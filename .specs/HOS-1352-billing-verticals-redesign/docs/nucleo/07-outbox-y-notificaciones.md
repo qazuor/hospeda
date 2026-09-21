@@ -207,7 +207,7 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | reanudación tras pausa | transaccional | al reanudar. **Dice una sola cosa: qué día se le cobra** | `DEC-SUB-010` |
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
-| retención | transaccional | antes del día 90, **al archivar** y antes del día 180 | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
+| retención | transaccional | antes del día 90, **al archivar** y antes del día 180, **los tres contados sobre `listing.inactiva_desde`** (`V/02` §2.5) — un reloj que se reinicia, así que su ocurrencia lleva la fecha objetivo (§2) | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
 | **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1` o por `MP4`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
 | **reapertura tras un pago manual tardío** | transaccional | al reabrir (`MP4`, cap. 03 §7.1, épica de billing). **Dice dos cosas y ninguna es opcional**: que el servicio volvió y desde cuándo, y **qué pasó con la ficha** — vuelve sola si estaba archivada (`PB7`), y si el hard delete ya corrió, **que el contenido no vuelve** | cap. 03 §7.1 (épica de billing), `V/02` §4.1 |
 
@@ -216,8 +216,10 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 sitio y el otro que el contenido se va a borrar. **El día 90 no avisaba nada**, y desde que una
 pausa del catálogo puede cruzarlo (`V/03` §9) el que se archiva puede ser un cliente al día que
 no canceló nada. El aviso al archivar dice las tres cosas que ese cliente necesita y ninguna
-estaba: **que no se borró nada**, **que vuelve sola cuando recupere la cobertura** (`PB7`) o a
-mano cuando quiera (`PB8`), y **desde cuándo se cuentan los 180**.
+estaba: **que no se borró nada**, **que vuelve sola cuando recupere la cobertura —o cuando el cupo
+vuelva a alcanzar—** si hay lugar para ella (`PB7`, `DEC-DATA-003`) o a mano cuando quiera y **sin
+pagar** (`PB8`), y **desde cuándo se cuentan los 180** — que es `listing.inactiva_desde`
+(`V/02` §2.5) y no una fecha que la superficie tenga que inventar.
 
 **El último no es un aviso más: es la condición bajo la cual se aceptó la decisión.** Se decidió
 perdonar el período impago y **no cancelar la predecesora antes de tiempo** —cancelarla

@@ -221,10 +221,28 @@ descubre sola.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido | la FK al dueño no es anulable: una ficha sin dueño no es un estado válido |
+| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | la FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 |
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
+
+**`inactiva_desde` es dónde vive el reloj del §25, y sin ella el hard delete del día 180 no es
+implementable.** La inactividad es un término del núcleo —cap. 01 §1.2— definida como *«el más
+reciente de los cuatro hechos que la reinician»*, y **un «más reciente de cuatro» no se deriva de
+ninguna máquina**: tres de los cuatro hechos no son transiciones de publicación y el cuarto es de
+la otra épica. Lo que decide **la única operación irreversible sobre datos del cliente de todo el
+programa** no puede ser un valor que nadie guarda.
+
+**Se escribe en los cuatro hechos y en ninguna otra parte.** Cada uno de los cuatro del cap. 01
+§1.2 le pone el instante en que ocurrió; nada más la toca. No es una columna denormalizada de algo
+que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia del cap. 03 §9 sobre
+el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
+segunda fuente.
+
+**Y la leen cinco consumidores, que son los mismos cinco que el cap. 01 §1.2 enumera**: `PB4`
+(día 90) y `PB5` (N meses) del cap. 03 §9, el día 180 del §4.1 de este capítulo, los dos avisos
+de schedule del cap. 07 §6 (núcleo) y la fecha que el cap. 19 §4 fila 18 obliga a imprimirle al
+cliente — que es **`inactiva_desde` + 180** y hasta esta pasada no tenía de dónde salir.
 
 ---
 
@@ -305,6 +323,12 @@ frase de esta tabla: cap. 01 §1.2 la define y enumera **los cuatro hechos que l
 que más importa acá es el segundo —**`cubierto` pasando a verdadero**—, porque es el que impide
 que el día 180 alcance a alguien que volvió.
 
+**Y se cuentan sobre una columna, no sobre una derivación: `listing.inactiva_desde`** (§2.5). El
+día 90 es `inactiva_desde + 90` y el 180 es `inactiva_desde + 180`; **el trabajo que hace el reloj
+es de la columna, y las transiciones sólo la leen**. El hecho 2 se resuelve **preguntándole al
+contrato**, nunca leyendo el aviso que lo empuja (`12-contrato…` §3), y `PB4` y `PB5` vuelven a
+preguntar en el momento de archivar (cap. 03 §9).
+
 | | qué | por qué |
 |---|---|---|
 | **Se borra** al día 180 | el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`) | es lo que el §25 llama operativo: sirve para prestar el servicio y el servicio terminó |
@@ -345,6 +369,11 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    `PB7` no llegue a disparar porque el cupo no alcanza. Sin esta regla, el que reanuda con un
    plan más chico se queda con la ficha archivada **y con el reloj del día 180 corriendo**, que es
    el mismo desenlace que la regla 3 viene a evitar.
+
+   **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en dos momentos, no en
+   uno**: cuando el recálculo que el aviso despierta vuelve a preguntar y trae `cubierto`
+   verdadero, y —como red— cuando `PB4` o `PB5` releen antes de archivar (cap. 03 §9). Los dos
+   preguntan; **ninguno de los dos le cree al aviso** (`12-contrato…` §3).
 
    **Su caso testigo es la pausa, y es la razón por la que estas dos reglas se escribieron
    juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha

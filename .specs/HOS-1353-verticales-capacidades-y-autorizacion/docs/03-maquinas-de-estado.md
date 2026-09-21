@@ -292,8 +292,8 @@ billing mueve varias publicaciones a la vez.
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
 | PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo |
 | PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza |
-| PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad** (cap. 01 §1.2, núcleo) | `ARCHIVED` | sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
-| PB5 | `DRAFT` | N meses de **inactividad** (cap. 01 §1.2, núcleo) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración |
+| PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | **relee la cobertura antes de archivar** (ver abajo). Sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
+| PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración. **Relee la cobertura antes de archivar**, igual que `PB4` |
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
 | **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás |
 | **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla |
@@ -309,6 +309,17 @@ sólo de `DRAFT`.
 §3)— así que atarse a él **no agrega un mecanismo: usa el que estaba**. Una lista de transiciones
 en una épica, mantenida a mano contra los cambios de la otra, es el punto de falla favorito de un
 arreglo hecho por racimos.
+
+**Pero el hecho dice CUÁNDO preguntar y no contesta la pregunta, y las dos filas del reloj releen
+antes de actuar.** El §3 del contrato prohíbe decidir con lo que trae el aviso —*«un consumidor que
+decidiera con lo que trae el evento estaría creyéndole a un mensaje en vez de al estado»*—, y `PB4`
+y `PB5` **deciden lo más caro que decide esta máquina**: el día 90 es el primer escalón del hard
+delete del día 180 (cap. 02 §4.1). Así que las dos, en el momento de ejecutar, **vuelven a pedirle
+la cobertura al contrato**: si el `user + vertical` está cubierto, no archivan y **reinician el
+reloj** escribiendo `listing.inactiva_desde` (cap. 02 §2.5, hecho 2 del cap. 01 §1.2, núcleo). Un
+aviso perdido pasa así a costar un retraso en el reinicio y nunca un archivado indebido — y que
+estos avisos se pierden lo declara el propio diseño en el otro consumidor de la misma lista
+(cap. 02 §3.2, regla 2).
 
 **Y el excedente queda como la única causa enumerada**, porque es la que **no** cambia `cubierto`:
 la persona sigue cubierta y lo que no le alcanza es el cupo. Por eso `PB3` pide las dos cosas.

@@ -548,15 +548,24 @@ evento: la cobertura de (user, vertical) cambió
 ```
 
 Es lo único que billing le **empuja** a verticales. Lleva qué fuente cambió y en qué dirección, y
-alimenta dos cosas que ya existen en el diseño: la transición `PB2` de publicación y la lista de
-invalidación del caché (cap. 02 §3.2), que es la **misma lista** que dispara el reconciliador de
-excedentes (cap. 15 §4.2) — *«una lista, dos consumidores»*.
+alimenta **tres** cosas que ya existen en el diseño: la transición `PB2` de publicación, la lista de
+invalidación del caché (cap. 02 §3.2) —que es la **misma lista** que dispara el reconciliador de
+excedentes (cap. 15 §4.2), *«una lista, dos consumidores»*— y **el reloj de inactividad**, cuyo
+hecho 2 es *«`cubierto` pasa a verdadero»* (`NUCLEO/01` §1.2).
 
 **El evento no reemplaza la consulta.** El reconciliador *«no se dispara por evento: se dispara
 por condición»* (cap. 15 §4.2): el aviso dice que hay que recalcular, y el recálculo vuelve a
 preguntar. Un consumidor que decidiera con lo que trae el evento estaría creyéndole a un mensaje
 en vez de al estado, que es el error que el capítulo 03 §10 ya prohibió para los eventos del
 proveedor.
+
+**El tercer consumidor es el que más caro paga esa regla, y por eso se dice acá y no sólo allá.**
+El reloj de inactividad decide **borrar** —el hard delete del día 180 (`V/02` §4.1)—, así que su
+hecho 2 se resuelve **preguntando `cubierto` en la respuesta del §2.1**, nunca leyéndolo del aviso,
+y el instante se escribe en `listing.inactiva_desde` (`V/02` §2.5). Y como un push se puede perder,
+**las dos filas que actúan sobre ese reloj vuelven a preguntar en el momento de ejecutar**
+(`V/03` §9, `PB4` y `PB5`): el aviso perdido cuesta un retraso en el reinicio, jamás un archivado
+sobre alguien que ya volvió.
 
 ---
 

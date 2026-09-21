@@ -45,16 +45,39 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | **Vertical con ficha** | Alojamiento, Gastronomía, Experiencia (§6). |
 | **Ficha** | Recurso publicable con **exactamente un** User dueño (§6). No hay multi-dueño. Un User puede tener varias. |
 | **Presencia de Partner** | La página propia de Partner Gold (§17.1). El §17.1 ordena **no** forzarla al modelo `Ficha` pese al parecido, así que es una entidad distinta con su propio ciclo de publicación. |
-| **Inactividad** (de una ficha) | El tiempo que lleva **sin estar a la vez publicada y cubierta**, contado desde **el más reciente** de los cuatro hechos que la reinician. Es el reloj del §25 —*«desde que queda efectivamente inactiva»*— el que disparan `PB4` (día 90) y `PB5`, y sobre el que se cuenta el día 180 (cap. 02 §4, épica de verticales). |
+| **Inactividad** (de una ficha) | El tiempo que lleva **sin estar a la vez publicada y cubierta**, contado desde **el más reciente** de los cuatro hechos que la reinician. Es el reloj del §25 —*«desde que queda efectivamente inactiva»*— el que disparan `PB4` (día 90) y `PB5`, y sobre el que se cuenta el día 180 (cap. 02 §4, épica de verticales). **Ese instante es un dato y tiene dónde vivir: la columna `listing.inactiva_desde`** (`V/02` §2.5). |
 
 **Los cuatro hechos que reinician la inactividad, y la lista es cerrada:**
 
 | # | hecho | de dónde se lee | por qué reinicia |
 |---|---|---|---|
 | 1 | un **acto del dueño** sobre la ficha: crearla, editarla, publicarla, despublicarla, exportarla, reactivarla | el registro append-only de eventos de dominio (cap. 08 §1.3), que ya los guarda todos por el criterio 2 del §1.1 | alguien la está usando, que es lo contrario de estar inactiva |
-| 2 | **`cubierto` pasa a verdadero** | el aviso del contrato ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §3) | volver a estar cubierto **es** dejar de estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
+| 2 | **`cubierto` pasa a verdadero** | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | volver a estar cubierto **es** dejar de estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
-| 4 | el **fin de servicio** de una vertical discontinuada | cap. 10 §4 (épica de billing) | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
+| 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
+
+**El hecho 2 se lee de la CONSULTA y nunca del aviso, y ésa es la diferencia entre reiniciar el
+reloj y creerle a un mensaje.** El §3 del contrato lo prohíbe con todas las letras —*«el evento no
+reemplaza la consulta … un consumidor que decidiera con lo que trae el evento estaría creyéndole a
+un mensaje en vez de al estado»*— y este reloj **decide**: decide borrar. Así que el aviso hace acá
+exactamente lo que hace en los otros dos consumidores que ya cuelgan de él —la invalidación del
+caché y el reconciliador, *«una lista, dos consumidores»* (`V/15` §4.2)—: **despierta el recálculo,
+y el recálculo vuelve a preguntar**. Si `cubierto` viene verdadero, se escribe el instante en
+`listing.inactiva_desde` (`V/02` §2.5).
+
+**Y como un aviso se puede perder, el que ACTÚA vuelve a preguntar antes de actuar.** `PB4`, `PB5`
+y el hard delete del día 180 **releen la cobertura del `user + vertical` en el momento de ejecutar**
+y, si está cubierta, reinician el reloj en vez de avanzar. Es el mismo §3 aplicado al otro extremo,
+y es lo que vuelve el aviso perdido un retraso y no un borrado: sin esta relectura el modo de falla
+cae del lado caro —el aviso que no llega deja el reloj corriendo sobre alguien que volvió—, y el
+propio diseño ya declara que estos avisos se pierden (`V/02` §3.2, regla 2: *«si la invalidación
+falla, la operación de dominio no falla»*). Ahí cuesta rendimiento; acá costaría el contenido.
+
+**Los otros tres hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
+append-only de eventos de dominio (cap. 08 §1.3), el 3 de la propia máquina de publicación y el 4
+de la columna `vertical.fin_de_servicio` (`V/02` §2.1). El 2 era **el único de los cuatro sin
+estado detrás**, y es justamente el que impide que el día 180 alcance a alguien que volvió
+(`V/02` §4.1).
 
 **Lo que se retira es que el reloj fuera monótono.** La palabra aparecía **una sola vez en todo
 el corpus** —la celda de `PB4`— y sin definición, así que la lectura que una implementación iba a
