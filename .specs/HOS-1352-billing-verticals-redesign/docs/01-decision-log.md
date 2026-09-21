@@ -3738,13 +3738,47 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-010 — La cortesía sobre un plan retirado se difiere y se re-emite sobre el plan nuevo
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra el borde que `DEC-SUB-015` dejó abierto explícitamente.**
+- **El caso**: `SUPER_ADMIN` le firmó a alguien **N días de cortesía**, y la cortesía **se
+  implementa pausando** (`DEC-GRANT-003`), así que esa suscripción está `PAUSED · COURTESY`.
+  Entonces **se retira el plan que tenía**. Por `DEC-SUB-015` la pausada no entra al piso, se le
+  avisa y al volver elige plan nuevo — pero **el que vuelve está en medio de un regalo nuestro**, y
+  el plan sobre el que se lo hicimos ya no existe.
+- **Decisión**: **la cortesía se difiere y se re-emite sobre el plan nuevo**, con el **mismo
+  mecanismo que `DEC-GRANT-007`** escribió el mismo día: el saldo de días vive en
+  `courtesy_grant.saldo_días`, y `S9` —que ya ganó un segundo disparador— la re-emite cuando la
+  fila llega a `ACTIVE`. **No se inventa nada nuevo.**
+- **El motivo**: es el criterio del owner sobre un caso donde la pérdida **la causaría un acto
+  deliberado nuestro** —retirar el plan— **sobre alguien que todavía no recibió nada**. Es el caso
+  de `DEC-TRIAL-009` **invertido**, y conviene leerlos juntos: allá la persona **ya había recibido
+  la cobertura completa** del plan anclado y por eso el trial gastado no se repara; **acá el regalo
+  no empezó a entregarse**.
+- **Las dos alternativas, y por qué se descartan:**
+  - **Que la cortesía corra hasta agotarse sobre el plan retirado** y recién ahí elija: le da
+    exactamente lo que se le firmó, sobre el plan sobre el que se le firmó, pero **mantiene vivo un
+    plan retirado hasta que se agote el regalo** — que es justo la garantía que `DEC-SUB-015`
+    conservó: **un plan retirado tiene fecha de cierre**.
+  - **Que la cortesía se pierda con el plan**, avisando: **contradice el criterio del owner**, por
+    la razón de arriba.
+- **El costo aceptado**: el plan nuevo puede ser **más caro**, así que los N días regalados valen
+  más de lo que valían al firmarse. Es un sobrecosto **nuestro, acotado y consecuencia de una
+  decisión nuestra**.
+- **Origen**: la FASE 9-bis-4; el borde declarado abierto en `DEC-SUB-015`; y la elección del owner
+  del 2026-09-21 entre las tres opciones que se le presentaron — eligió la 1, que era la
+  recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **85** |
+| Decisiones tomadas | **86** |
 | De metodología | 11 |
-| Funcionales | 74 |
+| Funcionales | 75 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
