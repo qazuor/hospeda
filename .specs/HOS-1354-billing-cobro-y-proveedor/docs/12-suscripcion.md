@@ -128,11 +128,24 @@ proveedor no tiene ninguna.
 | 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
 | 2 | **un upgrade** | **muere con la suscripción vieja.** `DEC-SUB-007` ejecuta el upgrade cancelando y recreando, y la nueva nace sin cola |
 | 3 | **una cancelación** (§24) | **lo absorbe, y en los cuatro casos.** Desde `ACTIVE` (`S11`) las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio. Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`) y desde `GRACE_PERIOD` (`S24`) la baja cae **hoy** (cap. 03 §3.2), así que el descenso no llega a ejecutarse nunca — que es la regla general de abajo: *«si no va a tenerlo nunca más, se descarta»* |
-| 4 | **una pausa** (§26) | **espera a la reanudación.** Durante la pausa no hay publicación ni servicio (§26.1), así que hacer cumplir un excedente sobre fichas ya bajadas no hace nada y habría que reevaluarlo igual al volver |
+| 4 | **una pausa** (§26) | **espera a la reanudación, y en las DOS pausas por la misma razón.** No es que durante la pausa no haya servicio —eso es verdad de `CUSTOMER_REQUEST` y **falso de `COURTESY`**, que **sí emite** como `tipo: CORTESÍA` (`12-contrato…` §2.6, `DEC-GRANT-003`)—: es que **estando pausada el proveedor rechaza toda modificación**, con `400` explícito y medido (`EX-11`, `VERIFIED`), y un descenso arranca mutando el monto *«cuando el cliente lo pide»* (`DEC-SUB-008`). Así que el cambio **no se puede aplicar**, tenga o no servicio. Es la implicación 3 de `DEC-SUB-010` —*«todo cambio pedido durante la pausa se aplica DESPUÉS de reanudar»*— y es **el mismo argumento que el §6.2 ya usa para el aumento de precio** |
 
-**La regla general detrás de las cuatro**: el descenso se aplica **al fin del primer ciclo en que
-el cliente efectivamente tiene servicio**. Si no lo tiene, espera; si no va a tenerlo nunca más,
-se descarta.
+**La regla general detrás de las cuatro, en dos cláusulas y no en una:**
+
+1. **Si la fila está pausada, el cambio espera a la reanudación** — por `EX-11` y la implicación 3
+   de `DEC-SUB-010`, que es una regla sobre **lo que el proveedor acepta**, no sobre lo que el
+   cliente está recibiendo.
+2. **Si no va a tener servicio nunca más, se descarta** — es la colisión 3, y ahí no hay
+   reanudación que esperar.
+
+> **La versión anterior tenía UNA cláusula y era falsa de la mitad de su sujeto.** Decía que el
+> descenso se aplica *«al fin del primer ciclo en que el cliente efectivamente tiene servicio»*, y
+> en una **cortesía** el cliente **sí tiene servicio** —lo sostenemos nosotros—, así que esa regla
+> ordenaba aplicar el descenso sobre una fila pausada: exactamente lo que `EX-11` demuestra
+> imposible. Es el mismo defecto de razón que el §7.2 ya había corregido para la baja
+> —*«el argumento va por el período pagado y no por “durante la pausa no hay servicio”, que es
+> verdad de una sola de las dos pausas»*—, y acá sobrevivía porque la conclusión era correcta y
+> nadie vuelve sobre la razón de una conclusión correcta. **La conclusión no cambia: esperar.**
 
 ### 2.3 Arrepentirse sigue siendo barato
 
