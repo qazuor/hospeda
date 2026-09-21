@@ -1,6 +1,32 @@
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
+import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import { applySecurityHeaders } from './lib/security-headers';
+
+/**
+ * HOS-1153 startup self-check, the admin twin of the one `apps/web`'s
+ * `src/middleware.ts` runs (HOS-155).
+ *
+ * Runs once at server-entry module load — this file is the SSR entry, so this
+ * is the admin's earliest server-side hook. Deliberately at module scope and
+ * not per-request: the config cannot change between requests, and an alert per
+ * request would be noise.
+ *
+ * Reads `process.env` directly rather than the `env` proxy so a
+ * `validateAdminEnv()` failure can never mask the diagnostic — the whole point
+ * is to report a config that is individually VALID (both vars are optional) yet
+ * jointly incoherent. Wrapped in try/catch as belt-and-suspenders: nothing here
+ * may ever prevent the server from booting.
+ */
+try {
+    reportInternalBypassSelfCheck({
+        internalApiUrl: process.env.HOSPEDA_INTERNAL_API_URL,
+        internalRequestSecret: process.env.HOSPEDA_INTERNAL_REQUEST_SECRET,
+        isProd: process.env.NODE_ENV === 'production'
+    });
+} catch (error) {
+    console.error('[admin] internal-bypass self-check threw at startup:', error);
+}
 
 /**
  * SPEC-209 T-002: cheap container healthcheck endpoint.
