@@ -2,8 +2,8 @@
 
 Fecha: 2026-09-17.
 
-El checklist tiene 74 puntos: 41 completos y 33 pendientes. Los pendientes no
-representan 37 bloqueos equivalentes; varios son decisiones opcionales,
+El artifact actual tiene 87 puntos: 53 completos y 34 pendientes. Los
+pendientes no representan 34 bloqueos equivalentes; varios son decisiones opcionales,
 pruebas que requieren infraestructura o trabajo posterior a la adopción.
 
 ## Para considerar la migración operativa
