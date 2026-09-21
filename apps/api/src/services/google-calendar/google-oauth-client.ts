@@ -31,6 +31,15 @@ import { env } from '../../utils/env.js';
 const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 /**
+ * Google's OAuth 2.0 revocation endpoint (HOS-663).
+ *
+ * Separate from the token endpoint and takes no client credentials — the token
+ * itself identifies the grant.
+ * https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke
+ */
+const GOOGLE_OAUTH_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
+
+/**
  * Normalized (camelCase) shape of a Google OAuth token response.
  *
  * The raw Google response uses snake_case field names (`access_token`,
@@ -243,4 +252,63 @@ export const refreshAccessToken = async (
     });
 
     return postTokenRequest(body);
+};
+
+/** Input for {@link revokeToken}. */
+export interface RevokeTokenInput {
+    /**
+     * The token to invalidate. Pass the REFRESH token when the connection has
+     * one: revoking a refresh token invalidates the whole grant, including
+     * every access token derived from it. Revoking an access token on its own
+     * only kills that one short-lived token, and the refresh token would still
+     * mint new ones.
+     */
+    readonly token: string;
+}
+
+/**
+ * Asks Google to invalidate an OAuth grant (HOS-663).
+ *
+ * This is the step that actually ends the platform's access to a host's
+ * calendar. Deactivating our connection row only stops US from using the token;
+ * the grant stays live at Google until it is revoked here, and it stays listed
+ * in the host's "Third-party apps with account access".
+ *
+ * Takes no client credentials — the token identifies the grant — so unlike the
+ * token grants above this works even if the OAuth client env vars are unset.
+ *
+ * A token Google no longer recognises answers `400 invalid_token`. That is
+ * treated as SUCCESS by the caller, not as a failure: a grant that does not
+ * exist is a grant that cannot be used, which is the outcome being asked for.
+ * Distinguishing it is left to the caller via
+ * {@link GoogleOAuthClientError.body}.
+ *
+ * @param input - The token to revoke — see {@link RevokeTokenInput}.
+ * @returns Nothing. Resolving means Google accepted the revocation.
+ * @throws {GoogleOAuthClientError} If Google responds with a non-2xx status.
+ *
+ * @example
+ * ```ts
+ * await revokeToken({ token: credential.refreshToken ?? credential.accessToken });
+ * ```
+ */
+export const revokeToken = async (input: RevokeTokenInput): Promise<void> => {
+    const response = await fetch(GOOGLE_OAUTH_REVOKE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json'
+        },
+        body: new URLSearchParams({ token: input.token }).toString()
+    });
+
+    if (!response.ok) {
+        const parsedBody = await tryParseJson(response);
+        // The token is never echoed into the message.
+        throw new GoogleOAuthClientError(
+            `Google OAuth token revocation failed with status ${response.status}`,
+            response.status,
+            parsedBody
+        );
+    }
 };

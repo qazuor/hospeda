@@ -1,8 +1,3 @@
-// HOS-963: pure media-composition helper reused by raw-query public routes
-// (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
-// never hit `_afterSearch`, the chokepoint that normally composes `media` from
-// the relational `accommodation_media` table. Mirrors commerce's
-// `composeCommerceMedia` export below.
 // HOS-663: the delete-time calendar cascade and the revocation port the API
 // layer registers into it at startup.
 export {
@@ -15,6 +10,11 @@ export {
     REVOCATION_FAILURE_PREFIX,
     setCalendarConnectionRevocationPort
 } from './accommodation/accommodation.calendar-cascade';
+// HOS-963: pure media-composition helper reused by raw-query public routes
+// (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
+// never hit `_afterSearch`, the chokepoint that normally composes `media` from
+// the relational `accommodation_media` table. Mirrors commerce's
+// `composeCommerceMedia` export below.
 export {
     type ComposeAccommodationMediaInput,
     composeAccommodationMedia
