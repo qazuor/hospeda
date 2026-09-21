@@ -2775,13 +2775,53 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-002 — El reembolso del pago pendiente lo confirma una persona: no hay operaciones automáticas sobre dinero
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Alcance**: la primera de las cuatro ramas con que puede terminar una sucesión en curso
+  (`B/12` §5.3) — la sucesora autoriza, `S17` mata a la predecesora, y el pago que había quedado
+  pendiente por `S19` **se devuelve**. La decisión es **quién lo ejecuta**, no si corresponde.
+- **El caso, para que se entienda sin reconstruirlo**: a alguien le rebota la cuota y entra en
+  `GRACE_PERIOD`. Cambia de plan para salir del problema, lo que abre una sucesión con una ventana
+  de 72 h. Mientras tanto el proveedor **sigue reintentando la cuota vieja por su cuenta** —
+  perdonar la deuda no apaga su reciclado— y el cobro entra. En ese instante **todavía no se sabe**
+  si la persona va a terminar el checkout, y las dos ramas piden lo contrario: si lo termina el
+  pago no le compró nada y se devuelve; si lo abandona, ese pago es **lo único que la salva**. Por
+  eso el pago queda pendiente (`S19`) y su destino lo decide **el cierre de la sucesión**.
+- **Decisión**: el reembolso **lo confirma una persona**. Al cerrar la sucesión el sistema **pone
+  la marca** y el caso entra al canal de conciliación; **no ejecuta el reembolso solo**.
+- **Por qué, y son tres reglas ya escritas, no una preferencia**:
+  1. `NUCLEO/08` §3 lista *«reembolsar»* entre las acciones que **mueven dinero**, con permiso
+     propio y confirmación explícita.
+  2. `B/09` §2.4 fija el criterio del owner: *«la línea es "toca plata o no toca plata"»* — y es la
+     **cuarta** vez que se aplica.
+  3. `S14`: **cero decisiones destructivas automáticas**.
+  Automatizarlo habría sido **la primera operación automática sobre dinero de todo el diseño**, en
+  un dominio que está vacío a propósito.
+- **Y un motivo técnico que empuja igual**: `B/02` §2.3 **no guarda el id del refund**, que `RF-6`
+  mide necesario para que un reintento no devuelva dos veces. La rama automática exigía además esa
+  columna; la manual no.
+- **El costo, aceptado con los ojos abiertos**: la persona **espera a que alguien mire**, y este es
+  un camino **normal**, no excepcional, así que va a pasar seguido sobre el camino de recuperación
+  que `DEC-SUB-003` diseñó para que no fuera un muro. Se acota **avisándolo en el mismo correo** que
+  `B/12` §5.3 ya obliga a reescribir para que nombre las dos ramas (`NUCLEO/07` §6 y `B/19` §4
+  fila 15).
+- **Lo que NO decide**: las otras tres ramas, que ya estaban resueltas y no devuelven plata —vencer
+  la ventana **reactiva**, la sucesión trabada ya tiene un humano mirándola, y el grant *Free
+  Forever* no devuelve por `DEC-GRANT-001`.
+- **Origen**: la FASE 9-bis-2, familia del pago tardío; el hallazgo `F-8cB3-011`, que midió que el
+  reembolso automático contradecía al resto del diseño; y la elección del owner del 2026-09-21
+  entre las dos opciones que se le presentaron.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **64** |
+| Decisiones tomadas | **65** |
 | De metodología | 9 |
-| Funcionales | 55 |
+| Funcionales | 56 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
