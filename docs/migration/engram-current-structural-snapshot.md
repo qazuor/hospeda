@@ -62,3 +62,15 @@ El único hash repetido involucra 33 filas, con IDs entre 567 y 9720. El CSV
 temporal contiene sólo IDs, tipos, proyectos, tamaños, fechas y hashes; no
 contiene títulos ni contenidos. Los checksums quedaron junto a la copia para
 detectar cambios antes de cualquier revisión.
+
+## Resultado del lote A en la copia
+
+Con las decisiones humanas registradas se aplicó un borrado lógico de 45 filas
+en la copia temporal y se ajustaron los títulos de tres memorias conservadas:
+
+- `668`: auditoría de estructura del Admin Panel.
+- `3553`: preferencia de ejecutar tests acotados.
+- `3708`: regla SSR para cargar Leaflet sólo del lado cliente.
+
+La copia quedó con 9.800 observaciones activas, cero candidatas restantes del
+lote A y `PRAGMA integrity_check = ok`. La instalación activa no se modificó.
