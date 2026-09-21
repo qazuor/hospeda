@@ -874,7 +874,8 @@ jobs:
   # (or `hops redeploy <app>` from inside the VPS), NOT from this repo's
   # workflows. The aggregator stays because it makes branch-protection
   # rules simpler: one required status check ("CI Pass") instead of
-  # nine independent ones.
+  # ten independent ones (HOS-1136 split `security` into `dependency-audit`
+  # + `sast`, raising the count from nine).
   # ------------------------------------------------------------------
   ci-pass:
     name: CI Pass

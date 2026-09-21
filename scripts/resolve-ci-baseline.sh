@@ -3,7 +3,8 @@
 # Resolves "the commit this change is measured against" for the CI jobs that
 # work off a diff rather than the whole tree:
 #
-#   - the Security job's `semgrep --baseline-commit`
+#   - the sast job's `semgrep --baseline-commit` (HOS-1136 split it out of
+#     the former single `Security` job)
 #   - the Guards job's seed dual-write check (`BASE_SHA`)
 #
 # Each trigger names that commit differently, and `workflow_dispatch` does not
