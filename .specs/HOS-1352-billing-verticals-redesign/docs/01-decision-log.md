@@ -3518,13 +3518,51 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-014 — La baja desde `GRACE_PERIOD` corta el servicio en el acto
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco**: al escribir `S22` (desde `PAUSED`) y `S23` (desde `SUSPENDED`), la FASE 9-bis-4
+  recorrió los seis estados vivos y encontró que **`GRACE_PERIOD` sigue sin fila de baja**. A
+  alguien le rebotó la tarjeta, está en los 7 días de gracia y **decide irse en el medio**: hoy
+  ninguna fila lo ejecuta, el intento se va a la marca por la regla 1 del núcleo, y mientras una
+  persona lo mira **el reloj del grace sigue corriendo hacia `SUSPENDED`**.
+- **Lo que el diseño existente no resolvía**: `DEC-SUB-009` fija que al cancelar se guarda
+  **nuestra** fecha de fin de servicio, y **no dice cuál es cuando el período en curso no está
+  pagado**. En `S11` (desde `ACTIVE`) la respuesta es clara —el cliente pagó el período, el
+  servicio corre hasta que termine—; en `GRACE_PERIOD` **no pagó**.
+- **Decisión**: **corta en el acto**, con `fin_real` en el día de la cancelación, igual que `S22` y
+  `S23`. Es una fila propia de `B/03` §3.2, con `desde` = `GRACE_PERIOD`, evento *«pide la baja»*,
+  `hacia` `CANCELLED` directo — **sin pasar por `CANCEL_SCHEDULED`**, por la misma razón que las
+  otras dos: no queda período pagado que sostener.
+- **El motivo**: es **el criterio que ya gobierna `S22` y `S23`** —*«no queda período pagado que
+  sostener»*— aplicado al estado donde es más literal que en ninguno: **el grace existe porque el
+  cobro falló**. El ciclo anterior ya se consumió, que es precisamente por lo que la fila está ahí.
+- **Las dos alternativas, y por qué se descartan:**
+  - **Correr el reloj del grace y cortar al vencer**, dándole la ventana completa por si paga:
+    obliga a un estado intermedio —*«de baja pero viva»*— y **deja el candado `A` ocupado** durante
+    esos días, que es **el mismo encierro que `S23` acaba de venir a romper**.
+  - **No escribir la fila** y que el que quiere irse espere a que lo suspendan para usar `S23`: le
+    pide a alguien que decidió irse que aguante una semana a que lo suspendan por falta de pago, y
+    **el correo de suspensión del proveedor insinúa mora** (`PA-5`, medido). Un mal trago por nada.
+- **Pendiente de implementación al momento de escribirse**: la fila **no está escrita todavía** en
+  `B/03` §3.2. Se difirió a propósito porque la familia de la sucesión estaba editando ese mismo
+  archivo, y dos escrituras simultáneas sobre la misma tabla es exactamente lo que esta fase evita
+  corriendo las familias en serie. **Entra en una tanda corta posterior**, junto con el recuento de
+  todo lo que la fila nueva mueve (las puertas del cap. 09, las transiciones de `B/16` §4.3, la
+  regla 7 y las ramas de `B/12` §5.3).
+- **Origen**: la FASE 9-bis-4, familia de la baja, pregunta 1 de su rastro
+  (`21-fase-9-bis-4/rastro-032f761e0.md` §5), y la elección del owner del 2026-09-21 entre las tres
+  opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **79** |
+| Decisiones tomadas | **80** |
 | De metodología | 11 |
-| Funcionales | 68 |
+| Funcionales | 69 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
