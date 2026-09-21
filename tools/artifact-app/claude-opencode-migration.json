@@ -362,7 +362,7 @@
                             "title": "Probar worktrees end-to-end",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Validar pass, DB, puertos, servidores, cleanup y rollback en temporales.",
-                            "notes": "Gate94: E2E completo desde wrappers globales: wt-create + template vigente + DB descartable + cinco envs desde hospeda-staging + puertos 3101/3100/4421 + build + API health + Admin/Web TCP + context/env drift + servers-down + cleanup. `wt-create`/`wt-up` ahora bootstrapéan client-tools con bun install sólo si faltan deps, corrigiendo worktrees históricos sin @clack/prompts.",
+                            "notes": "Gate94: E2E completo desde wrappers globales: wt-create + template vigente + DB descartable + cinco envs desde hospeda-staging + puertos 3101/3100/4421 + build + API health + Admin/Web TCP + context/env drift + servers-down + cleanup. `wt-create`/`wt-up` ahora bootstrapéan client-tools con bun install sólo si faltan deps, corrigiendo worktrees históricos sin @clack/prompts. Gate132: la repetición desde el checkout operativo queda condicionada a promover estos cambios a staging; el staging actual aún no contiene scripts/worktree/template.sh.",
                             "done": true
                         },
                         {
