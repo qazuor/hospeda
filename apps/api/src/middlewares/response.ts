@@ -335,10 +335,25 @@ export const createErrorHandler = () => {
         // path. That asymmetry is what the R4 twin-formatter rule in
         // `apps/api/docs/error-contract.md` forbids, and it has already drifted
         // twice (HOS-283, H-105).
-        const constraintViolation = buildConstraintViolationResponse(
-            error,
-            error instanceof DbError ? error.entity : 'record'
-        );
+        //
+        // Gated on the two typed branches NOT matching, because they outrank it
+        // in the chain below and this value also picks the log level. Without
+        // that gate the level would be decided by a branch that never answers:
+        // `extractPostgresErrorCause` follows `ServiceError.details`, where
+        // `BaseService` stores the original caught value, so a `ServiceError`
+        // wrapping a driver 23505 yields a constraint violation here while
+        // Priority 1 still answers 500 INTERNAL_ERROR — and that 500 would then
+        // be logged at `warn`, losing its stack (emitted only at `error` level)
+        // and dropping out of the ERROR stream, while `handleRouteError` logged
+        // the same error at `error`. The body was never affected, so R4 held;
+        // the regression would have been in observability.
+        const isTypedBranch = error instanceof ServiceError || error instanceof HTTPException;
+        const constraintViolation = isTypedBranch
+            ? null
+            : buildConstraintViolationResponse(
+                  error,
+                  error instanceof DbError ? error.entity : 'record'
+              );
 
         // Log the error for debugging. EXPECTED outcomes (401/403/404) are not
         // application faults: emit them at a reduced level without a stack trace
