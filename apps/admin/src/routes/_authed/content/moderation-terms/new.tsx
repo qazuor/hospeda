@@ -62,7 +62,7 @@ function ModerationTermCreatePage() {
                                     label: t('content-moderation.terms.form.kindLabel'),
                                     type: FieldTypeEnum.SELECT,
                                     required: true,
-                                    config: {
+                                    typeConfig: {
                                         options: [
                                             {
                                                 value: 'word',
@@ -80,7 +80,7 @@ function ModerationTermCreatePage() {
                                     label: t('content-moderation.terms.form.categoryLabel'),
                                     type: FieldTypeEnum.SELECT,
                                     required: true,
-                                    config: {
+                                    typeConfig: {
                                         options: [
                                             {
                                                 value: 'hate',
@@ -119,7 +119,7 @@ function ModerationTermCreatePage() {
                                     type: FieldTypeEnum.NUMBER,
                                     required: false,
                                     defaultValue: 1.0,
-                                    config: {
+                                    typeConfig: {
                                         type: 'NUMBER',
                                         min: 0,
                                         max: 1,

@@ -478,9 +478,6 @@ export type FieldConfig = {
     derivedFields?: DerivedFieldConfig[];
     computedValue?: (formData: Record<string, unknown>) => unknown;
 
-    // Type-specific configuration
-    config?: FieldTypeConfig;
-
     // Styling
     className?: string;
 
@@ -520,6 +517,16 @@ export type FieldConfig = {
     entitlementKey?: string;
     limitKey?: string; // For limit-based gates (e.g., max_photos)
 
-    // Type-specific configuration
+    /**
+     * Type-specific configuration: select options, number bounds, textarea
+     * limits, entity-select search functions, and so on.
+     *
+     * This is the ONLY channel renderers read (see `EntityFormSection`). A
+     * second property of the same type — `config` — used to sit alongside it
+     * and was read by nobody, so options written under it were dropped in
+     * silence and the field rendered its "no options available" state with no
+     * type error anywhere (HOS-1068). Do not reintroduce that twin; a guard
+     * test fails if it comes back.
+     */
     typeConfig?: FieldTypeConfig;
 };
