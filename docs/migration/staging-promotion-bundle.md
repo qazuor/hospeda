@@ -54,3 +54,20 @@ comprobar que incluya el paso `env-reconcile`; luego verificar
 `hops env --drift --wt hospeda-staging --json`, `hops db-update-template
 status` y el E2E de worktree/servers. No borrar claves obsoletas a mano antes
 de esas pruebas.
+
+## Mapa de commits de referencia
+
+La rama no debe integrarse con un merge ciego, pero este mapa permite revisar
+la procedencia de cada bloque antes de armar el PR:
+
+| Bloque | Commits principales |
+| --- | --- |
+| Template, fingerprint y rollback | `c2b103ad5`, `a14e85543`, `4c065590c`, `646428b21` |
+| Creación/up de worktrees y client-tools | `5d848e885`, `877d40459`, `40891fd85`, `050bc3aa5`, `8405cca2d` |
+| Env source-of-truth y drift | `a6fc2d679`, `eab8ca192`, `40952bc25`, `3de124b66` |
+| Update read-only/JSON | `6ab36b219`, `31d3cabff`, `6a097af17`, `fd06bcf40` |
+| Verify/CI y guards | `915507bb4`, `9da0f329b`, `19a8f6f2c`, `5578315d6` |
+
+Los commits de documentación y artifact que acompañan estos cambios deben
+revisarse por separado. El PR operativo debe seleccionar archivos, conservar
+sus tests y no arrastrar automáticamente todo el historial de migración.
