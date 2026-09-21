@@ -137,3 +137,155 @@ describe('handleRouteError unique-constraint violation (HOS-1061)', () => {
         expect(body.error.details).toBeUndefined();
     });
 });
+
+/**
+ * HOS-1174: the tests above construct a `DbError` whose MESSAGE carries the
+ * Postgres constraint text. The model layer never produced that shape — it
+ * copied Drizzle's wrapper message, which is only
+ * `"Failed query: <SQL>\nparams: <...>"`, so the text matcher could not fire
+ * in production and a unique conflict answered 500 `DATABASE_ERROR`.
+ *
+ * The errors below are the shape `BaseModelImpl` ACTUALLY throws now, measured
+ * against a real Postgres: the constraint text and the SQLSTATE live on the
+ * `cause` chain (`DbError` → `DrizzleQueryError` → `pg.DatabaseError`), never
+ * on the top-level message. Detection is by SQLSTATE, never by message text.
+ */
+describe('handleRouteError detects the SQLSTATE through the cause chain (HOS-1174)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Builds the exact wrapping the DB layer produces for a driver failure. */
+    const buildDbErrorWithDriverCause = (
+        entity: string,
+        driverFields: Record<string, unknown>,
+        driverMessage: string
+    ): DbError => {
+        const driverError = Object.assign(new Error(driverMessage), driverFields);
+        const drizzleError = Object.assign(
+            new Error(
+                'Failed query: update "partners" set "slug" = $1 where "id" = $2\nparams: duplicate-slug,test-id'
+            ),
+            { cause: driverError }
+        );
+        return new DbError(
+            entity,
+            'update',
+            { where: { id: 'test-id' } },
+            drizzleError.message,
+            drizzleError
+        );
+    };
+
+    it('answers 409 ALREADY_EXISTS for a 23505 buried on the cause chain, with no constraint text in the message', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = buildDbErrorWithDriverCause(
+            'partner',
+            { code: '23505', constraint: 'partners_slug_unique', table: 'partners' },
+            'duplicate key value violates unique constraint "partners_slug_unique"'
+        );
+        expect(error.message).not.toContain('violates unique constraint');
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(409);
+        const body = calls[0]?.body as { error: { code: string; message: string } };
+        expect(body.error.code).toBe('ALREADY_EXISTS');
+        expect(body.error.message).toBe('A partner with this slug already exists');
+    });
+
+    it('names the field from the driver-reported constraint, not from a parsed message', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = buildDbErrorWithDriverCause(
+            'user',
+            { code: '23505', constraint: 'users_email_unique', table: 'users' },
+            'duplicate key value violates unique constraint "users_email_unique"'
+        );
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        const body = calls[0]?.body as { error: { message: string } };
+        expect(body.error.message).toBe('A user with this email already exists');
+    });
+
+    it('answers 400 INVALID_REFERENCE for a 23503 buried on the cause chain', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = buildDbErrorWithDriverCause(
+            'partner',
+            { code: '23503', constraint: 'partners_owner_id_fkey', table: 'partners' },
+            'insert or update on table "partners" violates foreign key constraint "partners_owner_id_fkey"'
+        );
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(400);
+        const body = calls[0]?.body as { error: { code: string } };
+        expect(body.error.code).toBe('INVALID_REFERENCE');
+    });
+
+    it('still answers 500 DATABASE_ERROR for a SQLSTATE that is not a constraint violation', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = buildDbErrorWithDriverCause(
+            'partner',
+            { code: '08006' },
+            'connection failure'
+        );
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(500);
+        const body = calls[0]?.body as { error: { code: string } };
+        expect(body.error.code).toBe('DATABASE_ERROR');
+    });
+
+    it('never puts the driver `detail` (which carries the offending VALUE) in the response', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = buildDbErrorWithDriverCause(
+            'user',
+            {
+                code: '23505',
+                constraint: 'users_email_unique',
+                detail: 'Key (email)=(secret.person@example.com) already exists.'
+            },
+            'duplicate key value violates unique constraint "users_email_unique"'
+        );
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(JSON.stringify(calls[0]?.body)).not.toContain('secret.person@example.com');
+        expect(JSON.stringify(calls[0]?.body)).not.toContain('already exists.');
+    });
+
+    it('answers 409 for a bare pg error carrying the SQLSTATE at the top level (no DbError wrapping)', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = Object.assign(new Error('duplicate key value'), {
+            code: '23505',
+            constraint: 'posts_slug_unique'
+        });
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(409);
+        const body = calls[0]?.body as { error: { code: string; message: string } };
+        expect(body.error.code).toBe('ALREADY_EXISTS');
+        expect(body.error.message).toBe('A record with this slug already exists');
+    });
+});

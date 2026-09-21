@@ -6,7 +6,7 @@
 import { DbError } from '@repo/db/utils';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
-import { resolveErrorLogLevel } from '@repo/service-core';
+import { extractPostgresErrorCause, resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -424,13 +424,20 @@ const logRouteError = (
  * Matches a Postgres unique-violation message, e.g.:
  * `duplicate key value violates unique constraint "partners_slug_unique"`.
  *
- * The driver's `.detail` (which carries the actual column + value, e.g.
- * `Key (slug)=(my-slug) already exists.`) never reaches this point — the DB
- * layer's `update`/`create` wrap the raw `pg` error into a `DbError` using
- * only `err.message` (see `packages/db/src/base/base.model.ts`), so the
- * constraint name embedded in the top-level message is the only signal left.
+ * SECONDARY path only, kept for a thrown value that carries this text but NO
+ * SQLSTATE anywhere in its `cause` chain — i.e. something that never came from
+ * the pg driver (a hand-built `Error`, a legacy re-throw). Everything that did
+ * come from the driver is decided by {@link buildConstraintViolationResponse}
+ * BEFORE this pattern is ever consulted, so the fragile text match can never
+ * override the authoritative signal. See HOS-1174.
  */
 const UNIQUE_VIOLATION_PATTERN = /violates unique constraint "([^"]+)"/;
+
+/** PostgreSQL SQLSTATE for `unique_violation`. */
+const PG_UNIQUE_VIOLATION = '23505';
+
+/** PostgreSQL SQLSTATE for `foreign_key_violation`. */
+const PG_FOREIGN_KEY_VIOLATION = '23503';
 
 /**
  * Derives a human-readable field name from a Postgres unique constraint name.
@@ -475,6 +482,89 @@ const buildUniqueViolationErrorPayload = (
         message: `A ${entity} with this ${field} already exists`,
         details: env.HOSPEDA_API_DEBUG_ERRORS ? message : undefined
     };
+};
+
+/**
+ * A client-facing response derived from a PostgreSQL constraint violation.
+ */
+type ConstraintViolationResponse = {
+    readonly payload: {
+        readonly code: 'ALREADY_EXISTS' | 'INVALID_REFERENCE';
+        readonly message: string;
+        readonly details: string | undefined;
+    };
+    readonly status: 409 | 400;
+};
+
+/**
+ * Maps a PostgreSQL constraint violation to its client-facing response, by
+ * SQLSTATE — never by message text (HOS-1174).
+ *
+ * ## Why the SQLSTATE and not the message
+ *
+ * Drizzle wraps every query failure in an error whose `message` is only
+ * `"Failed query: <SQL>\nparams: <...>"`. The pg driver's own message (the one
+ * carrying `violates unique constraint "..."`), its SQLSTATE and the offending
+ * `constraint` live one level down, on `error.cause`. Until HOS-1174 the DB
+ * layer copied ONLY that wrapper message into `DbError` and dropped the error
+ * itself, so the text matcher below could not fire on anything a model
+ * actually threw and every unique conflict answered 500 `DATABASE_ERROR` —
+ * directly against `apps/api/docs/error-contract.md` ("a 4xx is never
+ * `INTERNAL_ERROR`"). `BaseModelImpl` now passes the caught error as the
+ * `DbError`'s `cause`, so {@link extractPostgresErrorCause} can walk to the
+ * driver error and read the SQLSTATE, which is stable across Postgres versions
+ * and locales in a way the message text is not.
+ *
+ * ## What is deliberately NOT read
+ *
+ * The driver also reports `detail`, which embeds the OFFENDING VALUE (e.g.
+ * `Key (email)=(alice@example.com) already exists.`).
+ * {@link extractPostgresErrorCause} never extracts it (see its "Scope
+ * decision"), and this function only ever names the `constraint` — schema
+ * metadata — so no column value can reach a response body or a log through
+ * this path.
+ *
+ * @param error - The caught value, of unknown shape.
+ * @param entity - A human-readable entity label to name in the response message.
+ * @returns The response to send, or `null` when the error is not a constraint
+ *   violation (or carries no SQLSTATE at all).
+ */
+const buildConstraintViolationResponse = (
+    error: unknown,
+    entity: string
+): ConstraintViolationResponse | null => {
+    const postgresCause = extractPostgresErrorCause(error);
+    if (!postgresCause) return null;
+
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    const details = env.HOSPEDA_API_DEBUG_ERRORS ? rawMessage : undefined;
+
+    if (postgresCause.code === PG_UNIQUE_VIOLATION) {
+        const field = postgresCause.constraint
+            ? deriveUniqueConstraintFieldName(postgresCause.constraint)
+            : 'value';
+        return {
+            payload: {
+                code: 'ALREADY_EXISTS',
+                message: `A ${entity} with this ${field} already exists`,
+                details
+            },
+            status: 409
+        };
+    }
+
+    if (postgresCause.code === PG_FOREIGN_KEY_VIOLATION) {
+        return {
+            payload: {
+                code: 'INVALID_REFERENCE',
+                message: 'Invalid reference: The specified resource does not exist',
+                details
+            },
+            status: 400
+        };
+    }
+
+    return null;
 };
 
 /**
@@ -701,6 +791,14 @@ export const handleRouteError = (error: unknown, c: Context) => {
 
     // Check for DbError (database errors from models)
     if (error instanceof DbError) {
+        // HOS-1174: the authoritative check, by SQLSTATE on the cause chain.
+        // Runs BEFORE the message-text branches below so the driver's own
+        // verdict always wins over a string match.
+        const constraintViolation = buildConstraintViolationResponse(error, error.entity);
+        if (constraintViolation) {
+            return createErrorResponse(constraintViolation.payload, c, constraintViolation.status);
+        }
+
         // Check for foreign key constraint violations
         if (error.message.includes('violates foreign key constraint')) {
             return createErrorResponse(
@@ -738,6 +836,14 @@ export const handleRouteError = (error: unknown, c: Context) => {
     }
 
     if (error instanceof Error) {
+        // HOS-1174: same SQLSTATE-first check as the DbError branch, for a
+        // driver error that reached here without model wrapping. No `.entity`
+        // to name, so the message falls back to the generic "record".
+        const constraintViolation = buildConstraintViolationResponse(error, 'record');
+        if (constraintViolation) {
+            return createErrorResponse(constraintViolation.payload, c, constraintViolation.status);
+        }
+
         // Check for ServiceErrorCode prefix in message (e.g., "NOT_FOUND: Resource not found")
         // This handles errors thrown with format `throw new Error(`${result.error.code}: ${result.error.message}`)`
         const errorCodeMatch = error.message.match(/^([A-Z_]+):\s*(.+)$/);
@@ -845,6 +951,12 @@ export const handleRouteError = (error: unknown, c: Context) => {
     // Handle errors that are objects but not Error instances (e.g., DbError)
     if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = String(error.message);
+
+        // HOS-1174: same SQLSTATE-first check as the two branches above.
+        const constraintViolation = buildConstraintViolationResponse(error, 'record');
+        if (constraintViolation) {
+            return createErrorResponse(constraintViolation.payload, c, constraintViolation.status);
+        }
 
         // Check for foreign key constraint violations
         if (errorMessage.includes('violates foreign key constraint')) {
