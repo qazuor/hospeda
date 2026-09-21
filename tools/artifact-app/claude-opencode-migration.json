@@ -596,7 +596,7 @@
                             "title": "Guard de secretos staged",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear tokens, claves, cookies, DSN y `.env` en cambios staged sin mostrar valores.",
-                            "notes": "scripts/guards/staged-secrets.sh integrado a .husky/pre-commit; bloquea nombres/contenido sospechoso y nunca imprime valores. Probado con caso limpio y caso sintético bloqueado.",
+                            "notes": "scripts/guards/staged-secrets.sh integrado a .husky/pre-commit; bloquea nombres/contenido sospechoso y nunca imprime valores. Probado con caso limpio y caso sintético bloqueado. Gate140: ShellCheck sin warnings en bootstrap, worktree scripts e install/uninstall de client-tools; el guard de push deja explícita una variable de autenticación vacía para no heredar credenciales al comando remoto.",
                             "done": true
                         },
                         {

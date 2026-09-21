@@ -3107,3 +3107,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `bin/hops-*` coincidieron exactamente: **29/29/29**.
 - Es el listado que consume `scripts/client-tools/install.sh` para generar las
   funciones de Fish; no se detectaron comandos huérfanos ni extras.
+
+## Gate 140 · ShellCheck del tooling de migración
+
+- ShellCheck 0.10.0 no reportó warnings en el bootstrap, los scripts de
+  worktree ni `scripts/client-tools/install.sh`/`uninstall.sh`.
+- Se hizo explícita la asignación vacía `GITHUB_TOKEN=''` del guard de push para
+  evitar ambigüedad sintáctica y no heredar credenciales al comando `gh`.
+- Los warnings restantes pertenecen a scripts existentes fuera del tooling de
+  migración (`scripts/dev.sh` y `scripts/server-tools/weekly-restart.sh`).

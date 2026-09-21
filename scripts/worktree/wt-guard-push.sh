@@ -6,7 +6,7 @@
 set -uo pipefail
 BR="${1:?usage: wt-guard-push.sh <branch>}"
 
-state=$(GITHUB_TOKEN= gh pr list --head "$BR" --state all --json state --jq '.[0].state // empty' 2>/dev/null)
+state=$(GITHUB_TOKEN='' gh pr list --head "$BR" --state all --json state --jq '.[0].state // empty' 2>/dev/null)
 
 case "$state" in
   MERGED|CLOSED)
