@@ -1,8 +1,8 @@
-import type {
-    AccommodationCalendarSync,
-    CalendarSyncStatusEnum,
-    OccupancySourceEnum
-} from '@repo/schemas';
+import type { AccommodationCalendarSync, OccupancySourceEnum } from '@repo/schemas';
+// Value import, not `import type`: `markRevocationFailed` writes the enum
+// MEMBER rather than the string literal 'ERROR' the rest of this file's
+// writers used to hand-spell.
+import { CalendarSyncStatusEnum } from '@repo/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -577,7 +577,7 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
             const rows = await db
                 .update(accommodationCalendarSync)
                 .set({
-                    lastSyncStatus: 'ERROR',
+                    lastSyncStatus: CalendarSyncStatusEnum.ERROR,
                     lastErrorMessage: errorMessage,
                     updatedAt: new Date()
                 })

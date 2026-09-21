@@ -56,6 +56,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 import {
     cascadeCalendarConnectionsOnAccommodationDelete,
+    HARD_DELETE_REVOCATION_FAILURE_MARKER,
     REVOCATION_FAILURE_PREFIX,
     setCalendarConnectionRevocationPort
 } from '../../../src/services/accommodation/accommodation.calendar-cascade';
@@ -457,6 +458,141 @@ describe('HOS-663 — a revocation that does not happen is recorded, never swall
         expect(revoke).not.toHaveBeenCalled();
         expect(markRevocationFailed).not.toHaveBeenCalled();
     });
+
+    it('does NOT stamp a row that is still active — the host would be shown the message', async () => {
+        // `last_error_message` is rendered to the OWNER by
+        // `CalendarProviderRow.client.tsx` when `isConnected && status ERROR`,
+        // and `isConnected` IS `row.isActive`. Normally the row was just
+        // deactivated so the block is out of the render — but if the
+        // deactivation write failed and the read still worked, stamping would
+        // put an internal issue code and an English sentence in front of a
+        // Spanish-first host.
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: false, reason: 'no revocation endpoint' })
+        });
+        deactivateAllByAccommodation.mockRejectedValue(new Error('deadlock detected'));
+        findAllByAccommodation.mockResolvedValue([
+            // Still active, because the deactivation above did not land.
+            connectionRow(OccupancySourceEnum.AIRBNB, 'acc-16', true)
+        ]);
+
+        const result = await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: 'acc-16',
+            logger: mockLogger
+        });
+
+        // The failure is still counted and still logged (and the log stream is
+        // persisted to `app_log_entries`), it just does not reach the UI.
+        expect(result.revocationFailures).toBe(1);
+        expect(markRevocationFailed).not.toHaveBeenCalled();
+    });
+
+    it('reports a malformed connection row instead of throwing out of the hook', async () => {
+        // `Promise.all` made this callback load-bearing in a way the old serial
+        // loop was not: a TypeError here escapes `_beforeHardDelete`, which
+        // `base.crud.write.ts` does NOT wrap in a try/catch, and the whole
+        // delete fails with INTERNAL_ERROR.
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: true })
+        });
+        findAllByAccommodation.mockResolvedValue([
+            null as never,
+            connectionRow(OccupancySourceEnum.GOOGLE_CALENDAR, 'acc-17')
+        ]);
+
+        const result = await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: 'acc-17',
+            logger: mockLogger
+        });
+
+        // The good row is still revoked; the bad one is counted as a failure.
+        expect(result.revoked).toBe(1);
+        expect(result.revocationFailures).toBe(1);
+    });
+});
+
+/**
+ * The hard path's failure record cannot live on the connection row: the row is
+ * destroyed by the FK cascade microseconds later. It goes to the log stream,
+ * which the API persists into `app_log_entries` — a table with no foreign key
+ * to the accommodation — under its own marker.
+ */
+describe('HOS-663 — a hard-delete revocation failure is recorded where it survives', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        setCalendarConnectionRevocationPort(undefined);
+        resetModelStubs();
+    });
+
+    it('does not stamp the row on the hard path, and logs the unrecoverable marker', async () => {
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: false, reason: 'google responded 503' })
+        });
+        const rows = [connectionRow(OccupancySourceEnum.GOOGLE_CALENDAR, 'acc-18')];
+        deactivateAllByAccommodation.mockResolvedValue(rows);
+        findAllByAccommodation.mockResolvedValue(rows);
+
+        const result = await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: 'acc-18',
+            logger: mockLogger,
+            mode: 'hard-delete'
+        });
+
+        expect(result.revocationFailures).toBe(1);
+        // A stamp here would be undone by `model.hardDelete` immediately after.
+        expect(markRevocationFailed).not.toHaveBeenCalled();
+
+        const errorMessages = asMock(mockLogger.error).mock.calls.map((call) => String(call[1]));
+        expect(errorMessages.some((m) => m.includes(HARD_DELETE_REVOCATION_FAILURE_MARKER))).toBe(
+            true
+        );
+    });
+
+    it('uses a marker distinct from the soft path, so the two are separable', async () => {
+        // The hard case is strictly worse — no token survives to retry with —
+        // so it needs its own WHERE clause, not to be buried among the
+        // recoverable ones.
+        expect(HARD_DELETE_REVOCATION_FAILURE_MARKER).not.toBe(REVOCATION_FAILURE_PREFIX);
+
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: false, reason: 'nope' })
+        });
+        const rows = [connectionRow(OccupancySourceEnum.AIRBNB, 'acc-19')];
+        deactivateAllByAccommodation.mockResolvedValue(rows);
+        findAllByAccommodation.mockResolvedValue(rows);
+
+        await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: 'acc-19',
+            logger: mockLogger,
+            mode: 'soft-delete'
+        });
+
+        const errorMessages = asMock(mockLogger.error).mock.calls.map((call) => String(call[1]));
+        expect(errorMessages.some((m) => m.includes(HARD_DELETE_REVOCATION_FAILURE_MARKER))).toBe(
+            false
+        );
+        // ...and the soft path DOES stamp, because its row survives.
+        expect(markRevocationFailed).toHaveBeenCalledTimes(1);
+    });
+
+    it('records when the row vanished before the stamp could land', async () => {
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: false, reason: 'nope' })
+        });
+        findAllByAccommodation.mockResolvedValue([
+            connectionRow(OccupancySourceEnum.AIRBNB, 'acc-20')
+        ]);
+        // No row matched: a silent no-op would leave the failure nowhere.
+        markRevocationFailed.mockResolvedValue(null);
+
+        await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: 'acc-20',
+            logger: mockLogger
+        });
+
+        const errorMessages = asMock(mockLogger.error).mock.calls.map((call) => String(call[1]));
+        expect(errorMessages.some((m) => m.includes('disappeared before the failure'))).toBe(true);
+    });
 });
 
 /**
@@ -529,5 +665,42 @@ describe('HOS-663 — hard delete revokes BEFORE the FK cascade destroys the tok
         await service.hardDelete(hardDeleteActor(), entity.id);
 
         expect(revoke).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not stamp the row on the real hardDelete path — the FK would destroy it', async () => {
+        // End-to-end through the service, so the `mode: 'hard-delete'` the hook
+        // passes is exercised rather than assumed.
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: false, reason: 'google responded 503' })
+        });
+        asMock(model.hardDelete).mockResolvedValue(1);
+        findAllByAccommodation.mockResolvedValue([
+            connectionRow(OccupancySourceEnum.GOOGLE_CALENDAR, entity.id, true)
+        ]);
+
+        const result = await service.hardDelete(hardDeleteActor(), entity.id);
+
+        expect(result.error).toBeUndefined();
+        expect(markRevocationFailed).not.toHaveBeenCalled();
+        const errorMessages = asMock(mockLogger.error).mock.calls.map((call) => String(call[1]));
+        expect(errorMessages.some((m) => m.includes(HARD_DELETE_REVOCATION_FAILURE_MARKER))).toBe(
+            true
+        );
+    });
+
+    it('does not fail the hard delete when a connection row is malformed', async () => {
+        // `base.crud.write.ts` does not wrap `_beforeHardDelete` in a
+        // try/catch, unlike `_beforeRestore`, so anything thrown here becomes
+        // INTERNAL_ERROR and the delete does not happen at all.
+        setCalendarConnectionRevocationPort({
+            revoke: vi.fn().mockResolvedValue({ revoked: true })
+        });
+        asMock(model.hardDelete).mockResolvedValue(1);
+        findAllByAccommodation.mockResolvedValue([null as never]);
+
+        const result = await service.hardDelete(hardDeleteActor(), entity.id);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.count).toBe(1);
     });
 });

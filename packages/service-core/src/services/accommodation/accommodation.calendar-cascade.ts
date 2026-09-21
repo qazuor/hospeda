@@ -62,11 +62,25 @@
  *
  * A revocation that fails silently is worse than no revocation, because it
  * leaves everyone believing the access was closed. So a failure — including
- * "no port registered" and "this provider has no revocation endpoint" — is
- * recorded ON THE ROW (`last_sync_status = ERROR` plus a
- * `{@link REVOCATION_FAILURE_PREFIX}`-tagged `last_error_message`) as well as
- * logged at error level. That makes the set of credentials still live at the
- * provider a single SQL query rather than a grep through log retention.
+ * "no port registered" and "this provider has no revocation endpoint" — always
+ * lands somewhere durable and queryable. WHERE depends on the path, and the
+ * difference is not stylistic:
+ *
+ * - **Soft delete** → on the row: `last_sync_status = ERROR` plus a
+ *   `{@link REVOCATION_FAILURE_PREFIX}`-tagged `last_error_message`. The row
+ *   outlives the delete, so it can carry the record, and the failure is
+ *   retryable because the ciphertext is still there.
+ * - **Hard delete** → in `app_log_entries`, under
+ *   `{@link HARD_DELETE_REVOCATION_FAILURE_MARKER}`. Stamping the row would be
+ *   pointless: `model.hardDelete` runs immediately after this cascade and the
+ *   FK `onDelete: 'cascade'` destroys that exact row, so the write would be
+ *   undone microseconds after it lands — no record at all, on the one path
+ *   where the grant is PERMANENTLY unclosable because no token survives to
+ *   retry with. `app_log_entries` is written by the API's logger DB sink for
+ *   every WARN and ERROR, has no foreign key to the accommodation, and backs
+ *   the admin log viewer. Still one SQL query, just a different table.
+ *
+ * Either way it is a query, not a grep through log retention.
  *
  * The cascade never throws: a dependent row must not be able to fail an
  * accommodation delete. The cron-side condition in
@@ -88,6 +102,31 @@ import type { ServiceLogger } from '../../utils/service-logger';
  * have a live grant pointing at us?".
  */
 export const REVOCATION_FAILURE_PREFIX = 'HOS-663 REVOCATION_FAILED';
+
+/**
+ * Marker for a revocation failure on the HARD-delete path, where the row about
+ * to carry the stamp is microseconds from being destroyed by the FK cascade.
+ *
+ * It is a SEPARATE marker, not a variant of {@link REVOCATION_FAILURE_PREFIX},
+ * because it is a strictly worse category and deserves its own WHERE clause. On
+ * the soft path a failed revocation can be retried: the row survives, the
+ * ciphertext survives, somebody can close the grant tomorrow. On the hard path
+ * the token is gone with the row, so the grant is **permanently unclosable by
+ * anybody**. Collapsing the two into one marker would bury the unrecoverable
+ * cases among the recoverable ones.
+ *
+ * Its durable home is `app_log_entries`, not the connection row — see
+ * {@link cascadeCalendarConnectionsOnAccommodationDelete}.
+ */
+export const HARD_DELETE_REVOCATION_FAILURE_MARKER = 'HOS-663 REVOCATION_FAILED_UNRECOVERABLE';
+
+/**
+ * Which delete the cascade is running for.
+ *
+ * Not cosmetic: it decides whether a failure stamp on the connection row is a
+ * durable record or a write that the next statement destroys.
+ */
+export type CalendarCascadeMode = 'soft-delete' | 'hard-delete';
 
 /** Outcome of asking the provider to revoke one connection's credential. */
 export type CalendarConnectionRevocationResult =
@@ -157,6 +196,15 @@ export interface CascadeCalendarConnectionsInput {
     readonly tx?: DrizzleClient;
     /** Service logger, so failures land in the same stream as the delete. */
     readonly logger: ServiceLogger;
+    /**
+     * Which delete this cascade serves. Defaults to `'soft-delete'`.
+     *
+     * On `'hard-delete'` the connection rows are about to be destroyed by the
+     * FK cascade, so a failure is recorded in the log stream instead of on a
+     * row that will not exist a microsecond later — see
+     * {@link HARD_DELETE_REVOCATION_FAILURE_MARKER}.
+     */
+    readonly mode?: CalendarCascadeMode;
 }
 
 /** What {@link cascadeCalendarConnectionsOnAccommodationDelete} did. */
@@ -198,7 +246,7 @@ export interface CascadeCalendarConnectionsResult {
 export async function cascadeCalendarConnectionsOnAccommodationDelete(
     input: CascadeCalendarConnectionsInput
 ): Promise<CascadeCalendarConnectionsResult> {
-    const { accommodationId, tx, logger } = input;
+    const { accommodationId, tx, logger, mode = 'soft-delete' } = input;
     const empty: CascadeCalendarConnectionsResult = {
         deactivated: 0,
         revoked: 0,
@@ -268,39 +316,112 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
     const port = getCalendarConnectionRevocationPort();
 
     const outcomes = await Promise.all(
-        connections.map(async ({ provider }) => {
+        connections.map(async (connection) => {
+            // The row is destructured defensively rather than in the parameter
+            // list. `Promise.all` made this callback load-bearing in a way the
+            // old serial loop was not: one row arriving null (or shaped wrong)
+            // would throw a TypeError that no `try` here catches, out through
+            // `_beforeHardDelete`, which `base.crud.write.ts` does NOT wrap —
+            // turning a dependent row into a failed delete and a 500.
+            const provider = connection?.provider;
+            if (provider === undefined) {
+                return {
+                    provider: undefined,
+                    stillActive: false,
+                    outcome: {
+                        revoked: false as const,
+                        reason: 'connection row had no provider'
+                    }
+                };
+            }
             const outcome = await askPortToRevoke({ port, accommodationId, provider });
-            return { provider, outcome };
+            return { provider, outcome, stillActive: connection.isActive === true };
         })
     );
 
     let revoked = 0;
     let revocationFailures = 0;
 
-    for (const { provider, outcome } of outcomes) {
+    for (const { provider, outcome, stillActive } of outcomes) {
         if (outcome.revoked) {
             revoked += 1;
             logger.info(
-                { accommodationId, provider },
-                '[calendar-cascade] Revoked calendar credential for a soft-deleted accommodation'
+                { accommodationId, provider, mode },
+                '[calendar-cascade] Revoked calendar credential for a deleted accommodation'
             );
             continue;
         }
 
         revocationFailures += 1;
+
+        if (provider === undefined) {
+            logger.error(
+                { accommodationId, reason: outcome.reason },
+                `[calendar-cascade] ${REVOCATION_FAILURE_PREFIX}: a connection row could not be read well enough to revoke`
+            );
+            continue;
+        }
+
+        // The HARD path cannot use the row. `model.hardDelete` runs immediately
+        // after this cascade and the FK `onDelete: 'cascade'` destroys the very
+        // row the stamp would live on — a write undone microseconds later,
+        // which is the same as no record at all, on the one path where the
+        // grant is PERMANENTLY unclosable because no token survives to retry
+        // with.
+        //
+        // So the durable home there is `app_log_entries`: the API registers a
+        // logger sink that persists every WARN and ERROR into that table, it
+        // has no foreign key to the accommodation, and the admin log viewer
+        // reads it. The claim "one SQL query, not a grep through log retention"
+        // still holds — the query just names a different table, and
+        // `HARD_DELETE_REVOCATION_FAILURE_MARKER` is its WHERE clause.
+        if (mode === 'hard-delete') {
+            logger.error(
+                { accommodationId, provider, reason: outcome.reason, mode },
+                `[calendar-cascade] ${HARD_DELETE_REVOCATION_FAILURE_MARKER}: the accommodation is being erased, so the stored credential is about to be destroyed and this grant can never be revoked by anyone`
+            );
+            continue;
+        }
+
         logger.error(
-            { accommodationId, provider, reason: outcome.reason },
+            { accommodationId, provider, reason: outcome.reason, mode },
             `[calendar-cascade] ${REVOCATION_FAILURE_PREFIX}: the connection is deactivated but its credential may still be valid at the provider`
         );
+
+        // Only stamp a row the host can no longer see. `last_error_message` is
+        // rendered to the OWNER by `CalendarProviderRow.client.tsx` whenever
+        // `isConnected && lastSyncStatus === 'ERROR'`, and `isConnected` IS
+        // `row.isActive`. In the normal path the row was just deactivated, so
+        // the whole block is out of the render. But if the deactivation write
+        // failed and the read still worked, the row is live — and stamping it
+        // would show a host an internal issue code and an English sentence in a
+        // Spanish-first product. The failure still reaches `app_log_entries`
+        // through the ERROR above, and the cron-side `deleted_at` filter still
+        // stops the sync.
+        if (stillActive) {
+            logger.error(
+                { accommodationId, provider },
+                '[calendar-cascade] Not stamping the connection row: it is still active, and its error message is rendered to the owner'
+            );
+            continue;
+        }
 
         // Persist it. A failure that lives only in a log line is a failure
         // nobody will find when they need the list of still-live grants.
         try {
-            await accommodationCalendarSyncModel.markRevocationFailed({
+            const stamped = await accommodationCalendarSyncModel.markRevocationFailed({
                 accommodationId,
                 provider,
                 errorMessage: `${REVOCATION_FAILURE_PREFIX}: ${outcome.reason}`
             });
+            if (stamped === null) {
+                // The row vanished between the read and the stamp. Say so,
+                // rather than letting a silent no-op stand in for a record.
+                logger.error(
+                    { accommodationId, provider },
+                    `[calendar-cascade] ${REVOCATION_FAILURE_PREFIX}: the connection row disappeared before the failure could be stamped on it`
+                );
+            }
         } catch (error) {
             logger.error(
                 { error, accommodationId, provider },

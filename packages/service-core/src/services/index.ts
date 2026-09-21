@@ -1,12 +1,14 @@
 // HOS-663: the delete-time calendar cascade and the revocation port the API
 // layer registers into it at startup.
 export {
+    type CalendarCascadeMode,
     type CalendarConnectionRevocationPort,
     type CalendarConnectionRevocationResult,
     type CascadeCalendarConnectionsInput,
     type CascadeCalendarConnectionsResult,
     cascadeCalendarConnectionsOnAccommodationDelete,
     getCalendarConnectionRevocationPort,
+    HARD_DELETE_REVOCATION_FAILURE_MARKER,
     REVOCATION_FAILURE_PREFIX,
     setCalendarConnectionRevocationPort
 } from './accommodation/accommodation.calendar-cascade';

@@ -2551,7 +2551,13 @@ export class AccommodationService extends BaseCrudService<
         await cascadeCalendarConnectionsOnAccommodationDelete({
             accommodationId: id,
             tx: ctx?.tx,
-            logger: this.logger
+            logger: this.logger,
+            // Not a label. It moves the durable record of a failed revocation
+            // off the connection row — which `model.hardDelete` destroys by FK
+            // cascade three lines from here — and into `app_log_entries`, under
+            // its own marker, because this is the path where the grant becomes
+            // permanently unclosable.
+            mode: 'hard-delete'
         });
 
         return id;
