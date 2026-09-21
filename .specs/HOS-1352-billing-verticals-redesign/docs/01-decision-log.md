@@ -3405,13 +3405,63 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-DATA-003 — El cupo que vuelve a alcanzar republica solo: `PB3` gana la rama simétrica a la del excedente
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** el defecto crítico `F-8eA2-001` de la FASE 8-bis-4.
+- **El caso**: un anfitrión con cinco fichas baja de Premium a Básico y el reconciliador le
+  despublica tres. Tres meses después **vuelve a Premium y paga el precio entero**, y sus tres
+  fichas **no vuelven nunca**. `PB2` tiene dos ramas y la del excedente está declarada como la que
+  *«no cambia `cubierto` y sí el cupo»*; `PB3` y `PB7` exigen que `cubierto` **pase** a verdadero,
+  y sobre alguien que estuvo cubierto todo el tiempo no hay cambio que disparar. El reconciliador
+  tampoco lo levanta: *«actúa sólo si algo bajó»* (`V/15` §4.2). Desde
+  `UNPUBLISHED_BY_BILLING` no sale ninguna otra transición salvo el reloj, así que el día 90 `PB4`
+  las archiva y el día 180 el hard delete les borra el contenido. **Paga Premium y recibe Básico,
+  indefinidamente, sin que nada lo señale.**
+- **Decisión**: **`PB3` gana una segunda rama, simétrica a la segunda de `PB2`: *«el cupo vuelve a
+  alcanzar»*.** Las fichas del excedente se republican **solas** cuando el cupo las vuelve a
+  admitir, sin que el dueño tenga que entrar al panel.
+- **Las dos alternativas, y por qué se descartan:**
+  - **A mano, con la ficha viva**: el excedente va a un estado nuevo desde el que el dueño
+    republica cuando quiere, con el reloj detenido. Cuesta un estado nuevo en la máquina de
+    publicación, y **el que no entra nunca al panel igual pierde la ficha**: sólo hace correr el
+    reloj más lento.
+  - **A mano, reusando `PB8`**: darle a `UNPUBLISHED_BY_BILLING` la salida por acto del dueño que
+    hoy sólo tiene `ARCHIVED`. Es la más barata —una fila— pero **el dueño tiene que enterarse, y
+    hoy nada le avisa que le despublicaron tres fichas**.
+- **El motivo, y es el criterio del owner aplicado literalmente**: *si la persona puso plata, se le
+  da salida*. Acá **volvió a Premium y pagó**, que es la forma más explícita que tiene de decir qué
+  quiere. Las dos alternativas le cobran Premium y le entregan Básico hasta que entre al panel, y
+  el que no entra nunca es justamente el que pierde el contenido el día 180.
+- **El costo aceptado, dicho en voz alta**: la rama **obliga a escribir un criterio de orden** —si
+  se liberan tres cupos y hay cinco candidatas, cuáles suben—. **No es costo nuevo**: `PB3` y `PB7`
+  ya compiten hoy por el mismo cupo sin criterio escrito (`F-8eA2-010`, `F-8eA1-006`), así que el
+  criterio hace falta igual. Lo que esta decisión agrega es la obligación de escribirlo ahora.
+- **Y el precedente que lo gobierna**: `DEC-SUB-008` ya exige un criterio *«escrito y predecible»*
+  para decidir **qué se baja**. Esto lo extiende a **qué se sube**, que es la mitad que faltaba.
+- **El riesgo aceptado**: se republica sola una ficha que el dueño **quizá ya no quiere pública**.
+  Se acepta porque el estado del que viene no es *«la despubliqué yo»* sino
+  `UNPUBLISHED_BY_BILLING` —la bajamos nosotros—, y devolverla al estado anterior a nuestro acto es
+  lo que repara nuestro acto. El dueño que no la quiera pública tiene `PB1` y la despublica.
+- **Los otros cuatro críticos que `DEC-DATA-002` produjo NO llevan decisión y se arreglan**, y va
+  escrito acá para no volver sobre el tema: `F-8eA3-002` (el reloj sin columna), `F-8eA3-001` (la
+  clave del outbox que manda los dos avisos una sola vez en la vida de la ficha), `F-8eA2-002`
+  (`S10` sin rama de fallo) y `F-8eA1-001` (`PB8` inejecutable contra el piso). **Declarar
+  cualquiera de los cuatro con causa significaría *«la ficha se borra igual»*, que es exactamente
+  lo que `DEC-DATA-002` prohibió**: no son objeciones a la decisión, son la decisión sin terminar
+  de escribir.
+- **Origen**: la FASE 8-bis-4, hallazgo `F-8eA2-001`, y la elección del owner del 2026-09-21 entre
+  las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **77** |
+| Decisiones tomadas | **78** |
 | De metodología | 11 |
-| Funcionales | 66 |
+| Funcionales | 67 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
