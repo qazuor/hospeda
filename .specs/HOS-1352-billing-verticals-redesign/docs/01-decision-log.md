@@ -2815,13 +2815,101 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-006 — La cortesía es POR SUSCRIPCIÓN: se retira su `scope`, y el §34 del PDR queda desviado a propósito
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** el `⚠️` que `B/02` §2.4 había dejado declarado abierto en la FASE 9-bis-2.
+- **Decisión**: **`courtesy_grant.scope` se retira de la tabla.** Una cortesía cubre **la
+  suscripción que pausa**, y nada más. Para dar cortesía en dos verticales se otorgan **dos
+  cortesías**, una por suscripción.
+- **Qué NO se pierde, y conviene decirlo porque suena a recorte**: la capacidad de tener a alguien
+  con cortesía en varias verticales a la vez **sigue existiendo**. Lo único que se pierde es el
+  **gesto único** en el panel. Nadie queda sin poder hacer nada que antes pudiera.
+- **El nudo, medido, que es por lo que la columna no hacía nada**: una suscripción es de **una**
+  vertical (`B/02` §2.2) y la cortesía transporta la **versión anclada de la suscripción que
+  pausa** (`DEC-GRANT-003`), así que emite **una** fuente, en esa vertical
+  (`12-contrato…` §2.7, fila `cortesía`). Un `scope` de dos verticales era **una columna que se
+  puede escribir y no hace nada** — el mismo modo de falla que `B/16` §2.4 nombra para rechazarlo.
+- **Por qué acá se elige lo CONTRARIO que en el grant, que es la pregunta que va a volver**: el
+  mismo día, `permanent_grant` se resolvió como **un instrumento con N anclas** y se rechazó «N
+  grants» explícitamente. La razón de aquello fue que **revocar es la acción administrativa más
+  grave del sistema** (`NUCLEO/08` §3) y con N instrumentos pasa a ser N actos, de los que se puede
+  olvidar uno y dejar capacidades regaladas para siempre. **Ese argumento no existe en la
+  cortesía: una cortesía se vence sola a los N días.** No hay revocación que se pueda escapar. La
+  asimetría no es una inconsistencia — es la misma regla aplicada a dos instrumentos con distinta
+  forma de terminar.
+- **Desviación declarada del PDR §34**, que pide *«scope configurable, de forma equivalente al
+  sistema de Free Forever»* y enumera una vertical / varias / todas las actuales / todas las
+  actuales y futuras. **Se desvía a propósito, y la razón es que los dos instrumentos no son
+  equivalentes**: el Free Forever **ancla un plan por vertical y no necesita que exista nada
+  previo**; la cortesía **pausa algo que ya existe**. Pedirle el mismo scope es pedirle a un
+  mecanismo que haga de otro. El §34 describe el resultado deseado por analogía con un instrumento
+  cuya mecánica no comparte.
+- **Y el hueco concreto que la analogía deja sin respuesta**, que es la prueba de lo anterior: con
+  scope plural, **qué hace la cortesía en una vertical donde el beneficiario NO tiene
+  suscripción**. El PDR trae media respuesta y en dos mecanismos distintos —**§34.1** *«durante
+  trial: extiende el trial»*, **§34.2** *«durante subscription: mantiene servicio sin cobrar»*— y
+  **ninguna** para el tercer caso, el de quien no tiene nada en esa vertical, ni siquiera un trial.
+  Un instrumento con tres comportamientos según lo que encuentre no es un scope: son tres
+  instrumentos con un nombre.
+- **Lo que queda fijado y no se revisa**: nadie puede emitir la cortesía en una segunda vertical
+  transportando la versión anclada de la suscripción de la primera. Sería el defecto del grant
+  (`F-8cA1-002` / `F-8cA3-005`) con otro `tipo`.
+- **Si alguna vez se quiere el gesto único**, el camino es **de superficie, no de modelo**: una
+  acción del panel que otorgue N cortesías en una transacción, mostrando las N. No vuelve una
+  columna al modelo de datos.
+- **Origen**: la FASE 9-bis-2, familia del contrato, que lo dejó declarado abierto en `B/02` §2.4
+  en vez de resolverlo en silencio; y la elección del owner del 2026-09-21 entre las tres opciones
+  que se le presentaron.
+
+---
+
+### DEC-TRIAL-008 — Quien tiene una suscripción que NO cubre recibe su trial: la frontera no transporta un segundo hecho
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** lo que la FASE 9-bis-2 dejó declarado abierto en `V/03` §2 y en `12-contrato…` §4.
+- **Decisión**: se deja como está. **`T1` y `T6` se deciden únicamente por `cubierto`**, y quien
+  tiene una suscripción en un estado que **no emite fuente** recibe su trial. **El contrato NO gana
+  un segundo hecho.**
+- **El caso, para no reconstruirlo**: de los diez estados de la suscripción, los que no emiten
+  fuente (`12-contrato…` §2.6) dan `cubierto` falso y disparan `T1`, que arranca el trial. Para
+  cuatro —`ABANDONED`, `CANCELLED`, `CHARGE_DECLINED` y no tener fila— es trivialmente correcto.
+  De los otros tres, **dos son correctos sin matices**: `PENDING_AUTHORIZATION` (el contrato ya
+  declara que esa fila *«no vale nada»* porque el checkout se puede abandonar) y `PAUSED` por
+  `CUSTOMER_REQUEST` (*«el servicio está detenido»*, `B/16` §2.2). **El tercero es la concesión**:
+  alguien `SUSPENDED` por impago que **nunca publicó en esa vertical** recibe los días de trial
+  que habría recibido igual si no hubiera contratado nunca.
+- **Por qué la concesión es aceptable, y está acotada por el propio diseño**: es **su único trial
+  de por vida**, no uno extra; si regulariza, `T2` lo convierte; si no regulariza, `T3` lo vence,
+  `PB2` lo despublica y **no le queda nada**.
+- **Por qué se rechaza la alternativa**, que era darle a verticales un bit tipo *«hay un vínculo de
+  suscripción no terminal»*:
+  1. **Es la frontera creciendo.** `DEC-ARCH-006` fija que el contrato es uno solo, y el §4.2 del
+     contrato tiene una regla de vigilancia precisamente para esto. Un bit que diga *«este tiene
+     algo no terminal»* **es un estado de cobranza con otro nombre**, y el día que exista alguien
+     escribe la segunda regla de producto encima. Es una puerta, no una excepción.
+  2. **Empeora dos casos para arreglar uno.** La alternativa alcanza a los tres, incluidos los dos
+     que hoy están bien resueltos.
+  3. **Y comercialmente va al revés de la intuición.** Quien está `SUSPENDED` **ya no está
+     pagando**: darle un trial en una vertical nueva no cuesta ingreso —no hay ingreso que
+     perder— y es la única vía por la que esa persona podría volver. Bloquearla protege un ingreso
+     inexistente y cierra la puerta de vuelta.
+- **Lo que esto NO autoriza**: distinguir sólo a `SUSPENDED` sería la peor versión de la
+  alternativa, porque es literalmente una señal de deuda cruzando a verticales. Queda rechazada con
+  el resto.
+- **Origen**: la FASE 9-bis-2, familia del trial, que lo dejó declarado abierto en vez de
+  resolverlo en silencio; los hallazgos `F-8cA3-001` (rama 1) y `F-8cA1-012`; y la elección del
+  owner del 2026-09-21 entre las dos opciones que se le presentaron.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **65** |
+| Decisiones tomadas | **67** |
 | De metodología | 9 |
-| Funcionales | 56 |
+| Funcionales | 58 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

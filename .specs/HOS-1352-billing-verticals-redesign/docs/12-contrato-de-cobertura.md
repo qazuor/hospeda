@@ -509,9 +509,12 @@ Cuatro ausencias que parecen faltas y son decisiones:
   reescribieron sobre `cubierto` y sobre la clase de las fuentes (`V/03` §2). El guard es
   `G-R4-B` (`V/20` §2). **Lo que esta prohibición cuesta también se declara**: los tres estados
   que no emiten fuente (§2.6) son **indistinguibles de no tener nada** desde el otro lado, y hay
-  una regla de producto —a quién le corresponde un trial— donde esa diferencia importaría. Se deja
-  dicho en `V/03` §2 y no se resuelve acá: resolverlo es agregarle un segundo hecho a la frontera,
-  y eso dispara la regla de vigilancia del §4.2.
+  una regla de producto —a quién le corresponde un trial— donde esa diferencia importaría. **El
+  owner decidió pagar ese precio y NO agregar el segundo hecho** (`DEC-TRIAL-008`, 2026-09-21):
+  el bit que separaría los tres estados es un estado de cobranza con otro nombre, y su costo real
+  —que alguien `SUSPENDED` por impago reciba su único trial de por vida en una vertical donde
+  nunca publicó— está acotado por `T2`, `T3` y `PB2`. El desarrollo está en `V/03` §2. **Esta
+  frontera no se vuelve a abrir por este caso.**
 - **Tampoco cruza el estado de la instancia de addon**, y por el mismo motivo: `EXPIRED` y
   `CANCELLED` son de billing, y lo único que verticales necesita saber es si la fuente está en la
   lista.

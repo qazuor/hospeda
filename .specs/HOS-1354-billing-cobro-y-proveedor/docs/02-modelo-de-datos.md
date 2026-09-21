@@ -214,7 +214,7 @@ ninguna columna de dinero.
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** (ficha, suscripción de vertical, usuario o global), estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código» |
-| **`courtesy_grant`** | beneficiario, scope, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** |
+| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable**; **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
 | **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4). **El scope de verticales NO es una columna: son sus anclas** | ídem; **al menos un ancla**, o el grant no otorga nada |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable |
 
@@ -263,19 +263,31 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
   aporta es la distinción que sí importa: una `PAUSED` por `CUSTOMER_REQUEST` **no cubre** (`B/16`
   §2.2, *«el servicio está detenido»*) y una `PAUSED` por `COURTESY` **sí**, porque lo sostenemos
   nosotros.
-- ⚠️ **`courtesy_grant.scope` NO significa lo mismo que el scope del grant, y hoy no hace nada.
-  Queda abierto, a propósito.** Una suscripción es de **una** vertical (§2.2) y la cortesía
-  transporta la versión anclada de **la** suscripción que pausa, así que emite **una** fuente, en
-  esa vertical (`12-contrato…` §2.7, fila de `cortesía`). Un `scope` de dos verticales es entonces
-  **una columna que se puede escribir y no hace nada** — el modo de falla que `B/16` §2.4 nombra
-  para rechazarlo— y hacérselo hacer no es una redacción sino **una decisión de producto**: el §34
-  pide scope plural *«de forma equivalente al sistema de Free Forever»*, pero una cortesía plural
-  tendría que **pausar N suscripciones** y no hay respuesta escrita para la vertical donde el
-  beneficiario **no tiene ninguna** (§34.1 la resuelve extendiendo el trial, §34.2 sosteniendo el
-  servicio, y no son el mismo mecanismo). **No se decide acá.** Lo que sí queda fijado es que la
-  lectura vigente es la de una sola fuente: **nadie puede emitir la cortesía en una segunda
-  vertical transportando la versión anclada de la suscripción de la primera**, que sería el defecto
-  del grant con otro `tipo`.
+- **`courtesy_grant` NO lleva `scope`: la columna se retiró** (`DEC-GRANT-006`, owner,
+  2026-09-21). Una cortesía cubre **la suscripción que pausa**, y nada más. Para dar cortesía en
+  dos verticales se otorgan **dos cortesías**, una por suscripción — la capacidad no se pierde;
+  lo único que no existe es el gesto único.
+  - **Por qué no podía significar lo que el grant significa.** Una suscripción es de **una**
+    vertical (§2.2) y la cortesía transporta la versión anclada de **la** suscripción que pausa,
+    así que emite **una** fuente, en esa vertical (`12-contrato…` §2.7, fila de `cortesía`). Un
+    `scope` de dos verticales era **una columna que se puede escribir y no hace nada** — el modo
+    de falla que `B/16` §2.4 nombra para rechazarlo.
+  - **Por qué acá se decidió al revés que en el grant**, que es la pregunta que vuelve: «N grants»
+    se rechazó porque **revocar es la acción administrativa más grave** (`NUCLEO/08` §3) y con N
+    instrumentos pasa a ser N actos de los que se puede olvidar uno. **Una cortesía se vence
+    sola**, así que no hay revocación que se escape. Misma regla, instrumentos con distinta forma
+    de terminar.
+  - **Desviación declarada del PDR §34**, que pide scope plural *«de forma equivalente al sistema
+    de Free Forever»*: **los dos instrumentos no son equivalentes**. El Free Forever ancla un plan
+    por vertical y **no necesita que exista nada previo**; la cortesía **pausa algo que ya
+    existe**. La prueba es el hueco que la analogía deja: con scope plural, **qué hace la cortesía
+    en una vertical donde el beneficiario no tiene suscripción**. El §34.1 contesta extendiendo el
+    trial, el §34.2 sosteniendo el servicio —**no son el mismo mecanismo**— y para quien no tiene
+    nada en esa vertical **no hay respuesta escrita**.
+  - **Lo que queda fijado**: nadie puede emitir la cortesía en una segunda vertical transportando
+    la versión anclada de la suscripción de la primera, que sería el defecto del grant con otro
+    `tipo`. Y si alguna vez se quiere el gesto único, es **una acción de superficie** que otorga N
+    cortesías en una transacción, **no una columna que vuelve al modelo**.
 - **El ancla es POR VERTICAL, y por eso es una tabla y no dos columnas.** Un plan pertenece a **una**
   vertical (`V/02` §2.1, `UNIQUE(vertical, slug)`) y un grant emite **una fuente por cada vertical de
   su scope** (`12-contrato…` §2.7). Con un solo `plan_id` las dos fuentes transportaban **la misma

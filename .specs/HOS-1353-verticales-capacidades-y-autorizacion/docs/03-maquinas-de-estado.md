@@ -155,8 +155,21 @@ lo convierte; si no regulariza, `T3` lo vence, `PB2` lo despublica y no le queda
 diseño **no puede** hacer hoy es distinguirlo de quien no tiene nada — los dos ven exactamente la
 misma respuesta del contrato—, y darle a verticales el dato que los separa es **agregarle un
 segundo hecho a la frontera**, que dispara la regla de vigilancia del `12-contrato…` §4.2.
-**Queda declarado como abierto**, no resuelto en silencio: es una decisión de producto, no de
-redacción.
+
+**Decidido: se deja así, y la frontera NO gana ese segundo hecho** (`DEC-TRIAL-008`, owner,
+2026-09-21). Tres razones, y la tercera es la que sorprende:
+
+1. **Un bit tipo *«hay un vínculo de suscripción no terminal»* es un estado de cobranza con otro
+   nombre.** `DEC-ARCH-006` fija que el contrato es uno solo, y el día que ese bit exista alguien
+   escribe la segunda regla de producto encima. Es una puerta, no una excepción.
+2. **La alternativa empeora dos casos para arreglar uno**: alcanza a los tres estados, incluidos
+   los dos que acá quedan bien resueltos.
+3. **Quien está `SUSPENDED` ya no está pagando.** Darle su trial en una vertical nueva **no cuesta
+   ingreso** —no hay ingreso que perder— y es la única vía por la que esa persona podría volver.
+   Bloquearla protege un ingreso inexistente y cierra la puerta de vuelta.
+
+Y queda rechazada con el resto la variante de distinguir **sólo** a `SUSPENDED`, que es la peor:
+es literalmente una señal de deuda cruzando a verticales.
 
 **Seis cosas que la tabla fija y conviene leer explícitas:**
 
