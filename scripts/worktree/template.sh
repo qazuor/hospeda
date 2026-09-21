@@ -62,7 +62,14 @@ build_candidate() {
   url="$(conn_for "$db")"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$url" pnpm db:migrate ) || { echo "ERROR: db:migrate failed; candidate is incomplete"; exit 1; }
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$url" pnpm db:apply-extras ) || { echo "ERROR: db:apply-extras failed; candidate is incomplete"; exit 1; }
-  ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$url" pnpm db:seed ) || { echo "ERROR: db:seed failed; candidate is incomplete"; exit 1; }
+  # The root db:seed alias includes --reset, which also triggers Cloudinary
+  # cleanup. A template candidate is already empty, so use the seed CLI
+  # directly without reset; building a local template must never mutate an
+  # external asset service.
+  # Remove Cloudinary credentials for the isolated build. Without them the
+  # seed keeps source URLs and never uploads images or touches the remote
+  # asset service.
+  ( cd "$ROOT" && HOSPEDA_CLOUDINARY_CLOUD_NAME='' HOSPEDA_CLOUDINARY_API_KEY='' HOSPEDA_CLOUDINARY_API_SECRET='' HOSPEDA_DATABASE_URL="$url" pnpm --filter @repo/seed seed --required --example --poi-catalog ) || { echo "ERROR: seed failed; candidate is incomplete"; exit 1; }
   stamp "$db" "$fp" "$commit"
   status "$db"
   echo "Candidate is isolated; promotion is a separate operation."

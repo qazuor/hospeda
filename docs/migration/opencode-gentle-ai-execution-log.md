@@ -3233,3 +3233,20 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   incompleto. No se considera una candidata validada y debe repetirse con una
   opción que no limpie servicios externos antes de probar servidores o
   promoción.
+- Un intento intermedio posterior cargó el proveedor de imágenes antes de ser
+  detenido; el log indicó uploads de seed. No se ejecutó cleanup remoto
+  automático. La candidata final se construyó con Cloudinary vacío y verificó
+  `uploaded=0`.
+
+## Gate 155 · Candidata de template validada sin Cloudinary
+
+- `scripts/worktree/template.sh` dejó de usar el alias `pnpm db:seed`, que
+  implica `--reset`; ahora ejecuta el seed directo y fuerza vacías las tres
+  variables de Cloudinary dentro del proceso aislado.
+- La candidata `hospeda_template_candidate_20260921d` completó 41 migraciones,
+  los 41 extras y el seed local: **9.559 registros exitosos, 0 errores**.
+- El contador de imágenes fue `uploaded=0`, `cached=0`, `failures=0`;
+  `template.sh status` confirmó journal 117 y manifest válido con fingerprint
+  del checkout actual.
+- La promoción a `hospeda_template` no se ejecutó. El template activo sigue
+  intacto y la promoción queda separada para aprobación explícita.
