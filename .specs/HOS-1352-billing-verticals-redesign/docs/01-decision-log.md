@@ -2903,12 +2903,79 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-010 — El grep no falla al buscar sino al resolver: la resolución se escribe POR APARICIÓN, y el alcance es todo el corpus
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Enmienda `DEC-METH-009`**, que no cortó el generador. No la deroga: **su caso de diseño
+  funciona y está fechado** — el mensaje de `f5731fd65` registra que la regla encontró que `B/12`
+  seguía con la condición histórica de `S16` que `B/03` ya había reemplazado, y esa contradicción
+  **no llegó** a la pasada siguiente.
+- **Problema, medido en la FASE 8-bis-3**: **85 hallazgos, 18 IDs `CRITICA`, 14 defectos críticos
+  distintos**, y **13 de los 14** los introdujo la tanda de arreglos anterior. La serie completa:
+
+  | | 8-bis | 8-bis-2 | 8-bis-3 |
+  |---|---|---|---|
+  | críticos distintos | — | 17 | **14** |
+  | atribuidos a la tanda anterior | 25/25 (A y B) | 17/17 | **13 de 14** |
+
+- **El diagnóstico, y es distinto del que motivó `DEC-METH-009`**: **el paso que falla es el 3, la
+  resolución, no el 2, la búsqueda.** El grep alcanzaba **5 de los 14**, y **al menos 2 de esos 5
+  pasaron con la regla declarada corrida y con cifras**. Medido en `19-fase-8-bis-3/C1-la-costura.md`
+  §4.3: `1ca12d709` declaró haber grepeado el `scope` del grant y dejó viva `NUCLEO/01` §5
+  (*«con su scope de verticales»*) en un archivo que no tocó; `3692d5deb` declaró *«23 de sucesora
+  y predecesora declaradas correctas»* y dejó viva `B/14` §2.2 (*«la sucesora lo hereda»*), que es
+  un `CRITICA` — con **14 apariciones fuera del commit** contra 23 declaradas. **Una resolución en
+  bloque no es falsable; una por aparición sí.**
+- **Decisión, y son tres enmiendas más una condicional. Van juntas y el orden importa:**
+  1. **El alcance es TODO EL CORPUS, y la unidad es el PÁRRAFO, no el archivo.** Donde
+     `DEC-METH-009` dice *«los capítulos que el commit NO toca»*, va *«todo el corpus —las dos
+     épicas, el núcleo, el contrato, el corte, la partición, los `spec.md`, las `descomposicion.md`
+     y este log—, **incluidos los archivos que el commit toca**, porque un archivo abierto no es un
+     párrafo leído»*.
+  2. **La obligación 3 se cumple por escrito y POR APARICIÓN.** Para cada aparición **que no se
+     corrige**, se deja el archivo, el § y **por qué sigue siendo correcta**. **Versión acotada, que
+     es la que se adopta**: se escriben las que no se corrigen **y están en un párrafo que el commit
+     no tocó** — que es donde vive el riesgo. En `3692d5deb` habrían sido pocas, y una de ellas la
+     de `B/14`.
+  3. **Se grepea también el término VIEJO, el que se retira**, no sólo el nuevo. El consumidor que
+     no se actualizó **no aparece buscando el nombre nuevo**, y ése es justamente el conjunto donde
+     viven los defectos que el arreglo vino a corregir.
+  4. **Condicional, y sólo con la 2 encima**: cada término que el núcleo define lleva **su lista de
+     consumidores**, y un arreglo que crea un consumidor nuevo **agrega la fila antes de declararse
+     aplicado**. Se adopta **junto con la 2 y no antes**, por la razón del punto siguiente.
+- **Por qué la 1 sin la 2 EMPEORA el problema, y por eso no se adopta suelta**: `49eb99f34` reportó
+  110 apariciones con el alcance chico. Con el corpus entero el número crece, y **un arreglo que
+  tenga que resolver 300 apariciones va a declarar correctas las 290 que no miró** — que es
+  exactamente el modo que produjo el crítico. Ampliar el alcance sin cambiar cómo se resuelve
+  multiplica el agregado no falsable.
+- **Por qué la 4 es condicional y no incondicional**: mantener listas en el núcleo es **la misma
+  clase de conteo que esta pasada encontró roto cinco veces** (`F-8dA2-009`, `F-8dA2-010`,
+  `F-8dA3-009`, `F-8dB2-012`, `F-8dC1-005`), y **el precedente es malo**: la única lista que existe
+  —`NUCLEO/01` §2.4, los predicados que usan *«fila viva»*— **quedó corta en el mismo commit que
+  creó su sexto miembro**. Una lista que se olvida es peor que no tenerla, porque afirma
+  completitud. Con la 2 encima se actualiza en el mismo acto en que se escribe la resolución.
+- **Lo que las cuatro juntas NO cierran, declarado en voz alta**: **«el capítulo que nunca nombró
+  el término»**. `V/11` es el dueño del §10.2 (*«el trial no vuelve»*) y **no contiene `T6` ni una
+  vez**; ninguna búsqueda por término, viejo o nuevo, en ningún alcance, lo devuelve. Lo único que
+  lo encuentra es recorrer el dominio **por el eje del tiempo** —*«¿qué pasa el día que la
+  configuración cambie?»*—, que es la obligación 1 de `DEC-METH-008` con un eje más. **No es una
+  regla de búsqueda y no se finge que estas cuatro lo cubren.**
+- **Y un dato que la regla necesita y el programa no publica**: **qué archivos toca cada commit**.
+  Dos de los siete informes de la 8-bis-3 contestaron mal *«¿lo habría encontrado el grep?»* porque
+  midieron contra el conjunto equivocado. Hasta que se publique, la respuesta se verifica con
+  `git show --name-only`.
+- **Origen**: la FASE 8-bis-3, `19-fase-8-bis-3/C1-la-costura.md` §4.5, y la elección del owner del
+  2026-09-21 entre las tres opciones que se le presentaron — eligió **correr la tanda completa con
+  la regla corregida y volver a medir**, por encima de la pasada acotada que se le recomendó.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **67** |
-| De metodología | 9 |
+| Decisiones tomadas | **68** |
+| De metodología | 10 |
 | Funcionales | 58 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
