@@ -68,12 +68,20 @@ máquina de estados y una convención.
    convertir un defecto de diseño en un comportamiento, y convertirlo **en silencio**.
 
    **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
-   las tablas de transiciones de las nueve máquinas, en las dos épicas. El único par con dos
-   filas y dos destinos distintos que el diseño declara hoy es `T1`/`T6` (`V/03` §2), y sus
-   guardas se escribieron disjuntas por construcción: una exige que **no** haya fuente viva de
-   clase `TÍTULO` y la otra que **sí**. **Que siga siendo el único no es una afirmación de este
-   capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no depende de que alguien
-   vuelva a recorrer las nueve tablas a mano.
+   las tablas de transiciones de las nueve máquinas, en las dos épicas. Los pares con dos filas y
+   dos destinos distintos que el diseño declara hoy son **tres**, en dos tablas:
+
+   | par | las dos filas | qué las separa |
+   |---|---|---|
+   | `(PRE_TRIAL, evento de activación de la vertical)` | `T1` / `T6` (`V/03` §2) | el booleano `cubierto`: una exige que **no** haya fuente viva de clase `TÍTULO` y la otra que **sí** |
+   | `(GRACE_PERIOD, entra el pago)` | `S5` / `S19` (`B/03` §3.2) | si la fila **es la predecesora de una sucesión en curso**: `S5` exige que no, `S19` que sí |
+   | `(SUSPENDED, entra el pago)` | `S7` / `S19` | el mismo booleano |
+
+   **Los tres son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
+   regla se cumple sin una precedencia: difieren en el valor de **un booleano**, no en una
+   combinación que alguien tenga que evaluar en orden. **Que sean tres y no cuatro no es una
+   afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
+   depende de que alguien vuelva a recorrer las nueve tablas a mano.
 
 ---
 

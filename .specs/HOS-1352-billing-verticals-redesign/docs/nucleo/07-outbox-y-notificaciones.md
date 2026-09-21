@@ -214,6 +214,14 @@ contradice `D7`, y si el cliente abandona el checkout se queda sin nada—, así
 en `recycling` y **puede entrar**. Un cobro que sorprende es un reclamo; uno anunciado es un
 trámite.
 
+**Y tiene que decir las DOS ramas, no sólo que el cobro puede entrar.** El cap. 12 §5.3 decidió
+después que ese cobro **no reactiva la suscripción vieja y queda pendiente hasta que la sucesión
+se resuelva**, con dos desenlaces opuestos que dependen de lo único que está en manos del cliente:
+**si termina el checkout, se le devuelve; si lo abandona, le queda** y le paga el período que está
+usando. Un aviso que nombra el cobro y calla el destino de esa plata anuncia el hecho y esconde la
+decisión, que es lo contrario de por qué este correo existe. El alcance espejo está en cap. 19
+§4, fila 15 (épica de billing).
+
 **El schedule del grace es relativo al vencimiento y no absoluto**: como la ventana es
 configurable por plan, un schedule con días fijos se cae fuera de la ventana en los planes con
 grace más corto (`DEC-SUB-002`).

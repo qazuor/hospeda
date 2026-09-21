@@ -100,6 +100,16 @@ ese estado —la cancelación de `S17` que falló sobre un preapproval vivo— *
 puesta**, así que esto no la duplica: lo que encuentra es la que llegó ahí **sin** marca, o sea
 por un camino que `G-R1-C` no alcanzó a impedir.
 
+**Y una segunda que tampoco le pregunta nada al proveedor: el pago pendiente por `S19` cuya
+sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de resolución**
+(`B/03` §3.2, `S19`) y ya **no** es la predecesora de una sucesión en curso —la sucesora murió, o
+la sucesión se cerró—, su destino estaba determinado y nadie lo ejecutó: se resuelve por la rama
+que le corresponda de las cuatro de `B/12` §5.3, y si la rama no es determinable, se pone la
+**marca**. Cuesta cero llamadas y cubre el único estado que el arreglo de `S19` puede dejar
+colgado: **un pago retenido para siempre**, que del lado del cliente se lee como un cobro sin
+servicio y sin devolución. Hace falta porque el reloj del grace **no corre** mientras ese pago
+esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
+
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.
 

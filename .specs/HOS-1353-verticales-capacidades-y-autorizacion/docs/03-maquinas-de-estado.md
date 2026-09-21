@@ -103,9 +103,11 @@ estaba, en la segunda máquina que lo necesitaba.
 
 ### `T1` y `T6` comparten el par, y sus guardas son complementarias
 
-`T1` y `T6` comparten `desde` y `evento`, y es el único par `(desde, evento)` con **dos destinos
-distintos** que el diseño declara hoy — lo cuenta `G-R4` sobre las nueve tablas, no una lectura a
-mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
+`T1` y `T6` comparten `desde` y `evento`, y es **el único par `(desde, evento)` con dos destinos
+distintos de esta épica**, y uno de los **tres** que el diseño declara hoy — los otros dos son
+`S5`/`S19` y `S7`/`S19`, en la tabla de suscripción de la épica de billing, separados también por
+un booleano (`B/03` §3.2; la lista está en el cap. 03 (núcleo) §1 regla 7). Lo cuenta `G-R4` sobre
+las nueve tablas, no una lectura a mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
 disjuntas, y acá lo son **por construcción y no por acuerdo**: las dos piden la misma mitad de
 catálogo —la vertical declara evento y su plan de trial tiene días > 0— y difieren en el valor de
 **un booleano**, `cubierto`. No hay una regla de precedencia que alguien pueda olvidar leer,

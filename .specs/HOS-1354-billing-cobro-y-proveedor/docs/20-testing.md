@@ -54,9 +54,10 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`** | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2 |
+| G-R1-D | un camino **reactiva** una fila —`S5`, `S7` o el efecto de `MP1`— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`), cap. 05 §3 condición 3 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 
-**Los tres de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
+**Los cuatro de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
 `G-R1-A` impide **declarar** una sucesión desde una `SUSPENDED` —autorización de estado
 indeterminado— o desde una `PAUSED`, donde `EX-11` mide que **el proveedor rechaza toda
 modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el momento de
@@ -84,6 +85,16 @@ nueva entra sin que nada la rechace—; la segunda sin la primera borra la únic
 hubo sucesión, y los complementos del que hizo un upgrade se cancelan de forma irreversible
 (`B/16` §4.2). Es una propiedad del árbol de fuentes y se rompe a propósito comentando una de las
 dos escrituras, que es lo que pide el §2.1.
+
+**`G-R1-D` es el guard de la VENTANA**, que es el tercer momento: `A` vigila cómo nace la sucesión,
+`C` cómo termina, y `D` lo que puede pasar **mientras dura**. Vigila dos escrituras opuestas y las
+dos son de plata: reactivar a la predecesora con el cobro reciclado —que deja dos filas vivas con
+el crédito de la sucesora ya computado en cero, y un período cobrado que `S17` se lleva puesto— y
+reembolsar ese mismo pago **antes** de saber si la sucesión se consuma, que en la rama del
+abandono le devuelve al cliente el pago que lo salvaba y lo manda a `SUSPENDED`. **El guard existe
+porque la regla se ejecuta en tres lugares y no en uno**: `S5`, `S7` y el efecto de `MP1`, y el
+camino que la olvide en cualquiera de los tres produce el daño entero. Se rompe a propósito
+sacándole la condición a una sola de las tres.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

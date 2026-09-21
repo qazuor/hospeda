@@ -157,13 +157,30 @@ implementación traza la línea en otro lado.
 |---|---|---|
 | 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
-| 3 | **no hay otra fila principal del mismo `user + vertical` en un estado que dé título** —`ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `CANCEL_SCHEDULED`—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una sucesora con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada y reactivar le daría **dos** |
+| 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una sucesora con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
 
-**Si las cuatro se cumplen**, entra `SUSPENDED → ACTIVE` (S7) y se restituye la publicación.
+**Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
+según en cuál de los dos estados de la condición 1 esté la fila, y se restituye la publicación.
 **Si falla cualquiera**, se pone la marca `requiere_conciliación` (cap. 03 §3.2, `S14`) y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero.
+
+**Con una excepción, y es la única: la condición 3 falla porque la otra fila viva es la sucesora de
+ésta, con la sucesión en curso.** Ése no es un caso ambiguo sino uno **diseñado**, el del `B/12`
+§5.3, y su desenlace está declarado: el pago **se registra y queda pendiente de resolución**
+(cap. 03 §3.2, `S19`), **sin marca y sin evento crítico**. Poner la marca ahí sería tratar el camino
+normal del cambio de plan desde grace como un incidente — y además rompería cosas: una fila marcada
+**no puede ser sucedida** (`B/03` §3.3) y acá ya hay un `sucede_a` apuntándola. Cualquier **otra**
+forma de fallar la 3 —otra fila viva que no es su sucesora, o la segunda mitad— sigue siendo
+divergencia y sigue poniendo la marca.
+
+**Este § nombra ahora las dos transiciones y antes nombraba una.** Su condición 1 admite
+`GRACE_PERIOD` **o** `SUSPENDED` desde siempre, y su desenlace decía sólo `SUSPENDED → ACTIVE`:
+**`S5` no aparecía ni una vez en el capítulo**. La incompletitud no era cosmética — era lo que
+tapaba la colisión con `B/12` §5.3, que prohíbe exactamente `S5`. Leídos al pie de la letra los dos
+textos no se contradecían, y quien implementara éste iba a escribir la reactivación para los dos
+estados porque la condición 1 los admite a los dos.
 
 **La condición 3 es la que más se olvida y la más cara.** Alguien que se cansó de esperar y se
 volvió a suscribir tiene dos filas; si el pago viejo reactiva la vieja, queda pagando dos veces
@@ -182,6 +199,16 @@ conviene decir cuál lee ésta: la **fila viva** de `NUCLEO/01` §2.4 —los sei
 es la lectura correcta acá porque lo que se está evitando es **un segundo cobro**, no una decisión
 de cobertura. Esta condición es de billing y sobre filas de billing; no cruza la frontera.
 
+**Y la enumeración de la condición 3 decía otro conjunto que el que este párrafo declara.** El
+párrafo dice *«los seis de `B/02` §2.2»* y la tabla enumeraba **cuatro** —*«un estado que dé
+título: `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `CANCEL_SCHEDULED`»*—, que es el conjunto de
+`12-contrato…` §2.6, no el de `B/02` §2.2. Los dos coincidían hasta que **`PENDING_AUTHORIZATION`
+dejó de emitir fuente** (`12-contrato…` §2.6): desde ese día hay un estado que **no da título y sí
+tiene una autorización viva**, y era justo el único que la enumeración dejaba pasar. **El peligro
+que la condición vigila es una autorización que puede cobrar, no un título**, que es literalmente
+la definición de *«fila viva»* — así que la enumeración pasa a ser la de `B/02` §2.2 y el conjunto
+deja de estar escrito dos veces con dos contenidos.
+
 **Y la segunda mitad de la 3 se lee sobre DOS columnas, porque la que la respondía se borra.**
 `sucede_a` sólo existe mientras la sucesión está en curso: cuando la sucesora autoriza, `S18` la
 limpia (`B/03` §3.2) y el vínculo pasa a vivir en `sucedida_por`, del lado de la predecesora.
@@ -189,10 +216,30 @@ Preguntar sólo por `sucede_a` daba *«no fue superada»* justo en el caso en qu
 el más caro de los dos. Con `sucedida_por` la condición se puede evaluar **después** del cierre,
 que es cuando llega un pago tardío.
 
-**Y una sucesora en `PENDING_AUTHORIZATION` no bloquea, a propósito.** Todavía no puede cobrar
-—`D8` le exige fecha de primer cobro futura— y el pago tardío que reactiva a la predecesora **es la
-evidencia de que la sucesión ya no hace falta**. Bloquear ahí dejaría a la persona con la vieja sin
-reactivar y la nueva sin autorizar.
+**Y una sucesora en `PENDING_AUTHORIZATION` BLOQUEA, que es lo contrario de lo que este § decía.**
+La versión anterior la eximía *«a propósito»*, con dos razones, y las dos se cayeron:
+
+1. **Contradecía su propia justificación.** La condición 3 existe, textual, porque *«si la hay, el
+   pago es de una suscripción superada y reactivar le daría dos»*. Una sucesora esperando
+   autorización es exactamente una suscripción que va a superar a ésta: reactivar le da dos. La
+   nota eximía el caso que la condición describe.
+2. **Su argumento era de tiempo, no de seguridad.** *«Todavía no puede cobrar»* es cierto —`D8` le
+   exige fecha de primer cobro futura—, pero el daño no es que la sucesora cobre **ahora**: es que
+   la predecesora vuelva a `ACTIVE` con el crédito de la sucesora **ya computado en cero**, que es
+   lo que `B/12` §5.3 mide y no se puede corregir después (`B/12` §5.4: las fechas del proveedor
+   son inmutables, `EX-39`).
+
+**Y su premisa empírica era falsa.** *«El pago tardío que reactiva a la predecesora es la evidencia
+de que la sucesión ya no hace falta»*: ese pago **no es un acto del cliente**, es una cuota en
+`recycling` que el proveedor reintenta solo (`B/12` §1.3, medido). El cliente que abrió el checkout
+sigue pudiendo autorizarlo, y si lo hace, `S17` cancela la fila que el pago acaba de reactivar.
+
+**Lo que la nota temía —*«dejar a la persona con la vieja sin reactivar y la nueva sin
+autorizar»*— no ocurre, y hay que decir por qué.** Mientras la sucesión está en curso la
+predecesora sigue en `GRACE_PERIOD`, que **emite fuente** con `hasta: SIN_FECHA_CONOCIDA`
+(`12-contrato…` §2.6): la cobertura no se interrumpe por no reactivar. Y si la sucesión muere sin
+consumarse, el pago pendiente se reevalúa y **entonces sí** reactiva, por `S5` o `S7`, con la
+condición 3 ya cumplida — el camino entero está en `B/12` §5.3.
 
 ---
 

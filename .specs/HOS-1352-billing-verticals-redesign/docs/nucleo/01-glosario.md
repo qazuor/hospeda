@@ -222,11 +222,19 @@ tiene un nombre propio que ya no se puede confundir con el otro.
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
 canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
 
-**Y «fila viva» es el término que nombran, ya sin la palabra suelta, los cuatro predicados de
+**Y «fila viva» es el término que nombran, ya sin la palabra suelta, los cinco predicados de
 billing que la necesitan**: el alcance de `S13`, el de `S17` y la condición de cierre de `S18`
-—los tres en cap. 03 (épica de billing) §3.2— más la definición de addon huérfano de
-cap. 16 (épica de billing) §4.2. Los cuatro están del lado de billing y sobre filas de billing,
-que es la regla 1 de abajo.
+—los tres en cap. 03 (épica de billing) §3.2—, la definición de addon huérfano de
+cap. 16 (épica de billing) §4.2, y la **condición 3 del pago tardío** de cap. 05 (épica de
+billing) §3. Los cinco están del lado de billing y sobre filas de billing, que es la regla 1 de
+abajo.
+
+**El quinto entró después, y por la razón exacta que este § existe para nombrar.** Su enumeración
+decía *«un estado que dé título»* y listaba **cuatro** —el conjunto de
+[`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.6—, cuando el peligro que
+vigila es **una autorización que puede cobrar**, que es éste. Los dos conjuntos coincidían hasta
+que `PENDING_AUTHORIZATION` dejó de emitir fuente, y desde entonces la diferencia entre ellos era
+justamente el estado por el que se colaba un doble cobro.
 
 **Y los dos conjuntos no coinciden, con la distancia contada contra la tabla de diez filas del
 `12-contrato…` §2.6.** De las **seis** filas vivas, **tres no emiten ninguna fuente**:

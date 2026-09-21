@@ -88,7 +88,7 @@ consumidores que la necesitan **después**, cuando ya se borró:
 | quién pregunta | qué pregunta | dónde |
 |---|---|---|
 | los complementos | *«la suscripción murió, ¿tenía sucesora a la que re-apuntarme?»* | `B/16` §4.2 |
-| el pago tardío | *«¿esta fila ya fue superada por una sucesora autorizada?»* | `B/05` §3, condición 3 |
+| el pago tardío | *«¿esta fila ya fue superada por una sucesora autorizada?»* — y, del lado de `sucede_a`, *«¿la está por superar una que todavía no autorizó?»*, que es la mitad que decide entre reactivar y dejar el pago pendiente (`B/03` §3.2, `S19`) | `B/05` §3, condición 3 |
 
 **`sucedida_por` es esa evidencia, y es durable.** Se escribe **en la predecesora**, en el mismo
 acto en que `S18` limpia `sucede_a` en la sucesora, y **no se borra nunca**. Las dos columnas
@@ -97,6 +97,22 @@ parten la vida de la relación en tres, sin superponerse:
 - `sucede_a` no nulo → **sucesión en curso**. La escribe `S1`, la limpia `S18`.
 - `sucedida_por` no nulo → **sucesión terminada**. La escribe `S18`, no la limpia nadie.
 - las dos nulas → **no hubo sucesión**, que es el caso de casi toda fila.
+
+> **Una regla sobre una sucesión se escribe nombrando la COLUMNA, nunca el verbo «declarar».**
+
+**No es prolijidad: el verbo ya se usa con los dos sujetos y eso costó un doble cobro.** *«La fila
+declara una sucesión»* de `S1` nombra a **la sucesora** —es la que se inserta con `sucede_a`
+puesto— y la regla de la marca, unas líneas más abajo, decía *«no se puede declarar una sucesión
+sobre esa fila»* nombrando a **la predecesora**, que es la que está siendo sucedida —por eso hoy
+está reescrita como *«no puede ser sucedida»*—. Las dos lecturas eran razonables y estaban a
+quince líneas de distancia. Una regla del `B/12` §5.3 se escribió sobre
+*«una fila que ya declaró sucesión»* queriendo decir la predecesora, y leída al pie de la letra
+eximía a la sucesora —donde era vacua— dejando intacto el caso que venía a cerrar.
+
+**Las dos columnas dan los nombres que no se pueden leer al revés**, y son los que el resto del
+corpus usa: la **sucesora** es la fila **con `sucede_a`**; la **predecesora** es la fila **a la
+que un `sucede_a` apunta** mientras la sucesión está en curso, y la que **tiene `sucedida_por`**
+una vez cerrada.
 
 Apunta de la predecesora a la sucesora, y no al revés, porque el consumidor que más la necesita
 —el addon— parte de la fila muerta y necesita **cuál** es la sucesora, no sólo que existe.
@@ -136,8 +152,8 @@ contratar de nuevo. La comodidad que la exclusión compraba deja de hacer falta,
 el candado en vez de liberarlo. Es la única dirección en que este modelado aprieta la restricción
 en vez de aflojarla.
 
-**Y la marca sí bloquea algo, a propósito**: mientras esté puesta **no se puede declarar una
-sucesión** sobre esa fila. Cancelar y recrear con una divergencia de plata sin resolver es
+**Y la marca sí bloquea algo, a propósito**: mientras esté puesta sobre una fila, **ningún
+`sucede_a` puede apuntarla** — o sea que esa fila no puede ser sucedida. Cancelar y recrear con una divergencia de plata sin resolver es
 exactamente el movimiento que `DEC-CONC-002` parte 4 manda que mire una persona.
 
 **La excepción, y es una sola, y lleva una verificación que no es opcional**: una fila marcada

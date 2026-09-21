@@ -316,21 +316,86 @@ es un reclamo; uno anunciado es un trámite. El correo va al catálogo de `NUCLE
 saber sobre qué descansa la salida si el cobro entra: el reembolso es **la única capacidad que el
 cap. 06 §10 declara en riesgo de plataforma** (`RF-6/7/8`).
 
+**El aviso tiene que decir las dos ramas, no sólo que el cobro puede entrar.** Lo que decide cuál
+de las dos le toca al cliente es **si termina el checkout**, que es lo único de todo esto que está
+en sus manos: si lo termina, el cobro se le devuelve; si lo abandona, **el cobro le queda** y le
+paga el período que está usando. Anunciar sólo *«el cobro puede entrar»* —que es lo que decía—
+describe el hecho y esconde la única decisión que el cliente puede tomar al respecto. Alcanza a
+`NUCLEO/07` §6, fila *«cambio de plan con una cuota en reintento»*, y a `B/19` §4, fila 15.
+
 #### Y si entra, NO reactiva a la predecesora
 
-> **`S5` no se aplica sobre una fila que ya declaró sucesión.** El pago entra, se registra, y **se
-> reembolsa**; la predecesora sigue su camino a `CANCELLED` por `S17`.
+> **Ni `S5` ni `S7` se aplican sobre la PREDECESORA de una sucesión en curso** — o sea la fila que
+> **tiene** una sucesora con `sucede_a` apuntándola (`B/02` §2.2). El pago entra, **se registra, y
+> queda pendiente de resolución**: `S19`.
+
+**El sujeto es la predecesora, y hay que decirlo con esas palabras porque la versión anterior decía
+*«una fila que ya declaró sucesión»* y eso nombra a la OTRA.** *«Declarar una sucesión»* es el
+vocabulario que fijaron `S1` —*«la fila declara una sucesión (`sucede_a`)»*— y los dos candados de
+`B/02` §2.2, partidos por `sucede_a IS NULL` / `IS NOT NULL`: **la que declara es la sucesora**. La
+predecesora tiene `sucede_a` nulo y no declaró nada. Leída al pie de la letra, la regla eximía a
+una fila en `PENDING_AUTHORIZATION` —que **no puede** estar en `GRACE_PERIOD`, así que `S5` nunca
+la alcanza y la regla era vacua— y dejaba intacta la reactivación de la única fila a la que ese
+cobro le puede llegar. Desde `B/02` §2.2 el lado se lee sin ambigüedad y por eso la regla se
+enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la apunta uno**.
+
+**Y son las dos transiciones, no una.** La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
+la ventana dura hasta 72 h y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
+el cobro reciclado entre —es la fila 3 de las seis que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
+la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. Nombrar sólo `S5`
+dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se repite**, porque
+`S6` no corre sobre un pago pendiente (ver abajo): las dos transiciones se bloquean, no una.
 
 **Sin esta regla el cobro hacía dos daños, no uno.** El primero es el que el aviso anticipa: el
-cliente paga la deuda que le perdonamos. El segundo no lo anticipaba nadie — **`S5` devuelve la
-predecesora a `ACTIVE`**, así que en plena sucesión la persona queda con **las dos vivas**, y el
-crédito de la sucesora **ya se computó en cero** suponiendo que ese período no se iba a pagar
-nunca. O sea: paga un período entero que **no le compra nada**, y la fórmula que lo ignoró ya no se
-puede corregir.
+cliente paga la deuda que le perdonamos. El segundo no lo anticipaba nadie — **la reactivación
+devuelve la predecesora a `ACTIVE`**, así que en plena sucesión la persona queda con **las dos
+vivas**, y el crédito de la sucesora **ya se computó en cero** suponiendo que ese período no se iba
+a pagar nunca. O sea: paga un período entero que **no le compra nada**, y la fórmula que lo ignoró
+ya no se puede corregir (§5.4: las fechas del proveedor son inmutables, `EX-39`).
 
-**Reembolsar es la salida coherente con lo que este mismo § decidió**: el período se declaró
-perdonado —*«no se compensa con el cobro nuevo ni se cobra aparte»*—, así que cobrarlo es un error
-y devolverlo es repararlo. Es el criterio de `PA-5` otra vez: **entre dos males, el reversible**.
+#### El destino del pago lo decide el cierre de la sucesión, no su llegada
+
+**Reembolsar al entrar el pago suponía que la sucesión siempre termina, y tiene dos desenlaces.**
+La versión anterior decía *«se reembolsa; la predecesora sigue su camino a `CANCELLED` por
+`S17`»*, y ese *«sigue su camino»* es una afirmación sobre el futuro que la propia tabla desmiente:
+`S3` mata a la sucesora **a las 72 h sin autorizar**, y `B/03` §3.3.1 trata abandonar el checkout
+como una salida normal y ofrecida. En esa rama la predecesora **nunca llega a `CANCELLED`**: se
+queda en `GRACE_PERIOD` sin sucesora y con su único pago **devuelto**, el reloj sigue corriendo, y
+a los pocos días la suspendemos por falta de pago — habiendo cobrado y devuelto el pago que la
+salvaba. Del lado del proveedor la cuota figura **pagada**, así que su reciclado se apagó y no va
+a volver a intentarlo: no hay segundo cobro que la rescate.
+
+> **El pago acreditado no se reembolsa al entrar: queda pendiente, y se resuelve cuando la sucesión
+> se resuelve.** Mientras tanto no reactiva, no se devuelve y **no se pierde**.
+
+**El dominio es el de las formas en que una sucesión en curso puede terminar, y son cuatro.** Las
+enumeré sobre `B/03` §3.2, recorriendo las salidas de la predecesora (en `GRACE_PERIOD` o
+`SUSPENDED`) y las de la sucesora (en `PENDING_AUTHORIZATION`):
+
+| cómo termina la sucesión | qué pasa con el pago pendiente | por qué |
+|---|---|---|
+| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
+| **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
+| **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
+| **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3 |
+
+**Las dos primeras son la razón de la regla y son opuestas**, y por eso el disparador no puede ser
+la llegada del pago: en el momento en que entra **todavía no se sabe cuál de las dos va a pasar**.
+Lo que sí se sabe es que no hay que reactivar —eso vale en las cuatro ramas mientras la sucesión
+esté en curso—, y eso es lo que `S19` ejecuta.
+
+**Reembolsar en la primera rama es la salida coherente con lo que este mismo § decidió**: el
+período se declaró perdonado —*«no se compensa con el cobro nuevo ni se cobra aparte»*—, así que
+cobrarlo por un servicio que `S17` cortó es un error y devolverlo es repararlo. Es el criterio de
+`PA-5` otra vez: **entre dos males, el reversible**.
+
+**Y el reloj del grace no corre sobre un pago pendiente.** Si la ventana de 72 h cruza el
+vencimiento del grace, `S6` mandaría a `SUSPENDED` —que **no emite fuente** (`12-contrato…`
+§2.6)— a alguien cuyo pago del período **está acreditado en nuestra cuenta**. El reloj existe para
+acotar el servicio regalado a quien no pagó (§4.3: *«el grace no es un beneficio de entrada»*), y
+acá el período se pagó: por eso `S6` lleva la condición en `B/03` §3.2. No es una gracia extra —es
+un tope de 72 h, el de la ventana— y sin ella el arreglo de este § crea, más chica, la misma
+suspensión que vino a impedir.
 
 ### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y no hay corrección
 
