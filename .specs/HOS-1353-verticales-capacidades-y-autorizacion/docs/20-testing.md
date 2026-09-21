@@ -72,6 +72,13 @@ búsqueda de texto—. Un guard es lo único que la vuelve a mirar sola. **Es cr
 en el catálogo de billing y el día 180 en el capítulo 02 de esta épica, así que `B/20` §2 lo
 repite como referencia cruzada, igual que `G-R4`.
 
+**Y vigila esa mitad y no la otra, que hay que decirlo para que nadie lea de más.** *«Se reinicia
+al reanudar»* presupone que **la reanudación ocurre**, y eso no es una cifra del catálogo: es una
+llamada al proveedor que puede no aplicarse. `G-R5` sigue en verde sobre una pausa que venció hace
+veinte días y no reanudó —las dos cifras que compara no cambiaron—, así que **esa mitad la cubren
+otras dos piezas y ninguna es un guard**: la rama de fallo de `S10` (`B/03` §3.2) y la **quinta**
+comprobación de cero llamadas del barrido (`B/09` §3).
+
 **`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
 mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace
 en el orden de recorrido, y `T1`/`T6` es el único par con dos destinos que el diseño declara hoy

@@ -108,7 +108,7 @@ Y una nota de registro que sigue valiendo:
 | S7 | `SUSPENDED` | regulariza, **o se reevalúa un pago que quedó pendiente** por `S19` | `ACTIVE` | el cobro entró de verdad **y** las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se restituye la publicación |
 | S8 | `ACTIVE` | la persona pide pausar | `PAUSED` *(motivo `CUSTOMER_REQUEST`)* | `puedePausar()` (capítulo 01 (núcleo) §3) | se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`) |
 | S9 | `ACTIVE` | `SUPER_ADMIN` otorga cortesía | `PAUSED` *(motivo `COURTESY`)* | no hay pausa vigente (`DEC-GRANT-004`) | se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`) |
-| S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | — | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) |
+| S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | **el `PUT` se aplicó, confirmado por relectura** — la misma regla que `S17` | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`). **Si la relectura sigue viendo `paused`, `S10` NO ocurre**: la fila se queda en `PAUSED` y **se pone la marca `requiere_conciliación`** (`S14`), porque una reanudación que no se aplicó le corta el servicio y el cobro a la vez — ver abajo |
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
 | S13 | **toda fila viva PRINCIPAL** del beneficiario en **cada vertical que el acto ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos. **Las de complemento no entran** (ver abajo, *«y no alcanza a los complementos»*) | `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a uno vivo** (`12-contrato…` §2.8) | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; el acceso pasa a darlo el grant. **Y si alguna de las filas alcanzadas retenía un pago pendiente por `S19`, la bandera se apaga en el mismo acto, sin reembolso** — es la rama 4 de `B/12` §5.3, y apagarla es parte de la decisión: dejarla puesta sobre una `CANCELLED` deja un *«pendiente»* que ningún barrido alcanza y que todo conteo de pagos pendientes cuenta de más. **Proceso idempotente y reanudable fila por fila**, con su detector en `B/09` §3 (ver abajo, *«la ejecución parcial»*) |
@@ -379,6 +379,56 @@ La quinta —la sucesión trabada— ya tiene una persona mirándola con la marc
 cuyo reloj es humano. **Y el backstop de `B/09` §3 sigue haciendo falta igual**, porque cubre el
 caso en que alguno de los cuatro actos no se ejecutó.
 
+#### `S10` es la única salida de `PAUSED`, y su rama de fallo es lo que sostiene la garantía de retención
+
+**`S10` tenía la columna de condición vacía y ningún desenlace escrito para la llamada que
+falla**, y eso valía mientras la ausencia no sostuviera nada. Desde `DEC-DATA-002` sostiene la
+mitad más cara de una garantía: el contenido publicable de la ficha de quien pausó.
+
+**El desenlace que la ausencia dejaba, recorrido:** el día 120 nuestro reloj manda el `PUT` y no
+se aplica. La fila se queda `PAUSED`, `cubierto` sigue falso, el reloj de inactividad de
+verticales **no se reinicia** —su único hecho aplicable acá es `cubierto` pasando a verdadero
+(`NUCLEO/01` §1.2, hecho 2)— y sigue corriendo hacia el día 180, que borra el contenido
+(`V/02` §4.1). **El cliente queda sin servicio y sin cobro desde el día 120**, y a nadie le llega
+nada que lo nombre.
+
+**Y era invisible por construcción, con las tres redes apagadas a la vez:**
+
+1. **El barrido compara y los dos lados coinciden**: nuestro estado dice `PAUSED` y el del
+   proveedor dice `paused` —`PS-4` mide que **no** se reanuda solo—, así que ninguna de las cinco
+   comparaciones de `B/09` §3 lo ve. Es la forma que ese § ya describe dos veces con otras
+   palabras: *«la fila está `ACTIVE`, el proveedor dice `authorized`, y para el barrido eso
+   coincide»*.
+2. **`D16` y `G-R5` siguen en verde**, porque comparan **el tope que declara el catálogo** contra
+   el día del hard delete (cap. 04 §3, núcleo). **El tiempo que una fila concreta lleva en
+   `PAUSED` no es ninguna de las dos cifras**, y nada lo comparaba contra nada.
+3. **Verticales no se entera ni puede**: no sabe que detrás de la pérdida de cobertura hay una
+   pausa (`12-contrato…` §4, `DEC-TRIAL-008`).
+
+**Por eso son dos escrituras y no una, y cada una tapa un agujero distinto:**
+
+- **La rama de fallo**, en la fila: la reanudación se confirma **por relectura**, igual que la
+  cancelación de `S17`, y si el proveedor sigue diciendo `paused` **`S10` no ocurre** y se pone la
+  marca. Es lo que convierte una llamada perdida en un caso que una persona mira.
+- **El detector**, en el barrido: la **quinta** comprobación de cero llamadas de `B/09` §3 —una
+  pausa cuyo `fin_previsto` ya pasó y que sigue sin `fin_real`, con su suscripción en `PAUSED`—.
+  Hace falta **además** de la rama porque la rama sólo corre **si el job corrió**: el modo que
+  deja la fila colgada para siempre es el del job que no se ejecutó nunca, y ése no produce
+  ninguna relectura que falle.
+
+**La asimetría con sus dos gemelas es lo que lo volvía un defecto y no una omisión pareja.**
+`S17` **sí** tenía rama escrita —*«la única rama en la que la sucesión NO se cierra…»*, arriba— y
+`S13` tiene su propio párrafo explicando por qué **no** la necesita (*«tiene que ocurrir igual»*,
+con la salvedad 4 del barrido detrás). `S10` no tenía ni lo uno ni lo otro, y **es la única de las
+tres cuyo desenlace silencioso termina en un borrado irreversible**.
+
+**Y no se elige *«tiene que ocurrir igual»*, que es el patrón de `S13`.** Escribir la fila como
+`ACTIVE` con el proveedor todavía en `paused` deja una suscripción que **cubre y no cobra** por
+tiempo indefinido: le devuelve la ficha al cliente y nos come el ingreso, con `EX-15` midiendo que
+mutar o cancelar **no emite webhook**, así que el primer aviso sería que el cobro no llega. En
+`S13` cortar la obligación de pago *«pase lo que pase»* es lo que el §35.3 ordena y el acceso ya
+lo da el grant; acá no hay ninguna otra fuente que sostenga nada.
+
 #### `S13` alcanza a toda fila viva PRINCIPAL, no a una — y no alcanza a los complementos
 
 El §35.3 ordena *«cancelar toda obligación de pago cubierta»*, en plural, y el origen de `S13`
@@ -522,7 +572,7 @@ alcance: *«la fila está `ACTIVE`, el proveedor dice `authorized`, y para el ba
 verdadera** para la vertical que la corrida no alcanzó. Por eso el detector va aparte y es la
 **tercera comprobación de cero llamadas** de `B/09` §3: *«un beneficiario con un ancla viva en la
 vertical V no debería tener una fila viva principal en V»*. Las dos filas están en nuestra base,
-igual que las de las otras tres comprobaciones.
+igual que las de las otras cuatro comprobaciones.
 
 **Y `S20` corre en el mismo acto, con el mismo fan-out y el mismo modo de falla, así que la
 tercera comprobación lo cubre a él también.** No es una comprobación nueva: es la misma
@@ -748,7 +798,7 @@ por S10.
 | **motivos** | `CUSTOMER_REQUEST` · `COURTESY`. Valor cerrado |
 | **unidad** | **meses enteros** (`DEC-SUB-010`). No existe la pausa intra-ciclo |
 | **cuándo empieza** | en el momento en que se pide, no al fin del ciclo |
-| **quién la termina** | **nuestro reloj**. Está medido que el proveedor **no tiene auto-reanudación** (`PS-4`) |
+| **quién la termina** | **nuestro reloj**, y **no hay segunda vía**: está medido que el proveedor **no tiene auto-reanudación** (`PS-4`). Por eso `S10` lleva **rama de fallo y detector** (§3.2, *«`S10` es la única salida de `PAUSED`»*) |
 | **qué pasa al volver** | se cobra normal en el ciclo siguiente; reanudar cambia **sólo el estado** y no dispara cobro de recuperación ni deja deuda (`PS-5`) |
 | **límites** | los del §26.3, reexpresados en meses: **4 pausas-mes** por pausa y **8** acumulados en 12 meses; máximo 3 pausas por ventana. Se cuentan por `user + vertical` y **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`) |
 
@@ -757,13 +807,23 @@ lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…
 `cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9). **Y el reloj de
 inactividad de verticales no se detiene**: si la pausa cruza el día 90, `PB4` la archiva.
 Verticales no sabe que detrás de esa pérdida de cobertura hay una pausa, y `DEC-TRIAL-008`
-decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino dos cosas:
-**`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar, y **el tope de una
+decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino **tres** cosas:
+**`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar; **el tope de una
 pausa es menor que el día del hard delete** —4 pausas-mes, unos 120 días, contra 180 (`V/02`
-§4.1)—. Esa desigualdad es el invariante `D16` y la vigila **`G-R5`, sobre el número que declara
-la fila de arriba**: subir el tope de pausa acá sin mirar el otro lado es lo que le borraría el
-contenido a un cliente que está al día. El aviso que se lo dice antes de confirmar es `B/19` §4,
-fila 5-bis.
+§4.1)—; y **que la reanudación efectivamente ocurra**, que es la premisa de las otras dos.
+
+Esa desigualdad es el invariante `D16` y la vigila **`G-R5`, sobre el número que declara la fila
+de arriba**: subir el tope de pausa acá sin mirar el otro lado es lo que le borraría el contenido
+a un cliente que está al día. El aviso que se lo dice antes de confirmar es `B/19` §4, fila 5-bis.
+
+**La tercera es la única que depende de que un job corra, y por eso es la que lleva las dos
+escrituras nuevas.** `D16` y `G-R5` comparan **dos cifras de configuración** y no miran el tiempo
+que una fila concreta lleva en `PAUSED`: con la reanudación sin ejecutar, las dos siguen en verde
+y el reloj de verticales igual llega al día 180. Lo que la vigila es la **rama de fallo de `S10`**
+—la relectura que, si el proveedor sigue diciendo `paused`, deja la fila donde está y pone la
+marca— y la **quinta comprobación de cero llamadas** de `B/09` §3, que encuentra la pausa cuyo
+`fin_previsto` pasó y sigue sin `fin_real`. Sin las dos, la premisa con la que `DEC-DATA-002`
+declaró *«el daño residual es cero»* no la sostenía nada.
 
 **El motivo no es un adorno, y ésta es la razón exacta**: en el proveedor una cortesía y una
 pausa pedida por el cliente **se ven idénticas** —el mismo `paused`, sin ningún campo que las
@@ -1162,7 +1222,7 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   `(sin fila, el reloj abre el período)` y **ninguna otra fila de esta tabla sale de *(sin fila)***,
   así que tiene una sola. Del lado de la tabla del §3.2 tampoco agrega uno: su efecto entra por
   `S4`, que ya existe y cuyo par `(ACTIVE, un cobro falla)` sigue teniendo una sola fila.
-- **El barrido de `B/09` §3 sigue con nueve puertas, cuatro salvedades y cuatro comprobaciones de
+- **El barrido de `B/09` §3 sigue con nueve puertas, cuatro salvedades y cinco comprobaciones de
   cero llamadas.** `MP5` no lleva ninguna suscripción a un estado terminal y no toca ningún
   preapproval — no hay ninguno.
 - **El catálogo de acciones administrativas sigue teniendo DOCE filas** (arriba).
@@ -1380,7 +1440,7 @@ que tengamos nosotros, éstos son los pares y su veredicto:
 | `pending` | `PENDING_AUTHORIZATION` | nada: coinciden |
 | `pending` | cualquier otro | **divergencia real** — el proveedor no puede retroceder a pendiente. Marca |
 | `authorized` | `PENDING_AUTHORIZATION` | **`S2`**: espejar es la transición que ya existe |
-| `authorized` | `PAUSED` | **`S10`**: el proveedor reanudó. Espejar |
+| `authorized` | `PAUSED` | **`S10`**: el proveedor reanudó. Espejar — y acá la condición de `S10` ya está cumplida, porque **esta lectura ES la relectura** que la fila pide. **El caso ciego es el contrario**, `paused` contra `PAUSED`: ahí los dos lados coinciden, esta tabla no ve nada y lo levanta la **quinta comprobación de cero llamadas** de `B/09` §3 |
 | `authorized` | `GRACE_PERIOD` · `SUSPENDED` | **divergencia real** — el preapproval está vivo y nuestro reloj dice que no cobró. Marca: es el caso que `B/12` §1.4 manda mirar. **Salvo que la fila sea la predecesora de una sucesión en curso —o sea con una sucesora VIVA apuntándola— y tenga un pago pendiente por `S19`**: ahí el cobro **sí** entró y está registrado, y el estado es el que `S19` declara — la premisa de esta fila (*«nuestro reloj dice que no cobró»*) es falsa para esa población, y marcarla sería un incidente sobre el camino normal. La salvedad **está acotada por la ventana**: muerta la sucesora, la fila deja de ser predecesora de una sucesión en curso y vuelve a esta fila con su premisa verdadera |
 | `paused` | `ACTIVE` | **`S8`**: el proveedor pausó y nosotros no lo sabíamos. Espejar, con motivo `CUSTOMER_REQUEST` |
 | `cancelled` | `CANCEL_SCHEDULED` | nada: es lo esperado, `S11` ya lo canceló. El servicio sigue hasta la fecha nuestra (`DEC-SUB-009`) |

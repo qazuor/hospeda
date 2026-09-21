@@ -287,7 +287,7 @@ complemento vivo es lo correcto, no una divergencia.
 > **Hace falta porque ése es, con esas palabras, el estado que el diseño declara indetectable.**
 > `B/03` §3.2 lo escribe al justificar el alcance de `S13`: *«la fila está `ACTIVE`, el proveedor
 > dice `authorized`, y para el barrido eso **coincide**»*. Las cinco comparaciones de arriba no lo
-> ven —los dos lados dicen lo mismo— y las otras tres comprobaciones miran `sucede_a`, el pago
+> ven —los dos lados dicen lo mismo— y las otras cuatro comprobaciones miran `sucede_a`, el pago
 > pendiente y **una instancia de addon**, no las filas de suscripción del beneficiario. **La
 > cuarta sí mira un ancla** —su segunda mitad pregunta si la que era título de una instancia se
 > retiró—, y aun así no ve esto: su sujeto es la **instancia**, y acá el que quedó colgado es un
@@ -334,9 +334,9 @@ su único dueño.
 > instancia **terminal** con el preapproval **vivo** —`A5` corrió y la llamada al proveedor no se
 > aplicó, **o corrió `A5` y no `S21`**—; ésta mira una instancia **viva** con el objetivo
 > **muerto** —`A5` no corrió—. Ninguna de las dos ve el caso de la otra, y entre las dos cubren
-> las dos mitades del *«el que no puede fallar»* del `B/16` §4.3. **Y siguen siendo cuatro
-> comprobaciones**: la ejecución parcial de `S21` no pide una quinta, porque su fila ya vuelve al
-> barrido por la 1.
+> las dos mitades del *«el que no puede fallar»* del `B/16` §4.3. **Y `S21` no agrega ninguna**:
+> su ejecución parcial no pide comprobación propia, porque su fila ya vuelve al barrido por la 1.
+> La quinta, que sí existe, es la de la pausa vencida y llegó por otro sujeto (más abajo).
 >
 > **Hace falta porque este estado es indetectable por comparación, con las mismas palabras que el
 > de `S13`**: la instancia dice `ACTIVE`, el proveedor dice `authorized`, y para las cinco
@@ -348,6 +348,36 @@ su único dueño.
 > los **cuatro** momentos que el `B/16` §4.3 enumera —el cuarto es la revocación del grant o el
 > retiro de un ancla—. Esta comprobación existe para la corrida en que ninguno se ejecutó, y su
 > desenlace es la marca —una persona—, nunca una cancelación automática.
+
+**Y una quinta, que tampoco le pregunta nada al proveedor: la pausa vencida que no reanudó.** Si
+hay una `subscription_pause` **sin `fin_real`** cuyo **`fin_previsto` ya pasó** (`B/02` §2.2) y su
+suscripción sigue en `PAUSED`, `S10` no corrió: se pone la **marca**. Cuesta cero llamadas —la
+pausa y la suscripción están las dos en nuestra base— y cubre el único estado que la única salida
+de `PAUSED` puede dejar colgado.
+
+> **Hace falta porque este estado es indetectable por comparación, y acá los dos lados dicen lo
+> mismo de verdad.** `PS-4` mide que el proveedor **no tiene auto-reanudación**, así que su
+> preapproval sigue `paused` igual que nuestra fila: para las cinco comparaciones de arriba eso
+> **coincide**, exactamente como en el caso de `S13`. Y las otras cuatro comprobaciones miran
+> `sucede_a`, el pago pendiente de `S19`, las filas vivas bajo un ancla y una instancia de addon;
+> **ninguna mira el reloj de una fila**.
+>
+> **Es la comprobación que mira el TIEMPO REAL de una fila, y por eso no la cubre `D16`.** `D16`
+> compara *«el tope de una pausa que declara el catálogo»* contra el día del hard delete
+> (cap. 04 §3, núcleo) — **dos cifras de configuración**, las dos verdaderas mientras nadie las
+> toque y **las dos ciegas a que una pausa concreta lleve 140 días abierta**. `G-R5` sigue en
+> verde en ese escenario, y tiene razón: no es su pregunta.
+>
+> **Y lo que está en juego no es sólo el cobro.** Una reanudación que no ocurre deja al cliente
+> **sin servicio y sin cobro** desde el día en que su pausa vencía, y —porque `cubierto` sigue
+> falso— con el reloj de inactividad de verticales corriendo hacia el hard delete del día 180
+> (`V/02` §4.1, `NUCLEO/01` §1.2). Es la única de las cinco comprobaciones cuyo desenlace no
+> atendido **borra datos del cliente**.
+>
+> **Es un backstop, no el disparador.** En el curso normal la rama de fallo de `S10` (`B/03` §3.2)
+> ya puso la marca cuando la relectura vio el preapproval todavía `paused`. Esta comprobación
+> existe para la corrida que **no se ejecutó nunca**, que es el modo que ninguna relectura
+> produce. Su desenlace es la marca —una persona—, nunca una reanudación automática a ciegas.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.

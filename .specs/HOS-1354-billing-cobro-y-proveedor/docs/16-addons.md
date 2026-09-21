@@ -654,10 +654,11 @@ corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo
 terminal de `B/09` §3 pasa a **nueve** filas con `S21`, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
 sin emitir nada (`EX-15`). Vuelve al barrido por la **salvedad 1**, no por la 4, porque su fila es
-terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona. Las
-**comprobaciones de cero llamadas siguen siendo cuatro**: la corrida que ejecuta `A5` y muere antes
-de `S21` la cubre esa misma salvedad 1, que es la única que ve una fila de complemento todavía
-`ACTIVE` colgando de una instancia terminal.
+terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona. **Y `S21` no
+agrega ninguna comprobación de cero llamadas**: la corrida que ejecuta `A5` y muere antes de `S21`
+la cubre esa misma salvedad 1, que es la única que ve una fila de complemento todavía `ACTIVE`
+colgando de una instancia terminal. (Las comprobaciones son **cinco** desde que `S10` recibió su
+detector, `B/09` §3; ninguna de las cinco es de `S21`.)
 
 ---
 

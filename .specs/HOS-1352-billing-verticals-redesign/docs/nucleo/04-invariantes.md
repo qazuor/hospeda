@@ -139,7 +139,7 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
 | D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
 | D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **ninguna sucesión termina sin dejar rastro, con un rastro por forma de terminar**: la que se **cierra** deja `sucedida_por` puesta en la predecesora; la que **muere sin cerrarse** deja la sucesora no viva **con su `sucede_a` escrito**. **Nunca las dos columnas en la misma fila** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más las dos columnas anulables que no pueden estar puestas a la vez. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las escrituras del cierre vayan juntas y completas |
-| D16 | **El tope de una pausa, en días, es menor que el día del hard delete.** Hoy son **4 pausas-mes** —unos 120 días, cap. 03 §5 (épica de billing)— contra **180** (cap. 02 §4.1, épica de verticales). Es lo único que impide que una pausa del catálogo llegue a borrar contenido, porque el reloj de inactividad **no se detiene** durante la pausa: se reinicia recién al reanudar (cap. 01 §1.2, hecho 2). **Las dos cifras son configuración**, así que el invariante es la relación entre ellas y nunca los números | `F-8cC1-001`, la decisión del owner del 2026-09-21 | **guard**: compara el tope de pausa del catálogo contra el día del hard delete y falla si el primero lo alcanza |
+| D16 | **El tope de una pausa, en días, es menor que el día del hard delete.** Hoy son **4 pausas-mes** —unos 120 días, cap. 03 §5 (épica de billing)— contra **180** (cap. 02 §4.1, épica de verticales). Es **una de las dos cosas** que impiden que una pausa del catálogo llegue a borrar contenido, porque el reloj de inactividad **no se detiene** durante la pausa: se reinicia recién al reanudar (cap. 01 §1.2, hecho 2). **Las dos cifras son configuración**, así que el invariante es la relación entre ellas y nunca los números. **La otra cosa —que la reanudación ocurra— NO es de este invariante y no la vigila `G-R5`**: la vigilan la rama de fallo de `S10` y la quinta comprobación de cero llamadas de `B/09` §3 | `F-8cC1-001`, la decisión del owner del 2026-09-21 | **guard**: compara el tope de pausa del catálogo contra el día del hard delete y falla si el primero lo alcanza |
 
 **`D16` existe porque la alternativa era una premisa que envejece sola.** El arreglo de
 `F-8cC1-001` se apoya en una desigualdad entre dos números —120 y 180— que hoy es verdadera y que
@@ -147,6 +147,16 @@ peso, porque romperlos rompe algo que ya se decidió:
 que `DEC-METH-010` declara no cubierto por ninguna búsqueda de texto: el texto es correcto el día
 que se escribe. La única forma de que no caduque en silencio es que la desigualdad la verifique
 algo en cada PR, y por eso el apoyo es un guard y no una nota.
+
+**Y `D16` tiene un alcance exacto que conviene no estirar: compara dos cifras de CATÁLOGO, no el
+tiempo que una fila lleva pausada.** El arreglo de `F-8cC1-001` descansa sobre **dos** premisas
+—la desigualdad *«120 < 180»* y *«cada reanudación reinicia»*— y de las dos, **`D16` sólo cubre
+la primera**. Una pausa que vence y **no reanuda** deja la fila en `PAUSED` con el reloj de
+verticales corriendo hacia el día 180, y `G-R5` sigue en verde con toda razón: las dos cifras que
+compara no cambiaron. La segunda premisa es la única que depende de que un job corra, así que se
+vigila donde eso se puede ver —la **rama de fallo de `S10`** y la **quinta comprobación de cero
+llamadas** del cap. 09 §3 (épica de billing)— y no acá. Leer `D16` como si cubriera las dos es
+exactamente el modo que el invariante vino a cerrar, con el sujeto cambiado.
 
 **`D15` afirmaba más de lo que el diseño cumple, y se corrigió hacia abajo.** Decía *«toda
 sucesión que termina deja escrito que ocurrió: la predecesora queda con `sucedida_por` puesta»*, y
