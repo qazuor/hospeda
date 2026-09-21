@@ -40,7 +40,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.2.0",
-        "@types/react": "^19.2.18",
+        "@types/react": "^19.3.0",
         "@vitest/coverage-v8": "^4.1.10",
         "tsx": "^4.23.11",
         "typescript": "6.0.3",
