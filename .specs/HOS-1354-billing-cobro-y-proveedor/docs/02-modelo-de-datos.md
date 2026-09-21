@@ -305,8 +305,8 @@ de períodos que arrancaron antes.
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
 | **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **se re-apunta en `S18`** (§2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
-| **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4). **El scope de verticales NO es una columna: son sus anclas** | ídem; **al menos un ancla**, o el grant no otorga nada |
-| **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable |
+| **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en` y quién la firmó** | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas** |
+| **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable. **El ancla no tiene estado propio**: es ***ancla viva*** si y sólo si su grant lo es (`NUCLEO/01` §2.4), y **la fila sobrevive a la revocación** |
 
 **`addon_product` se partió por campo, igual que el catálogo de planes.** El corte del §11.2 —*«no
 es por entidad, es por campo»*— dejaba a esta entidad entera del lado de billing con capacidades
@@ -362,6 +362,18 @@ el grant … un campo que el modelo ya necesita, no uno nuevo»*—. Es `F-8dA3-
   no el retiro del ancla**, justamente porque desanclar no está declarado; la columna sigue
   apuntando al ancla porque lo que hay que saber es **en qué vertical** era gratis, no cuál se
   retira.
+- **Y tiene un SEGUNDO consumidor, que la lee DESPUÉS de la revocación**: la segunda mitad de la
+  cuarta comprobación de cero llamadas (`B/09` §3), *«el ancla que era su título ya no es la de un
+  grant vivo»*. Esa pregunta sólo se puede contestar si la fila del ancla **sigue existiendo**
+  cuando el grant ya no está vivo, que es exactamente por qué revocar **marca y no borra**
+  (más abajo, *«revocar retira las anclas como TÍTULO, no como FILAS»*).
+- **La escribe `S20` ANTES de cancelar el cobro, y el orden es parte de la transición**
+  (`B/03` §3.2). `S20` tiene dos escrituras sobre dos entidades y **la que cancela la suscripción
+  de complemento saca la fila de su propio `desde`**: hecha primero, una corrida cortada dejaba la
+  instancia `ACTIVE`, sin cobro y **con esta columna en nulo** —o sea con la tercera cláusula de
+  `A5` sin sujeto y con el addon gratis para siempre—. Escribiendo el título primero, lo que queda
+  es una instancia ya anclada y un complemento todavía vivo, que es un estado **reanudable y
+  detectable**.
 
 **Y el vínculo con la suscripción de complemento se lee ahora en las dos direcciones.** Hasta acá
 sólo se leía hacia adelante —la instancia dice cuál es su cobro—, y la vuelta no tenía consumidor:
@@ -452,6 +464,61 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
   cubrir, y lo que cubre cancela la obligación de pago de esa vertical; sin esa mitad el
   beneficiario sigue pagando lo que se le acaba de regalar. **Desanclar no está declarado**, y no se
   infiere de que las anclas sean filas.
+
+**Y el instrumento gana la columna que dice si sigue vivo, porque tres predicados la preguntan y
+ninguno podía contestarse.** Hasta acá `permanent_grant` **no declaraba ni estado ni revocación**:
+la revocación existía **como acto** —una de las tres escrituras del catálogo de `NUCLEO/08` §3,
+el evento de la tercera cláusula de `A5`— y **como acto no se puede leer después**. Los tres
+consumidores que la leen después son:
+
+| quién pregunta | qué pregunta | dónde |
+|---|---|---|
+| la **tercera comprobación** de cero llamadas | *«¿este beneficiario tiene un **ancla viva** en la vertical V?»* | `B/09` §3 |
+| la **cuarta comprobación**, segunda mitad | *«¿el ancla que era su título sigue siendo la de un **grant vivo**?»* | `B/09` §3 |
+| la **tercera mitad de la orfandad** | *«¿hay en esa vertical **un grant vivo** que valga como título?»* | `B/16` §4.2 |
+
+Las tres son **backstops**: corren en el barrido diario, *«para la corrida en que ninguno se
+ejecutó»* (`B/09` §3). Un evento sirve para disparar `A5` en el instante; **no sirve para un
+predicado que se evalúa al día siguiente**. Sin la columna, las dos comprobaciones que esta tanda
+escribió para ver *«lo que el diseño declara indetectable»* **no se podían evaluar**, y lo que
+dejaban sin ver es que **alguien paga todos los meses algo que el §35.2 y el §35.3 declaran
+gratis**.
+
+**Y no estaba en ningún otro lado, porque el instrumento no vence.** `NUCLEO/01` §1.5 dice que el
+grant *«no vence»*, contra la cortesía, que *«vence»* y guarda *«días o meses, inicio, fin»*. Un
+instrumento que **sólo** termina por revocación y **no guarda la revocación** no tiene forma de
+dejar de estar vivo — y ése es, con todas sus letras, el modo de falla que el
+[`12-contrato-de-cobertura.md`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+§2.6 ya había escrito para otra fuente: *«una fuente se emite porque un estado lo dice, y si ese
+estado no se puede mover … la fuente sigue contando para `cubierto`»*. El grant emite con
+`hasta: NO_VENCE`, así que era exactamente el caso, y nadie lo había leído sobre él.
+
+> **Revocar retira las anclas como TÍTULO, no como FILAS.** Escribe `revocado_en` en el
+> instrumento —**una** escritura, sobre **una** fila— y con eso las N anclas dejan de ser anclas
+> vivas a la vez, que es lo que *«una revocación sobre un instrumento con un ancla por cada
+> vertical»* (`12-contrato…` §2.8) siempre quiso decir. **Las filas de
+> `permanent_grant_vertical` no se borran.**
+
+**Las dos razones por las que no se borran, y las dos son de otros capítulos:**
+
+1. **`addon_instance` apunta ahí.** La columna del título *«apunta a
+   `permanent_grant_vertical`»* (arriba), y su segundo consumidor la lee **después** de la
+   revocación. Borrar el ancla deja esa referencia colgando y **la segunda mitad de la cuarta
+   comprobación se queda sin sujeto**, que es el mismo agujero por otra puerta.
+2. **El corpus ya rechazaba ese mecanismo.** Reducir el scope de un grant entra *«por el catálogo
+   con su propia fila, su confirmación y su transición — y **no como un efecto lateral de borrar
+   una fila**»* (`12-contrato…` §2.8). Borrar anclas al revocar sería precisamente eso.
+
+**Un grant revocado no emite ninguna fuente**, y va escrito acá porque la resolución del contrato
+lo necesita: la fuente `GRANT` de una vertical existe **mientras el ancla de esa vertical esté
+viva** (`12-contrato…` §2.8). `hasta: NO_VENCE` dice *«no hay fin por calendario»*, nunca
+*«no se puede apagar»*.
+
+**Y esto no le devuelve una máquina de estados al grant.** `revocado_en` es **una marca de un
+acto**, como `fin_real` en `subscription_pause`: no hay transiciones, no hay `desde`/`hacia` y no
+entra en ninguna tabla del cap. 03. Lo único que agrega es que el acto más grave del catálogo
+**deje rastro legible**, que es lo que `NUCLEO/08` §3 ya exigía auditar y lo que ningún predicado
+podía consultar.
 
 **Anclar no es ser.** Una suscripción ancla una versión de plan y no es un plan: el grant sigue
 siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya estaba resuelto —

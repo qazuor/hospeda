@@ -133,6 +133,13 @@ Las tres se distinguen por **quién la inicia y cuánto dura**: la promo la canj
 acotada; la cortesía la firma `SUPER_ADMIN` y vence; el grant la firma `SUPER_ADMIN` y no
 vence.
 
+> **«No vence» no es «no termina»: el grant termina por revocación y sólo por revocación, y esa
+> revocación se guarda.** La cortesía trae su fin escrito en la fila —*«días o meses, inicio,
+> fin»*— y el grant no tiene ninguno que anticipe nada, así que lo único que puede apagarlo es un
+> acto. Ese acto **deja marca**: `permanent_grant.revocado_en` (cap. 02 (billing) §2.4), que es lo
+> que vuelve evaluable *«grant vivo»* (§2.4). Leído como *«no tiene forma de dejar de estar
+> vivo»*, este renglón dejaba tres predicados del diseño sin nada contra qué evaluarse.
+
 ### 1.6 Capacidades
 
 | término | qué es |
@@ -257,18 +264,34 @@ fecha de fin de servicio **es un dato nuestro**, no del proveedor.
    columna que acepte cualquier cadena no tiene máquina, tiene una convención. El capítulo 02
    fija que cada columna de estado lleva su restricción de dominio.
 
-### 2.4 «Vivo» nombra dos conjuntos, y nunca el mismo
+### 2.4 «Vivo» nombra cuatro conjuntos, y nunca el mismo
 
 La palabra decidía tres cosas caras —el candado del §11, el disparo de `S17` y la condición de
 `T6`— y **este capítulo no la definía**, contra su propia regla de que *«todo lo que el resto de
-la spec use tiene que estar acá»*. Los dos conjuntos que nombraba difieren en **la mitad de sus
-seis estados**, y el último consumidor que la usó eligió el equivocado. Acá se separan, y cada uno
-tiene un nombre propio que ya no se puede confundir con el otro.
+la spec use tiene que estar acá»*. Los dos primeros conjuntos que nombraba difieren en **la mitad
+de sus seis estados**, y el último consumidor que la usó eligió el equivocado. Acá se separan, y
+cada uno tiene un nombre propio que ya no se puede confundir con los otros.
 
 | término | qué es | dónde se enumera | para qué existe |
 |---|---|---|---|
 | **fila viva** | una fila —de suscripción o de instancia de addon— que **todavía tiene una autorización de cobro que puede cobrar** | **son dos enumeraciones, una por sujeto.** De la **suscripción**, los **seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2). De la **instancia de addon**, los **dos**: `PENDING_AUTHORIZATION` y `ACTIVE` (cap. 03 (billing) §8) | el candado del §11: impedir un segundo `INSERT` sobre una autorización que sigue pudiendo cobrar |
 | **fuente viva** | una fuente que el contrato de cobertura **devuelve hoy** en `fuentes` | la lista de esa respuesta, resuelta en el momento ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2) | resolver la cobertura y las capacidades: los pasos 5 y 6 de la autorización |
+| **grant vivo** | un `permanent_grant` **que todavía no fue revocado** | **no se enumera con estados: es una columna.** `revocado_en` **nulo** (cap. 02 (billing) §2.4). No hay máquina de estados del grant y no hay más valores que esos dos | contestar **después del acto** si la concesión sigue en pie: los tres backstops de abajo, que corren en el barrido diario y no en el instante de revocar |
+| **ancla viva** | una fila de `permanent_grant_vertical` **cuyo grant está vivo** | **no tiene enumeración propia**: el ancla no lleva estado, así que se deriva **entera** del grant (cap. 02 (billing) §2.4) | preguntar por **una vertical concreta**, que es lo que el grant solo no contesta: el título es por vertical |
+
+**Los dos últimos llegaron tarde y por el mismo camino que el resto de este §**: tres predicados
+los usaban —la tercera y la cuarta comprobación del barrido y la tercera mitad de la orfandad— y
+**el modelo no tenía dónde escribirlos**, así que los tres eran inevaluables. Es la misma forma de
+defecto que `S19`: el término estaba en uso, no estaba definido, y su ausencia no la devolvía
+ninguna búsqueda **porque el lugar donde faltaba no lo nombraba**. La columna la agrega el cap. 02
+(billing) §2.4 y la razón entera está ahí.
+
+> **«Grant vivo» y «ancla viva» son UN conjunto y su proyección, no dos independientes.** Revocar
+> es **una** escritura sobre el instrumento y las N anclas dejan de ser vivas **a la vez**; no
+> existe un ancla viva de un grant revocado ni un grant vivo sin anclas vivas. Se separan por el
+> **sujeto del predicado**, exactamente como las dos enumeraciones de *«fila viva»*: el que
+> pregunta por una vertical dice *«ancla viva»*, el que pregunta por el instrumento dice
+> *«grant vivo»*.
 
 **Los tres que quedan afuera de la primera lo están por la razón que le da su nombre**:
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
@@ -304,7 +327,7 @@ detecta comparando contra los seis.
 | 4 | el **`desde` de `S18`** | cap. 03 (billing) §3.2 | la **sucesora viva**: `ACTIVE`, o `PENDING_AUTHORIZATION` si la predecesora murió sola |
 | 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* |
 | 6 | la **condición 3 del pago tardío** | cap. 05 (billing) §3 | *«no hay otra fila viva principal del mismo `user + vertical`»* — las seis, `PENDING_AUTHORIZATION` incluido |
-| 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V, **ni una fila viva DE COMPLEMENTO de un addon compatible con V** si el grant lleva `includesAddons: true`»* — el detector de la ejecución parcial de `S13` **y de `S20`**, que corren en el mismo acto. Las dos mitades enumeran **los seis**: las dos filas son suscripciones |
+| 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V, **ni una fila viva DE COMPLEMENTO de un addon compatible con V** si el grant lleva `includesAddons: true`»* — el detector de la ejecución parcial de `S13` **y de `S20`**, que corren en el mismo acto. Las dos mitades enumeran **los seis**: las dos filas son suscripciones. **Y el *«ancla viva»* de su predicado es el OTRO término**, con su propio inventario (más abajo): este comentario enumeraba los dos *«vivos»* que sabía nombrar y dejaba el tercero pasar dentro de la misma frase |
 | 18 | el **`desde` de `A5`** | cap. 03 (billing) §8 | *«toda instancia con una autorización que puede cobrar»* — es el **único consumidor cuyo sujeto es SÓLO una instancia de addon** —el 19 la nombra también, pero junto con una suscripción—, así que su enumeración es la de **dos**, no la de seis. Decía `ACTIVE` y nada más, y la mitad que faltaba —`PENDING_AUTHORIZATION`— es la ventana de 72 h por la que un complemento nacía cobrando sobre un título ya muerto |
 | 19 | el **alcance de `S20`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** del beneficiario … cuya instancia esté en uno de sus dos estados vivos»* — es el **único consumidor con dos sujetos a la vez**: enumera **los seis** para la suscripción de complemento y **los dos** para la instancia, y ninguna de las dos enumeraciones sirve para la otra. Es el reverso exacto del 1: `S13` dice *«principal»* para dejar los complementos afuera, `S20` dice *«de complemento»* para que sean los únicos adentro |
 | 20 | el **`desde` de `S21`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** de la que cuelga una instancia de addon»* — enumera **los seis**, los de la suscripción, y **no enumera** el conjunto de la instancia: la nombra por un **estado terminal concreto**, `CANCELLED`, que es su condición. Por eso el 19 sigue siendo *«el único consumidor con dos sujetos a la vez»*: acá el segundo sujeto no aporta una enumeración de *«fila viva»*, aporta su opuesto. **Y no necesita el adjetivo que el 1 sí necesita**: de una fila principal no cuelga ninguna instancia, así que el conjunto queda partido por el sujeto y no por una acotación |
@@ -340,8 +363,8 @@ vigila es **una autorización que puede cobrar**, que es éste. Los dos conjunto
 que `PENDING_AUTHORIZATION` dejó de emitir fuente, y desde entonces la diferencia entre ellos era
 justamente el estado por el que se colaba un doble cobro.
 
-**Y los dos conjuntos no coinciden, con la distancia contada contra la tabla de diez filas del
-`12-contrato…` §2.6.** De las **seis** filas vivas **de la suscripción**, **tres no emiten ninguna fuente**:
+**Y los dos primeros conjuntos no coinciden, con la distancia contada contra la tabla de diez
+filas del `12-contrato…` §2.6.** De las **seis** filas vivas **de la suscripción**, **tres no emiten ninguna fuente**:
 `PENDING_AUTHORIZATION`, `SUSPENDED` y `PAUSED` cuando el motivo es `CUSTOMER_REQUEST`. Y la
 cuarta discrepancia es de otra forma: `PAUSED` por `COURTESY` **sí** emite, pero con `tipo:
 CORTESÍA` y no como suscripción — o sea que `PAUSED` es el único de los seis cuya respuesta **no
@@ -355,6 +378,35 @@ fallan**, así que no hay ninguna lectura en la que una sea el proxy de la otra.
 ninguna de las dos cuenta para `cubierto` (`12-contrato…` §2.4): estar en la lista y contar para
 la cobertura son dos preguntas, y la segunda se escribe **nombrando la clase**.
 
+#### El inventario de consumidores de «grant vivo» y «ancla viva»
+
+**Es la misma clase de control que el de arriba y existe por la misma razón medida**: los tres
+predicados que preguntan por un grant vivo estaban escritos **antes** de que el término tuviera
+columna, y ninguno de los tres figuraba en ninguna lista. Se mantiene entero, con la misma regla:
+**quien escribe un consumidor nuevo agrega su fila acá en el mismo acto**, y lo vigila la segunda
+mitad de `G-R1-E` (`B/20` §2).
+
+**Se parten por el sujeto del predicado**, que es lo único que decide cuál de los dos nombres va.
+
+**A · Preguntan por una VERTICAL concreta → «ancla viva».**
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 1 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«si un beneficiario tiene un **ancla viva** en la vertical V y además una fila viva principal suya en V —o una de complemento compatible, con `includesAddons: true`— el fan-out no terminó de correr»* |
+| 2 | la **tercera mitad de la condición de orfandad** | cap. 16 (billing) §4.2 | *«ningún grant permanente la releva: no hay en esa vertical **un grant vivo** que valga como título»* — nombra el instrumento y **pregunta por una vertical**, así que el conjunto que evalúa es el del ancla |
+| 3 | la **excepción del §2.4 de addons** | cap. 16 (billing) §2.4 | *«un grant permanente vale como título en lugar de la suscripción `ACTIVE`»*, y **vale sólo donde el grant ancló** (§4.2): sin ancla viva en esa vertical no hay título |
+| 4 | la **incompatibilidad cortesía × grant** | cap. 14 (billing) §4.3 | *«sobre un grant no se otorga cortesía»* — el predicado es *«hay un **ancla viva** en la vertical de esa suscripción»*, porque lo que lo justifica es que no quede obligación de pago, y sobre un grant **revocado** sí queda |
+
+**B · Preguntan por el INSTRUMENTO → «grant vivo».**
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 5 | la **segunda mitad de la cuarta comprobación del barrido** | cap. 09 (billing) §3 | *«el ancla que era su título ya no es la de un **grant vivo**»* — el sujeto es la instancia y lo que se lee es el grant al que su ancla pertenece |
+| 6 | el **evento de `S13`** | cap. 03 (billing) §3.2 | *«`SUPER_ADMIN` otorga un *Free Forever*, o le ancla una vertical nueva a un **grant vivo***»* — anclarle una vertical a uno revocado no es un acto: no hay instrumento al que agregarle nada |
+| 7 | el **evento de `S20`** | cap. 03 (billing) §3.2 | ídem — es el mismo acto, y por eso los dos comparten el evento |
+| 8 | la **tercera cláusula del evento de `A5`** | cap. 03 (billing) §8 | *«se revoca el grant del que cuelga el ancla que era su título»* — es **el escritor**, no un lector: es el acto que hace que el grant deje de estar vivo, y por eso figura acá |
+| 9 | la **invalidación del caché de entitlements** | cap. 02 (verticales) §2.4 | *«se otorga o se revoca … un grant, o se le ancla una vertical nueva a un **grant vivo***»* — es el único consumidor **fuera de billing**, y llega como evento, no como predicado: verticales no lee la columna (regla 1) |
+
 **Tres reglas de uso, porque la ambigüedad ya costó tres críticos distintos:**
 
 1. **Ninguna regla de la épica de verticales se condiciona sobre una fila viva.** No es una
@@ -364,15 +416,22 @@ la cobertura son dos preguntas, y la segunda se escribe **nombrando la clase**.
    va a terminar leyendo `cubierto` —que es **otro conjunto**— sin decirlo.
 2. **«Vivo» sin calificar no se usa en un predicado.** En prosa explicativa se entiende solo; en
    la columna *condición* de una tabla de transiciones, en el enunciado de un invariante o en el
-   de un guard va **«fila viva»** o **«fuente viva de clase `TÍTULO`»**, nunca la palabra sola.
-   Lo vigila `G-R4-B` (`V/20` §2) para el primer caso, que es el que cruza la frontera.
+   de un guard va **«fila viva»**, **«fuente viva de clase `TÍTULO`»**, **«grant vivo»** o
+   **«ancla viva»**, nunca la palabra sola. Lo vigila `G-R4-B` (`V/20` §2) para el primer caso,
+   que es el que cruza la frontera. **Los dos últimos nombres llegaron después de la regla, y es
+   lo que la regla no alcanzó a impedir**: el evento de `S13` decía *«le ancla una vertical nueva
+   a **uno vivo**»* —la palabra sola, sobre un sujeto que este capítulo todavía no definía—, y el
+   consumidor 17 de abajo citaba *«un **ancla viva**»* enumerando sólo los dos *«vivos»* que sabía
+   nombrar. **La regla se cumplía a medias porque el término no existía**: ningún guard puede
+   exigir que se califique con un nombre que el glosario no tiene.
 3. **Y tampoco se usa una PARÁFRASIS que lo omita, que es el caso que la regla 2 no contemplaba.**
    `S19` no violó la regla 2 —no usó la palabra suelta—: escribió *«tiene una sucesora con
    `sucede_a` apuntándola»*, que dice lo mismo que el predicado correcto **menos el adjetivo**, y
    con eso se saltó el único control que existía. Así que un predicado que mencione `sucede_a`
    **dice además en qué estado está la fila que lo escribió**, y **quien escribe un consumidor
-   nuevo agrega su fila al inventario de arriba en el mismo acto**, antes de declarar el cambio
-   aplicado. Lo vigila `G-R1-E` (`B/20` §2), en sus dos mitades.
+   nuevo agrega su fila al inventario que le corresponda —el de *«fila viva»* o el de
+   *«grant vivo»* / *«ancla viva»*— en el mismo acto**, antes de declarar el cambio aplicado. Lo
+   vigila `G-R1-E` (`B/20` §2), en sus dos mitades.
 
 **El caso testigo, y son dos en direcciones opuestas.** `T6` se escribió con *«ya hay una
 suscripción viva»* leyendo las seis filas vivas, y sobre las tres que no emiten fuente eso

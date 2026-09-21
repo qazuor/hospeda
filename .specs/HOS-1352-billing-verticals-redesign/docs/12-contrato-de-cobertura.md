@@ -285,7 +285,7 @@ puede elegir qué decir:
 | valor | cuándo | qué tiene que entender el aviso |
 |---|---|---|
 | **`fecha`** | el fin ya está determinado: `CANCEL_SCHEDULED` con la fecha de `DEC-SUB-009`, fin de cortesía, vencimiento de un addon `DÍAS_FIJOS`, fin del trial | hay ventana, y es ésta |
-| **`NO_VENCE`** | grant permanente, título `BASE` | no hay ventana **porque no hay fin** |
+| **`NO_VENCE`** | grant permanente, título `BASE` | no hay ventana **porque no hay fin por calendario** — que no es lo mismo que *«no se apaga»*: un grant se apaga al revocarse, sin anticipación (§2.8) |
 | **`SIN_FECHA_CONOCIDA`** | suscripción `ACTIVE`, addon `MIENTRAS_VIVA_LA_SUSCRIPCIÓN` | no hay ventana **porque todavía no se sabe** |
 | **`SIN_EMPEZAR`** | la fuente de trial en `PRE_TRIAL` | no hay ventana **porque el reloj no arrancó** |
 
@@ -509,6 +509,34 @@ entero no es una operación de este diseño; si alguna vez se necesita, entra po
 `NUCLEO/08` §3 con su propia fila, su confirmación y su transición —cortar servicio en una
 vertical es la mitad de *«la acción administrativa más grave»*— y no como un efecto lateral de
 borrar una fila.
+
+#### Un grant emite mientras está vivo, y revocarlo no borra sus anclas
+
+**La fuente `GRANT` de una vertical existe mientras el ancla de esa vertical esté VIVA.** *Vivo*
+acá tiene definición y columna: `permanent_grant.revocado_en` nulo, con el término y su inventario
+de consumidores en `NUCLEO/01` §2.4 y la fila en `B/02` §2.4. **Un grant revocado no emite
+ninguna fuente**, en ninguna de sus N verticales, desde el instante de la revocación.
+
+**Hay que escribirlo acá, y la razón está tres §§ más arriba.** El §2.6 declara que *«una fuente
+se emite porque un estado lo dice, y si ese estado no se puede mover el `hasta` queda en el pasado
+y la fuente sigue contando para `cubierto` — una cobertura perpetua que no falla ruidosamente,
+regala, y que ningún aviso muestra»*. El grant emite con `hasta: NO_VENCE` y **hasta la FASE
+9-bis-4 no tenía ningún estado que se pudiera mover**: la revocación existía como acto y no como
+dato. Era literalmente el caso que ese renglón nombra, sobre la única fuente del diseño que no
+vence nunca, y nadie lo había leído sobre ella.
+
+**Revocar retira las anclas como TÍTULO, no como FILAS.** Es **una** escritura sobre el
+instrumento y las N anclas dejan de ser vivas a la vez —que es lo que *«una revocación sobre un
+instrumento con un ancla por cada vertical»* dice—; **las filas de `permanent_grant_vertical` no
+se borran**. Dos razones, y las dos son de este mismo §: `addon_instance` apunta al ancla para
+saber **en qué vertical** el addon es gratis, y el barrido lee ese ancla **después** de la
+revocación (`B/09` §3, cuarta comprobación); y borrarlas sería exactamente *«un efecto lateral de
+borrar una fila»*, que el párrafo de arriba acaba de rechazar para el caso vecino.
+
+**Esto no le da al grant una máquina de estados ni una ventana.** `hasta` sigue valiendo
+`NO_VENCE`, y `V/15` §4.4 sigue repartiendo bien: *«vencimiento de un addon · fin de una
+cortesía»* tienen ventana y *«revocación de un grant»* no — porque una revocación **no se
+anticipa**, no porque no exista.
 
 **Los tres pedazos, y ninguno inventa un modo nuevo:**
 

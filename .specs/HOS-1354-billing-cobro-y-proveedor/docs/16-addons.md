@@ -112,6 +112,12 @@ Gastronomía, no por el solo hecho de que el beneficiario tenga un grant. En una
 ancló nada **no emite fuente**, así que ahí no hay título que reemplace a la suscripción y el addon
 se adquiere como cualquier otro.
 
+**Y vale mientras el grant esté VIVO, que es la otra mitad de la misma frase.** El predicado es
+*«hay un **ancla viva** en esa vertical»* (`NUCLEO/01` §2.4): un grant revocado no emite ninguna
+fuente, así que deja de ser título en las N verticales a la vez. Se lee sobre
+`permanent_grant.revocado_en` (`B/02` §2.4) y no sobre la existencia de la fila del ancla, que
+**sobrevive a la revocación** a propósito.
+
 Sin esta excepción, `includesAddons: true` sería una configuración **inalcanzable**: una opción
 que existe en la base, se puede encender, y no hace nada. Un control por exclusión que se olvida
 de un título nuevo no falla ruidosamente; deja una funcionalidad muerta y nadie se entera.
@@ -205,6 +211,12 @@ nombrado.
 > los cuatro scopes. Las otras dos escrituras del catálogo no retiran ninguna: otorgar crea y
 > anclar **agrega**. El razonamiento entero está en `B/03` §8, *«el addon cuyo título era el
 > ancla»*.
+>
+> **Y las retira como TÍTULO, no como FILAS.** La revocación escribe `revocado_en` en el
+> instrumento (`B/02` §2.4) y las N anclas dejan de ser **anclas vivas** a la vez; sus filas
+> siguen existiendo, porque `addon_instance` apunta ahí y la cuarta comprobación del barrido lee
+> el ancla **después** de la revocación (`B/09` §3). Sin esa columna, *«se revoca»* era un acto
+> que ningún predicado podía leer más tarde.
 
 ### 3.4 El addon que la persona YA venía pagando: se convierte a costo $0 en el acto
 
@@ -217,8 +229,8 @@ addon que su propio flag le declaraba gratis.
 
 > **Al otorgar un *Free Forever* con `includesAddons: true` —y al anclarle una vertical nueva, que
 > es el otro disparador de `S13`— los addons compatibles que el beneficiario venía pagando se
-> convierten a costo $0: se cancela su suscripción de complemento y la instancia pasa a colgar del
-> ANCLA como su título.**
+> convierten a costo $0: la instancia pasa a colgar del ANCLA como su título y **después** se
+> cancela su suscripción de complemento.**
 
 Lo ejecuta **`S20`** (`B/03` §3.2), que es una transición aparte y no una ampliación de `S13`: el
 adjetivo *«principal»* del alcance de `S13` **es una acotación con motivo** —sin él los
@@ -310,6 +322,18 @@ de acá.
 | **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de `A1`–`A6`** | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando se revoque el grant (§3.3) |
 | **`PENDING_AUTHORIZATION`** | **no se convierte** —no hay nada comprado todavía— pero **su cobro se cancela igual**, y la instancia muere por `A3` al vencer su ventana. La persona puede elegir el addon gratis en el acto (§3.2) | *«una instancia esperando autorización es una obligación de pago»*: su preapproval está creado y puede completar el checkout sin tener por qué saber que el grant llegó. Es el mismo argumento con el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` y en el `desde` de `A5`. La pantalla de *«esperando que completes el pago»* **deja de ofrecer el enlace en el mismo acto** |
 
+**Y el orden de las dos escrituras es parte de la transición, no una nota de implementación.**
+`S20` escribe **primero** el ancla-título sobre la instancia y **después** cancela el cobro, y la
+razón es que la cancelación **saca la fila de su propio `desde`** —*«toda fila viva de
+complemento»*—: hecha primero, una corrida que muere entre las dos deja la instancia `ACTIVE`,
+sin cobro y **con el ancla-título en nulo**, o sea sin el sujeto que la tercera cláusula de `A5`
+necesita para apagarla el día que se revoque el grant (§3.3). En `LISTING`, `USER` y `GLOBAL` eso
+es **para siempre y sin detector**, porque el objetivo nunca muere (§4.2) y las dos comprobaciones
+que podrían verlo miran cosas que en ese estado están sanas. Con el orden declarado, lo que queda
+es una instancia ya anclada y un complemento todavía vivo: reanudable, y **es la segunda fila de
+la tercera comprobación** (`B/09` §3). El dominio entero está en `B/03` §3.2, *«el orden de las
+dos escrituras de `S20`»*.
+
 **Y la condición de huérfano del §4.2 no se toca.** Sus **tres** mitades siguen siendo las mismas
 y siguen dando el mismo resultado: el objetivo de un `VERTICAL_SUBSCRIPTION` murió con `S13`, la
 tercera mitad —*«ningún grant permanente la releva»*— lo rescata, y por eso *«conserva los dos»*
@@ -346,7 +370,7 @@ lo da el scope:
 | scope (§40) | queda huérfano cuando |
 |---|---|
 | `LISTING` | la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna |
-| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4), **ninguna sucesión la releva** —su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola**— **y ningún grant permanente la releva**: no hay en esa vertical un grant vivo que valga como título (§2.4) |
+| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4), **ninguna sucesión la releva** —su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola**— **y ningún grant permanente la releva**: no hay en esa vertical un **grant vivo** —o sea un **ancla viva**: una fila de `permanent_grant_vertical` cuyo grant tenga `revocado_en` nulo (`NUCLEO/01` §2.4, `B/02` §2.4)— que valga como título (§2.4) |
 | `USER` · `GLOBAL` | la cuenta se borró |
 
 > **«Huérfano» acá es el addon cuyo objetivo murió.** No confundirlo con la *«huérfana»* del
@@ -423,6 +447,14 @@ ancló** (§2.4): en una vertical sin ancla no emite fuente, no hay título, y l
 **Y se vuelve a evaluar como las otras dos**, así que el día que el grant se revoca el addon pasa
 a huérfano y se corta — que es lo que §3.3 ya decidía por el otro camino.
 
+> **Esta mitad es la única de las tres que pregunta por algo que hasta la FASE 9-bis-4 no estaba
+> en la base.** Las otras dos se leen sobre columnas —el estado de la suscripción, `sucede_a` y
+> `sucedida_por`—, y ésta preguntaba por *«un grant vivo»* sobre una entidad que **no declaraba ni
+> estado ni revocación**: evaluada el día después del acto, no tenía contra qué contestarse. La
+> columna es `permanent_grant.revocado_en` (`B/02` §2.4) y el término quedó definido en
+> `NUCLEO/01` §2.4, con su inventario de consumidores. **La lectura no cambió**: lo que cambió es
+> que ahora se puede hacer.
+>
 > **Eso vale para `VERTICAL_SUBSCRIPTION` y para ningún otro scope, y conviene decirlo porque se
 > lee como si valiera para los cuatro.** Acá el objetivo **sí** había muerto y lo único que lo
 > rescataba era el grant, así que revocarlo devuelve la condición a *«huérfano»*. En
@@ -652,8 +684,9 @@ permiso y confirmación explícita (`NUCLEO/08` §3), la línea del owner es *«
 plata»* (`B/09` §2.4), y `S14` prohíbe toda decisión destructiva automática. Si en un caso concreto
 corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo decide la máquina.
 
-**Y el barrido gana una puerta y no gana una comprobación.** La tabla de puertas a un estado
-terminal de `B/09` §3 pasa a **nueve** filas con `S21`, y su veredicto es **no exenta**: el
+**Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
+de puertas a un estado terminal de `B/09` §3 —que hoy tiene **once**, desde que `S22` y `S23` le
+agregaron las suyas (`B/03` §3.2)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
 sin emitir nada (`EX-15`). Vuelve al barrido por la **salvedad 1**, no por la 4, porque su fila es
 terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona. **Y `S21` no

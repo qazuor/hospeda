@@ -203,6 +203,15 @@ dos filas describen un trámite que nadie empieza.
    nuevo, vuelve a suscribirse. Sin esta frase, *«qué addons corta»* (`B/19` §4 fila 13) se lee
    como que corta regalos, cuando la mitad puede ser lo que la persona pagaba.
 
+   **Y revocar DEJA MARCA en el instrumento, que es lo que vuelve auditable el acto más grave de
+   esta tabla.** El §35.4 exige auditar el grant, y hasta la FASE 9-bis-4 el registro de auditoría
+   era **lo único** que sabía que hubo una revocación: la fila del grant no declaraba ni estado ni
+   revocación, así que ningún predicado del diseño podía preguntar después si la concesión seguía
+   en pie. Ahora la revocación escribe `permanent_grant.revocado_en` y quién la firmó (`B/02`
+   §2.4). **Las anclas no se borran**: dejan de ser anclas vivas todas a la vez. Y la regla que
+   esta tabla ya imponía sigue igual —*«lo que no se puede es ejecutar una escritura que no esté
+   nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una décimotercera.
+
    **Y la frase de revocar dice además que el trial ya está consumido y no vuelve**
    (`DEC-TRIAL-009`). Recibir el grant consume el trial de esa vertical —`T2` o `T6`, según
    estuviera corriendo o no— y **la revocación no lo devuelve**: el beneficiario queda sin grant,

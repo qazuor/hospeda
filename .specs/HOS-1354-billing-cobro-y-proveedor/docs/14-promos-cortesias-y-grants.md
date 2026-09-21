@@ -225,6 +225,20 @@ ningún cobro ocurrió, así que ningún cobro se consumió.
 *«cancelar toda obligación de pago cubierta»*, así que **no queda nada que no cobrar**. Es la
 misma forma que `DEC-GRANT-004` eligió para *«sobre una pausa no se otorga»*.
 
+> **Y el predicado es *«un ANCLA VIVA en esa vertical»*, no *«el beneficiario tuvo un grant
+> alguna vez»*.** La razón es la frase de arriba leída al pie: lo que impide la cortesía es que
+> **no queda obligación de pago**, y sobre un grant **revocado** sí queda —el beneficiario volvió
+> a suscribirse y volvió a pagar (`DEC-GRANT-001`: revocar *«no reanuda el débito viejo: hay que
+> pedirle al cliente que autorice uno nuevo»*)—. Desde que la revocación se guarda
+> (`permanent_grant.revocado_en`, `B/02` §2.4) el término tiene columna y esta condición se lee
+> sola; escrita sin el adjetivo dejaba sin cortesía, para siempre, a quien alguna vez tuvo un
+> grant. Es la regla 2 de `NUCLEO/01` §2.4 sobre el sujeto nuevo.
+>
+> **Y es *«ancla viva»* y no *«grant vivo»* porque la cortesía es por suscripción**
+> (`DEC-GRANT-006`): lo que hay que saber es si **esa** vertical está cubierta por el grant, no si
+> el instrumento existe. Un grant vivo anclado sólo en Gastronomía **no impide** una cortesía
+> sobre la suscripción de Alojamiento, que el beneficiario sigue pagando.
+
 **Y al revés: otorgar un grant termina cualquier cortesía vigente.** No es una pérdida — el grant
 es estrictamente mejor y para siempre—, pero la confirmación del capítulo 08 §3.1 tiene que
 decirlo, porque el estado en el proveedor cambia de `paused` a `cancelled` y el cliente va a

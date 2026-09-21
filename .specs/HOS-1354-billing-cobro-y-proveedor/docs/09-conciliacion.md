@@ -271,21 +271,30 @@ esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
 > que alguno no se ejecutó.
 
 **Y una tercera, que tampoco le pregunta nada al proveedor: la vertical que `S13` —o `S20`— no
-alcanzó a cerrar.** Si un beneficiario tiene un **ancla viva** en la vertical V
-(`permanent_grant_vertical`, `B/02` §2.4) y además **una de estas dos cosas**, el fan-out no
-terminó de correr y se pone la **marca**:
+alcanzó a cerrar.** Si un beneficiario tiene un **ancla viva** en la vertical V —una fila de
+`permanent_grant_vertical` cuyo grant tiene **`revocado_en` nulo** (`B/02` §2.4, `NUCLEO/01`
+§2.4)— y además **una de estas dos cosas**, el fan-out no terminó de correr y se pone la
+**marca**:
 
 | qué no debería existir | qué acto quedó a medias | qué le está pasando al beneficiario |
 |---|---|---|
 | una **fila viva principal** suya en V | `S13` | **paga todos los meses una vertical que el grant le regaló**, con el §35.3 ordenando lo contrario |
 | una **fila viva de complemento** suya cuyo addon es **compatible con V**, si el grant lleva `includesAddons: true` | `S20` (`B/03` §3.2, `B/16` §3.4) | **paga todos los meses un addon que el flag le declaró gratis**, con el §35.2 ordenando lo contrario |
 
-Cuesta cero llamadas —todas esas filas están en nuestra base— y cubre el único estado que ese
-fan-out puede dejar colgado. **Es una comprobación y no dos**: los dos actos corren en el mismo
-instante, fallan del mismo modo y se arreglan reanudando lo mismo, así que partirla sería contar
-dos veces el mismo barrido. **Y la segunda fila no corre si el flag es `false`**: ahí el
-complemento vivo es lo correcto, no una divergencia.
+Cuesta cero llamadas —todas esas filas están en nuestra base, **incluida la columna que contesta
+si el grant sigue vivo**— y cubre el único estado que ese fan-out puede dejar colgado. **Es una
+comprobación y no dos**: los dos actos corren en el mismo instante, fallan del mismo modo y se
+arreglan reanudando lo mismo, así que partirla sería contar dos veces el mismo barrido. **Y la
+segunda fila no corre si el flag es `false`**: ahí el complemento vivo es lo correcto, no una
+divergencia.
 
+> **La segunda fila alcanza también a la corrida que `S20` cortó ENTRE sus dos escrituras, y eso
+> depende del orden en que están declaradas** (`B/03` §3.2). `S20` escribe primero el ancla-título
+> sobre la instancia y recién después cancela el cobro, así que una corrida cortada deja la fila
+> de complemento **todavía viva** — que es exactamente lo que esta comprobación pregunta. Con el
+> orden inverso preguntaba por la mitad que ya se había ejecutado y la población le quedaba
+> vacía.
+>
 > **Hace falta porque ése es, con esas palabras, el estado que el diseño declara indetectable.**
 > `B/03` §3.2 lo escribe al justificar el alcance de `S13`: *«la fila está `ACTIVE`, el proveedor
 > dice `authorized`, y para el barrido eso **coincide**»*. Las cinco comparaciones de arriba no lo
@@ -305,18 +314,32 @@ complemento vivo es lo correcto, no una divergencia.
 > una fila viva principal en su vertical. Si alguna vez la hubiera, el desenlace es la marca —una
 > persona—, no una cancelación automática.
 >
+> **Y la segunda fila tampoco la necesita, aunque `S20` sí tenga una ventana interna.** Entre sus
+> dos escrituras —el ancla-título primero, el cobro después (`B/03` §3.2)— existe un instante en
+> que el ancla ya está viva y la fila de complemento todavía también. Esa ventana **no es
+> legítima: es el estado que esta comprobación tiene que levantar**, y dura lo que dura el acto
+> frente a un barrido diario. Exentarla sería apagar el detector justo sobre la población que lo
+> obliga a existir.
+>
 > **Es el detector de un racimo, no de un caso.** La misma comprobación ve la vertical que `S13`
 > no alcanzó por una corrida cortada, la que no alcanzó porque **el acto nuevo no la disparó**, y
 > la que alcanzó con la llamada al proveedor fallida —esa última la ve **además** la salvedad 4,
 > por el otro lado—. Ninguna de las tres la cierra; las tres las detecta. **Y las mismas tres
 > valen para `S20`**, con el complemento en lugar de la principal: es el mismo fan-out, en el
 > mismo acto, con la misma llamada por fila.
+>
+> **En `S20` la primera de las tres tiene una granularidad más fina, y siguen siendo tres.** Una
+> corrida de `S20` puede cortarse **dentro de una fila**, entre sus dos escrituras, porque `S20`
+> escribe sobre dos entidades (`B/03` §3.2). Es el mismo caso —*«el fan-out no llegó»*— visto más
+> de cerca, no uno nuevo, y lo ve esta misma comprobación **gracias al orden**: la fila de
+> complemento sigue viva hasta la segunda escritura.
 
 **Y una cuarta, que tampoco le pregunta nada al proveedor: la instancia de addon viva cuyo
 objetivo ya murió.** Si una instancia está en uno de sus **dos** estados con autorización que
 puede cobrar —`PENDING_AUTHORIZATION` o `ACTIVE` (`B/03` §8)— y su objetivo **ya cumple la
 condición de orfandad del `B/16` §4.2**, **o el ancla que era su título ya no es la de un grant
-vivo**, `A5` no
+vivo** —el `permanent_grant` de esa ancla tiene **`revocado_en` escrito** (`B/02` §2.4,
+`NUCLEO/01` §2.4)—, `A5` no
 corrió: se pone la **marca**. Cuesta cero llamadas —la instancia, su objetivo y el ancla del
 grant están todos en nuestra base— y **no reescribe el predicado: lo delega** en el §4.2, que es
 su único dueño.
@@ -329,8 +352,21 @@ su único dueño.
 > existiendo**, así que la condición de orfandad **no se cumple nunca** y una comprobación
 > escrita sólo sobre el objetivo no encuentra a nadie. Es la misma delegación: el predicado de la
 > tercera cláusula vive en `B/03` §8, no acá. **Y se lee igual de barata con el enunciado nuevo**:
-> que el grant del ancla siga vivo es un dato de nuestra base, así que la comprobación sigue
-> costando **cero llamadas**.
+> que el grant del ancla siga vivo es un dato de nuestra base **desde que es una columna**
+> —`permanent_grant.revocado_en`, `B/02` §2.4—, así que la comprobación sigue costando **cero
+> llamadas**.
+>
+> **Esa frase se escribió antes que la columna, y hasta la FASE 9-bis-4 era falsa.** `B/02` §2.4
+> no declaraba para el grant **ni estado ni revocación**, así que *«que siga vivo»* no era un dato
+> de nuestra base: era un acto que nadie había guardado, y esta mitad del predicado —como la
+> tercera comprobación entera y como la tercera mitad de la orfandad— **no se podía evaluar**.
+> Lo que cambió no es el enunciado sino contra qué se lee.
+>
+> **Y la pregunta se hace DESPUÉS de la revocación, que es por qué el ancla no se borra.** Si
+> revocar borrara las filas de `permanent_grant_vertical`, esta mitad se quedaría sin sujeto
+> —`addon_instance` apuntaría a una fila que no existe— justo en el instante en que tiene que
+> contestar. Revocar **marca el instrumento**; las anclas sobreviven como filas y dejan de ser
+> vivas todas a la vez (`B/02` §2.4).
 >
 > **Es el reverso exacto de la salvedad 1, y hacen falta las dos.** La salvedad 1 mira una
 > instancia **terminal** con el preapproval **vivo** —`A5` corrió y la llamada al proveedor no se
