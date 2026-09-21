@@ -14,7 +14,7 @@ cierra:
 
 # 03 · Las máquinas de estado
 
-La mitad de núcleo del capítulo 03 del programa: las seis reglas de lectura que valen para todas las máquinas. Las máquinas mismas viven en la épica de verticales (Trial, Publicación, Postulación de Partner) o en la de billing (Suscripción, Grace, Pausa, Pago, Pago manual, Addon, la regla de no-retroceso).
+La mitad de núcleo del capítulo 03 del programa: las siete reglas de lectura que valen para todas las máquinas. Las máquinas mismas viven en la épica de verticales (Trial, Publicación, Postulación de Partner) o en la de billing (Suscripción, Grace, Pausa, Pago, Pago manual, Addon, la regla de no-retroceso).
 
 El §63 pide ocho explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
 Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*. Acá
@@ -28,7 +28,7 @@ son las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condic
 
 ## 1. Cómo se leen estas máquinas
 
-Seis reglas que valen para todas. Están acá arriba porque son la diferencia entre una
+Siete reglas que valen para todas. Están acá arriba porque son la diferencia entre una
 máquina de estados y una convención.
 
 1. **La tabla de transiciones es exhaustiva.** Lo que no está, no pasa. Un intento de
@@ -55,6 +55,25 @@ máquina de estados y una convención.
 6. **Grace y Pause no son máquinas independientes**, y el §63 las nombra igual. Son sub-estados
    de Suscripción **con reloj propio y datos propios**, y se modelan aparte por eso: un estado
    sin reloj no puede vencer solo, y los dos vencen. Se describen en §4 y §5.
+7. **Dos filas que comparten `(desde, evento)` tienen guardas disjuntas.** La regla 1 dice qué
+   pasa con lo que **falta** en una tabla y no decía nada de lo que **sobra**: dos filas que
+   aplican a la vez sobre el mismo par dejan el desenlace en manos del **orden en que una
+   implementación recorra la tabla**, que es exactamente la diferencia entre una máquina de
+   estados y una convención. **No se dirime por precedencia**, porque una precedencia es una
+   séptima cosa que hay que acordarse de leer: se exige que **las condiciones no se puedan
+   satisfacer las dos a la vez**, y una tabla que no lo cumpla es un defecto de la tabla.
+
+   **Qué pasa si igual se solapan**: el intento **cae en la regla 1** —no se ejecuta, se registra
+   como evento de dominio y, si tocaba plata o estado, pone la marca—. Elegir una de las dos sería
+   convertir un defecto de diseño en un comportamiento, y convertirlo **en silencio**.
+
+   **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
+   las tablas de transiciones de las nueve máquinas, en las dos épicas. El único par con dos
+   filas y dos destinos distintos que el diseño declara hoy es `T1`/`T6` (`V/03` §2), y sus
+   guardas se escribieron disjuntas por construcción: una exige que **no** haya fuente viva de
+   clase `TÍTULO` y la otra que **sí**. **Que siga siendo el único no es una afirmación de este
+   capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no depende de que alguien
+   vuelva a recorrer las nueve tablas a mano.
 
 ---
 

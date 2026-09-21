@@ -90,7 +90,7 @@ va a usar sin repetirla:
 | quién pregunta | qué lee |
 |---|---|
 | **la pricing** (§47) y todo camino de alta | la **versión vigente** de cada plan de la vertical, **y sólo si es vendible** |
-| **una suscripción viva** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
+| **una fuente `SUSCRIPCIÓN`** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
 | **la derivación del plan de trial** (§10.3) | las versiones **vigentes y vendibles**, la de `rank` más alto y la más baja (`DEC-ARCH-002`) |
 | **la comparación de tiers** (§27, §28) | los `rank` de las versiones **vigentes y vendibles** |
 | **un grant permanente** (§35) | la **versión vigente** del plan que ancló **en esa vertical**, **sea vendible o no** (`12-contrato-de-cobertura.md` §2.8) |
@@ -125,10 +125,16 @@ si la resolución les exigiera `vendible`, **nadie tendría nada**, nunca.
 > separado.
 
 Con ese enunciado las **seis** filas quedan del lado correcto sin excepción: la pricing, la
-derivación del plan de trial y la comparación de tiers **venden**, y piden las dos; la suscripción
-viva, el grant y las dos versiones no vendibles **resuelven lo que alguien tiene**, y ninguna pide
-`vendible`. Lo que cambia entre esas tres últimas es sólo **cuál versión** toman: la suscripción, la
-que ancló; el grant y las no vendibles, la vigente.
+derivación del plan de trial y la comparación de tiers **venden**, y piden las dos; la fuente
+`SUSCRIPCIÓN`, el grant y las dos versiones no vendibles **resuelven lo que alguien tiene**, y
+ninguna pide `vendible`. Lo que cambia entre esas tres últimas es sólo **cuál versión** toman: la
+suscripción, la que ancló; el grant y las no vendibles, la vigente.
+
+**Y la fila 2 dice «fuente» y no «suscripción viva» a propósito.** Lo que lee el catálogo acá es
+**verticales**, y verticales no ve filas de suscripción: ve fuentes (`12-contrato…` §4, y los dos
+sentidos de *«vivo»* en el cap. 01 (núcleo) §2.4). La referencia que transporta la fuente **es** la
+versión anclada, así que la fila no cambia de contenido — cambia de vocabulario, para que el que
+la implemente no salga a buscar un estado que no le llega.
 
 **Y la mitad que sigue rigiendo igual**: ninguna lectura de catálogo resuelve **lo que se compró**.
 La referencia de una fuente `ADDON` sale de la **instancia** y no del producto (`B/02` §2.4) por

@@ -89,6 +89,13 @@ simultánea**, que es lo que `DEC-CONC-001` fue a evitar.
 preapproval, la suscripción terminó, o el proveedor lo canceló de forma terminal al rechazar el
 primer cobro (`B/12` §4.4).
 
+> **Éste es el conjunto que `NUCLEO/01` §2.4 llama «fila viva», y es de esta épica.** El programa
+> usa la palabra *«vivo»* para dos cosas distintas y sólo esta sección enumera la primera. La otra
+> —**«fuente viva»**— es la del contrato de cobertura, y **no coinciden**: cuatro de estos seis
+> **no emiten ninguna fuente** (`12-contrato…` §2.6). Una condición de la épica de verticales que
+> se escriba sobre las filas vivas de acá **no se puede evaluar** del otro lado de la frontera, y
+> ése fue el origen de dos críticos opuestos sobre la misma transición.
+
 **`RECONCILIATION_REQUIRED` ya no figura acá porque dejó de ser un estado** (`B/03` §3.1): es la
 marca `requiere_conciliación` sobre la fila, que conserva el estado que tenía. La exclusión de hoy
 estaba escrita con una razón buena —*«si una suscripción necesita intervención humana, la persona

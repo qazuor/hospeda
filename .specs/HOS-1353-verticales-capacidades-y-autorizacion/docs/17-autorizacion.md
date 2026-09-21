@@ -65,7 +65,7 @@ falla.
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | inhabilitada, o correo sin verificar |
 | 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? | **no existe** — las tres juntas |
-| 5 | **título vivo** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
+| 5 | **fuente viva** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
 | 7 | **limits** | ¿le queda cupo? | excedido |
 
@@ -81,8 +81,9 @@ falla.
    anteriores se responden con lo que ya está resuelto; éste lee datos. Ponerlo antes hace
    trabajo que la mayoría de los rechazos no necesita.
 4. **El paso 5 no decide capacidades: decide si hay de dónde resolverlas.** Una fuente viva es la
-   que el contrato de cobertura devuelve con su referencia; **qué otorga esa referencia es el paso
-   6**. Ahí se separa quien puede publicar de quien sólo puede escribir borradores. Un paso 5 que
+   que el contrato de cobertura devuelve con su referencia (cap. 01 (núcleo) §2.4 — y **no** es
+   una *fila* viva, que es otra cosa y no cruza la frontera); **qué otorga esa referencia es el
+   paso 6**. Ahí se separa quien puede publicar de quien sólo puede escribir borradores. Un paso 5 que
    contestara *«sin cobertura»* a alguien que tiene una fuente viva con conjunto efectivo vacío
    estaría dando el veredicto del 6 con el mensaje del 5 — y ésa es la forma exacta en que el paso
    5 dejó de tener respuesta para `PRE_TRIAL`.

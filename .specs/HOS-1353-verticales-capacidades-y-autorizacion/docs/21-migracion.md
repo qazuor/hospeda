@@ -80,6 +80,12 @@ construcción —*«`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene»* (`V/
 dispara con *«la ficha queda publicada»*, que es la **transición** de publicar, y sus fichas ya
 están publicadas.
 
+**Y la guarda nueva del par `T1`/`T6` no cambia esta conclusión, que es lo que hay que
+verificar.** Desde que `T1` exige `cubierto` **falso** y `T6` lo exige **verdadero** (`V/03` §2),
+el mismo evento podría mandar a alguien a `TRIAL_CONVERTED` en vez de a `TRIAL_ACTIVE` — pero **no
+la mañana del corte**: las ocho suscripciones se cancelan (§2.1), así que **nadie tiene un título
+vivo** y la única de las dos que puede disparar es `T1`. Lo de abajo vale sin ramas.
+
 **Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
 un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
 que **las fichas publicadas de Alojamiento se despublican la mañana del corte**. No es una

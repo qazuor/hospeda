@@ -278,6 +278,17 @@ puede elegir qué decir:
 `V/15` §4.4 reparte las ventanas exactamente por esa diferencia: *«vencimiento de un addon · fin de
 una cortesía»* tienen ventana; *«revocación de un grant»* no.
 
+> **El `hasta` es el fin de la emisión, no una etiqueta: una fuente con `hasta: fecha` deja de
+> aparecer en `fuentes` cuando esa fecha pasa.**
+
+Parece obvio y hay que escribirlo, porque la alternativa ya se materializó una vez. Una fuente se
+emite porque **un estado lo dice**, y si ese estado no se puede mover el `hasta` queda en el
+pasado y la fuente **sigue contando para `cubierto`** — una cobertura perpetua que no falla
+ruidosamente, regala, y que ningún aviso muestra porque el aviso sólo mira la ventana. Fue el
+desenlace del trial que quedaba en `TRIAL_ACTIVE` sin salida alcanzable (`V/03` §2). La máquina que
+emite la fuente es la responsable de tener salida; este renglón es la segunda línea, para que un
+estado atascado se note como fuente que se apaga en vez de como capacidad que no se apaga nunca.
+
 #### Qué emite cada estado de la suscripción — los nueve, sin huecos
 
 El `hasta` estaba enumerado por **situación** y no por **estado**, y así quedaban cuatro de los
@@ -464,6 +475,17 @@ Cuatro ausencias que parecen faltas y son decisiones:
   `GRACE_PERIOD`: el §20 y el §21 dicen que durante el grace **el servicio sigue**, así que los dos
   cubren y la diferencia es de billing. Pasarla sería invitar a que alguien escriba una regla de
   producto sobre un estado de cobranza.
+
+  **Y la consecuencia obliga en la dirección que nadie miró: una regla de verticales que se
+  condicione sobre un estado de suscripción no es una regla laxa, es una regla que no se puede
+  evaluar.** Tres condiciones de la máquina de trial estaban escritas así —*«se autoriza una
+  suscripción»*, *«no hay suscripción autorizada»*, *«ya hay una suscripción viva»*— y las tres se
+  reescribieron sobre `cubierto` y sobre la clase de las fuentes (`V/03` §2). El guard es
+  `G-R4-B` (`V/20` §2). **Lo que esta prohibición cuesta también se declara**: los tres estados
+  que no emiten fuente (§2.6) son **indistinguibles de no tener nada** desde el otro lado, y hay
+  una regla de producto —a quién le corresponde un trial— donde esa diferencia importaría. Se deja
+  dicho en `V/03` §2 y no se resuelve acá: resolverlo es agregarle un segundo hecho a la frontera,
+  y eso dispara la regla de vigilancia del §4.2.
 - **Tampoco cruza el estado de la instancia de addon**, y por el mismo motivo: `EXPIRED` y
   `CANCELLED` son de billing, y lo único que verticales necesita saber es si la fuente está en la
   lista.

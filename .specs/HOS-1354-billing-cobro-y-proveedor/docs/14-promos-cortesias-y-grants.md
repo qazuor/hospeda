@@ -156,9 +156,10 @@ que se puede verificar: la hora depende de cuándo corrió un job, y eso no es u
 la que leyó al armar el lote.
 
 Sin eso, un job que selecciona *«los trials que vencen hoy»* y los procesa cinco minutos después
-vence uno que, en el medio, se extendió diez días. La condición de T3 —*llega la fecha de fin*—
-dejó de cumplirse, y la tabla del capítulo 03 §1 es exhaustiva: **lo que no cumple la condición no
-se ejecuta.**
+vence uno que, en el medio, se extendió diez días. El **evento** de T3 —*llega la fecha de fin*—
+dejó de ocurrir, y la tabla del capítulo 03 §1 es exhaustiva: **lo que la tabla no declara no se
+ejecuta.** T3 **no tiene ninguna otra condición**, así que la fecha releída es lo único que la
+frena: si el job no la re-lee, nada más lo va a hacer.
 
 ### 3.4 Un canje rechazado no se consume
 

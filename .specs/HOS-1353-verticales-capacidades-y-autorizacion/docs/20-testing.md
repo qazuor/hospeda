@@ -59,6 +59,22 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R3 | una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; o la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
 | G-R3-B | una transición **disparada por el reloj** otorga algo, en vez de quitar | cap. 17 §3.4 |
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
+| G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las nueve máquinas, en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
+| G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
+
+**`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
+mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace
+en el orden de recorrido, y `T1`/`T6` es el único par con dos destinos que el diseño declara hoy
+—que siga siendo el único es **lo que este guard cuenta**, no una lectura a mano—. El segundo
+mira **de qué habla** una guarda: `T6` estaba escrita sobre *«una suscripción viva»*, un predicado
+que el §4 del contrato **le prohíbe evaluar** al lado que tiene que evaluarlo, así que su
+implementación iba a leer otra cosa sin decirlo. Disjuntas y **evaluables** son dos propiedades
+distintas; `T6` fallaba las dos, y cada guard atrapa una.
+
+**`G-R4` es del núcleo y el catálogo de guards está partido en dos épicas** —la numeración es una
+sola—. Esta fila es la definición; `B/20` §2 la repite como referencia cruzada, para que las seis
+tablas de billing no queden vigiladas por un guard que su propio catálogo no nombra. **Es un
+guard, no dos.**
 
 **`G-R3` es el que más carga lleva, y conviene decir por qué.** El arreglo del trial concentra todo
 en un solo dato: **si alguien siembra una de esas dos versiones con una clave comercial, toda la

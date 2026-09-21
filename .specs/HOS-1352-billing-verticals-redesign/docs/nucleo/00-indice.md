@@ -90,9 +90,9 @@ preguntar **una vez** si están todos.
 | # | capítulo | qué define |
 |---|---|---|
 | `00` | este documento | el mapa y las reglas de escritura |
-| `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, el criterio Eje 1 / Eje 2 |
+| `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los dos sentidos de «vivo», el criterio Eje 1 / Eje 2 |
 | `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, y el registro de eventos |
-| `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las seis reglas de lectura que valen para las nueve máquinas |
+| `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las nueve máquinas |
 | `04` | [invariantes](./04-invariantes.md) | los 51, con quién sostiene cada uno |
 | `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario |
 | `08` | [auditoría y observabilidad](./08-auditoria-y-observabilidad.md) | qué es auditable y los identificadores de correlación |

@@ -53,6 +53,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G11 | se le pide un **trial al proveedor** | `D12` |
 | G-R1-A | una fila con `sucede_a` no nulo apunta a una predecesora **fuera de** `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2 |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
+| G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 
 **Los dos de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
 `G-R1-A` impide declarar una sucesión desde una `SUSPENDED` —autorización de estado

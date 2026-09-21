@@ -205,6 +205,57 @@ fecha de fin de servicio **es un dato nuestro**, no del proveedor.
    columna que acepte cualquier cadena no tiene máquina, tiene una convención. El capítulo 02
    fija que cada columna de estado lleva su restricción de dominio.
 
+### 2.4 «Vivo» nombra dos conjuntos, y nunca el mismo
+
+La palabra decidía tres cosas caras —el candado del §11, el disparo de `S17` y la condición de
+`T6`— y **este capítulo no la definía**, contra su propia regla de que *«todo lo que el resto de
+la spec use tiene que estar acá»*. Los dos conjuntos que nombraba difieren en **la mitad de sus
+seis estados**, y el último consumidor que la usó eligió el equivocado. Acá se separan, y cada uno
+tiene un nombre propio que ya no se puede confundir con el otro.
+
+| término | qué es | dónde se enumera | para qué existe |
+|---|---|---|---|
+| **fila viva** | una fila —de suscripción o de instancia de addon— que **todavía tiene una autorización de cobro que puede cobrar** | los **seis** de la suscripción: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2) | el candado del §11: impedir un segundo `INSERT` sobre una autorización que sigue pudiendo cobrar |
+| **fuente viva** | una fuente que el contrato de cobertura **devuelve hoy** en `fuentes` | la lista de esa respuesta, resuelta en el momento ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2) | resolver la cobertura y las capacidades: los pasos 5 y 6 de la autorización |
+
+**Los tres que quedan afuera de la primera lo están por la razón que le da su nombre**:
+`ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
+canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
+
+**Y los dos conjuntos no coinciden, con la distancia contada contra la tabla de diez filas del
+`12-contrato…` §2.6.** De las **seis** filas vivas, **tres no emiten ninguna fuente**:
+`PENDING_AUTHORIZATION`, `SUSPENDED` y `PAUSED` cuando el motivo es `CUSTOMER_REQUEST`. Y la
+cuarta discrepancia es de otra forma: `PAUSED` por `COURTESY` **sí** emite, pero con `tipo:
+CORTESÍA` y no como suscripción — o sea que `PAUSED` es el único de los seis cuya respuesta **no
+la decide el estado**, sino el motivo.
+
+Una fila viva no implica una fuente viva, y una fuente viva no implica una fila viva —un grant
+permanente y el piso `BASE` no tienen fila de suscripción ninguna—. **Las dos direcciones
+fallan**, así que no hay ninguna lectura en la que una sea el proxy de la otra.
+
+**Y «viva» tampoco es «cubre».** Una fuente viva puede ser de clase `BASE` o `COMPLEMENTO`, y
+ninguna de las dos cuenta para `cubierto` (`12-contrato…` §2.4): estar en la lista y contar para
+la cobertura son dos preguntas, y la segunda se escribe **nombrando la clase**.
+
+**Dos reglas de uso, porque la ambigüedad ya costó dos críticos distintos:**
+
+1. **Ninguna regla de la épica de verticales se condiciona sobre una fila viva.** No es una
+   preferencia: **no puede**, porque *«el estado exacto de la suscripción no cruza»* (`12-contrato…`
+   §4) y lo único que verticales recibe es `cubierto` y `fuentes`. Una condición de verticales
+   escrita sobre filas vivas es inejecutable del lado que tiene que evaluarla, y el que la escriba
+   va a terminar leyendo `cubierto` —que es **otro conjunto**— sin decirlo.
+2. **«Vivo» sin calificar no se usa en un predicado.** En prosa explicativa se entiende solo; en
+   la columna *condición* de una tabla de transiciones, en el enunciado de un invariante o en el
+   de un guard va **«fila viva»** o **«fuente viva de clase `TÍTULO`»**, nunca la palabra sola.
+   Lo vigila `G-R4-B` (`V/20` §2) para el primer caso, que es el que cruza la frontera.
+
+**El caso testigo, y son dos en direcciones opuestas.** `T6` se escribió con *«ya hay una
+suscripción viva»* leyendo las seis filas vivas, y sobre las tres que no emiten fuente eso
+significaba **quemarle a alguien su trial único de por vida sin darle nada a cambio**; leerlo como
+`cubierto` —el único conjunto que verticales puede observar— dejaba a `T1` disparando sobre esas
+mismas tres, con el desenlace opuesto. **El mismo término, dos consumidores, dos daños
+opuestos**, y ninguna de las dos lecturas era arreglable sin nombrar la otra.
+
 ---
 
 ## 3. Dónde vive la pausa · cierra `A-SUB-02`

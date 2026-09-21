@@ -135,10 +135,14 @@ suscripción.
 > **La capacidad de activación está en la versión de pre-trial de una vertical si y sólo si esa
 > vertical declara evento de activación y su plan de trial tiene días > 0.**
 
-Es la condición de `T1` expresada **como dato en vez de como rama**, y un guard la verifica en las
-dos direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum de verticales.
+Es la **mitad de catálogo** de la condición de `T1` —que `T6` comparte palabra por palabra
+(`V/03` §2)— expresada **como dato en vez de como rama**, y un guard la verifica en las dos
+direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum de verticales. La
+otra mitad de esas dos condiciones es del **sujeto** —`cubierto`, y es lo que las vuelve
+disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el momento.
 Partner, que hoy tiene el trial en cero (`DEC-TRIAL-003`) y **ningún evento declarado**
-(`DEC-TRIAL-006`), no la lleva.
+(`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las dos transiciones dispara ahí**,
+que es lo que impide quemarle el trial a alguien antes de que la vertical lo ofrezca.
 
 **Y esa condición necesita una columna que no existía**: `vertical.evento_de_activacion`. Sin
 ella el lado izquierdo del «si y sólo si» no se puede leer, y el guard **no verifica nada** — se

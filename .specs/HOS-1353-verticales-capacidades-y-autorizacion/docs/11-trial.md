@@ -27,8 +27,8 @@ donde eso se siente injusto o se puede explotar.
 La respuesta de fondo es una sola y conviene tenerla a la vista antes de los casos:
 
 > **El trial no vuelve. Lo que puede haber es reparación hacia adelante.** Nada rebobina la
-> máquina; lo que existe es extenderla mientras está viva, o compensar después con otro
-> instrumento.
+> máquina; lo que existe es extenderla mientras corre —o sea en `TRIAL_ACTIVE`—, o compensar
+> después con otro instrumento.
 >
 > Es lo que permite sostener el §10.2 sin excepciones —y por lo tanto sin un camino por donde se
 > recupere un trial— y al mismo tiempo arreglar lo que rompimos nosotros.
@@ -92,7 +92,7 @@ El capítulo 03 §2 es terminante: no existe transición de vuelta a `TRIAL_ACTI
 
 | cuándo se repara | con qué | por qué alcanza |
 |---|---|---|
-| el trial **sigue vivo** | una extensión por los días perdidos: es **T4**, la transición que ya existe | el trial nunca murió; sólo se corre su fecha de fin |
+| el trial está en **`TRIAL_ACTIVE`** | una extensión por los días perdidos: es **T4**, la transición que ya existe | el trial nunca murió; sólo se corre su fecha de fin |
 | el trial **ya venció** | una **cortesía temporal** sobre la suscripción que tome después (§34, `DEC-GRANT-002`) | no hay trial que extender, y la cortesía es el instrumento que el PDR ya tiene para sostener servicio sin cobrar |
 
 **Las dos las firma `SUPER_ADMIN` con motivo escrito**, porque las dos entregan servicio sin
@@ -197,7 +197,10 @@ repite porque es el error más fácil de cometer al implementar la derivación.
 
 El §10.5 dice *«no se permite adquirir addons mientras el user solamente está en trial»*. La
 palabra **«solamente»** abre un caso que el PDR no resuelve: alguien en trial de Gastronomía
-**y** con suscripción comercial viva de Alojamiento no está solamente en trial.
+**y** con un título comercial en Alojamiento —una fuente viva de clase `TÍTULO` que no es un
+trial— no está solamente en trial. Se dice así y no *«con suscripción viva»* porque la frase
+tiene que ser evaluable del lado de verticales: los dos sentidos de *«vivo»* están separados en
+el cap. 01 (núcleo) §2.4, y el que nombra filas de suscripción no cruza la frontera.
 
 ### 5.2 Son dos preguntas y tienen respuestas distintas
 
@@ -259,10 +262,17 @@ verticales las indica claramente a las tres.
 
 ### 6.3 El corte al suscribirse es por vertical
 
-T2 y T5 ya cortan la campaña al autorizarse una suscripción (cap. 03 §2). Lo que hay que decir
-acá, porque es donde se equivoca: **corta la de esa vertical y ninguna otra.** Quien se suscribe
-a Alojamiento y sigue sin suscribirse en Gastronomía tiene que seguir recibiendo la de
-Gastronomía — el trial que no convirtió es el de allá.
+T2 y T5 ya cortan la campaña cuando **aparece una fuente viva de clase `TÍTULO`** en esa vertical
+(cap. 03 §2). Lo que hay que decir acá, porque es donde se equivoca: **corta la de esa vertical y
+ninguna otra.** Quien se suscribe a Alojamiento y sigue sin suscribirse en Gastronomía tiene que
+seguir recibiendo la de Gastronomía — el trial que no convirtió es el de allá.
+
+**Y el disparador es la aparición del título, no la autorización de una suscripción**, que es
+como estaba escrito y dejaba afuera tres formas de quedar cubierto: la cortesía, el grant, y la
+suscripción que **se recupera** desde `SUSPENDED` o **se reanuda** desde `PAUSED` sin que se
+autorice nada nuevo. En los tres casos la persona está cubierta y la campaña le sigue pidiendo que
+se suscriba. La fuente de la que sale la vertical es la misma que la del corte, así que la regla de
+*«esa vertical y ninguna otra»* no cambia.
 
 Con la consolidación de §6.2 eso se ve directo: la pieza del hito siguiente sale nombrando una
 vertical menos.

@@ -177,6 +177,11 @@ consideraba seguro de reactivar aunque hubiera otra `ACTIVE` marcada, que es tex
 que la condición existe para detener. Con la marca de `B/02` §2.2 ese agujero desaparece **sin
 tocar la condición**, porque la fila marcada conserva su estado real y entra en la cuenta.
 
+**Y es la segunda vez que la palabra *«viva»* rompe algo leyendo el conjunto equivocado**, así que
+conviene decir cuál lee ésta: la **fila viva** de `NUCLEO/01` §2.4 —los seis de `B/02` §2.2—, que
+es la lectura correcta acá porque lo que se está evitando es **un segundo cobro**, no una decisión
+de cobertura. Esta condición es de billing y sobre filas de billing; no cruza la frontera.
+
 **Y una sucesora en `PENDING_AUTHORIZATION` no bloquea, a propósito.** Todavía no puede cobrar
 —`D8` le exige fecha de primer cobro futura— y el pago tardío que reactiva a la predecesora **es la
 evidencia de que la sucesión ya no hace falta**. Bloquear ahí dejaría a la persona con la vieja sin
