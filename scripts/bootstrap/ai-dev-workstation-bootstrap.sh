@@ -6,11 +6,12 @@ set -euo pipefail
 
 usage() {
   cat <<'HELP'
-Usage: ai-dev-workstation-bootstrap.sh [--plan|--dry-run|--verify] [options]
+Usage: ai-dev-workstation-bootstrap.sh [--plan|--dry-run|--check|--verify] [options]
 
   --plan    print the reproducible installation plan (default)
   --dry-run alias for --plan; never writes or installs anything
   --verify  inspect available tools and versions without changing anything
+  --check   alias for --verify; inspect tools, pins and managed paths
   --backup-dir PATH  record the future backup destination in the plan
   --restore PATH     rejected until the apply/restore phase is implemented
   --help    show this help
@@ -33,7 +34,7 @@ ENGRAM_PIN="1.20.0"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --plan|--dry-run) mode=plan ;;
-    --verify) mode=verify ;;
+    --verify|--check) mode=verify ;;
     --backup-dir)
       [ "$#" -ge 2 ] || { echo 'ERROR: --backup-dir requiere PATH' >&2; exit 2; }
       backup_dir="$2"; shift ;;

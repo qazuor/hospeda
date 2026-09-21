@@ -3033,3 +3033,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   wrappers y health checks).
 - La implementación ejecutable todavía queda pendiente; el artifact conserva
   la tarea abierta para no presentarla como terminada.
+
+## Gate 130 · Bootstrap read-only con contrato de check
+
+- `scripts/bootstrap/ai-dev-workstation-bootstrap.sh` acepta ahora `--check`
+  como alias explícito de `--verify`, además de `--plan` y `--dry-run`.
+- La prueba local validó Bash, Git, jq, Bun, Node, OpenCode, Gentle-AI y
+  Engram; los tres pins operativos (`1.18.31`, `2.9.0`, `1.20.0`) quedaron en
+  estado `ok`.
+- La ejecución terminó con `secret-values=not-read` y `mutations=none`.
+  `--apply` y `--restore` siguen deliberadamente sin implementar hasta cerrar
+  el diseño de backups y el adapter de Hospeda.
