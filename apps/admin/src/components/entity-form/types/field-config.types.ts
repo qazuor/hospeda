@@ -478,6 +478,17 @@ export type FieldConfig = {
     derivedFields?: DerivedFieldConfig[];
     computedValue?: (formData: Record<string, unknown>) => unknown;
 
+    /**
+     * Reserved so the historical typo cannot come back (HOS-1068).
+     *
+     * Typed `never` rather than simply absent: the form-config prop is a union
+     * of array types, and TypeScript skips excess-property checking against
+     * such a target, so an undeclared `config` was accepted in silence at
+     * every route call site. `never` refuses the assignment itself, with no
+     * dependence on freshness.
+     */
+    config?: never;
+
     // Styling
     className?: string;
 

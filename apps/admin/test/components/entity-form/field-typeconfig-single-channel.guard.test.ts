@@ -10,17 +10,25 @@
  * exactly what made `/content/moderation-terms/new` impossible to submit: both
  * of its required selects opened on "Sin opciones disponibles".
  *
- * Two assertions, because the hole has two halves:
+ * Simply DELETING `config` does not close the hole, and that was measured
+ * rather than assumed: with the property gone, a field literal declaring
+ * `config: {...}` — or `zzzTotallyBogusProperty: 1` — still typechecks with exit
+ * 0. The form-config prop is typed `ConsolidatedSectionConfig[] |
+ * SectionConfig[]`, and TypeScript performs no excess-property check against a
+ * union target, so every route call site accepts unknown keys in silence.
  *
- *  1. The dead twin must stay deleted. While `config` is a declared property of
- *     `FieldConfig`, excess-property checking cannot reject it and the next typo
- *     costs another few months. With it gone, `config:` on any field literal is a
- *     typecheck error in all 93+ files at once — that is the real defense, and
- *     this test only keeps it from being undone.
- *  2. The one route that had the typo declares its select options where the
- *     renderer looks. Asserted on the brace-matched `typeConfig` object of each
- *     FIELD, so neither another field's `typeConfig` nor a leftover `config`
- *     sibling can vouch for it.
+ * Two defenses close it, and this guard keeps both in place:
+ *
+ *  1. `FieldConfig.config` is declared `never`. Assigning an object to `never`
+ *     fails on its own terms, with no dependence on freshness, so the exact
+ *     historical typo is now an error in all 93+ forms at once without touching
+ *     any of them.
+ *  2. This route's sections carry `satisfies SectionConfig[]`, which restores
+ *     excess-property checking for the whole literal — that is what catches the
+ *     NEXT misspelling, the one nobody has reserved a name for.
+ *
+ * Verified by mutation: reverting either defense reproduces a typecheck that
+ * passes over the original bug.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -97,16 +105,23 @@ const readTypeConfig = (fieldLiteral: string, fieldId: string): string => {
 };
 
 describe('FieldConfig exposes exactly one type-config channel (HOS-1068)', () => {
-    it('does not declare a `config` property alongside `typeConfig`', () => {
+    it('reserves `config` as `never` so the historical typo cannot be assigned', () => {
         const body = readFieldConfigBody(read(FIELD_CONFIG_TYPES));
 
         // Anchored to a top-level member of the type (four-space indent, then
         // the key), so a `config` nested inside some member's inline object
-        // literal is not mistaken for the dead twin.
+        // literal is neither mistaken for the reservation nor able to satisfy it.
+        const declaration = / {4}config\?:\s*([^;]+);/.exec(body);
+
         expect(
-            /^ {4}config\??:/m.test(body),
-            'FieldConfig declares a `config` property again. No renderer reads it — declaring it re-opens HOS-1068, where options written under `config` were silently dropped and the select rendered "no options available". Type-specific configuration goes under `typeConfig`.'
-        ).toBe(false);
+            declaration,
+            'FieldConfig no longer reserves `config`. Deleting the property is NOT enough: the form-config prop is a union of array types, against which TypeScript skips excess-property checking, so an undeclared `config: {...}` typechecks at every route call site exactly as it did in HOS-1068. Declare `config?: never;`.'
+        ).not.toBeNull();
+
+        expect(
+            declaration?.[1].trim(),
+            'FieldConfig declares `config` with a real type again. No renderer reads it, so anything written there is dropped in silence — which is how both required selects of /content/moderation-terms/new came to render "no options available". It must stay `never`.'
+        ).toBe('never');
     });
 
     it('still declares the `typeConfig` property every renderer reads', () => {
@@ -121,6 +136,18 @@ describe('FieldConfig exposes exactly one type-config channel (HOS-1068)', () =>
 
 describe('the moderation-term create form declares its options where the renderer reads them (HOS-1068)', () => {
     const CONFIGURED_FIELDS = ['kind', 'category', 'severity'] as const;
+
+    /**
+     * `config?: never` only stops the ONE name that has already burned us.
+     * `satisfies` is what makes the compiler reject a key nobody anticipated,
+     * and without it this file's literal is checked against nothing.
+     */
+    it('pins its sections with `satisfies` so unknown keys are rejected', () => {
+        expect(
+            read(MODERATION_TERM_NEW_ROUTE),
+            'The sections literal of /content/moderation-terms/new no longer carries `satisfies SectionConfig[]`. Without it TypeScript performs no excess-property check on this form — a misspelled field key is accepted silently and surfaces months later as an empty control.'
+        ).toMatch(/\]\s*satisfies\s+SectionConfig\[\]/);
+    });
 
     for (const fieldId of CONFIGURED_FIELDS) {
         it(`field '${fieldId}' carries its configuration under typeConfig`, () => {

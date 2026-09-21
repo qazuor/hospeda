@@ -2,6 +2,7 @@ import { createContentModerationTermSchema, PermissionEnum } from '@repo/schemas
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { EntityCreatePageBase } from '@/components/entity-pages';
 import { useCreateModerationTerm } from '@/features/content-moderation/hooks/useModerationTermQuery';
@@ -134,7 +135,7 @@ function ModerationTermCreatePage() {
                                 }
                             ]
                         }
-                    ],
+                    ] satisfies SectionConfig[],
                     metadata: { entityName, entityNamePlural }
                 })}
                 configDeps={[]}
