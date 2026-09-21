@@ -99,19 +99,43 @@ const DRIZZLE_UNIQUE_SUFFIX = /_(unique|key)$/;
 /**
  * Derives the offending column name from a Postgres unique constraint name.
  *
- * Returns `null` — never a guess — when the name does not follow Drizzle's
+ * Returns `null` — never a guess — unless the name genuinely follows Drizzle's
  * `<table>_<column>_unique` (or `_key`) convention. That nullability is the
- * fix, not a detail: the previous version had no failure mode, so it answered
- * `"pkey"` for `r_entity_tag_pkey` and `"featured"` for
- * `uq_accommodation_media_single_featured`, and the caller had no way to tell
- * a real column from a fragment of a constraint name.
+ * fix, not a detail: the original version had no failure mode at all, so it
+ * answered `"pkey"` for `r_entity_tag_pkey` and `"featured"` for
+ * `uq_accommodation_media_single_featured`.
  *
- * When the driver reported the `table`, the column is recovered EXACTLY by
- * stripping the table prefix and the suffix, which is the only way to get a
- * multi-word column right: `user_push_tokens_token_hash_unique` over table
- * `user_push_tokens` yields `token_hash`, where the last-segment heuristic
- * yields `hash`. The heuristic is kept only for the case where no `table` was
- * reported.
+ * ## The suffix alone is not the convention
+ *
+ * Requiring only the suffix was the second version of this bug. Run over the
+ * 133 constraint names in the schema, ~12 hand-written unique INDEXES end in
+ * `_unique`/`_key` without following the convention, and the last-segment
+ * heuristic then produced a plausible-looking lie for each:
+ *
+ * | constraint | table | old result |
+ * | --- | --- | --- |
+ * | `idx_tourist_price_alerts_user_accommodation_active_unique` | `tourist_price_alerts` | `active` |
+ * | `idx_refunds_provider_refund_id_unique` | `billing_refunds` | `id` |
+ * | `idx_notification_log_idempotency_key` | `billing_notification_log` | `idempotency` |
+ * | `conv_notif_schedules_conversation_recipient_unique` | `conversation_notification_schedules` | `recipient` |
+ * | `promo_code_usage_customer_promo_unique` | `billing_promo_code_usage` | `promo` |
+ *
+ * A tourist creating the same price alert twice was told "A touristPriceAlert
+ * with this **active** already exists". So when the driver reported the
+ * `table`, the name MUST also start with `<table>_` — which every one of the
+ * rows above fails — and the column is then the exact remainder. That is also
+ * the only way to get a multi-word column right:
+ * `user_push_tokens_token_hash_unique` over `user_push_tokens` yields
+ * `token_hash`, where the last-segment heuristic yields `hash`.
+ *
+ * ## Remaining, documented limitation
+ *
+ * A MULTI-COLUMN index that does follow the prefix convention still yields the
+ * joined middle (`<table>_a_b_unique` → `a_b`) because nothing in the name
+ * says where one column ends and the next begins. That is a name this repo
+ * does not currently produce, and it degrades to an odd field rather than to a
+ * wrong one. The last-segment heuristic survives ONLY for the case where the
+ * driver reported no `table` at all, where there is nothing to verify against.
  *
  * @param constraintName - The constraint name as reported by the pg driver.
  * @param tableName - The table the statement targeted, when the driver reported one.
@@ -126,7 +150,10 @@ export const deriveUniqueConstraintFieldName = (
     const withoutSuffix = constraintName.replace(DRIZZLE_UNIQUE_SUFFIX, '');
     if (withoutSuffix.length === 0) return null;
 
-    if (tableName && withoutSuffix.startsWith(`${tableName}_`)) {
+    if (tableName) {
+        // The driver told us the table, so the convention is VERIFIABLE — and
+        // a name that fails it is not a convention-shaped name at all.
+        if (!withoutSuffix.startsWith(`${tableName}_`)) return null;
         const column = withoutSuffix.slice(tableName.length + 1);
         return column.length > 0 ? column : null;
     }

@@ -484,3 +484,105 @@ describe('the 409 introduced by HOS-1174 never carries the driver detail', () =>
         expect(warnPayload).not.toContain(PII_VALUE);
     });
 });
+
+/**
+ * HOS-1174, second pass: requiring only the `_unique`/`_key` SUFFIX was not
+ * the convention, it was a weaker gate that still let ~12 hand-written unique
+ * INDEXES through to the last-segment heuristic. Run over the schema's real
+ * constraint names, each produced a plausible-looking lie — a tourist creating
+ * the same price alert twice was told "A touristPriceAlert with this ACTIVE
+ * already exists".
+ *
+ * The gate is now the convention itself: when the driver reports the `table`,
+ * the constraint name must also START with `<table>_`. Every row below fails
+ * that and therefore degrades to the generic conflict message.
+ */
+describe('handleRouteError rejects a constraint name that does not start with its table (HOS-1174)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    const buildDriverError = (constraint: string, table: string, entity: string): DbError => {
+        const driverError = Object.assign(new Error('duplicate key value'), {
+            code: '23505',
+            constraint,
+            table
+        });
+        const drizzleError = Object.assign(new Error('Failed query: insert into ...\nparams: x'), {
+            cause: driverError
+        });
+        return new DbError(entity, 'create', {}, drizzleError.message, drizzleError);
+    };
+
+    /** Real (constraint, table) pairs from `packages/db/src/migrations/**`. */
+    const REAL_NON_CONVENTION_INDEXES: ReadonlyArray<{
+        readonly constraint: string;
+        readonly table: string;
+        readonly entity: string;
+        /** What the suffix-only gate used to answer. */
+        readonly oldLie: string;
+    }> = [
+        {
+            constraint: 'idx_tourist_price_alerts_user_accommodation_active_unique',
+            table: 'tourist_price_alerts',
+            entity: 'touristPriceAlert',
+            oldLie: 'active'
+        },
+        {
+            constraint: 'idx_refunds_provider_refund_id_unique',
+            table: 'billing_refunds',
+            entity: 'refund',
+            oldLie: 'id'
+        },
+        {
+            constraint: 'idx_notification_log_idempotency_key',
+            table: 'billing_notification_log',
+            entity: 'notificationLog',
+            oldLie: 'idempotency'
+        },
+        {
+            constraint: 'conv_notif_schedules_conversation_recipient_unique',
+            table: 'conversation_notification_schedules',
+            entity: 'conversationNotificationSchedule',
+            oldLie: 'recipient'
+        },
+        {
+            constraint: 'promo_code_usage_customer_promo_unique',
+            table: 'billing_promo_code_usage',
+            entity: 'promoCodeUsage',
+            oldLie: 'promo'
+        }
+    ];
+
+    for (const { constraint, table, entity, oldLie } of REAL_NON_CONVENTION_INDEXES) {
+        it(`answers the generic conflict message for ${constraint}`, () => {
+            // Arrange
+            const { ctx, calls } = createMockContext();
+            const error = buildDriverError(constraint, table, entity);
+
+            // Act
+            handleRouteError(error, ctx);
+
+            // Assert
+            expect(calls[0]?.status).toBe(409);
+            const body = calls[0]?.body as { error: { code: string; message: string } };
+            expect(body.error.code).toBe('ALREADY_EXISTS');
+            expect(body.error.message).toBe('This operation conflicts with an existing record');
+            expect(body.error.message).not.toContain(`with this ${oldLie}`);
+        });
+    }
+
+    it('still names the field when the constraint DOES start with its table', () => {
+        // Arrange — the gate must not be so strict that it rejects the real
+        // convention it exists to recognise.
+        const { ctx, calls } = createMockContext();
+        const error = buildDriverError('partners_slug_unique', 'partners', 'partner');
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        const body = calls[0]?.body as { error: { message: string } };
+        expect(body.error.message).toBe('A partner with this slug already exists');
+    });
+});
