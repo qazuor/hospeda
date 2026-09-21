@@ -246,8 +246,10 @@ avanzaba un período.
 - **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
   que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
-  quedar registrada la cuota, y la vuelta a `ACTIVE` desde un estado donde el reloj no corría la
-  corre al instante de la vuelta si había quedado atrás. **Su único lector es `MP5`.**
+  quedar registrada la cuota, y `S10` la avanza **tantos ciclos como hayan vencido durante la
+  pausa, sin abrir cuota** —el espejo local de lo que el proveedor hace medido (`PS-6`) y
+  `DEC-SUB-010` ya adoptó—. Más **un tope**, que corre sólo en `MP4`: si el avance cae en el
+  pasado, la fecha pasa a ser el instante de la reactivación. **Su único lector es `MP5`.**
 
 ### 2.3 Dinero
 
