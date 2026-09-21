@@ -73,7 +73,11 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
     echo "ERROR: no encontré package.json en $TOOLS" >&2
     exit 3
   }
+  source_branch="$(git -C "$TOOLS" branch --show-current 2>/dev/null || true)"
+  source_commit="$(git -C "$TOOLS" rev-parse --short HEAD 2>/dev/null || true)"
+  source_dirty="$(git -C "$TOOLS" status --porcelain --untracked-files=no 2>/dev/null | head -1 || true)"
   echo "OK: fuente client-tools=$TOOLS"
+  echo "OK: fuente branch=${source_branch:-detached} commit=${source_commit:-unknown} status=$([ -n "$source_dirty" ] && echo dirty || echo clean)"
   echo "OK: modo check; no se instalaron dependencias ni se escribieron funciones de fish"
   exit 0
 fi

@@ -3178,3 +3178,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 
 - `install.sh --check --here` validó el checkout de migración como fuente.
 - Terminó sin instalar dependencias ni escribir funciones de Fish.
+
+## Gate 149 · Diagnóstico de fuente del instalador
+
+- `install.sh --check` ahora informa branch, commit corto y estado limpio/dirty
+  de la fuente seleccionada, sin mostrar secretos.
+- En la prueba, staging reportó `staging@60a39dae2` y estado limpio; el
+  worktree de migración reportó su branch actual y estado dirty por cambios aún
+  no confirmados al momento del check.
