@@ -83,7 +83,8 @@ segunda sucesora colisiona con la primera.
 **El candado `A` no puede quedar vacío mientras haya una fila viva, y por eso el cierre no espera
 la autorización.** Los dos índices reparten a las filas vivas por su **propia** columna, y ninguno
 de los dos puede mirar el estado de la otra fila: si la predecesora se muere sola —`S12`, `S16` o el espejo del §10.1,
-tres de las siete transiciones que `B/03` §3.2 recorre— la sucesora sigue con `sucede_a` no nulo, o
+tres de las ocho transiciones que `B/03` §3.2 recorre; y desde `DEC-SUB-014` también si se va
+ella misma, por `S22`, `S23` o `S24`— la sucesora sigue con `sucede_a` no nulo, o
 sea en `B`, y **`A` queda libre para un alta nueva**. Ahí hay dos preapprovals que pueden cobrar
 sobre el mismo `user + vertical`, y `EX-6` mide que el proveedor no frena la segunda. La base no
 lo puede impedir sola, así que lo impide **el acto**: `S18` cierra la sucesión en cuanto la

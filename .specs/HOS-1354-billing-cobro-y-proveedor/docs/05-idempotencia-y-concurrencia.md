@@ -89,7 +89,8 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5), **con la referencia al cobro que hay que devolver**, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §4) |
 
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
-eso vale para `S11` y no para las otras dos.** Desde `PAUSED` (`S22`) y desde `SUSPENDED` (`S23`)
+eso vale para `S11` y no para las otras tres.** Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`)
+y desde `GRACE_PERIOD` (`S24`)
 la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de la cancelación
 (cap. 03 §3.2), así que **no hay nada que extender** y la primera fila no tiene dónde aplicarse:
 
@@ -105,6 +106,17 @@ la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de
   y la devolución **la confirma una persona**
   (`DEC-RF-002`) — la segunda fila de arriba, por la misma razón y no por analogía, **y por eso el
   motivo es el mismo**.
+- **Desde `GRACE_PERIOD` el cobro que entra es el reciclado del proveedor, y llega tarde.** `S24`
+  canceló el preapproval *«de inmediato»* (cap. 03 §3.2), así que lo que puede entrar después es
+  un cobro que ya estaba en vuelo; la condición 1 del §3 rechaza `CANCELLED` igual que arriba, así
+  que **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** y la devolución **la confirma
+  una persona**. **Y acá esa persona tiene un dato que en `SUSPENDED` no tiene, que hay que
+  ponerle delante y no decidir por ella**: durante el grace el cliente **sí recibió servicio**
+  —el §20 lo da entero (`12-contrato…` §2.6)—, así que el período que ese cobro paga no fue
+  enteramente en vano. Cuánto de él corresponde devolver **no lo fija esta tabla**: es
+  exactamente la clase de juicio que `DEC-RF-002` puso en manos de una persona, y lo que el
+  listado accionable tiene que mostrarle es el pago, el monto y **desde cuándo la fila estaba en
+  grace**.
 
 ### C3 · Se otorga *Free Forever* mientras se ejecuta un cobro
 

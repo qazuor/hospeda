@@ -127,7 +127,7 @@ proveedor no tiene ninguna.
 |---|---|---|
 | 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
 | 2 | **un upgrade** | **muere con la suscripción vieja.** `DEC-SUB-007` ejecuta el upgrade cancelando y recreando, y la nueva nace sin cola |
-| 3 | **una cancelación** (§24) | **lo absorbe, y en los tres casos.** Desde `ACTIVE` (`S11`) las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio. Desde `PAUSED` (`S22`) y desde `SUSPENDED` (`S23`) la baja cae **hoy** (cap. 03 §3.2), así que el descenso no llega a ejecutarse nunca — que es la regla general de abajo: *«si no va a tenerlo nunca más, se descarta»* |
+| 3 | **una cancelación** (§24) | **lo absorbe, y en los cuatro casos.** Desde `ACTIVE` (`S11`) las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio. Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`) y desde `GRACE_PERIOD` (`S24`) la baja cae **hoy** (cap. 03 §3.2), así que el descenso no llega a ejecutarse nunca — que es la regla general de abajo: *«si no va a tenerlo nunca más, se descarta»* |
 | 4 | **una pausa** (§26) | **espera a la reanudación.** Durante la pausa no hay publicación ni servicio (§26.1), así que hacer cumplir un excedente sobre fichas ya bajadas no hace nada y habría que reevaluarlo igual al volver |
 
 **La regla general detrás de las cuatro**: el descenso se aplica **al fin del primer ciclo en que
@@ -457,7 +457,7 @@ sobre sus filas numeradas**, que es la corrección que trajo la quinta:
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca que `S14` ya abrió | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso. **Y *«junto con»* sólo es verdad si las dos marcas se ven**: cuando `S15` resuelve la traba y `S18` cierra, la predecesora queda con **dos marcas abiertas** —la de la traba y el `REEMBOLSO_POR_CONFIRMAR` que abre el cierre—, y `S15` levanta **una por vez** (`B/02` §2.2 y §2.5). Con un booleano, resolver la traba apagaba el reembolso en el mismo gesto |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
 | **el proveedor da de baja a la PREDECESORA** por impagos acumulados (§1.4), y el espejo del `B/03` §10.1 la lleva a `CANCELLED` con la sucesora todavía esperando autorización | **se reembolsa, y lo confirma una persona** — igual que la rama 1: **`S18` cierra la sucesión sin `S17`** (la predecesora ya no es fila viva) y le abre a **ella** la marca con motivo `REEMBOLSO_POR_CONFIRMAR` | el período que el pago cubría lo cortó la baja del proveedor, no nosotros, pero el resultado para el cliente es el mismo de la rama 1: pagó un período que no le compró nada. Y el cierre **tiene** que correr igual —si no, el candado `A` queda vacío y un alta nueva entra (`B/03` §3.2)—, así que el acto que lo dispara ya está ahí |
-| **la propia PREDECESORA, en `SUSPENDED`, pide la baja** (`S23`, `B/03` §3.2) y llega a `CANCELLED` con la sucesora todavía esperando autorización | **lo decide una persona**: `S18` cierra la sucesión sin `S17` y le abre a **ella** la misma marca de las ramas 1 y 5, con el mismo motivo `REEMBOLSO_POR_CONFIRMAR` | es la única de las seis en que **el acto lo hace el cliente sobre su propia fila**, así que ninguno de los dos automatismos vecinos encaja: no hubo un período que nosotros cortáramos (rama 1) ni una baja que decidiera el proveedor (rama 5), y devolver o no devolver **es exactamente el tipo de caso que `DEC-RF-002` puso en manos de una persona**. Lo que no puede pasar es que la bandera quede puesta sobre una `CANCELLED` que ningún barrido mira: la salvedad 3 del `B/09` §3 la devuelve al barrido hasta que se apague |
+| **la propia PREDECESORA pide la baja** y llega a `CANCELLED` con la sucesora todavía esperando autorización — **desde `SUSPENDED` (`S23`) o desde `GRACE_PERIOD` (`S24`)**, que son los **dos** estados desde los que `S19` retiene un pago (`B/03` §3.2) | **lo decide una persona**: `S18` cierra la sucesión sin `S17` y le abre a **ella** la misma marca de las ramas 1 y 5, con el mismo motivo `REEMBOLSO_POR_CONFIRMAR` | es la única de las seis en que **el acto lo hace el cliente sobre su propia fila**, así que ninguno de los dos automatismos vecinos encaja: no hubo un período que nosotros cortáramos (rama 1) ni una baja que decidiera el proveedor (rama 5), y devolver o no devolver **es exactamente el tipo de caso que `DEC-RF-002` puso en manos de una persona**. Lo que no puede pasar es que la bandera quede puesta sobre una `CANCELLED` que ningún barrido mira: la salvedad 3 del `B/09` §3 la devuelve al barrido hasta que se apague |
 
 **Las seis ramas valen para las dos puertas, y las TRES que abren la marca de dinero ya tienen
 dónde asentarla.** *«El pago»* de las ramas 1, 5 y 6 es el que `S19` retuvo, que puede ser un
@@ -489,7 +489,7 @@ que `DEC-RF-002` declara normal:
 | 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
 | 4 · cae un grant | **`S13`** (efecto) | las dos |
 | 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 5), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |
-| 6 · la predecesora pide la baja estando suspendida | **`S18`** (efecto 5), disparado por `S23` (`B/03` §3.2) | **la predecesora**, `CANCELLED` |
+| 6 · la predecesora pide la baja ella misma | **`S18`** (efecto 5), disparado por `S23` **o por `S24`** (`B/03` §3.2) | **la predecesora**, `CANCELLED` |
 
 > **La 5 y la 1 comparten acto y no son la misma rama.** Difieren en qué mata a la predecesora
 > —`S17`, nuestro, contra el proveedor, ajeno— y eso cambia dos cosas que el cliente ve: en la 1
@@ -506,6 +506,16 @@ que `DEC-RF-002` declara normal:
 > pendiente que reevaluar. Lo que antes mandaba ese caso a *«si la rama no es determinable, se
 > pone la marca»* del backstop de `B/09` §3 —o sea a una persona, sin que ningún texto lo
 > anticipara— era justamente que esta rama no existía.
+
+**Y la rama 6 tiene desde la FASE 9-bis-4 DOS filas y sigue siendo UNA rama, que es una
+distinción que este § ya usa.** `S24` —la baja pedida en medio del grace, `DEC-SUB-014`— produce
+exactamente el mismo desenlace que `S23`: el cliente mata su propia fila, `S18` cierra sin `S17`
+y el pago que `S19` retenía queda en manos de una persona. **Las ramas enumeran cómo termina la
+sucesión, no desde qué estado**, y por eso el recuadro de arriba tuvo que argumentar que la 5 y la
+1 **no** son la misma —difieren en **quién** mata a la predecesora— mientras que acá quien la mata
+es el mismo en las dos. **Los dos estados son además los únicos dos desde los que `S19` retiene un
+pago**, así que con `S24` la rama 6 pasa a cubrir su población entera en vez de la mitad. **Las
+ramas siguen siendo seis y el número se recontó sobre la tabla**, no se dejó como estaba.
 
 **La marca va sobre la PREDECESORA y no sobre la sucesora, y la elección tiene consecuencia.** El
 pago cuelga de la predecesora (`B/02` §2.3), así que es la fila que hay que mirar para resolverlo.

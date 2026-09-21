@@ -83,7 +83,7 @@ ser.**
 | 5-bis | al **pausar**, antes de confirmar | **qué le pasa a la ficha mientras dure la pausa**: sale del sitio público el mismo día, **vuelve sola al reanudar** si el cupo del plan le alcanza, y si la pausa cruza los 90 días queda **archivada** — sin que se borre nada y sin que la vuelta deje de ser automática. Es el acto que **parece que sólo suspende el cobro**, y el cliente no tiene otra forma de enterarse | cap. 03 §5, `12-contrato…` §2.6, `V/03` §9 (`PB2`, `PB4`, `PB7`), `V/02` §4.2 |
 | 6 | al **reanudar** una pausa | **una sola cosa: qué día se le va a cobrar** — nada de días perdidos ni compensaciones | `DEC-SUB-010`, impl. 1 |
 | 7 | al **cambiar de ciclo** teniendo una promo | que **el importe nuevo ya no lleva el descuento** | cap. 14 §2.3 (épica de billing) |
-| 8 | al **pedir la baja estando pausado o suspendido** (`S22` / `S23`, cap. 03 §3.2), antes de confirmar | **que el servicio termina hoy y no al fin de un período**: desde esos dos estados no queda período pagado que sostener, así que la frase que la §5 pone en la pantalla de la baja —*«seguís hasta el …»*— **no aplica** y prometerla sería prometer días que no hay. **Y si la pausa era una cortesía, que pierde los días que le quedaban**: esa fila **sí emitía cobertura** (`12-contrato…` §2.6), a diferencia de la pausa pedida por el cliente, así que es lo único que la baja le corta de verdad. Es el aviso simétrico de la fila 5, que ya dice lo mismo para el cruce vecino | cap. 03 §3.2, cap. 12 §7.2, `DEC-SUB-010`, `DEC-GRANT-004` |
+| 8 | al **pedir la baja estando pausado, suspendido o en el grace** (`S22` / `S23` / `S24`, cap. 03 §3.2), antes de confirmar | **que el servicio termina hoy y no al fin de un período**: desde esos tres estados no queda período pagado que sostener, así que la frase que la §5 pone en la pantalla de la baja —*«seguís hasta el …»*— **no aplica** y prometerla sería prometer días que no hay. **Y en dos de los tres hay además cobertura que se corta hoy, así que la frase no es la misma para los tres.** Si la pausa era una cortesía, **pierde los días que le quedaban**: esa fila **sí emitía cobertura** (`12-contrato…` §2.6), a diferencia de la pausa pedida por el cliente. Y **desde `GRACE_PERIOD` pierde el servicio entero que el §20 le venía dando** —el grace **sí emite fuente**— más lo que le quedara de reloj, que es lo que hace que ésta sea la única de las cuatro bajas que **retira algo que estaba corriendo**; a cambio no se le sigue reclamando el período impago (`DEC-SUB-014`). Es el aviso simétrico de la fila 5, que ya dice lo mismo para el cruce vecino | cap. 03 §3.2, cap. 12 §7.2, `DEC-SUB-010`, `DEC-SUB-014`, `DEC-GRANT-004` |
 | 10 | el aviso de **suspensión** | lo que pierde **como turista**, no sólo como anfitrión — y los **días de addon** que se le van a ir | cap. 15 §6.3 (épica de verticales), `DEC-ADDON-001` impl. 2 |
 | 10-bis | al **registrar un pago manual que llegó después de declarar el impago** (`MP4`, cap. 03 §7.1), antes de confirmar | **qué devuelve la reapertura y qué no**: vuelve el servicio y vuelve la publicación (`S7`), y la ficha que se hubiera archivado **vuelve sola si el cupo del plan le alcanza** (`PB7`, `V/03` §9) — pero **el contenido que el hard delete ya borró no vuelve**, y si la suspensión cruzó el día 180 lo que se reactiva es una ficha vacía (`V/02` §4.1). Es el acto que **parece que sólo deshace un estado**, y prometer una ficha que no está es peor que no prometerla (cap. 12 §4.5, punto 3). **Y si la fila es la predecesora de una sucesión en curso, dice que el pago NO reactiva**: queda pendiente por `S19` y lo resuelve el cierre, igual que en la fila 15. **Y dice cuándo se abre la próxima cuota**, que es lo que el admin necesita para contestarle al cliente en el acto y son **dos respuestas distintas** según cuánto duró el atraso: si la reapertura cae **dentro** del período que se acaba de pagar, la próxima cuota es la del día en que ese período termina; si el atraso fue más largo que un período, **arranca uno nuevo hoy** y la cuota se abre ahora (cap. 03 §7.2, *«qué mueve la fecha del próximo cobro»*). Sin esto el acto se confirma sin saber si le queda período pago o si se le abre una cuota en el mismo instante | cap. 03 §7.1, §7.2 y §3.2 (`S19`), `V/02` §4.1, `V/03` §9 |
 | 11 | la compra de **Turista VIP estando suspendido** | que **al regularizar se le cancela**, sin reembolso | cap. 15 §6.3 (épica de verticales), `DEC-ENT-004` |
@@ -122,12 +122,19 @@ Lo que pasa después ya está resuelto y la pantalla lo dice: se cancela en el p
 inmediato y **el servicio sigue hasta el fin del período pagado** (`DEC-SUB-009`), con esa fecha a
 la vista.
 
-**Y esa fecha no siempre es futura: depende del estado desde el que se pide la baja, y son tres**
-(cap. 03 §3.2). Desde `ACTIVE` es el fin del período pagado (`S11`). Desde `PAUSED` (`S22`) y
-desde `SUSPENDED` (`S23`) **es hoy** —al pausar los días no usados se perdieron (`DEC-SUB-010`) y
-estando suspendido el servicio ya estaba cortado (§21)—, así que **la pantalla dice que el
+**Y esa fecha no siempre es futura: depende del estado desde el que se pide la baja, y son
+cuatro** (cap. 03 §3.2). Desde `ACTIVE` es el fin del período pagado (`S11`). Desde `PAUSED`
+(`S22`), desde `SUSPENDED` (`S23`) y desde `GRACE_PERIOD` (`S24`) **es hoy** —al pausar los días
+no usados se perdieron (`DEC-SUB-010`), estando suspendido el servicio ya estaba cortado (§21), y
+en el grace **el período en curso no está pagado**: su cobro es justamente el que falló
+(`DEC-SUB-014`)—, así que **la pantalla dice que el
 servicio termina en el acto** en vez de una fecha futura que no existe. Es la misma regla 2 del §4
 —*«cada aviso lleva la fecha de ese cliente»*— aplicada a un caso en que la fecha es el día mismo.
+
+**Y en una de las cuatro esa frase corta algo que estaba corriendo.** Desde `GRACE_PERIOD` el
+cliente **tiene servicio entero** hasta el instante en que confirma (§20, `12-contrato…` §2.6),
+mientras que desde `PAUSED` por `CUSTOMER_REQUEST` y desde `SUSPENDED` no tenía ninguno. Por eso
+la fila 8 del §4 nombra los tres estados y **no dice lo mismo de los tres**.
 
 Y sale **nuestro** correo antes que el del proveedor, porque el suyo dice *«por un pago
 no realizado o por opción del vendedor»* y a alguien que canceló por su voluntad eso le insinúa

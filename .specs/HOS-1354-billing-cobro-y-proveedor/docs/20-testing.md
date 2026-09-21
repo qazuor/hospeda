@@ -71,9 +71,10 @@ modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el 
 escribirla en vez de al insertar.
 
 **`G-R1-A` vigila el ACTO de declarar, no una propiedad permanente de la fila**, y la diferencia
-no es de matiz: la sucesión dura **hasta 72 h**, y en esa ventana **siete transiciones normales
+no es de matiz: la sucesión dura **hasta 72 h**, y en esa ventana **ocho transiciones normales
 sacan a una predecesora perfectamente legal del conjunto de tres** —`S8` y `S9` la pausan, `S6` la
-suspende, y `S12`, `S13`, `S16` y el espejo de la baja decidida por el proveedor (cap. 03 §10.1)
+suspende, y `S12`, `S13`, `S16`, el espejo de la baja decidida por el proveedor (cap. 03 §10.1) y
+**`S24`** —la baja que la propia persona pide en medio del grace—
 la matan; el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
 numeradas**—. Leído como
 propiedad permanente, el guard se ponía en rojo sobre el camino normal, **exactamente durante la
