@@ -168,7 +168,7 @@
                             "title": "Instalador deja el entorno listo para trabajar",
                             "category": "Instalación y reproducibilidad",
                             "description": "Detectar/crear hospeda-staging, actualizarlo desde origin/staging, reconciliar envs, generar los primeros .env.local seguros, preparar Postgres/Redis, construir/promover el primer template válido y verificar wrappers, puertos y health checks.",
-                            "notes": "Nueva tarea. Incluye hospeda-staging, envs, Postgres/Redis, primer template válido, wrappers, health checks y ahora también backup/restore inicial de Engram; debe ser idempotente, tener dry-run y no imprimir secretos.",
+                            "notes": "Contrato documentado en docs/migration/bootstrap-contract.md (Gate129). Incluye hospeda-staging, envs, Postgres/Redis, primer template válido, wrappers, health checks y backup/restore inicial de Engram; debe ser idempotente, tener --plan/--check/--apply/--restore, rollback y no imprimir secretos. La implementación ejecutable sigue pendiente.",
                             "done": false
                         }
                     ]
@@ -710,7 +710,7 @@
                             "title": "Ejecutar validación integral",
                             "category": "Adopción progresiva",
                             "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
-                            "notes": "Gate123: suite client-tools 298/298 y `verify --changed` ya entrega BASE_SHA local correctamente. La integración llegó a tests web y encontró `document is not defined`; faltan corregir Vitest/DOM y completar el gate E2E de DB/servidores, Linear/GitHub y memoria.",
+                            "notes": "Gate128: suite client-tools 299/299 (737 assertions), server-tools 299/299 y `verify --changed` validado con BASE_SHA local, filtros por paquetes y working-directory del workflow preservado. Quedan gates E2E de DB/servidores, Linear/GitHub y memoria; la implementación del bootstrap reproducible está documentada en docs/migration/bootstrap-contract.md.",
                             "done": false
                         },
                         {

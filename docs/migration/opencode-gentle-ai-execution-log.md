@@ -3021,3 +3021,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   afectados.
 - El timeout intermitente queda como observación de estabilidad bajo ejecución
   encadenada, no como fallo reproducible del código.
+
+## Gate 129 · Contrato de bootstrap reproducible
+
+- Se documentó `docs/migration/bootstrap-contract.md` como contrato previo a
+  implementar el instalador: modos `--plan`, `--check`, `--apply` y
+  `--restore`, capas global/cliente/proyecto, manifest sin secretos, orden de
+  operaciones, backups y rollback.
+- El contrato separa el bootstrap genérico de workstation de los adaptadores
+  específicos de Hospeda (checkout `hospeda-staging`, envs, DB/template,
+  wrappers y health checks).
+- La implementación ejecutable todavía queda pendiente; el artifact conserva
+  la tarea abierta para no presentarla como terminada.
