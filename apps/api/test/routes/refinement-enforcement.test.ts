@@ -4,12 +4,16 @@
  *
  * ## Why this file exists, and why it is not ten HTTP tests
  *
- * Repairing the factory CHANGES the effective validation of these ten routes:
- * each one starts rejecting bodies it accepted the day before. That is the
- * point of the fix, but it is also the risk, so every schema is exercised with
- * a body that actually violates its rule — not merely inspected for a check
- * count, which would pass just as happily if the check were re-attached to the
- * wrong schema or never consulted.
+ * Repairing the factory changes WHERE these ten routes refuse a body: at the
+ * boundary, rather than wherever the rule happened to be re-applied further in.
+ * The request itself was already being refused in all ten cases — each rule is
+ * duplicated downstream, by the route's service, by a `parseRefinedBody` patch
+ * in the handler, or (for the one schema with a `z.coerce` field) by the
+ * factory's own escape hatch. What this file establishes is that the rule
+ * survives the rebuild at all, so every schema is exercised with a body that
+ * actually violates it — not merely inspected for a check count, which would
+ * pass just as happily if the check were re-attached to the wrong schema or
+ * never consulted.
  *
  * The assertion runs against `createOpenAPISchema(schema)`, because that is the
  * object the factory hands to the runtime body validator — the exact artifact
