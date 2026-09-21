@@ -52,3 +52,13 @@ seleccionar texto, confirmó:
 Estos números sólo delimitan el lote. Para revisar una entrada se debe copiar
 la base completa, mostrar un ID por vez en una interfaz local y registrar una
 decisión explícita. No se autoriza eliminar por conteo, hash o proyecto.
+
+## Snapshot temporal de revisión
+
+Se creó `/tmp/engram-review-a-20260921` con DB, WAL y SHM copiados, y se
+verificó `PRAGMA integrity_check = ok`. El inventario de candidatos contiene
+48 filas únicas (los criterios de contenido vacío y título vacío se solapan).
+El único hash repetido involucra 33 filas, con IDs entre 567 y 9720. El CSV
+temporal contiene sólo IDs, tipos, proyectos, tamaños, fechas y hashes; no
+contiene títulos ni contenidos. Los checksums quedaron junto a la copia para
+detectar cambios antes de cualquier revisión.
