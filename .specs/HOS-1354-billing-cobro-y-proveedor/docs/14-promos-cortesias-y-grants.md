@@ -202,6 +202,14 @@ es estrictamente mejor y para siempre—, pero la confirmación del capítulo 08
 decirlo, porque el estado en el proveedor cambia de `paused` a `cancelled` y el cliente va a
 recibir el correo del proveedor por su cuenta (`EX-3`).
 
+**Y lo mismo vale para la otra escritura que hace cubrir a un grant: anclarle una vertical nueva**
+(`12-contrato…` §2.8). Una cortesía **pausa una suscripción concreta** y no lleva scope
+(`DEC-GRANT-006`), así que la que termina es **la de la vertical que se ancla**, y termina porque
+`S13` cancela esa suscripción. Las cortesías del beneficiario en las demás verticales **no las
+toca nadie**: el acto alcanza una vertical, no la cartera. Se dice acá porque *«otorgar un grant»*
+se lee como el único momento en que un grant empieza a cubrir, y desde que el scope es el conjunto
+de anclas **son dos**.
+
 ### 4.4 Extensión de trial + cortesía durante el trial
 
 **Ya está resuelto en el capítulo 11 (épica de verticales) §3**: las dos extienden, **acumulan contra un único techo**

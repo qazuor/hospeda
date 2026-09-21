@@ -189,7 +189,8 @@ consumir trial (`DEC-TRIAL-007`).
 **Real no quiere decir con fila.** Una fila en `PRE_TRIAL` no llevaría **ni un dato** que su
 ausencia no lleve: el hash del correo normalizado, el piso del trinquete, la referencia al plan y
 las dos fechas se escriben **todos** en `T1` (cap. 02 §2.2, épica de verticales). Lo que hace real
-a `PRE_TRIAL` son sus reglas y su transición de salida, y las dos existen sin fila.
+a `PRE_TRIAL` son sus reglas y **sus transiciones de salida —tres: `T1`, `T6` y `T7`** (`V/03`
+§2)—, y todas existen sin fila.
 
 **`CANCEL_SCHEDULED` existe aunque el proveedor ya esté cancelado.** `DEC-SUB-009` decidió
 cancelar en el proveedor de inmediato y sostener el servicio de nuestro lado hasta el fin del

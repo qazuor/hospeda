@@ -99,7 +99,7 @@ Y una nota de registro que sigue valiendo:
 | S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | — | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) |
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
-| S13 | **toda fila viva** del beneficiario en **cada vertical que el grant ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos | `SUPER_ADMIN` otorga *Free Forever* | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; el acceso pasa a darlo el grant |
+| S13 | **toda fila viva** del beneficiario en **cada vertical que el acto ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos | `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a uno vivo** (`12-contrato…` §2.8) | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; el acceso pasa a darlo el grant |
 | S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se pone la marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas** |
 | S15 | cualquiera **con la marca puesta** | una persona resuelve | **el mismo estado** | intervención humana registrada | **se levanta la marca**; si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita** |
 | S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** |
@@ -234,6 +234,30 @@ faltaban no son bordes:
 - **`CANCEL_SCHEDULED` entra por completitud**: no tiene obligación de pago viva —`S11` ya canceló
   su preapproval— pero dejarla afuera obligaba a leer la ausencia como una excepción. Entra, y la
   regla de *«ya está `cancelled`, no se manda nada»* hace que no cueste una llamada.
+
+**Y son DOS los eventos que disparan `S13`, no uno, porque son dos las escrituras que hacen que un
+grant cubra.** El origen escribía sólo *«`SUPER_ADMIN` otorga *Free Forever*»*, que era exacto
+mientras el scope era **una columna del instrumento**: cambiarlo era editar el grant. Desde que el
+scope **es el conjunto de anclas** (`B/02` §2.4), **anclarle una vertical nueva a un grant vivo es
+un acto propio** —así lo declaran `12-contrato…` §2.8 y `B/02` §2.4— y **hace cubrir exactamente
+igual que el otorgamiento**: emite en esa vertical una fuente `GRANT` de clase `TÍTULO` con
+`hasta: NO_VENCE` (`12-contrato…` §2.7 y §2.4). Sin el segundo evento, el beneficiario de un grant
+extendido a Gastronomía **sigue pagando todos los meses la suscripción de Gastronomía que el grant
+le acaba de regalar**, y —otra vez— nada lo detecta: la fila está `ACTIVE`, el proveedor dice
+`authorized`, y para el barrido eso **coincide**. Es el mismo daño que este § vino a cerrar,
+entrando por la puerta que el acto nuevo abrió.
+
+**El alcance se lee contra el acto, no contra el grant entero:**
+
+| el evento es | `S13` alcanza |
+|---|---|
+| **otorgar** un *Free Forever* | toda fila viva del beneficiario en **cada** vertical que el grant ancla ese día |
+| **anclarle una vertical nueva** a un grant vivo | toda fila viva del beneficiario **en esa vertical**, y en ninguna otra |
+
+Las verticales que el grant ya anclaba **no se vuelven a recorrer**: sus filas vivas ya las cerró
+el otorgamiento, y volver a pasar por ellas sería pedirle a `S13` una idempotencia que su fila
+todavía no declara. La consecuencia queda dicha en voz alta: **el acto nuevo le agrega a `S13` un
+segundo disparador, así que la ejecución parcial de `S13` pasa a tener dos orígenes y no uno.**
 
 **Si el grant cae en medio de una sucesión, `S13` alcanza a las dos filas y la sucesión no se
 cierra: se cancela.** No corre `S18` —no queda ninguna sucesora viva a la que pasarle el origen— y

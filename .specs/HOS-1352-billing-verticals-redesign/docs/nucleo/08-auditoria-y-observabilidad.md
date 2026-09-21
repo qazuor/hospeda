@@ -134,7 +134,7 @@ si es destructiva o mueve dinero.**
 | acción | de dónde sale | ¿destructiva o mueve dinero? |
 |---|---|---|
 | otorgar o revocar una **cortesía temporal** | §34, `DEC-GRANT-002` | **sí**: revocar deja al cliente sin la cortesía que le quedaba |
-| otorgar o revocar un **grant permanente** | §35, §35.4 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`) |
+| otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) |
 | registrar un **pago manual** | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
@@ -146,11 +146,29 @@ si es destructiva o mueve dinero.**
 | **extender un trial** | §32 | no |
 | **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero |
 
+**La tabla tiene DOCE filas y cada fila es UNA acción, aunque varias nombren más de una escritura.**
+*«Otorgar o revocar»*, *«pausar o reanudar»*, *«aprobar o rechazar»* y ahora *«otorgar, anclar o
+revocar»* son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las cinco
+líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— siguen
+diciendo **doce** y siguen siendo exactas. **Lo que no se puede es ejecutar una escritura que no
+esté nombrada en ninguna fila**: una escritura sin fila no tiene permiso que pedir, no es capacidad
+del actor —así que sus pasos 5-7 caen sobre el sujeto y la vuelven inejecutable— y **no le está
+prohibida a un actor de sistema**, que son las tres cosas que esta tabla reparte. Por eso anclar
+una vertical a un grant entra **acá** y no sólo en la prosa del contrato que lo declaró.
+
 ### 3.1 Dos reglas sobre la confirmación
 
 1. **La confirmación dice qué va a pasar, no pregunta si está seguro.** `DEC-GRANT-001` lo pide
    textualmente para la revocación de un grant — *«la UI del admin debe decirlo explícitamente al
    revocar, o alguien lo va a hacer sin entender que está cortando el servicio de alguien»*.
+
+   **Las tres escrituras sobre un grant tienen cada una su frase, y ninguna se deduce de la otra**:
+   otorgar y anclar **cancelan la suscripción que el beneficiario paga** en cada vertical
+   alcanzada (`S13`) y **terminan la cortesía que tuviera vigente ahí** (`B/14` §4.3) — el estado
+   en el proveedor pasa a `cancelled` y el cliente recibe el correo del proveedor por su cuenta
+   (`EX-3`)—; revocar corta el servicio. Quien ancla una vertical tiene que leer, antes de
+   firmar, **qué cobro deja de ocurrir**, porque ése es el acto que hoy nadie ve: el grant ya
+   existía y la pantalla parece decir que sólo se agrega algo.
 2. **`SUPER_ADMIN` firma toda concesión gratuita**, temporal o permanente (`DEC-GRANT-002`), y
    eso tiene un costo operativo declarado: compensar unos días a alguien pasa a requerirlo. **El
    riesgo concreto es que se termine compartiendo la cuenta**, que es peor que el riesgo que se

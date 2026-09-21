@@ -86,6 +86,7 @@ ser.**
 | 11 | la compra de **Turista VIP estando suspendido** | que **al regularizar se le cancela**, sin reembolso | cap. 15 §6.3 (épica de verticales), `DEC-ENT-004` |
 | 12 | los **tres avisos de aumento** | precio actual, precio nuevo, **la fecha de ese cliente**, y que puede cancelar | `DEC-MP-002` |
 | 13 | la confirmación de **revocar un grant** | que deja al cliente **sin servicio**, y qué addons corta | cap. 08 §3.1 (núcleo), cap. 16 §3.3 (épica de billing) |
+| 13-bis | la confirmación de **anclarle una vertical nueva a un grant** | **qué cobro deja de ocurrir**: se cancela la suscripción que el beneficiario paga en esa vertical (`S13`) y termina la cortesía que tuviera vigente ahí. Es el acto que **parece que sólo agrega**, y por eso necesita la frase más que los otros | cap. 08 §3.1 (núcleo), `12-contrato…` §2.8, cap. 14 §4.3 |
 | 14 | el aviso de **discontinuar una vertical** | la **fecha de fin de servicio**, qué pasa con la ficha y **cómo exportarla** | cap. 10 §4.3 |
 | 15 | el **cambio de plan** con una cuota en reintento | que **el cobro de la cuota impaga puede entrar igual**, antes de confirmar — **y qué pasa con esa plata según lo que el cliente haga**: si termina el checkout **se le devuelve**, si lo abandona **le queda** y le paga el período que está usando. Nunca reactiva la suscripción vieja mientras el cambio esté en curso | cap. 12 §5.3 |
 | 16 | el **cambio de plan** con un checkout abierto | que **no se ofrece**: *«terminá o cancelá el checkout que tenés abierto»* | cap. 03 §3.3.1 |

@@ -132,6 +132,13 @@ instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefin
 converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
 cortesías heredadas, son el caso normal**.
 
+**Y esas dos filas cruzan la frontera, así que la mitad de verticales las tiene que ver.** Un
+`GRANT` con `hasta: NO_VENCE` es de clase `TÍTULO` (`12-contrato…` §2.4), de modo que las dos
+cuentas amanecen con `cubierto` **verdadero**: no las alcanza `PB2` y, el día que publiquen algo,
+la transición que dispara es `T6` y no `T1`. La verificación completa —y el orden entre esta
+escritura y el paso 4, que hay que fijar en el procedimiento— está en la mitad de verticales,
+cap. 21 §2.4. Se dice acá porque **el efecto lo produce esta escritura y se observa allá**.
+
 **Con una precisión que no es de forma: un ANCLA por cada vertical de su scope, sobre UNA sola fila
 de grant.** Un grant ancla **un plan por vertical** (`12-contrato…` §2.8, `B/02` §2.4), porque un
 plan pertenece a una sola. Las dos formas equivocadas quedaron descartadas por escrito y conviene

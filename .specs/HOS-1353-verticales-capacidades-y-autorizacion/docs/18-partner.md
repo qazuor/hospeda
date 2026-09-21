@@ -70,11 +70,25 @@ fotos en mi página»*— usa **`VERTICAL_SUBSCRIPTION`**, y es exacto: como Par
 presencia por suscripción**, ese scope la identifica sin ambigüedad. El §40 dice *«como mínimo»*
 cuatro scopes, así que agregar uno sería legítimo; no se agrega porque no hace falta.
 
-### 1.5 Y el §10.5 nunca se cruza
+### 1.5 Y el §10.5 no se cruza HOY
 
 *«Máximo una ficha durante trial»* no alcanza a Partner por una razón anterior: **Partner no tiene
 trial.** Sus planes lo tienen en cero (`DEC-TRIAL-003`) y no declara evento de activación
-(`DEC-TRIAL-006`), así que la transición T1 no puede ocurrir.
+(`DEC-TRIAL-006`).
+
+**La garantía se escribe sobre las TRES salidas de `PRE_TRIAL`, no sobre `T1` sola.** Razonar por
+enumeración con la enumeración corta es exactamente cómo una garantía se vuelve falsa sin que
+nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara— y `T7`
+espera **el encendido**, que todavía no ocurrió (`V/03` §2). Ninguna de las tres puede ocurrir, y
+**la razón es la configuración de hoy, no una propiedad de Partner**: las tres dependen de dos
+números y una declaración que `DEC-TRIAL-003` planifica cambiar.
+
+**El día que Partner encienda su trial, el §10.5 pasa a alcanzarlo y el procedimiento ya está
+escrito**: capítulo 11 §8 — declarar el evento, publicar la versión con días `> 0` y ejecutar
+`T7`, los tres como **un solo acto**. Para Partner el candidato a evento de activación es la
+aprobación del admin (`DEC-TRIAL-003`, implicación 1), así que `T7` alcanzaría a **los partners ya
+aprobados**, que es lo correcto: ya fueron clientes y no les corresponde estrenar el trial el día
+que se enciende.
 
 ---
 
@@ -173,4 +187,6 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
   el plan Gold y que no es una ficha.
 - **Cómo se registra un pago manual** es del capítulo 13 (épica de billing).
 - **Si algún día Partner enciende su trial**, tiene que declarar su evento de activación
-  (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo.
+  (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo. **Cuál** es ese evento sigue
+  abierto; **qué hay que hacer ese día** no: es el capítulo 11 §8, y los partners ya aprobados
+  quedan resueltos por `T7`.

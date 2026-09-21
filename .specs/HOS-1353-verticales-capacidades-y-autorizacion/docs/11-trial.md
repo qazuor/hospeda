@@ -19,10 +19,12 @@ cierra:
 
 # 11 · Trial
 
-La máquina está en el capítulo 03 §2 y sus cinco transiciones no se repiten acá. Este capítulo
-resuelve **los siete huecos que quedaron alrededor de ella**, y todos son variantes de la misma
+La máquina está en el capítulo 03 §2 y sus **siete** transiciones no se repiten acá. Este capítulo
+resuelve **los ocho huecos que quedaron alrededor de ella**, y todos son variantes de la misma
 pregunta: el §10.2 dice que el trial **no se devuelve nunca**, y no dice qué hacer en los casos
-donde eso se siente injusto o se puede explotar.
+donde eso se siente injusto o se puede explotar. El octavo —el §8, el día que una vertical
+enciende su trial— es el único que no pregunta por una persona sino por **un cambio de
+configuración**, y es por eso que tardó en aparecer.
 
 La respuesta de fondo es una sola y conviene tenerla a la vista antes de los casos:
 
@@ -315,12 +317,88 @@ camino **no se abre sin reabrir esto**.
 
 ---
 
+## 8. El día que una vertical enciende su trial
+
+Los siete huecos de arriba preguntan qué le pasa a **una persona**. Éste pregunta qué pasa el día
+que cambia **un número del catálogo**, y es el único de los ocho que no se puede contestar mirando
+una fila: el sujeto es una **cohorte**.
+
+### 8.1 El caso
+
+Una vertical puede declarar su evento de activación y tener los **días de trial en cero** — hoy
+Partner (`DEC-TRIAL-003`), y encenderlo está planificado, no es hipotético. Mientras el número
+está en cero, **nadie sale de `PRE_TRIAL`**: `T1` y `T6` piden las dos la misma mitad de catálogo
+—*«la vertical declara evento y su plan de trial tiene días > 0»*— y ninguna se cumple. Pero la
+gente **sí opera**: contrata, publica —con la capacidad que le da su plan vendible, porque la
+versión de pre-trial no lleva la de activación cuando los días son cero (cap. 02 §2.1)—, paga
+meses, y algunos cancelan y se van.
+
+**Sin una regla para el encendido, el día que el número sube esa gente vuelve a ser elegible.** El
+ex-cliente entra, publica, y como no está cubierto por nada dispara `T1`: trial completo, con las
+capacidades del plan vendible de `rank` más alto. **Le pasa a toda la cohorte de ex-clientes de
+esa vertical el mismo día**, y es precisamente *«un trial gratis para quien ya fue cliente»*, la
+puerta que el §10.2 existe para cerrar y que el capítulo 03 §2 cita para justificar a `T6`.
+
+### 8.2 La regla: el encendido resuelve a quien ya ejerció el evento
+
+> **Encender los días de trial de una vertical no es sólo subir un número: el mismo acto escribe la
+> fila de `trial` CONSUMIDA para todo el que está en `PRE_TRIAL` en esa vertical y ya ejerció el
+> hecho que la vertical declara como evento de activación.** Es la transición **`T7`** del capítulo
+> 03 §2, y no arranca ningún reloj ni manda ninguna campaña.
+
+**No es una excepción al §10.2: es lo que lo hace cumplir en la única fila del dominio donde no lo
+hacía cumplir nadie.** Y tampoco es *«reparación hacia adelante»* al revés — no le quita nada a
+nadie: le niega a un ex-cliente un trial que, mientras fue cliente, la vertical no ofrecía y él no
+podía pedir.
+
+**Quién NO entra, y es la mitad que importa:** quien **nunca ejerció el evento** en esa vertical
+sigue en `PRE_TRIAL` intacto, tenga suscripción o no la tenga, esté al día o esté `SUSPENDED`.
+Cuando publique, deciden `T1` y `T6` como en cualquier vertical. Es la misma población que
+`DEC-TRIAL-008` decidió proteger con todas las letras —*«alguien `SUSPENDED` por impago que nunca
+publicó en esa vertical recibe los días de trial que habría recibido igual si no hubiera
+contratado nunca»*—, y esta regla **no la toca**.
+
+**Y no pide un hecho nuevo en la frontera**, que es lo que `DEC-TRIAL-008` prohibió el día antes.
+La pregunta *«¿ya ejerció el evento de activación acá?»* es de verticales de punta a punta: es el
+mismo hecho que `T1` ya tiene que detectar, leído sobre el pasado. Su registro es el evento de
+dominio de la transición de publicar (cap. 08 §1.1 punto 2, núcleo), que es **append-only** (§1.3):
+ni borrar la ficha ni darse de baja lo borran — la misma promesa que el §10.2 ya hace sobre el
+trial, apoyada en el mismo lugar.
+
+### 8.3 Las tres cosas que hay que hacer el mismo día, y en este orden
+
+`DEC-TRIAL-003` ya dice que poner el número en distinto de cero **es una decisión registrada**.
+Esto es lo que esa decisión tiene que ejecutar, porque encender el número y nada más es lo que
+abre la puerta del §8.1:
+
+| # | qué | por qué no se puede dejar para después |
+|---|---|---|
+| 1 | **declarar el evento de activación** de la vertical, si todavía no lo declaró | el §10.4 lo exige, y sin él `T7` no tiene hecho que buscar en el pasado. Para Partner el candidato anotado es la aprobación del admin (`DEC-TRIAL-003`, implicación 1) |
+| 2 | **publicar la versión del plan de trial con días > 0** | es el encendido. Desde ese instante `T1` puede disparar sobre cualquiera que publique |
+| 3 | **ejecutar `T7` sobre la cohorte** | entre el paso 2 y éste, cualquier ex-cliente que publique se lleva un trial completo. La ventana tiene que ser **cero**: los tres pasos son **un solo acto**, no tres tareas |
+
+**El orden de 1 y 2 no es intercambiable con el 3, y la ventana entre 2 y 3 es el riesgo entero.**
+Es la misma forma del riesgo que el capítulo 02 §2.2 declara para el `UNIQUE` del hash del correo:
+*«aplicar el arreglo del trial primero y la restricción después abre una ventana en la que la
+puerta está abierta, y no hace falta mala fe para encontrarla: se descubre sola»*.
+
+### 8.4 Lo que este § deja dicho para la próxima vertical
+
+**Toda vertical que nazca con los días en cero hereda este §**, no sólo Partner. Y el caso inverso
+—**apagar** un trial encendido, poner los días de nuevo en cero— **no está declarado y este § no lo
+declara**: no hay ninguna transición que salga de `TRIAL_ACTIVE` por un cambio de catálogo, y
+quien lo necesite tiene que decidir antes qué pasa con los relojes que ya están corriendo.
+
+---
+
 ## Lo que este capítulo NO cierra
 
 - **`BD-TRIAL-01`** —qué pasa cuando la versión de la que deriva el plan de trial cambia en mitad
   de un trial— sigue abierto desde `DEC-TRIAL-001`.
 - **El evento de activación de Partner** queda diferido, no respondido (`DEC-TRIAL-003`): hoy su
-  trial está en cero y encenderlo es una decisión registrada.
+  trial está en cero y encenderlo es una decisión registrada. **Qué hay que hacer el día que se
+  encienda sí está resuelto, y es el §8** — lo que falta es **cuál** es el evento, no el
+  procedimiento.
 - **Si el mes de la cuota corre por calendario o por aniversario** es del capítulo 15
   (`DEC-ENT-002`, implicación 2). Acá sólo se fijó que la del trial **no** es mensual.
 - **Qué significa exactamente archivar** un borrador pre-trial depende de `C-DATA-01`

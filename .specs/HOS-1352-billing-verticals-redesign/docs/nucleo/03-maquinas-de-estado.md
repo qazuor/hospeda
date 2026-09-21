@@ -83,6 +83,13 @@ máquina de estados y una convención.
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
    depende de que alguien vuelva a recorrer las nueve tablas a mano.
 
+   **Compartir el `desde` no es compartir el par, y hay un caso vivo que lo pide dicho.** `T7`
+   (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de trial
+   de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su par,
+   `(PRE_TRIAL, encendido)`, tiene **una sola** fila: no hay guardas que dirimir y la tabla de
+   arriba sigue teniendo tres entradas. Lo que este guard cuenta son **pares**, no estados de
+   origen.
+
 ---
 
 ## Lo que esta mitad NO cierra

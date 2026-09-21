@@ -435,6 +435,29 @@ acto de `SUPER_ADMIN` y queda auditado como cualquier otro. No hay rama que deci
 regalar en una vertical que nadie miró — y la alternativa, elegirlo automáticamente, es
 precisamente lo que *«regalar algo pasa a ser elegir un plan concreto»* vino a impedir.
 
+**Y ese acto no es sólo una escritura: es una de las acciones administrativas del catálogo, y
+dispara `S13`.** Las dos mitades son necesarias y ninguna se infiere de *«queda auditado»*:
+
+1. **Está en el catálogo de `NUCLEO/08` §3**, en la fila del grant permanente, con lo que esa
+   tabla da: **permiso propio**, registro, y **confirmación explícita** —anclar concede servicio
+   gratuito permanente en una vertical nueva, o sea *«una concesión que evita un cobro»*, que es
+   la primera de las tres condiciones del §1.1—. Estar en el catálogo es además lo que lo vuelve
+   **una capacidad del actor** y no del sujeto (`V/17` §3.2, regla 3): sin esa entrada, los pasos
+   5-7 se resolverían **sobre el beneficiario**, que por definición todavía no tiene en esa
+   vertical la capacidad que se le está por conceder, y el acto sería inejecutable. Y es lo que
+   hace que **un actor de sistema no lo pueda ejecutar** (`V/17` §3.3).
+2. **Dispara `S13` sobre la vertical que se ancla** (`B/03` §3.2): el beneficiario queda cubierto
+   ahí desde el instante del anclaje, así que **toda fila viva suya en esa vertical se cancela**,
+   igual que en el otorgamiento. Sin esto el §35.3 —*«cancelar toda obligación de pago
+   cubierta»*— queda incumplido **exactamente en la vertical que se acaba de regalar**, y el
+   beneficiario la sigue pagando todos los meses.
+
+**Desanclar no está declarado, y esto no lo declara.** Reducir el scope de un grant sin revocarlo
+entero no es una operación de este diseño; si alguna vez se necesita, entra por el catálogo del
+`NUCLEO/08` §3 con su propia fila, su confirmación y su transición —cortar servicio en una
+vertical es la mitad de *«la acción administrativa más grave»*— y no como un efecto lateral de
+borrar una fila.
+
 **Los tres pedazos, y ninguno inventa un modo nuevo:**
 
 1. **Cada ancla apunta a un plan, no a una versión.** `UNIQUE(plan_id) WHERE vigente` garantiza que

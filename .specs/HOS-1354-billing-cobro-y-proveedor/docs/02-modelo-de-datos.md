@@ -319,7 +319,12 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
 - **Una vertical sin ancla no recibe nada, y es la respuesta al scope *«todas actuales y futuras»* del
   §35.1.** Una fuente sin referencia resoluble **no se puede expresar** (`12-contrato…` §2.3), así que
   el grant no emite fuente donde no ancló; extenderlo a una vertical nueva es anclarle un plan, un acto
-  de `SUPER_ADMIN` que queda auditado.
+  de `SUPER_ADMIN` que queda auditado. **Y no alcanza con que quede auditado: es una de las acciones
+  del catálogo de `NUCLEO/08` §3 —la fila del grant permanente, con su permiso y su confirmación— y
+  dispara `S13` sobre la vertical que se ancla** (`12-contrato…` §2.8, `B/03` §3.2). Anclar hace
+  cubrir, y lo que cubre cancela la obligación de pago de esa vertical; sin esa mitad el
+  beneficiario sigue pagando lo que se le acaba de regalar. **Desanclar no está declarado**, y no se
+  infiere de que las anclas sean filas.
 
 **Anclar no es ser.** Una suscripción ancla una versión de plan y no es un plan: el grant sigue
 siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya estaba resuelto —

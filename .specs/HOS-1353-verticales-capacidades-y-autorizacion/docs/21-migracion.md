@@ -82,9 +82,35 @@ están publicadas.
 
 **Y la guarda nueva del par `T1`/`T6` no cambia esta conclusión, que es lo que hay que
 verificar.** Desde que `T1` exige `cubierto` **falso** y `T6` lo exige **verdadero** (`V/03` §2),
-el mismo evento podría mandar a alguien a `TRIAL_CONVERTED` en vez de a `TRIAL_ACTIVE` — pero **no
-la mañana del corte**: las ocho suscripciones se cancelan (§2.1), así que **nadie tiene un título
-vivo** y la única de las dos que puede disparar es `T1`. Lo de abajo vale sin ramas.
+el mismo evento podría mandar a alguien a `TRIAL_CONVERTED` en vez de a `TRIAL_ACTIVE`. **La
+conclusión se sostiene, pero por el argumento del párrafo de arriba y no por `cubierto`: el evento
+ya ocurrió, así que la mañana del corte no dispara NINGUNA de las dos.** Nadie publica una ficha
+que ya está publicada, y sin evento no hay transición — para las ocho filas por igual. `T7`
+tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende nada.
+
+**Dos correcciones sobre esta misma verificación, porque razonaba sobre el conjunto equivocado:**
+
+1. **No es cierto que «nadie tiene un título vivo».** Las ocho suscripciones se cancelan (§2.1),
+   sí, pero la otra mitad del corte **escribe dos `permanent_grant`** en el mismo acto —las dos
+   cortesías del owner, `B/21` §2.4— y un `GRANT` con `hasta: NO_VENCE` es de clase **`TÍTULO`**
+   (`12-contrato…` §2.4). Para esas dos cuentas `cubierto` es **verdadero** en cuanto el grant
+   existe. No cambia lo de abajo —no dispara ninguna transición—, pero sí cambia **cuál
+   dispararía** el día que publiquen algo nuevo, y eso es el punto 3.
+2. **Y por eso `PB2` tampoco las alcanza.** Con `cubierto` verdadero no hay cambio de cobertura
+   que despublique nada: **lo de abajo vale para seis de las ocho**, no para las ocho.
+3. **El orden entre la escritura de los dos grants y el paso 4 no está fijado en ningún lado, y
+   hay que fijarlo en el procedimiento del corte.** Si los grants se escriben **antes**, esas dos
+   cuentas nunca pierden cobertura; si se escriben **después**, pasan por una ventana con
+   `cubierto` falso en la que `PB2` les baja las fichas y `PB3` se las devuelve. Las dos ramas
+   terminan igual y el residuo es una despublicación visible de minutos sobre dos cuentas del
+   owner: **es un orden que hay que escribir, no una decisión de diseño**.
+
+**Lo que este § NO decide es qué pasa con el trial de esas dos cuentas.** Cubiertas por un grant,
+el día que publiquen una ficha dispara **`T6`** y su fila de `trial` nace **consumida**; y si ese
+grant se revocara alguna vez, quedarían sin grant y sin el trial que nunca usaron. Eso es un
+defecto de la máquina de trial, no del corte, **está abierto y lo decide el owner**. Acá sólo se
+declara que el corte pone a dos cuentas en esa posición, y que las dos son suyas y *«regenerables
+de cero»* (`B/21` §2.4) — que es lo que lo vuelve tolerable mientras se decide.
 
 **Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
 un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así

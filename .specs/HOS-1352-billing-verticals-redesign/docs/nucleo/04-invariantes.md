@@ -65,7 +65,7 @@ el invariante se puede perder.
 | 22 | la cancelación normal conserva el período pagado | S11 + S12, con **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | 23 | sólo los planes mensuales pueden pausarse | `puedePausar()`, un solo lugar (cap. 01 §3) |
 | 24 | la pausa puede terminar anticipadamente | S10, el mismo reloj para el fin previsto y el anticipado (`DEC-SUB-010`) |
-| 30 | sólo `SUPER_ADMIN` otorga *Free Forever* | la autorización de esa operación, y **también la cortesía temporal** (`DEC-GRANT-002`) |
+| 30 | sólo `SUPER_ADMIN` otorga *Free Forever* | la autorización de esa operación, y **también la cortesía temporal** (`DEC-GRANT-002`). **La misma autorización cubre las otras dos escrituras sobre el instrumento** —anclarle una vertical nueva y revocarlo—, que son la misma fila del cap. 08 §3: si «otorgar» fuera la única autorizada, extender un grant a una vertical más quedaría sin gate y `SUPER_ADMIN` dejaría de ser exclusivo por la puerta de al lado |
 
 ### 2.3 Los que sostiene un guard (5)
 

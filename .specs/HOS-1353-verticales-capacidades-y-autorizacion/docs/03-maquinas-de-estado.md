@@ -35,6 +35,8 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
       └──────────► TRIAL_CONVERTED ◄──────────────────────────────── TRIAL_EXPIRED
        T6 · evento de activación,
             y SÍ hay título
+       T7 · la vertical enciende sus días de trial,
+            y el evento de activación ya se ejerció
 ```
 
 | # | desde | evento | hacia | condición | efectos |
@@ -45,6 +47,7 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
 | T5 | `TRIAL_EXPIRED` | **aparece una fuente viva de clase `TÍTULO`** | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; **la publicación la restituye `PB3`**, por el cambio de `cubierto` (§9) |
 | T6 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_CONVERTED` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **verdadero** | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
+| T7 | `PRE_TRIAL` | **el encendido: la vertical pasa los días de trial de su plan de trial de 0 a > 0** | `TRIAL_CONVERTED` | la persona **ya ejerció el hecho que la vertical declara como evento de activación**, en cualquier momento anterior al encendido — **`cubierto` no participa** | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
 
 **Qué contesta el contrato de cobertura en cada estado.** El trial es **fuente viva en
 `PRE_TRIAL` y en `TRIAL_ACTIVE`, y en ningún otro estado**; lo que cambia entre los dos no es *si
@@ -120,13 +123,66 @@ porque no hace falta ninguna.
 |---|---|---|
 | declara evento y días > 0 | **falso** | `T1`: arranca el trial |
 | declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
-| no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara**, y la persona se queda en `PRE_TRIAL` |
+| no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **hasta el encendido, que es lo que resuelve `T7`** |
 
 **La tercera fila es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
 vertical que declarara evento con los días en cero le escribía a un cliente la fila consumida de
 un trial **que la vertical todavía no ofrece** — y el día que lo encendiera, esa persona ya no lo
 tenía. `DEC-TRIAL-003` contempla exactamente ese día para Partner. Consumir un beneficio que no
 existe no es consumirlo: es destruirlo antes de que nazca.
+
+#### La tercera fila no es un estado final: `T7` la cierra el día del encendido
+
+**«Se queda en `PRE_TRIAL`» es verdadero mientras la configuración no cambie, y la configuración
+va a cambiar**: `DEC-TRIAL-003` no dice *«Partner no tiene trial»*, dice *«hoy lo tiene en cero»*
+y que **encenderlo es una decisión registrada**. El día del encendido, quien quedó en esa fila
+**sale de `PRE_TRIAL` con las dos guardas del par cumplidas**: la vertical declara evento, los
+días ya son `> 0`, y `cubierto` decide cuál de las dos dispara. Para el que **fue cliente y se
+fue** —contrató, publicó, pagó meses y canceló— `cubierto` es **falso**, así que dispara **`T1`**
+y le arranca un trial completo: las capacidades del plan vendible de `rank` más alto, gratis, a
+alguien cuya relación comercial ya terminó. Y no le pasa a una persona: le pasa **a toda la
+cohorte de ex-clientes de esa vertical, el mismo día**.
+
+**Eso es exactamente lo que el §10.2 existe para cerrar** —*«un trial gratis para quien ya fue
+cliente»*, la frase con la que este mismo § justifica a `T6`—, y en el tercer renglón no lo
+cerraba nadie, porque `T6` tampoco dispara mientras los días estén en cero. `T7` es el renglón que
+faltaba:
+
+> **El encendido de una vertical resuelve, en el acto, a todo el que quedó en `PRE_TRIAL` habiendo
+> ya ejercido el evento de activación: su fila de `trial` se escribe consumida.** No arranca ningún
+> reloj y no manda ninguna campaña — es la misma escritura de `T6`, con otro disparador.
+
+**Por qué la condición es «ya ejerció el evento» y no `cubierto`, que es la pregunta obvia.** Las
+dos mitades importan y ninguna es intercambiable con la otra:
+
+| quién | qué le pasa el día del encendido | por qué es lo correcto |
+|---|---|---|
+| **ya publicó en esa vertical** (con los días en cero sólo se puede publicar teniendo un título: la versión de pre-trial **no lleva la capacidad de activación** cuando los días son cero, cap. 02 §2.1) | **`T7`**: fila consumida | ya fue cliente y ya ejerció el evento que arranca el trial. Devolvérselo el día del encendido es el reseteo del §10.2 |
+| **nunca publicó ahí**, tenga o no suscripción | **nada**: sigue en `PRE_TRIAL` | nunca ejerció el evento. Cuando lo ejerza, deciden `T1` y `T6` como en cualquier vertical — y es **literalmente** la población que `DEC-TRIAL-008` protege: *«alguien `SUSPENDED` por impago que **nunca publicó en esa vertical** recibe los días de trial que habría recibido igual si no hubiera contratado nunca»* |
+
+**Y no pide ningún hecho nuevo en la frontera**, que es la restricción que `DEC-TRIAL-008` acaba
+de poner y que un *«¿alguna vez tuvo un título acá?»* habría violado de frente. *«Ejerció el
+evento de activación»* es **un hecho de verticales**: es el mismo hecho que esta máquina ya tiene
+que detectar para disparar `T1`, leído sobre el pasado en vez de sobre el instante. Su registro
+existe y es duradero sin agregar nada: publicar es una transición de la máquina del §9, o sea un
+evento auditable por el criterio 2 del cap. 08 §1.1 (núcleo), y ese registro es **append-only**
+(§1.3) — ni borrar la ficha ni darse de baja lo borran, que es la misma promesa que el §10.2 ya
+hace sobre el trial.
+
+**`T7` no es un cuarto par de `G-R4` y no toca los tres declarados.** Comparte el `desde` con
+`T1`/`T6`, pero **no el evento**: el suyo es el encendido, un cambio de catálogo, y los de aquéllas
+son el evento de activación de la persona. El par `(PRE_TRIAL, evento de activación)` sigue
+teniendo **dos** filas y dos destinos, que es lo que el cap. 03 §1 regla 7 (núcleo) enumera y lo
+que `G-R4` cuenta. Y el par `(PRE_TRIAL, encendido)` tiene **una sola** fila, así que no hay
+guardas que dirimir.
+
+**El encendido no es una acción del catálogo del cap. 08 §3 (núcleo) y no hay que agregarlo ahí.**
+No es un acto de un administrador sobre la cuenta de otro: es **configuración de catálogo**
+—publicar una versión del plan de trial con días `> 0`, cap. 10 §3—, igual que cualquier otro
+cambio de versión. Es auditable por el criterio 2 del §1.1 —cambia el acceso de mucha gente a la
+vez— y `DEC-TRIAL-003` ya exige que la decisión quede registrada. Lo que el capítulo 11 (épica de
+verticales) §8 agrega es **qué hay que hacer el mismo día**, porque encender el número sin ejecutar
+`T7` es lo que abre la puerta.
 
 **Y `cubierto` no se puede referir a sí mismo por accidente**, que es la trampa obvia de
 condicionar una máquina de trial sobre la cobertura: la fuente del trial en `PRE_TRIAL` tiene

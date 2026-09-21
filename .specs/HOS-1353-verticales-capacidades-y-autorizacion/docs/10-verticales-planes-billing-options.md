@@ -34,7 +34,7 @@ hoy (§6). La tabla no agrega ítems ni los interpreta: los instancia.
 
 | # | ítem del Eje 2 | Turista | Alojamiento | Gastronomía | Experiencia | Partner |
 |---|---|---|---|---|---|---|
-| 1 | evento que activa el trial | pulsar *Empezar* (`DEC-TRIAL-006`) | publicar una ficha | publicar una ficha | publicar una ficha | **ninguno**: trial en cero días (`DEC-TRIAL-003`) |
+| 1 | evento que activa el trial | pulsar *Empezar* (`DEC-TRIAL-006`) | publicar una ficha | publicar una ficha | publicar una ficha | **ninguno hoy**: trial en cero días (`DEC-TRIAL-003`). Declararlo es el paso 1 del encendido, que no es sólo subir el número — cap. 11 §8 |
 | 2 | qué publica | nada | ficha | ficha | ficha | presencia de Partner, **sólo Gold** (§17.1) |
 | 3 | sección de Mi Cuenta | sí | sí | sí | sí | sí |
 | 4 | claves de entitlement y limit con sentido | subconjunto propio | subconjunto propio | subconjunto propio | subconjunto propio | subconjunto propio |

@@ -141,8 +141,12 @@ direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum 
 otra mitad de esas dos condiciones es del **sujeto** —`cubierto`, y es lo que las vuelve
 disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el momento.
 Partner, que hoy tiene el trial en cero (`DEC-TRIAL-003`) y **ningún evento declarado**
-(`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las dos transiciones dispara ahí**,
-que es lo que impide quemarle el trial a alguien antes de que la vertical lo ofrezca.
+(`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las tres transiciones que salen de
+`PRE_TRIAL` dispara ahí hoy**, que es lo que impide quemarle el trial a alguien antes de que la
+vertical lo ofrezca. **Son tres y no dos**: `T1` y `T6` esperan el evento de activación, que
+Partner no declara, y `T7` espera **el encendido**, que todavía no ocurrió. El día que ocurra,
+`T7` es justamente la que resuelve a quien ya ejerció el evento (`V/03` §2, cap. 11 §8) — así que
+esta frase es verdadera **por la configuración de hoy**, no por una propiedad de Partner.
 
 **Y esa condición necesita una columna que no existía**: `vertical.evento_de_activacion`. Sin
 ella el lado izquierdo del «si y sólo si» no se puede leer, y el guard **no verifica nada** — se
@@ -248,7 +252,7 @@ Invalidan la entrada de un `user + vertical`:
 | cambio de plan o de ciclo | cambia la versión anclada |
 | toda transición de la máquina de suscripción | `ACTIVE`, `SUSPENDED` y `PAUSED` otorgan cosas distintas |
 | toda transición de la máquina de trial | ídem |
-| se otorga o se revoca una cortesía o un grant | son fuentes independientes (§2.4) |
+| se otorga o se revoca una cortesía o un grant, **o se le ancla una vertical nueva a un grant vivo** | son fuentes independientes (§2.4). **El anclaje es la tercera escritura que cambia la cobertura** (`12-contrato…` §2.8) e invalida **la entrada de esa vertical**, que es justo la que hasta ese instante no tenía fuente `GRANT` |
 | se activa o vence un addon | ídem |
 | se publica una versión nueva de un plan al que hay suscripciones ancladas | cambia lo que esa versión otorga |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
