@@ -51,18 +51,39 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G9 | el `reason` que se manda al proveedor es **un identificador interno** y no copy para el cliente | `D9`, `EX-19` |
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
-| G-R1-A | una fila con `sucede_a` no nulo apunta a una predecesora **fuera de** `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2 |
+| G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
+| G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`** | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 
-**Los dos de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
-`G-R1-A` impide declarar una sucesión desde una `SUSPENDED` —autorización de estado
+**Los tres de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
+`G-R1-A` impide **declarar** una sucesión desde una `SUSPENDED` —autorización de estado
 indeterminado— o desde una `PAUSED`, donde `EX-11` mide que **el proveedor rechaza toda
 modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el momento de
-escribirla en vez de al insertar. `G-R1-B` es **`D8` hecho verificable en vez de recordable**, y
+escribirla en vez de al insertar.
+
+**`G-R1-A` vigila el ACTO de declarar, no una propiedad permanente de la fila**, y la diferencia
+no es de matiz: la sucesión dura **hasta 72 h**, y en esa ventana **seis transiciones normales
+sacan a una predecesora perfectamente legal del conjunto de tres** —`S8` y `S9` la pausan, `S6` la
+suspende, `S12`, `S13` y `S16` la matan; las conté sobre la tabla del cap. 03 §3.2—. Leído como
+propiedad permanente, el guard se ponía en rojo sobre el camino normal, **exactamente durante la
+ventana en que nadie lo puede distinguir de un rojo real**, y un guard que falla sobre el camino
+normal es un guard que alguien va a relajar. Leído sobre el acto, el conjunto de tres es el
+dominio correcto y coincide con el que `S1` exige.
+
+`G-R1-B` es **`D8` hecho verificable en vez de recordable**, y
 por eso **depende de la columna** que guarda la fecha con la que nació la fila (cap. 02 §2.2): sin
 ella el guard no se puede escribir, y el invariante vuelve a ser algo que alguien tiene que
 acordarse de cumplir.
+
+**`G-R1-C` es el guard del CIERRE**, que es la mitad que faltaba: `A` y `B` vigilan cómo nace una
+sucesión y ninguno vigilaba cómo termina. `S18` escribe `sucedida_por` en la predecesora y limpia
+`sucede_a` en la sucesora, y las dos mitades son inseparables **en direcciones opuestas**: la
+primera sin la segunda deja la sucesora ocupando el candado `B` con el `A` **vacío** —y un alta
+nueva entra sin que nada la rechace—; la segunda sin la primera borra la única evidencia de que
+hubo sucesión, y los complementos del que hizo un upgrade se cancelan de forma irreversible
+(`B/16` §4.2). Es una propiedad del árbol de fuentes y se rompe a propósito comentando una de las
+dos escrituras, que es lo que pide el §2.1.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

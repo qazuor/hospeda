@@ -222,6 +222,12 @@ tiene un nombre propio que ya no se puede confundir con el otro.
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
 canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
 
+**Y «fila viva» es el término que nombran, ya sin la palabra suelta, los cuatro predicados de
+billing que la necesitan**: el alcance de `S13`, el de `S17` y la condición de cierre de `S18`
+—los tres en cap. 03 (épica de billing) §3.2— más la definición de addon huérfano de
+cap. 16 (épica de billing) §4.2. Los cuatro están del lado de billing y sobre filas de billing,
+que es la regla 1 de abajo.
+
 **Y los dos conjuntos no coinciden, con la distancia contada contra la tabla de diez filas del
 `12-contrato…` §2.6.** De las **seis** filas vivas, **tres no emiten ninguna fuente**:
 `PENDING_AUTHORIZATION`, `SUSPENDED` y `PAUSED` cuando el motivo es `CUSTOMER_REQUEST`. Y la

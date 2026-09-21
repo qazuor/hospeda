@@ -319,6 +319,32 @@ plata en la misma dirección.
 rigiendo el piso** (§2.5), y a quien está cambiando de plan **lo sigue cubriendo su suscripción
 vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede autorizada.
 
+**Y la garantía termina donde termina la sucesión, así que hay que decir qué pasa después.** La
+frase de arriba —*«hasta que la nueva se autorice»*— cierra la ventana **anterior** a la
+autorización, y hay una ventana **posterior**: cuando la sucesora ya autorizó pero la
+cancelación de la predecesora en el proveedor **falló**, `B/03` §3.2 deja las dos filas donde
+estaban, con la marca puesta, y `B/03` §3.1 es explícito en que una fila marcada *«conserva el
+estado que tenía, y sigue cubriendo a quien estaba cubierto»*. Las dos emiten.
+
+> **Dos fuentes `SUSCRIPCIÓN` de clase `TÍTULO` para el mismo `user + vertical` son posibles, y
+> sólo en ese caso.** El contrato no las desempata: `fuentes` las devuelve a las dos y el pliegue
+> de `V/15` §2.2 las agrega como a cualquier otro par.
+
+**No se desempata porque en esa rama el cliente está pagando las dos**, y desempatar sería la
+única forma de cobrarle dos planes y darle uno. Tampoco hay decisión de cobertura que tomar: la
+rama es un incidente declarado, con la marca puesta y una persona mirándolo, y su salida es
+resolver la cancelación —no elegir qué fuente vale—. Lo que no puede pasar es que el caso quede
+sin nombrar, porque entonces el techo de lo que alguien puede tener depende de si una llamada al
+proveedor salió bien.
+
+**Y no es alcanzable por ningún otro camino.** Las seis transiciones que mueven a la predecesora
+durante la ventana de 72 h —las conté sobre la tabla de `B/03` §3.2: `S8`, `S9`, `S6`, `S12`,
+`S13` y `S16`— la dejan en un estado que **no emite** en cinco de los seis casos; la excepción es
+`S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`. Y en
+todas, si
+la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a
+`CANCELLED`.
+
 **Consecuencia sobre el dominio del `hasta`**: `SIN_EMPEZAR` **no puede venir de una
 `SUSCRIPCIÓN`**, porque el único estado que lo justificaría no emite fuente. Es la fila
 «imposible» de la tabla del §2.4, y ahora tiene su razón escrita.

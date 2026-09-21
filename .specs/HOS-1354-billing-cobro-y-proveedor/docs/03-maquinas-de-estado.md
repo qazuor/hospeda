@@ -99,17 +99,23 @@ Y una nota de registro que sigue valiendo:
 | S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | — | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) |
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
-| S13 | `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED` | `SUPER_ADMIN` otorga *Free Forever* | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); el acceso pasa a darlo el grant |
+| S13 | **toda fila viva** del beneficiario en **cada vertical que el grant ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos | `SUPER_ADMIN` otorga *Free Forever* | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; el acceso pasa a darlo el grant |
 | S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se pone la marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas** |
 | S15 | cualquiera **con la marca puesta** | una persona resuelve | **el mismo estado** | intervención humana registrada | **se levanta la marca**; si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita** |
 | S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** |
-| S17 | la **predecesora**, en cualquier estado vivo | webhook de que **su sucesora** quedó autorizada, confirmado por relectura | `CANCELLED` | la fila tiene una sucesora con `sucede_a` apuntándola | **se cancela en el proveedor** (es `D7`), y en el mismo acto **la sucesora limpia su `sucede_a`**: la sucesión terminó y pasa a ser el origen |
+| S17 | la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED` | su sucesora quedó **autorizada**, confirmado por relectura | `CANCELLED` | la fila tiene una sucesora con `sucede_a` apuntándola | **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada** |
+| S18 | la **sucesora**, en `ACTIVE` | la misma autorización que disparó `S2`, o una resolución de `S15` sobre la sucesión trabada | **el mismo estado** | la predecesora **ya no es fila viva** | **cierra la sucesión, y es el único acto que lo hace**: se escribe **`sucedida_por`** en la predecesora, se **limpia `sucede_a`** en la sucesora, y los complementos de la predecesora se **re-apuntan** a ella (`B/16` §4.2). La sucesora pasa a ser el origen |
 
-**`S17` es la transición que cierra la sucesión, y sin ella el candado se rompía en las dos
-direcciones a la vez.** `D7` declara obligatorio cancelar la vieja al recibir el webhook de que la
-nueva quedó autorizada, y **ninguna fila de esta tabla lo ejecutaba** — así que, por la regla 1 del
-núcleo, el acto normal del mecanismo más caro del sistema terminaba **en un incidente y una fila
-sin cancelar**, con dos preapprovals vivos cobrando.
+**La muerte de la predecesora y el cierre de la sucesión son DOS actos, y por eso son dos
+filas.** `S17` mata a la predecesora; `S18` cierra la sucesión. Escribirlos como uno solo es lo
+que rompía el candado, porque ataba el cierre —que siempre tiene que ocurrir— a una precondición
+que la predecesora puede dejar de cumplir **sola**, y a una llamada al proveedor que puede
+fallar.
+
+`D7` declara obligatorio cancelar la vieja al recibir el webhook de que la nueva quedó
+autorizada, y **ninguna fila de esta tabla lo ejecutaba** — así que, por la regla 1 del núcleo, el
+acto normal del mecanismo más caro del sistema terminaba **en un incidente y una fila sin
+cancelar**, con dos preapprovals vivos cobrando. Eso lo cierra `S17`.
 
 **Y `sucede_a` no se limpiaba nunca**, que es la otra mitad y produce dos daños opuestos:
 
@@ -118,15 +124,101 @@ sin cancelar**, con dos preapprovals vivos cobrando.
 | el candado `A` **vacío** —ninguna fila viva con `sucede_a IS NULL`— | todo cliente que alguna vez cambió de plan quedaba **permanentemente fuera del §11**: un alta nueva entraba sin que nada la rechazara, y `EX-6` mide que el proveedor no frena la segunda |
 | el candado `B` **consumido** —la sucesora viva lo ocupa para siempre— | **nadie podía cambiar de plan dos veces** en la vida de la relación |
 
-Los dos se cierran con el mismo acto: **terminada la sucesión, la sucesora vuelve a ser un
-origen**. `A` vuelve a estar ocupado y `B` vuelve a estar libre, que es el estado en el que la
-persona estaba antes de empezar.
+Los dos los cierra `S18`: **terminada la sucesión, la sucesora vuelve a ser un origen**. `A` vuelve
+a estar ocupado y `B` vuelve a estar libre, que es el estado en el que la persona estaba antes de
+empezar.
 
-**El dominio que esto crea, recorrido**: la sucesora puede tener `sucede_a` **no nulo** (sucesión en
-curso: `A` ocupado por la predecesora, `B` por ella) o **nulo** (sucesión terminada: `A` ocupado por
-ella, `B` libre). **No hay un tercer estado**, y el paso entre los dos es atómico con `S17`. Si la
-cancelación en el proveedor **falla**, `S17` no ocurre: la marca se pone y una persona lo mira, que
-es el camino declarado y no un hueco.
+#### El dominio, recorrido por el lado de la PREDECESORA
+
+La versión anterior de este § recorrió el dominio sobre la sucesora —*«`sucede_a` nulo o no nulo,
+no hay un tercer estado»*— y **puso la precondición sobre la predecesora**, que es el eje que no
+recorrió. El tercer estado existía y era caro: `sucede_a` no nulo con la sucesión terminada y
+nada que pudiera limpiarlo.
+
+**Mientras la sucesora espera autorización —hasta 72 h— la predecesora se sigue moviendo, y se
+mueve sola.** Recorrí las salidas de los tres estados desde los que se declara una sucesión y son
+**seis** las transiciones de esta misma tabla que la sacan de ahí sin que nadie declare nada:
+
+| # | desde | transición | hacia | ¿sigue siendo fila viva? |
+|---|---|---|---|---|
+| 1 | `ACTIVE` | `S8` — la persona pide pausar | `PAUSED` | **sí** |
+| 2 | `ACTIVE` | `S9` — `SUPER_ADMIN` otorga cortesía | `PAUSED` | **sí** |
+| 3 | `GRACE_PERIOD` | `S6` — se agota el reloj | `SUSPENDED` | **sí** |
+| 4 | `CANCEL_SCHEDULED` | `S12` — llega la fecha de fin de servicio | `CANCELLED` | **no** |
+| 5 | cualquiera de los cinco | `S13` — *Free Forever* | `CANCELLED` | **no** |
+| 6 | `ACTIVE` | `S16` — el primer cobro de esa autorización se rechaza | `CHARGE_DECLINED` | **no** |
+
+**La 3 y la 4 no necesitan que nadie toque un botón —las dos son relojes—**, y la 6 llega con el
+cobro real, que `PA-3` mide **entre 26 y 44 minutos** después de autorizar: en esa media hora un
+cambio de plan es legal y la predecesora todavía está `ACTIVE`. **Las tres primeras siguen siendo
+filas vivas y son el dominio de `S17`** —por eso su `desde` son cinco estados y no tres—; **las
+tres últimas ya no lo son, y ahí `S17` simplemente no aplica: no hay nada que cancelar y no hay
+nada que matar.** En los seis casos `S18` corre igual, porque su condición es *«la predecesora ya
+no es fila viva»* y las tres primeras la cumplen recién después de `S17`.
+
+Con eso, el dominio queda recorrido en los dos ejes y la relación tiene **tres** estados, no dos,
+y el tercero es el que faltaba:
+
+| estado de la relación | cómo se lee | qué candado ocupa |
+|---|---|---|
+| **no hay sucesión** | `sucede_a` nulo y `sucedida_por` nulo | `A` la fila, `B` libre |
+| **sucesión en curso** | la sucesora con `sucede_a` no nulo | `A` la predecesora, `B` la sucesora |
+| **sucesión terminada** | la predecesora con `sucedida_por` no nulo, la sucesora con `sucede_a` nulo | `A` la sucesora, `B` libre |
+
+**Son dos filas y un solo acto: o corren las dos o no corre ninguna.** Partirlas es lo que hace
+que el cierre sea alcanzable —`S18` no depende de que `S17` tenga sujeto—, no una licencia para
+ejecutar una sin la otra: `S17` sin `S18` deja el candado `A` **vacío**, y `S18` sin `S17` deja
+viva una autorización que el `D7` manda cancelar. Lo vigila `G-R1-C` (`B/20` §2).
+
+**Y el disparador de las dos es un ESTADO, no una entrega.** *«Su sucesora quedó autorizada,
+confirmado por relectura»* se puede volver a evaluar mañana; *«llegó el webhook»* no, porque un
+webhook no se vuelve a emitir. Es lo que hace que la salida que `S15` promete —*«se ejecuta la
+transición de esta misma tabla que lo permita»*— exista de verdad para una sucesión trabada.
+
+**La única rama en la que la sucesión NO se cierra es que la cancelación en el proveedor falle
+sobre un preapproval que la relectura vio vivo.** Ahí `S17` no ocurre, `S18` tampoco —su condición
+no se cumple—, la marca se pone y una persona lo mira. **Y es lo correcto, no un hueco**: en esa
+rama hay de verdad dos autorizaciones que pueden cobrar, y limpiar `sucede_a` ahí sería, además de
+mentira, **imposible** — la sucesora pasaría a competir por el candado `A` con una predecesora que
+lo sigue ocupando, y la base rechaza la escritura. Lo que la rama le cuesta a la cobertura está
+escrito en `12-contrato-de-cobertura.md` §2.6.
+
+**Lo que ya NO es esa rama, y antes lo era**: un preapproval que la relectura encuentra ya
+`cancelled` —el arrepentimiento del §3.3, donde `S11` lo canceló *«de inmediato»*— no es una
+cancelación fallida. `PA-5` mide que re-cancelar da `400`, así que mandarlo otra vez convertía el
+camino normal en un incidente garantizado. `D7` pide que la vieja **no se cancele antes**; sobre
+una ya cancelada por decisión de la persona, `D7` está cumplido y no hay nada que mandar.
+
+#### `S13` alcanza a TODA fila viva, no a una
+
+El §35.3 ordena *«cancelar toda obligación de pago cubierta»*, en plural, y el origen de `S13`
+enumeraba **cuatro** estados y una sola fila. *«Cubierta»* se lee contra el scope del grant, que
+desde `B/02` §2.4 **no es una columna sino sus anclas**: una por vertical. Los dos estados que
+faltaban no son bordes:
+
+- **`PENDING_AUTHORIZATION` es el caro.** Una sucesora esperando autorización **es una obligación
+  de pago**: su preapproval está creado y la persona puede completar el checkout en cualquier
+  momento —no tiene por qué saber que el grant llegó—, y entonces `S2` la lleva a `ACTIVE` con una
+  fecha de primer cobro que `B/12` §5.2 puso **días después** del grant. El beneficiario de *Free
+  Forever* terminaba pagando todos los meses una suscripción que el grant le regaló, y nada lo
+  detectaba: la fila está `ACTIVE`, el proveedor dice `authorized`, y para el barrido eso
+  **coincide**. Por eso el efecto de `S13` cancela el preapproval **esté autorizado o esperando
+  autorización**, y por eso la pantalla de *«esperando que completes el pago»* del §3.4 punto 3
+  —con su enlace para retomar— tiene que dejar de ofrecer ese enlace en el mismo acto.
+- **`CANCEL_SCHEDULED` entra por completitud**: no tiene obligación de pago viva —`S11` ya canceló
+  su preapproval— pero dejarla afuera obligaba a leer la ausencia como una excepción. Entra, y la
+  regla de *«ya está `cancelled`, no se manda nada»* hace que no cueste una llamada.
+
+**Si el grant cae en medio de una sucesión, `S13` alcanza a las dos filas y la sucesión no se
+cierra: se cancela.** No corre `S18` —no queda ninguna sucesora viva a la que pasarle el origen— y
+la sucesora queda `CANCELLED` con su `sucede_a` escrito, que es el registro fiel de lo que pasó.
+No ocupa ningún candado, porque los dos índices son parciales sobre las filas vivas, y no dispara
+`G-R1-A`, que desde `B/20` §2 mira **el acto de declarar** y no una propiedad permanente de la
+fila.
+
+**Esto vuelve verdadera una afirmación de `B/14` §4.3** —*«sobre un grant no se otorga cortesía
+… porque no queda nada que no cobrar»*—, que con `S13` alcanzando una sola fila era falsa
+exactamente en este camino.
 
 **`S14` y `S15` quedan en la tabla y ya no son transiciones de estado.** Se listan acá porque son
 los dos eventos que el §22.1 gobierna y nadie los debe buscar en otro lado, pero **ninguna de las
@@ -142,12 +234,22 @@ escribir:
 
 | lo que no existe | por qué |
 |---|---|
-| `CANCEL_SCHEDULED` → `ACTIVE` | arrepentirse **no es una transición: es una sucesión**. `DEC-SUB-009` cancela en el proveedor de inmediato y cancelar allá es irreversible (`PA-5`), así que volver exige recrear y volver a autorizar — y eso entra por el candado `B` igual que un upgrade, **no** por un `INSERT` que el §11 rechace. No hay riesgo de doble cobro: `S11` ya canceló el preapproval de la predecesora *«de inmediato»*, así que la única autorización que puede cobrar es la de la sucesora |
+| `CANCEL_SCHEDULED` → `ACTIVE` | arrepentirse **no es una transición: es una sucesión**. `DEC-SUB-009` cancela en el proveedor de inmediato y cancelar allá es irreversible (`PA-5`), así que volver exige recrear y volver a autorizar — y eso entra por el candado `B` igual que un upgrade, **no** por un `INSERT` que el §11 rechace. No hay riesgo de doble cobro: `S11` ya canceló el preapproval de la predecesora *«de inmediato»*, así que la única autorización que puede cobrar es la de la sucesora. **Y por eso mismo `S17` no manda nada acá**: su relectura encuentra el preapproval ya `cancelled`, `D7` está cumplido, y la sucesión la cierra `S18` (§3.2) |
 | `CANCELLED` → cualquier cosa | ídem. Una suscripción terminada no revive |
 | `TRIAL_*` → `SUSPENDED` | el trial vencido es `TRIAL_EXPIRED`, que es otra máquina y otro estado (`DEC-ARCH-003`) |
 | `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` | está medido que **estando pausada el proveedor rechaza toda modificación** (`EX-11`), y que **sí deja cancelar** |
 | `ABANDONED` → `ACTIVE` | la ventana venció y el preapproval se canceló. Volver a intentar crea una fila nueva, con clave de idempotencia nueva |
 | dos vivas para el mismo `user + vertical`, **salvo una sucesión declarada** | es el §11, y su excepción está acotada por la base, no por una convención: **un origen y su única sucesora**, impuesto por los dos índices parciales de `B/02` §2.2. La condición está en `S1` y el capítulo 05 la hace cumplir con restricciones de unicidad, no con un chequeo. El invariante cuenta **compromisos, no filas** |
+
+**El arrepentimiento no le quema al cliente el período que ya pagó, y hay que decirlo porque
+`S17` lo pasa a `CANCELLED` antes de su fecha de fin de servicio.** Lo que esa fecha sostenía era
+**la emisión de cobertura** de la predecesora (`12-contrato…` §2.6), y a partir de `S18` la
+cobertura la da la sucesora, que está `ACTIVE`. Y lo pagado sin usar **no se pierde**: la
+sucesión del arrepentimiento computa el crédito de `DEC-SUB-006` como cualquier otra, *«al crear
+la sucesora»* (`B/12` §5.4), corriendo la fecha de su primer cobro. Es la misma uniformidad que
+`B/12` §5.2 defiende para la precondición de `D8` —*«vale para toda sucesión, venga de donde
+venga»*—: una sucesión con una regla de compensación propia según de dónde viene es una regla que
+alguien va a leer mal.
 
 **Dos cosas que el §11 sigue prohibiendo y conviene no confundir con la excepción**: una sucesora
 **no puede ser sucedida mientras viva** (el candado `B` la rechaza sin ninguna regla extra), y una

@@ -157,7 +157,7 @@ implementación traza la línea en otro lado.
 |---|---|---|
 | 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
-| 3 | **no hay otra fila principal del mismo `user + vertical` en un estado que dé título** —`ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `CANCEL_SCHEDULED`—, **ni una sucesora de esta fila ya autorizada** | si la hay, el pago es de una suscripción superada y reactivar le daría **dos** |
+| 3 | **no hay otra fila principal del mismo `user + vertical` en un estado que dé título** —`ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `CANCEL_SCHEDULED`—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una sucesora con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
 
 **Si las cuatro se cumplen**, entra `SUSPENDED → ACTIVE` (S7) y se restituye la publicación.
@@ -181,6 +181,13 @@ tocar la condición**, porque la fila marcada conserva su estado real y entra en
 conviene decir cuál lee ésta: la **fila viva** de `NUCLEO/01` §2.4 —los seis de `B/02` §2.2—, que
 es la lectura correcta acá porque lo que se está evitando es **un segundo cobro**, no una decisión
 de cobertura. Esta condición es de billing y sobre filas de billing; no cruza la frontera.
+
+**Y la segunda mitad de la 3 se lee sobre DOS columnas, porque la que la respondía se borra.**
+`sucede_a` sólo existe mientras la sucesión está en curso: cuando la sucesora autoriza, `S18` la
+limpia (`B/03` §3.2) y el vínculo pasa a vivir en `sucedida_por`, del lado de la predecesora.
+Preguntar sólo por `sucede_a` daba *«no fue superada»* justo en el caso en que sí lo fue, que es
+el más caro de los dos. Con `sucedida_por` la condición se puede evaluar **después** del cierre,
+que es cuando llega un pago tardío.
 
 **Y una sucesora en `PENDING_AUTHORIZATION` no bloquea, a propósito.** Todavía no puede cobrar
 —`D8` le exige fecha de primer cobro futura— y el pago tardío que reactiva a la predecesora **es la

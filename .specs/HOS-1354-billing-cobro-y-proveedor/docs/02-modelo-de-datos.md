@@ -44,7 +44,7 @@ a la restricción no obliga a nada.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** (FK anulable a `subscription`), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
+| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
@@ -78,6 +78,32 @@ exactamente: un origen y su única sucesora. Es el número que `DEC-SUB-006` pid
 **una sucesión no es una cadena**: al indexar `B` sobre `(user_id, vertical)` —y no sobre
 `sucede_a`— una sucesora no puede ser sucedida mientras viva, sin ninguna regla extra, porque la
 segunda sucesora colisiona con la primera.
+
+**Y hace falta una segunda columna, porque los candados leen una columna que se borra.**
+`sucede_a` es **operativa**: mientras está puesta la sucesión está en curso, y `S18` la limpia al
+cerrarla para que la sucesora vuelva a ocupar el candado `A`. Eso es correcto para los candados y
+destruye la única evidencia de que esa cancelación **fue una sucesión y no una baja** — y hay
+consumidores que la necesitan **después**, cuando ya se borró:
+
+| quién pregunta | qué pregunta | dónde |
+|---|---|---|
+| los complementos | *«la suscripción murió, ¿tenía sucesora a la que re-apuntarme?»* | `B/16` §4.2 |
+| el pago tardío | *«¿esta fila ya fue superada por una sucesora autorizada?»* | `B/05` §3, condición 3 |
+
+**`sucedida_por` es esa evidencia, y es durable.** Se escribe **en la predecesora**, en el mismo
+acto en que `S18` limpia `sucede_a` en la sucesora, y **no se borra nunca**. Las dos columnas
+parten la vida de la relación en tres, sin superponerse:
+
+- `sucede_a` no nulo → **sucesión en curso**. La escribe `S1`, la limpia `S18`.
+- `sucedida_por` no nulo → **sucesión terminada**. La escribe `S18`, no la limpia nadie.
+- las dos nulas → **no hubo sucesión**, que es el caso de casi toda fila.
+
+Apunta de la predecesora a la sucesora, y no al revés, porque el consumidor que más la necesita
+—el addon— parte de la fila muerta y necesita **cuál** es la sucesora, no sólo que existe.
+
+**Ninguna de las dos claves la mira**, y es deliberado: un índice sobre `sucedida_por` volvería a
+atar una decisión de unicidad a un dato histórico. Los candados siguen partidos por `sucede_a`, y
+`sucedida_por` sólo se lee.
 
 Lo que esto NO hace es sacar `PENDING_AUTHORIZATION` de los vivos, que es la salida que parece
 equivalente y no lo es: sin él **nada impide una tercera, una cuarta y una décima creación

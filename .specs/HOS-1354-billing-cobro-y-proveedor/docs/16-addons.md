@@ -193,17 +193,45 @@ lo da el scope:
 | scope (§40) | queda huérfano cuando |
 |---|---|
 | `LISTING` | la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna |
-| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical llegó a `CANCELLED` **y no tiene sucesora** |
+| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4) **y su `sucedida_por` es nulo** (`B/02` §2.2) |
 | `USER` · `GLOBAL` | la cuenta se borró |
 
-**Una sucesión tampoco deja huérfano a nada, y es la mitad que faltaba.** Un upgrade lleva la
-predecesora a `CANCELLED` **siempre**, así que sin esta condición **todo upgrade cancelaría los
-addons recurrentes del cliente en el mismo acto en que mejora su plan** — le cobramos más y le
-sacamos lo que ya pagó. El addon **se re-apunta a la sucesora**, en el mismo acto del upgrade: no
-se cancela y no se rehace, deja de colgar de la fila vieja y pasa a colgar de la nueva. Es el
-mismo razonamiento que el contador de promos de `B/14` §2.2, y por la misma razón — **el objetivo
-del addon no desapareció, se sucedió**. La suscripción vieja y la nueva son la misma relación
-comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una baja**.
+> **«Huérfano» acá es el addon cuyo objetivo murió.** No confundirlo con la *«huérfana»* del
+> capítulo 09 §2.2, que es un recurso **del proveedor sin fila nuestra**. Son dos palabras iguales
+> con dos sujetos opuestos, y ningún mecanismo de uno sirve para el otro.
+
+**Las dos mitades de la condición se escribieron de nuevo, y cada una arreglaba lo contrario de
+la otra.**
+
+**Uno: *«dejó de ser fila viva»*, no *«llegó a `CANCELLED`»*.** `CANCELLED` es **uno** de los tres
+estados en que una suscripción deja de tener autorización que pueda cobrar; los otros dos son
+`ABANDONED` y `CHARGE_DECLINED` (`NUCLEO/01` §2.4). Con la condición atada a `CANCELLED`, el addon
+de alguien cuya suscripción murió en `CHARGE_DECLINED` **no quedaba huérfano nunca**, y su
+preapproval seguía cobrando todos los meses. **Y el detector del §4.3 no lo alcanzaba**, porque
+lo que ese detector busca es *«un addon en estado terminal con su preapproval vivo»* y acá el
+addon **no** está en estado terminal: nadie lo declaró huérfano, así que la discrepancia no
+existe para el barrido. Fallaba hacia cobrarle a quien ya no es cliente, que es la dirección que
+el §4.3 llama la que no puede fallar.
+
+**Dos: *«`sucedida_por` es nulo»*, no *«no tiene sucesora»*.** Un upgrade lleva la predecesora a
+`CANCELLED` **siempre**, así que sin esta mitad **todo upgrade cancelaría los addons recurrentes
+del cliente en el mismo acto en que mejora su plan** — le cobramos más y le sacamos lo que ya
+pagó. Pero *«tiene sucesora»* sólo se podía evaluar buscando una fila con `sucede_a` apuntando a
+ésta, y ese puntero **lo limpia `S18` al cerrar la sucesión**: evaluada en cualquier instante
+posterior, la condición daba *«huérfano»* siempre, y la salvedad nombraba un estado inalcanzable.
+`sucedida_por` es la misma pregunta contra un dato que **no se borra**, así que se puede contestar
+tarde: el barrido, una revisión manual o un reconciliador leen lo mismo que el acto.
+
+**El re-apunte es un efecto declarado de `S18`, y por eso el orden dejó de importar.** El addon no
+se cancela y no se rehace: deja de colgar de la fila vieja y pasa a colgar de la nueva, en el acto
+que cierra la sucesión (`B/03` §3.2). Antes decía *«en el mismo acto del upgrade»* sin nombrar
+cuál, y era lo único que separaba el camino normal del daño irreversible. Ahora, aunque el
+re-apunte se demore, `sucedida_por` ya dice que no hay huérfano.
+
+Es el mismo razonamiento que el contador de promos de `B/14` §2.2, y por la misma razón — **el
+objetivo del addon no desapareció, se sucedió**. La suscripción vieja y la nueva son la misma
+relación comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una
+baja**.
 
 `DEC-SUB-007` impl. 4 lo había dejado explícitamente abierto —*«hay que decidir si siguen colgando
 del cliente o si hay que re-vincularlos»*—. Lo que **no** se decide acá es colgarlos **del
@@ -212,6 +240,8 @@ capítulo, no una condición. Se discute el día que un addon tenga que sobreviv
 suscripción viva.
 
 **La suspensión y la pausa no dejan huérfano a nada**, y es el punto del §41: el objetivo existe.
+Ya no hace falta declararlo aparte —`PAUSED` y `SUSPENDED` son **filas vivas**, así que la
+condición de arriba no se cumple—, y se deja escrito porque es la lectura que más se equivoca.
 El addon sigue su curso y **su reloj no se congela** (`DEC-ADDON-001`), con la consecuencia ya
 registrada de que un suspendido dos meses pierde dos meses de algo que pagó, y con la obligación
 de que el aviso de suspensión lo diga.
@@ -227,7 +257,7 @@ disparan del mismo lugar:
 | efecto | quién lo hace |
 |---|---|
 | las capacidades bajan | el reconciliador de excedentes (cap. 15 (épica de verticales) §4) |
-| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que se re-apuntan a una sucesora (§4.2), que no quedaron huérfanos |
+| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los de una fila con `sucedida_por` puesta (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos |
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar
 es una capacidad regalada; un preapproval huérfano sin cancelar es un débito mensual a alguien

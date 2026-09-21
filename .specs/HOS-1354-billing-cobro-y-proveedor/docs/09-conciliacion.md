@@ -90,6 +90,16 @@ Por cada suscripción de nuestro inventario que no esté en un estado terminal:
 divergir hacia nada que nos importe, y barrerlos es gastar llamadas sobre la parte de la cartera
 que más crece.
 
+**Y hay una comprobación que no le pregunta nada al proveedor: la sucesión abierta sobre una fila
+muerta.** Si una fila que el barrido alcanza tiene `sucede_a` **no nulo** y la predecesora a la
+que apunta **ya no es fila viva** (`NUCLEO/01` §2.4), la sucesión debería estar cerrada y no lo
+está: `S18` no corrió. Se pone la **marca**. Cuesta cero llamadas —las dos filas están en nuestra
+base— y vigila el único estado que deja el candado `A` **vacío**, que es el que permite que un
+alta nueva entre sin que nada la rechace y queden dos preapprovals cobrando. La rama legítima de
+ese estado —la cancelación de `S17` que falló sobre un preapproval vivo— **ya trae la marca
+puesta**, así que esto no la duplica: lo que encuentra es la que llegó ahí **sin** marca, o sea
+por un camino que `G-R1-C` no alcanzó a impedir.
+
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.
 

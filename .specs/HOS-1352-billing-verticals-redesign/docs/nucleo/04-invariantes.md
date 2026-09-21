@@ -130,7 +130,7 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D4 | **El candado de idempotencia se persiste ANTES de la primera llamada al proveedor** | `DEC-CONC-001` | servicio; si se genera al reintentar, no hay nada que comparar |
 | D5 | **Toda mutación en el proveedor se verifica releyendo y comparando campo por campo** | `EX-20`, `EX-15` | servicio: el código de estado **nunca** cierra una mutación |
 | D6 | **El buscador del proveedor no es fuente de verdad de nada** | `RC-1`, `DEC-CONC-002` | servicio: el inventario a conciliar sale de nuestra base |
-| D7 | **La suscripción vieja se cancela sólo al recibir el webhook de que la nueva quedó autorizada** | `DEC-SUB-006` | servicio; al revés, el cliente que abandona el checkout se queda sin nada |
+| D7 | **La suscripción vieja se cancela sólo al recibir el webhook de que la nueva quedó autorizada** — y si para entonces su preapproval **ya está cancelado**, `D7` está cumplido y no se lo vuelve a cancelar (`PA-5`: re-cancelar da `400`) | `DEC-SUB-006` | servicio; al revés, el cliente que abandona el checkout se queda sin nada |
 | D8 | **Una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo.** Toda sucesora nace con fecha de primer cobro **posterior al vencimiento de su ventana de autorización** | `DEC-SUB-006` | **base**: la fecha **que el proveedor confirmó** se guarda en `subscription` (cap. 02 §2.2, épica de billing), y un guard la compara contra esa ventana |
 | D9 | **El `reason` que se manda al proveedor es copy para el cliente, nunca un identificador interno** | `EX-19`, `DEC-MAIL-001` | guard |
 | D10 | **El `init_point` crudo del proveedor no se muestra nunca sin sanear** | `EX-37` | guard |
@@ -138,7 +138,7 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D12 | **El trial no se le pide al proveedor: el reloj del trial es nuestro** | `DEC-TRIAL-002`, cap. 03 §2 | guard + servicio |
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
 | D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
-| D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a` |
+| D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **toda sucesión que termina deja escrito que ocurrió**: la predecesora queda con `sucedida_por` puesta | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más la columna `sucedida_por`, que conserva el vínculo después de que el cierre limpia `sucede_a`. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las dos escrituras del cierre vayan juntas |
 
 **`D8` subió de nivel, y el motivo es el que el §1 usa para todo lo demás.** Era un invariante *de
 servicio*, o sea recordable: sin una columna que guardara la fecha con la que nació la fila no había
@@ -200,8 +200,17 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 > columna de servicio en 11**, o sea mal de nuevo, porque `D8` **se mudó, no se agregó**.
 >
 > **Los conteos se recorren enteros con un script, o no se tocan.** Éstos salen de recorrer las 15
-> filas del §3 clasificando su columna de apoyo: base `D2 D3 D8 D15`, guard `D8 D9 D10 D12`, y las
-> diez restantes servicio. La columna izquierda no se movió y cierra: 6+14+5+7+5 = 37.
+> filas del §3 clasificando su columna de apoyo: base `D2 D3 D8 D15`, guard `D8 D9 D10 D12 D15`, y
+> las diez restantes servicio. La columna izquierda no se movió y cierra: 6+14+5+7+5 = 37.
+>
+> **Recorrido otra vez el 2026-09-21 — FASE 9-bis-2.** `D15` pasó de tener **un** apoyo a tener
+> **dos**: sigue apoyado en la base —los dos índices parciales, más la columna `sucedida_por`— y
+> gana un guard, `G-R1-C`, que exige que las dos escrituras del cierre de la sucesión vayan en el
+> mismo acto. Recorrí las 15 filas otra vez y **lo único que se mueve es la lista de guards**, que
+> pasa de cuatro a cinco: `D15` se agrega a `D8 D9 D10 D12`. **La base sigue en cuatro** —`D15` ya
+> estaba—, y por eso *«diez los sostiene la base»* y *«cincuenta y dos invariantes»* **no cambian**.
+> Los apoyos totales pasan de 18 a 19 sobre las mismas 15 filas, y la columna de servicio sigue en
+> diez: `D1 D3 D4 D5 D6 D7 D11 D12 D13 D14`.
 
 Y la corrección anterior, que queda como registro:
 
