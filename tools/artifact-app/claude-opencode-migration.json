@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate127: `BASE_SHA` local y filtros explícitos por paquete corregidos. El parser conserva `working-directory`; `verify --only guards` ya ejecuta server-tools en su carpeta correcta. Dependencias locales instaladas con lockfile y validación completa: 299 tests, 0 fallos, 737 assertions. El agente debe usar verify antes de verificar manualmente.",
+                            "notes": "Gate128: `BASE_SHA`, filtros explícitos y working-directory corregidos. `verify --changed` completo termina sin tests de apps/packages no afectados; client-tools y server-tools quedan en 299 tests, 0 fallos, 737 assertions. Hubo un timeout aislado bajo ejecución encadenada, pero la repetición completa pasó. El agente debe usar verify antes de verificar manualmente.",
                             "done": true
                         },
                         {
