@@ -2995,3 +2995,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Suite client-tools posterior al cambio: **298 tests, 0 fallos y 736
   assertions**. `verify --changed --list` confirma que no agrega tests cuando
   no hay cambios bajo `apps/` o `packages/`.
+
+## Gate 127 · `verify` respeta working-directory y guards completos
+
+- El parser del workflow conserva `working-directory` y el runner local lo
+  resuelve relativo al root del worktree. Esto evita ejecutar `bun test` de
+  `scripts/server-tools` desde la raíz, donde Bun podía descubrir tests ajenos.
+- La prueba inicial reveló dependencias locales ausentes en
+  `scripts/server-tools`; se instalaron con `bun install --frozen-lockfile`
+  sólo dentro del worktree de migración.
+- `bun run src/index.ts verify --only guards` completó correctamente:
+  **299 tests, 0 fallos y 737 assertions** en las suites client/server-tools;
+  no agregó tests de apps/packages porque no había cambios afectados.

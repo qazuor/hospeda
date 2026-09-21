@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
@@ -225,7 +225,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         const code = await runner.exec({
             command: 'bash',
             args: ['-c', step.run],
-            cwd,
+            cwd: step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
             // CI injects BASE_SHA for guards that inspect the diff. Local
             // verify has the same contract: use the configured local base so
             // those guards do not fail closed merely because they are outside
