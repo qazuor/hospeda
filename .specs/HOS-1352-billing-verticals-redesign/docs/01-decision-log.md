@@ -2734,13 +2734,54 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MIG-004 — La población de producción se resuelve por teléfono, no por diseño: es del owner y está cerrada
+
+- **Fecha**: 2026-09-20 · **Estado**: ACCEPTED · **Decide**: owner
+- **Complementa `DEC-MIG-003`** («no se migra»): le da el **mecanismo humano** que la hace
+  ejecutable, y que hasta hoy vivía sólo en la conversación.
+- **Decisión del owner, en sus términos**: la población de producción —usuarios, fichas y pagos—
+  **son pocos y son conocidos suyos**. Les habla, les explica qué pasa y **les pide que se
+  resuscriban cuando el sistema nuevo esté andando**. No se construye ningún mecanismo de diseño
+  para ellos: ni transcripción, ni coexistencia, ni asiento retroactivo, ni crédito automático.
+- **Por qué se registra, y no es burocracia**: está medido que **no estaba registrada**, y por eso
+  **cada pasada adversarial la vuelve a descubrir como hallazgo**. En la FASE 8-bis-2, **cinco de
+  los diecisiete críticos distintos** son la misma preocupación vista desde cinco capítulos. Sin
+  esta entrada, la 8-bis-3 los produce de nuevo, y la de después también: el trabajo no se ahorra
+  arreglándolos, se ahorra **declarando la decisión que los responde**.
+- **Qué retira, nominalmente** (numeración de `18-fase-8-bis-2/C1-la-costura.md` §2.1). Los cinco
+  quedan **declarados con causa**, que es lo que `DEC-METH-006` permite, y **no** se arreglan:
+
+  | # | defecto | por qué lo responde esta decisión |
+  |---|---|---|
+  | **1** | `PB2` no dispara la mañana del corte y la cartera queda publicada sin cobertura | la cartera es la población conocida; se la llama y se resuscribe |
+  | **7** | la entidad `listing` no tiene camino declarado al modelo nuevo | no lo necesita: no se transcribe ninguna |
+  | **15** | la lápida no existe entre el paso 3 y el paso 4 del corte | el cobro en vuelo es de uno de los tres conocidos |
+  | **16** | el paso 1 cancela «los tres» y el conjunto crece con las altas nuevas | mismo remedio, y **⚠️ es el único cuyo sujeto NO es la población medida el 2026-09-15** — ver abajo |
+  | **17** | el corte no tiene paso para un período ya pagado, y *«cero pagos»* caduca el 2026-09-26 | si alguien pagó un período, se le resuelve hablando |
+
+- **La salvedad del #16, declarada para que no se lea cubierta de más**: su sujeto son las altas que
+  entren **durante** el rediseño, que por construcción **no son las ocho medidas** y pueden no ser
+  conocidas del owner. El remedio es el mismo —se las llama— pero la premisa *«son conocidos míos»*
+  es de otra población. Si la cohorte nueva crece, quien decide si sigue siendo manejable es el
+  owner, y el umbral ya está medido: **unas 20** (`B/21` §2.4, hoy 8).
+- **Lo que NO cubre**: los **doce críticos restantes**, que son defectos del sistema nuevo y le
+  pasan a gente que todavía no existe. Ésos se arreglan.
+- **El dato operativo con fecha, que sobrevive a la decisión**: el **2026-09-26** cae el primer
+  cobro de la historia del sistema, bajo el sistema **actual**. No es una pregunta de diseño y no
+  vuelve a este log: está en [`04-open-decisions.md`](./04-open-decisions.md) con su 📅.
+- **Origen**: decisión sostenida del owner, reafirmada el 2026-09-20 —*«son pocos, son conocidos
+  míos a los cuales les puedo hablar, explicarles lo que pasa y pedirles que se resuscriban cuando
+  el sistema nuevo esté andando»*—.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **63** |
+| Decisiones tomadas | **64** |
 | De metodología | 9 |
-| Funcionales | 54 |
+| Funcionales | 55 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
