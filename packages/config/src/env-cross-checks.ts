@@ -136,9 +136,15 @@ export const CROSS_CHECK_RULES: readonly CrossCheckRule[] = [
          *
          * Split in two, each pair is judged on its own: api↔web keeps failing
          * on a divergence no matter what admin holds, and api↔admin reports
-         * `partial` until the admin side exists. Equality is transitive, so
-         * api==web plus api==admin still gives web==admin — no coverage is lost
-         * by not comparing those two directly.
+         * `partial` until the admin side exists.
+         *
+         * Not comparing web↔admin directly costs nothing WHILE api is set:
+         * equality is transitive, so api==web plus api==admin gives web==admin.
+         * api is the hub, and with the hub unset both rules go `partial`, so a
+         * web≠admin divergence is not caught. That is not a regression — the
+         * pre-existing 2-sided rule behaved identically with api unset — but
+         * the guarantee is conditional, and stating it unconditionally would be
+         * a comment claiming more than the rules verify.
          *
          * Pinned by `scripts/__tests__/check-env-rules.test.ts`.
          */
