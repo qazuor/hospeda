@@ -28,9 +28,28 @@ así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exig
 
 | Comando | Qué hace |
 |---|---|
-| `stats` | Estadísticas del repo: código, tests, deuda técnica, cobertura por paquete, commits, higiene de PRs, balance del backlog de Linear y uso de disco. Con historial para comparar corridas. |
-| `wt-clean` | Lista los worktrees con su estado, te deja tildar cuáles borrar, y los da de baja completos vía `wt-remove.sh` (servers + base de datos + worktree + branch). |
-| `start-issue` | Lee un issue de Linear, arma el worktree con su branch cortada de `staging`, y abre Claude adentro. |
+| `artifact` | Valida, publica, lista y lee el estado de artifacts locales versionados. |
+| `stats` | Estadísticas del repo: código, tests, deuda, Git, PRs, Linear y disco. |
+| `wt-clean` | Inventaría y limpia worktrees seleccionados, con sus recursos asociados. |
+| `start-issue` | Lee Linear, prepara el worktree y abre Claude u OpenCode (`--agent`). |
+| `close-issue` | Preflight de cierre: cambios, commits, spec, PR, CI y smoke gates. |
+| `handoff` | Produce un handoff autocontenido con hechos, hallazgos y próximo paso. |
+| `recap` | Resume el estado estático de la sesión/worktree para el agente. |
+| `context` | Entrega contexto compacto y verificable de un issue/worktree. |
+| `issue-preflight` | Consulta issue, labels y recursos de Linear sin mutar nada. |
+| `smoke-plan` | Calcula los smoke gates requeridos por labels del issue. |
+| `verify` | Ejecuta los pasos del CI local; usar primero `--changed`. |
+| `test` | Ejecuta tests por categoría o paquete. |
+| `ci` | Consulta el estado del PR y sus checks, con espera opcional. |
+| `merge` | Dictamina si el PR está listo; no hace merge. |
+| `env` | Comprueba variables necesarias sin imprimir secretos. |
+| `run` | Busca y ejecuta scripts del repo con argumentos explícitos. |
+| `db-start` / `db-stop` | Inicia o detiene Postgres y Redis compartidos. |
+| `db-migrate` / `db-seed` | Migra o carga la base del worktree. |
+| `db-studio` / `db-fresh` | Abre Drizzle Studio o rehace la base desde template. |
+| `db-update-template` | Actualiza el template de base desde staging. |
+| `servers-up` / `servers-down` | Levanta o detiene los servidores del worktree. |
+| `update` | Actualiza client-tools desde la copia de staging. |
 
 Cada uno tiene su propio `--help` con el detalle.
 
@@ -127,6 +146,22 @@ Instala dependencias y escribe cuatro funciones de fish en
 `~/.config/fish/functions/`. Se autocargan: no hace falta reiniciar la terminal.
 `./uninstall.sh` las borra.
 
+Para una instalación automatizada que no permita caer a otra rama si
+`hospeda-staging` todavía no tiene el tooling actualizado:
+
+```bash
+./install.sh --strict-staging
+```
+
+Para validar la fuente sin instalar dependencias ni escribir funciones de Fish:
+
+```bash
+./install.sh --check --strict-staging
+```
+
+`--here` sigue disponible para desarrollar el propio CLI desde el checkout
+actual.
+
 ## Correr con bun, no con Node
 
 Como `server-tools`, este paquete corre con **bun** y vive fuera del workspace de
@@ -140,7 +175,7 @@ no debería depender del árbol de fuentes; acá los binarios de `bin/` son shim
 la próxima corrida ya lo usa. No hay `dist/` que se quede viejo.
 
 ```bash
-bun install       # dependencias
+bun install --frozen-lockfile # dependencias reproducibles
 bun test          # tests
 bunx tsc --noEmit # typecheck
 bun run src/index.ts <comando>   # correr sin instalar
@@ -172,3 +207,23 @@ LINEAR_API_KEY='lin_api_...'
 
 El archivo, y no sólo la variable de entorno: una universal de fish no la ve un
 subproceso ni un cron. `chmod 600`.
+
+El workflow de worktrees busca primero los scripts versionados en
+`scripts/worktree/`. Para una instalación externa o una copia de transición se
+puede indicar otra ubicación con `HOPS_WORKTREE_SCRIPT_DIR`; sólo se usa si allí
+existe `wt-create.sh`. El fallback histórico en `~/.claude/skills/worktree`
+queda como compatibilidad temporal.
+
+## `hops artifact` — snapshots locales
+
+Con el servidor local de `tools/artifact-app` corriendo:
+
+```bash
+hops artifact validate ./bundle.json
+hops artifact publish ./bundle.json
+hops artifact list
+```
+
+`publish` ejecuta el publisher determinista del prototipo y no llama al modelo,
+Linear ni Engram. `list` solo consulta el endpoint local. El command no publica
+remotamente ni cambia Git.

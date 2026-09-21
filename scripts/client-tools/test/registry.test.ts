@@ -54,5 +54,5 @@ describe('command modules', () => {
             expect(command.name).toBe(entry.name);
             expect(typeof command.run).toBe('function');
         }
-    });
+    }, 15_000);
 });

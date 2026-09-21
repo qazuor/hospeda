@@ -5,7 +5,9 @@ set -euo pipefail
 
 FISH_FUNCTIONS="$HOME/.config/fish/functions"
 
-for name in hops hops-stats hops-wt-clean hops-start-issue; do
+for name in hops hops-stats hops-wt-clean hops-start-issue hops-artifact \
+  hops-handoff hops-smoke-plan hops-context hops-issue-preflight hops-recap \
+  hops-close-issue; do
   target="$FISH_FUNCTIONS/$name.fish"
   if [ -f "$target" ]; then
     rm "$target"
