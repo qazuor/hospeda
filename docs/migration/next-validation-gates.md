@@ -106,8 +106,9 @@ No se deben introducir simultáneamente SDD, nuevos plugins, migración masiva d
 skills, saneamiento de Engram y automatizaciones de cierre.
 
 Estado: selección reversible `--agent opencode` agregada a `hops start-issue` en
-el worktree. Las suites client/server-tools quedaron validadas con 299 tests y
-737 assertions; no se ejecutaron workflows ni mutaciones externas.
+el worktree. `client-tools` quedó validado con 299 tests y 737 assertions;
+`server-tools`, con 334 tests y 501 assertions. No se ejecutaron workflows ni
+mutaciones externas.
 
 ## Gate 9 — Complementos de seguridad y observabilidad (análisis completado)
 
