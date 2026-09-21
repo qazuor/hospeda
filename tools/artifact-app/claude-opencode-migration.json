@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate125: `BASE_SHA` local corregido. Turbo aislado con `--filter=hospeda-web` usa jsdom y no reproduce el fallo; el error sólo aparece con el filtro incremental amplio `[origin/staging]`. Queda pendiente capturar el plan exacto de paquetes y reproducir esa ruta sin relajar Vitest. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate126: `BASE_SHA` local corregido y filtro incremental reparado: Turbo ya no usa `[origin/staging]`, que seleccionaba 31 paquetes, sino filtros explícitos por ruta afectada. `verify --changed --list` no agrega tests si no hay cambios en apps/packages; suite client-tools 298/298. El agente debe usarlo antes de verificar manualmente.",
                             "done": true
                         },
                         {
