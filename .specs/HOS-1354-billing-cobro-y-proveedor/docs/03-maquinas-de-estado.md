@@ -108,7 +108,7 @@ Y una nota de registro que sigue valiendo:
 | S7 | `SUSPENDED` | regulariza, **o se reevalúa un pago que quedó pendiente** por `S19` | `ACTIVE` | el cobro entró de verdad **y** las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se restituye la publicación |
 | S8 | `ACTIVE` | la persona pide pausar | `PAUSED` *(motivo `CUSTOMER_REQUEST`)* | `puedePausar()` (capítulo 01 (núcleo) §3) | se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`) |
 | S9 | `ACTIVE` | `SUPER_ADMIN` otorga cortesía | `PAUSED` *(motivo `COURTESY`)* | no hay pausa vigente (`DEC-GRANT-004`) | se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`) |
-| S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | **el `PUT` se aplicó, confirmado por relectura** — la misma regla que `S17` | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`). **Si la relectura sigue viendo `paused`, `S10` NO ocurre**: la fila se queda en `PAUSED` y **se pone la marca `requiere_conciliación`** (`S14`), porque una reanudación que no se aplicó le corta el servicio y el cobro a la vez — ver abajo |
+| S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | **el `PUT` se aplicó, confirmado por relectura** — la misma regla que `S17` | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) — **y en un pagador manual ese día lo fija esta misma transición**: si la fecha del próximo cobro (`B/02` §2.2) quedó en el pasado durante la pausa, pasa a ser el instante de la vuelta, porque cobrarle después un período que transcurrió adentro de la cortesía es cobrarle la cortesía (§7.2, *«qué mueve la fecha»*). **Si la relectura sigue viendo `paused`, `S10` NO ocurre**: la fila se queda en `PAUSED` y **se pone la marca `requiere_conciliación`** (`S14`), porque una reanudación que no se aplicó le corta el servicio y el cobro a la vez — ver abajo |
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
 | S13 | **toda fila viva PRINCIPAL** del beneficiario en **cada vertical que el acto ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos. **Las de complemento no entran** (ver abajo, *«y no alcanza a los complementos»*) | `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a uno vivo** (`12-contrato…` §2.8) | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; el acceso pasa a darlo el grant. **Y si alguna de las filas alcanzadas retenía un pago pendiente por `S19`, la bandera se apaga en el mismo acto, sin reembolso** — es la rama 4 de `B/12` §5.3, y apagarla es parte de la decisión: dejarla puesta sobre una `CANCELLED` deja un *«pendiente»* que ningún barrido alcanza y que todo conteo de pagos pendientes cuenta de más. **Proceso idempotente y reanudable fila por fila**, con su detector en `B/09` §3 (ver abajo, *«la ejecución parcial»*) |
@@ -874,11 +874,11 @@ manuales**. Lo único propio es cómo se constata el pago.
 
 | # | desde | evento | hacia | efectos |
 |---|---|---|---|---|
-| MP1 | `AWAITING` | el admin registra el pago | `REGISTERED` | la suscripción sale de `GRACE_PERIOD` por `S5` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago. **`S19` lo admite por su propio evento**, que nombra las dos puertas (§3.2): sin eso la derivación apuntaba a una fila que no podía recibirlo |
+| MP1 | `AWAITING` | el admin registra el pago | `REGISTERED` | la suscripción sale de `GRACE_PERIOD` por `S5` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago. **`S19` lo admite por su propio evento**, que nombra las dos puertas (§3.2): sin eso la derivación apuntaba a una fila que no podía recibirlo. **Y avanza un ciclo la fecha del próximo cobro** (`B/02` §2.2): registrada la cuota de este período, lo que queda por cobrar es el siguiente. Es **acá** y no en `S5`, cuya celda de efectos es *«se apaga el reloj»* y nada más (§7.2, *«qué mueve la fecha»*) |
 | MP2 | `AWAITING` | el admin confirma que no se pagó | `DECLARED_UNPAID` | la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj |
 | MP3 | `AWAITING` | se agota el grace sin que el admin haga nada | `DECLARED_UNPAID` | `S6` |
-| MP4 | `DECLARED_UNPAID` | el admin registra el pago, que llegó **después** | `REGISTERED` | la suscripción sale de `SUSPENDED` por `S7` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: misma herencia y misma razón que `MP1`, porque **el daño no depende de por qué puerta entró el pago** ni de desde qué estado del pago manual se lo registre. **`S19` lo admite por su propio evento**, que nombra el hecho —entró el pago del período impago— y no el mecanismo (§3.2). **Y no es incondicional**, por partida doble: el cruce de `C5` vale igual que en `MP1`, y `S7` exige **las cuatro condiciones del `B/05` §3** — la **1** es el tope de la reapertura (ver abajo, *«el tope no es un día»*) |
-| MP5 | *(sin fila)* | **un reloj abre el período** de una suscripción de pagador manual: llegó el instante en que el proveedor habría cobrado (§7.2) | `AWAITING` | **es la entrada de esta máquina, y la crea el sistema, no un admin.** Sólo corre con la suscripción en **`ACTIVE`** —los otros cinco estados vivos están descartados uno por uno en el §7.2—, y **en el mismo acto la suscripción entra en `GRACE_PERIOD` por `S4`**, que es lo que el §30 ya ordenaba abajo y lo que `MP1` y `MP2` ya presuponían en sus efectos. **Idempotente por condición**: no crea si ya existe una fila de `manual_payment` para ese período, igual que `S13` y `S20` son *«idempotentes y reanudables fila por fila»* |
+| MP4 | `DECLARED_UNPAID` | el admin registra el pago, que llegó **después** | `REGISTERED` | la suscripción sale de `SUSPENDED` por `S7` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: misma herencia y misma razón que `MP1`, porque **el daño no depende de por qué puerta entró el pago** ni de desde qué estado del pago manual se lo registre. **`S19` lo admite por su propio evento**, que nombra el hecho —entró el pago del período impago— y no el mecanismo (§3.2). **Y no es incondicional**, por partida doble: el cruce de `C5` vale igual que en `MP1`, y `S7` exige **las cuatro condiciones del `B/05` §3** — la **1** es el tope de la reapertura (ver abajo, *«el tope no es un día»*). **Y avanza un ciclo la fecha del próximo cobro, igual que `MP1`, con un tope y no con un re-anclaje**: sólo **si ese avance cae en el pasado** —o sea si la suspensión duró más que un período— la fecha pasa a ser el instante de la reactivación (§7.2). Avanzar siempre al día de la reactivación le cobraba dos veces los días que le quedaban del período que acababa de pagar |
+| MP5 | *(sin fila)* | **un reloj abre el período** de una suscripción de pagador manual: **llegó la fecha del próximo cobro** (`B/02` §2.2), que es el instante en que el proveedor habría cobrado (§7.2) | `AWAITING` | **es la entrada de esta máquina, y la crea el sistema, no un admin.** Sólo corre con la suscripción en **`ACTIVE`** —los otros cinco estados vivos están descartados uno por uno en el §7.2—, y **en el mismo acto la suscripción entra en `GRACE_PERIOD` por `S4`**, que es lo que el §30 ya ordenaba abajo y lo que `MP1` y `MP2` ya presuponían en sus efectos. **Idempotente por condición**: no crea si ya existe una fila de `manual_payment` para ese período, igual que `S13` y `S20` son *«idempotentes y reanudables fila por fila»* |
 
 **Lo que el §30 agrega y la máquina tiene que cumplir**: si falta el pago, va a `GRACE_PERIOD`
 **los mismos días configurables** que el resto (`DEC-SUB-002` vale igual acá), y **además se
@@ -1116,18 +1116,26 @@ quedan afuera por decisión sino porque en cada uno falta el sujeto o el períod
 |---|---|---|
 | `ACTIVE` | **sí** | es el caso: el período arranca y hay una obligación de pago que constatar |
 | `SUSPENDED` | **no** | es la mitad (b) de la decisión del owner |
-| `PENDING_AUTHORIZATION` | **no** | **todavía no hay período**: el período lo arranca `S2` (§3.2), así que no hay *«inicio de período»* que el reloj pueda leer. La primera cuota es la del primer período, y ése empieza cuando la fila llega a `ACTIVE` |
-| `GRACE_PERIOD` | **no, y la población es vacía** | el período **no avanza** mientras el pago no entra: `S5` es lo que lo cierra. Un pagador manual llega a grace **porque su cuota de este período no se pagó**, así que la cuota de ese período **ya existe** —es la que `MP1` registra— y crear otra la rechazaría la condición de idempotencia de `MP5`. No hay un segundo período que abrir |
-| `CANCEL_SCHEDULED` | **no** | el servicio está sostenido *«hasta el fin del período pagado»* (§3.1) y `S12` llega ese día: **ningún período nuevo empieza** antes de `CANCELLED`. Crear una cuota acá sería cobrarle un período a quien ya se dio de baja |
+| `PENDING_AUTHORIZATION` | **no** | **todavía no hay fecha del próximo cobro**: la estrena `S2` al arrancar el período (§3.2), así que el reloj no tiene qué leer. La primera cuota es la del primer período, y ése empieza cuando la fila llega a `ACTIVE` |
+| `GRACE_PERIOD` | **no** | un pagador manual llega a grace **porque su cuota de este período no se pagó**, así que esa cuota **ya existe** —es la que `MP1` registra— y el grace es su reloj: su desenlace son `S5` o `S6`, no una segunda cuota. **Lo que NO se puede decir es que el período no avance**: si el grace configurado es más largo que un ciclo, la fecha del próximo cobro llega estando la fila acá, y lo que impide abrir la cuota es que el `desde` de `MP5` es `ACTIVE`, no que no haya qué abrir. Esa cuota se abre **cuando y si** `S5` la devuelve a `ACTIVE`, y ahí el cliente paga dos períodos con días de diferencia — que es lo que corresponde, porque en grace *«el servicio sigue entero»* (`S4`, §3.2) |
+| `CANCEL_SCHEDULED` | **no** | el servicio está sostenido *«hasta el fin del período pagado»* (§3.1) y `S12` llega ese día, que en un pagador manual **es** la fecha del próximo cobro que `MP1` dejó al registrar la última cuota: la fila llega a `CANCELLED` el mismo día en que el reloj habría mirado, y además el `desde` de `MP5` es `ACTIVE`. **Ningún período nuevo empieza** antes de `CANCELLED`, y crear una cuota acá sería cobrarle un período a quien ya se dio de baja |
 | `PAUSED` | **no** | ver abajo, *«la pausa»* |
 
 **El horario del reloj y su idempotencia, que es lo que el `NUCLEO/03` le pide a cada
 subdominio.** La cadencia **sale de la base como todos los schedules** (§42) y no se fija acá; lo
 que sí se fija es que **correr tarde no pierde un período**, porque la condición no es *«es hoy»*
-sino *«el período actual arrancó y no tiene fila»* — una corrida que se saltea un día crea la
-cuota al día siguiente, con su período correcto, y el atraso lo absorbe la ventana del grace, que
-es configurable por plan (`DEC-SUB-002`). Y **correr dos veces no crea dos cuotas**, por la misma
-condición.
+sino *«la fecha del próximo cobro ya llegó y ese período no tiene cuota»* — una corrida que se
+saltea un día crea la cuota al día siguiente, con su período correcto, y el atraso lo absorbe la
+ventana del grace, que es configurable por plan (`DEC-SUB-002`). Y **correr dos veces no crea dos
+cuotas**, por la misma condición.
+
+**Esa condición lee una columna, así que hay que decir quién la mueve — y es el punto siguiente.**
+Enunciada sobre *«el período actual»*, la condición pedía que alguien avanzara un período y
+**ninguna transición lo declaraba**: pagada la primera cuota el reloj no volvía a encontrar nada,
+no se abría ninguna otra, nadie le pedía nada al cliente y —porque `ACTIVE` emite fuente con
+`hasta: SIN_FECHA_CONOCIDA` (`12-contrato…` §2.6)— **seguía cubierto para siempre**. O sea el
+*«servicio gratis en silencio»* que la mitad (a) de la decisión declaró inadmisible, entrando por
+la puerta del mecanismo que iba a cerrarlo.
 
 **Y el reloj es un acto de sistema, así que no toca el catálogo de `NUCLEO/08` §3.** Ahí van las
 acciones **del admin**, y crear la cuota no es ninguna: la tabla **sigue teniendo doce filas** y
@@ -1152,25 +1160,75 @@ proveedor** (`B/06` §7), así que las dos mitades son falsas y `CHARGE_DECLINED
 población vacía. `B/12` §4.3 ya dice que la condición *«se lee POR AUTORIZACIÓN»*: sin
 autorización no hay sujeto.
 
-#### Al reabrir por `MP4`: el reloj vuelve a crear, y el período arranca de cero
+#### Qué mueve la fecha del próximo cobro: tres escrituras, y la tercera es un tope
+
+La columna es la de `B/02` §2.2, y sobre un pagador manual **es la única copia que existe** —no
+hay proveedor que la tenga—. **Son tres escrituras y no hay una cuarta:**
+
+1. **La estrena `S2`**, con su efecto ya escrito: *«arranca el período»* (§3.2). La fila llega a
+   `ACTIVE` y la fecha es ese instante, así que la primera corrida del reloj abre la primera
+   cuota.
+2. **La avanzan `MP1` y `MP4`, un ciclo del `billing_option` anclado** (`B/02` §2.1), **al quedar
+   registrada la cuota de ese período**. Es la transición que constata que el período quedó
+   pagado la que declara que lo que sigue por cobrar es el siguiente. **No lo hace `S5`**: su
+   celda de efectos, entera, es *«se apaga el reloj»* (§3.2), y atribuirle el avance era pedirle
+   a la tabla algo que la tabla no dice — la regla 1 del `NUCLEO/03` aplicada al § que la invoca
+   cinco veces.
+3. **Y un tope**: cuando la fila vuelve a `ACTIVE` desde un estado en el que el reloj no corría
+   **y cuyos días no se le pueden cobrar**, si la fecha quedó en el pasado **pasa a ser el
+   instante de la vuelta**. Son dos vueltas, y la tercera queda afuera a propósito:
+
+| vuelta a `ACTIVE` | ¿corre el tope? | por qué |
+|---|---|---|
+| `S7`, desde `SUSPENDED` | **sí** | ahí no hubo servicio —`S6` deja la fila *«sin listado público, sin edición, sin creación, sin entitlements comerciales»* (§3.2)—, y es la mitad (b): el que vuelve paga **el período que arranca**, no los que pasó suspendido |
+| `S10`, desde `PAUSED` por cortesía | **sí** | esos días fueron un regalo firmado (`DEC-GRANT-003`). Cobrarle más tarde un período que transcurrió adentro de la cortesía es cobrarle la cortesía con un mes de atraso: la misma cuenta que abrir la cuota durante ella, que este § prohíbe abajo |
+| `S5`, desde `GRACE_PERIOD` | **no** | ahí *«el servicio sigue entero»* (`S4`, §3.2). Esos días son exactamente los que cubre la cuota que se está pagando, así que correr la fecha se los regalaría |
+
+**El tope no puede colisionar con nada, y conviene decirlo porque parece que sí**: deja siempre
+una fecha **estrictamente posterior** a la que había, y las cuotas que existen son las de períodos
+que arrancaron antes. El `UNIQUE(subscription_id, período)` de `B/05` §C5 y la condición de
+idempotencia de `MP5` siguen sin tener contra qué chocar (`B/02` §2.3).
+
+#### Al reabrir por `MP4`: el reloj vuelve a crear, y sólo se re-ancla si el período viejo ya terminó
 
 Si estuvo `SUSPENDED` no se crearon cuotas, así que hay que decir qué pasa cuando vuelve.
 
-> **`MP4` lleva la fila a `ACTIVE` por `S7`, y desde ese instante el reloj vuelve a crear. El
-> período nuevo arranca EN LA REACTIVACIÓN**, no en el aniversario viejo: se re-ancla el *«período
-> actual»* de la fila (`B/02` §2.2) al día en que `S7` la reactiva.
+> **`MP4` lleva la fila a `ACTIVE` por `S7`, y desde ese instante el reloj vuelve a crear.** La
+> fecha del próximo cobro **avanza un ciclo** desde la del período que `MP4` acaba de registrar,
+> igual que en `MP1`; y **sólo si ese avance cae en el pasado** —o sea si la suspensión duró más
+> que un período— la fecha pasa a ser **el instante de la reactivación**.
 
-**No es una elección, es lo único compatible con (b).** Con el ancla vieja, el inicio del período
-siguiente cae **en el pasado** —tantas veces como meses duró la suspensión— y el reloj, en su
-primera corrida, crearía de golpe todas las cuotas que (b) mandó no crear. Re-anclar es cómo (b)
-se cumple, no un beneficio aparte.
+**Re-anclar siempre a la reactivación era un doble cobro, y hay que decir sobre quién.** El que se
+atrasa, transfiere **el día 20 de un período que arrancó el día 0** y paga el importe del período
+entero (`B/05` §3, condición 2) tiene diez días por delante que ya pagó. Con el re-anclaje
+incondicional esos diez días pasaban a ser el arranque del período **siguiente**: el reloj le abría
+la cuota en el acto y `S4` lo devolvía a `GRACE_PERIOD` el mismo día. **Pagaba dos veces los días
+20 a 30**, y ni el correo ni la pantalla lo decían. Con el tope, la fecha queda en el día 30, el
+reloj no encuentra nada que abrir hasta ese día, y los diez días son los que compró.
+
+**Y el argumento que justificaba el re-anclaje era verdadero en su conclusión y falso en su
+mecanismo, que es lo que le agrandó el alcance.** Decía que con el ancla vieja *«el reloj, en su
+primera corrida, crearía **de golpe** todas las cuotas que (b) mandó no crear»*. **De golpe no**:
+la condición de `MP5` nombra **un** período —el de la fecha vigente— y es idempotente, así que
+crea **una** cuota por corrida. El daño verdadero es otro y sigue siendo real: esa única cuota
+sería la de un período que **transcurrió entero durante la suspensión**, o sea días sin servicio,
+que es exactamente lo que la mitad (b) mandó no cobrar; y al registrarse, la fecha avanzaría a otro
+pasado, y así hasta ponerse al día. No una avalancha sino una cola, con la misma deuda al final.
+**El remedio era correcto y su alcance estaba mal escrito**: se aplicaba también a la población
+donde el avance cae en el futuro, y ahí su propio motivo no existe.
 
 **Y no le regala nada a nadie**: lo que `MP4` acaba de registrar **es la cuota del período impago**
 —la misma fila que `MP2` o `MP3` cerraron, por el importe esperado de ese período (§7.1, *«lo
-adeudado»*)—, así que el cliente pagó lo que debía y lo que empieza es un período nuevo por el que
-va a pagar. **Es específico de esta puerta y no se escribe en `S7`**: el pagador con tarjeta que
-reactiva no re-ancla nada, porque las fechas las tiene el proveedor y son inmutables (`EX-39`,
-`B/12` §5.4).
+adeudado»*)—, así que el cliente pagó lo que debía. Lo que **no** le devuelve son los días que pasó
+en grace y suspendido adentro de ese período: *«nada es retroactivo»* (§7.1), y ésa es la
+consecuencia de no haber pagado a término, no un cobro nuevo.
+
+**El tope es de esta puerta en un sentido y no en el otro.** Sobre un pagador con tarjeta **no hay
+nada que topar**: las fechas las tiene el proveedor y son inmutables (`EX-39`, `B/12` §5.4), y
+sobre esa población la columna es una copia que ninguna regla lee para decidir (`B/02` §2.2).
+Sobre un pagador manual, en cambio, el tope **no** es sólo de `MP4` —la vuelta de una cortesía lo
+necesita igual—, y por eso está escrito arriba como la tercera escritura y no adentro de esta
+puerta.
 
 #### La pausa: no contradice el `B/06` §7, y por dos razones distintas
 
@@ -1188,7 +1246,10 @@ lo contradice**:
    (`DEC-GRANT-003`), y sobre un pagador manual **la primera mitad no tiene sujeto** —es
    exactamente lo que el `B/06` §7 constata— **así que lo único que queda de la cortesía es la
    segunda: no pedirle la plata**. Abrir una cuota durante una cortesía sería cobrarle la cortesía,
-   que la vacía de contenido.
+   que la vacía de contenido. **Y no alcanza con no abrirla durante**: si al volver por `S10` la
+   fecha del próximo cobro quedó adentro de la cortesía, el reloj le abre en el acto la cuota de un
+   período que transcurrió regalado — la misma cuenta, cobrada más tarde. Por eso `S10` es la
+   segunda vuelta que corre el tope (arriba, *«qué mueve la fecha del próximo cobro»*).
 
 **Y el §7 de `B/06` gana un consumidor, no una excepción**: la respuesta sigue saliendo de componer
 capacidades y no de un `if` por vertical ni por método, que es lo que ese § existe para impedir.
@@ -1233,6 +1294,14 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   ya un `manual_payment` de ese período—, no esa restricción. Las dos conviven sin superponerse.
 - **Las cuatro condiciones del `B/05` §3 valen igual.** `MP5` no registra un pago: abre la cuota
   contra la que después se lo registra.
+- **El avance y el tope no agregan ninguna fila, así que nada de lo de arriba se recuenta.** Son
+  **efectos**, declarados en las celdas de `MP1`, `MP4` y `S10`, no transiciones nuevas: no hay un
+  `MP6`, `G-R4` sigue contando tres pares y la máquina sigue teniendo tres estados.
+- **Y el barrido NO gana una sexta comprobación de cero llamadas.** La pregunta que faltaba
+  —*«¿hay una suscripción de pagador manual a la que nadie le abre cuota?»*— dejó de tener
+  población: no es un caso a detectar, es un estado que ya no se alcanza, porque la fecha que
+  `MP5` lee tiene **tres** escrituras declaradas y ninguna la deja quieta. Las **cinco** de
+  `B/09` §3 quedan como estaban, con la quinta contada sobre su texto vigente.
 
 #### Qué premisa de otro arreglo vuelve falsa este, y dónde quedó resuelta
 
@@ -1248,6 +1317,12 @@ La obligación 2 de `DEC-METH-008`, contestada por escrito:
 | *«un pago manual mensual no tiene nada que pausar»* | `B/06` §7 | **sigue verdadera**, y esta regla la usa en vez de contradecirla | arriba, *«la pausa»* |
 | *«el grace no es un beneficio de entrada»* | `B/12` §4.3 | **sigue verdadera**: su condición se lee por autorización y un pagador manual no tiene ninguna, así que `S16` tiene población vacía acá | arriba, *«cómo entra el grace»* |
 | *«la deuda vieja no se persigue por separado»* y *«el que paga tarde paga esa cuota»* | `B/12` §5.3 y `DEC-SUB-012` | **siguen verdaderas**, y son la razón escrita de (b) | arriba |
+| *«el período actual»* como columna de `subscription` | `B/02` §2.2 | **queda RENOMBRADA**: lo que la fila guarda es **una fecha** y no un período, y leerla como período es lo que dejó a `MP5` esperando que alguien *«avanzara»* algo. Pasa a ser *«la fecha del próximo cobro»*, la misma cifra que el barrido compara contra `next_payment_date` | corregida en `B/02` §2.2 |
+| *«el período no avanza mientras el pago no entra: `S5` es lo que lo cierra»* | el arreglo de `MP5`, en la fila `GRACE_PERIOD` de la tabla de arriba | **queda FALSA en sus dos mitades**: `S5` no declara ese efecto —su celda es *«se apaga el reloj»*— y el período **sí** puede avanzar en grace si el grace configurado es más largo que un ciclo. Lo que impide abrir la cuota ahí es el `desde` de `MP5` | corregida arriba, en esa misma fila |
+| *«el período nuevo arranca EN LA REACTIVACIÓN»*, sin condición | el arreglo de `MP5`, en *«al reabrir por `MP4`»* | **queda FALSA como regla general**: sobre una reapertura que cae **dentro** del período pagado, re-anclar le cobra dos veces los días que le quedaban. Pasa a ser un **tope** que corre sólo cuando el avance de un ciclo cae en el pasado | corregida arriba, en esa misma sección |
+| *«el reloj crearía de golpe todas las cuotas»* | el arreglo de `MP5`, misma sección | **queda FALSA en el mecanismo y verdadera en el desenlace**: la condición de `MP5` nombra un período y es idempotente, así que crea **una** cuota por corrida; la deuda igual se acumula cuota a cuota. Era la parte falsa la que le agrandaba el alcance al remedio | corregida arriba, con el motivo reescrito |
+| *«al reanudar se le muestra una sola cosa: qué día se le cobra»* | `DEC-SUB-010`, en la celda de `S10` | **sigue verdadera, y recién ahora tiene respuesta sobre un pagador manual**: el día se lo fija el tope de la vuelta, porque no hay proveedor que lo calcule | `S10`, §3.2 |
+| *«la fecha del próximo cobro se registra»* del barrido | `B/09` §3 | **sigue verdadera y sin tocar**: es la escritura del régimen **con** proveedor, y sobre un pagador manual el barrido no tiene preapproval que leer | sin tocar |
 
 ---
 

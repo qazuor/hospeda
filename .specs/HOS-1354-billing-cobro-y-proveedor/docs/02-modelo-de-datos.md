@@ -44,7 +44,7 @@ a la restricción no obliga a nada.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
+| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
@@ -225,13 +225,37 @@ id es otra cosa y es `VERIFIED`** (`RC-2`), y `D5` ya obliga a hacerlo: *«toda 
 proveedor se verifica releyendo y comparando campo por campo»*. La fecha se escribe en esa misma
 relectura, que ya ocurre. El guard sigue corriendo sin red, porque lee la columna.
 
+#### La fecha del próximo cobro, y por qué no es la de primer cobro
+
+**Son DOS columnas y confundirlas cuesta caro, así que van nombradas aparte.** *«La fecha de
+primer cobro con la que nació la fila»* es **inmutable**: es la que el proveedor confirmó al
+nacer, y existe para que `D8` sea verificable (arriba). *«La fecha del próximo cobro»* **se
+mueve**, y es la misma cifra que el barrido compara contra `next_payment_date` (`B/09` §3).
+
+**Se llamaba *«período actual»* y ese nombre se retira.** Nombraba un período —algo que se
+atraviesa— cuando lo que la columna guarda es **una fecha**, y esa lectura es la que dejó a `MP5`
+(`B/03` §7.2) disparando sobre *«el período actual arrancó»* mientras nadie declaraba quién
+avanzaba un período.
+
+**Quién la escribe depende de si hay débito en el proveedor, y son dos regímenes:**
+
+- **Con débito**, las fechas las tiene el proveedor y son inmutables para nosotros (`EX-39`,
+  `B/12` §5.4): la columna es **una copia**, y quien la escribe es la lectura del barrido —*«se
+  registra»*, `B/09` §3—. **Ninguna regla del diseño la lee para decidir**, porque la decisión de
+  cobrar es del proveedor.
+- **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
+  que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
+  en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
+  quedar registrada la cuota, y la vuelta a `ACTIVE` desde un estado donde el reloj no corría la
+  corre al instante de la vuelta si había quedado atrás. **Su único lector es `MP5`.**
+
 ### 2.3 Dinero
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
-| **`manual_payment`** | suscripción, **el período que cubre**, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe |
+| **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
@@ -261,6 +285,14 @@ presuponía, y sin ella ni ese candado ni la condición 2 del `B/05` §3 —*«e
 el período que cubre»*— tienen contra qué evaluarse. Es lo único que este arreglo le agrega a la
 entidad: **no hay estado nuevo** (arriba) y **no hay columna de monto** (la resuelve la versión
 anclada).
+
+**Y el período se identifica por su fecha de inicio, que es lo que vuelve evaluables al candado y
+a la idempotencia.** *«Ya existe una cuota para ese período»* —la condición de `MP5`— y
+*«`UNIQUE(subscription_id, período)`»* piden que dos períodos se puedan distinguir, y lo único que
+los distingue es cuándo arrancan. Al abrirse, la cuota copia la fecha del próximo cobro vigente
+(§2.2); al registrarse, esa fecha avanza. **Por eso el tope de `B/03` §7.2 no puede colisionar**:
+deja siempre una fecha **estrictamente posterior** a la anterior, y las cuotas que existen son las
+de períodos que arrancaron antes.
 
 ### 2.4 Capacidades y concesiones
 
