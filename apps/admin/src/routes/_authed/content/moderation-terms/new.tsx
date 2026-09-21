@@ -6,6 +6,10 @@ import type { SectionConfig } from '@/components/entity-form/types/section-confi
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { EntityCreatePageBase } from '@/components/entity-pages';
 import { useCreateModerationTerm } from '@/features/content-moderation/hooks/useModerationTermQuery';
+import {
+    buildModerationCategoryOptions,
+    buildModerationTermKindOptions
+} from '@/features/content-moderation/moderation-term-options';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -22,6 +26,13 @@ function ModerationTermCreatePage() {
 
     const entityName = t('content-moderation.terms.singular');
     const entityNamePlural = t('content-moderation.terms.plural');
+
+    // Derived from `createContentModerationTermSchema` — the same object the
+    // submit handler validates with — so the form cannot offer a value that
+    // `safeParse` then refuses. It used to offer `self_harm`, which is not a
+    // member of ModerationCategoryEnum (HOS-1068).
+    const { options: kindOptions } = buildModerationTermKindOptions({ t });
+    const { options: categoryOptions } = buildModerationCategoryOptions({ t });
 
     const createConfig: EntityCreateConfig = {
         entityType: 'contentModerationTerm',
@@ -63,56 +74,14 @@ function ModerationTermCreatePage() {
                                     label: t('content-moderation.terms.form.kindLabel'),
                                     type: FieldTypeEnum.SELECT,
                                     required: true,
-                                    typeConfig: {
-                                        options: [
-                                            {
-                                                value: 'word',
-                                                label: t('content-moderation.terms.kinds.word')
-                                            },
-                                            {
-                                                value: 'domain',
-                                                label: t('content-moderation.terms.kinds.domain')
-                                            }
-                                        ]
-                                    }
+                                    typeConfig: { options: kindOptions }
                                 },
                                 {
                                     id: 'category',
                                     label: t('content-moderation.terms.form.categoryLabel'),
                                     type: FieldTypeEnum.SELECT,
                                     required: true,
-                                    typeConfig: {
-                                        options: [
-                                            {
-                                                value: 'hate',
-                                                label: t('content-moderation.categories.hate')
-                                            },
-                                            {
-                                                value: 'sexual',
-                                                label: t('content-moderation.categories.sexual')
-                                            },
-                                            {
-                                                value: 'violence',
-                                                label: t('content-moderation.categories.violence')
-                                            },
-                                            {
-                                                value: 'harassment',
-                                                label: t('content-moderation.categories.harassment')
-                                            },
-                                            {
-                                                value: 'self_harm',
-                                                label: t('content-moderation.categories.self_harm')
-                                            },
-                                            {
-                                                value: 'spam',
-                                                label: t('content-moderation.categories.spam')
-                                            },
-                                            {
-                                                value: 'other',
-                                                label: t('content-moderation.categories.other')
-                                            }
-                                        ]
-                                    }
+                                    typeConfig: { options: categoryOptions }
                                 },
                                 {
                                     id: 'severity',
