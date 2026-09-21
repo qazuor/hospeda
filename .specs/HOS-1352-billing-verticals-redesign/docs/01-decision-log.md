@@ -3556,13 +3556,73 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-015 — La suscripción pausada NO entra al piso de un plan retirado: se le avisa, y al volver elige plan nuevo
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco, que es anterior a los arreglos de esta tanda**: `B/10` §4.3 manda a
+  `CANCEL_SCHEDULED` a todas las suscripciones alcanzadas por el retiro de un plan —los **60 días
+  de piso** que el programa le da a quien ya estaba adentro— y **no excluye a las pausadas**,
+  mientras `B/03` §3.3 **prohíbe** llegar a `CANCEL_SCHEDULED` desde `PAUSED`. Es una instrucción
+  que ordena un movimiento que la máquina no permite: hoy ese caso muere en la marca. La FASE
+  9-bis-4 lo encontró al recorrer, no lo creó.
+- **Y la ventana no es un borde raro**: el tope de una pausa son **120 días** y el piso son **60**,
+  así que una pausa que sobrevive al piso es el caso **normal**, no la excepción.
+- **Decisión, tres partes:**
+  1. **La pausada NO entra al piso.** Queda `PAUSED` apuntando a un plan retirado, y **eso es
+     legal**: hay que decirlo con todas las letras en `B/10` §4.3, que hoy la incluye sin poder
+     alcanzarla.
+  2. **El aviso sale al RETIRAR el plan, no al reanudar.** Es la parte que carga toda la ventaja de
+     esta opción: el cliente se entera con la pausa corriendo y con tiempo para decidir, en vez de
+     encontrarse con la novedad el día que vuelve.
+  3. **Al reanudar elige un plan nuevo**, y la fila pausada termina ahí. `S10` no puede llevarla a
+     `ACTIVE` sobre un plan que no existe: **qué transición ejecuta ese final es lo que la tanda
+     corta tiene que escribir**, y no se inventa acá.
+- **El motivo, y es una medición de esta misma vuelta, no una preferencia de estilo**: la
+  alternativa recomendada por el agente —mantener la pausa y **congelar el reloj del piso**—
+  agregaba **un segundo reloj que se detiene y se reanuda**. Ese mecanismo entró al programa esta
+  misma mañana con `DEC-DATA-002` y **produjo cinco de los doce críticos de la FASE 8-bis-4**: el
+  reloj sin columna, el aviso que se manda una sola vez, `S10` sin rama de fallo, `PB8` contra el
+  piso y el excedente sin vuelta. **Cinco de doce, de un solo mecanismo, en una sola vuelta.**
+  Proponer un segundo reloj con hechos de reinicio dos días después de medir eso es repetir a
+  sabiendas el mecanismo más caro del programa. Esta decisión **no toca la máquina de estados**: es
+  una rama del aviso.
+- **Las tres alternativas, y por qué se descartan:**
+  - **El piso con el reloj congelado** durante la pausa (la recomendada por el agente): compra la
+    garantía *«nadie pierde su plan sin sus 60 días»* al precio de arriba.
+  - **El piso sin congelar**: el plan se le vence estando pausado —a la **mayoría** de los que
+    pausan, por los 120 contra 60— y hay que escribir igual a qué plan vuelve. Paga casi el mismo
+    costo estructural y no compra la garantía.
+  - **Interrumpir la pausa** para meterla al piso: **le cortás una pausa que pagó**, o le terminás
+    una cortesía antes de tiempo. Acto nuestro, plata suya.
+- **Lo que el cliente pierde, dicho sin maquillar**: el **derecho a volver al precio que tenía**,
+  que es exactamente para lo que existen los 60 días. **Pero lo perdía igual con el piso**, sólo
+  que 60 días después de reanudar. La diferencia real entre las opciones no es *si* pierde el plan
+  sino **cuándo se entera**, y acá se entera antes y con la pausa corriendo.
+- **Lo que NO está medido, y va escrito porque sostiene la decisión**: **nadie midió cuántas veces
+  se retira un plan del catálogo.** No hay una cifra en el corpus. La decisión se apoya en el
+  juicio del owner de que es un evento poco frecuente, y **eso es un juicio, no un dato**. Si
+  resultara frecuente, la que hay que releer es esta entrada.
+- **Un borde que esta decisión NO cierra**: qué pasa con una **cortesía pausada** cuando se retira
+  el plan —`SUPER_ADMIN` le firmó N días y el plan desaparece debajo—. Queda abierto como pregunta
+  al owner; el precedente de cómo tratarlo es `DEC-GRANT-007`, que resolvió hoy la misma tensión
+  por otra puerta.
+- **Pendiente de implementación al momento de escribirse**, igual que `DEC-SUB-014`: entra en la
+  **tanda corta posterior**, con el recuento de todo lo que mueva.
+- **Origen**: la FASE 9-bis-4, familia de la baja, pregunta 2 de su rastro
+  (`21-fase-9-bis-4/rastro-032f761e0.md` §5); la contrapropuesta del owner del 2026-09-21 frente a
+  las tres opciones que se le presentaron; y **el cambio de recomendación del agente**, que había
+  recomendado el piso con reloj congelado y retiró esa recomendación ante el argumento de la
+  medición.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **80** |
+| Decisiones tomadas | **81** |
 | De metodología | 11 |
-| Funcionales | 69 |
+| Funcionales | 70 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
