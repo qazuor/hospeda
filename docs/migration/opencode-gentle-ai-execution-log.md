@@ -3094,3 +3094,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   físicos `bin/hops-*` con las entradas `bin` de `package.json`.
 - La prueba pasó junto con el resto del archivo: **14 tests, 0 fallos y 148
   assertions**.
+
+## Gate 138 · Typecheck de las dos capas de tooling
+
+- `bunx tsc --noEmit` pasó en `scripts/client-tools`.
+- `bunx tsc --noEmit` pasó en `scripts/server-tools`.
+- No se generaron artefactos persistentes ni se ejecutaron operaciones externas.
