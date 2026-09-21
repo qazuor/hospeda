@@ -28,9 +28,18 @@
  * soft-delete is reversible; a cascade that hard-deletes the dependent rows is
  * not, so a restore would silently come back with less than it had.
  *
- * Hard deletes need none of this: `accommodation_calendar_sync.accommodation_id`
- * declares `onDelete: 'cascade'`, so a physical delete already takes the rows
- * (and the tokens) with it. Only the soft path leaked.
+ * ## The hard-delete path runs this BEFORE the delete, not after
+ *
+ * `accommodation_calendar_sync.accommodation_id` declares
+ * `onDelete: 'cascade'`, so a physical delete takes the connection rows with
+ * it, and it is tempting to conclude hard deletes need none of this. They need
+ * it MORE, and earlier. The FK removes OUR copy of the token and does nothing
+ * whatsoever to the grant, and once the ciphertext is gone there is no token
+ * left for anybody to revoke with — not this code, not a later manual cleanup,
+ * not ever. Erasure is the one operation that makes a grant permanently
+ * unclosable, which would leave the hard path strictly worse off than the soft
+ * one it is supposed to supersede. `_beforeHardDelete` therefore calls this
+ * cascade while the row still exists.
  *
  * ## Revocation is a separate act from deactivation
  *
