@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate126: `BASE_SHA` local corregido y filtro incremental reparado: Turbo ya no usa `[origin/staging]`, que seleccionaba 31 paquetes, sino filtros explícitos por ruta afectada. `verify --changed --list` no agrega tests si no hay cambios en apps/packages; suite client-tools 298/298. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate127: `BASE_SHA` local y filtros explícitos por paquete corregidos. El parser conserva `working-directory`; `verify --only guards` ya ejecuta server-tools en su carpeta correcta. Dependencias locales instaladas con lockfile y validación completa: 299 tests, 0 fallos, 737 assertions. El agente debe usar verify antes de verificar manualmente.",
                             "done": true
                         },
                         {
