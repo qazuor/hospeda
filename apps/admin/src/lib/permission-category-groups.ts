@@ -5,10 +5,18 @@
  * a handful of domain groups. It used to do that with a chain of `if/else if`
  * branches that listed the categories of each group by hand and had NO final
  * `else`: a category no branch claimed was not put in an "other" bucket, it was
- * dropped. Thirty-four of the enum's categories — `HOST_TRADE`, `PARTNER`,
- * `MEDIA`, `MODERATION`, `COMMERCE`, every `SOCIAL_*`, and more — fell through
- * that hole, and a permission that never renders on this page cannot be granted
- * or revoked from the panel at all.
+ * dropped. Thirty-four of the enum's eighty-one categories — `HOST_TRADE`,
+ * `PARTNER`, `MEDIA`, `MODERATION`, `COMMERCE`, every `SOCIAL_*`, and more —
+ * fell through that hole.
+ *
+ * What that costs, stated precisely: this page is a READ-ONLY catalogue. It
+ * lists categories, performs no mutation, and its own info note points at Roles
+ * for assignments. Granting and revoking happens in `PermissionPicker`, which
+ * groups through `getPermissionsByCategory()` from `@repo/schemas` and never
+ * lost anything. So what broke was the REFERENCE — the screen an operator
+ * consults to learn what the platform can even express — which showed 47 of 81
+ * families while looking complete. That is worth fixing on its own; it is not
+ * "those permissions could not be assigned".
  *
  * Two things keep that from happening again, and the first is the one that
  * matters:
@@ -104,11 +112,15 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.POI_CATEGORY]: 'Content Management',
     [PermissionCategoryEnum.MEDIA]: 'Content Management',
     [PermissionCategoryEnum.MODERATION]: 'Content Management',
-    [PermissionCategoryEnum.CONVERSATION]: 'Content Management',
     [PermissionCategoryEnum.RECOMMENDATION]: 'Content Management',
 
     // ---- User & Access -----------------------------------------------------
     [PermissionCategoryEnum.USER]: 'User & Access',
+    // Private messaging between users, not editorial content: the family holds
+    // `conversation.view.any`, `.delete.any` and `.block.any` — reading,
+    // deleting and blocking any user's messages. Filing that beside Posts and
+    // Events would read as a content chore.
+    [PermissionCategoryEnum.CONVERSATION]: 'User & Access',
     [PermissionCategoryEnum.USER_BOOKMARK]: 'User & Access',
     [PermissionCategoryEnum.USER_BOOKMARK_COLLECTION]: 'User & Access',
     [PermissionCategoryEnum.PERMISSION]: 'User & Access',

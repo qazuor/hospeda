@@ -27,11 +27,14 @@ function PermissionsPage() {
     const { t } = useTranslations();
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-    const categories = Object.values(PermissionCategoryEnum);
-    // Grouping lives in @/lib/permission-category-groups, where the map is a
-    // total Record over the enum. Declaring it here is what let 34 categories
-    // fall out of the page unnoticed (HOS-1124).
-    const groupedCategories = useMemo(() => groupPermissionCategories(categories), [categories]);
+    // `Object.values` builds a fresh array every render, so memoising on it as
+    // a dependency would never hit. The enum is a module constant: compute both
+    // once and depend on nothing.
+    const groupedCategories = useMemo(
+        () => groupPermissionCategories(Object.values(PermissionCategoryEnum)),
+        []
+    );
+    const categoryCount = Object.keys(PermissionCategoryEnum).length;
 
     const toggleGroup = (groupName: string) => {
         setExpandedGroups((prev) => ({
@@ -59,7 +62,7 @@ function PermissionsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="font-bold text-2xl">{categories.length}</div>
+                            <div className="font-bold text-2xl">{categoryCount}</div>
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.access.permissions.permissionCategories')}
                             </p>

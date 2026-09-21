@@ -43,7 +43,7 @@ describe('every permission category reaches the screen (HOS-1124)', () => {
 
         expect(
             missing,
-            `${missing.length} permission categories never render on /access/permissions, so the permissions in them cannot be granted or revoked from the panel: ${missing.join(', ')}`
+            `${missing.length} permission categories never render on /access/permissions: ${missing.join(', ')}. That page is the read-only reference an operator consults to learn what the platform can express, so a missing family is invisible there while the screen still looks complete. (Assignment itself lives in PermissionPicker, which groups separately.)`
         ).toEqual([]);
     });
 
