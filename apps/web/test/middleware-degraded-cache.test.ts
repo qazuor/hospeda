@@ -202,6 +202,58 @@ describe('HOS-1154 AC-4 — the healthy response is cached exactly as before', (
         expect(response.headers.get('Cache-Tag')).toBe('list-accom');
     });
 
+    it('reads the flag AFTER the body is drained, so a streamed component still counts', async () => {
+        // The one property of this fix that nothing else asserts. Every other
+        // test sets `responseDegraded` synchronously inside the `next()` mock,
+        // so they would all pass even if middleware read the flag BEFORE the
+        // render finished — and in production the flag is raised by a component
+        // deep in the tree, potentially while the body is still streaming.
+        //
+        // What makes it safe is Step 9: for every SSR HTML response middleware
+        // does `await response.text()` to hash inline blocks for the CSP, which
+        // drains the stream to completion before Step 11a looks at anything.
+        // This models that: the body is a real ReadableStream that raises the
+        // flag in its LAST chunk, so the assertion can only hold if the drain
+        // really happens first.
+        // The flag is raised on the SECOND pull, deliberately. A `start()`
+        // callback runs during construction, so a stream that marked there
+        // would pass this test with the drain removed — vacuous, and the first
+        // draft of this test was exactly that. The second pull cannot happen
+        // until the first chunk has actually been READ.
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        const next = vi.fn().mockImplementation(() => {
+            const locals = context.locals as { responseDegraded?: boolean };
+            const encoder = new TextEncoder();
+            let pulls = 0;
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    pulls += 1;
+                    if (pulls === 1) {
+                        controller.enqueue(encoder.encode('<html><body>listing'));
+                        return;
+                    }
+                    // The banner renders here, late — as a nested component's
+                    // frontmatter does while the body is still streaming.
+                    locals.responseDegraded = true;
+                    controller.enqueue(encoder.encode('</body></html>'));
+                    controller.close();
+                }
+            });
+            return Promise.resolve(
+                new Response(body, {
+                    headers: {
+                        'content-type': 'text/html',
+                        'Cache-Control': CATALOG_CONTROL
+                    }
+                })
+            );
+        });
+
+        const response = (await onRequest(context as never, next)) as Response;
+
+        expect(response.headers.get('Cache-Control')).toBe(LISTING_PRIVATE_CONTROL);
+    });
+
     it('opens the flag before next(), so a component can only ever flip it', async () => {
         // Same contract as `locals.cacheTags`: present from Step 0, so no
         // consumer ever reads `undefined` and no page has to initialise it.

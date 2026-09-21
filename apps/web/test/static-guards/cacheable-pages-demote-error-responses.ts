@@ -50,12 +50,35 @@ import { classifyCacheControl, stripComments } from './cacheable-responses-decla
  *
  * WHAT THIS DOES NOT SEE, stated so nobody mistakes it for total coverage:
  *
+ *   - **The FAIL-SOFT class, and this is the big one.** A page that swallows a
+ *     load failure into `result.ok ? … : []` renders no failure markup at all,
+ *     so none of the signals above fire and it is not even policed. This entry
+ *     used to say such a page "would still have to be WRITTEN" and that a
+ *     reviewer would be the last line. **Both halves were false and review
+ *     measured it**: with the API down, `/es/` answered 200 with
+ *     `public, s-maxage=3600, stale-while-revalidate=3600`,
+ *     `cache-tag: dev:all,dev:home`, zero `<article>` elements and
+ *     `destinations: []` — the highest-traffic page on the site, already
+ *     shipped, already caching its own outage.
+ *
+ *     Those sites are fixed (`pages/[lang]/index.astro` and its four homepage
+ *     sections, `autores/[slug]`, `destinos/lugar/[slug]`) but they are fixed
+ *     by hand, NOT by this guard. Adding a fail-soft signal here was measured
+ *     and rejected: 65 cacheable files, 9 with an unpoliced fail-soft, 6 of
+ *     them unmarked — and every one of those 6 swallows a DECORATION (a
+ *     bookmark counter, a related-posts strip) on a detail page whose primary
+ *     fetch succeeded. Demoting those would cost the edge cache HOS-369 built
+ *     for no user-visible gain, and exempting them one by one would be the
+ *     fail-open this file refuses elsewhere.
+ *
+ *     The line that actually separates them is semantic, so write it down
+ *     rather than pretend a regex draws it: **a fail-soft that makes the page
+ *     ASSERT SOMETHING FALSE is a degradation** ("este autor no tiene
+ *     publicaciones", an empty home, "nothing nearby"); **one that omits a
+ *     decoration is not**. A new page in the first category is not caught here
+ *     — it is caught in review, by someone who read this paragraph.
  *   - A failure state whose markup and variable names avoid the word "error"
- *     entirely (`<Oops>`, `const broken = …`). Nothing textual can catch that.
- *     What limits the damage is that such a component would still have to be
- *     WRITTEN, and the moment it is used by a cacheable page the reviewer is
- *     the last line — which is why the runtime mechanism does not depend on
- *     this list being complete.
+ *     entirely (`<Oops>`, `const broken = …`).
  *   - It reads source text, so a component resolved dynamically
  *     (`const C = cond ? A : B; <C />`) is invisible to it.
  */
