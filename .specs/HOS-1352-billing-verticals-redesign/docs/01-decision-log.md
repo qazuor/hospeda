@@ -3652,13 +3652,34 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-008 — La revocación de un grant guarda MOTIVO, además de fecha y firmante
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El contexto**: la FASE 9-bis-4 le dio a `permanent_grant` la columna **`revocado_en`** —el
+  estado que las comprobaciones de cero llamadas necesitaban y que no existía (`F-8eB3-002`)— más
+  **quién la firmó**. Faltaba decidir si además se guarda **por qué**.
+- **Decisión**: **sí, y es texto libre.** La revocación guarda fecha, firmante y motivo.
+- **El motivo**: un *Free Forever* es una concesión discrecional de `SUPER_ADMIN`, y revocarla
+  **le corta el servicio a alguien que no hizo nada para provocarlo**. `DEC-TRIAL-009` decidió hoy
+  que revocar **consume el trial y no se repara**, apoyándose en que es *«una decisión legítima y
+  deliberada»* — y **una decisión deliberada cuyo motivo no se registra es indefendible seis meses
+  después**, empezando por ante el propio beneficiario que pregunta por qué le cortaron.
+- **Por qué libre y no de lista cerrada** (error / acuerdo vencido / abuso / otro): el volumen es
+  bajo —son concesiones firmadas a mano por `SUPER_ADMIN`—, así que el texto libre no genera
+  basura, y una lista cerrada obliga a mantenerla mientras el `otro` se come el resto.
+- **Origen**: la FASE 9-bis-4, familia del grant y el addon, pregunta 1 de su rastro
+  (`21-fase-9-bis-4/rastro-ce52dce5f.md`), y la elección del owner del 2026-09-21 entre las tres
+  opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **82** |
+| Decisiones tomadas | **83** |
 | De metodología | 11 |
-| Funcionales | 71 |
+| Funcionales | 72 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
