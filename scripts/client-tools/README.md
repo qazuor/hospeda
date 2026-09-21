@@ -153,6 +153,12 @@ Para una instalación automatizada que no permita caer a otra rama si
 ./install.sh --strict-staging
 ```
 
+Para validar la fuente sin instalar dependencias ni escribir funciones de Fish:
+
+```bash
+./install.sh --check --strict-staging
+```
+
 `--here` sigue disponible para desarrollar el propio CLI desde el checkout
 actual.
 

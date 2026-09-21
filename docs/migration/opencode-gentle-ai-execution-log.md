@@ -3143,3 +3143,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   preexistente, no por un cambio versionado del proyecto.
 - No se borró ni reparó `node_modules`. La remediación debe ser una operación
   explícita de limpieza/reinstalación en una etapa futura.
+
+## Gate 144 · Preflight no mutante del instalador
+
+- `install.sh --check --strict-staging` confirmó la fuente
+  `/home/qazuor/projects/WEBS/hospeda-staging/scripts/client-tools`.
+- El modo check terminó sin instalar dependencias ni escribir funciones de
+  Fish, y ShellCheck siguió sin warnings.

@@ -14,16 +14,20 @@
 #            itself, where running the staging copy defeats the purpose.
 #   --strict-staging  Refuse the temporary fallback when staging has no
 #            client-tools yet. Intended for automated/bootstrap installs.
+#   --check  Validate the selected source without installing or writing fish
+#            functions.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FISH_FUNCTIONS="$HOME/.config/fish/functions"
 USE_HERE=0
 STRICT_STAGING=0
+CHECK_ONLY=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --here) USE_HERE=1 ;;
     --strict-staging) STRICT_STAGING=1 ;;
+    --check) CHECK_ONLY=1 ;;
     --help|-h)
       sed -n '2,14p' "$0"
       exit 0
@@ -62,6 +66,16 @@ else
     echo "       Las funciones van a apuntar a este checkout hasta que se mergee."
     TOOLS="$HERE"
   fi
+fi
+
+if [ "$CHECK_ONLY" -eq 1 ]; then
+  [ -f "$TOOLS/package.json" ] || {
+    echo "ERROR: no encontré package.json en $TOOLS" >&2
+    exit 3
+  }
+  echo "OK: fuente client-tools=$TOOLS"
+  echo "OK: modo check; no se instalaron dependencias ni se escribieron funciones de fish"
+  exit 0
 fi
 
 echo "== instalando dependencias en $TOOLS =="
