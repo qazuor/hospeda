@@ -69,21 +69,33 @@ Donde **ocurrencia** es lo que identifica *este* envío y no otro de la misma pl
 
 | tipo de correo | qué es la ocurrencia |
 |---|---|
-| de **schedule** (avisos previos, campaña, recordatorios de renovación) | el sujeto más el hito: `trial:<id>:pre:-2d`, `sub:<id>:renov:-5d` |
+| de **schedule** (avisos previos, campaña, recordatorios de renovación, retención) | el sujeto, el hito **y la fecha objetivo vigente de ese hito**: `trial:<id>:pre:-2d:2026-10-04`, `sub:<id>:renov:-5d:2026-11-01`, `listing:<id>:ret:-180d:2027-01-12` |
 | de **evento** (cobro fallido, cancelación, aumento aplicado) | el id del evento de dominio que lo causó |
 
 **La clave se calcula antes de encolar, no antes de enviar.** Si se calculara al enviar, dos
 procesos ya habrían encolado dos filas y la restricción llegaría tarde.
 
-**Y el reloj no entra en la clave.** Un aviso de «faltan 2 días» tiene una sola ocurrencia por
-trial, aunque el job corra cada hora — si la fecha del cálculo entrara en la clave, correrlo dos
-veces el mismo día seguiría mandando dos.
+**Y el reloj del JOB no entra en la clave, que es otra cosa que la fecha objetivo.** Un aviso de
+«faltan 2 días» tiene una sola ocurrencia **por fecha de vencimiento**, aunque el job corra cada
+hora — si la fecha **del cálculo** entrara en la clave, correrlo dos veces el mismo día seguiría
+mandando dos. Lo que entra es **a qué día apunta el aviso**, no **cuándo se lo evaluó**.
 
-**Un caso que esto tiene que dejar pasar a propósito**: si el trial se extiende (T4 del cap. 03),
-el aviso de «faltan 2 días» **corresponde de nuevo** contra la fecha nueva. La ocurrencia
-entonces incluye la fecha objetivo vigente, no un contador — y al correrse la fecha, cambia la
-ocurrencia y el aviso vuelve a salir. Es deliberado: `DEC-TRIAL-*` deja la campaña re-agendada, y
-sin esto la extensión dejaría al cliente sin aviso.
+**La fecha objetivo va en la ocurrencia SIEMPRE, y no como excepción de un sujeto.** Es la regla
+entera y no tiene lista: **todo hito de schedule cuelga de una fecha, y toda fecha de la que
+cuelga un hito se puede mover**. El trial se extiende por `T4` (cap. 03), la renovación llega una
+vez por ciclo, y el reloj de retención se reinicia por cualquiera de los **cuatro hechos** del
+§1.2 del cap. 01. Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
+vida del sujeto**, y ningún hito del catálogo del §6 cumple eso.
+
+> ⚠️ **Escrito como excepción por sujeto, esto ya falló una vez, y falló en silencio.** La versión
+> anterior nombraba **un** sujeto —el trial— y **una** transición —`T4`—, y la retención no
+> aparecía. Cuando `DEC-DATA-002` volvió reiniciable el reloj de retención, sus **tres** avisos
+> (§6) pasaron a corresponder de nuevo en cada ciclo y la clave sin fecha los suprimía como
+> duplicados: el segundo día 180 borraba el contenido publicable de la ficha **sin avisar y sin
+> abrir la ventana de exportación**, que es con lo que `V/02` §4.2 regla 3 defiende ese borrado. Y
+> no se veía: la clave **se calcula antes de encolar**, así que la fila no llegaba a la cola, no
+> quedaba `failed` y no escalaba por el §1.3. **Una regla con lista de sujetos envejece cada vez
+> que aparece un sujeto nuevo; ésta no tiene lista.**
 
 ---
 
@@ -207,7 +219,7 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | reanudación tras pausa | transaccional | al reanudar. **Dice una sola cosa: qué día se le cobra** | `DEC-SUB-010` |
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
-| retención | transaccional | antes del día 90, **al archivar** y antes del día 180, **los tres contados sobre `listing.inactiva_desde`** (`V/02` §2.5) — un reloj que se reinicia, así que su ocurrencia lleva la fecha objetivo (§2) | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
+| retención | transaccional | antes del día 90, **al archivar** y antes del día 180, **los tres contados sobre `listing.inactiva_desde`** (`V/02` §2.5) — un reloj **reiniciable**, así que los tres pueden corresponder más de una vez sobre la misma ficha y su ocurrencia lleva la fecha objetivo, como todo schedule (§2) | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
 | **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1` o por `MP4`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
 | **reapertura tras un pago manual tardío** | transaccional | al reabrir (`MP4`, cap. 03 §7.1, épica de billing). **Dice dos cosas y ninguna es opcional**: que el servicio volvió y desde cuándo, y **qué pasó con la ficha** — vuelve sola si estaba archivada (`PB7`), y si el hard delete ya corrió, **que el contenido no vuelve** | cap. 03 §7.1 (épica de billing), `V/02` §4.1 |
 

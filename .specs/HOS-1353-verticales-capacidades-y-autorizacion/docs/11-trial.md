@@ -323,8 +323,11 @@ la persona recibió un aviso que dejó de ser cierto.
 - **La campaña PREVIA** —10, 5, 2 días antes y el día del vencimiento— **sí** puede quedar
   desmentida por una extensión, y **ya está resuelta**: T4 la **re-agenda** contra la fecha nueva
   (cap. 03 §2). Si el aviso de «faltan 2 días» ya salió, vuelve a salir contra la fecha nueva.
-  El sujeto más el hito son la clave de una-sola-vez del capítulo 07 §2, así que la ocurrencia
-  nueva es un envío nuevo y no un duplicado suprimido.
+  **Y vuelve a salir porque la ocurrencia de la clave de una-sola-vez del capítulo 07 §2 lleva la
+  fecha objetivo vigente**, no sólo el sujeto y el hito: al correrse la fecha cambia la ocurrencia,
+  así que el envío nuevo no es un duplicado suprimido. Con una ocurrencia de sujeto más hito a
+  secas, `T4` dejaría al cliente **sin** el aviso que la extensión acaba de volver a hacer
+  corresponder.
 - **La campaña de RECUPERACIÓN** —+1 a +60— **no puede quedar desmentida, porque el cruce es
   imposible por construcción.** Arranca en T3, o sea con el trial ya en `TRIAL_EXPIRED`, y la
   única transición que extiende es **T4**, que exige `TRIAL_ACTIVE`. Entre las dos no hay
