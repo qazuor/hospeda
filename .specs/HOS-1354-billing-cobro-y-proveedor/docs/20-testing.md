@@ -57,6 +57,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §6) la muestra **sin motivo, sin `puesta_en`, sin el pago o sin el default de `DEC-RF-003`** cuando el motivo es uno de los cuatro que devuelven plata; **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §6, `NUCLEO/01` §2.5, `DEC-RF-002`, `DEC-RF-003` |
+| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de esta épica, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001`, cap. 03 §7.2 (`MP5`), `F-8eB1-002` |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
 
@@ -137,7 +138,9 @@ columna**: tres predicados los usaban —la tercera y la cuarta comprobación de
 tercera mitad de la orfandad del `B/16` §4.2— y ninguna búsqueda devolvía el hueco, porque **el
 lugar donde faltaba la columna no nombraba el término**. Con el inventario, un cuarto consumidor
 que llegue sin fila se cuenta igual que uno de *«fila viva»*. **El guard sigue siendo uno y los
-de `R1` siguen siendo cinco**: lo que cambia es contra cuántas listas cuenta su segunda mitad.
+de `R1` son SEIS**: lo que cambia es contra cuántas listas cuenta su segunda mitad. *(Este
+renglón decía «cinco»; quedó caduco cuando `G-R1-F` entró en la misma tanda, y el conteo se
+recalculó sobre la tabla de arriba.)*
 
 **`G-R1-D` es el guard de la VENTANA**, que es el tercer momento: `A` vigila cómo nace la sucesión,
 `C` cómo termina, y `D` lo que puede pasar **mientras dura**. Vigila dos escrituras opuestas y las
@@ -163,6 +166,53 @@ produce **el daño entero** de este guard: dos filas vivas con el crédito de la
 computado en cero. Es la misma puerta de `MP1` con otro estado de origen, así que se vigila igual
 y no necesita una regla propia — lo que necesita es **figurar**, porque un guard escrito sobre
 tres caminos no mira el cuarto.
+
+**`G-R6` es el guard de la COLUMNA MUERTA, y vigila una clase que ya costó un crítico de dinero.**
+`MP5` disparaba sobre *«el período actual arrancó»* y **ninguna escritura del corpus avanzaba esa
+columna**, así que el pagador manual pagaba **una vez en la vida** y seguía cubierto para siempre
+(`F-8eB1-002`). El defecto no es que la condición esté mal escrita: está perfectamente escrita y
+**lee algo que nadie mueve**, que es un estado que ninguna lectura de la fila revela y ninguna
+comparación del barrido detecta — los dos lados dicen lo mismo, porque el dato no cambió de
+ninguno de los dos.
+
+**Se verifica mecánicamente, y eso es lo que lo hace admisible.** Cruzar las columnas que una
+condición **lee** contra las que alguna transición **escribe** es una comprobación **estructural**,
+no un juicio: no hace falta entender qué significa la columna para saber si alguien la mueve. Es
+la diferencia con el guard que `DEC-TEST-001` **rechazó**, abajo.
+
+**Se rompe a propósito** sacándole a `S10` la escritura que avanza la fecha del próximo cobro
+(cap. 03 §7.2, *«qué mueve la fecha del próximo cobro»*): esa columna queda con **dos** escritores
+en vez de tres y el guard **sigue verde**, así que para ponerlo en rojo hay que sacarle **los
+tres** — que es exactamente el estado en que `MP5` nació, y la prueba de que el predicado es
+*«al menos una»* y no *«alguna que alguien recuerde»*.
+
+**Y su dominio son las SEIS tablas de esta épica, no las nueve máquinas, y conviene no leer eso
+como un descuido.** `DEC-TEST-001` decidió agregar el guard al catálogo de billing, que es donde
+nació el defecto; la clase **también puede existir** en las tablas de la otra épica, y extenderlo
+ahí pide una fila en `V/20` §2 que esa decisión no tomó. **Queda como pregunta al owner**, del
+mismo modo que `G-R4` y `G-R5` terminaron siendo referencias cruzadas después de nacer en un solo
+catálogo.
+
+**Y el SEGUNDO guard que esta tanda evaluó NO se agrega, con su razón escrita** (`DEC-TEST-001`).
+Era *«toda fila con `desde` de conjunto declara cuántas escrituras tiene y en qué orden»*, y su
+caso real es `F-8eB2-002`: `S20` copió de `S13` el *«idempotente y reanudable fila por fila»*
+teniendo **dos** escrituras, sobre un argumento que supone una.
+
+- **Vigila una convención de redacción** —*«declará tus escrituras»*— que un guard estático
+  **sólo puede comprobar en su forma, no en su verdad**. Puede exigir que la fila **diga** cuántas
+  escrituras tiene; **no puede verificar que sean ésas**.
+- Sería **un guard que afirma más de lo que prueba**, y este capítulo ya tiene la regla escrita
+  (§2.1): *«el texto con que falla no puede afirmar más de lo que el predicado verifica»*. Un
+  guard así es **peor que no tenerlo**, porque declara cubierta una clase que no cubre.
+- **Lo que queda sin vigilancia va declarado**: `S20` demostró que el error se comete **copiando
+  de una fila que parece análoga**, y contra eso no hay comprobación estructural. Lo único que lo
+  detecta es que alguien lea las dos filas juntas.
+
+**Y el costo de agregar `G-R6` va con su cifra, que no la medimos acá**: los guards de este
+programa **no corren todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y
+`C2` de la FASE 8-bis-4 midió que **12 de 26 no tienen unidad que los construya**. Agregar uno
+empeora esa proporción a **13 de 27**, y `DEC-TEST-001` lo acepta porque la alternativa —no
+escribirlo— garantiza que no llegue a la FASE 10.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

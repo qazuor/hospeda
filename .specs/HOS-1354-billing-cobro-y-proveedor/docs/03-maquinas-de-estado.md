@@ -1395,6 +1395,14 @@ autorización no hay sujeto.
 La columna es la de `B/02` §2.2, y sobre un pagador manual **es la única copia que existe** —no
 hay proveedor que la tenga—. **Son tres escrituras y un tope, y no hay una cuarta escritura:**
 
+> **Y que sean TRES y no cero es lo que `G-R6` vigila desde la FASE 9-bis-4** (`B/20` §2,
+> `DEC-TEST-001`). El defecto que este § arregló —`MP5` disparando sobre una columna que **ninguna
+> transición avanzaba**, o sea el pagador manual que paga *una vez en la vida* y sigue cubierto
+> para siempre— no lo detecta ninguna lectura de la fila ni ninguna comparación del barrido: los
+> dos lados coinciden **porque el dato no se movió de ninguno de los dos**. Lo único que lo ve es
+> **cruzar las columnas que las condiciones leen contra las que las transiciones escriben**, y eso
+> es una propiedad del texto, no de una ejecución.
+
 1. **La estrena `S2`**, con su efecto ya escrito: *«arranca el período»* (§3.2). La fila llega a
    `ACTIVE` y la fecha es ese instante, así que la primera corrida del reloj abre la primera
    cuota.
