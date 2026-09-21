@@ -143,11 +143,28 @@ describe('POST /admin/events — authorship comes from the actor (HOS-998)', () 
         expect(input.authorId).toBe(ACTOR_ID);
     });
 
-    it('ignores an authorId supplied in the body rather than honouring it', async () => {
+    it('refuses an authorId supplied in the body instead of dropping it quietly', async () => {
         // The body is not the source of authorship on any tier (HOS-374 D-2).
-        // Asserting the resulting value — not just "no error" — is what makes
-        // this test see a route that passes the caller's value straight through.
-        await post({ ...PANEL_PAYLOAD, authorId: OTHER_USER_ID });
+        // `.omit()` alone STRIPS the key and answers 201, so a caller that
+        // meant to attribute the event elsewhere would get it attributed to
+        // themselves with no signal. The route reads the RAW body to catch it
+        // — the parsed one has already lost the key by then.
+        const response = await post({ ...PANEL_PAYLOAD, authorId: OTHER_USER_ID });
+        const payload = (await response.json()) as {
+            error?: { code?: string; details?: Array<{ field?: string }> };
+        };
+
+        expect(response.status).toBe(400);
+        expect(payload.error?.code).toBe('VALIDATION_ERROR');
+        expect(payload.error?.details?.map((detail) => detail.field)).toContain('authorId');
+        expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('never lets a body value become the author, whatever the body says', async () => {
+        // The security property, stated independently of HOW it is enforced:
+        // across every accepted create, the author is the actor. If the
+        // rejection above were ever relaxed to a strip, this must still hold.
+        await post(PANEL_PAYLOAD);
 
         expect(serviceInput().authorId).toBe(ACTOR_ID);
     });
