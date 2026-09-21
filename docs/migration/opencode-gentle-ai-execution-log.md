@@ -3208,3 +3208,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `server-tools` mantuvo **334 tests, 0 fallos y 501 assertions**.
 - `bunx tsc --noEmit` pasó en ambos paquetes.
 - No se ejecutaron instalaciones, mutaciones externas ni cambios de branches.
+
+## Gate 153 · Preflight E2E de envs y template
+
+- `hops env --drift --wt hospeda-staging --json` se ejecutó en modo
+  read-only: api, web y admin no tienen variables faltantes, obsoletas ni
+  valores pendientes; `docker/.env` todavía declara `COMPOSE_PROJECT_NAME`,
+  que no pertenece al registro actual, y falta una comprobación cruzada de la
+  variable interna correspondiente.
+- `hops db-update-template status` confirmó que `hospeda_template` no tiene
+  journal de migraciones ni `hospeda_tooling.template_manifest`. El nuevo
+  `wt-create` debe bloquear ese estado, por lo que el E2E de DB/servidores no
+  puede continuar hasta construir y validar una candidata aislada.
+- No se crearon worktrees, bases, servidores ni cambios en Linear/GitHub.
