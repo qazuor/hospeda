@@ -65,7 +65,7 @@ import { getDestinationSameAs } from '@/lib/destination-sameas';
 import { Image } from 'astro:assets';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
 const { path } = Astro.params;
@@ -282,6 +282,23 @@ const parentDestinationId =
  * Some routes return a bare array. We probe the well-known wrapper keys
  * before giving up — keeps the page resilient to future schema renames.
  */
+/**
+ * Whether a settled list result represents a FAILED load, as opposed to a
+ * successful one that happened to be empty.
+ *
+ * The distinction `extractItems` and `extractTotal` deliberately erase — they
+ * exist to hand the template something renderable — and the one the cache
+ * decision needs, because an empty list the page turns into "no hay
+ * alojamientos disponibles" is a claim, and a claim built from a 500 is false.
+ *
+ * @param settled - A settled entry from the page's `Promise.allSettled`.
+ * @returns `true` when the read rejected or answered `ok: false`.
+ */
+function settledLoadFailed(settled: PromiseSettledResult<unknown>): boolean {
+	if (settled.status === 'rejected') return true;
+	return (settled.value as { ok?: boolean } | undefined)?.ok !== true;
+}
+
 function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
 	if (settled.status === 'rejected') return [];
 	const val = settled.value as { ok?: boolean; data?: unknown };
@@ -353,6 +370,33 @@ try {
 		.slice(0, 3)
 		.map((item) => toEventCardProps({ item, locale }));
 	eventsCount = extractTotal(eventsResult);
+
+	// `extractItems`/`extractTotal` turn a failed load into `[]`/`0`, which is
+	// indistinguishable from a destination that genuinely has nothing — and the
+	// page then SAYS so: "No hay alojamientos disponibles. Próximamente
+	// agregaremos alojamientos en este destino." Measured by review with the
+	// accommodations endpoint returning 500 on a destination whose own stats
+	// report 31 accommodations: 200, `public, s-maxage=3600,
+	// stale-while-revalidate=3600`, and the false claim pinned for the `detail`
+	// TTL (HOS-1154 review round 3).
+	//
+	// `statsResult` is in the list for a second reason: it feeds
+	// `isThinDestination` below, so losing it turns the page `noindex` as well as
+	// wrong — the same conflation `autores/[slug]` guards ("a broken endpoint
+	// must not de-index a URL the sitemap still advertises"), except here it
+	// would be cached too.
+	//
+	// `postsResult` and `siblingsResult` are deliberately NOT here. The related
+	// posts strip is a decoration, and `siblingsResult` is a literal
+	// `{ ok: false }` whenever the destination has no parent — counting it would
+	// demote most of the catalog for a condition that is not a failure at all.
+	if (
+		settledLoadFailed(accResult) ||
+		settledLoadFailed(eventsResult) ||
+		settledLoadFailed(statsResult)
+	) {
+		markResponseDegraded({ locals: Astro.locals });
+	}
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
 		stats = {

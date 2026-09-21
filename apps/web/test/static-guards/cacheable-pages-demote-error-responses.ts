@@ -72,21 +72,35 @@ import { classifyCacheControl, stripComments } from './cacheable-responses-decla
  *     shipped, already caching its own outage.
  *
  *     Those sites are fixed (`pages/[lang]/index.astro` and its four homepage
- *     sections, `autores/[slug]`, `destinos/lugar/[slug]`) but they are fixed
- *     by hand, NOT by this guard. Adding a fail-soft signal here was measured
- *     and rejected: 65 cacheable files, 9 with an unpoliced fail-soft, 6 of
- *     them unmarked — and every one of those 6 swallows a DECORATION (a
- *     bookmark counter, a related-posts strip) on a detail page whose primary
- *     fetch succeeded. Demoting those would cost the edge cache HOS-369 built
- *     for no user-visible gain, and exempting them one by one would be the
- *     fail-open this file refuses elsewhere.
+ *     sections, `autores/[slug]`, `destinos/lugar/[slug]`, `destinos/[...path]`)
+ *     but they are fixed by hand, NOT by this guard.
+ *
+ *     Adding a fail-soft signal here was measured and rejected: 65 cacheable
+ *     files, 9 with an unpoliced fail-soft, 6 of them unmarked. **This entry
+ *     then claimed all 6 were decorations, and review measured one that was
+ *     not**: `destinos/[...path]` turns a failed accommodations read into
+ *     `[]`/`0` via `extractItems`/`extractTotal` and renders "No hay
+ *     alojamientos disponibles" for a destination whose own stats report 31 —
+ *     200, `public, s-maxage=3600, stale-while-revalidate=3600`, the false
+ *     claim pinned for the `detail` TTL. It is now marked, which is why it is
+ *     in the fixed list above rather than in this sentence.
+ *
+ *     The remaining 5 are decorations: a bookmark counter (`eventos/[slug]`,
+ *     `publicaciones/[slug]`), a related-posts strip, a reviews list on a
+ *     detail page whose primary fetch succeeded, and — the closest to the line
+ *     — a FAQ entry dropped from `planes/turistas`, which degrades the page's
+ *     completeness but makes it assert nothing untrue. Demoting those would
+ *     cost the edge cache HOS-369 built for no user-visible gain, and exempting
+ *     them one by one would be the fail-open this file refuses elsewhere.
  *
  *     The line that actually separates them is semantic, so write it down
  *     rather than pretend a regex draws it: **a fail-soft that makes the page
  *     ASSERT SOMETHING FALSE is a degradation** ("este autor no tiene
- *     publicaciones", an empty home, "nothing nearby"); **one that omits a
- *     decoration is not**. A new page in the first category is not caught here
- *     — it is caught in review, by someone who read this paragraph.
+ *     publicaciones", an empty home, "nothing nearby", "no hay alojamientos");
+ *     **one that omits a decoration is not**. A new page in the first category
+ *     is not caught here — it is caught in review, by someone who read this
+ *     paragraph. Note how that went the first time: the claim that the 6 had
+ *     been checked one by one was itself the thing that turned out false.
  *   - A failure state whose markup and variable names avoid the word "error"
  *     entirely (`<Oops>`, `const broken = …`).
  *   - It reads source text, so a component resolved dynamically
