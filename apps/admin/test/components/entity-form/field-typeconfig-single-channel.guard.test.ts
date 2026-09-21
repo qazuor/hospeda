@@ -185,15 +185,54 @@ describe('the moderation-term create form declares its options where the rendere
      * `test/features/content-moderation/moderation-term-options.test.ts`; what
      * this file asserts is only that the route still gets them from there.
      */
-    it('feeds both selects from the schema-derived builders, not a hand-written list', () => {
-        const source = read(MODERATION_TERM_NEW_ROUTE);
-
+    it('imports both option builders', () => {
         expect(
-            source,
-            'The moderation-term route no longer imports its select options from @/features/content-moderation/moderation-term-options. Hand-writing them is what let the form offer `self_harm`, a value createContentModerationTermSchema rejects.'
+            read(MODERATION_TERM_NEW_ROUTE),
+            'The moderation-term route no longer imports both option builders from @/features/content-moderation/moderation-term-options. Hand-writing option values is what let the form offer `self_harm`, which createContentModerationTermSchema rejects.'
         ).toMatch(
-            /import\s*\{[^}]*\bbuildModerationCategoryOptions\b[^}]*\}\s*from\s*'@\/features\/content-moderation\/moderation-term-options'/
+            /import\s*\{(?=[^}]*\bbuildModerationCategoryOptions\b)(?=[^}]*\bbuildModerationTermKindOptions\b)[^}]*\}\s*from\s*'@\/features\/content-moderation\/moderation-term-options'/
         );
+    });
+
+    /**
+     * Binding, not just presence.
+     *
+     * An earlier version of this assertion checked only that the import was
+     * there and that `typeConfig` mentioned the variable — which a shadowing
+     * declaration walks straight past: keep the import, then
+     * `const categoryOptions = [{ value: 'self_harm', … }]` in the component
+     * body. Measured: 19/19 green and `tsc` clean with the bad option back on
+     * the form. So the binding is what gets asserted — each name may be
+     * declared exactly once, by destructuring its builder.
+     */
+    for (const [name, builder] of [
+        ['kindOptions', 'buildModerationTermKindOptions'],
+        ['categoryOptions', 'buildModerationCategoryOptions']
+    ] as const) {
+        it(`binds ${name} only by destructuring ${builder}`, () => {
+            const source = read(MODERATION_TERM_NEW_ROUTE);
+
+            // The trailing `[^;\n]*` matters: without it the match stops at the
+            // name itself and the shape assertion below can never see the `=`.
+            const declarations =
+                source.match(new RegExp(String.raw`\bconst\b[^;\n]*\b${name}\b[^;\n]*`, 'g')) ?? [];
+
+            expect(
+                declarations.length,
+                `${name} is declared ${declarations.length} time(s) in the route; it must be declared exactly once. A second declaration shadows the derived list, which puts hand-written option values back on the form while the import above still looks correct.`
+            ).toBe(1);
+
+            expect(
+                declarations[0],
+                `${name} is no longer bound by destructuring ${builder}(). Only the builder guarantees the values come from createContentModerationTermSchema.`
+            ).toMatch(
+                new RegExp(String.raw`const\s*\{\s*options:\s*${name}\s*\}\s*=\s*${builder}`)
+            );
+        });
+    }
+
+    it('passes those bindings straight into each typeConfig', () => {
+        const source = read(MODERATION_TERM_NEW_ROUTE);
 
         expect(readTypeConfig(readFieldLiteral(source, 'kind'), 'kind')).toContain('kindOptions');
         expect(readTypeConfig(readFieldLiteral(source, 'category'), 'category')).toContain(
@@ -201,13 +240,13 @@ describe('the moderation-term create form declares its options where the rendere
         );
     });
 
-    it('hardcodes no option value in the route', () => {
+    it('declares no literal option value inside either typeConfig', () => {
         const source = read(MODERATION_TERM_NEW_ROUTE);
 
         for (const fieldId of ['kind', 'category'] as const) {
             expect(
                 readTypeConfig(readFieldLiteral(source, fieldId), fieldId),
-                `Field '${fieldId}' declares literal option values again. They must come from createContentModerationTermSchema so the form cannot offer something the submit handler refuses.`
+                `Field '${fieldId}' declares literal option values inside its typeConfig again.`
             ).not.toMatch(/\bvalue:\s*'/);
         }
     });
