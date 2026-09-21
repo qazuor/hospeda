@@ -53,10 +53,10 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G11 | se le pide un **trial al proveedor** | `D12` |
 | G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
-| G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento, la **redención de promo** o la **cortesía vigente** sin re-apuntar, o un **pago pendiente por `S19` sin una marca `requiere_conciliación` abierta con motivo `REEMBOLSO_POR_CONFIRMAR`** —la marca sin el motivo **pasaba el guard y no ordenaba nada**— | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002` |
+| G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento o la **redención de promo** sin re-apuntar, **o una cortesía vigente sin cerrar y sin `saldo_días`** —ésa **no** se re-apunta, `DEC-GRANT-007`—, o un **pago pendiente por `S19` sin una marca `requiere_conciliación` abierta con motivo `REEMBOLSO_POR_CONFIRMAR`** —la marca sin el motivo **pasaba el guard y no ordenaba nada**— | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002` |
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
-| G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §4) la muestra **sin motivo, sin `puesta_en`, o sin el pago** cuando el motivo es uno de los tres que devuelven plata; **o un consumidor nuevo de *«marca abierta»* no figura** en el inventario de `NUCLEO/01` §2.5 —que es el **tercer** inventario del glosario y **no** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §4, `NUCLEO/01` §2.5, `DEC-RF-002` |
+| G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §4) la muestra **sin motivo, sin `puesta_en`, o sin el pago** cuando el motivo es uno de los cuatro que devuelven plata; **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §4, `NUCLEO/01` §2.5, `DEC-RF-002` |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
 
@@ -95,16 +95,18 @@ hubo sucesión, y los complementos del que hizo un upgrade se cancelan de forma 
 (`B/16` §4.2). Es una propiedad del árbol de fuentes y se rompe a propósito comentando una de las
 dos escrituras, que es lo que pide el §2.1.
 
-**Y vigila las otras dos escrituras del cierre, que es lo que cambió**: `S18` no tiene dos
-efectos sino cuatro, y los dos que se agregaron son los que **fallan en silencio**. Un cierre que
+**Y vigila las otras TRES escrituras del cierre, que es lo que cambió**: `S18` no tiene dos
+efectos sino cinco, y los tres que se agregaron son los que **fallan en silencio**. Un cierre que
 re-apunta los complementos y se olvida de la **redención de promo** deja al cliente pagando precio
 de lista para siempre, y el barrido no lo ve porque compara contra el monto vigente de la
-sucesora, que **es** el de lista (`B/14` §2.2). Uno que se olvida de la **cortesía** deja una
-columna no anulable apuntando a una `CANCELLED`, que no emite fuente. Y uno que cierra sobre una
+sucesora, que **es** el de lista (`B/14` §2.2). Uno que se olvida de la **cortesía** —que desde `DEC-GRANT-007` no se re-apunta sino que se
+**cierra con su saldo de días**— deja una
+columna no anulable apuntando a una `CANCELLED`, que no emite fuente, y **nada que `S9` pueda
+re-emitir**. Y uno que cierra sobre una
 predecesora con un pago pendiente por `S19` **sin poner la marca** deja plata del cliente en
-nuestra cuenta sin nadie que la mire — es el único de los cuatro que no tiene ningún otro
-detector, porque la fila queda terminal (`DEC-RF-002`, `B/12` §5.3 rama 1). **Se rompe a
-propósito comentando cada una de las cuatro escrituras por separado**, y el inventario contra el
+nuestra cuenta sin nadie que la mire — es el único de los cinco que no tiene ningún otro
+detector, porque la fila queda terminal (`DEC-RF-002`, `B/12` §5.3 ramas 1, 5 y 6). **Se rompe a
+propósito comentando cada una de las cinco escrituras por separado**, y el inventario contra el
 que se verifica es `B/02` §2.6.
 
 **`G-R1-E` es el guard del TÉRMINO, y existe porque el defecto que cierra no es una omisión sino

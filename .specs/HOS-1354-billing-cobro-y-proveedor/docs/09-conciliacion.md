@@ -72,10 +72,10 @@ sólo dice de quién es. Y está medido que se puede hacer sobre una suscripció
 persona.** Es el criterio del owner aplicado por tercera vez: **la línea no es «automático contra
 manual», es «toca plata o no toca plata»**.
 
-> **Y la marca dice CUÁL de las once cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
+> **Y la marca dice CUÁL de las trece cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. Tres de los once motivos significan *«hay plata del cliente que devolver»*, y
-> ésos son los que la demora le cobra al cliente.
+> indistinguibles**. Cuatro de los trece motivos significan *«hay plata del cliente que devolver»*,
+> y ésos son los que la demora le cobra al cliente.
 
 ---
 
@@ -309,7 +309,7 @@ divergencia.
 > **Hace falta porque ése es, con esas palabras, el estado que el diseño declara indetectable.**
 > `B/03` §3.2 lo escribe al justificar el alcance de `S13`: *«la fila está `ACTIVE`, el proveedor
 > dice `authorized`, y para el barrido eso **coincide**»*. Las cinco comparaciones de arriba no lo
-> ven —los dos lados dicen lo mismo— y las otras cuatro comprobaciones miran `sucede_a`, el pago
+> ven —los dos lados dicen lo mismo— y las otras cinco comprobaciones miran `sucede_a`, el pago
 > pendiente y **una instancia de addon**, no las filas de suscripción del beneficiario. **La
 > cuarta sí mira un ancla** —su segunda mitad pregunta si la que era título de una instancia se
 > retiró—, y aun así no ve esto: su sujeto es la **instancia**, y acá el que quedó colgado es un
@@ -416,7 +416,7 @@ falso positivo**.
 > **Hace falta porque este estado es indetectable por comparación, y acá los dos lados dicen lo
 > mismo de verdad.** `PS-4` mide que el proveedor **no tiene auto-reanudación**, así que su
 > preapproval sigue `paused` igual que nuestra fila: para las cinco comparaciones de arriba eso
-> **coincide**, exactamente como en el caso de `S13`. Y las otras cuatro comprobaciones miran
+> **coincide**, exactamente como en el caso de `S13`. Y las otras cinco comprobaciones miran
 > `sucede_a`, el pago pendiente de `S19`, las filas vivas bajo un ancla y una instancia de addon;
 > **ninguna mira el reloj de una fila**.
 >
@@ -429,13 +429,44 @@ falso positivo**.
 > **Y lo que está en juego no es sólo el cobro.** Una reanudación que no ocurre deja al cliente
 > **sin servicio y sin cobro** desde el día en que su pausa vencía, y —porque `cubierto` sigue
 > falso— con el reloj de inactividad de verticales corriendo hacia el hard delete del día 180
-> (`V/02` §4.1, `NUCLEO/01` §1.2). Es la única de las cinco comprobaciones cuyo desenlace no
+> (`V/02` §4.1, `NUCLEO/01` §1.2). Es la única de las seis comprobaciones cuyo desenlace no
 > atendido **borra datos del cliente**.
 >
 > **Es un backstop, no el disparador.** En el curso normal la rama de fallo de `S10` (`B/03` §3.2)
 > ya puso la marca cuando la relectura vio el preapproval todavía `paused`. Esta comprobación
 > existe para la corrida que **no se ejecutó nunca**, que es el modo que ninguna relectura
 > produce. Su desenlace es la marca —una persona—, nunca una reanudación automática a ciegas.
+
+**Y una sexta, que tampoco le pregunta nada al proveedor: la cortesía diferida que nadie
+re-emitió.** Si hay un `courtesy_grant` con **`saldo_días` no nulo** —o sea **diferido**, `B/02`
+§2.4 y `NUCLEO/01` §2.6— y la suscripción a la que apunta tiene **`sucedida_por` no nulo** y esa
+sucesora ya está en **`ACTIVE`**, `S9` no corrió por su segundo disparador: se abre la **marca**
+con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía, la
+predecesora y la sucesora están las tres en nuestra base— y cubre el único estado que
+`DEC-GRANT-007` puede dejar colgado: **la sucesora cobra el precio entero por días que
+`SUPER_ADMIN` había regalado**.
+
+> **Hace falta porque este estado es indetectable por comparación, con las mismas palabras que el
+> de `S13` y el de `S10`.** La sucesora dice `ACTIVE`, el proveedor dice `authorized`, y para las
+> cinco comparaciones de arriba eso **coincide**. Y las otras cinco comprobaciones miran
+> `sucede_a`, el pago pendiente de `S19`, las filas vivas bajo un ancla, una instancia de addon y
+> el reloj de una pausa: **ninguna mira una cortesía**, que es literalmente lo que `B/14` §4.4 ya
+> declaraba del caso hermano —*«el barrido no compara grants, la fila no queda marcada, y el
+> cliente se entera cuando le cobran»*—. Ésta es la que lo compara.
+>
+> **Y no marca el instante entre `S2` y `S9`, que es legítimo.** `S9` corre en el mismo acto de la
+> autorización; lo que esta comprobación levanta es la corrida que **no se ejecutó**, contra un
+> barrido diario. El cobro que el proveedor pueda haber hecho en ese instante **no entra por acá**:
+> entra por su propia marca, `COBRO_DURANTE_CORTESÍA`, que es el riesgo que `DEC-GRANT-007` aceptó
+> por escrito.
+>
+> **Y el caso en que la sucesora NO llega a `ACTIVE` no es de esta comprobación.** Si abandona el
+> checkout, `S3` la manda a `ABANDONED` y la cortesía queda diferida sin ninguna suscripción a la
+> que volver — **el beneficiario ya no tiene ninguna fila viva en esa vertical**, así que no hay
+> obligación de pago que no cobrar, que es la razón exacta con que `DEC-GRANT-004` (2) bloquea
+> otorgar una cortesía sobre una pausa. **Qué se hace con ese saldo —se cierra, o espera a que la
+> persona se suscriba de nuevo— no está decidido**, y no se decide acá: queda como pregunta al
+> owner.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.

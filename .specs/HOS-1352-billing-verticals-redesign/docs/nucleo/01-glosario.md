@@ -431,9 +431,10 @@ mitad de `G-R1-E` (`B/20` §2).
    **dice además en qué estado está la fila que lo escribió**, y **quien escribe un consumidor
    nuevo agrega su fila al inventario que le corresponda —el de *«fila viva»* o el de
    *«grant vivo»* / *«ancla viva»*— en el mismo acto**, antes de declarar el cambio aplicado. Lo
-   vigila `G-R1-E` (`B/20` §2), en sus dos mitades. **Y desde la FASE 9-bis-4 hay un tercer
-   inventario en este capítulo** —el de *«marca abierta»*, §2.5—, que **no es de `G-R1-E`**: su
-   sujeto no es un conjunto *«vivo»* sino un caso abierto, y lo vigila `G-R1-F`.
+   vigila `G-R1-E` (`B/20` §2), en sus dos mitades. **Y desde la FASE 9-bis-4 hay dos inventarios
+   más en este capítulo** —el de *«marca abierta»* (§2.5) y el de *«cortesía diferida»* (§2.6)—,
+   que **no son de `G-R1-E`**: sus sujetos no son conjuntos *«vivos»* sino un caso abierto y un
+   instrumento en espera, y los vigila `G-R1-F`.
 
 **El caso testigo, y son dos en direcciones opuestas.** `T6` se escribió con *«ya hay una
 suscripción viva»* leyendo las seis filas vivas, y sobre las tres que no emiten fuente eso
@@ -455,7 +456,7 @@ definía**.
 | **`requiere_conciliación`** | el **predicado derivado** *«esta suscripción tiene **al menos una** marca abierta»* | se evalúa sobre las marcas de la fila; **no hay ninguna columna con ese nombre** | conservar verbatim las frases del corpus que ya decían *«la marca `requiere_conciliación`»*, que siguen siendo exactas |
 
 > **El plural es el punto, y por eso el término es *«abierta»* y no *«puesta»*.** El corpus escribe
-> **once** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5) y **tres de ellos
+> **trece** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5) y **cuatro de ellos
 > significan *«hay plata del cliente que devolver»***. Con un booleano, dos casos simultáneos eran
 > uno solo y `S15` los apagaba juntos; el que se perdía era el del dinero, porque es el que ninguna
 > superficie nombraba. *«Puesta»* describe una casilla; *«abierta»* describe **un caso**, que es lo
@@ -465,7 +466,8 @@ definía**.
 
 **Misma regla que los dos inventarios del §2.4, y acá la vigila `G-R1-F`** (`B/20` §2) —no
 `G-R1-E`, cuyo sujeto son los conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su
-fila acá **en el mismo acto**. Se parten por lo que preguntan.
+fila acá **en el mismo acto**. Es el **tercero** de los cuatro inventarios del capítulo. Se parten
+por lo que preguntan.
 
 **A · Preguntan «¿hay alguna marca abierta sobre esta fila?» — el predicado `requiere_conciliación`.**
 
@@ -481,7 +483,7 @@ fila acá **en el mismo acto**. Se parten por lo que preguntan.
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
 | 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un pago pendiente por `S19` sin una marca abierta con motivo `REEMBOLSO_POR_CONFIRMAR`»* — **es el consumidor que el booleano volvía vacuo**: la marca sin motivo pasaba el guard |
-| 6 | el **listado accionable** | cap. 19 (billing) §4 | ordena por motivo y pone adelante los **tres** que devuelven plata |
+| 6 | el **listado accionable** | cap. 19 (billing) §4 | ordena por motivo y pone adelante los **cuatro** que devuelven plata |
 | 7 | el **escalamiento por reloj** | cap. 09 (billing) §3 | *«si sigue abierta pasado su plazo, escala»* — lee `puesta_en`, **por marca**, así que el plazo puede depender del motivo |
 | 8 | la **entrada del §22.1 para el reembolso por confirmar** | cap. 08 (núcleo) §4.3 | *«el monto a devolver, el pago que lo origina y por qué puerta entró»* — es el mismo dato que la marca ahora **guarda**, en vez de vivir sólo en un evento que pasa |
 | 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, y que ningún levantado sea *«la fila»* |
@@ -492,6 +494,40 @@ puesta»* a secas** cuando lo que importa es **cuál**. Va *«con una marca abie
 predicado y **el motivo con su nombre** para el caso. La diferencia ya costó un crítico: `S18`
 escribía un motivo que la columna no admitía y **las tres ramas que mueven dinero se apoyaban en
 él**.
+
+---
+
+### 2.6 «Cortesía diferida»: la que espera a que la sucesora autorice
+
+**Entra acá por la misma razón que las anteriores**: desde `DEC-GRANT-007` hay un predicado en la
+columna *evento* de una transición (`S9`), uno en una comprobación del barrido y uno en un guard,
+y los tres preguntan lo mismo.
+
+| término | qué es | dónde se enumera | para qué existe |
+|---|---|---|---|
+| **cortesía diferida** | un `courtesy_grant` con **`saldo_días` no nulo** | **no se enumera con estados: es una columna anulable** (cap. 02 (billing) §2.4). Diferida o corriente, no hay más valores | sostener los días que `SUPER_ADMIN` firmó **entre que la suscripción que pausaban muere y la sucesora autoriza** |
+| **cortesía vigente** | un `courtesy_grant` **no diferido** cuyo `fin` todavía no pasó | el `fin` de la fila, contra hoy | el predicado de siempre: *«¿este beneficiario está en cortesía hoy?»* |
+
+> **Una cortesía diferida NO es una cortesía vigente, y los dos términos conviven a propósito.**
+> La diferida **no cubre a nadie hoy** —su suscripción está `CANCELLED` y una `CANCELLED` no emite
+> ninguna fuente ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.6)—, y la
+> vigente sí. Es la misma distinción que el §2.4 hace entre *«fila viva»* y *«fuente viva»*: el
+> instrumento existe y no está emitiendo. **Y la fila sigue apuntando a la predecesora**, que es
+> lo que la mantiene resoluble: la sucesora se alcanza por `sucedida_por`.
+
+#### El inventario de consumidores de «cortesía diferida»
+
+**Misma regla y mismo guard que el §2.5** —lo vigila `G-R1-F`, que es el que mira los términos que
+no son conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su fila acá en el mismo acto.
+
+| # | quién | dónde | qué hace con el término |
+|---|---|---|---|
+| 1 | la **cuarta escritura de `S18`** | cap. 03 (billing) §3.2 | **es el ESCRITOR**: cierra la cortesía sobre la predecesora y le escribe `saldo_días` |
+| 2 | el **segundo disparador de `S9`** | cap. 03 (billing) §3.2 | *«una sucesora recién autorizada tiene una cortesía diferida esperándola»* — y es el que **borra** el saldo al re-emitir |
+| 3 | la **fila de la cortesía** en el inventario del cierre | cap. 02 (billing) §2.6 | declara que **no se re-apunta**: se difiere |
+| 4 | la **sexta comprobación del barrido** | cap. 09 (billing) §3 | *«una cortesía diferida cuya sucesora ya está `ACTIVE`»* — `S9` no corrió |
+| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un cierre que deja una cortesía vigente sin cerrar y sin `saldo_días`»* |
+| 6 | el **cruce cortesía × cambio de plan** | cap. 14 (billing) §4.4 | es el § que lo explica entero, con su población y su riesgo aceptado |
 
 ---
 

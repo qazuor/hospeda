@@ -132,8 +132,9 @@ mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecu
    detector del diseño mira eso.
 
 **Y vale igual cuando `S18` corre con la sucesora todavía en `PENDING_AUTHORIZATION`** —el
-segundo camino del cierre, cuando la predecesora se murió sola por `S12`, por `S16` o por el
-espejo de la baja decidida por el proveedor (`B/03` §3.2 y §10.1)—.
+segundo camino del cierre, cuando la predecesora se murió sola: **son cinco**, por `S12`, por
+`S16`, por el espejo de la baja decidida por el proveedor, **o porque ella misma pidió la baja
+estando pausada (`S22`) o suspendida (`S23`)** (`B/03` §3.2 y §10.1)—.
 Mutar el monto **sí funciona sobre un preapproval `pending`**: es el control de `EX-39`, que lo
 midió al probar lo contrario para las fechas —`transaction_amount` 2000 → 2500, con
 `last_modified` movido—. **Lo que no se puede mover son las fechas**, y el descuento no las toca.
@@ -254,39 +255,99 @@ de anclas **son dos**.
 
 ### 4.4 Cortesía temporal + cambio de plan
 
-**Una cortesía vigente sobrevive al cambio de plan, por el mismo acto y la misma razón que la
-promo**: `S18` re-apunta `courtesy_grant.subscription_id` a la sucesora al cerrar la sucesión
-(`B/03` §3.2, `B/02` §2.6). El instrumento no desapareció — **la suscripción que pausaba se
-sucedió**.
+**Una cortesía vigente sobrevive al cambio de plan, y NO lo hace re-apuntándose**
+(`DEC-GRANT-007`, owner, 2026-09-21). `S18` la **cierra** sobre la predecesora y le escribe en
+`courtesy_grant.saldo_días` los días que le quedaban; **`S9` la re-emite sobre la sucesora cuando
+ésta autoriza** —o sea cuando llega a `ACTIVE`, que es exactamente el `desde` que `S9` ya tiene—,
+re-apuntando ahí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo
+(`B/03` §3.2, `B/02` §2.4 y §2.6). El instrumento no desapareció — **la suscripción que pausaba se
+sucedió**, y la cortesía la espera.
 
-**Y acá re-apuntar no alcanza, porque el mecanismo de la cortesía es la pausa.** `DEC-GRANT-003`
-la implementa *«pausando en el proveedor y sosteniendo el servicio de nuestro lado»*, así que la
-sucesora **queda pausada con motivo `COURTESY` por los días que le quedaban**, contados desde el
-cierre. Una cortesía re-apuntada sobre una fila `ACTIVE` que sigue cobrando no es una cortesía: es
-una fila de base que no hace nada, que es el modo de falla que `B/16` §2.4 nombra para rechazar
-una columna.
+**Por qué re-apuntarla en el cierre no se podía ejecutar, que es el defecto que esto cierra.** El
+mecanismo de la cortesía **es la pausa**: `DEC-GRANT-003` la implementa *«pausando en el proveedor
+y sosteniendo el servicio de nuestro lado»*, así que re-apuntarla obligaba a dejar la sucesora
+*«pausada con motivo `COURTESY`»* en el mismo acto. Y ahí los dos desenlaces le cobran:
 
-**Por qué no puede simplemente morirse con la predecesora**, que es lo que pasaba:
-`courtesy_grant.subscription_id` **no es anulable** y desde `DEC-GRANT-006` es **la única
+- **el `hacia` de `S18` es *«el mismo estado»*** y **la única fila que llega a `PAUSED · COURTESY`
+  es `S9`**, cuyo `desde` es `ACTIVE` (`B/03` §3.2). Sobre una sucesora en `PENDING_AUTHORIZATION`
+  **no hay transición**, así que por la regla 1 del núcleo —*«lo que la tabla no declara, no
+  pasa»*— el cierre del camino normal terminaba **en la marca**, o sea en un incidente sobre un
+  cliente que no hizo nada mal;
+- y si alguien lo implementaba **sin** pausar —que es lo que la celda de efectos decía, porque
+  nombraba *«se re-apuntan»* y no *«se pausa»*—, la sucesora autorizaba, arrancaba el período y
+  **cobraba**, con la cortesía encima. Una cortesía re-apuntada sobre una fila `ACTIVE` que sigue
+  cobrando no es una cortesía: es
+  una fila de base que no hace nada, que es el modo de falla que `B/16` §2.4 nombra para rechazar
+  una columna.
+
+**Por qué tampoco puede simplemente morirse con la predecesora**, que es lo que pasaba antes de
+todo esto: `courtesy_grant.subscription_id` **no es anulable** y desde `DEC-GRANT-006` es **la única
 referencia que la cortesía tiene** —se le retiró el `scope`—, así que una predecesora `CANCELLED`
 deja la fila apuntando a algo que no emite fuente (`12-contrato…` §2.6). El beneficio que firmó
 `SUPER_ADMIN` desaparece **en silencio**: el barrido no compara grants, la fila no queda marcada,
 y el cliente se entera cuando le cobran. Y sin `scope` tampoco hay salida alternativa: reemitirla
 exige un acto administrativo nuevo, que es *«la acción más grave del catálogo»* de la que alguien
-se puede olvidar (`NUCLEO/08` §3).
+se puede olvidar (`NUCLEO/08` §3). **El saldo es lo que resuelve las dos puntas**: la fila sigue
+apuntando a la predecesora —referencia resoluble, `B/02` §2.4— y el beneficio no se pierde, porque
+la re-emisión es un acto **del sistema** y no uno que alguien tenga que acordarse de hacer.
 
-**Y acá `S18` siempre corre sobre una sucesora ya `ACTIVE`, aunque su fila admita también
-`PENDING_AUTHORIZATION`.** El segundo camino de `S18` —la predecesora que se muere sola— sale de
-`S12` (`desde: CANCEL_SCHEDULED`) o de `S16` (`desde: ACTIVE`), y **una predecesora con cortesía
-vigente está `PAUSED`**, así que ninguna de las dos la alcanza (`B/03` §3.2). No hay caso en que
-haya que pausar un preapproval que todavía no autorizó. La pausa entra entonces sobre una fila
-autorizada: no choca con `EX-11`, que mide que el proveedor rechaza modificaciones **estando ya
-pausada**, ni con la condición de `S9` (*«no hay pausa vigente»*), porque la sucesora nació sin
-ninguna.
+#### La población NO es vacía, y el corpus la enumera
+
+**La versión anterior de este § afirmaba lo contrario y por eso el defecto duró dos tandas.**
+Decía: *«acá `S18` siempre corre sobre una sucesora ya `ACTIVE` … el segundo camino de `S18` sale
+de `S12` o de `S16`, y una predecesora con cortesía vigente está `PAUSED`, así que ninguna de las
+dos la alcanza. No hay caso en que haya que pausar un preapproval que todavía no autorizó»*.
+**Las tres cláusulas se caen, y cada una por su lado:**
+
+1. **La enumeración era de dos caminos y hoy son cinco** —`S12`, `S16`, el espejo del §10.1, `S22`
+   y `S23`—. El §2.2 de este mismo capítulo ya los corrigió a tres un commit después, **130 líneas
+   más arriba**, y este párrafo quedó como estaba.
+2. **El espejo sale de `PAUSED`.** Su `desde` es *«cualquier estado vivo que no sea
+   `CANCEL_SCHEDULED`»* (`B/03` §10.1) y `PAUSED` es uno de los seis vivos (`B/02` §2.2); está
+   medido que el proveedor **rechaza toda modificación sobre una pausada pero sí deja cancelar**
+   (`EX-11`, `B/20` §3.2). Así que una predecesora pausada por cortesía **puede** llegar a `S18`
+   con la sucesora todavía sin autorizar.
+3. **Y `S17` también sale de `PAUSED`** —es uno de sus cinco `desde` alcanzables—, así que ni
+   siquiera hace falta el espejo: en el camino **normal** la predecesora pausada por cortesía
+   muere por `S17` y `S18` cierra.
+
+**Cómo se llega, contado sobre la tabla que el propio `B/03` §3.2 ya publica.** `G-R1-A` sólo deja
+declarar una sucesión desde `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}` (`B/20` §2), así que la
+predecesora **no está `PAUSED` cuando se declara** — está `ACTIVE`. Después, **dentro de la ventana
+de 72 h**, `SUPER_ADMIN` otorga la cortesía: es la **fila 2** de la tabla de recorrido del `B/03`
+§3.2, *«`ACTIVE` | `S9` — `SUPER_ADMIN` otorga cortesía | `PAUSED` | ¿sigue siendo fila viva? sí»*.
+De ahí en más la sucesión sigue abierta sobre una predecesora pausada por cortesía, y termina por
+`S17` (la sucesora autoriza) o por el espejo (el proveedor la da de baja). **La población está
+enumerada en la tabla desde antes de que este § dijera que no existía.**
+
+**Qué sí hay que decir sobre la pausa, ahora que entra por el lado correcto.** `S9` corre sobre la
+sucesora **ya `ACTIVE`**, así que no choca con `EX-11` —que mide que el proveedor rechaza
+modificaciones **estando ya pausada**— ni con la condición de `S9` (*«no hay pausa vigente»*),
+porque una sucesora recién autorizada nació sin ninguna. **Y no se le pide al proveedor nada que
+nadie haya medido**: pausar un preapproval `pending` no está en la matriz (`B/20` §3.2 tiene
+`EX-11` para la pausada y `EX-39` para las fechas, y nada para una `pending`), y ésa es la razón
+por la que `DEC-GRANT-007` descartó la alternativa de que la sucesora heredara la pausa.
+
+> **El riesgo aceptado, dicho en voz alta.** Entre que la sucesora autoriza (`S2`) y que `S9`
+> re-emite, **el proveedor puede cobrar el primer pago**. Ese cobro **se devuelve por el camino que
+> ya existe** —la marca con motivo `COBRO_DURANTE_CORTESÍA` y la confirmación de una persona
+> (`B/02` §2.5, `DEC-RF-002`)— y **no se inventa un mecanismo nuevo** para evitarlo. Se prefiere un
+> cobro que se devuelve por una vía escrita antes que una pausa que quizá el proveedor no acepta.
+>
+> **Y si la re-emisión no ocurre, hay quién lo vea**: la **sexta** comprobación de cero llamadas
+> del `B/09` §3 levanta la cortesía diferida cuya sucesora ya está `ACTIVE`. Sin ella el
+> mecanismo nuevo tendría el mismo modo de falla silencioso que el viejo — *«el barrido no compara
+> grants»*—, que es lo que este § pasó dos tandas describiendo.
 
 **Y no contradice `§4.3`**: allá la cortesía **termina** porque el grant cancela la suscripción y
 *«no queda nada que no cobrar»*. Acá sí queda: la sucesora cobra, y es exactamente lo que la
 cortesía existe para evitar por los días que le quedan.
+
+**Ni contradice a `S22`, que hace lo contrario con la misma cortesía.** Ahí la persona **pide la
+baja** estando pausada y la cortesía *«termina con ella»* (`B/03` §3.2) — no se difiere, porque no
+hay ninguna sucesora que la reciba y porque `DEC-GRANT-004` (1) ya eligió que **quien se va pierde
+la cortesía que le quedaba, avisándole**. Diferir es para quien **sigue siendo cliente** con otro
+plan; terminar es para quien deja de serlo.
 
 ### 4.5 Extensión de trial + cortesía durante el trial
 

@@ -305,7 +305,7 @@ de períodos que arrancaron antes.
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente, **y el ancla del grant que sea su título, si lo es** | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. **El ancla del título apunta a `permanent_grant_vertical` y sí es anulable**: nula cuando el título es el ordinario de esa vertical, no nula cuando el addon vive de un grant. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
-| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **se re-apunta en `S18`** (§2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
+| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** y **`saldo_días`** (anulable) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
 | **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en` y quién la firmó** | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas** |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable. **El ancla no tiene estado propio**: es ***ancla viva*** si y sólo si su grant lo es (`NUCLEO/01` §2.4), y **la fila sobrevive a la revocación** |
 
@@ -394,6 +394,22 @@ irreversible sin adivinar qué había antes.
 dos casos: `12-contrato-de-cobertura.md` §2.3 declara que **una fuente sin referencia resoluble no
 se puede expresar**, así que ninguna de las dos columnas admite nulo.
 
+- **`courtesy_grant.saldo_días`** (anulable) — **dónde vive la cortesía entre que su suscripción
+  muere y la sucesora autoriza**, que es lo único nuevo que `DEC-GRANT-007` pide. Nula en el curso
+  normal; con un número, la cortesía está **diferida** (`NUCLEO/01` §2.6): `S18` la cierra sobre la
+  predecesora y escribe ahí los días que le quedaban, y `S9` la re-emite sobre la sucesora cuando
+  llega a `ACTIVE`, recalculando `inicio` y `fin` y **volviendo el saldo a nulo**.
+  - **`subscription_id` sigue sin admitir nulo, y por eso el saldo es una columna aparte.** La
+    regla de arriba —*«una fuente sin referencia resoluble no se puede expresar»*— no cede: la
+    cortesía diferida **sigue apuntando a la predecesora**, que es el registro fiel de qué
+    suscripción pausó, y **la sucesora se alcanza por `predecesora.sucedida_por`** (§2.2), que es
+    la primera escritura que `S18` hace en el mismo acto. Anular la columna habría perdido el
+    único puntero que lleva a la sucesora.
+  - **Y una cortesía diferida no emite ninguna fuente, sin que haga falta escribirlo en el
+    contrato.** Lo que emite `tipo: CORTESÍA` es **el estado de la suscripción** —`PAUSED` por
+    `COURTESY`—, y la predecesora está `CANCELLED`, que no emite nada (`12-contrato…` §2.6). Es la
+    diferencia con el grant, que sí necesitó decirlo (`12-contrato…` §2.8): un grant emite por sí
+    mismo, una cortesía emite **por la fila que pausa**.
 - **`courtesy_grant.subscription_id`** — el mecanismo ya la presuponía y la fila no la guardaba.
   `DEC-GRANT-003` implementa la cortesía *«pausando en el proveedor y sosteniendo el servicio de
   nuestro lado»* y `B/14` §4.3 confirma que sobre un grant no se otorga porque *«no queda nada que
@@ -527,13 +543,13 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: once motivos sobre la misma casilla, y tres de ellos devuelven plata
+### 2.5 La marca de conciliación: trece motivos sobre la misma casilla, y cuatro de ellos devuelven plata
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras diez marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras doce marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -545,10 +561,10 @@ misma forma y le faltaba la misma columna.**
 #### El catálogo, contado sobre los escritores que hay hoy
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
-seis de los once casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el de la
-pausa lo trae `S8` o `S9`. Los otros cinco los abren actos que **no son `S14`** — `S18` y las cinco
-comprobaciones de cero llamadas del `B/09` §3 —, y el propio `S19` declara por escrito que su caso
-**no es una divergencia**.
+**siete** de los trece casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros **seis** los abren actos que **no son `S14`** — `S18` y
+las **seis** comprobaciones de cero llamadas del `B/09` §3 —, y el propio `S19` declara por escrito
+que su caso **no es una divergencia**.
 
 | # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
 |---|---|---|---|---|
@@ -563,15 +579,21 @@ comprobaciones de cero llamadas del `B/09` §3 —, y el propio `S19` declara po
 | 9 | `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA` | la **primera** comprobación del `B/09` §3 | cerrar la sucesión que `S18` no cerró, antes de que el candado `A` vacío deje entrar un alta nueva | no |
 | 10 | `FAN_OUT_DE_GRANT_INCOMPLETO` | la **tercera** comprobación del `B/09` §3 | reanudar `S13` / `S20` — el beneficiario **paga todos los meses algo declarado gratis** | no, pero **hay un cobro que cortar** |
 | 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
+| 12 | `COBRO_DURANTE_CORTESÍA` | `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`) | confirmar el reembolso de un cobro sobre días que `SUPER_ADMIN` había regalado | **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió |
+| 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
-transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla.
+transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla. **Los dos
+últimos llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
+el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este §
+—trece motivos, cuatro que devuelven plata— se volvieron a contar sobre la tabla.
 
 #### Qué cambia con el motivo, además de que se pueda leer
 
 1. **El listado accionable deja de ser homogéneo.** `B/19` §4 muestra el motivo y ordena primero
-   las tres primeras filas, que son las únicas donde **esperar le cuesta plata al cliente**.
+   los **cuatro** motivos con `SÍ` en la última columna —1, 2, 3 y 12—, que son los únicos donde
+   **esperar le cuesta plata al cliente**.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
    apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`
    parcial del §2.2 es lo que deja convivir las dos, y es el caso que la rama 3 de `B/12` §5.3
@@ -599,19 +621,24 @@ vez**, en vez de descubrirse entidad por entidad:
 |---|---|---|---|
 | **complementos** (addons recurrentes y de única vez) | `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION` | **se re-apuntan a la sucesora** | el objetivo no desapareció, se sucedió (`B/16` §4.2). Sin esto, todo upgrade cancela de forma irreversible los addons que el cliente pagó |
 | **la redención de promo** | `promo_redemption.subscription_id` | **se re-apunta a la sucesora**, y el descuento se vuelve a aplicar sobre el monto de ella con la regla de `B/14` §2.2 —porcentual se recalcula, fijo se traslada—, **con el contador de N cobros donde estaba** | `B/14` §2.2 ya declaraba el resultado (*«la sucesora lo hereda»*) y ningún acto lo ejecutaba. El descuento vive **mutado en el monto del proveedor** (`DEC-MP-001`) y ese monto muere con el preapproval que `S17` cancela, así que sin el re-apunte el cliente pasa a pagar precio de lista **y nada lo detecta**: el barrido compara contra el monto vigente, y el monto vigente de la sucesora **es** el de lista |
-| **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) | **se re-apunta a la sucesora**, y la sucesora **queda pausada con motivo `COURTESY` por los días que quedaban** | una cortesía *«cubre la suscripción que pausa, y nada más»* (`DEC-GRANT-006`): re-apuntarla sin pausar deja una fuente que no sostiene nada, porque el mecanismo de la cortesía **es** la pausa (`DEC-GRANT-003`). Y no re-apuntarla deja la columna no anulable señalando una `CANCELLED`, que no emite fuente (`12-contrato…` §2.6): el beneficio que firmó `SUPER_ADMIN` desaparece en silencio |
-| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le abre a **esa** fila una marca con motivo **`REEMBOLSO_POR_CONFIRMAR`** (§2.5), que además **lleva la referencia al pago** que hay que devolver, y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre ese mismo pago (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** — y sin el motivo esa fila llegaba al listado indistinguible de las otras diez marcas |
+| **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) + **`saldo_días`** (§2.4) | **NO se re-apunta: queda DIFERIDA.** `S18` la cierra sobre la predecesora y le escribe en `saldo_días` los días que le quedaban; **`S9` la re-emite sobre la sucesora cuando ésta llega a `ACTIVE`** —re-apuntando ahí sí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo— y la deja `PAUSED` con motivo `COURTESY` | `DEC-GRANT-007`. Re-apuntarla en el cierre **pedía una pausa que ninguna transición declara**: el `hacia` de `S18` es *«el mismo estado»* y la única fila que llega a `PAUSED · COURTESY` es `S9`, cuyo `desde` es `ACTIVE`; sobre una sucesora en `PENDING_AUTHORIZATION` no hay transición, y la regla 1 del núcleo mandaba el cierre del camino normal a la marca. Y si alguien la re-apuntaba sin pausar, la sucesora autorizaba y **cobraba** con una cortesía encima que es *«una fila de base que no hace nada»*. Diferirla usa `S9` **tal como está**, sobre una fila `ACTIVE` que el proveedor sí deja pausar |
+| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le abre a **esa** fila una marca con motivo **`REEMBOLSO_POR_CONFIRMAR`** (§2.5), que además **lleva la referencia al pago** que hay que devolver, y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre ese mismo pago (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** — y sin el motivo esa fila llegaba al listado indistinguible de las otras doce marcas |
 | **pagos y pagos manuales ya resueltos, comprobantes, pausas cerradas, el `provider_link`** | varias | **no se re-apuntan** | son el histórico de esa fila y de su preapproval. Cada suscripción tiene el suyo |
 
-**Las tres primeras son el acto, la cuarta es el aviso, y la quinta es historia.** Es la
-distinción que `S18` tiene que ejecutar y la que `G-R1-C` vigila: un cierre que escribe las dos
-columnas y deja alguna de las tres primeras apuntando a la predecesora es un cierre incompleto,
-no un cierre.
+**Las DOS primeras son el re-apunte, la tercera es el DIFERIMIENTO, la cuarta es el aviso, y la
+quinta es historia.** El reparto cambió con `DEC-GRANT-007`: hasta entonces las tres primeras se
+re-apuntaban y la cortesía era la que no se podía ejecutar. Es la distinción que `S18` tiene que
+ejecutar y la que `G-R1-C` vigila: un cierre que escribe las dos
+columnas y deja **un complemento o la redención** apuntando a la predecesora, **o una cortesía
+vigente sin cerrar y sin saldo**, es un cierre incompleto, no un cierre.
 
 **Y las tres primeras tienen el mismo modo de falla: son silenciosas.** Ninguna emite webhook,
 ninguna cambia un estado que el barrido compare, y las tres le sacan al cliente algo que ya tenía
 —capacidad comprada, descuento pactado, cortesía firmada— en el acto con el que decidió gastar
-más. Por eso el inventario va acá y no repartido en tres capítulos.
+más. Por eso el inventario va acá y no repartido en tres capítulos. **Y la tercera tiene además un
+segundo modo de falla que las otras dos no tienen**: el diferimiento se puede escribir bien y la
+re-emisión no ocurrir nunca, porque `S9` es un acto y no un reloj — para eso está la **sexta**
+comprobación de cero llamadas del `B/09` §3.
 
 > **Y un grant NO es una sucesión: no re-apunta nada, y tampoco se lleva nada puesto.** `S13`
 > alcanza *«toda fila viva **principal**»* (`B/03` §3.2), así que **no toca la suscripción de

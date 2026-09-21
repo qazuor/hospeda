@@ -471,7 +471,7 @@ registrar**.
 > **Y la marca que las tres abren se distingue de las otras diez, que es lo que faltaba.** Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras doce—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **la referencia al pago** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.
@@ -484,12 +484,12 @@ que `DEC-RF-002` declara normal:
 
 | rama | qué acto lo dispara | sobre qué fila |
 |---|---|---|
-| 1 · la sucesora autoriza | **`S18`** (efecto 4) | **la predecesora**, `CANCELLED` |
+| 1 · la sucesora autoriza | **`S18`** (efecto 5) | **la predecesora**, `CANCELLED` |
 | 2 · la sucesora vence su ventana | **`S3`** (efecto) | la predecesora, viva |
 | 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
 | 4 · cae un grant | **`S13`** (efecto) | las dos |
-| 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 4), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |
-| 6 · la predecesora pide la baja estando suspendida | **`S18`** (efecto 4), disparado por `S23` (`B/03` §3.2) | **la predecesora**, `CANCELLED` |
+| 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 5), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |
+| 6 · la predecesora pide la baja estando suspendida | **`S18`** (efecto 5), disparado por `S23` (`B/03` §3.2) | **la predecesora**, `CANCELLED` |
 
 > **La 5 y la 1 comparten acto y no son la misma rama.** Difieren en qué mata a la predecesora
 > —`S17`, nuestro, contra el proveedor, ajeno— y eso cambia dos cosas que el cliente ve: en la 1

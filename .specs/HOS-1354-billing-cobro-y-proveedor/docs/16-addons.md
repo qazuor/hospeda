@@ -486,10 +486,12 @@ objetivo del addon no desapareció, se sucedió**. La suscripción vieja y la nu
 relación comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una
 baja**.
 
-**Y el complemento es UNA de las tres cosas que `S18` re-apunta, no la única.** De una suscripción
-cuelgan además la **redención de promo** y la **cortesía vigente**, con el mismo modo de falla
+**Y el complemento es UNA de las DOS cosas que `S18` re-apunta, no la única.** De una suscripción
+cuelga además la **redención de promo**, con el mismo modo de falla
 —silencioso, sin webhook y sin detector—, y durante una tanda entera la enumeración de efectos de
-`S18` nombró sólo a los complementos. El inventario completo, con qué se re-apunta y qué no, está
+`S18` nombró sólo a los complementos. **Y cuelga una tercera que desde `DEC-GRANT-007` NO se
+re-apunta**: la **cortesía vigente**, que `S18` cierra sobre la predecesora dejándole el saldo de
+días, para que `S9` la re-emita sobre la sucesora cuando autorice (`B/14` §4.4). El inventario completo, con qué se re-apunta y qué no, está
 en `B/02` §2.6; acá queda dicho para que la promoción del addon **a efecto declarado** no se lea
 como que las otras dos ya estaban resueltas.
 
