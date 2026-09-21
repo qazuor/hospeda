@@ -93,6 +93,8 @@ promote() {
     exit 1
   fi
   if pgsh "psql -U $DBUSER -d postgres -v ON_ERROR_STOP=1 -c \"ALTER DATABASE $active RENAME TO $backup; ALTER DATABASE $candidate RENAME TO $active;\""; then
+    pgsh "psql -U $DBUSER -d $active -v ON_ERROR_STOP=1 -c \"UPDATE hospeda_tooling.template_manifest SET template_name='$active', built_at=now() WHERE id=true;\"" >/dev/null \
+      || { echo "ERROR: template renamed but manifest metadata could not be synchronized"; exit 1; }
     echo "template promoted; rollback target: $backup"
   else
     echo "ERROR: promotion failed; no template rename completed reliably"

@@ -3250,3 +3250,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   del checkout actual.
 - La promoción a `hospeda_template` no se ejecutó. El template activo sigue
   intacto y la promoción queda separada para aprobación explícita.
+
+## Gate 156 · Promoción reversible del template
+
+- La candidata validada se promovió a `hospeda_template` con el procedimiento
+  de rename transaccional del script.
+- La base anterior quedó conservada como
+  `hospeda_template_backup_20260921T142420Z` para rollback explícito.
+- Se corrigió y verificó el `template_name` del manifest activo después del
+  rename. El journal sigue en 117 y el fingerprint coincide con la candidata.
+- El E2E de worktree, puertos y health checks todavía no se ejecutó.
