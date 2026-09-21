@@ -12,11 +12,23 @@ import { applySecurityHeaders } from './lib/security-headers';
  * not per-request: the config cannot change between requests, and an alert per
  * request would be noise.
  *
- * Reads `process.env` directly rather than the `env` proxy so a
- * `validateAdminEnv()` failure can never mask the diagnostic — the whole point
- * is to report a config that is individually VALID (both vars are optional) yet
- * jointly incoherent. Wrapped in try/catch as belt-and-suspenders: nothing here
- * may ever prevent the server from booting.
+ * Reads `process.env` directly rather than the lazy `env` proxy, so the READ
+ * does not depend on `validateAdminEnv()` succeeding. That is a narrower claim
+ * than "the diagnostic always runs", and the difference matters: it reorders
+ * nothing. If another module dereferences the proxy earlier in the bundle's
+ * module graph and validation throws, the process dies before this line is
+ * reached — measured with an invalid `VITE_SENTRY_ENVIRONMENT` baked into a
+ * build, where the uncaught exception fires ~251 lines ahead of this check in
+ * `index.mjs` and the alert never prints. That case is loud on its own (a fatal
+ * boot error naming the offending var), so it is not the silent failure this
+ * check exists for.
+ *
+ * What the direct read does buy: the check can report a config whose vars are
+ * each individually VALID — both are `.optional()` — yet jointly incoherent,
+ * which is exactly the shape validation cannot flag.
+ *
+ * Wrapped in try/catch as belt-and-suspenders: nothing here may ever prevent
+ * the server from booting.
  */
 try {
     reportInternalBypassSelfCheck({
