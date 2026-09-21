@@ -3,7 +3,7 @@ title: Master Spec 07 — Outbox y notificaciones
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 7
@@ -208,7 +208,8 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
 | retención | transaccional | antes del día 90, **al archivar** y antes del día 180 | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
-| **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
+| **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1` o por `MP4`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
+| **reapertura tras un pago manual tardío** | transaccional | al reabrir (`MP4`, cap. 03 §7.1, épica de billing). **Dice dos cosas y ninguna es opcional**: que el servicio volvió y desde cuándo, y **qué pasó con la ficha** — vuelve sola si estaba archivada (`PB7`), y si el hard delete ya corrió, **que el contenido no vuelve** | cap. 03 §7.1 (épica de billing), `V/02` §4.1 |
 
 **Los avisos de retención son tres y no dos, y el del medio es el que faltaba.** Los dos de
 `DEC-DATA-001` se escribieron para alguien que se fue: uno le avisa que la ficha va a salir del
@@ -249,6 +250,17 @@ puerta manual es además la única que el cliente abre **a propósito**: transfe
 mientras cambia de plan es un acto suyo, así que avisarle antes es todavía más de lo que este
 correo existe para hacer. El nombre de la fila quedó como estaba —*«una cuota en reintento»*, que
 es el caso mayoritario— y lo que se amplió es su alcance.
+
+**El de la reapertura existe porque el acto no lo hace el cliente, y porque puede devolver menos
+de lo que su nombre promete.** Lo dispara un admin al registrar una transferencia que llegó tarde
+(`MP4`), así que la persona se entera de que volvió **sólo si se lo decimos** — es el mismo motivo
+por el que existe el de *«reanudación tras pausa»*, que también sale de un cambio de estado que el
+cliente no ejecutó. Y lleva la segunda mitad porque la reapertura **no es reversible hacia atrás**:
+si la suspensión cruzó el día 180, el hard delete ya se llevó el contenido de la ficha
+(`V/02` §4.1) y lo que vuelve es una ficha vacía. Anunciar la vuelta y callar eso es prometer una
+ventana que no se tiene, que es el criterio que el cap. 12 §4.5, punto 3 (épica de billing) ya fijó para
+el otro aviso que podía mentir por omisión. **No reemplaza a los tres avisos de retención**: aquéllos
+se mandan antes, y éste describe lo que quedó después.
 
 **El schedule del grace es relativo al vencimiento y no absoluto**: como la ventana es
 configurable por plan, un schedule con días fijos se cae fuera de la ventana en los planes con

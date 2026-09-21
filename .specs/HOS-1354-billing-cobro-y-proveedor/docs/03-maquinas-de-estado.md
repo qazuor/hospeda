@@ -117,7 +117,7 @@ Y una nota de registro que sigue valiendo:
 | S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** — **salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A` (§3.3.1) |
 | S17 | la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED` | su sucesora quedó **autorizada**, confirmado por relectura | `CANCELLED` | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada** |
 | S18 | la **sucesora viva**: en `ACTIVE`, **o en `PENDING_AUTHORIZATION` cuando la predecesora se murió sola** | la misma autorización que disparó `S2`; **o la predecesora dejó de ser fila viva sin `S17` — por `S12`, por `S16` o por el espejo de la baja decidida por el proveedor (§10.1)**; o una resolución de `S15` sobre la sucesión trabada | **el mismo estado** | la predecesora **ya no es fila viva** | **cierra la sucesión, y es el único acto que lo hace.** Son **cuatro** escrituras y la tercera alcanza **tres** entidades: se escribe **`sucedida_por`** en la predecesora; se **limpia `sucede_a`** en la sucesora; **todo lo que colgaba de la predecesora se re-apunta a la SUCESORA** —los **complementos** (`B/16` §4.2), la **redención de promo** (`B/14` §2.2) y la **cortesía vigente** (`B/14` §4.4), con el inventario completo en `B/02` §2.6—; y **si la predecesora retiene un pago pendiente por `S19`, se le pone a ELLA la marca `requiere_conciliación`** con motivo *«reembolso por confirmar»* (rama 1 de `B/12` §5.3, `DEC-RF-002`). La sucesora pasa a ser el origen |
-| S19 | la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED` | **entra el pago del período impago, por cualquiera de sus DOS puertas**: la cuota que el proveedor sigue reciclando, **o** el pago que el admin registra a mano (`MP1`, §7) | **el mismo estado** | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **el pago se registra y queda pendiente de resolución** —sea un `payment` o un `manual_payment` (`B/02` §2.3)—: no reactiva, no se reembolsa todavía y **no pone la marca todavía** — es un caso diseñado y no una divergencia, así que `S14` no aplica; **la marca la pone `S18` al cerrar, y sólo en las ramas 1 y 5**. Su destino lo decide **cómo termina la sucesión**, con las cinco ramas de `B/12` §5.3. Mientras esté pendiente, `S6` no corre |
+| S19 | la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED` | **entra el pago del período impago, por cualquiera de sus DOS puertas**: la cuota que el proveedor sigue reciclando, **o** el pago que el admin registra a mano (`MP1` **o `MP4`**, §7) | **el mismo estado** | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **el pago se registra y queda pendiente de resolución** —sea un `payment` o un `manual_payment` (`B/02` §2.3)—: no reactiva, no se reembolsa todavía y **no pone la marca todavía** — es un caso diseñado y no una divergencia, así que `S14` no aplica; **la marca la pone `S18` al cerrar, y sólo en las ramas 1 y 5**. Su destino lo decide **cómo termina la sucesión**, con las cinco ramas de `B/12` §5.3. Mientras esté pendiente, `S6` no corre |
 | S20 | **toda fila viva DE COMPLEMENTO** del beneficiario —los **seis** estados de la suscripción, no los dos de la instancia— cuya instancia esté en uno de sus **dos** estados vivos y cuyo `addon_product` declare compatible **la vertical que el acto ancla**; para los scopes con vertical propia —`VERTICAL_SUBSCRIPTION` y `LISTING`— **además su objetivo tiene que ser de esa vertical** (`B/16` §3.4). **Las principales no entran**: ésas son de `S13` | el mismo acto que dispara `S13`: `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a uno vivo** (`12-contrato…` §2.8) | `CANCELLED` | **el grant lleva `includesAddons: true`** — con `false` no corre y el complemento sigue cobrando | §35.2: el addon pasa a **costo $0**. Se cancela el preapproval en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada. **Sin reembolso del período ya cobrado** (`DEC-GRANT-001`, igual que `S13`). **No lleva la mitad de `S19` que `S13` sí lleva**, y no por olvido: `S19` sale de *«la predecesora de una sucesión en curso»* y una fila de complemento **nunca es una**, así que esa bandera sobre un complemento es población vacía. **La instancia no cambia de estado**: si estaba `ACTIVE` sigue `ACTIVE`, ahora colgando del **ancla** como su título (`B/02` §2.4); si estaba `PENDING_AUTHORIZATION` no se convierte —no hay nada comprado— y muere por `A3` al vencer su ventana, con la pantalla de *«esperando que completes el pago»* dejando de ofrecer el enlace en el acto. **Proceso idempotente y reanudable fila por fila**, con su detector en `B/09` §3 |
 | S21 | **toda fila viva DE COMPLEMENTO** —los **seis** estados de la suscripción— **de la que cuelga una instancia de addon**. **Las principales no entran, y acá no hace falta acotarlo**: de una principal no cuelga ninguna instancia, así que el conjunto ya es disjunto por el sujeto y no por un adjetivo | **su instancia llega a `CANCELLED`**: por cualquiera de las **tres** cláusulas del evento de `A5` —se da de baja, **queda huérfana** (la condición de `B/16` §4.2, con sus **tres** mitades) o **se retira el ancla que era su título**— **y también por `A6`**, el borrado de la ficha (§8) | `CANCELLED` | **la instancia está en `CANCELLED`**. Es una condición **sobre un estado y no sobre una entrega**, así que **se vuelve a evaluar** —igual que el disparador de `S17` y `S18`—, y por eso una corrida que muere entre `A5` y esta fila no deja el caso perdido | **no se manda nada al proveedor, y ésa es la mitad que no hay que duplicar**: un addon recurrente tiene **un** preapproval y es el de esta fila (`DEC-ADDON-002`, `B/02` §2.4), así que la cancelación que `A5` y `A6` ya declaran —con la regla de relectura de `S17`— **es ésta misma**. Volver a escribirla acá serían dos llamadas por el mismo recurso. **Sin período de gracia y sin fecha de fin de servicio**: no se pasa por `CANCEL_SCHEDULED` (ver abajo, *«el complemento que sobrevive a su instancia»*). **Sin reembolso del período ya cobrado**; si corresponde devolver, entra por la vía del reembolso, que **confirma una persona** (`DEC-RF-002`). **Idempotente**: sobre una fila que ya está `CANCELLED` no escribe nada y no manda nada |
 
@@ -309,7 +309,8 @@ mandaría a la marca, convirtiendo el camino normal del cambio de plan desde gra
 **El evento son DOS puertas y no una, y escribirlo con una sola suspendía a quien había
 pagado.** La versión anterior decía *«entra el pago de la cuota que sigue en `recycling`»*, y
 `recycling` es un estado **del proveedor** (`B/12` §1.3, medido). Pero el pago del período impago
-tiene una segunda puerta declarada en este mismo capítulo: **`MP1` (§7), el pago manual**, que
+tiene una segunda puerta declarada en este mismo capítulo: **el pago manual (§7)**, cuya primera
+fila es `MP1` —la segunda, `MP4`, entra por lo mismo y está abajo— y que
 *«queda pendiente por `S19`, si es la predecesora de una sucesión en curso»* y cuyo principio
 escrito es que **el daño no depende de por qué puerta entró el pago**. Con el evento atado al
 reciclado, el pago manual **no matcheaba ninguna fila**: por la regla 1 del núcleo el intento no
@@ -323,21 +324,38 @@ trajo.**
 
 **Y no hay una tercera puerta que el evento deje afuera.** Las formas de que entre plata del
 período impago son exactamente dos, y las dos están declaradas: el reciclado del proveedor
-(`B/12` §1.3) y `MP1` (§7). Un pago manual sobre una fila **`SUSPENDED`** no es una tercera:
-`MP1` sale de `AWAITING`, y la única forma de que la suscripción de un pagador manual llegue a
-`SUSPENDED` es `MP2` o `MP3`, que sacan al `manual_payment` de `AWAITING` en el mismo acto — así
-que por esta puerta `S7` es inalcanzable, y no es un hueco sino aritmética de los dos estados.
-**Lo que sí queda nombrado y NO se resuelve acá** es qué pasa con un pago manual que llega
-**después** de `DECLARED_UNPAID`: el §7 no tiene salida de ese estado, el caso es idéntico dentro
-y fuera de una sucesión, y decidir si un admin puede reabrirlo es una decisión de producto que no
-es de `S19`.
+(`B/12` §1.3) y el pago manual (§7). **La puerta manual tiene DOS filas y sigue siendo una sola
+puerta**: `MP1`, desde `AWAITING`, y `MP4`, desde `DECLARED_UNPAID`. El evento de `S19` las cubre
+a las dos sin nombrarlas porque **se enuncia sobre el hecho —entró el pago del período impago— y
+no sobre el mecanismo que lo trajo**, que es la misma razón por la que dejó de estar atado al
+reciclado.
+
+**Y por esa segunda fila `S7` SÍ es alcanzable desde la puerta manual, que es lo contrario de lo
+que este párrafo decía.** Decía que un pago manual sobre una `SUSPENDED` no era una tercera puerta
+porque *«`MP1` sale de `AWAITING`, y la única forma de que la suscripción de un pagador manual
+llegue a `SUSPENDED` es `MP2` o `MP3`, que sacan al `manual_payment` de `AWAITING` en el mismo
+acto — así que por esta puerta `S7` es inalcanzable»*. La aritmética era correcta y la premisa
+caducó: desde `MP4` hay una transición que **sale** de `DECLARED_UNPAID`, así que el pago que el
+admin registra tarde llega sobre una fila `SUSPENDED` y `S7` es exactamente su destino. La
+conclusión que **no** cambia es la de este §: si esa fila es la predecesora de una sucesión en
+curso, `S7` **no** corre y el pago queda pendiente por `S19`, con su condición 3 del `B/05` §3 sin
+cumplir. `MP4` hereda esa condición igual que `MP1`, y por el mismo motivo escrito — *«el daño no
+depende de por qué puerta entró el pago»*.
+
+**Lo que este § dejaba declarado abierto ya está resuelto, y no acá.** Decía que qué pasa con un
+pago manual que llega **después** de `DECLARED_UNPAID` *«es una decisión de producto que no es de
+`S19`»*, y tenía razón en las dos mitades: la decisión la tomó el owner el 2026-09-21 —**se puede
+reabrir**— y la ejecuta `MP4`, en el §7.1, que es donde vive la máquina del pago manual. Lo que
+`S19` aporta es lo de siempre: que esa reapertura **no ocurra** mientras haya una sucesión en
+curso.
 
 **`S19` y `S5` comparten `(GRACE_PERIOD, entra el pago)`, y `S19` y `S7` comparten el par sobre
 `SUSPENDED`: las guardas son disjuntas por construcción**, porque una pregunta si la fila es la
 predecesora de una sucesión en curso y la otra si no lo es. Es la regla 7 del núcleo, y lo vigila
-`G-R4`. **Abrir la segunda puerta no agrega un par**: `MP1` no es un evento de esta tabla sino un
-efecto que entra por el evento *«entra el pago»* que `S5` y `S19` ya compartían, así que los pares
-con dos filas siguen siendo los **tres** que `NUCLEO/03` §1 regla 7 enumera.
+`G-R4`. **Abrir la segunda puerta no agrega un par, y su segunda fila tampoco**: ni `MP1` ni
+`MP4` son eventos de esta tabla, sino efectos que entran por el evento *«entra el pago»* que
+`S5`/`S19` y `S7`/`S19` ya compartían, así que los pares con dos filas siguen siendo los **tres**
+que `NUCLEO/03` §1 regla 7 enumera.
 
 **Y `S6` lleva su condición por el mismo motivo**: con el pago acreditado y pendiente, el reloj del
 grace mandaría a `SUSPENDED` —que no emite fuente (`12-contrato…` §2.6)— a alguien que pagó el
@@ -799,6 +817,7 @@ manuales**. Lo único propio es cómo se constata el pago.
 | MP1 | `AWAITING` | el admin registra el pago | `REGISTERED` | la suscripción sale de `GRACE_PERIOD` por `S5` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago. **`S19` lo admite por su propio evento**, que nombra las dos puertas (§3.2): sin eso la derivación apuntaba a una fila que no podía recibirlo |
 | MP2 | `AWAITING` | el admin confirma que no se pagó | `DECLARED_UNPAID` | la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj |
 | MP3 | `AWAITING` | se agota el grace sin que el admin haga nada | `DECLARED_UNPAID` | `S6` |
+| MP4 | `DECLARED_UNPAID` | el admin registra el pago, que llegó **después** | `REGISTERED` | la suscripción sale de `SUSPENDED` por `S7` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: misma herencia y misma razón que `MP1`, porque **el daño no depende de por qué puerta entró el pago** ni de desde qué estado del pago manual se lo registre. **`S19` lo admite por su propio evento**, que nombra el hecho —entró el pago del período impago— y no el mecanismo (§3.2). **Y no es incondicional**, por partida doble: el cruce de `C5` vale igual que en `MP1`, y `S7` exige **las cuatro condiciones del `B/05` §3** — la **1** es el tope de la reapertura (ver abajo, *«el tope no es un día»*) |
 
 **Lo que el §30 agrega y la máquina tiene que cumplir**: si falta el pago, va a `GRACE_PERIOD`
 **los mismos días configurables** que el resto (`DEC-SUB-002` vale igual acá), y **además se
@@ -807,18 +826,191 @@ efecto colateral, porque sin ella nadie va a registrar nada.
 
 **Y el cruce peligroso queda nombrado**: un admin registrando un pago manual mientras la persona
 paga por el proveedor es **doble cobro con dinero real** (`E-CONC-01`). Lo resuelve el capítulo
-05; acá queda dicho que la transición MP1 **no** es incondicional.
+05; acá queda dicho que las transiciones MP1 y MP4 **no** son incondicionales.
 
-**Esta máquina no tiene transición de reversa, y no la necesita: la devolución se asienta en un
-`refund` sobre el pago manual.** El §6 da `P3` y `P4` sobre la máquina de `payment`, y de acá
-salía la lectura de que un pago manual **no se puede devolver** — que es falso y era caro,
-porque las ramas 1 y 5 de `B/12` §5.3 mandan devolver el pago que `S19` retuvo **sin distinguir
-por qué puerta entró**. Lo que se devuelve es *«el pago»*, y desde `B/02` §2.3 un `refund` cuelga
-del pago que se devuelve, sea `payment` o `manual_payment`. El estado del `manual_payment` **no
-se mueve**: quedó `REGISTERED` porque el pago existió, y la devolución es un hecho posterior con
-su propia fila — exactamente la relación que `payment` y `refund` ya tienen. Y la devolución no
-es automática en ninguno de los dos casos: la confirma una persona (`DEC-RF-002`), sobre la marca
-que `S18` puso.
+**Devolver un pago registrado no es una transición de esta máquina, y `MP4` no lo cambia: la
+devolución se asienta en un `refund` sobre el pago manual.** `MP4` revierte **la declaración de
+impago**, que es otra cosa —mueve la columna de estado de `DECLARED_UNPAID` a `REGISTERED`—; lo
+que sigue sin mover esa columna es devolver la plata. El §6 da `P3` y `P4` sobre la máquina de
+`payment`, y de acá salía la lectura de que un pago manual **no se puede devolver** — que es falso
+y era caro, porque las ramas 1 y 5 de `B/12` §5.3 mandan devolver el pago que `S19` retuvo **sin
+distinguir por qué puerta entró**. Lo que se devuelve es *«el pago»*, y desde `B/02` §2.3 un
+`refund` cuelga del pago que se devuelve, sea `payment` o `manual_payment`. El estado del
+`manual_payment` **no se mueve**: quedó `REGISTERED` porque el pago existió, y la devolución es un
+hecho posterior con su propia fila — exactamente la relación que `payment` y `refund` ya tienen. Y
+la devolución no es automática en ninguno de los dos casos: la confirma una persona
+(`DEC-RF-002`), sobre la marca que `S18` puso.
+
+### 7.1 `DECLARED_UNPAID` deja de ser el final: el pago que llega tarde reabre
+
+**El §30 le da al admin el acto de *«confirmar que no se pagó»* y esta máquina no tenía cómo
+deshacerlo.** `MP2` y `MP3` dejaban el pago manual en `DECLARED_UNPAID` y la suscripción en
+`SUSPENDED`, y ninguna fila salía de ahí: el cliente que transfería **después** ponía plata en
+nuestra cuenta y el sistema no tenía qué hacer con ella — por la regla 1 del núcleo el intento no
+se ejecutaba, se iba a la marca, y lo que el cliente veía era que pagar no servía de nada. **No es
+un borde de sucesión**: es el camino normal del que se atrasa y después paga, y el §3.2 lo dejaba
+nombrado abierto con esas palabras.
+
+> **La decisión del owner del 2026-09-21 es que se puede reabrir: el pago manual lo saca de
+> `DECLARED_UNPAID` y reactiva la suscripción.** Lo ejecuta `MP4`.
+
+**Y conviene decir por qué acá se reabre y en los dos casos vecinos de la misma semana no.** Al
+revocar un grant el trial **no vuelve** (`DEC-TRIAL-009`) y el addon que el grant había pasado a
+$0 **se apaga y no vuelve solo** (`DEC-ADDON-003`, `B/16` §3.3): en los dos **nosotros** terminamos
+algo deliberadamente y la persona **no puso plata nueva**, así que reparar sería devolverle gratis
+lo que se le retiró. Acá la persona **puso plata**, y hacerle repetir el trámite es fricción sobre
+alguien que está tratando de volver. Es la misma elección que `DEC-SUB-003` ya hizo para el
+cambio de plan en grace: que el camino de recuperación sea **una salida del problema en vez de un
+muro**.
+
+#### El tope no es un día: es que la fila siga viva, y la condición ya está escrita
+
+**El tope evidente —*«mientras la ficha no se haya borrado»*, o sea el día 180 de la retención
+(`V/02` §4.1)— no cierra, y hay que decir por qué antes de que alguien lo vuelva a proponer.** Son
+tres razones y ninguna es de matiz:
+
+1. **Ese reloj es de la ficha y el sujeto acá es la suscripción, y no hay una correspondencia.**
+   Una suscripción principal cubre **todas las fichas de esa vertical** (`NUCLEO/01` §5), así que
+   un anfitrión con cartera tiene tantos relojes como fichas y ninguno es *«el»* de su
+   suscripción; y el pagador manual es el que menos lo tiene — el §17.2 lo admite en **Partner**,
+   cuya presencia *«no es una ficha»* por orden del §17.1. Sobre esa población el tope propuesto
+   **no existe**, que es peor que ser largo.
+2. **Ya no es monótono, y un tope que se reinicia solo no es un tope.** `DEC-DATA-002` le puso a
+   la inactividad **cuatro hechos de reinicio** con lista cerrada (`NUCLEO/01` §1.2), y el primero
+   es *«un acto del dueño sobre la ficha»*: el suspendido que entra a editar su borrador corre su
+   propio vencimiento hacia adelante, indefinidamente. Lo que se retiró en esa decisión fue,
+   textual, *«que el reloj fuera monótono»*.
+3. **Crearía una segunda dependencia sobre una cifra que el guard no vigila con ese sentido.**
+   `D16` dice *«el tope de una pausa, en días, es menor que el día del hard delete»* y `G-R5`
+   compara **esas dos** cifras y nada más (`B/20` §2). Atarle la reapertura al mismo número le
+   agrega un consumidor que el guard no mira: bajar el día del hard delete acortaría la ventana de
+   reapertura sin que nada se ponga en rojo, que es exactamente el modo de falla que `DEC-DATA-002`
+   escribió `D16` para cerrar.
+
+**Y no hace falta inventar otro número, porque el tope ya está escrito y es una condición y no un
+reloj:**
+
+> **Se puede reabrir mientras la suscripción siga siendo la fila que el pago puede reactivar.** Es
+> la **condición 1 del `B/05` §3** —*«la suscripción existe y está en `GRACE_PERIOD` o
+> `SUSPENDED`»*—, que `S7` ya exige y que rechaza `CANCELLED`, `ABANDONED` y `ACTIVE`.
+
+Eso cierra la ventana **con actos que ya existen**, no con un plazo: cuando una persona cancela la
+suscripción (§3.1 enumera esa salida, y es una de las doce acciones del `NUCLEO/08` §3) o cuando
+le cae un grant (`S13`), la fila pasa a `CANCELLED`, de donde el §3.3 ya declara que **no se
+vuelve**. A partir de ahí el pago que llegue no reabre nada y lo que corresponde es un alta nueva.
+**Y las otras tres condiciones acotan el resto**: la **3** rechaza la reapertura si la persona ya
+volvió por otra puerta —tendría dos filas vivas y dos cobros—, y la **4**, con la restricción
+`UNIQUE(subscription_id, período)` de `B/05` §C5 detrás, rechaza que el mismo período quede
+pagado dos veces. Ninguna de las cuatro es nueva: `MP4` no las agrega, las alcanza.
+
+**Lo que este tope NO acota, dicho en voz alta**: una `SUSPENDED` de pagador manual que nadie
+cancela se puede reabrir indefinidamente, porque **no hay preapproval que el proveedor dé de baja
+por mora** (`B/06` §7: un pago manual *«no tiene nada que pausar porque no hay débito que
+detener»*) y el espejo del §10.1 nunca la alcanza. Se acepta: el acto lo ejecuta un admin con la
+plata a la vista, las condiciones 3 y 4 impiden los dos daños de plata, y **nada es retroactivo**
+—lo que la reapertura devuelve es servicio de acá en adelante, no el contenido que el día 180 ya
+borró—, que es justamente lo que el aviso del `B/19` §4 fila 10-bis está obligado a decir.
+
+#### A qué estado va: `ACTIVE` directo, y por qué no deja una fila que no puede cobrar
+
+**La objeción correcta es que reactivar el estado local sobre una autorización cancelada deja una
+fila que el mes que viene no cobra** —`PA-5` mide que cancelar en el proveedor es irreversible, y
+`B/12` §1.4 manda espejar la baja que el proveedor decide—. **Sobre esta población esa fila no
+puede existir, y no por una regla nueva:**
+
+- **En el caso central no hay autorización que contradecir.** El pagador manual no tiene débito en
+  el proveedor (`B/06` §7), así que `PA-5` no tiene sujeto: no hay preapproval cancelado que
+  reactivar.
+- **Y si lo hubiera, la fila ya no estaría en `SUSPENDED`.** `SUSPENDED` **no es terminal**, así
+  que el barrido diario la recorre entera (`B/09` §3); leído el preapproval `cancelled` contra un
+  estado vivo que no es `CANCEL_SCHEDULED`, el §10.1 manda **espejar la baja** y la fila termina en
+  `CANCELLED`. Ahí la condición 1 del `B/05` §3 rechaza la reapertura por su cuenta.
+
+**Entonces `S7` sin escala**, con su efecto ya escrito —*«se restituye la publicación»*—: la fila
+vuelve a emitir fuente con `hasta: SIN_FECHA_CONOCIDA` (`12-contrato…` §2.6), `cubierto` vuelve a
+verdadero y la ficha que `PB4` hubiera archivado **vuelve sola por `PB7`** (`V/03` §9). No hace
+falta un estado intermedio: el que lo necesitaría es el que tiene una autorización que confirmar,
+y acá o no hay ninguna o la fila ya se murió.
+
+#### Lo adeudado: no hay deuda vieja que perseguir, porque el pago que reabre ES la cuota
+
+**`B/12` §5.3 decidió que *«la deuda vieja no se persigue por separado»*, y acá esa regla no se
+aplica — no porque se la contradiga, sino porque su población no existe.** Allá el cliente cambia
+de plan y **deja atrás** la cuota impaga, así que hay algo que decidir no perseguir. Acá el cliente
+**la paga**: `MP4` actúa sobre **la misma fila de `manual_payment`** que `MP2` o `MP3` cerraron, o
+sea sobre el mismo período, y registrarla es liquidar exactamente lo que se debía. No queda
+remanente que compensar ni que cobrar aparte.
+
+**Y tampoco se cobra nada por encima.** Ningún capítulo del programa tiene recargo, interés ni
+punitorio, y crear uno acá sería una decisión de producto que esta fila no toma. Lo que la
+reapertura mueve es un estado, no un monto: el importe que se registra es el esperado para ese
+período, que es la **condición 2** del `B/05` §3.
+
+**Lo que sí se hereda entero de `B/12` §5.3 es su otra mitad**: si la fila es la predecesora de una
+sucesión en curso, el pago **no reactiva** — queda pendiente por `S19` y su destino lo decide el
+cierre de la sucesión, con las cinco ramas de ese §. Es la misma condición que `MP1` hereda, por la
+misma razón, y es la que impide que la reapertura le devuelva dos filas vivas a alguien que está
+cambiando de plan.
+
+> **Lo que queda abierto y no lo abre esta fila**: **quién crea las cuotas de un pagador manual y
+> cuándo**, o sea qué pasa con los períodos que transcurren mientras la suscripción está
+> `SUSPENDED`. La máquina tampoco declara hoy la entrada a `AWAITING`, así que la pregunta es
+> **anterior** a `MP4` y no la agrava: `MP4` no crea filas de `manual_payment`, sólo mueve la que
+> `MP2` o `MP3` cerraron.
+
+#### Es una fila nueva y no el `desde` de `MP1` ampliado
+
+**Ampliar `MP1` a `{AWAITING, DECLARED_UNPAID}` habría sido una fila con dos efectos según de
+dónde viene**, y este capítulo ya tiene escrito por qué eso no se hace: *«una transición cuyo
+`desde` se escribe como un conjunto de filas tiene que decir si alcanza también a…»* (§3). Los dos
+efectos difieren de verdad y no en el matiz: `MP1` saca de `GRACE_PERIOD` por **`S5`** y `MP4` saca
+de `SUSPENDED` por **`S7`**, que son dos transiciones distintas de la tabla del §3.2 con dos
+condiciones que se evalúan sobre estados distintos. Con una sola fila, la derivación habría
+quedado escrita como *«`S5`, o `S7` si venía de `DECLARED_UNPAID`»*, que es la forma que la regla 1
+del núcleo no puede verificar.
+
+**Y `MP4` no agrega ningún par con dos filas, así que `G-R4` sigue contando tres.** Comparte el
+evento con `MP1` —*«el admin registra el pago»*— y **compartir el evento no es compartir el par**
+(`NUCLEO/03` §1 regla 7): el `desde` de una es `AWAITING` y el de la otra `DECLARED_UNPAID`, y
+ninguna otra fila de esta tabla sale de ninguno de los dos con ese evento. Del lado de la tabla del
+§3.2 **tampoco agrega uno**, por el argumento que el §3.2 ya escribió para `MP1`: `MP4` no es un
+evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y `S19` ya compartían.
+
+#### Lo que NO cambia, y hay que contarlo para que nadie lo recuente
+
+- **El barrido de `B/09` §3 sigue con nueve puertas y cuatro salvedades.** Las nueve son puertas a
+  un estado terminal **de una suscripción**, y ese § enumera los tres que tiene: `CANCELLED`,
+  `ABANDONED` y `CHARGE_DECLINED`. **`DECLARED_UNPAID` es un estado del `manual_payment`**, nunca
+  estuvo en esa tabla y retirarle la condición de final no le agrega ni le saca una fila. Lo que sí
+  conviene saber es que la fila que `MP4` reabre **estaba siendo barrida** todo el tiempo, porque
+  `SUSPENDED` no es terminal — y es esa lectura diaria la que hace segura la reactivación directa
+  (arriba).
+- **El catálogo de acciones administrativas sigue teniendo DOCE filas.** `MP4` es *«registrar un
+  pago manual»* (§30), la fila que ya está, ejecutada desde otro estado de origen: mismo permiso,
+  misma auditoría, misma confirmación de que mueve dinero. Las cinco líneas que cuantifican sobre
+  esa tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— siguen diciendo doce y siguen siendo
+  exactas.
+- **La máquina sigue teniendo tres estados.** `AWAITING`, `REGISTERED` y `DECLARED_UNPAID`
+  (`NUCLEO/01` §2.2): `MP4` agrega una arista, no un nodo, y por eso `B/02` §2.3 sigue sin
+  necesitar *«un estado nuevo en la máquina del pago manual»*.
+- **No agrega una columna.** `manual_payment` guarda ya *«quién lo registró, cuándo,
+  comprobante»* (`B/02` §2.3), que es lo que `MP4` escribe; los dos actos —declarar el impago y
+  reabrirlo— quedan distinguibles en el registro de eventos de dominio, que la regla 4 del
+  `NUCLEO/03` §1 exige por cada transición.
+
+#### Qué premisa de otro arreglo vuelve falsa este, y dónde quedó resuelta
+
+La obligación 2 de `DEC-METH-008`, contestada por escrito. **Es una y está corregida en su
+lugar**, más cuatro apariciones que quedan como estaban con su razón:
+
+| premisa | de quién era | qué pasa | dónde |
+|---|---|---|---|
+| *«por esta puerta `S7` es inalcanzable, y no es un hueco sino aritmética de los dos estados»* | el arreglo que le abrió a `S19` la segunda puerta (§3.2, familia del pago manual de la 9-bis-3) | **queda FALSA**: con `MP4` hay una transición que sale de `DECLARED_UNPAID`, así que el pago manual llega sobre una `SUSPENDED` y `S7` es su destino | corregida en §3.2, con la premisa vieja citada |
+| *«`S19` admite las dos puertas»* | el mismo arreglo | **sigue verdadera**, y por eso `MP4` no necesita ampliarla: el evento se enuncia sobre el hecho y no sobre el mecanismo, que es lo que esa corrección dejó escrito | §3.2, con `MP4` nombrado en la celda de `S19` |
+| *«la regla se ejecuta en tres lugares»* (`G-R1-D`) | el mismo arreglo, en `B/20` §2 | **queda incompleta**: son cuatro | corregida en `B/20` §2 |
+| *«los estados terminales de una suscripción no se barren»* y sus **nueve** puertas | `B/09` §3, y `B/16` §4.4 que las contó | **sigue verdadera**: `DECLARED_UNPAID` es del `manual_payment` y nunca estuvo en esa tabla, cuyos sujetos son `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` | sin tocar |
+| *«la tabla tiene DOCE filas»* (`NUCLEO/08` §3) y las cinco líneas que la cuantifican | el arreglo del anclaje de verticales | **sigue verdadera**: `MP4` es la fila *«registrar un pago manual»* ejecutada desde otro origen, no una acción nueva | sin tocar |
+| *«el crédito de `DEC-SUB-006` se computa en cero en grace»* y las cinco ramas de `B/12` §5.3 | el arreglo del pago tardío | **siguen verdaderas**: `MP4` hereda la condición de `S19`, así que no reactiva durante una sucesión y el pago se resuelve por las mismas cinco ramas | `B/12` §5.3, con `MP4` nombrado en la puerta manual |
 
 ---
 

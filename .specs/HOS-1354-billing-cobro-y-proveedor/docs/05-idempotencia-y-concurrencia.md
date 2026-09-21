@@ -3,7 +3,7 @@ title: Master Spec 05 — Idempotencia y concurrencia
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 5
@@ -165,6 +165,15 @@ según en cuál de los dos estados de la condición 1 esté la fila, y se restit
 **Si falla cualquiera**, se pone la marca `requiere_conciliación` (cap. 03 §3.2, `S14`) y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero.
+
+> **La condición 1 tiene desde `MP4` un segundo consumidor, y conviene decirlo porque nadie lo
+> vería.** Además de decidir si un pago tardío reactiva, **es el tope de la reapertura de un pago
+> manual declarado impago** (cap. 03 §7.1): se puede reabrir mientras la suscripción siga en
+> `GRACE_PERIOD` o `SUSPENDED`, y deja de poder reabrirse cuando llega a `CANCELLED`, que es lo
+> que esta condición ya rechaza. Se eligió así —en vez de un plazo nuevo— justamente para no
+> agregar una cifra de configuración sin guard; el precio es que **relajar esta condición alarga
+> esa ventana sin que ningún texto de allá lo diga**, y por eso queda anotado acá, que es donde
+> alguien la relajaría.
 
 **Con una excepción, y es la única: la condición 3 falla porque la otra fila viva es la sucesora de
 ésta, con la sucesión en curso.** Ése no es un caso ambiguo sino uno **diseñado**, el del `B/12`

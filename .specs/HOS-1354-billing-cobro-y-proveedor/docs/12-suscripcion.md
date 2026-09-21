@@ -3,7 +3,7 @@ title: Master Spec 12 — Suscripción
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 12
@@ -344,10 +344,12 @@ siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar**. Si e
 72 h de la sucesión, el cliente **paga la deuda que le perdonamos**.
 
 **Y son DOS las puertas por las que puede entrar, no sólo el reciclado.** La otra es el **pago
-manual** del §30: el cliente transfiere la cuota vieja y el admin la registra con `MP1`
-(`B/03` §7). El desenlace es idéntico por la razón que `MP1` escribe —*«el daño no depende de por
-qué puerta entró el pago»*—, y por eso el evento de `S19` nombra las dos (`B/03` §3.2). Todo lo
-que sigue en este § vale igual para las dos, incluido el aviso previo.
+manual** del §30: el cliente transfiere la cuota vieja y el admin la registra con `MP1` —o con
+**`MP4`**, si el impago ya se había declarado y la fila está en `SUSPENDED` (`B/03` §7.1)—. **Las
+dos filas son la misma puerta**, y el desenlace es idéntico por la razón que `MP1` escribe —*«el
+daño no depende de por qué puerta entró el pago»*—, así que el evento de `S19` las cubre a las dos
+sin distinguirlas: se enuncia sobre el hecho y no sobre el mecanismo (`B/03` §3.2). Todo lo que
+sigue en este § vale igual para las dos, incluido el aviso previo.
 
 > **Se acepta que el cobro pueda entrar, y se le avisa al cliente ANTES de que pase.**
 

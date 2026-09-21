@@ -54,7 +54,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento, la **redención de promo** o la **cortesía vigente** sin re-apuntar, o un **pago pendiente por `S19` sin la marca `requiere_conciliación`** | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2 y §2.6, `DEC-RF-002` |
-| G-R1-D | un camino **reactiva** una fila —`S5`, `S7` o el efecto de `MP1`— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`), cap. 05 §3 condición 3 |
+| G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo del término *«fila viva»* **no figura** en el inventario de `NUCLEO/01` §2.4; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
@@ -119,9 +119,9 @@ dos son de plata: reactivar a la predecesora con el cobro reciclado —que deja 
 el crédito de la sucesora ya computado en cero, y un período cobrado que `S17` se lleva puesto— y
 reembolsar ese mismo pago **antes** de saber si la sucesión se consuma, que en la rama del
 abandono le devuelve al cliente el pago que lo salvaba y lo manda a `SUSPENDED`. **El guard existe
-porque la regla se ejecuta en tres lugares y no en uno**: `S5`, `S7` y el efecto de `MP1`, y el
-camino que la olvide en cualquiera de los tres produce el daño entero. Se rompe a propósito
-sacándole la condición a una sola de las tres.
+porque la regla se ejecuta en cuatro lugares y no en uno**: `S5`, `S7`, el efecto de `MP1` y el de
+`MP4`, y el camino que la olvide en cualquiera de los cuatro produce el daño entero. Se rompe a
+propósito sacándole la condición a una sola de las cuatro.
 
 **Y el tercer lugar sólo es real porque `S19` admite las dos puertas del pago.** Este guard
 asume que el efecto de `MP1` **llega** a `S19`; mientras el evento de `S19` nombró sólo *«la
@@ -129,6 +129,14 @@ cuota que sigue en `recycling`»*, el pago manual no matcheaba ninguna fila, el 
 regla 1 y el guard vigilaba un camino que la tabla no dejaba recorrer — con el reloj del grace
 corriendo igual sobre alguien que había pagado (cap. 03 §3.2). Un guard cuyo dominio la tabla no
 puede satisfacer no está en rojo: está mirando a otro lado.
+
+**El cuarto llegó con `MP4`, y es el que más fácil se olvida porque su origen no parece un pago
+que reactive.** La reapertura de un `DECLARED_UNPAID` (cap. 03 §7.1) es un pago manual que entra
+sobre una fila `SUSPENDED`, y si esa fila es la predecesora de una sucesión en curso, reactivarla
+produce **el daño entero** de este guard: dos filas vivas con el crédito de la sucesora ya
+computado en cero. Es la misma puerta de `MP1` con otro estado de origen, así que se vigila igual
+y no necesita una regla propia — lo que necesita es **figurar**, porque un guard escrito sobre
+tres caminos no mira el cuarto.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

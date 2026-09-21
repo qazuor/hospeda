@@ -3183,13 +3183,70 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-012 — El que paga después de que lo dimos por perdido se reabre, y el tope no es un plazo: es la condición que ya existía
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco**: `DECLARED_UNPAID` es donde queda un pago manual cuando un admin *«confirma que no
+  se pagó»* (§30), y **la máquina no tenía ninguna transición que lo sacara**. Un cliente que
+  transfiere dos semanas después dejaba la plata en la cuenta **sin desenlace**. Es el camino
+  normal del que se atrasa y después paga, no un caso raro de sucesión.
+- **Decisión**: **se puede reabrir.** `MP4` (`DECLARED_UNPAID` → `REGISTERED`) reactiva la
+  suscripción.
+- **Por qué acá se reabre y en las otras dos decisiones de esta misma semana no.** En
+  `DEC-TRIAL-009` (revocar un grant) y `DEC-ADDON-003` (su addon) **nosotros** terminábamos algo
+  deliberadamente y **la persona no había puesto plata nueva**. Acá **la persona puso plata**, y
+  hacerle repetir el trámite es fricción sobre alguien que está tratando de volver — lo contrario
+  de lo que `DEC-SUB-003` eligió al hacer del camino de recuperación *«una salida del problema en
+  vez de un muro»*.
+- **El tope: se propuso el día 180 y NO cierra.** El orquestador propuso acotar la reapertura a
+  *«mientras la ficha no se haya borrado»*, por ser un límite ya existente. Se verificó y falla por
+  tres razones, las tres contra el texto:
+  1. **es el reloj de la ficha y el sujeto es la suscripción** — una principal cubre **todas** las
+     fichas de su vertical, así que un anfitrión tiene N relojes y ninguno es *«el suyo»*; y el
+     pagador manual es justo el que menos lo tiene, porque el §17.2 lo admite en **Partner**, cuya
+     presencia *«no es una ficha»*;
+  2. **`DEC-DATA-002` acaba de volverlo no-monótono** — cuatro hechos de reinicio, el primero *«un
+     acto del dueño sobre la ficha»*. Un tope que se reinicia solo no es un tope;
+  3. **crea una segunda dependencia sobre una cifra que `G-R5` no vigila**, porque ese guard
+     compara sólo tope-de-pausa contra hard-delete.
+- **El tope que rige ya estaba escrito, y no es un plazo**: es la **condición 1 de `B/05` §3** —*la
+  suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED`*—, la misma que `S7` ya exige. **Cierra
+  con actos, no con el calendario**: cancelar la suscripción (una de las doce acciones
+  administrativas) o `S13`. **Lo que NO acota, dicho en voz alta**: una `SUSPENDED` de pagador
+  manual que nadie cancela **es reabrible indefinidamente**, porque sin preapproval el espejo del
+  §10.1 nunca la alcanza.
+- **Las cuatro cosas de mecánica, resueltas:**
+  1. **Fila propia `MP4`**, no `MP1` ampliado: los efectos difieren de verdad (`S5` desde grace,
+     `S7` desde suspendida). `G-R4` sigue contando **tres** pares.
+  2. **Va a `ACTIVE` directo, y es seguro por construcción**: el pagador manual **no tiene débito
+     en el proveedor**, así que `PA-5` no tiene sujeto; y si lo hubiera y estuviera cancelado, la
+     fila ya no estaría en `SUSPENDED` —el barrido diario la lee y el espejo del §10.1 la habría
+     llevado a `CANCELLED`—, donde la condición 1 la rechaza sola.
+  3. **Lo adeudado**: `B/12` §5.3 (*«la deuda vieja no se persigue por separado»*) **no aplica**,
+     porque su población no existe acá: allá el cliente **deja atrás** la cuota y acá **la paga**.
+     No hay remanente ni recargo. Lo que sí se hereda entero es que **no reactiva durante una
+     sucesión**: queda pendiente por `S19`.
+  4. **El barrido no cambia**: sus nueve puertas y sus cuatro salvedades son sobre terminales **de
+     una suscripción**, y `DECLARED_UNPAID` es del `manual_payment` — nunca estuvo ahí. Las doce
+     acciones administrativas tampoco: `MP4` es *«registrar un pago manual»* desde otro origen.
+- **Una decisión de producto que esto NO resuelve y queda declarada abierta**: **quién crea las
+  cuotas de un pagador manual y cuándo** — qué pasa con los períodos que transcurren mientras la
+  suscripción está `SUSPENDED`. Es **anterior** a `MP4` (`F-8B2-018`: la máquina tampoco declara
+  hoy la entrada a `AWAITING`) y `MP4` **no la agrava**, porque no crea filas de `manual_payment`:
+  sólo mueve la que `MP2`/`MP3` cerraron.
+- **Origen**: el hueco que la familia del pago manual de la 9-bis-3 dejó declarado abierto en
+  `B/03` §3.2, y la elección del owner del 2026-09-21 entre las tres opciones que se le presentaron
+  — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **72** |
+| Decisiones tomadas | **73** |
 | De metodología | 10 |
-| Funcionales | 62 |
+| Funcionales | 63 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
