@@ -3067,3 +3067,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Dependencia explícita: promover primero los cambios versionados del
   worktree de migración a `staging`; después repetir `hops update`, el status
   del template y el E2E completo desde el checkout operativo.
+
+## Gate 134 · Repetición completa de client-tools
+
+- `bun test test` terminó correctamente en el worktree de migración.
+- Resultado: **299 tests, 0 fallos y 737 assertions** en 21 archivos.
+- No se realizaron mutaciones en Git, Linear, Engram, bases ni servidores.

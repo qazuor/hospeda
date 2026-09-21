@@ -710,7 +710,7 @@
                             "title": "Ejecutar validación integral",
                             "category": "Adopción progresiva",
                             "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
-                            "notes": "Gate128: suite client-tools 299/299 (737 assertions), server-tools 299/299 y `verify --changed` validado con BASE_SHA local, filtros por paquetes y working-directory del workflow preservado. Quedan gates E2E de DB/servidores, Linear/GitHub y memoria; la implementación del bootstrap reproducible está documentada en docs/migration/bootstrap-contract.md.",
+                            "notes": "Gate128: suite client-tools 299/299 (737 assertions), server-tools 299/299 y `verify --changed` validado con BASE_SHA local, filtros por paquetes y working-directory del workflow preservado. Gate134: repetición completa de client-tools mantiene 299 tests, 0 fallos y 737 assertions. Quedan gates E2E de DB/servidores, Linear/GitHub y memoria; la implementación del bootstrap reproducible está documentada en docs/migration/bootstrap-contract.md.",
                             "done": false
                         },
                         {
