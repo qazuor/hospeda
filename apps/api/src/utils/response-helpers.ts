@@ -510,6 +510,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 success: false,
                 error: {
                     code: validation.code,
+                    // R5 — same addition as the `defaultHook` in
+                    // utils/create-app.ts; these three emitters of the rich
+                    // validation body must stay byte-identical.
+                    message: validation.userFriendlyMessage,
                     messageKey: validation.messageKey,
                     details: validation.details,
                     summary: validation.summary,
