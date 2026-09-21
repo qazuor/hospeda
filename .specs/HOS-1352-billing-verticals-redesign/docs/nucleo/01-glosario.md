@@ -139,6 +139,19 @@ vence.
 > acto. Ese acto **deja marca**: `permanent_grant.revocado_en` (cap. 02 (billing) §2.4), que es lo
 > que vuelve evaluable *«grant vivo»* (§2.4). Leído como *«no tiene forma de dejar de estar
 > vivo»*, este renglón dejaba tres predicados del diseño sin nada contra qué evaluarse.
+>
+> **Y esa marca guarda TRES cosas: cuándo, quién y POR QUÉ.** El motivo es **texto libre** y entra
+> por `DEC-GRANT-008`: revocar *«consume el trial y no se repara»* (`DEC-TRIAL-009`) apoyándose en
+> que es una decisión deliberada, y **una decisión deliberada cuyo motivo no se registra es
+> indefendible seis meses después** — empezando por ante el beneficiario al que le cortaron el
+> servicio sin que hiciera nada. De las tres concesiones de esta tabla es la única cuyo final es
+> **un acto de alguien** en vez de un calendario, así que es la única que tiene un *«por qué»* que
+> guardar.
+>
+> **Y un beneficiario tiene a lo sumo UN grant vivo, y lo garantiza la base**, no los **nueve**
+> consumidores del término: `UNIQUE(beneficiario) WHERE revocado_en IS NULL` (`DEC-GRANT-009`,
+> cap. 02 (billing) §2.4). El índice es **parcial**, así que las revocadas se acumulan sin límite
+> — que es exactamente lo que *«revocar marca y no borra»* necesita.
 
 ### 1.6 Capacidades
 

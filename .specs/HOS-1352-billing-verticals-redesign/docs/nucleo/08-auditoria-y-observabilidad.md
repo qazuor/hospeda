@@ -208,10 +208,18 @@ dos filas describen un trámite que nadie empieza.
    esta tabla.** El §35.4 exige auditar el grant, y hasta la FASE 9-bis-4 el registro de auditoría
    era **lo único** que sabía que hubo una revocación: la fila del grant no declaraba ni estado ni
    revocación, así que ningún predicado del diseño podía preguntar después si la concesión seguía
-   en pie. Ahora la revocación escribe `permanent_grant.revocado_en` y quién la firmó (`B/02`
-   §2.4). **Las anclas no se borran**: dejan de ser anclas vivas todas a la vez. Y la regla que
+   en pie. Ahora la revocación escribe `permanent_grant.revocado_en`, quién la firmó **y el
+   MOTIVO, en texto libre** (`B/02` §2.4, `DEC-GRANT-008`). **Las anclas no se borran**: dejan de
+   ser anclas vivas todas a la vez. Y la regla que
    esta tabla ya imponía sigue igual —*«lo que no se puede es ejecutar una escritura que no esté
    nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una décimotercera.
+
+   **El motivo es la mitad que la auditoría necesitaba y el registro de auditoría no da.** Ese
+   registro dice **qué acto ocurrió, cuándo y quién lo hizo**; lo que no dice —ni puede— es
+   **por qué**, y es lo primero que se pregunta seis meses después, empezando por el beneficiario
+   al que le cortaron el servicio sin que hiciera nada. **Libre y no de lista cerrada**: el
+   volumen es bajo —son concesiones firmadas a mano por `SUPER_ADMIN`— así que no genera basura, y
+   una lista cerrada hay que mantenerla mientras el `otro` se come el resto (`DEC-GRANT-008`).
 
    **Y la frase de revocar dice además que el trial ya está consumido y no vuelve**
    (`DEC-TRIAL-009`). Recibir el grant consume el trial de esa vertical —`T2` o `T6`, según

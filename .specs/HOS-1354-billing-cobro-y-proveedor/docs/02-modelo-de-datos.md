@@ -307,7 +307,7 @@ de períodos que arrancaron antes.
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
 | **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** y **`saldo_días`** (anulable) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6). **`S25` es su segundo escritor**, con la misma columna y la misma forma: la pausa que no puede reanudar sobre un plan retirado difiere la cortesía en vez de perderla, y `S9` la re-emite sobre el alta nueva (`DEC-GRANT-010`, `B/14` §4.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
-| **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en` y quién la firmó** | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas** |
+| **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en`, quién la firmó y su `motivo_de_revocación`, en texto libre** (`DEC-GRANT-008`) | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Las tres columnas de la revocación van juntas**: las tres nulas o las tres escritas — ninguna de las tres se escribe sola. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas**. **`UNIQUE(beneficiario) WHERE revocado_en IS NULL`**: a lo sumo **un grant vivo** por beneficiario, y lo garantiza la base (`DEC-GRANT-009`) |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable. **El ancla no tiene estado propio**: es ***ancla viva*** si y sólo si su grant lo es (`NUCLEO/01` §2.4), y **la fila sobrevive a la revocación** |
 
 **`addon_product` se partió por campo, igual que el catálogo de planes.** El corte del §11.2 —*«no
@@ -522,6 +522,56 @@ estado no se puede mover … la fuente sigue contando para `cubierto`»*. El gra
 > vertical»* (`12-contrato…` §2.8) siempre quiso decir. **Las filas de
 > `permanent_grant_vertical` no se borran.**
 
+**Y esa escritura guarda tres cosas, no dos: fecha, firmante y MOTIVO.** `DEC-GRANT-008` (owner,
+2026-09-21) agregó el tercero, en **texto libre**.
+
+- **Por qué hace falta.** Un *Free Forever* es una concesión **discrecional** de `SUPER_ADMIN`, y
+  revocarla **le corta el servicio a alguien que no hizo nada para provocarlo**: `DEC-TRIAL-009`
+  decidió que revocar *«consume el trial y no se repara»* apoyándose en que es *«una decisión
+  legítima y deliberada»*, y **una decisión deliberada cuyo motivo no se registra es indefendible
+  seis meses después** — empezando por ante el propio beneficiario que pregunta por qué le
+  cortaron. La fecha dice **cuándo** y el firmante **quién**; sin el motivo, *«por qué»* no tiene
+  dónde vivir.
+- **Por qué libre y no de lista cerrada** —error / acuerdo vencido / abuso / otro—: el volumen es
+  bajo, porque son concesiones firmadas a mano por `SUPER_ADMIN`, así que el texto libre **no
+  genera basura**; y una lista cerrada obliga a mantenerla mientras el `otro` se come el resto.
+- **No es un motivo de los de `reconciliation_mark`**, y conviene no confundirlos: aquéllos son
+  una **enumeración cerrada** que un guard verifica (§2.5, `G-R1-F`) porque de ellos cuelga el
+  comportamiento del listado. Éste **no gobierna ningún comportamiento**: es registro, y por eso
+  puede ser libre sin romper nada.
+- **La confirmación de revocar ya le pide a la persona que diga qué hace** (`B/19` §4, fila 13);
+  lo que faltaba era **guardar por qué**, que es otra cosa.
+
+**Y un beneficiario tiene a lo sumo UN grant vivo, garantizado por la base** — `DEC-GRANT-009`,
+del mismo día:
+
+> **`UNIQUE(beneficiario) WHERE revocado_en IS NULL`.** Es un índice **parcial**, restringido a las
+> filas vivas: las revocadas quedan afuera y se pueden acumular sin límite, que es lo que el
+> *«revocar marca y no borra»* de arriba necesita.
+
+**Por qué en la base y no en los consumidores.** Con `revocado_en`, un beneficiario puede juntar
+**N filas revocadas** y *«grant vivo»* se resuelve mirando `revocado_en IS NULL` — lo cual está
+bien **mientras ese filtro esté en todos lados**, y el inventario de `NUCLEO/01` §2.4 dice que hoy
+son **nueve** consumidores. La restricción convierte *«hay a lo sumo uno vivo»* en algo que la base
+**garantiza** en vez de algo que nueve lugares tienen que recordar: **si un consumidor olvida el
+filtro, encuentra a lo sumo una fila viva y no dos**, que es la diferencia entre un resultado
+incompleto y uno **falso**.
+
+**Y el precedente es de esta misma vuelta**: la columna existe porque *«el grant sigue vivo»* se
+daba por sabido sin que nada lo garantizara, y el programa tiene medido que los inventarios se
+olvidan — **la única lista que existía antes quedó corta en el mismo commit que creó su sexto
+miembro** (`NUCLEO/01` §2.4).
+
+**Por qué no rompe ningún caso contemplado**: el grant es *«UN instrumento con UN ANCLA POR CADA
+VERTICAL»* (más arriba, `12-contrato…` §2.8), así que **la multiplicidad vive en
+`permanent_grant_vertical`** y no en el grant. **Un segundo grant vivo para la misma persona no
+tiene significado escrito en ningún lado**, y extender uno a una vertical más es **anclarle**, no
+crearle otro.
+
+**El costo aceptado, dicho en voz alta**: si algún día apareciera un caso legítimo de dos grants
+vivos simultáneos, la restricción es **difícil de revertir** sobre datos ya escritos. Se acepta
+porque hoy ese caso no existe en ningún capítulo.
+
 **Las dos razones por las que no se borran, y las dos son de otros capítulos:**
 
 1. **`addon_instance` apunta ahí.** La columna del título *«apunta a
@@ -693,6 +743,7 @@ son los que no dependen de que ningún camino de código se acuerde:
 | 8 · máximo una suscripción principal por vertical | **dos** `UNIQUE` parciales sobre los estados vivos, partidos por `sucede_a` (§2.2). El invariante cuenta **compromisos, no filas**: durante la ventana del cambio de plan hay dos filas y un solo compromiso de pago |
 | 10 · una acción en una vertical no afecta a otra | **`UNIQUE(permanent_grant_id, vertical)` en `permanent_grant_vertical`, más «el plan del ancla pertenece a esa vertical»** (§2.4). Es la mitad del §64.10 que el scope estructural del cap. 17 **no** alcanza: ahí la resolución pide la vertical, pero el cruce venía **adentro** de la fuente |
 | 19 · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment` |
+| — · a lo sumo **un grant vivo** por beneficiario | **`UNIQUE(beneficiario) WHERE revocado_en IS NULL` en `permanent_grant`** (§2.4, `DEC-GRANT-009`). No está en el §64 —el PDR no lo enuncia— y entra acá por la misma razón que los otros: es lo que hace que **los nueve consumidores de *«grant vivo»*** (`NUCLEO/01` §2.4) no puedan encontrar dos filas si alguno olvida el filtro |
 | 26 · producto ≠ instancia | son dos tablas, y la instancia no repite ningún campo del producto |
 | — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |
 
