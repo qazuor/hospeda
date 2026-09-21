@@ -3556,15 +3556,29 @@ Cada entrada lleva, según §3.4:
 
 ---
 
-### DEC-SUB-015 — La suscripción pausada NO entra al piso de un plan retirado: se le avisa, y al volver elige plan nuevo
+### DEC-SUB-015 — La suscripción pausada NO entra al piso de una vertical discontinuada: se le avisa, y al volver elige plan nuevo
 
 - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- ***Corregido el mismo día, y el error era del encuadre con que se presentó el caso, no de la
+  decisión***: esta entrada nació diciendo *«el retiro de un plan»*, y **ese acto no produce el
+  caso**. `B/10` §3 dice literal que **«retirar un plan no mueve a nadie»** y que *«un plan retirado
+  sostiene a sus clientes por tiempo indefinido»*, y el §4.3 avisa que *«esto NO es el retiro de un
+  plan del §3»*. El acto que produce el caso es **la discontinuación de una vertical** (§4.3), que
+  es donde la decisión se implementó.
 - **El hueco, que es anterior a los arreglos de esta tanda**: `B/10` §4.3 manda a
-  `CANCEL_SCHEDULED` a todas las suscripciones alcanzadas por el retiro de un plan —los **60 días
-  de piso** que el programa le da a quien ya estaba adentro— y **no excluye a las pausadas**,
-  mientras `B/03` §3.3 **prohíbe** llegar a `CANCEL_SCHEDULED` desde `PAUSED`. Es una instrucción
-  que ordena un movimiento que la máquina no permite: hoy ese caso muere en la marca. La FASE
-  9-bis-4 lo encontró al recorrer, no lo creó.
+  `CANCEL_SCHEDULED` a **cada suscripción viva** alcanzada por la discontinuación de una vertical
+  —los **60 días de piso**— y **no excluía a las pausadas**, mientras `B/03` §3.3 **prohíbe** llegar
+  a `CANCEL_SCHEDULED` desde `PAUSED`, porque **`EX-11` midió que el proveedor rechaza toda
+  modificación sobre una pausada**. Es una instrucción que ordena un movimiento imposible: el caso
+  moría en la marca. La FASE 9-bis-4 lo encontró al recorrer, no lo creó.
+- **El escenario está declarado improbable por el owner, y la corrección se conserva igual.** El
+  owner declaró el 2026-09-21 que **una vertical no se va a discontinuar**, y que si algún día se
+  decide **se resolverá en el momento**. Eso NO retira nada de lo escrito, y la razón es que
+  **la contradicción entre `B/10` §4.3 y `B/03` §3.3 era real con escenario o sin escenario**: un
+  capítulo ordenaba lo que otro prohíbe, que es exactamente la clase de defecto que el ciclo
+  `DEC-METH-006` existe para eliminar. Lo que la declaración del owner sí cierra es **la pregunta
+  del saldo de cortesía sin destino** (ver `DEC-GRANT-010`): no se define, y queda declarada con
+  causa.
 - **Y la ventana no es un borde raro**: el tope de una pausa son **120 días** y el piso son **60**,
   así que una pausa que sobrevive al piso es el caso **normal**, no la excepción.
 - **Decisión, tres partes:**
@@ -3738,15 +3752,18 @@ Cada entrada lleva, según §3.4:
 
 ---
 
-### DEC-GRANT-010 — La cortesía sobre un plan retirado se difiere y se re-emite sobre el plan nuevo
+### DEC-GRANT-010 — La cortesía sobre una vertical discontinuada se difiere; su re-emisión puede no llegar, y eso queda declarado
 
 - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
 - **Cierra el borde que `DEC-SUB-015` dejó abierto explícitamente.**
+- ***Corregido el mismo día, por lo mismo que `DEC-SUB-015`***: nació diciendo *«se retira el plan»*
+  y **ese acto no produce el caso** — `B/10` §3: *«retirar un plan no mueve a nadie»*. El acto es
+  **la discontinuación de la vertical** (§4.3).
 - **El caso**: `SUPER_ADMIN` le firmó a alguien **N días de cortesía**, y la cortesía **se
   implementa pausando** (`DEC-GRANT-003`), así que esa suscripción está `PAUSED · COURTESY`.
-  Entonces **se retira el plan que tenía**. Por `DEC-SUB-015` la pausada no entra al piso, se le
+  Entonces **se discontinúa la vertical**. Por `DEC-SUB-015` la pausada no entra al piso, se le
   avisa y al volver elige plan nuevo — pero **el que vuelve está en medio de un regalo nuestro**, y
-  el plan sobre el que se lo hicimos ya no existe.
+  la vertical sobre la que se lo hicimos está cerrada.
 - **Decisión**: **la cortesía se difiere y se re-emite sobre el plan nuevo**, con el **mismo
   mecanismo que `DEC-GRANT-007`** escribió el mismo día: el saldo de días vive en
   `courtesy_grant.saldo_días`, y `S9` —que ya ganó un segundo disparador— la re-emite cuando la
@@ -3766,9 +3783,21 @@ Cada entrada lleva, según §3.4:
 - **El costo aceptado**: el plan nuevo puede ser **más caro**, así que los N días regalados valen
   más de lo que valían al firmarse. Es un sobrecosto **nuestro, acotado y consecuencia de una
   decisión nuestra**.
-- **Origen**: la FASE 9-bis-4; el borde declarado abierto en `DEC-SUB-015`; y la elección del owner
-  del 2026-09-21 entre las tres opciones que se le presentaron — eligió la 1, que era la
-  recomendada.
+- **La re-emisión puede NO LLEGAR, y eso queda declarado con causa en vez de resuelto.** Una
+  vertical discontinuada queda **cerrada a altas para siempre** (`B/10`, la tabla de verticales sin
+  fecha), así que **no va a existir la fila nueva que reciba el saldo**, y re-emitirlo en otra
+  vertical es lo que `DEC-GRANT-006` prohíbe —la cortesía es **por suscripción**—. El saldo no se
+  pierde: **queda diferido y sin emitir.** Se le presentaron al owner tres salidas —pagarlo en otra
+  vertical, declararlo perdido con aviso, o convertirlo en un crédito— y **eligió no definir
+  ninguna**, con esta razón, el 2026-09-21: *«una vertical no la vamos a discontinuar nunca, y si
+  algún día decidimos eso, lo veremos en el momento»*. **Es un desenlace declarado, que es lo que
+  `DEC-METH-006` admite**, y no un hueco olvidado: el día que se discontinúe una vertical, esta
+  entrada es la que hay que releer.
+- **Origen**: la FASE 9-bis-4; el borde declarado abierto en `DEC-SUB-015`; la elección del owner
+  del 2026-09-21 entre las tres opciones que se le presentaron —eligió la 1, que era la
+  recomendada—; y la pregunta 2 del rastro de la tanda corta
+  (`21-fase-9-bis-4/rastro-8d6b27a12.md` §6), que encontró que la re-emisión no tiene destino y que
+  el owner cerró declarando el escenario improbable.
 
 ---
 
