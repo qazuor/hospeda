@@ -139,11 +139,55 @@ sigue sale de acá.
 Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 
 **Día 0 — el anuncio.** La vertical deja de admitir altas y trials. Y en el mismo acto, **cada
-suscripción viva se cancela en el proveedor de inmediato** y pasa a `CANCEL_SCHEDULED`
+suscripción viva que pueda llegar a `CANCEL_SCHEDULED` se cancela en el proveedor de inmediato** y
+pasa a ese estado
 (`DEC-SUB-009`), con su fecha de fin de servicio sostenida de nuestro lado. Desde ese instante
 **el proveedor no emite un cobro más** en la vertical. Lo mismo con cada suscripción de
 complemento viva en ella (`DEC-ADDON-002`: cada addon recurrente es su propia autorización, así
 que cada una se cancela por su cuenta).
+
+#### La pausada NO entra al piso, y eso es legal
+
+**El calificativo de arriba no es un matiz: hasta la FASE 9-bis-4 este § decía *«cada suscripción
+viva»* y ordenaba un movimiento que la máquina no permite.** `B/03` §3.3 **prohíbe**
+`PAUSED → CANCEL_SCHEDULED` —está medido que sobre una pausada el proveedor rechaza toda
+modificación (`EX-11`)— así que una pausada alcanzada por la discontinuación caía en la regla 1
+del núcleo: no se ejecutaba, se registraba y abría una marca. **La decisión es `DEC-SUB-015`, y
+son tres partes:**
+
+1. **La pausada no entra al piso y se queda `PAUSED`.** Sigue apuntando a un plan de una vertical
+   que ya tiene fecha de cierre, y **eso es legal** — hay que decirlo con todas las letras porque
+   es exactamente lo que este § ordenaba y no podía. **No cuesta plata dejarla ahí**: una pausada
+   **no cobra** (`PS-2`, `VERIFIED` en producción), así que la garantía del §4.2 —*«se deja de
+   cobrar antes de dejar de prestar»*— se cumple sin tocarla. Su preapproval **no se cancela el
+   día 0**: se cancela cuando la pausa termine, en `S25`.
+2. **El aviso sale AL ANUNCIAR, no al volver.** Es la parte que carga toda la ventaja de esta
+   opción: el cliente se entera **con la pausa corriendo y con tiempo para decidir**, en vez de
+   encontrarse con la novedad el día que vuelve. Lleva su propia fila en el catálogo de correos
+   (`NUCLEO/07` §6) y su propia fila en `B/19` §4, porque **no dice lo mismo que los tres avisos
+   de `DEC-MP-002`**: a esta persona no le corre ninguna fecha de fin de servicio, le corre el
+   reloj de su pausa.
+3. **Al volver elige de nuevo, y la fila pausada termina ahí.** `S10` **no puede** llevarla a
+   `ACTIVE` sobre un plan que ya no se presta, así que quien ejecuta ese final es **`S25`**
+   (`B/03` §3.2): la manda a `CANCELLED`, le escribe el `fin_real` a la pausa y libera el candado
+   `A`, con lo que un alta nueva entra por `S1` **si en esa vertical queda algo que comprar**.
+
+**Y la ventana no es un borde raro.** El tope de **una** pausa son 120 días (`B/03` §5) y el piso
+del §4.4 son 60, así que **una pausa que sobrevive al piso es el caso normal**, no la excepción.
+
+**Lo que el cliente pierde, dicho sin maquillar**: el derecho a volver al precio que tenía, que es
+para lo que existen los 60 días. **Pero lo perdía igual con el piso**, sólo que 60 días después de
+reanudar — la diferencia real entre las dos opciones no es *si* pierde el plan sino **cuándo se
+entera**, y acá se entera antes (`DEC-SUB-015`).
+
+**Y no se interrumpe la pausa para meterla al piso**, que era la tercera opción: eso es cortarle
+una pausa que pagó, o terminarle una cortesía antes de tiempo. **Acto nuestro, plata suya.**
+
+> **Esto NO es el retiro de un plan del §3, y conviene no leerlo así.** Retirar un plan del
+> catálogo **no mueve a ninguna suscripción** (§3.2) y **no tiene fecha de vencimiento** (§3.4):
+> ahí no hay piso, no hay aviso y no hay nada de lo de arriba. El único acto del corpus que deja
+> a una pausada apuntando a un plan que va a dejar de prestarse es **la discontinuación de la
+> vertical**, que es este §.
 
 **La fecha de fin de servicio es una sola para toda la vertical**, y es:
 

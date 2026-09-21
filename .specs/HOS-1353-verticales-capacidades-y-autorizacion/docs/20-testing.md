@@ -81,8 +81,12 @@ comprobación de cero llamadas del barrido (`B/09` §3).
 
 **`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
 mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace
-en el orden de recorrido, y `T1`/`T6` es el único par con dos destinos que el diseño declara hoy
-—que siga siendo el único es **lo que este guard cuenta**, no una lectura a mano—. El segundo
+en el orden de recorrido, y los pares con dos destinos que el diseño declara hoy son **cuatro**:
+`T1`/`T6` acá, y `S5`/`S19`, `S7`/`S19` y `S10`/`S25` en la tabla de suscripción (`B/03` §3.2).
+**Cuántos son es lo que este guard cuenta**, no una lectura a mano — y el cuarto entró en la FASE
+9-bis-4 por una decisión sobre planes retirados (`DEC-SUB-015`), no porque nadie estuviera
+mirando esta lista. *(Este párrafo decía que `T1`/`T6` era el único; ya no lo era desde que `S19`
+compartió par con `S5` y con `S7`.)* El segundo
 mira **de qué habla** una guarda: `T6` estaba escrita sobre *«una suscripción viva»*, un predicado
 que el §4 del contrato **le prohíbe evaluar** al lado que tiene que evaluarlo, así que su
 implementación iba a leer otra cosa sin decirlo. Disjuntas y **evaluables** son dos propiedades
