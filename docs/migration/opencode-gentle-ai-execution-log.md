@@ -3007,3 +3007,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `bun run src/index.ts verify --only guards` completó correctamente:
   **299 tests, 0 fallos y 737 assertions** en las suites client/server-tools;
   no agregó tests de apps/packages porque no había cambios afectados.
+
+## Gate 128 · Revalidación completa de `verify --changed`
+
+- La ejecución completa ya respeta `BASE_SHA`, filtros por paquete y
+  `working-directory` del workflow.
+- `scripts/server-tools` pasó 299 tests; el intento encadenado tuvo un timeout
+  aislado en `scripts/client-tools`, pero las suites `ci.test.ts` y
+  `bin.test.ts` pasaron de forma directa y la repetición completa terminó
+  correctamente.
+- Resultado final repetido: **299 tests, 0 fallos y 737 assertions** en
+  client-tools. No se ejecutaron tests de apps/packages porque no había cambios
+  afectados.
+- El timeout intermitente queda como observación de estabilidad bajo ejecución
+  encadenada, no como fallo reproducible del código.
