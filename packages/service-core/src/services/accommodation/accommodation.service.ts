@@ -143,6 +143,7 @@ import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port'
 import { NEARBY_POI_DEFAULT_LIMIT } from '../point-of-interest/point-of-interest.nearby-relevance';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
+import { cascadeCalendarConnectionsOnAccommodationDelete } from './accommodation.calendar-cascade';
 import {
     flattenAccommodationJoinRelations,
     flattenAccommodationJoinRelationsList,
@@ -2448,6 +2449,29 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deleted = ctx.hookState?.deletedEntity;
         const deletedId = ctx.hookState?.deletedEntityId;
+
+        // HOS-663: cascade the external calendar connections. Soft-deleting an
+        // accommodation used to leave them `is_active = true`, so the 6-hourly
+        // sync crons kept pulling the host's calendar and writing occupancy for
+        // a listing nobody can see — with the host's encrypted OAuth tokens
+        // still in active use after they deleted their publication.
+        //
+        // Runs on `result.count > 0` only: `softDelete` returns `{ count: 0 }`
+        // for an already-deleted entity, and re-revoking on every repeat delete
+        // would be pure noise.
+        //
+        // NOT gated on `ctx?.tx`, unlike the conversation cascade below: both
+        // delete routes call `softDelete(actor, id)` with no context, so a
+        // tx-gated cascade never runs from the application at all. The
+        // deactivation is a single UPDATE, atomic on its own, and joins the
+        // caller's transaction when there is one.
+        if (deletedId && result.count > 0) {
+            await cascadeCalendarConnectionsOnAccommodationDelete({
+                accommodationId: deletedId,
+                tx: ctx?.tx,
+                logger: this.logger
+            });
+        }
 
         // SPEC-085 AC-008-01: cascade close all conversations attached to the
         // soft-deleted accommodation so guests cannot reply on a stale thread.

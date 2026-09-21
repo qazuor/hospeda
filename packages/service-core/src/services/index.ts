@@ -3,6 +3,18 @@
 // never hit `_afterSearch`, the chokepoint that normally composes `media` from
 // the relational `accommodation_media` table. Mirrors commerce's
 // `composeCommerceMedia` export below.
+// HOS-663: the delete-time calendar cascade and the revocation port the API
+// layer registers into it at startup.
+export {
+    type CalendarConnectionRevocationPort,
+    type CalendarConnectionRevocationResult,
+    type CascadeCalendarConnectionsInput,
+    type CascadeCalendarConnectionsResult,
+    cascadeCalendarConnectionsOnAccommodationDelete,
+    getCalendarConnectionRevocationPort,
+    REVOCATION_FAILURE_PREFIX,
+    setCalendarConnectionRevocationPort
+} from './accommodation/accommodation.calendar-cascade';
 export {
     type ComposeAccommodationMediaInput,
     composeAccommodationMedia
