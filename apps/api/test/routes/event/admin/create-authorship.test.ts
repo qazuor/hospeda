@@ -152,3 +152,28 @@ describe('POST /admin/events — authorship comes from the actor (HOS-998)', () 
         expect(serviceInput().authorId).toBe(ACTOR_ID);
     });
 });
+describe('POST /admin/events — the date-order refinement runs at the boundary (HOS-425)', () => {
+    it('rejects an event whose date range ends before it starts', async () => {
+        const response = await post({
+            ...PANEL_PAYLOAD,
+            date: {
+                start: '2030-02-01T23:00:00.000Z',
+                end: '2030-02-01T18:00:00.000Z',
+                precision: 'EXACT'
+            }
+        });
+
+        expect(response.status).toBe(400);
+        expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('still accepts an event with only a start date', async () => {
+        const { date: _date, ...rest } = PANEL_PAYLOAD;
+        const response = await post({
+            ...rest,
+            date: { start: '2030-02-01T18:00:00.000Z', precision: 'EXACT' }
+        });
+
+        expect(response.status).toBe(201);
+    });
+});
