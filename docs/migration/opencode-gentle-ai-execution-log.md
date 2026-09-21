@@ -3073,3 +3073,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `bun test test` terminó correctamente en el worktree de migración.
 - Resultado: **299 tests, 0 fallos y 737 assertions** en 21 archivos.
 - No se realizaron mutaciones en Git, Linear, Engram, bases ni servidores.
+
+## Gate 135 · Repetición completa de server-tools
+
+- `bun test test` terminó correctamente en `scripts/server-tools`.
+- Resultado: **334 tests, 0 fallos y 501 assertions** en 19 archivos.
+- La suite no ejecutó operaciones externas ni imprimió valores sensibles.
