@@ -16,10 +16,21 @@
  *   4. `_executeAdminSearch` receives `undefined` and adds NO condition to the
  *      where clause.
  *
- * `GET /api/v1/admin/<entity>?search=anything` then answers with the WHOLE
+ * A search term that reaches that path is therefore answered with the WHOLE
  * table, paginated. No error, no warning, no log. For an operator that is worse
  * than a failure: the list looks full and normal, so they may pick the wrong
  * record believing it was filtered.
+ *
+ * The hook has exactly two call sites, `list()` (line 295) and `adminList()`
+ * (line 535) — NOT `search()` or `count()`, which build their conditions
+ * elsewhere. Whether a given entity's HTTP route exposes `?search=` at all is a
+ * separate question this guard does not ask: `createListRoute` derives
+ * `allowedParams` from `PaginationQuerySchema` plus the route's own
+ * `requestQuery`, so a route that declares no `requestQuery` answers `?search=`
+ * with a 400 rather than an unfiltered list. Five of the thirteen services
+ * fixed alongside this guard are in that position today. That makes their fix
+ * defensive rather than urgent — it does not make the hook correct, and a route
+ * gaining a `requestQuery` later must not be what turns the search on.
  *
  * ---------------------------------------------------------------------------
  * WHY A GUARD AND NOT A REVIEW HABIT
@@ -33,17 +44,23 @@
  * ---------------------------------------------------------------------------
  * WHAT IT ASSERTS
  * ---------------------------------------------------------------------------
- * For every concrete subclass of `BaseCrudService` in this package: at least
- * ONE of the columns `getSearchableColumns()` returns exists on the table its
- * own model points at. That is the exact predicate `buildSearchCondition` uses,
- * evaluated against the real Drizzle table object — not an approximation of it,
- * and not a match on source text. A service that renames the hook, spells a
- * column wrong, or silently inherits the default is caught by the same check.
+ * For every concrete subclass of `BaseCrudService` in this package: EVERY
+ * column `getSearchableColumns()` returns exists on the table its own model
+ * points at. The decisive check is `buildSearchCondition` itself, called with
+ * the real Drizzle table object — not an approximation of it, and not a match
+ * on source text.
+ *
+ * Note the "every", not "at least one". One valid column is enough for
+ * `buildSearchCondition` to return a condition, so a service that names
+ * `['slug', 'nombre']` passes that test while `nombre` is dropped silently and
+ * forever — the operator believes the search covers two fields and it covers
+ * one. That is the same failure one level down, so it is reported too.
  *
  * ---------------------------------------------------------------------------
  * MEASURED BEFORE IT WAS WRITTEN (2026-09-21, branch point 60a39dae2)
  * ---------------------------------------------------------------------------
- * 49 CRUD service classes inspected, 13 failing open. Ten were given real
+ * 49 subclasses discovered, 2 of them the abstract bases listed in
+ * `ABSTRACT_BASES`, so 47 concrete services inspected — 13 failing open. Ten were given real
  * columns in the same change; the three in `DECLARED_EXCEPTIONS` below are
  * entities where free-text search has nothing to match, and they are required
  * to say so EXPLICITLY — an exception is honoured only when the service itself
@@ -108,11 +125,11 @@ const ABSTRACT_BASES: readonly string[] = [
 const DECLARED_EXCEPTIONS: ReadonlyArray<{ readonly service: string; readonly reason: string }> = [
     {
         service: 'AlertSubscriptionService',
-        reason: 'alert_subscriptions has no text column at all — the admin list filters on typed columns (user, alert type, channel). There is nothing for a free-text term to match.'
+        reason: 'tourist_price_alerts has no text column at all: id, userId, accommodationId, basePriceSnapshot, targetPercentDrop, isActive and the three timestamps. There is nothing for a free-text term to match.'
     },
     {
         service: 'ExchangeRateService',
-        reason: 'exchange_rates has no text column at all — every column is a currency code enum, a rate or a timestamp. Free-text search has no surface here.'
+        reason: 'exchange_rates has no text column at all: a uuid, four Postgres enums (fromCurrency, toCurrency, rateType, source), two numerics, a boolean and four timestamps. Free-text search has no surface here.'
     },
     {
         service: 'HostTradeUsageService',
@@ -249,28 +266,45 @@ const evaluate = (
         const failsOpen = inspection.failsOpen;
         const isExcepted = excepted.has(inspection.service);
 
-        if (failsOpen && !isExcepted) {
-            findings.push({
-                service: inspection.service,
-                problem: `resolves NO searchable column against its own table (${HOOK}() returned [${inspection.columns.join(', ')}]${
-                    inspection.declaresHook ? '' : `, inherited from BaseCrudService`
-                }). An admin ?search= would return the whole table instead of a filtered list. Override ${HOOK}() with columns that exist, or declare the exception.`
-            });
+        if (failsOpen) {
+            if (!isExcepted) {
+                findings.push({
+                    service: inspection.service,
+                    problem: `resolves NO searchable column against its own table (${HOOK}() returned [${inspection.columns.join(', ')}]${
+                        inspection.declaresHook ? '' : ', inherited from BaseCrudService'
+                    }). Any search term that reaches list() or adminList() would apply no filter at all. Override ${HOOK}() with columns that exist, or declare the exception.`
+                });
+                continue;
+            }
+            if (!inspection.declaresHook) {
+                findings.push({
+                    service: inspection.service,
+                    problem: `is a declared exception but never says so in code: it INHERITS ${HOOK}() from BaseCrudService. A declared exception must override ${HOOK}() and return [] explicitly, so the absence of a search surface is a decision and not an omission.`
+                });
+            }
             continue;
         }
 
-        if (failsOpen && isExcepted && !inspection.declaresHook) {
-            findings.push({
-                service: inspection.service,
-                problem: `is a declared exception but never says so in code: it INHERITS ${HOOK}() from BaseCrudService. A declared exception must override ${HOOK}() and return [] explicitly, so the absence of a search surface is a decision and not an omission.`
-            });
-            continue;
-        }
-
-        if (!failsOpen && isExcepted) {
+        if (isExcepted) {
             findings.push({
                 service: inspection.service,
                 problem: `is listed in DECLARED_EXCEPTIONS but no longer fails open (it resolves [${inspection.usableColumns.join(', ')}]). Remove the stale entry — an exception that outlives its subject exempts a service nobody meant to exempt.`
+            });
+            continue;
+        }
+
+        // One valid column is enough for `buildSearchCondition` to return a
+        // condition, so a PARTIAL typo hides inside a passing service: the
+        // misspelled column is dropped silently and forever, and an operator
+        // reading the hook believes the search covers a field it never touches.
+        // Same failure mode as the one above, one level down.
+        const dropped = inspection.columns.filter(
+            (column) => !inspection.usableColumns.includes(column)
+        );
+        if (dropped.length > 0) {
+            findings.push({
+                service: inspection.service,
+                problem: `names [${dropped.join(', ')}] in ${HOOK}(), and no such column exists on its own table. buildSearchCondition drops unknown columns silently, so the search matches only [${inspection.usableColumns.join(', ')}] while the hook claims more.`
             });
         }
     }
@@ -338,9 +372,11 @@ describe('HOS-1117: admin search never resolves to zero columns', () => {
     });
 
     it('finds the CRUD services of this package', () => {
-        // A discovery that silently returns nothing would make every assertion
-        // below vacuous.
-        expect(concrete.length).toBeGreaterThan(30);
+        // A discovery that silently returns nothing — or a barrel regression
+        // that drops a folder of services — would make the sweep below vacuous
+        // without failing anything. The floor sits just under the measured 47
+        // so that losing more than a couple of services is caught, not excused.
+        expect(concrete.length).toBeGreaterThanOrEqual(45);
         expect(discovered.has('AccommodationService')).toBe(true);
     });
 
@@ -386,7 +422,7 @@ describe('HOS-1117: admin search never resolves to zero columns', () => {
             expect(inspection.usableColumns).toEqual([]);
             expect(inspection.declaresHook).toBe(false);
             expect(evaluate([inspection], [])).toHaveLength(1);
-            expect(evaluate([inspection], [])[0]?.problem).toContain('whole table');
+            expect(evaluate([inspection], [])[0]?.problem).toContain('no filter at all');
         });
 
         it('clears the same service once it overrides the hook with a real column', () => {
@@ -406,6 +442,22 @@ describe('HOS-1117: admin search never resolves to zero columns', () => {
 
             expect(inspection.declaresHook).toBe(true);
             expect(evaluate([inspection], [])).toHaveLength(1);
+        });
+
+        it('reports a PARTIAL typo, which buildSearchCondition alone would pass', () => {
+            const proto = Object.create(BaseCrudService.prototype) as Record<string, unknown>;
+            proto[HOOK] = () => ['slug', 'nombre'];
+            const inspection = inspectInstance('HalfTypoService', makeInstance(proto));
+
+            // One good column is enough for the helper to build a condition, so
+            // the fail-open check alone sees nothing wrong here.
+            expect(inspection.failsOpen).toBe(false);
+            expect(inspection.usableColumns).toEqual(['slug']);
+
+            const findings = evaluate([inspection], []);
+            expect(findings).toHaveLength(1);
+            expect(findings[0]?.problem).toContain('nombre');
+            expect(findings[0]?.problem).toContain('drops unknown columns silently');
         });
 
         it('honours a declared exception only when the service returns [] itself', () => {
