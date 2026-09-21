@@ -65,7 +65,7 @@ If you prefer to compile on a dev machine and `scp` the result:
 
 ```bash
 cd scripts/server-tools
-bun install
+bun install --frozen-lockfile
 bun run build       # produces ./hops-bin
 scp -P 2222 hops-bin qazuor@216.238.103.219:/usr/local/bin/hops
 ssh -p 2222 qazuor@216.238.103.219 'sudo chmod +x /usr/local/bin/hops'
@@ -78,7 +78,7 @@ ssh -p 2222 qazuor@216.238.103.219
 curl -fsSL https://bun.sh/install | bash
 exec bash
 cd ~/hospeda/scripts/server-tools
-bun install
+bun install --frozen-lockfile
 echo 'alias hops="bun /home/qazuor/hospeda/scripts/server-tools/src/index.ts"' >> ~/.bashrc
 exec bash
 ```

@@ -3157,3 +3157,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `scripts/server-tools/install.sh` ahora usa `bun install --frozen-lockfile`.
 - ShellCheck pasó en ambos scripts; no se ejecutaron instalaciones reales ni se
   modificaron checkouts operativos.
+
+## Gate 146 · Documentación alineada con lockfiles
+
+- Los ejemplos de instalación de `client-tools` y `server-tools` ahora usan
+  `bun install --frozen-lockfile`.
+- El barrido de scripts no encontró instalaciones mutantes sin lockfile en el
+  flujo de bootstrap, worktrees o tooling.

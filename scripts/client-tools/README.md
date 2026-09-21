@@ -175,7 +175,7 @@ no debería depender del árbol de fuentes; acá los binarios de `bin/` son shim
 la próxima corrida ya lo usa. No hay `dist/` que se quede viejo.
 
 ```bash
-bun install       # dependencias
+bun install --frozen-lockfile # dependencias reproducibles
 bun test          # tests
 bunx tsc --noEmit # typecheck
 bun run src/index.ts <comando>   # correr sin instalar
