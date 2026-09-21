@@ -19,9 +19,22 @@
 # script implements HOS-1136 option (4) on top of that split, so a registry
 # outage on this job specifically stops reading as "found a vulnerability".
 #
-# Fails closed on anything it does not recognize: only the exact network
-# error signatures below are treated as inconclusive-not-failing. Any other
-# non-zero exit (including a real advisory finding) still fails the build.
+# ORDER MATTERS. The completion-report check below runs BEFORE the
+# network-signature check and always wins over it. An earlier version of
+# this script checked the network signature against the audit's FULL output,
+# which fails open: an advisory's own title/description is free text an
+# upstream maintainer writes, and nothing stops a real vulnerability from
+# being titled something like "DoS via socket hang up" or mentioning
+# ECONNRESET/ETIMEDOUT as the bug itself — that text would match the network
+# pattern and exit 0 with a real critical/high finding still present. A
+# completed pnpm/npm audit ALWAYS ends with its own summary line(s)
+# ("N vulnerabilities found" / "Severity: ..."), whether it found something
+# or not (verified against a real dependency tree with known moderate/high
+# findings, 2026-09-21) — their presence proves the registry answered and
+# audit finished evaluating every dependency, which makes it a real result
+# no matter what an advisory's own text happens to contain. Only a run with
+# NO such summary — the registry never answered at all — is a candidate for
+# the network exemption.
 set -uo pipefail
 
 OUTPUT_FILE="$(mktemp)"
@@ -29,17 +42,29 @@ readonly OUTPUT_FILE
 trap 'rm -f "${OUTPUT_FILE}"' EXIT
 
 pnpm audit --prod --audit-level=high 2>&1 | tee "${OUTPUT_FILE}"
-readonly AUDIT_EXIT_CODE="${PIPESTATUS[0]}"
+AUDIT_EXIT_CODE="${PIPESTATUS[0]}"
+readonly AUDIT_EXIT_CODE
 
 if [ "${AUDIT_EXIT_CODE}" -eq 0 ]; then
     echo "[dependency-audit] OK: no critical/high vulnerabilities in production dependencies."
     exit 0
 fi
 
-# Signatures observed on the 2026-09-03 registry.npmjs.org advisories-endpoint
-# outage (the exact strings from that job's raw log, per HOS-1136), plus the
-# broader set of network-layer error names pnpm/npm/node surface for a
-# request that never got an answer. None of these describe a vulnerability.
+# pnpm/npm's own completion summary — printed only once the registry has
+# answered and audit finished evaluating the dependency tree, regardless of
+# outcome. Its presence means this is a real result, full stop; checked
+# BEFORE the network-signature check, and takes precedence over it.
+if grep -qE '^[0-9]+ vulnerabilit(y|ies) found|^Severity: ' "${OUTPUT_FILE}"; then
+    echo "::error::pnpm audit completed and reported a real finding (production dependency at critical/high severity). Failing the build."
+    exit "${AUDIT_EXIT_CODE}"
+fi
+
+# No completion summary was printed anywhere in the output, so the registry
+# never produced a report to evaluate at all — only now do we check whether
+# the failure matches a known network/timeout signature. These are the exact
+# strings from the 2026-09-03 incident log (HOS-1136), plus the broader set
+# of network-layer error names pnpm/npm/node surface for a request that
+# never got an answer.
 readonly NETWORK_ERROR_PATTERN='TimeoutError: The operation was aborted due to timeout|operation was aborted due to timeout|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|FetchError|network timeout at|socket hang up'
 
 if grep -qE "${NETWORK_ERROR_PATTERN}" "${OUTPUT_FILE}"; then
@@ -47,5 +72,5 @@ if grep -qE "${NETWORK_ERROR_PATTERN}" "${OUTPUT_FILE}"; then
     exit 0
 fi
 
-echo "::error::pnpm audit failed with a finding that is not a recognized network/timeout error — treating it as a real result (a vulnerability, or an audit failure needing investigation). See HOS-1136 for the network-timeout exemption this does NOT match."
+echo "::error::pnpm audit failed without a completion summary or a recognized network/timeout signature — treating it as a real failure needing investigation. See HOS-1136 for the network-timeout exemption this does NOT match."
 exit "${AUDIT_EXIT_CODE}"
