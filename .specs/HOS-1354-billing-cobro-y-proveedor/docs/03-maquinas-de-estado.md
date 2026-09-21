@@ -991,7 +991,8 @@ puede existir, y no por una regla nueva:**
 
 **Entonces `S7` sin escala**, con su efecto ya escrito —*«se restituye la publicación»*—: la fila
 vuelve a emitir fuente con `hasta: SIN_FECHA_CONOCIDA` (`12-contrato…` §2.6), `cubierto` vuelve a
-verdadero y la ficha que `PB4` hubiera archivado **vuelve sola por `PB7`** (`V/03` §9). No hace
+verdadero y la ficha que `PB4` hubiera archivado **vuelve sola por `PB7` si el cupo del plan le
+alcanza** (`V/03` §9). No hace
 falta un estado intermedio: el que lo necesitaría es el que tiene una autorización que confirmar,
 y acá o no hay ninguna o la fila ya se murió.
 

@@ -55,8 +55,12 @@ avisaron, lo que vale es la evidencia del envío»*.
 **Ya está resuelto por el capítulo 07 (núcleo) y no hacía falta un abogado**: el §44 exige que el
 intento de notificación quede registrado, y el outbox guarda destinatario, plantilla, estado,
 identificador del proveedor e intentos. La clave de una-sola-vez del capítulo 07 (núcleo) §2 —el
-sujeto más el hito, `sub:<id>:aumento:-30d`— hace que **cada aviso sea localizable por lo que
-es**, no por una búsqueda de texto.
+sujeto, el hito **y la fecha objetivo vigente**, `sub:<id>:aumento:-30d:2026-11-01`— hace que
+**cada aviso sea localizable por lo que es**, no por una búsqueda de texto. **Y la fecha es parte
+de la prueba, no un adorno de la clave**: los tres avisos de aumento apuntan a una fecha de
+aplicación que se puede correr, así que sin ella dos anuncios sucesivos del mismo aumento
+comparten ocurrencia y el segundo **ni siquiera se encola** — la evidencia que este § promete no
+existiría.
 
 Y los tres avisos de aumento de `DEC-MP-002` son **transaccionales no suprimibles** (cap. 07
 §4.1, núcleo): no los apaga el opt-out ni el tope diario. Un aviso obligatorio que el opt-out

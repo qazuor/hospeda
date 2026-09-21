@@ -457,7 +457,10 @@ esta misma tanda:**
    `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo).
 3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
    *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` y `PB5`, y las
-   dos **quitan**; a `PB7` la dispara un cambio de cobertura, igual que a `PB3`.
+   dos **quitan**; a `PB7` la disparan **un cambio de cobertura o un cambio de cupo**, igual que a
+   `PB3`. **Ninguno de los dos es el reloj**: los dos son el recálculo del conjunto efectivo de un
+   `user + vertical` (cap. 15 §4.2), que lo dispara un acto —el de la persona o el de billing— y
+   no el paso del tiempo.
 
 **Y la mitad `PUBLISHED` del `desde` de `PB4` deja de ser letra muerta con el término definido.**
 Una ficha publicada y cubierta no acumula inactividad, así que esa mitad sólo alcanza a una ficha
