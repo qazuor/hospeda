@@ -588,7 +588,7 @@
                             "title": "Alinear guards locales y CI",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Evitar verde local engañoso y mantener CI como autoridad final.",
-                            "notes": "verify lee workflow real.",
+                            "notes": "verify lee workflow real. Gate147: pre-commit cubre secretos staged, lint-staged, safeIlike y documentación; env drift y ramas protegidas siguen fuera del hook hasta aprobar precedencia y falsos positivos.",
                             "done": true
                         },
                         {
