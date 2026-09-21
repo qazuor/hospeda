@@ -5,7 +5,7 @@ cualquier promoción. Estado actual: **planificado; no aplicado**.
 
 - Rama fuente: `chore/opencode-gentle-ai-migration`
 - Rama destino: `staging`
-- Archivos candidatos: 110
+- Archivos candidatos: 114
 - Código operativo: 73
 - Documentación de migración: 32
 - Configuración del proyecto: 3
@@ -15,12 +15,15 @@ cualquier promoción. Estado actual: **planificado; no aplicado**.
 ## Orden recomendado
 
 1. Configuración del proyecto y guards.
-2. Código de envs, worktrees, template y DB.
+2. Código de envs, worktrees, template y DB, incluyendo `wt-config.sh` para
+   calcular el fingerprint según la configuración de la rama base y `wt-up.sh`
+   con `HOPS_ENV_COPY_SCRIPT` configurable.
 3. Comandos `hops` y sus tests.
 4. Validación en un worktree temporal.
 5. Documentación de migración.
 6. Artifact tooling y bootstrap genérico.
-7. `hops update --json`, drift, template status y E2E completo.
+7. `hops update --json`, drift, template status y E2E completo, usando el
+   template construido desde el mismo checkout base.
 
 ## Regla de seguridad
 

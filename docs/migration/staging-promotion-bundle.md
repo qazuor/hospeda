@@ -17,7 +17,13 @@ el checkout operativo.
   para el modo JSON.
 - `scripts/worktree/template.sh`, `scripts/worktree/wt-config.sh` y los
   helpers de DB/servers: lifecycle de template con candidata aislada,
-  fingerprint, manifest y rollback.
+  fingerprint, manifest y rollback. `wt-config.sh` debe calcular el
+  fingerprint con la configuración de la rama base; de lo contrario un
+  checkout nuevo puede bloquear un template correcto por usar reglas futuras
+  del checkout que ejecuta el comando.
+- `scripts/worktree/wt-up.sh`: aceptar `HOPS_ENV_COPY_SCRIPT` para validar el
+  reconciliador nuevo mientras el checkout operativo todavía contiene el
+  script anterior.
 - `scripts/client-tools/src/commands/db/update-template.ts`: interfaz Hops
   para `status`, `build-candidate` y `promote --confirm`.
 
@@ -30,7 +36,7 @@ operativo, guards, comandos nuevos y documentación histórica.
 ## Evidencia
 
 - La rama de migración tiene cambios en commits separados; el diff completo
-  contra `staging` incluye aproximadamente 110 archivos y 9.500 líneas. El
+  contra `staging` incluye aproximadamente 114 archivos y 9.500 líneas. El
   paquete mínimo de env/worktree/template debe seleccionarse por archivos o
   commits revisados, no mediante un merge ciego de toda la rama.
 - La prueba E2E real de `hops update --json` funcionó sobre `hospeda-staging`
