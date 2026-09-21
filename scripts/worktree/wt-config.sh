@@ -90,10 +90,12 @@ wt_template_fingerprint() {
 }
 
 wt_template_fingerprint_ref() {
-  local ref="$1" root cfg paths tmp fp
+  local ref="$1" root cfg cfg_rel ref_cfg paths tmp fp
   root="$(wt_root)"; cfg="$(wt_config_path)"
   [ -f "$cfg" ] || return 0
-  mapfile -t paths < <(jq -r '.db.templateFingerprintPaths[]? // empty' "$cfg" 2>/dev/null)
+  cfg_rel="${cfg#"$root"/}"
+  ref_cfg="$(git -C "$root" show "$ref:$cfg_rel" 2>/dev/null || true)"
+  mapfile -t paths < <(printf '%s' "$ref_cfg" | jq -r '.db.templateFingerprintPaths[]? // empty' 2>/dev/null)
   [ "${#paths[@]}" -eq 0 ] && { wt_schema_fingerprint_ref "$ref"; return; }
   tmp="$(mktemp -d)"
   git -C "$root" archive "$ref" -- "${paths[@]}" 2>/dev/null | tar -x -C "$tmp" 2>/dev/null

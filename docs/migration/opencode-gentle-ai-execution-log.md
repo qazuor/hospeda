@@ -3260,3 +3260,21 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se corrigió y verificó el `template_name` del manifest activo después del
   rename. El journal sigue en 117 y el fingerprint coincide con la candidata.
 - El E2E de worktree, puertos y health checks todavía no se ejecutó.
+
+## Gate 157 · E2E de worktree, DB, envs y build
+
+- El builder ejecutado desde `hospeda-staging` creó una candidata con 125
+  migraciones, 9.568 registros, 0 errores y `uploaded=0`; se promovió con
+  rollback conservado.
+- `wt-config.sh` ahora calcula el fingerprint usando la configuración de la
+  rama base, evitando comparar reglas nuevas del checkout actual contra una
+  rama anterior.
+- `wt-create` pasó: fast clone del template, copia de cinco archivos de
+  entorno desde `hospeda-staging`, preparación sin valores nuevos, instalación
+  congelada y build de 18 paquetes.
+- `wt-up` pasó la clonación de DB, auto-heal de la migración faltante, extras,
+  usuarios de prueba, puertos 3102/3103/4422 y health checks internos de API,
+  admin y web.
+- `wt-up` admite `HOPS_ENV_COPY_SCRIPT` para usar el reconciliador versionado
+  mientras staging incorpora el nuevo copy-env. El runner cerró los procesos al
+  terminar la sesión; una prueba de persistencia 24/7 queda pendiente.
