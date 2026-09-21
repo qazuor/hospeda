@@ -304,9 +304,67 @@ describe('google-oauth-client', () => {
             expect(requestInit.body).toBe(`token=${encodeURIComponent(REFRESH_TOKEN)}`);
         });
 
-        it('should bound the request with an abort signal', async () => {
-            // A revocation sits on the synchronous path of a user's DELETE; an
-            // unbounded fetch to a half-dead Google becomes a Cloudflare 524.
+        it('should not carry the token in ANY header either', async () => {
+            // The URL and the body were covered; the headers were not, so
+            // adding `Authorization: Bearer ${token}` alongside an untouched
+            // body passed everything. An `Authorization` header lands in the
+            // same outbound proxies and the same Sentry breadcrumb the docblock
+            // rejects a query string for — the argument does not stop at URLs.
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act
+            await revokeToken({ token: REFRESH_TOKEN });
+
+            // Assert
+            const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const headers = requestInit.headers as Record<string, string>;
+
+            for (const [name, value] of Object.entries(headers)) {
+                expect(`${name}: ${value}`).not.toContain(REFRESH_TOKEN);
+                expect(`${name}: ${value}`).not.toContain(encodeURIComponent(REFRESH_TOKEN));
+            }
+            // Pinned exactly, so a new header has to be added deliberately here
+            // rather than slipped past a "does not contain" loop by encoding.
+            expect(Object.keys(headers).sort()).toEqual(['Accept', 'Content-Type']);
+        });
+
+        it('should bound the request with a REAL timeout signal, at 8s', async () => {
+            // `instanceof AbortSignal` on its own is vacuous: a
+            // `new AbortController().signal` satisfies it and never fires,
+            // which is precisely the regression that puts an unbounded fetch
+            // back on the synchronous path of a user's DELETE. And the
+            // duration was unasserted, so 600_000 passed too — a Cloudflare 524
+            // with extra steps.
+            //
+            // Spying on `AbortSignal.timeout` pins both at once: a plain
+            // controller never calls it (spy uncalled → fail), and a changed
+            // duration shows up in the argument. Fake timers cannot be used
+            // here — `AbortSignal.timeout` is driven by a Node-internal timer
+            // that vitest does not patch, so advancing the clock never aborts
+            // it and the assertion would be testing the harness.
+            // Arrange
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+            try {
+                mockFetch.mockResolvedValue(emptyOkResponse());
+
+                // Act
+                await revokeToken({ token: REFRESH_TOKEN });
+
+                // Assert
+                expect(timeoutSpy).toHaveBeenCalledTimes(1);
+                expect(timeoutSpy).toHaveBeenCalledWith(8_000);
+
+                // ...and the signal handed to fetch is the one it produced,
+                // not a lookalike created alongside it.
+                const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+                expect(requestInit.signal).toBe(timeoutSpy.mock.results[0]?.value);
+            } finally {
+                timeoutSpy.mockRestore();
+            }
+        });
+
+        it('should attach an abort signal at all', async () => {
             // Arrange
             mockFetch.mockResolvedValue(emptyOkResponse());
 

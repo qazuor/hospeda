@@ -220,6 +220,36 @@ describe('calendarConnectionRevocationAdapter — unknown providers fail CLOSED'
         expect(getGoogleCredential).not.toHaveBeenCalled();
     });
 
+    it('has an EXPLICIT case for every value of OccupancySourceEnum', async () => {
+        // The fail-closed test below proves a new enum value cannot be waved
+        // through as revoked. It does NOT prove anybody NOTICES it exists:
+        // `VRBO` added to the enum lands in `default`, is reported as a
+        // failure, and stamps REVOCATION_FAILED on every delete forever while
+        // looking like ordinary operation — a real OAuth provider nobody ever
+        // got around to implementing.
+        //
+        // So this asserts the stronger property: every enum value is handled by
+        // NAME. Adding one fails here, and the failure names it.
+        // Arrange: Google's credential row absent, so its branch resolves
+        // without an HTTP call.
+        getGoogleCredential.mockResolvedValue(null);
+
+        // Act
+        const unhandled: string[] = [];
+        for (const provider of Object.values(OccupancySourceEnum)) {
+            const result = await calendarConnectionRevocationAdapter.revoke({
+                accommodationId: 'acc-enum',
+                provider
+            });
+            if (!result.revoked && result.reason.includes('unknown provider')) {
+                unhandled.push(provider);
+            }
+        }
+
+        // Assert
+        expect(unhandled).toEqual([]);
+    });
+
     it('reports a provider the switch does not know as NOT revoked', async () => {
         // Stands in for the `VRBO` somebody adds to the enum next year without
         // touching this adapter.

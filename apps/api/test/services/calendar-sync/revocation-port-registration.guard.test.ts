@@ -49,9 +49,14 @@ describe('HOS-663 — the revocation port is wired at API startup', () => {
     });
 
     it('imports the concrete adapter from the calendar-sync module', () => {
+        // The `.js` suffix is OPTIONAL in this pattern on purpose. `apps/api`
+        // uses it on most relative imports, so normalising this one to match
+        // its neighbours would fail the guard while nothing was actually
+        // wrong — a false positive pointing the safe way, but still a false
+        // positive, and those are what get guards deleted.
         expect(indexSource).toMatch(
             new RegExp(
-                `import\\s*\\{[^}]*\\b${ADAPTER}\\b[^}]*\\}\\s*from\\s*'\\./services/calendar-sync/calendar-connection-revocation\\.adapter'`,
+                `import\\s*\\{[^}]*\\b${ADAPTER}\\b[^}]*\\}\\s*from\\s*'\\./services/calendar-sync/calendar-connection-revocation\\.adapter(\\.js)?'`,
                 's'
             )
         );
