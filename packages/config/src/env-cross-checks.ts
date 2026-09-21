@@ -106,23 +106,55 @@ export const CROSS_CHECK_RULES: readonly CrossCheckRule[] = [
         ]
     },
     {
-        // Renamed from `internal-request-secret-api-web-match` by HOS-1153,
-        // which added the admin as a third sender: an id naming two apps while
-        // the rule compares three is a message claiming less than its predicate.
-        id: 'internal-request-secret-api-web-admin-match',
+        id: 'internal-request-secret-api-web-match',
         description:
-            'HOSPEDA_INTERNAL_REQUEST_SECRET must hold the SAME value in apps/api, apps/web and ' +
-            'apps/admin — web sends it as the X-Internal-Request header on SSR fetches, admin ' +
-            'sends it on the two session reads its _authed beforeLoad makes (HOS-1153), and api ' +
-            'exempts matching requests from the rate limiter. A mismatch silently breaks the ' +
-            'exemption: that traffic is rate-limited again and its tier re-exhausts, with no ' +
-            'error surfaced anywhere (HOS-103). Unset everywhere is a valid "feature disabled" ' +
-            'state, so this is only enforced when every side is set (partial = pass).',
+            'HOSPEDA_INTERNAL_REQUEST_SECRET must hold the SAME value in both apps/api and ' +
+            'apps/web — web sends it as the X-Internal-Request header on SSR fetches and api ' +
+            'exempts matching requests from the public rate limit. A mismatch silently breaks ' +
+            'the exemption: SSR traffic is rate-limited again and the public tier re-exhausts, ' +
+            'with no error surfaced anywhere (HOS-103). Empty on both sides is a valid ' +
+            '"feature disabled" state, so this is only enforced when both are set (partial = pass).',
         appliesTo: ['local', 'coolify'],
         comparator: 'equals',
         compare: [
             { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
-            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
+        ]
+    },
+    {
+        /*
+         * HOS-1153 — a SECOND rule, deliberately NOT a third side on the rule
+         * above.
+         *
+         * `evaluateCrossCheckRule` short-circuits to `partial` ("not a
+         * failure") the moment ANY referenced side is unset. Adding admin to
+         * the api/web rule would therefore have switched that rule OFF for as
+         * long as the admin's value is missing — which is exactly the
+         * post-merge window HOS-1153 opens, before an operator sets the var in
+         * Coolify. An api/web rotation mismatch landing in that window is the
+         * HOS-155 incident (2026-07-13), and it would have gone green.
+         *
+         * Split in two, each pair is judged on its own: api↔web keeps failing
+         * on a divergence no matter what admin holds, and api↔admin reports
+         * `partial` until the admin side exists. Equality is transitive, so
+         * api==web plus api==admin still gives web==admin — no coverage is lost
+         * by not comparing those two directly.
+         *
+         * Pinned by `scripts/__tests__/check-env-rules.test.ts`.
+         */
+        id: 'internal-request-secret-api-admin-match',
+        description:
+            'HOSPEDA_INTERNAL_REQUEST_SECRET must hold the SAME value in apps/api and apps/admin ' +
+            '(HOS-1153) — the admin sends it as the X-Internal-Request header on the two session ' +
+            'reads its _authed beforeLoad makes server-side, and api exempts matching requests ' +
+            'from the rate limiter. A mismatch silently breaks the exemption and every operator ' +
+            'collapses back onto one proxy:<container-ip> bucket. Kept SEPARATE from the api/web ' +
+            'rule on purpose, so an unset admin side cannot disable that one. Unset on either ' +
+            'side is a valid "feature disabled" state (partial = pass).',
+        appliesTo: ['local', 'coolify'],
+        comparator: 'equals',
+        compare: [
+            { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
             { app: 'admin', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
         ]
     },

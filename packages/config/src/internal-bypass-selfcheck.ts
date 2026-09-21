@@ -1,20 +1,27 @@
 /**
  * @file internal-bypass-selfcheck.ts
- * @description Pure startup self-check for the SSR internal-request rate-limit
- * bypass (HOS-103 / HOS-155).
+ * @description Pure startup self-check for the server-to-server
+ * internal-request rate-limit bypass (HOS-103 / HOS-155 / HOS-1153).
  *
  * Background (the incident this prevents): on 2026-07-13 `hospeda-web-prod` had
  * `HOSPEDA_INTERNAL_REQUEST_SECRET` set but `HOSPEDA_INTERNAL_API_URL` UNSET.
  * `getInternalApiUrl()` returning `undefined` silently disables the
- * `X-Internal-Request` bypass header (see `src/lib/api/client.ts`), so ALL SSR
- * traffic collapsed onto the public per-IP rate-limit bucket and the site
- * mass-429'd. Both env vars are `.optional()` in Zod, so nothing failed at
+ * `X-Internal-Request` bypass header (see `apps/web/src/lib/api/client.ts`), so
+ * ALL SSR traffic collapsed onto the public per-IP rate-limit bucket and the
+ * site mass-429'd. Both env vars are `.optional()` in Zod, so nothing failed at
  * startup — the failure was 100% silent.
  *
+ * **Why this lives in `@repo/config` (HOS-1153).** The admin now makes the same
+ * kind of server-to-server call from `fetchAuthSession`, gated on the same two
+ * vars, and therefore inherits the same silent-failure mode. Rather than copy
+ * the predicate into a second app, it moved here — the package that already
+ * owns the env registry and the cross-app env rules. `apps/web` re-exports it
+ * from its original path, so every existing web import keeps working.
+ *
  * This module only decides WHETHER the current config is coherent; it never
- * logs, never touches Sentry, and never reads `import.meta.env` itself, so it
- * stays trivially unit-testable. The caller (`src/middleware.ts`) is
- * responsible for reading the env, calling this function, and alerting.
+ * logs, never touches Sentry, and never reads any env itself, so it stays
+ * trivially unit-testable and framework-agnostic. Each app's caller is
+ * responsible for reading its own env, calling this function, and alerting.
  */
 
 /**

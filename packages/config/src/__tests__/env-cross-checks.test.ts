@@ -9,8 +9,11 @@ import { describe, expect, it } from 'vitest';
 import { CROSS_CHECK_RULES } from '../env-cross-checks.js';
 
 describe('CROSS_CHECK_RULES', () => {
-    it('should contain the three seeded rules', () => {
-        expect(CROSS_CHECK_RULES).toHaveLength(3);
+    // 3 -> 4 (HOS-1153): the api/admin internal-secret rule is a rule of its
+    // own rather than a third side on the api/web one, because an unset side
+    // makes the evaluator skip the WHOLE rule. See the comment on that rule.
+    it('should contain the four seeded rules', () => {
+        expect(CROSS_CHECK_RULES).toHaveLength(4);
     });
 
     it('should seed the HOSPEDA_REVALIDATION_SECRET api/web equality rule with the exact shape', () => {
@@ -25,11 +28,9 @@ describe('CROSS_CHECK_RULES', () => {
         ]);
     });
 
-    it('should seed the HOSPEDA_INTERNAL_REQUEST_SECRET api/web/admin equality rule with the exact shape', () => {
-        // HOS-1153 added the admin as a third sender of X-Internal-Request, so
-        // the rule now spans three apps and was renamed to say so.
+    it('should seed the HOSPEDA_INTERNAL_REQUEST_SECRET api/web equality rule with the exact shape', () => {
         const rule = CROSS_CHECK_RULES.find(
-            (r) => r.id === 'internal-request-secret-api-web-admin-match'
+            (r) => r.id === 'internal-request-secret-api-web-match'
         );
 
         expect(rule).toBeDefined();
@@ -37,9 +38,41 @@ describe('CROSS_CHECK_RULES', () => {
         expect(rule?.appliesTo).toEqual(['local', 'coolify']);
         expect(rule?.compare).toEqual([
             { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
-            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
+        ]);
+    });
+
+    it('should seed the api/admin internal-secret rule SEPARATELY from the api/web one (HOS-1153)', () => {
+        // The separation is the fix, not a stylistic choice: the evaluator
+        // short-circuits to `partial` on any unset side, so folding admin into
+        // the api/web rule would disable that rule while the admin value is
+        // missing. The resulting behaviour is pinned in
+        // scripts/__tests__/check-env-rules.test.ts; this pins the shape.
+        const rule = CROSS_CHECK_RULES.find(
+            (r) => r.id === 'internal-request-secret-api-admin-match'
+        );
+
+        expect(rule).toBeDefined();
+        expect(rule?.comparator).toBe('equals');
+        expect(rule?.appliesTo).toEqual(['local', 'coolify']);
+        expect(rule?.compare).toEqual([
+            { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
             { app: 'admin', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
         ]);
+    });
+
+    it('should never reference a third app inside the api/web internal-secret rule (HOS-1153)', () => {
+        // A future edit that "simplifies" the two rules back into one would
+        // silently restore the fail-open. Anchored on the api/web rule's own
+        // compare list, so unrelated rules cannot make this pass or fail.
+        const apiWebRule = CROSS_CHECK_RULES.find(
+            (r) => r.id === 'internal-request-secret-api-web-match'
+        );
+
+        expect(
+            apiWebRule?.compare.map((side) => side.app),
+            'The api/web internal-secret rule must compare exactly api and web. Any extra side disables the whole rule whenever that side is unset (HOS-1153 / HOS-155).'
+        ).toEqual(['api', 'web']);
     });
 
     it('should seed the Sentry-environment rule spanning all three apps (H-16)', () => {
