@@ -37,3 +37,18 @@ aislada de `~/.engram`, siguiendo [engram-review-batches.md](./engram-review-bat
 y [engram-human-approval-packet.md](./engram-human-approval-packet.md). El
 primer lote recomendado es el de memorias vacías/sin título; no se debe empezar
 por `tmp` ni por una consolidación global.
+
+## Lote A: conteo read-only
+
+La consulta directa sobre la base activa, usando `sqlite3 -readonly` y sin
+seleccionar texto, confirmó:
+
+- 33 observaciones con contenido vacío.
+- 16 observaciones con título vacío.
+- 33 filas involucradas en un único grupo de `normalized_hash` repetido.
+- Las filas vacías o sin título se reparten en 24 para `hospeda` y 24 sin
+  proyecto; los conjuntos pueden solaparse.
+
+Estos números sólo delimitan el lote. Para revisar una entrada se debe copiar
+la base completa, mostrar un ID por vez en una interfaz local y registrar una
+decisión explícita. No se autoriza eliminar por conteo, hash o proyecto.
