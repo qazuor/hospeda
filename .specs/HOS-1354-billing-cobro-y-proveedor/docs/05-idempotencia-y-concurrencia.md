@@ -86,7 +86,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5), **con la referencia al cobro que hay que devolver**, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §4) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5), **con la referencia al cobro que hay que devolver**, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
 eso vale para `S11` y no para las otras tres.** Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`)

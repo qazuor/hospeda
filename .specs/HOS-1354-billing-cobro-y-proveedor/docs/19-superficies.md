@@ -154,7 +154,30 @@ de algo que este diseño creó:
 
 | qué | por qué existe |
 |---|---|
-| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, el pago y el monto** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los cuatro motivos que significan *«hay plata del cliente que devolver»***, que son los únicos en los que esperar le cuesta al cliente. **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las **trece** marcas del corpus llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
+| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, el pago, el monto y QUÉ PROPONE EL SISTEMA** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los cuatro motivos que significan *«hay plata del cliente que devolver»***, que son los únicos en los que esperar le cuesta al cliente. **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las **trece** marcas del corpus llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
+
+**Y una marca con motivo llega con un DEFAULT, que es lo último que le faltaba.** Un motivo dice
+*qué pasó*; la persona que abre el caso además necesita saber **qué debería hacer**, y hasta la
+FASE 9-bis-4 una de las tres ramas que abren `REEMBOLSO_POR_CONFIRMAR` llegaba **sin ninguna
+indicación**: la rama 6 de `B/12` §5.3, la baja que pide la propia predecesora. `DEC-RF-003` le
+puso el default, y es **DEVOLVER**.
+
+| motivo | qué propone el listado |
+|---|---|
+| `REEMBOLSO_POR_CONFIRMAR` (ramas 1, 5 y **6** de `B/12` §5.3) | **devolver** |
+| `COBRO_POSTERIOR_A_LA_BAJA` | **devolver** (`B/05` C2) |
+| `COBRO_POSTERIOR_AL_GRANT` | **devolver** (`B/05` C3) |
+| `PAGO_PENDIENTE_SIN_RAMA` | **nada**, y es el único: por definición es el caso que **ninguna** de las seis ramas alcanzó (`B/09` §3, segunda comprobación) |
+
+**El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.** La persona confirma —o se niega, con
+lo que vea delante— y el sistema **no dispara ningún reembolso solo**. Lo que cambia es que ahora
+encuentra **una propuesta escrita** en vez de una marca muda: *«el default es devolver, y la
+persona confirma salvo que haya razón para no hacerlo»*.
+
+**Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
+era indistinguible de las otras doce y **el pago se quedaba**; una marca con motivo y sin default
+reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué se espera de ella
+**no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma

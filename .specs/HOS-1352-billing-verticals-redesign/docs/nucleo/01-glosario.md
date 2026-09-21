@@ -483,7 +483,7 @@ por lo que preguntan.
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
 | 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un pago pendiente por `S19` sin una marca abierta con motivo `REEMBOLSO_POR_CONFIRMAR`»* — **es el consumidor que el booleano volvía vacuo**: la marca sin motivo pasaba el guard |
-| 6 | el **listado accionable** | cap. 19 (billing) §4 | ordena por motivo y pone adelante los **cuatro** que devuelven plata |
+| 6 | el **listado accionable** | cap. 19 (billing) §6 | ordena por motivo, pone adelante los **cuatro** que devuelven plata y muestra **el default de lo que el sistema propone** (`DEC-RF-003`) |
 | 7 | el **escalamiento por reloj** | cap. 09 (billing) §3 | *«si sigue abierta pasado su plazo, escala»* — lee `puesta_en`, **por marca**, así que el plazo puede depender del motivo |
 | 8 | la **entrada del §22.1 para el reembolso por confirmar** | cap. 08 (núcleo) §4.3 | *«el monto a devolver, el pago que lo origina y por qué puerta entró»* — es el mismo dato que la marca ahora **guarda**, en vez de vivir sólo en un evento que pasa |
 | 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, y que ningún levantado sea *«la fila»* |

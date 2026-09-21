@@ -597,7 +597,8 @@ el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifr
 
 #### Qué cambia con el motivo, además de que se pueda leer
 
-1. **El listado accionable deja de ser homogéneo.** `B/19` §4 muestra el motivo y ordena primero
+1. **El listado accionable deja de ser homogéneo.** `B/19` §6 muestra el motivo, **el default de
+   lo que el sistema propone** (`DEC-RF-003`) y ordena primero
    los **cuatro** motivos con `SÍ` en la última columna —1, 2, 3 y 12—, que son los únicos donde
    **esperar le cuesta plata al cliente**.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
