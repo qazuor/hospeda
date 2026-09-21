@@ -393,6 +393,16 @@ jobs:
       # (HOS-1214 AC-11).
       - name: Check What's New catalog integrity (HOS-1214 AC-11)
         run: pnpm check:whats-new-catalog
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above, F-6).
+      # This one fails on a `test.fixme` in apps/e2e that no branch guards — the
+      # construct that kept four @p0/@p1 specs in the inventory while running
+      # nothing, one of them for four months. The conditional seed guard
+      # (`test.fixme(!planId, ...)`, or a `test.fixme(true, ...)` inside the `if`
+      # that found the precondition missing) is legitimate and stays allowed,
+      # which is why the check is an AST walk and not a grep.
+      - name: Check no unconditional test.fixme in apps/e2e (HOS-1267)
+        run: pnpm check:no-unconditional-fixme
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
