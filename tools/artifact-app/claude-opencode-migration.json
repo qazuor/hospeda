@@ -314,7 +314,7 @@
                             "title": "Implementar comandos client-tools existentes",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Mantener todos los comandos del registro con binarios, wrappers y tests.",
-                            "notes": "Gate136: el registro expone 29 comandos con 29 wrappers standalone `hops-*` y el binario base `hops` (30 entradas `bin`); package.json y archivos quedaron alineados, sin faltantes ni extras. Gate95: stats --json también validado desde hospeda-staging sin mutaciones.",
+                            "notes": "Gate136: el registro expone 29 comandos con 29 wrappers standalone `hops-*` y el binario base `hops` (30 entradas `bin`); package.json y archivos quedaron alineados, sin faltantes ni extras. Gate137: se agregó un test de regresión que exige esa paridad; `test/bin.test.ts` pasó 14 tests, 0 fallos y 148 assertions. Gate95: stats --json también validado desde hospeda-staging sin mutaciones.",
                             "done": true
                         },
                         {

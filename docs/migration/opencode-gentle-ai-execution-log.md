@@ -3087,3 +3087,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se agregaron las 18 entradas faltantes; ahora hay 29 wrappers declarados y
   29 archivos físicos, además del binario base `hops`.
 - `test/bin.test.ts` pasó: **13 tests, 0 fallos y 147 assertions**.
+
+## Gate 137 · Guard de regresión para wrappers
+
+- Se agregó a `test/bin.test.ts` una comprobación que compara los wrappers
+  físicos `bin/hops-*` con las entradas `bin` de `package.json`.
+- La prueba pasó junto con el resto del archivo: **14 tests, 0 fallos y 148
+  assertions**.

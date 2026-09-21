@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'bun:test';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    mkdirSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMMANDS } from '../src/registry.ts';
 
 const BIN_DIR = join(import.meta.dir, '..', 'bin');
+
+describe('standalone distribution manifest', () => {
+    it('declares every hops-* wrapper in package.json', () => {
+        const packageJson = JSON.parse(
+            readFileSync(join(import.meta.dir, '..', 'package.json'), 'utf8')
+        ) as {
+            readonly bin: Record<string, string>;
+        };
+        const declared = Object.keys(packageJson.bin)
+            .filter((name) => name.startsWith('hops-'))
+            .sort();
+        const files = readdirSync(BIN_DIR)
+            .filter((name) => name.startsWith('hops-'))
+            .sort();
+        expect(declared).toEqual(files);
+    });
+});
 
 /** Runs a binary to completion, capturing what it wrote. */
 async function runBin({
