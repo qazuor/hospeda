@@ -186,3 +186,78 @@ describe('calendarConnectionRevocationAdapter — iCal providers', () => {
         expect(getGoogleCredential).not.toHaveBeenCalled();
     });
 });
+
+/**
+ * The `switch` used to enumerate what to handle and wave everything else
+ * through as `{ revoked: true }` — a gate by exclusion, which fails OPEN.
+ *
+ * The failure that invites is specific and silent: add `VRBO` or `EXPEDIA` to
+ * `OccupancySourceEnum` — real OAuth providers with real grants — and the
+ * adapter reports a successful revocation without calling anyone, the cascade
+ * counts it in `revoked`, nothing is stamped on the row, and the log line reads
+ * "Revoked calendar credential". That is the exact lie this feature exists to
+ * refuse, arriving through the door the `default` left open.
+ *
+ * So `MANUAL` is now an explicit case and `default` fails closed. The
+ * enum-completeness test below is what keeps it that way: it enumerates
+ * `OccupancySourceEnum` from the schema package rather than restating it, so a
+ * value added there without a matching `case` lands in `default` and is
+ * asserted to fail closed — without anyone having to remember this file.
+ */
+describe('calendarConnectionRevocationAdapter — unknown providers fail CLOSED', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('reports MANUAL as revoked — there is no connection and no credential', async () => {
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-9',
+            provider: OccupancySourceEnum.MANUAL
+        });
+
+        expect(result).toEqual({ revoked: true });
+        expect(revokeToken).not.toHaveBeenCalled();
+        expect(getGoogleCredential).not.toHaveBeenCalled();
+    });
+
+    it('reports a provider the switch does not know as NOT revoked', async () => {
+        // Stands in for the `VRBO` somebody adds to the enum next year without
+        // touching this adapter.
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-10',
+            provider: 'VRBO' as OccupancySourceEnum
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).toContain('unknown provider');
+        expect(revokeToken).not.toHaveBeenCalled();
+    });
+
+    it('answers revoked:true for MANUAL and Google only, across the WHOLE enum', async () => {
+        // Arrange: Google's credential row is absent, so its branch reports
+        // "nothing left to close". Every other value must justify itself.
+        getGoogleCredential.mockResolvedValue(null);
+
+        // Act
+        const revokedTrue: string[] = [];
+        for (const provider of Object.values(OccupancySourceEnum)) {
+            const result = await calendarConnectionRevocationAdapter.revoke({
+                accommodationId: 'acc-11',
+                provider
+            });
+            if (result.revoked) {
+                revokedTrue.push(provider);
+            } else {
+                // A failure without a reason is a failure nobody can act on.
+                expect(result.reason.length).toBeGreaterThan(0);
+            }
+        }
+
+        // Assert: MANUAL is unconditionally true; GOOGLE_CALENDAR is true only
+        // because the row was mocked absent. Anything else appearing here is a
+        // new enum value silently taking the fail-open path.
+        expect(revokedTrue.sort()).toEqual(
+            [OccupancySourceEnum.GOOGLE_CALENDAR, OccupancySourceEnum.MANUAL].sort()
+        );
+    });
+});

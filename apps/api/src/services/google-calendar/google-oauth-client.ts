@@ -40,6 +40,23 @@ const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_OAUTH_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 
 /**
+ * Hard ceiling on the revocation round trip, in milliseconds (HOS-663).
+ *
+ * Unlike the two token grants below, this call sits on the SYNCHRONOUS path of
+ * a user's `DELETE`: the cascade is awaited inside `_afterSoftDelete`, which is
+ * awaited inside `softDelete`, which the route awaits before responding. A bare
+ * `fetch` has no timeout of its own, and undici's default `headersTimeout`
+ * leaves a socket that connects and then goes quiet hanging for minutes — long
+ * enough for Cloudflare to answer 524 and tell the host their delete failed,
+ * while the revalidation and destination-count work queued behind the cascade
+ * waits it out too.
+ *
+ * 8s mirrors `safeExternalFetch` in `@repo/utils/safe-fetch`, which the iCal
+ * feed fetcher next door already uses for exactly this reason.
+ */
+const GOOGLE_OAUTH_REVOKE_TIMEOUT_MS = 8_000;
+
+/**
  * Normalized (camelCase) shape of a Google OAuth token response.
  *
  * The raw Google response uses snake_case field names (`access_token`,
@@ -283,9 +300,25 @@ export interface RevokeTokenInput {
  * Distinguishing it is left to the caller via
  * {@link GoogleOAuthClientError.body}.
  *
+ * ## The token goes in the BODY, and only in the body
+ *
+ * Google accepts `?token=` on the query string too, and it would work. It must
+ * not be used: a refresh token in a URL lands in undici's access log, in every
+ * outbound proxy along the way, and in a Sentry breadcrumb the moment anybody
+ * instruments `fetch`. A POST body is logged by none of those. The same rule is
+ * why {@link GoogleOAuthClientError} carries only the status.
+ *
+ * ## Any non-2xx is a failure
+ *
+ * Deliberately `!response.ok`, not a 5xx check. A `403` is Google REFUSING the
+ * revocation; treating it as success because it is not a server error would
+ * report a grant as closed while it is wide open.
+ *
  * @param input - The token to revoke — see {@link RevokeTokenInput}.
  * @returns Nothing. Resolving means Google accepted the revocation.
- * @throws {GoogleOAuthClientError} If Google responds with a non-2xx status.
+ * @throws {GoogleOAuthClientError} If Google responds with any non-2xx status.
+ * @throws {Error} A `TimeoutError` if Google does not answer within
+ * {@link GOOGLE_OAUTH_REVOKE_TIMEOUT_MS}.
  *
  * @example
  * ```ts
@@ -299,7 +332,9 @@ export const revokeToken = async (input: RevokeTokenInput): Promise<void> => {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/json'
         },
-        body: new URLSearchParams({ token: input.token }).toString()
+        // NEVER move this onto the query string — see the note above.
+        body: new URLSearchParams({ token: input.token }).toString(),
+        signal: AbortSignal.timeout(GOOGLE_OAUTH_REVOKE_TIMEOUT_MS)
     });
 
     if (!response.ok) {

@@ -120,10 +120,32 @@ export const calendarConnectionRevocationAdapter: CalendarConnectionRevocationPo
                     reason: `${provider} is an iCal feed: the credential is a secret export URL the provider exposes no API to invalidate, so only the host can rotate it`
                 };
 
-            default:
-                // `MANUAL` and any future source that never carries a
-                // credential. Nothing was ever granted, so nothing is open.
+            case OccupancySourceEnum.MANUAL:
+                // The host blocked those dates by hand. No connection row, no
+                // credential, nothing anybody ever granted us.
                 return { revoked: true };
+
+            default:
+                // FAILS CLOSED — and the asymmetry with `MANUAL` above is the
+                // point, not an inconsistency.
+                //
+                // This used to be the `revoked: true` branch, which made the
+                // switch a gate by exclusion: it enumerated what to handle and
+                // waved through everything else. The day somebody adds `VRBO`
+                // or `EXPEDIA` to `OccupancySourceEnum` — real OAuth providers
+                // with real grants — that shape would report a successful
+                // revocation without calling anyone, the cascade would count it
+                // in `revoked`, nothing would be stamped, and the log line would
+                // read "Revoked calendar credential". That is exactly the
+                // comfortable lie this feature exists to refuse, arriving
+                // through the door left open for it.
+                //
+                // An unrecognised provider is an UNCLOSED grant until somebody
+                // teaches this switch otherwise.
+                return {
+                    revoked: false,
+                    reason: `unknown provider '${provider}': no revocation path is implemented for it`
+                };
         }
     }
 };
