@@ -14,16 +14,23 @@
  * through something it imports. Reaching it is what makes middleware strip the
  * public `Cache-Control` before the response leaves the origin.
  *
- * "Reach" rather than "call" is the load-bearing word. None of the 18 listing
+ * "Reach" rather than "call" is the load-bearing word. None of the 16 listing
  * pages calls the marker; every one of them renders `ErrorBanner.astro`, which
- * does. Demanding the call at the page would re-introduce the 18-places-to-
+ * does. Demanding the call at the page would re-introduce the 16-places-to-
  * remember problem this fix exists to remove, and would fail every page that is
  * already correct. So the check follows local imports transitively and asks
  * whether the marker is anywhere in the page's own module graph.
  *
  * That also gives the guard a useful failure mode on a rename: delete the call
- * from `ErrorBanner.astro`, or rename `markResponseDegraded`, and all 18 pages
- * become violations at once, loudly, instead of the guard going quietly blind.
+ * from `ErrorBanner.astro`, or rename `markResponseDegraded` at its call sites,
+ * and all 16 pages become violations at once, loudly, instead of the guard
+ * going quietly blind. (Measured, both ways.) Renaming ONLY the declaration is
+ * not caught here and is not meant to be — that source does not compile, so it
+ * is typecheck's failure to report, not this guard's.
+ *
+ * `16`, not the `18` HOS-1154 states: the two accommodation-facet pages in that
+ * count mention `applyCacheHeaders` only inside a JSDoc saying they deliberately
+ * have no such call. See the guard test's module doc for the full accounting.
  *
  * @module test/static-guards/cacheable-pages-demote-error-responses
  */
