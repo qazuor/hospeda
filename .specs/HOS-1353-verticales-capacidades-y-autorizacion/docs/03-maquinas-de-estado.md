@@ -453,7 +453,8 @@ esta misma tanda:**
    quemaría el trial a quien reanuda una pausa.
 2. **Ninguna de las dos comparte par con otra fila.** Salen las dos de `ARCHIVED`, pero sus
    eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
-   **una sola** fila y `G-R4` sigue contando **tres** pares con dos destinos. Es el mismo caso que
+   **una sola** fila y **`PB7`/`PB8` no agregan ninguno** a los pares con dos destinos, que desde la
+   FASE 9-bis-4 son **cuatro** —el cuarto es `S10`/`S25` (`NUCLEO/03` §1 regla 7)—. Es el mismo caso que
    `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo).
 3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
    *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` y `PB5`, y las

@@ -98,7 +98,7 @@ en `RECONCILIATION_REQUIRED` es **textualmente una decisión destructiva automá
 > **Y la marca no es un booleano: es una fila con MOTIVO y con RELOJ** (`reconciliation_mark`,
 > `B/02` §2.2 y §2.5). Este corpus escribe **trece** marcas distintas sobre la misma casilla y
 > **cuatro de ellas significan *«hay plata del cliente que devolver»***; sin el motivo llegaban
-> todas iguales al listado accionable de `B/19` §4. `requiere_conciliación` pasa a nombrar el
+> todas iguales al listado accionable de `B/19` §6. `requiere_conciliación` pasa a nombrar el
 > **predicado** —*«la fila tiene al menos una marca abierta»*, `NUCLEO/01` §2.5—, así que cada
 > frase de este capítulo que dice *«se pone la marca `requiere_conciliación`»* sigue diciendo lo
 > mismo y ahora dice además **con qué motivo**.
@@ -264,8 +264,8 @@ que se reparten.** Las tres primeras —`sucedida_por`, limpiar `sucede_a` y el 
 
 | escritura | por qué caminos corre | por qué |
 |---|---|---|
-| **4 · la cortesía se DIFIERE** (`saldo_días`, `DEC-GRANT-007`) | el cierre normal con `S17`, y **el espejo** del §10.1 | una cortesía vigente deja la fila en `PAUSED` (`S9`), y `PAUSED` está entre los cinco `desde` de `S17` y entre los vivos del espejo. **No corre por `S12`** (`desde: CANCEL_SCHEDULED`) **ni por `S16`** (`desde: ACTIVE`), que son otros conjuntos; **ni por `S22`**, que sale de `PAUSED` pero **termina** la cortesía en vez de diferirla —la persona pidió irse, que es la elección de `DEC-GRANT-004` (1)—; **ni por `S23`**, porque una `SUSPENDED` no tiene cortesía vigente |
-| **5 · la marca `REEMBOLSO_POR_CONFIRMAR`** sobre un pago pendiente por `S19` | **el espejo** (rama 5), **`S23`** (rama 6) y el cierre normal con `S17` (rama 1) | `S19` sólo existe sobre una predecesora en `GRACE_PERIOD` o `SUSPENDED`. **No puede aplicar por `S12` ni por `S16`**, y es aritmética de los `desde`: **ninguna fila puede estar en los dos conjuntos** |
+| **4 · la cortesía se DIFIERE** (`saldo_días`, `DEC-GRANT-007`) | el cierre normal con `S17`, y **el espejo** del §10.1 | una cortesía vigente deja la fila en `PAUSED` (`S9`), y `PAUSED` está entre los cinco `desde` de `S17` y entre los vivos del espejo. **No corre por `S12`** (`desde: CANCEL_SCHEDULED`) **ni por `S16`** (`desde: ACTIVE`), que son otros conjuntos; **ni por `S22`**, que sale de `PAUSED` pero **termina** la cortesía en vez de diferirla —la persona pidió irse, que es la elección de `DEC-GRANT-004` (1)—; **ni por `S23`, ni por `S24`**, porque ni una `SUSPENDED` ni una `GRACE_PERIOD` tienen cortesía vigente —una cortesía deja la fila en `PAUSED`— |
+| **5 · la marca `REEMBOLSO_POR_CONFIRMAR`** sobre un pago pendiente por `S19` | **el espejo** (rama 5), **`S23` y `S24`** (las dos filas de la rama 6) y el cierre normal con `S17` (rama 1) | `S19` sólo existe sobre una predecesora en `GRACE_PERIOD` o `SUSPENDED`. **No puede aplicar por `S12` ni por `S16`**, y es aritmética de los `desde`: **ninguna fila puede estar en los dos conjuntos** |
 
 > **Por el espejo del §10.1 corren las cinco, y hay que decirlo porque la versión
 > anterior de este párrafo afirmaba lo contrario sobre un dominio de dos.** El `desde` del espejo
@@ -427,7 +427,7 @@ porque `S18` cubre tres de ellas:
 | **la sucesión trabada** | **una persona**, sobre la marca que `S14` ya abrió — es la única cuyo reloj es humano | viva, con dos marcas abiertas cuando `S15` resuelve y `S18` cierra |
 | cae un grant *Free Forever* | **`S13`**, que apaga la bandera sin reembolso | `CANCELLED`, sin nada pendiente |
 | **el proveedor da de baja a la predecesora** (el espejo del §10.1, por mora acumulada) | **`S18`**, que corre sin `S17` y le abre la misma marca | `CANCELLED` con esa marca abierta, en el canal de conciliación |
-| **la predecesora pide la baja estando `SUSPENDED`** (`S23`) | **`S18`**, que corre sin `S17` y le abre la misma marca | ídem |
+| **la predecesora pide la baja ella misma** — estando `SUSPENDED` (`S23`) o **en el grace (`S24`)**, que son los dos únicos estados desde los que `S19` retiene un pago | **`S18`**, que corre sin `S17` y le abre la misma marca | ídem |
 
 **La tabla enumeraba cuatro filas y dejaba la quinta en prosa; hoy son las seis, y la de `S23`
 —la sexta rama que la FASE 9-bis-4 agregó— no estaba en ninguna de las dos formas.** **Y el
@@ -1022,7 +1022,7 @@ sostiene lo que sigue es S10.
 | **motivos** | `CUSTOMER_REQUEST` · `COURTESY`. Valor cerrado |
 | **unidad** | **meses enteros** (`DEC-SUB-010`). No existe la pausa intra-ciclo |
 | **cuándo empieza** | en el momento en que se pide, no al fin del ciclo |
-| **quién la termina** | **la reanuda nuestro reloj, y no hay segunda vía**: está medido que el proveedor **no tiene auto-reanudación** (`PS-4`). Por eso `S10` lleva **rama de fallo y detector** (§3.2, *«`S10` es la única salida de `PAUSED` que devuelve el servicio»*). **La persona sí tiene una segunda vía, y no reanuda: es irse** (`S22`) |
+| **quién la termina** | **la termina nuestro reloj, y del lado del proveedor no hay segunda vía**: está medido que **no tiene auto-reanudación** (`PS-4`). Por eso `S10` lleva **rama de fallo y detector** (§3.2, *«`S10` es la única salida de `PAUSED` que devuelve el servicio»*). **Que el reloj la termine no siempre es reanudarla**: si el plan al que la fila está anclada dejó de prestarse, el mismo evento lo ejecuta `S25` y la fila se cancela (`DEC-SUB-015`). **Y la persona tiene su propia vía, que tampoco reanuda: es irse** (`S22`) |
 | **qué pasa al volver** | se cobra normal en el ciclo siguiente; reanudar cambia **sólo el estado** y no dispara cobro de recuperación ni deja deuda (`PS-5`) |
 | **límites** | los del §26.3, reexpresados en meses: **4 pausas-mes** por pausa y **8** acumulados en 12 meses; máximo 3 pausas por ventana. Se cuentan por `user + vertical` y **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`) |
 

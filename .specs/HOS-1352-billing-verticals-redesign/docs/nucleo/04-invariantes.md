@@ -164,7 +164,8 @@ la única escritura de esa columna es `S18`. De las **seis** formas de terminar 
 enumera, `S18` corre en **cuatro** —la sucesora autoriza; la sucesión trabada que una persona
 resuelve por `S15`; la baja que **decide el proveedor** sobre la predecesora, que desde la
 FASE 9-bis-3 es la rama 5 y entra por el espejo de `B/03` §10.1; y la baja que **pide la propia
-predecesora estando suspendida**, que desde la FASE 9-bis-4 es la rama 6 y entra por `S23`—; en
+predecesora**, que desde la FASE 9-bis-4 es la rama 6 y entra por `S23` **o por `S24`**, según
+esté suspendida o en el grace (`DEC-SUB-014`)—; en
 las otras dos **no corre**:
 si la sucesora vence su ventana (`S3`) o si le cae un grant (`S13`), no queda sucesora viva a la
 que pasarle el origen y `sucedida_por` **no se escribe nunca**. Un invariante sobre-enunciado es
