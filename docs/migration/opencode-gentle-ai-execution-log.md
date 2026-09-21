@@ -3079,3 +3079,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `bun test test` terminó correctamente en `scripts/server-tools`.
 - Resultado: **334 tests, 0 fallos y 501 assertions** en 19 archivos.
 - La suite no ejecutó operaciones externas ni imprimió valores sensibles.
+
+## Gate 136 · Paridad de wrappers distribuibles
+
+- La inspección de `scripts/client-tools/package.json` encontró que había 29
+  archivos `hops-*` pero sólo 11 estaban declarados en `bin`.
+- Se agregaron las 18 entradas faltantes; ahora hay 29 wrappers declarados y
+  29 archivos físicos, además del binario base `hops`.
+- `test/bin.test.ts` pasó: **13 tests, 0 fallos y 147 assertions**.
