@@ -6,6 +6,13 @@
  * reconcile (`syncAccommodationIcalCalendar`) for each. The same primitive
  * backs the owner's on-demand "sync now" route.
  *
+ * ## Deleted accommodations are not iterated (HOS-663)
+ *
+ * Same as the Google sweep: "active" means active AND belonging to a live
+ * listing, enforced once inside `findAllActiveByProvider` rather than in each
+ * job. See `calendar-sync-google.job.ts` for why that read-side condition
+ * exists alongside the delete-time cascade.
+ *
  * ## Why no advisory lock
  *
  * Mirrors `calendar-sync-google.job.ts`: this job interleaves external HTTP
