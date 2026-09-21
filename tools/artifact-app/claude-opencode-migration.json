@@ -193,7 +193,7 @@
                             "title": "Revisar memoria una por una",
                             "category": "Engram + CLAUDE.md",
                             "description": "Clasificar vigente, histórica, duplicada, contradictoria, ruidosa o secreta antes de usarla.",
-                            "notes": "Gate112: checkpoint read-only del 2026-09-19: DB íntegra/WAL, 9.786 observaciones, 11.823 sesiones, 56 proyectos en observaciones, 1.103 sin proyecto y 97 referencias foráneas huérfanas conocidas. Persisten capturas automáticas y mezcla de proyectos; no se leyó contenido ni se mutó la DB. Detalle actualizado en engram-post-cleanup-audit.md. Revisión humana por lote sigue pendiente. Gate113: `hops engram` exige `--confirm` para export y subcomandos anidados de consolidación/replay/apply; suite 298/298.",
+                            "notes": "Gate112: checkpoint read-only del 2026-09-19: DB íntegra/WAL, 9.786 observaciones, 11.823 sesiones, 56 proyectos en observaciones, 1.103 sin proyecto y 97 referencias foráneas huérfanas conocidas. Persisten capturas automáticas y mezcla de proyectos; no se leyó contenido ni se mutó la DB. Detalle actualizado en engram-post-cleanup-audit.md. Revisión humana por lote sigue pendiente. Gate113: `hops engram` exige `--confirm` para export y subcomandos anidados de consolidación/replay/apply; el conteo 298/298 era histórico. La suite actual de client-tools es 299/299, 737 assertions.",
                             "done": false
                         },
                         {
@@ -330,7 +330,7 @@
                             "title": "Validar hops ci",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Cubrir verde, rojo, pending, conflicto, sin checks, sin PR y errores.",
-                            "notes": "Gate85: `ci --json` y `merge --json` consultaron GitHub en el branch de migración y devolvieron `pullRequest:null`, `verdict:no-pr`, `readOnly:true`, sin mutaciones. Suite completa actual: 294 tests, 0 fallos y 724 assertions.",
+                            "notes": "Gate85: `ci --json` y `merge --json` consultaron GitHub en el branch de migración y devolvieron `pullRequest:null`, `verdict:no-pr`, `readOnly:true`, sin mutaciones. La suite actual de client-tools es 299 tests, 0 fallos y 737 assertions.",
                             "done": true
                         },
                         {
