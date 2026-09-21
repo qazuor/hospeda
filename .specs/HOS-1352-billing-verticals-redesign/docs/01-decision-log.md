@@ -2684,12 +2684,62 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-009 — Un arreglo no está aplicado hasta que se buscó el término que redefine en los capítulos que el commit NO toca
+
+- **Fecha**: 2026-09-20 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende `DEC-METH-008`**: le agrega una **tercera obligación**. No la reemplaza ni la corrige
+  —la obligación 1 funcionó—, y no toca la condición de corte.
+- **Problema, y está medido**: la segunda vuelta del ciclo —la FASE 8-bis-2— dio **120 hallazgos**
+  y **17 defectos críticos distintos**, y **17 de 17** los atribuyen sus informes a un arreglo de
+  la 9-bis. La proporción **no bajó** respecto de la primera vuelta (25 de 25). Lo que sí cambió es
+  el **modo**, y `18-fase-8-bis-2/C1-la-costura.md` §2.3 lo cuenta:
+
+  | generador | críticos |
+  |---|---|
+  | el arreglo se escribió **en un solo lado de una frontera de dos** | 6 |
+  | el arreglo **volvió falsa la premisa de otro arreglo** | 6 |
+  | el arreglo **declaró su dominio recorrido y lo recorrió a medias** | 3 |
+  | el arreglo **abrió una pregunta y contestó una mitad** | 2 |
+  | el arreglo **se apoyó en una medición que caduca sola** | 1 |
+
+- **La causa, precisa**: la obligación 1 de `DEC-METH-008` —recorrer el dominio que el arreglo
+  crea— **se ejecutó**, y los tres arreglos que traen su dominio escrito (la tabla de 6 × 4, los
+  nueve estados, los dos valores de `sucede_a`) dejaron su propio dominio en orden. La obligación 2
+  —*«¿qué premisa de OTRO arreglo estoy volviendo falsa?»*— **no se ejecutó en ninguno**. Pero el
+  generador más grande, los 6 de la primera fila, **no lo detecta ninguna de las dos**: no es un
+  dominio mal recorrido ni una premisa ajena rota, es **un arreglo escrito en un lugar y no en el
+  otro lugar donde la misma regla se ejecuta**. Caso testigo: el gate que descarta las fuentes
+  `COMPLEMENTO` se escribió en `12-contrato-de-cobertura.md` §2.4 y `V/15` siguió diciendo *«suma
+  todas las fuentes vivas»* (`F-8cA1-007` y `F-8cA3-004` son el mismo defecto visto por dos agentes
+  ciegos).
+- **Decisión**: un arreglo **no se declara aplicado** hasta que se cumple este paso, que es
+  mecánico y no depende de que el que arregla se acuerde de hacerse una pregunta:
+  1. **Nombrar el término que el arreglo redefine** — el campo, el estado, la clase, la regla o la
+     frase cuyo significado cambia. Se escribe, no se piensa.
+  2. **Buscarlo con `rg` sobre los capítulos que el commit NO toca**, las dos épicas y el núcleo.
+  3. **Cada aparición se resuelve**: o se corrige, o se declara por escrito por qué esa aparición
+     sigue siendo correcta con el significado nuevo.
+- **Por qué esta y no más recorrido interno**: está contado. *«Ninguno de los 17 se habría evitado
+  con más recorrido interno; **doce de los 17** se detectan con una búsqueda de texto por el término
+  que el arreglo redefine, sobre los capítulos que el commit no toca»* —
+  `18-fase-8-bis-2/C1-la-costura.md` §2.3, con los términos enumerados: `sucede_a`, «sucesora»,
+  «viva», «barrido», «cubierto», `plan_id`, `version_id`, «pago tardío» y «los tres».
+- **Lo que NO cubre**, y se declara para que no se lea como que sí: el quinto modo —**un arreglo
+  apoyado en una premisa propia y verdadera que envejece sola** (`F-8cC2-002`)—. Ninguna búsqueda
+  de texto lo encuentra, porque el texto es correcto el día que se escribe. La regla que lo cubre
+  **ya existe** y es `S-METH-01`; lo que falta es instrumentarla en los checklists irreversibles.
+  Queda abierto.
+- **Origen**: la FASE 8-bis-2, `18-fase-8-bis-2/C1-la-costura.md` §2.3, la mecánica que `B1`
+  propone al cerrar su informe, y la conversación con el owner del 2026-09-20.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **62** |
-| De metodología | 8 |
+| Decisiones tomadas | **63** |
+| De metodología | 9 |
 | Funcionales | 54 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
