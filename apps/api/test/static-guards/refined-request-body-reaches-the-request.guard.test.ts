@@ -32,6 +32,13 @@
  * schema that lands on a branch which still drops them (the introspection
  * fallback, for one).
  *
+ * **Route-local bodies count too.** Half two sweeps `@repo/schemas`, and two of
+ * the sixteen refined request bodies in this app are declared inside their own
+ * route file — which is exactly how the first inventory of this issue counted
+ * ten instead of sixteen. Half three closes that: it reads the route tree, finds
+ * every `requestBody:` whose schema is declared locally AND refined, and fails
+ * unless that schema is exported, so half two can reach it.
+ *
  * **Many declaration forms, not one.** A guard anchored on a single way of
  * spelling the schema lets the other five through, so the table below covers
  * `.refine`, `.superRefine`, `.check`, two stacked refinements, `.strict()` on
@@ -42,6 +49,8 @@
  * @module test/static-guards/refined-request-body-reaches-the-request
  */
 
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import * as schemas from '@repo/schemas';
 import { Hono } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
@@ -272,6 +281,131 @@ function checkCount(schema: unknown): number {
 const REFINED_EXPORTS = Object.entries(schemas)
     .filter(([, value]) => value instanceof z.ZodObject && checkCount(value) > 0)
     .map(([name, value]) => ({ name, schema: value as z.ZodTypeAny }));
+
+/** A request body schema declared in the route file that uses it. */
+interface RouteLocalBody {
+    readonly name: string;
+    readonly decl: { readonly exported: boolean; readonly body: string };
+    readonly file: string;
+}
+
+/**
+ * True when a declaration applies `.refine` / `.superRefine` / `.check` at
+ * CHAIN level — to the object itself, not to one of its fields.
+ *
+ * Only object-level rules are at risk: a `.refine()` on a field
+ * (`z.string().refine(...)`) survives the rebuild untouched, because field
+ * instances are copied across as-is.
+ *
+ * Decided by PAREN DEPTH, not by matching a shape like `}).superRefine(`. A
+ * guard anchored on one spelling misses the others — the first attempt at this
+ * check did exactly that, skipping the schema that writes `.strict()` between
+ * the object and its rule. Depth is indifferent to formatting, to how many
+ * chain calls sit in between, and to their order.
+ */
+function hasChainLevelRefinement(source: string): boolean {
+    const CHAIN_CALL = /^\.(superRefine|refine|check)\s*\(/;
+    let depth = 0;
+    let quote: string | null = null;
+
+    for (let i = 0; i < source.length; i++) {
+        const ch = source[i] as string;
+
+        if (quote !== null) {
+            if (ch === '\\') {
+                i++;
+            } else if (ch === quote) {
+                quote = null;
+            }
+            continue;
+        }
+
+        if (ch === "'" || ch === '"' || ch === '`') {
+            quote = ch;
+            continue;
+        }
+
+        if (ch === '(' || ch === '{' || ch === '[') {
+            depth++;
+        } else if (ch === ')' || ch === '}' || ch === ']') {
+            depth--;
+        } else if (ch === '.' && depth === 0 && CHAIN_CALL.test(source.slice(i))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** Every `.ts` file under the routes tree, excluding tests. */
+function routeFiles(dir: string, acc: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+            routeFiles(full, acc);
+        } else if (entry.endsWith('.ts') && !entry.endsWith('.test.ts')) {
+            acc.push(full);
+        }
+    }
+    return acc;
+}
+
+const ROUTES_DIR = join(import.meta.dirname, '..', '..', 'src', 'routes');
+
+/**
+ * Request bodies declared inside a route file rather than imported.
+ *
+ * Found by source text, because that is the only way to see a schema the module
+ * does not export — the very thing being guarded against. Comments are stripped
+ * first so a commented-out example cannot register as a declaration.
+ */
+const ROUTE_LOCAL_BODIES = routeFiles(ROUTES_DIR).flatMap((file) => {
+    const source = readFileSync(file, 'utf-8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
+
+    const declared = new Map<string, { exported: boolean; body: string }>();
+    for (const match of source.matchAll(
+        /^(export\s+)?const\s+([A-Za-z_$][\w$]*)\s*=([\s\S]*?);\s*$/gm
+    )) {
+        declared.set(match[2] as string, {
+            exported: Boolean(match[1]),
+            body: match[3] as string
+        });
+    }
+
+    const used = new Set(
+        [...source.matchAll(/requestBody:\s*([A-Za-z_$][\w$]*)/g)].map((m) => m[1] as string)
+    );
+
+    return [...used]
+        .map((name) => ({ name, decl: declared.get(name), file }))
+        .filter(
+            (row): row is RouteLocalBody =>
+                row.decl !== undefined && hasChainLevelRefinement(row.decl.body)
+        );
+});
+
+describe('GUARD: a refined request body declared inside a route file is reachable (HOS-425)', () => {
+    it('finds the route-local refined bodies at all', () => {
+        // If this drops to zero the two assertions below stop asserting, and
+        // the blind spot that caused the original miscount is back.
+        expect(ROUTE_LOCAL_BODIES.length).toBeGreaterThanOrEqual(2);
+    });
+
+    for (const { name, file } of ROUTE_LOCAL_BODIES) {
+        it(`${name} is exported, so the inventory sweep can see it`, () => {
+            const row = ROUTE_LOCAL_BODIES.find((candidate) => candidate.name === name);
+
+            expect(
+                row?.decl.exported,
+                `${name} (${file}) declares a cross-field rule but is not exported, so no sweep ` +
+                    'over the schema packages can check that the factory still enforces it. ' +
+                    'Export it.'
+            ).toBe(true);
+        });
+    }
+});
 
 describe('GUARD: no refined schema loses its rule in the OpenAPI conversion (HOS-425)', () => {
     it('finds a meaningful number of refined schemas to check', () => {

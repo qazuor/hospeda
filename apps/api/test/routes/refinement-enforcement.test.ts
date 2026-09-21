@@ -1,6 +1,15 @@
 /**
- * Per-route verification for HOS-425: the ten `requestBody` schemas whose
+ * Per-route verification for HOS-425: the SIXTEEN `requestBody` schemas whose
  * cross-field refinement the route factory used to discard.
+ *
+ * Sixteen, not the ten the issue listed. The issue cross-referenced the schemas
+ * package against `requestBody:` usages; a full sweep of all 261 `requestBody:`
+ * identifiers under `src/routes` finds fourteen imported from `@repo/schemas`
+ * and TWO declared inside their own route file — invisible to any sweep that
+ * starts from the package. Those two are imported here by path, and
+ * `refined-request-body-reaches-the-request.guard.test.ts` now fails on a
+ * route-local refined body that is not exported, so the same blind spot cannot
+ * reopen.
  *
  * ## Why this file exists, and why it is not ten HTTP tests
  *
@@ -34,17 +43,27 @@ import {
     CreateBillingPlanSchema,
     CreateSocialDraftSchema,
     EventAdminCreateBodySchema,
+    EventPatchInputSchema,
     EventUpdateInputSchema,
+    ExperienceAdminCreateInputCheckedSchema,
+    ExperienceOwnerCreateInputCheckedSchema,
     HostTradeBenefitUsageProviderCreateBodySchema,
     HostTradeOwnerUpdateSchema,
     ScheduleSocialPostSchema,
     UpdateNewsletterPreferencesInputSchema,
-    updateContentModerationThresholdSchema
+    updateContentModerationThresholdSchema,
+    updatePartnerMentionSchema
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { DeclarationSuspensionBodySchema } from '../../src/routes/host-trade/admin/usages';
+import { AdminSetPointOfInterestCategoriesBodySchema } from '../../src/routes/point-of-interest/admin/categories';
 import { createOpenAPISchema, hasObjectLevelRefinement } from '../../src/utils/openapi-schema';
 import { hasHttpCoercionFields } from '../../src/utils/route-factory';
 import type { z } from '../../src/utils/zod';
+
+/** Two POI category ids, for the primary-in-set rule. */
+const POI_CATEGORY_A = '88888888-8888-4888-8888-888888888881';
+const POI_CATEGORY_B = '88888888-8888-4888-8888-888888888882';
 
 /**
  * One row per route from the HOS-425 inventory.
@@ -166,6 +185,61 @@ const CASES: ReadonlyArray<{
         schema: updateContentModerationThresholdSchema,
         violating: { pending: 0.9, reject: 0.5 },
         accepted: { pending: 0.5, reject: 0.9 }
+    },
+    // ---- the six the issue's inventory missed -----------------------------
+    {
+        route: 'experience/admin/create.ts',
+        rule: 'priceUnit is required unless the price is on request',
+        schema: ExperienceAdminCreateInputCheckedSchema,
+        // The scenario in plain words: an admin fills in a price but leaves
+        // "a consultar" unticked and picks no unit.
+        violating: buildExperience({ isPriceOnRequest: false, priceUnit: undefined }),
+        accepted: buildExperience({ isPriceOnRequest: false, priceUnit: 'per_person' })
+    },
+    {
+        route: 'commerce/protected/create.ts',
+        rule: 'priceUnit is required unless the price is on request',
+        schema: ExperienceOwnerCreateInputCheckedSchema,
+        violating: buildOwnerExperience({ isPriceOnRequest: false, priceUnit: undefined }),
+        accepted: buildOwnerExperience({ isPriceOnRequest: false, priceUnit: 'per_person' })
+    },
+    {
+        route: 'event/admin/patch.ts',
+        rule: 'date.end must not precede date.start',
+        schema: EventPatchInputSchema,
+        violating: {
+            date: { start: '2030-02-01T23:00:00.000Z', end: '2030-02-01T18:00:00.000Z' }
+        },
+        accepted: {
+            date: { start: '2030-02-01T18:00:00.000Z', end: '2030-02-01T23:00:00.000Z' }
+        }
+    },
+    {
+        route: 'point-of-interest/admin/categories.ts',
+        rule: 'the primary category must be one of the assigned categories',
+        schema: AdminSetPointOfInterestCategoriesBodySchema,
+        violating: {
+            categoryIds: [POI_CATEGORY_A],
+            primaryCategoryId: POI_CATEGORY_B
+        },
+        accepted: {
+            categoryIds: [POI_CATEGORY_A, POI_CATEGORY_B],
+            primaryCategoryId: POI_CATEGORY_B
+        }
+    },
+    {
+        route: 'host-trade/admin/usages.ts',
+        rule: 'suspending requires a reason',
+        schema: DeclarationSuspensionBodySchema,
+        violating: { suspended: true },
+        accepted: { suspended: true, reason: 'Manufacturing usages.' }
+    },
+    {
+        route: 'partners/admin/mentions/update.ts',
+        rule: 'a channel that needs a URL must be patched with one',
+        schema: updatePartnerMentionSchema,
+        violating: { channel: 'INSTAGRAM' },
+        accepted: { channel: 'INSTAGRAM', url: 'https://instagram.com/p/abc123' }
     }
 ];
 
@@ -213,6 +287,29 @@ function buildSchedule() {
     };
 }
 
+/** An admin experience create body that satisfies every field-level rule. */
+function buildExperience(pricing: { isPriceOnRequest?: boolean; priceUnit?: string }) {
+    return {
+        name: 'Kayak al amanecer',
+        slug: 'kayak-al-amanecer',
+        summary: 'Una salida en kayak por el rio Uruguay con guia certificado.',
+        description:
+            'Una salida en kayak por el rio Uruguay con guia certificado, equipo incluido ' +
+            'y desayuno al regresar, apta para principiantes y de dos horas de duracion.',
+        type: 'KAYAK_RENTAL',
+        priceFrom: 5000,
+        destinationId: '99999999-9999-4999-8999-999999999991',
+        ownerId: '99999999-9999-4999-8999-999999999992',
+        ...pricing
+    };
+}
+
+/** The owner-tier variant of the same body. */
+function buildOwnerExperience(pricing: { isPriceOnRequest?: boolean; priceUnit?: string }) {
+    const { ownerId: _ownerId, ...rest } = buildExperience(pricing);
+    return rest;
+}
+
 /** An admin event create body that satisfies every field-level rule. */
 function buildEvent(date: { start: string; end: string }) {
     return {
@@ -249,7 +346,10 @@ describe('HOS-425 — which routes actually change behaviour', () => {
     // refinement was running all along. That is a fact about the schema, not a
     // judgement, and the PR's verdict table depends on it being true — so it is
     // measured here rather than asserted in prose.
-    const ALREADY_ENFORCED = new Set(['social/admin/posts/schedule.ts']);
+    const ALREADY_ENFORCED = new Set([
+        'social/admin/posts/schedule.ts',
+        'partners/admin/mentions/update.ts'
+    ]);
 
     for (const { route, schema } of CASES) {
         it(`${route} ${ALREADY_ENFORCED.has(route) ? 'already enforced its rule (coercion escape hatch)' : 'starts enforcing its rule with this change'}`, () => {
