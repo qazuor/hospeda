@@ -197,13 +197,35 @@ export function mayBeEdgeCacheable({ source }: { readonly source: string }): boo
 const DEGRADATION_MARKER = /\bmarkResponseDegraded\s*\(/;
 
 /**
- * Whether a source file itself calls the degradation marker.
+ * Where the marker is DECLARED rather than called.
+ *
+ * Removed before the call is looked for, and this is load-bearing rather than
+ * tidy. `markResponseDegraded` is defined in `lib/cache/response-cache.ts` —
+ * the same module that exports `applyCacheHeaders`, which every cacheable page
+ * imports. Without this, the traversal walks one hop into that module, finds
+ * the function SIGNATURE, and reports the marker "reached" for every page in
+ * the app. The rule then passes unconditionally and the guard watches nothing.
+ *
+ * That is not a hypothetical: this detector shipped with the bug and was caught
+ * by mutation — deleting the call from `ErrorBanner.astro` left the violation
+ * list empty. The `defining module does not count as calling` test below is the
+ * regression.
+ */
+const DEGRADATION_MARKER_DECLARATION =
+    /\b(?:export\s+)?(?:async\s+)?function\s+markResponseDegraded\s*\(|\b(?:export\s+)?const\s+markResponseDegraded\s*=/g;
+
+/**
+ * Whether a source file actually CALLS the degradation marker.
+ *
+ * Declaring it does not count, and neither does importing it: the import
+ * binding carries no parenthesis, so only an invocation matches.
  *
  * @param params.source - Raw file contents.
  * @returns `true` when the marker is called in this file.
  */
 export function marksDegradedResponse({ source }: { readonly source: string }): boolean {
-    return DEGRADATION_MARKER.test(stripComments({ source }));
+    const code = stripComments({ source }).replace(DEGRADATION_MARKER_DECLARATION, ' ');
+    return DEGRADATION_MARKER.test(code);
 }
 
 /** Import specifiers, in both the `import … from '…'` and `import '…'` shapes. */

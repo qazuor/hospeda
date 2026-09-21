@@ -345,6 +345,38 @@ describe('detector: reaching the marker', () => {
         ).toBe(false);
     });
 
+    it('THE OTHER TRAP: the module that DEFINES the marker does not count as calling it', () => {
+        // This detector shipped with exactly this fail-open and mutation caught
+        // it. `markResponseDegraded` lives in the same module as
+        // `applyCacheHeaders`, which every cacheable page imports — so a
+        // traversal that accepted the function SIGNATURE reported "reached" for
+        // every page in the app, and the guard's main rule passed on nothing.
+        expect(
+            marksDegradedResponse({
+                source: `export function markResponseDegraded({ locals }: { locals: App.Locals }): void {
+                    locals.responseDegraded = true;
+                }`
+            })
+        ).toBe(false);
+
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/nuevo.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/nuevo.astro`]: `import { applyCacheHeaders } from '@/lib/cache/response-cache';`,
+                    [`${SRC}/lib/cache/response-cache.ts`]: `export function markResponseDegraded({ locals }) { locals.responseDegraded = true; }`
+                })
+            })
+        ).toBe(false);
+    });
+
+    it('does not credit an import of the marker that is never called', () => {
+        expect(
+            marksDegradedResponse({ source: `import { markResponseDegraded } from '@/x';` })
+        ).toBe(false);
+    });
+
     it('does not credit a marker that is only mentioned in a comment', () => {
         expect(
             reachesDegradationMarker({
