@@ -3455,13 +3455,60 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-007 — La cortesía que el espejo se lleva puesta NO se re-apunta: se re-emite sobre la sucesora cuando autoriza
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** el defecto crítico que la FASE 8-bis-4 reportó por **tres** IDs desde tres vectores
+  distintos —`F-8eB2-001`, `F-8eB3-001` y `F-8eB1-003`—, verificados como un solo defecto en
+  `20-fase-8-bis-4/C1-la-costura.md` §2.
+- **El caso**: un cliente con una cortesía vigente —N días sin cobrar, firmados por `SUPER_ADMIN`—
+  está en medio de un cambio de plan. **El proveedor da de baja su preapproval por su cuenta**, el
+  espejo mata a la predecesora y `S18` cierra la sucesión **re-apuntando la cortesía a la
+  sucesora**, que está en `PENDING_AUTHORIZATION`. Ahí `S18` va *«al mismo estado»* y **el único
+  evento que lleva a `PAUSED · COURTESY` es `S9`**, que sale de `ACTIVE` y lo dispara
+  `SUPER_ADMIN`. Los dos desenlaces le cobran: o `S18` escribe una pausa que ninguna fila declara
+  —y la regla 1 la manda a la marca— o la sucesora autoriza, cobra y sigue cobrando con una
+  cortesía re-apuntada que es *«una fila de base que no hace nada»*.
+- **Decisión**: **la cortesía no se re-apunta en el cierre. `S18` guarda el SALDO DE DÍAS, y la
+  cortesía se re-emite sobre la sucesora cuando ésta autoriza** — o sea cuando llega a `ACTIVE`,
+  que es exactamente el `desde` que `S9` ya tiene. Lo único nuevo es **dónde vive el saldo** y que
+  **el disparador sea la autorización de la sucesora** en vez del acto de `SUPER_ADMIN`.
+- **Las dos alternativas, y por qué se descartan:**
+  - **Que la sucesora herede la pausa** con una fila nueva que la lleve a `PAUSED · COURTESY` al
+    cerrarse la sucesión. Es la más elegante y la más corta de escribir, y **se descarta por una
+    razón de método, no de diseño**: apoya el mecanismo en **una capacidad del proveedor que nadie
+    midió** —pausar un preapproval que todavía está `pending`—, y lo que sí está medido apunta en
+    contra: `EX-11` `VERIFIED` dice que **una pausada no acepta ninguna modificación** (`400`
+    explícito). Si no se puede, el diseño queda inejecutable y nos enteramos en FASE 10.
+  - **Que la cortesía se pierda y se declare**. Cuesta cero y **es el único que contradice el
+    criterio del owner**: la pérdida **no la causa un acto deliberado nuestro** —la causa el
+    proveedor dando de baja el preapproval— y la persona tiene días que `SUPER_ADMIN` le firmó.
+- **El motivo**: es la única de las tres que **no apoya el diseño en una medición que no existe**, y
+  su riesgo cae en un camino que el programa **ya tiene construido y decidido**. Reusa `S9` tal como
+  está, con su condición *«no hay pausa vigente»* intacta: una sucesora recién autorizada no tiene
+  pausa, así que la fila corre sin tocarse.
+- **El riesgo aceptado, dicho en voz alta**: entre que la sucesora autoriza y la cortesía se
+  re-emite, **el proveedor puede cobrar el primer pago**. Ese cobro **se devuelve por el camino que
+  ya existe** —`DEC-RF-002`, el reembolso que confirma una persona— y **no se inventa un mecanismo
+  nuevo** para evitarlo. Se prefiere un cobro que se devuelve por una vía escrita antes que una
+  pausa que quizá el proveedor no acepta.
+- **Lo que esto NO cambia**: `DEC-GRANT-003` sigue entera —la cortesía se implementa **pausando**,
+  porque el piso son ARS 15 (`PC-2`) y ni `free_trial` ni correr la fecha de cobro se pueden
+  aplicar a una suscripción viva (`EX-35`, `EX-34`)—. Lo que cambia es **cuándo** se pausa: no en
+  el cierre de la sucesión, sino cuando hay una fila `ACTIVE` que se pueda pausar.
+- **Origen**: la FASE 8-bis-4, hallazgos `F-8eB2-001` / `F-8eB3-001` / `F-8eB1-003`, y la elección
+  del owner del 2026-09-21 entre las tres opciones que se le presentaron — eligió la 2, que era la
+  recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **78** |
+| Decisiones tomadas | **79** |
 | De metodología | 11 |
-| Funcionales | 67 |
+| Funcionales | 68 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
