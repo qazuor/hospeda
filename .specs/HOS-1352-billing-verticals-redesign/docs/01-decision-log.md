@@ -3317,18 +3317,32 @@ Cada entrada lleva, según §3.4:
   máquina **sigue teniendo tres estados**, porque *(sin fila)* vive afuera de la columna, igual que
   en la de suscripción.
 - **Corre SÓLO sobre `ACTIVE`**, y los otros cinco vivos tienen su razón escrita:
-  `PENDING_AUTHORIZATION` porque el período lo arranca `S2`; `GRACE_PERIOD` porque el período no
-  avanza hasta que entra el pago y **la cuota ya existe**; `CANCEL_SCHEDULED` porque ningún período
+  `PENDING_AUTHORIZATION` porque el período lo arranca `S2`; `GRACE_PERIOD` ~~porque el período no
+  avanza hasta que entra el pago y~~ porque **la cuota ya existe**; `CANCEL_SCHEDULED` porque ningún período
   nuevo empieza antes de `S12`; `SUSPENDED` por la decisión; y `PAUSED` por el punto siguiente.
+  - ***Enmendado el 2026-09-21 por la FASE 9-bis-4 (crítico `F-8eB1-002`).*** La mitad tachada era
+    falsa: **el período sí avanza**, y lo avanzan `MP1` y `MP4` al quedar registrada la cuota. La
+    conclusión —que `MP5` no corra sobre `GRACE_PERIOD`— **no cambia**, y se sostiene entera con la
+    mitad que quedó: ahí la cuota ya existe, y `MP5` es idempotente por esa misma condición.
 - **La pausa no contradice a `B/06` §7** (*«un pago manual mensual no tiene nada que pausar»*), y
   por dos razones distintas: `CUSTOMER_REQUEST` tiene **población vacía** —`S8` exige
   `puedePausar()`, que da `false`—, y `COURTESY` sí existe, y ahí **no abrir cuota es lo que la
   cortesía significa**: sobre un pagador manual la mitad *«pausar en el proveedor»* de
   `DEC-GRANT-003` no tiene sujeto, así que lo único que queda es no pedirle la plata.
-- **Al reabrir por `MP4`, el período se RE-ANCLA al instante de la reactivación.** No es una
+- **Al reabrir por `MP4`, el período se RE-ANCLA al instante de la reactivación.** ~~No es una
   elección: con el ancla vieja el reloj crearía de golpe todo el atraso que la mitad (2) mandó no
-  crear. Es específico de esa puerta y **no se escribe en `S7`**, porque el pagador con tarjeta no
+  crear.~~ Es específico de esa puerta y **no se escribe en `S7`**, porque el pagador con tarjeta no
   re-ancla (`EX-39`).
+  - ***Enmendado el 2026-09-21 por la FASE 9-bis-4 (crítico `F-8eB1-001`), y las dos mitades
+    tachadas eran falsas por separado.*** **Sí era una elección**: hoy es un **tope**, no un
+    re-anclaje —la fecha salta al instante de la reactivación **sólo si cayó en el pasado**—,
+    porque el re-anclaje incondicional le cobraba **dos veces** los días que le quedaban al que
+    transfiere dentro del período que estaba pagando. Y el *«de golpe»* **es falso en el
+    mecanismo**: `MP5` nombra **un** período por corrida, así que nunca crea todas las cuotas
+    juntas; es verdadero sólo en el desenlace acumulado. Esa mitad falsa era la que le agrandaba el
+    alcance al remedio hasta una población en la que su propio motivo no existe. **La mitad (2) de
+    la decisión no cambia**: el que vuelve sigue pagando el período que arranca y no los que pasó
+    suspendido.
 - **Sin aviso nuevo**: el catálogo de `NUCLEO/07` §6 no gana fila. El aviso del §30 al admin no
   cambia de momento — lo que `MP5` le aporta es **el sujeto que no tenía**.
 - **Y de paso cierra la otra mitad de `F-8B2-018`**: cómo entra el grace de un pagador manual. No
@@ -3442,7 +3456,9 @@ Cada entrada lleva, según §3.4:
 - **El riesgo aceptado**: se republica sola una ficha que el dueño **quizá ya no quiere pública**.
   Se acepta porque el estado del que viene no es *«la despubliqué yo»* sino
   `UNPUBLISHED_BY_BILLING` —la bajamos nosotros—, y devolverla al estado anterior a nuestro acto es
-  lo que repara nuestro acto. El dueño que no la quiera pública tiene `PB1` y la despublica.
+  lo que repara nuestro acto. El dueño que no la quiera pública tiene ~~`PB1`~~ **`PB6`** y la
+  despublica. *(Corregido el 2026-09-21 por la FASE 9-bis-4: `PB1` sale sólo de `DRAFT`, así que la
+  transición que despublica a mano es `PB6`. La decisión no cambia; la sigla estaba mal.)*
 - **Los otros cuatro críticos que `DEC-DATA-002` produjo NO llevan decisión y se arreglan**, y va
   escrito acá para no volver sobre el tema: `F-8eA3-002` (el reloj sin columna), `F-8eA3-001` (la
   clave del outbox que manda los dos avisos una sola vez en la vida de la ficha), `F-8eA2-002`
