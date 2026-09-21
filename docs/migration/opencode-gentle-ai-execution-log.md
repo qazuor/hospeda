@@ -3186,3 +3186,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - En la prueba, staging reportó `staging@60a39dae2` y estado limpio; el
   worktree de migración reportó su branch actual y estado dirty por cambios aún
   no confirmados al momento del check.
+
+## Gate 150 · Paridad posterior al commit del manifest
+
+- `test/bin.test.ts` volvió a pasar después de versionar el `package.json`:
+  **14 tests, 0 fallos y 148 assertions**.
+- El conjunto versionado de manifest, registry y wrappers sigue alineado.
