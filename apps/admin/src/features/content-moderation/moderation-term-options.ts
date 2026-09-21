@@ -37,6 +37,15 @@ export type ModerationTermSelectOption = {
 };
 
 /**
+ * A value/key pair for the entity-list filter bar, which resolves its own copy
+ * instead of receiving translated text.
+ */
+export type ModerationTermFilterOption = {
+    readonly value: string;
+    readonly labelKey: TranslationKey;
+};
+
+/**
  * Label key per term kind. Total by type — a third kind in the schema fails
  * typecheck here rather than rendering an unlabelled option.
  */
@@ -51,10 +60,15 @@ export const MODERATION_TERM_KIND_LABEL_KEYS: Record<ModerationTermKind, Transla
  *
  * Note there is no `self_harm` entry: the enum has no such member. A
  * `content-moderation.categories.self_harm` string does still exist in all
- * three locales and is read by other moderation screens, which is a separate
- * question for the owner — either the enum is missing `SELF_HARM` or those
- * screens are offering a value nothing accepts. This form takes no position:
- * it offers what the schema accepts and nothing else.
+ * three locales, and `moderation-terms.columns.tsx` still maps it to a badge
+ * colour — dead code that renders for no row, since no row can hold the value.
+ *
+ * Whether the enum should GAIN `SELF_HARM` is an owner decision. What is not a
+ * decision, and is not contained by one: while the enum is as it is today,
+ * every surface offering that value is broken, so the create form, the edit
+ * form and the listing filter all derive from here instead. If the owner adds
+ * the member, all three gain the option with no further edit; if they do not,
+ * none of them can offer it.
  */
 export const MODERATION_CATEGORY_LABEL_KEYS: Record<ModerationCategoryEnum, TranslationKey> = {
     [ModerationCategoryEnum.SPAM]: 'content-moderation.categories.spam',
@@ -100,5 +114,39 @@ export const buildModerationCategoryOptions = ({
     options: createContentModerationTermSchema.shape.category.options.map((value) => ({
         value,
         label: t(MODERATION_CATEGORY_LABEL_KEYS[value])
+    }))
+});
+
+/**
+ * Builds the listing filter's category options from the same schema.
+ *
+ * The filter bar resolves its own copy, so these carry the key rather than the
+ * text. Derived for the same reason as the form's: a filter value no row can
+ * ever hold returns an empty list that reads as "no results" instead of "not a
+ * thing" — and `self_harm`, which the badge still renders, is exactly the one
+ * an operator would reach for.
+ *
+ * @returns `{ options }` in the enum's declaration order.
+ */
+export const buildModerationCategoryFilterOptions = (): {
+    options: ModerationTermFilterOption[];
+} => ({
+    options: createContentModerationTermSchema.shape.category.options.map((value) => ({
+        value,
+        labelKey: MODERATION_CATEGORY_LABEL_KEYS[value]
+    }))
+});
+
+/**
+ * Builds the listing filter's term-kind options from the same schema.
+ *
+ * @returns `{ options }` in the schema's declaration order.
+ */
+export const buildModerationTermKindFilterOptions = (): {
+    options: ModerationTermFilterOption[];
+} => ({
+    options: createContentModerationTermSchema.shape.kind.options.map((value) => ({
+        value,
+        labelKey: MODERATION_TERM_KIND_LABEL_KEYS[value]
     }))
 });
