@@ -74,6 +74,19 @@ export class SocialPlatformFormatService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Formats are searched by `makeChannelKey` and `notes`.
+     *
+     * The table has no `name` column — a format is identified by its channel
+     * key — so the inherited `['name']` default matched nothing and admin
+     * search returned every format (HOS-1117). `recommendedRatio` and
+     * `recommendedSize` are dimension strings, not identifiers, and are left
+     * out on purpose.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['makeChannelKey', 'notes'];
+    }
+
     constructor(
         ctx: ServiceConfig,
         model?: SocialPlatformFormatModel,

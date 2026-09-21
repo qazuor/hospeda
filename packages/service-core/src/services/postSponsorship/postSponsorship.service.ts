@@ -46,6 +46,18 @@ export class PostSponsorshipService extends BaseCrudService<
         return { post: true, sponsor: true };
     }
 
+    /**
+     * Sponsorships are searched by their `message` and `description`, the two
+     * free-text columns a sponsorship carries.
+     *
+     * The table has no `name` column (the sponsor's name lives on
+     * `post_sponsors`), so the inherited `['name']` default matched nothing
+     * and `?search=` listed every sponsorship (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['message', 'description'];
+    }
+
     public readonly normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput

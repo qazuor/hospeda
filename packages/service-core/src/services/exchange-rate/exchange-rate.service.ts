@@ -69,6 +69,19 @@ export class ExchangeRateService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * No free-text search surface: `exchange_rates` has no text column at
+     * all — a row is a currency pair, a rate and a timestamp.
+     *
+     * Declared here rather than inherited (HOS-1117), for the same reason as
+     * `AlertSubscriptionService`: the inherited `['name']` default names a
+     * column this table lacks, and an unmatched column list makes `adminList`
+     * attach no filter at all rather than an empty result.
+     */
+    protected override getSearchableColumns(): string[] {
+        return [];
+    }
+
     protected normalizers: CrudNormalizersFromSchemas<
         typeof ExchangeRateCreateInputSchema,
         typeof ExchangeRateUpdateInputSchema,

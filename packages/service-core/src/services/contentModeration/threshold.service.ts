@@ -47,6 +47,17 @@ export class ContentModerationThresholdService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Thresholds are searched by `context`, the only text column the table
+     * has — the rest are numeric scores and flags.
+     *
+     * The inherited `['name']` default named a column that does not exist
+     * here, which made `?search=` return every threshold (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['context'];
+    }
+
     protected _canCreate(): void {
         throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Threshold creation is disabled');
     }
