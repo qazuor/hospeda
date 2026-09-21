@@ -3192,3 +3192,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `test/bin.test.ts` volvió a pasar después de versionar el `package.json`:
   **14 tests, 0 fallos y 148 assertions**.
 - El conjunto versionado de manifest, registry y wrappers sigue alineado.
+
+## Gate 151 · Suite completa de client-tools actualizada
+
+- La suite completa de `scripts/client-tools` pasó: **300 tests, 0 fallos y
+  738 assertions**.
+- El aumento respecto del conteo anterior corresponde al test de regresión que
+  comprueba que el `bin` publicado, el registry y los wrappers físicos estén
+  alineados.
