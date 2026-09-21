@@ -218,7 +218,8 @@ fila viva PRINCIPAL»*).
 
 #### Por qué `S18` también sale de `PENDING_AUTHORIZATION`: el candado `A` no se puede quedar vacío
 
-**Cuando la predecesora se muere sola —por `S12`, por `S16` o por el espejo del §10.1—, el candado
+**Cuando la predecesora se muere sola —por `S12`, por `S16`, por el espejo del §10.1, o porque ella
+misma pidió la baja estando pausada (`S22`) o suspendida (`S23`)—, el candado
 `A` queda VACÍO y la sucesora no lo ocupa.** Es aritmética de los índices parciales de `B/02` §2.2: `A` es
 `UNIQUE (user_id, vertical) WHERE clase = principal AND sucede_a IS NULL AND estado ∈ {vivos}`, la
 predecesora ya no está entre los vivos, y la sucesora tiene `sucede_a` **no nulo**, así que cae en
@@ -230,7 +231,7 @@ tiene que limpiar `sucede_a`, y esa escritura **la rechaza la base** porque la s
 competir por `A` con el alta nueva. La sucesión no se cerraría nunca.
 
 **Por eso el cierre no espera a la autorización cuando no hay nada que esperar.** Muerta la
-predecesora por `S12`, por `S16` o por el espejo, la sucesora **ya es el único compromiso** de ese
+predecesora por cualquiera de esos **cinco** caminos, la sucesora **ya es el único compromiso** de ese
 `user + vertical`: el cierre la vuelve origen en el acto, ocupa `A` con ella —`PENDING_AUTHORIZATION`
 está entre los vivos— y el segundo `INSERT` lo rechaza la base, que es la premisa que el §3.4
 punto 4 necesita para ser verdadera. Lo que el cliente ve entonces **no es *«empezar de nuevo»***:
@@ -299,7 +300,8 @@ las dos mitades es real, no retórica:
 
 - **`S17` sin `S18` es siempre un defecto**: deja el candado `A` **vacío** y un alta nueva entra
   sin que nada la rechace. Lo vigila `G-R1-C` (`B/20` §2).
-- **`S18` sin `S17` es lo CORRECTO en `S12`, en `S16` y en el espejo del §10.1**, y en ninguno de
+- **`S18` sin `S17` es lo CORRECTO en los CINCO caminos por los que la predecesora se muere sola
+  —`S12`, `S16`, el espejo del §10.1, `S22` y `S23`—**, y en ninguno de
   los tres deja viva una autorización: en `S12` el preapproval de la predecesora lo canceló `S11`
   *«de inmediato»* (`DEC-SUB-009`), en `S16` **lo canceló el proveedor en el mismo milisegundo del
   rechazo** (`B/12` §4.4, medido el 2026-09-17) y en el espejo **lo canceló el proveedor por su
