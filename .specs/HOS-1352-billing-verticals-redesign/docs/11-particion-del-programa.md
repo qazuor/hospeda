@@ -95,17 +95,19 @@ reduce a **un solo hecho**, que aparece en cuatro lugares distintos y es siempre
 | cap. 15 §6 | *«su plan comercial está `SUSPENDED`»* |
 | cap. 02 §3.2 · cap. 15 §4.2 | el disparador del recálculo del conjunto efectivo |
 
-**El hecho, enunciado una vez:**
+**El hecho, enunciado una vez** — y **enunciado en un solo lugar, que no es éste**: una consulta de
+cobertura por `user + vertical`, cuya firma exacta vive en el §2 de
+[`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md). Su contracara, lo único que billing
+le empuja a verticales, es el evento *«la cobertura de (user, vertical) cambió»*, y es el §3 del
+mismo documento.
 
-```text
-cobertura(user, vertical) → { tiene_título_vivo, fuente, hasta_cuándo }
-```
-
-Y su contracara, que es lo único que billing le empuja a verticales:
-
-```text
-evento: la cobertura de (user, vertical) cambió
-```
+> **Este capítulo llevaba una transcripción de la firma y es la que hay que no volver a escribir.**
+> Decía `{ tiene_título_vivo, fuente, hasta_cuándo }` — tres campos, con `fuente` en singular, que
+> es exactamente lo que el contrato §2.2 descarta por su nombre (*«quitar una fuente no quita la
+> cobertura si queda otra»*), y con tres nombres que no existen en ningún otro documento del
+> programa. Era `F-8C1-009`, y es el mismo generador que `F-8dC2-001` encontró en los dos
+> `spec.md`: **una copia no necesita que nadie la mute para divergir, alcanza con que el contrato
+> avance**. Se retira en vez de actualizarse, porque actualizarla deja el generador en pie.
 
 **Nada más cruza la frontera.** No cruzan montos, ni estados de pago, ni ids del proveedor, ni
 fechas de cobro. Si mañana aparece un quinto lugar que necesita algo de billing y no es este
@@ -116,8 +118,9 @@ lugar.
 
 **El trial ya es un título vivo, y el trial no es billing.** Esa es toda la respuesta.
 
-Mientras la épica de billing no exista, `cobertura()` se resuelve con una sola fuente —el trial—
-y las otras tres (suscripción, cortesía, grant) responden que no. Con eso:
+Mientras la épica de billing no exista, `cobertura()` se resuelve con las **dos** fuentes que ya
+viven del lado de verticales —el trial y el título `BASE` del contrato §2.5— y las **cuatro** de
+billing (suscripción, cortesía, grant y addon) responden que no (contrato §5.1). Con eso:
 
 - la resolución de autorización recorre sus **nueve pasos completos** (cap. 17 §1.2);
 - la máquina de publicación tiene su disparador de PB2 vivo, alimentado por `T3`;

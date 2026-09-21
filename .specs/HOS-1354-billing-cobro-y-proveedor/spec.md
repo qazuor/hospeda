@@ -138,17 +138,23 @@ con el proveedor real.
 
 ## 4. El contrato con la épica de verticales
 
-Esta épica **entrega** un hecho y un aviso, y nada más
-([`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)):
+Esta épica **entrega** un hecho y un aviso, y nada más: una consulta de cobertura por
+`user + vertical`, y el evento que avisa que esa cobertura cambió. Los dos están definidos —y
+**sólo** definidos— en
+[`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md):
+**la firma exacta, con todos sus campos y su tabla de qué es cada uno, es su §2**; el aviso es su
+§3; qué emite cada uno de los nueve estados de la suscripción, su §2.6.
 
-```text
-cobertura(user, vertical) → { cubierto, fuentes: [ { tipo, versiónDePlan, hasta } ] }
+> **Acá no va una copia de la firma, y la ausencia es el arreglo.** `DEC-ARCH-006` protege al
+> contrato de que una épica lo mute sola, pero **una copia no necesita que nadie la mute para
+> divergir: alcanza con que el contrato avance**. Ésta existió y divergió — publicaba **tres campos
+> de cinco**, sin `alcance` y sin `objetivo`, que son justamente los dos que esta épica tiene que
+> llenar para que un addon comprado para una ficha no habilite su capacidad en toda la cartera
+> (`F-8dC2-001`). El campo que haga falta acá se lee allá.
 
-evento: la cobertura de (user, vertical) cambió
-```
-
-**Lo que esta épica implementa son tres de las cuatro fuentes** —suscripción, cortesía y grant—;
-la cuarta, el trial, es de la otra y ya existe. Se enchufa: **no modifica nada de lo construido**.
+**Lo que esta épica implementa son cuatro de las seis fuentes** —suscripción, cortesía, grant y
+addon—; las otras dos, el trial y el título `BASE`, son de la otra épica y ya existen (contrato
+§5.1 y §5.2). Se enchufa: **no modifica nada de lo construido**.
 
 **Y devuelve un puntero, nunca los valores.** Quién sabe *qué otorga* un plan es verticales;
 quién sabe *cuál plan* tiene esta persona es esta épica. Devolver los entitlements resueltos

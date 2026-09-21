@@ -13,6 +13,17 @@ status: CURRENT
 > **ninguna de las dos lo puede mutar sola** (`DEC-ARCH-006`). Una copia que una de las dos pueda
 > tocar sin que la otra se entere es `F-1B-132` otra vez: seis repartos sobre las mismas tablas y
 > ninguno coincide.
+>
+> **Y la copia no hace falta que nadie la mute, y por eso la regla es más dura que «no la mutes».**
+> Cuatro documentos transcribieron esta firma —los dos `spec.md`, la partición §3 y el handoff— y
+> **las cuatro divergieron sin que nadie las tocara**: alcanzó con que el contrato avanzara de tres
+> campos a cinco (`F-8C1-009`, `F-8dC2-001`). Las cuatro se retiraron y quedaron como remisión.
+>
+> > **Regla de vigilancia: la firma de `cobertura()` se enuncia acá y en ningún otro documento.**
+> > Ningún otro capítulo, `spec.md`, `descomposicion.md` ni documento del paraguas lleva un bloque
+> > que enumere sus campos; lo que llevan es un puntero a este §2. Se comprueba con
+> > `rg -n "cobertura\(user" .specs/` — fuera de este documento y de los informes de fase, toda
+> > aparición tiene que ser prosa que **cite**, nunca un bloque que **defina**.
 
 ---
 
@@ -403,6 +414,24 @@ los dos que ya conviven, los cuatro scopes del §40 y el *«scope de verticales�
 | grant | *«scope de verticales»* (§35.1) | una fuente `VERTICAL` **por cada vertical de su scope**, y cada una transporta **el ancla de esa vertical** (§2.8) — nunca la de otra |
 | addon | los cuatro del §40 | `LISTING` · `VERTICAL` · `USER` · `GLOBAL` |
 
+**Y el mapeo del addon SÍ colapsa un nombre, así que decir *«no se renombra ninguno»* era falso
+para esa fila.** El scope nativo del §40 se llama `VERTICAL_SUBSCRIPTION` —*«el addon que cuelga de
+la suscripción de una vertical»*— y acá viaja como `VERTICAL`, que es también el `alcance` de las
+fuentes que **cubren** una vertical. Se declara en vez de arreglarse, y con su alcance exacto:
+
+- **El nombre nativo no cambia y sigue siendo el canónico donde vive el dato.** `B/02` §2.4 guarda
+  `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION`, y `V/11` §5.2 razona sobre esa
+  grafía. Ningún documento las renombra; lo que se renombra es **la etiqueta de transporte** de
+  este contrato, y sólo dentro de él.
+- **El colapso no cambia ninguna resolución hoy**, y la razón es del §2.7: los dos se pliegan en el
+  **mismo tramo**, el cacheado por `user + vertical`. El único `alcance` que el pliegue trata
+  distinto es `LISTING`, y ése no colapsa con nada.
+- **Lo que sí se pierde es poder distinguirlos del lado de verticales**, porque el `objetivo` viaja
+  *«nada en los otros tres»*. Es deliberado —verticales no tiene qué hacer con esa distinción— y es
+  la línea a revisar el día que alguna clave se resuelva distinto según de qué cuelga el addon:
+  ese día el contrato gana un quinto valor de `alcance`, no un mapa de traducción (`NUCLEO/01`
+  §2.3). Es `F-8dA1-010`.
+
 ### 2.8 Qué referencia transporta un `GRANT`: un plan POR VERTICAL, su versión vigente, y con trinquete
 
 Un grant permanente cruza la frontera, la persona queda cubierta, y cuando el paso 6 pregunta qué
@@ -673,8 +702,13 @@ una cobertura que dice que sí.
 
 ### 5.2 La real la escribe la épica de billing
 
-Agrega las otras tres fuentes —suscripción, cortesía, grant— y **no toca nada de lo construido**:
-se enchufa como fuente y como emisor del aviso.
+Agrega las otras **cuatro** fuentes —suscripción, cortesía, grant y **addon**— y **no toca nada de
+lo construido**: se enchufa como fuente y como emisor del aviso.
+
+**Son cuatro y no tres desde que el addon es una fuente del contrato** (§2.4, clase
+`COMPLEMENTO`): este § decía tres contra las cuatro que el §5.1 ya enumeraba, y la que faltaba es
+justamente la única que transporta `alcance: LISTING` y `objetivo` — o sea, la que el §2.7 necesita
+para que el pliegue por ficha exista.
 
 ### 5.3 Son dos, y no hay una tercera
 

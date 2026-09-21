@@ -498,12 +498,12 @@ que son columnas de `plan_version`.
 
 ### La frontera es un contrato, y tiene una sola fuente
 
-`DEC-ARCH-006`, en [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md):
-
-```text
-cobertura(user, vertical) → { cubierto, fuentes: [ { tipo, versiónDePlan, hasta } ] }
-evento: la cobertura de (user, vertical) cambió
-```
+`DEC-ARCH-006`, en [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md). La frontera es
+**una consulta de cobertura por `user + vertical` y un evento que avisa que cambió**, y **la firma
+no se transcribe acá**: vive en el §2 de ese documento y en ningún otro lado. Copiarla es lo que
+produjo `F-8dC2-001` y `F-8C1-009`: **cuatro** transcripciones divergidas —los dos `spec.md`, la
+partición y este mismo párrafo—, tres campos cada una contra los cinco del contrato, y ninguna
+igual a las otras. Las cuatro se retiraron en la 9-bis-3; ésta es la remisión que las reemplaza.
 
 Aparece en cuatro lugares del diseño y es siempre el mismo hecho. **Nada más cruza.** Y **la
 implementación de arranque no devuelve datos fijos: resuelve el trial de verdad** — un simulacro

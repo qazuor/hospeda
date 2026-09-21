@@ -215,14 +215,19 @@ No hay cuota chica para el guest porque **una cuota necesita a quién imputarla*
 
 ## 4. El contrato con la épica de billing
 
-Todo lo que esta épica necesita de HOS-1354 es **un hecho y un aviso**, definidos en
+Todo lo que esta épica necesita de HOS-1354 es **un hecho y un aviso**: una consulta de cobertura
+por `user + vertical`, y el evento que avisa que esa cobertura cambió. Los dos están definidos —y
+**sólo** definidos— en
 [`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md):
+**la firma exacta, con todos sus campos y su tabla de qué es cada uno, es su §2**; el aviso es su
+§3; y **cuáles fuentes cuentan para `cubierto` y cuáles no** es su §2.4.
 
-```text
-cobertura(user, vertical) → { cubierto, fuentes: [ { tipo, versiónDePlan, hasta } ] }
-
-evento: la cobertura de (user, vertical) cambió
-```
+> **Acá no va una copia de la firma, y la ausencia es el arreglo.** `DEC-ARCH-006` protege al
+> contrato de que una épica lo mute sola, pero **una copia no necesita que nadie la mute para
+> divergir: alcanza con que el contrato avance**. Ésta existió y divergió — publicaba **tres campos
+> de cinco**, sin `alcance` y sin `objetivo`, y sin `objetivo` el pliegue en dos tramos del §2.7 no
+> se puede calcular, así que **un addon comprado para una ficha habilitaba su capacidad en toda la
+> cartera** (`F-8dC2-001`). El campo que haga falta acá se lee allá.
 
 El mismo hecho aparece en cuatro lugares del diseño: el paso 5 de la autorización, la transición
 `PB2` de publicación, la pérdida de beneficios de turista al suspender, y el disparador del
@@ -235,7 +240,15 @@ cobro. Ni siquiera el estado exacto de la suscripción — esta épica no distin
 ### 4.1 Cómo se construye sin que exista billing
 
 **El trial ya es un título vivo, y el trial no es billing.** La implementación de arranque del
-contrato resuelve esa fuente de verdad y niega las otras tres.
+contrato resuelve de verdad las **dos** fuentes que ya viven de este lado —el trial, con su máquina
+del capítulo 03 §2, y el título `BASE` del contrato §2.5— y responde que no a las **cuatro** de
+billing: suscripción, cortesía, grant y addon (contrato §5.1).
+
+**El piso no es un agregado cosmético a esa lista.** Sin `BASE`, un `TRIAL_EXPIRED` no tiene
+ninguna fuente en el paso 5 y el paso le niega **la operación de suscribirse**, que es la única
+forma de volver a tener un título: queda afuera para siempre (contrato §2.5). Y el piso **no
+devuelve `cubierto` a verdadero** —es de clase `BASE`, no `TÍTULO`—, así que `PB2` sigue disparando
+cuando el trial vence.
 
 Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina de
 publicación tiene vivo su `PB2` alimentado por `T3`, el reconciliador de excedentes corre disparado
