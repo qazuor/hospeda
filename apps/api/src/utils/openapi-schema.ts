@@ -77,7 +77,7 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
             // return a generic permissive object schema so zod-to-openapi does not crash on
             // Proxy introspection. This path also drops any object-level check the source
             // carried — it has no shape to re-attach them to. The guard in
-            // test/guards/openapi-schema-preserves-refinements.guard.test.ts fails if a real
+            // test/static-guards/refined-request-body-reaches-the-request.guard.test.ts fails if a real
             // refined schema ever lands here (HOS-425).
             // NOTE: this schema is fed to the runtime body validator too
             // (route-factory), so it does NOT preserve a source .strict() — a strict request

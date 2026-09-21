@@ -18,21 +18,29 @@
  * request on every tier — see
  * `test/static-guards/refined-request-body-reaches-the-request.guard.test.ts`.
  *
- * ## Why the two remaining call sites keep it
+ * ## Who still re-parses a body, and why
  *
- * Not because the rule would otherwise go unenforced — it would not. They are
- * left as they are because each has a reason of its own:
+ * FOUR routes carried a second-line parse, not two — and only two of them used
+ * this helper, which is why grepping for `parseRefinedBody` undercounted them.
+ * None of the survivors keeps its parse because the rule would otherwise go
+ * unenforced:
  *
- * - `billing/admin/plans.ts` sits in an area an epic in flight (HOS-1352 /
- *   HOS-1354) is rewriting, so it got the transversal factory fix and nothing
- *   else.
- * - `ai/social/drafts.ts` runs its parse deliberately AFTER the operator-PIN
- *   check, so validation messages cannot be used to probe the schema.
+ * - `billing/admin/plans.ts` — uses this helper. Left untouched because the
+ *   area is being rewritten by an epic in flight (HOS-1352 / HOS-1354), so it
+ *   got the transversal factory fix and nothing else.
+ * - `ai/social/drafts.ts` — used this helper; the call is GONE. Its stated
+ *   reason was ordering ("after the PIN check, so validation messages cannot
+ *   probe the schema"), and the PIN check has moved to a route middleware,
+ *   which is the only place that can actually hold that order.
+ * - `host-trade/admin/usages.ts` — a hand-rolled `safeParse`, kept because it
+ *   is what narrows the body to the typed shape the handler reads.
+ * - `commerce/protected/create.ts` — a hand-rolled `safeParse`, kept because
+ *   it re-applies admin defaults after stamping owner/visibility fields.
  *
- * A third call site, `host-trade/protected/mine-usages.ts`, was removed with
- * its cause.
+ * A fifth, `host-trade/protected/mine-usages.ts`, was removed with its cause.
  *
- * New routes do not need this helper.
+ * New routes do not need this helper: declare the refined schema as the
+ * `requestBody` and the boundary enforces it.
  *
  * ## Same rejection, same shape (HOS-607)
  *
