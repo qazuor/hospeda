@@ -10,22 +10,30 @@
  * exactly what made `/content/moderation-terms/new` impossible to submit: both
  * of its required selects opened on "Sin opciones disponibles".
  *
- * Simply DELETING `config` does not close the hole, and that was measured
- * rather than assumed: with the property gone, a field literal declaring
- * `config: {...}` — or `zzzTotallyBogusProperty: 1` — still typechecks with exit
- * 0. The form-config prop is typed `ConsolidatedSectionConfig[] |
- * SectionConfig[]`, and TypeScript performs no excess-property check against a
- * union target, so every route call site accepts unknown keys in silence.
+ * Simply DELETING `config` did not close the hole here, and that was measured
+ * rather than assumed: with the property gone, a field literal in THIS route
+ * declaring `config: {...}` — or `zzzTotallyBogusProperty: 1` — still
+ * typechecked with exit 0.
  *
- * Two defenses close it, and this guard keeps both in place:
+ * The reason is narrow, and worth stating precisely because the first draft of
+ * this comment overstated it. TypeScript performs no excess-property check when
+ * the contextual type is a union, and the form prop is
+ * `ConsolidatedSectionConfig[] | SectionConfig[]`. But almost nothing assigns a
+ * literal straight to that prop: the other 92 forms build their sections in
+ * factories with an ANNOTATED RETURN TYPE, which checks them fine — the same
+ * bogus key in `features/amenities/config/sections/flags.consolidated.ts` fails
+ * with TS2353. An inline `sections: [` appears exactly once under `src/routes`,
+ * and it was this file. One unprotected literal, not ninety-three.
+ *
+ * Two defenses, and this guard keeps both in place:
  *
  *  1. `FieldConfig.config` is declared `never`. Assigning an object to `never`
  *     fails on its own terms, with no dependence on freshness, so the exact
- *     historical typo is now an error in all 93+ forms at once without touching
- *     any of them.
+ *     historical typo is refused everywhere — including wherever a union target
+ *     would otherwise have let it through.
  *  2. This route's sections carry `satisfies SectionConfig[]`, which restores
- *     excess-property checking for the whole literal — that is what catches the
- *     NEXT misspelling, the one nobody has reserved a name for.
+ *     excess-property checking for the one literal that lacked it. That is what
+ *     catches the NEXT misspelling, the one nobody has reserved a name for.
  *
  * Verified by mutation: reverting either defense reproduces a typecheck that
  * passes over the original bug.
@@ -108,14 +116,15 @@ describe('FieldConfig exposes exactly one type-config channel (HOS-1068)', () =>
     it('reserves `config` as `never` so the historical typo cannot be assigned', () => {
         const body = readFieldConfigBody(read(FIELD_CONFIG_TYPES));
 
-        // Anchored to a top-level member of the type (four-space indent, then
-        // the key), so a `config` nested inside some member's inline object
-        // literal is neither mistaken for the reservation nor able to satisfy it.
-        const declaration = / {4}config\?:\s*([^;]+);/.exec(body);
+        // Anchored on a line start and a word boundary rather than on an exact
+        // indent: a Biome reformat must not be able to retire this guard in
+        // silence. Members of the OTHER `*FieldConfig` types in this file are
+        // excluded by slicing FieldConfig's own body first.
+        const declaration = /^\s*\bconfig\?:\s*([^;]+);/m.exec(body);
 
         expect(
             declaration,
-            'FieldConfig no longer reserves `config`. Deleting the property is NOT enough: the form-config prop is a union of array types, against which TypeScript skips excess-property checking, so an undeclared `config: {...}` typechecks at every route call site exactly as it did in HOS-1068. Declare `config?: never;`.'
+            'FieldConfig no longer reserves `config`. Deleting the property is not enough on its own: a literal assigned straight to the union-typed form prop (`ConsolidatedSectionConfig[] | SectionConfig[]`) gets no excess-property check, so `config: {...}` would typecheck there exactly as it did in HOS-1068. Declare `config?: never;`.'
         ).not.toBeNull();
 
         expect(
@@ -139,13 +148,20 @@ describe('the moderation-term create form declares its options where the rendere
 
     /**
      * `config?: never` only stops the ONE name that has already burned us.
-     * `satisfies` is what makes the compiler reject a key nobody anticipated,
-     * and without it this file's literal is checked against nothing.
+     * `satisfies` is what makes the compiler reject a key nobody anticipated.
+     *
+     * It matters HERE specifically. The other 92 forms build their sections in
+     * factories with an annotated return type, which already gives them the
+     * check; this route is the only place under `src/routes` that assigns a
+     * `sections: [...]` literal straight to the union-typed prop, and a union
+     * target is the case TypeScript skips. So this file was the one literal in
+     * the app without excess-property checking, and `satisfies` is what closed
+     * it.
      */
     it('pins its sections with `satisfies` so unknown keys are rejected', () => {
         expect(
             read(MODERATION_TERM_NEW_ROUTE),
-            'The sections literal of /content/moderation-terms/new no longer carries `satisfies SectionConfig[]`. Without it TypeScript performs no excess-property check on this form — a misspelled field key is accepted silently and surfaces months later as an empty control.'
+            'The sections literal of /content/moderation-terms/new no longer carries `satisfies SectionConfig[]`. This route assigns its literal directly to the union-typed form prop, where TypeScript performs no excess-property check, so a misspelled field key is accepted silently and surfaces months later as an empty control.'
         ).toMatch(/\]\s*satisfies\s+SectionConfig\[\]/);
     });
 
@@ -157,32 +173,42 @@ describe('the moderation-term create form declares its options where the rendere
         });
     }
 
-    it('both required selects actually offer their options', () => {
+    /**
+     * Deliberately NOT a frozen list of the option values.
+     *
+     * An earlier version of this guard pinned the seven categories the route
+     * used to hardcode — `self_harm` among them, which the schema rejects. A
+     * frozen list cannot tell a correct removal from a regression: it would
+     * have greeted whoever deleted the invalid option with a red test claiming
+     * they broke something. What the options must BE is asserted against the
+     * schema itself in
+     * `test/features/content-moderation/moderation-term-options.test.ts`; what
+     * this file asserts is only that the route still gets them from there.
+     */
+    it('feeds both selects from the schema-derived builders, not a hand-written list', () => {
         const source = read(MODERATION_TERM_NEW_ROUTE);
 
-        // The values that must be selectable for a term to be creatable at all.
-        // Asserted INSIDE each field's own typeConfig object, so options left
-        // behind in a sibling `config` cannot make this pass.
-        const kind = readTypeConfig(readFieldLiteral(source, 'kind'), 'kind');
-        for (const value of ['word', 'domain']) {
-            expect(kind, `term kind '${value}' is no longer offered`).toContain(
-                `value: '${value}'`
-            );
-        }
+        expect(
+            source,
+            'The moderation-term route no longer imports its select options from @/features/content-moderation/moderation-term-options. Hand-writing them is what let the form offer `self_harm`, a value createContentModerationTermSchema rejects.'
+        ).toMatch(
+            /import\s*\{[^}]*\bbuildModerationCategoryOptions\b[^}]*\}\s*from\s*'@\/features\/content-moderation\/moderation-term-options'/
+        );
 
-        const category = readTypeConfig(readFieldLiteral(source, 'category'), 'category');
-        for (const value of [
-            'hate',
-            'sexual',
-            'violence',
-            'harassment',
-            'self_harm',
-            'spam',
-            'other'
-        ]) {
-            expect(category, `moderation category '${value}' is no longer offered`).toContain(
-                `value: '${value}'`
-            );
+        expect(readTypeConfig(readFieldLiteral(source, 'kind'), 'kind')).toContain('kindOptions');
+        expect(readTypeConfig(readFieldLiteral(source, 'category'), 'category')).toContain(
+            'categoryOptions'
+        );
+    });
+
+    it('hardcodes no option value in the route', () => {
+        const source = read(MODERATION_TERM_NEW_ROUTE);
+
+        for (const fieldId of ['kind', 'category'] as const) {
+            expect(
+                readTypeConfig(readFieldLiteral(source, fieldId), fieldId),
+                `Field '${fieldId}' declares literal option values again. They must come from createContentModerationTermSchema so the form cannot offer something the submit handler refuses.`
+            ).not.toMatch(/\bvalue:\s*'/);
         }
     });
 });
