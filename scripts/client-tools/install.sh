@@ -65,7 +65,7 @@ else
 fi
 
 echo "== instalando dependencias en $TOOLS =="
-(cd "$TOOLS" && bun install)
+(cd "$TOOLS" && bun install --frozen-lockfile)
 
 mkdir -p "$FISH_FUNCTIONS"
 

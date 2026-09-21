@@ -3124,3 +3124,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   instalador termina con error y no cae silenciosamente al checkout actual.
 - El fallback anterior queda disponible para desarrollo explícito; el README
   documenta ambos modos.
+
+## Gate 142 · Dependencias reproducibles del instalador
+
+- `install.sh` ahora usa `bun install --frozen-lockfile` para no resolver ni
+  actualizar dependencias implícitamente.
+- La prueba en los checkouts actuales encontró `EEXIST` al enlazar el binario
+  de TypeScript porque `node_modules` ya contenía una entrada incompatible.
+- No hubo cambios versionados en `hospeda-staging`; resolver ese residuo de
+  `node_modules` queda para una limpieza explícita y separada.
