@@ -508,8 +508,13 @@ describe('AccommodationCalendarSyncModel — deleted accommodations (HOS-663)', 
                     tx
                 );
             }
-            // Already inactive before the cascade — must NOT be reported as
-            // newly deactivated (nothing to revoke a second time).
+            // Already inactive before the cascade — this call did not change
+            // it, so it must not appear in the RETURNING set.
+            //
+            // It does NOT follow that it needs no revocation: the only route
+            // that deactivates without deleting the accommodation is the
+            // host-initiated disconnect, which revokes nothing. The revocation
+            // set is `findAllByAccommodation`, asserted separately below.
             await model.deactivate(
                 { accommodationId: accommodation.id, provider: OccupancySourceEnum.BOOKING },
                 tx
@@ -566,6 +571,126 @@ describe('AccommodationCalendarSyncModel — deleted accommodations (HOS-663)', 
                 tx
             );
             expect(secondRun).toEqual([]);
+
+            // ...and the set to REVOKE is wider than the set just changed: all
+            // three providers, including the one disconnected beforehand.
+            const toRevoke = await model.findAllByAccommodation(
+                { accommodationId: accommodation.id },
+                tx
+            );
+            expect(toRevoke.map((row) => row.provider).sort()).toEqual(
+                [
+                    OccupancySourceEnum.AIRBNB,
+                    OccupancySourceEnum.BOOKING,
+                    OccupancySourceEnum.GOOGLE_CALENDAR
+                ].sort()
+            );
+        });
+    });
+
+    it('findAllByAccommodation returns INACTIVE rows — the ones the disconnect route left unrevoked', async () => {
+        await withTestTransaction(async (tx) => {
+            const { owner, accommodation } = await seedAccommodation(tx, 'hos663-inactive');
+            const { owner: otherOwner, accommodation: otherAccommodation } =
+                await seedAccommodation(tx, 'hos663-other');
+            const model = new AccommodationCalendarSyncModel();
+
+            await model.upsertConnection(
+                {
+                    accommodationId: accommodation.id,
+                    provider: OccupancySourceEnum.GOOGLE_CALENDAR,
+                    accessTokenCiphertext: 'ciphertext-inactive',
+                    accessTokenIv: 'iv-inactive',
+                    accessTokenAuthTag: 'authtag-inactive',
+                    createdById: owner.id
+                },
+                tx
+            );
+            // The host pressed "Disconnect": `is_active = false`, tokens still
+            // stored, grant still live at the provider.
+            await model.deactivate(
+                {
+                    accommodationId: accommodation.id,
+                    provider: OccupancySourceEnum.GOOGLE_CALENDAR
+                },
+                tx
+            );
+
+            // Another accommodation's connection must not bleed in.
+            await model.upsertConnection(
+                {
+                    accommodationId: otherAccommodation.id,
+                    provider: OccupancySourceEnum.AIRBNB,
+                    accessTokenCiphertext: 'ciphertext-neighbour',
+                    accessTokenIv: 'iv-neighbour',
+                    accessTokenAuthTag: 'authtag-neighbour',
+                    createdById: otherOwner.id
+                },
+                tx
+            );
+
+            const rows = await model.findAllByAccommodation(
+                { accommodationId: accommodation.id },
+                tx
+            );
+
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.isActive).toBe(false);
+            expect(rows[0]?.provider).toBe(OccupancySourceEnum.GOOGLE_CALENDAR);
+            // The credential is still on the row — which is exactly why this
+            // row still needs revoking.
+            expect(rows[0]?.accessTokenCiphertext).toBe('ciphertext-inactive');
+            expect(rows.map((row) => row.accommodationId)).not.toContain(otherAccommodation.id);
+        });
+    });
+
+    it('markRevocationFailed records the failure WITHOUT touching last_sync_at', async () => {
+        await withTestTransaction(async (tx) => {
+            const { owner, accommodation } = await seedAccommodation(tx, 'hos663-stamp');
+            const model = new AccommodationCalendarSyncModel();
+
+            await model.upsertConnection(
+                {
+                    accommodationId: accommodation.id,
+                    provider: OccupancySourceEnum.AIRBNB,
+                    accessTokenCiphertext: 'ciphertext-stamp',
+                    accessTokenIv: 'iv-stamp',
+                    accessTokenAuthTag: 'authtag-stamp',
+                    createdById: owner.id
+                },
+                tx
+            );
+
+            // A real sync happened at a known moment.
+            const syncedAt = new Date('2026-03-01T06:00:00.000Z');
+            await model.updateSyncState(
+                {
+                    accommodationId: accommodation.id,
+                    provider: OccupancySourceEnum.AIRBNB,
+                    lastSyncAt: syncedAt,
+                    lastSyncStatus: CalendarSyncStatusEnum.OK,
+                    lastErrorMessage: null
+                },
+                tx
+            );
+
+            const stamped = await model.markRevocationFailed(
+                {
+                    accommodationId: accommodation.id,
+                    provider: OccupancySourceEnum.AIRBNB,
+                    errorMessage: 'HOS-663 REVOCATION_FAILED: no revocation endpoint'
+                },
+                tx
+            );
+
+            expect(stamped?.lastSyncStatus).toBe(CalendarSyncStatusEnum.ERROR);
+            expect(stamped?.lastErrorMessage).toContain('REVOCATION_FAILED');
+            // A revocation is not a sync. `last_sync_at` is one of the columns
+            // the forensic query that FOUND HOS-663 leaned on; moving it would
+            // claim the connection was read at a moment it was not.
+            expect(stamped?.lastSyncAt?.toISOString()).toBe(syncedAt.toISOString());
+            // The credential columns are untouched.
+            expect(stamped?.accessTokenCiphertext).toBe('ciphertext-stamp');
         });
     });
 });
