@@ -269,6 +269,20 @@ describe('BaseModelImpl preserves the driver error as DbError#cause (HOS-1174)',
     });
 });
 
+/**
+ * Static guard over `base.model.ts`'s own source.
+ *
+ * The behavioural cases above only cover the methods they name; this covers
+ * the file, including call sites nobody has written yet. It polices BOTH ways
+ * of constructing the error — `new DbError(...)` and the `throwDbError(...)`
+ * helper exported from the same module (`src/utils/error.ts`), whose signature
+ * also ends in an optional `cause`. Covering only the constructor would leave a
+ * ready-made escape hatch: deriving a call site to the helper drops the cause
+ * and the guard would stay green.
+ *
+ * Comments are stripped before parsing, so a `new DbError(a, b, c, d)` inside a
+ * JSDoc example cannot fail the guard falsely.
+ */
 describe('static guard: every catch-site in base.model.ts passes a cause (HOS-1174)', () => {
     /**
      * Pre-flight guards throw a `DbError` describing a CALLER mistake, before
@@ -281,6 +295,79 @@ describe('static guard: every catch-site in base.model.ts passes a cause (HOS-11
         'does not have a deletedAt column'
     ] as const;
     const EXPECTED_PRE_FLIGHT_GUARD_COUNT = 6;
+
+    /** Both ways this module can raise a `DbError`. Neither may drop the cause. */
+    const CALL_MARKERS = ['new DbError(', 'throwDbError('] as const;
+
+    /**
+     * Blanks out comment bodies while preserving offsets, so the scan sees code
+     * only. Without this, an illustrative `new DbError(a, b, c, d)` in a JSDoc
+     * block would be counted as a real causeless call site.
+     */
+    const stripComments = (source: string): string => {
+        let out = '';
+        let index = 0;
+        let state: 'code' | 'line' | 'block' = 'code';
+        let quote: string | null = null;
+        while (index < source.length) {
+            const ch = source[index] as string;
+            const next = source[index + 1];
+            if (state === 'code') {
+                if (quote) {
+                    out += ch;
+                    if (ch === '\\') {
+                        out += next ?? '';
+                        index += 2;
+                        continue;
+                    }
+                    if (ch === quote) quote = null;
+                    index++;
+                    continue;
+                }
+                if (ch === "'" || ch === '"' || ch === '`') {
+                    quote = ch;
+                    out += ch;
+                    index++;
+                    continue;
+                }
+                if (ch === '/' && next === '/') {
+                    state = 'line';
+                    out += '  ';
+                    index += 2;
+                    continue;
+                }
+                if (ch === '/' && next === '*') {
+                    state = 'block';
+                    out += '  ';
+                    index += 2;
+                    continue;
+                }
+                out += ch;
+                index++;
+                continue;
+            }
+            if (state === 'line') {
+                if (ch === '\n') {
+                    state = 'code';
+                    out += '\n';
+                    index++;
+                    continue;
+                }
+                out += ' ';
+                index++;
+                continue;
+            }
+            if (ch === '*' && next === '/') {
+                state = 'code';
+                out += '  ';
+                index += 2;
+                continue;
+            }
+            out += ch === '\n' ? '\n' : ' ';
+            index++;
+        }
+        return out;
+    };
 
     /** Splits a call's argument list on top-level commas. */
     const splitTopLevelArgs = (source: string, openParenIndex: number): string[] => {
@@ -314,23 +401,26 @@ describe('static guard: every catch-site in base.model.ts passes a cause (HOS-11
             }
             current += ch;
         }
-        throw new Error('Unbalanced parentheses while parsing a `new DbError(` call');
+        throw new Error('Unbalanced parentheses while parsing a DbError call');
     };
 
     const parseDbErrorCalls = (): ReadonlyArray<{ argCount: number; args: string[] }> => {
-        const source = readFileSync(join(__dirname, '../../src/base/base.model.ts'), 'utf8');
-        const marker = 'new DbError(';
+        const source = stripComments(
+            readFileSync(join(__dirname, '../../src/base/base.model.ts'), 'utf8')
+        );
         const calls: Array<{ argCount: number; args: string[] }> = [];
-        let index = source.indexOf(marker);
-        while (index !== -1) {
-            const args = splitTopLevelArgs(source, index + marker.length - 1);
-            calls.push({ argCount: args.length, args: args.map((a) => a.trim()) });
-            index = source.indexOf(marker, index + marker.length);
+        for (const marker of CALL_MARKERS) {
+            let index = source.indexOf(marker);
+            while (index !== -1) {
+                const args = splitTopLevelArgs(source, index + marker.length - 1);
+                calls.push({ argCount: args.length, args: args.map((a) => a.trim()) });
+                index = source.indexOf(marker, index + marker.length);
+            }
         }
         return calls;
     };
 
-    it('finds every `new DbError(` call site in the file', () => {
+    it('finds every DbError call site in the file', () => {
         expect(parseDbErrorCalls().length).toBeGreaterThan(10);
     });
 
@@ -364,5 +454,20 @@ describe('static guard: every catch-site in base.model.ts passes a cause (HOS-11
         for (const call of withCause) {
             expect(call.args[4]).toBe('err');
         }
+    });
+
+    it('would catch a causeless call routed through the `throwDbError` helper', () => {
+        // Arrange — the helper's signature ends in the same optional `cause`,
+        // so a partial refactor to it is the cheapest way to drop the cause
+        // without touching a `new DbError(` line. This pins that the scan reads
+        // both markers rather than only the constructor.
+        expect(CALL_MARKERS).toContain('throwDbError(');
+
+        // Act — `throwDbError` is exported from the module the file imports
+        // from, so a future call site is reachable without a new import.
+        const errorModule = readFileSync(join(__dirname, '../../src/utils/error.ts'), 'utf8');
+
+        // Assert
+        expect(errorModule).toContain('export const throwDbError');
     });
 });
