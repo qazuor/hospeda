@@ -121,7 +121,10 @@ de un título nuevo no falla ruidosamente; deja una funcionalidad muerta y nadie
 ## 3. El addon a costo cero · cierra `E-ADDON-03`
 
 El §35.2 con `includesAddons: true` dice que *«addons compatibles pueden utilizarse a costo $0»*
-y que **no** se activan automáticamente. De ahí salen tres preguntas.
+y que **no** se activan automáticamente. De ahí salen **cuatro** preguntas, y la cuarta es de otro
+orden que las tres primeras: **éstas describen el addon que todavía no existe** —alguien con el
+grant que después quiere un destaque— y la cuarta es **la que nadie había escrito**, la del addon
+que la persona **ya tenía comprado** el día que le cae el grant (§3.4).
 
 ### 3.1 No hay pago de cero ni comprobante de cero
 
@@ -145,6 +148,13 @@ por uno, y esa elección es un acto suyo con su registro.
 Es coherente con `DEC-GRANT-001`, que ya separó conceder de ejecutar, y evita el desenlace
 absurdo de que revocar un grant tenga que apagar quince cosas que el beneficiario nunca pidió.
 
+**Y esta regla rige sobre el addon que NO existe todavía, que es de lo único que habla.** *«Elegir
+cuáles quiere»* presupone que no los tiene; *«apagar quince cosas que nunca pidió»* presupone que
+el grant las encendió. Para el addon que la persona **ya venía pagando** las dos premisas son
+falsas —ya lo eligió, y con plata—, así que ahí no hay nada que encender y la regla **no dice
+nada**: lo dice el §3.4, y lo que ese § ordena es **automático a propósito**, porque lo que se
+automatiza no es una capacidad nueva sino **el fin de un cobro**.
+
 ### 3.3 Al revocar el grant, el addon se corta — y nunca se empieza a cobrar
 
 Tres salidas posibles y una sola defendible:
@@ -162,6 +172,113 @@ No es duro en comparación con lo que ya pasa: el capítulo 08 §3 registra que 
 **la acción administrativa más grave** porque deja al cliente sin grant y sin suscripción, o sea
 sin servicio. El addon es lo menos que pierde, y la confirmación del capítulo 08 §3.1 tiene que
 nombrarlo igual.
+
+**Y esto alcanza igual al addon que el §3.4 convirtió a costo $0, que es el caso que duele.** Ahí
+la persona **no recibió el addon de regalo: lo venía pagando**, y la revocación se lo apaga sin
+devolverle el débito que le cancelamos. **No pasa nada más: no se reanuda la suscripción de
+complemento vieja y no se compensa.** Las tres razones ya estaban escritas y ninguna es de acá:
+cancelar en el proveedor **es irreversible** (`PA-5`), `DEC-GRANT-001` dice que al revocar *«no se
+reanuda el débito viejo: hay que pedirle al cliente que autorice uno nuevo»*, y `DEC-TRIAL-009`
+fija el criterio de por qué revocar **no repara** —el acto no es un error sino una decisión
+legítima, y la persona **estuvo cubierta de verdad** todo lo que duró el grant—. **Si lo quiere de
+nuevo, vuelve a suscribirse.**
+
+**Qué transición lo ejecuta, porque son dos caminos y sólo uno estaba escrito.** Para un addon de
+scope `VERTICAL_SUBSCRIPTION` lo ejecuta la condición de huérfano: al irse el ancla deja de
+relevarlo la **tercera mitad** del §4.2, el objetivo vuelve a estar muerto y `A5` lo cancela. Para
+los otros tres scopes **el objetivo nunca murió** —`LISTING` es una ficha que sigue ahí,
+`USER`/`GLOBAL` es la cuenta— así que la condición de huérfano **no se cumple nunca** y, tal como
+estaba, *«se corta»* era una frase sin transición que la regla 1 del núcleo no admite. Por eso el
+evento de `A5` tiene **una tercera cláusula** —*«se retira el ancla que era su título»*
+(`B/03` §8)— y **cierra los dos casos con una sola regla**: el convertido y el que el §3.2 dejó
+elegir gratis desde el principio, que tenía el mismo agujero y nadie lo había nombrado.
+
+### 3.4 El addon que la persona YA venía pagando: se convierte a costo $0 en el acto
+
+Las dos frases del §35.2 y del §3.2 —*«pueden utilizarse a costo $0»*, *«habilita; no
+enciende»*— están escritas sobre addons **que todavía no existen**. Para el que la persona **ya
+tenía comprado** no había acto declarado en ningún capítulo, y la consecuencia no era neutra:
+`S13` acota su alcance a *«toda fila viva **principal**»* (`B/03` §3.2), así que **la suscripción
+de complemento seguía viva y seguía cobrando** — al beneficiario se le debitaba todos los meses un
+addon que su propio flag le declaraba gratis.
+
+> **Al otorgar un *Free Forever* con `includesAddons: true` —y al anclarle una vertical nueva, que
+> es el otro disparador de `S13`— los addons compatibles que el beneficiario venía pagando se
+> convierten a costo $0: se cancela su suscripción de complemento y la instancia pasa a colgar del
+> ANCLA como su título.**
+
+Lo ejecuta **`S20`** (`B/03` §3.2), que es una transición aparte y no una ampliación de `S13`: el
+adjetivo *«principal»* del alcance de `S13` **es una acotación con motivo** —sin él los
+complementos entraban *«por pertenencia al conjunto»*, que es literalmente lo que el §41 prohíbe—,
+y ampliarlo reabriría eso. `S20` **evalúa una condición**, que es lo que el §41 pide.
+
+**Con `includesAddons: false` no corre nada**: el complemento sigue cobrando y el addon sigue
+siendo del cliente. El flag no es decorativo en ninguna de sus dos posiciones.
+
+#### Sólo los compatibles, y «compatible» ya estaba definido
+
+El §35.2 dice *«los addons compatibles»*, no *«los addons»*, y **la palabra no se reinterpreta
+acá**: compatible es lo que el §39 hace declarar al **producto** —sus *«compatible verticals»*,
+`addon_product` en `B/02` §2.4—. `S20` alcanza entonces al complemento cuyo producto declara
+compatible **la vertical que el acto ancla**, y para los dos scopes que tienen vertical propia
+—`VERTICAL_SUBSCRIPTION` y `LISTING`— pide además que **su objetivo sea de esa vertical**.
+
+**El que no es compatible sigue cobrándose, y no es un olvido**: el grant es título **sólo donde
+ancló** (§2.4), así que en una vertical que no ancló no hay título suyo que reemplace nada y el
+addon conserva el que ya tenía —una suscripción que el beneficiario sigue pagando y que `S13`
+tampoco tocó—. Convertirlo sería regalar el complemento de una vertical que nadie regaló.
+
+> **Costo declarado, y se declara en vez de resolverse**: un addon de scope `USER` o `GLOBAL`
+> compatible con **dos** verticales, en alguien cuyo grant ancla **una**, se convierte igual —es
+> un addon compatible— y de paso queda gratis también en la vertical que el grant no ancló. Es la
+> lectura literal del §35.2 y la población es fina, pero **es una fuga real** y queda nombrada.
+> Acotarla —exigir que el grant ancle **todas** las verticales que el producto declara— es una
+> decisión de producto y **no se toma acá**.
+
+#### El período ya pagado no se devuelve
+
+Mismo criterio que `S13` sobre la principal, misma decisión y mismo riesgo declarado: `DEC-GRANT-001`
+dice *«se corta el cobro en el acto y no se devuelve lo pagado»*. Entonces, escrito y no implícito:
+
+| qué | qué pasa |
+|---|---|
+| el período del complemento **ya cobrado** | **no se reembolsa**, y el addon lo sigue usando: el cobro es anterior al regalo |
+| un pago del complemento **retenido por `S19`** | **no existe, y por eso `S20` no lo nombra**: `S19` sale de *«la predecesora de una sucesión en curso»* y una fila de complemento nunca lo es. Es la única mitad de `S13` que `S20` no copia, y la diferencia es de población, no de criterio |
+| un addon de cobro **`UNA_VEZ`** | **no tiene nada que convertir**: no hay suscripción de complemento (§1.2), ya se pagó entero y **tampoco se devuelve**. Sigue su curso, que es el *«conserva los dos»* del `12-contrato…` §2.4 |
+
+**Por eso el sujeto de `S20` son sólo los `PERIÓDICO`**: son los únicos con una suscripción de
+complemento que apagar. Contar los `UNA_VEZ` sería contar una población sin efecto.
+
+#### Qué transporta la fuente después de convertirse
+
+**Nada cambia en la fuente `ADDON`, y eso es el punto.** Sigue transportando **la `addon_version`
+que la INSTANCIA ancló al comprarse** y nunca `addon_product.version_id`
+([`12-contrato-de-cobertura.md`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+§2.3, `B/02` §2.4): son dos preguntas distintas —qué se compró y qué se vende— y **convertir a $0
+no es volver a comprar**. Si la conversión releyera el producto, un grant movería a la versión de
+hoy un addon comprado hace un año, sin que nadie lo pidiera ni lo notara.
+
+**Lo que sí cambia de referente es el TÍTULO, y eso tiene que ser resoluble igual**, porque el
+§2.3 no admite excepciones: *«una fuente sin referencia resoluble no se puede expresar»*. La
+instancia registra **el ancla** (`permanent_grant_vertical`), **no *«el grant»***, porque el
+título es por vertical (§2.4) y un grant de tres anclas tiene tres títulos distintos: con *«el
+grant»* no se podría saber cuál se retira ni a quién corta. Es la columna que `B/16` §3.1 ya daba
+por existente y **no existía** —`F-8dA3-007`, `FASE 8-bis-3`—; `B/02` §2.4 la escribe, y la
+escribe **una sola vez para los dos orígenes**: el addon elegido gratis del §3.2 y el convertido
+de acá.
+
+#### Qué le pasa a la instancia, y son dos casos
+
+| la instancia está | qué le pasa | por qué |
+|---|---|---|
+| **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de `A1`–`A6`** | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando el ancla se retire (§3.3) |
+| **`PENDING_AUTHORIZATION`** | **no se convierte** —no hay nada comprado todavía— pero **su cobro se cancela igual**, y la instancia muere por `A3` al vencer su ventana. La persona puede elegir el addon gratis en el acto (§3.2) | *«una instancia esperando autorización es una obligación de pago»*: su preapproval está creado y puede completar el checkout sin tener por qué saber que el grant llegó. Es el mismo argumento con el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` y en el `desde` de `A5`. La pantalla de *«esperando que completes el pago»* **deja de ofrecer el enlace en el mismo acto** |
+
+**Y la condición de huérfano del §4.2 no se toca.** Sus **tres** mitades siguen siendo las mismas
+y siguen dando el mismo resultado: el objetivo de un `VERTICAL_SUBSCRIPTION` murió con `S13`, la
+tercera mitad —*«ningún grant permanente la releva»*— lo rescata, y por eso *«conserva los dos»*
+sigue siendo verdadero. Lo único que cambia es **de dónde sale la plata**, y eso la condición de
+orfandad nunca lo miró.
 
 ---
 
@@ -270,6 +387,16 @@ ancló** (§2.4): en una vertical sin ancla no emite fuente, no hay título, y l
 **Y se vuelve a evaluar como las otras dos**, así que el día que el grant se revoca el addon pasa
 a huérfano y se corta — que es lo que §3.3 ya decidía por el otro camino.
 
+> **Eso vale para `VERTICAL_SUBSCRIPTION` y para ningún otro scope, y conviene decirlo porque se
+> lee como si valiera para los cuatro.** Acá el objetivo **sí** había muerto y lo único que lo
+> rescataba era el grant, así que retirar el ancla devuelve la condición a *«huérfano»*. En
+> `LISTING`, `USER` y `GLOBAL` el objetivo **nunca murió** —la ficha y la cuenta siguen ahí—, así
+> que un addon de esos scopes cuyo título era el ancla **no queda huérfano al revocar** y esta
+> condición no lo alcanza nunca. Lo corta la **tercera cláusula del evento de `A5`**
+> —*«se retira el ancla que era su título»*, `B/03` §8—, que es una puerta distinta y hace falta
+> igual. **La orfandad mira el OBJETIVO; el corte del §3.3 mira el TÍTULO**, y confundirlos es lo
+> que dejaba *«se corta»* sin transición para tres de los cuatro scopes.
+
 **La fila viva es parte del predicado, no un adorno.** En `S13` la sucesora también queda
 `CANCELLED` **con su `sucede_a` escrito** (`B/03` §3.2), así que un `sucede_a` apuntándola sin
 exigir que quien lo escribe siga vivo volvería a esa predecesora **no huérfana para siempre**, y
@@ -331,7 +458,7 @@ distintos** y los dos se disparan del mismo lugar:
 | efecto | quién lo hace |
 |---|---|
 | las capacidades bajan | el reconciliador de excedentes (cap. 15 (épica de verticales) §4) |
-| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que una sucesión releva (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos, y los que **releva un grant permanente** en esa vertical (§4.2, tercera mitad), que siguen su curso sin cambiar de objetivo |
+| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que una sucesión releva (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos, y los que **releva un grant permanente** en esa vertical (§4.2, tercera mitad), que siguen su curso sin cambiar de objetivo —y, si ese grant lleva `includesAddons: true` y el addon es compatible, **además a costo $0**, con su suscripción de complemento cancelada por `S20` (§3.4)— |
 
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
@@ -346,21 +473,23 @@ estados: el caso que lo obliga es una sucesora que autoriza tarde o abandona des
 predecesora ya murió (§4.2).
 
 > **«Se re-evalúa» necesita decir CUÁNDO, porque una re-evaluación sin evento no la ejecuta
-> nadie** — es la regla 1 del núcleo: lo que la tabla no declara, no pasa. Son **tres** momentos,
-> y los tres son eventos ya declarados en otra tabla:
+> nadie** — es la regla 1 del núcleo: lo que la tabla no declara, no pasa. Son **cuatro**
+> momentos, y los cuatro son actos ya declarados en otro lado —tres en una tabla de transiciones
+> y el cuarto en el catálogo de acciones administrativas:
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
 > | **una de las seis transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
 > | **muere la sucesora que relevaba** — `S3` la abandona, o `S13` la mata | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
+> | **se revoca el grant, o se retira el ancla de esa vertical** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando |
 >
 > **La lista no agrega una séptima transición al disparador de arriba**: las seis son las que
-> sacan a **la principal** de las filas vivas, y estos tres son los instantes en que la
-> **condición del §4.2** se vuelve a leer. Un momento de re-evaluación no es una puerta a la
-> orfandad: es cuándo se pregunta.
+> sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
+> tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
+> momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.
 >
-> **Y el backstop de los tres es la cuarta comprobación de cero llamadas de `B/09` §3** —una
+> **Y el backstop de los cuatro es la cuarta comprobación de cero llamadas de `B/09` §3** —una
 > instancia viva cuyo objetivo ya cumple la condición de este §—, que es lo que cubre la corrida
 > en que ninguno de los tres se ejecutó. Hace falta porque ese estado es **indetectable por
 > comparación**: la instancia dice `ACTIVE`, el proveedor dice `authorized`, y para el barrido
@@ -411,8 +540,11 @@ razón es **quién canceló el preapproval**: lo que exime a una fila terminal n
 llamada nuestra**, y el preapproval de un **complemento** lo cancelamos siempre nosotros, con una
 llamada que puede fallar sin emitir nada. **Esa asimetría no parte suscripciones contra
 complementos**, y creerlo fue el error de la versión anterior de esta frase: hay terminales de
-suscripción que también dependen de una llamada nuestra —`S13`, `S3` y la lápida del corte—, y
-`B/09` §3 las devuelve al barrido por la misma puerta y con la misma condición de corte.
+suscripción que también dependen de una llamada nuestra —`S12`, `S3`, `S13`, **`S20`** y la
+lápida del corte—, y `B/09` §3 las devuelve al barrido por la misma puerta y con la misma
+condición de corte. **`S20` es además la prueba de que la asimetría no parte por ahí**: es una
+suscripción **de complemento** que llega a terminal por una llamada nuestra, o sea las dos cosas
+a la vez.
 
 ---
 
@@ -422,7 +554,9 @@ suscripción que también dependen de una llamada nuestra —`S13`, `S3` y la l�
   `DEC-ADDON-001` lo dejó anotado como tal.
 - **Qué pasa con una suscripción de complemento cuando la principal se va** es el §41 en su otra
   dirección, y está resuelto en §4.2 y §4.3: no lo decide el estado de la principal sino si el
-  objetivo del addon sobrevive.
+  objetivo del addon sobrevive. **El caso en que la principal se va porque cae un grant lo
+  resuelve el §3.4**, y ahí la respuesta es la otra: el objetivo sobrevive y lo que se apaga es
+  el cobro.
 - **El checkout de una contratación** —y el `init_point` roto de `EX-37`, que alcanza a cada
   addon— es del capítulo 13.
 - **Cómo se resuelve una tarjeta que se cambia sobre N preapprovals** y queda a medias

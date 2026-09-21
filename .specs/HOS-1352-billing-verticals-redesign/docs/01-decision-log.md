@@ -3078,13 +3078,68 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ADDON-003 — El grant con `includesAddons` convierte a $0 el addon YA comprado, y al revocar se apaga sin reparación
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco**: el §35.2 dice que con `includesAddons: true` los addons compatibles *«pueden
+  utilizarse a costo $0»*, y `B/16` §3.2 agrega *«habilita; no enciende»*. **Las dos frases están
+  escritas sobre el addon que TODAVÍA NO EXISTE** — alguien con el grant que después quiere un
+  destaque. **Nadie escribió qué pasa con el que la persona YA TENÍA COMPRADO** el día que le cae
+  el grant. Con `S13` acotado a *«toda fila viva PRINCIPAL»* (commit `4e383480d`), **su suscripción
+  de complemento seguía viva y seguía cobrando**: se le debitaba todos los meses un addon que el
+  flag le había declarado gratis.
+- **Decisión, y son dos mitades:**
+  1. **Al otorgar el grant —y al anclarle una vertical, que es el otro disparador—, se convierte a
+     $0**: se cancela la suscripción de complemento y la instancia pasa a colgar del ancla como su
+     título.
+  2. **Al revocar el grant NO pasa nada**, en el sentido de que **no se repara**: no se reanuda el
+     débito viejo ni se emite compensación. El addon **se apaga con el resto**, y *«si lo quiere de
+     nuevo, debe volver a suscribirse»*. Es deliberadamente la misma regla que `DEC-GRANT-001` y
+     `DEC-TRIAL-009`: revocar corta el servicio y no repara.
+- **El mecanismo es una transición propia, `S20`, y NO una ampliación de `S13`.** Ampliar el
+  `desde` de `S13` reabriría la acotación *«principal»* que el commit `4e383480d` acababa de poner
+  para cerrar el crítico #8, y `S20` además **evalúa una condición** (la compatibilidad), que es lo
+  que el §41 exige. `B/03` §3.2.
+- **Las cinco cosas de mecánica que la decisión no cubría, resueltas con su razón:**
+  1. **Compatibilidad**: no se reinterpreta. Es lo que el §39 hace declarar al **producto**. `S20`
+     alcanza al complemento cuyo producto declara compatible **la vertical que el acto ancla**.
+     **El no compatible sigue cobrándose**, porque el grant es título **sólo donde ancló**.
+  2. **El período ya pagado no se reembolsa** (`DEC-GRANT-001`), y un `UNA_VEZ` no tiene nada que
+     convertir ni que devolver.
+  3. **La fuente no cambia de forma**: sigue transportando `addon_instance.addon_version_id` y
+     nunca `addon_product.version_id` — convertir a $0 **no es volver a comprar**. Lo que cambia de
+     referente es el **título**, y como el §2.3 no admite una fuente sin referencia resoluble, la
+     instancia registra **el ancla**, no *«el grant»*.
+  4. **La instancia**: una `ACTIVE` no cambia de estado; una `PENDING_AUTHORIZATION` no se
+     convierte —no hay nada comprado— pero su cobro se cancela igual. **La condición de huérfano
+     no se toca: sigue con tres mitades.**
+  5. **El detector**: la tabla de puertas a un terminal pasa de **siete a ocho** y la salvedad 4 de
+     cuatro a cinco filas. Las comprobaciones de cero llamadas **siguen siendo cuatro**: se
+     ampliaron dos, no se agregó ninguna.
+- **Dos huecos preexistentes que este acto obligó a cerrar, y conviene saber que se cerraron acá**:
+  `B/16` §3.3 (*«al revocar, el addon se corta»*) **no tenía transición para 3 de los 4 scopes** —en
+  `LISTING`, `USER` y `GLOBAL` el objetivo nunca muere, así que la orfandad no llegaba nunca—, y lo
+  cierra la tercera cláusula del evento de `A5`. Y **`F-8dA3-007` queda medio cerrado**: la columna
+  del título que `B/16` §3.1 daba por existente **no existía**, y se escribió nombrando el hallazgo
+  para que quien lo tome no agregue una segunda.
+- **Lo que queda declarado abierto y NO se resolvió**: un addon de scope `USER`/`GLOBAL` compatible
+  con **dos** verticales, en alguien cuyo grant ancla **una**, se convierte igual y queda gratis
+  **también en la vertical que el grant no ancló**. Es la lectura literal del §35.2. Acotarlo
+  —exigir que el grant ancle todas las verticales que el producto declara— es una decisión de
+  producto y está declarada en `B/16` §3.4, sin tomar.
+- **Origen**: la disyuntiva que la familia de `S13` de la 9-bis-3 declaró abierta en `B/03` §3.2 y
+  `B/02` §2.6, y la elección del owner del 2026-09-21 entre las dos opciones que se le presentaron
+  — eligió la 2, que era la recomendada, y contestó de entrada la pregunta que arrastraba.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **70** |
+| Decisiones tomadas | **71** |
 | De metodología | 10 |
-| Funcionales | 60 |
+| Funcionales | 61 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

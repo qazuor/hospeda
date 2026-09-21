@@ -102,7 +102,7 @@ razón, escrita como criterio y no como lista, es una sola:
 
 **Escrita como enumeración de transiciones, la garantía era falsa, y hay que decir dónde.** La
 versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobre un conjunto de
-**siete** puertas a un estado terminal, y de las tres que nombraba una era al revés:
+**ocho** puertas a un estado terminal, y de las tres que nombraba una era al revés:
 
 | puerta a un estado terminal | ¿quién dejó el preapproval sin poder cobrar? | ¿exenta? |
 |---|---|---|
@@ -112,6 +112,7 @@ versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobr
 | `S12` → `CANCELLED` | nuestra llamada: la de `S11`, *«de inmediato»* (`DEC-SUB-009`), emitida un tiempo antes y **no confirmada al llegar acá** | **no** |
 | `S3` → `ABANDONED` | **nuestra llamada**: el job que recorre las vencidas *«cancela el preapproval en el proveedor»* (`B/03` §3.4 punto 2), y `B/06` §6 lo subraya con `EX-1` todavía `UNKNOWN` — *«es lo único que impide una autorización viva que puede cobrar»* | **no** |
 | `S13` → `CANCELLED` | **nuestra llamada**, y `S13` no tiene rama de fallo declarada: su destino es `CANCELLED` pase lo que pase con la llamada | **no** |
+| `S20` → `CANCELLED` — la **suscripción de complemento** que el grant convierte a costo $0 (`B/03` §3.2, `B/16` §3.4) | **nuestra llamada**, y como `S13` no tiene rama de fallo declarada: el addon pasa a $0 pase lo que pase con la llamada, porque el §35.2 lo declara gratis desde el acto | **no** |
 | la **lápida** del corte → `CANCELLED` | **una persona a mano** contra la API del proveedor, *«sin idempotencia, sin registro y sin nadie que verifique»* (`B/21` §2.5 y `16-fase-7-del-paraguas.md` §4.2) | **no** |
 
 **Las cuatro salvedades que devuelven una terminal al barrido, y por qué cada una.** La exención
@@ -122,7 +123,7 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 | 1 | **una instancia de addon** en estado terminal | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo |
 | 2 | **una suscripción terminal con la marca `requiere_conciliación` puesta** | hasta que una persona la levante (`S15`) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre |
 | 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. La rama 1 de `B/12` §5.3 deja la predecesora en `CANCELLED` **con un reembolso por confirmar**, así que sin esta salvedad el desenlace que mueve dinero es el único que ningún proceso vuelve a mirar |
-| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — las cuatro filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13` y la lápida | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron |
+| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — las **cinco** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`** y la lápida. **`S20` es de complemento y las otras cuatro son principales**, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron |
 
 > **La 4 es la que cierra el caso de `S13`, y por eso `S13` no necesita una rama de fallo propia
 > como la de `S17`.** `S17` puede no ocurrir porque su cierre depende de la cancelación; `S13`
@@ -132,6 +133,13 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 > los meses y el único mecanismo declarado para lo que diverge en silencio tendría escrito que no
 > lo mira. La 4 es ese mecanismo, y no cuesta ninguna decisión nueva: es la salvedad 1 con otro
 > sujeto.
+>
+> **Y `S20` entra por la 4 y no por la 1, aunque su sujeto sea un complemento.** La 1 selecciona
+> la suscripción de complemento **por el estado terminal de su instancia**, y en `S20` la
+> instancia **no** es terminal: sigue `ACTIVE`, a costo $0 (`B/16` §3.4). La fila terminal es la
+> suscripción, y la canceló una llamada nuestra que puede fallar — exactamente el sujeto de la
+> 4. Si la 1 fuera la puerta, la población quedaría vacía y el preapproval seguiría cobrando el
+> addon que acabamos de declarar gratis.
 
 **La 2 y la 3 se solapan a propósito, y no es redundancia**: la 2 cubre la fila que ya tiene la
 marca, la 3 cubre la que **debería** tenerla y no la tiene porque `S18` no llegó a ponerla — que
@@ -144,8 +152,9 @@ que la fila marcada era terminal.
 
 **Una instancia de addon en estado terminal SÍ se barre, hasta que la relectura la vea
 `cancelled`.** Ahí la garantía no existe: su preapproval es propio (`DEC-ADDON-002`), el
-proveedor no lo tocó y **lo cancelamos nosotros** cuando `A3`, `A5` —la que declara al
-addon huérfano— o `A6` la llevan a un estado terminal (`B/03` §8) — una llamada que puede fallar,
+proveedor no lo tocó y **lo cancelamos nosotros** cuando `A3`, `A5` —la que lo declara
+huérfano, o la que retira el ancla que era su título— o `A6` la llevan a un estado terminal
+(`B/03` §8) — una llamada que puede fallar,
 y **mutar o cancelar no emite webhook**
 (`EX-15`), así que no hay ninguna otra vía de aviso. Es exactamente el detector que `B/16` §4.3
 declara —*«un addon en estado terminal con su preapproval vivo es una discrepancia que el barrido
@@ -169,6 +178,11 @@ terminal entera sino la cola de las que todavía no confirmaron.
 > esa causa, y por la regla 1 del núcleo eso no se puede escribir. Queda nombrado y **no se
 > resuelve acá**: elegir el estado de llegada es elegir si sostiene servicio hasta una fecha, que
 > es una decisión de producto.
+>
+> **Y `S20` no lo cierra, aunque sea la primera transición que lleva un complemento a terminal.**
+> Ahí la causa es otra —el grant lo convierte a costo $0— y la instancia **sobrevive**; acá la
+> instancia **muere** y la pregunta es qué pasa con su cobro. Son dos huecos distintos con el
+> mismo sujeto, y el de arriba **sigue abierto**.
 >
 > **`A4` no está en esa lista y antes sí estaba.** `A4` es *«llega su fecha de fin → `EXPIRED`»*,
 > o sea la vigencia `DÍAS_FIJOS`, y un preapproval propio existe **sólo** si el cobro es
@@ -234,18 +248,30 @@ esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
 > rama 5—, `S3` lo reevalúa, `S13` apaga la bandera. Esta comprobación existe para la corrida en
 > que alguno no se ejecutó.
 
-**Y una tercera, que tampoco le pregunta nada al proveedor: la vertical que `S13` no alcanzó a
-cerrar.** Si un beneficiario tiene un **ancla viva** en la vertical V (`permanent_grant_vertical`,
-`B/02` §2.4) y además una **fila viva principal** suya en V, `S13` no terminó de correr: se pone
-la **marca**. Cuesta cero llamadas —las dos filas están en nuestra base— y cubre el único estado
-que el fan-out de `S13` puede dejar colgado: **el beneficiario de un *Free Forever* pagando todos
-los meses una vertical que el grant le regaló**, con el §35.3 ordenando lo contrario.
+**Y una tercera, que tampoco le pregunta nada al proveedor: la vertical que `S13` —o `S20`— no
+alcanzó a cerrar.** Si un beneficiario tiene un **ancla viva** en la vertical V
+(`permanent_grant_vertical`, `B/02` §2.4) y además **una de estas dos cosas**, el fan-out no
+terminó de correr y se pone la **marca**:
+
+| qué no debería existir | qué acto quedó a medias | qué le está pasando al beneficiario |
+|---|---|---|
+| una **fila viva principal** suya en V | `S13` | **paga todos los meses una vertical que el grant le regaló**, con el §35.3 ordenando lo contrario |
+| una **fila viva de complemento** suya cuyo addon es **compatible con V**, si el grant lleva `includesAddons: true` | `S20` (`B/03` §3.2, `B/16` §3.4) | **paga todos los meses un addon que el flag le declaró gratis**, con el §35.2 ordenando lo contrario |
+
+Cuesta cero llamadas —todas esas filas están en nuestra base— y cubre el único estado que ese
+fan-out puede dejar colgado. **Es una comprobación y no dos**: los dos actos corren en el mismo
+instante, fallan del mismo modo y se arreglan reanudando lo mismo, así que partirla sería contar
+dos veces el mismo barrido. **Y la segunda fila no corre si el flag es `false`**: ahí el
+complemento vivo es lo correcto, no una divergencia.
 
 > **Hace falta porque ése es, con esas palabras, el estado que el diseño declara indetectable.**
 > `B/03` §3.2 lo escribe al justificar el alcance de `S13`: *«la fila está `ACTIVE`, el proveedor
 > dice `authorized`, y para el barrido eso **coincide**»*. Las cinco comparaciones de arriba no lo
 > ven —los dos lados dicen lo mismo— y las otras tres comprobaciones miran `sucede_a`, el pago
-> pendiente y el objetivo de un complemento, no los grants.
+> pendiente y **una instancia de addon**, no las filas de suscripción del beneficiario. **La
+> cuarta sí mira un ancla** —su segunda mitad pregunta si la que era título de una instancia se
+> retiró—, y aun así no ve esto: su sujeto es la **instancia**, y acá el que quedó colgado es un
+> **cobro**, con su instancia perfectamente sana.
 >
 > **Y cubre los dos disparadores de `S13`, no uno.** Desde que el scope son anclas, `S13` lo lanza
 > el **otorgamiento** y también el **anclaje de una vertical nueva a un grant vivo**
@@ -260,15 +286,26 @@ los meses una vertical que el grant le regaló**, con el §35.3 ordenando lo con
 > **Es el detector de un racimo, no de un caso.** La misma comprobación ve la vertical que `S13`
 > no alcanzó por una corrida cortada, la que no alcanzó porque **el acto nuevo no la disparó**, y
 > la que alcanzó con la llamada al proveedor fallida —esa última la ve **además** la salvedad 4,
-> por el otro lado—. Ninguna de las tres la cierra; las tres las detecta.
+> por el otro lado—. Ninguna de las tres la cierra; las tres las detecta. **Y las mismas tres
+> valen para `S20`**, con el complemento en lugar de la principal: es el mismo fan-out, en el
+> mismo acto, con la misma llamada por fila.
 
 **Y una cuarta, que tampoco le pregunta nada al proveedor: la instancia de addon viva cuyo
 objetivo ya murió.** Si una instancia está en uno de sus **dos** estados con autorización que
 puede cobrar —`PENDING_AUTHORIZATION` o `ACTIVE` (`B/03` §8)— y su objetivo **ya cumple la
-condición de orfandad del `B/16` §4.2**, `A5` no corrió: se pone la **marca**. Cuesta cero
-llamadas —la instancia, su objetivo y el ancla del grant están todos en nuestra base— y **no
-reescribe el predicado: lo delega** en el §4.2, que es su único dueño.
+condición de orfandad del `B/16` §4.2**, **o el ancla que era su título ya no existe**, `A5` no
+corrió: se pone la **marca**. Cuesta cero llamadas —la instancia, su objetivo y el ancla del
+grant están todos en nuestra base— y **no reescribe el predicado: lo delega** en el §4.2, que es
+su único dueño.
 
+> **La segunda mitad no es un adorno del enunciado: sin ella la comprobación es ciega a tres de
+> los cuatro scopes.** El evento de `A5` tiene **tres** cláusulas desde `B/03` §8, y la tercera
+> —*«se retira el ancla que era su título»*— es la única que corta un addon de scope `LISTING`,
+> `USER` o `GLOBAL` cuyo título era un grant: su objetivo es una ficha o una cuenta que **siguen
+> existiendo**, así que la condición de orfandad **no se cumple nunca** y una comprobación
+> escrita sólo sobre el objetivo no encuentra a nadie. Es la misma delegación: el predicado de la
+> tercera cláusula vive en `B/03` §8, no acá.
+>
 > **Es el reverso exacto de la salvedad 1, y hacen falta las dos.** La salvedad 1 mira una
 > instancia **terminal** con el preapproval **vivo** —`A5` corrió y la llamada al proveedor no se
 > aplicó—; ésta mira una instancia **viva** con el objetivo **muerto** —`A5` no corrió—. Ninguna
@@ -282,8 +319,9 @@ reescribe el predicado: lo delega** en el §4.2, que es su único dueño.
 > población está apagado.
 >
 > **Es un backstop, no el disparador.** En el curso normal `A5` ya cerró la instancia en alguno de
-> los tres momentos que el `B/16` §4.3 enumera. Esta comprobación existe para la corrida en que
-> ninguno se ejecutó, y su desenlace es la marca —una persona—, nunca una cancelación automática.
+> los **cuatro** momentos que el `B/16` §4.3 enumera —el cuarto es la revocación del grant o el
+> retiro de un ancla—. Esta comprobación existe para la corrida en que ninguno se ejecutó, y su
+> desenlace es la marca —una persona—, nunca una cancelación automática.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.

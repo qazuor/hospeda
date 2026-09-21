@@ -26,10 +26,14 @@ complemento —una por addon recurrente, `DEC-ADDON-002`— usan **esta misma m�
 propio.
 
 > **Usar la misma máquina no es entrar en el mismo dominio.** Una transición cuyo `desde` se
-> escribe como un **conjunto de filas** —y en esta tabla hay una sola, `S13`— tiene que decir si
-> alcanza también a las de complemento, porque son filas de `subscription` como cualquier otra y
-> **entran por pertenencia sin que nadie lo decida**. `S13` dice **«principal»** y no las alcanza
-> (§3.2); toda transición futura que se escriba sobre un conjunto tiene que contestar lo mismo.
+> escribe como un **conjunto de filas** —y en esta tabla hay **dos**, `S13` y `S20`— tiene que
+> decir si alcanza también a las de complemento, porque son filas de `subscription` como
+> cualquier otra y **entran por pertenencia sin que nadie lo decida**. Las dos lo contestan, y al
+> revés una de la otra: `S13` dice **«principal»** y no las alcanza; `S20` dice **«de
+> complemento»** y **sólo** las alcanza (§3.2). Que sean dos filas y no un `desde` ampliado es
+> deliberado: `S13` cancela **sin evaluar condición**, y `S20` **evalúa una** —compatibilidad y
+> el flag— que es lo que el §41 exige para no cancelar a ciegas. Toda transición futura que se
+> escriba sobre un conjunto tiene que contestar lo mismo.
 
 ### 3.1 Los nueve estados
 
@@ -114,6 +118,7 @@ Y una nota de registro que sigue valiendo:
 | S17 | la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED` | su sucesora quedó **autorizada**, confirmado por relectura | `CANCELLED` | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada** |
 | S18 | la **sucesora viva**: en `ACTIVE`, **o en `PENDING_AUTHORIZATION` cuando la predecesora se murió sola** | la misma autorización que disparó `S2`; **o la predecesora dejó de ser fila viva sin `S17` — por `S12`, por `S16` o por el espejo de la baja decidida por el proveedor (§10.1)**; o una resolución de `S15` sobre la sucesión trabada | **el mismo estado** | la predecesora **ya no es fila viva** | **cierra la sucesión, y es el único acto que lo hace.** Son **cuatro** escrituras y la tercera alcanza **tres** entidades: se escribe **`sucedida_por`** en la predecesora; se **limpia `sucede_a`** en la sucesora; **todo lo que colgaba de la predecesora se re-apunta a la SUCESORA** —los **complementos** (`B/16` §4.2), la **redención de promo** (`B/14` §2.2) y la **cortesía vigente** (`B/14` §4.4), con el inventario completo en `B/02` §2.6—; y **si la predecesora retiene un pago pendiente por `S19`, se le pone a ELLA la marca `requiere_conciliación`** con motivo *«reembolso por confirmar»* (rama 1 de `B/12` §5.3, `DEC-RF-002`). La sucesora pasa a ser el origen |
 | S19 | la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED` | **entra el pago del período impago, por cualquiera de sus DOS puertas**: la cuota que el proveedor sigue reciclando, **o** el pago que el admin registra a mano (`MP1`, §7) | **el mismo estado** | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **el pago se registra y queda pendiente de resolución** —sea un `payment` o un `manual_payment` (`B/02` §2.3)—: no reactiva, no se reembolsa todavía y **no pone la marca todavía** — es un caso diseñado y no una divergencia, así que `S14` no aplica; **la marca la pone `S18` al cerrar, y sólo en las ramas 1 y 5**. Su destino lo decide **cómo termina la sucesión**, con las cinco ramas de `B/12` §5.3. Mientras esté pendiente, `S6` no corre |
+| S20 | **toda fila viva DE COMPLEMENTO** del beneficiario —los **seis** estados de la suscripción, no los dos de la instancia— cuya instancia esté en uno de sus **dos** estados vivos y cuyo `addon_product` declare compatible **la vertical que el acto ancla**; para los scopes con vertical propia —`VERTICAL_SUBSCRIPTION` y `LISTING`— **además su objetivo tiene que ser de esa vertical** (`B/16` §3.4). **Las principales no entran**: ésas son de `S13` | el mismo acto que dispara `S13`: `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a uno vivo** (`12-contrato…` §2.8) | `CANCELLED` | **el grant lleva `includesAddons: true`** — con `false` no corre y el complemento sigue cobrando | §35.2: el addon pasa a **costo $0**. Se cancela el preapproval en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada. **Sin reembolso del período ya cobrado** (`DEC-GRANT-001`, igual que `S13`). **No lleva la mitad de `S19` que `S13` sí lleva**, y no por olvido: `S19` sale de *«la predecesora de una sucesión en curso»* y una fila de complemento **nunca es una**, así que esa bandera sobre un complemento es población vacía. **La instancia no cambia de estado**: si estaba `ACTIVE` sigue `ACTIVE`, ahora colgando del **ancla** como su título (`B/02` §2.4); si estaba `PENDING_AUTHORIZATION` no se convierte —no hay nada comprado— y muere por `A3` al vencer su ventana, con la pantalla de *«esperando que completes el pago»* dejando de ofrecer el enlace en el acto. **Proceso idempotente y reanudable fila por fila**, con su detector en `B/09` §3 |
 
 **La muerte de la predecesora y el cierre de la sucesión son DOS actos, y por eso son dos
 filas.** `S17` mata a la predecesora; `S18` cierra la sucesión. Escribirlos como uno solo es lo
@@ -428,8 +433,17 @@ malo en las dos direcciones:
 - **hacia regalar lo que nadie paga**: para un addon de scope `USER` o `GLOBAL` el objetivo es la
   cuenta, que no se borró, así que **no queda huérfano** (`B/16` §4.2) — pero su cobro ya estaba
   cancelado, y **ninguna transición de la máquina de addon tiene por evento *«mi suscripción de
-  complemento fue cancelada»*** (`A4` es su fecha de fin, `A5` la orfandad y `A6` el borrado de la
-  ficha, §8). La instancia se quedaba `ACTIVE` y gratis para siempre.
+  complemento fue cancelada»*** (`A4` es su fecha de fin, `A5` la orfandad o el retiro de su
+  ancla, y `A6` el borrado de la ficha, §8). La instancia se quedaba `ACTIVE` y gratis para
+  siempre.
+
+  > **`S20` deja a esa instancia exactamente así —`ACTIVE` y gratis— y no es el mismo desenlace**,
+  > aunque la foto coincida. Acá el addon quedaba gratis **porque nadie decidió nada** y sin
+  > ninguna forma de apagarse: el grant se revocaba y seguía encendido para siempre. Con `S20` es
+  > gratis **porque el §35.2 lo declara gratis** mientras el grant dure, la instancia **cuelga del
+  > ancla** y **tiene apagado declarado**: la tercera cláusula del evento de `A5` la corta cuando
+  > el ancla se retira (§8, `B/16` §3.3). Lo que hacía inadmisible este camino no era que el addon
+  > quedara gratis: era que **nada lo volvía a apagar**.
 
 **Las tres reglas que lo prohíben ya estaban escritas, y ninguna es de acá**: el §41 ordena *«no
 cancelar ciegamente»* y cancelar *«sólo cuando queda efectivamente huérfano»*; `DEC-ADDON-002`
@@ -444,17 +458,31 @@ lo que el §41 prohíbe.
 | scope del addon (§40) | qué pasa cuando `S13` mata la principal de esa vertical |
 |---|---|
 | `VERTICAL_SUBSCRIPTION` | **no queda huérfano**: el grant que acaba de caer **vale como título en esa vertical** (`B/16` §2.4), y ésa es la tercera salvedad de la condición de `B/16` §4.2. Sin ella, `A5` lo cancelaría de inmediato por la otra puerta y *«conserva los dos»* sería falso igual |
-| `USER` · `GLOBAL` | **no queda huérfano**: el objetivo es la cuenta y la cuenta no se borró. Ya era así; lo que cambia es que ahora su cobro tampoco se cancela |
+| `USER` · `GLOBAL` | **no queda huérfano**: el objetivo es la cuenta y la cuenta no se borró. Ya era así; lo que cambia es que ahora `S13` tampoco le cancela el cobro |
 | `LISTING` | **no lo toca nadie**: su objetivo es la ficha (`B/16` §4.2) |
 
-**Y su suscripción de complemento sigue cobrando, porque ningún acto la apaga.** Es la regla 1 del
-núcleo leída en la dirección que menos se lee: lo que la tabla no declara **no pasa**, así que un
-grant que no alcanza al complemento tampoco lo deja gratis. **Lo que NO decide este § es si un
-grant con `includesAddons: true` tiene que convertir a costo $0 un addon que el beneficiario ya
-venía pagando**: el §35.2 habla de addons que *«pueden utilizarse a costo $0»* y `B/16` §3.2 dice
-que el grant *«habilita; no enciende»* y que la persona los elige uno por uno, las dos frases
-escritas sobre addons que **todavía no existen**. Para uno ya comprado no hay acto declarado en
-ningún capítulo, y **no se inventa acá**: queda abierto y nombrado.
+**Y `S13` no le apaga el cobro a ninguno de los tres, que es lo que esta acotación garantiza.** Es
+la regla 1 del núcleo leída en la dirección que menos se lee: lo que la tabla no declara **no
+pasa**, así que un grant que no alcanza al complemento tampoco lo deja gratis por accidente.
+
+**Lo que SÍ se lo apaga es `S20`, y es otra fila con otra condición.** Que la instancia sobreviva
+al grant no decidía de dónde sale la plata, y **durante toda una tanda nadie lo escribió**: el
+beneficiario de un *Free Forever* con `includesAddons: true` seguía pagando todos los meses un
+addon que su propio flag le declaraba gratis. Eso lo cierra `S20` (arriba, y el caso entero en
+`B/16` §3.4), que **evalúa una condición** —el flag, la compatibilidad del producto con la
+vertical anclada y, en los scopes con vertical propia, el objetivo— en vez de alcanzar por
+pertenencia. Las dos afirmaciones conviven sin contradecirse porque **hablan de conjuntos
+distintos**: `S13` de las principales, `S20` de las de complemento que cumplen su condición. Un
+complemento **no compatible**, o cualquiera si el flag es `false`, **sigue cobrando** — y sigue
+siendo lo correcto, por la misma razón por la que `S13` no lo alcanza.
+
+**`S13` y `S20` comparten el evento y NO comparten el par, así que `G-R4` no tiene nada que
+mirar.** El evento es el mismo —otorgar, o anclar una vertical nueva—, pero el `desde` de una es
+*«toda fila viva **principal**»* y el de la otra *«toda fila viva **de complemento**»*, y la
+partición por `clase` (`B/02` §2.2) hace que los dos conjuntos sean **disjuntos por
+construcción**: ninguna fila puede satisfacer los dos. La regla 7 del núcleo pide guardas
+disjuntas cuando el par coincide; acá **el par no coincide**, y **los pares con dos filas de
+esta tabla siguen siendo los tres** que `NUCLEO/03` §1 regla 7 enumera.
 
 ##### La ejecución parcial: `S13` es idempotente, y su detector cuesta cero llamadas
 
@@ -476,6 +504,15 @@ verdadera** para la vertical que la corrida no alcanzó. Por eso el detector va 
 **tercera comprobación de cero llamadas** de `B/09` §3: *«un beneficiario con un ancla viva en la
 vertical V no debería tener una fila viva principal en V»*. Las dos filas están en nuestra base,
 igual que las de las otras tres comprobaciones.
+
+**Y `S20` corre en el mismo acto, con el mismo fan-out y el mismo modo de falla, así que la
+tercera comprobación lo cubre a él también.** No es una comprobación nueva: es la misma
+pregunta sobre el otro conjunto —*«…ni una fila viva de complemento de un addon compatible en
+V»*—, y hace falta por la razón de siempre, escrita con las mismas palabras: la fila de
+complemento dice `ACTIVE`, el proveedor dice `authorized`, **y para el barrido eso coincide**.
+Una corrida que muere después de cerrar las principales y antes de llegar a los complementos deja
+al beneficiario **pagando un addon que el flag le declaró gratis**, que es exactamente el defecto
+que `S20` vino a cerrar, entrando por la puerta de la ejecución parcial.
 
 **`S14` y `S15` quedan en la tabla y ya no son transiciones de estado.** Se listan acá porque son
 los dos eventos que el §22.1 gobierna y nadie los debe buscar en otro lado, pero **ninguna de las
@@ -714,7 +751,7 @@ que `S18` puso.
 | A2 | `PENDING_AUTHORIZATION` | se autoriza | `ACTIVE` | recurrente: su propio preapproval (`DEC-ADDON-002`). De única vez: su propio cobro |
 | A3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | mismas 72 h que S3 |
 | A4 | `ACTIVE` | llega su fecha de fin | `EXPIRED` | **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`) |
-| A5 | **toda instancia con una autorización que puede cobrar: `PENDING_AUTHORIZATION` y `ACTIVE`** (ver abajo, *«la instancia que autoriza después»*) | se da de baja, o queda huérfano | `CANCELLED` | §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las **seis** transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16`, `S17` y el espejo del §10.1—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3) |
+| A5 | **toda instancia con una autorización que puede cobrar: `PENDING_AUTHORIZATION` y `ACTIVE`** (ver abajo, *«la instancia que autoriza después»*) | se da de baja, queda huérfano, **o se retira el ancla que era su título** | `CANCELLED` | **Son tres eventos y el tercero es nuevo** (ver abajo, *«el addon cuyo título era el ancla»*). §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las **seis** transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16`, `S17` y el espejo del §10.1—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3) |
 | A6 | `ACTIVE` | se borra la ficha destino | `CANCELLED` | **se consume**: no se libera ni se reasigna (`DEC-ADDON-001`), y el borrado **tiene que advertir qué addons se pierden y por cuánto** |
 
 **Cancelar el plan no cancela los addons**: como cada addon recurrente es una suscripción aparte,
@@ -752,7 +789,9 @@ punto 3).
 **`A5` desde `PENDING_AUTHORIZATION` no colisiona con `A3`**: el par es
 `(PENDING_AUTHORIZATION, queda huérfano)` y `A3` es `(PENDING_AUTHORIZATION, vence la ventana)`.
 Son dos eventos distintos, así que **no hay un cuarto par con dos filas** y la tabla de la regla 7
-del núcleo sigue teniendo **tres** entradas. Los estados de llegada difieren —`CANCELLED` y
+del núcleo sigue teniendo **tres** entradas. **El tercer evento de `A5` tampoco agrega un par**:
+*«se retira el ancla»* no lo comparte ninguna otra fila de esta tabla, ni desde `ACTIVE` —donde
+están `A4` y `A6`, con sus propios eventos— ni desde `PENDING_AUTHORIZATION`. Los estados de llegada difieren —`CANCELLED` y
 `ABANDONED`— y los dos son terminales de la instancia, así que **los dos caen bajo la salvedad 1
 de `B/09` §3**, que devuelve al barrido la suscripción de complemento hasta que la relectura vea
 el preapproval `cancelled`.
@@ -763,6 +802,35 @@ instante porque una sucesión lo relevaba, y se cumplió después—, la condici
 evaluar cuando la instancia llega a `ACTIVE` por `A2`**: es uno de los momentos que `B/16` §4.3
 enumera, y sin esa enumeración *«se re-evalúa»* era una promesa sin transición, que es lo que la
 regla 1 de este capítulo no admite.
+
+#### El addon cuyo título era el ancla: por qué `A5` gana un tercer evento
+
+`B/16` §3.3 decide desde hace tiempo que **al revocar un grant el addon se corta** —*«la fuente
+era el grant y el grant se fue»*—, y **ninguna fila de esta tabla lo ejecutaba**. La orfandad no
+sirve para eso y la razón es exacta: **el predicado de `B/16` §4.2 pregunta por el OBJETIVO**, y
+el objetivo de un addon de scope `LISTING`, `USER` o `GLOBAL` es una ficha o una cuenta que
+siguen existiendo. Sólo el scope `VERTICAL_SUBSCRIPTION` volvía a *«huérfano»* al retirarse el
+ancla, porque ahí el objetivo **sí** estaba muerto y era el grant lo único que lo relevaba
+(tercera mitad del §4.2). Para los otros tres, *«se corta»* era una frase sin transición — y por
+la regla 1 de este capítulo, una frase sin transición **no pasa**.
+
+**El evento es el retiro del ancla, no la ausencia de título**, y la diferencia importa. Si el
+predicado fuera *«no le queda ninguna fuente de clase `TÍTULO`»*, alguien que vuelve a
+suscribirse el mismo día que le revocan el grant conservaría el addon gratis: tendría título de
+nuevo y nadie pagaría el complemento. Lo que se retiró es **el título concreto del que ese addon
+colgaba**, y la instancia lo dice porque lo guarda: `addon_instance` apunta al ancla
+(`B/02` §2.4). Si después quiere el addon, lo contrata — que es la mitad de la decisión del owner
+que dice que **revocar no repara** (`B/16` §3.3, `DEC-GRANT-001`, `DEC-TRIAL-009`).
+
+**Cubre los dos orígenes del addon gratuito con una sola regla**: el que el beneficiario eligió
+gratis (`B/16` §3.2) y el que `S20` convirtió desde uno que venía pagando (`B/16` §3.4). El
+primero ya tenía este agujero y nadie lo había nombrado; el segundo lo habría heredado.
+
+**Y el efecto es el mismo que el de los otros dos eventos**: `CANCELLED`, con la cancelación del
+preapproval si quedaba alguno vivo y con la regla de relectura de `S17`. En el addon convertido
+por `S20` **normalmente no queda ninguno** —su suscripción de complemento ya se canceló al
+otorgar—, así que ahí el acto es sólo local; la llamada existe para el addon que nunca fue
+gratis y llegó acá por otro camino.
 
 ---
 

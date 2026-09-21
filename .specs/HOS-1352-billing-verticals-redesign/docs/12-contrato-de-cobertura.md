@@ -493,9 +493,13 @@ dispara `S13`.** Las dos mitades son necesarias y ninguna se infiere de *«queda
    ahí desde el instante del anclaje, así que **toda fila viva PRINCIPAL suya en esa vertical se
    cancela**, igual que en el otorgamiento. Sin esto el §35.3 —*«cancelar toda obligación de pago
    cubierta»*— queda incumplido **exactamente en la vertical que se acaba de regalar**, y el
-   beneficiario la sigue pagando todos los meses. **Sus complementos no**: los addons que ya
-   compró los conserva —es el *«conserva los dos»* del §2.4—, y el alcance de `S13` dice
-   *«principal»* por esa razón (`B/03` §3.2).
+   beneficiario la sigue pagando todos los meses. **Sus complementos no los cancela `S13`**: los
+   addons que ya compró los conserva —es el *«conserva los dos»* del §2.4—, y el alcance de
+   `S13` dice *«principal»* por esa razón (`B/03` §3.2). **Lo que sí les pasa, si el grant lleva
+   `includesAddons: true`, es que los compatibles se convierten a costo $0**: `S20` cancela su
+   suscripción de complemento y la instancia pasa a colgar del ancla, sin reembolso del período
+   ya cobrado (`B/16` §3.4). Conservarlos y seguir cobrándolos no son lo mismo, y el §35.2 pide
+   lo primero sin lo segundo.
 
 **Desanclar no está declarado, y esto no lo declara.** Reducir el scope de un grant sin revocarlo
 entero no es una operación de este diseño; si alguna vez se necesita, entra por el catálogo del

@@ -134,7 +134,7 @@ si es destructiva o mueve dinero.**
 | acción | de dónde sale | ¿destructiva o mueve dinero? |
 |---|---|---|
 | otorgar o revocar una **cortesía temporal** | §34, `DEC-GRANT-002` | **sí**: revocar deja al cliente sin la cortesía que le quedaba |
-| otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) |
+| otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) — **y, con `includesAddons: true`, la de cada addon compatible que venía pagando** (`S20`, `B/16` §3.4) |
 | registrar un **pago manual** | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
@@ -188,6 +188,20 @@ dos filas describen un trámite que nadie empieza.
    (`EX-3`)—; revocar corta el servicio. Quien ancla una vertical tiene que leer, antes de
    firmar, **qué cobro deja de ocurrir**, porque ése es el acto que hoy nadie ve: el grant ya
    existía y la pantalla parece decir que sólo se agrega algo.
+
+   **Y con `includesAddons: true` los cobros que dejan de ocurrir son más de uno**: otorgar y
+   anclar **también cancelan la suscripción de complemento de cada addon compatible** y lo pasan
+   a costo $0 (`S20`, `B/16` §3.4). La frase tiene que **enumerarlos**, no resumirlos, porque
+   cada uno es un débito distinto que desaparece y porque **el beneficiario va a recibir un
+   correo del proveedor por cada preapproval cancelado** (`EX-3`): quien firma tiene que saber
+   cuántos son antes de que los mande.
+
+   **Y la frase de revocar dice que esos addons se apagan y NO vuelven solos.** Es la mitad que
+   duele de la decisión del owner: el beneficiario **venía pagando** esos addons, se los pasamos
+   a gratis, y al revocar **no se reanuda el débito viejo** —cancelar en el proveedor es
+   irreversible (`PA-5`) y `DEC-GRANT-001` ya lo declara— **ni se compensa**. Si los quiere de
+   nuevo, vuelve a suscribirse. Sin esta frase, *«qué addons corta»* (`B/19` §4 fila 13) se lee
+   como que corta regalos, cuando la mitad puede ser lo que la persona pagaba.
 
    **Y la frase de revocar dice además que el trial ya está consumido y no vuelve**
    (`DEC-TRIAL-009`). Recibir el grant consume el trial de esa vertical —`T2` o `T6`, según

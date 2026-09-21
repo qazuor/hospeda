@@ -256,7 +256,7 @@ automático que esa decisión rechazó.
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es **la versión que se vende hoy**: la que una compra nueva ancla | `version_id` **no es anulable**: sin ella el producto no se puede comprar. **NO es la referencia que transporta una fuente `ADDON`** — ésa la aporta la instancia |
-| **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
+| **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente, **y el ancla del grant que sea su título, si lo es** | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. **El ancla del título apunta a `permanent_grant_vertical` y sí es anulable**: nula cuando el título es el ordinario de esa vertical, no nula cuando el addon vive de un grant. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
 | **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **se re-apunta en `S18`** (§2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
@@ -289,6 +289,28 @@ lecturas, y el desenlace está medido: quien compró *«+30 fotos»* pasaría a 
 versión nueva, **sin comprar nada y sin que nadie se lo avise** (`V/02` §2.1). Por eso
 `addon_product` **no necesita declararse inmutable**: re-apuntarlo es cómo se publica una versión,
 y con la referencia viviendo en la instancia esa mutación ya no alcanza a nadie que haya comprado.
+
+**Y la instancia gana una TERCERA referencia, que no contesta ninguna de esas dos preguntas: de
+qué TÍTULO vive.** Las dos de arriba dicen *qué otorga* el addon; ésta dice *quién lo sostiene*, y
+hasta acá **no existía** aunque `B/16` §3.1 afirmara que sí —*«la instancia dice que su título es
+el grant … un campo que el modelo ya necesita, no uno nuevo»*—. Es `F-8dA3-007` de la `FASE
+8-bis-3`, y se escribe **una sola vez para sus dos orígenes**: el addon que el beneficiario
+**elige gratis** (`B/16` §3.2) y el que venía pagando y `S20` **convierte a costo $0**
+(`B/16` §3.4).
+
+- **Apunta al ANCLA, no al grant.** Un grant es *«UN instrumento con UN ANCLA POR CADA VERTICAL»*
+  (§2.4 más abajo, `12-contrato…` §2.8) y el título **es por vertical** (`B/16` §2.4): con *«el
+  grant»* no se podría saber cuál ancla lo sostiene, así que retirar una vertical cortaría los
+  addons de las otras o no cortaría ninguno. Las dos ramas están medidas en `F-8dA3-007`.
+- **Es anulable, y eso no contradice el `12-contrato…` §2.3.** Lo que esa regla prohíbe sin
+  excepción es que **la fuente** quede sin referencia resoluble, y la referencia de una fuente
+  `ADDON` es la versión anclada por la instancia, que **no** es anulable. Esta columna es otra
+  cosa: **el vínculo con el título**, y para el addon comprado sobre una suscripción no hay nada
+  que guardar —la validez se evalúa al comprar (`B/16` §2.2)— así que nula es su valor correcto.
+- **Su consumidor es la tercera cláusula del evento de `A5`** (`B/03` §8), que corta el addon
+  cuando **ese** ancla se retira. Sin la columna, esa cláusula no tiene sujeto y *«al revocar el
+  grant el addon se corta»* (`B/16` §3.3) vuelve a ser una frase sin transición para los scopes
+  `LISTING`, `USER` y `GLOBAL`.
 
 **Las concesiones no modifican el plan ni la suscripción: son fuentes independientes.** El §36
 dice que un entitlement sigue activo «mientras al menos una source exista», y eso sólo se puede
@@ -407,11 +429,18 @@ más. Por eso el inventario va acá y no repartido en tres capítulos.
 > alcanza *«toda fila viva **principal**»* (`B/03` §3.2), así que **no toca la suscripción de
 > complemento** —que es una fila de esta misma tabla, con su `clase`—; y el addon tampoco queda
 > huérfano, porque el grant **releva** a la principal en esa vertical (`B/16` §4.2, tercera
-> mitad de la condición). De las cinco filas de arriba la única que un grant mueve es la cuarta
-> —el pago pendiente por `S19`—, y la mueve **apagando la bandera**, no re-apuntándola (rama 4 de
-> `B/12` §5.3). Lo que queda **abierto y no lo decide ningún capítulo** es si un grant con
-> `includesAddons: true` tiene que convertir a costo $0 un complemento que el beneficiario ya
-> venía pagando: hoy se sigue cobrando, porque ningún acto declarado lo apaga.
+> mitad de la condición). De las cinco filas de arriba la única que un grant mueve por ser grant
+> es la cuarta —el pago pendiente por `S19`—, y la mueve **apagando la bandera**, no
+> re-apuntándola (rama 4 de `B/12` §5.3).
+>
+> **Y si el grant lleva `includesAddons: true`, la primera fila la mueve OTRO acto, que tampoco
+> es una sucesión.** `S20` (`B/03` §3.2) **cancela** la suscripción de complemento de cada addon
+> compatible y **la instancia pasa a colgar del ancla** —no de la sucesora, porque no hay
+> sucesora—, que es el addon a costo $0 del §35.2 escrito por fin como un acto (`B/16` §3.4).
+> Esto **no convierte al grant en una sucesión**: no hereda nada, no re-apunta la promo ni la
+> cortesía y no cierra ningún candado. Lo único que comparte con `S18` es que el complemento
+> **deja de colgar de donde colgaba**, y hacia dónde pasa a colgar es distinto: allá la sucesora,
+> acá el ancla. Con el flag en `false` no se mueve nada y el complemento sigue cobrando.
 
 ---
 
