@@ -51,6 +51,7 @@ import { describe, expect, it } from 'vitest';
 import {
     isPolicedFile,
     marksDegradedResponse,
+    marksDegradedResponseUnconditionally,
     matchedErrorSurfaces,
     mayBeEdgeCacheable,
     reachesDegradationMarker,
@@ -400,6 +401,35 @@ describe('detector: reaching the marker', () => {
         ).toBe(false);
     });
 
+    it('THE FORMATTING TRAP: a BLOCK-form conditional does not certify either', () => {
+        // Review's mutation on `shared/feedback/ErrorBanner.astro`. The first
+        // version of the unconditional check was
+        // `/(?:^|[{};])\s*markResponseDegraded\s*\(/m`, where `^` under `/m` is
+        // LINE start and `[{};]` matches the opening brace of the very `if` —
+        // so this exact shape counted as unconditional, the banner stopped
+        // marking in practice, and all 40 tests stayed green with the 16 pages
+        // still certified.
+        //
+        // The one-line form was the ONLY thing it rejected, which made the
+        // whole distinction a matter of FORMATTING — and `.astro` is excluded
+        // from Biome, so nothing normalises that line in either direction.
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/nuevo.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/nuevo.astro`]: `import Banner from '@/components/Banner.astro';
+                        <Banner />`,
+                    [`${SRC}/components/Banner.astro`]: `
+                        if (error?.status === 599) {
+                            markResponseDegraded({ locals: Astro.locals });
+                        }
+                    `
+                })
+            })
+        ).toBe(false);
+    });
+
     it('but a page may mark inside its OWN failure branch', () => {
         // The fail-soft shape: no banner, a conditional call at the page. It is
         // marking exactly when it should, so the entry file's own call counts
@@ -473,6 +503,72 @@ describe('detector: reaching the marker', () => {
                 })
             })
         ).toBe(false);
+    });
+});
+
+describe('detector: which marker calls certify a component', () => {
+    it.each([
+        ['a plain top-level call', `markResponseDegraded({ locals: Astro.locals });`],
+        [
+            'a top-level call after other statements',
+            `const t = createT(locale);\nmarkResponseDegraded({ locals: Astro.locals });\nconst x = 1;`
+        ],
+        [
+            'a call whose argument object spans lines',
+            `markResponseDegraded({\n    locals: Astro.locals\n});`
+        ]
+    ])('CERTIFIES %s', (_label, source) => {
+        expect(marksDegradedResponseUnconditionally({ source })).toBe(true);
+    });
+
+    it.each([
+        [
+            'the one-line if',
+            `if (variant === 'error') markResponseDegraded({ locals: Astro.locals });`
+        ],
+        [
+            'the BLOCK if — the form that defeated the first regex',
+            `if (variant === 'error') {\n    markResponseDegraded({ locals: Astro.locals });\n}`
+        ],
+        [
+            'an else branch',
+            `if (a) {\n    b();\n} else {\n    markResponseDegraded({ locals: Astro.locals });\n}`
+        ],
+        ['a logical-and guard', `ok && markResponseDegraded({ locals: Astro.locals });`],
+        ['a ternary', `ok ? noop() : markResponseDegraded({ locals: Astro.locals });`],
+        [
+            'inside a loop',
+            `for (const r of results) {\n    markResponseDegraded({ locals: Astro.locals });\n}`
+        ],
+        [
+            'inside a catch',
+            `try {\n    load();\n} catch {\n    markResponseDegraded({ locals: Astro.locals });\n}`
+        ],
+        [
+            'inside a helper the component may or may not call',
+            `const degrade = () => {\n    markResponseDegraded({ locals: Astro.locals });\n};`
+        ]
+    ])('does NOT certify %s', (_label, source) => {
+        expect(marksDegradedResponseUnconditionally({ source })).toBe(false);
+    });
+
+    it('is not fooled by a brace inside a string literal', () => {
+        const source = `const msg = "if (x) {";\nmarkResponseDegraded({ locals: Astro.locals });`;
+        expect(marksDegradedResponseUnconditionally({ source })).toBe(true);
+    });
+
+    it('the real banner certifies; the real variant-gated one does not', () => {
+        const banner = fs.readFileSync(
+            path.join(WEB_SRC, 'components/shared/feedback/ErrorBanner.astro'),
+            'utf8'
+        );
+        const generic = fs.readFileSync(path.join(WEB_SRC, 'components/ErrorBanner.astro'), 'utf8');
+
+        expect(marksDegradedResponseUnconditionally({ source: banner })).toBe(true);
+        // Marks only for `variant === 'error'`, so it protects itself but
+        // cannot vouch for a caller.
+        expect(marksDegradedResponse({ source: generic })).toBe(true);
+        expect(marksDegradedResponseUnconditionally({ source: generic })).toBe(false);
     });
 });
 

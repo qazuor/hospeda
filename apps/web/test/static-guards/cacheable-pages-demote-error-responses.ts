@@ -258,42 +258,153 @@ export function marksDegradedResponse({ source }: { readonly source: string }): 
     return DEGRADATION_MARKER.test(code);
 }
 
+/** Every occurrence of a marker call, for the position analysis below. */
+const DEGRADATION_MARKER_GLOBAL = /\bmarkResponseDegraded\s*\(/g;
+
 /**
- * A marker call that opens its own statement, i.e. one that runs on EVERY render
- * of the file that contains it.
+ * Keywords that make an enclosing `{ … }` block conditional on something, so a
+ * call inside it does not necessarily run.
+ */
+const BLOCK_OPENERS_THAT_BRANCH = /\b(?:if|else|for|while|switch|catch|try|do)\s*$|=>\s*$|\)\s*$/;
+
+/**
+ * Operators and keywords that make a call conditional WITHIN its own statement.
+ */
+const INLINE_BRANCHING = /\b(?:if|else|for|while|return|case)\b|&&|\|\||\?/;
+
+/**
+ * Replace the contents of string and template literals with spaces, so a brace
+ * or semicolon inside text cannot skew the structural scan below.
+ *
+ * @param params.code - Comment-stripped source.
+ * @returns The same source with literal CONTENTS blanked, lengths preserved.
+ */
+function blankStringLiterals({ code }: { readonly code: string }): string {
+    const out = code.split('');
+    let quote: string | null = null;
+    for (let i = 0; i < out.length; i += 1) {
+        const char = out[i] as string;
+        if (quote !== null) {
+            if (char === '\\') {
+                out[i] = ' ';
+                if (i + 1 < out.length) out[i + 1] = ' ';
+                i += 1;
+                continue;
+            }
+            if (char === quote) {
+                quote = null;
+                continue;
+            }
+            if (char !== '\n') out[i] = ' ';
+            continue;
+        }
+        if (char === "'" || char === '"' || char === '`') quote = char;
+    }
+    return out.join('');
+}
+
+/**
+ * Whether a source file marks the response on EVERY render of it.
+ *
+ * ## Why this is structural and not a regex
  *
  * The distinction decides whether a component may CERTIFY the pages that render
  * it. `components/ErrorBanner.astro` marks behind `if (variant === 'error')`,
  * which is right at runtime — `warning`/`info` are advisory notes on content
  * that rendered fine — but it means rendering that component is not by itself
- * proof that anything was marked. Counting it would let a page render
- * `<ErrorBanner variant="info">`, satisfy this guard, and then draw its real
- * failure some other way with nothing to demote it.
+ * proof that anything was marked.
  *
- * So only an unconditional call certifies. A component whose marking is
- * conditional is still correct, still protects its own error variant at
- * runtime, and simply cannot vouch for its callers — the caller has to arrange
- * its own demotion, and until it does this guard says so.
+ * The first attempt was `/(?:^|[{};])\s*markResponseDegraded\s*\(/m`, and review
+ * showed it distinguished nothing useful: `^` under `/m` is LINE start and
+ * `[{};]` matches the opening brace of the very `if` in question, so
  *
- * Anchored to the start of a statement (line start, or after `{`/`;`) so
- * `if (x) markResponseDegraded(…)` and `x && markResponseDegraded(…)` do not
- * match while an ordinary top-level call does.
- */
-const UNCONDITIONAL_DEGRADATION_MARKER = /(?:^|[{};])\s*markResponseDegraded\s*\(/m;
-
-/**
- * Whether a source file marks the response on EVERY render of it.
+ *     if (error?.status === 599) {
+ *         markResponseDegraded({ locals: Astro.locals });
+ *     }
+ *
+ * counted as unconditional — the banner stopped marking in practice and all 40
+ * tests stayed green, with the 16 pages still certified. It rejected only the
+ * one-line forms. Worse, the discrimination rested on FORMATTING, and `.astro`
+ * is excluded from Biome, so nothing normalises that line either way.
+ *
+ * So the check is now positional. A call certifies only when BOTH hold:
+ *
+ *   1. it sits at brace depth 0 — not inside any block, which is what an
+ *      `if (…) { … }`, a loop, a `try`, a callback or a helper function all
+ *      produce; and
+ *   2. nothing between the previous statement boundary and the call branches —
+ *      no `if`/`return`/`case`, no `&&`, `||` or `?`.
+ *
+ * Deliberately conservative: a call inside a `try` block, or inside a helper the
+ * component always calls, is reported as conditional. Being wrong in that
+ * direction costs a guard failure that a human resolves; being wrong in the
+ * other direction is what review just caught.
  *
  * @param params.source - Raw file contents.
- * @returns `true` when the file carries an unconditional marker call.
+ * @returns `true` when the file carries a marker call that always runs.
  */
 export function marksDegradedResponseUnconditionally({
     source
 }: {
     readonly source: string;
 }): boolean {
-    const code = stripComments({ source }).replace(DEGRADATION_MARKER_DECLARATION, ' ');
-    return UNCONDITIONAL_DEGRADATION_MARKER.test(code);
+    const stripped = stripComments({ source }).replace(DEGRADATION_MARKER_DECLARATION, ' ');
+    const code = blankStringLiterals({ code: stripped });
+
+    DEGRADATION_MARKER_GLOBAL.lastIndex = 0;
+    let match = DEGRADATION_MARKER_GLOBAL.exec(code);
+    while (match !== null) {
+        if (isAlwaysReached({ code, index: match.index })) return true;
+        match = DEGRADATION_MARKER_GLOBAL.exec(code);
+    }
+    return false;
+}
+
+/**
+ * Whether the statement at `index` runs on every execution of the module body.
+ *
+ * @param params.code - Comment-stripped, string-blanked source.
+ * @param params.index - Offset of the call being judged.
+ * @returns `true` when the call is at top level and unguarded.
+ */
+function isAlwaysReached({
+    code,
+    index
+}: {
+    readonly code: string;
+    readonly index: number;
+}): boolean {
+    let depth = 0;
+    let boundary = 0;
+
+    for (let i = 0; i < index; i += 1) {
+        const char = code[i];
+        if (char === '{') {
+            // An object literal does not branch, but a block opened by `if`,
+            // `for`, `=>`, `try`… does. Either way the call is nested, and
+            // "nested" is already enough to decline certification.
+            depth += 1;
+            if (depth === 1) boundary = i + 1;
+            continue;
+        }
+        if (char === '}') {
+            depth -= 1;
+            if (depth === 0) boundary = i + 1;
+            continue;
+        }
+        if (depth === 0 && (char === ';' || char === '\n')) boundary = i + 1;
+    }
+
+    if (depth !== 0) return false;
+
+    const prefix = code.slice(boundary, index);
+    if (INLINE_BRANCHING.test(prefix)) return false;
+
+    // A trailing `)` or branch keyword immediately before the statement means
+    // the line is a continuation of something that branches — e.g. a
+    // single-line `if (x) mark(…)` whose boundary landed at the previous `;`.
+    const beforeBoundary = code.slice(Math.max(0, boundary - 120), boundary).trimEnd();
+    return !BLOCK_OPENERS_THAT_BRANCH.test(beforeBoundary);
 }
 
 /**
