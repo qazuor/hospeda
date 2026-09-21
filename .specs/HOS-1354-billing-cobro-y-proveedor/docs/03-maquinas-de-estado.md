@@ -1184,6 +1184,16 @@ hay proveedor que la tenga—. **Son tres escrituras y un tope, y no hay una cua
    cortesía. **Se computa al volver y no pide un reloj propio**: son los ciclos que caben entre la
    fecha vigente y el instante de la vuelta.
 
+   > **Y esta mitad cuelga de una medición que sigue abierta, así que va dicho.** `DEC-SUB-010`
+   > quedó *«condicionada a FASE 1C, a la segunda lectura del reloj: ¿la fecha corre +1 ciclo por
+   > vencimiento **indefinidamente**, o sólo la primera vez?»*. Lo de arriba es la primera
+   > lectura: **tantos ciclos como hayan vencido**. Si la segunda lectura dice que el proveedor
+   > corre la fecha **una sola vez**, el pagador con tarjeta vuelve con la fecha en el pasado y el
+   > cobro en el acto, y entonces esta regla deja de ser el espejo de nada y hay que volver a
+   > elegir para el pagador manual. **No se elige a ciegas y no se deja sin escribir**: sin una
+   > regla acá, `MP5` vuelve a leer una fecha que nadie movió, que es el defecto que este § existe
+   > para cerrar.
+
 **Y un tope, que corre SÓLO en `MP4`**: si el avance del punto 2 cae en el pasado —la suspensión
 duró más que un período— la fecha pasa a ser **el instante de la reactivación**. Las otras dos
 vueltas a `ACTIVE` no lo necesitan y no lo llevan, y conviene decir por qué cada una:
