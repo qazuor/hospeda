@@ -25,9 +25,11 @@ describe('CROSS_CHECK_RULES', () => {
         ]);
     });
 
-    it('should seed the HOSPEDA_INTERNAL_REQUEST_SECRET api/web equality rule with the exact shape', () => {
+    it('should seed the HOSPEDA_INTERNAL_REQUEST_SECRET api/web/admin equality rule with the exact shape', () => {
+        // HOS-1153 added the admin as a third sender of X-Internal-Request, so
+        // the rule now spans three apps and was renamed to say so.
         const rule = CROSS_CHECK_RULES.find(
-            (r) => r.id === 'internal-request-secret-api-web-match'
+            (r) => r.id === 'internal-request-secret-api-web-admin-match'
         );
 
         expect(rule).toBeDefined();
@@ -35,7 +37,8 @@ describe('CROSS_CHECK_RULES', () => {
         expect(rule?.appliesTo).toEqual(['local', 'coolify']);
         expect(rule?.compare).toEqual([
             { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
-            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
+            { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'admin', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
         ]);
     });
 

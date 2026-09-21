@@ -105,19 +105,19 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_INTERNAL_REQUEST_SECRET',
         description:
-            'Shared secret exempting internal server-to-server SSR traffic from the public rate limit (HOS-103). The web sends it as the X-Internal-Request header on SSR fetches; the API bypasses rate limiting only when it matches. MUST be identical in apps/api AND apps/web for the same environment. Min 32 characters. Fails safe: unset on either side → no bypass.',
+            'Shared secret exempting internal server-to-server SSR traffic from the public rate limit (HOS-103, extended to the admin by HOS-1153). The web sends it as the X-Internal-Request header on SSR fetches and the admin sends it on the two session reads its _authed beforeLoad makes; the API bypasses rate limiting only when it matches. MUST be identical in apps/api, apps/web AND apps/admin for the same environment. Min 32 characters. Fails safe: unset on either side → no bypass.',
         descriptionEs:
-            'Secreto compartido que exime del rate limit público al tráfico SSR server-to-server interno (HOS-103). El web lo manda como header X-Internal-Request en los fetches del SSR; la API omite el rate limit solo cuando matchea. TIENE que ser idéntico en apps/api Y apps/web para el mismo entorno. Mínimo 32 caracteres. Falla seguro: sin setear en cualquiera de los dos lados → no hay bypass.',
+            'Secreto compartido que exime del rate limit público al tráfico SSR server-to-server interno (HOS-103, extendido al admin por HOS-1153). El web lo manda como header X-Internal-Request en los fetches del SSR y el admin lo manda en las dos lecturas de sesión que hace su beforeLoad de _authed; la API omite el rate limit solo cuando matchea. TIENE que ser idéntico en apps/api, apps/web Y apps/admin para el mismo entorno. Mínimo 32 caracteres. Falla seguro: sin setear en cualquiera de los dos lados → no hay bypass.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'a-shared-internal-request-secret-min-32-chars',
-        apps: ['api', 'web'],
+        apps: ['api', 'web', 'admin'],
         category: 'core',
         howToObtain:
-            'Generate with:  openssl rand -base64 32  — MUST be identical in apps/api AND apps/web for the same environment. Leave unset in local dev (SSR hits the same localhost API as the browser); set it in staging/prod once HOSPEDA_INTERNAL_API_URL is configured.',
+            'Generate with:  openssl rand -base64 32  — MUST be identical in apps/api, apps/web AND apps/admin for the same environment. Leave unset in local dev (SSR hits the same localhost API as the browser); set it in staging/prod once HOSPEDA_INTERNAL_API_URL is configured.',
         howToObtainEs:
-            'Generalo con:  openssl rand -base64 32  — TIENE que ser idéntico en apps/api Y apps/web para el mismo entorno. Dejalo sin setear en dev local (el SSR pega a la misma API localhost que el browser); seteálo en staging/prod cuando configures HOSPEDA_INTERNAL_API_URL.'
+            'Generalo con:  openssl rand -base64 32  — TIENE que ser idéntico en apps/api, apps/web Y apps/admin para el mismo entorno. Dejalo sin setear en dev local (el SSR pega a la misma API localhost que el browser); seteálo en staging/prod cuando configures HOSPEDA_INTERNAL_API_URL.'
     },
     {
         name: 'HOSPEDA_EXTRA_TRUSTED_ORIGINS',
