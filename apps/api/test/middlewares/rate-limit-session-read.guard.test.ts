@@ -231,6 +231,44 @@ describe('HOS-1153 guard — session reads do not share the `auth` bucket', () =
             // Assert
             expect(result).toBe('auth');
         });
+
+        for (const path of SESSION_READ_ENDPOINTS) {
+            it(`classifies GET ${path}/ (trailing slash) as a session read too`, () => {
+                // Arrange: exact-set membership is only safe because the path is
+                // normalised first. Without that step a trailing slash silently
+                // drops the request back into the anti-brute-force bucket — the
+                // exact regression this file exists to prevent. Neutralising the
+                // normaliser to the identity survived 80 green tests until this
+                // case existed.
+                const result = getEndpointType(`${path}/`, 'GET');
+
+                // Assert
+                expect(
+                    result,
+                    `GET ${path}/ landed in \`${result}\`. A trailing slash must not change which budget a session read spends.`
+                ).toBe('auth-session-read');
+            });
+        }
+
+        it('classifies a lower-case "get" as a session read (the method is normalised)', () => {
+            // Arrange: Hono upper-cases `c.req.method` before the middleware
+            // calls in, so the normalisation inside `getEndpointType` is only
+            // exercised by direct callers — tests, guards, future call sites.
+            // Dropping it must not silently re-route a read into `auth`.
+            const result = getEndpointType('/api/v1/public/auth/me', 'get');
+
+            // Assert
+            expect(result).toBe('auth-session-read');
+        });
+
+        it('still keeps a lower-case "post" to a session-read path in `auth`', () => {
+            // Arrange: the mixed case for that normalisation — normalising the
+            // method must not turn every method into a read.
+            const result = getEndpointType('/api/v1/public/auth/me', 'post');
+
+            // Assert
+            expect(result).toBe('auth');
+        });
     });
 
     describe('x-ratelimit-type header (what the middleware actually applied)', () => {
