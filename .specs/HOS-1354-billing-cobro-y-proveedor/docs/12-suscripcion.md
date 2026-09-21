@@ -337,6 +337,13 @@ paga el período que está usando. Anunciar sólo *«el cobro puede entrar»* �
 describe el hecho y esconde la única decisión que el cliente puede tomar al respecto. Alcanza a
 `NUCLEO/07` §6, fila *«cambio de plan con una cuota en reintento»*, y a `B/19` §4, fila 15.
 
+**Y tiene que decir que la devolución no es instantánea**, porque `DEC-RF-002` la puso en manos de
+una persona: el reembolso de la primera rama **se confirma, no se dispara solo**. Es el precio
+aceptado de no abrir el único dominio que el diseño tiene vacío a propósito —operaciones
+automáticas sobre dinero—, y el aviso es donde ese precio se acota: un cliente que sabe que la
+devolución lleva unas horas espera; uno que la esperaba en el acto reclama. Sin esta frase el
+correo promete algo que la decisión no da.
+
 #### Y si entra, NO reactiva a la predecesora
 
 > **Ni `S5` ni `S7` se aplican sobre la PREDECESORA de una sucesión en curso** — o sea la fila que
@@ -388,7 +395,7 @@ enumeré sobre `B/03` §3.2, recorriendo las salidas de la predecesora (en `GRAC
 
 | cómo termina la sucesión | qué pasa con el pago pendiente | por qué |
 |---|---|---|
-| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
+| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa, y lo confirma una persona** (`DEC-RF-002`): al cerrar la sucesión se pone la **marca** y el caso entra al canal de conciliación; el sistema **no ejecuta el reembolso solo** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
 | **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3 |

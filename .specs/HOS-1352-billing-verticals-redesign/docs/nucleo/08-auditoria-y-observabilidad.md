@@ -144,7 +144,7 @@ si es destructiva o mueve dinero.**
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
 | **extender un trial** | §32 | no |
-| **reembolsar** | `DEC-RF-001` | **sí** |
+| **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero |
 
 ### 3.1 Dos reglas sobre la confirmación
 

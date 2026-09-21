@@ -121,6 +121,20 @@ ese estado —la cancelación de `S17` que falló sobre un preapproval vivo— *
 puesta**, así que esto no la duplica: lo que encuentra es la que llegó ahí **sin** marca, o sea
 por un camino que `G-R1-C` no alcanzó a impedir.
 
+> **Con una excepción, y sin ella la comprobación da falso positivo en un camino normal.** `S18`
+> exige la sucesora **`ACTIVE`**, y la tabla de `B/03` §3.2 enumera **tres** transiciones por las
+> que la predecesora deja de ser fila viva **antes** de que eso pase —`S12`, `S13` y `S16`—, con la
+> sucesora todavía en `PENDING_AUTHORIZATION` y dentro de su ventana. Ahí `S18` **no es que no
+> corrió: todavía no puede correr**, y marcar es acusar de incidente al cliente que está por
+> terminar su checkout. **La comprobación no alcanza a la sucesora que sigue siendo fila viva en
+> `PENDING_AUTHORIZATION` con su ventana abierta**; cuando la ventana vence, `S3` la mata y la fila
+> sale del barrido por su propio estado terminal.
+>
+> Esto **no** abre el agujero que la comprobación vigila: mientras la sucesora no autorizó no hay
+> dos autorizaciones que puedan cobrar, que es la condición del candado `A`. Lo escribió la
+> **FASE 9-bis-2**, y el defecto lo introdujo su propia familia de la sucesión al hacer de `S18`
+> una transición aparte.
+
 **Y una segunda que tampoco le pregunta nada al proveedor: el pago pendiente por `S19` cuya
 sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de resolución**
 (`B/03` §3.2, `S19`) y ya **no** es la predecesora de una sucesión en curso —la sucesora murió, o
