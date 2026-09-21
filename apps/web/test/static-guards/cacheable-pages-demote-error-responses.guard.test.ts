@@ -318,15 +318,98 @@ describe('detector: reaching the marker', () => {
         ).toBe(true);
     });
 
+    it('THE IMPORT TRAP: importing the banner without rendering it is NOT enough', () => {
+        // Reproduced by review on `pages/[lang]/gastronomia/index.astro` — the
+        // exact page HOS-1154 measured. Replacing the `<ErrorBanner …>` render
+        // with inline markup and leaving the import alone put the public
+        // Cache-Control straight back on the error response, and the FIRST
+        // version of this detector passed it, because it walked imports.
+        //
+        // All three nets missed that mutation: guard + middleware suite gave
+        // `45 passed`; `biome check` said `Checked 0 files` (.astro is excluded
+        // from Biome by config) so the dead import was not even a warning; and
+        // `astro check` gave `0 errors, 0 warnings` because ts(6133) is a hint.
+        // Nothing else in the toolchain was going to catch it.
+        const page = `
+            import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+            applyCacheHeaders({ locals, headers, cacheable: isCacheable, cacheClass: 'catalog', tags: ['t'] });
+            const hasError = !result.ok;
+            ---
+            {hasError && <p class="load-failure" role="alert">No pudimos cargar.</p>}
+        `;
+
+        expect(isPolicedFile({ source: page })).toBe(true);
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/nuevo.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/nuevo.astro`]: page,
+                    [`${SRC}/components/shared/feedback/ErrorBanner.astro`]: `markResponseDegraded({ locals: Astro.locals });`
+                })
+            })
+        ).toBe(false);
+    });
+
     it('follows more than one hop, because a banner can be wrapped', () => {
         expect(
             reachesDegradationMarker({
                 file: `${SRC}/pages/nuevo.astro`,
                 srcRoot: SRC,
                 ...graph({
-                    [`${SRC}/pages/nuevo.astro`]: `import Wrapper from './Wrapper.astro';`,
-                    [`${SRC}/pages/Wrapper.astro`]: `import Banner from '@/components/Banner.astro';`,
+                    [`${SRC}/pages/nuevo.astro`]: `import Wrapper from './Wrapper.astro';
+                        <Wrapper />`,
+                    [`${SRC}/pages/Wrapper.astro`]: `import Banner from '@/components/Banner.astro';
+                        <Banner />`,
                     [`${SRC}/components/Banner.astro`]: `markResponseDegraded({ locals: Astro.locals });`
+                })
+            })
+        ).toBe(true);
+    });
+
+    it('honours an `as` rename, so the template name still resolves', () => {
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/nuevo.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/nuevo.astro`]: `import { Banner as Boom } from '@/components/Banner.astro';
+                        <Boom />`,
+                    [`${SRC}/components/Banner.astro`]: `markResponseDegraded({ locals: Astro.locals });`
+                })
+            })
+        ).toBe(true);
+    });
+
+    it('a CONDITIONAL marker in a component does not certify the page that renders it', () => {
+        // `components/ErrorBanner.astro` marks behind `if (variant === 'error')`.
+        // That is right at runtime — `info`/`warning` are advisory notes on
+        // content that rendered fine — but rendering it is not proof anything
+        // was marked, so it cannot vouch for a caller that draws its real
+        // failure some other way.
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/nuevo.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/nuevo.astro`]: `import Banner from '@/components/Banner.astro';
+                        <Banner variant="info" />`,
+                    [`${SRC}/components/Banner.astro`]: `if (variant === 'error') markResponseDegraded({ locals: Astro.locals });`
+                })
+            })
+        ).toBe(false);
+    });
+
+    it('but a page may mark inside its OWN failure branch', () => {
+        // The fail-soft shape: no banner, a conditional call at the page. It is
+        // marking exactly when it should, so the entry file's own call counts
+        // whether or not it is unconditional.
+        expect(
+            reachesDegradationMarker({
+                file: `${SRC}/pages/home.astro`,
+                srcRoot: SRC,
+                ...graph({
+                    [`${SRC}/pages/home.astro`]: `if (!result.ok) markResponseDegraded({ locals: Astro.locals });`
                 })
             })
         ).toBe(true);
@@ -338,8 +421,10 @@ describe('detector: reaching the marker', () => {
                 file: `${SRC}/a.astro`,
                 srcRoot: SRC,
                 ...graph({
-                    [`${SRC}/a.astro`]: `import b from './b.astro';`,
-                    [`${SRC}/b.astro`]: `import a from './a.astro';`
+                    [`${SRC}/a.astro`]: `import B from './b.astro';
+                        <B />`,
+                    [`${SRC}/b.astro`]: `import A from './a.astro';
+                        <A />`
                 })
             })
         ).toBe(false);
@@ -364,7 +449,8 @@ describe('detector: reaching the marker', () => {
                 file: `${SRC}/pages/nuevo.astro`,
                 srcRoot: SRC,
                 ...graph({
-                    [`${SRC}/pages/nuevo.astro`]: `import { applyCacheHeaders } from '@/lib/cache/response-cache';`,
+                    [`${SRC}/pages/nuevo.astro`]: `import { applyCacheHeaders } from '@/lib/cache/response-cache';
+                        <ResponseCache />`,
                     [`${SRC}/lib/cache/response-cache.ts`]: `export function markResponseDegraded({ locals }) { locals.responseDegraded = true; }`
                 })
             })

@@ -235,8 +235,131 @@ export function marksDegradedResponse({ source }: { readonly source: string }): 
     return DEGRADATION_MARKER.test(code);
 }
 
-/** Import specifiers, in both the `import … from '…'` and `import '…'` shapes. */
-const IMPORT_SPECIFIER = /\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]/g;
+/**
+ * A marker call that opens its own statement, i.e. one that runs on EVERY render
+ * of the file that contains it.
+ *
+ * The distinction decides whether a component may CERTIFY the pages that render
+ * it. `components/ErrorBanner.astro` marks behind `if (variant === 'error')`,
+ * which is right at runtime — `warning`/`info` are advisory notes on content
+ * that rendered fine — but it means rendering that component is not by itself
+ * proof that anything was marked. Counting it would let a page render
+ * `<ErrorBanner variant="info">`, satisfy this guard, and then draw its real
+ * failure some other way with nothing to demote it.
+ *
+ * So only an unconditional call certifies. A component whose marking is
+ * conditional is still correct, still protects its own error variant at
+ * runtime, and simply cannot vouch for its callers — the caller has to arrange
+ * its own demotion, and until it does this guard says so.
+ *
+ * Anchored to the start of a statement (line start, or after `{`/`;`) so
+ * `if (x) markResponseDegraded(…)` and `x && markResponseDegraded(…)` do not
+ * match while an ordinary top-level call does.
+ */
+const UNCONDITIONAL_DEGRADATION_MARKER = /(?:^|[{};])\s*markResponseDegraded\s*\(/m;
+
+/**
+ * Whether a source file marks the response on EVERY render of it.
+ *
+ * @param params.source - Raw file contents.
+ * @returns `true` when the file carries an unconditional marker call.
+ */
+export function marksDegradedResponseUnconditionally({
+    source
+}: {
+    readonly source: string;
+}): boolean {
+    const code = stripComments({ source }).replace(DEGRADATION_MARKER_DECLARATION, ' ');
+    return UNCONDITIONAL_DEGRADATION_MARKER.test(code);
+}
+
+/**
+ * Local bindings an `import` statement introduces, paired with its specifier:
+ * `import X from '…'`, `import X, { A } from '…'`, `import { A as B } from '…'`.
+ *
+ * The NAME is what makes render-based reachability possible — without it there
+ * is no way to tell an imported component that is rendered from one that is
+ * merely imported.
+ */
+const IMPORT_BINDING = /\bimport\s+([^;]*?)\s+from\s*['"]([^'"]+)['"]/g;
+
+/**
+ * Component names this source actually RENDERS.
+ *
+ * Only capitalised tags, which is how Astro and JSX distinguish a component
+ * from an HTML element. For a namespaced tag (`<Feedback.Error />`) the base
+ * binding is what the import introduced, so that is what is returned.
+ *
+ * @param params.source - Raw file contents.
+ * @returns The distinct component binding names appearing as elements.
+ */
+export function renderedComponentNames({
+    source
+}: {
+    readonly source: string;
+}): ReadonlySet<string> {
+    const code = stripComments({ source });
+    const names = new Set<string>();
+    for (const match of code.matchAll(/<\s*([A-Z][A-Za-z0-9_$]*)(?:\.[A-Za-z0-9_$]+)*[\s/>]/g)) {
+        const name = match[1];
+        if (name !== undefined) names.add(name);
+    }
+    return names;
+}
+
+/**
+ * The local bindings a file imports from inside `src`, keyed by the name the
+ * file refers to them by.
+ *
+ * @param params.source - Raw file contents.
+ * @param params.fromFile - Absolute path of the importing file.
+ * @param params.srcRoot - Absolute path of `apps/web/src`.
+ * @param params.fileExists - Existence predicate, injectable for tests.
+ * @returns A map from local binding name to the resolved absolute path.
+ */
+export function localImportBindings({
+    source,
+    fromFile,
+    srcRoot,
+    fileExists
+}: {
+    readonly source: string;
+    readonly fromFile: string;
+    readonly srcRoot: string;
+    readonly fileExists?: (target: string) => boolean;
+}): ReadonlyMap<string, string> {
+    const code = stripComments({ source });
+    const bindings = new Map<string, string>();
+
+    IMPORT_BINDING.lastIndex = 0;
+    let match = IMPORT_BINDING.exec(code);
+    while (match !== null) {
+        const clause = match[1] ?? '';
+        const specifier = match[2] ?? '';
+        const resolved = resolveLocalImport({ specifier, fromFile, srcRoot, fileExists });
+        if (resolved !== null) {
+            // Default binding: everything before the first `{` or `,`.
+            const defaultName = clause.split(/[,{]/)[0]?.trim();
+            if (defaultName !== undefined && /^[A-Za-z_$][\w$]*$/.test(defaultName)) {
+                bindings.set(defaultName, resolved);
+            }
+            // Named bindings, honouring `as` renames — the LOCAL name is what
+            // the template writes, so it is the one that must be keyed.
+            const named = clause.match(/\{([^}]*)\}/)?.[1] ?? '';
+            for (const entry of named.split(',')) {
+                const local = entry.includes(' as ')
+                    ? entry.split(' as ')[1]?.trim()
+                    : entry.trim();
+                if (local !== undefined && /^[A-Za-z_$][\w$]*$/.test(local)) {
+                    bindings.set(local, resolved);
+                }
+            }
+        }
+        match = IMPORT_BINDING.exec(code);
+    }
+
+    return bindings;
+}
 
 /** Extension candidates tried, in order, when resolving a specifier to a file. */
 const RESOLUTION_SUFFIXES: readonly string[] = [
@@ -293,10 +416,41 @@ export function resolveLocalImport({
 }
 
 /**
- * Whether the degradation marker is anywhere in a file's own module graph.
+ * Whether a file's response is demoted when it renders — either because the
+ * file marks the response itself, or because it RENDERS a component that always
+ * does.
  *
- * Breadth-first over local imports, because the pages this rule protects reach
- * the marker through the component they render, never directly.
+ * ## Why this follows renders and not imports
+ *
+ * The first version of this walked every local import. It passed the whole
+ * repo, and it was wrong in a way that matters more than the definition bug it
+ * replaced: an import is not a render. A page that imports `ErrorBanner` was
+ * certified for as long as the import line survived, whatever the template
+ * actually drew.
+ *
+ * That is not a contrived shape, it is what a refactor looks like. Measured on
+ * `pages/[lang]/gastronomia/index.astro` — the page HOS-1154 itself measured —
+ * replacing
+ *
+ *     {hasError && !result.ok && <ErrorBanner … />}
+ *
+ * with an inline `<p class="load-failure" role="alert">…</p>` and leaving the
+ * import alone put the public `Cache-Control` straight back on the error
+ * response, and all three nets missed it: this guard and the middleware suite
+ * gave `45 passed`, `biome check` reported `Checked 0 files` because `.astro`
+ * is excluded from Biome by configuration, and `astro check` reported
+ * `0 errors, 0 warnings` because an unused import is only a `ts(6133)` hint.
+ * The dead import was not even a warning.
+ *
+ * So the question this answers is "does something that RUNS on this render
+ * demote the response", which is the property the fix actually depends on.
+ * Recursion is over rendered components too, so a banner behind a wrapper still
+ * counts.
+ *
+ * Only an UNCONDITIONAL marker call in a rendered component certifies its
+ * caller — see {@link marksDegradedResponseUnconditionally}. The file's OWN
+ * call may be conditional, because a page that marks inside its failure branch
+ * is marking exactly when it should.
  *
  * @param params.file - Absolute path of the file to start from.
  * @param params.srcRoot - Absolute path of `apps/web/src`.
@@ -304,7 +458,7 @@ export function resolveLocalImport({
  *   exercised on synthetic graphs.
  * @param params.fileExists - Existence predicate, injected together with
  *   `readFile` for the same reason.
- * @returns `true` when some file in the graph calls the marker.
+ * @returns `true` when this render demotes its own response.
  */
 export function reachesDegradationMarker({
     file,
@@ -318,41 +472,45 @@ export function reachesDegradationMarker({
     readonly fileExists?: (target: string) => boolean;
 }): boolean {
     const seen = new Set<string>();
-    const queue: string[] = [file];
 
-    while (queue.length > 0) {
-        const current = queue.shift() as string;
-        if (seen.has(current)) continue;
+    /** @param current - Absolute path of the file being examined. */
+    const visit = (current: string, isEntry: boolean): boolean => {
+        if (seen.has(current)) return false;
         seen.add(current);
 
         let source: string;
         try {
             source = readFile(current);
         } catch {
-            continue;
+            return false;
         }
 
-        if (marksDegradedResponse({ source })) return true;
+        // The entry file may mark conditionally — a page marking inside its own
+        // failure branch is marking exactly when it should. A component vouching
+        // for its CALLER must mark on every render of itself.
+        const marks = isEntry
+            ? marksDegradedResponse({ source })
+            : marksDegradedResponseUnconditionally({ source });
+        if (marks) return true;
 
-        const code = stripComments({ source });
-        IMPORT_SPECIFIER.lastIndex = 0;
-        let match = IMPORT_SPECIFIER.exec(code);
-        while (match !== null) {
-            const specifier = match[1] ?? match[2];
-            if (specifier !== undefined) {
-                const resolved = resolveLocalImport({
-                    specifier,
-                    fromFile: current,
-                    srcRoot,
-                    fileExists
-                });
-                if (resolved !== null && !seen.has(resolved)) queue.push(resolved);
-            }
-            match = IMPORT_SPECIFIER.exec(code);
+        const rendered = renderedComponentNames({ source });
+        if (rendered.size === 0) return false;
+
+        const bindings = localImportBindings({
+            source,
+            fromFile: current,
+            srcRoot,
+            fileExists
+        });
+
+        for (const name of rendered) {
+            const target = bindings.get(name);
+            if (target !== undefined && visit(target, false)) return true;
         }
-    }
+        return false;
+    };
 
-    return false;
+    return visit(file, true);
 }
 
 /**
