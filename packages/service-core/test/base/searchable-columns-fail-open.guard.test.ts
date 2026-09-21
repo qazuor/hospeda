@@ -63,6 +63,18 @@ import { pgTable, text, uuid } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import { BaseCrudService } from '../../src/base/base.crud.service';
 
+/**
+ * `import.meta.glob` is Vite's, resolved at transform time. This package's
+ * tsconfig type-checks `test/**` but does not pull in `vite/client`, so the
+ * one signature used here is declared locally rather than widening the whole
+ * package's ambient types for a single call.
+ */
+declare global {
+    interface ImportMeta {
+        glob<TModule>(pattern: string, options: { eager: true }): Record<string, TModule>;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // The hook under watch
 // ---------------------------------------------------------------------------
@@ -319,8 +331,10 @@ describe('HOS-1117: admin search never resolves to zero columns', () => {
         expect(declaredOn, `${HOOK}() is no longer declared anywhere on the base chain`).not.toBe(
             null
         );
-        const base = BaseCrudService.prototype as Inspectable;
-        expect(base[HOOK]?.()).toEqual(['name']);
+        const inherited = Reflect.get(BaseCrudService.prototype, HOOK) as
+            | (() => readonly string[])
+            | undefined;
+        expect(inherited?.()).toEqual(['name']);
     });
 
     it('finds the CRUD services of this package', () => {
