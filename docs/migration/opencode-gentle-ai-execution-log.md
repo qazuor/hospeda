@@ -3500,3 +3500,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El plan de agent-packs detectó OpenCode, Claude y Codex; no hubo comandos faltantes, duplicados ni drift.
 - El bundle del artifact validó y fue publicado como versión 207.
 - La auditoría de `develop` sigue siendo read-only: la rama no existe y no se alteraron Git, CI, GitHub ni Linear.
+
+## Gate 204 · Preflight real de cierre
+
+- `close-issue --plan --issue HOS-635 --json` se ejecutó en el entorno real sin mutaciones.
+- El resultado indicó que HOS-635 sigue en `Backlog`, sin PR, spec ni closeout; el worktree actual está dirty.
+- El guard reportó drift de variables de entorno por nombre y mantuvo `requiredMissing: 0`; no expuso valores.
+- El comando sigue siendo read-only y devuelve acciones concretas para que el agente resuelva antes de cerrar.
