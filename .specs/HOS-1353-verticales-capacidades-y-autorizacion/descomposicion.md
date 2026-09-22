@@ -63,7 +63,7 @@ condicionan**: se apoyan en ella.
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
-Porque sus dos guards son **los únicos que no se pueden agregar después sin reescribir lo
+Porque **dos de sus tres guards** son **los únicos que no se pueden agregar después sin reescribir lo
 anterior**. `G1` prohíbe nombrar una vertical fuera de los ocho ítems del Eje 2 y `G3` verifica el
 catálogo de claves **en las dos direcciones**. Si llegan en V5, para entonces hay cinco unidades
 de código que los violan y el guard nace con una lista de excepciones — que es exactamente cómo
@@ -76,10 +76,14 @@ dejaría el puerto sin ninguna fuente que lo responda de verdad, y ahí la únic
 simulacro que contesta siempre lo mismo — que es justo lo que la decisión descartó, porque **deja
 sin ejercer la mitad interesante: perder la cobertura**.
 
-### 2.3 V4 sí tiene un guard, y nace del otro lado
+### 2.3 Hay un guard de V4 que NO nace en V4, y nace del otro lado
 
-Esta tabla dejó a **V4 sin guards**, y la descomposición de billing encontró el que le
-correspondía: **`G13`**, la tercera defensa del
+*(Este § decía *«esta tabla dejó a V4 sin guards»*, y desde el reparto del §2.6 V4 tiene tres:
+`G-R4`, `G-R4-B` y `G-R6`. Lo que sigue valiendo entero es el caso de `G13`, que es de otra
+naturaleza: es un guard **sobre** lo que V4 construye y que **no puede nacer acá**.)*
+
+El que le correspondía a V4 y no podía nacer en V4 lo encontró la descomposición de billing:
+**`G13`**, la tercera defensa del
 [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3 — *«un
 guard impide que la implementación de arranque llegue a producción»*.
 
