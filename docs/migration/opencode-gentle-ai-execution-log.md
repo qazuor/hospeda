@@ -3299,3 +3299,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   la versión 186.
 - Esto no instala ni genera todavía comandos `qz`; la extracción de `qz-core`,
   `agent-packs` y la distribución por cliente sigue siendo una etapa posterior.
+
+## Gate 181 · Paridad de commands OpenCode con el registry Hops
+
+- Se agregaron `.opencode/commands/hops-engram.md`,
+  `hops-gentle-status.md` y `hops-gentle-sdd-status.md`.
+- La comparación read-only entre los nombres del registry de
+  `scripts/client-tools` y los commands de OpenCode ya no detecta comandos Hops
+  faltantes. Los cuatro subcommands de artifacts siguen agrupados bajo el
+  command único `hops-artifact` por diseño.
+- Los nuevos commands sólo consumen wrappers read-only y mantienen las
+  barreras contra escrituras de Engram/Gentle-AI.
