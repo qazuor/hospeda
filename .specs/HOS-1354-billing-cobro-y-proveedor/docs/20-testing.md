@@ -60,6 +60,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §6) la muestra **sin motivo, sin `puesta_en`, sin el pago o sin el default de `DEC-RF-003`** cuando el motivo es uno de los cuatro que devuelven plata; **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §6, `NUCLEO/01` §2.5, `DEC-RF-002`, `DEC-RF-003` |
 | **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
+| **G-R6-B** | una **escritura de `listing.inactiva_desde`** que **no sea uno de los cuatro hechos** que el `NUCLEO/01` §1.2 enumera y declara cerrados | `DEC-TEST-001`, **tercera enmienda** del mismo día; `V/02` §2.5. **Referencia cruzada**: lo define `V/20` §2, donde vive la columna. Figura acá porque **lo que puede romper la lista se escribe en esta épica**: el §4.3 del cap. 10 es donde está escrito que el reloj *«arranca acá, no antes»* —el cuarto hecho—, y el §7.1 del cap. 03 apoya el tope de la reapertura en que la lista **sea** cerrada |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
 
@@ -195,8 +196,20 @@ porque en verticales vive el candidato más fresco del corpus para exactamente e
 **`listing.inactiva_desde`**, la columna que `DEC-DATA-002` creó ese mismo día y **lo que decide es
 el borrado irreversible del contenido de una ficha**. La razón entera está escrita en `V/20` §2,
 que es donde vive la columna; acá alcanza con decir que **el dominio del guard ya no es este
-catálogo**. Termina, sí, siendo la tercera referencia cruzada del catálogo —`G-R4` y `G-R5` son las
-otras dos—, pero eso es la consecuencia y no el argumento.
+catálogo**. Termina, sí, siendo la tercera referencia cruzada del catálogo —`G-R4` y `G-R5` son
+las dos anteriores, y `G-R6-B` la cuarta—, pero eso es la consecuencia y no el argumento.
+
+**Y `G-R6-B` es el guard de la LISTA DE ESCRITORES de esa misma columna, que existe porque el
+párrafo de arriba dejó dicho que `G-R6` no la cubre.** De los cuatro hechos que escriben
+`listing.inactiva_desde` **sólo uno es una transición**, así que el predicado *«al menos una
+transición la escribe»* queda verde por ése solo y los otros tres —el registro de eventos, la
+respuesta del contrato y `vertical.fin_de_servicio`— **no los mira nadie**. Lo único que los
+sostenía era la enumeración de `V/02` §2.5, y una lista cerrada sin guard es una promesa que este
+programa ya rompió una vez. **La razón entera, con su caso que lo hace fallar a propósito y las
+dos cosas que no verifica, está escrita en `V/20` §2**, que es donde vive la columna; acá alcanza
+con decir por qué figura en este catálogo: **lo que puede romper la lista se escribe de este
+lado** —el cap. 10 §4.3 y el cap. 03 §7.1—, y un quinto escritor agregado desde acá no obliga a
+abrir el capítulo de la otra épica. Es el mismo argumento de `G-R5`, en la misma dirección.
 
 **Y el SEGUNDO guard que esta tanda evaluó NO se agrega, con su razón escrita** (`DEC-TEST-001`).
 Era *«toda fila con `desde` de conjunto declara cuántas escrituras tiene y en qué orden»*, y su
@@ -229,20 +242,31 @@ salto.
 **Y el costo va con su cifra, recontada acá y no copiada.** Los guards de este programa **no corren
 todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10—, así que lo que decide si
 alguno llega es que una unidad lo construya. Contado sobre las dos tablas de catálogo y las dos
-`descomposicion.md` el **2026-09-21**, después de los cambios de esta tanda:
+`descomposicion.md` el **2026-09-21**, con el catálogo que deja la **tercera enmienda** de
+`DEC-TEST-001` —la que agrega `G-R6-B`—, que es el último cambio de la serie:
 
 | | cuántos | quiénes |
 |---|---|---|
-| filas de `B/20` §2 | **15** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` |
-| filas de `V/20` §2 | **16** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` `G-R6` |
-| **guards distintos** | **28** | 15 + 16 menos las **tres** referencias cruzadas: `G-R4`, `G-R5` y `G-R6` |
-| **con unidad que los construya** | **14** | **13 por su id** — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`) — más **`G-R5`**, que la celda de `V9` nombra *«el de `D16`»*, por su invariante y no por su id |
+| filas de `B/20` §2 | **16** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` `G-R6-B` |
+| filas de `V/20` §2 | **17** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` `G-R6` `G-R6-B` |
+| **guards distintos** | **29** | 16 + 17 menos las **cuatro** referencias cruzadas: `G-R4`, `G-R5`, `G-R6` y `G-R6-B` |
+| **con unidad que los construya** | **15** | **13 por su id** — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`) — más **`G-R5`**, que la celda de `V9` nombra *«el de `D16`»* por su invariante y no por su id, y **`G-R6-B`**, que nace con `V6` |
 | **sin unidad** | **14** | los **seis** de `R1` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` · **`G-R6`** |
 
-**Lo que esta tanda movió, y movió a mejor**: los **sin unidad siguen siendo catorce** —agregar
-`G12` y `G13` no suma ninguno, porque los dos **sí** tienen unidad, y la fila de `G-R6` en `V/20`
-§2 es una referencia cruzada y no un guard más—, y el denominador pasa de **26** a **28**. La
-proporción baja de **14 de 26** a **14 de 28**. Es lo contrario de lo que se temía al escribirlo.
+**Lo que movió la tanda del cierre de guards, y movió a mejor**: los **sin unidad siguieron siendo
+catorce** —agregar `G12` y `G13` no suma ninguno, porque los dos **sí** tienen unidad, y la fila de
+`G-R6` en `V/20` §2 es una referencia cruzada y no un guard más—, y el denominador pasó de **26** a
+**28**: de **14 de 26** a **14 de 28**. Es lo contrario de lo que se temía al escribirlo.
+
+**Y lo que movió `G-R6-B`, medido igual y no deducido**: el denominador pasa de **28** a **29** y
+los sin unidad **siguen siendo catorce**, porque este guard **nace con unidad** —`V6`, la que
+construye la columna y las escrituras de `V/02` §2.5 y `V/03` §9— en vez de sumarse a los `G-R*`
+huérfanos. **14 de 28 → 14 de 29.** Los **dos** guards que la FASE 9-bis-4 había agregado antes
+—`G-R1-F` y el propio `G-R6`— **nacieron los dos sin unidad** (medido en `DEC-TEST-001`, no acá), y
+éste no; no es mérito de nadie, es la regla 1 de las descomposiciones —*«cada guard va con la pieza
+que protege, nunca al final»*— aplicada **en el acto de escribirlo**, que es el único momento en que
+sale gratis. **Cuál es la pieza está discutido en `V/descomposicion.md` §2.5**, porque había dos
+candidatas.
 
 **Y la cifra que este § traía —*«12 de 26»*, *«13 de 27»*— estaba caduca por dos razones
 independientes, las dos medidas acá.** La primera: el **26** de `C2` (FASE 8-bis-4, `F-8eC2-004`,
