@@ -152,5 +152,5 @@ This workflow supersedes the "ask first" worktree policy for formal specs (which
 ## See Also
 
 - [Development Workflow](development-workflow.md) — overall SDD + Test-Informed flow.
-- [Worktree Policy](AGENTS.md#worktree-policy) — when to use worktrees.
+- [Worktree Policy](../../AGENTS.md) — when to use worktrees.
 - [Worktree Dev Environments](../../docs/guides/worktree-dev-environments.md) — one-command `wt:up` / `wt:down` to run a worktree's full stack (isolated ports + DB, auto-heal).
