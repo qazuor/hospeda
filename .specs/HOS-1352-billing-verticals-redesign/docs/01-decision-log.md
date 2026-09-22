@@ -3754,14 +3754,33 @@ Cada entrada lleva, según §3.4:
   sin tenerla**, el mismo que la FASE 8-bis-4 encontró cinco veces. Se agregan a `B/20` §2. *(El
   salto `G7` → `G9` del catálogo **no** es un agujero: la numeración `G1`-`G13` está repartida
   entre las dos épicas, y `G8` vive en `V/20` §2 — medido.)*
-- **El costo aceptado, con su cifra ~~, y la cifra cambió al medirla~~**: los guards de este
-  programa **no corren todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y
-  `C2` midió que **12 de 26 no tienen unidad que los construya**. ~~Agregar uno empeora esa
-  proporción a 13 de 27~~ **y se creyó que agregar `G-R6` la empeoraba a 13 de 27. Al agregar
-  también `G12` y `G13` la proporción MEJORA, porque esos dos SÍ tienen unidad declarada (`B1` y
-  `B4`)** — que es, además, la razón por la que la tanda corta se había abstenido de sumarlos.
-  Se acepta porque
-  la alternativa —no escribirlo— garantiza que no llegue a la FASE 10.
+- **El costo aceptado**: los guards de este programa **no corren todavía** —son declaraciones en
+  `B/20` §2 y `V/20` §2 hasta la FASE 10— y **se acepta agregar uno más**, porque la alternativa
+  —no escribirlo— garantiza que no llegue a la FASE 10.
+- ***La cifra con que se aceptó ese costo era falsa, y se corrige acá con la medición.***
+  ~~`C2` midió que 12 de 26 no tienen unidad que los construya, y agregar uno empeora esa
+  proporción a 13 de 27.~~ ~~Al agregar también `G12` y `G13` la proporción MEJORA, porque esos dos
+  SÍ tienen unidad declarada.~~ **Lo medido el 2026-09-21, recorriendo las filas de las dos tablas
+  y la columna de guards de las dos `descomposicion.md`:**
+
+  | | cuántos |
+  |---|---|
+  | filas de `B/20` §2 | **15** |
+  | filas de `V/20` §2 | **16** |
+  | guards **distintos** | **28** — 15+16 menos **3 referencias cruzadas** (`G-R4`, `G-R5`, `G-R6`) |
+  | **sin unidad que los construya** | **14**, de los cuales la mitad son los `G-R*` |
+
+  **Tres correcciones sobre lo que esta entrada afirmaba**, y ninguna cambia la decisión:
+  1. **El *«12 de 26»* de `C2` no era un conteo de catálogo**: era la **unión** de los dos
+     catálogos **más** `G12` y `G13` leídos de la descomposición, en un día en que `B/20` §2 listaba
+     **once** filas.
+  2. **El *«13 de 27»* no describió ningún estado del corpus en ningún momento.** Desde la medición
+     de `C2` habían entrado dos guards más —`G-R1-F` y el propio `G-R6`—, **los dos sin unidad**, así
+     que los sin-unidad **ya eran catorce antes de que esta decisión se tomara**.
+  3. **La mejora es real pero no por donde esta entrada decía.** Los sin-unidad **no se mueven**:
+     catorce antes y catorce después, porque `G12` y `G13` ya estaban contados en la unión de `C2` y
+     ya tenían unidad. **Lo que mejora es el denominador**: `14 de 26` → **`14 de 28`**.
+  **La conclusión de la decisión es correcta; su cifra intermedia no lo era.**
 - **Lo que queda sin vigilancia, declarado**: la clase del segundo guard. `S20` demostró que el
   error se comete **copiando de una fila que parece análoga**, y contra eso no hay comprobación
   estructural: lo único que lo detecta es que alguien lea las dos filas juntas.
