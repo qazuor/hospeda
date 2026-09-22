@@ -3,7 +3,7 @@
  * Render a command pack into an explicit staging directory.
  * This is deliberately not an installer: it never chooses global paths.
  */
-import { readFileSync, writeFileSync, mkdirSync, cpSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, cpSync, readdirSync, existsSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '../..')
@@ -25,6 +25,11 @@ if (!['opencode', 'claude', 'codex'].includes(client) || !output) {
   process.exit(2)
 }
 const destination = resolve(output)
+const force = args.includes('--force')
+if (existsSync(destination) && readdirSync(destination, { withFileTypes: true }).length && !force) {
+  console.error(`ERROR: destino no vacío: ${destination}; usá --force de forma explícita.`)
+  process.exit(3)
+}
 mkdirSync(destination, { recursive: true })
 const sourceDir = resolve(root, '.opencode/commands')
 const commandNames = manifest.commands.map((entry) => entry.id)

@@ -3358,3 +3358,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   genera `skills/hops-commands/SKILL.md` y un manifest de catálogo.
 - Se probó con ambos clientes en `/tmp/qz-agent-pack-render`; no se modificó
   ninguna instalación, configuración global ni credencial.
+
+## Gate 187 · Protección contra sobrescritura del renderer
+
+- `render.mjs` ahora rechaza un destino existente y no vacío salvo que se pase
+  `--force` explícitamente.
+- Se probó creación inicial, rechazo de sobrescritura y regeneración controlada
+  en `/tmp`; el planificador y el catálogo siguieron completos.
+- La protección evita que un futuro instalador pise archivos locales sin una
+  acción consciente y separada.
