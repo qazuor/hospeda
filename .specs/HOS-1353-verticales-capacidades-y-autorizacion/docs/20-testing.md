@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -62,6 +62,30 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las nueve máquinas, en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1 |
+| G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
+
+**`G-R6` llega a este catálogo por una columna concreta y no por simetría, y conviene decir cuál.**
+Nació en `B/20` §2 acotado a las seis tablas de billing, porque el crítico que lo motivó era de
+billing: `MP5` disparaba sobre *«el período actual arrancó»* y **ninguna escritura del corpus
+avanzaba esa columna**, así que el pagador manual pagaba una vez en la vida y seguía cubierto para
+siempre (`F-8eB1-002`). La ampliación no se pide porque *«también podría pasar acá»* —eso vale para
+cualquier guard— sino porque **acá vive el candidato más fresco del corpus**: `listing.inactiva_desde`,
+la columna que `DEC-DATA-002` creó **el mismo día** que esta decisión, con **cuatro escritores** y
+**cinco consumidores** (cap. 02 §2.5, que enumera las dos listas y las cierra). Y sobre todo: **lo
+que esa columna decide es el borrado irreversible del contenido de una ficha** — `PB4` archiva en
+`inactiva_desde + 90` y el hard delete borra en `inactiva_desde + 180` (cap. 02 §4.1). En billing la
+clase costó dinero; **acá cuesta datos sin vuelta**, y ésa es la diferencia que justifica la fila.
+
+**Y hay que decir qué NO afirma el guard sobre esta columna, porque los cuatro escritores no son
+cuatro transiciones.** El predicado es *«al menos una transición la escribe»*, y de los cuatro
+hechos de reinicio del cap. 01 §1.2 (núcleo) **sólo el tercero** —la ficha vuelve a `PUBLISHED`
+por `PB1`, `PB3` o `PB7`— es una transición. El primero se lee del registro de eventos de dominio,
+el segundo de la respuesta del contrato y el cuarto de `vertical.fin_de_servicio`. Así que sobre
+`inactiva_desde` el guard queda **verde por el tercero solo**, y lo que certifica es *«alguien la
+mueve»*, nunca *«los cuatro hechos la escriben»*. Es el §2.1 aplicado a su propio mensaje: el texto
+con que falla no puede afirmar más de lo que el predicado verifica. **Que los otros tres escritores
+estén es lo que vigila el cap. 02 §2.5**, que los enumera y declara la lista cerrada, y no este
+guard.
 
 **`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
 arreglo de `F-8cC1-001` deja al cliente que pausa a salvo del borrado **porque 120 es menor que
