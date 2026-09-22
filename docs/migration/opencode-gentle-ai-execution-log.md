@@ -3349,3 +3349,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La ejecución local pasó con 33 commands y los tres clientes detectados.
 - No existe todavía `--apply`; la aplicación queda separada para una etapa con
   backups, allowlist de destinos y rollback.
+
+## Gate 186 · Renderer aislado de adapters
+
+- Se agregó `tools/agent-packs/render.mjs`, que exige `--client` y `--output`
+  explícitos y no tiene destinos globales implícitos.
+- Para OpenCode y Claude genera `commands/` con los 33 archivos; para Codex
+  genera `skills/hops-commands/SKILL.md` y un manifest de catálogo.
+- Se probó con ambos clientes en `/tmp/qz-agent-pack-render`; no se modificó
+  ninguna instalación, configuración global ni credencial.
