@@ -51,6 +51,8 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G9 | el `reason` que se manda al proveedor es **un identificador interno** y no copy para el cliente | `D9`, `EX-19` |
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
+| G12 | se importa el **SDK de la pasarela fuera del adaptador** | `DEC-ARCH-004`, condición A. Lo construye `B1` (`B/descomposicion.md` §2) |
+| G13 | la implementación **de arranque** de `cobertura()` llega a producción | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. Lo construye `B4` (`B/descomposicion.md` §2), que es donde aparece la segunda implementación — **no puede nacer en `V4`**, porque mientras la de arranque es la única, un guard que prohíba su llegada a producción falla desde el primer día |
 | G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento o la **redención de promo** sin re-apuntar, **o una cortesía vigente sin cerrar y sin `saldo_días`** —ésa **no** se re-apunta, `DEC-GRANT-007`—, o un **pago pendiente por `S19` sin una marca `requiere_conciliación` abierta con motivo `REEMBOLSO_POR_CONFIRMAR`** —la marca sin el motivo **pasaba el guard y no ordenaba nada**—; **o `S25` mata una `PAUSED · COURTESY` con días sin entregar y no le escribe el `saldo_días`** (`DEC-GRANT-010`) | `D15`, cap. 03 §3.2 (`S18` y `S25`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002` |
@@ -211,11 +213,48 @@ teniendo **dos** escrituras, sobre un argumento que supone una.
   de una fila que parece análoga**, y contra eso no hay comprobación estructural. Lo único que lo
   detecta es que alguien lea las dos filas juntas.
 
-**Y el costo de agregar `G-R6` va con su cifra, que no la medimos acá**: los guards de este
-programa **no corren todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y
-`C2` de la FASE 8-bis-4 midió que **12 de 26 no tienen unidad que los construya**. Agregar uno
-empeora esa proporción a **13 de 27**, y `DEC-TEST-001` lo acepta porque la alternativa —no
-escribirlo— garantiza que no llegue a la FASE 10.
+**Y `G12` y `G13` estaban definidos y fuera de este catálogo, que es el defecto que su llegada
+cierra.** Vivían sólo en `B/descomposicion.md` §2, donde se numeraron *«para poder asignarlos a una
+unidad»* con la nota *«si el `20` se reescribe, los absorbe»*. Un § que se presenta como *«la lista,
+que es lo que permite preguntar «¿están todos?» una vez en vez de siete»* y deja dos afuera es un
+**inventario que afirma completitud sin tenerla**, que es el patrón que la FASE 8-bis-4 encontró
+cinco veces. Los dos entran **acá y no en `V/20` §2**, incluido `G13`: vigila el contrato, y el
+consumidor del contrato es billing.
+
+***El salto `G7` → `G9` no es un agujero, y conviene decirlo para que nadie lo busque.*** La
+numeración `G1`-`G13` es **una sola, repartida entre las dos épicas**: `G1`-`G6` y `G8` están en
+`V/20` §2, y `G7` más `G9`-`G13` están acá. Medido recorriendo las dos tablas, no deducido del
+salto.
+
+**Y el costo va con su cifra, recontada acá y no copiada.** Los guards de este programa **no corren
+todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10—, así que lo que decide si
+alguno llega es que una unidad lo construya. Contado sobre las dos tablas de catálogo y las dos
+`descomposicion.md` el **2026-09-21**, después de los cambios de esta tanda:
+
+| | cuántos | quiénes |
+|---|---|---|
+| filas de `B/20` §2 | **15** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` |
+| filas de `V/20` §2 | **16** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` `G-R6` |
+| **guards distintos** | **28** | 15 + 16 menos las **tres** referencias cruzadas: `G-R4`, `G-R5` y `G-R6` |
+| **con unidad que los construya** | **14** | **13 por su id** — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`) — más **`G-R5`**, que la celda de `V9` nombra *«el de `D16`»*, por su invariante y no por su id |
+| **sin unidad** | **14** | los **seis** de `R1` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` · **`G-R6`** |
+
+**Lo que esta tanda movió, y movió a mejor**: los **sin unidad siguen siendo catorce** —agregar
+`G12` y `G13` no suma ninguno, porque los dos **sí** tienen unidad, y la fila de `G-R6` en `V/20`
+§2 es una referencia cruzada y no un guard más—, y el denominador pasa de **26** a **28**. La
+proporción baja de **14 de 26** a **14 de 28**. Es lo contrario de lo que se temía al escribirlo.
+
+**Y la cifra que este § traía —*«12 de 26»*, *«13 de 27»*— estaba caduca por dos razones
+independientes, las dos medidas acá.** La primera: el **26** de `C2` (FASE 8-bis-4, `F-8eC2-004`,
+sobre `635a2699f`) era la **unión** de los catálogos **más** `G12` y `G13` leídos de la
+descomposición —`B/20` §2 listaba once ese día—, así que no era comparable con un conteo de
+catálogo. La segunda, y es la que la vuelve falsa: desde esa medición entraron al catálogo **dos
+guards más y los dos sin unidad** —`G-R1-F` y el propio `G-R6`—, así que **sin unidad son catorce y
+no doce** desde antes de que esta tanda tocara nada. El *«13 de 27»* no describió ningún estado del
+corpus en ningún momento.
+
+`DEC-TEST-001` acepta el costo porque la alternativa —no escribir el guard— garantiza que no llegue
+a la FASE 10.
 
 ### 2.1 Un guard se prueba rompiéndolo
 
