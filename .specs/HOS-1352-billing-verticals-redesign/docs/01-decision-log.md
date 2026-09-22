@@ -3733,15 +3733,34 @@ Cada entrada lleva, según §3.4:
 - **Por qué el primero sí**: vigila una clase que ya costó **un crítico de dinero**, y **se
   verifica mecánicamente** — cruzar las columnas leídas contra las escritas es una comprobación
   estructural, no un juicio.
+- ***Ampliado el mismo día, a pedido del owner: `G-R6` alcanza LAS DOS ÉPICAS, no sólo billing.***
+  Nació acotado a las seis tablas de billing porque el crítico que lo motivó era de billing, y
+  **nadie planteó la extensión**. Se amplía a las tres máquinas de verticales por una razón
+  concreta y no por simetría: ahí vive **`inactiva_desde`**, la columna que `DEC-DATA-002` creó
+  **ese mismo día**, con **cuatro escritores nuevos** y **cinco consumidores**, y **lo que decide es
+  el borrado irreversible del contenido de una ficha**. Es el candidato más fresco del corpus para
+  exactamente el defecto que `G-R6` vigila, y ahí el daño no es dinero: son datos sin vuelta. Se
+  agrega su fila en `V/20` §2.
 - **Por qué el segundo no, y es la parte que importa**: vigila una **convención de redacción**
   —*«declará tus escrituras»*— que un guard estático **sólo puede comprobar en su forma, no en su
   verdad**. Puede exigir que la fila **diga** cuántas escrituras tiene; no puede verificar que
   **sean ésas**. Sería **un guard que afirma más de lo que prueba**, y el programa tiene la regla
   escrita de que el mensaje de un guard no puede afirmar más que su predicado. Un guard así es
   **peor que no tenerlo**, porque declara cubierta una clase que no cubre.
-- **El costo aceptado, con su cifra**: los guards de este programa **no corren todavía** —son
-  declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y `C2` midió que **12 de 26 no tienen
-  unidad que los construya**. Agregar uno empeora esa proporción a 13 de 27, y **se acepta** porque
+- ***Y el catálogo estaba incompleto, medido el mismo día***: **`G12` y `G13` existen definidos
+  sólo en `B/descomposicion.md`** —el documento de unidades de trabajo— **y no estaban en ningún
+  catálogo**, en un § que se declara *«los guards, en un solo lugar… lo que permite preguntar
+  "¿están todos?" una vez en vez de siete»*. Es el patrón de **inventario que afirma completitud
+  sin tenerla**, el mismo que la FASE 8-bis-4 encontró cinco veces. Se agregan a `B/20` §2. *(El
+  salto `G7` → `G9` del catálogo **no** es un agujero: la numeración `G1`-`G13` está repartida
+  entre las dos épicas, y `G8` vive en `V/20` §2 — medido.)*
+- **El costo aceptado, con su cifra ~~, y la cifra cambió al medirla~~**: los guards de este
+  programa **no corren todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y
+  `C2` midió que **12 de 26 no tienen unidad que los construya**. ~~Agregar uno empeora esa
+  proporción a 13 de 27~~ **y se creyó que agregar `G-R6` la empeoraba a 13 de 27. Al agregar
+  también `G12` y `G13` la proporción MEJORA, porque esos dos SÍ tienen unidad declarada (`B1` y
+  `B4`)** — que es, además, la razón por la que la tanda corta se había abstenido de sumarlos.
+  Se acepta porque
   la alternativa —no escribirlo— garantiza que no llegue a la FASE 10.
 - **Lo que queda sin vigilancia, declarado**: la clase del segundo guard. `S20` demostró que el
   error se comete **copiando de una fila que parece análoga**, y contra eso no hay comprobación
