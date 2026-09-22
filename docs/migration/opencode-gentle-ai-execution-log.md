@@ -3310,3 +3310,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   command único `hops-artifact` por diseño.
 - Los nuevos commands sólo consumen wrappers read-only y mantienen las
   barreras contra escrituras de Engram/Gentle-AI.
+
+## Gate 182 · Commands Hops versionados
+
+- Los 30 archivos `.opencode/commands/hops-*.md` quedaron versionados en Git
+  dentro del worktree de migración.
+- El secret guard y Markdown lint del pre-commit pasaron; no se incluyeron
+  `node_modules`, auth ni archivos de configuración global.
+- Esto deja reproducible la capa OpenCode actual. La generación equivalente
+  para Claude/Codex se mantiene como trabajo del instalador `agent-packs`.
