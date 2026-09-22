@@ -63,6 +63,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1 |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
+| **G-R6-B** | una **escritura de `listing.inactiva_desde`** —el efecto de una transición, un camino de servicio o un barrido— **que no sea uno de los cuatro hechos** que el cap. 01 §1.2 (núcleo) enumera y declara cerrados | `DEC-TEST-001`, **tercera enmienda** del mismo día; cap. 02 §2.5 —*«se escribe en los cuatro hechos y en ninguna otra parte»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
 
 **`G-R6` llega a este catálogo por una columna concreta y no por simetría, y conviene decir cuál.**
 Nació en `B/20` §2 acotado a las seis tablas de billing, porque el crítico que lo motivó era de
@@ -86,6 +87,49 @@ mueve»*, nunca *«los cuatro hechos la escriben»*. Es el §2.1 aplicado a su p
 con que falla no puede afirmar más de lo que el predicado verifica. **Que los otros tres escritores
 estén es lo que vigila el cap. 02 §2.5**, que los enumera y declara la lista cerrada, y no este
 guard.
+
+**Y esa lista cerrada dejó de ser la única vigilancia: desde la tercera enmienda de `DEC-TEST-001`
+lleva guard propio, `G-R6-B`.** El párrafo de arriba es su motivo entero — si `G-R6` queda verde
+por un escritor de cuatro, **a los otros tres no los mira nadie** y lo único que los sostiene es la
+enumeración del cap. 02 §2.5. **Una lista cerrada sin guard es una promesa que en este programa ya
+se rompió una vez**: `DEC-TEST-001` lo dice con el caso —*«la única lista que existía quedó corta
+en el mismo commit que creó su sexto miembro»*— y acá lo que la lista sostiene no es un conteo,
+es **el borrado irreversible del contenido de una ficha**.
+
+**Su papel es el de `G-R1-E` y su forma también, que es por qué es una letra de `R6` y no un
+racimo nuevo.** `G-R1-E` ancla su segunda mitad en un inventario —*«un consumidor nuevo no figura
+en la lista»*— porque ahí **ningún grep sustituye la cuenta**: un escritor nuevo **no aparece
+buscando el término viejo**, así que lo único que lo detecta es que la lista tenga una fila menos
+que los escritores. El precedente de la letra es `G-R1-F`, que entró como sexto de `R1` **con un
+sujeto distinto del racimo** —la marca y no `sucede_a`— porque el daño estaba pegado al de sus
+hermanos. Acá es lo mismo: el sujeto de `R6` son *«las columnas que una condición lee»* y el de
+éste son **las que una escritura toca**, pero la columna es la misma, el día es el mismo, y `G-R6`
+**ya declaró por escrito que no lo cubre**.
+
+**Se rompe a propósito** agregándole la escritura a **`PB2`** —la ficha que cae al perder cobertura
+(cap. 03 §9)—, que es el quinto escritor más creíble de todos: *«la ficha acaba de quedar inactiva,
+sellemos el instante»* se lee bien y **corre el día 90 y el día 180 hacia adelante en cada caída**,
+con lo cual una ficha que va y viene no llega nunca al borrado. `PB2` no es ninguno de los cuatro
+hechos, así que el guard tiene que ponerse en rojo.
+
+**Y hay que decir las dos cosas que NO verifica, porque las dos se leen de más.** La primera:
+**no verifica que los cuatro hechos tengan quien los ejecute**, que es justo la mitad que `G-R6`
+deja abierta. Comprobarlo pide que cada escritura **declare cuál de los cuatro ejecuta**, y un
+guard estático sólo puede comprobar que la declaración **esté**, nunca que sea cierta — que es
+**exactamente la forma que `DEC-TEST-001` rechazó** para el segundo guard de esa decisión. Así que
+`G-R6` y `G-R6-B` juntos certifican *«alguien la mueve»* y *«nadie de más la mueve»*, **nunca
+*«los cuatro la mueven»***: quitarle la escritura a uno de los cuatro —al recálculo del hecho 2,
+por ejemplo, que el cap. 02 §4.2 regla 4 declara **en dos momentos y no en uno**— deja a los dos
+en verde. La segunda: **no mira a los cinco consumidores** que el mismo cap. 02 §2.5 enumera y
+cierra. La enmienda decidió la lista de **escritores**, y esto es lo que decidió; el otro lado
+queda declarado y sin guard.
+
+**Y `B/20` §2 lo repite como referencia cruzada por la razón de `G-R5` y no por simetría**: lo que
+puede romperlo se escribe **en la otra épica**. Dos lugares medidos. `B/10` §4.3 es donde está
+escrito que el reloj *«arranca acá, no antes»*, que **es** el cuarto hecho; y `B/03` §7.1 apoya el
+tope de la reapertura en que la lista **sea** cerrada —*«`DEC-DATA-002` le puso a la inactividad
+cuatro hechos de reinicio con lista cerrada»*, y de ahí sale que el tope *«ya no es monótono»*—.
+Un quinto escritor agregado desde billing rompe las dos cosas **sin que nadie abra este capítulo**.
 
 **`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
 arreglo de `F-8cC1-001` deja al cliente que pausa a salvo del borrado **porque 120 es menor que
