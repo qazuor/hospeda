@@ -57,7 +57,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §6) la muestra **sin motivo, sin `puesta_en`, sin el pago o sin el default de `DEC-RF-003`** cuando el motivo es uno de los cuatro que devuelven plata; **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §6, `NUCLEO/01` §2.5, `DEC-RF-002`, `DEC-RF-003` |
-| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de esta épica, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001`, cap. 03 §7.2 (`MP5`), `F-8eB1-002` |
+| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
 
@@ -186,12 +186,15 @@ en vez de tres y el guard **sigue verde**, así que para ponerlo en rojo hay que
 tres** — que es exactamente el estado en que `MP5` nació, y la prueba de que el predicado es
 *«al menos una»* y no *«alguna que alguien recuerde»*.
 
-**Y su dominio son las SEIS tablas de esta épica, no las nueve máquinas, y conviene no leer eso
-como un descuido.** `DEC-TEST-001` decidió agregar el guard al catálogo de billing, que es donde
-nació el defecto; la clase **también puede existir** en las tablas de la otra épica, y extenderlo
-ahí pide una fila en `V/20` §2 que esa decisión no tomó. **Queda como pregunta al owner**, del
-mismo modo que `G-R4` y `G-R5` terminaron siendo referencias cruzadas después de nacer en un solo
-catálogo.
+**Y su dominio son las NUEVE máquinas de las dos épicas, no las seis tablas de ésta.** Nació
+acotado a billing porque el crítico que lo motivó era de billing y nadie planteó la extensión; la
+ampliación del mismo día de `DEC-TEST-001` la tomó, y **no por simetría con `G-R4` y `G-R5`** sino
+porque en verticales vive el candidato más fresco del corpus para exactamente este defecto:
+**`listing.inactiva_desde`**, la columna que `DEC-DATA-002` creó ese mismo día y **lo que decide es
+el borrado irreversible del contenido de una ficha**. La razón entera está escrita en `V/20` §2,
+que es donde vive la columna; acá alcanza con decir que **el dominio del guard ya no es este
+catálogo**. Termina, sí, siendo la tercera referencia cruzada del catálogo —`G-R4` y `G-R5` son las
+otras dos—, pero eso es la consecuencia y no el argumento.
 
 **Y el SEGUNDO guard que esta tanda evaluó NO se agrega, con su razón escrita** (`DEC-TEST-001`).
 Era *«toda fila con `desde` de conjunto declara cuántas escrituras tiene y en qué orden»*, y su
