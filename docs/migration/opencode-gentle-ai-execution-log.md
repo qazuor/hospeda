@@ -3402,3 +3402,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   presencia.
 - La prueba sigue aislada de instalaciones globales; el `--apply` con backup y
   rollback todavía no está habilitado.
+
+## Gate 192 · Detección de commands sobrantes
+
+- `verify.mjs` ahora detecta archivos `.md` de commands que no figuran en el
+  manifest, además de faltantes y hashes divergentes.
+- Un adapter limpio pasó; al agregar `hops-stale.md` como residuo sintético,
+  el verificador lo rechazó con `unexpected-command`.

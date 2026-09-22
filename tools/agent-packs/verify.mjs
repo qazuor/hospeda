@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Read-only verification of a rendered agent-pack adapter. */
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { createHash } from 'node:crypto'
 
@@ -25,12 +25,20 @@ if (!existsSync(manifestPath)) {
 }
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 const failures = []
+const expectedIds = new Set(manifest.commands?.map((entry) => entry.id) ?? [])
 for (const entry of manifest.commands ?? []) {
   if (client === 'codex') continue
   const path = join(root, 'commands', `${entry.id}.md`)
   if (!existsSync(path)) { failures.push({ id: entry.id, reason: 'missing' }); continue }
   const actual = createHash('sha256').update(readFileSync(path)).digest('hex')
   if (actual !== entry.sha256) failures.push({ id: entry.id, reason: 'hash', expected: entry.sha256, actual })
+}
+if (client !== 'codex' && existsSync(join(root, 'commands'))) {
+  for (const file of readdirSync(join(root, 'commands'))) {
+    if (file.endsWith('.md') && !expectedIds.has(file.slice(0, -3))) {
+      failures.push({ id: file, reason: 'unexpected-command' })
+    }
+  }
 }
 if (client === 'codex' && !existsSync(join(root, 'skills', 'hops-commands', 'SKILL.md'))) {
   failures.push({ id: 'hops-commands', reason: 'missing-skill' })
