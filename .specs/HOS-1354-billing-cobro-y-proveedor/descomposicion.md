@@ -126,11 +126,13 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 **dependen de una que sí**, así que tampoco arrancan antes. La única sin ninguna atadura con la
 pasarela, ni propia ni heredada, es **B2**: su gate es `V2`, de la otra épica.
 
-### 2.1 Los dos guards que el capítulo 20 no nombra
+### 2.1 Los dos guards que nacieron acá y ya están en el catálogo
 
-El `20` §2 lista cuatro —`G7`, `G9`, `G10`, `G11`—. **Faltan dos que dos decisiones exigen
-explícitamente**, y se numeran acá para poder asignarlos a una unidad; si el `20` se reescribe,
-los absorbe:
+Se numeraron en esta descomposición **porque el `20` §2 no los nombraba**, y ahí quedó escrito
+*«si el `20` se reescribe, los absorbe»*. **Los absorbió**: desde la FASE 9-bis-4 las dos filas
+están en `20` §2 (`DEC-TEST-001`, *«y el catálogo estaba incompleto»*), así que **ya no viven
+fuera del catálogo que CI leería**. La tabla queda acá porque **es esta tabla la que les asigna
+unidad** —`G12` a `B1`, `G13` a `B4`— y el catálogo cataloga, no reparte trabajo:
 
 | # | qué falla si se rompe | de dónde sale |
 |---|---|---|
