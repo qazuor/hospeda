@@ -33,16 +33,17 @@ if (existsSync(destination) && readdirSync(destination, { withFileTypes: true })
 mkdirSync(destination, { recursive: true })
 const sourceDir = resolve(root, '.opencode/commands')
 const commandNames = manifest.commands.map((entry) => entry.id)
+const commandIntegrity = manifest.commands.map(({ id, sha256 }) => ({ id, sha256 }))
 
 if (client === 'opencode' || client === 'claude') {
   const commandsDir = join(destination, 'commands')
   mkdirSync(commandsDir, { recursive: true })
   for (const name of commandNames) cpSync(join(sourceDir, `${name}.md`), join(commandsDir, `${name}.md`))
-  writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ manifestId: manifest.manifestId, client, commands: commandNames }, null, 2) + '\n')
+  writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ manifestId: manifest.manifestId, client, commands: commandIntegrity }, null, 2) + '\n')
 } else {
   const skillDir = join(destination, 'skills', 'hops-commands')
   mkdirSync(skillDir, { recursive: true })
   writeFileSync(join(skillDir, 'SKILL.md'), `---\nname: hops-commands\ndescription: Usa los comandos deterministas de Hospeda mediante los wrappers Hops.\n---\n\nLa fuente de verdad y el catálogo están en \`manifest.json\`. Ejecutá el wrapper Hops correspondiente antes de razonar sobre estado local. No inventes resultados ni ejecutes mutaciones sensibles sin autorización.\n`)
-  writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ manifestId: manifest.manifestId, client, commands: commandNames }, null, 2) + '\n')
+  writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ manifestId: manifest.manifestId, client, commands: commandIntegrity }, null, 2) + '\n')
 }
 console.log(JSON.stringify({ client, output: destination, commands: commandNames.length, mutations: [destination] }, null, 2))

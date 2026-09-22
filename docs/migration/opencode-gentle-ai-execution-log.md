@@ -3367,3 +3367,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   en `/tmp`; el planificador y el catálogo siguieron completos.
 - La protección evita que un futuro instalador pise archivos locales sin una
   acción consciente y separada.
+
+## Gate 188 · Integridad SHA-256 de commands
+
+- Cada entrada de `hops-command-manifest.json` incluye el SHA-256 del archivo
+  fuente.
+- `plan.mjs --check` ahora reporta fuentes faltantes, IDs duplicados y drift de
+  contenido; la ejecución actual devolvió `drift: []`.
+- `render.mjs` propaga los hashes a los manifests de adapters para permitir una
+  futura verificación posterior a la instalación.

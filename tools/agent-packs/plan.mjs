@@ -9,6 +9,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '../..')
 const manifestPath = resolve(root, 'tools/agent-packs/hops-command-manifest.json')
@@ -39,6 +40,13 @@ const missing = commandFiles
 const duplicateIds = manifest.commands
   .map((entry) => entry.id)
   .filter((id, index, all) => all.indexOf(id) !== index)
+const drift = manifest.commands
+  .filter((entry) => existsSync(resolve(root, entry.source)))
+  .map((entry) => {
+    const actual = createHash('sha256').update(readFileSync(resolve(root, entry.source))).digest('hex')
+    return actual === entry.sha256 ? null : { id: entry.id, expected: entry.sha256, actual }
+  })
+  .filter(Boolean)
 
 const result = {
   mode: args.has('--check') ? 'check' : 'plan',
@@ -55,7 +63,8 @@ const result = {
   validation: {
     missingSources: missing,
     duplicateIds,
-    sourceComplete: missing.length === 0 && duplicateIds.length === 0
+    drift,
+    sourceComplete: missing.length === 0 && duplicateIds.length === 0 && drift.length === 0
   },
   mutations: 'none'
 }
