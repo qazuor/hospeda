@@ -466,7 +466,7 @@
                             "title": "Agregar develop como rama de integración intermedia",
                             "category": "Git, Linear y promoción",
                             "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
-                            "notes": "Auditor\u00eda y contrato documentados en develop-branch-audit.md: issueBaseBranch, integrationBranch, promotionChain, urgentBases y backMergeChain. Implementaci\u00f3n Git/CI y creaci\u00f3n efectiva de develop siguen pendientes de decisi\u00f3n y ejecuci\u00f3n posterior.",
+                            "notes": "Gate202: auditoría read-only del 2026-09-22 confirmó que develop no existe localmente ni en origin; el adapter continúa con staging como base y rama protegida. El contrato issueBaseBranch/integrationBranch/promotionChain/urgentBases/backMergeChain queda documentado. No se modificaron Git, CI, GitHub, Linear ni workflows; creación y activación siguen pendientes de decisión.",
                             "done": false
                         },
                         {

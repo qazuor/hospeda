@@ -1,4 +1,13 @@
-# Auditoría para agregar `develop`
+# Verificación actualizada — 2026-09-22
+
+La auditoría read-only confirmó que `develop` todavía no existe ni localmente ni
+en `origin`. El adapter activo sigue usando `staging` como base y rama protegida.
+No se creó la rama ni se modificaron GitHub, CI, Linear o workflows operativos.
+
+La activación requiere una decisión explícita y una etapa separada: crear la rama,
+actualizar el adapter, ajustar promoción/back-merge y validar start/close issue.
+
+## Auditoría para agregar `develop`
 
 El repositorio actual sólo conoce operacionalmente `staging` y `main`.
 

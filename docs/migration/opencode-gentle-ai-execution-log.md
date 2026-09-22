@@ -3485,3 +3485,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   migración a AGENTS.md.
 - Se corrigió `.claude/docs/git-branch-workflow.md` para apuntar a
   `../../AGENTS.md`; la validación de documentación volvió a pasar sin warnings.
+
+## Gate 202 · Auditoría read-only de `develop`
+
+- La verificación del 2026-09-22 confirmó que `develop` no existe ni localmente ni en `origin`.
+- El adapter Hospeda continúa declarando `staging` como base y rama protegida; Dependabot y CI siguen configurados alrededor de `staging`/`main`.
+- Se actualizó `docs/migration/develop-branch-audit.md` con el estado observado y la secuencia requerida para una futura activación.
+- No se creó ninguna rama ni se modificaron Git, GitHub, CI, Linear o workflows operativos.
