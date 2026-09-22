@@ -3478,3 +3478,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se borró el árbol `.claude`; sólo se eliminaron referencias a archivos
   `CLAUDE.md` que ya no existen.
 - `rg` y `git diff --check` no detectan referencias stale en esas rutas.
+
+## Gate 201 · Validación de enlaces legacy
+
+- El validador de documentación detectó un enlace relativo roto después de la
+  migración a AGENTS.md.
+- Se corrigió `.claude/docs/git-branch-workflow.md` para apuntar a
+  `../../AGENTS.md`; la validación de documentación volvió a pasar sin warnings.
