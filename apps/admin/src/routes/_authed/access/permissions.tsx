@@ -5,161 +5,36 @@
  * Read-only reference page showing the permission catalog organized by category.
  */
 
-import type { TranslationKey } from '@repo/i18n';
 import { ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { PermissionCategoryEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import {
+    categoryTranslationKey,
+    GROUP_TRANSLATION_KEYS,
+    groupPermissionCategories
+} from '@/lib/permission-category-groups';
 
 export const Route = createFileRoute('/_authed/access/permissions')({
     component: PermissionsPage
 });
 
-// Internal group keys (not displayed directly, translated in render)
-const GROUP_KEYS = {
-    CONTENT_MANAGEMENT: 'Content Management',
-    USER_ACCESS: 'User & Access',
-    COMMERCE_BILLING: 'Commerce & Billing',
-    MARKETING_ADVERTISING: 'Marketing & Advertising',
-    SERVICES_LISTINGS: 'Services & Listings',
-    SYSTEM_CONFIGURATION: 'System & Configuration'
-} as const;
-
-type GroupKey = (typeof GROUP_KEYS)[keyof typeof GROUP_KEYS];
-
-const GROUP_TRANSLATION_KEYS: Record<GroupKey, TranslationKey> = {
-    'Content Management': 'admin-pages.access.permissions.groupContentManagement',
-    'User & Access': 'admin-pages.access.permissions.groupUserAccess',
-    'Commerce & Billing': 'admin-pages.access.permissions.groupCommerceBilling',
-    'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
-    'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
-    'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration'
-};
-
-/**
- * Group categories by domain for better organization
- */
-function groupCategories(categories: string[]): Record<string, string[]> {
-    const groups: Record<string, string[]> = {
-        'Content Management': [],
-        'User & Access': [],
-        'Commerce & Billing': [],
-        'Marketing & Advertising': [],
-        'Services & Listings': [],
-        'System & Configuration': []
-    };
-
-    for (const category of categories) {
-        const cat = category as PermissionCategoryEnum;
-
-        // Content entities
-        if (
-            [
-                PermissionCategoryEnum.ACCOMMODATION,
-                PermissionCategoryEnum.ACCOMMODATION_REVIEW,
-                PermissionCategoryEnum.DESTINATION,
-                PermissionCategoryEnum.DESTINATION_REVIEW,
-                PermissionCategoryEnum.EVENT,
-                PermissionCategoryEnum.POST,
-                PermissionCategoryEnum.ATTRACTION
-            ].includes(cat)
-        ) {
-            groups['Content Management'].push(category);
-        }
-        // User and access
-        else if (
-            [
-                PermissionCategoryEnum.USER,
-                PermissionCategoryEnum.USER_BOOKMARK,
-                PermissionCategoryEnum.PERMISSION,
-                PermissionCategoryEnum.CLIENT_ACCESS_RIGHT
-            ].includes(cat)
-        ) {
-            groups['User & Access'].push(category);
-        }
-        // Commerce
-        else if (
-            [
-                PermissionCategoryEnum.INVOICE,
-                PermissionCategoryEnum.INVOICE_LINE,
-                PermissionCategoryEnum.PAYMENT,
-                PermissionCategoryEnum.PAYMENT_METHOD,
-                PermissionCategoryEnum.PURCHASE,
-                PermissionCategoryEnum.REFUND,
-                PermissionCategoryEnum.CREDIT_NOTE,
-                PermissionCategoryEnum.SUBSCRIPTION,
-                PermissionCategoryEnum.SUBSCRIPTION_ITEM,
-                PermissionCategoryEnum.PRODUCT,
-                PermissionCategoryEnum.CLIENT
-            ].includes(cat)
-        ) {
-            groups['Commerce & Billing'].push(category);
-        }
-        // Marketing
-        else if (
-            [
-                PermissionCategoryEnum.CAMPAIGN,
-                PermissionCategoryEnum.PROMOTION,
-                PermissionCategoryEnum.DISCOUNT_CODE,
-                PermissionCategoryEnum.DISCOUNT_CODE_USAGE,
-                PermissionCategoryEnum.AD_PRICING_CATALOG,
-                PermissionCategoryEnum.POST_SPONSOR,
-                PermissionCategoryEnum.POST_SPONSORSHIP
-            ].includes(cat)
-        ) {
-            groups['Marketing & Advertising'].push(category);
-        }
-        // Services and listings
-        else if (
-            [
-                PermissionCategoryEnum.ACCOMMODATION_LISTING,
-                PermissionCategoryEnum.ACCOMMODATION_LISTING_PLAN,
-                PermissionCategoryEnum.SERVICE_LISTING,
-                PermissionCategoryEnum.SERVICE_LISTING_PLAN,
-                PermissionCategoryEnum.SERVICE_ORDER,
-                PermissionCategoryEnum.BENEFIT_LISTING,
-                PermissionCategoryEnum.BENEFIT_LISTING_PLAN,
-                PermissionCategoryEnum.BENEFIT_PARTNER,
-                PermissionCategoryEnum.TOURIST_SERVICE,
-                PermissionCategoryEnum.PROFESSIONAL_SERVICE,
-                PermissionCategoryEnum.PROFESSIONAL_SERVICE_ORDER
-            ].includes(cat)
-        ) {
-            groups['Services & Listings'].push(category);
-        }
-        // System
-        else if (
-            [
-                PermissionCategoryEnum.NOTIFICATION,
-                PermissionCategoryEnum.EVENT_LOCATION,
-                PermissionCategoryEnum.EVENT_ORGANIZER,
-                PermissionCategoryEnum.PUBLIC,
-                PermissionCategoryEnum.SYSTEM,
-                PermissionCategoryEnum.ACCESS,
-                // HOS-981. Without this line the category is silently DROPPED
-                // from this page: the chain below has no final `else`, so a
-                // category no branch claims simply never renders.
-                PermissionCategoryEnum.QR_CODE
-            ].includes(cat)
-        ) {
-            groups['System & Configuration'].push(category);
-        }
-    }
-
-    // Remove empty groups
-    return Object.fromEntries(Object.entries(groups).filter(([_, items]) => items.length > 0));
-}
-
 function PermissionsPage() {
     const { t } = useTranslations();
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-    const categories = Object.values(PermissionCategoryEnum);
-    const groupedCategories = groupCategories(categories);
+    // `Object.values` builds a fresh array every render, so memoising on it as
+    // a dependency would never hit. The enum is a module constant: compute both
+    // once and depend on nothing.
+    const groupedCategories = useMemo(
+        () => groupPermissionCategories(Object.values(PermissionCategoryEnum)),
+        []
+    );
+    const categoryCount = Object.keys(PermissionCategoryEnum).length;
 
     const toggleGroup = (groupName: string) => {
         setExpandedGroups((prev) => ({
@@ -187,7 +62,7 @@ function PermissionsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="font-bold text-2xl">{categories.length}</div>
+                            <div className="font-bold text-2xl">{categoryCount}</div>
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.access.permissions.permissionCategories')}
                             </p>
@@ -201,9 +76,7 @@ function PermissionsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="font-bold text-2xl">
-                                {Object.keys(groupedCategories).length}
-                            </div>
+                            <div className="font-bold text-2xl">{groupedCategories.length}</div>
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.access.permissions.functionalDomains')}
                             </p>
@@ -229,11 +102,9 @@ function PermissionsPage() {
 
                 {/* Permission categories by group */}
                 <div className="space-y-4">
-                    {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
+                    {groupedCategories.map(([groupName, groupCategories]) => {
                         const isExpanded = expandedGroups[groupName] ?? true;
-                        const translationKey = (GROUP_TRANSLATION_KEYS[groupName as GroupKey] ??
-                            groupName) as TranslationKey;
-                        const translatedGroupName = t(translationKey);
+                        const translatedGroupName = t(GROUP_TRANSLATION_KEYS[groupName]);
 
                         return (
                             <Card key={groupName}>
@@ -266,9 +137,7 @@ function PermissionsPage() {
                                                 >
                                                     <span className="text-primary">•</span>
                                                     <span className="font-medium">
-                                                        {t(
-                                                            `admin-pages.access.permissions.categories.${category}` as TranslationKey
-                                                        )}
+                                                        {t(categoryTranslationKey(category))}
                                                     </span>
                                                 </div>
                                             ))}
