@@ -3492,3 +3492,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El adapter Hospeda continúa declarando `staging` como base y rama protegida; Dependabot y CI siguen configurados alrededor de `staging`/`main`.
 - Se actualizó `docs/migration/develop-branch-audit.md` con el estado observado y la secuencia requerida para una futura activación.
 - No se creó ninguna rama ni se modificaron Git, GitHub, CI, Linear o workflows operativos.
+
+## Gate 203 · Validación integral actual
+
+- La suite `scripts/client-tools` pasó nuevamente: 300 tests, 0 fallos y 738 assertions.
+- `.qz/project.json` validó sin errores y sin leer valores secretos.
+- El plan de agent-packs detectó OpenCode, Claude y Codex; no hubo comandos faltantes, duplicados ni drift.
+- El bundle del artifact validó y fue publicado como versión 207.
+- La auditoría de `develop` sigue siendo read-only: la rama no existe y no se alteraron Git, CI, GitHub ni Linear.
