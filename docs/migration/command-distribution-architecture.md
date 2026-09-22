@@ -9,7 +9,7 @@ La fuente de verdad debe vivir en un repositorio de tooling separado del código
 | `qz-core` | CLI genérico, adapters, guards, bootstrap y contratos | Cualquier proyecto |
 | `hops-hospeda` | Linear HOS, DB/template, servidores, envs, specs y aliases | Sólo Hospeda |
 | `agent-packs` | Adaptadores de instalación para Codex, OpenCode y Claude | Máquina/cliente |
-| Proyecto | `.qz/project.json`, `AGENTS.md`, `CLAUDE.md` compatible y overrides | Checkout concreto |
+| Proyecto | `.qz/project.json`, `AGENTS.md` y overrides | Checkout concreto |
 
 ## Fuente y derivados
 
@@ -32,7 +32,7 @@ No se recomiendan symlinks como mecanismo principal: rompen al mover repositorio
 4. Instrucciones locales del checkout.
 5. Overrides explícitos y versionados.
 
-`AGENTS.md` será corto y universal. `CLAUDE.md` se conservará como archivo compatible generado desde la misma fuente, sin conocimiento exclusivo de Claude. OpenCode usará sus commands/skills derivados y Codex su distribución equivalente.
+`AGENTS.md` será corto y universal y constituirá la única fuente de instrucciones compartidas. No se generará ni conservará `CLAUDE.md`; Claude Code 2.1.277+ ya admite `AGENTS.md`.
 
 ## Actualización
 
@@ -51,7 +51,7 @@ El adapter Hospeda registra `hops`, `hops-staging`, `.claude/project.config.json
 - instalar una workstation nueva en modo plan y apply;
 - detectar los tres clientes y omitir los ausentes;
 - regenerar comandos después de un cambio en la fuente;
-- detectar divergencia en `AGENTS.md`/`CLAUDE.md`/skills;
+- detectar divergencia en `AGENTS.md`/skills;
 - no leer ni copiar secretos;
 - rollback completo desde el manifest y backups;
 - prueba con una segunda configuración de proyecto antes de extraer `qz` del tooling Hospeda.

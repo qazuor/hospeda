@@ -11,7 +11,7 @@ Este documento define cómo se trasladará el conocimiento de Claude Code a Open
 - Agents: roles pocos y explícitos, con permisos propios; no se crearán agentes por cada tecnología.
 - Documentación normal: explicación extensa, histórica o de referencia que no debe entrar en cada contexto.
 - `AGENTS.md`: será la fuente canónica común para Claude Code, OpenCode V1 y Codex.
-- `CLAUDE.md`: no tendrá contenido propio. Claude Code 2.1.277+ ya lee `AGENTS.md` cuando no existe un `CLAUDE.md` del proyecto; la versión instalada es 2.1.278. Se mantendrá sólo como symlink/shim opcional si necesitamos compatibilidad con versiones antiguas o proveedores Bedrock/Vertex/Foundry, donde AGENTS aún no está disponible.
+- `CLAUDE.md`: se elimina del proyecto. Claude Code 2.1.277+ ya lee `AGENTS.md` cuando no existe un `CLAUDE.md` del proyecto; la versión instalada es 2.1.278.
 - `MEMORY.md`: se conserva como material histórico; sólo el conocimiento estable y deduplicado debe transformarse en skills o AGENTS. No se importará completo a Engram.
 
 ## Inventario verificado (2026-09-15)
@@ -112,9 +112,8 @@ El objetivo inicial es conservar solo roles de exploración, implementación y r
 | enlaces a documentación y legacy `.qtm` | README/documentación de migración | referencia y compatibilidad, no instrucciones activas |
 
 El `AGENTS.md` raíz no debe absorber el contenido de billing, smoke,
-MercadoPago, despliegue ni historiales de specs. `CLAUDE.md` se conservará para
-compatibilidad futura, pero se reducirá gradualmente sólo después de validar los
-skills equivalentes.
+MercadoPago, despliegue ni historiales de specs. No se conservará un segundo
+archivo de instrucciones específico de Claude.
 
 ## Secuencia de migración
 
@@ -145,11 +144,9 @@ conserva detalles de billing, smoke, specs, comandos, worktrees y gotchas para
 compatibilidad histórica. No se migrará como segundo archivo canónico: se
 extraerá el contenido útil a `AGENTS.md`, skills y documentación.
 
-Durante la transición puede existir un shim `CLAUDE.md` apuntando a
-`AGENTS.md`, pero OpenCode debe usar `AGENTS.md` como autoridad. Claude Code
-2.1.277+ también lo cargará si no encuentra `CLAUDE.md`; esto evita mantener dos
-copias divergentes. El contenido especializado debe pasar gradualmente a skills
-o documentación canónica. Cuando haya diferencias de proceso (por ejemplo,
+OpenCode debe usar `AGENTS.md` como autoridad. Claude Code 2.1.277+ también lo
+carga si no encuentra `CLAUDE.md`. El contenido especializado debe pasar
+gradualmente a skills o documentación canónica. Cuando haya diferencias de proceso (por ejemplo,
 políticas de commit o permisos), la configuración activa de OpenCode y la
 autorización humana prevalecen; no se debe duplicar la regla en ambos archivos
 sin registrar cuál es la autoridad.
@@ -168,8 +165,7 @@ sin registrar cuál es la autoridad.
 
 Decisión: mantener un único contenido canónico en `AGENTS.md`. No copiar el
 archivo a tres formatos. Si se necesita compatibilidad con un Claude antiguo,
-crear un `CLAUDE.md` symlink/shim que remita a `AGENTS.md`, sin instrucciones
-independientes.
+no se creará un `CLAUDE.md` alternativo.
 
 ## Mapa de secciones de `CLAUDE.md`
 

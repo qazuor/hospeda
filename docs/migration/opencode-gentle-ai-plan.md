@@ -22,7 +22,7 @@ Este documento separa decisiones y trabajo futuro de las operaciones ya ejecutad
 - `.specs` se conservará. Gentle SDD se probará para features complejas, sin conversión masiva ni reemplazo automático de la historia existente.
 - Task-master no se migrará inicialmente. Se comparará con Gentle SDD antes de decidir si conservar partes de su comportamiento.
 - `AGENTS.md` será la fuente principal de instrucciones para OpenCode y permanecerá corto.
-- `CLAUDE.md` se conservará breve para compatibilidad futura con Claude Code, sin duplicar todos los skills.
+- `AGENTS.md` será la única fuente de instrucciones compartidas; no se mantendrá `CLAUDE.md`.
 - El conocimiento especializado se moverá a skills bajo demanda.
 - La configuración TUI validada actualmente vive en `~/.config/opencode/tui.json`; no asumir `cli.json` sin verificar el esquema de la versión instalada.
 - La TUI objetivo tendrá mouse desactivado, diff automático, Home/End normales, Ctrl+A/Ctrl+E para línea, Ctrl+Home/Ctrl+End para el buffer, notificaciones visuales y sonido desactivado.
@@ -43,7 +43,7 @@ Repositorio global de tooling
 
 Repositorio Hospeda
 ├── AGENTS.md
-├── CLAUDE.md compatible y breve
+├── AGENTS.md
 ├── .opencode/
 │   ├── skills/
 │   ├── commands/
@@ -90,7 +90,7 @@ OpenCode V2 introduce cambios incompatibles en:
 - configuración de TUI: la documentación y el binario instalados deben verificarse juntos; la configuración activa validada usa `tui.json`;
 - agentes: nuevos campos, modos y permisos por agente;
 - configuración de plugins: `plugins` y objetos de opciones;
-- instrucciones: V2 reconoce `AGENTS.md`; `CLAUDE.md` queda como compatibilidad V1, no como fuente automática V2.
+- instrucciones: `AGENTS.md` es la única fuente compartida; no se mantiene `CLAUDE.md`.
 
 Por eso no se copiarán configuraciones ni plugins V1 literalmente. Se conservarán backups separados y se portarán los componentes necesarios.
 
@@ -396,7 +396,7 @@ Probar start, reanudación, DB, puertos, tests, smoke, close, cleanup interrumpi
 
 ### Stage 11 — Retiro de Claude
 
-Desactivar hooks y launchers, mantener `CLAUDE.md` y conservar backups durante un período acordado. Eliminar ejecutables solo al final.
+Desactivar hooks y launchers, conservar backups durante un período acordado y retirar los ejecutables sólo al final.
 
 ## Qué no se debe borrar
 
