@@ -3911,13 +3911,59 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-003 — La pausa que hace el proveedor por mora lleva motivo propio, y no entra como pausa del cliente
+
+- **Fecha**: 2026-09-22 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hecho que la motiva, medido el 2026-09-21/22** (`RN-2` y `GR-3` de la matriz): **el proveedor
+  pausa la suscripción por su cuenta** cuando un ciclo agota sus cuatro reintentos y vence su
+  ventana. Está en el mail al vendedor —*«se pausó… no recibimos el pago en la fecha original del
+  cobro y los 3 intentos siguientes fallaron»*— y medido sobre tres sujetos de producción, con la
+  pausa cayendo **80-105 segundos antes** del `expire_date`. `PS-4` tenía medida la **no**
+  auto-reanudación; **la auto-pausa no estaba medida en ningún lado.**
+- **Lo que rompía**: `B/03` §10.1 espeja ese `paused` con **`S8`, o sea con motivo
+  `CUSTOMER_REQUEST`** — *«el proveedor pausó y nosotros no lo sabíamos»*—, que es la transición de
+  *«la persona pide pausar»*. Consecuencias, las cuatro reales:
+  1. **el moroso queda FUERA del dunning**: sin `GRACE_PERIOD`, sin reloj, sin `SUSPENDED`;
+  2. **se le consume una pausa que no pidió**, contra su tope de cuatro por mes y de 120 días;
+  3. **`S10` lo devuelve a `ACTIVE`** al vencer el reloj de la pausa, **sin haber cobrado nada**;
+  4. y `paused` ya cargaba **dos** significados, porque es también el mecanismo de la cortesía
+     (`DEC-GRANT-003`, forzado por el piso de ARS 15 de `PC-2`).
+- **Decisión**: **un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de
+  `CUSTOMER_REQUEST`. Los motivos pasan de **dos a tres**, y **todo lo que lee el motivo de pausa
+  hay que recorrerlo** — empezando por `puedePausar()`, los topes del §26 y las salidas `S10`,
+  `S22` y `PB*`.
+- **Por qué no las otras dos, y la segunda razón es la que más pesa:**
+  - **Una columna *«quién pausó»*, escrita cuando pausamos nosotros**: no toca el enum, pero **falla
+    abierto** — si no se escribe el registro (un job que se cae, una fila vieja), **una pausa
+    nuestra se lee como del proveedor**. El programa lleva cuatro vueltas midiendo que lo que hay
+    que acordarse de escribir se olvida: la única lista de consumidores que existía **quedó corta
+    en el mismo commit que creó su sexto miembro**.
+  - **Mapear el `paused` del proveedor a `GRACE_PERIOD`**: es lo semánticamente correcto —es mora,
+    no pausa— y **se descarta por una razón operativa**: **el cobro que cerraría ese grace no lo va
+    a intentar nadie**, porque del lado del proveedor la suscripción está pausada y no cobra. Nos
+    dejaría un reloj corriendo hacia un pago imposible, más una divergencia permanente contra el
+    proveedor que el barrido del cap. 09 tendría que declarar legal. **Se prefiere un estado honesto
+    —«el proveedor lo pausó por mora»— antes que uno que promete un cobro que no ocurre.**
+- **Lo que esta decisión NO cierra, y va declarado**: **qué hace el dunning con esa fila.** El
+  motivo la vuelve distinguible; no dice si entra a `GRACE_PERIOD`, si va directo a `SUSPENDED`, ni
+  con qué reloj. Esa decisión **espera el veredicto de la [sonda 49](../docs/mp-probes/probe-49-la-ventana-de-reintentos.mjs)**,
+  que se lee el **2026-09-24**: si la ventana de reintentos resulta **fija de 24 h**, el proveedor
+  se rinde al día siguiente sin importar el plan y **un `GRACE_PERIOD` de 7 días no lo sostiene
+  nadie**; si resulta ser **el ciclo**, con un plan mensual hay un mes de margen y el grace se ata
+  al ciclo. **Son dos diseños distintos y el dato llega en dos días.**
+- **Origen**: la revisión de los mails de `info@mercadopago.com` y de la API de producción del
+  2026-09-21/22 (`RN-2`, `GR-3`, `RC-5`, `RC-6`, `RC-7` de la matriz), y la elección del owner del
+  2026-09-22 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **86** |
+| Decisiones tomadas | **87** |
 | De metodología | 11 |
-| Funcionales | 75 |
+| Funcionales | 76 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
