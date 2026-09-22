@@ -3446,3 +3446,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   sólo permanece la mención normativa en `AGENTS.md` que indica no depender de
   ese archivo.
 - `bash -n scripts/worktree/wt-up.sh` y `git diff --check` pasaron.
+
+## Gate 197 · Tooling de artifacts versionado
+
+- El servidor local, publisher, validator, catálogo y skill visual quedaron
+  versionados bajo `tools/artifact-app` y `.opencode/skills/visual-artifact`.
+- El secret guard detectó inicialmente el nombre `sessionToken` del UUID
+  efímero del servidor; se renombró a `sessionCookieValue` y el commit pasó sin
+  excepciones ni `--no-verify`.
