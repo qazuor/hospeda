@@ -482,7 +482,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Gate210: el informe extrae el paquete del título y cuenta archivos locales que lo referencian con `rg` read-only, excluyendo node_modules/dist/build/locks. PR #3367 detectó @vitest/ui en 4 archivos; no se modificó el repo.",
+                            "notes": "Gate211: corregida la búsqueda de uso local para excluir lockfiles, `.specs` y documentación; conserva manifests/configuración reales. PR #3367 quedó reducido a tres archivos relevantes, sin mutaciones.",
                             "done": false
                         },
                         {

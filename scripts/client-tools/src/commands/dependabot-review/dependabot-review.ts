@@ -44,7 +44,11 @@ async function localUsage(
             '--glob',
             '!build/**',
             '--glob',
-            '!*.lock',
+            '!**/*lock*',
+            '--glob',
+            '!**/.specs/**',
+            '--glob',
+            '!**/docs/**',
             packageName,
             '.'
         ],

@@ -3545,3 +3545,8 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `dependabot-review` extrae el nombre del paquete y cuenta archivos locales que lo referencian con `rg` read-only.
 - La búsqueda excluye `node_modules`, artefactos generados y lockfiles; PR #3367 detectó `@vitest/ui` en 4 archivos.
 - La señal es orientativa: todavía debe distinguir imports de configuración antes de automatizar una decisión.
+
+## Gate 211 · Exclusiones del uso local
+
+- La búsqueda de uso local excluye lockfiles, `.specs` y documentación para evitar falsos positivos de contexto.
+- Mantiene manifests y configuración del workspace; PR #3367 quedó reducido a tres archivos relevantes.
