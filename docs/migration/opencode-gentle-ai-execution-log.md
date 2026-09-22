@@ -3462,3 +3462,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   plugins, artifacts, specs, worktrees y bootstrap.
 - Markdown lint y secret guard pasaron. Se corrigió un único caso de formato en
   `artifact-schema-proposal.md` antes del commit.
+
+## Gate 199 · Lockfile del workspace OpenCode versionado
+
+- Se versionaron `.opencode/package.json` y `.opencode/package-lock.json`, con
+  `@opencode-ai/plugin` fijado a `1.18.31`.
+- Se eliminó su exclusión del `.opencode/.gitignore`; `node_modules` y locks
+  alternativos siguen excluidos.
+- El secret guard y los checks del commit pasaron.
