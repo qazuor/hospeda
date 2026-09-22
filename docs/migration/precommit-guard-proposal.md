@@ -45,4 +45,16 @@ Cloudinary, seed, seguridad y billing.
 - cada guard necesita una prueba positiva y una negativa para no volverse
   fail-open.
 
-No se modificó `.husky` ni `package.json` en esta etapa.
+## Implementado después de la propuesta
+
+El hook ahora valida automáticamente dos contratos versionados cuando sus
+fuentes cambian:
+
+- `tools/agent-packs/plan.mjs --check` para detectar comandos faltantes,
+  duplicados o hashes desactualizados entre OpenCode, Claude y Codex;
+- `tools/qz/validate-project.mjs` para validar el adaptador declarativo de
+  proyecto sin leer valores secretos.
+
+Ambos checks son locales, read-only y condicionales; no se ejecutan en commits
+que no tocan esos contratos. Drift de entornos, operaciones peligrosas y la
+reducción del permiso global `bash: "*"` siguen siendo decisiones separadas.

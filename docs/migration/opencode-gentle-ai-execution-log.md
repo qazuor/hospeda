@@ -3550,3 +3550,18 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 
 - La búsqueda de uso local excluye lockfiles, `.specs` y documentación para evitar falsos positivos de contexto.
 - Mantiene manifests y configuración del workspace; PR #3367 quedó reducido a tres archivos relevantes.
+
+## Gate 212 · Contratos de migración en pre-commit
+
+- `.husky/pre-commit` ahora ejecuta de forma condicional y read-only
+  `node tools/agent-packs/plan.mjs --check` cuando cambia el catálogo de
+  comandos cross-client o cualquier comando `.opencode/commands`.
+- Cuando cambia `.qz/project.json`, el hook ejecuta
+  `node tools/qz/validate-project.mjs` y bloquea el commit si el adaptador no
+  cumple el contrato o contiene nombres de campos sensibles.
+- Las comprobaciones no se ejecutan en commits sin esos archivos, no leen
+  valores secretos y no escriben artefactos. Shell syntax, manifest y adapter
+  pasaron en la validación local.
+- El endurecimiento restante (drift de envs, operaciones peligrosas y política
+  final de permisos) continúa separado para evitar falsos positivos y cambios
+  persistentes no aprobados.
