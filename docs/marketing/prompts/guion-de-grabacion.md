@@ -175,7 +175,7 @@ Un solo trabajo de carga alimenta cuatro grabaciones. Hecho al revés, se hace d
 
 > El paso 3 va sin sesión y el 4 con sesión: no es capricho del orden, es que el widget
 > flotante de chat con IA solo aparece logueado y tapa el contenido en las tomas de scroll.
-
+>
 > A5 y A4 tienen que grabarse **antes** de que la ficha esté terminada, porque los dos
 > videos son un antes y un después. Si primero completás todo y después grabás, no hay
 > "antes" que mostrar.
