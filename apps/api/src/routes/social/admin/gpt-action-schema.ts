@@ -158,14 +158,22 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         operationId: 'getSocialCatalog',
         summary: 'Fetch the social automation catalog',
         // NOTE: OpenAI Custom GPT Actions reject any operation `description`
-        // longer than 300 characters. Keep both descriptions under that ceiling
-        // — the behavioural guidance they used to carry lives in the GPT's
-        // Instructions, which is the only place long-form rules survive anyway.
+        // longer than 300 characters, so both descriptions below are written to
+        // that ceiling and pinned by `rejects a description over the 300-char
+        // Custom GPT Actions ceiling` in this route's test.
+        //
+        // They are NOT free prose to trim for length: these strings are the
+        // Custom GPT's OWN instructions, and per HOS-66 T-003 they are the only
+        // implementation surface for G-5's LLM-reasoning requirement (NG-2
+        // forbids backend heuristic matching). Shortening one by dropping the
+        // association guidance below removes the feature, not a sentence — an
+        // earlier pass at this ceiling did exactly that. Cut adjectives, never
+        // the instruction.
         description:
-            'Read-only catalog the GPT must fetch before drafting: hashtags, hashtag sets, ' +
-            'footers, platform formats, campaigns, batches, audiences and operator defaults. ' +
-            'Only ACTIVE campaigns and batches are listed. Never invent a slug, a hashtag or ' +
-            'a platform/format pair — read them from here.',
+            'Catalog to fetch before drafting: hashtags, sets, footers, platform formats, ' +
+            'campaigns, batches, audiences, defaults. Only ACTIVE campaigns/batches are ' +
+            'listed. Never invent slugs. If the operator named none, propose an association ' +
+            'from these lists and confirm it — never associate silently.',
         tags: ['AI - Social'],
         security: [{ HospedaAiKey: [] }],
         responses: {
@@ -198,10 +206,10 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         operationId: 'saveSocialDraft',
         summary: 'Submit a social post draft for review',
         description:
-            'Saves one social post draft authored by the GPT, always as NEEDS_REVIEW / PENDING ' +
-            'for operator approval. Requires a valid operatorPin in the body. A campaignSlug or ' +
-            'batchSlug missing from the catalog is CREATED automatically, so confirm with the ' +
-            'operator before sending a new one.',
+            'Saves one draft authored by the GPT as NEEDS_REVIEW / PENDING. Requires ' +
+            'operatorPin. An unknown campaignSlug/batchSlug is CREATED automatically, so first ' +
+            'scan the catalog for a near-duplicate name and ask the operator to confirm ' +
+            '"use existing" vs "create new".',
         tags: ['AI - Social'],
         security: [{ HospedaAiKey: [] }],
         request: {
