@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate189: `tools/agent-packs/verify.mjs` valida adapters renderizados y hashes read-only; OpenCode/Claude y Codex pasaron con 33 commands en `/tmp`. Gate188 agregó integridad SHA-256 y detección de drift en la fuente. Falta el instalador con backups, allowlist y drift persistido.",
+                            "notes": "Gate190: `bun test` en `scripts/client-tools` pasó con 300 tests, 0 fallos y 738 assertions después de la distribución multi-cliente. Gate189 dejó el verificador post-render; el instalador con backups, allowlist y drift persistido sigue pendiente.",
                             "done": false
                         },
                         {
