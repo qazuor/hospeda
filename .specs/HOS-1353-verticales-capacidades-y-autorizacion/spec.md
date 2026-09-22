@@ -3,7 +3,7 @@ title: Verticales — capacidades, entitlements, limits y autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-21
 type: feature
 areas:
   - api
@@ -58,7 +58,7 @@ y ninguno de ellos necesita leer uno de la épica de billing para estar completo
 | `17` | [autorización](./docs/17-autorizacion.md) | los nueve pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **quince guards** |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **dieciséis guards** |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el hash irreversible del correo |
 
@@ -300,8 +300,12 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ## 5. Cómo se comprueba que está bien
 
-**Siete guards**, y cada uno **lleva un caso que lo hace fallar a propósito** — porque un guard que
-no puede fallar es un comentario con exit code 0:
+**Siete guards con id propio de esta épica** —`G1`-`G6` y `G8`—, y cada uno **lleva un caso que lo
+hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
+**Siete NO es el total**: el catálogo del capítulo `20` §2 lista **dieciséis**, y los nueve que no
+están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus tres referencias cruzadas con
+billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
+es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están todos?»*:
 
 | # | falla si |
 |---|---|
@@ -316,7 +320,7 @@ no puede fallar es un comentario con exit code 0:
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los siete: **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los dieciséis: **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---
