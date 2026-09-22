@@ -572,7 +572,7 @@
                             "title": "Endurecer pre-commit",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
-                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. La arquitectura por capas está documentada; faltan decidir/implementar guards adicionales de drift y operaciones peligrosas.",
+                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. Gate212: el pre-commit ahora valida de forma condicional y read-only el manifest cross-client de comandos cuando cambia `.opencode/commands` o su manifest, y `.qz/project.json` cuando cambia el adaptador; ambos checks pasaron (`plan --check`, `validate-project`, shell syntax). La arquitectura por capas sigue pendiente para drift de envs, operaciones peligrosas y la política final de permisos.",
                             "done": false
                         },
                         {
