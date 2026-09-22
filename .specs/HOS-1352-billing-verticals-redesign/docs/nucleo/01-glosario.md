@@ -56,6 +56,14 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
 | 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
 
+**Que la lista sea cerrada lo verifica un guard, `G-R6-B` (`V/20` §2), y no la memoria del que
+escribe.** Una escritura de `listing.inactiva_desde` que no sea uno de estos cuatro lo pone en
+rojo, y quien agregue un hecho nuevo agrega su fila acá **en el mismo acto**. Es la misma regla que
+los cuatro inventarios del §2.4, §2.5 y §2.6, con la diferencia de que acá lo que se enumera son
+**escritores** y no consumidores. **No la vigila `G-R6`**: ése cruza las columnas que una condición
+**lee** contra las que alguna transición **escribe**, y de estos cuatro hechos **sólo el tercero es
+una transición**, así que queda verde por ése solo — está medido y dicho en `V/20` §2.
+
 **El hecho 2 se lee de la CONSULTA y nunca del aviso, y ésa es la diferencia entre reiniciar el
 reloj y creerle a un mensaje.** El §3 del contrato lo prohíbe con todas las letras —*«el evento no
 reemplaza la consulta … un consumidor que decidiera con lo que trae el evento estaría creyéndole a
