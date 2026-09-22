@@ -26,6 +26,11 @@
  * tag: their frontmatter runs after the page's, when the header would otherwise
  * already be decided.
  *
+ * {@link markResponseDegraded} (HOS-1154) rides the same collector in the other
+ * direction: a component that draws a failure state can VETO the cacheability
+ * its page declared before it knew the fetch would fail. Same mechanism, same
+ * reason — the answer is only knowable after the decision had to be made.
+ *
  * Since HOS-369 W1-2 the tags are namespaced by deployment environment
  * (`prod:list-accom`) at COLLECTION time, not at header-write time. Both
  * staging and production live in one Cloudflare zone, so an unqualified tag
@@ -262,6 +267,71 @@ export function applyCacheHeaders({
     const cacheControl = resolveCacheableControl({ cacheClass });
     headers.set('Cache-Control', cacheControl);
     return { cacheControl, cacheable: true, tagCount };
+}
+
+/**
+ * Declare that the response being rendered is DEGRADED — it is showing a
+ * failure state instead of the content it was asked for — and must therefore
+ * never be stored by a shared cache (HOS-1154).
+ *
+ * This is the third entry point of this module, and it exists because the other
+ * two are necessarily too early. `applyCacheHeaders` runs in the first lines of
+ * a listing's frontmatter, before the fetch it depends on has even been issued;
+ * measured on `pages/[lang]/gastronomia/index.astro`, it ran at line 52 while
+ * `hasError` was derived at line 148 and the banner drawn at line 401. Nothing
+ * the page could write at line 52 knows what line 148 is about to discover, so
+ * the correction has to travel forward through `locals` and be applied by
+ * middleware after the render — exactly like `declareCacheTags`, and for
+ * exactly the same reason.
+ *
+ * WHO CALLS IT, AND WHY IT IS NOT THE PAGES. The obvious fix — a
+ * `demoteCacheHeaders()` in each error branch — is the shape this file's own
+ * header argues against: it has to be remembered in 18 places, and the one that
+ * forgets is silent. So the call lives inside the COMPONENTS that draw the
+ * failure state (`components/shared/feedback/ErrorBanner.astro` and
+ * `components/ErrorBanner.astro`'s `error` variant). An `.astro` component's
+ * frontmatter runs when, and only when, the component is actually rendered, so
+ * "this response shows an error" and "this response is marked degraded" become
+ * the same event. A page cannot render the banner and forget the mark, because
+ * the mark is part of rendering the banner — and the static guard
+ * `test/static-guards/cacheable-pages-demote-error-responses.guard.test.ts`
+ * fails the build if a cacheable page reaches an error surface that does not
+ * lead here.
+ *
+ * Deliberately one-way. There is no `unmarkResponseDegraded`: a render that
+ * produced a failure state anywhere in the page produced it, and a later
+ * section succeeding does not make the page whole. Monotonic also means the
+ * order components run in cannot change the answer.
+ *
+ * Status cannot substitute for this. A degraded SSR page answers **200** — the
+ * page rendered; its data did not — which is precisely why middleware cannot
+ * read cacheability off `response.status` and needs a signal.
+ *
+ * @param params.locals - `Astro.locals` for the current request.
+ */
+export function markResponseDegraded({ locals }: { readonly locals: App.Locals }): void {
+    locals.responseDegraded = true;
+}
+
+/**
+ * Whether the current render declared itself degraded.
+ *
+ * Read by middleware Step 11 to strip a shared-cacheable `Cache-Control` before
+ * the response leaves the origin.
+ *
+ * Tolerates the flag being absent rather than requiring it. Middleware opens it
+ * at Step 0 for every request, so production always has it; a `.astro`
+ * component rendered in isolation (a test, Astro's container API) may not, and
+ * the useful reading of "no render said it was degraded" is "not degraded".
+ * This is the ONE permissive default in this module, and it is safe in a way
+ * the tag rules are not: the flag can only ever be raised, so a missing flag
+ * can only mean nothing raised it.
+ *
+ * @param params.locals - `Astro.locals` for the current request.
+ * @returns `true` when some part of the render drew a failure state.
+ */
+export function isResponseDegraded({ locals }: { readonly locals: Partial<App.Locals> }): boolean {
+    return locals.responseDegraded === true;
 }
 
 /**

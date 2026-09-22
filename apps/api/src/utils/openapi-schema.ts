@@ -11,19 +11,20 @@ import { z } from './zod';
  * @returns A new schema with z.date() fields converted to z.string().datetime() for OpenAPI compatibility
  */
 export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTypeAny {
-    // Handle ZodEffects (schemas with .refine(), .transform(), etc.)
-    // Zod has no public ZodEffects class export; typeName + _def.schema are the only way
-    // to detect and unwrap refined schemas for OpenAPI conversion.
-    // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
-    if ((schema as any)._def?.typeName === 'ZodEffects') {
-        // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
-        const innerSchema = (schema as any)._def.schema;
-        // Convert the inner schema and preserve the effects
-        const _convertedInner = createOpenAPISchema(innerSchema);
-        // Return the original schema since we can't easily reconstruct ZodEffects
-        // The validation will happen at runtime, OpenAPI docs just won't show the refinement
-        return schema;
-    }
+    // There is no `ZodEffects` branch here any more (HOS-425).
+    //
+    // It used to test `_def.typeName === 'ZodEffects'` and return the schema
+    // untouched. Under Zod 4 that property does not exist on any schema, so the
+    // branch was dead: measured, 0 of the 10 refined request bodies in this app
+    // matched it. Worse, Zod 4 keeps a `.refine()`/`.superRefine()` on an object
+    // AS a `ZodObject` (the checks move into `_def.checks`), so every one of
+    // them fell into the rebuild below and lost its cross-field rule on the way
+    // out. The rebuild now carries the checks across instead — see
+    // `getObjectLevelChecks`.
+    //
+    // `.transform()` still leaves the ZodObject family (it yields a `ZodPipe`),
+    // so it falls through to `convertDateField` and is returned as-is, which is
+    // the same outcome the old branch produced.
 
     // If it's a ZodObject, process its shape
     if (schema instanceof z.ZodObject) {
@@ -70,11 +71,15 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
             // validator, so losing .strict() makes affected endpoints accept-and-
             // strip unknown fields instead of rejecting them with 400 (HOS-106).
             const rebuilt = z.object(newShape);
-            return reapplyUnknownKeys(rebuilt, schema);
+            return reapplyObjectLevelChecks(reapplyUnknownKeys(rebuilt, schema), schema);
         } catch {
             // If shape access fails (e.g., Zod v4 .pick()/.omit() Proxy with invalid keys),
             // return a generic permissive object schema so zod-to-openapi does not crash on
-            // Proxy introspection. NOTE: this schema is fed to the runtime body validator too
+            // Proxy introspection. This path also drops any object-level check the source
+            // carried — it has no shape to re-attach them to. The guard in
+            // test/static-guards/refined-request-body-reaches-the-request.guard.test.ts fails if a real
+            // refined schema ever lands here (HOS-425).
+            // NOTE: this schema is fed to the runtime body validator too
             // (route-factory), so it does NOT preserve a source .strict() — a strict request
             // body reaching this path would be downgraded to accept unknown keys. No current
             // route hits this fallback with a strict request body; if one is ever added,
@@ -85,6 +90,75 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
 
     // For non-object schemas, just convert the field directly
     return convertDateField(schema, 'root');
+}
+
+/**
+ * The OBJECT-LEVEL checks a Zod 4 schema carries — what `.refine()`,
+ * `.superRefine()` and `.check()` leave behind on the object itself.
+ *
+ * In Zod 4 these do NOT wrap the schema in another type the way Zod 3's
+ * `ZodEffects` did: `z.object({...}).superRefine(fn)` is still a `ZodObject`,
+ * and the rule lives in `_def.checks`. That is the whole reason a rebuild can
+ * silently drop a cross-field rule while every `instanceof` test still says the
+ * schema is the same kind of thing (HOS-425).
+ *
+ * Only object-level checks are returned. Field-level constraints
+ * (`z.string().min(5)`, `z.number().max(1)`) live in the FIELD's own `_def`, so
+ * they travel with the field when the shape is copied and never appear here.
+ *
+ * @param schema - Any Zod schema to introspect
+ * @returns Its object-level checks; an empty array when it carries none
+ *
+ * @example
+ * getObjectLevelChecks(z.object({ a: z.number() })).length          // 0
+ * getObjectLevelChecks(CreateBillingPlanSchema).length              // 1
+ */
+export function getObjectLevelChecks(schema: z.ZodTypeAny): readonly unknown[] {
+    // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
+    const checks = (schema as any)?._def?.checks;
+    return Array.isArray(checks) ? (checks as readonly unknown[]) : [];
+}
+
+/**
+ * True when the schema declares a cross-field rule that a naive rebuild loses.
+ *
+ * @param schema - Any Zod schema to introspect
+ * @returns Whether it carries at least one object-level check
+ */
+export function hasObjectLevelRefinement(schema: z.ZodTypeAny): boolean {
+    return getObjectLevelChecks(schema).length > 0;
+}
+
+/**
+ * Carries the source schema's object-level checks onto the rebuilt object.
+ *
+ * `z.object(newShape)` starts with no checks, so without this every
+ * `.refine()` / `.superRefine()` declared on a request body is dropped on the
+ * way through {@link createOpenAPISchema} — and because the factory feeds this
+ * rebuilt copy to the RUNTIME body validator as well as to the OpenAPI
+ * document, the rule stopped being enforced at the route boundary entirely
+ * (HOS-425).
+ *
+ * `.check()` is non-mutating and preserves each issue's `path` and `message`,
+ * so the rejection a caller sees is the one the schema author wrote.
+ *
+ * The checks run against the REBUILT schema's output. That matters for the one
+ * transformation this module performs: a bare `z.date()` field becomes
+ * `z.string().datetime()`. No check in this app reads a field that conversion
+ * touches — verified per schema on HOS-425 — but a future refinement that does
+ * would see a string where its author wrote a `Date`.
+ *
+ * @param rebuilt - The freshly rebuilt object (shape and unknown-keys settled)
+ * @param original - The source schema whose object-level checks must survive
+ * @returns The rebuilt object carrying the original's checks
+ */
+function reapplyObjectLevelChecks(rebuilt: z.ZodTypeAny, original: z.ZodTypeAny): z.ZodTypeAny {
+    const checks = getObjectLevelChecks(original);
+    if (checks.length === 0) {
+        return rebuilt;
+    }
+    // biome-ignore lint/suspicious/noExplicitAny: Zod's $ZodCheck type is not exported for re-application
+    return (rebuilt as any).check(...checks) as z.ZodTypeAny;
 }
 
 /**

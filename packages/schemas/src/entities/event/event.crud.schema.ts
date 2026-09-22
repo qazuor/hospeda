@@ -64,9 +64,14 @@ const dateRangeOrderIssue = () => ({
  * Makes moderationState optional (will default to PENDING if not provided)
  *
  * Carries the date-order refinement, so it is the single gate every writer
- * passes: the admin route validates against it directly, and the protected
- * route reaches it through `EventService.create` (`createSchema`) after
- * `httpToDomainEventCreate` flattens the HTTP body into the domain shape.
+ * passes: both write surfaces reach it through `EventService.create`
+ * (`createSchema`) — the protected route after `httpToDomainEventCreate`
+ * flattens the HTTP body into the domain shape, the admin route after
+ * `adminBodyToDomainEventCreate` stamps the actor onto the admin body.
+ *
+ * NOT a request body itself: it requires `authorId`, which no client can
+ * supply (HOS-374 D-2, HOS-998). Admin routes declare
+ * {@link EventAdminCreateBodySchema}.
  *
  * NOTE (Zod 4): `.pick()`, `.omit()` and `.partial()` THROW on a schema that
  * carries a refinement. Derive from `EventSchema` instead of from this schema.
@@ -86,6 +91,70 @@ export const EventCreateInputSchema = EventSchema.omit({
         moderationState: ModerationStatusEnumSchema.optional()
     })
     .refine(isDateRangeOrdered, dateRangeOrderIssue());
+
+/**
+ * Request body for the ADMIN create-event endpoint.
+ *
+ * Identical to {@link EventCreateInputSchema} except that `authorId` is absent,
+ * because it is not something a client can know: it is the authenticated actor
+ * (HOS-374 D-2), stamped server-side by {@link adminBodyToDomainEventCreate}.
+ *
+ * WHY THIS EXISTS (HOS-998): the admin route used to declare the DOMAIN schema
+ * as its request body. Route validation runs BEFORE the handler, so a required
+ * `authorId` was demanded of a panel that has no field for it and no way to
+ * acquire one — measured on staging at `a8ea95f04`, a fully completed "Nuevo
+ * Evento" form came back with exactly one error, `authorId`, and the admin
+ * alta could not be completed by any route. The protected tier had already
+ * solved this with an author-free body plus a mapper; this is that same
+ * arrangement for the admin tier's DOMAIN-shaped payload, which carries
+ * `summary`, `tags`, `media` and `seo` that `EventCreateHttpSchema` has no
+ * room for. Reusing the HTTP schema here would have traded one broken alta for
+ * another.
+ *
+ * Derived from `EventSchema` rather than from `EventCreateInputSchema` because
+ * Zod 4 `.omit()` THROWS on a schema that carries a refinement.
+ */
+export const EventAdminCreateBodySchema = EventSchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true,
+    authorId: true
+})
+    .extend({
+        slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional(),
+        // Make moderationState optional for creation
+        moderationState: ModerationStatusEnumSchema.optional()
+    })
+    .refine(isDateRangeOrdered, dateRangeOrderIssue());
+
+/** Inferred type for {@link EventAdminCreateBodySchema}. */
+export type EventAdminCreateBody = z.infer<typeof EventAdminCreateBodySchema>;
+
+/**
+ * Turns an admin create body into the domain create input, stamping authorship
+ * from the authenticated actor.
+ *
+ * Mirrors `httpToDomainEventCreate` on the protected tier: the two surfaces
+ * differ in payload SHAPE, never in where authorship comes from. A body that
+ * carries an `authorId` anyway loses to the actor — the spread puts `authorId`
+ * last on purpose.
+ *
+ * @param body - The validated admin request body
+ * @param authorId - The authenticated actor's id
+ * @returns The domain create input accepted by `EventService.create`
+ */
+export const adminBodyToDomainEventCreate = (
+    body: EventAdminCreateBody,
+    authorId: string
+): EventCreateInput =>
+    ({
+        ...body,
+        authorId
+    }) as EventCreateInput;
 
 /**
  * Schema for event creation response

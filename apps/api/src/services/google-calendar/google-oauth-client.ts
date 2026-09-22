@@ -31,6 +31,32 @@ import { env } from '../../utils/env.js';
 const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 /**
+ * Google's OAuth 2.0 revocation endpoint (HOS-663).
+ *
+ * Separate from the token endpoint and takes no client credentials — the token
+ * itself identifies the grant.
+ * https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke
+ */
+const GOOGLE_OAUTH_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
+
+/**
+ * Hard ceiling on the revocation round trip, in milliseconds (HOS-663).
+ *
+ * Unlike the two token grants below, this call sits on the SYNCHRONOUS path of
+ * a user's `DELETE`: the cascade is awaited inside `_afterSoftDelete`, which is
+ * awaited inside `softDelete`, which the route awaits before responding. A bare
+ * `fetch` has no timeout of its own, and undici's default `headersTimeout`
+ * leaves a socket that connects and then goes quiet hanging for minutes — long
+ * enough for Cloudflare to answer 524 and tell the host their delete failed,
+ * while the revalidation and destination-count work queued behind the cascade
+ * waits it out too.
+ *
+ * 8s mirrors `safeExternalFetch` in `@repo/utils/safe-fetch`, which the iCal
+ * feed fetcher next door already uses for exactly this reason.
+ */
+const GOOGLE_OAUTH_REVOKE_TIMEOUT_MS = 8_000;
+
+/**
  * Normalized (camelCase) shape of a Google OAuth token response.
  *
  * The raw Google response uses snake_case field names (`access_token`,
@@ -243,4 +269,81 @@ export const refreshAccessToken = async (
     });
 
     return postTokenRequest(body);
+};
+
+/** Input for {@link revokeToken}. */
+export interface RevokeTokenInput {
+    /**
+     * The token to invalidate. Pass the REFRESH token when the connection has
+     * one: revoking a refresh token invalidates the whole grant, including
+     * every access token derived from it. Revoking an access token on its own
+     * only kills that one short-lived token, and the refresh token would still
+     * mint new ones.
+     */
+    readonly token: string;
+}
+
+/**
+ * Asks Google to invalidate an OAuth grant (HOS-663).
+ *
+ * This is the step that actually ends the platform's access to a host's
+ * calendar. Deactivating our connection row only stops US from using the token;
+ * the grant stays live at Google until it is revoked here, and it stays listed
+ * in the host's "Third-party apps with account access".
+ *
+ * Takes no client credentials — the token identifies the grant — so unlike the
+ * token grants above this works even if the OAuth client env vars are unset.
+ *
+ * A token Google no longer recognises answers `400 invalid_token`. That is
+ * treated as SUCCESS by the caller, not as a failure: a grant that does not
+ * exist is a grant that cannot be used, which is the outcome being asked for.
+ * Distinguishing it is left to the caller via
+ * {@link GoogleOAuthClientError.body}.
+ *
+ * ## The token goes in the BODY, and only in the body
+ *
+ * Google accepts `?token=` on the query string too, and it would work. It must
+ * not be used: a refresh token in a URL lands in undici's access log, in every
+ * outbound proxy along the way, and in a Sentry breadcrumb the moment anybody
+ * instruments `fetch`. A POST body is logged by none of those. The same rule is
+ * why {@link GoogleOAuthClientError} carries only the status.
+ *
+ * ## Any non-2xx is a failure
+ *
+ * Deliberately `!response.ok`, not a 5xx check. A `403` is Google REFUSING the
+ * revocation; treating it as success because it is not a server error would
+ * report a grant as closed while it is wide open.
+ *
+ * @param input - The token to revoke — see {@link RevokeTokenInput}.
+ * @returns Nothing. Resolving means Google accepted the revocation.
+ * @throws {GoogleOAuthClientError} If Google responds with any non-2xx status.
+ * @throws {Error} A `TimeoutError` if Google does not answer within
+ * {@link GOOGLE_OAUTH_REVOKE_TIMEOUT_MS}.
+ *
+ * @example
+ * ```ts
+ * await revokeToken({ token: credential.refreshToken ?? credential.accessToken });
+ * ```
+ */
+export const revokeToken = async (input: RevokeTokenInput): Promise<void> => {
+    const response = await fetch(GOOGLE_OAUTH_REVOKE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json'
+        },
+        // NEVER move this onto the query string — see the note above.
+        body: new URLSearchParams({ token: input.token }).toString(),
+        signal: AbortSignal.timeout(GOOGLE_OAUTH_REVOKE_TIMEOUT_MS)
+    });
+
+    if (!response.ok) {
+        const parsedBody = await tryParseJson(response);
+        // The token is never echoed into the message.
+        throw new GoogleOAuthClientError(
+            `Google OAuth token revocation failed with status ${response.status}`,
+            response.status,
+            parsedBody
+        );
+    }
 };

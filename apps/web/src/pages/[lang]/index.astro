@@ -42,7 +42,7 @@ import { buildUrl } from "@/lib/urls";
 import { slugForAccommodationType } from "@/lib/facet-slugs";
 import { AccommodationTypeEnum } from "@repo/schemas";
 import { CACHE_TAG_HOME } from "@repo/cache-tags";
-import { applyCacheHeaders } from "@/lib/cache/response-cache";
+import { applyCacheHeaders, markResponseDegraded } from "@/lib/cache/response-cache";
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -97,6 +97,24 @@ const [destinationsResult, partnersResult, statsResult] = await Promise.all([
     // Fetch platform stats for the stats section (SSG — fetched at build time)
     statsApi.getPlatformStats(),
 ]);
+
+// Any of the three failing means the home renders with a section silently
+// missing — no banner, no error text, just absence — and the `cacheable: true`
+// above would hand that hollow page to the edge for an hour fresh plus an hour
+// of stale-while-revalidate (HOS-1154 review finding).
+//
+// Measured with the API fully down: `/es/` answered 200 with
+// `public, s-maxage=3600, stale-while-revalidate=3600` and
+// `cache-tag: dev:all,dev:home`, carrying zero `<article>` elements and
+// `destinations: []`. This is the highest-traffic page on the site, so it is
+// also the worst one to pin a blank copy of.
+//
+// Fail-soft is still the right BEHAVIOUR — a missing partner marquee must not
+// 500 the home. What was wrong was calling that result cacheable. The four
+// homepage sections below fetch independently and mark themselves the same way.
+if (!destinationsResult.ok || !partnersResult.ok || !statsResult.ok) {
+    markResponseDegraded({ locals: Astro.locals });
+}
 
 const destinations = destinationsResult.ok
     ? destinationsResult.data.items.map((d) => ({

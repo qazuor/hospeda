@@ -153,7 +153,7 @@ const hasCoercion = (fieldSchema: z.ZodTypeAny): boolean => {
  * These schemas should NOT be processed by createOpenAPISchema as they need
  * their coercion logic preserved for runtime validation
  */
-const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
+export const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
     if (!(schema instanceof z.ZodObject)) {
         return false;
     }
@@ -376,19 +376,24 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
         tags: options.tags,
         request: createRequestOptions({
             params: options.requestParams || {},
-            // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies
-            // HTTP schemas (with refinements or coercion) don't need OpenAPI conversion
+            // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies.
+            //
+            // Exactly ONE escape hatch remains: a schema with `z.coerce.*`
+            // fields passes through whole, because the rebuild would drop the
+            // coercion and the route would then reject the very strings HTTP
+            // delivers.
+            //
+            // The second escape hatch, `_def.typeName === 'ZodEffects'`, is
+            // gone (HOS-425). It was a Zod 3 marker that matched nothing here,
+            // so refined bodies fell into the rebuild and came out without
+            // their cross-field rule. `createOpenAPISchema` now carries
+            // object-level checks across the rebuild, which keeps the
+            // refinement AND the date conversion instead of choosing one.
             body:
                 options.method === 'get' || options.method === 'delete'
                     ? undefined
                     : options.requestBody
-                      ? // Skip createOpenAPISchema for:
-                        // 1. ZodEffects (schemas with .refine()) - need validations preserved
-                        // 2. Schemas with coercion fields (z.coerce.date(), z.coerce.number()) - need coercion preserved
-                        // Zod provides no instanceof check for ZodEffects; typeName is the only discriminant.
-                        // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for ZodEffects detection
-                        (options.requestBody as any)._def?.typeName === 'ZodEffects' ||
-                        hasHttpCoercionFields(options.requestBody)
+                      ? hasHttpCoercionFields(options.requestBody)
                           ? options.requestBody
                           : createOpenAPISchema(options.requestBody)
                       : undefined,

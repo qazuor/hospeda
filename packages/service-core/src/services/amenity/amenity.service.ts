@@ -83,6 +83,21 @@ export class AmenityService extends BaseCrudRelatedService<
         return undefined;
     }
 
+    /**
+     * Amenities are searched by `slug`.
+     *
+     * SPEC-266 dropped the `name` column — display labels now come from
+     * `@repo/i18n`, keyed by slug — so the inherited `['name']` default
+     * resolved to no column at all and `?search=` answered with the whole
+     * catalogue (HOS-1117). `slug` is the one plain text column left, and it
+     * is the i18n key, so it is also what an operator actually types.
+     * Mirrors `PointOfInterestCategoryService`, in the same post-`name`
+     * position.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['slug'];
+    }
+
     protected readonly accommodationModel: AccommodationModel;
 
     constructor(

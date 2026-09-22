@@ -5,13 +5,20 @@
  *         `archive-abandoned-drafts` cron job.
  * Tags: @p0 @host @onboarding @cron
  *
- * **Status (2026-05-07)**: temporarily disabled via `test.fixme`. The HTTP
- * trigger endpoint `POST /api/v1/cron/:name` was removed during the VPS
- * migration (cron jobs now run in-process via node-cron). To restore this
- * test, rewrite the trigger to POST `/api/v1/admin/cron/archive-abandoned-drafts`
- * with an authenticated admin session (see `apps/api/src/routes/cron-admin/`).
- * The underlying job logic is still covered by unit/integration tests in
- * `apps/api/test/cron/`.
+ * **Status (HOS-1267)**: re-enabled. Both tests carried an unconditional
+ * `test.fixme(true, ...)` from 2026-05-07 to 2026-09-21 — 4 months of a `@p0`
+ * spec that never ran anywhere while still counting as present. The stated
+ * blocker was that `POST /api/v1/cron/:name` had been removed in the VPS
+ * migration; the fix the docblock itself prescribed —
+ * `POST /api/v1/admin/cron/{jobName}` with an authenticated admin session —
+ * has existed since SPEC-161 (`apps/api/src/routes/cron-admin/index.ts`,
+ * `SYSTEM_MAINTENANCE_MODE`). It is now what the trigger calls.
+ *
+ * Note on `dryRun`: the query param is parsed with `z.coerce.boolean()`, for
+ * which EVERY non-empty string — `'false'` included — coerces to `true`. The
+ * trigger below therefore sends no `dryRun` at all rather than `dryRun=false`;
+ * sending the latter would run the job in simulation and leave `demoted: 0`
+ * with nothing archived, which reads exactly like a broken job.
  *
  * What this validates (two scenarios in one test):
  *
@@ -41,19 +48,27 @@ import {
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
-const CRON_SECRET = process.env.HOSPEDA_CRON_SECRET ?? '';
 
-async function runArchiveAbandonedDraftsCron(): Promise<{
-    readonly status: number;
-    readonly body: unknown;
-}> {
-    const url = `${API_URL}/api/v1/cron/archive-abandoned-drafts`;
+/**
+ * Triggers the `archive-abandoned-drafts` job through the admin cron endpoint.
+ *
+ * Deliberately passes NO `dryRun` query param — see the file header: the route
+ * parses it with `z.coerce.boolean()`, so `dryRun=false` would be `true`.
+ *
+ * @param sessionCookie - An admin session holding `SYSTEM_MAINTENANCE_MODE`.
+ * @returns The HTTP status and parsed body of the trigger call.
+ */
+async function runArchiveAbandonedDraftsCron(
+    sessionCookie: string
+): Promise<{ readonly status: number; readonly body: unknown }> {
+    const url = `${API_URL}/api/v1/admin/cron/archive-abandoned-drafts`;
     const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'x-cron-secret': CRON_SECRET,
+            cookie: sessionCookie,
             'content-type': 'application/json'
-        }
+        },
+        body: '{}'
     });
     let body: unknown;
     try {
@@ -75,10 +90,9 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
     });
 
     test('A: single stale DRAFT → archived + role demoted to USER', async () => {
-        test.fixme(
-            true,
-            'HTTP cron trigger removed in VPS migration; rewrite via /api/v1/admin/cron with admin session.'
-        );
+        const admin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(admin.id);
+        await forceVerifyEmail(admin.id);
 
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(host.id);
@@ -91,7 +105,19 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
         });
         await backdateAccommodation(acc.id, 60);
 
-        const cronResult = await runArchiveAbandonedDraftsCron();
+        // Pre-state control: the row starts as a DRAFT and the owner holds
+        // HOST. Without this the assertions below could be satisfied by a
+        // fixture that never created what the cron is supposed to act on.
+        const accBefore = await execSQL<{ lifecycle_state: string }>(
+            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
+            [acc.id]
+        );
+        expect(accBefore[0]?.lifecycle_state, 'the accommodation must start as DRAFT').toBe(
+            'DRAFT'
+        );
+        expect(await getUserRoles(host.id), 'the owner must start as a HOST').toContain('HOST');
+
+        const cronResult = await runArchiveAbandonedDraftsCron(admin.sessionCookie);
         expect(
             cronResult.status >= 200 && cronResult.status < 300,
             `cron must succeed (status=${cronResult.status}, body=${JSON.stringify(cronResult.body)})`
@@ -112,10 +138,9 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
     });
 
     test('B: stale + fresh drafts → only stale archived, role stays HOST', async () => {
-        test.fixme(
-            true,
-            'HTTP cron trigger removed in VPS migration; rewrite via /api/v1/admin/cron with admin session.'
-        );
+        const admin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(admin.id);
+        await forceVerifyEmail(admin.id);
 
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(host.id);
@@ -135,10 +160,10 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
         });
         // No backdating — `updated_at` is NOW().
 
-        const cronResult = await runArchiveAbandonedDraftsCron();
+        const cronResult = await runArchiveAbandonedDraftsCron(admin.sessionCookie);
         expect(
             cronResult.status >= 200 && cronResult.status < 300,
-            `cron must succeed (status=${cronResult.status})`
+            `cron must succeed (status=${cronResult.status}, body=${JSON.stringify(cronResult.body)})`
         ).toBe(true);
 
         const staleAfter = await execSQL<{ lifecycle_state: string }>(
