@@ -434,8 +434,8 @@
                             "title": "Restaurar wrappers a staging",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Apuntar wrappers globales a `hospeda-staging` después de integrar cambios.",
-                            "notes": "Gate132: no se puede marcar como integrado. El `hospeda-staging` actual aún no contiene los scripts/wrappers nuevos; el alcance y orden están en docs/migration/staging-promotion-manifest.md. Debe promoverse el paquete operativo y repetirse `hops update`, `context`, `env --drift` y el E2E de wt-create.",
-                            "done": false
+                            "notes": "Gate179: verificado `scripts/client-tools/install.sh --check --strict-staging`; los wrappers Fish globales apuntan a `/home/qazuor/projects/WEBS/hospeda-staging`, branch `staging`, commit `c01849bad`, checkout limpio. Las 30 funciones Hops están presentes y se validó la fuente sin instalar ni escribir.",
+                            "done": true
                         },
                         {
                             "id": "template-lifecycle",
