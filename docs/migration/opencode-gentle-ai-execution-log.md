@@ -3319,3 +3319,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `node_modules`, auth ni archivos de configuración global.
 - Esto deja reproducible la capa OpenCode actual. La generación equivalente
   para Claude/Codex se mantiene como trabajo del instalador `agent-packs`.
+
+## Gate 183 · Auditoría de acoplamiento de commands OpenCode
+
+- Se revisaron los 30 commands Hops versionados: todos tienen frontmatter
+  válido y mantienen el prefijo `hops-`.
+- No se encontraron referencias a Claude Code, aliases `/startIssue`,
+  `/closeIssue` o `/recap`, ni duplicación de lógica en los prompts.
+- `hops-db-update-template` queda correctamente como excepción: delega el
+  trabajo pesado a `scripts/worktree/template.sh`, no a otro command LLM.

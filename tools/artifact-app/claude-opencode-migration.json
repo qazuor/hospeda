@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate182: los 30 commands Hops de OpenCode quedaron versionados en el worktree, incluidos los tres agregados en Gate181. La comparación registry/commands no detecta comandos Hops faltantes. Gate180 agregó `.qz/project.json` como manifiesto declarativo sin secretos. La implementación completa de qz-core, agent-packs y generación por cliente sigue pendiente.",
+                            "notes": "Gate183: auditoría read-only de los 30 commands Hops versionados: frontmatter válido, prefijo `hops-` consistente y sin referencias a Claude ni aliases legacy. Gate182 los dejó versionados; Gate180 agregó `.qz/project.json` sin secretos. La implementación completa de qz-core, agent-packs y generación por cliente sigue pendiente.",
                             "done": false
                         },
                         {
