@@ -429,9 +429,10 @@ const logRouteError = (
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
-    // HOS-607: a cross-field refinement rejection (re-applied manually via
-    // `parseRefinedBody` because the route factory drops `.refine()` when it
-    // rebuilds the OpenAPI request schema — see utils/refined-body.ts) carries
+    // HOS-607: a cross-field refinement rejection raised by `parseRefinedBody`
+    // — the second-line check two routes still run for reasons of their own,
+    // now that the factory no longer drops `.refine()` when it rebuilds the
+    // OpenAPI request schema (HOS-425; see utils/refined-body.ts) — carries
     // the full `transformZodError` payload. Render it in the SAME rich shape
     // (`details`/`summary`/`userFriendlyMessage`) the OpenAPI request
     // validator's `defaultHook` (utils/create-app.ts) already uses for an
@@ -456,6 +457,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 success: false,
                 error: {
                     code: validation.code,
+                    // R5 — same addition as the `defaultHook` in
+                    // utils/create-app.ts; these three emitters of the rich
+                    // validation body must stay byte-identical.
+                    message: validation.userFriendlyMessage,
                     messageKey: validation.messageKey,
                     details: validation.details,
                     summary: validation.summary,

@@ -28,10 +28,10 @@
 import { timingSafeEqual } from 'node:crypto';
 import { CreateSocialDraftResponseSchema, CreateSocialDraftSchema } from '@repo/schemas';
 import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/service-core';
+import type { MiddlewareHandler } from 'hono';
 import { getMediaProvider } from '../../../services/media';
 import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { getActorFromContext } from '../../../utils/actor';
-import { parseRefinedBody } from '../../../utils/refined-body';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -91,6 +91,37 @@ function buildErrorJson(
     return { success: false, error: { code, message } };
 }
 
+/**
+ * Refuses the request with 403 unless the body carries a valid operator PIN.
+ *
+ * WHY A MIDDLEWARE AND NOT THE HANDLER (HOS-425): route middlewares run before
+ * the OpenAPI request validator, the handler runs after it. While the PIN was
+ * checked inside the handler, a caller holding the API key but not the PIN got
+ * the body's validation errors FIRST — `details[].field` and all — and the 403
+ * only if the body happened to be well-formed. That inverted the order
+ * `docs/error-contract.md` fixes (permission 403 before input shape 400) and
+ * handed an attacker a schema oracle. The in-handler check hid it behind a
+ * comment claiming the opposite ("Runs AFTER the PIN check so an
+ * unauthenticated caller cannot use validation messages to probe the schema"),
+ * which was true of the refinement re-parse beside it and false of every
+ * field-level rule in the same schema.
+ *
+ * Reading the body here does NOT consume it: Hono caches the parsed JSON on the
+ * request, so the validator downstream reads the same object.
+ */
+const operatorPinMiddleware: MiddlewareHandler = async (c, next) => {
+    // A body that is not JSON at all is not this gate's business — it fails
+    // validation downstream. Treat it as "no PIN supplied", which is a 403.
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const rawPin = typeof body.operatorPin === 'string' ? body.operatorPin : undefined;
+
+    if (!(await validateOperatorPin(rawPin))) {
+        return c.json(buildErrorJson('FORBIDDEN', 'Invalid operator pin'), 403);
+    }
+
+    await next();
+};
+
 // ---------------------------------------------------------------------------
 // Route
 // ---------------------------------------------------------------------------
@@ -102,7 +133,9 @@ function buildErrorJson(
  * database with status NEEDS_REVIEW / PENDING for admin review.
  *
  * Authentication: `x-hospeda-ai-key` header (API-key middleware) PLUS
- * `operatorPin` in the request body (validated inline before service call).
+ * `operatorPin` in the request body, checked by `operatorPinMiddleware` — i.e.
+ * before the body is validated, so a caller without the PIN never sees a
+ * schema error (HOS-425).
  */
 export const socialDraftsRoute = createApiKeyRoute({
     method: 'post',
@@ -121,29 +154,17 @@ export const socialDraftsRoute = createApiKeyRoute({
     requestBody: CreateSocialDraftSchema,
     responseSchema: CreateSocialDraftResponseSchema,
     handler: async (ctx, _params, body: Record<string, unknown>) => {
-        // ----------------------------------------------------------------
-        // Step 1: Operator PIN validation (before calling the service)
-        // ----------------------------------------------------------------
-        const rawPin = typeof body.operatorPin === 'string' ? body.operatorPin : undefined;
-        const pinValid = await validateOperatorPin(rawPin);
-        if (!pinValid) {
-            return ctx.json(buildErrorJson('FORBIDDEN', 'Invalid operator pin'), 403) as never;
-        }
-
-        // Re-parse with the full schema so its refinement runs (H-54).
-        //
-        // `CreateSocialDraftSchema` requires a non-empty root `openaiFileIdRefs`
-        // when `image.mode === 'openai_file_refs'`, but the route factory
-        // rebuilds the declared `requestBody` for OpenAPI and drops
-        // `.superRefine()` in the process. Without this, the pipeline reads
+        // The PIN is already verified (`operatorPinMiddleware`) and the body is
+        // already validated WITH its `.superRefine()` — the factory stopped
+        // dropping object-level checks in HOS-425, so the second-line
+        // `parseRefinedBody` that used to stand here has nothing left to catch.
+        // The rule it guarded: `image.mode === 'openai_file_refs'` requires a
+        // non-empty root `openaiFileIdRefs`, without which the pipeline reads
         // `openaiFileIdRefs?.[0]`, finds nothing, and publishes a draft with no
         // image — degraded rather than refused, which is why it went unnoticed.
-        // Runs AFTER the PIN check so an unauthenticated caller cannot use
-        // validation messages to probe the schema.
-        parseRefinedBody({ schema: CreateSocialDraftSchema, body });
-
+        //
         // ----------------------------------------------------------------
-        // Step 2: Call the ingestion service
+        // Call the ingestion service
         // ----------------------------------------------------------------
         const actor = getActorFromContext(ctx);
 
@@ -211,5 +232,8 @@ export const socialDraftsRoute = createApiKeyRoute({
                     500
                 ) as never;
         }
-    }
+    },
+    // Runs BEFORE the OpenAPI request validator, which is the whole point:
+    // no PIN, no schema errors. See `operatorPinMiddleware`.
+    options: { middlewares: [operatorPinMiddleware] }
 });
