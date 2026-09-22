@@ -74,12 +74,22 @@ describe('showConfirmationDialog', () => {
         // Waiting for the dialog to actually leave the DOM first flushes that
         // pending unmount HERE, so no test ever inherits another test's
         // straggling cleanup.
-        await waitFor(() => {
-            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-        });
-        document.body.innerHTML = '';
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
+        //
+        // The flush goes in `try`, the wipe in `finally`: `waitFor` THROWS on
+        // timeout, so leaving the three lines below it unguarded would make the
+        // teardown conditional on the test having passed — and a single genuine
+        // failure would then leak the mounted dialog and `overflow: 'hidden'`
+        // into every later test in the worker. That is this file's own bug
+        // (HOS-1384) rebuilt inside its fix.
+        try {
+            await waitFor(() => {
+                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            });
+        } finally {
+            document.body.innerHTML = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
     });
 
     it('renders a real, labelled dialog with both actions', async () => {
