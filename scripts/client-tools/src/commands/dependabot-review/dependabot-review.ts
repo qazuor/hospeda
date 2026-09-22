@@ -77,6 +77,24 @@ export function versionImpact(title: string): VersionImpact {
     return 'unknown';
 }
 
+/** Extract only bounded, relevant release-note links from untrusted PR text. */
+export function extractReleaseNotesUrls(body: string): readonly string[] {
+    const urls = new Set<string>();
+    for (const match of body.matchAll(/https?:\/\/[^\s<>'"\])}]+/gi)) {
+        const candidate = match[0].replace(/&amp;/gi, '&').replace(/[.,;:!?`]+$/g, '');
+        try {
+            const parsed = new URL(candidate);
+            const haystack = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+            if (!/changelog|releases|compare|npmjs\.com/.test(haystack)) continue;
+            parsed.hash = '';
+            urls.add(parsed.toString());
+        } catch {
+            // Ignore malformed links from Markdown/HTML instead of exposing them.
+        }
+    }
+    return [...urls].slice(0, 8);
+}
+
 type PrEvidence = {
     readonly files: readonly string[];
     readonly reviewDecision: string | null;
@@ -189,12 +207,7 @@ export async function runDependabotReview({
                         body?: string;
                         reviewDecision?: string | null;
                     };
-                    const releaseNotesUrls = [
-                        ...(parsed.body ?? '').matchAll(/https?:\/\/[^\s)]+/g)
-                    ]
-                        .map((match) => match[0].replace(/["'<>]+$/g, ''))
-                        .filter((url) => /changelog|releases|compare|npmjs\.com/.test(url))
-                        .slice(0, 8);
+                    const releaseNotesUrls = extractReleaseNotesUrls(parsed.body ?? '');
                     evidence = {
                         files: (parsed.files ?? []).map((file) => file.path ?? '').filter(Boolean),
                         reviewDecision: parsed.reviewDecision ?? null,

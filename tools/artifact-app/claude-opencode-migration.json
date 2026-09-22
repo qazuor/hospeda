@@ -482,7 +482,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Gate211: corregida la búsqueda de uso local para excluir lockfiles, `.specs` y documentación; conserva manifests/configuración reales. PR #3367 quedó reducido a tres archivos relevantes, sin mutaciones.",
+                            "notes": "Gate211: corregida la búsqueda de uso local para excluir lockfiles, `.specs` y documentación; conserva manifests/configuración reales. Gate214: la extracción de release notes ahora parsea URLs con `URL`, elimina HTML/puntuación/fragments, deduplica y limita a ocho enlaces relevantes; se agregaron pruebas para enlaces GitHub/npm y texto no confiable. Suite client-tools: 303 tests, 0 fallos y 768 assertions. El comando sigue siendo read-only y la decisión humana por PR continúa pendiente.",
                             "done": false
                         },
                         {
