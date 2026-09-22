@@ -179,6 +179,36 @@ export const getRateLimitConfig = () => ({
         'API_RATE_LIMIT_AUTH_MESSAGE',
         'Too many authentication requests, please try again later.'
     ),
+    // HOS-1153: session READS (`GET /api/auth/get-session`,
+    // `GET /api/v1/public/auth/me`, `GET /api/v1/public/auth/status`) used to
+    // share the `auth` bucket above. They accept no credential, so a tight
+    // anti-brute-force ceiling buys nothing there — and it cost a lot: the admin
+    // panel fires TWO of them per route `beforeLoad`, so one operator exhausted
+    // 50/5min within a handful of navigations and the API answered 429.
+    //
+    // CALIBRATION — this stays an IP-keyed CEILING, never the governor. Its
+    // effective rate is `max / (windowMs / 60_000)`: 600 over 5 minutes is
+    // 120 req/min, deliberately the same order of magnitude as the `protected`
+    // tier's 133 req/min (see its own note below) because both carry
+    // authenticated browsing, and any IP-keyed limit on that is hostile to
+    // CGNAT — Argentine mobile carriers put thousands of users behind one
+    // address. For comparison the previous shared `auth` tier gave these reads
+    // 10 req/min. Server-side SSR callers do not pay from this bucket at all:
+    // they carry `X-Internal-Request` and are exempted upstream (HOS-103).
+    //
+    // What did NOT move: the real anti-brute-force control is the per-EMAIL
+    // lockout in `auth-lockout.ts`, which is independent of every counter here,
+    // and the `auth` tier still covers every credential-accepting POST.
+    authSessionReadEnabled: _safe.getBoolean('API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED', true),
+    authSessionReadWindowMs: _safe.getNumber('API_RATE_LIMIT_AUTH_SESSION_READ_WINDOW_MS', 300000),
+    authSessionReadMaxRequests: _safe.getNumber(
+        'API_RATE_LIMIT_AUTH_SESSION_READ_MAX_REQUESTS',
+        600
+    ),
+    authSessionReadMessage: _safe.get(
+        'API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE',
+        'Too many session checks, please try again later.'
+    ),
     publicEnabled: _safe.getBoolean('API_RATE_LIMIT_PUBLIC_ENABLED', true),
     publicWindowMs: _safe.getNumber('API_RATE_LIMIT_PUBLIC_WINDOW_MS', 3600000),
     publicMaxRequests: _safe.getNumber('API_RATE_LIMIT_PUBLIC_MAX_REQUESTS', 1000),

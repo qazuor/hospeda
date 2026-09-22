@@ -30,6 +30,10 @@ export {
     SYSTEM_ENV_VARS
 } from './env-registry.js';
 export {
+    checkInternalBypassConfig,
+    type InternalBypassCheckResult
+} from './internal-bypass-selfcheck.js';
+export {
     type ExchangeRateConfig,
     ExchangeRateSchema,
     parseExchangeRateSchema

@@ -88,36 +88,36 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_INTERNAL_API_URL',
         description:
-            'Internal API base URL for the web app server-to-server SSR fetches (HOS-103). When set, SSR GETs use this instead of PUBLIC_API_URL, keeping traffic off the public Cloudflare hostname. Server-only; browser calls always use the public URL. Leave unset in local dev.',
+            'Internal API base URL for server-to-server fetches made by the web SSR (HOS-103) and by the admin server functions (HOS-1153). When set, those server-side calls use it instead of the public URL, keeping traffic off the public Cloudflare hostname. It also GATES the X-Internal-Request header: left unset, the shared secret is never put on the wire. Server-only; browser calls always use the public URL. Leave unset in local dev.',
         descriptionEs:
-            'URL base interna de la API para los fetches server-to-server del SSR del web (HOS-103). Cuando está seteada, los GET del SSR la usan en vez de PUBLIC_API_URL, manteniendo el tráfico fuera del hostname público de Cloudflare. Solo server; el browser siempre usa la URL pública. Dejar sin setear en dev local.',
+            'URL base interna de la API para los fetches server-to-server del SSR del web (HOS-103) y de las server functions del admin (HOS-1153). Cuando está seteada, esas llamadas server-side la usan en vez de la URL pública, manteniendo el tráfico fuera del hostname público de Cloudflare. Además GATEA el header X-Internal-Request: sin setear, el secreto compartido nunca sale a la red. Solo server; el browser siempre usa la URL pública. Dejar sin setear en dev local.',
         type: 'url',
         required: false,
         secret: false,
         exampleValue: 'http://hospeda-api-prod:3001',
-        apps: ['web'],
+        apps: ['web', 'admin'],
         category: 'core',
         howToObtain:
-            'The API reachable from the web container over the internal Coolify/docker network (service name or private host), e.g. http://hospeda-api-prod:3001. Must NOT go through Cloudflare. Pair with HOSPEDA_INTERNAL_REQUEST_SECRET so the API exempts this traffic from the public rate limit.',
+            'The API reachable from the web/admin container over the internal Coolify/docker network (service name or private host), e.g. http://hospeda-api-prod:3001. Must NOT go through Cloudflare — the shared secret travels on this hop and Cloudflare terminates TLS. Pair with HOSPEDA_INTERNAL_REQUEST_SECRET so the API exempts this traffic from the rate limit; without this URL the secret is deliberately NOT sent at all.',
         howToObtainEs:
-            'La API alcanzable desde el contenedor del web por la red interna de Coolify/docker (nombre de servicio o host privado), ej: http://hospeda-api-prod:3001. NO debe pasar por Cloudflare. Usar junto con HOSPEDA_INTERNAL_REQUEST_SECRET para que la API exima ese tráfico del rate limit público.'
+            'La API alcanzable desde el contenedor del web/admin por la red interna de Coolify/docker (nombre de servicio o host privado), ej: http://hospeda-api-prod:3001. NO debe pasar por Cloudflare: el secreto compartido viaja en ese salto y Cloudflare termina TLS. Usar junto con HOSPEDA_INTERNAL_REQUEST_SECRET para que la API exima ese tráfico del rate limit; sin esta URL el secreto deliberadamente NO se manda.'
     },
     {
         name: 'HOSPEDA_INTERNAL_REQUEST_SECRET',
         description:
-            'Shared secret exempting internal server-to-server SSR traffic from the public rate limit (HOS-103). The web sends it as the X-Internal-Request header on SSR fetches; the API bypasses rate limiting only when it matches. MUST be identical in apps/api AND apps/web for the same environment. Min 32 characters. Fails safe: unset on either side → no bypass.',
+            'Shared secret exempting internal server-to-server SSR traffic from the public rate limit (HOS-103, extended to the admin by HOS-1153). The web sends it as the X-Internal-Request header on SSR fetches and the admin sends it on the two session reads its _authed beforeLoad makes; the API bypasses rate limiting only when it matches. MUST be identical in apps/api, apps/web AND apps/admin for the same environment. Min 32 characters. Fails safe: unset on either side → no bypass.',
         descriptionEs:
-            'Secreto compartido que exime del rate limit público al tráfico SSR server-to-server interno (HOS-103). El web lo manda como header X-Internal-Request en los fetches del SSR; la API omite el rate limit solo cuando matchea. TIENE que ser idéntico en apps/api Y apps/web para el mismo entorno. Mínimo 32 caracteres. Falla seguro: sin setear en cualquiera de los dos lados → no hay bypass.',
+            'Secreto compartido que exime del rate limit público al tráfico SSR server-to-server interno (HOS-103, extendido al admin por HOS-1153). El web lo manda como header X-Internal-Request en los fetches del SSR y el admin lo manda en las dos lecturas de sesión que hace su beforeLoad de _authed; la API omite el rate limit solo cuando matchea. TIENE que ser idéntico en apps/api, apps/web Y apps/admin para el mismo entorno. Mínimo 32 caracteres. Falla seguro: sin setear en cualquiera de los dos lados → no hay bypass.',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'a-shared-internal-request-secret-min-32-chars',
-        apps: ['api', 'web'],
+        apps: ['api', 'web', 'admin'],
         category: 'core',
         howToObtain:
-            'Generate with:  openssl rand -base64 32  — MUST be identical in apps/api AND apps/web for the same environment. Leave unset in local dev (SSR hits the same localhost API as the browser); set it in staging/prod once HOSPEDA_INTERNAL_API_URL is configured.',
+            "Generate with:  openssl rand -base64 32  — MUST be identical in apps/api, apps/web AND apps/admin for the same environment. Leave unset in local dev (server-side calls hit the same localhost API as the browser). In staging/prod set it on an app ONLY together with that app's own HOSPEDA_INTERNAL_API_URL: both web and admin refuse to send the header without an internal URL, precisely so the secret never crosses Cloudflare, which terminates TLS and would see it in the clear.",
         howToObtainEs:
-            'Generalo con:  openssl rand -base64 32  — TIENE que ser idéntico en apps/api Y apps/web para el mismo entorno. Dejalo sin setear en dev local (el SSR pega a la misma API localhost que el browser); seteálo en staging/prod cuando configures HOSPEDA_INTERNAL_API_URL.'
+            'Generalo con:  openssl rand -base64 32  — TIENE que ser idéntico en apps/api, apps/web Y apps/admin para el mismo entorno. Dejalo sin setear en dev local (las llamadas server-side pegan a la misma API localhost que el browser). En staging/prod seteálo en una app SOLO junto con el HOSPEDA_INTERNAL_API_URL de esa misma app: web y admin se niegan a mandar el header sin URL interna, justamente para que el secreto nunca cruce Cloudflare, que termina TLS y lo vería en claro.'
     },
     {
         name: 'HOSPEDA_EXTRA_TRUSTED_ORIGINS',

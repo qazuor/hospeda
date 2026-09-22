@@ -122,6 +122,49 @@ export const CROSS_CHECK_RULES: readonly CrossCheckRule[] = [
         ]
     },
     {
+        /*
+         * HOS-1153 — a SECOND rule, deliberately NOT a third side on the rule
+         * above.
+         *
+         * `evaluateCrossCheckRule` short-circuits to `partial` ("not a
+         * failure") the moment ANY referenced side is unset. Adding admin to
+         * the api/web rule would therefore have switched that rule OFF for as
+         * long as the admin's value is missing — which is exactly the
+         * post-merge window HOS-1153 opens, before an operator sets the var in
+         * Coolify. An api/web rotation mismatch landing in that window is the
+         * HOS-155 incident (2026-07-13), and it would have gone green.
+         *
+         * Split in two, each pair is judged on its own: api↔web keeps failing
+         * on a divergence no matter what admin holds, and api↔admin reports
+         * `partial` until the admin side exists.
+         *
+         * Not comparing web↔admin directly costs nothing WHILE api is set:
+         * equality is transitive, so api==web plus api==admin gives web==admin.
+         * api is the hub, and with the hub unset both rules go `partial`, so a
+         * web≠admin divergence is not caught. That is not a regression — the
+         * pre-existing 2-sided rule behaved identically with api unset — but
+         * the guarantee is conditional, and stating it unconditionally would be
+         * a comment claiming more than the rules verify.
+         *
+         * Pinned by `scripts/__tests__/check-env-rules.test.ts`.
+         */
+        id: 'internal-request-secret-api-admin-match',
+        description:
+            'HOSPEDA_INTERNAL_REQUEST_SECRET must hold the SAME value in apps/api and apps/admin ' +
+            '(HOS-1153) — the admin sends it as the X-Internal-Request header on the two session ' +
+            'reads its _authed beforeLoad makes server-side, and api exempts matching requests ' +
+            'from the rate limiter. A mismatch silently breaks the exemption and every operator ' +
+            'collapses back onto one proxy:<container-ip> bucket. Kept SEPARATE from the api/web ' +
+            'rule on purpose, so an unset admin side cannot disable that one. Unset on either ' +
+            'side is a valid "feature disabled" state (partial = pass).',
+        appliesTo: ['local', 'coolify'],
+        comparator: 'equals',
+        compare: [
+            { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
+            { app: 'admin', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
+        ]
+    },
+    {
         id: 'sentry-environment-all-apps-match',
         description:
             'The Sentry environment tag must hold the SAME value across api, web and admin on a ' +

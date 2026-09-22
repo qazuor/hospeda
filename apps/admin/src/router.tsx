@@ -52,7 +52,13 @@ export const getRouter = () => {
         routeTree,
         context,
         scrollRestoration: true,
-        defaultPreloadStaleTime: 0,
+        // HOS-1153: was 0, which made every hover re-run `beforeLoad` — and the
+        // `_authed` guard's `beforeLoad` issues TWO session reads. One sweep of
+        // the sidebar (~10 links) therefore cost ~20 API requests, and sweeping
+        // it again cost 20 more. 30_000 is TanStack Router's own default,
+        // chosen for exactly this reason: a preload resolved less than 30 s ago
+        // is reused instead of re-fetched.
+        defaultPreloadStaleTime: 30_000,
         defaultPreload: 'intent', // Prefetch on hover/focus
         defaultPreloadDelay: 100, // Small delay to avoid excessive prefetching
         defaultPendingComponent: RouterPendingComponent,
