@@ -31,6 +31,7 @@ type PrEvidence = {
     readonly files: readonly string[];
     readonly reviewDecision: string | null;
     readonly bodyPresent: boolean;
+    readonly releaseNotesUrls: readonly string[];
     readonly error?: string;
     readonly versionImpact?: VersionImpact;
 };
@@ -125,7 +126,12 @@ export async function runDependabotReview({
                 cwd: context.repoRoot,
                 args: ['pr', 'view', String(pr.number), '--json', 'files,body,reviewDecision']
             });
-            let evidence: PrEvidence = { files: [], reviewDecision: null, bodyPresent: false };
+            let evidence: PrEvidence = {
+                files: [],
+                reviewDecision: null,
+                bodyPresent: false,
+                releaseNotesUrls: []
+            };
             if (detail.ok) {
                 try {
                     const parsed = JSON.parse(detail.stdout) as {
@@ -133,16 +139,24 @@ export async function runDependabotReview({
                         body?: string;
                         reviewDecision?: string | null;
                     };
+                    const releaseNotesUrls = [
+                        ...(parsed.body ?? '').matchAll(/https?:\/\/[^\s)]+/g)
+                    ]
+                        .map((match) => match[0].replace(/["'<>]+$/g, ''))
+                        .filter((url) => /changelog|releases|compare|npmjs\.com/.test(url))
+                        .slice(0, 8);
                     evidence = {
                         files: (parsed.files ?? []).map((file) => file.path ?? '').filter(Boolean),
                         reviewDecision: parsed.reviewDecision ?? null,
-                        bodyPresent: Boolean(parsed.body?.trim())
+                        bodyPresent: Boolean(parsed.body?.trim()),
+                        releaseNotesUrls
                     };
                 } catch {
                     evidence = {
                         files: [],
                         reviewDecision: null,
                         bodyPresent: false,
+                        releaseNotesUrls: [],
                         error: 'respuesta de detalle inválida'
                     };
                 }
@@ -151,6 +165,7 @@ export async function runDependabotReview({
                     files: [],
                     reviewDecision: null,
                     bodyPresent: false,
+                    releaseNotesUrls: [],
                     error: detail.error.split('\n')[0]
                 };
             }

@@ -482,7 +482,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Gate208: el informe agrega `versionImpact` (major/minor/patch/unknown) extraído de rangos semver del título. PR #3367 fue detectado como major y recomendado create-issue, sin mutaciones.",
+                            "notes": "Gate209: la evidencia de release notes/changelog se limita a 8 URLs sanitizadas y se conserva sólo como metadata; no se guarda el body completo ni contenido sensible.",
                             "done": false
                         },
                         {

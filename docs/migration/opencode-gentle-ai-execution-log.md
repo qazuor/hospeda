@@ -3534,3 +3534,8 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `dependabot-review` agrega `versionImpact`: `major`, `minor`, `patch` o `unknown`.
 - La prueba read-only sobre PR #3367 detectó `4.1.9 -> 5.0.0`, clasificó `major` y recomendó `create-issue`.
 - No se realizaron cambios en GitHub ni se generaron issues automáticamente.
+
+## Gate 209 · Release notes sanitizadas
+
+- La salida de Dependabot conserva como máximo 8 URLs de release notes/changelog, sanitizadas y filtradas por dominios/rutas relevantes.
+- No guarda el body completo ni contenido HTML del PR; la evidencia sigue siendo read-only y compacta.
