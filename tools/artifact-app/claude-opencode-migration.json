@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate184: agregado `tools/agent-packs/hops-command-manifest.json`, generado desde `.opencode/commands`, con los 33 commands y adapters declarados para OpenCode, Claude y Codex. Gate183 confirmó frontmatter/prefijos sin acoplamiento a Claude. Aún falta el instalador que materializa esos adapters y detecta drift.",
+                            "notes": "Gate185: `tools/agent-packs/plan.mjs --plan/--check` valida el manifiesto, detecta OpenCode/Claude/Codex y muestra destinos sin escribir ni leer secretos; pasó con los 33 commands y los tres clientes presentes. Gate184 agregó el manifiesto. Aún falta el instalador que materializa adapters y detecta drift persistido.",
                             "done": false
                         },
                         {

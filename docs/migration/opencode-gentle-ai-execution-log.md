@@ -3339,3 +3339,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Sólo contiene metadata y rutas versionadas; no instala, copia credenciales ni
   modifica configuraciones globales. El instalador y la detección de drift
   quedan como etapa posterior.
+
+## Gate 185 · Planificador read-only de agent-packs
+
+- Se agregó `tools/agent-packs/plan.mjs` con modos `--plan` y `--check`.
+- Valida fuentes y duplicados del manifiesto, detecta los ejecutables
+  OpenCode/Claude/Codex y muestra los destinos previstos sin escribir, instalar,
+  autenticar ni leer secretos.
+- La ejecución local pasó con 33 commands y los tres clientes detectados.
+- No existe todavía `--apply`; la aplicación queda separada para una etapa con
+  backups, allowlist de destinos y rollback.
