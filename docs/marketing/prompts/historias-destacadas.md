@@ -388,7 +388,7 @@ recuadros ni viñetas.
 
 ## 5 · Cómo se usa
 
-**Adjuntar además [`../capturas/pantalla.png`](../capturas/pantalla.png)** — la captura
+**Adjuntar además `../capturas/pantalla.png`** — la captura
 real del sitio, que es lo que va dentro del teléfono. Es la regla 3 del plan de contenido:
 capturas reales, nunca mockups.
 
