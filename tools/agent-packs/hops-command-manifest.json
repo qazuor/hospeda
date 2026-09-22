@@ -144,6 +144,14 @@
             "sha256": "07847c00ca33804983d7a7390d9d668b3202f2f126db249be3be2bbacb308fcc"
         },
         {
+            "id": "hops-dependabot-review",
+            "source": ".opencode/commands/hops-dependabot-review.md",
+            "description": "Analiza PRs de Dependabot y recomienda cerrar, NO-SPEC, issue o bloqueo",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper",
+            "sha256": "9630a14eec332313d9fa7ded94da091cbe02ecc035eb5180139d98de6745adc4"
+        },
+        {
             "id": "hops-engram",
             "source": ".opencode/commands/hops-engram.md",
             "description": "Consulta segura y descubrible de la memoria Engram",

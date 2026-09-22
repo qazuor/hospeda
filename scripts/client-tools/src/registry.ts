@@ -177,6 +177,12 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/branch-plan/command.ts')).promoteCommand
     },
     {
+        name: 'dependabot-review',
+        summary: 'Analiza PRs de Dependabot sin mutar GitHub',
+        load: async () =>
+            (await import('./commands/dependabot-review/command.ts')).dependabotReviewCommand
+    },
+    {
         name: 'back-merge',
         summary: 'Plan read-only de back-merge entre ramas',
         load: async () => (await import('./commands/branch-plan/command.ts')).backMergeCommand
