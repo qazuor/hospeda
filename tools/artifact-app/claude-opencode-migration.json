@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate195: `tools/qz/validate-project.mjs` valida read-only `.qz/project.json`: campos mínimos, versión, adapter, issues, ramas, worktree, DB, servidores, prefijos y ausencia de campos de secretos. El adapter Hospeda pasó con API/admin/web. Gate194 dejó el inventario de backups.",
+                            "notes": "Gate196: se corrigieron referencias operativas a `CLAUDE.md` en workflows, Dependabot, templates, worktree y server-tools; `rg` ya no encuentra referencias stale fuera de la mención normativa en AGENTS.md. Sintaxis shell y diff pasan. Gate195 dejó el validador qz.",
                             "done": false
                         },
                         {

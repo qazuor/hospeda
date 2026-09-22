@@ -6,6 +6,6 @@ contact_links:
   - name: 📚 Documentation
     url: https://github.com/hospeda/main/wiki
     about: Check the documentation and guides
-  - name: 🤖 Claude Code Workflow
+  - name: 🤖 Agent Workflow
     url: https://github.com/hospeda/main/blob/main/.claude/README.md
     about: Learn about our automated workflow system

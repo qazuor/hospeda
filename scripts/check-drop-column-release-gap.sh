@@ -34,7 +34,7 @@
 # "Did the code that used to read this column already ship, live, in an
 # earlier release" is a fact about DEPLOY HISTORY, not about git state at PR
 # time — this repo's own workflow separates "merged to staging" from
-# "promoted to main" as a deliberate, human-gated step (see CLAUDE.md
+# "promoted to main" as a deliberate, human-gated step (see AGENTS.md
 # "Branch Workflow"), so even a clean `base...HEAD` diff cannot prove the
 # column-removal commit actually reached production yet. A regex over
 # application source is *also* unreliable here: HOS-620 (the companion

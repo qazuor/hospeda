@@ -1,7 +1,7 @@
 name: Smoke Gate Sync
 
 # Keeps a Linear issue out of "Done" while it still needs manual smoke testing.
-# See CLAUDE.md -> "Smoke-gate labels for any spec" for the full convention.
+# See AGENTS.md and the smoke-gate documentation for the full convention.
 #
 # Trigger: only PRs whose body contains a real GitHub/Linear closing keyword
 # (Closes/Fixes/Resolves/Implements HOS-N) — i.e. only the ONE PR that actually

@@ -91,8 +91,8 @@ async function main(): Promise<void> {
         },
         {
             path: 'docs/claude-code',
-            readmeTitle: 'Claude Code',
-            description: 'AI-assisted development with Claude Code.'
+            readmeTitle: 'AI-assisted development',
+            description: 'AI-assisted development conventions shared by CLI agents.'
         },
         {
             path: 'docs/runbooks',

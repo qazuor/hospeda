@@ -40,7 +40,7 @@
 # since a correct `@hospeda.com.ar` address CONTAINS that substring.
 # `grep -P` is used for that lookahead (standard GNU grep, NOT `rg`, which is
 # ugrep in this repo and does not reliably support combined flags for this
-# kind of scan — see CLAUDE.md "rg acá es ugrep").
+# kind of scan — see AGENTS.md for the repository search convention).
 #
 # Wired into CI via the `check:hospeda-email-domain` package script and the
 # Guards job in `.github/workflows/ci.yml` (being listed in `check:guards`

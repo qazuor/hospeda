@@ -10,7 +10,7 @@
  *
  * Why this exists as its own command instead of a `db-seed` flag: the
  * `--test-users` group is deliberately excluded from `--required`/`--example`
- * (see packages/seed/CLAUDE.md) so it never runs as a side effect of the
+ * (see packages/seed/src/test-users/testUsers.seed.ts) so it never runs as a side effect of the
  * destructive `hops db-seed` default (`--reset --required --example`).
  * Giving it a dedicated command makes that separation visible at the CLI
  * level too — there is no `--reset` flag here at all, this command can only
@@ -78,7 +78,7 @@ Prerequisite: the target DB must already have required system data (roles,
 etc.). For a brand-new/empty staging DB, run this first:
   hops db-seed --target=staging --no-reset --no-example
 
-Full account matrix: packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1
+Full account matrix: packages/seed/src/test-users/testUsers.seed.ts
 `.trim();
 
 export interface ParsedArgs {
@@ -221,6 +221,6 @@ export async function dbSeedTestUsers(argv: ReadonlyArray<string>): Promise<void
 
     log.ok(`db-seed-test-users completed against ${target}.`);
     log.hint(
-        'Login with any account from packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1 — e.g. host-pro@local.test / Password123!. Verify row counts with `hops db-counts`.'
+        'Login with an account from packages/seed/src/test-users/testUsers.seed.ts — e.g. host-pro@local.test. Verify row counts with `hops db-counts`.'
     );
 }

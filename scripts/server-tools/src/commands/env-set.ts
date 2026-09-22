@@ -53,7 +53,7 @@ class WizardCancelledError extends Error {
 
 /**
  * Framework/platform-level keys that must NEVER be hand-set into Coolify via
- * this VPS wizard: the runtime/deploy platform owns them (see CLAUDE.md env
+ * this VPS wizard: the runtime/deploy platform owns them (see AGENTS.md env
  * policy — `NODE_ENV`, `API_PORT`, `API_HOST` are read as-is). The registry
  * does NOT flag them `platformInjected` on purpose, because they ARE
  * dev-settable locally — so the LOCAL wizard (`pnpm env:set`) still offers

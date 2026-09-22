@@ -58,4 +58,4 @@ jobs:
 
           gh pr create --base staging --head main \
             --title "chore: back-merge main into staging (security sync)" \
-            --body "Auto-opened after a merge to \`main\` so \`staging\` does not fall behind on security fixes routed to \`main\` by Dependabot. Merge once CI is green. See the Dependabot security exception in CLAUDE.md."
+            --body "Auto-opened after a merge to \`main\` so \`staging\` does not fall behind on security fixes routed to \`main\` by Dependabot. Merge once CI is green. See the Dependabot security exception in AGENTS.md."

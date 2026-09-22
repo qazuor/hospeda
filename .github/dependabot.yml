@@ -10,7 +10,7 @@
 # That is expected platform behavior. A `dependabot` PR based on `main` is, by
 # construction, a security update; it may merge to `main` (CI green) and MUST be
 # back-merged into `staging` afterward via `.github/workflows/sync-main-to-staging.yml`.
-# See the "Dependabot security exception" section in CLAUDE.md for the full rule.
+# See the "Dependabot security exception" section in AGENTS.md for the full rule.
 version: 2
 updates:
   - package-ecosystem: 'npm'
@@ -66,7 +66,7 @@ updates:
     #     dependency leaves the transitive @tanstack/form-core resolved at the
     #     old 0.x version, so the build fails with [MISSING_EXPORT] on
     #     mergeAndUpdate/FormGroupApi/uuid. apps/admin forms use
-    #     @tanstack/react-form as the mandated pattern (CLAUDE.md) — real prod
+      #     @tanstack/react-form as the mandated pattern (AGENTS.md) — real prod
     #     surface, not cosmetic. Owner: HOS-57.
     #   - better-auth / @better-auth/*: 1.6.23 -> 1.6.25 (a PATCH) makes the
     #     @better-auth/expo plugin object stop satisfying BetterAuthClientPlugin,
@@ -132,7 +132,7 @@ updates:
       # errors in src/components/table/DataTable.tsx and
       # src/features/conversations/components/InboxList.tsx (PR #2793, closed).
       # Real prod surface: DataTable is the mandated admin table pattern
-      # (apps/admin/CLAUDE.md), also used by VirtualizedDataTable and
+      # (AGENTS.md), also used by VirtualizedDataTable and
       # conversations/columns.tsx. Needs the official "Migrating to V9" sweep,
       # not a version bump. Unlike zod/@tanstack/react-form/better-auth above,
       # the break arrives in a MAJOR, so scope the gate to majors — 8.x

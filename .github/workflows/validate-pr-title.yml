@@ -6,7 +6,7 @@ name: Validate PR Title
 #   [SPEC-NNN] type(scope): description     -> legacy pre-Linear spec work (in-flight only)
 #   [NOSPEC:<slug>] type(scope): description -> small change outside the spec process
 # The <slug> is a short kebab-case identifier so multiple no-spec PRs are
-# distinguishable at a glance. See CLAUDE.md -> Git Conventions -> PR titles.
+# distinguishable at a glance. See AGENTS.md -> Git conventions -> PR titles.
 #
 # Bot-authored PRs (dependabot, github-actions back-sync merges) are exempt:
 # the job is skipped for them, which reports as a neutral/skipped check and

@@ -1,5 +1,5 @@
 name: Code TODO
-description: TODO comment from codebase (auto-created by Claude Code)
+description: TODO comment from codebase (auto-created by agent workflow)
 title: "[TODO] "
 labels: ["from:claude-code", "comment:todo"]
 body:
@@ -8,7 +8,7 @@ body:
       value: |
         ## Code TODO
 
-        This issue was automatically created from a TODO comment in the codebase using Claude Code workflow automation.
+        This issue was automatically created from a TODO comment in the codebase using agent workflow automation.
 
   - type: input
     id: file-path

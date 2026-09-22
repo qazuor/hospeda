@@ -7,7 +7,7 @@ on:
       - develop
     paths:
       - '.claude/**'
-      - 'CLAUDE.md'
+      - 'AGENTS.md'
       - '.github/workflows/validate-docs.yml'
   pull_request:
     branches:
@@ -15,7 +15,7 @@ on:
       - develop
     paths:
       - '.claude/**'
-      - 'CLAUDE.md'
+      - 'AGENTS.md'
       - '.github/workflows/validate-docs.yml'
 
 # Least-privilege default token: the job only reads the repo.
@@ -59,7 +59,7 @@ jobs:
       - name: Lint markdown files
         run: |
           echo "📝 Linting markdown files..."
-          pnpm lint:md .claude/**/*.md CLAUDE.md || true
+          pnpm lint:md .claude/**/*.md AGENTS.md || true
         continue-on-error: true
 
       - name: Check for broken links

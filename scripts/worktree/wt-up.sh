@@ -72,7 +72,7 @@ if [ "$all_up" -eq 1 ] && [ "$REFRESH" -eq 0 ]; then
   done
   echo
   echo "Test logins: <slug>@local.test / Password123!"
-  echo "(13 dev users; see packages/seed/CLAUDE.md for the full matrix)"
+  echo "(13 dev users; see packages/seed/src/test-users/testUsers.seed.ts for the source matrix)"
   exit 0
 fi
 
@@ -289,4 +289,4 @@ for name in "${SRV_NAMES[@]}"; do
 done
 echo
 echo "Test logins: <slug>@local.test / Password123!"
-echo "(13 dev users covering every role × plan; see packages/seed/CLAUDE.md)"
+echo "(13 dev users covering every role × plan; see packages/seed/src/test-users/testUsers.seed.ts)"

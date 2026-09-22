@@ -152,7 +152,7 @@ function main() {
             const tail = fullKey.replace(/^zodError\./, '');
             const parts = tail.split('.');
             // Every locale gets the plain Spanish copy. `en`/`pt` falling back to
-            // `es` until translated is the documented policy (apps/web/CLAUDE.md);
+            // `es` until translated is the documented policy (AGENTS.md/docs);
             // tagging that fallback with a `[EN]`/`[PT]` marker is not — the marker
             // is versioned content, so it ships to users (H-57: 3.136 such values
             // reached production). Locale parity is preserved because the key is

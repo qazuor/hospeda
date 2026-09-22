@@ -1,5 +1,5 @@
 name: Code HACK
-description: HACK/workaround from codebase (auto-created by Claude Code)
+description: HACK/workaround from codebase (auto-created by agent workflow)
 title: "[HACK] "
 labels: ["from:claude-code", "comment:hack", "technical-debt"]
 body:
@@ -8,7 +8,7 @@ body:
       value: |
         ## Code HACK
 
-        This issue was automatically created from a HACK comment in the codebase using Claude Code workflow automation.
+        This issue was automatically created from a HACK comment in the codebase using agent workflow automation.
 
         **⚠️ HACKs represent technical debt that should be addressed.**
 

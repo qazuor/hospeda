@@ -30,7 +30,7 @@
  *     confirmation before running. `--yes` skips it. The combination
  *     `--reset --example` wipes the database and loads Faker-generated
  *     demo content including the well-known `admin@hospeda.com`
- *     credentials — never silently. See `packages/seed/CLAUDE.md`.
+ *     credentials — never silently. See `packages/seed/src/test-users/testUsers.seed.ts`.
  *   - `--target=staging` does not require an extra confirmation (it is
  *     designed to be reseeded freely). The `--pull` prompt still runs
  *     unless `--pull` / `--no-pull` is passed.
@@ -147,7 +147,7 @@ Notes:
   This command WIPES the target database by default (--reset is on).
   It is the same workflow as the dev-only \`pnpm db:seed\` script — the
   --example pass loads Faker-generated content with the well-known
-  admin@hospeda.com credentials. Read packages/seed/CLAUDE.md before
+  admin@hospeda.com credentials. Read packages/seed/src/test-users/testUsers.seed.ts before
   using against any environment that holds real data.
 
   Schema sync is intentionally NOT included by default. The recommended

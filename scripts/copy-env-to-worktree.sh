@@ -18,7 +18,7 @@
 # The global Bash validation hook blocks any command whose literal text matches
 # `.env` (with a narrow allow-list for example/template/test files). That hook
 # is the right default — `.env.local` files hold real secrets. This script lets
-# Claude Code populate a new worktree with the env files it needs without ever
+# the agent tooling populate a new worktree with the env files it needs without ever
 # putting `.env` in a tool-call command string. The script's own invocation
 # (`./scripts/copy-env-to-worktree.sh <dest>`) does not contain `.env` and
 # passes the hook; the actual env reads/writes happen inside the script after

@@ -3436,3 +3436,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   campos que impliquen secretos.
 - El adapter Hospeda pasó con `api`, `admin` y `web`; no se leyeron valores
   sensibles ni se modificó el checkout.
+
+## Gate 196 · Eliminación de referencias operativas a `CLAUDE.md`
+
+- Se actualizaron workflows, Dependabot, templates de issues, scripts de
+  worktrees y server-tools para apuntar a `AGENTS.md`, documentación existente o
+  fuentes de código reales.
+- `rg` no encuentra referencias stale a `CLAUDE.md`/`Claude Code` en esas rutas;
+  sólo permanece la mención normativa en `AGENTS.md` que indica no depender de
+  ese archivo.
+- `bash -n scripts/worktree/wt-up.sh` y `git diff --check` pasaron.
