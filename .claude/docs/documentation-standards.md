@@ -15,19 +15,19 @@
 - No commented-out code in production
 - No TODO without a linked issue or ticket
 
-## CLAUDE.md Files
+## AGENTS.md and project instructions
 
 - Max ~300 lines, concise format for AI agents
 - Purpose: quick reference for agents working on the package
 - Format: bullet points, tables, short code snippets
 - Must reference `docs/` for full details
-- Every app/package must have one
+- The project root AGENTS.md is the canonical shared reference
 
 ## README.md Files
 
 - Complete human-oriented documentation, 200-800 lines
 - Standard sections: Overview, Installation, Quick Start, Architecture, API Reference, Configuration, How to Create New [X], Testing, Troubleshooting, Related Docs
-- Every app/package must have one
+- The project root AGENTS.md is the canonical shared reference
 
 ## Markdown Formatting
 
@@ -42,5 +42,5 @@
 
 - `docs/` - Human-oriented project documentation
 - `.claude/docs/` - Concise agent cheat sheets (reference docs/ for details)
-- `CLAUDE.md` per package - Package-specific agent reference
+- Specialized package guidance belongs in skills or `docs/`
 - `README.md` per package - Package documentation for humans

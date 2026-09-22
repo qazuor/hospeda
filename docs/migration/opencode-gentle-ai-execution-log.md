@@ -3470,3 +3470,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se eliminó su exclusión del `.opencode/.gitignore`; `node_modules` y locks
   alternativos siguen excluidos.
 - El secret guard y los checks del commit pasaron.
+
+## Gate 200 · Referencias legacy de `.claude` actualizadas
+
+- Se actualizaron `.claude/docs`, el agente de DB y el runbook de migraciones de
+  seeds para apuntar a `AGENTS.md`, documentación de paquetes o fuentes reales.
+- No se borró el árbol `.claude`; sólo se eliminaron referencias a archivos
+  `CLAUDE.md` que ya no existen.
+- `rg` y `git diff --check` no detectan referencias stale en esas rutas.

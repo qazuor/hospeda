@@ -259,7 +259,7 @@ Behavior:
 
 ## The dual-write rule
 
-The root [`CLAUDE.md`](../../CLAUDE.md) states the mandatory rule under "Seed dual-write rule
+The root [`AGENTS.md`](../../AGENTS.md) states the mandatory rule under "Seed dual-write rule
 (MANDATORY, HOS-25)" — read it there for the exact wording; summarized: **any PR that edits
 baseline seed data already present on a live environment must, in the same PR, both (1) edit
 the baseline fixture/constant AND (2) add a numbered data migration** (`pnpm db:seed:make
@@ -648,8 +648,8 @@ guard actually closes is the **third** copy.
 ## Reference
 
 - [`.specs/HOS-25-versioned-seed-data-migrations/spec.md`](../../.specs/HOS-25-versioned-seed-data-migrations/spec.md) — full design record
-- [`packages/seed/CLAUDE.md`](../../packages/seed/CLAUDE.md) — Seed package quick reference (Seed Data Migrations section)
-- [`packages/db/CLAUDE.md`](../../packages/db/CLAUDE.md) — DB package migration carriles
+- [`packages/seed/src/test-users/testUsers.seed.ts`](../../packages/seed/src/test-users/testUsers.seed.ts) — Seed package quick reference (Seed Data Migrations section)
+- [`packages/db/docs/README.md`](../../packages/db/docs/README.md) — DB package migration carriles
 - [docs/guides/migrations.md](migrations.md) — schema migration carriles (`migrations/` + `extras/`)
 - [docs/deployment/first-time-setup.md](../deployment/first-time-setup.md#phase-4-database-initialization) — production day-1 bootstrap (Phase 4)
 - `packages/seed/src/data-migrations/types.ts` — the full `SeedMigrationCtx`/`SeedMigrationModule` contract

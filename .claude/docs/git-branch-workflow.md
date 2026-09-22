@@ -131,7 +131,7 @@ This is the ONLY case where a branch is cut from `main` directly. Document the r
 
 ## Worktree Policy Interaction
 
-This workflow supersedes the "ask first" worktree policy for formal specs (which already default to worktree-on). For non-spec work, the global "ask first" rule from `~/.claude/CLAUDE.md` still applies — but when a worktree IS created, the base branch is `staging`, not `main`.
+This workflow supersedes the "ask first" worktree policy for formal specs (which already default to worktree-on). For non-spec work, the global "ask first" rule from `AGENTS.md` still applies — but when a worktree IS created, the base branch is `staging`, not `main`.
 
 ## Why This Workflow
 
@@ -152,5 +152,5 @@ This workflow supersedes the "ask first" worktree policy for formal specs (which
 ## See Also
 
 - [Development Workflow](development-workflow.md) — overall SDD + Test-Informed flow.
-- [Worktree Policy](~/.claude/CLAUDE.md#worktree-policy) — when to use worktrees.
+- [Worktree Policy](AGENTS.md#worktree-policy) — when to use worktrees.
 - [Worktree Dev Environments](../../docs/guides/worktree-dev-environments.md) — one-command `wt:up` / `wt:down` to run a worktree's full stack (isolated ports + DB, auto-heal).

@@ -442,7 +442,7 @@ npx drizzle-kit studio
 ## Hospeda Project: Two-Carril Migration Protocol
 
 **MANDATORY** for any work touching `packages/db/src/schemas/`. Read
-`packages/db/CLAUDE.md` (Migrations section) for full details. The 5-step protocol:
+`packages/db/docs/README.md` and the migration runbooks for full details. The 5-step protocol:
 
 1. **Iterate freely in dev** with `pnpm db:push` / `pnpm db:fresh-dev`.
 2. **At close**: run `pnpm --filter @repo/db db:generate` and review the generated `.sql`.

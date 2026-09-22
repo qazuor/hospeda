@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate199: `.opencode/package.json` y `package-lock.json` quedaron versionados con `@opencode-ai/plugin` 1.18.31; se quitó su exclusión del ignore y el secret guard pasó. Gate198 dejó versionado el corpus documental completo.",
+                            "notes": "Gate200: se actualizaron referencias documentales legacy de `.claude`, agentes y runbooks para apuntar a `AGENTS.md`, `packages/*/docs` o fuentes reales; no quedan referencias a `CLAUDE.md` en esas rutas. Gate199 dejó versionado el lockfile OpenCode.",
                             "done": false
                         },
                         {
