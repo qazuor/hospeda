@@ -1,0 +1,173 @@
+{
+    "schemaVersion": "artifact/v1",
+    "artifact": {
+        "id": "art_hops_command_catalog",
+        "project": "hospeda",
+        "slug": "hops-command-catalog",
+        "title": "Hops: comandos, uso y estado",
+        "description": "Guía visual del CLI local de Hospeda y sus contrapartes OpenCode.",
+        "audience": "team"
+    },
+    "version": {
+        "id": "ver_hops_command_catalog_1",
+        "number": 1,
+        "createdAt": "2026-09-16T00:00:00.000Z",
+        "author": "opencode",
+        "reason": "catalogo inicial",
+        "sourceHash": "sha256:manual-catalog",
+        "rendererVersion": "artifact-app/0.1",
+        "basedOnVersion": null
+    },
+    "data": {
+        "sections": [
+            {
+                "id": "hero",
+                "type": "hero",
+                "data": {
+                    "eyebrow": "HOSPEDA · CLIENT-TOOLS",
+                    "title": "Una capa determinista para trabajar con agentes",
+                    "description": "Hops concentra lecturas, validaciones y operaciones repetibles. OpenCode agrega análisis y decisiones sólo cuando hacen falta."
+                }
+            },
+            {
+                "id": "principles",
+                "type": "callout",
+                "title": "Regla de uso",
+                "data": {
+                    "tone": "info",
+                    "text": "Antes de reconstruir contexto o lanzar comandos manuales, usá la contraparte hops-* del agente. Para verificar cambios, empezá por hops verify --changed."
+                }
+            },
+            {
+                "id": "metrics",
+                "type": "metricGrid",
+                "title": "Estado del catálogo",
+                "data": {
+                    "metrics": [
+                        { "value": "26", "label": "comandos registrados" },
+                        { "value": "28", "label": "commands hops-*" },
+                        { "value": "288", "label": "tests de client-tools" },
+                        { "value": "670", "label": "aserciones" }
+                    ]
+                }
+            },
+            {
+                "id": "read-only",
+                "type": "table",
+                "title": "Comandos read-only y gates",
+                "data": {
+                    "columns": ["Comando", "Uso", "Estado"],
+                    "rows": [
+                        ["recap / context", "resumen y contexto de issue/worktree", "completo"],
+                        ["issue-preflight", "Linear, labels, worktrees y PR/CI", "completo"],
+                        ["handoff", "hechos y pendientes para otra sesión", "completo"],
+                        ["smoke-plan", "gates derivados de labels", "completo; no ejecuta smoke"],
+                        [
+                            "verify --changed",
+                            "lint, guards, typecheck y tests afectados",
+                            "implementado"
+                        ],
+                        ["ci", "estado real de PR y checks", "unitario + E2E simulado"],
+                        ["merge", "dictamen del gate de merge", "unitario + consulta read-only"],
+                        ["stats / env", "métricas y variables sin valores", "completo"]
+                    ]
+                }
+            },
+            {
+                "id": "lifecycle",
+                "type": "timeline",
+                "title": "Flujo recomendado",
+                "data": {
+                    "items": [
+                        {
+                            "label": "1 · Inicio",
+                            "detail": "hops issue-preflight HOS-NNN y luego start-issue en dry-run."
+                        },
+                        {
+                            "label": "2 · Contexto",
+                            "detail": "hops context HOS-NNN --json; el agente resume sólo lo necesario."
+                        },
+                        {
+                            "label": "3 · Verificación",
+                            "detail": "hops verify --changed; --full queda reservado para casos justificados."
+                        },
+                        {
+                            "label": "4 · CI",
+                            "detail": "hops ci y hops merge informan el gate; no hacen merge ni mutan GitHub."
+                        },
+                        {
+                            "label": "5 · Cierre",
+                            "detail": "hops close-issue --plan; el cierre mutante sigue pendiente."
+                        },
+                        {
+                            "label": "6 · Handoff",
+                            "detail": "hops handoff --plan --json y hops-handoff agregan hallazgos y próximo paso."
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "mutations",
+                "type": "accordion",
+                "title": "Operaciones que requieren autorización",
+                "data": {
+                    "items": [
+                        {
+                            "label": "Worktrees y servidores",
+                            "text": "start-issue sin dry-run, wt-clean, servers-up y servers-down pueden crear o detener procesos."
+                        },
+                        {
+                            "label": "Bases de datos",
+                            "text": "db-migrate, db-seed, db-fresh y db-update-template escriben o recrean datos; confirmar target y rollback."
+                        },
+                        {
+                            "label": "GitHub y Linear",
+                            "text": "ci y merge son read-only. No se marca Done, no se comenta, no se hace merge ni push desde estos commands."
+                        },
+                        {
+                            "label": "Artifacts",
+                            "text": "artifact validate es read-only; publish y eventos persistentes requieren intención explícita."
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "checklist",
+                "type": "checklist",
+                "title": "Checklist de adopción",
+                "data": {
+                    "items": [
+                        {
+                            "id": "preflight",
+                            "label": "Usé issue-preflight antes de iniciar",
+                            "required": true
+                        },
+                        {
+                            "id": "changed",
+                            "label": "Corrí verify --changed antes de verificar manualmente",
+                            "required": true
+                        },
+                        {
+                            "id": "ci",
+                            "label": "Revisé ci y merge con evidencia del PR",
+                            "required": true
+                        },
+                        {
+                            "id": "mutations",
+                            "label": "Confirmé explícitamente toda operación mutable",
+                            "required": true
+                        },
+                        {
+                            "id": "handoff",
+                            "label": "Dejé handoff con marcadores y próximo paso",
+                            "required": false
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "view": { "tabs": ["catalog"], "defaultTab": "catalog" },
+    "capabilities": ["reviewChecklist.itemToggled"],
+    "sources": ["scripts/client-tools", "docs/migration/hops-command-status.md"]
+}

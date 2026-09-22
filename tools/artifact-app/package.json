@@ -1,0 +1,9 @@
+{
+    "name": "@hospeda/local-artifact-app",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "start": "node server.mjs",
+        "publish:sample": "node publish-sample.mjs"
+    }
+}
