@@ -69,6 +69,18 @@ export class ContentModerationTermService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Moderation terms are searched by the term itself.
+     *
+     * The table has no `name` column, so the inherited `['name']` default
+     * resolved to nothing and `?search=` listed every term in the dictionary
+     * (HOS-1117). `kind` and `category` are closed vocabularies with their
+     * own typed admin filters, so free text belongs on `term` alone.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['term'];
+    }
+
     protected _canCreate(actor: Actor): void {
         checkCanCreateTerm(actor);
     }

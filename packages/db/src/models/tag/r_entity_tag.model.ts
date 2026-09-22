@@ -288,7 +288,15 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'assign', logContext, err);
-            throw new DbError(this.entityName, 'assign', logContext, err.message);
+            // HOS-1174: the cause is load-bearing here, not decorative. This is an
+            // INSERT against a 4-column PK reached through a check-then-insert in
+            // `TagService.assignTag`, so two concurrent requests (a double click on
+            // the admin tag chip) both clear the existence check and the loser hits
+            // SQLSTATE 23505. Without the cause `handleRouteError` cannot see that
+            // SQLSTATE and the conflict answers 500 DATABASE_ERROR instead of 409 —
+            // the same defect HOS-1174 fixed in `BaseModelImpl`, reproduced in this
+            // bespoke write path.
+            throw new DbError(this.entityName, 'assign', logContext, err.message, err);
         }
     }
 

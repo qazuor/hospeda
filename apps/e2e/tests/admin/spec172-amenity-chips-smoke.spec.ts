@@ -23,6 +23,25 @@
  *
  * Tags: @p1 @admin @spec172 @chips @regression
  *
+ * ## Re-enabled by HOS-1267
+ *
+ * This test carried a `test.fixme(true, ...)` placed AFTER the navigation and
+ * BEFORE all three assertions listed above — so the file appeared in the
+ * inventory as a SPEC-172 regression guard while guarding nothing.
+ *
+ * Its stated reason was that the admin "redirects a freshly-granted SUPER_ADMIN
+ * to /dashboard despite the API reporting all 691 permissions", and it pointed
+ * at `RoutePermissionGuard` and the admin permission mirror. The observation
+ * was right; the diagnosis was wrong. The redirect is SPEC-174 D13: the admin
+ * auto-offers its welcome tour on first visit, and when that offer lands on a
+ * non-dashboard route `decideAutoTrigger` returns `welcome-redirect`, which
+ * `TourAutoTrigger` turns into `navigate({ to: '/dashboard' })`. The failure
+ * screenshot is the dashboard with the welcome dialog open on top of it.
+ * Permissions were never involved.
+ *
+ * `createAdminSession` now calls `markAdminToursSeen`, which retires the tour
+ * for the account it just created.
+ *
  * Selector strategy (verified against source — these components carry no
  * data-testid except the accordion, so most hooks are structural):
  *   - Accordion section header: `[data-testid="accordion-header-amenities"]`
@@ -40,7 +59,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { setUserRole } from '../../fixtures/api-helpers.ts';
+import { markAdminToursSeen, setUserRole } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -95,6 +114,12 @@ async function createAdminSession(): Promise<{
     // UPDATE no longer exists.
     await execSQL('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
     await setUserRole(userId, 'SUPER_ADMIN');
+
+    // Retire the admin welcome tour for this account. Without it every deep
+    // admin URL this session opens is redirected to /dashboard by D13 — see
+    // `markAdminToursSeen`'s JSDoc, which is the actual reason this spec spent
+    // months under a `test.fixme` blaming the permission guard.
+    await markAdminToursSeen({ userId });
 
     const signinRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
         method: 'POST',
@@ -223,23 +248,8 @@ test.describe('SPEC-172: amenity & feature chips smoke @p1 @admin @spec172 @chip
         // The edit form is a SectionAccordion; the amenities section is not
         // first, so it starts collapsed and must be expanded by clicking its
         // header before the combobox + chips are visible.
-        // KNOWN GAP: the admin bounces this session to /dashboard instead of opening
-        // the edit page. The API side checks out — with these exact cookies
-        // GET /api/v1/public/auth/me answers 200 with roles ["USER","SUPER_ADMIN"]
-        // and 691 permissions, and role_permission carries accommodation.update.own
-        // and .any for SUPER_ADMIN. The redirect comes from RoutePermissionGuard,
-        // which only navigates once userPermissions is non-empty, so the admin's auth
-        // context is resolving SOME permission set that lacks the accommodation ones.
-        // What is NOT determined: why the admin's own session read disagrees with
-        // /auth/me for a user whose SUPER_ADMIN hat was granted via setUserRole
-        // rather than seeded. Worth checking against the hand-maintained admin
-        // permission mirror before assuming the guard is at fault.
         await page.goto(`${ADMIN_URL}/accommodations/${target.id}/edit`);
         await page.waitForLoadState('networkidle');
-        test.fixme(
-            true,
-            'Admin redirects a freshly-granted SUPER_ADMIN to /dashboard despite the API reporting all 691 permissions'
-        );
         await expect(page).toHaveURL(new RegExp(`/${target.id}/edit`), { timeout: 30_000 });
 
         await page.getByTestId(`accordion-header-${AMENITIES_SECTION_ID}`).click();

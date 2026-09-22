@@ -201,6 +201,19 @@ export class PartnerMentionService extends BaseCrudService<
         return {};
     }
 
+    /**
+     * Mentions are searched by their `url` and by the admin-only
+     * `internalNote`.
+     *
+     * The table has no `name` column — a mention is identified by where it
+     * points and by whatever the moderator wrote about it — so the inherited
+     * `['name']` default matched nothing and admin search returned every
+     * mention (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['url', 'internalNote'];
+    }
+
     /** Fired once per committed batch, or null when no transport was injected. */
     private readonly notifier: PartnerMentionNotifyPort | null;
 

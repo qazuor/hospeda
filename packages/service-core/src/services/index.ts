@@ -1,3 +1,17 @@
+// HOS-663: the delete-time calendar cascade and the revocation port the API
+// layer registers into it at startup.
+export {
+    type CalendarCascadeMode,
+    type CalendarConnectionRevocationPort,
+    type CalendarConnectionRevocationResult,
+    type CascadeCalendarConnectionsInput,
+    type CascadeCalendarConnectionsResult,
+    cascadeCalendarConnectionsOnAccommodationDelete,
+    getCalendarConnectionRevocationPort,
+    HARD_DELETE_REVOCATION_FAILURE_MARKER,
+    REVOCATION_FAILURE_PREFIX,
+    setCalendarConnectionRevocationPort
+} from './accommodation/accommodation.calendar-cascade';
 // HOS-963: pure media-composition helper reused by raw-query public routes
 // (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
 // never hit `_afterSearch`, the chokepoint that normally composes `media` from

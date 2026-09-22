@@ -135,8 +135,35 @@ export async function demoteHostToUser(userId: string): Promise<void> {
  * Backdates an accommodation's `updated_at` field by N days.
  * Used by HOST-07e to trigger the archive-abandoned-drafts cron behavior.
  *
- * @param accommodationId - UUID
- * @param days - Number of days to subtract
+ * ## Why this is not a plain UPDATE (HOS-1267)
+ *
+ * `accommodations` carries `trg_set_updated_at_accommodations`, a `BEFORE
+ * UPDATE` trigger running `set_updated_at()`, which assigns
+ * `NEW.updated_at := NOW()` unconditionally. A plain
+ * `UPDATE ... SET updated_at = <past>` is therefore overwritten before it is
+ * stored: the statement reports one row affected, the transaction commits, and
+ * the column still holds `NOW()`.
+ *
+ * That is exactly what this helper did between the VPS migration and HOS-1267.
+ * Nobody noticed because its only caller — `host-07e-cron-demote` — was
+ * `test.fixme(true)` for the whole period.
+ *
+ * The write runs inside a transaction with `session_replication_role =
+ * 'replica'`, which suppresses ordinary user triggers for that transaction
+ * only. `SET LOCAL` on a dedicated client is what keeps it that way: the shared
+ * pool hands out a different connection per `execSQL` call, so a plain `SET`
+ * would leak the setting onto a connection some other test later borrows, and
+ * `ALTER TABLE ... DISABLE TRIGGER` would suppress the trigger for every
+ * parallel worker rather than just this one.
+ *
+ * It then READS THE VALUE BACK and throws if the row is not actually in the
+ * past. A fixture that quietly does nothing is worse than one that fails: the
+ * test it feeds goes green while asserting about a state that was never set up.
+ *
+ * @param accommodationId - UUID of the accommodation to backdate.
+ * @param days - Number of days to subtract from `updated_at` (positive).
+ * @throws When `days` is not a positive finite number, when no row matches, or
+ *   when the stored `updated_at` did not actually move into the past.
  */
 export async function backdateAccommodation(accommodationId: string, days: number): Promise<void> {
     if (!Number.isFinite(days) || days <= 0) {
@@ -144,10 +171,46 @@ export async function backdateAccommodation(accommodationId: string, days: numbe
             `backdateAccommodation: 'days' must be a positive finite number (got ${days})`
         );
     }
-    await execSQL(
-        `UPDATE accommodations SET updated_at = NOW() - ($1::int * INTERVAL '1 day') WHERE id = $2`,
-        [days, accommodationId]
-    );
+
+    const client = await getDbPool().connect();
+    let stored: { updated_at: Date } | undefined;
+    try {
+        await client.query('BEGIN');
+        // Transaction-scoped: reverts on COMMIT/ROLLBACK, and never reaches
+        // another connection in the pool.
+        await client.query("SET LOCAL session_replication_role = 'replica'");
+        const result = await client.query<{ updated_at: Date }>(
+            `UPDATE accommodations
+                SET updated_at = NOW() - ($1::int * INTERVAL '1 day')
+              WHERE id = $2
+              RETURNING updated_at`,
+            [days, accommodationId]
+        );
+        await client.query('COMMIT');
+        stored = result.rows[0];
+    } catch (error) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw error;
+    } finally {
+        client.release();
+    }
+
+    if (!stored) {
+        throw new Error(`backdateAccommodation: no accommodation with id ${accommodationId}`);
+    }
+
+    // Read-back check. Half the requested offset is a deliberately loose bound:
+    // it is far beyond any clock skew, and it fails hard on the only outcome
+    // that matters — the trigger having stamped `NOW()` over the write.
+    const cutoff = Date.now() - (days / 2) * 24 * 60 * 60 * 1000;
+    if (new Date(stored.updated_at).getTime() > cutoff) {
+        throw new Error(
+            `backdateAccommodation: updated_at for ${accommodationId} is ${stored.updated_at.toISOString()}, ` +
+                `which is not ~${days} days in the past. A BEFORE UPDATE trigger has overwritten the ` +
+                'backdate — the fixture did nothing, so any test relying on it would assert about a ' +
+                'state that was never set up.'
+        );
+    }
 }
 
 /**
