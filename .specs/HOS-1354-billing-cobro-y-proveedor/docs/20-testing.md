@@ -62,7 +62,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
 | **G-R6-B** | **las dos mitades de la lista cerrada de `listing.inactiva_desde`**: una **escritura** que no sea uno de los **cuatro hechos** del `NUCLEO/01` §1.2, o una **lectura** que no figure entre los **cinco consumidores** del `V/02` §2.5. **El mensaje nombra la mitad que falló** | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; `V/02` §2.5. **Referencia cruzada**: lo define `V/20` §2, donde vive la columna. Figura acá porque **lo que puede romper la lista se escribe en esta épica**: el §4.3 del cap. 10 es donde está escrito que el reloj *«arranca acá, no antes»* —el cuarto hecho—, y el §7.1 del cap. 03 apoya el tope de la reapertura en que la lista **sea** cerrada |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
-| G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo |
+| G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo. **Lo construye `B8`** (`B/descomposicion.md` §2.8), que es la unidad del cap. 03 §5 — **no `V9`**, que corre antes de que el tope exista (`F-8eC2-004`) |
 
 **Los SEIS de `R1` son la contracara de las dos claves y de la marca, y conviene decir qué impide
 cada uno.** *(Eran cinco hasta la FASE 9-bis-4. `G-R1-F` llegó con el motivo de la marca y es el
@@ -247,17 +247,33 @@ salto.
 
 **Y el costo va con su cifra, recontada acá y no copiada.** Los guards de este programa **no corren
 todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10—, así que lo que decide si
-alguno llega es que una unidad lo construya. Contado sobre las dos tablas de catálogo y las dos
-`descomposicion.md` el **2026-09-21**, con el catálogo que deja la **tercera enmienda** de
-`DEC-TEST-001` —la que agrega `G-R6-B`—, que es el último cambio de la serie:
+alguno llega es que una unidad lo construya. Recontado sobre las dos tablas de catálogo y las dos
+`descomposicion.md` el **2026-09-21**, sobre el árbol que deja el reparto de la **quinta enmienda**
+de `DEC-TEST-001` —la que reparte los catorce sin unidad—, que es el último cambio de la serie:
 
 | | cuántos | quiénes |
 |---|---|---|
 | filas de `B/20` §2 | **16** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` `G-R6-B` |
 | filas de `V/20` §2 | **17** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` `G-R6` `G-R6-B` |
 | **guards distintos** | **29** | 16 + 17 menos las **cuatro** referencias cruzadas: `G-R4`, `G-R5`, `G-R6` y `G-R6-B` |
-| **con unidad que los construya** | **15** | **13 por su id** — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`) — más **`G-R5`**, que la celda de `V9` nombra *«el de `D16`»* por su invariante y no por su id, y **`G-R6-B`**, que nace con `V6` |
-| **sin unidad** | **14** | los **seis** de `R1` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` · **`G-R6`** |
+| **con unidad que los construya** | **29** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`), `G-R5` (ver abajo) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) |
+| **sin unidad** | **0** | y es la primera vez en la serie. El reparto, unidad por unidad y con su razón medida, está en `V/descomposicion.md` §2.6 y en `B/descomposicion.md` §2.8 |
+
+**`G-R5` cambió de unidad y no de estado: era el único contado *«con unidad»* sin nombrarse.** La
+celda de `V9` decía *«el de `D16`»* —por su invariante y no por su id— y `F-8eC2-004` midió que
+estaba **en la épica equivocada**: el número que puede romperlo es el tope de pausa del cap. 03 §5
+de esta épica, que construye **`B8`**, y `V9` corre antes de que ese número exista. Desde el reparto
+de la quinta enmienda **lo construye `B8`, nombrado por su id** (`B/descomposicion.md` §2.8, y el
+retiro de la celda en `V/descomposicion.md` §2.7). El conteo no se mueve por esto; lo que se mueve
+es que el guard ahora puede fallar.
+
+**Dónde vive el reparto, y por qué no se copia a cada fila de esta tabla.** La asignación de unidad
+la hacen **las dos `descomposicion.md`**, que son los documentos que reparten trabajo; este § es el
+catálogo, y *«el catálogo cataloga, no reparte trabajo»* (`B/descomposicion.md` §2.1). Las cuatro
+filas que igual nombran su unidad —`G12`, `G13`, `G-R6-B` y `G-R5`— lo hacen como **referencia
+cruzada** y no como fuente: las tres primeras porque su unidad está del otro lado de donde uno la
+buscaría, y `G-R5` porque **su asignación ya estuvo mal una vez** y el catálogo es donde se lee
+primero.
 
 **Lo que movió la tanda del cierre de guards, y movió a mejor**: los **sin unidad siguieron siendo
 catorce** —agregar `G12` y `G13` no suma ninguno, porque los dos **sí** tienen unidad, y la fila de
@@ -265,7 +281,7 @@ catorce** —agregar `G12` y `G13` no suma ninguno, porque los dos **sí** tiene
 **28**: de **14 de 26** a **14 de 28**. Es lo contrario de lo que se temía al escribirlo.
 
 **Y lo que movió `G-R6-B`, medido igual y no deducido**: el denominador pasa de **28** a **29** y
-los sin unidad **siguen siendo catorce**, porque este guard **nace con unidad** —`V6`, la que
+los sin unidad **quedaron en catorce**, porque este guard **nace con unidad** —`V6`, la que
 construye la columna y las escrituras de `V/02` §2.5 y `V/03` §9— en vez de sumarse a los `G-R*`
 huérfanos. **14 de 28 → 14 de 29.** Los **dos** guards que la FASE 9-bis-4 había agregado antes
 —`G-R1-F` y el propio `G-R6`— **nacieron los dos sin unidad** (medido en `DEC-TEST-001`, no acá), y
@@ -273,6 +289,13 @@ huérfanos. **14 de 28 → 14 de 29.** Los **dos** guards que la FASE 9-bis-4 ha
 que protege, nunca al final»*— aplicada **en el acto de escribirlo**, que es el único momento en que
 sale gratis. **Cuál es la pieza está discutido en `V/descomposicion.md` §2.5**, porque había dos
 candidatas.
+
+> **Los dos párrafos de arriba miden las tandas ANTERIORES al reparto y se dejan como están.** Su
+> *«catorce»* es correcto para su momento y **es el número que la quinta enmienda vino a mover**:
+> la cuenta viva es la de la tabla, **14 de 29 → 0 de 29**. Se anclan en vez de reescribirse por la
+> misma razón por la que `DEC-TEST-001` ancló su cifra: son mediciones de un momento, y reescribir
+> una medición vieja para que describa el presente es lo que hizo falsa la cifra que esa entrada
+> traía.
 
 **Y la cifra que este § traía —*«12 de 26»*, *«13 de 27»*— estaba caduca por dos razones
 independientes, las dos medidas acá.** La primera: el **26** de `C2` (FASE 8-bis-4, `F-8eC2-004`,
