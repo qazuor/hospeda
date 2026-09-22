@@ -1,10 +1,11 @@
-import type {
-    AccommodationCalendarSync,
-    CalendarSyncStatusEnum,
-    OccupancySourceEnum
-} from '@repo/schemas';
-import { and, eq } from 'drizzle-orm';
+import type { AccommodationCalendarSync, OccupancySourceEnum } from '@repo/schemas';
+// Value import, not `import type`: `markRevocationFailed` writes the enum
+// MEMBER rather than the string literal 'ERROR' the rest of this file's
+// writers used to hand-spell.
+import { CalendarSyncStatusEnum } from '@repo/schemas';
+import { and, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
+import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationCalendarSync } from '../../schemas/accommodation/accommodationCalendarSync.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
@@ -33,6 +34,10 @@ import { logError, logQuery } from '../../utils/logger.ts';
  *   state columns.
  * - {@link deactivate} / {@link deleteConnection} — the two disconnect
  *   variants (soft vs hard).
+ * - {@link deactivateAllByAccommodation} — the delete-time cascade's WRITE
+ *   (HOS-663); {@link findAllByAccommodation} is the set it revokes, which is
+ *   deliberately wider.
+ * - {@link markRevocationFailed} — records a grant we could not close.
  * - {@link findAllActiveByProvider} — the cron's iteration entry point.
  */
 export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationCalendarSync> {
@@ -387,6 +392,15 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
      * forgotten (e.g. GDPR-style erasure, or a broken/unrecoverable
      * connection the host is replacing from scratch).
      *
+     * ## Revoke BEFORE calling this (HOS-663)
+     *
+     * Destroying our copy of a token is not the same as closing the grant.
+     * Once this row is gone the ciphertext is gone with it, so the provider-side
+     * grant can no longer be revoked by anyone, ever — not even by a later
+     * manual cleanup. A caller that erases a connection without revoking first
+     * leaves the host's calendar permanently reachable by a credential nobody
+     * can point at any more, which is strictly worse than the soft path.
+     *
      * @param params.accommodationId - The accommodation to disconnect.
      * @param params.provider - The calendar provider.
      * @param tx - Optional transaction client.
@@ -425,13 +439,195 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
     }
 
     /**
+     * Deactivates EVERY currently-active connection of one accommodation, for
+     * every provider at once, in a single statement (HOS-663).
+     *
+     * Backs the delete-time cascade: soft-deleting an accommodation leaves its
+     * calendar connections `is_active = true`, so the sync crons keep fetching
+     * the remote feed and writing occupancy for a listing nobody can see —
+     * measured in production as 311 of 324 occupancy rows belonging to deleted
+     * listings, with the host's encrypted OAuth tokens still in active use.
+     *
+     * Deliberately filtered on `isActive = true` and `RETURNING`-based, so the
+     * result is exactly the set of connections this call CHANGED — a second
+     * call returns `[]`, which makes the write idempotent.
+     *
+     * That set is NOT the set to revoke. An inactive row is not a revoked row:
+     * the only path that deactivates without deleting the accommodation is the
+     * host-initiated disconnect route, and it revokes nothing — it just flips
+     * `is_active` and leaves the tokens where they are. A host who disconnects
+     * and later deletes would otherwise walk away with a live grant and no
+     * trace of it anywhere. Revocation therefore iterates
+     * {@link findAllByAccommodation}, which does not filter on `isActive`.
+     *
+     * Soft, not hard: this mirrors {@link deactivate} (the host-initiated
+     * disconnect) and the sibling conversation cascade on the same hook, both
+     * of which keep the row for audit. An accommodation soft-delete is
+     * reversible, so its cascade is reversible too.
+     *
+     * @param params.accommodationId - The accommodation whose connections to deactivate.
+     * @param tx - Optional transaction client.
+     * @returns The rows this call flipped from active to inactive (possibly empty).
+     */
+    async deactivateAllByAccommodation(
+        params: { accommodationId: string },
+        tx?: DrizzleClient
+    ): Promise<AccommodationCalendarSync[]> {
+        const { accommodationId } = params;
+        const db = this.getClient(tx);
+        const logContext = { accommodationId };
+
+        try {
+            const rows = await db
+                .update(accommodationCalendarSync)
+                .set({ isActive: false, updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(accommodationCalendarSync.accommodationId, accommodationId),
+                        eq(accommodationCalendarSync.isActive, true)
+                    )
+                )
+                .returning();
+
+            try {
+                logQuery(this.entityName, 'deactivateAllByAccommodation', logContext, rows);
+            } catch {}
+            return rows as AccommodationCalendarSync[];
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'deactivateAllByAccommodation', logContext, err);
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'deactivateAllByAccommodation',
+                logContext,
+                err.message
+            );
+        }
+    }
+
+    /**
+     * Finds EVERY connection row of one accommodation, active or not (HOS-663).
+     *
+     * The absence of an `isActive` filter is the whole point. Revocation has to
+     * iterate this, not {@link deactivateAllByAccommodation}'s return value:
+     * `is_active = false` means "we stopped using it", never "the provider
+     * closed it". The host-initiated disconnect route flips the flag and
+     * revokes nothing, so the inactive rows are precisely the ones whose grants
+     * have been quietly outliving their listing.
+     *
+     * @param params.accommodationId - The accommodation whose connections to read.
+     * @param tx - Optional transaction client.
+     * @returns Every connection row for that accommodation (possibly empty).
+     */
+    async findAllByAccommodation(
+        params: { accommodationId: string },
+        tx?: DrizzleClient
+    ): Promise<AccommodationCalendarSync[]> {
+        const { accommodationId } = params;
+        const db = this.getClient(tx);
+        const logContext = { accommodationId };
+
+        try {
+            const rows = await db
+                .select()
+                .from(accommodationCalendarSync)
+                .where(eq(accommodationCalendarSync.accommodationId, accommodationId));
+
+            try {
+                logQuery(this.entityName, 'findAllByAccommodation', logContext, rows);
+            } catch {}
+            return rows as AccommodationCalendarSync[];
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAllByAccommodation', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAllByAccommodation', logContext, err.message);
+        }
+    }
+
+    /**
+     * Records that a connection's credential could NOT be revoked at the
+     * provider (HOS-663).
+     *
+     * Separate from {@link updateSyncState} on purpose, even though it writes
+     * two of the same columns. `updateSyncState` also stamps `lastSyncAt`, and
+     * a revocation is not a sync: stamping it would claim the connection was
+     * read at a moment it was not, and `last_sync_at` is one of the columns the
+     * forensic query that FOUND this bug relied on. Truthfulness of that column
+     * is worth a second method.
+     *
+     * @param params.accommodationId - The accommodation whose connection failed to revoke.
+     * @param params.provider - The calendar provider.
+     * @param params.errorMessage - The already-composed, credential-free reason to persist.
+     * @param tx - Optional transaction client.
+     * @returns The updated row, or `null` if no matching connection exists.
+     */
+    async markRevocationFailed(
+        params: { accommodationId: string; provider: OccupancySourceEnum; errorMessage: string },
+        tx?: DrizzleClient
+    ): Promise<AccommodationCalendarSync | null> {
+        const { accommodationId, provider, errorMessage } = params;
+        const db = this.getClient(tx);
+        const logContext = { accommodationId, provider };
+
+        try {
+            const rows = await db
+                .update(accommodationCalendarSync)
+                .set({
+                    lastSyncStatus: CalendarSyncStatusEnum.ERROR,
+                    lastErrorMessage: errorMessage,
+                    updatedAt: new Date()
+                })
+                .where(
+                    and(
+                        eq(accommodationCalendarSync.accommodationId, accommodationId),
+                        eq(accommodationCalendarSync.provider, provider)
+                    )
+                )
+                .returning();
+
+            const row = (rows[0] as AccommodationCalendarSync | undefined) ?? null;
+            try {
+                logQuery(this.entityName, 'markRevocationFailed', logContext, row);
+            } catch {}
+            return row;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'markRevocationFailed', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'markRevocationFailed', logContext, err.message);
+        }
+    }
+
+    /**
      * Finds every active connection for a given provider, across all
      * accommodations. Backs the sync cron's iteration entry point — it loops
      * over the returned rows and runs a sync for each.
      *
+     * ## Soft-deleted accommodations are excluded (HOS-663)
+     *
+     * The join on `accommodations` with `deleted_at IS NULL` is the SECOND of
+     * two independent defences, not a duplicate of the first. The delete-time
+     * cascade (`AccommodationService._afterSoftDelete`) is best-effort by
+     * design — it must never fail a delete over a dependent row — so on its own
+     * it leaves a hole whenever it does not run: a delete that predates this
+     * fix, a delete performed straight against the model or in SQL, or a
+     * cascade that threw. This condition closes that hole for every one of
+     * those cases at once, including the rows already wrong in production,
+     * because it is enforced where the cron READS rather than where the delete
+     * WRITES.
+     *
+     * `accommodation_calendar_sync` has no `deleted_at` of its own (see the
+     * table's schema doc), so the liveness of a connection is the liveness of
+     * its accommodation — there is no second column here that could disagree.
+     *
      * @param params.provider - The calendar provider to iterate (Phase 2: `GOOGLE_CALENDAR`).
      * @param tx - Optional transaction client.
-     * @returns All rows with `isActive=true` for the given provider.
+     * @returns All rows with `isActive=true` for the given provider whose accommodation is NOT soft-deleted.
      */
     async findAllActiveByProvider(
         params: { provider: OccupancySourceEnum },
@@ -443,19 +639,26 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
 
         try {
             const rows = await db
-                .select()
+                .select({ connection: accommodationCalendarSync })
                 .from(accommodationCalendarSync)
+                .innerJoin(
+                    accommodations,
+                    eq(accommodations.id, accommodationCalendarSync.accommodationId)
+                )
                 .where(
                     and(
                         eq(accommodationCalendarSync.provider, provider),
-                        eq(accommodationCalendarSync.isActive, true)
+                        eq(accommodationCalendarSync.isActive, true),
+                        isNull(accommodations.deletedAt)
                     )
                 );
 
+            const connections = rows.map((row) => row.connection) as AccommodationCalendarSync[];
+
             try {
-                logQuery(this.entityName, 'findAllActiveByProvider', logContext, rows);
+                logQuery(this.entityName, 'findAllActiveByProvider', logContext, connections);
             } catch {}
-            return rows as AccommodationCalendarSync[];
+            return connections;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
