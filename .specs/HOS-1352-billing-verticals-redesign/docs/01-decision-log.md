@@ -3763,12 +3763,27 @@ Cada entrada lleva, según §3.4:
   SÍ tienen unidad declarada.~~ **Lo medido el 2026-09-21, recorriendo las filas de las dos tablas
   y la columna de guards de las dos `descomposicion.md`:**
 
-  | | cuántos |
-  |---|---|
-  | filas de `B/20` §2 | **15** |
-  | filas de `V/20` §2 | **16** |
-  | guards **distintos** | **28** — 15+16 menos **3 referencias cruzadas** (`G-R4`, `G-R5`, `G-R6`) |
-  | **sin unidad que los construya** | **14**, de los cuales la mitad son los `G-R*` |
+  | | cuántos | |
+  |---|---|---|
+  | filas de `B/20` §2 | ~~15~~ → **16** | |
+  | filas de `V/20` §2 | ~~16~~ → **17** | |
+  | guards **distintos** | ~~28~~ → **29** | menos **4** referencias cruzadas (`G-R4`, `G-R5`, `G-R6`, `G-R6-B`) |
+  | **sin unidad que los construya** | **14** | la mitad son los `G-R*` |
+
+  > **Estas cifras están ancladas a un SHA y NO describen el presente: son de `7676082e6`,
+  > 2026-09-21.** La columna tachada es de `e98727349`, del mismo día y **tres horas antes** — la
+  > movió `G-R6-B`, que la tercera enmienda de esta misma entrada introdujo. **El número medido vive
+  > en `B/20` §2 y `V/20` §2**, que son los catálogos; acá vive **el costo que se aceptó al
+  > decidir**, que es otra cosa y no caduca.
+  >
+  > **Por qué se ancla en vez de corregirse otra vez**: es la **tercera** vez en un día que este
+  > número queda corto dentro de esta entrada, y las dos anteriores se arreglaron a mano. El log
+  > estaba **repitiendo un número que se mueve cada vez que alguien toca un catálogo**, que es
+  > exactamente lo que la regla de trabajo del owner prohíbe —*los conteos se recuentan con script,
+  > no se toman de un índice*—. Anclado al SHA, el número deja de pretender describir el presente y
+  > pasa a ser lo que siempre fue: **una medición de un momento**, en la misma forma que usan los
+  > rastros. **Decisión del owner del 2026-09-21**, entre retirar la cifra, anclarla, o seguir
+  > corrigiéndola a mano.
 
   **Tres correcciones sobre lo que esta entrada afirmaba**, y ninguna cambia la decisión:
   1. **El *«12 de 26»* de `C2` no era un conteo de catálogo**: era la **unión** de los dos
