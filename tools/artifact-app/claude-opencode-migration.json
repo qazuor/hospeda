@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Gate194: `tools/agent-packs/backup-plan.mjs` inventaría read-only configuraciones globales, Engram, estado, `.opencode`, `.qz`, AGENTS, specs y client-tools; sólo devuelve existencia/tamaño y confirma `secretValues: not-read`. Gate193 dejó el plan de instalación. La aplicación real con backup verificable, allowlist y rollback sigue pendiente.",
+                            "notes": "Gate195: `tools/qz/validate-project.mjs` valida read-only `.qz/project.json`: campos mínimos, versión, adapter, issues, ramas, worktree, DB, servidores, prefijos y ausencia de campos de secretos. El adapter Hospeda pasó con API/admin/web. Gate194 dejó el inventario de backups.",
                             "done": false
                         },
                         {

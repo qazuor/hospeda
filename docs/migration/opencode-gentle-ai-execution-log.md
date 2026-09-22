@@ -3426,3 +3426,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   migración, `.opencode`, `.qz`, `AGENTS.md`, specs, Taskmaster y client-tools.
 - No lee contenidos ni valores secretos. El apply futuro queda condicionado a
   espacio, copias verificadas, checksums y manifest de rollback.
+
+## Gate 195 · Validador del adapter `qz`
+
+- Se agregó `tools/qz/validate-project.mjs`, read-only y sin dependencias
+  externas.
+- Verifica `.qz/project.json`, campos requeridos, schema, provider de issues,
+  ramas, worktree/env source, DB, servidores, prefijos y ausencia de nombres de
+  campos que impliquen secretos.
+- El adapter Hospeda pasó con `api`, `admin` y `web`; no se leyeron valores
+  sensibles ni se modificó el checkout.
