@@ -98,18 +98,28 @@ escribirlo sin poder probarlo.
 
 ### 2.5 `G-R6-B` va con V6 y no con V9, y las dos candidatas eran razonables
 
-`G-R6-B` (`20` §2) falla si **algo escribe `listing.inactiva_desde` desde un lugar que la lista
-cerrada del `01` §1.2 (núcleo) no nombra**. Las dos unidades que lo podían reclamar son **V6**, que
-crea la columna (`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, y la
-relectura de `PB4`/`PB5` es el segundo momento del segundo (`02` §4.2 regla 4)—, y **V9**, que es
-la dueña del `01` §1.2 y del reloj que la **lee**.
+`G-R6-B` (`20` §2) falla si **algo toca `listing.inactiva_desde` desde un lugar que las listas
+cerradas no nombran**: una **escritura** que no sea uno de los cuatro hechos del `01` §1.2 (núcleo),
+o una **lectura** que no figure entre los cinco consumidores del `02` §2.5 (cuarta enmienda de
+`DEC-TEST-001`). Las dos unidades que lo podían reclamar son **V6**, que crea la columna
+(`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, y la relectura de
+`PB4`/`PB5` es el segundo momento del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña del
+`01` §1.2 y del reloj que la **lee**.
 
-**Va con V6 por la regla 1 leída entera**: el guard protege **las escrituras**, no la lista como
-texto, y V6 es la unidad donde nacen. Y por el argumento del §2.1 leído sobre el orden real: **V9
+**Va con V6 por la regla 1 leída entera**: el guard protege **las piezas que tocan la columna**, no
+las listas como texto, y **V6 es la unidad donde nacen las primeras** — la columna, sus escrituras
+y los dos lectores que archivan. Y por el argumento del §2.1 leído sobre el orden real: **V9
 depende de V4 y V6** (§3), así que un guard que llegue con V9 llega **después de todos los
 escritores que existen**, que es la definición de *«un guard que se escribe contra código ya
-escrito»*. Puesto en V6, el único escritor que puede aparecer después es uno nuevo — que es
-exactamente lo que viene a rechazar.
+escrito»*. Puesto en V6, lo que puede aparecer después es **una pieza nueva** — que es exactamente
+lo que viene a rechazar.
+
+**Y la mitad de lectores refuerza la elección en vez de moverla, aunque sus consumidores nazcan
+tarde.** De los cinco, `PB4` y `PB5` son de V6; el día 180 y los dos avisos previos son de **V9**;
+la fecha que se le imprime al cliente es de **V8**. Un guard que naciera con el último de ellos
+llegaría cuando los cinco ya existen y **nacería con lista de excepciones**; naciendo en V6 ve
+llegar a los tres de afuera **uno por uno**, y cada uno tiene que traer su fila al `02` §2.5 para
+pasar. Es el caso de libro del §2.1, con lectores en vez de escritores.
 
 **Lo que V9 conserva es su parte**: la lista del `01` §1.2 es su capítulo y el guard la cita; si
 alguien agrega un quinto hecho, **el cambio es de V9 y el rojo lo da el guard de V6**. Es la misma
