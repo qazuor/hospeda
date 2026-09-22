@@ -56,7 +56,7 @@ condicionan**: se apoyan en ella.
 | **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | — |
 | **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | — |
 | **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` |
-| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` |
+| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
 | **V9** | **Retención** | el reloj de 90 y 180 días **con sus cuatro hechos de reinicio**, la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | el de `D16` |
@@ -95,6 +95,26 @@ para que nadie lo lea como un olvido.
 El reconciliador se define en el `15` §4, pero **lo que hace es despublicar**, y su criterio —cae
 lo más reciente primero— sólo se puede verificar con fichas de verdad. Construirlo en V3 sería
 escribirlo sin poder probarlo.
+
+### 2.5 `G-R6-B` va con V6 y no con V9, y las dos candidatas eran razonables
+
+`G-R6-B` (`20` §2) falla si **algo escribe `listing.inactiva_desde` desde un lugar que la lista
+cerrada del `01` §1.2 (núcleo) no nombra**. Las dos unidades que lo podían reclamar son **V6**, que
+crea la columna (`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, y la
+relectura de `PB4`/`PB5` es el segundo momento del segundo (`02` §4.2 regla 4)—, y **V9**, que es
+la dueña del `01` §1.2 y del reloj que la **lee**.
+
+**Va con V6 por la regla 1 leída entera**: el guard protege **las escrituras**, no la lista como
+texto, y V6 es la unidad donde nacen. Y por el argumento del §2.1 leído sobre el orden real: **V9
+depende de V4 y V6** (§3), así que un guard que llegue con V9 llega **después de todos los
+escritores que existen**, que es la definición de *«un guard que se escribe contra código ya
+escrito»*. Puesto en V6, el único escritor que puede aparecer después es uno nuevo — que es
+exactamente lo que viene a rechazar.
+
+**Lo que V9 conserva es su parte**: la lista del `01` §1.2 es su capítulo y el guard la cita; si
+alguien agrega un quinto hecho, **el cambio es de V9 y el rojo lo da el guard de V6**. Es la misma
+forma de `G13`, que vigila el contrato de V4 y nace en `B4` (§2.3): **dónde se construye un guard y
+qué documento define su lista son dos preguntas distintas.**
 
 ---
 
