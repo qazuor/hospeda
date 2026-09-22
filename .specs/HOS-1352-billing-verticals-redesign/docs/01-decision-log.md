@@ -3818,6 +3818,19 @@ Cada entrada lleva, según §3.4:
     diferencia es medible y no de gusto — aquél sólo podía comprobar su **forma** (*que la fila diga
     cuántas escrituras tiene*), mientras éste comprueba un **hecho**: que no exista un escritor
     fuera de la lista. Uno afirma más de lo que prueba; el otro no.
+  - ***Cuarta enmienda, el mismo día: `G-R6-B` vigila las DOS mitades de la lista.*** `V/02` §2.5
+    cierra **dos** listas sobre `inactiva_desde` —sus **cuatro escritores** y sus **cinco
+    consumidores**— y el guard nació vigilando sólo la primera. **Se le suma la segunda**, porque
+    **las dos mitades fallan distinto y la segunda falla peor**: un escritor fuera de la lista mueve
+    el reloj cuando no corresponde; **un consumidor que nadie registró LEE el reloj y decide con
+    él**, y el consumidor más caro de esa columna **es el hard delete del día 180**. Un lector no
+    inventariado es un lugar que borra contenido sin que la lista sepa que existe. Además es la
+    simetría que ya tiene el precedente: **`G-R1-E` cubre la mitad consumidores** para los
+    inventarios del núcleo.
+  - **La condición con que se acepta, y no es decorativa**: **el mensaje del guard tiene que decir
+    QUÉ MITAD falló.** Un guard que vigila dos cosas con un solo mensaje afirma más que su
+    predicado, que es **exactamente la regla con la que se rechazó el segundo guard** tres párrafos
+    más arriba. Sin esa condición, esta enmienda se contradice con su propia entrada.
 - **Origen**: la FASE 9-bis-4, preguntas de los rastros del pagador manual
   (`rastro-8f9f31ac0.md`) y del grant (`rastro-ce52dce5f.md`), presentadas juntas al owner el
   2026-09-21 —eligió la 2, que era la recomendada—; la ampliación a las dos épicas pedida por el
