@@ -271,10 +271,22 @@ el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las colum
 transición**, así que queda verde por ése y no mira a los otros tres — está dicho en el cap. 20 §2 y
 es el motivo entero de que exista `G-R6-B`.
 
-**Y la leen cinco consumidores, que son los mismos cinco que el cap. 01 §1.2 enumera**: `PB4`
-(día 90) y `PB5` (N meses) del cap. 03 §9, el día 180 del §4.1 de este capítulo, los dos avisos
-de schedule del cap. 07 §6 (núcleo) y la fecha que el cap. 19 §4 fila 18 obliga a imprimirle al
-cliente — que es **`inactiva_desde` + 180** y hasta esta pasada no tenía de dónde salir.
+**Y la leen cinco consumidores, y esta lista también es cerrada**: `PB4`
+(día 90) y `PB5` (N meses) del cap. 03 §9, el día 180 del §4.1 de este capítulo, los **dos avisos
+previos** de schedule del cap. 07 §6 (núcleo) y la fecha que el cap. 19 §4 fila 18 obliga a
+imprimirle al cliente — que es **`inactiva_desde` + 180** y hasta esta pasada no tenía de dónde
+salir. *(El quinto **es** el aviso al archivar, el que `DEC-DATA-002` agregó: los avisos de
+retención son **tres** —`NUCLEO/07` §6— y acá entran **dos por el schedule y el tercero por la
+superficie que imprime su fecha**, que es por qué el renglón dice «dos» sin contradecir al núcleo.
+Este párrafo decía además que eran «los mismos cinco que el cap. 01 §1.2 enumera», y **ese § no los
+enumera**: enumera los cuatro hechos que la escriben y nombra de paso a tres de estos cinco —`PB4`,
+`PB5` y el día 180— al pedirles que relean antes de actuar.)*
+
+**Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
+un mensaje propio.** Es la mitad que la cuarta enmienda de `DEC-TEST-001` le sumó, y la razón es
+que **falla peor que la de escritores**: un escritor de más mueve el reloj, y **un lector que no
+figura acá decide con él** — y el lector más caro de esta columna es el hard delete del §4.1. Quien
+agregue una lectura de `inactiva_desde` agrega su fila **en el mismo acto**.
 
 ---
 
