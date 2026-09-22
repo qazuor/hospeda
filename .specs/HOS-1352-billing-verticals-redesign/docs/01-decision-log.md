@@ -3831,11 +3831,34 @@ Cada entrada lleva, según §3.4:
     QUÉ MITAD falló.** Un guard que vigila dos cosas con un solo mensaje afirma más que su
     predicado, que es **exactamente la regla con la que se rechazó el segundo guard** tres párrafos
     más arriba. Sin esa condición, esta enmienda se contradice con su propia entrada.
+- ***Quinta enmienda, y va contra la recomendación del agente, que es la razón de que quede
+  escrita: LOS GUARDS SIN UNIDAD SE REPARTEN AHORA.*** `C2` lo viene reportando **tres vueltas
+  seguidas** (`F-8dC2-003` → `F-8eC2-004`): la proporción de guards sin unidad que los construya
+  fue de `11 de 24` a `12 de 26`, y el 2026-09-21 quedó en **14 de 29**. **Un guard sin unidad es
+  una promesa escrita que nadie tiene asignado construir cuando llegue la FASE 10.**
+  - **La decisión del owner: se reparten ahora**, con el contexto fresco del día en que la mitad de
+    ellos se escribió, en vez de declararlos como límite conocido para la FASE 10.
+  - **La recomendación del agente era la contraria, y su razón queda acá porque es el riesgo que
+    esta decisión acepta**: `C2` midió que **el único de los trece que consiguió dueño lo consiguió
+    en la ÉPICA EQUIVOCADA** —`G-R5` vigila un número que declara billing y lo construye una unidad
+    de verticales **que corre antes de que ese número exista**—. **Una asignación apurada acierta el
+    guard y erra la unidad, y eso es peor que no tener unidad, porque afirma que alguien lo
+    construye.**
+  - **Las tres condiciones con que se ejecuta, que son lo que hace aceptable el riesgo**: (1) **cada
+    asignación lleva su razón medida con cita**, no plausible; (2) **la unidad nace ANTES o CON lo
+    que el guard vigila, nunca después** —el criterio que confirmó `V6` para `G-R6-B` y el que
+    `G-R5` violó—; y (3) **no se inventa**: un guard sin unidad clara **se declara sin dueño con su
+    razón**. **Trece asignaciones medidas y una declarada honestamente valen más que catorce
+    plausibles.**
+  - **Y se aprovecha para cerrar `F-8eC2-004`**: si se confirma que la unidad de `G-R5` está en la
+    épica equivocada, se corrige en el mismo acto.
 - **Origen**: la FASE 9-bis-4, preguntas de los rastros del pagador manual
   (`rastro-8f9f31ac0.md`) y del grant (`rastro-ce52dce5f.md`), presentadas juntas al owner el
   2026-09-21 —eligió la 2, que era la recomendada—; la ampliación a las dos épicas pedida por el
-  owner el mismo día; y la tercera enmienda, sobre la medición de los cuatro escritores que trajo
-  el cierre de guards (`rastro-12cc0879f.md`), donde eligió la 2, que era la recomendada.
+  owner el mismo día; la tercera enmienda, sobre la medición de los cuatro escritores que trajo
+  el cierre de guards (`rastro-12cc0879f.md`), donde eligió la 2, que era la recomendada; la cuarta,
+  sobre las dos mitades de la lista, donde eligió la 1, que era la recomendada; y la quinta, el
+  reparto, donde eligió la 1 **contra** la recomendada.
 
 ---
 
