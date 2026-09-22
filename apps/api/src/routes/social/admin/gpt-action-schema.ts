@@ -159,8 +159,8 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         summary: 'Fetch the social automation catalog',
         // NOTE: OpenAI Custom GPT Actions reject any operation `description`
         // longer than 300 characters, so both descriptions below are written to
-        // that ceiling and pinned by `rejects a description over the 300-char
-        // Custom GPT Actions ceiling` in this route's test.
+        // that ceiling and pinned by `keeps every operation description within
+        // the 300-char Custom GPT Actions ceiling` in this route's test.
         //
         // They are NOT free prose to trim for length: these strings are the
         // Custom GPT's OWN instructions, and per HOS-66 T-003 they are the only
