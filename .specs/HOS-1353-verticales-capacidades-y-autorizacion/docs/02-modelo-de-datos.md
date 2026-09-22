@@ -264,6 +264,13 @@ que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia
 el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
 segunda fuente.
 
+**Y que sea cerrada lo verifica un guard, `G-R6-B` (cap. 20 §2), no la memoria del que escribe.**
+Quien agregue un escritor nuevo agrega su hecho a la lista del cap. 01 §1.2 **en el mismo acto**, o
+el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las columnas que una condición
+**lee** contra las que alguna transición **escribe**, y de estos cuatro hechos **uno solo es una
+transición**, así que queda verde por ése y no mira a los otros tres — está dicho en el cap. 20 §2 y
+es el motivo entero de que exista `G-R6-B`.
+
 **Y la leen cinco consumidores, que son los mismos cinco que el cap. 01 §1.2 enumera**: `PB4`
 (día 90) y `PB5` (N meses) del cap. 03 §9, el día 180 del §4.1 de este capítulo, los dos avisos
 de schedule del cap. 07 §6 (núcleo) y la fecha que el cap. 19 §4 fila 18 obliga a imprimirle al
