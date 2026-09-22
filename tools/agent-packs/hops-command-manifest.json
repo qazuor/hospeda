@@ -1,0 +1,250 @@
+{
+    "schemaVersion": 1,
+    "manifestId": "hops-command-pack",
+    "sourceOfTruth": "opencode-command-contract",
+    "generatedFrom": ".opencode/commands",
+    "clients": {
+        "opencode": {
+            "strategy": "project-command-files"
+        },
+        "claude": {
+            "strategy": "generated-command-files"
+        },
+        "codex": {
+            "strategy": "generated-skill-or-instruction-adapter"
+        }
+    },
+    "commands": [
+        {
+            "id": "hops-artifact-create",
+            "source": ".opencode/commands/hops-artifact-create.md",
+            "description": "Genera un artifact de Hospeda mediante el renderer local",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-artifact-list",
+            "source": ".opencode/commands/hops-artifact-list.md",
+            "description": "Lista artifacts locales y sus versiones",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-artifact-publish",
+            "source": ".opencode/commands/hops-artifact-publish.md",
+            "description": "Publica un snapshot de artifact cuando el usuario lo solicita",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-artifact-state",
+            "source": ".opencode/commands/hops-artifact-state.md",
+            "description": "Lee el estado persistente de un artifact para el agente",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-artifact",
+            "source": ".opencode/commands/hops-artifact.md",
+            "description": "Opera artifacts locales versionados mediante hops",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-ci",
+            "source": ".opencode/commands/hops-ci.md",
+            "description": "Consulta el estado del PR y CI de la branch",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-close-issue",
+            "source": ".opencode/commands/hops-close-issue.md",
+            "description": "Preflight de cierre de una issue sin mutar estado",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-context",
+            "source": ".opencode/commands/hops-context.md",
+            "description": "Reúne contexto verificable de una issue Hospeda",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-fresh",
+            "source": ".opencode/commands/hops-db-fresh.md",
+            "description": "Recrea la base de desarrollo desde el template",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-migrate",
+            "source": ".opencode/commands/hops-db-migrate.md",
+            "description": "Aplica migraciones de base de datos del worktree",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-seed",
+            "source": ".opencode/commands/hops-db-seed.md",
+            "description": "Carga datos de desarrollo en la base del worktree",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-start",
+            "source": ".opencode/commands/hops-db-start.md",
+            "description": "Inicia los servicios de base de desarrollo",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-stop",
+            "source": ".opencode/commands/hops-db-stop.md",
+            "description": "Detiene los servicios de base de desarrollo",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-studio",
+            "source": ".opencode/commands/hops-db-studio.md",
+            "description": "Abre Drizzle Studio para la base del worktree",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-db-update-template",
+            "source": ".opencode/commands/hops-db-update-template.md",
+            "description": "Construye y promueve de forma controlada el template de bases",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-engram",
+            "source": ".opencode/commands/hops-engram.md",
+            "description": "Consulta segura y descubrible de la memoria Engram",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-env",
+            "source": ".opencode/commands/hops-env.md",
+            "description": "Chequea variables requeridas sin revelar valores",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-gentle-sdd-status",
+            "source": ".opencode/commands/hops-gentle-sdd-status.md",
+            "description": "Estado y routing SDD read-only de Gentle-AI",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-gentle-status",
+            "source": ".opencode/commands/hops-gentle-status.md",
+            "description": "Estado read-only de Gentle-AI, review y telemetría",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-handoff",
+            "source": ".opencode/commands/hops-handoff.md",
+            "description": "Prepara un handoff completo de Hospeda para otra sesión o agente",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-issue-preflight",
+            "source": ".opencode/commands/hops-issue-preflight.md",
+            "description": "Preflight read-only de una issue antes de iniciar trabajo",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-merge",
+            "source": ".opencode/commands/hops-merge.md",
+            "description": "Dictamina si el PR está listo para merge",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-recap",
+            "source": ".opencode/commands/hops-recap.md",
+            "description": "Recap analítico de Hospeda apoyado en hops",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-run",
+            "source": ".opencode/commands/hops-run.md",
+            "description": "Ejecuta un script del repositorio con guardas",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-servers-down",
+            "source": ".opencode/commands/hops-servers-down.md",
+            "description": "Detiene servidores del worktree",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-servers-up",
+            "source": ".opencode/commands/hops-servers-up.md",
+            "description": "Levanta DB y servidores del worktree",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-smoke-plan",
+            "source": ".opencode/commands/hops-smoke-plan.md",
+            "description": "Muestra el plan y gates de smoke testing de una issue",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-start-issue",
+            "source": ".opencode/commands/hops-start-issue.md",
+            "description": "Diagnóstico seguro para iniciar una issue en OpenCode",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-stats",
+            "source": ".opencode/commands/hops-stats.md",
+            "description": "Estadísticas verificables del repositorio Hospeda",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-test",
+            "source": ".opencode/commands/hops-test.md",
+            "description": "Ejecuta tests por categoría del monorepo",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-update",
+            "source": ".opencode/commands/hops-update.md",
+            "description": "Actualiza client-tools desde staging",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-verify",
+            "source": ".opencode/commands/hops-verify.md",
+            "description": "Ejecuta las verificaciones que usa CI",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        },
+        {
+            "id": "hops-wt-clean",
+            "source": ".opencode/commands/hops-wt-clean.md",
+            "description": "Revisión y limpieza interactiva de worktrees",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper"
+        }
+    ]
+}

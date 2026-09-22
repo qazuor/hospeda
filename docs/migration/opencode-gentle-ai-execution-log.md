@@ -3328,3 +3328,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `/closeIssue` o `/recap`, ni duplicación de lógica en los prompts.
 - `hops-db-update-template` queda correctamente como excepción: delega el
   trabajo pesado a `scripts/worktree/template.sh`, no a otro command LLM.
+
+## Gate 184 · Manifiesto canónico de distribución multi-cliente
+
+- Se agregó `tools/agent-packs/hops-command-manifest.json`, generado a partir
+  de `.opencode/commands` y con los 33 commands registrados.
+- El manifiesto declara una fuente única y tres estrategias de adaptación:
+  archivos de commands para OpenCode, commands generados para Claude y un
+  adapter de skill/instrucciones para Codex.
+- Sólo contiene metadata y rutas versionadas; no instala, copia credenciales ni
+  modifica configuraciones globales. El instalador y la detección de drift
+  quedan como etapa posterior.
