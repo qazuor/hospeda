@@ -3515,3 +3515,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se agregaron los binarios `hops-promote` y `hops-back-merge`, sus entradas de package y comandos OpenCode versionados.
 - `staging -> main` y `main -> staging` se probaron en el checkout actual; no se crearon PRs, ramas, pushes ni merges.
 - Suite client-tools: 300 tests, 0 fallos, 756 assertions; typecheck directo de client-tools sin errores.
+
+## Gate 206 · Revisión read-only de Dependabot
+
+- Se agregó `hops dependabot-review [--base] [--pr] [--json]` y su contraparte OpenCode `/hops-dependabot-review`.
+- Consulta PRs abiertos de `dependabot[bot]`, conserva `auth_unavailable` frente a errores 401 y nunca interpreta un error como lista vacía.
+- La prueba real del 22/09 devolvió 8 PRs y recomendaciones iniciales sin modificar GitHub.
+- La heurística inicial es deliberadamente conservadora; changelogs, semver, manifests y uso real quedan pendientes antes de automatizar decisiones.
