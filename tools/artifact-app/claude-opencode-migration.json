@@ -474,7 +474,7 @@
                             "title": "Agregar comandos de promoción y back-merge",
                             "category": "CLI, Git y workflow",
                             "description": "Crear comandos deterministas para develop → staging, staging → main y sus back-merges, con plan, validaciones, PR/base branch y lectura posterior.",
-                            "notes": "Diseño read-only documentado en docs/migration/qz-promotion-backmerge-design.md. qz promote y qz back-merge leerán un adapter de ramas; --plan por defecto y --confirm sólo para crear/actualizar PRs. No implementado.",
+                            "notes": "Gate205: implementados `hops promote --plan` y `hops back-merge --plan` contra `.qz/project.json`, con refs/divergencia read-only, JSON, binarios standalone y contrapartes OpenCode `hops-promote`/`hops-back-merge`. No crean PR, push, merge ni ramas; la aplicación con `--confirm` sigue pendiente.",
                             "done": false
                         },
                         {

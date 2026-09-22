@@ -3507,3 +3507,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El resultado indicó que HOS-635 sigue en `Backlog`, sin PR, spec ni closeout; el worktree actual está dirty.
 - El guard reportó drift de variables de entorno por nombre y mantuvo `requiredMissing: 0`; no expuso valores.
 - El comando sigue siendo read-only y devuelve acciones concretas para que el agente resuelva antes de cerrar.
+
+## Gate 205 · Planes read-only de promoción
+
+- Se agregaron `hops promote --plan` y `hops back-merge --plan`, configurables mediante `.qz/project.json`.
+- Ambos validan pares de ramas declarados, existencia de refs locales/remotas y divergencia ahead/behind; emiten texto o JSON.
+- Se agregaron los binarios `hops-promote` y `hops-back-merge`, sus entradas de package y comandos OpenCode versionados.
+- `staging -> main` y `main -> staging` se probaron en el checkout actual; no se crearon PRs, ramas, pushes ni merges.
+- Suite client-tools: 300 tests, 0 fallos, 756 assertions; typecheck directo de client-tools sin errores.

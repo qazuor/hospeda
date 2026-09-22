@@ -1,6 +1,6 @@
 # Diseño de `qz promote` y `qz back-merge`
 
-Este diseño separa el núcleo reutilizable de las decisiones de ramas de cada proyecto. No implementa comandos ni modifica GitHub, ramas o workflows.
+Este diseño separa el núcleo reutilizable de las decisiones de ramas de cada proyecto. La primera implementación read-only ya existe en `scripts/client-tools`; no crea PRs, ramas ni modifica GitHub, Linear o workflows.
 
 ## Decisión
 
@@ -72,6 +72,8 @@ La promoción normal será `develop -> staging -> main`. El flujo urgente podrá
 - Probar una épica con varios issues sin promover a staging.
 - Probar una urgencia directa a staging y su reconciliación posterior.
 
-## Fuera de alcance
+## Estado actual y fuera de alcance
 
-No se implementan comandos, no se crea `develop`, no se cambia CI, no se abre ningún PR y no se modifica Linear en esta etapa.
+`hops promote --plan` y `hops back-merge --plan` ya validan el adapter, refs locales/remotas, divergencia ahead/behind y acciones propuestas. Los aliases OpenCode versionados son `hops-promote` y `hops-back-merge`; el manifest común los distribuye a OpenCode, Claude y Codex.
+
+Siguen fuera de alcance la creación de `develop`, la apertura/actualización de PRs, merge, push, cambios de CI, cambios en GitHub/Linear y cualquier aplicación mutante.

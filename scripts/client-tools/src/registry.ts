@@ -172,6 +172,16 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/merge/command.ts')).mergeCommand
     },
     {
+        name: 'promote',
+        summary: 'Plan read-only de promoción entre ramas',
+        load: async () => (await import('./commands/branch-plan/command.ts')).promoteCommand
+    },
+    {
+        name: 'back-merge',
+        summary: 'Plan read-only de back-merge entre ramas',
+        load: async () => (await import('./commands/branch-plan/command.ts')).backMergeCommand
+    },
+    {
         name: 'env',
         summary: 'Chequea las variables de entorno (los seis checks)',
         load: async () => (await import('./commands/env/command.ts')).envCommand

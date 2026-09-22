@@ -16,6 +16,14 @@
     },
     "commands": [
         {
+            "id": "hops-artifact",
+            "source": ".opencode/commands/hops-artifact.md",
+            "description": "Opera artifacts locales versionados mediante hops",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper",
+            "sha256": "2073a06cb08da35ed56b2a76a24a8c477e832d2b16525d52681686c557078efc"
+        },
+        {
             "id": "hops-artifact-create",
             "source": ".opencode/commands/hops-artifact-create.md",
             "description": "Genera un artifact de Hospeda mediante el renderer local",
@@ -48,12 +56,12 @@
             "sha256": "40c5344bc848d381cdd96624841c1a1e9cd96d7d7fb2973ad9b5daacbb73a2e1"
         },
         {
-            "id": "hops-artifact",
-            "source": ".opencode/commands/hops-artifact.md",
-            "description": "Opera artifacts locales versionados mediante hops",
+            "id": "hops-back-merge",
+            "source": ".opencode/commands/hops-back-merge.md",
+            "description": "Plan read-only de back-merge entre ramas declaradas",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "2073a06cb08da35ed56b2a76a24a8c477e832d2b16525d52681686c557078efc"
+            "sha256": "ad4a490920ef59405852c442c8a70cb222ffa38e4bf70e11e6274640b1e056f9"
         },
         {
             "id": "hops-ci",
@@ -190,6 +198,14 @@
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
             "sha256": "c377e11d1a5ee8437bfae82f948b2db35e89aa3b96e7ac6c583013ca8d4b569d"
+        },
+        {
+            "id": "hops-promote",
+            "source": ".opencode/commands/hops-promote.md",
+            "description": "Plan read-only de promoción entre ramas declaradas",
+            "clients": ["opencode", "claude", "codex"],
+            "kind": "agent-wrapper",
+            "sha256": "888548eb323d3cabcd6fd6ff5f66df2ba5496d257cbc8af5214145002ec34c58"
         },
         {
             "id": "hops-recap",

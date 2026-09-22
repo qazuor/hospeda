@@ -19,7 +19,14 @@
     "branches": {
         "base": "staging",
         "protected": ["main", "staging"],
-        "pattern": "{type}/{slug}"
+        "pattern": "{type}/{slug}",
+        "promotion": ["staging", "main"],
+        "backMerge": [
+            {
+                "from": "main",
+                "to": "staging"
+            }
+        ]
     },
     "worktree": {
         "pathPattern": "../hospeda-{slug}",
