@@ -1,5 +1,6 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
+import { run } from '../../lib/exec.ts';
 import { gh } from '../../lib/github.ts';
 
 type DependabotPr = {
@@ -16,6 +17,51 @@ type DependabotPr = {
 };
 
 export type VersionImpact = 'major' | 'minor' | 'patch' | 'unknown';
+
+export function packageFromTitle(title: string): string | null {
+    const match = title.match(/bump\s+(.+?)\s+from\s+v?\d/i);
+    return match?.[1]?.trim() ?? null;
+}
+
+async function localUsage(
+    repoRoot: string,
+    title: string
+): Promise<{ package: string | null; files: readonly string[]; status: 'ok' | 'unknown' }> {
+    const packageName = packageFromTitle(title);
+    if (!packageName) return { package: null, files: [], status: 'unknown' };
+    const result = await run({
+        command: 'rg',
+        args: [
+            '-l',
+            '--hidden',
+            '--fixed-strings',
+            '--glob',
+            '!.git/**',
+            '--glob',
+            '!node_modules/**',
+            '--glob',
+            '!dist/**',
+            '--glob',
+            '!build/**',
+            '--glob',
+            '!*.lock',
+            packageName,
+            '.'
+        ],
+        cwd: repoRoot,
+        timeoutMs: 30_000
+    });
+    if (!result.ok) return { package: packageName, files: [], status: 'unknown' };
+    return {
+        package: packageName,
+        files: result.stdout
+            .split('\n')
+            .map((file) => file.trim())
+            .filter(Boolean)
+            .slice(0, 100),
+        status: 'ok'
+    };
+}
 
 export function versionImpact(title: string): VersionImpact {
     const match = title.match(/from\s+v?(\d+)\.(\d+)\.(\d+)[^ ]*\s+to\s+v?(\d+)\.(\d+)\.(\d+)/i);
@@ -179,6 +225,7 @@ export async function runDependabotReview({
                 recommendation: recommend(pr, evidence),
                 versionImpact: versionImpact(pr.title),
                 risk: riskOf(evidence.files),
+                usage: await localUsage(context.repoRoot, pr.title),
                 evidence,
                 readOnly: true
             };
