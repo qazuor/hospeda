@@ -53,7 +53,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
 | `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **quince guards** —`G7`, `G9`–`G13`, los seis de `R1` y las tres referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **dieciséis guards** —`G7`, `G9`–`G13`, los seis de `R1` y las **cuatro** referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 
