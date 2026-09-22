@@ -110,12 +110,12 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 |---|---|---|---|---|---|
 | **B1** | **El adaptador y el proveedor que miente** | ⛔ | las ocho capacidades como interfaz definida por lo que el dominio necesita, el adaptador falso que reproduce las mentiras medidas, y la regla de releer toda mutación | `06` entero · `20` §2–§3, §6 | `G9` `G10` `G11` `G12` |
 | **B2** | **El precio** | ✅ | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan | `02` §2.1 · `06` §5 | `G7` |
-| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 | — |
+| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 | **`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`** |
 | **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
 | **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
 | **B6** | **Ejecutar el cobro y el reembolso** 🔒 | ⛔ | **BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir | `13` *(sin escribir)* | — |
-| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, el que nunca pagó no recibe diez días gratis, y **el pago que entra en plena sucesión no reactiva, no se pierde y tiene quién lo resuelva** | `03` §4, S4–S7, **S19** · `12` §1, §4, §5 · `05` §3 | — |
-| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse — **incluido el CIERRE de la sucesión con sus cinco escrituras** | `03` §5, S8–S12, **S17–S18** · `12` §2, §3, §6, §7 · `02` §2.6 · `05` C2, C4 | — |
+| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, el que nunca pagó no recibe diez días gratis, y **el pago que entra en plena sucesión no reactiva, no se pierde y tiene quién lo resuelva** | `03` §4, S4–S7, **S19** · `12` §1, §4, §5 · `05` §3 | **`G-R1-D`** |
+| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse — **incluido el CIERRE de la sucesión con sus cinco escrituras** | `03` §5, S8–S12, **S17–S18** · `12` §2, §3, §6, §7 · `02` §2.6 · `05` C2, C4 | **`G-R1-C`** **`G-R5`** |
 | **B9** | **Las concesiones** | ⛔ | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes. **`S20` no es de acá**: el grant cancela la principal (`S13`) y el complemento lo apaga **B10**, que llega después en el camino crítico y es donde vive el modelo del addon | `14` entero · `03` S9, S13 · `02` §2.4 · `05` C3 | — |
 | **B10** | **Addons** | ⛔ | los dos ejes, qué es una suscripción válida, el addon a costo cero —**el que se elige gratis y el que ya se venía pagando y `S20` convierte**— y el huérfano que sigue cobrando —**con su cobro apagado por `S21`**— | `16` entero · `03` §8 **y `S20` y `S21` de §3.2** · `02` §2.4 · `09` §3 *(tercera y cuarta comprobación, y las salvedades 1 y 4)* · `19` §4 filas 13 y 13-bis | — |
 | **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece | `09` entero | — |
@@ -277,6 +277,131 @@ Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `
 
 **Ninguna de las ocho bloquea una unidad que no estuviera ya bloqueada.** El §61 prohíbe empezar
 una capability crítica con su fila abierta, y la única que lo está es B6.
+
+### 2.8 Los seis guards de esta épica que no tenían unidad, más el que llega de la otra
+
+La columna de arriba dejaba **seis** guards de `B/20` §2 sin ninguna unidad que los construya —**los
+seis de `R1`**— y `C2` lo venía reportando **tres vueltas seguidas** (`F-8dC2-003` →
+`F-8eC2-004`). La **quinta enmienda de `DEC-TEST-001`** decide repartirlos ahora, con tres
+condiciones: **la razón va medida y con cita**, **la unidad nace ANTES o CON lo que el guard
+vigila, nunca después**, y **lo que no tiene unidad clara se declara sin dueño**. Los seis tienen
+unidad medida; lo que queda abierto está en el §2.9 y son preguntas, no asignaciones faltantes.
+
+| guard | unidad | qué construye esa unidad que hace que el guard pueda existir ahí |
+|---|---|---|
+| **`G-R1-A`** | **B3** | **el acto que escribe `sucede_a`** —la rama de sucesión de `S1`— y los dos candados del `02` §2.2 |
+| **`G-R1-B`** | **B3** | **la ventana de autorización** y la columna con la fecha con que nace la fila |
+| **`G-R1-E`** | **B3** | **la columna `sucede_a`** y la doctrina de que *«viva»* es parte del predicado |
+| **`G-R1-F`** | **B3** | **la entidad `reconciliation_mark`** con su motivo, y `S14`/`S15` |
+| **`G-R1-D`** | **B7** | **`S19`**, el pago pendiente — sin él el guard no tiene dominio |
+| **`G-R1-C`** | **B8** | **`S18`** con sus cinco escrituras, y el inventario del `02` §2.6 contra el que se verifica |
+| **`G-R5`** | **B8** | **el tope de la pausa** (`03` §5), que es el número que puede romperlo |
+
+**Cuatro de los seis caen en B3, y no por comodidad: caen en `02` §2.2.** Ese § es la tabla que
+crea `sucede_a`, `sucedida_por`, la fecha de primer cobro con la que nace la fila y la entidad
+`reconciliation_mark`, y **es capítulo de B3**. Los cuatro guards que anclan ahí anclan en columnas,
+no en caminos, y las columnas nacen todas en el mismo acto.
+
+**`G-R1-A` va con B3 porque vigila un acto, y el acto es `S1`.** Su fila lo dice sin ambigüedad:
+*«vigila el ACTO de declarar, no una propiedad permanente de la fila»* (`B/20` §2), y el acto es la
+segunda rama de la condición de `S1` —*«no hay otro origen vivo para ese `user + vertical`, **o la
+fila declara una sucesión** (`sucede_a`)»*— que vive en `03` §3.2, adentro del `03` §3.1–§3.4 de
+B3. B3 es la **tercera** unidad del §3, así que las **ocho** transiciones que después sacan a una
+predecesora del conjunto de tres —`S8` y `S9`, `S6`, `S12`, `S13`, `S16`, el espejo del §10.1 y
+`S24`— llegan repartidas entre B7, B8 y B9, todas **después**.
+
+**`G-R1-B` va con B3 porque depende de una columna de B3 y compara contra la ventana de B3.** El
+catálogo lo dice: es *«`D8` hecho verificable en vez de recordable, y por eso **depende de la
+columna** que guarda la fecha con la que nació la fila (`02` §2.2)»*. Y lo que compara esa fecha
+contra el **vencimiento de la ventana de autorización** — que es literalmente el nombre de la
+unidad: B3 es *«El alta y su ventana»*. La escritura que vigila es el efecto de `S1` (*«si declara
+sucesión, nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización»*),
+también de B3. No hay ningún momento anterior en que el guard pueda existir, ni ninguno posterior
+en que no llegue tarde.
+
+**`G-R1-E` va con B3 porque está anclado en la columna, no en la palabra.** Su fila lo declara:
+*«este guard se ancla en la **columna**, no en la palabra: todo predicado que mencione `sucede_a`
+tiene que decir además en qué estado está quien lo escribió»*. `sucede_a` y `sucedida_por` nacen en
+`02` §2.2 —B3—, y ahí mismo nace la doctrina que hace cumplir: *«el adjetivo «viva» es parte del
+predicado y no un adorno»*. **Todos los predicados que cuenta llegan después**: `S19` con **B7**,
+`S17` con **B8**, `S20`, `S21` y `A5` con **B10**, y los dos inventarios que su segunda mitad
+sumó —*«grant vivo»* y *«ancla viva»*— con **B9** y **B10**. Naciendo en B3 los ve llegar uno por
+uno, y cada uno tiene que traer su fila al inventario para pasar; naciendo con el último nace con
+lista de excepciones. **Con una salvedad que hay que decir**: el caso que hoy lo hace fallar a
+propósito —*«sacándole «viva» a la condición de `S19`»*— es de B7, así que **B3 tiene que traer el
+suyo**, sobre los predicados que sí existen en su momento: los **dos índices parciales** del `02`
+§2.2, que leen `estado ∈ {vivos}`, y la condición de `S1`.
+
+**`G-R1-F` va con B3 porque la marca y sus dos actos son de B3, y eso ya está medido.** La entidad
+`reconciliation_mark` está en `02` §2.2 —B3— con su *«**motivo** (enumeración cerrada, §2.5)»*, y
+los dos actos que la abren y la levantan son `S14` y `S15`, que también son de B3: **la FASE
+8-bis-4 lo midió y lo declaró suficiente** — *«la mitad *«`S14`–`S16` no caen en ningún rango
+numérico»* sigue, y **no la reporto**: `B3` las toma por sección (`03` §3.1–§3.4) y eso alcanza»*
+(`20-fase-8-bis-4/C2…`, veredicto de `F-8dC2-004`). Todo lo demás que el guard cuenta llega
+después: los **siete** motivos que `S14` trae de los casos que lo disparan, el **listado
+accionable** del `19` §6 (**B13**, la anteúltima del camino crítico) y los inventarios de *«marca
+abierta»* y *«cortesía diferida»* (**B9**). **Con una pregunta abierta**, que es el §2.9: la tabla
+de los trece motivos que el guard lee es `02` §2.5, y ese § **no figura en la columna de capítulos
+de ninguna unidad**.
+
+**`G-R1-D` va con B7 porque antes de B7 no tiene dominio, y eso está escrito.** El guard vigila
+**cuatro caminos que reactivan** —`S5`, `S7`, el efecto de `MP1` y el de `MP4`— más el reembolso
+anticipado del pago que `S19` dejó pendiente. `S4`–`S7` y `S19` son de **B7** por nombre, igual que
+`12` §5.3 y `05` §3, que son las otras dos fuentes de su fila. Los otros dos caminos, `MP1` y
+`MP4`, viven en `03` §7 y son de **B5**, que corre antes — **y eso no lo manda a B5**, por la razón
+que el propio catálogo ya tiene escrita: *«el tercer lugar sólo es real porque `S19` admite las dos
+puertas del pago … Un guard cuyo dominio la tabla no puede satisfacer no está en rojo: **está
+mirando a otro lado**»* (`B/20` §2). Antes de B7 no existe ni el pago pendiente ni la condición 3
+del `05` §3 que decide entre reactivar y retener, así que los dos caminos de B5 **todavía no pueden
+producir el daño**. B7 es la unidad más temprana en la que el guard puede fallar, que es el criterio
+de la regla 1 leído entero.
+
+**`G-R1-C` va con B8 porque el cierre es de B8, y también el inventario contra el que se verifica.**
+Es *«el guard del CIERRE»*, y el cierre es `S18` con sus **cinco** escrituras: `S18` es de B8 por
+nombre (*«`03` §5, S8–S12, **S17–S18**»*), y el inventario contra el que el guard comprueba
+—*«el inventario contra el que se verifica es `B/02` §2.6»* (`B/20` §2)— **también es capítulo de
+B8**. El criterio de terminación de B8 (§4) ya describe cuatro de las cinco escrituras, así que el
+guard y su sujeto se escriben en el mismo acto. Y el **sexto camino** que ganó con `DEC-GRANT-010`
+—`S25` difiriendo la cortesía con su `saldo_días`— llega **después**: el `saldo_días` cuelga del
+`courtesy_grant` (`02` §2.4) y la re-emisión es `S9`, los dos de **B9**, la unidad siguiente del
+camino crítico. Naciendo en B8 el guard **ve llegar** ese sexto camino en vez de heredarlo, que es
+exactamente lo que su fila pide: *«un guard escrito sobre un camino no mira el segundo»*.
+
+**`G-R5` llega de la otra épica, y llega acá porque el número que puede romperlo es de acá.**
+`F-8eC2-004` midió que su única asignación —la celda de `V9` que decía *«el de `D16`»*— estaba en
+la épica equivocada, y se confirma: el guard compara **el tope de una pausa**, que declara `03` §5
+de esta épica (*«**4 pausas-mes** por pausa»*, y el mismo § dice *«Esa desigualdad es el invariante
+`D16` y la vigila **`G-R5`, sobre el número que declara la fila de arriba**»*), contra **el día del
+hard delete** del `V/02` §4.1. `V9` construye el segundo número, no el primero — y su fila del §3
+la pone *«una vez que estén V4 y V6»*, o sea **antes de que el tope exista**, con lo cual el guard
+nacía sin nada contra qué fallar. `03` §5 es capítulo de **B8**, así que B8 es la unidad más
+temprana en la que las **dos** cifras existen y el guard puede dar rojo. La advertencia ya estaba
+escrita en `B/20` §2 —*«si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la
+otra, el cambio se hace sin verlo»*— y esto la aplica al reparto del trabajo. Del lado de
+verticales, el retiro de la celda está explicado en
+[`V/descomposicion.md`](../HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md) §2.7.
+
+### 2.9 Dos preguntas que el reparto deja abiertas, y ninguna se resuelve inventando
+
+**Ninguna de las dos es un guard sin dueño**: son secciones que **ninguna unidad declara entre sus
+capítulos** y que dos de los guards repartidos **leen**. Se anotan en vez de resolverse porque
+asignar un capítulo a una unidad es repartir trabajo, no asignar un guard, y eso lo decide el owner.
+
+1. **`02` §2.5 —la tabla de los trece motivos de la marca— no es capítulo de ninguna unidad.**
+   Medido recorriendo la columna *capítulos* del §2: `02` §2.1 es de B2, §2.2 de B3, §2.3 de B5,
+   §2.4 de B9 y B10, §2.6 de B8 — **y §2.5 no aparece**. La única mención del § en este documento
+   está en el §1.3 regla 3, que lo cita como regla y no como trabajo. `G-R1-F` **lee esa
+   enumeración** para decidir si un motivo existe, así que la pregunta no es teórica: quien
+   construya el guard necesita que la tabla esté sembrada. La asignación a B3 no depende de la
+   respuesta —la entidad y sus dos actos son de B3 igual—, pero **la tabla sí necesita dueño**.
+2. **Los inventarios de `NUCLEO/01` §2.4, §2.5 y §2.6 tampoco lo son**, y es la mitad que
+   `G-R1-E` y `G-R1-F` cuentan. No es hallazgo nuevo: `F-8dC2-002` reporta que **cuatro capítulos
+   del núcleo no son de ninguna unidad** y su veredicto de la FASE 8-bis-4 dice *«`nucleo/01` entró
+   por `V9`»* — pero lo que entró por `V9` es el §1.2, los cuatro hechos de reinicio, **no los
+   inventarios del §2**. Vale acá el precedente que `V/descomposicion.md` §2.5 ya escribió para
+   `G-R6-B`: **dónde se construye un guard y qué documento define su lista son dos preguntas
+   distintas**, así que esto no mueve las asignaciones de arriba. Lo que deja abierto es quién
+   mantiene las listas.
 
 ---
 
