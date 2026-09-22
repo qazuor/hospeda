@@ -15,13 +15,30 @@ type DependabotPr = {
     readonly labels?: readonly { readonly name?: string }[];
 };
 
+type PrEvidence = {
+    readonly files: readonly string[];
+    readonly reviewDecision: string | null;
+    readonly bodyPresent: boolean;
+    readonly error?: string;
+};
+
+function riskOf(files: readonly string[]): 'low' | 'medium' | 'high' {
+    if (files.some((file) => /migrations|\.github\/workflows|Dockerfile|turbo\.json/.test(file)))
+        return 'high';
+    if (files.some((file) => /package\.json|pnpm-lock|package-lock|yarn\.lock/.test(file)))
+        return 'medium';
+    return 'low';
+}
+
 export type DependabotRecommendation = 'close' | 'no-spec' | 'create-issue' | 'blocked';
 
-export function recommend(pr: DependabotPr): DependabotRecommendation {
+export function recommend(pr: DependabotPr, evidence?: PrEvidence): DependabotRecommendation {
     if (pr.isDraft || pr.mergeStateStatus === 'DIRTY') return 'blocked';
     if (pr.baseRefName !== 'staging' && pr.baseRefName !== 'main') return 'blocked';
     if (/revert|supersed|duplicate|obsolete/i.test(pr.title)) return 'close';
     if (/major|breaking|migration|deprecated/i.test(pr.title)) return 'create-issue';
+    if (evidence?.files.some((file) => /migrations|\.github\/workflows|Dockerfile/.test(file)))
+        return 'create-issue';
     return 'no-spec';
 }
 
@@ -85,16 +102,55 @@ export async function runDependabotReview({
     prs = prs
         .filter((pr) => base === undefined || pr.baseRefName === base)
         .filter((pr) => prNumber === undefined || String(pr.number) === prNumber);
-    const items = prs.map((pr) => ({
-        number: pr.number,
-        title: pr.title,
-        url: pr.url ?? null,
-        base: pr.baseRefName ?? null,
-        head: pr.headRefName ?? null,
-        updatedAt: pr.updatedAt ?? null,
-        recommendation: recommend(pr),
-        readOnly: true
-    }));
+    const items = await Promise.all(
+        prs.map(async (pr) => {
+            const detail = await gh({
+                cwd: context.repoRoot,
+                args: ['pr', 'view', String(pr.number), '--json', 'files,body,reviewDecision']
+            });
+            let evidence: PrEvidence = { files: [], reviewDecision: null, bodyPresent: false };
+            if (detail.ok) {
+                try {
+                    const parsed = JSON.parse(detail.stdout) as {
+                        files?: readonly { path?: string }[];
+                        body?: string;
+                        reviewDecision?: string | null;
+                    };
+                    evidence = {
+                        files: (parsed.files ?? []).map((file) => file.path ?? '').filter(Boolean),
+                        reviewDecision: parsed.reviewDecision ?? null,
+                        bodyPresent: Boolean(parsed.body?.trim())
+                    };
+                } catch {
+                    evidence = {
+                        files: [],
+                        reviewDecision: null,
+                        bodyPresent: false,
+                        error: 'respuesta de detalle inválida'
+                    };
+                }
+            } else {
+                evidence = {
+                    files: [],
+                    reviewDecision: null,
+                    bodyPresent: false,
+                    error: detail.error.split('\n')[0]
+                };
+            }
+            return {
+                number: pr.number,
+                title: pr.title,
+                url: pr.url ?? null,
+                base: pr.baseRefName ?? null,
+                head: pr.headRefName ?? null,
+                updatedAt: pr.updatedAt ?? null,
+                recommendation: recommend(pr, evidence),
+                risk: riskOf(evidence.files),
+                evidence,
+                readOnly: true
+            };
+        })
+    );
     const payload = { readOnly: true, status: 'ok', count: items.length, items };
     if (json) process.stdout.write(`${JSON.stringify(payload)}\n`);
     else {

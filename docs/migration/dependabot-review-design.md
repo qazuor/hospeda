@@ -49,7 +49,7 @@ El comando sólo consulta GitHub y el checkout local. Cualquier acción mutante 
 - Permite repetir el análisis sin duplicar decisiones ni escribir estado.
 - No imprime tokens, envs ni contenido sensible.
 
-Estado: el comando read-only ya está implementado como `hops dependabot-review`. La primera versión consulta PRs abiertos, filtra por base/PR y clasifica con reglas conservadoras; todavía no analiza changelogs, manifests, semver ni uso real, por lo que sus recomendaciones son iniciales y deben revisarse humanamente.
+Estado: el comando read-only ya está implementado como `hops dependabot-review`. La primera versión consulta PRs abiertos, filtra por base/PR y clasifica con reglas conservadoras; todavía no analiza changelogs, semver ni uso real; sí inspecciona archivos tocados, body y reviewDecision, por lo que sus recomendaciones son iniciales y deben revisarse humanamente.
 
 ## Verificación en vivo (2026-09-20)
 

@@ -3522,3 +3522,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Consulta PRs abiertos de `dependabot[bot]`, conserva `auth_unavailable` frente a errores 401 y nunca interpreta un error como lista vacía.
 - La prueba real del 22/09 devolvió 8 PRs y recomendaciones iniciales sin modificar GitHub.
 - La heurística inicial es deliberadamente conservadora; changelogs, semver, manifests y uso real quedan pendientes antes de automatizar decisiones.
+
+## Gate 207 · Evidencia por PR de Dependabot
+
+- `dependabot-review` ahora consulta por PR archivos tocados, body y `reviewDecision` sin mutar GitHub.
+- La salida conserva evidencia segura y clasifica riesgo `low`, `medium` o `high`; una prueba sobre PR #3382 detectó manifests y lockfile con riesgo `medium`.
+- Changelogs, semver y uso real siguen pendientes antes de automatizar decisiones.

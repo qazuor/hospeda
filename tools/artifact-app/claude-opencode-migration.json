@@ -482,7 +482,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Gate206: implementado `hops dependabot-review [--base] [--pr] [--json]` en modo read-only. Consulta PRs abiertos de Dependabot, separa errores de autenticación de listas vacías y emite recomendación inicial close/no-spec/create-issue/blocked. Probado contra GitHub: devolvió 8 PRs sin mutar nada. El análisis profundo de changelogs, uso real y semver queda como siguiente iteración.",
+                            "notes": "Gate207: el informe ahora consulta por PR archivos tocados, body y reviewDecision en modo read-only; agrega evidencia y riesgo low/medium/high. HOS-3382 fue probado con evidencia de 18 manifests/lockfile y riesgo medium. No se muta GitHub.",
                             "done": false
                         },
                         {
