@@ -209,7 +209,7 @@
                             "title": "Separar AGENTS, skills y docs",
                             "category": "Engram + CLAUDE.md",
                             "description": "Dejar AGENTS.md corto y mover conocimiento especializado a skills bajo demanda.",
-                            "notes": "Mapa y backlog documentados.",
+                            "notes": "Mapa y backlog documentados. Gate177: verificado con documentación oficial y versiones instaladas que `AGENTS.md` puede ser la única fuente canónica para Claude Code 2.1.278, OpenCode V1 1.18.31 y Codex CLI 0.155.1. `CLAUDE.md` queda sólo como shim/symlink opcional para compatibilidad con versiones o proveedores antiguos.",
                             "done": true
                         },
                         {
