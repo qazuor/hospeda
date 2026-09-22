@@ -3409,3 +3409,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   manifest, además de faltantes y hashes divergentes.
 - Un adapter limpio pasó; al agregar `hops-stale.md` como residuo sintético,
   el verificador lo rechazó con `unexpected-command`.
+
+## Gate 193 · Plan de instalación multi-cliente
+
+- Se agregó `tools/agent-packs/install.mjs` con modos `--plan` y `--check`.
+- Enumera los clientes detectados, destinos globales previstos y grupos de
+  backup sin leer valores de secretos.
+- Valida el drift de las fuentes y mantiene `--apply` bloqueado hasta definir
+  allowlist, backup verificable, conflictos y rollback.
+- La ejecución pasó con los 33 commands y OpenCode, Claude y Codex detectados.
