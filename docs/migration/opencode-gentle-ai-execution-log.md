@@ -3454,3 +3454,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El secret guard detectó inicialmente el nombre `sessionToken` del UUID
   efímero del servidor; se renombró a `sessionCookieValue` y el commit pasó sin
   excepciones ni `--no-verify`.
+
+## Gate 198 · Documentación de migración versionada
+
+- Se incorporaron 41 documentos bajo `docs/migration` al historial del
+  worktree, incluyendo decisiones, relevamientos, runbooks, seguridad, Engram,
+  plugins, artifacts, specs, worktrees y bootstrap.
+- Markdown lint y secret guard pasaron. Se corrigió un único caso de formato en
+  `artifact-schema-proposal.md` antes del commit.
