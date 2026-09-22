@@ -3376,3 +3376,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   contenido; la ejecución actual devolvió `drift: []`.
 - `render.mjs` propaga los hashes a los manifests de adapters para permitir una
   futura verificación posterior a la instalación.
+
+## Gate 189 · Verificación post-render
+
+- Se agregó `tools/agent-packs/verify.mjs`, que valida de forma read-only el
+  manifest, la presencia de los 33 commands y sus SHA-256 en adapters OpenCode
+  y Claude; para Codex valida el skill generado y su catálogo.
+- Los adapters Claude y Codex renderizados en `/tmp` pasaron sin fallos.
+- La futura instalación podrá ejecutar este verificador después de escribir y
+  abortar si el destino no coincide con la fuente.
