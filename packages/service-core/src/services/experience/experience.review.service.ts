@@ -127,6 +127,19 @@ export class ExperienceReviewService extends BaseCrudService<
         return { experience: true, user: true };
     }
 
+    /**
+     * Experience reviews are searched by `title` and `content`, matching the
+     * convention `AccommodationReviewService` and `DestinationReviewService`
+     * already follow.
+     *
+     * No review table has a `name` column, so the inherited `['name']`
+     * default matched nothing and admin search returned every review
+     * (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'content'];
+    }
+
     // -----------------------------------------------------------------------
     // Permission hooks
     // -----------------------------------------------------------------------

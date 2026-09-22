@@ -11,6 +11,10 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ZodIssue, ZodTypeAny } from 'zod';
+import {
+    buildConstraintViolationResponse,
+    buildUniqueViolationErrorPayload
+} from './constraint-violation';
 import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { resolveErrorCodeForStatus } from './http-error-codes';
@@ -421,70 +425,14 @@ const logRouteError = (
 };
 
 /**
- * Matches a Postgres unique-violation message, e.g.:
- * `duplicate key value violates unique constraint "partners_slug_unique"`.
- *
- * The driver's `.detail` (which carries the actual column + value, e.g.
- * `Key (slug)=(my-slug) already exists.`) never reaches this point — the DB
- * layer's `update`/`create` wrap the raw `pg` error into a `DbError` using
- * only `err.message` (see `packages/db/src/base/base.model.ts`), so the
- * constraint name embedded in the top-level message is the only signal left.
- */
-const UNIQUE_VIOLATION_PATTERN = /violates unique constraint "([^"]+)"/;
-
-/**
- * Derives a human-readable field name from a Postgres unique constraint name.
- *
- * Drizzle's default naming for an unnamed `.unique()` column is
- * `<table>_<column>_unique` (confirmed against every constraint in
- * `packages/db/src/migrations/*.sql` — e.g. `partners_slug_unique`,
- * `posts_slug_unique`, `users_email_unique`). Taking the last underscore
- * segment before the `_unique` suffix recovers the column name correctly for
- * every SINGLE-WORD column, which is every admin-editable unique field in
- * the schema today (`slug`, `code`, `key`, `email`, `path`, `token`). A
- * multi-word column (e.g. `token_hash`, `entity_type` — none of them
- * user-editable) degrades to its last word only; that is an acceptable,
- * documented limitation rather than a silent wrong answer.
- *
- * @param constraintName - The quoted constraint name from the Postgres error message.
- * @returns The best-effort field name, or `'value'` if the name doesn't match the convention.
- */
-const deriveUniqueConstraintFieldName = (constraintName: string): string => {
-    const withoutSuffix = constraintName.replace(/_(unique|key)$/, '');
-    const segments = withoutSuffix.split('_').filter(Boolean);
-    return segments.at(-1) ?? 'value';
-};
-
-/**
- * Builds the 409 `ALREADY_EXISTS` error payload for a Postgres unique-violation
- * message, or `null` if the message doesn't match that shape.
- *
- * @param message - The raw error message (`DbError#message` or a bare `Error#message`).
- * @param entity - A human-readable entity label to name in the response message.
- */
-const buildUniqueViolationErrorPayload = (
-    message: string,
-    entity: string
-): { code: 'ALREADY_EXISTS'; message: string; details: string | undefined } | null => {
-    const match = message.match(UNIQUE_VIOLATION_PATTERN);
-    if (!match?.[1]) return null;
-
-    const field = deriveUniqueConstraintFieldName(match[1]);
-    return {
-        code: 'ALREADY_EXISTS',
-        message: `A ${entity} with this ${field} already exists`,
-        details: env.HOSPEDA_API_DEBUG_ERRORS ? message : undefined
-    };
-};
-
-/**
  * Helper function to handle errors in route handlers
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
-    // HOS-607: a cross-field refinement rejection (re-applied manually via
-    // `parseRefinedBody` because the route factory drops `.refine()` when it
-    // rebuilds the OpenAPI request schema — see utils/refined-body.ts) carries
+    // HOS-607: a cross-field refinement rejection raised by `parseRefinedBody`
+    // — the second-line check two routes still run for reasons of their own,
+    // now that the factory no longer drops `.refine()` when it rebuilds the
+    // OpenAPI request schema (HOS-425; see utils/refined-body.ts) — carries
     // the full `transformZodError` payload. Render it in the SAME rich shape
     // (`details`/`summary`/`userFriendlyMessage`) the OpenAPI request
     // validator's `defaultHook` (utils/create-app.ts) already uses for an
@@ -509,6 +457,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 success: false,
                 error: {
                     code: validation.code,
+                    // R5 — same addition as the `defaultHook` in
+                    // utils/create-app.ts; these three emitters of the rich
+                    // validation body must stay byte-identical.
+                    message: validation.userFriendlyMessage,
                     messageKey: validation.messageKey,
                     details: validation.details,
                     summary: validation.summary,
@@ -692,6 +644,27 @@ export const handleRouteError = (error: unknown, c: Context) => {
             c,
             statusCode
         );
+    }
+
+    // HOS-1174: a driver-reported constraint violation is an EXPECTED
+    // client-facing outcome, so it is resolved BEFORE the blanket `error` log
+    // below. This PR turned a class of 500s into 409s; leaving them under that
+    // log would emit a full stack — and an `app_log_entries` row — for every
+    // double click that now answers 409, which is precisely the ERROR-stream
+    // flooding HOS-622 / HOS-283 set out to stop (see `logRouteError`'s JSDoc).
+    // `warn` matches the tier those decisions already use for a 403 gate.
+    //
+    // `resolveHttpStatusLogLevel` is deliberately NOT changed for 409: it is
+    // shared with `createErrorHandler`, so editing it would re-level every
+    // conflict on both paths — a contract change, not a tweak to this helper.
+    const dbEntity = error instanceof DbError ? error.entity : 'record';
+    const constraintViolation = buildConstraintViolationResponse(error, dbEntity);
+    if (constraintViolation) {
+        logRouteError('warn', error, {
+            code: constraintViolation.payload.code,
+            status: constraintViolation.status
+        });
+        return createErrorResponse(constraintViolation.payload, c, constraintViolation.status);
     }
 
     // Everything below is a genuine fault, not an EXPECTED client-facing

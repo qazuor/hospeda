@@ -201,9 +201,11 @@ export const EventCreateHttpSchema = z
         // `httpToDomainEventCreate`. Accepting it from the body let any caller
         // holding EVENT_CREATE attribute content to an arbitrary user.
         //
-        // This affects the PROTECTED tier only. The admin routes validate with
-        // `EventCreateInputSchema` instead, where an admin legitimately assigns
-        // authorship to someone else.
+        // The ADMIN tier reaches the same conclusion by a different road: it
+        // validates with `EventAdminCreateBodySchema`, which omits `authorId`
+        // for the same reason, and stamps the actor in
+        // `adminBodyToDomainEventCreate`. Neither tier takes an author from the
+        // body any more (HOS-998).
         isFeatured: z.coerce.boolean().default(false),
         // `price` and `currency` are create-only. `httpToDomainEventCreate` folds
         // them into the domain's nested `pricing` object; the UPDATE surface drops

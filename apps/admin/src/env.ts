@@ -70,6 +70,38 @@ const safeEnv = {
 };
 
 /**
+ * True when `process.env` is reachable, i.e. we are on the server (HOS-1153).
+ *
+ * Vite does not polyfill `process` in the client bundle, so a bare
+ * bare member access on it there is a `ReferenceError`. The
+ * `import.meta.env` / `process.env` fallback reads below get away with it
+ * only because the
+ * `hospeda-env-mapping` plugin `define`s those keys to string literals, which
+ * makes the right-hand side dead code. The two HOS-1153 vars deliberately have
+ * NO `define` — inlining them would bake the shared rate-limit bypass secret
+ * into the shipped JS — so their guard has to be real rather than incidental.
+ *
+ * `typeof` on an undeclared identifier is safe by spec, and the `&&`
+ * short-circuits before `process.env` is touched, so this is correct whether or
+ * not the bundler substitutes `process.env`.
+ *
+ * @returns `true` on the server, `false` in the browser.
+ */
+const hasProcessEnv = (): boolean => typeof process !== 'undefined' && Boolean(process.env);
+
+/**
+ * Normalises an env value so an empty string reads as absent. Coolify writes
+ * `''` for a var that has been cleared, and for both HOS-1153 vars "cleared"
+ * must behave exactly like "never set" — an empty internal URL must not open
+ * the gate, and an empty secret must not be put on the wire.
+ *
+ * @param value - The raw value read from `process.env`.
+ * @returns The value, or `undefined` when unset or empty.
+ */
+const orUndefinedIfBlank = (value: string | undefined): string | undefined =>
+    value === '' ? undefined : value;
+
+/**
  * Validate all required environment variables for the Admin App
  * Should be called at application startup
  */
@@ -81,6 +113,33 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
             VITE_ADMIN_URL: import.meta.env.VITE_ADMIN_URL,
             HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL ?? process.env.HOSPEDA_API_URL,
+            // HOS-1153. Guarded by `hasProcessEnv()` rather than written as the
+            // `import.meta.env` / `process.env` fallback shape used just above.
+            //
+            // Two reasons, and the second is the load-bearing one:
+            //
+            // 1. `process` does not exist in the browser, and unlike
+            //    `HOSPEDA_API_URL` — which `hospeda-env-mapping` `define`s to a
+            //    string literal, so its right-hand side is dead code — these two
+            //    have no `define`. That expression would reach `process.env` in
+            //    the client bundle and only survive because Rolldown happens to
+            //    substitute `{}`. The guard makes it explicit rather than a
+            //    property of whichever bundler is in use.
+            // 2. These must NOT be `define`d. A `define` inlines the value into
+            //    the client bundle, and one of them is the shared rate-limit
+            //    bypass secret. Reading it at runtime on the server is what
+            //    keeps it out of the shipped JS.
+            //
+            // The keys are spelled out as literal member accesses, never as a
+            // dynamic subscript: `pnpm env:check:usage` resolves a static
+            // access back to a registry entry and cannot see through a
+            // computed one (it reports the unresolved name and fails).
+            HOSPEDA_INTERNAL_API_URL: hasProcessEnv()
+                ? orUndefinedIfBlank(process.env.HOSPEDA_INTERNAL_API_URL)
+                : undefined,
+            HOSPEDA_INTERNAL_REQUEST_SECRET: hasProcessEnv()
+                ? orUndefinedIfBlank(process.env.HOSPEDA_INTERNAL_REQUEST_SECRET)
+                : undefined,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',

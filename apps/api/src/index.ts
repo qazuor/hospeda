@@ -18,6 +18,7 @@ import {
     initializeRevalidationService,
     initializeTranslationService,
     PlatformSettingsService,
+    setCalendarConnectionRevocationPort,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -34,6 +35,7 @@ import { shutdownPostHog } from './lib/posthog';
 import { getRequestContext } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
+import { calendarConnectionRevocationAdapter } from './services/calendar-sync/calendar-connection-revocation.adapter';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
@@ -355,6 +357,12 @@ const startServer = async (): Promise<void> => {
         setPermissionChangeAuditEmitter((payload) =>
             auditLog({ auditEvent: AuditEventType.PERMISSION_CHANGE, ...payload })
         );
+
+        // HOS-663: same shape — deleting an accommodation must close the OAuth
+        // grants behind its calendar connections, and only this layer can reach
+        // the OAuth vault and the provider clients that do it.
+        setCalendarConnectionRevocationPort(calendarConnectionRevocationAdapter);
+        apiLogger.info('Calendar connection revocation adapter registered');
 
         const app = initApp();
 

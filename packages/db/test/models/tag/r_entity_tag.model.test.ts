@@ -428,3 +428,74 @@ describe('REntityTagModel', () => {
         });
     });
 });
+
+/**
+ * HOS-1174 regression: `assign()` is a bespoke write path that does NOT go
+ * through `BaseModelImpl`, so the fix there did not reach it.
+ *
+ * It INSERTs into a table whose PK is `(tagId, entityId, entityType,
+ * assignedById)`, and `TagService.assignTag` reaches it through a
+ * check-then-insert (`findOne` then `assign`). Two concurrent requests — a
+ * double click on the admin tag chip, `POST /{type}/{id}/tags` — both clear the
+ * existence check and the loser's INSERT raises SQLSTATE 23505. Dropping the
+ * cause here meant `handleRouteError` could not see that SQLSTATE and answered
+ * 500 `DATABASE_ERROR`: the same TOCTOU defect HOS-1174 fixed in the base model,
+ * reproduced one layer out.
+ */
+describe('REntityTagModel.assign preserves the driver cause (HOS-1174)', () => {
+    let model: REntityTagModel;
+    let getDb: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        model = new REntityTagModel();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('re-throws a DbError whose cause chain still carries SQLSTATE 23505', async () => {
+        // Arrange — the shape Drizzle actually produces: the SQLSTATE lives on
+        // the pg driver error, and the wrapper message carries only the SQL.
+        const driverError = Object.assign(
+            new Error('duplicate key value violates unique constraint "r_entity_tag_pkey"'),
+            { code: '23505', constraint: 'r_entity_tag_pkey', table: 'r_entity_tag' }
+        );
+        const drizzleError = Object.assign(
+            new Error('Failed query: insert into "r_entity_tag" ...\nparams: a,b,c,d'),
+            { cause: driverError }
+        );
+        getDb.mockReturnValue({
+            insert: () => ({
+                values: () => ({
+                    returning: () => {
+                        throw drizzleError;
+                    }
+                })
+            })
+        });
+
+        // Act
+        let caught: unknown;
+        try {
+            await model.assign({
+                tagId: asTagId(UUID_TAG),
+                entityId: asEntityId(UUID_ENTITY),
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                assignedById: asTagId(UUID_ACTOR_A) as unknown as EntityTag['assignedById']
+            });
+        } catch (error) {
+            caught = error;
+        }
+
+        // Assert
+        expect(caught).toBeInstanceOf(DbError);
+        expect((caught as Error).cause).toBe(drizzleError);
+        // The wrapper message alone is NOT enough to classify the failure —
+        // which is exactly why the cause has to survive.
+        expect((caught as Error).message).not.toContain('violates unique constraint');
+        expect(((caught as Error).cause as { cause: { code: string } }).cause.code).toBe('23505');
+    });
+});

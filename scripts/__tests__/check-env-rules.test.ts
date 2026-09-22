@@ -293,4 +293,61 @@ describe('end-to-end: fixture dotenv files feed the pass/fail/partial states (AC
         );
         expect(revalidationResult?.status).toBe('fail');
     });
+
+    /**
+     * HOS-1153 regression. {@link evaluateCrossCheckRule} short-circuits to
+     * `partial` — explicitly "not a failure" — as soon as ANY referenced side
+     * is unset. So widening an existing rule with a third app does not merely
+     * extend its coverage: it DISABLES the rule for as long as that third side
+     * has no value.
+     *
+     * The window is real and HOS-1153 creates it: the admin's
+     * `HOSPEDA_INTERNAL_REQUEST_SECRET` is unset until an operator sets it in
+     * Coolify. An api/web divergence landing inside that window is exactly the
+     * HOS-155 incident (2026-07-13) — the bypass breaks silently, all SSR
+     * traffic collapses onto the public per-IP bucket, and the site mass-429s.
+     *
+     * The rule SET must therefore keep api↔web strict no matter what the admin
+     * side holds. How that is arranged (two rules, an optional side, ...) is
+     * left open on purpose: this test constrains the behaviour, not the shape.
+     */
+    it('keeps failing on an api/web internal-secret divergence while the admin side is unset (HOS-1153)', () => {
+        // Arrange: api and web disagree; admin has no value at all.
+        const dir = mkdtempSync(join(tmpdir(), 'env-rules-hos1153-'));
+        createdDirs.push(dir);
+        const apiPath = join(dir, 'api.local');
+        const webPath = join(dir, 'web.local');
+        writeFileSync(apiPath, 'HOSPEDA_INTERNAL_REQUEST_SECRET=rotated-on-api-side-only\n');
+        writeFileSync(webPath, 'HOSPEDA_INTERNAL_REQUEST_SECRET=stale-value-on-web-side\n');
+
+        const localValues: Record<AppId, Record<string, string>> = {
+            api: readDotenvFile({ filePath: apiPath }),
+            web: readDotenvFile({ filePath: webPath }),
+            // The post-merge / pre-configuration state HOS-1153 explicitly expects.
+            admin: {},
+            mobile: {},
+            docker: {},
+            seed: {}
+        };
+
+        // Act
+        const results = evaluateLocalRules({ localValues });
+        const internalSecretResults = results.filter((r) =>
+            r.ruleId.startsWith('internal-request-secret-')
+        );
+
+        // Assert
+        expect(
+            internalSecretResults.length,
+            'no internal-request-secret cross-check rule is registered at all'
+        ).toBeGreaterThan(0);
+        expect(
+            internalSecretResults.some((r) => r.status === 'fail'),
+            `An api/web internal-secret divergence went undetected because the admin side is unset. Statuses: ${internalSecretResults
+                .map((r) => `${r.ruleId}=${r.status}`)
+                .join(
+                    ', '
+                )}. A missing side must never void the comparison of the sides that ARE set (HOS-1153 / HOS-155).`
+        ).toBe(true);
+    });
 });

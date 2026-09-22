@@ -31,7 +31,9 @@ vi.mock('@tanstack/react-start/server', () => ({
     getRequest: getRequestMock
 }));
 
-const { fetchAuthSession, resolveAuthSession } = await import('@/lib/auth-session');
+const { fetchAuthSession, resolveAuthSession, resolveInternalRequestTarget } = await import(
+    '@/lib/auth-session'
+);
 
 const API = 'http://api.test';
 const SESSION_URL = `${API}/api/auth/get-session`;
@@ -262,5 +264,245 @@ describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() ren
         // Assert
         expect(result.isAuthenticated).toBe(false);
         expect(result.userId).toBeNull();
+    });
+
+    it('does NOT send the secret over the public URL when no internal URL is set (HOS-1153)', async () => {
+        // Arrange: the shape `hospeda-admin-prod` is actually in today —
+        // HOSPEDA_API_URL is the public Cloudflare hostname and there is no
+        // HOSPEDA_INTERNAL_API_URL. Cloudflare terminates TLS, so putting the
+        // shared secret on this hop would expose it in edge logs; and a leaked
+        // secret disables rate limiting for the WHOLE API, not just the admin.
+        const SECRET = 'an-admin-internal-request-secret-32ch';
+        const previousSecret = process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+        const previousInternal = process.env.HOSPEDA_INTERNAL_API_URL;
+        process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = SECRET;
+        // biome-ignore lint/performance/noDelete: the var must be ABSENT, not empty — that is the case under test
+        delete process.env.HOSPEDA_INTERNAL_API_URL;
+        getRequestMock.mockReturnValue(
+            new Request('http://localhost/', { headers: { cookie: 'session=valid' } })
+        );
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(ADMIN_SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u11', emailVerified: true } });
+            }),
+            http.get(ADMIN_ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        try {
+            await fetchAuthSession();
+        } finally {
+            if (previousSecret === undefined) {
+                // biome-ignore lint/performance/noDelete: restore absence, not emptiness
+                delete process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+            } else {
+                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = previousSecret;
+            }
+            if (previousInternal !== undefined) {
+                process.env.HOSPEDA_INTERNAL_API_URL = previousInternal;
+            }
+        }
+
+        // Assert: the calls still went out (auth keeps working) but carried no
+        // credential.
+        expect(
+            seen.session,
+            'The shared secret was sent over the PUBLIC API URL, which is fronted by Cloudflare (HOS-1153).'
+        ).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+});
+
+/**
+ * HOS-1153 — the gate that keeps the shared secret on the internal network.
+ * `apps/web` has had this since HOS-103 (`client.ts`: `import.meta.env.SSR &&
+ * getInternalApiUrl()`); the admin must not be looser.
+ */
+describe('resolveInternalRequestTarget (HOS-1153 internal-URL gate)', () => {
+    const PUBLIC_URL = 'https://api.hospeda.com.ar';
+    const INTERNAL_URL = 'http://hospeda-api-prod:3001';
+    const SECRET = 'a-shared-internal-request-secret-32ch';
+
+    it('sends the secret and uses the internal URL when both are configured', () => {
+        // Act
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: INTERNAL_URL, internalRequestSecret: SECRET });
+    });
+
+    it('withholds the secret and keeps the public URL when no internal URL is set', () => {
+        // Arrange / Act: the measured state of hospeda-admin-prod.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: undefined,
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(
+            result.internalRequestSecret,
+            'A configured secret must NOT travel over the public URL just because it exists.'
+        ).toBeUndefined();
+        expect(result.apiUrl).toBe(PUBLIC_URL);
+    });
+
+    it('withholds the secret when the internal URL is an empty string', () => {
+        // Arrange: Coolify writes empty strings for cleared vars, so "unset"
+        // and "empty" must behave identically. Reading this as truthy would put
+        // the credential on the public hop.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: '',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: PUBLIC_URL, internalRequestSecret: undefined });
+    });
+
+    it('uses the internal URL but sends no header when the secret is missing', () => {
+        // Arrange: the inverse half-configuration. Routing internally is still
+        // correct; there is simply nothing to authenticate with.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: undefined
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: INTERNAL_URL, internalRequestSecret: undefined });
+    });
+
+    it('treats an empty secret as absent rather than sending a blank header', () => {
+        // Act
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: ''
+        });
+
+        // Assert
+        expect(result.internalRequestSecret).toBeUndefined();
+    });
+});
+
+/**
+ * HOS-1153 — the admin's session reads run server-side, so without this header
+ * every operator shares one `proxy:<admin-container-ip>` rate-limit bucket on
+ * the API. These pin the header's presence, its absence when unconfigured, and
+ * that it never displaces the cookie.
+ */
+describe('resolveAuthSession internal-request header (HOS-1153)', () => {
+    const SECRET = 'a-shared-internal-request-secret-32ch';
+
+    it('attaches X-Internal-Request to get-session AND /auth/me when given a secret', async () => {
+        // Arrange
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u12' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(seen.session).toBe(SECRET);
+        expect(seen.me).toBe(SECRET);
+    });
+
+    it('omits the header entirely when no secret is configured (fails safe)', async () => {
+        // Arrange
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u13' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        // Assert
+        expect(seen.session).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+
+    it('omits the header when the secret is an empty string', async () => {
+        // Arrange: an empty value is a misconfiguration, not a credential, and
+        // the API's comparison would reject it on every single request.
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u14' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: ''
+        });
+
+        // Assert
+        expect(seen.session).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+
+    it('still forwards the cookie alongside the internal-request header', async () => {
+        // Arrange: the secret must ADD a header, never replace the cookie —
+        // dropping it would resolve every session read as a guest.
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.cookie = request.headers.get('cookie');
+                return HttpResponse.json({ user: { id: 'u15' } });
+            }),
+            http.get(ME_URL, () =>
+                HttpResponse.json({ success: true, data: { actor: { permissions: [] } } })
+            )
+        );
+
+        // Act
+        const result = await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(seen.cookie).toContain('session=valid');
+        expect(result.isAuthenticated).toBe(true);
     });
 });

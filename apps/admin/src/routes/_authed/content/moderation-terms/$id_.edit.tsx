@@ -13,10 +13,15 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
     useModerationTermDetail,
     useUpdateModerationTerm
 } from '@/features/content-moderation/hooks/useModerationTermQuery';
+import {
+    buildModerationCategoryOptions,
+    buildModerationTermKindOptions
+} from '@/features/content-moderation/moderation-term-options';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -70,6 +75,15 @@ function ModerationTermEditForm({ id, term }: ModerationTermEditFormProps) {
     const navigate = useNavigate();
     const updateMutation = useUpdateModerationTerm();
     const { t } = useTranslations();
+    const { addToast } = useToast();
+
+    // Derived from the schema this form validates against, so the selects can
+    // never offer a value `safeParse` refuses. This screen hand-rolls its
+    // Selects instead of going through EntityFormSection, so it was never
+    // covered by the `config`/`typeConfig` typo — its hardcoded `self_harm`
+    // option has been live the whole time (HOS-1068).
+    const { options: kindOptions } = buildModerationTermKindOptions({ t });
+    const { options: categoryOptions } = buildModerationCategoryOptions({ t });
 
     const form = useForm({
         defaultValues: {
@@ -81,7 +95,22 @@ function ModerationTermEditForm({ id, term }: ModerationTermEditFormProps) {
         },
         onSubmit: async ({ value }) => {
             const validation = updateContentModerationTermSchema.safeParse(value);
-            if (!validation.success) return;
+            if (!validation.success) {
+                // This used to be a bare `return`. Nothing else in this form
+                // surfaces a validation failure — there are no `validators`, so
+                // `field.state.meta.errors` is always empty — which meant a
+                // rejected value produced no save, no navigation and no
+                // message at all. Silence is the worst possible answer here:
+                // the operator cannot tell a refusal from a broken button.
+                addToast({
+                    title: t('content-moderation.terms.messages.updateError'),
+                    message: validation.error.issues
+                        .map((issue) => `${issue.path.join('.') || 'form'}: ${issue.message}`)
+                        .join(' · '),
+                    variant: 'error'
+                });
+                return;
+            }
             await updateMutation.mutateAsync({ id, data: validation.data });
             navigate({ to: `/content/moderation-terms/${id}` });
         }
@@ -153,12 +182,14 @@ function ModerationTermEditForm({ id, term }: ModerationTermEditFormProps) {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="word">
-                                                {t('content-moderation.terms.kinds.word')}
-                                            </SelectItem>
-                                            <SelectItem value="domain">
-                                                {t('content-moderation.terms.kinds.domain')}
-                                            </SelectItem>
+                                            {kindOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     {field.state.meta.errors.length > 0 && (
@@ -190,27 +221,14 @@ function ModerationTermEditForm({ id, term }: ModerationTermEditFormProps) {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="hate">
-                                                {t('content-moderation.categories.hate')}
-                                            </SelectItem>
-                                            <SelectItem value="sexual">
-                                                {t('content-moderation.categories.sexual')}
-                                            </SelectItem>
-                                            <SelectItem value="violence">
-                                                {t('content-moderation.categories.violence')}
-                                            </SelectItem>
-                                            <SelectItem value="harassment">
-                                                {t('content-moderation.categories.harassment')}
-                                            </SelectItem>
-                                            <SelectItem value="self_harm">
-                                                {t('content-moderation.categories.self_harm')}
-                                            </SelectItem>
-                                            <SelectItem value="spam">
-                                                {t('content-moderation.categories.spam')}
-                                            </SelectItem>
-                                            <SelectItem value="other">
-                                                {t('content-moderation.categories.other')}
-                                            </SelectItem>
+                                            {categoryOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     {field.state.meta.errors.length > 0 && (

@@ -37,7 +37,7 @@ import { buildUrl } from '@/lib/urls';
 import { LocationIcon } from '@repo/icons';
 
 import { buildEntityCacheTags } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
 /**
  * Radius for the "nearby accommodations" query, in km. Matches
  * `DEFAULT_POI_PROXIMITY_RADIUS_KM` in service-core — the same radius the
@@ -150,6 +150,16 @@ const fallbackResult = useDestinationFallback
 		})
 	: null;
 const fallbackItems = fallbackResult?.ok ? fallbackResult.data.items : [];
+
+// Three `?.ok ? … : []` above, none of which renders anything a visitor could
+// read as a failure: a broken endpoint looks exactly like a landmark with no
+// nearby accommodations and no destination. `applyCacheHeaders` already ran, so
+// without this the edge pins that false "nothing here" for the full TTL
+// (HOS-1154 review finding). `fallbackResult` is `null` when the fallback was
+// never attempted, which is not a failure — only an attempt that failed counts.
+if (!destinationsResult.ok || !nearbyResult.ok || fallbackResult?.ok === false) {
+	markResponseDegraded({ locals: Astro.locals });
+}
 
 const accommodationItems = nearbyItems.length > 0 ? nearbyItems : fallbackItems;
 const accommodationCards = accommodationItems.map((item) =>

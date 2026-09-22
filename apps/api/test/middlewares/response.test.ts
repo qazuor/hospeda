@@ -2,7 +2,11 @@
  * Response Middleware Tests
  * Tests the response formatting functionality
  */
+import { DbError } from '@repo/db/utils';
+import { ServiceErrorCode } from '@repo/schemas';
+import { extractPostgresErrorCause, ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createErrorHandler,
@@ -1099,5 +1103,239 @@ describe('Response Middleware', () => {
             expect(data.error.code).toBe('FORBIDDEN');
             expect('reason' in data.error).toBe(false);
         });
+    });
+});
+
+/**
+ * HOS-1174 / error-contract R4: `createErrorHandler` and `handleRouteError` are
+ * twin formatters — the same error must produce the same body whichever one
+ * sees it. `createErrorHandler` had no DbError branch, so a `DbError` carrying
+ * SQLSTATE 23505 reaching `app.onError` (a hand-rolled route, a middleware
+ * write — anything not going through one of the 13 route factories) fell
+ * through its priority chain to the 500 INTERNAL_ERROR default, while the same
+ * error answered 409 on the route-factory path. That drift has already cost
+ * two incidents (HOS-283, H-105).
+ */
+describe('createErrorHandler maps a Postgres constraint violation (HOS-1174)', () => {
+    let app: Hono;
+
+    /** The exact wrapping `BaseModelImpl` produces for a driver failure. */
+    const buildDbErrorWithDriverCause = (
+        code: string,
+        constraint: string,
+        table: string
+    ): DbError => {
+        const driverError = Object.assign(new Error('duplicate key value'), {
+            code,
+            constraint,
+            table,
+            detail: 'Key (slug)=(taken) already exists.'
+        });
+        const drizzleError = Object.assign(
+            new Error('Failed query: insert into "partners" ...\nparams: taken'),
+            { cause: driverError }
+        );
+        return new DbError('partner', 'create', {}, drizzleError.message, drizzleError);
+    };
+
+    beforeEach(() => {
+        app = new Hono();
+        app.use(responseFormattingMiddleware);
+        app.onError(createErrorHandler());
+        vi.clearAllMocks();
+    });
+
+    it('answers 409 ALREADY_EXISTS for a 23505, not the 500 default', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23505', 'partners_slug_unique', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(409);
+        const data = await res.json();
+        expect(data.error.code).toBe('ALREADY_EXISTS');
+        expect(data.error.message).toBe('A partner with this slug already exists');
+    });
+
+    it('answers 400 VALIDATION_ERROR for a 23503', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23503', 'partners_owner_id_fkey', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('never leaks the driver `detail` into the body', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23505', 'partners_slug_unique', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert — 409 proves the branch ran; the absence is the property.
+        expect(res.status).toBe(409);
+        expect(JSON.stringify(await res.json())).not.toContain('already exists.');
+    });
+
+    it('leaves a DB failure that is not a constraint violation as a 500', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('08006', 'n/a', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(500);
+    });
+});
+
+/**
+ * HOS-1174 precedence: the constraint-violation branch must NOT outrank an
+ * explicit `ServiceError` or `HTTPException`.
+ *
+ * This is the property a refactor breaks silently. `extractPostgresErrorCause`
+ * follows `ServiceError.details` — which is exactly where `BaseService` stores
+ * the original caught value (`new ServiceError(INTERNAL_ERROR, msg, error)`) —
+ * so a `ServiceError` deliberately raised as `FORBIDDEN` while carrying a
+ * driver 23505 underneath WOULD produce a constraint violation here if the
+ * order were inverted, and the caller would get a 409 instead of the 403 the
+ * service chose. Mutating `createErrorHandler` to let the new branch win
+ * survived 201 tests across 5 files before this block existed.
+ *
+ * ## Why the errors below carry the driver error on BOTH `details` and `cause`
+ *
+ * Under vitest, `ServiceError` imported from `@repo/service-core` and from
+ * `@repo/service-core/types` are two DIFFERENT classes (measured: `===` is
+ * false, and an instance of one fails `instanceof` against the other). In
+ * production they resolve to the same module, so this split exists only in the
+ * test environment — but it is a trap in both directions:
+ *
+ * - `createErrorHandler` checks `instanceof ServiceError` against the ROOT
+ *   import, so an error built from `/types` would skip Priority 1 entirely and
+ *   the test would pin nothing;
+ * - `extractPostgresErrorCause` checks `instanceof ServiceError` against the
+ *   `/types` import to decide to follow `.details`, so an error built from the
+ *   root import yields `undefined` and the test would pass VACUOUSLY — green
+ *   with the precedence inverted.
+ *
+ * Building from the root import and ALSO hanging the driver error off `cause`
+ * satisfies both: Priority 1 genuinely fires, and the walker genuinely reaches
+ * the 23505 through its generic `cause` link. Verified below by asserting that
+ * `extractPostgresErrorCause` really does find it.
+ */
+describe('createErrorHandler keeps ServiceError/HTTPException above the constraint branch (HOS-1174)', () => {
+    let app: Hono;
+
+    const buildDriverError = () =>
+        Object.assign(new Error('duplicate key value'), {
+            code: '23505',
+            constraint: 'users_email_unique',
+            table: 'users'
+        });
+
+    beforeEach(() => {
+        app = new Hono();
+        app.use(responseFormattingMiddleware);
+        app.onError(createErrorHandler());
+        vi.clearAllMocks();
+    });
+
+    it('the fixture really does expose a 23505 to the walker (anti-vacuity check)', () => {
+        // Arrange
+        const wrapped = Object.assign(
+            new ServiceError(ServiceErrorCode.FORBIDDEN, 'nope', buildDriverError()),
+            { cause: buildDriverError() }
+        );
+
+        // Act
+        const found = extractPostgresErrorCause(wrapped);
+
+        // Assert — without this, every assertion below would hold trivially.
+        expect(found?.code).toBe('23505');
+    });
+
+    it('answers the ServiceError status, not 409, when a 23505 is underneath', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw Object.assign(
+                new ServiceError(ServiceErrorCode.FORBIDDEN, 'not allowed', buildDriverError()),
+                { cause: buildDriverError() }
+            );
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('FORBIDDEN');
+    });
+
+    it('answers the HTTPException status, not 409, when a 23505 is underneath', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw Object.assign(new HTTPException(401, { message: 'unauthenticated' }), {
+                cause: buildDriverError()
+            });
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(401);
+        const data = await res.json();
+        expect(data.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('does not downgrade the log level of a 5xx answered by Priority 1', async () => {
+        // Arrange — a ServiceError wrapping a driver 23505 answers 500
+        // INTERNAL_ERROR. Leveling it by the constraint branch would log that
+        // 500 at `warn`, and the stack is emitted only at `error` level, so the
+        // fault would leave the ERROR stream with no stack — while
+        // `handleRouteError` still logged it at `error`. Twin divergence.
+        const { apiLogger } = await import('../../src/utils/logger');
+        const warnSpy = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
+        const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+        app.get('/boom', () => {
+            throw Object.assign(
+                new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'An unexpected error occurred',
+                    buildDriverError()
+                ),
+                { cause: buildDriverError() }
+            );
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(500);
+        const data = await res.json();
+        expect(data.error.code).toBe('INTERNAL_ERROR');
+        expect(warnSpy).not.toHaveBeenCalled();
+        expect(errorSpy).toHaveBeenCalled();
+
+        warnSpy.mockRestore();
+        errorSpy.mockRestore();
     });
 });
