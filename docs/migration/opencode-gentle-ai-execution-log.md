@@ -3286,3 +3286,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   local de prueba.
 - No quedaron servidores ni recursos de ese E2E; los worktrees reales y los
   backups de templates permanecen intactos.
+
+## Gate 180 · Manifiesto declarativo del adapter Hospeda
+
+- Se agregó `.qz/project.json` al worktree de migración como contrato
+  versionado y sin secretos para el futuro núcleo `qz`.
+- El manifiesto declara Linear/HOS, ramas base y protegidas, naming de
+  worktrees, checkout protegido `hospeda-staging` para envs, estrategia de
+  PostgreSQL template, servidores API/admin/web, health de API y prefijos
+  `qz-`/`hops-`.
+- Se validó sintácticamente con `jq` y se publicó el artifact de migración en
+  la versión 186.
+- Esto no instala ni genera todavía comandos `qz`; la extracción de `qz-core`,
+  `agent-packs` y la distribución por cliente sigue siendo una etapa posterior.
