@@ -15,11 +15,24 @@ type DependabotPr = {
     readonly labels?: readonly { readonly name?: string }[];
 };
 
+export type VersionImpact = 'major' | 'minor' | 'patch' | 'unknown';
+
+export function versionImpact(title: string): VersionImpact {
+    const match = title.match(/from\s+v?(\d+)\.(\d+)\.(\d+)[^ ]*\s+to\s+v?(\d+)\.(\d+)\.(\d+)/i);
+    if (!match) return 'unknown';
+    const [, fromMajor, fromMinor, fromPatch, toMajor, toMinor, toPatch] = match.map(Number);
+    if (toMajor !== fromMajor) return 'major';
+    if (toMinor !== fromMinor) return 'minor';
+    if (toPatch !== fromPatch) return 'patch';
+    return 'unknown';
+}
+
 type PrEvidence = {
     readonly files: readonly string[];
     readonly reviewDecision: string | null;
     readonly bodyPresent: boolean;
     readonly error?: string;
+    readonly versionImpact?: VersionImpact;
 };
 
 function riskOf(files: readonly string[]): 'low' | 'medium' | 'high' {
@@ -36,7 +49,11 @@ export function recommend(pr: DependabotPr, evidence?: PrEvidence): DependabotRe
     if (pr.isDraft || pr.mergeStateStatus === 'DIRTY') return 'blocked';
     if (pr.baseRefName !== 'staging' && pr.baseRefName !== 'main') return 'blocked';
     if (/revert|supersed|duplicate|obsolete/i.test(pr.title)) return 'close';
-    if (/major|breaking|migration|deprecated/i.test(pr.title)) return 'create-issue';
+    if (
+        versionImpact(pr.title) === 'major' ||
+        /major|breaking|migration|deprecated/i.test(pr.title)
+    )
+        return 'create-issue';
     if (evidence?.files.some((file) => /migrations|\.github\/workflows|Dockerfile/.test(file)))
         return 'create-issue';
     return 'no-spec';
@@ -145,6 +162,7 @@ export async function runDependabotReview({
                 head: pr.headRefName ?? null,
                 updatedAt: pr.updatedAt ?? null,
                 recommendation: recommend(pr, evidence),
+                versionImpact: versionImpact(pr.title),
                 risk: riskOf(evidence.files),
                 evidence,
                 readOnly: true

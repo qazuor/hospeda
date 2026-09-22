@@ -3528,3 +3528,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `dependabot-review` ahora consulta por PR archivos tocados, body y `reviewDecision` sin mutar GitHub.
 - La salida conserva evidencia segura y clasifica riesgo `low`, `medium` o `high`; una prueba sobre PR #3382 detectó manifests y lockfile con riesgo `medium`.
 - Changelogs, semver y uso real siguen pendientes antes de automatizar decisiones.
+
+## Gate 208 · Impacto semver de Dependabot
+
+- `dependabot-review` agrega `versionImpact`: `major`, `minor`, `patch` o `unknown`.
+- La prueba read-only sobre PR #3367 detectó `4.1.9 -> 5.0.0`, clasificó `major` y recomendó `create-issue`.
+- No se realizaron cambios en GitHub ni se generaron issues automáticamente.
