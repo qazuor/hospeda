@@ -3418,3 +3418,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Valida el drift de las fuentes y mantiene `--apply` bloqueado hasta definir
   allowlist, backup verificable, conflictos y rollback.
 - La ejecución pasó con los 33 commands y OpenCode, Claude y Codex detectados.
+
+## Gate 194 · Inventario de backups previo al apply
+
+- Se agregó `tools/agent-packs/backup-plan.mjs`, read-only.
+- Enumera existencia y tamaño de OpenCode, Claude, Codex, Engram, estado de
+  migración, `.opencode`, `.qz`, `AGENTS.md`, specs, Taskmaster y client-tools.
+- No lee contenidos ni valores secretos. El apply futuro queda condicionado a
+  espacio, copias verificadas, checksums y manifest de rollback.
