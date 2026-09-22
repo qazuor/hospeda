@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Arquitectura documentada en command-distribution-architecture.md: fuente canónica versionada, derivados por cliente, manifest/hash, copias generadas en vez de symlinks y separación qz-core/hops-hospeda. Implementación final pendiente.",
+                            "notes": "Gate180: agregado `.qz/project.json` como manifiesto declarativo del adapter Hospeda. Declara Linear HOS, ramas, worktrees/envs, PostgreSQL template, servidores y prefijos `qz-`/`hops-` sin secretos. La implementación completa de qz-core, agent-packs y generación por cliente sigue pendiente.",
                             "done": false
                         },
                         {
@@ -798,6 +798,7 @@
     "sources": [
         "docs/migration/opencode-gentle-ai-plan.md",
         "docs/migration/opencode-gentle-ai-execution-log.md",
-        "docs/migration/hops-command-status.md"
+        "docs/migration/hops-command-status.md",
+        ".qz/project.json"
     ]
 }
