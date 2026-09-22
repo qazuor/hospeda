@@ -3393,3 +3393,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se cubren registry/binarios, wrappers, env drift, CI, Linear/worktrees,
   DB, Engram, verify, handoff y guards de mutación.
 - No se hicieron consultas mutantes a Linear, GitHub, Engram ni bases reales.
+
+## Gate 191 · Verificación equivalente de los tres adapters
+
+- Se renderizaron y verificaron adapters para OpenCode, Claude y Codex en
+  `/tmp/qz-agent-pack-render`.
+- Los tres reportaron `valid: true`, 33 commands y ningún fallo de hash o
+  presencia.
+- La prueba sigue aislada de instalaciones globales; el `--apply` con backup y
+  rollback todavía no está habilitado.
