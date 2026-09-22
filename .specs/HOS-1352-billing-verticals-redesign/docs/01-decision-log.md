@@ -3784,9 +3784,30 @@ Cada entrada lleva, según §3.4:
 - **Lo que queda sin vigilancia, declarado**: la clase del segundo guard. `S20` demostró que el
   error se comete **copiando de una fila que parece análoga**, y contra eso no hay comprobación
   estructural: lo único que lo detecta es que alguien lea las dos filas juntas.
+- ***Tercera enmienda del mismo día: va un guard MÁS, el de la lista de escritores.*** Al escribir
+  `G-R6` en `V/20` §2 se midió algo que nadie había planteado: de los **cuatro hechos que escriben
+  `inactiva_desde`, sólo uno es una transición** (`PB1`/`PB3`/`PB7`); los otros tres salen del
+  registro de eventos, del contrato y de `vertical.fin_de_servicio`. Como el predicado de `G-R6` es
+  *«al menos una transición la escribe»*, **el guard queda verde por uno solo de los cuatro**:
+  certifica *«alguien la mueve»*, **nunca *«los cuatro la escriben»***. Eso quedó declarado en
+  `V/20` §2, y deja como única vigilancia de los otros tres **la lista cerrada de `V/02` §2.5**.
+  - **Decisión: la lista lleva guard propio**, que falle si alguien escribe `inactiva_desde` desde
+    un lugar que la lista no nombra — exactamente el papel que `G-R1-E` cumple para los inventarios
+    del núcleo.
+  - **El motivo**: `inactiva_desde` **decide un borrado irreversible**, sus cuatro escritores
+    **nacieron el mismo día** (`DEC-DATA-002`), y `G-R6` ya declaró por escrito que no los cubre.
+    Es la misma situación que motivó a `G-R1-E`, **con una consecuencia peor**. Y el precedente del
+    programa es explícito: **la única lista que existía quedó corta en el mismo commit que creó su
+    sexto miembro**, así que una lista cerrada sin guard es una promesa que ya se rompió una vez.
+  - **Lo que esto NO contradice**: el segundo guard del rechazo de arriba sigue rechazado. La
+    diferencia es medible y no de gusto — aquél sólo podía comprobar su **forma** (*que la fila diga
+    cuántas escrituras tiene*), mientras éste comprueba un **hecho**: que no exista un escritor
+    fuera de la lista. Uno afirma más de lo que prueba; el otro no.
 - **Origen**: la FASE 9-bis-4, preguntas de los rastros del pagador manual
   (`rastro-8f9f31ac0.md`) y del grant (`rastro-ce52dce5f.md`), presentadas juntas al owner el
-  2026-09-21 — eligió la 2, que era la recomendada.
+  2026-09-21 —eligió la 2, que era la recomendada—; la ampliación a las dos épicas pedida por el
+  owner el mismo día; y la tercera enmienda, sobre la medición de los cuatro escritores que trajo
+  el cierre de guards (`rastro-12cc0879f.md`), donde eligió la 2, que era la recomendada.
 
 ---
 
