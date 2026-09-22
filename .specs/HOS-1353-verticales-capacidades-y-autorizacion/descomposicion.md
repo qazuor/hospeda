@@ -52,14 +52,14 @@ condicionan**: se apoyan en ella.
 | # | unidad | qué deja funcionando | capítulos | guards |
 |---|---|---|---|---|
 | **V1** | **El catálogo y su doble guard** | el enum de verticales, su espejo en base, y el catálogo de claves de entitlement y limit en código | `02` §1 (núcleo) · `10` §1 | `G1` `G3` `G8` |
-| **V2** | **El catálogo de planes** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible | `02` §2.1 · `10` §2 | — |
-| **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | — |
-| **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | — |
-| **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` |
+| **V2** | **El catálogo de planes** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible | `02` §2.1 · `10` §2 | **`G-R3`** |
+| **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
+| **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
+| **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
 | **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus cuatro hechos de reinicio**, la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | el de `D16` |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus cuatro hechos de reinicio**, la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -125,6 +125,140 @@ pasar. Es el caso de libro del §2.1, con lectores en vez de escritores.
 alguien agrega un quinto hecho, **el cambio es de V9 y el rojo lo da el guard de V6**. Es la misma
 forma de `G13`, que vigila el contrato de V4 y nace en `B4` (§2.3): **dónde se construye un guard y
 qué documento define su lista son dos preguntas distintas.**
+
+### 2.6 Los ocho guards de esta épica que no tenían unidad, y por qué cada uno cae donde cae
+
+La columna de arriba dejaba **ocho** guards de `V/20` §2 sin ninguna unidad que los construya, y
+`C2` lo venía reportando **tres vueltas seguidas** (`F-8dC2-003` → `F-8eC2-004`). La **quinta
+enmienda de `DEC-TEST-001`** decide repartirlos ahora, con tres condiciones que gobiernan lo que
+sigue: **la razón va medida y con cita**, **la unidad nace ANTES o CON lo que el guard vigila** —el
+criterio del §2.5, que es el que `G-R5` violó— y **lo que no tiene unidad clara se declara sin
+dueño**. Los ocho tienen unidad medida; lo que queda abierto está en el §2.8 y son preguntas, no
+asignaciones faltantes.
+
+| guard | unidad | qué construye esa unidad que hace que el guard pueda existir ahí |
+|---|---|---|
+| **`G-R3`** | **V2** | las **dos versiones no vendibles** que el guard vigila — son `plan_version`, y `02` §2.1 es capítulo de V2 |
+| **`G-R2`** | **V3** | **la resolución**, que el propio `15` §2.6 declara *«el sujeto del guard»* |
+| **`G-R2-B`** | **V3** | **el trinquete por vertical** del `GRANT`, que se compara adentro de esa misma resolución (`15` §2.5) |
+| **`G-R4`** | **V4** | **la primera tabla de transiciones del programa**: la de trial, `03` §2 |
+| **`G-R4-B`** | **V4** | esa misma tabla **y el contrato** cuyo §4 el guard hace cumplir |
+| **`G-R6`** | **V4** | la misma primera tabla — mismo dominio que `G-R4` |
+| **`G-R3-B`** | **V5** | **la clase** *«transición disparada por el reloj»*, que `17` §3.4 declara |
+| **`G-R3-C`** | **V5** | **el paso 5** y la declaración que el guard lee, que `17` §3.5 pide con todas las letras |
+
+**`G-R3` va con V2 porque su sujeto nace ahí y no antes.** El guard sale de `02` §2.1, que es
+capítulo de V2, y lo que vigila son **las dos versiones no vendibles** —la de pre-trial y la de
+piso—, que son `plan_version`: exactamente lo que V2 deja funcionando (*«`plan`, `plan_version` y
+sus entitlements y limits, con `rank`, vigente y vendible»*). Antes de V2 no hay ninguna versión
+que se pueda sembrar mal, así que el guard **nace con su sujeto y no contra él**. Y V2 es la
+**segunda** unidad del §3, con lo cual todo lo que después lee esas versiones —la resolución de
+V3, el paso 5 de V5, y la reactivación desde `ARCHIVED` *«que la versión de piso le autoriza»*
+(§4, fila V5)— llega **uno por uno**. Importa que sea temprano por lo que el catálogo dice de este
+guard: *«es el que más carga lleva … si alguien siembra una de esas dos versiones con una clave
+comercial, toda la plataforma la recibe gratis, para siempre»* (`V/20` §2).
+
+**`G-R2` va con V3 porque el capítulo que lo crea nombra su sujeto.** `15` §2.6 cierra diciendo
+*«Se comprueba sobre la resolución y no sobre cada call site, porque `V/17` §1.3 ya obliga a que
+los pasos se resuelvan en un solo lugar; **ese lugar es el sujeto del guard**»*. Ese lugar —el
+pliegue del conjunto efectivo y sus cuatro estrategias— **lo construye V3** (`15` §1–3). Fuera de
+V3 el guard no tiene dónde pararse: no es una propiedad de los call sites.
+
+**`G-R2-B` va con V3 por el mismo capítulo, y su consumidor llega de la otra épica.** `15` §2.5
+termina con *«Lo vigila `G-R2-B` (`V/20` §2)»*, y lo que vigila es el **trinquete por vertical** de
+la fuente `GRANT` —*«toma la fuente `GRANT` de esa vertical … y ninguna otra»*—, que se compara
+*«al final»* dentro de la resolución. La fuente `GRANT` la enchufa **B9** de la otra épica, que en
+`B/descomposicion.md` §3 está después de `B7 → B8`: naciendo en V3 el guard **ve llegar al grant**
+en vez de heredarlo escrito.
+
+**`G-R4` va con V4 porque V4 construye la primera de las nueve máquinas.** El guard vigila *«las
+nueve máquinas, en las dos épicas»*, y esta épica tiene tres: trial (`03` §2, **V4**), publicación
+(`03` §9, V6) y postulación de Partner (`03` §11, V7). La más temprana del §3 es la de V4, y las
+**seis de billing** no compiten por ser primeras: `DEC-ARCH-005` parte el programa en dos épicas
+donde verticales *«arranca»* y billing *«espera»*, y `B/descomposicion.md` §2.3 mide que hoy *«lo
+único que arranca es B2 y la interfaz de B1»*, ninguna de las dos con tabla de transiciones. Y el
+par que el guard cuenta nace ahí mismo: de los **cuatro** pares con dos destinos que el diseño
+declara hoy, `T1`/`T6` es de esta máquina y los otros tres —`S5`/`S19`, `S7`/`S19`, `S10`/`S25`—
+son de la tabla de suscripción, que construyen B7 y B8 (`B/20` §2). Naciendo en V4 el guard ve
+llegar **ocho tablas una por una**; naciendo en cualquier otro lado nace contra tablas ya escritas.
+
+**`G-R4-B` va con V4 porque el defecto que lo motivó es de la propia máquina de V4.** El guard
+falla si una máquina **de esta épica** nombra un estado de la suscripción, y sale del §4 del
+contrato — que **lo trae V4** (su fila del §2 lo lista entre sus capítulos). El caso es `T6`:
+estaba escrita sobre *«una suscripción viva»*, *«un predicado que el §4 del contrato le prohíbe
+evaluar al lado que tiene que evaluarlo»* (`V/20` §2). Las otras dos máquinas de la épica son de V6
+y V7, las dos posteriores a V4 en el §3.
+
+**`G-R6` va con V4 por el mismo orden, y hay una razón propia por la que ahí es seguro.** Su
+dominio es el mismo de `G-R4` —*«las nueve máquinas, en las dos épicas»*— así que la primera tabla
+del programa es el lugar que la regla 1 pide. Lo propio es esto: su predicado es **global**
+(*«exige que al menos una transición **del corpus** las escriba»*), y un predicado global evaluado
+sobre un corpus a medio construir puede dar **rojos falsos**. Con las máquinas de esta épica no
+puede: el §4 del contrato le prohíbe a una máquina de verticales leer del otro lado —que es
+justamente lo que `G-R4-B` hace cumplir—, así que **ninguna condición de V4, V6 o V7 lee una
+columna que sólo escriba billing**. Eso vuelve a la primera tabla un lugar seguro para nacer, y no
+sólo el más temprano. Lo que el predicado global sí deja abierto está en el §2.8, como pregunta.
+
+**`G-R3-B` va con V5 porque antes de V5 no hay nada que leer.** La **clase** que vigila —*«las
+transiciones disparadas por el reloj»*, y que *«nunca otorga»*— la declara `17` §3.4, y `17 entero`
+es de V5. El capítulo además insiste en que *«la clase se declara transición por transición, nunca
+se infiere»*: **la declaración es el mecanismo, y el mecanismo lo construye V5**. El caso que el
+capítulo usa, `T3`, es de la máquina de V4 y ya existe cuando V5 llega — y **no es una excepción
+heredada**, porque lo que V5 construye es el acto de clasificar, y `T3` se clasifica al
+construirlo. Los relojes que vienen después —`PB4` y `PB5` de V6, el de retención de V9, y los de
+billing— llegan uno por uno.
+
+**`G-R3-C` va con V5 porque el capítulo de V5 lo pide con todas las letras.** `17` §3.5 lo enumera
+como su tercera parte —*«Un guard que lo hace cumplir: toda operación de dominio **declara** si
+pasa por el paso 5, y el build falla si alguna no lo declara»*— y explica por qué no puede llegar
+después: *«sin él, alguien agrega una operación dentro de ocho meses, no se pregunta nada, y nadie
+se entera — la fábrica de exenciones por ruta»*. El paso 5 y los otros ocho son de V5, y la
+enumeración que el guard vuelve completa *«se arma sola a medida que se construyen las
+superficies»*, que son V8 y B13: las dos posteriores.
+
+### 2.7 `G-R5` se va a `B8`, porque la celda de `V9` estaba en la épica equivocada
+
+`F-8eC2-004` lo reportó y **se confirma recorriendo los dos grafos del §3**. La celda de `V9` decía
+*«el de `D16`»* —o sea `G-R5`, nombrado por su invariante y no por su id— y el guard compara **dos
+cifras de configuración**: el **tope de una pausa**, que declara `B/03` §5 (*«**4 pausas-mes** por
+pausa»*), y el **día del hard delete**, que declara `V/02` §4.1. De las dos, la que `V9` construye
+es la segunda: sus capítulos son `02` §4, `22` §3 y `01` §1.2 (núcleo), y **`B/03` §5 no está entre
+ellos**. El catálogo de billing ya lo había advertido por escrito, doce líneas antes de que la
+celda se escribiera: *«Figura acá porque **el número que puede romperlo es de esta épica**: si
+alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin
+verlo»* (`B/20` §2).
+
+**Y el orden no lo deja mal ubicado: lo deja inejecutable.** `V9` corre *«una vez que estén V4 y
+V6»* (§3), temprano y sin esperar a billing; el tope lo construye **B8**, que en
+`B/descomposicion.md` §3 está después de la bisagra —`B1 → B3 → B5 → B7 → B8`— y después de todo
+lo que espera a la pasarela. El guard se construiría **antes que el número que compara**, y ahí no
+llega tarde: llega tan temprano que **no tiene contra qué fallar**, que es *«un comentario con exit
+code 0»* — la regla 1 de esta descomposición leída al revés.
+
+**Va a `B8`, que es la unidad que construye el tope**, y la razón entera, del lado que lo
+construye, está en `B/descomposicion.md` §2.8. Es la misma forma de `G13` (§2.3) y de `G-R6-B`
+(§2.5) con el eje cambiado: **dónde se construye un guard y qué documento declara sus números son
+dos preguntas distintas.** `V9` conserva lo suyo — el día 180 es de su capítulo y el guard lo cita;
+si alguien mueve ese número, **el cambio es de `V9` y el rojo lo da el guard de `B8`**.
+
+### 2.8 Lo que el reparto deja abierto, y es una pregunta y no un hueco
+
+**`G-R6` tiene un predicado global y el corpus se construye por partes.** El guard exige que *«al
+menos una transición **del corpus** escriba»* cada columna que una condición lee, y el corpus son
+nueve máquinas repartidas en dos épicas que se construyen a lo largo de todo el programa. Del lado
+de verticales eso es inofensivo (§2.6), pero del lado de billing **una condición puede leer una
+columna cuyo escritor llega en una unidad posterior** — el caso medido está en el propio catálogo:
+la fecha del próximo cobro tiene **tres** escrituras (`B/03` §7.2) y una de ellas es `S10`, que es
+de B8, mientras la condición que la lee es de B5. Entre B5 y B8 el guard daría **rojo sobre el
+camino normal**, que es lo que la fila de `G-R1-A` describe como *«un guard que alguien va a
+relajar»*.
+
+**No se resuelve acá, y a propósito.** Resolverlo sería decidir **qué comprueba** el guard —por
+ejemplo, acotar el corpus a las máquinas ya construidas—, y eso es cambiar su enunciado, no su
+dueño. **Queda como pregunta para el owner**, con las dos salidas que se ven: que el guard evalúe
+sobre las máquinas existentes en cada momento, o que su rojo sea informativo hasta que las nueve
+estén. La asignación a V4 no depende de cuál se elija: en las dos, la primera tabla sigue siendo el
+lugar más temprano donde puede nacer.
 
 ---
 
