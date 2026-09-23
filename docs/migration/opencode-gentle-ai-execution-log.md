@@ -3623,3 +3623,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `engram-autosave-SessionEnd`, en sesiones principalmente bajo `/tmp`.
 - Hay 1.078 observaciones sin proyecto y sin directorio de sesión útil; no se
   atribuyeron a Hospeda por inferencia.
+
+## Gate 217 · Dry-run de consolidación `Hospeda` → `hospeda`
+
+- `engram projects consolidate --all --dry-run` encontró un único grupo de
+  nombres similares: `Hospeda` (2 observaciones) y `hospeda` (3.045).
+- Engram recomienda `hospeda` como canonical y no detectó otro grupo similar.
+- No se aplicó la consolidación: queda como mutación separada para revisar el
+  ownership de las dos memorias de `Hospeda` y aprobar el cambio explícitamente.
