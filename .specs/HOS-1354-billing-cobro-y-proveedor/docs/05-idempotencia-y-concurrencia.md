@@ -88,6 +88,11 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
 | el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
+> **Este motivo le gana al del §3 sobre el mismo hecho, y está escrito allá.** Un cobro que entra
+> sobre una fila `CANCELLED` falla también la condición 1 del pago tardío, que mandaría a
+> `PAGO_TARDÍO_RECHAZADO`; la regla de desempate —y por qué gana éste— vive en el §3, que es el §
+> que cuantifica sobre *«si falla cualquiera»*.
+
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
 eso vale para `S11` y no para las otras tres.** Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`)
 y desde `GRACE_PERIOD` (`S24`)
@@ -204,11 +209,38 @@ implementación traza la línea en otro lado.
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
 según en cuál de los dos estados de la condición 1 esté la fila, y se restituye la publicación.
 **Si falla cualquiera**, se pone la marca `requiere_conciliación` con motivo `PAGO_TARDÍO_RECHAZADO`
-(cap. 03 §3.2, `S14`; `B/02` §2.5) y el evento
+(cap. 03 §3.2, `S14`; `B/02` §2.5) —**salvo el caso que el §2 ya nombra con otro motivo, y la regla
+de desempate está abajo**— y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero. **Cuál de las cuatro condiciones falló va en el evento y no en el motivo**: el motivo es lo
-que separa este caso de los otros diez en el listado, y el diagnóstico fino ya tiene su lugar
+que separa este caso de los otros doce en el listado, y el diagnóstico fino ya tiene su lugar
 declarado en `NUCLEO/08` §4.3.
+
+**Y un mismo pago tardío cae bajo ESTE § y bajo el §2, así que hace falta decir cuál motivo gana.**
+No es una hipótesis: los tres bullets de `C2` describen un cobro que entra sobre una fila que `S22`,
+`S23` o `S24` llevaron a `CANCELLED`, razonan *«la condición 1 del §3 rechaza `CANCELLED`»* y
+concluyen **`COBRO_POSTERIOR_A_LA_BAJA`**; este § dice *«si falla cualquiera»* →
+**`PAGO_TARDÍO_RECHAZADO`**. Son **dos motivos distintos para el mismo hecho, escritos en el mismo
+capítulo**, y hasta acá nada elegía entre ellos: `G-R1-F` sólo exige que el motivo esté en la tabla
+(`B/20` §2), y los dos están.
+
+**La regla: gana el motivo que nombra POR QUÉ la fila no puede recibir el pago, no el que nombra
+que el pago llegó tarde.**
+
+| qué pasó | motivo |
+|---|---|
+| la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** — `S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1 | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
+| la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
+| **cualquier otra forma de fallar**: la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras | **`PAGO_TARDÍO_RECHAZADO`** |
+
+**El criterio no es de precedencia formal sino de qué necesita la persona que abre el caso**, y por
+eso ordena así: los dos primeros le dicen **qué acto nuestro dejó cobrando un preapproval que
+debería estar cancelado**, que es lo único que le permite cortar la sangría además de devolver
+—`C2` y `C3` la mandan a mirar la llamada de cancelación—; `PAGO_TARDÍO_RECHAZADO` le dice que
+**la plata entró y la fila no la pudo tomar**, que es otro trabajo. **Los tres devuelven plata**
+(`B/02` §2.5), así que el desempate **no decide si el cliente cobra de vuelta**: decide qué le
+ponen delante a quien lo resuelve. Es exactamente la diferencia que antes quedaba librada a cuál de
+los dos §§ leyera quien implementara.
 
 > **La condición 1 tiene desde `MP4` un segundo consumidor, y conviene decirlo porque nadie lo
 > vería.** Además de decidir si un pago tardío reactiva, **es el tope de la reapertura de un pago
