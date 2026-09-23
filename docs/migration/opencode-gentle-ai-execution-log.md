@@ -3641,3 +3641,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `docs/migration/qz-generic-adapter-audit-2026-09-23.md`.
 - No se renombraron comandos ni se generaron symlinks: primero hace falta
   extraer la configuración y validar el núcleo contra un proyecto fixture.
+
+## Gate 219 · Corrección de alcance del audit de dependencias
+
+- El audit de Astro, Hono, Tiptap, Vitest y demás paquetes del monorepo se
+  reclasifica como mantenimiento separado de Hospeda.
+- No forma parte de la migración Claude Code → OpenCode + Gentle-AI y no debe
+  bloquearla ni disparar actualizaciones automáticas.
+- El gate de supply chain de la migración queda reservado para plugins, MCPs y
+  herramientas que se agreguen al stack de agentes.
