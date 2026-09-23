@@ -3685,3 +3685,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   reconstruyó, promovió ni modificó ninguna base.
 - El E2E de worktree/template queda pendiente de una sesión con Docker/Postgres
   accesible y una promoción explícita de candidata.
+
+## Gate 223 · Revalidación de versiones upstream
+
+- OpenCode local `1.18.32` coincide con el release estable `v1.18.32` de
+  upstream.
+- Engram local `2.0.0` coincide con el release estable `v2.0.0` publicado.
+- Gentle-AI local reporta `3.7.0`, pero el listado oficial consultado muestra
+  `v3.6.0` como último release público. El origen de `3.7.0` no quedó
+  verificado; no se reemplazó ni se ejecutó `upgrade`/`sync`.
+- La discrepancia debe resolverse antes de diseñar el instalador automático:
+  conservar el binario local si proviene de un canal controlado o reinstalar
+  desde un release oficial verificable.
