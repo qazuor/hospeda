@@ -498,7 +498,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate121: frontera qz/hops y distribuci\u00f3n por capas documentada. Gate218: `start-issue` ahora lee `issues.teamKey` desde `.qz/project.json` para normalizar IDs sin asumir HOS; conserva HOS como fallback legacy y no expone secretos. Se agreg\u00f3 `project-config.ts` como lector seguro del adapter y una prueba QZ-96. La extracci\u00f3n completa de worktrees/envs/DB/Linear queda diferida hasta validar con un segundo proyecto; no se duplicar\u00e1 l\u00f3gica ni se copiar\u00e1n secretos.",
+                            "notes": "Gate121: frontera qz/hops y distribuci\u00f3n por capas documentada. Gate218: `start-issue` ahora lee `issues.teamKey` desde `.qz/project.json` para normalizar IDs sin asumir HOS; conserva HOS como fallback legacy y no expone secretos. Gate219: `close-issue --plan` tambi\u00e9n lee `branches.protected` para decidir si una branch tiene PR propio, con fallback `main/staging`; el JSON expone la decisi\u00f3n y la lista usada. Se agreg\u00f3 `project-config.ts` como lector seguro del adapter. La extracci\u00f3n completa de worktrees/envs/DB/Linear queda diferida hasta validar con un segundo proyecto; no se duplicar\u00e1 l\u00f3gica ni se copiar\u00e1n secretos.",
                             "done": false
                         }
                     ]

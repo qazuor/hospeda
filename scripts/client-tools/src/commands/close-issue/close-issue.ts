@@ -4,6 +4,7 @@ import type { RunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
 import { findPr } from '../../lib/github.ts';
 import { fetchIssue } from '../../lib/linear.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { collectEnvDrift } from '../env/drift.ts';
 
 function issueFromBranch(branch: string): string | null {
@@ -43,6 +44,8 @@ export async function runCloseIssue({
         return 1;
     }
     const cwd = context.worktree.path;
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const protectedBranches = adapter?.branches?.protected ?? ['main', 'staging'];
     const branch = await git(cwd, ['branch', '--show-current']);
     const issueFlag = argv.indexOf('--issue');
     const explicitIssue = issueFlag >= 0 ? argv[issueFlag + 1] : undefined;
@@ -78,11 +81,11 @@ export async function runCloseIssue({
         mismatched: envReport.mismatched.length,
         absentCrossChecks: envReport.absentCrossChecks.length
     };
-    // main/staging do not have an issue PR of their own. Avoid asking GitHub
+    // Protected base branches do not have an issue PR of their own. Avoid asking GitHub
     // about them: an empty PR result would look like a missing closeout signal
     // instead of the structural fact that this is a protected base branch.
-    const pr =
-        branch && !['main', 'staging'].includes(branch) ? await findPr({ branch, cwd }) : 'none';
+    const isProtectedBranch = branch !== '' && protectedBranches.includes(branch);
+    const pr = branch && !isProtectedBranch ? await findPr({ branch, cwd }) : 'none';
 
     const actions: string[] = [];
     if (dirty.length > 0) actions.push('resolver cambios sin commit antes del cierre');
@@ -98,7 +101,7 @@ export async function runCloseIssue({
     if (state.ok && state.issue.labels.some((label) => label.startsWith('status-needs-smoke-')))
         actions.push('ejecutar y evidenciar los smoke gates pendientes');
     if (!envDrift.clean) actions.push('resolver drift de variables de entorno antes del cierre');
-    if (pr === 'none' && branch && !['main', 'staging'].includes(branch))
+    if (pr === 'none' && branch && !isProtectedBranch)
         actions.push('abrir o vincular el PR antes del cierre');
     else if (typeof pr === 'object' && 'error' in pr)
         actions.push('reintentar la consulta de PR/CI con GitHub disponible');
@@ -113,6 +116,8 @@ export async function runCloseIssue({
         process.stdout.write(
             `${JSON.stringify({
                 branch: branch || null,
+                protectedBranch: isProtectedBranch,
+                protectedBranches,
                 issue: issueId,
                 git: { dirty: dirty.length > 0, ahead: ahead || null },
                 specs,
