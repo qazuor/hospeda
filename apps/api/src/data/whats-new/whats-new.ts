@@ -206,7 +206,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-mobile-menu-single-controls',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T15:25:19Z',
         highlight: false,
         title: {
             es: 'El menú del celular ya no repite los mismos botones',
@@ -222,7 +222,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-dialog-back-button',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T14:25:19Z',
         highlight: false,
         title: {
             es: 'El botón «atrás» del celular cierra el diálogo, no la página',
@@ -238,7 +238,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-public-user-listings-are-actor-blind',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T13:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -255,7 +255,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-single-brand-phone-number',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T12:25:19Z',
         highlight: false,
         title: {
             es: 'Un solo teléfono de contacto en todo el sitio',
@@ -271,7 +271,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-host-trade-benefit-usage-and-reviews',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T11:25:19Z',
         highlight: true,
         roles: ['HOST'],
         title: {
@@ -288,7 +288,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-uploaded-photos-optimised-cards',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T10:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -305,7 +305,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-provider-signup-benefit-value',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T09:25:19Z',
         highlight: false,
         title: {
             es: 'El alta de proveedor sólo pide el valor cuando hace falta',
@@ -321,7 +321,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-ai-chat-answers-from-listing-faqs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T08:25:19Z',
         highlight: true,
         roles: ['USER'],
         title: {
@@ -338,7 +338,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-slug-stays-put-after-publishing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T07:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -355,7 +355,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-bulk-photo-upload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T06:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -372,7 +372,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-listing-editor-form-polish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T05:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -389,7 +389,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-import-listing-keeps-formatting',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T04:25:19Z',
         highlight: true,
         roles: ['HOST'],
         title: {
@@ -406,7 +406,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-menu-as-photo-or-pdf',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T03:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -423,7 +423,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-no-native-browser-dialogs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T02:25:19Z',
         highlight: false,
         title: {
             es: 'Se terminaron los avisos grises del navegador',
@@ -439,7 +439,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-single-auth-screen-with-tabs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T01:25:19Z',
         highlight: false,
         title: {
             es: 'Entrar y registrarse, en una sola pantalla',
@@ -455,7 +455,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-similar-listings-real-photos',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T00:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -472,7 +472,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-search-ignores-accents',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T23:25:19Z',
         highlight: true,
         roles: ['USER'],
         title: {
@@ -489,7 +489,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-collections-update-without-reload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T22:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -506,7 +506,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-editor-back-button-consistency',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T21:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -523,7 +523,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-menu-headers-readable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T20:25:19Z',
         highlight: false,
         title: {
             es: 'Los títulos de los menús se distinguen de sus opciones',
@@ -539,7 +539,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-alt-text-reminder-on-photos',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T19:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -556,7 +556,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-photo-thumbnails-less-covered',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T18:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -573,7 +573,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-photo-quota-warning-before-upload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T17:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -590,7 +590,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-shared-report-view-is-clean',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T16:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -607,7 +607,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-featured-addon-offer-on-editor',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T15:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -624,7 +624,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-menu-in-three-languages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T14:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -641,7 +641,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-photo-per-dish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T13:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -658,7 +658,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-dietary-options-filter',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T12:25:19Z',
         highlight: true,
         roles: ['USER', 'GASTRONOMY_OWNER'],
         title: {
@@ -675,7 +675,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-multi-vertical-subscription-card',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T11:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -692,7 +692,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-features-on-commerce-pages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T10:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -709,7 +709,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-cuisine-type-catalog',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T09:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -726,7 +726,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-commerce-editor-by-sections',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T08:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -743,7 +743,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-addon-raises-listing-quota',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T07:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -760,7 +760,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-favourites-return-to-the-listing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T06:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -777,7 +777,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-ai-writing-helpers',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T05:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
@@ -794,7 +794,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-08-whats-new-has-content',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T04:25:19Z',
         highlight: false,
         title: {
             es: 'Esta sección ahora te cuenta lo que cambió',
