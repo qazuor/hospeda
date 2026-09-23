@@ -703,7 +703,7 @@ por escrito que su caso **no es una divergencia**.
 | 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
 | 12 | `COBRO_DURANTE_CORTESÍA` | `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`) | confirmar el reembolso de un cobro sobre días que `SUPER_ADMIN` había regalado | **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió |
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
-| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae** |
+| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y es el único motivo del catálogo cuya PROPUESTA depende del disparador y no del motivo** (`DEC-RF-004`): de los **cuatro** disparadores de `S21`, el de la **revocación del grant** propone devolver y los otros tres no (`B/03` §3.2, *«la propuesta del 14 depende del disparador»*) |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
@@ -711,6 +711,13 @@ transición o comprobación del corpus pone la marca sin nombrar un motivo de es
 últimos llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
 el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este §
 —catorce motivos, cinco que devuelven plata— se volvieron a contar sobre la tabla.
+
+**Y las dos cifras siguen siendo las mismas después de `DEC-RF-004`, contadas otra vez sobre la
+tabla de arriba.** El 14 pasó a tener **default por rama** y eso **no** mueve ninguna de las dos:
+la enumeración sigue teniendo **catorce** filas, y los **cinco** que devuelven plata son los que
+llevan **SÍ** en la última columna —el 1, el 2, el 3, el 7 y el 12—, mientras el 14 sigue con
+**puede**, que es la casilla que ya tenía antes de la partición. Lo que `DEC-RF-004` cambia vive en
+la tabla de defaults del `B/19` §6, no acá.
 
 **El 14 llegó por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una

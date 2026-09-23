@@ -686,7 +686,14 @@ ya declaran —con la regla de relectura de `S17`— **es la de esta fila**. `S2
 proveedor**: escribe el estado local que faltaba. Duplicarla serían dos llamadas por el mismo
 recurso; omitir la fila dejaba el estado sin declarar, que es lo que este § cierra.
 
-**El período ya cobrado no se reembolsa.** Igual que `DEC-GRANT-001` lo dice para `S13` y el §3.4
+**El período ya cobrado no se reembolsa — con una excepción declarada, y es la de `DEC-RF-004`.**
+La regla vale donde el complemento se pierde **por un acto del propio cliente**; **no** vale cuando
+la instancia llega a `CANCELLED` por la **tercera** cláusula de `A5` —**se revoca el grant que era
+su título**—, porque ahí el cliente no hizo nada y pierde días que pagó. Los **cuatro**
+disparadores de `S21` están enumerados uno por uno, con el lado de cada uno, en `B/03` §3.2,
+*«la propuesta del 14 depende del disparador»*. Lo que sigue es la regla para los otros tres.
+
+Igual que `DEC-GRANT-001` lo dice para `S13` y el §3.4
 para `S20`, y por las tres reglas que `DEC-RF-002` enumera: *«reembolsar»* mueve dinero y lleva
 permiso y confirmación explícita (`NUCLEO/08` §3), la línea del owner es *«toca plata o no toca
 plata»* (`B/09` §2.4), y `S14` prohíbe toda decisión destructiva automática. Si en un caso concreto
@@ -695,12 +702,15 @@ corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo
 **Y esa vía tiene desde ahora quién la dispare, que es lo que le faltaba para existir.** Cuando el
 último cobro del complemento paga **un período que todavía no terminó**, `S21` abre la marca
 `requiere_conciliación` con motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO`** (`B/02` §2.5, motivo 14)
-con ese pago colgado, y el listado accionable la muestra con el default **NO devolver** —la regla
-del párrafo de arriba, escrita— más el pago y el monto (`B/19` §6). Hasta acá esa frase nombraba
+con ese pago colgado, y el listado accionable la muestra con **el default que le corresponde a su
+disparador** —**NO devolver** en tres de los cuatro, que es la regla del párrafo de arriba escrita,
+y **devolver** en el de la revocación del grant (`DEC-RF-004`)— más el pago y el monto (`B/19` §6). Hasta acá esa frase nombraba
 una vía que **ninguna transición ni comprobación del corpus abría**, y desde que la enumeración de
 motivos es **cerrada** eso dejó de ser una omisión discutible: `G-R1-F` rechaza una marca cuyo
 motivo no esté en esa tabla (`B/20` §2), y ninguno de los trece era éste. **La marca no decide
-nada** —la regla sigue siendo no devolver— **y tampoco agrega una comprobación al barrido**: la
+nada** —lo que trae es una propuesta, que en tres de los cuatro disparadores es no devolver y en el
+cuarto es devolver (`DEC-RF-004`), y la confirma una persona en los cuatro— **y tampoco agrega una
+comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
