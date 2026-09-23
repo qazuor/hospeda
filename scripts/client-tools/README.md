@@ -31,7 +31,7 @@ así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exig
 | `artifact` | Valida, publica, lista y lee el estado de artifacts locales versionados. |
 | `stats` | Estadísticas del repo: código, tests, deuda, Git, PRs, Linear y disco. |
 | `wt-clean` | Inventaría y limpia worktrees seleccionados, con sus recursos asociados. |
-| `start-issue` | Lee Linear, prepara el worktree y abre Claude u OpenCode (`--agent`). |
+| `start-issue` | Lee Linear, prepara el worktree desde `develop` y abre Claude, OpenCode o Codex sólo con `--agent`; `--base staging` queda para urgencias explícitas. |
 | `close-issue` | Preflight de cierre: cambios, commits, spec, PR, CI y smoke gates. |
 | `handoff` | Produce un handoff autocontenido con hechos, hallazgos y próximo paso. |
 | `recap` | Resume el estado estático de la sesión/worktree para el agente. |
@@ -55,6 +55,20 @@ así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exig
 | `update` | Actualiza client-tools desde la copia de staging. |
 
 Cada uno tiene su propio `--help` con el detalle.
+
+## Branches de integración
+
+Los issues nuevos parten de `develop` y sus PR normales apuntan allí. La
+promoción prevista es `develop → staging → main`; `staging` se usa para la
+integración solicitada y para escapes urgentes documentados. Para un trabajo
+urgente que deba cortar directamente desde staging:
+
+```bash
+hops start-issue HOS-NNN --base staging
+```
+
+La base se resuelve desde `.qz/project.json`; los comandos no inventan una
+rama ni cambian el destino remoto por su cuenta.
 
 ## `hops ci --wait` — esperar el CI en una sola llamada
 
