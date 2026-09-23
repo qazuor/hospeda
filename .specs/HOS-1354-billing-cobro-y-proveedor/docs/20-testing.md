@@ -59,7 +59,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §6) la muestra **sin motivo, sin `puesta_en`, sin el pago o sin el default de `DEC-RF-003`** cuando el motivo es uno de los cuatro que devuelven plata; **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`— | cap. 02 §2.2 y §2.5, cap. 03 §3.2 (`S14`, `S15`, `S18`), cap. 09 §3, cap. 19 §6, `NUCLEO/01` §2.5, `DEC-RF-002`, `DEC-RF-003` |
-| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
+| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** — donde *«el corpus»* son **las tablas que los capítulos declaran**, nunca el subconjunto ya construido, o el guard nace en rojo sobre el camino normal entre `B5` y `B8` | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
 | **G-R6-B** | **las dos mitades de la lista cerrada de `listing.inactiva_desde`, con tres predicados**: una **escritura** que no sea uno de los **cuatro hechos** del `NUCLEO/01` §1.2; una **lectura** que no figure entre los **cinco consumidores** del `V/02` §2.5; o **uno de esos cinco que ya no lee** la columna. **El mensaje nombra el predicado que falló** | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; `V/02` §2.5. **Referencia cruzada**: lo define `V/20` §2, donde vive la columna. Figura acá porque **lo que puede romper la lista se escribe en esta épica**: el §4.3 del cap. 10 es donde está escrito que el reloj *«arranca acá, no antes»* —el cuarto hecho— **y, desde esta pasada, quién lo escribe: el barrido del día del fin de servicio, que es la única escritura de `listing.inactiva_desde` que sale de esta épica**; y el §7.1 del cap. 03 apoya el tope de la reapertura en que la lista **sea** cerrada |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo. **Lo construye `B8`** (`B/descomposicion.md` §2.8), que es la unidad del cap. 03 §5 — **no `V9`**, que corre antes de que el tope exista (`F-8eC2-004`) |
@@ -188,6 +188,35 @@ la diferencia con el guard que `DEC-TEST-001` **rechazó**, abajo.
 en vez de tres y el guard **sigue verde**, así que para ponerlo en rojo hay que sacarle **los
 tres** — que es exactamente el estado en que `MP5` nació, y la prueba de que el predicado es
 *«al menos una»* y no *«alguna que alguien recuerde»*.
+
+**Y el corpus que recorre son las TABLAS DECLARADAS, no el subconjunto ya construido — sin esto el
+guard nace en rojo sobre el camino normal.** *«Al menos una transición **del corpus**»* se puede
+leer de dos maneras, y una de ellas lo vuelve inservible: el corpus son **nueve máquinas repartidas
+en dos épicas que se construyen a lo largo de todo el programa**, así que una condición puede leer
+una columna cuyo escritor llega en una unidad posterior. El caso está medido en este mismo catálogo:
+**la fecha del próximo cobro tiene tres escrituras (cap. 03 §7.2) y una de ellas es `S10`, que
+construye `B8`, mientras la condición que la lee es de `B5`** — con el dominio leído como *«lo ya
+construido»*, el guard da **rojo durante `B5` → `B7` → `B8`**, tres unidades consecutivas del camino
+crítico (`descomposicion.md` §3), **sobre código correcto**.
+
+**Queda leído sobre las tablas que los capítulos declaran**, que existen completas desde antes de la
+FASE 10, y por tres razones:
+
+1. **Es el defecto que lo motivó, sin pérdida.** `F-8eB1-002` no fue una escritura que llegaba
+   tarde: fue que **ningún lugar del diseño** avanzaba la columna que `MP5` leía. Ese defecto es
+   visible sobre las tablas declaradas y el guard lo sigue atrapando entero.
+2. **La otra lectura es la que alguien relaja.** Un guard que falla sobre el camino normal
+   **exactamente durante la ventana en que nadie lo puede distinguir de un rojo real** es el mismo
+   error que `G-R1-A` tenía leído como propiedad permanente, y está resuelto arriba de la misma
+   manera: eligiendo el dominio sobre el que el predicado es verdadero cuando el sistema está bien.
+3. **Y no le baja la fuerza**: sigue siendo una propiedad **del diseño** y no del avance, que es lo
+   que la alternativa —acotarlo a las máquinas existentes en cada momento— le habría quitado.
+
+**Lo que con esto NO verifica, dicho para que nadie lo lea de más**: que el escritor declarado esté
+**implementado**. Una condición cuya escritura vive en una tabla que todavía es sólo un capítulo
+**pasa en verde**, y eso es deliberado — la clase *«lo declarado no está construido»* es otra, no la
+vigila este guard y **no la vigila ninguno**. Es el §2.1 sobre este mismo guard: el texto con que
+falla no puede afirmar más de lo que el predicado verifica.
 
 **Y su dominio son las NUEVE máquinas de las dos épicas, no las seis tablas de ésta.** Nació
 acotado a billing porque el crítico que lo motivó era de billing y nadie planteó la extensión; la

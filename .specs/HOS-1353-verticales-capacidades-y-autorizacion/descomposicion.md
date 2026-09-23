@@ -138,8 +138,9 @@ La columna de arriba dejaba **ocho** guards de `V/20` §2 sin ninguna unidad que
 enmienda de `DEC-TEST-001`** decide repartirlos ahora, con tres condiciones que gobiernan lo que
 sigue: **la razón va medida y con cita**, **la unidad nace ANTES o CON lo que el guard vigila** —el
 criterio del §2.5, que es el que `G-R5` violó— y **lo que no tiene unidad clara se declara sin
-dueño**. Los ocho tienen unidad medida; lo que queda abierto está en el §2.8 y son preguntas, no
-asignaciones faltantes.
+dueño**. Los ocho tienen unidad medida; lo que el §2.8 trataba aparte **no era una asignación
+faltante y tampoco era una pregunta**: era un defecto del enunciado de `G-R6`, y quedó resuelto en
+`B/20` §2.
 
 | guard | unidad | qué construye esa unidad que hace que el guard pueda existir ahí |
 |---|---|---|
@@ -202,7 +203,9 @@ sobre un corpus a medio construir puede dar **rojos falsos**. Con las máquinas 
 puede: el §4 del contrato le prohíbe a una máquina de verticales leer del otro lado —que es
 justamente lo que `G-R4-B` hace cumplir—, así que **ninguna condición de V4, V6 o V7 lee una
 columna que sólo escriba billing**. Eso vuelve a la primera tabla un lugar seguro para nacer, y no
-sólo el más temprano. Lo que el predicado global sí deja abierto está en el §2.8, como pregunta.
+sólo el más temprano. Lo que el predicado global abría del lado de billing está en el §2.8, y
+**quedó cerrado**: el corpus que el guard recorre son las tablas declaradas, no las construidas
+(`B/20` §2).
 
 **`G-R3-B` va con V5 porque antes de V5 no hay nada que leer.** La **clase** que vigila —*«las
 transiciones disparadas por el reloj»*, y que *«nunca otorga»*— la declara `17` §3.4, y `17 entero`
@@ -246,7 +249,7 @@ construye, está en `B/descomposicion.md` §2.8. Es la misma forma de `G13` (§2
 dos preguntas distintas.** `V9` conserva lo suyo — el día 180 es de su capítulo y el guard lo cita;
 si alguien mueve ese número, **el cambio es de `V9` y el rojo lo da el guard de `B8`**.
 
-### 2.8 Lo que el reparto deja abierto, y es una pregunta y no un hueco
+### 2.8 El predicado global de `G-R6`, y por qué el reparto no lo tocaba
 
 **`G-R6` tiene un predicado global y el corpus se construye por partes.** El guard exige que *«al
 menos una transición **del corpus** escriba»* cada columna que una condición lee, y el corpus son
@@ -258,12 +261,20 @@ de B8, mientras la condición que la lee es de B5. Entre B5 y B8 el guard daría
 camino normal**, que es lo que la fila de `G-R1-A` describe como *«un guard que alguien va a
 relajar»*.
 
-**No se resuelve acá, y a propósito.** Resolverlo sería decidir **qué comprueba** el guard —por
-ejemplo, acotar el corpus a las máquinas ya construidas—, y eso es cambiar su enunciado, no su
-dueño. **Queda como pregunta para el owner**, con las dos salidas que se ven: que el guard evalúe
-sobre las máquinas existentes en cada momento, o que su rojo sea informativo hasta que las nueve
-estén. La asignación a V4 no depende de cuál se elija: en las dos, la primera tabla sigue siendo el
-lugar más temprano donde puede nacer.
+**Esto quedó escrito como pregunta para el owner y no lo era: era un defecto del ENUNCIADO**, y la
+diferencia importa porque una pregunta espera y un enunciado ambiguo se resuelve solo, en el peor
+sentido — el primero que se choque con ese rojo lo relaja, y lo que se pierde es la vigilancia de la
+clase que costó `F-8eB1-002`, **un crítico de dinero**. **Resuelto en `B/20` §2, donde el guard se
+define**: *«el corpus»* son **las tablas que los capítulos declaran**, no el subconjunto ya
+construido. `S10` tiene fila en `B/03` §7.2 desde antes de que nadie escriba una línea de `B8`, así
+que entre `B5` y `B8` el guard está **verde**, y el defecto que lo motivó —una columna que **ningún
+lugar del diseño** escribe— lo sigue atrapando entero. Lo que a cambio **no** verifica, y está dicho
+allá, es que el escritor declarado esté implementado.
+
+**Y ninguna de las dos salidas que este § proponía se toma.** *«Que el guard evalúe sobre las
+máquinas existentes en cada momento»* es exactamente la lectura que produce el rojo, y *«que su rojo
+sea informativo hasta que las nueve estén»* compra meses en los que nadie lo mira. **La asignación a
+V4 no se mueve**: era independiente de la salida elegida, y lo sigue siendo.
 
 ---
 
