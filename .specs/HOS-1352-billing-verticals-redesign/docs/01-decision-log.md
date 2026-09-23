@@ -4316,17 +4316,28 @@ Cada entrada lleva, según §3.4:
 - **Ampliado el 2026-09-23, ya medidos los cuatro**: `A5` 1ª cláusula *(se da de baja)*, `A5` 2ª
   *(queda huérfana)*, `A5` 3ª *(se revoca el grant que era su título)* y `A6` *(se borra la ficha
   destino)*. **La 3ª va a `DEVOLVER`; las otras tres a `NO DEVOLVER`.**
-  **Y la 2ª NO es homogénea, lo que el owner decidió aceptar con una condición.** De las seis
-  transiciones que dejan huérfano un addon (`B/16` §4.3), **dos no son del cliente**: `S17` es
-  nuestra, y `S12` puede venir de un `CANCEL_SCHEDULED` que puso `S26` al discontinuar la vertical.
-  Por el criterio de esta misma decisión esas dos irían a `DEVOLVER`, y **quedan en `NO DEVOLVER`
-  por MECANISMO**: `S21` conoce la cláusula de `A5` que la disparó, **no cuál de las seis mató al
+  **Y la 2ª NO es homogénea, lo que el owner decidió aceptar con una condición.** De las
+  ~~seis~~ **DOCE** transiciones que dejan huérfano un addon (`B/16` §4.3), ~~dos~~ **CINCO no son
+  un acto del cliente**: `S17` (nuestra), `S12` cuando viene de un `CANCEL_SCHEDULED` que puso
+  `S26`, y `S25`, `S27` y `S28` (las tres, la discontinuación de una vertical).
+  Por el criterio de esta misma decisión esas cinco irían a `DEVOLVER`, y **quedan en `NO DEVOLVER`
+  por MECANISMO**: `S21` conoce la cláusula de `A5` que la disparó, **no cuál de las doce mató al
   título tres saltos antes**, y hacerle llegar esa causa es mecanismo nuevo.
-  **La condición, y es obligatoria**: la fila del motivo 14 **dice en voz alta que esos dos caminos
+  **La condición, y es obligatoria**: la fila del motivo 14 **dice en voz alta que esos caminos
   existen**, para que quien resuelve pueda apartarse del default sabiendo cuándo. Un default es una
   propuesta y no una sentencia; lo que no puede ser es una propuesta que contradice el criterio **en
   silencio**. Elección del owner del 2026-09-23 entre tres opciones — eligió la 1, con esta
   condición agregada.
+  > **Cifras corregidas el 2026-09-23, y la cadena vale escribirla.** Esta viñeta decía *«de las
+  > SEIS… DOS no son del cliente»*. Las dos cifras eran falsas: **son doce y cinco**, verificadas
+  > contra la enumeración de `B/16` §4.3 —`S3`, `S12`, `S13`, `S16`, `S17`, el espejo de la baja del
+  > proveedor, `S22`, `S23`, `S24`, `S25`, `S27`, `S28`, con `S26` excluida a propósito porque manda
+  > la fila a `CANCEL_SCHEDULED`, que sigue viva—. **El «seis» nació de leer el primer tramo de una
+  > enumeración de doce**, pasó a `B/03` §3.2, de ahí a esta entrada y de ahí al encargo de la tanda
+  > que la implementó; lo frenó la instrucción de verificarlo contra `B/16` §4.3. **El criterio de
+  > la decisión no cambia y la condición obligatoria se implementó sobre los cinco.** Lo que sí
+  > cambia es el peso de lo aceptado, y por eso se volvió a consultar al owner: **`S27` y `S28` no
+  > tienen ninguna compensación**, porque `DEC-SUB-018` les niega el piso de 60 días.
 - **Por qué, y la razón ya estaba escrita en el programa**: *si la pérdida la causa un acto
   deliberado NUESTRO y la persona no puso plata nueva → se declara y no se repara; **si la persona
   PUSO PLATA → se le da salida***. En la tercera cláusula **las dos mitades apuntan al mismo lado**:
