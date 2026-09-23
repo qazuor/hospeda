@@ -28,9 +28,9 @@ restore_path=''
 
 # Operational compatibility pins. Change only after an isolated validation.
 RUNTIME_CHANNEL="v1-gentle-compatible"
-OPENCODE_PIN="1.18.31"
-GENTLE_AI_PIN="2.9.0"
-ENGRAM_PIN="1.20.0"
+OPENCODE_PIN="1.18.32"
+GENTLE_AI_PIN="3.7.0"
+ENGRAM_PIN="2.0.0"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --plan|--dry-run) mode=plan ;;

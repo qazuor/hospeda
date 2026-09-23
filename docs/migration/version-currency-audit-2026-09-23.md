@@ -228,3 +228,11 @@ El MCP directo de Engram v2 responde. Las consultas `opencode mcp list` y
 `opencode providers list` continúan bloqueadas en este runner porque OpenCode no
 puede abrir su log en modo escritura; debe repetirse en una terminal normal con
 filesystem writable.
+
+## Pines versionados alineados
+
+El bootstrap reproducible quedó alineado con el runtime activo: OpenCode
+`1.18.32`, Gentle-AI `3.7.0` y Engram `2.0.0`. También se actualizaron
+`@opencode-ai/plugin` y `@opencode-ai/sdk` a `1.18.32`, con integridades npm
+verificadas. `ai-dev-workstation-bootstrap.sh --verify` pasa los tres pines sin
+leer valores secretos ni escribir archivos.
