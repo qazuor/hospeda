@@ -4330,10 +4330,17 @@ Cada entrada lleva, según §3.4:
     de arriba.
     **Por qué justo esas tres, y el argumento es que la razón para no partir era FALSA ahí**: lo que
     sostenía el `NO DEVOLVER` era *«`S21` no puede saber cuál de las doce mató al título tres saltos
-    antes»*. **Para la discontinuación eso no se cumple** — es un **acto masivo nuestro que recorre
-    las filas una por una** (`B/10` §4.3), así que **puede dejar la marca al pasar, sin trazar nada
-    hacia atrás**. No hace falta el mecanismo que se descartó: hace falta que el acto que ya las
-    toca las marque.
+    antes»*. **Para la discontinuación eso no se cumple.** No hace falta el mecanismo que se
+    descartó: la causa está disponible en el acto mismo.
+    > **Precisión del 2026-09-23, y corrige esta enmienda**: la razón se escribió como *«es un acto
+    > masivo nuestro que recorre las filas una por una»* **sobre las tres, y eso es verdadero sólo
+    > para `S27` y `S28`**. `B/10` §4.3 dice textual que la `PAUSED` ***«no entra al acto»*** y
+    > *«termina en `S25` cuando la pausa termina»* — `DEC-SUB-015` la saca del día 0 a propósito.
+    > **`S25` llega al mismo lado por otra vía**: su propia guarda **es** la discontinuación (*«el
+    > plan ya no se presta»*, que es lo que la separa de `S10`), así que también conoce la causa sin
+    > trazar nada hacia atrás. **Son dos vías distintas y el capítulo las escribe separadas**; la
+    > frase original, aplicada a las tres, habría metido una premisa falsa en el corpus. Lo detectó
+    > la tanda que la implementó y lo verifiqué contra `B/10` §4.3.
     **Y es donde el costo humano es mayor**: `S27` y `S28` **no reciben el piso de 60 días**, porque
     `DEC-SUB-018` se lo niega a la suspendida y a la que esperaba autorización. Son los dos únicos
     caminos en que la persona pierde el complemento que pagó, **no recibe ninguna compensación**, y
