@@ -83,3 +83,17 @@ de Bash sigue siendo demasiado amplio para cerrar la migración. El próximo
 cambio seguro es probar una copia de configuración con default `ask` y una
 allowlist mínima de diagnósticos, conservando rollback. No se modificó aún la
 configuración activa ni se ejecutaron operaciones mutantes para probarla.
+
+## Revalidación efectiva — 2026-09-23
+
+OpenCode `1.18.32` mantiene exactamente la política descrita: `bash: "*":
+"allow"`, excepciones `ask` para Git mutante y transporte remoto, y bloqueos de
+lectura para `.env*`, `.ssh`, credenciales, secretos y claves. Context7 y Engram
+MCP aparecen conectados; la lectura no mostró valores de autenticación.
+
+La configuración sigue siendo funcional para el workflow actual, pero no puede
+considerarse una política de mínimo privilegio. El siguiente cambio debe hacerse
+en una copia de `opencode.json`, probar primero `git status`, `rg`, `hops
+verify --changed --json` y lectura de documentación, y verificar explícitamente
+que `pnpm`, `bun`, Docker, `gh`, worktrees y Git mutante pidan autorización. No
+se aplica ese cambio en este gate.
