@@ -347,6 +347,28 @@ el paso 5.
 No es una lista de tests: es **qué pregunta tiene que poder contestar alguien de afuera** cuando
 la unidad se declara terminada.
 
+> **Y hay una condición que vale para las nueve y no está en la tabla, porque no depende de qué
+> construye cada una**: **una unidad no está terminada mientras algún guard de su columna `guards`
+> del §2 no esté escrito y no tenga su caso que lo hace fallar a propósito.** La regla 1 del §1.1
+> dice **cuándo** va cada guard —*«con la pieza que protege, nunca al final»*— y hasta esta pasada
+> **no había ningún lugar donde se comprobara que había ido**: la asignación vivía sólo en una
+> columna que nadie consulta al declarar una unidad lista, así que las nueve se podían declarar
+> terminadas, una por una, con **cero** guards escritos, y el tablero del §5 las marcaba verdes.
+> **Los 29 guards del programa están repartidos entre las 22 unidades —16 en esta épica y 13 en la
+> otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22 criterios.**
+>
+> **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
+> mismo conjunto, que es la clase de defecto que el contrato §2.1 acaba de cerrar. **La columna es
+> la lista; esto es lo que la vuelve una condición.**
+>
+> **Lo que esta condición NO exige, dicho para no afirmar de más**: que el guard esté
+> *implementado* del lado del código que todavía no existe. Un guard cuyo caso de rojo se ejerce
+> sobre **texto declarado** —`G-R4`, `G-R6` y `G-R6-B` recorren tablas de transiciones y listas
+> cerradas de los capítulos, no el subconjunto ya construido (`B/20` §2)— se puede romper a
+> propósito el día que nace, incluso cuando la fila que se le saca es de una unidad de la otra
+> épica. Eso es lo que vuelve exigible esta condición en `V4`, que lleva tres guards cuyo dominio
+> son **las nueve** máquinas.
+
 | # | la unidad está lista cuando… |
 |---|---|
 | **V1** | agregar una clave al código sin agregarla a la base **falla**, y al revés también; y nombrar una vertical sin implementar su ítem del Eje 2 **falla** |
