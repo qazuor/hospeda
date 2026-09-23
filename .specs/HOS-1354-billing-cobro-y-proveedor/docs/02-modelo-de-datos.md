@@ -45,7 +45,7 @@ a la restricción no obliga a nada.
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**) y **la fecha de primer cobro con la que nació la fila**. **No lleva ninguna columna de conciliación**: la marca es una fila aparte —`reconciliation_mark`, abajo— y **`requiere_conciliación` pasa a ser un PREDICADO derivado**, *«esta fila tiene al menos una marca abierta»* (§2.5) | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
-| **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila** |
+| **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila**. **Los dos motivos de `S21` —el 14 y el 15 del §2.5— no conviven, y no es esta clave la que lo impide**: abajo |
 | **`reconciliation_mark_payment`** | la marca y **un** pago que hay que devolver — FK a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) —, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta, las dos anulables | **`UNIQUE(marca, pago)`**: el mismo pago no se cuelga dos veces de la misma marca. Una marca lleva **cero, uno o N**: cero en los motivos que no piden pago, **N cuando el hecho que la abre se repite ciclo a ciclo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
@@ -74,6 +74,29 @@ exactamente eso**. Las tres consecuencias de la cardinalidad están escritas don
 **el escritor acumula** en vez de rebotar (`B/05` §2 `C2` y `C3`, `B/03` §3.2 `S14`), **`S15` no
 puede levantar una marca con pagos sin resolver** (`B/03` §3.2) y **el listado muestra cuántos y
 por cuánto en total** (`B/19` §6).
+
+**Y desde `DEC-RF-006` el mismo escritor abre DOS motivos, así que hay que decir si esta clave los
+deja convivir.** El **14** y el **15** del §2.5 son motivos **distintos**, o sea que el `UNIQUE`
+**no los excluye entre sí**: sobre la misma fila admitiría las dos marcas abiertas a la vez.
+**No puede ocurrir, y está excluido por CONSTRUCCIÓN, no por la base.** El argumento son tres
+hechos que ya estaban escritos y ninguno es nuevo:
+
+1. **el único escritor de los dos es `S21`** (§2.5, columna *«quién abre la marca»*);
+2. **su evento es la llegada de su instancia a `CANCELLED`**, y ahí se llega por **uno solo** de
+   los cuatro disparadores —las tres cláusulas del evento de `A5` más `A6` (`B/03` §3.2)—, que es
+   exactamente lo que elige **cuál** de los dos motivos se escribe; y
+3. **`CANCELLED` es terminal para la instancia**, y `S21` deja terminal también a la suscripción de
+   complemento, así que **no hay una segunda llegada** que pudiera traer después el otro motivo.
+
+**Lo que la clave sigue haciendo sobre estos dos es lo de siempre**: una corrida repetida de `S21`
+vuelve a escribir **el mismo** motivo y el `UNIQUE` la rechaza, que es lo que sostiene que la
+segunda de sus dos escrituras sea idempotente (`B/03` §3.2).
+
+**Y lo que NO hace va dicho, porque es la parte que se puede leer de más.** El `UNIQUE` **no es**
+lo que mantiene separados al 14 y al 15: un camino que abriera los dos sobre la misma fila
+**pasaría la base** y dejaría en el listado **dos propuestas contradictorias sobre el mismo pago**.
+Lo que lo impide es que el disparador sea uno; lo que lo vigila es **`G-R1-F`** (`B/20` §2), que
+desde `DEC-RF-006` falla si un camino abre los dos motivos de `S21` sobre la misma suscripción.
 
 **El compromiso y la sucesión son dos cosas, y se escriben como dos claves.** Una sola clave estaba
 haciendo cumplir dos invariantes distintos —*«un compromiso comercial por vertical»* y *«una
@@ -665,13 +688,13 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: catorce motivos sobre la misma casilla, y cinco de ellos devuelven plata
+### 2.5 La marca de conciliación: quince motivos sobre la misma casilla, y seis de ellos devuelven plata
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras trece marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras catorce marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -683,10 +706,10 @@ misma forma y le faltaba la misma columna.**
 #### El catálogo, contado sobre los escritores que hay hoy
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
-**siete** de los catorce casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
-de la pausa lo trae `S8` o `S9`. Los otros **siete** los abren actos que **no son `S14`** — `S18`,
-las **seis** comprobaciones de cero llamadas del `B/09` §3 y **`S21`** —, y el propio `S19` declara
-por escrito que su caso **no es una divergencia**.
+**siete** de los quince casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros **ocho** los abren actos que **no son `S14`** — `S18`,
+las **seis** comprobaciones de cero llamadas del `B/09` §3 y **`S21`, que desde `DEC-RF-006` abre
+dos** —, y el propio `S19` declara por escrito que su caso **no es una divergencia**.
 
 | # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
 |---|---|---|---|---|
@@ -703,31 +726,33 @@ por escrito que su caso **no es una divergencia**.
 | 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
 | 12 | `COBRO_DURANTE_CORTESÍA` | `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`) | confirmar el reembolso de un cobro sobre días que `SUPER_ADMIN` había regalado | **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió |
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
-| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y es el único motivo del catálogo cuya PROPUESTA depende del disparador y no del motivo** (`DEC-RF-004`): de los **cuatro** disparadores de `S21`, el de la **revocación del grant** propone devolver entero, y el de la **orfandad** se PARTE —propone devolver cuando al título lo mató la discontinuación de su vertical (`S25`, `S27` o `S28`) y no devolver en las otras nueve transiciones de `B/16` §4.3—; los otros dos no proponen devolver (`B/03` §3.2, *«la propuesta del 14 depende del disparador»*) |
+| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** y la instancia **no** llegó a `CANCELLED` por ninguna de las dos causas del **15** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y dos de los caminos que caen acá son NUESTROS, y están acá por MECANISMO y no por criterio** —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`—: la transición que mata al título **no nombra su causa**, así que `S21` no tiene qué escribir (`DEC-RF-004`, la condición obligatoria; `B/03` §3.2, `B/19` §6) |
+| 15 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN` | **`S21`**, sobre la misma población, cuando la instancia llegó a `CANCELLED` **porque se revocó el grant que era su título** —tercera cláusula de `A5`— **o porque a su objetivo lo mató la discontinuación de la vertical** —`S25`, `S27` o `S28`— (`B/03` §3.2, `B/10` §4.3) | confirmar el reembolso de lo que queda del período | **SÍ**: en los dos casos **el cliente no hizo nada** y pierde días que pagó, y en los dos **la causa la conoce el acto mismo** —`S21` conoce la cláusula de `A5` que disparó, y la discontinuación la deja escrita la transición que mata al título—, así que `S21` escribe este motivo **sin trazar nada hacia atrás** (`DEC-RF-006`) |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
-transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla. **Los dos
-últimos llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
-el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este §
-—catorce motivos, cinco que devuelven plata— se volvieron a contar sobre la tabla.
+transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla. **El 12 y
+el 13 llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
+el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este § se
+volvieron a contar sobre la tabla en vez de sumarles dos.
 
-**Y las dos cifras siguen siendo las mismas después de `DEC-RF-004`, contadas otra vez sobre la
-tabla de arriba.** El 14 pasó a tener **default por rama** y eso **no** mueve ninguna de las dos:
-la enumeración sigue teniendo **catorce** filas, y los **cinco** que devuelven plata son los que
-llevan **SÍ** en la última columna —el 1, el 2, el 3, el 7 y el 12—, mientras el 14 sigue con
-**puede**, que es la casilla que ya tenía antes de la partición. Lo que `DEC-RF-004` cambia vive en
-la tabla de defaults del `B/19` §6, no acá. **Y la ampliación del 2026-09-23 —que parte además el
-disparador de la orfandad— tampoco las mueve**, por lo mismo: agranda la población de la rama que
-devuelve y no toca ni cuántos motivos hay ni cuáles llevan `SÍ`.
+**Y las dos cifras SE MOVIERON con `DEC-RF-006`, recontadas enteras sobre la tabla de arriba.** El
+motivo único que `S21` abría se partió en **dos** —el 14 y el 15—, así que la enumeración tiene
+**quince** filas; y los que llevan **SÍ** en la última columna son **seis** —el 1, el 2, el 3, el
+7, el 12 y el **15**—, mientras el 14 se queda con **puede**, que es la casilla que el motivo único
+ya tenía. **Lo que la partición compra es que el default vuelva a leerse POR MOTIVO**: `DEC-RF-004`
+había dejado un motivo cuya propuesta no se podía resolver sin saber además de qué disparador vino
+la marca, y desde `DEC-RF-006` eso lo resuelve **quien escribe el motivo**, en el acto y con lo que
+ya sabe. La tabla de defaults del `B/19` §6 vuelve a ser una columna plana, y **las seis filas con
+`SÍ` son exactamente las seis que ese § propone devolver**.
 
-**El 14 llegó por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
+**El 14 y el 15 llegaron por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una
 persona (`DEC-RF-002`)»* (`B/03` §3.2)— **que nadie disparaba**, y desde que esta enumeración es
 cerrada la ausencia dejó de ser una omisión y pasó a ser una imposibilidad: bajo `G-R1-F` esa vía
 **no se podía escribir sin agregar una fila acá**. La acción existe en el catálogo de `NUCLEO/08`
 §3 con su permiso, su auditoría y su confirmación, y ese mismo § dice que *«no sirve de nada si
-nadie enruta el caso»*. El 14 es quien lo enruta.
+nadie enruta el caso»*. **Los dos son quienes lo enrutan**, cada uno con su propuesta.
 
 #### Por qué el 7 no puede llevar «no»
 
@@ -742,8 +767,7 @@ forma de llegar a este motivo sin plata del cliente en nuestra cuenta sobre un p
 compró.**
 
 **Llevaba `no` y eso lo mandaba al peor de los dos desenlaces.** El listado ordena adelante los
-motivos con `SÍ` porque en ellos esperar le cuesta al cliente (`B/19` §6) —**y desde `DEC-RF-004`
-también la marca del 14 cuya rama es `DEVOLVER`, que es el único caso de afuera de los cinco**—, y
+motivos con `SÍ` porque en ellos esperar le cuesta al cliente (`B/19` §6), y
 el default que `G-R1-F` exige es el de ésos: con `no`, el 7 llegaba **último y sin ninguna
 propuesta**, que es el
 estado que ese mismo § declara **ya fallido** —*«la persona que no sabe qué se espera de ella no
@@ -764,11 +788,10 @@ porque **cuál de las cuatro falló va en el evento crítico** y no en el motivo
 
 1. **El listado accionable deja de ser homogéneo.** `B/19` §6 muestra el motivo, **el default de
    lo que el sistema propone** (`DEC-RF-003`) y ordena primero
-   los **cinco** motivos con `SÍ` en la última columna —1, 2, 3, **7** y 12—, donde **esperar le
-   cuesta plata al cliente**, **y con ellos la marca del 14 en su rama `DEVOLVER`** (`DEC-RF-004`):
-   es el único caso en que eso se decide mirando **la rama con la que la marca llegó** y no el
-   motivo —el disparador, y en el de la orfandad además qué transición mató al título— y por eso no
-   aparece en la última columna de la tabla de arriba, que se lee por motivo.
+   los **seis** motivos con `SÍ` en la última columna —1, 2, 3, **7**, 12 y **15**—, donde
+   **esperar le cuesta plata al cliente**. **Y desde `DEC-RF-006` ese orden se lee entero sobre la
+   tabla de arriba**: el caso que `DEC-RF-004` había dejado afuera de la columna —la propuesta de
+   `S21`, que dependía del disparador— es hoy el motivo 15, con su `SÍ` propio.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
    apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`
    parcial del §2.2 es lo que deja convivir las dos, y es el caso que la rama 3 de `B/12` §5.3
