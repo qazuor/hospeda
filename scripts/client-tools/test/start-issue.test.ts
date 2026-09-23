@@ -22,6 +22,10 @@ describe('normalizeIssueId', () => {
         expect(normalizeIssueId({ raw: 'beta-96' })).toBe('BETA-96');
     });
 
+    it('should use the configured adapter team for bare issue numbers', () => {
+        expect(normalizeIssueId({ raw: '96', teamKey: 'QZ' })).toBe('QZ-96');
+    });
+
     it('should reject anything without a number', () => {
         expect(normalizeIssueId({ raw: 'HOS-' })).toBeNull();
         expect(normalizeIssueId({ raw: 'improve search' })).toBeNull();

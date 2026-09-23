@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { fetchIssue } from '../../lib/linear.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { resolveRepoRoot } from '../../lib/repo.ts';
 import {
     BRANCH_TYPES,
@@ -193,7 +194,12 @@ export async function runStartIssue({
         return opts.help ? 0 : 1;
     }
 
-    const issueId = normalizeIssueId({ raw: opts.issueArg });
+    const repoRoot = await resolveRepoRoot({ cwd: process.cwd() });
+    const adapter = await loadProjectAdapter(repoRoot);
+    const issueId = normalizeIssueId({
+        raw: opts.issueArg,
+        teamKey: adapter?.issues?.teamKey ?? 'HOS'
+    });
     if (issueId === null) {
         process.stderr.write(`${pc.red('No entiendo el issue:')} ${opts.issueArg}\n`);
         process.stderr.write('Probá con 273, hos-273, HOS-273 o #273.\n');
@@ -253,8 +259,6 @@ export async function runStartIssue({
         ].join('\n'),
         issueId
     );
-
-    const repoRoot = await resolveRepoRoot({ cwd: process.cwd() });
 
     if (opts.dryRun) {
         process.stdout.write(`${type}/${slug}\n`);
