@@ -667,6 +667,20 @@ porque su evento es un webhook de autorizada y no hay preapproval que autorice (
 que la recomputación viaja en una escritura que **ya ocurre**: las escrituras de esa columna siguen
 siendo las que `B/02` §2.2 declara —*«son tres y no hay una cuarta»*— y no hay columna nueva.
 
+**Y ese instante no es una elección de conveniencia: es el ÚLTIMO en que el caso todavía puede
+ocurrir, así que no deja borde.** El caso es *«la predecesora renueva **dentro de la ventana**»*, y
+la ventana se cierra exactamente ahí: sobre una fila que sigue en `PENDING_AUTHORIZATION`, **es el
+registro de `MP1` el que la habilita a llegar a `ACTIVE`** (`B/03` §7.1), y que la sucesora llegue a
+`ACTIVE` es lo que dispara **`S17`** sobre la predecesora (§3.2), que la lleva a `CANCELLED`. Una
+renovación **posterior** a la recomputación no existe, porque después de ella ya no hay predecesora
+viva que renueve; una **anterior** está acreditada y la recomputación la ve. El otro final de la
+ventana —`S3`— no deja sucesora, así que tampoco deja crédito que corregir.
+
+> **La fila que lleva a `ACTIVE` a un pagador manual es una de las que el capítulo 13 todavía
+> debe** (`B/03` §7.1), así que esta corrección se apoya en una transición **declarada y no
+> construida**, igual que el resto de esa población. Va dicho acá porque es justo la clase que el
+> criterio de terminación de `DEC-TEST-002` mira al declarar lista la unidad.
+
 **Y no contradice la forma congelada del §5.2**, que es lo primero que hay que comprobar: *«el
 crédito se computa a partir de los pagos acreditados, nunca a partir de los días transcurridos»*.
 Recomputar más tarde lee **los mismos pagos acreditados**, sólo que ya incluye el que entró adentro
