@@ -4589,13 +4589,57 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-006 — El motivo 14 se PARTE EN DOS MOTIVOS, y con eso el default vuelve a ser por motivo
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco, que es ANTERIOR a la partición de `DEC-RF-004`**: `NUCLEO/08` §4.3 dice que la marca
+  *«lleva de qué disparador vino»* y `B/19` §6 que la rama *«viaja con la marca»*, pero las columnas
+  de `reconciliation_mark` (`B/02` §2.2) son **la suscripción, el motivo, `puesta_en`,
+  `levantada_en` y quién la levantó** — verificado contra el texto—: **ninguna es el disparador.**
+  `DEC-RF-004` ya exigía distinguir cuatro disparadores desde que le quitó el default único; la
+  enmienda de la discontinuación sólo llevó ese dato de cuatro valores a cinco.
+- **Y hay un agravante medido**: en la orfandad por discontinuación **la causa no sobrevive en
+  ningún lado** una vez que la fila llega a `CANCELLED`, así que *«derivarla al leer»* no tiene de
+  qué derivarla.
+- **Decisión**: **el motivo 14 se parte en DOS motivos del catálogo** — uno para la orfandad por
+  **discontinuación de una vertical** (`S25`, `S27`, `S28`), con default **`DEVOLVER`**; otro para
+  el **resto** de la 2ª cláusula de `A5`, con default **`NO DEVOLVER`**. El catálogo pasa de
+  **catorce a quince** motivos. **La tanda que la implemente elige los nombres respetando la
+  convención del catálogo, y recuenta el conjunto entero** — no le suma uno.
+- **Por qué, y no es sólo que sea barata**: `reconciliation_mark.motivo` **ya es una enumeración
+  cerrada y ya se escribe al abrir la marca**, en el acto, **cuando la causa todavía existe**. Eso
+  cierra el agravante sin columna nueva y sin derivar nada.
+- **Y revierte el costo que `DEC-RF-004` había declarado como su precio**: *«el 14 es el primer
+  motivo del catálogo con default por rama en vez de por motivo, así que la tabla de defaults deja
+  de poder leerse como una columna plana»*. **Con dos motivos el default vuelve a ser por motivo**,
+  como en las otras trece filas, y **`G-R1-F` los vigila sin cláusula especial** — se retira la
+  cláusula que la familia 3 tuvo que agregarle para alcanzar la rama `DEVOLVER` de un motivo que no
+  estaba entre los que devuelven.
+- **Lo que hay que resolver al implementarla, y va escrito porque es lo único que la partición
+  agrega**: el `UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL` pasa a **admitir las dos
+  marcas abiertas a la vez sobre la misma fila**. Hay que decir **si eso puede ocurrir o está
+  excluido por construcción**, y escribirlo donde alguien lo vaya a leer.
+- **Lo que sigue vigente**: la **condición obligatoria** de `DEC-RF-004` —decir en voz alta que
+  `S17` y `S12`-vía-`S26` son caminos **nuestros** que igual no devuelven— **aplica al motivo que NO
+  devuelve**, que es donde esos dos caen.
+- **Las dos alternativas, y por qué no**:
+  - **Una columna nueva** en `reconciliation_mark` con el disparador: resuelve, pero **agrega una
+    columna al modelo** y un valor más que mantener cada vez que `S21` gane un disparador.
+  - **Derivarlo al leer**: es lo que el corpus dice hoy y **es lo que está roto** — después de
+    `CANCELLED` la causa no está en ningún lado.
+- **Origen**: la tanda corta 3 de la FASE 9-bis-5, que declaró el hueco en `B/03` §3.2 y no lo
+  resolvió por ser decisión de modelo, y la elección del owner del 2026-09-23 entre las tres
+  opciones que se le presentaron — eligió la 3, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **102** |
+| Decisiones tomadas | **103** |
 | De metodología | 12 |
-| Funcionales | 90 |
+| Funcionales | 91 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
