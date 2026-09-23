@@ -139,7 +139,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son catorce motivos y **cinco** tienen una confirmación de reembolso encima |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son catorce motivos y **cinco** tienen una confirmación de reembolso encima — **más el 14 cuando la marca viene de la revocación del grant** (`DEC-RF-004`), que es el único caso en que eso lo decide el **disparador** y no el motivo |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
