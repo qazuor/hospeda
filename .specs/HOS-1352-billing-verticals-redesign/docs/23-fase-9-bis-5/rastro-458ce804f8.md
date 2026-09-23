@@ -319,8 +319,15 @@ y la de `B/16` §4.4, **y las dos se recontaron** (§2 punto 10).
 
 ### Grupo F — la ventana de 72 h y el piso de 60 días · 35 apariciones
 
-**Las 51 cuantifican sobre la duración de la ventana de autorización o sobre el piso de la
-discontinuación, y esta familia no movió ninguna de las dos.** La ventana sigue declarada en **72 h**
+**Las 35 cuantifican sobre la duración de la ventana de autorización o sobre el piso de la
+discontinuación, y esta familia no movió ninguna de las dos.**
+> **Corregido el 2026-09-23**: esta línea decía *«Las 51»*. Lo detectó la tanda corta del cierre y
+> no lo tocó por las reglas duras. **El 35 es el número medido** — la tabla de abajo lleva 35
+> referencias y los ocho encabezados de grupo suman los 688 del §4; el 51 no cerraba con ninguno de
+> los dos. Es el modo *«un conteo en prosa junto a una tabla se desincroniza sin que nada lo vea»*
+> que esta misma tanda viene midiendo, esta vez adentro de un rastro.
+
+La ventana sigue declarada en **72 h**
 en el corpus: `DEC-SUB-016` le dio **dos** plazos según el método de pago y **su implementación en
 los capítulos es de la tanda corta del cierre de la 9-bis-5, no de ésta** (§6). Por eso el aviso de
 la fila 18 lleva **la fecha de vencimiento de esa persona** y no una cifra: es correcto bajo los dos
