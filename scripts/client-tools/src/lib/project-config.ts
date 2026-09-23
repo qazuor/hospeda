@@ -9,6 +9,7 @@ export interface ProjectAdapter {
     readonly branches?: {
         readonly base?: string;
         readonly protected?: readonly string[];
+        readonly promotion?: readonly string[];
     };
 }
 

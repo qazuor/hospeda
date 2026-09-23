@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { findPr } from '../../lib/github.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
 import { type Check, explainVerdict, groupChecks, overallVerdict } from './verdict.ts';
@@ -131,6 +132,8 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
     const { name: worktreeName } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const cwd = context.worktree?.path ?? context.repoRoot;
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const integrationBranches = new Set(adapter?.branches?.promotion ?? ['staging', 'main']);
 
     // A branch that could not be resolved is NOT a branch to ask GitHub about.
     // Querying `--head '(desconocida)'` returns zero rows, and zero rows read
@@ -164,7 +167,7 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
     }
     const branch = worktree.branch;
 
-    if (branch === 'staging' || branch === 'main') {
+    if (integrationBranches.has(branch)) {
         if (json) {
             process.stdout.write(
                 `${JSON.stringify({ branch, error: 'branch sin PR propio', readOnly: true })}\n`
