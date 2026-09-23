@@ -949,7 +949,11 @@ tres razones que no se pisan:
    regla y su confirmación humana (`DEC-RF-002`): no se fuerza a la máquina a sostener un estado
    vacío para emular una devolución.
 
-**El período ya pagado no se reembolsa, y va escrito y no implícito.** Es el mismo criterio con el
+**El período ya pagado no se reembolsa SOLO, y eso vale en los cuatro disparadores.** Lo que
+`DEC-RF-004` partió después es **lo que el listado propone**, no quién decide: en los cuatro la
+decisión la toma una persona (`DEC-RF-002`), y lo que cambia es con qué propuesta delante (ver
+abajo, *«la propuesta del 14 depende del disparador»*). **Y que el período no se devuelva de oficio
+va escrito y no implícito.** Es el mismo criterio con el
 que `DEC-GRANT-001` lo dice para `S13` y `B/16` §3.4 para `S20`, apoyado acá en las tres reglas que
 `DEC-RF-002` enumera: *«reembolsar»* es una acción que mueve dinero, con permiso propio y
 confirmación explícita (`NUCLEO/08` §3); la línea del owner es *«toca plata o no toca plata»*
