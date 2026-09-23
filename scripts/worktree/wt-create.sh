@@ -43,7 +43,9 @@ if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BASE"; then
 elif git -C "$ROOT" show-ref --verify --quiet "refs/remotes/origin/$BASE"; then
   START="origin/$BASE"
 else
-  START="$BASE"
+  echo "ERROR: base branch '$BASE' is not available locally or in origin." >&2
+  echo "       Activate it first, or use --base staging for an urgent bypass." >&2
+  exit 1
 fi
 
 # The shared template is the fast path, but it must never be silently stale.
