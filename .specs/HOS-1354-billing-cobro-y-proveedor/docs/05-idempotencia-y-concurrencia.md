@@ -86,7 +86,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5), **con la referencia al cobro que hay que devolver**, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §6) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **cuatro** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
 eso vale para `S11` y no para las otras tres.** Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`)
@@ -103,13 +103,15 @@ la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de
   condición 1 del §3 rechaza `CANCELLED`, que es exactamente el tope que el cap. 03 §7.1 eligió:
   *«a partir de ahí el pago que llegue no reabre nada»*. Así que la plata está en nuestra cuenta
   sin período que darle: **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5)
+  —o el cobro se cuelga de la que ya esté abierta con ese motivo—
   y la devolución **la confirma una persona**
   (`DEC-RF-002`) — la segunda fila de arriba, por la misma razón y no por analogía, **y por eso el
   motivo es el mismo**.
 - **Desde `GRACE_PERIOD` el cobro que entra es el reciclado del proveedor, y llega tarde.** `S24`
   canceló el preapproval *«de inmediato»* (cap. 03 §3.2), así que lo que puede entrar después es
   un cobro que ya estaba en vuelo; la condición 1 del §3 rechaza `CANCELLED` igual que arriba, así
-  que **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** y la devolución **la confirma
+  que **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** —o el cobro se cuelga de la que
+  ya esté abierta— y la devolución **la confirma
   una persona**. **Y acá esa persona tiene un dato que en `SUSPENDED` no tiene, que hay que
   ponerle delante y no decidir por ella**: durante el grace el cliente **sí recibió servicio**
   —el §20 lo da entero (`12-contrato…` §2.6)—, así que el período que ese cobro paga no fue
@@ -125,9 +127,17 @@ acto y **no se devuelve lo pagado**, con su riesgo declarado.
 
 Lo que este cruce agrega es sólo el borde: si un cobro se acredita **después** de que el grant
 canceló la suscripción, no debería poder ocurrir por `GT-1` — y si ocurre igual, **se pone la
-marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_AL_GRANT`** (`B/02` §2.5), también con
-la referencia al cobro. La diferencia con C2 es que acá **el cliente no pidió nada**, así que
+marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_AL_GRANT`** (`B/02` §2.5), **con el cobro
+colgado de ella** y, si ya hay una abierta con ese motivo, **colgado de ÉSA**. La diferencia con C2
+es que acá **el cliente no pidió nada**, así que
 un cobro posterior a un regalo es material de reembolso, no de retención.
+
+**Y acá la repetición no es un borde: es la forma normal del caso.** `S13` *«no tiene rama de fallo
+declarada: su destino es `CANCELLED` pase lo que pase con la llamada»* (`B/09` §3), así que un
+*Free Forever* cuya cancelación en el proveedor no se aplicó deja al beneficiario *«pagando todos
+los meses algo declarado gratis»* — **un hecho por ciclo**, y ninguna transición reintenta la
+llamada sola. Los N cobros van todos a la **misma** marca, que es lo único que hace que la persona
+que la resuelve vea la deuda entera y no el primer mes.
 
 ### C4 · Se compra un addon mientras se aplica un downgrade que baja su base
 
