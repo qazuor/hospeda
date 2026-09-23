@@ -519,7 +519,10 @@ configuración, como todos los del §42.
 > `requiere_conciliación` era un booleano: decía *«hay un caso»* y no *«desde cuándo»*, así que
 > *«pasado su plazo»* no tenía contra qué medirse. Hoy es `puesta_en`, **por marca y no por fila**
 > (`B/02` §2.2 y §2.5), que es lo que hace que el plazo pueda ser distinto según el motivo — un
-> `REEMBOLSO_POR_CONFIRMAR` tiene plata del cliente parada y un `PAGO_TARDÍO_RECHAZADO` no.
+> `REEMBOLSO_POR_CONFIRMAR` tiene plata del cliente parada y un `TRANSICIÓN_NO_DECLARADA` no.
+> **El ejemplo era `PAGO_TARDÍO_RECHAZADO` y se cambió porque dejó de ser cierto**: ese motivo
+> lleva `SÍ` desde que se recorrieron sus cuatro condiciones (`B/02` §2.5), así que tiene plata
+> parada igual que el 1 y el plazo corto le corresponde a él también.
 > Lo que cambió no es el enunciado sino contra qué se lee.
 
 ---

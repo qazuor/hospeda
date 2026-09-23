@@ -168,6 +168,7 @@ puso el default, y es **DEVOLVER**.
 | `COBRO_POSTERIOR_A_LA_BAJA` | **devolver** (`B/05` C2) |
 | `COBRO_POSTERIOR_AL_GRANT` | **devolver** (`B/05` C3) |
 | `COBRO_DURANTE_CORTESÍA` | **devolver** — es el camino que `DEC-GRANT-007` eligió por escrito para el riesgo que aceptó (`B/02` §2.5, motivo 12) |
+| `PAGO_TARDÍO_RECHAZADO` | **devolver** — sus cuatro condiciones sólo fallan con el pago ya acreditado sobre un período que no compró (`B/05` §3). **Con una salida declarada**: si lo que falló es la condición **2** y el monto de más es un precio nuevo que no se propagó, lo que corresponde es aceptarlo y reactivar, y **cuál de las cuatro falló está en el evento crítico** (`NUCLEO/08` §4.3), no en el motivo |
 | `PAGO_PENDIENTE_SIN_RAMA` | **nada**, y es el único: por definición es el caso que **ninguna** de las seis ramas alcanzó (`B/09` §3, segunda comprobación) |
 
 **El default se propone sobre TODOS los pagos de la marca, no sobre el primero.** Una marca lleva
