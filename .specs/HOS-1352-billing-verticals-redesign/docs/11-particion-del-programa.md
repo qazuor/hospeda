@@ -86,7 +86,8 @@ que exista un precio en la base.**
 ## 3. La interfaz entre las dos épicas: un hecho y un aviso
 
 Verificado capítulo por capítulo, todo lo que el lado verticales necesita del lado billing se
-reduce a **un solo hecho**, que aparece en cuatro lugares distintos y es siempre el mismo:
+reduce a **un solo hecho**, que el diseño pedía en cuatro lugares distintos con cuatro nombres
+distintos y es siempre el mismo:
 
 | dónde aparece | cómo se llama ahí |
 |---|---|
@@ -110,9 +111,19 @@ mismo documento.
 > avance**. Se retira en vez de actualizarse, porque actualizarla deja el generador en pie.
 
 **Nada más cruza la frontera.** No cruzan montos, ni estados de pago, ni ids del proveedor, ni
-fechas de cobro. Si mañana aparece un quinto lugar que necesita algo de billing y no es este
-hecho, es una señal de que el corte se está filtrando y hay que mirarlo, no resolverlo en el
-lugar.
+fechas de cobro. **La regla de vigilancia vive en el contrato §4.2 y acá se la cita, no se la
+repite**: si aparece **un lugar que necesita algo de billing y no figura en la fila `cubierto` del
+contrato §2.1** —y no es este hecho—, es señal de que el corte se está filtrando y hay que mirarlo,
+no resolverlo en el lugar.
+
+> **Este renglón decía *«un quinto lugar»* y era la tercera copia de una cifra que ya había
+> caducado.** La tabla de arriba enumera **los cuatro nombres con que el diseño pedía el hecho
+> antes de que el contrato existiera**, y el censo vivo de quién lo consume es la fila `cubierto`
+> del contrato §2.1, que hoy es más larga. Es el mismo generador que el recuadro de arriba describe
+> para la firma —**una copia no necesita que nadie la mute para divergir**—, aplicado esta vez a un
+> conteo en vez de a un bloque de campos. **La mitad inversa de la misma regla llevaba la otra
+> cifra caduca** (*«los seis campos»* contra los **siete** del §4.1), y las dos se arreglaron
+> sacándole el ordinal a la que puede vivir sin él.
 
 ### 3.1 El valor por defecto que hace posible construir sin billing
 

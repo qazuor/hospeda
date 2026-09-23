@@ -239,9 +239,13 @@ por `user + vertical`, y el evento que avisa que esa cobertura cambió. Los dos 
 > se puede calcular, así que **un addon comprado para una ficha habilitaba su capacidad en toda la
 > cartera** (`F-8dC2-001`). El campo que haga falta acá se lee allá.
 
-El mismo hecho aparece en cuatro lugares del diseño: el paso 5 de la autorización, la transición
-`PB2` de publicación, la pérdida de beneficios de turista al suspender, y el disparador del
-recálculo del conjunto efectivo.
+El mismo hecho lo pedía el diseño en cuatro lugares con cuatro nombres, **antes de que el contrato
+existiera**: el paso 5 de la autorización, la transición `PB2` de publicación, la pérdida de
+beneficios de turista al suspender, y el disparador del recálculo del conjunto efectivo. **Eso es
+una tabla histórica y no el censo de quién lo consume**, que vive en la fila `cubierto` del
+contrato §2.1 y hoy es más larga —lleva además `PB3`, `PB7`, `PB4`, `PB5` y el hard delete del día
+180—. Contar acá para saber cuántos hay da una cifra congelada, que es lo que le pasó a la regla de
+vigilancia del §4.2 del contrato.
 
 **Nada más cruza la frontera**: ni montos, ni estados de pago, ni ids del proveedor, ni fechas de
 cobro. Ni siquiera el estado exacto de la suscripción — esta épica no distingue `ACTIVE` de
