@@ -96,8 +96,8 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
 3. **Lo que toca plata no se ejecuta solo.** Toda divergencia de monto, estado o cobro **abre una
    marca `requiere_conciliación`, con su MOTIVO** (`02` §2.5), y la mira una persona. Es el criterio
    del owner —*«toca plata o no toca plata»*— aplicado adentro de la épica que toca plata entera.
-   **El motivo es parte de la regla**: el corpus escribe catorce marcas distintas sobre la misma
-   casilla y **cinco** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
+   **El motivo es parte de la regla**: el corpus escribe quince marcas distintas sobre la misma
+   casilla y **seis** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
    iguales a la bandeja y las que se perdían eran ésas.
 
 ---
@@ -372,7 +372,7 @@ numérico»* sigue, y **no la reporto**: `B3` las toma por sección (`03` §3.1�
 después: los **siete** motivos que `S14` trae de los casos que lo disparan, el **listado
 accionable** del `19` §6 (**B13**, la anteúltima del camino crítico) y los inventarios de *«marca
 abierta»* y *«cortesía diferida»* (**B9**). **Y la tabla que el guard lee es capítulo de B3, desde
-esta pasada.** El `02` §2.5 —los catorce motivos— **no figuraba en la columna de capítulos de
+esta pasada.** El `02` §2.5 —los quince motivos— **no figuraba en la columna de capítulos de
 ninguna unidad** y era la primera de las dos preguntas del §2.9: `G-R1-F` compara contra esa
 enumeración para decidir si un motivo existe, así que quien construyera el guard se encontraba con
 una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la respuesta**: el propio
@@ -380,8 +380,9 @@ una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la resp
 de B3 igual—, pero la tabla sí necesita dueño»*, y el dueño es el mismo que el de la entidad. El
 §2.5 es **el catálogo de una columna que nace en el `02` §2.2**, y las dos únicas cosas que hay que
 saber para sembrarlo —qué motivos hay y quién abre cada uno— salen de `S14` y `S15`, que son de
-B3. **Con la parte que B3 no puede terminar sola, dicha**: siete de los catorce motivos los abren
-actos de otras unidades —`S18` (B8), `S21` (B10) y las seis comprobaciones del `09` §3 (B12)—, así
+B3. **Con la parte que B3 no puede terminar sola, dicha**: ocho de los quince motivos los abren
+actos de otras unidades —`S18` (B8), `S21` (B10), **que desde `DEC-RF-006` abre dos**, y las seis
+comprobaciones del `09` §3 (B12)—, así
 que B3 siembra la tabla completa y **cada una de esas unidades trae su propia fila viva cuando
 llega**, que es la misma forma con que `G-R1-E` recibe sus predicados.
 
