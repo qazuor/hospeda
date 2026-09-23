@@ -100,7 +100,8 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
     const worktrees = await collectWorktrees({
         repoRoot: opts.repoPath,
         currentPath,
-        measureDisk: opts.measureDisk
+        measureDisk: opts.measureDisk,
+        preferredBase: adapter?.branches?.base
     });
     spin.stop(`${worktrees.length} worktrees`);
 
