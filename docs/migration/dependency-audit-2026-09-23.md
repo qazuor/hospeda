@@ -50,3 +50,22 @@ runtime y pruebas de producción.
 El inventario está completo y reproducible, pero el gate de dependencias queda
 **pendiente** hasta aplicar las correcciones en issues separados y validar el
 runtime. El audit no leyó secretos ni ejecutó mutaciones.
+
+## Versiones publicadas consultadas
+
+Consulta read-only del registro el 2026-09-23:
+
+| Paquete | Versión publicada observada | Lectura para la remediación |
+|---|---:|---|
+| `astro` | `7.3.4` | Puede superar el parche mínimo `7.2.8`; validar compatibilidad antes de subir |
+| `sharp` | `0.35.4` | Parche mínimo disponible y alineado con el advisory |
+| `hono` | `4.13.8` | Parche compatible dentro de la línea 4.x |
+| `vitest` | `5.0.1` | Es major; no usar como actualización automática sólo para cerrar el advisory |
+| `@tiptap/core` | `3.31.3` | Parche dentro de la línea 3.x |
+| `js-yaml` | `5.4.2` | Es major; analizar quién lo consume antes de actualizar |
+| `svgo` | `4.1.0` | Parche mínimo publicado |
+| `@xmldom/xmldom` | `0.9.12` | Cambia de 0.8.x a 0.9.x; revisar la cadena Expo antes de forzar override |
+
+La próxima remediación debería empezar por Astro/Sharp/Hono/Tiptap/SVGO, dejando
+Vitest, js-yaml y xmldom para slices separadas cuando sus consumidores estén
+verificados.

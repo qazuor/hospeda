@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_58",
-        "number": 58,
-        "createdAt": "2026-09-23T21:50:00.000Z",
+        "id": "ver_claude_opencode_migration_59",
+        "number": 59,
+        "createdAt": "2026-09-23T22:05:00.000Z",
         "author": "opencode",
-        "reason": "auditar separación qz y adapter Hospeda",
+        "reason": "consultar versiones publicadas de dependencias vulnerables",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_57"
+        "basedOnVersion": "ver_claude_opencode_migration_58"
     },
     "data": {
         "sections": [
@@ -628,7 +628,7 @@
                             "title": "Auditar dependencias y supply chain",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Revisar plugins, MCPs y paquetes antes de agregarlos al stack.",
-                            "notes": "Gate269: `pnpm audit --prod --json` read-only encontró 45 advisories: 1 critical, 26 high, 19 moderate y 1 low. Astro 7.1.6 (<7.2.8) es la prioridad crítica; también sharp 0.35.3, Hono 4.13.0, Vitest 4.1.10, Tiptap 3.29.2, js-yaml, svgo y xmldom requieren correcciones mínimas. No se ejecutó audit --fix ni se modificaron lockfiles; queda pendiente resolver en issues separados.",
+                            "notes": "Gate269: `pnpm audit --prod --json` read-only encontró 45 advisories: 1 critical, 26 high, 19 moderate y 1 low. Astro 7.1.6 (<7.2.8) es la prioridad crítica; también sharp 0.35.3, Hono 4.13.0, Vitest 4.1.10, Tiptap 3.29.2, js-yaml, svgo y xmldom requieren correcciones mínimas. No se ejecutó audit --fix ni se modificaron lockfiles; queda pendiente resolver en issues separados. Gate275: versiones publicadas consultadas: Astro 7.3.4, sharp 0.35.4, Hono 4.13.8, Tiptap 3.31.3, SVGO 4.1.0; Vitest 5.0.1, js-yaml 5.4.2 y xmldom 0.9.12 implican major/cambio de cadena y quedan separados.",
                             "done": false
                         }
                     ]
