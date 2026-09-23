@@ -181,8 +181,10 @@ bien su trabajo cerraba el caso con el resto adentro.
 
 **El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.** La persona confirma —o se niega, con
 lo que vea delante— y el sistema **no dispara ningún reembolso solo**. Lo que cambia es que ahora
-encuentra **una propuesta escrita** en vez de una marca muda: *«el default es devolver, y la
-persona confirma salvo que haya razón para no hacerlo»*.
+encuentra **una propuesta escrita** en vez de una marca muda: *«acá el default es éste, y la
+persona confirma salvo que haya razón para no hacerlo»*. **En cinco de las siete filas de la tabla
+ese default es devolver**; el 14 propone lo contrario y `PAGO_PENDIENTE_SIN_RAMA` no propone nada,
+cada uno por la razón que su fila escribe.
 
 **Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
 era indistinguible de las otras trece y **el pago se quedaba**; una marca con motivo y sin default
