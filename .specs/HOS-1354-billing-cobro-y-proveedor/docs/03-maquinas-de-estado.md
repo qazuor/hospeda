@@ -1523,7 +1523,7 @@ evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y
 #### Lo que NO cambia, y hay que contarlo para que nadie lo recuente
 
 - **El barrido de `B/09` §3 no gana ninguna puerta por `MP4`, y sigue con cuatro salvedades.** Sus
-  puertas son **doce** desde que `S22`, `S23` y `S24` le agregaron tres —no las agregó `MP4`—, y todas son
+  puertas son **quince**, recontadas sobre la tabla de `B/09` §3 —las agregaron `S22`, `S23`, `S24`, `S25`, `S27` y `S28`, no `MP4`—, y todas son
   puertas a
   un estado terminal **de una suscripción**, y ese § enumera los tres que tiene: `CANCELLED`,
   `ABANDONED` y `CHARGE_DECLINED`. **`DECLARED_UNPAID` es un estado del `manual_payment`**, nunca
@@ -1916,7 +1916,7 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   que la hace no ser un beneficio de entrada.
 - **El barrido de `B/09` §3 no gana nada por `MP5`: sigue con cuatro salvedades y las
   comprobaciones de cero llamadas que tenga —**seis** desde `DEC-GRANT-007`—, y sus puertas son
-  doce desde `S22`, `S23` y `S24`.** `MP5` no lleva
+  **quince**, recontadas sobre la tabla de `B/09` §3.** `MP5` no lleva
   ninguna suscripción a un estado terminal y no toca ningún preapproval — no hay ninguno.
 - **El catálogo de acciones administrativas sigue teniendo DOCE filas** (arriba).
 - **`C5` no se toca.** Su `UNIQUE(subscription_id, período) WHERE el pago está acreditado`
