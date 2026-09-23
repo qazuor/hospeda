@@ -740,8 +740,10 @@ forma de llegar a este motivo sin plata del cliente en nuestra cuenta sobre un p
 compró.**
 
 **Llevaba `no` y eso lo mandaba al peor de los dos desenlaces.** El listado ordena adelante los
-motivos con `SÍ` *«porque son los únicos en los que esperar le cuesta al cliente»* (`B/19` §6) y
-sólo ésos llevan default: con `no`, el 7 llegaba **último y sin ninguna propuesta**, que es el
+motivos con `SÍ` porque en ellos esperar le cuesta al cliente (`B/19` §6) —**y desde `DEC-RF-004`
+también la marca del 14 cuya rama es `DEVOLVER`, que es el único caso de afuera de los cinco**—, y
+el default que `G-R1-F` exige es el de ésos: con `no`, el 7 llegaba **último y sin ninguna
+propuesta**, que es el
 estado que ese mismo § declara **ya fallido** —*«la persona que no sabe qué se espera de ella no
 hace nada»*—. Y es literalmente el desenlace que la columna `motivo` vino a cerrar: el párrafo de
 arriba dice que con un booleano *«el pago se quedaba»* porque la marca era indistinguible; sobre el
@@ -760,8 +762,10 @@ porque **cuál de las cuatro falló va en el evento crítico** y no en el motivo
 
 1. **El listado accionable deja de ser homogéneo.** `B/19` §6 muestra el motivo, **el default de
    lo que el sistema propone** (`DEC-RF-003`) y ordena primero
-   los **cinco** motivos con `SÍ` en la última columna —1, 2, 3, **7** y 12—, que son los únicos donde
-   **esperar le cuesta plata al cliente**.
+   los **cinco** motivos con `SÍ` en la última columna —1, 2, 3, **7** y 12—, donde **esperar le
+   cuesta plata al cliente**, **y con ellos la marca del 14 en su rama `DEVOLVER`** (`DEC-RF-004`):
+   es el único caso en que eso se decide mirando el **disparador** y no el motivo, y por eso no
+   aparece en la última columna de la tabla de arriba, que se lee por motivo.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
    apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`
    parcial del §2.2 es lo que deja convivir las dos, y es el caso que la rama 3 de `B/12` §5.3
