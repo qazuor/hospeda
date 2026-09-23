@@ -11,6 +11,7 @@
 # separate, reviewed operation because it can invalidate existing clones.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091 # wt-config.sh is resolved from this script's directory at runtime.
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 [ -f "$CFG" ] || { echo "ERROR: no project config"; exit 2; }
@@ -83,8 +84,11 @@ promote() {
   candidate_status="$(status "$candidate")"
   journal="$(printf '%s' "$candidate_status" | jq -r '.migrationJournal')"
   users="$(printf '%s' "$candidate_status" | jq -r '.hasUsers')"
-  [ "$users" = true ] && [ "$journal" != missing ] && [ "${journal:-0}" -gt 0 ] 2>/dev/null \
-    || { echo "ERROR: candidate is not a validated migrated database"; printf '%s\n' "$candidate_status"; exit 1; }
+  if [ "$users" != true ] || [ "$journal" = missing ] || ! [ "${journal:-0}" -gt 0 ] 2>/dev/null; then
+    echo "ERROR: candidate is not a validated migrated database"
+    printf '%s\n' "$candidate_status"
+    exit 1
+  fi
   now="$(date -u +%Y%m%dT%H%M%SZ)"; backup="${active}_backup_${now}"
   echo "Promoting $candidate → $active (previous active kept as $backup)"
   # Refuse active connections rather than terminating application sessions.

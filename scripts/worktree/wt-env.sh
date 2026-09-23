@@ -15,7 +15,7 @@ mapfile -t NAMES < <(jq -r '.servers[].name' "$CFG")
 declare -A PORT
 idx=0
 for n in "${NAMES[@]}"; do
-  idx=$((idx+1)); PORT[$n]="${!idx:?missing port arg for server '$n'}"
+  idx=$((idx+1)); PORT[$n]="${!idx:?missing port arg for server $n}"
 done
 
 # Replace {name} placeholders with chosen ports.
