@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_47",
-        "number": 47,
-        "createdAt": "2026-09-23T18:35:00.000Z",
+        "id": "ver_claude_opencode_migration_48",
+        "number": 48,
+        "createdAt": "2026-09-23T19:00:00.000Z",
         "author": "opencode",
-        "reason": "validar política develop en modo plan",
+        "reason": "validar informe Dependabot read-only",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_46"
+        "basedOnVersion": "ver_claude_opencode_migration_47"
     },
     "data": {
         "sections": [
@@ -498,7 +498,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Gate211: corregida la búsqueda de uso local para excluir lockfiles, `.specs` y documentación; conserva manifests/configuración reales. Gate214: la extracción de release notes ahora parsea URLs con `URL`, elimina HTML/puntuación/fragments, deduplica y limita a ocho enlaces relevantes; se agregaron pruebas para enlaces GitHub/npm y texto no confiable. Suite client-tools: 303 tests, 0 fallos y 768 assertions. El comando sigue siendo read-only y la decisión humana por PR continúa pendiente.",
+                            "notes": "Gate211: corregida la búsqueda de uso local para excluir lockfiles, `.specs` y documentación; conserva manifests/configuración reales. Gate214: la extracción de release notes ahora parsea URLs con `URL`, elimina HTML/puntuación/fragments, deduplica y limita a ocho enlaces relevantes; se agregaron pruebas para enlaces GitHub/npm y texto no confiable. Suite client-tools: 303 tests, 0 fallos y 768 assertions. El comando sigue siendo read-only y la decisión humana por PR continúa pendiente. Gate265: prueba en vivo `hops dependabot-review --json` devolvió `status: query_failed` porque `gh pr list` no pudo consultar GitHub en este entorno; no se interpretó como lista vacía ni se ejecutó ninguna mutación.",
                             "done": false
                         },
                         {
