@@ -209,3 +209,22 @@ de Gentle dejó background agents de OpenCode activos (`policy effective: on`),
 coherente con usar OpenCode y no instalar Pi. La configuración global de
 OpenCode fue modificada por el sync y queda respaldada para comparar cualquier
 personalización propia antes de cerrar la migración.
+
+## Engram v2 activo
+
+Con el backup `20260923-pre-upgrade` disponible se activó Engram `2.0.0`. La
+migración de esquema terminó y la DB activa pasó `PRAGMA integrity_check = ok`.
+Las operaciones explícitas `stats --project hospeda`, `search --project hospeda`
+y el arranque MCP con `--project hospeda` funcionan.
+
+`engram doctor` reporta 2 checks correctos y 7 hallazgos históricos: sesiones
+ambiguas, mismatches de identidad/directorio, sesiones sin dueño, 19 referencias
+huérfanas, 6079 payloads legacy sin campos requeridos y 6 destinos de sync
+cerrados. No se ejecutó ninguna reparación, consolidación, borrado, importación,
+exportación ni sync. Esos hallazgos quedan como backlog de curación; la memoria
+no se declara limpia automáticamente por haber actualizado el binario.
+
+El MCP directo de Engram v2 responde. Las consultas `opencode mcp list` y
+`opencode providers list` continúan bloqueadas en este runner porque OpenCode no
+puede abrir su log en modo escritura; debe repetirse en una terminal normal con
+filesystem writable.
