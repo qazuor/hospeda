@@ -4126,13 +4126,48 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-012 — La cortesía diferida se le muestra al cliente CON su condición, no a secas y no escondida
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: `B/19` §3 **obliga** a mostrar las cortesías en «Mi Suscripción». Entre el cierre de
+  la sucesión (`S18`) y la autorización de la sucesora (`S2` → `S9`), la persona **tiene días
+  firmados y no tiene cortesía corriendo** — el estado que `DEC-GRANT-007` creó al diferir el saldo
+  en `courtesy_grant.saldo_días`.
+- **Decisión**: se muestra el saldo **con la condición que lo activa** — *«te quedan N días, que
+  empiezan a correr cuando completes el pago»*. Es una fila de copy en `B/19` §3, y ata esa
+  superficie al `saldo_días` de `courtesy_grant`.
+- **Por qué, y es la razón que `DEC-GRANT-011` vuelve más filosa**: con el saldo **cerrándose** al
+  vencer la ventana de autorización, la ventana en que la persona no ve nada es exactamente la
+  ventana en que puede perder los días. **Ésta es la única de las tres opciones que le da la
+  información con la que evitar esa pérdida**, y decirlo es además lo que empuja a completar el
+  pago.
+- **Las dos alternativas, y la tercera se descarta de plano**:
+  - **No mostrar nada** hasta que la cortesía vuelva a correr: cuesta cero y **le esconde al
+    cliente días que son suyos**, justo cuando puede abandonar y perderlos. Es el mismo hueco que
+    `DEC-GRANT-011` por la otra puerta.
+  - **Mostrar el saldo a secas** —*«te quedan N días»*, sin la condición—: cuesta lo mismo que la
+    elegida y es **estrictamente peor**. Es la clase de promesa que `NUCLEO/07` §5.3 manda
+    anticipar, y es el patrón que el programa ya tiene medido en la copy del proveedor —*«Pagaste
+    la suscripción»* sobre un cobro que nunca ocurrió (`EX-3`)—, que es lo que motivó la regla de
+    que ninguna decisión de soporte se apoye en ella. **Prometer días y después quitarlos es
+    exactamente lo que no se hace.**
+- **Lo que NO cierra**: el texto exacto de la copy, que es trabajo de producto y se escribe en
+  `B/19` §3; y **qué se le dice cuando el saldo efectivamente se cierra** por `DEC-GRANT-011` — el
+  aviso de ese cierre no está escrito en ningún capítulo, y la tanda que implemente las dos
+  decisiones tiene que resolverlo junto.
+- **Origen**: la FASE 8-bis-5, `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E3`
+  —levantado de `rastro-f21d5d828.md` §6 punto 3—, y la elección del owner del 2026-09-23 entre las
+  tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **90** |
+| Decisiones tomadas | **91** |
 | De metodología | 12 |
-| Funcionales | 78 |
+| Funcionales | 79 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
