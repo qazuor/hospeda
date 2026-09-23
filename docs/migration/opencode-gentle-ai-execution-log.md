@@ -3691,12 +3691,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - OpenCode local `1.18.32` coincide con el release estable `v1.18.32` de
   upstream.
 - Engram local `2.0.0` coincide con el release estable `v2.0.0` publicado.
-- Gentle-AI local reporta `3.7.0`, pero el listado oficial consultado muestra
-  `v3.6.0` como último release público. El origen de `3.7.0` no quedó
-  verificado; no se reemplazó ni se ejecutó `upgrade`/`sync`.
-- La discrepancia debe resolverse antes de diseñar el instalador automático:
-  conservar el binario local si proviene de un canal controlado o reinstalar
-  desde un release oficial verificable.
+- Gentle-AI local reporta `3.7.0`; la consulta directa al release oficial
+  confirmó `v3.7.0`, publicado el 23 de septiembre, con selección nativa de
+  modelos para OpenCode/Claude/Codex y sin breaking changes declarados.
+- El instalador futuro puede fijar `v3.7.0` por tag y checksum, y debe ejecutar
+  `gentle-ai sync` después de actualizar para refrescar los assets administrados.
 
 ## Gate 224 · Proveniencia local de Gentle-AI `3.7.0`
 
@@ -3706,6 +3705,5 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `a730a61a43758f04cc9a4ac644945cc0e8652a1e33d6997a0a3d3f0044d2fff5`.
 - El SHA-256 del binario instalado coincide con el binario extraído del mismo
   staging: `002d09fd2b9628a29986a660c1f51f8a5042ff7fd54c8ab15b7b27de96c6cccc`.
-- Conclusión: `3.7.0` tiene integridad local verificable y proviene del bundle
-  preparado para esta migración, pero su publicación upstream no quedó
-  confirmada. No se reemplaza ni se actualiza hasta resolver esa diferencia.
+- Conclusión: `3.7.0` tiene integridad local verificable y coincide con el
+  release upstream firmado. No se reemplaza porque ya es la versión instalada.
