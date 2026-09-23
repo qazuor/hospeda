@@ -693,8 +693,12 @@ el grant que era su título**—, ni cuando llega por la **segunda** —**queda 
 título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación del
 2026-09-23). En las dos el cliente no hizo nada y pierde días que pagó. Los **cuatro** disparadores
 de `S21` están enumerados uno por uno, con el lado de cada uno —y el segundo con su reparto interno—
-en `B/03` §3.2, *«la propuesta del 14 depende del disparador»*. Lo que sigue es la regla para el
-resto.
+en `B/03` §3.2, *«la propuesta del 14 depende del disparador»*. **Y el resto no es todo *«un acto
+del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla **dos**
+caminos nuestros —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`— **por mecanismo y no
+por criterio**, porque ahí la transición que mata al título no nombra su causa; el § de `B/03` los
+enumera y la fila de `B/19` §6 los dice en voz alta para que quien resuelve pueda apartarse. Lo que
+sigue es la regla para ese resto.
 
 Igual que `DEC-GRANT-001` lo dice para `S13` y el §3.4
 para `S20`, y por las tres reglas que `DEC-RF-002` enumera: *«reembolsar»* mueve dinero y lleva
