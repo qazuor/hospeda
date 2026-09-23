@@ -268,6 +268,12 @@ no tuviera respuesta para el caso más común del sistema era el mismo defecto q
    sobre una. **La tercera no lo toca**: traer a borrador una ficha propia archivada (`PB8`) no
    publica, no cuenta contra ningún limit y no alcanza una ficha ajena, así que no es ni una clave
    comercial ni un entitlement medido.
+
+   **Y que la segunda y la tercera ESTÉN lo vigila el mismo guard por su otra mitad.** Es la mitad
+   *(b)* de `G-R3` (`V/20` §2), y hace falta acá más que en ninguna otra parte: el párrafo de arriba
+   dice que sin piso el paso 5 le niega a un `TRIAL_EXPIRED` la operación de suscribirse y **queda
+   afuera para siempre**. Un piso presente al que le falte esa clave produce lo mismo un paso más
+   adentro, en el 6, y hasta esta pasada **ningún control lo miraba**.
 3. **No es un `tipo` que billing resuelva.** El piso lo resuelve verticales, que es de quien son
    las dos tablas de la versión. Billing no conoce `BASE`.
 

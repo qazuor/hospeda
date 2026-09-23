@@ -182,8 +182,8 @@ y pueda volver a contratar. Son **tres** cosas y la lista es cerrada:
 | # | qué otorga | para qué |
 |---|---|---|
 | 1 | **ninguna capacidad comercial** | es la mitad en negativo, y la vigila `G-R3` |
-| 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir |
-| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla y **reactivarla a borrador** (`PB8`, cap. 03 §9) | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3 |
+| 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir. **Que esté la vigila `G-R3`** |
+| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla y **reactivarla a borrador** (`PB8`, cap. 03 §9) | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
 
 Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`.
 
@@ -199,23 +199,47 @@ que si acá no está, el paso 6 la rechaza — y como el hecho 1 del reloj de in
 del dueño … reactivarla»* (cap. 01 §1.2, núcleo), esa persona no puede ejecutar **ninguno** de los
 cuatro reinicios y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
 
-**Y no toca `G-R3`, que es lo que hay que verificar antes de agregar nada acá.** El guard falla si
-esta versión otorga *«una clave de la clase comercial o un entitlement medido»* (cap. 20 §2).
-**Recuperar lo suyo no es ninguna de las dos**: no publica nada —`PB8` va a `DRAFT`, y publicar
-sigue siendo `PB1`, que sí es comercial—, no cuenta contra ningún limit, y su objeto es **una ficha
-que la persona ya tenía**, nunca una nueva. Es del mismo tipo que *«contratar una suscripción»*:
-una capacidad de **recuperación**, que es literalmente para lo que esta versión existe.
+**Y no toca `G-R3` por el lado que prohíbe, que es lo que hay que verificar antes de agregar nada
+acá.** El guard falla si esta versión otorga *«una clave de la clase comercial o un entitlement
+medido»* (cap. 20 §2). **Recuperar lo suyo no es ninguna de las dos**: no publica nada —`PB8` va a
+`DRAFT`, y publicar sigue siendo `PB1`, que sí es comercial—, no cuenta contra ningún limit, y su
+objeto es **una ficha que la persona ya tenía**, nunca una nueva. Es del mismo tipo que *«contratar
+una suscripción»*: una capacidad de **recuperación**, que es literalmente para lo que esta versión
+existe.
+
+**Y por el lado que OTORGA sí lo toca, que es la pregunta que agregar esta fila obligaba a hacerse
+y no se hizo.** *«¿Esto rompe el guard?»* y *«¿quién se entera si esto no está?»* son dos preguntas
+distintas, y hasta esta pasada el guard sólo contestaba la primera: su enunciado era **negativo
+entero** —*«ninguna … otorga»*— más un *«si y sólo si»* cuyo dominio es **una sola clave**, la de
+activación. Las filas 2 y 3 de la tabla de arriba no nombraban ningún guard, así que **un catálogo
+sembrado sin ellas pasaba en verde**. El desenlace está escrito dos párrafos más arriba para la fila
+3 —*«esa persona no puede ejecutar **ninguno** de los cuatro reinicios y el día 180 le borra el
+contenido»*— y en el `12-contrato…` §2.5 para la fila 2 —*«queda afuera para siempre»*—. Es el mismo
+punto único de falla que el aviso de abajo declara, **leído en el sentido que nadie había escrito**:
+ahí la plataforma entera recibe de más, acá la población que menos puede defenderse recibe de menos.
 
 > ⚠️ **Las dos versiones no vendibles son un punto único de falla, y por eso llevan guard.** Si
 > alguien le siembra una clave comercial a la de piso o a la de pre-trial, **toda la plataforma la
-> recibe gratis, para siempre, sin consumir ningún trial**. Las vigila el mismo guard:
+> recibe gratis, para siempre, sin consumir ningún trial**; y si alguien siembra la de piso **sin**
+> lo que tiene que otorgar, la recuperación y el alta quedan inejecutables sin que nada lo señale.
+> Las vigila el mismo guard, con **tres** mitades:
 >
-> **`G-R3` — ninguna de las dos versiones no vendibles de una vertical otorga una clave de la clase
-> comercial ni ningún entitlement medido**, y la capacidad de activación está en la de pre-trial
-> **si y sólo si** la vertical declara evento y su plan de trial tiene días > 0.
+> **`G-R3` — (a)** ninguna de las dos versiones no vendibles de una vertical otorga una clave de la
+> clase comercial ni ningún entitlement medido; **(b)** la versión de piso de cada vertical **otorga
+> las dos claves de las filas 2 y 3** de la lista cerrada de arriba; **(c)** la capacidad de
+> activación está en la de pre-trial **si y sólo si** la vertical declara evento y su plan de trial
+> tiene días > 0.
 >
-> Se comprueba sobre el catálogo, en CI, en las dos direcciones. Es una verificación automática y
-> no una revisión, porque es el único lugar donde un error de siembra no lo ve nadie.
+> **El mensaje nombra la mitad que falló** —*«clave de más»*, *«clave de piso que falta»* o
+> *«activación fuera del si y sólo si»*—, nunca uno solo para las tres: son tres arreglos distintos
+> y un texto único afirmaría más de lo que el predicado verificó en esa corrida. Es la misma
+> condición con la que `G-R6-B` vigila sus mitades (cap. 20 §2 y §2.1).
+>
+> Se comprueba sobre el catálogo, en CI. Cada mitad tiene su dominio y conviene no leerlos de más:
+> *(a)* alcanza **las dos** versiones no vendibles; *(b)* alcanza **sólo la de piso**, porque es la
+> única cuya lista de lo que otorga el corpus declara cerrada; *(c)* es un bicondicional sobre **una**
+> clave. Es una verificación automática y no una revisión, porque es el único lugar donde un error
+> de siembra no lo ve nadie.
 
 ### 2.2 Compromiso y ciclo de vida
 

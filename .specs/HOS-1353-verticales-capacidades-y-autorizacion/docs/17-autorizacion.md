@@ -90,8 +90,10 @@ falla.
    ninguna fuente de clase `TÍTULO`**: su conjunto efectivo es la **versión de piso**. Por la
    precisión 5 de más abajo, el 5 la deja pasar y **el 6 es el único que decide**, así que
    habilitarla en el 4 y no en el 6 dejaba la promesa exactamente igual de inalcanzable, una
-   puerta más adentro. La versión de piso la otorga hoy: es la **tercera** cosa de su lista
-   cerrada, *«recuperar lo suyo»* (cap. 02 §2.1). Y es lo mismo para **exportar**, que `V/02`
+   puerta más adentro. La versión de piso la otorga: es la **tercera** cosa de su lista
+   cerrada, *«recuperar lo suyo»* (cap. 02 §2.1), y **que la otorgue no es un hecho del catálogo de
+   hoy sino una obligación con guard** — la mitad *(b)* de `G-R3` (cap. 20 §2) falla si falta.
+   Y es lo mismo para **exportar**, que `V/02`
    §4.2 regla 3 usa para justificar el borrado: es una lectura, no pasa por el 5 y **sí por los
    otros ocho** (§3.5).
 2. **El estado de la persona va ANTES del permiso.** Al revés, una cuenta inhabilitada puede

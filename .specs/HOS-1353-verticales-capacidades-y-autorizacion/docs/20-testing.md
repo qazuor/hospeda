@@ -56,7 +56,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
 | G-R2 | el pliegue del conjunto efectivo **recibe una fuente de clase `COMPLEMENTO`** cuando el conjunto no tiene ninguna de clase `TÍTULO` viva — en cualquiera de sus dos tramos | cap. 15 §2.6 |
 | G-R2-B | una fuente `GRANT` transporta **un plan de otra vertical** que la de la fuente | cap. 15 §2.5, `12-contrato…` §2.8 |
-| G-R3 | una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; o la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
+| G-R3 | **tres mitades, con tres mensajes**. **(a)** una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; **(b)** la versión de piso de una vertical **no otorga** alguna de las **dos claves** que las filas 2 y 3 de su lista cerrada declaran —*«contratar una suscripción»* y *«recuperar lo suyo»*—; **(c)** la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
 | G-R3-B | una transición **disparada por el reloj** otorga algo, en vez de quitar | cap. 17 §3.4 |
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las nueve máquinas, en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
@@ -192,6 +192,32 @@ que antes no existía, y la comparación honesta no es *«¿esto abre algo?»* s
 que la alternativa?»*: la exención por ruta abre un agujero **por cada ruta que alguien marque**, y
 ninguna herramienta lo cuenta; ésta abre uno solo, en una tabla, que un guard puede contar en cada
 PR.
+
+**Y hasta esta pasada sólo sabía prohibir, que es la mitad barata del punto único de falla.** Su
+enunciado era **negativo entero** —*«ninguna … otorga»*— más un bicondicional cuyo dominio es **una
+sola** clave, la de activación. La lista de lo que el piso otorga es de **tres** filas y es cerrada
+(cap. 02 §2.1), y **sólo la primera nombraba un guard**: la 1 *es* la mitad en negativo. Así que un
+catálogo al que le faltara la fila 2 o la 3 **pasaba en verde**, y el desenlace de cada ausencia lo
+escribe el propio capítulo: sin la 3, *«esa persona no puede ejecutar ninguno de los cuatro
+reinicios y el día 180 le borra el contenido»* (cap. 02 §2.1); sin la 2, un `TRIAL_EXPIRED`, un
+`Turista Free` y un `Guest` **no pueden suscribirse** —*«queda afuera para siempre»*
+(`12-contrato…` §2.5)—. **La mitad `(b)` es esa dirección.** Es la misma corrección que la cuarta
+enmienda de `DEC-TEST-001` le hizo a `G-R6-B` sobre otra lista cerrada, y por la misma razón: **una
+lista cerrada vigilada en una sola dirección declara una cobertura que no tiene.**
+
+**La `(b)` se puede formar sin juicio, y ésa es la condición con que entra.** Pregunta si **dos
+claves nombradas** están entre las que la versión de piso de cada vertical otorga en el catálogo:
+no hay que entender qué significan, igual que `G-R6` no necesita entender qué significa una columna
+(`B/20` §2). Y **no** verifica que otorgar esas dos claves alcance para ejecutar `PB8` ni el alta —
+eso son los nueve pasos del cap. 17 §3.5 y este guard no los recorre—; verifica que **estén**.
+
+**Se rompe a propósito tres veces, una por mitad, y cada una tiene que dar SU mensaje.** *(a)* se le
+siembra a la versión de piso de una vertical una clave comercial cualquiera. *(b)* se le **saca** a
+esa misma versión la clave *«recuperar lo suyo»*, que es exactamente el catálogo con el que el hard
+delete del día 180 se vuelve indefendible. *(c)* se le pone la capacidad de activación a la versión
+de pre-trial de una vertical que no declara evento. **Un rojo de una mitad con el texto de otra es
+el guard fallando su propia condición** (§2.1): son tres arreglos distintos, en dos tablas
+distintas, y el que lo lea tiene que saber cuál le tocó.
 
 **G1 y G2 son la pinza** y ya se explicó en el capítulo 17 §2.3 (épica de verticales): uno acota
 **quién puede** nombrar una vertical, el otro obliga a que las operaciones **lo hagan**. Por
