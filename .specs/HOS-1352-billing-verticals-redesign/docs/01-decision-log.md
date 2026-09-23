@@ -4201,13 +4201,49 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ENT-002 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El problema que cierra**, el crítico #1 de la FASE 8-bis-5 (`F-8fA1-002`, `ALTA`): `G-R3` tiene
+  por predicado *«la clave de la clase comercial…»* y **«clase comercial» se usaba en cuatro lugares
+  y no estaba definida en ninguno**. El guard más cargado del programa **no podía formar su
+  predicado**, y la primera clave que tenía que clasificar era la que la tanda acababa de agregar.
+- **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo
+  —junto al scope, la estrategia de agregación y los que ya estaban—, con **lista cerrada de dos
+  valores: `COMERCIAL` y `DE_ACCESO`**, y su entrada de glosario al lado de *«entitlement medido»*.
+  **`G-R3` lee un atributo; no juzga.**
+- **Por qué, y es el patrón con que el programa viene cerrando guards inconstruibles**: un predicado
+  que obliga al guard a decidir *«¿esta clave es comercial?»* no es ejecutable; uno que le hace leer
+  una columna, sí. **Convertir un juicio en una lectura** es lo mismo que hizo `DEC-GRANT-009` al
+  mandar el *«a lo sumo un grant vivo»* a un `UNIQUE` parcial en vez de a nueve consumidores.
+- **Los precedentes, que están en el mismo capítulo**: el `scope` y la estrategia de agregación ya
+  son atributos declarados de una clave (`V/15` §2.3 y §3.2). Y **`NUCLEO/02` §1.2 no lo prohíbe**:
+  lo que prohíbe llevar en código son **valores, precios y asignaciones**, no los metadatos de una
+  clave.
+- **Las dos alternativas, y por qué no**:
+  - **Tres valores**, dejando lugar a una clave que no caiga en ninguno de los dos: se descarta
+    porque **es una puerta vacía**. Si aparece la clave que no encaja, agregar el tercer valor
+    entonces cuesta exactamente lo mismo que ahora **y con un caso real delante** para nombrarlo
+    bien.
+  - **Definir *«clase comercial»* en prosa** y que `G-R3` la juzgue: **es volver al crítico**. Era el
+    estado de partida.
+- **Cómo se tomó, y va dicho**: el agente de arreglo de la familia 1 de la 9-bis-5 **la tomó sin
+  consultar** —es una decisión de modelo— y la declaró como tal pidiendo ratificación. El owner la
+  ratificó el 2026-09-23. **Que la haya tomado un agente no la vuelve menos decisión**: por eso
+  tiene entrada propia en vez de quedar sólo en el commit `2e39e6224`.
+- **Origen**: `22-fase-8-bis-5/A1-acceso-cruzado-y-autorizacion.md` (`F-8fA1-001` y `F-8fA1-002`), la
+  familia 1 de la FASE 9-bis-5 (`6dc5aeb70`, `2e39e6224`) y la ratificación del owner del 2026-09-23
+  entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **92** |
+| Decisiones tomadas | **93** |
 | De metodología | 12 |
-| Funcionales | 80 |
+| Funcionales | 81 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
