@@ -250,8 +250,9 @@ avanzaba un período.
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
   quedar registrada la cuota, y `S10` la avanza **tantos ciclos como hayan vencido durante la
   pausa, sin abrir cuota** —el espejo local de lo que el proveedor hace medido (`PS-6`) y
-  `DEC-SUB-010` ya adoptó—. Más **un tope**, que corre sólo en `MP4`: si el avance cae en el
-  pasado, la fecha pasa a ser el instante de la reactivación. **Su único lector es `MP5`.**
+  `DEC-SUB-010` ya adoptó—. **Son tres y no hay una cuarta**: lo que la reapertura larga necesita
+  no se escribe acá sino sobre el `período` de la cuota (§2.3, la **reimputación** de `MP4`), y el
+  avance sale después de ese período nuevo. **Su único lector es `MP5`.**
 
 ### 2.3 Dinero
 
@@ -259,7 +260,7 @@ avanzaba un período.
 |---|---|---|
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
-| **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe |
+| **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió, **salvo que `MP4` la haya reimputado** (abajo)—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe, y es además lo que hace que reimputar no cambie el monto esperado |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
@@ -294,9 +295,21 @@ anclada).
 a la idempotencia.** *«Ya existe una cuota para ese período»* —la condición de `MP5`— y
 *«`UNIQUE(subscription_id, período)`»* piden que dos períodos se puedan distinguir, y lo único que
 los distingue es cuándo arrancan. Al abrirse, la cuota copia la fecha del próximo cobro vigente
-(§2.2); al registrarse, esa fecha avanza. **Por eso el tope de `B/03` §7.2 no puede colisionar**:
+(§2.2); al registrarse, esa fecha avanza. **Por eso el avance de `B/03` §7.2 no puede colisionar**:
 deja siempre una fecha **estrictamente posterior** a la anterior, y las cuotas que existen son las
 de períodos que arrancaron antes.
+
+**El `período` se escribe DOS veces y no una, y la segunda es la reimputación de `MP4`.** La
+primera es la de la creación, arriba. La segunda corre **sólo** cuando `MP4` registra un pago sobre
+una cuota **cuyo período ya terminó** —la suspensión duró más que un período—: ahí la cuota pasa a
+cubrir el período que arranca en la reactivación, porque registrarla contra el período viejo le
+cobra a la persona uno que transcurrió entero sin servicio y deja la fecha del próximo cobro donde
+`MP5` abre otro en la misma corrida (`B/03` §7.2, *«al reabrir por `MP4`»*). **No rompe nada de lo
+de arriba**: el período sigue sin ser anulable, sigue identificando la cuota por su fecha de
+inicio, y el `UNIQUE` no tiene contra qué chocar porque durante la suspensión no se creó ninguna
+cuota. **Y no cambia el monto esperado**, que sale de la versión de plan anclada y no del período.
+La escritura **se asienta en el evento de dominio de `MP4`** —la regla 4 del `NUCLEO/03` §1—, con
+el período que la cuota tenía y el que pasó a cubrir.
 
 ### 2.4 Capacidades y concesiones
 
