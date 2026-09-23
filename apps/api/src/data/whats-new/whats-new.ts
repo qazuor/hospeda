@@ -153,6 +153,55 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     {
+        id: '2026-09-22-pages-recover-after-an-outage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Si una sección falla, se recupera apenas se arregla',
+            en: 'When a section fails, it recovers as soon as it is fixed',
+            pt: 'Se uma seção falha, ela se recupera assim que é corrigida'
+        },
+        body: {
+            es: 'Antes, cuando un listado no cargaba, ese error podía quedar guardado hasta dos horas y lo seguías viendo aunque el problema ya estuviera resuelto. Ahora la página vuelve sola en cuanto se arregla.',
+            en: 'Previously, when a listing failed to load, that error could stay cached for up to two hours and you kept seeing it even after the problem was fixed. Now the page comes back on its own as soon as it is resolved.',
+            pt: 'Antes, quando uma listagem não carregava, esse erro podia ficar guardado por até duas horas e você continuava vendo-o mesmo depois de o problema ser resolvido. Agora a página volta sozinha assim que é corrigida.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    {
+        id: '2026-09-22-rss-feeds-signal-outages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los feeds RSS avisan cuando algo falla, en vez de aparecer vacíos',
+            en: 'RSS feeds now signal an outage instead of looking empty',
+            pt: 'Os feeds RSS avisam quando algo falha, em vez de aparecerem vazios'
+        },
+        body: {
+            es: 'Si seguís las publicaciones o los eventos por RSS, un problema temporal ya no te llega como un feed sin novedades: tu lector entiende que hubo un error y vuelve a intentar.',
+            en: 'If you follow posts or events via RSS, a temporary problem no longer reaches you as a feed with no news: your reader understands there was an error and tries again.',
+            pt: 'Se você acompanha as publicações ou os eventos por RSS, um problema temporário não chega mais como um feed sem novidades: seu leitor entende que houve um erro e tenta de novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    {
+        id: '2026-09-22-double-click-save-no-longer-errors',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        title: {
+            es: 'Guardar dos veces seguidas ya no te da un error',
+            en: 'Saving twice in a row no longer gives you an error',
+            pt: 'Salvar duas vezes seguidas não gera mais um erro'
+        },
+        body: {
+            es: 'Si hacés doble clic o tenés dos pestañas abiertas editando lo mismo, el sistema reconoce que es la misma acción repetida en lugar de cortar con un error.',
+            en: 'If you double-click or have two tabs open editing the same thing, the system recognises it as the same repeated action instead of failing with an error.',
+            pt: 'Se você clicar duas vezes ou tiver duas abas abertas editando a mesma coisa, o sistema reconhece que é a mesma ação repetida em vez de falhar com um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    {
         id: '2026-09-08-mobile-menu-single-controls',
         publishedAt: 'on-promotion',
         highlight: false,
