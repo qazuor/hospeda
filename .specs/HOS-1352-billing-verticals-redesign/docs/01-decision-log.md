@@ -4237,13 +4237,51 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-016 — La primera cuota de un pagador manual tiene ventana propia: SIETE días corridos, no las 72 h del checkout
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso, abierto por la familia 2 de la 9-bis-5**: al cerrar `F-8fB1-004` la primera cuota del
+  pagador manual ganó ejecutor —la abre `S1`, en `PENDING_AUTHORIZATION`, donde `S4` no alcanza—, y
+  si nadie transfiere, `S3` la lleva a `ABANDONED`, que es **terminal**. **Pero la única ventana
+  declarada en todo el corpus son las 72 h de `S3`, escritas para completar un checkout con
+  tarjeta**, no para que se acredite una transferencia bancaria.
+- **Decisión**: `S3` tiene **dos plazos según el método de pago**. Para el pagador con tarjeta siguen
+  las **72 h**. Para el **pagador manual**, la ventana es de **7 días corridos**.
+- **Por qué siete, y por qué corridos**: es el único de los tres caminos en que el mecanismo coincide
+  con el hecho físico que espera. **Una transferencia interbancaria en Argentina no se acredita en
+  72 h si cae un fin de semana largo**, y el costo de equivocarse es asimétrico: se pierde a alguien
+  que **ya decidió pagar** contra tener una fila pendiente unos días más. Corridos y no hábiles
+  porque un plazo en días hábiles obliga a un calendario de feriados que el programa no tiene y que
+  nadie va a mantener — el mismo criterio con que el programa viene descartando mecanismo.
+- **Las dos alternativas, y por qué no**:
+  - **Dejar las 72 h** —una sola ventana en todo el corpus, costo cero—: se descarta porque el caso
+    que falla no es de borde. Una transferencia enviada un viernes se acredita el lunes, y ese
+    Partner de buena fe **muere en `ABANDONED`** y tiene que rehacer el alta entera. Si alguna vez
+    se vuelve a esta opción, **el aviso del alta tiene que decir el plazo explícitamente**.
+  - **Sin ventana**, la fila queda en `PENDING_AUTHORIZATION` hasta que alguien transfiera o un
+    humano la cierre: es ***«un instrumento abierto sin fecha de cierre»***, la forma que `B/16` §1.3
+    rechaza por escrito y que este mismo día llevó a descartar *«dejar el saldo de cortesía
+    esperando»* en `DEC-GRANT-011`. **Mismo criterio, mismo día, mismo rechazo.**
+- **Lo que hay que recorrer al implementarla**: `S3` deja de tener un plazo y pasa a tener dos, así
+  que **todo lo que cite «72 h» o «la ventana de `S3`» hay que recorrerlo** —`B/03` §3.4 y §7, el
+  aviso del alta en `B/19`, y el cap. 07 §2—. Es el trabajo que `DEC-METH-011` obliga a rastrear.
+- **Lo que NO cierra**: **qué se le dice a quien se le venció la ventana** y tiene que rehacer el
+  alta. No está escrito en ningún capítulo, y es el mismo hueco que `DEC-GRANT-012` dejó abierto para
+  el aviso del cierre del saldo. **Las dos las resuelve la misma tanda**, y conviene que sea la misma
+  fila de copy.
+- **Origen**: la familia 2 de la FASE 9-bis-5 (`44e3d963a`, `cbd3e7093`), que dejó la cifra
+  explícitamente sin elegir por ser de producto, y la elección del owner del 2026-09-23 entre las
+  tres opciones que se le presentaron — eligió la 2, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **93** |
+| Decisiones tomadas | **94** |
 | De metodología | 12 |
-| Funcionales | 81 |
+| Funcionales | 82 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
