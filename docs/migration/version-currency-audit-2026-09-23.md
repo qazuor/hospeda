@@ -264,6 +264,19 @@ La única entrada nueva es la observación `965`, detectada por v2 como sin
 `type`; debe revisarse por separado. Las otras 48 decisiones siguen pendientes
 de reaplicación controlada sobre la copia, no sobre la DB activa.
 
+En la copia se revalidaron además las tres entradas `vigente-con-ajuste`:
+
+| ID | Título propuesto | Destino conceptual |
+|---:|---|---|
+| 668 | Auditoría de arquitectura de rutas del Admin Panel | documentación/arquitectura; conservar en Engram como descubrimiento fechado |
+| 3553 | Regla de testing acotado: no ejecutar suites completas | `AGENTS.md`/skill de testing; conservar en Engram como preferencia del usuario |
+| 3708 | Regla SSR para Leaflet y módulos browser-only con `clientOnly` | skill de TanStack Start/SSR; conservar en Engram como gotcha técnico |
+
+Las 45 entradas clasificadas como ruido más la `965` quedaron soft-deleted sólo
+en la copia v2 y la copia conserva `integrity_check = ok`. Los tres títulos
+propuestos todavía no se escribieron, porque la DB activa no debe recibir ningún
+cambio hasta cerrar la revisión completa del lote.
+
 ## Pines versionados alineados
 
 El bootstrap reproducible quedó alineado con el runtime activo: OpenCode
