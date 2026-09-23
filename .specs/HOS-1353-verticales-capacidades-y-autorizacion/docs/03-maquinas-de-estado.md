@@ -169,7 +169,8 @@ evento auditable por el criterio 2 del cap. 08 §1.1 (núcleo), y ese registro e
 (§1.3) — ni borrar la ficha ni darse de baja lo borran, que es la misma promesa que el §10.2 ya
 hace sobre el trial.
 
-**`T7` no es un cuarto par de `G-R4` y no toca los tres declarados.** Comparte el `desde` con
+**`T7` no agrega ningún par a `G-R4` y no toca los cuatro declarados** —eran tres cuando esto se
+escribió; el cuarto lo agregó `S25` (`DEC-SUB-015`), en la otra épica y sin abrir este §—. Comparte el `desde` con
 `T1`/`T6`, pero **no el evento**: el suyo es el encendido, un cambio de catálogo, y los de aquéllas
 son el evento de activación de la persona. El par `(PRE_TRIAL, evento de activación)` sigue
 teniendo **dos** filas y dos destinos, que es lo que el cap. 03 §1 regla 7 (núcleo) enumera y lo

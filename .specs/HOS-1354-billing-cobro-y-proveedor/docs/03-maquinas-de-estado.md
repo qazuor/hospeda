@@ -991,7 +991,8 @@ gratis y llegó a `A5` por cualquiera de las otras puertas.
 > `S21` sobre un addon convertido no es vacía, y es exactamente el que no puede quedar sin
 > cerrar.
 
-**`S21` no agrega ningún par con dos filas, así que `G-R4` sigue contando tres.** Comparte el
+**`S21` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — y son cuatro
+desde `S25`, no tres** (`NUCLEO/03` §1 regla 7). Comparte el
 `desde` con `S20` —las dos salen de *«toda fila viva de complemento»*— y **compartir el `desde` no
 es compartir el par** (`NUCLEO/03` §1 regla 7): el evento de `S20` es otorgar o anclar un grant y
 el de `S21` es que su instancia llegó a `CANCELLED`, y ninguna otra fila de esta tabla declara
@@ -1382,7 +1383,9 @@ condiciones que se evalúan sobre estados distintos. Con una sola fila, la deriv
 quedado escrita como *«`S5`, o `S7` si venía de `DECLARED_UNPAID`»*, que es la forma que la regla 1
 del núcleo no puede verificar.
 
-**Y `MP4` no agrega ningún par con dos filas, así que `G-R4` sigue contando tres.** Comparte el
+**Y `MP4` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — y son
+cuatro desde `S25`, no tres** (`NUCLEO/03` §1 regla 7; esta frase decía *«sigue contando tres»* y
+caducó con `DEC-SUB-015`, que creó el cuarto par sin tocar este §). Comparte el
 evento con `MP1` —*«el admin registra el pago»*— y **compartir el evento no es compartir el par**
 (`NUCLEO/03` §1 regla 7): el `desde` de una es `AWAITING` y el de la otra `DECLARED_UNPAID`, y
 ninguna otra fila de esta tabla sale de ninguno de los dos con ese evento. Del lado de la tabla del
@@ -1815,7 +1818,7 @@ La obligación 2 de `DEC-METH-008`, contestada por escrito:
 |---|---|---|---|
 | *«quién crea las cuotas de un pagador manual y cuándo queda abierto»* | el arreglo de `MP4` (`DEC-SUB-012`, §7.1) | **queda FALSA**: lo cierra `MP5`, y su respuesta —no crear durante la suspensión— es además la que ese § dejaba pedida en su misma frase | corregida en §7.1, en el recuadro que la declaraba abierta |
 | *«la máquina de pago manual no tiene entrada, y su grace no tiene quién lo abra»* (`F-8B2-018`) | la FASE 8 adversarial | **queda FALSA en sus dos mitades**: la entrada es `MP5` y el grace entra por `S4`, con el hecho nombrado acá arriba | este § |
-| *«`MP4` no agrega ningún par, así que `G-R4` sigue contando tres»* | el arreglo de `MP4` (§7.1) | **sigue verdadera**, y `MP5` tampoco agrega uno: sale de un `desde` que ninguna otra fila usa | arriba, *«lo que NO cambia»* |
+| *«`MP4` no agrega ningún par, así que `G-R4` sigue contando tres»* | el arreglo de `MP4` (§7.1) | **verdadera en su primera mitad y CADUCA en la segunda**: `MP4` no agrega ningún par y `MP5` tampoco —sale de un `desde` que ninguna otra fila usa—, pero los pares dejaron de ser tres el día que `DEC-SUB-015` creó `S25`, que es de otro §. **Son cuatro**, recontados sobre la tabla de `NUCLEO/03` §1 regla 7 y no sumándole uno | corregida en §7.1, y en las otras tres apariciones del corpus |
 | *«la máquina sigue teniendo tres estados»* y *«`B/02` §2.3 no necesita un estado nuevo»* | el arreglo de `MP4` (§7.1) y `B/02` §2.3 | **siguen verdaderas**: `MP5` agrega una arista desde *(sin fila)*, que no es un nodo de la columna | sin tocar |
 | *«`manual_payment` guarda quién lo registró, cuándo, comprobante»* | `B/02` §2.3 | **queda INCOMPLETA**: una cuota en `AWAITING` existe **antes** de que nadie registre nada, así que esos tres no se pueden escribir todavía y falta **el período** que el `UNIQUE` de `B/05` §C5 ya presuponía | corregida en `B/02` §2.3 |
 | *«un pago manual mensual no tiene nada que pausar»* | `B/06` §7 | **sigue verdadera**, y esta regla la usa en vez de contradecirla | arriba, *«la pausa»* |
@@ -1877,8 +1880,8 @@ punto 3).
 
 **`A5` desde `PENDING_AUTHORIZATION` no colisiona con `A3`**: el par es
 `(PENDING_AUTHORIZATION, queda huérfano)` y `A3` es `(PENDING_AUTHORIZATION, vence la ventana)`.
-Son dos eventos distintos, así que **no hay un cuarto par con dos filas** y la tabla de la regla 7
-del núcleo sigue teniendo **tres** entradas. **El tercer evento de `A5` tampoco agrega un par**:
+Son dos eventos distintos, así que **`A5` no agrega ninguna entrada** y la tabla de la regla 7
+del núcleo sigue teniendo **cuatro** —la cuarta la agregó `S25`, no ésta—. **El tercer evento de `A5` tampoco agrega un par**:
 *«se revoca el grant»* no lo comparte ninguna otra fila de esta tabla, ni desde `ACTIVE` —donde
 están `A4` y `A6`, con sus propios eventos— ni desde `PENDING_AUTHORIZATION`. Los estados de llegada difieren —`CANCELLED` y
 `ABANDONED`— y los dos son terminales de la instancia, así que **los dos caen bajo la salvedad 1
