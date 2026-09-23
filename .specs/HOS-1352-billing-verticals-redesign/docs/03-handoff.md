@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-20
+updated: 2026-09-23
 status: CURRENT
 ---
 
@@ -26,8 +26,10 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**90 filas: 49 `VERIFIED`, 13 parciales, 20 `NOT_SUPPORTED`, 8 `UNKNOWN`**, recontadas con
-   [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
+   (**89 filas: 50 `VERIFIED`, 13 parciales, 20 `NOT_SUPPORTED`, 6 `UNKNOWN`**, recontadas el
+   2026-09-23 con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano.
+   **Esta línea decía «90 · 49 · 13 · 20 · 8» y era falsa**: es un conteo congelado de los que el
+   programa viene midiendo, y vivía en el documento que todo agente lee cuarto).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido
 9. [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) — la evaluación de reemplazo
    de Mercado Pago
@@ -45,7 +47,118 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-20 — la 9-bis CERRADA, los 23 aplicados
+## Última actualización: 2026-09-23 — la 8-bis-5 y la 9-bis-5 corridas; la serie BAJÓ por primera vez
+
+### El próximo paso exacto, y tiene fecha
+
+> **1.** El **2026-09-24, después de las 18:06 `-03`**, leer la **sonda 49**:
+>
+> ```bash
+> INTENTO=c MP_ACCESS_TOKEN=$(cat ~/.mp-token-hos1352) \
+>   node .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes/probe-49-la-ventana-de-reintentos.mjs leer
+> ```
+>
+> **2.** Con su veredicto, **una decisión del owner**: qué hace el dunning con la fila que el
+> proveedor pausó (`DEC-MP-003` la declara pendiente).
+> **3.** Las **familias 6 y 7** de la 9-bis-5, que son las únicas que faltan.
+> **4.** Recién entonces la **FASE 8-bis-6**.
+
+**El sujeto**: `f0be57a1a6924e3f9824682a9297b320`, `frequency: 2 days`, creado el 22/09 a las
+18:06 `-03`. **El manifiesto vivía sólo en `/tmp`**; hay una copia en `~/.hos1352-sonda-49-c.json`.
+Lo que decide: si la ventana de reintentos del proveedor es **fija de 24 h** —y entonces un
+`GRACE_PERIOD` de 7 días no lo sostiene nadie— o **es el ciclo** —y con plan mensual hay un mes de
+margen—. Según `C1`, **decide además si `RC-5` es un crítico o dos**, porque `B/09` §4 y la ventana
+leen el mismo objeto.
+
+### Dónde estamos
+
+| paso del ciclo (`DEC-METH-006`) | estado |
+|---|---|
+| 8-bis · 9-bis · 8-bis-2 · 9-bis-2 · 8-bis-3 · 9-bis-3 · 8-bis-4 · 9-bis-4 | ✅ |
+| **8-bis-5** | ✅ 23/09 — **76 hallazgos · 9 `CRITICA` por ID · 8 defectos distintos** |
+| **9-bis-5** | 🟡 **132 commits**, 5 familias + 4 tandas cortas · **faltan las familias 6 y 7** |
+| **8-bis-6** | ⬜ después de las familias 6 y 7 |
+
+### Lo que la 8-bis-5 midió, y es el resultado del programa hasta hoy
+
+**Por primera vez en cinco vueltas el acto de arreglar dejó de ser el generador.**
+
+| | 8-bis | -2 | -3 | -4 | **-5** |
+|---|---|---|---|---|---|
+| hallazgos nuevos | 112 | 120 | 85 | 83 | **76** |
+| `CRITICA` por ID | 28 | 27 | 18 | 13 | **9** |
+| críticos **distintos** | — | 17 | 14 | 12 | **8** |
+| **generados por la tanda anterior** | 25/25 | 17/17 | 13/14 | 12/12 | **6 de 8** |
+
+Los dos que **no** vienen de la tanda son de clases que el programa nunca había producido: una
+**medición externa** (`RC-5`) y una **lectura del conjunto** anterior a todo (la dirección inversa
+sin constructor).
+
+**Y `DEC-METH-011` se ejecutó con cobertura completa**: 47 de 47 commits que editan el corpus
+nombrados en alguno de los diez rastros de la 9-bis-4, **1.030 apariciones** justificadas una por
+una. Eso permitió medir por primera vez **la CALIDAD** de una resolución y no sólo su existencia:
+los ocho informes revisaron **887 líneas** y exhibieron **16 falsas** (1,8 %-3,1 %), con archivo y
+línea. De ahí salió `DEC-METH-012`.
+
+### Qué hizo la 9-bis-5, por si hay que retomar sin releer 132 commits
+
+Cerró **los 8 críticos** y los **6 defectos** que el censo de preguntas destapó. Cada bloque tiene
+su rastro en [`23-fase-9-bis-5/`](./23-fase-9-bis-5/):
+
+| bloque | cierra | rastro |
+|---|---|---|
+| familia 1 · la retención y el piso | críticos #1 #2 #3 · `H2` `I1` | `rastro-93eb0a1dc.md` |
+| familia 2 · el pagador manual | crítico #4 | `rastro-2e58663f7.md` |
+| familia 3 · la marca y los motivos | críticos #5 #6 · `I2` | `rastro-d3bd02332.md` |
+| familia 4 · la cortesía diferida | `DEC-GRANT-011`/`-012` · `E2` `F3` | `rastro-458ce804f8.md` |
+| familia 5 · la dirección inversa y las unidades | crítico #8 · `I3` | `rastro-a7a63d3b0.md` |
+| tandas cortas 1-4 · las decisiones del owner | 8 decisiones | `rastro-e8f63e45f.md`, `rastro-4bcb3c50fb.md`, `rastro-d993972490.md`, `rastro-a15301471d.md` |
+
+**Las 9-bis-5 corren EN SERIE, nunca en paralelo**: las familias tocan los mismos capítulos
+(`B/03`, `nucleo/01`, `V/02`) y dos agentes se pisan.
+
+### El decision log pasó de 88 a 103 en un día
+
+Nuevas: `DEC-METH-012` (el cuantificador de la cita), `DEC-GRANT-011`/`-012`/`-013`/`-014`,
+`DEC-DATA-004`, `DEC-ENT-002`, `DEC-SUB-016`/`-017`/`-018`, `DEC-RF-004`/`-005`/`-006`,
+`DEC-TEST-002`, `DEC-ARCH-008`.
+
+**Cuatro de ellas las tomó un agente sin consultar, las declaró como tales y el owner las
+ratificó** (`DEC-ENT-002`, `DEC-GRANT-013`, `DEC-GRANT-014`, `DEC-ARCH-008`). Tienen entrada propia
+en vez de quedar en un commit: **que la haya tomado un agente no la vuelve menos decisión.**
+
+### La regla que la sesión del 23/09 midió, y hay que aplicarla
+
+**Cuatro entradas del log escritas ese día tenían un error de hecho** —una referencia a `S13` donde
+iba `S9`, un «seis» que era **doce**, una razón que valía para dos de tres transiciones, y una
+partición descrita por disparador en vez de por default—. **Los cuatro los frenó la misma cosa**:
+una línea en el encargo que decía *«verificá X contra `<archivo §>`»*. Ninguno lo habría visto un
+guard, ninguno aparece como error en un diff, y los cuatro iban camino a implementarse.
+
+> **Al delegar la implementación de una decisión, poner en el encargo una verificación explícita
+> por cada cifra o referencia que la decisión afirma.**
+
+Y dos cosas más que la tanda midió sobre los rastros: **el §6 de un rastro declara caducidad y NO
+promete corrección — sólo el §5 la promete** (un conteo anotado en un §6 quedó falso en el corpus
+durante dos familias); y **un `rg` citado en un rastro hay que correrlo DESPUÉS de editar**.
+
+### Pendientes del owner
+
+1. Las **12 etiquetas `status-blocked`** de Linear.
+2. La automatización de Linear **«On PR merge → Done»**.
+3. `DEC-CI-001` y el `CLAUDE.md` del repo.
+4. **El criterio de salida del ciclo 8↔9** — `DEC-METH-006` dice *«hasta que ningún `CRITICA` quede
+   abierto sin causa declarada»*, que **no termina por construcción**: cada vuelta cierra los suyos y
+   su tanda fabrica los de la siguiente. Está en discusión al 23/09.
+5. **`RN-3`, `GR-1`, `GR-2`** (matriz) esperan un acto que nadie ejecutó: **poner al día una
+   suscripción que el proveedor pausó por mora**. ⚠️ El sujeto **no es reproducible a voluntad** —es
+   la tarjeta del owner rechazando—: si se normaliza, las tres se pierden.
+6. Pendiente chico: agregarle a la fila `GR-3` de la matriz que **la predicción se cumplió** (4º
+   caso, 103 s).
+
+---
+
+## Histórico: 2026-09-20 — la 9-bis CERRADA, los 23 aplicados
 
 ### El próximo paso exacto
 
