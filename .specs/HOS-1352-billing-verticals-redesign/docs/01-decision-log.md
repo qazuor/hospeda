@@ -4323,6 +4323,25 @@ Cada entrada lleva, según §3.4:
   Por el criterio de esta misma decisión esas cinco irían a `DEVOLVER`, y **quedan en `NO DEVOLVER`
   por MECANISMO**: `S21` conoce la cláusula de `A5` que la disparó, **no cuál de las doce mató al
   título tres saltos antes**, y hacerle llegar esa causa es mecanismo nuevo.
+  - ***Enmendado el 2026-09-23, con las cifras ya corregidas: la DISCONTINUACIÓN se parte y el resto
+    no.*** Cuando las cifras falsas se corrigieron —doce y cinco, no seis y dos— el owner volvió a
+    mirar el reparto y **partió el disparador 2 sólo para la discontinuación**: **`S25`, `S27` y
+    `S28` van a `DEVOLVER`**; `S17` y `S12`-vía-`S26` **siguen en `NO DEVOLVER`** con la condición
+    de arriba.
+    **Por qué justo esas tres, y el argumento es que la razón para no partir era FALSA ahí**: lo que
+    sostenía el `NO DEVOLVER` era *«`S21` no puede saber cuál de las doce mató al título tres saltos
+    antes»*. **Para la discontinuación eso no se cumple** — es un **acto masivo nuestro que recorre
+    las filas una por una** (`B/10` §4.3), así que **puede dejar la marca al pasar, sin trazar nada
+    hacia atrás**. No hace falta el mecanismo que se descartó: hace falta que el acto que ya las
+    toca las marque.
+    **Y es donde el costo humano es mayor**: `S27` y `S28` **no reciben el piso de 60 días**, porque
+    `DEC-SUB-018` se lo niega a la suspendida y a la que esperaba autorización. Son los dos únicos
+    caminos en que la persona pierde el complemento que pagó, **no recibe ninguna compensación**, y
+    el default le proponía no devolverle nada.
+    **Lo que NO se parte, y queda declarado**: `S17` y `S12`-vía-`S26` siguen dependiendo de que
+    quien resuelve se aparte del default, **porque ahí el argumento del mecanismo sí vale** — no hay
+    un acto nuestro recorriendo esas filas que pueda marcarlas al pasar.
+    Elección del owner del 2026-09-23 entre tres opciones — eligió la 3, que era la recomendada.
   **La condición, y es obligatoria**: la fila del motivo 14 **dice en voz alta que esos caminos
   existen**, para que quien resuelve pueda apartarse del default sabiendo cuándo. Un default es una
   propuesta y no una sentencia; lo que no puede ser es una propuesta que contradice el criterio **en
