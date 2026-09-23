@@ -3611,3 +3611,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `PRAGMA integrity_check` devolvió `ok`; el proyecto exacto quedó con cero
   observaciones activas. Los proyectos `hospeda3-*`, externos y `tmp` siguen
   pendientes de una decisión separada.
+
+## Gate 216 · Inventario estructural posterior de Engram
+
+- El proyecto canónico `hospeda` conserva 3.045 observaciones activas; `Hospeda`
+  conserva 2 y queda como variante de capitalización pendiente.
+- Los namespaces `hospeda-*`, `hospeda-api`, `api`, `admin`, `web`, `seed`,
+  `server-tools` y `qzpay` fueron identificados sólo por metadatos; no se
+  consolidaron porque el nombre no prueba que sean duplicados.
+- `tmp` concentra 5.259 observaciones, 99,9% `passive`, creadas por
+  `engram-autosave-SessionEnd`, en sesiones principalmente bajo `/tmp`.
+- Hay 1.078 observaciones sin proyecto y sin directorio de sesión útil; no se
+  atribuyeron a Hospeda por inferencia.

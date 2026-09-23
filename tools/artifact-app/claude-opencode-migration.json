@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_55",
-        "number": 55,
-        "createdAt": "2026-09-23T21:05:00.000Z",
+        "id": "ver_claude_opencode_migration_56",
+        "number": 56,
+        "createdAt": "2026-09-23T21:20:00.000Z",
         "author": "opencode",
-        "reason": "registrar limpieza autorizada de hospeda3 en Engram",
+        "reason": "actualizar inventario estructural de Engram",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_54"
+        "basedOnVersion": "ver_claude_opencode_migration_55"
     },
     "data": {
         "sections": [
@@ -241,7 +241,7 @@
                             "title": "Clasificar proyectos Engram",
                             "category": "Engram + CLAUDE.md",
                             "description": "Separar Hospeda, worktrees, temporales y otros repos antes de consolidar.",
-                            "notes": "Gate120: clasificación agregada read-only: tmp 5.259; hospeda 2.986; sin proyecto 1.103; hospeda3 108; Asistia 55; new-asistia 27; restantes <=23 cada uno. Prioridad de revisión: tmp/sin proyecto, luego Hospeda por checkout y worktrees; externos separados. No se leyeron contenidos ni se ejecutaron mutaciones; revisión semántica y aprobación humana por lote siguen pendientes. Gate271: `hospeda3` exacto quedó sin observaciones activas tras backup y soft-delete autorizado; no se tocaron `hospeda3-*` ni proyectos no-Hospeda.",
+                            "notes": "Gate120: clasificación agregada read-only: tmp 5.259; hospeda 2.986; sin proyecto 1.103; hospeda3 108; Asistia 55; new-asistia 27; restantes <=23 cada uno. Prioridad de revisión: tmp/sin proyecto, luego Hospeda por checkout y worktrees; externos separados. No se leyeron contenidos ni se ejecutaron mutaciones; revisión semántica y aprobación humana por lote siguen pendientes. Gate271: `hospeda3` exacto quedó sin observaciones activas tras backup y soft-delete autorizado; no se tocaron `hospeda3-*` ni proyectos no-Hospeda. Gate272: inventario estructural posterior: `hospeda` 3.045 activas, `Hospeda` 2, `tmp` 5.259 (99,9% passive/autosave), y 1.078 sin proyecto. Los namespaces auxiliares quedan sin consolidar por falta de evidencia semántica.",
                             "done": false
                         },
                         {
