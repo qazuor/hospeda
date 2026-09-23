@@ -556,6 +556,38 @@ unidad se declara terminada.
 >
 > **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
 > mismo conjunto. **La columna es la lista; esto es lo que la vuelve una condición.**
+>
+> **Y hay una segunda condición de la misma forma, sobre los ESCRITORES** (`DEC-TEST-002`):
+> **una unidad no está terminada mientras alguna escritura que sus capítulos le declaran a una de
+> sus transiciones no esté implementada.** También vale para las trece, también es independiente de
+> qué construye cada una, y también sale de una columna que ya existe — acá la de **capítulos** del
+> §2, que es donde está declarado qué escribe cada transición.
+>
+> **De dónde sale, y es una contrapartida exacta y no una precaución general.** `G-R6` exige que
+> *«al menos una transición del corpus»* escriba cada columna que una condición lee, y **el corpus
+> son las tablas que los capítulos declaran**, nunca el subconjunto ya construido (`B/20` §2) —
+> es lo que impide que el guard nazca en rojo sobre el camino normal entre `B5` y `B8`, donde
+> `MP5` lee una fecha cuya tercera escritura es de `S10`, que construye `B8`. **El precio de esa
+> elección está dicho en el mismo lugar donde se toma**: un escritor que el capítulo declara y que
+> **nadie implementa pasa en verde**, y `B/20` §2 declara que esa clase **ningún guard la vigila**.
+>
+> **Por qué un criterio y no un guard, que es lo que el owner eligió entre las tres opciones.**
+> Un guard que compare escritores **declarados** contra **implementados** sólo puede correr cuando
+> exista el código —FASE 10 en adelante—, así que hasta entonces no vigila nada; el criterio, en
+> cambio, actúa **en el instante en que la unidad se declara lista**, que es cuando el escritor
+> tendría que estar, y no cuando alguien lea un dato vacío en producción. Es exactamente la forma
+> del párrafo de arriba aplicada al otro conjunto.
+>
+> **Y no se enumeran acá tampoco, por la misma razón**: las tablas de transiciones de los capítulos
+> ya declaran cada escritura, y copiarlas sería un segundo censo del mismo conjunto. **La
+> declaración del capítulo es la lista; esto es lo que la vuelve una condición.**
+>
+> **Y esto NO revive el guard que `B/20` §2 rechaza sobre la misma dirección.** Allá lo rechazado
+> es que **un guard estático** comprueba que un hecho tenga quien lo ejecute: *«pide una
+> declaración, y un guard estático sólo puede comprobar que esté»*. Un criterio de terminación no
+> es un guard —lo contesta una persona al declarar lista la unidad, con el código delante— así que
+> la objeción **no lo alcanza**, y la dirección que allá sigue sin vigilancia automática queda con
+> vigilancia humana en el único momento en que se puede ejercer.
 
 | # | la unidad está lista cuando… |
 |---|---|
