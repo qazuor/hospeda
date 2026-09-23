@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_50",
-        "number": 50,
-        "createdAt": "2026-09-23T19:45:00.000Z",
+        "id": "ver_claude_opencode_migration_51",
+        "number": 51,
+        "createdAt": "2026-09-23T20:05:00.000Z",
         "author": "opencode",
-        "reason": "registrar la segunda validación real de verify changed",
+        "reason": "actualizar evaluación de OpenKilo OpenChamber PTY y voz",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_49"
+        "basedOnVersion": "ver_claude_opencode_migration_50"
     },
     "data": {
         "sections": [
@@ -514,7 +514,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate121: frontera qz/hops y distribuci\u00f3n por capas documentada. Gate218: `start-issue` ahora lee `issues.teamKey` desde `.qz/project.json` para normalizar IDs sin asumir HOS; conserva HOS como fallback legacy y no expone secretos. Gate219: `close-issue --plan` tambi\u00e9n lee `branches.protected` para decidir si una branch tiene PR propio, con fallback `main/staging`; el JSON expone la decisi\u00f3n y la lista usada. Se agreg\u00f3 `project-config.ts` como lector seguro del adapter. La extracci\u00f3n completa de worktrees/envs/DB/Linear queda diferida hasta validar con un segundo proyecto; no se duplicar\u00e1 l\u00f3gica ni se copiar\u00e1n secretos.",
+                            "notes": "Gate121: frontera qz/hops y distribución por capas documentada. Gate218: `start-issue` ahora lee `issues.teamKey` desde `.qz/project.json` para normalizar IDs sin asumir HOS; conserva HOS como fallback legacy y no expone secretos. Gate219: `close-issue --plan` también lee `branches.protected` para decidir si una branch tiene PR propio, con fallback `main/staging`; el JSON expone la decisión y la lista usada. Se agregó `project-config.ts` como lector seguro del adapter. La extracción completa de worktrees/envs/DB/Linear queda diferida hasta validar con un segundo proyecto; no se duplicará lógica ni se copiarán secretos.",
                             "done": false
                         }
                     ]
@@ -758,7 +758,7 @@
                             "title": "Evaluar OpenKilo",
                             "category": "Adopción progresiva",
                             "description": "Medir modelos disponibles, costo, privacidad, estabilidad y utilidad real.",
-                            "notes": "OpenKilo: probar aislado por gateway externo y modelos gratuitos; no usar en código sensible.",
+                            "notes": "Gate268: auditoría read-only del 2026-09-23. OpenKilo ofrece un gateway Kilo/OpenRouter con modelos gratuitos potenciales, pero el repositorio/release específico no quedó verificado. Mantener como prueba aislada, sin datos sensibles ni activación por defecto.",
                             "done": false
                         },
                         {
@@ -766,7 +766,7 @@
                             "title": "Evaluar OpenChamber",
                             "category": "Adopción progresiva",
                             "description": "Determinar si aporta UI/gestión que no duplique OpenCode/Gentle.",
-                            "notes": "OpenChamber: probar separado; duplica TUI/sesiones/worktrees y no entra al núcleo inicialmente.",
+                            "notes": "Gate268: OpenChamber v1.24.2 visible al 2026-09-18 es una aplicación/workspace externo, no un plugin base. Mantener como prueba separada porque puede traer su propio OpenCode y competir con la TUI V1/Gentle.",
                             "done": false
                         },
                         {
@@ -774,7 +774,7 @@
                             "title": "Evaluar PTY y voz",
                             "category": "Adopción progresiva",
                             "description": "Probar sólo si existe un gap de procesos largos o notificaciones.",
-                            "notes": "PTY no recomendado para el núcleo por solapamiento con hops y permisos asimétricos; voz sólo piloto posterior.",
+                            "notes": "Gate268: opencode-pty v0.3.6 es candidato útil para procesos persistentes, pero sus permisos `ask` se vuelven deny y requiere allowlist explícita. Smart voice queda opt-in posterior por su superficie TTS/webhook.",
                             "done": false
                         },
                         {
