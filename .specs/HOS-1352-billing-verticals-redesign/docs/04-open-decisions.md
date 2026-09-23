@@ -291,7 +291,7 @@ corte al suscribirse es por vertical) · ~~`E-TRIAL-03`~~ **disuelto**: la campa
 re-agenda T4, y el cruce con la de recuperación es imposible por construcción — arranca en T3 y la
 única extensión es T4, que exige `TRIAL_ACTIVE`
 
-**Suscripción** · ~~`M-SUB-01`~~ **cerrado por el cap. 03** (los cuatro estados que pedía, más `ABANDONED`; y las 72 h, la limpieza y el reintento de la ventana sin autorizar) · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
+**Suscripción** · ~~`M-SUB-01`~~ **cerrado por el cap. 03** (los cuatro estados que pedía, más `ABANDONED`; y la duración de la ventana sin autorizar —**dos** plazos desde `DEC-SUB-016`: 72 h con tarjeta y 7 días corridos con pago manual—, la limpieza y el reintento) · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
 existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADDON-002`; el §11
 acota sólo la principal) · ~~`A-SUB-02`~~ **cerrado por el cap. 01** (ni el plan ni el billing
 option lo declaran: `puedePausar()` lo deriva en un solo lugar) · ~~`E-SUB-05`~~ **disuelto por el cap. 12 §5**: `DEC-SUB-006` define el crédito como *lo pagado
@@ -317,7 +317,7 @@ respuesta) · ~~`MP-01`~~ **cerrado por el cap. 06** (los cuatro ciclos `VERIFIE
 existe y `frequency: 5` se acepta, así que los cuatro son elección nuestra) · ~~`M-MP-01`~~
 **cerrado por el cap. 06** (sólo ARS, la columna existe igual por el §57; los impuestos no se
 modelan hasta ARCA) · ~~`M-MP-02`~~ **cerrado por los caps. 03 y 06** (la ventana del checkout es
-NUESTRA, 72 h, y se cancela explícitamente al vencer porque `EX-1` sigue `UNKNOWN`) ·
+NUESTRA —**72 h con tarjeta y 7 días corridos con pago manual**, `DEC-SUB-016`— y se cancela explícitamente al vencer porque `EX-1` sigue `UNKNOWN`) ·
 ~~`S-MP-01`~~ **cerrado por el cap. 06** (las capacidades se componen proveedor ∩ plan ∩ billing
 option, y nadie pregunta por el método de pago) · ~~`S-MP-02`~~ **cerrado por el cap. 06** (una
 fila caduca cuando cambia lo que la sostiene, no por antigüedad; se re-verifica antes de
@@ -510,7 +510,7 @@ inventó; los dos quedan acá:
 | Qué | Para qué |
 |---|---|
 | ⚠️ **Un error VIVO en producción, encontrado de paso** — ahora con destino: `DEC-CONC-002` lo convierte en **el detector de huérfanas**, así que al arreglarlo **no debe silenciarse** sino convertirse en el disparador de la re-vinculación | Los webhooks `subscription_authorized_payment` / `invoice.updated` de al menos dos preapprovals (`74eea70d…` y `7a9e6a99…`) fallan con `SubscriptionNotResolvedError` (HOS-276), la API responde **`500`** y los encola para reintentar hasta 5 veces. **Alcanza a suscripciones reales, no sólo a las de prueba**, y es **anterior a esta sesión** (aparece disparado por el cron `webhook-retry`). Además, `invoice.updated` cae en `DEAD-LETTER: unrecognized MercadoPago event type`. **Queda registrado y NO se tocó**: el §4 prohíbe tocar código productivo, y es justo lo que el rediseño tiene que resolver de raíz |
-| ~~📬 **`EX-3`: mirá tu casilla**~~ ✅ **CERRADO el 2026-09-19** | Se leyó la casilla del owner con su autorización, `in:anywhere` (Spam y Papelera incluidos), acotado al 2026-09-15: **46 correos del proveedor ese día y la franja 22:04–23:04 vacía**. **Mercado Pago no comunica nada sobre un preapproval que queda `pending` y nunca se autoriza**, ni sobre su cancelación. Registrado como la séptima consecuencia de `EX-3` en la matriz. **Consecuencia de diseño**: durante `PENDING_AUTHORIZATION` el proveedor calla, así que las 72 h del cap. 03 §3.4 son **nuestro único canal** |
+| ~~📬 **`EX-3`: mirá tu casilla**~~ ✅ **CERRADO el 2026-09-19** | Se leyó la casilla del owner con su autorización, `in:anywhere` (Spam y Papelera incluidos), acotado al 2026-09-15: **46 correos del proveedor ese día y la franja 22:04–23:04 vacía**. **Mercado Pago no comunica nada sobre un preapproval que queda `pending` y nunca se autoriza**, ni sobre su cancelación. Registrado como la séptima consecuencia de `EX-3` en la matriz. **Consecuencia de diseño**: durante `PENDING_AUTHORIZATION` el proveedor calla, así que la ventana del cap. 03 §3.4 —**72 h con tarjeta y 7 días corridos con pago manual** desde `DEC-SUB-016`— es **nuestro único canal** |
 | ~~Autorizar (o no) lo que **sigue** necesitando una tarjeta real~~ ✅ **AUTORIZADO el 2026-09-19** | `EX-4` (cambiar el ciclo), `EX-12` (reusar un token), `UP-*`, `DW-*`, `PS-*`: exigen una suscripción **autorizada**, y autorizar en producción exige una tarjeta real y un cobro real. Hoy están medidas sólo en sandbox. **El owner autorizó medir con tarjeta real.** ⚠️ Pendiente de decidir **cuándo**: son cobros reales sobre Mercado Pago, y si la PRUEBA 0 vuelve negativa el proveedor probablemente sale y esas mediciones se tiran |
 | **La PRUEBA 0 quedó con un solo canal** | El formulario comercial **se envió el 2026-09-19**. El centro de soporte técnico **no da acceso a una persona** —deriva a un bot— así que el **criterio** de elegibilidad y `R-MP-01` se quedaron sin vía. Registrado en [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) §5.0.1 |
 

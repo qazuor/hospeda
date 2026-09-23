@@ -303,7 +303,7 @@ Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `
 | `RN-2` `RN-3` `GR-1` `GR-2` `GR-3` | **B7** | son **el mismo hecho, un cobro que falla**, e imposibles de fabricar con Mercado Pago. Y gobiernan el grace **sólo mientras el reloj sea del proveedor**: con el reloj nuestro pasan a ser una nota del adaptador |
 | `WH-5` | **B1** | nada crítico — se fuerza con el interruptor del receptor |
 | `RF-3` | **B6** | el caso viejo del reembolso. Ya está en la unidad bloqueada |
-| `EX-1` | **B3** | nada: la ventana de 72 h es nuestra justamente porque esta fila está abierta, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta** |
+| `EX-1` | **B3** | nada: la ventana de autorización es nuestra justamente porque esta fila está abierta —y por eso `DEC-SUB-016` la pudo partir en **dos** plazos sin esperar respuesta del proveedor—, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta** |
 
 **Ninguna de las ocho bloquea una unidad que no estuviera ya bloqueada.** El §61 prohíbe empezar
 una capability crítica con su fila abierta, y la única que lo está es B6.

@@ -71,7 +71,7 @@ ocupar el candado `A` y la base rechaza la segunda.
 cobro rechazado el proveedor **cancela la suscripción en el mismo instante** en que manda la cuota
 a `recycling` —los dos hechos comparten el milisegundo— y que esa cancelación es **terminal**:
 `PUT {status:"authorized"}` devuelve `400 "Invalid transition from cancelled to authorized"`. Ese
-mismo § declaró el residuo y no lo resolvió: *«`ABANDONED` dice "nadie autorizó en 72 h"; esto es
+mismo § declaró el residuo y no lo resolvió: *«`ABANDONED` dice "nadie autorizó dentro de su ventana"; esto es
 "intentó y lo rechazaron". Le decimos cosas distintas al cliente en cada caso, así que no pueden
 compartir nombre»*. **Acá se cierra**, y no por prolijidad: es ese residuo el que rompía el
 candado. Mandar el alta que nunca cobró a `SUSPENDED` hacía que `SUSPENDED` significara **dos

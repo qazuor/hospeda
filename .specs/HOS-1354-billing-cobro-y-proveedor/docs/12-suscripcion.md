@@ -277,7 +277,7 @@ Dos consecuencias que el diseño tiene que absorber:
    fila 16). Abandonar lo deja en `ABANDONED`, que no es vivo, y recién ahí *«empezar de nuevo»*
    es la oferta correcta.
 2. **Las dos muertes ya no comparten estado — el residuo está cerrado.** `ABANDONED` dice *«nadie
-   autorizó en 72 h»*; **`CHARGE_DECLINED`** dice *«intentó y lo rechazaron»*. Le decimos cosas
+   autorizó dentro de su ventana»*; **`CHARGE_DECLINED`** dice *«intentó y lo rechazaron»*. Le decimos cosas
    distintas al cliente en cada caso y ahora tienen nombres distintos (cap. 03 §3.1, transición
    `S16`). No era una cuestión de prolijidad: mientras compartían nombre con `SUSPENDED`, el
    candado del §11 no podía distinguir una autorización viva de una cancelada de forma terminal.
@@ -367,7 +367,8 @@ cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de vol
 
 **Pero perdonarla no la apaga, y eso hay que decirlo antes de que pase.** Mientras la predecesora
 siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar**. Si entra dentro de las
-72 h de la sucesión, el cliente **paga la deuda que le perdonamos**.
+la ventana de autorización de la sucesión —**72 h o 7 días corridos, según el método de pago**
+(`B/03` §3.4 punto 1, `DEC-SUB-016`)—, el cliente **paga la deuda que le perdonamos**.
 
 **Y son DOS las puertas por las que puede entrar, no sólo el reciclado.** La otra es el **pago
 manual** del §30: el cliente transfiere la cuota vieja y el admin la registra con `MP1` —o con
@@ -418,7 +419,7 @@ correo promete algo que la decisión no da.
 > registra, y queda pendiente de resolución**: `S19`.
 
 **El adjetivo *«viva»* es la mitad que decide cuándo la regla DEJA de aplicar.** Nada limpia
-`sucede_a` cuando la sucesora se muere —`S3` a las 72 h, o `S13`—, así que leída sin él la regla
+`sucede_a` cuando la sucesora se muere —`S3` al vencer su ventana, o `S13`—, así que leída sin él la regla
 no vence nunca: la fila queda para siempre sin poder reactivar (`S5`, `S7`), sin poder suspender
 (`S6` no corre sobre un pago pendiente) y con la plata retenida. Con él, la muerte de la sucesora
 **es** el fin de la sucesión y el pago se resuelve por la rama 2, que es lo que la tabla de abajo
@@ -435,7 +436,7 @@ cobro le puede llegar. Desde `B/02` §2.2 el lado se lee sin ambigüedad y por e
 enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la apunta uno**.
 
 **Y son las dos transiciones, no una.** La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
-la ventana dura hasta 72 h y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
+la ventana dura hasta vencer —**72 h o 7 días corridos**, `B/03` §3.4 punto 1— y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
 el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. Nombrar sólo `S5`
 dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se repite**, porque
@@ -453,7 +454,7 @@ ya no se puede corregir (§5.4: las fechas del proveedor son inmutables, `EX-39`
 **Reembolsar al entrar el pago suponía que la sucesión siempre termina, y tiene dos desenlaces.**
 La versión anterior decía *«se reembolsa; la predecesora sigue su camino a `CANCELLED` por
 `S17`»*, y ese *«sigue su camino»* es una afirmación sobre el futuro que la propia tabla desmiente:
-`S3` mata a la sucesora **a las 72 h sin autorizar**, y `B/03` §3.3.1 trata abandonar el checkout
+`S3` mata a la sucesora **al vencer su ventana sin autorizar**, y `B/03` §3.3.1 trata abandonar el checkout
 como una salida normal y ofrecida. En esa rama la predecesora **nunca llega a `CANCELLED`**: se
 queda en `GRACE_PERIOD` sin sucesora y con su único pago **devuelto**, el reloj sigue corriendo, y
 a los pocos días la suspendemos por falta de pago — habiendo cobrado y devuelto el pago que la
@@ -539,7 +540,8 @@ que `DEC-RF-002` declara normal:
 > ([`12-contrato…`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
 > §2.6), así que el cliente **cae al piso por lo que le quede de ventana** — el mismo desenlace
 > que ese § ya declara y acepta para `S12`, `S13` y `S16`, y por la misma razón: el compromiso que
-> sostenía la cobertura terminó. El tope sigue siendo la ventana de 72 h.
+> sostenía la cobertura terminó. El tope sigue siendo la ventana de autorización, con sus **dos**
+> plazos (`B/03` §3.4 punto 1).
 >
 > **Y si la sucesora después abandona, no cae en la rama 2.** La 2 *«reactiva»*, y sobre una
 > predecesora `CANCELLED` eso es imposible por la condición 1 de `B/05` §3. No hay conflicto
@@ -593,20 +595,29 @@ período se declaró perdonado —*«no se compensa con el cobro nuevo ni se cob
 cobrarlo por un servicio que `S17` cortó es un error y devolverlo es repararlo. Es el criterio de
 `PA-5` otra vez: **entre dos males, el reversible**.
 
-**Y el reloj del grace no corre sobre un pago pendiente.** Si la ventana de 72 h cruza el
+**Y el reloj del grace no corre sobre un pago pendiente.** Si la ventana de autorización cruza el
 vencimiento del grace, `S6` mandaría a `SUSPENDED` —que **no emite fuente** (`12-contrato…`
 §2.6)— a alguien cuyo pago del período **está acreditado en nuestra cuenta**. El reloj existe para
 acotar el servicio regalado a quien no pagó (§4.3: *«el grace no es un beneficio de entrada»*), y
 acá el período se pagó: por eso `S6` lleva la condición en `B/03` §3.2. No es una gracia extra —es
-un tope de 72 h, el de la ventana— y sin ella el arreglo de este § crea, más chica, la misma
+el tope de la ventana— y sin ella el arreglo de este § crea, más chica, la misma
 suspensión que vino a impedir.
 
 ### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y no hay corrección
 
 El crédito se computa **al crear** la sucesora (`DEC-SUB-006`), y la ventana de autorización dura
-**72 h**. Si la predecesora renueva dentro de esa ventana, el crédito quedó corto **por un ciclo
-entero**. Corregirlo exigiría mover la fecha de cobro de la sucesora, que en ese momento está
-`pending`.
+**72 h sobre un pagador con tarjeta y 7 días corridos sobre un pagador manual** (`B/03` §3.4
+punto 1, `DEC-SUB-016`). Si la predecesora renueva dentro de esa ventana, el crédito quedó corto
+**por un ciclo entero**. Corregirlo exigiría mover la fecha de cobro de la sucesora, que en ese
+momento está `pending`.
+
+> **La exposición no es la misma para los dos, y hay que decirlo porque la cifra la partió
+> `DEC-SUB-016` después de que esta medición se hiciera.** La sonda 48 midió un **preapproval**, y
+> un pagador manual no tiene ninguno (`B/06` §7): sobre él la ventana dura **más del doble** y la
+> fecha del próximo cobro es **una columna nuestra** (`B/03` §7.2, *«qué mueve la fecha»*), no un
+> dato del proveedor. **Lo que este § afirma queda acotado a lo medido**: sobre el preapproval
+> `pending` no hay corrección posible. **Si la hay sobre la copia local de un pagador manual es una
+> pregunta abierta**, y este § no la contesta.
 
 **Se midió si eso se puede hacer, y no se puede.** Sonda 48, sandbox, 2026-09-19, registrada como
 `EX-39`, sobre un preapproval `pending`:

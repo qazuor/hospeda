@@ -185,13 +185,16 @@ liquidó, no se deriva. El día que entre ARCA, eso es una capacidad nueva, no u
 
 El §5.6 fija el modelo: creamos el preapproval por API y **recién después** mandamos al cliente a
 autorizar. Esa ventana **existe siempre, por diseño**, y el capítulo 03 §3.4 ya le puso número
-—**72 h**—, limpieza y regla de reintento.
+—**dos, y no uno: 72 h con tarjeta y 7 días corridos con pago manual** (`DEC-SUB-016`)—, limpieza
+y regla de reintento. **Sobre el pagador manual esta § no tiene sujeto en el proveedor**: no hay
+preapproval que crear ni que cancelar (§7), así que la ventana larga no le agrega a este capítulo
+ningún recurso ajeno que vigilar.
 
 Lo que este capítulo agrega es qué sabemos del lado del proveedor:
 
 | | |
 |---|---|
-| **¿un `pending` vence solo?** | **`EX-1` sigue `UNKNOWN`.** Hay un sujeto vivo desde el 2026-09-15 esperando respuesta. **Por eso la ventana de 72 h es NUESTRA y no del proveedor**: no se puede depender de un vencimiento que no está medido |
+| **¿un `pending` vence solo?** | **`EX-1` sigue `UNKNOWN`.** Hay un sujeto vivo desde el 2026-09-15 esperando respuesta. **Por eso la ventana de autorización es NUESTRA y no del proveedor**: no se puede depender de un vencimiento que no está medido. **Y por eso `DEC-SUB-016` la pudo partir en dos plazos sin preguntarle nada al proveedor**: la cifra es nuestra en los dos casos |
 | **¿se puede cancelar un `pending`?** | **sí**, 11 de 11 verificado por relectura (`EX-17`) |
 | **¿el checkout respeta una fecha de primer cobro futura?** | **sí**, `EX-33` `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador |
 | **¿el enlace que devuelve la API sirve?** | **no**, viene roto (`EX-37`, §4.2) |

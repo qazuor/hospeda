@@ -359,7 +359,8 @@ dos la alcanza. No hay caso en que haya que pausar un preapproval que todavía n
 **Cómo se llega, contado sobre la tabla que el propio `B/03` §3.2 ya publica.** `G-R1-A` sólo deja
 declarar una sucesión desde `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}` (`B/20` §2), así que la
 predecesora **no está `PAUSED` cuando se declara** — está `ACTIVE`. Después, **dentro de la ventana
-de 72 h**, `SUPER_ADMIN` otorga la cortesía: es la **fila 2** de la tabla de recorrido del `B/03`
+de autorización** —**72 h o 7 días corridos**, según el método de pago (`B/03` §3.4 punto 1)—,
+`SUPER_ADMIN` otorga la cortesía: es la **fila 2** de la tabla de recorrido del `B/03`
 §3.2, *«`ACTIVE` | `S9` — `SUPER_ADMIN` otorga cortesía | `PAUSED` | ¿sigue siendo fila viva? sí»*.
 De ahí en más la sucesión sigue abierta sobre una predecesora pausada por cortesía, y termina por
 `S17` (la sucesora autoriza) o por el espejo (el proveedor la da de baja). **La población está

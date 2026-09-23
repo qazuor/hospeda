@@ -81,7 +81,7 @@ Comprar un addon **toca plata**, así que se elige hacia dónde falla: **hacia n
 
 | estado (cap. 03 §3) | ¿vale? | por qué |
 |---|---|---|
-| `PENDING_AUTHORIZATION` | **no** | se comprarían complementos sobre algo que puede no autorizarse nunca; el capítulo 03 le da 72 h y después muere |
+| `PENDING_AUTHORIZATION` | **no** | se comprarían complementos sobre algo que puede no autorizarse nunca; el capítulo 03 le da su ventana —**72 h o 7 días corridos, según el método de pago**, `B/03` §3.4 punto 1— y después muere |
 | **`ACTIVE`** | **sí** | es el único |
 | `GRACE_PERIOD` | **no** | el servicio corre, pero hay un cobro que no entró: venderle algo más a quien no pudo pagar lo anterior es agrandarle la deuda |
 | `PAUSED` | **no** | el servicio está detenido: no hay nada que complementar. Y `EX-11` midió que estando pausada el proveedor **rechaza toda modificación** |
@@ -503,8 +503,8 @@ suscripción viva.
 
 **Y la condición se evalúa sobre toda instancia con una autorización que puede cobrar, no sólo
 sobre las `ACTIVE`.** Son **dos** estados de la instancia: `PENDING_AUTHORIZATION` y `ACTIVE`
-(`B/03` §8). Dejar afuera la primera abría la ventana entera del checkout del addon —72 h, las
-mismas que `S3`—: el título moría mientras la instancia esperaba autorización, el disparador del
+(`B/03` §8). Dejar afuera la primera abría la ventana entera del checkout del addon —la misma que
+`S3`, con sus **dos** plazos según el método de pago (`B/03` §3.4 punto 1)—: el título moría mientras la instancia esperaba autorización, el disparador del
 §4.3 no encontraba a quién aplicarle porque `A5` salía sólo de `ACTIVE`, y después `A2` la llevaba
 a `ACTIVE` **con su preapproval cobrando** sobre un objetivo que ya no estaba. Es el argumento con
 el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` (`B/03` §3.2), aplicado acá: **una
@@ -675,7 +675,7 @@ atarse a una sola habría dejado el cobro vivo en los tres scopes —`LISTING`, 
 donde el objetivo nunca muere. **`A6` entra por la misma puerta y con la misma razón**: la ficha se
 borró, el addon *«se consume»* (`DEC-ADDON-001`) y su cobro no tiene a qué complementar. **`A3` no
 entra** —la instancia va a `ABANDONED` y la fila de complemento ya tiene su propia transición,
-`S3`, con la misma ventana de 72 h— y **`A4` tampoco**, porque su población es vacía: un
+`S3`, con la misma ventana y sus **dos** plazos (`B/03` §3.4 punto 1)— y **`A4` tampoco**, porque su población es vacía: un
 preapproval propio existe sólo si el cobro es `PERIÓDICO`, y `PERIÓDICO` + `DÍAS_FIJOS` no existe
 (§1.2 y §1.3).
 

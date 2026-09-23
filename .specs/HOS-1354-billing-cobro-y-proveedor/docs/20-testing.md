@@ -75,7 +75,8 @@ modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el 
 escribirla en vez de al insertar.
 
 **`G-R1-A` vigila el ACTO de declarar, no una propiedad permanente de la fila**, y la diferencia
-no es de matiz: la sucesión dura **hasta 72 h**, y en esa ventana **ocho transiciones normales
+no es de matiz: la sucesión dura **hasta que vence la ventana de autorización** —**72 h o 7 días
+corridos**, según el método de pago (cap. 03 §3.4 punto 1)—, y en esa ventana **ocho transiciones normales
 sacan a una predecesora perfectamente legal del conjunto de tres** —`S8` y `S9` la pausan, `S6` la
 suspende, y `S12`, `S13`, `S16`, el espejo de la baja decidida por el proveedor (cap. 03 §10.1) y
 **`S24`** —la baja que la propia persona pide en medio del grace—
@@ -437,8 +438,9 @@ más de lo autorizado, no se ejecuta.
 El §62.4 lo dice sin ambigüedad: *«el objetivo es que cambios futuros no obliguen a repetir
 manualmente todo billing»*. Los flujos críticos son los que mueven plata o cortan servicio:
 
-1. alta y autorización de una suscripción, incluido **el checkout abandonado** que muere a las
-   72 h (cap. 03, S3);
+1. alta y autorización de una suscripción, incluido **el checkout abandonado** que muere al vencer
+   su ventana — **y son DOS plazos, así que son dos casos y no uno**: 72 h con tarjeta y 7 días
+   corridos con pago manual (cap. 03, S3 y §3.4 punto 1, `DEC-SUB-016`);
 2. el ciclo completo de **impago**: cobro fallido → grace → suspensión → regularización;
 3. **cambio de plan** y **cambio de ciclo**, que no son el mismo mecanismo (`DEC-SUB-006`,
    `DEC-SUB-007`, `DEC-SUB-008`);

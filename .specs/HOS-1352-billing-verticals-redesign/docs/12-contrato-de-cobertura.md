@@ -348,8 +348,11 @@ volvió frecuente.
 
 > **Una suscripción esperando autorización NO emite fuente de cobertura.**
 
-**Y es la respuesta cara de las dos.** Emitirla significa **hasta 72 horas de servicio completo
-gratis, y repetibles** —se abandona el checkout y se empieza de nuevo—, y durante una sucesión
+**Y es la respuesta cara de las dos.** Emitirla significa **hasta lo que dure la ventana de
+autorización de servicio completo gratis, y repetible** —se abandona el checkout y se empieza de
+nuevo—, y **esa ventana no es una sola**: **72 horas** con tarjeta y **7 días corridos** con pago
+manual (`B/03` §3.4 punto 1, `DEC-SUB-016`), o sea que sobre el pagador manual la respuesta cara
+lo es **más del doble**. Y durante una sucesión
 significa **los dos planes sumados** hasta que la nueva se autorice. Las dos lecturas cuestan
 plata en la misma dirección.
 
@@ -392,7 +395,7 @@ sin nombrar, porque entonces el techo de lo que alguien puede tener depende de s
 proveedor salió bien.
 
 **Y no es alcanzable por ningún otro camino.** Las **ocho** transiciones que mueven a la
-predecesora durante la ventana de 72 h —`S8`, `S9`, `S6`, `S12`, `S13`, `S16`, `S24` y el espejo
+predecesora durante la ventana de autorización —`S8`, `S9`, `S6`, `S12`, `S13`, `S16`, `S24` y el espejo
 del
 `B/03` §10.1, que es la que la tabla numerada del §3.2 no lista— la dejan en un estado que **no
 emite** en siete de los ocho casos; la excepción es
