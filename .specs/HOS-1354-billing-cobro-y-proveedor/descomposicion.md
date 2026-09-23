@@ -110,7 +110,7 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 |---|---|---|---|---|---|
 | **B1** | **El adaptador y el proveedor que miente** | ⛔ | las ocho capacidades como interfaz definida por lo que el dominio necesita, el adaptador falso que reproduce las mentiras medidas, y la regla de releer toda mutación | `06` entero · `20` §2–§3, §6 | `G9` `G10` `G11` `G12` |
 | **B2** | **El precio** | ✅ | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan | `02` §2.1 · `06` §5 | `G7` |
-| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5** | **`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`** |
+| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5** · **`01` §2.4, §2.5 y §2.6 (núcleo)** | **`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`** |
 | **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
 | **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
 | **B6** | **Ejecutar el cobro y el reembolso** 🔒 | ⛔ | **BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir | `13` *(sin escribir)* | — |
@@ -315,7 +315,8 @@ seis de `R1`**— y `C2` lo venía reportando **tres vueltas seguidas** (`F-8dC2
 `F-8eC2-004`). La **quinta enmienda de `DEC-TEST-001`** decide repartirlos ahora, con tres
 condiciones: **la razón va medida y con cita**, **la unidad nace ANTES o CON lo que el guard
 vigila, nunca después**, y **lo que no tiene unidad clara se declara sin dueño**. Los seis tienen
-unidad medida; lo que queda abierto está en el §2.9 y es **una** pregunta, no una asignación faltante.
+unidad medida; lo que el §2.9 trataba aparte eran **dos** secciones sin capítulo, no asignaciones
+faltantes, y **las dos quedaron resueltas ahí**.
 
 | guard | unidad | qué construye esa unidad que hace que el guard pueda existir ahí |
 |---|---|---|
@@ -421,11 +422,14 @@ otra, el cambio se hace sin verlo»*— y esto la aplica al reparto del trabajo.
 verticales, el retiro de la celda está explicado en
 [`V/descomposicion.md`](../HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md) §2.7.
 
-### 2.9 Una pregunta que el reparto deja abierta, y no se resuelve inventando
+### 2.9 Las dos secciones que ninguna unidad declaraba entre sus capítulos — las dos RESUELTAS
 
-**No es un guard sin dueño**: es una sección que **ninguna unidad declara entre sus capítulos** y
-que dos de los guards repartidos **leen**. Se anota en vez de resolverse porque asignar un capítulo
-a una unidad es repartir trabajo, no asignar un guard, y eso lo decide el owner.
+**Ninguna de las dos era un guard sin dueño**: eran secciones que **ninguna unidad declaraba entre
+sus capítulos** y que los guards repartidos **leen**. Se anotaron como preguntas para el owner y
+**no lo eran**: en las dos faltaba una fila en una tabla de reparto, no había dos políticas entre
+las que elegir, y **la unidad se deduce del mismo criterio en los dos casos** — la que construye el
+guard que lee la lista y el término que la lista enumera. Quedan resueltas acá, y se deja escrito
+lo que las abrió para que nadie lo lea como una asignación inventada.
 
 1. ~~**`02` §2.5 —la tabla de los motivos de la marca— no es capítulo de ninguna unidad.**~~
    **RESUELTA**: la tabla es capítulo de **B3**, y la fila del §2 lo dice (`02` §2.2 **y §2.5**).
@@ -434,14 +438,38 @@ a una unidad es repartir trabajo, no asignar un guard, y eso lo decide el owner.
    no una decisión entre dos políticas: el §2.5 es el catálogo de una columna que nace en el §2.2,
    y quien construye `G-R1-F` necesita esa tabla sembrada para que el guard compare contra algo. El
    razonamiento completo está arriba, en la fila de `G-R1-F`.
-2. **Los inventarios de `NUCLEO/01` §2.4, §2.5 y §2.6 tampoco lo son**, y es la mitad que
-   `G-R1-E` y `G-R1-F` cuentan. No es hallazgo nuevo: `F-8dC2-002` reporta que **cuatro capítulos
-   del núcleo no son de ninguna unidad** y su veredicto de la FASE 8-bis-4 dice *«`nucleo/01` entró
-   por `V9`»* — pero lo que entró por `V9` es el §1.2, los cuatro hechos de reinicio, **no los
-   inventarios del §2**. Vale acá el precedente que `V/descomposicion.md` §2.5 ya escribió para
-   `G-R6-B`: **dónde se construye un guard y qué documento define su lista son dos preguntas
-   distintas**, así que esto no mueve las asignaciones de arriba. Lo que deja abierto es quién
-   mantiene las listas.
+2. ~~**Los inventarios de `NUCLEO/01` §2.4, §2.5 y §2.6 tampoco lo son.**~~
+   **RESUELTA**: los tres son capítulos de **B3**, y la fila del §2 lo dice (`01` §2.4, §2.5 y
+   §2.6, núcleo). Lo medido que la abrió sigue siendo cierto y **llevaba dos vueltas reportado**
+   —`F-8dC2-002` dice que cuatro capítulos del núcleo no son de ninguna unidad, y el veredicto de
+   la FASE 8-bis-4 *«`nucleo/01` entró por `V9`»* es cierto **del §1.2**, los cuatro hechos de
+   reinicio, y no de los inventarios del §2—. Lo que faltaba era **una fila en el reparto**, igual
+   que en el punto 1, y el dueño se elige con el mismo criterio que allá: **la unidad que construye
+   los guards que los leen y los términos que enumeran**.
+
+   **Los dos guards que los cuentan son de B3**, y está escrito arriba: `G-R1-E` vigila los
+   inventarios del §2.4 —*«fila viva»*, y desde su segunda mitad *«grant vivo»* y *«ancla viva»*—
+   y `G-R1-F` los del §2.5 —*«marca abierta»*— y del §2.6 —*«cortesía diferida»*—. **Y el término
+   más temprano de los tres nace en su capítulo**: las dos enumeraciones de *«fila viva»* son la
+   de `02` §2.2 —los seis estados de la suscripción— y la de `03` §8, y `reconciliation_mark` con
+   su columna anulable también es `02` §2.2. Quien construya los dos guards en B3 sin la tabla
+   sembrada se encuentra con un guard que compara contra una enumeración vacía, que es exactamente
+   el patrón del punto 1.
+
+   **Lo que B3 no puede terminar solo, dicho igual que en el punto 1**: los inventarios enumeran
+   **consumidores**, y la mayoría llega después —`S19` con B7, `S17` con B8, `S20`, `S21` y `A5`
+   con B10, *«grant vivo»* y *«ancla viva»* con B9 y B10, y los **diez** de *«cortesía diferida»*
+   repartidos entre B8, B9, B11 y B13—. **B3 siembra los tres inventarios y cada unidad trae su
+   propia fila cuando llega**, que es literalmente la regla que los tres §§ ya declaran:
+   *«quien escribe un consumidor nuevo agrega su fila acá en el mismo acto»*.
+
+   **Y esto no muta el núcleo por una sola épica, que era la parte que costaba.**
+   `DEC-ARCH-006` dice que ninguna de las dos lo puede mutar sola, y **los tres §§ son de billing
+   por su propio contenido**: el inventario del §2.4 lo declara textualmente —*«Todos están del
+   lado de billing y sobre filas de billing»*— y *«marca abierta»* y *«cortesía diferida»* son
+   entidades de `B/02`. El único término del §2.4 que es de la frontera, *«fuente viva»*, **no
+   tiene inventario que mantener**: se resuelve contra la respuesta del contrato en el momento. Y
+   el precedente de que un § del núcleo sea capítulo de una unidad ya existe: el §1.2 es de `V9`.
 
 ---
 

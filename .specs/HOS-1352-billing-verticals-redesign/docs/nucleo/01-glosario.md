@@ -345,6 +345,14 @@ fecha de fin de servicio **es un dato nuestro**, no del proveedor.
    columna que acepte cualquier cadena no tiene máquina, tiene una convención. El capítulo 02
    fija que cada columna de estado lleva su restricción de dominio.
 
+> **Quién siembra los cuatro inventarios de este §2, y hasta esta pasada no era nadie.** Los §2.4,
+> §2.5 y §2.6 **no eran capítulo de ninguna de las 22 unidades del programa** —llevaba dos vueltas
+> reportado (`F-8dC2-002`)— mientras `G-R1-E` y `G-R1-F` los cuentan. **Son capítulos de `B3`**
+> (`B/descomposicion.md` §2.9 punto 2), que es la unidad que construye esos dos guards y los
+> términos más tempranos que enumeran. **`B3` los siembra enteros y cada unidad posterior trae su
+> propia fila cuando llega**, que es la misma regla que cada inventario ya declara abajo. Lo que
+> entró por `V9` es el **§1.2**, los cuatro hechos de reinicio, y no estos inventarios.
+
 ### 2.4 «Vivo» nombra cuatro conjuntos, y nunca el mismo
 
 La palabra decidía tres cosas caras —el candado del §11, el disparo de `S17` y la condición de
