@@ -4073,13 +4073,66 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-011 — El saldo de cortesía de una sucesión que nadie completó se CIERRA, y se declara
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso, creado por `DEC-GRANT-007`**: la cortesía ya no se re-apunta, se **difiere** en
+  `courtesy_grant.saldo_días` y `S9` la re-emite cuando la sucesora autoriza. `S18` cierra la
+  sucesión con la sucesora en `PENDING_AUTHORIZATION`, y desde ahí hay **dos salidas**: autorizar
+  (`S2` → `S9` re-emite, que es el camino escrito) **o vencer la ventana** (`S3` → `ABANDONED`). La
+  segunda deja un `courtesy_grant` con saldo y **sin ninguna fila viva en esa vertical a la que
+  volver**.
+- **Estaba declarado abierto en el capítulo, no sólo en el rastro**: `B/09` §3, sexta comprobación
+  — *«la cortesía queda diferida sin ninguna suscripción a la que volver … **no está decidido**, y
+  no se decide acá: queda como pregunta al owner»*.
+- **Decisión**: **al vencer la ventana de autorización, el saldo se cierra.** La misma transición
+  que lleva la sucesora a `ABANDONED` cierra el `courtesy_grant` diferido, y el cierre **se
+  declara** —queda asentado con su motivo, como toda revocación desde `DEC-GRANT-008`—. El
+  beneficiario que vuelva a suscribirse **no recupera esos días**.
+- **Por qué, y la razón ya estaba escrita**: es el criterio del owner que el programa viene
+  aplicando desde la tanda de la 9-bis-3 — *si la pérdida la causa un acto deliberado NUESTRO y la
+  persona no puso plata nueva → se declara y no se repara; si la persona PUSO PLATA → se le da
+  salida*. Acá **la persona no puso plata** y **el acto que corta es suyo**: abandonar el checkout.
+  Es el mismo desenlace que `DEC-TRIAL-009` («revocar un grant no devuelve el trial»), y por las
+  mismas razones.
+- **Lo que cuesta, dicho en voz alta**: al beneficiario se le pierden días que **`SUPER_ADMIN` le
+  firmó**, y el abandono puede ser un error de checkout —una pestaña que se cierra, un pago que se
+  cae— y no una decisión. **Se acepta**: quien firmó la cortesía puede volver a otorgarla, que es
+  un acto que ya existe (`S13`) y no necesita mecanismo nuevo.
+- **Las dos alternativas, y por qué no**:
+  - **Dejar el saldo esperando** a que la persona se suscriba de nuevo: **es la forma que `B/16`
+    §1.3 rechaza por escrito** —*«un instrumento abierto sin fecha de cierre»*— y hoy **ninguna
+    comprobación lo levanta**: la sexta de `B/09` §3 exige que la fila receptora ya exista en
+    `ACTIVE`, así que el saldo quedaría en la base **sin dueño, sin vencimiento y sin nadie que lo
+    mire**. Descartada por el propio corpus, no por preferencia.
+  - **Darle vencimiento al saldo** —espera un plazo y después se cierra solo—: cierra el agujero de
+    la anterior y es más justa que la elegida, **pero es la única de las tres que agrega
+    mecanismo**: un reloj más y su barrido. Se descarta por el criterio con que `DEC-MP-003`
+    descartó la columna *«quién pausó»* y `DEC-METH-012` descartó el barrido de caducidad, y además
+    porque **la población de este caso no la midió nadie**. Si alguna vez se mide y resulta grande,
+    ésta es la alternativa a reabrir.
+- **Lo que esta decisión NO cierra**: **qué se le muestra al cliente mientras el saldo está
+  diferido** (`B/19` §3 obliga a mostrar las cortesías en «Mi Suscripción»). Queda como pregunta
+  abierta del censo, y **esta decisión la vuelve más filosa**: con el saldo cerrándose al abandonar,
+  decirle *«te quedan N días»* durante la ventana y quitárselos al vencer es peor que no haberlo
+  dicho.
+- **Y un defecto que NO resuelve, anotado para que no se confunda con ella**: un grant que cae sobre
+  una cortesía **diferida** (`B/14` §4.3 la termina *cancelando la suscripción que la pausaba*, y
+  acá no hay ninguna). Eso no es una elección entre políticas sino una regla cuyo sujeto no existe:
+  es el hallazgo `E2` del censo, severidad `MEDIA`, y lo arregla la tanda.
+- **Origen**: la FASE 8-bis-5, `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E1`
+  —levantado de `rastro-f21d5d828.md` §6 punto 1 y de `B/09` §3—, y la elección del owner del
+  2026-09-23 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **89** |
+| Decisiones tomadas | **90** |
 | De metodología | 12 |
-| Funcionales | 77 |
+| Funcionales | 78 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
