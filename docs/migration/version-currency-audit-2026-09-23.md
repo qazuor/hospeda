@@ -229,6 +229,20 @@ El MCP directo de Engram v2 responde. Las consultas `opencode mcp list` y
 puede abrir su log en modo escritura; debe repetirse en una terminal normal con
 filesystem writable.
 
+### Interpretación de los hallazgos bloqueantes
+
+La cifra `6079` de `engram doctor` no representa 6079 observaciones actuales
+rotas. Corresponde a mutaciones legacy de `sync_mutations` que carecen de campos
+requeridos para replay; la tabla contiene 47.879 mutaciones pendientes dirigidas
+al target Cloud, distribuidas entre sesiones, observaciones y prompts. Cloud no
+forma parte de la arquitectura aprobada y no se debe reparar/reproducir ese
+historial sin una decisión separada.
+
+En la tabla actual `observations`, la inspección immutable encontró 33 filas sin
+contenido, 16 sin título y 1 sin tipo; 25 están sin proyecto y 24 pertenecen a
+`hospeda`. Esas cifras sí corresponden a la curación de memoria pendiente y no
+deben confundirse con el backlog de replay Cloud.
+
 ## Pines versionados alineados
 
 El bootstrap reproducible quedó alineado con el runtime activo: OpenCode
