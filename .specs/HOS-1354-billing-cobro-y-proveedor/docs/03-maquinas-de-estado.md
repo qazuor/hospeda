@@ -1299,9 +1299,10 @@ evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y
   (`NUCLEO/01` §2.2): `MP4` agrega una arista, no un nodo, y por eso `B/02` §2.3 sigue sin
   necesitar *«un estado nuevo en la máquina del pago manual»*.
 - **No agrega una columna.** `manual_payment` guarda ya *«quién lo registró, cuándo,
-  comprobante»* (`B/02` §2.3), que es lo que `MP4` escribe; los dos actos —declarar el impago y
-  reabrirlo— quedan distinguibles en el registro de eventos de dominio, que la regla 4 del
-  `NUCLEO/03` §1 exige por cada transición.
+  comprobante»* (`B/02` §2.3), que es lo que `MP4` escribe — **y el `período`, que también ya
+  existe, cuando la reimputación del §7.2 corre**; los dos actos —declarar el impago y reabrirlo—
+  quedan distinguibles en el registro de eventos de dominio, que la regla 4 del `NUCLEO/03` §1
+  exige por cada transición, y ahí va también el período que la cuota tenía antes de reimputarse.
 
 #### Qué premisa de otro arreglo vuelve falsa este, y dónde quedó resuelta
 
