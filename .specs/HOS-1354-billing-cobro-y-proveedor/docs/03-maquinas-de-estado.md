@@ -985,7 +985,9 @@ reclame.
 **`DEC-RF-004` le quitó al motivo 14 el default único.** La regla de `B/16` §4.4 —*«el período ya
 pagado no se reembolsa»*— sigue valiendo donde el complemento se pierde **por un acto del propio
 cliente**; **no** vale donde la pérdida la causa **un acto deliberado nuestro sobre alguien que
-puso plata**. El evento de `S21` se ata al estado de llegada de la instancia, y a `CANCELLED`
+puso plata y ese acto puede decirlo sin mecanismo nuevo** — la segunda mitad de esa condición es lo
+que deja **dos** caminos nuestros del lado de la regla, y abajo van nombrados. El evento de `S21` se
+ata al estado de llegada de la instancia, y a `CANCELLED`
 llegan **cuatro** disparadores y no tres — las **tres** cláusulas del evento de `A5` más `A6`
 (§8, `B/16` §4.4). **Ninguno queda implícito**:
 
@@ -1056,10 +1058,11 @@ baja que `S17` ejecuta abre el motivo **1** con las **seis** ramas de `B/12` §5
 discontinuación que llega por `S26` → `S12` trae el piso de **60 días** del `B/10` §4.3 y §4.4.
 **`S27` y `S28` no traen ninguno de los dos**: `DEC-SUB-018` decidió que la suspendida **no entra
 al piso** y va directo a `CANCELLED`, y `S28` tampoco pasa por él —*«sobre alguien que nunca
-autorizó ni pagó nada»* (§3.2)—. Son los **dos** únicos caminos en que la persona pierde el
-complemento que pagó **y no recibe ninguna compensación**, y el default uniforme le proponía no
-devolverle nada. Que la **principal** no tenga nada que compensar no dice nada sobre el
-**complemento**, que es otra fila y pudo haber cobrado su período.
+autorizó ni pagó nada»* (§3.2)—. **De los cinco caminos nuestros son los dos únicos** en que la
+persona pierde el complemento que pagó **y no recibe absolutamente nada a cambio por ningún lado**,
+y el default uniforme le proponía no devolverle nada. **Y lo que el piso y el motivo 1 compensan es
+la PRINCIPAL, no el complemento**, que es otra fila y pudo haber cobrado su período: por eso esto
+ordena el costo humano de los cinco y no vuelve entero a nadie.
 
 **Lo que la partición NO compra, y va dicho porque es lo único que quedaría implícito.** La rama
 tiene que llegar hasta el listado, y **quién la lleva ya estaba declarado**: `NUCLEO/08` §4.3 dice
