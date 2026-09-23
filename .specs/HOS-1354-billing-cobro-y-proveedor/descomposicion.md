@@ -514,6 +514,21 @@ que hay que decir, no la que inventa las pantallas de las demás.
 No es una lista de tests: es **qué pregunta tiene que poder contestar alguien de afuera** cuando la
 unidad se declara terminada.
 
+> **Y hay una condición que vale para las trece y no está en la tabla, porque no depende de qué
+> construye cada una**: **una unidad no está terminada mientras algún guard de su columna `guards`
+> del §2 no esté escrito y no tenga su caso que lo hace fallar a propósito** (§2.1, *«un guard que
+> no puede fallar es un comentario con exit code 0»*). La regla 1 del §1.3 dice **cuándo** va cada
+> guard —*«con la pieza que protege, nunca al final»*— y hasta esta pasada **no había ningún lugar
+> donde se comprobara que había ido**: la asignación vivía sólo en una columna que nadie consulta
+> al declarar una unidad lista. **Los 29 guards están repartidos entre las 22 unidades —13 en esta
+> épica y 16 en la otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22
+> criterios**, así que la quinta enmienda de `DEC-TEST-001` compró que todos tuvieran dueño y no
+> compró que alguno se construya. El desarrollo, del lado de verticales, está en
+> [`V/descomposicion.md`](../HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md) §4.
+>
+> **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
+> mismo conjunto. **La columna es la lista; esto es lo que la vuelve una condición.**
+
 | # | la unidad está lista cuando… |
 |---|---|
 | **B1** | el adaptador falso implementa la interfaz entera **sin nombrar un concepto de Mercado Pago**; importar el SDK afuera **falla**; y el falso **miente** — hay un caso donde acepta una mutación, devuelve `2xx`, **no la aplica**, y el código de arriba lo detecta releyendo |
