@@ -120,17 +120,15 @@ export async function runBranchPlan({
     }
     const context = await resolveRunContext({ cwd: process.cwd(), target: 'local' });
     const config = await loadConfig(context.repoRoot);
-    const from = args.from ?? (kind === 'back-merge' ? undefined : config.branches?.base);
-    const to =
-        args.to ??
-        (kind === 'promote'
-            ? config.branches?.protected?.find((branch) => branch === 'main')
-            : undefined);
     const declaredPromotion =
         config.branches?.promotion ?? ([config.branches?.base, 'main'].filter(Boolean) as string[]);
     const declaredBackMerge = config.branches?.backMerge ?? [
         { from: 'main', to: config.branches?.base ?? 'develop' }
     ];
+    const from = args.from ?? (kind === 'back-merge' ? undefined : config.branches?.base);
+    const defaultPromotionTarget =
+        from === undefined ? undefined : declaredPromotion[declaredPromotion.indexOf(from) + 1];
+    const to = args.to ?? (kind === 'promote' ? defaultPromotionTarget : undefined);
     const allowed =
         kind === 'promote'
             ? Boolean(
