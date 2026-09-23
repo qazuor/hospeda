@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_45",
-        "number": 45,
-        "createdAt": "2026-09-23T17:45:00.000Z",
+        "id": "ver_claude_opencode_migration_46",
+        "number": 46,
+        "createdAt": "2026-09-23T18:10:00.000Z",
         "author": "opencode",
-        "reason": "validar guards de dominio",
+        "reason": "revalidar model routing",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_44"
+        "basedOnVersion": "ver_claude_opencode_migration_45"
     },
     "data": {
         "sections": [
@@ -152,7 +152,7 @@
                             "title": "Evaluar GLM/DeepSeek/Ollama",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Medir costo, latencia, contexto y calidad para tareas simples.",
-                            "notes": "Gate116: runtime V1.18.31 detecta OpenAI OAuth y GitHub Copilot; Context7 y Engram MCP están conectados. GLM/DeepSeek/Ollama/OpenKilo siguen sin activarse hasta medir calidad/costo y definir perfiles explícitos sin fallback silencioso ni datos sensibles.",
+                            "notes": "Gate116: runtime V1.18.31 detecta OpenAI OAuth y GitHub Copilot; Context7 y Engram MCP están conectados. GLM/DeepSeek/Ollama/OpenKilo siguen sin activarse hasta medir calidad/costo y definir perfiles explícitos sin fallback silencioso ni datos sensibles. Gate263: revalidación 2026-09-23 confirmó que el cache de variantes contiene nombres de GLM/DeepSeek, pero no prueba auth ni disponibilidad; `opencode.json` no declara fallback. No se activó ningún provider adicional.",
                             "done": false
                         },
                         {
