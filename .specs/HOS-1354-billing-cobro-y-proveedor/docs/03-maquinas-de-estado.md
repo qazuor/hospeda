@@ -1256,9 +1256,10 @@ cambiando de plan.
 > **Lo que esta fila dejó abierto ya está cerrado, y no acá**: **quién crea las cuotas de un
 > pagador manual y cuándo** —o sea qué pasa con los períodos que transcurren mientras la
 > suscripción está `SUSPENDED`— era una pregunta **anterior** a `MP4`, porque la máquina tampoco
-> declaraba la entrada a `AWAITING`. La contesta el **§7.2** con `MP5`: **las crea un reloj, y no
-> las crea durante la suspensión**. `MP4` sigue sin crear filas de `manual_payment`: sólo mueve la
-> que `MP2` o `MP3` cerraron.
+> declaraba la entrada a `AWAITING`. La contesta el **§7.2** con `MP5`: **las crea el sistema —un
+> reloj de la segunda en adelante, el alta la primera— y no las crea durante la suspensión**. `MP4`
+> sigue sin crear filas de `manual_payment`: sólo mueve la que `MP2` o `MP3` cerraron, y **desde
+> esta pasada también la reimputa** cuando el período que cubría ya terminó (§7.2).
 
 #### Es una fila nueva y no el `desde` de `MP1` ampliado
 
@@ -1318,7 +1319,7 @@ lugar**, más cuatro apariciones que quedan como estaban con su razón:
 
 ---
 
-### 7.2 La cuota la crea un reloj, y no se crea durante la suspensión
+### 7.2 La cuota la crea el sistema —un reloj, salvo la primera— y no se crea durante la suspensión
 
 **La máquina tenía cuatro salidas y ninguna entrada.** `MP1`, `MP2` y `MP3` salen de `AWAITING`,
 `MP4` de `DECLARED_UNPAID`, y **nadie declaraba quién crea la fila `AWAITING` ni cuándo**: es
@@ -1387,14 +1388,15 @@ siguen siendo exactas. Es el mismo argumento con el que el barrido y `S18` no su
 
 #### Cómo entra el grace, que era la otra mitad de `F-8B2-018`
 
-`MP3` sale de *«se agota el grace»* y el grace tenía el mismo problema que `AWAITING`: **`S4`
+La primera cláusula de `MP3` sale de *«se agota el grace»* y el grace tenía el mismo problema que
+`AWAITING`: **`S4`
 describe *«un cobro falla»* y en el pago manual nadie cobra**. Con `MP5` el hecho queda nombrado
 y **no hace falta una fila nueva**: para una suscripción sin débito, *«el cobro de este período
 falló»* **es** que su cuota se abrió y no hay pago acreditado contra ella. Es lo que este § ya
 ordenaba abajo de la tabla —*«si falta el pago, va a `GRACE_PERIOD` los mismos días
 configurables»*— y lo que `MP1` y `MP2` ya presuponían: los dos declaran que la suscripción está
 en `GRACE_PERIOD` cuando el admin actúa. Así que `S4` es la fila, con su `desde` en `ACTIVE`, que
-es el único estado desde el que `MP5` crea.
+es el único estado desde el que **el reloj** —la cláusula *(a)* de `MP5`— crea.
 
 **Pero eso vale de la SEGUNDA cuota en adelante, y hay que decir por qué la primera es otra cosa.**
 `B/12` §4.3 ordena que **el grace no sea un beneficio de entrada**, y esa regla **sí alcanza a un
@@ -1636,8 +1638,11 @@ parte del flujo»*—. **Crear la cuota no pide un aviso propio**, y son dos des
 respuestas:
 
 - **Al admin**: el aviso que el §30 ordena es el de la falta del pago, y ése **no cambia de
-  momento** — sale cuando la cuota se abre sin pago contra ella, que es el mismo instante en que
-  `S4` entra al grace. Lo que `MP5` aporta no es un aviso más: es **el sujeto** que ese aviso no
+  momento** — sale cuando la cuota se abre sin pago contra ella, que **de la segunda cuota en
+  adelante** es el mismo instante en que `S4` entra al grace. **Sobre la primera no hay `S4` que
+  coincida** —se abre en el alta y no hay grace (abajo, *«cómo entra el grace»*)—, y el aviso sale
+  igual, en el instante en que la cuota se abre: lo que lo dispara es la cuota sin pago, no el
+  cambio de estado. Lo que `MP5` aporta no es un aviso más: es **el sujeto** que ese aviso no
   tenía. El catálogo del `NUCLEO/07` §6 ya lo lleva en la fila *«cobro fallido / grace»*, con su
   schedule *«relativo al vencimiento»* (`DEC-SUB-002`) — que acá es el instante en que `MP5`
   creó la cuota.
