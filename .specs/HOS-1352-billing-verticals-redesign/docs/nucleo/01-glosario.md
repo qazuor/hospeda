@@ -564,10 +564,12 @@ por lo que preguntan.
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
 | 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un pago pendiente por `S19` sin una marca abierta con motivo `REEMBOLSO_POR_CONFIRMAR`»* — **es el consumidor que el booleano volvía vacuo**: la marca sin motivo pasaba el guard |
-| 6 | el **listado accionable** | cap. 19 (billing) §6 | ordena por motivo, pone adelante los **cuatro** que devuelven plata y muestra **el default de lo que el sistema propone** (`DEC-RF-003`) |
+| 6 | el **listado accionable** | cap. 19 (billing) §6 | ordena por motivo, pone adelante los **cuatro** que devuelven plata y muestra **todos los pagos colgados de la marca con su monto total** y **el default de lo que el sistema propone** (`DEC-RF-003`) |
 | 7 | el **escalamiento por reloj** | cap. 09 (billing) §3 | *«si sigue abierta pasado su plazo, escala»* — lee `puesta_en`, **por marca**, así que el plazo puede depender del motivo |
 | 8 | la **entrada del §22.1 para el reembolso por confirmar** | cap. 08 (núcleo) §4.3 | *«el monto a devolver, el pago que lo origina y por qué puerta entró»* — es el mismo dato que la marca ahora **guarda**, en vez de vivir sólo en un evento que pasa |
-| 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, y que ningún levantado sea *«la fila»* |
+| 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, que ningún levantado sea *«la fila»*, **que un hecho con plata sobre una marca abierta del mismo motivo se cuelgue de ELLA** y **que no se levante una marca con pagos colgados sin resolver** |
+| 10 | **`S14`, antes de abrir** | cap. 03 (billing) §3.2 | *«¿esta fila ya tiene una marca abierta con ESTE motivo?»* — si la tiene, **le cuelga el pago en vez de abrir una segunda** (cap. 02 (billing) §2.2) |
+| 11 | **`S15`, antes de levantar** | cap. 03 (billing) §3.2 | *«¿le queda a esta marca algún pago colgado sin resolver?»* — es la guarda que impide cerrar el caso con plata adentro |
 
 **Y una regla de uso, que es la regla 2 del §2.4 sobre este sujeto**: en la columna *condición* de
 una transición, en un invariante o en un guard **no se escribe *«marcada»* ni *«con la marca
