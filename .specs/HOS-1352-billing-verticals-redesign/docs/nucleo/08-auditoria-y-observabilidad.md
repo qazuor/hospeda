@@ -133,7 +133,7 @@ si es destructiva o mueve dinero.**
 
 | acción | de dónde sale | ¿destructiva o mueve dinero? |
 |---|---|---|
-| otorgar o revocar una **cortesía temporal** | §34, `DEC-GRANT-002` | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo |
+| otorgar o revocar una **cortesía temporal** | §34, `DEC-GRANT-002` | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo — **y CERRAR su saldo tampoco**, que es el efecto opuesto y lo hace `S3` (`DEC-GRANT-011`) |
 | otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) — **y, con `includesAddons: true`, la de cada addon compatible que venía pagando** (`S20`, `B/16` §3.4) |
 | registrar un **pago manual** | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
@@ -169,13 +169,18 @@ que no son éste:
 | **abrir** la marca —con motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO`** y el pago colgado— sobre la **suscripción de complemento** que muere con un período cobrado **sin terminar** | **`S21`**, en el mismo acto en que la lleva a `CANCELLED` | `B/03` §3.2, `B/02` §2.5 **motivo 14**, `B/16` §4.4, `DEC-ADDON-004` |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
 | **re-emitir una cortesía DIFERIDA** sobre la fila que acaba de autorizar — **la sucesora** de un cambio de plan, o **el alta nueva** de quien perdió su plan porque se discontinuó su vertical | **`S9`**, por su segundo disparador y por el **tercero** — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila, **por ninguno de los dos caminos** | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4 y §4.6, `DEC-GRANT-007`, `DEC-GRANT-010` |
+| **CERRAR el saldo de una cortesía diferida** cuya sucesora abandonó el checkout, con `saldo_cerrado_en` y su `motivo_cierre` | **`S3`**, en el mismo acto en que la manda a `ABANDONED` — **no hay persona en el camino, y por eso el motivo es una enumeración cerrada y no el texto libre de `DEC-GRANT-008`** | `B/03` §3.2, `B/02` §2.4, `DEC-GRANT-011` |
 
-Las **cuatro** son actos **de sistema**, no de admin, y por eso no suman filas —el renglón decía
-*«las dos»* y la tabla ya tenía tres cuando `DEC-GRANT-010` sumó la re-emisión; ahora son cuatro y
-el conteo se recontó sobre las filas. **Ninguna de las dos que abren una marca es `S14`**: su
+Las **cinco** son actos **de sistema**, no de admin, y por eso no suman filas —el renglón decía
+*«las dos»*, la tabla ya tenía tres cuando `DEC-GRANT-010` sumó la re-emisión, pasó a cuatro con la
+marca que abre `S21` y llega a cinco con el cierre de `DEC-GRANT-011`; el conteo se recontó sobre
+las filas cada vez. **La quinta es la única que no le pone nada delante a nadie**: no enruta un
+caso, **termina** una concesión que firmó `SUPER_ADMIN`, y es por eso que necesitó dejar asentado
+su motivo — el registro de auditoría dice qué acto ocurrió y cuándo, y **acá no hay nadie a quien
+preguntarle por qué**. **Ninguna de las dos que abren una marca es `S14`**: su
 evento es *«divergencia que toca plata o estado»*, y ni el pago que `S19` retiene ni el período del
 complemento que muere son divergencias — los dos son casos **diseñados**, y `S19` lo declara por
-escrito. La tercera es un job y la cuarta es un efecto de `S9`. Lo que sí es de esta
+escrito. La tercera es un job, la cuarta es un efecto de `S9` y la quinta, uno de `S3`. Lo que sí es de esta
 tabla son los dos actos con que una persona **cierra** el caso: **reembolsar** y **levantar la
 marca**, cada uno con su fila, su permiso y su confirmación. Sin las dos mitades de arriba, esas
 dos filas describen un trámite que nadie empieza.
