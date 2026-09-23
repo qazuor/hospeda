@@ -169,6 +169,7 @@ puso el default, y es **DEVOLVER**.
 | `COBRO_POSTERIOR_AL_GRANT` | **devolver** (`B/05` C3) |
 | `COBRO_DURANTE_CORTESÍA` | **devolver** — es el camino que `DEC-GRANT-007` eligió por escrito para el riesgo que aceptó (`B/02` §2.5, motivo 12) |
 | `PAGO_TARDÍO_RECHAZADO` | **devolver** — sus cuatro condiciones sólo fallan con el pago ya acreditado sobre un período que no compró (`B/05` §3). **Con una salida declarada**: si lo que falló es la condición **2** y el monto de más es un precio nuevo que no se propagó, lo que corresponde es aceptarlo y reactivar, y **cuál de las cuatro falló está en el evento crítico** (`NUCLEO/08` §4.3), no en el motivo |
+| `COMPLEMENTO_CON_PERÍODO_COBRADO` | **NO devolver** — es el único que propone lo contrario, y no es una laguna: `B/16` §4.4 ya decidió que *«el período ya pagado no se reembolsa»*, con `DEC-GRANT-001` y el §3.4 de ese capítulo como precedente. La persona confirma esa regla o ve la razón para apartarse |
 | `PAGO_PENDIENTE_SIN_RAMA` | **nada**, y es el único: por definición es el caso que **ninguna** de las seis ramas alcanzó (`B/09` §3, segunda comprobación) |
 
 **El default se propone sobre TODOS los pagos de la marca, no sobre el primero.** Una marca lleva
@@ -187,6 +188,12 @@ persona confirma salvo que haya razón para no hacerlo»*.
 era indistinguible de las otras doce y **el pago se quedaba**; una marca con motivo y sin default
 reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué se espera de ella
 **no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
+
+**Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El 14 es el
+caso: `B/16` §4.4 decidió la regla —*«el período ya pagado no se reembolsa»*— y dejó la excepción
+en manos de una persona, así que lo que el listado le pone delante es **esa regla escrita**, con el
+pago y el monto al lado, en vez de una casilla vacía. La diferencia con `PAGO_PENDIENTE_SIN_RAMA`
+es que allá **no hay regla** que proponer y acá sí.
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma

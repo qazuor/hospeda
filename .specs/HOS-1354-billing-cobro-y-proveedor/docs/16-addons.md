@@ -690,6 +690,17 @@ permiso y confirmación explícita (`NUCLEO/08` §3), la línea del owner es *«
 plata»* (`B/09` §2.4), y `S14` prohíbe toda decisión destructiva automática. Si en un caso concreto
 corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo decide la máquina.
 
+**Y esa vía tiene desde ahora quién la dispare, que es lo que le faltaba para existir.** Cuando el
+último cobro del complemento paga **un período que todavía no terminó**, `S21` abre la marca
+`requiere_conciliación` con motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO`** (`B/02` §2.5, motivo 14)
+con ese pago colgado, y el listado accionable la muestra con el default **NO devolver** —la regla
+del párrafo de arriba, escrita— más el pago y el monto (`B/19` §6). Hasta acá esa frase nombraba
+una vía que **ninguna transición ni comprobación del corpus abría**, y desde que la enumeración de
+motivos es **cerrada** eso dejó de ser una omisión discutible: `G-R1-F` rechaza una marca cuyo
+motivo no esté en esa tabla (`B/20` §2), y ninguno de los trece era éste. **La marca no decide
+nada** —la regla sigue siendo no devolver— **y tampoco agrega una comprobación al barrido**: la
+escribe la transición, en el mismo acto.
+
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
 de puertas a un estado terminal de `B/09` §3 —que hoy tiene **trece**, desde que `S22`, `S23`,
 `S24` y `S25` le agregaron las suyas (`B/03` §3.2)—, y su veredicto es **no exenta**: el

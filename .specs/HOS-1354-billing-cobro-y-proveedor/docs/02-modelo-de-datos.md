@@ -638,7 +638,7 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: trece motivos sobre la misma casilla, y cinco de ellos devuelven plata
+### 2.5 La marca de conciliación: catorce motivos sobre la misma casilla, y cinco de ellos devuelven plata
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
@@ -676,13 +676,22 @@ que su caso **no es una divergencia**.
 | 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
 | 12 | `COBRO_DURANTE_CORTESÍA` | `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`) | confirmar el reembolso de un cobro sobre días que `SUPER_ADMIN` había regalado | **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió |
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
+| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae** |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
 transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla. **Los dos
 últimos llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
 el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este §
-—trece motivos, cinco que devuelven plata— se volvieron a contar sobre la tabla.
+—catorce motivos, cinco que devuelven plata— se volvieron a contar sobre la tabla.
+
+**El 14 llegó por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
+del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una
+persona (`DEC-RF-002`)»* (`B/03` §3.2)— **que nadie disparaba**, y desde que esta enumeración es
+cerrada la ausencia dejó de ser una omisión y pasó a ser una imposibilidad: bajo `G-R1-F` esa vía
+**no se podía escribir sin agregar una fila acá**. La acción existe en el catálogo de `NUCLEO/08`
+§3 con su permiso, su auditoría y su confirmación, y ese mismo § dice que *«no sirve de nada si
+nadie enruta el caso»*. El 14 es quien lo enruta.
 
 #### Por qué el 7 no puede llevar «no»
 
