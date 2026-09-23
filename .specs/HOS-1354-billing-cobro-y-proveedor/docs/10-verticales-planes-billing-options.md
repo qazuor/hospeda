@@ -161,7 +161,9 @@ sacar a la `PAUSED` —lo de abajo— y se leía como si las otras tres fueran a
 **Y este acto DEJA UNA MARCA AL PASAR, que es lo único que le agregó la ampliación de `DEC-RF-004`
 del 2026-09-23.** Cuando `S27` o `S28` sacan al título de las filas vivas y con eso dejan huérfano
 un complemento cuyo último cobro paga **un período que todavía no terminó**, la marca que `S21`
-abre sale en la rama **`DEVOLVER`** (`B/03` §3.2, `B/02` §2.5 motivo 14). **No es mecanismo nuevo,
+abre lleva el motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** —el
+**15**, cuya propuesta es `DEVOLVER`— y no el 14 (`B/03` §3.2, `B/02` §2.5; que sean dos motivos y
+no dos ramas de uno es `DEC-RF-006`). **No es mecanismo nuevo,
 y por eso se pudo hacer acá y no en los otros caminos**: este acto **recorre las filas una por
 una** —la frase de arriba ya dice *«lo mismo con cada suscripción de complemento viva en ella»*—,
 así que la causa se escribe en el momento en que la fila se toca y **nadie la traza hacia atrás**.
