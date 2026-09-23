@@ -4358,13 +4358,46 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-014 — `motivo_cierre` es una enumeración CERRADA, porque el que cierra un saldo es una transición y no una persona
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **La tensión aparente**: `DEC-GRANT-008` decidió que la revocación de un grant guarda **motivo en
+  TEXTO LIBRE**. Al escribir el cierre del saldo diferido (`DEC-GRANT-011`, `DEC-GRANT-013`), la
+  familia 4 de la 9-bis-5 usó una **enumeración cerrada** en su lugar.
+- **Decisión**: **`motivo_cierre` es una enumeración cerrada.** No deroga `DEC-GRANT-008`.
+- **Por qué, y la distinción es real, no una excepción de conveniencia**: la razón escrita de
+  `DEC-GRANT-008` es ***«concesiones firmadas a mano»*** — un humano explicando por qué revoca, que
+  es justamente lo que un enum no puede capturar. **Acá el que cierra es una TRANSICIÓN.** Una
+  persona necesita explicar; una transición sólo necesita **identificarse**.
+- **Lo que compra, y es el mismo movimiento que `DEC-ENT-002`**: convierte *«ningún otro acto puede
+  terminar una concesión de `SUPER_ADMIN`»* en algo que **un guard lee**, en vez de prosa que alguien
+  tiene que acordarse de respetar. Una enumeración cerrada se gana el lugar cuando su trabajo es
+  decir **quién NO está en ella**.
+- **Lo que queda vigente, dicho para que nadie lea esta entrada como una derogación**:
+  **`DEC-GRANT-008` sigue rigiendo la revocación manual de un grant**, con su motivo en texto libre.
+  Las dos formas conviven porque describen dos actos distintos: **enumeración para lo que cierra una
+  transición, texto libre para lo que firma una persona.**
+- **Las dos alternativas, y por qué no**:
+  - **Texto libre también acá**, por uniformidad con `DEC-GRANT-008`: una sola forma, pero **ningún
+    guard puede comprobar qué actos cierran saldos** — que es exactamente la clase de vigilancia que
+    esta tanda viene construyendo.
+  - **Declararlo como regla general de dos formas**: es lo que en los hechos queda, y está escrito
+    arriba; no necesita una decisión aparte.
+- **Cómo se tomó**: la familia 4 **la tomó sin consultar**, declarándola como decisión de modelo y
+  pidiendo ratificación. El owner la ratificó el 2026-09-23. Tercer caso del mismo patrón en esta
+  tanda, con `DEC-ENT-002` y `DEC-GRANT-013`.
+- **Origen**: la familia 4 de la FASE 9-bis-5 y la ratificación del owner del 2026-09-23 entre las
+  tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **96** |
+| Decisiones tomadas | **97** |
 | De metodología | 12 |
-| Funcionales | 84 |
+| Funcionales | 85 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
