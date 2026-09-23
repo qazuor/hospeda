@@ -45,7 +45,8 @@ a la restricción no obliga a nada.
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**) y **la fecha de primer cobro con la que nació la fila**. **No lleva ninguna columna de conciliación**: la marca es una fila aparte —`reconciliation_mark`, abajo— y **`requiere_conciliación` pasa a ser un PREDICADO derivado**, *«esta fila tiene al menos una marca abierta»* (§2.5) | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
-| **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables), y **el pago que hay que devolver** cuando el motivo lo pide — FK anulable a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila** |
+| **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila** |
+| **`reconciliation_mark_payment`** | la marca y **un** pago que hay que devolver — FK a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) —, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta, las dos anulables | **`UNIQUE(marca, pago)`**: el mismo pago no se cuelga dos veces de la misma marca. Una marca lleva **cero, uno o N**: cero en los motivos que no piden pago, **N cuando el hecho que la abre se repite ciclo a ciclo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
@@ -53,6 +54,26 @@ a la restricción no obliga a nada.
 > que permite descartar un evento viejo sin gastar una relectura (cap. 03 §10.1) y lo que hace
 > visible el caso en que el recurso cambió **sin** que el proveedor avisara — mutar el monto lo
 > salta sin emitir ninguna entrega (`EX-15`).
+
+**La marca es una por `(fila, motivo)` y los HECHOS que la sostienen son N, y por eso el pago dejó
+de ser una columna.** La restricción de arriba es correcta y no se toca: dos marcas abiertas del
+mismo motivo sobre la misma fila serían el mismo caso dos veces en el listado. Lo que estaba mal
+era **colgar un solo pago de una marca cuyo hecho se repite**. Los motivos 2, 3 y 12 del §2.5 salen
+de un preapproval que sigue cobrando **todos los meses** sobre una fila que ya no compra nada —el
+caso que la salvedad 4 del `B/09` §3 existe para cubrir: *«cancelar no emite webhook, así que si la
+llamada no se aplicó no hay ninguna otra vía de aviso y el primer aviso es el cobro»*—, y ahí los
+hechos son **uno por ciclo**. Con una FK singular el segundo cobro **no tenía dónde escribirse**:
+el `UNIQUE` rechazaba la marca nueva y el pago quedaba sin ninguna fila que lo nombrara.
+
+**El desenlace que eso producía es peor que no tener marca**, y conviene decirlo porque es el que
+justifica la entidad: el listado le mostraba a la persona **un** pago con el default en devolver,
+la persona devolvía **ése**, `S15` levantaba la marca y el caso se cerraba con los meses 2 a N
+cobrados, sin `refund` y sin nadie que los mirara. Una marca muda decía *«hay un caso acá, andá a
+mirar»*; una marca con un solo pago dice *«éste es el pago, devolvelo»*, **y la persona hace
+exactamente eso**. Las tres consecuencias de la cardinalidad están escritas donde se ejecutan:
+**el escritor acumula** en vez de rebotar (`B/05` §2 `C2` y `C3`, `B/03` §3.2 `S14`), **`S15` no
+puede levantar una marca con pagos sin resolver** (`B/03` §3.2) y **el listado muestra cuántos y
+por cuánto en total** (`B/19` §6).
 
 **El compromiso y la sucesión son dos cosas, y se escriben como dos claves.** Una sola clave estaba
 haciendo cumplir dos invariantes distintos —*«un compromiso comercial por vertical»* y *«una
