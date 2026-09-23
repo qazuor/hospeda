@@ -26,14 +26,18 @@ complemento —una por addon recurrente, `DEC-ADDON-002`— usan **esta misma m�
 propio.
 
 > **Usar la misma máquina no es entrar en el mismo dominio.** Una transición cuyo `desde` se
-> escribe como un **conjunto de filas** —y en esta tabla hay **dos**, `S13` y `S20`— tiene que
-> decir si alcanza también a las de complemento, porque son filas de `subscription` como
-> cualquier otra y **entran por pertenencia sin que nadie lo decida**. Las dos lo contestan, y al
-> revés una de la otra: `S13` dice **«principal»** y no las alcanza; `S20` dice **«de
-> complemento»** y **sólo** las alcanza (§3.2). Que sean dos filas y no un `desde` ampliado es
-> deliberado: `S13` cancela **sin evaluar condición**, y `S20` **evalúa una** —compatibilidad y
-> el flag— que es lo que el §41 exige para no cancelar a ciegas. Toda transición futura que se
-> escriba sobre un conjunto tiene que contestar lo mismo.
+> escribe como un **conjunto de filas** —y en esta tabla hay **cinco**: `S13`, `S20` y las **tres**
+> de la discontinuación, `S26`, `S27` y `S28`— tiene que decir si alcanza también a las de
+> complemento, porque son filas de `subscription` como cualquier otra y **entran por pertenencia
+> sin que nadie lo decida**. **Las cinco lo contestan, y no las cinco igual**: `S13` dice
+> **«principal»** y no las alcanza; `S20` dice **«de complemento»** y **sólo** las alcanza; las
+> tres de la discontinuación dicen **las dos clases**, porque `B/10` §4.3 ordena el acto también
+> sobre *«cada suscripción de complemento viva en ella»* (§3.2). Que `S13` y `S20` sean dos filas y
+> no un `desde` ampliado es deliberado: `S13` cancela **sin evaluar condición**, y `S20` **evalúa
+> una** —compatibilidad y el flag— que es lo que el §41 exige para no cancelar a ciegas; que la
+> discontinuación sean tres es por otra razón, y está abajo: **el destino cambia con lo que cada
+> estado emite**. Toda transición futura que se escriba sobre un conjunto tiene que contestar lo
+> mismo.
 
 ### 3.1 Los nueve estados
 
@@ -75,11 +79,13 @@ muertes distintas**, y bloqueaba el reintento que `B/12` §4.4 exige.
 
 Con `CHARGE_DECLINED` afuera, **`SUSPENDED` vuelve a significar una sola cosa** —alguien que pagó
 alguna vez y dejó de pagar, que es la política de retención del §20— y ahí bloquear **es lo
-correcto**: su preapproval puede seguir vivo, y una segunda suscripción serían dos cobros. Su
-salida no es el candado: es pagar (`S7`), que el proveedor la dé de baja y la espejemos (`B/12`
-§1.4), o que la cancele una persona (**`S23`**, §3.2).
+correcto**: su preapproval puede seguir vivo, y una segunda suscripción serían dos cobros. Sus
+salidas no son el candado: son pagar (`S7`), que el proveedor la dé de baja y la espejemos (`B/12`
+§1.4), que la cancele una persona (**`S23`**, §3.2) o que **se discontinúe la vertical entera**
+(**`S27`**, §3.2) — **cuatro, y la cuarta no la decide ni el cliente ni el proveedor sino
+`SUPER_ADMIN` sobre la cartera**.
 
-> **Las tres son ejecutables, y la tercera recién desde que tiene fila.** Hasta `S23` la baja de
+> **Las tres primeras son ejecutables, y la tercera recién desde que tiene fila.** Hasta `S23` la baja de
 > la tabla salía sólo de `ACTIVE`, así que esta enumeración prometía una salida que la máquina no
 > declaraba — y sobre un **pagador manual** era la única de las tres que podía existir, porque no
 > hay preapproval que el proveedor dé de baja por mora (`B/06` §7) y el espejo del §10.1 no lo
@@ -138,6 +144,9 @@ Y una nota de registro que sigue valiendo:
 | S23 | `SUSPENDED` | pide la baja — **la pide el cliente o la ejecuta un admin**: es la tercera salida que el §3.1 enumera | `CANCELLED` | — | el mismo acto otra vez, y acá **no hay servicio ni cobertura que retirar**: el §21 ya cortó el servicio y `SUSPENDED` **no emite ninguna fuente** (`12-contrato…` §2.6), así que tampoco hay período pagado que sostener y la fecha de fin de servicio **es el día de la cancelación**. **En el proveedor: si el preapproval sigue vivo se cancela**, con la regla de relectura de `S17`; **sobre un pagador manual no hay nada que mandar**, porque no hay débito que detener (`B/06` §7). **Libera el candado `A`** (`B/02` §2.2), y ésa es la mitad que el §7.1 necesitaba: desde `CANCELLED` la condición 1 del `B/05` §3 rechaza la reapertura, así que este acto **cierra la ventana de `MP4`** y de paso le devuelve a la persona el alta nueva que el candado le bloqueaba. **Idempotente**, como `S12` |
 | S24 | `GRACE_PERIOD` | pide la baja | `CANCELLED` | — | **el mismo acto de nuevo**, y su desenlace lo fija `DEC-SUB-014`: **corta en el acto**, con la fecha de fin de servicio en **el día de la cancelación** y **sin pasar por `CANCEL_SCHEDULED`**, por la misma razón que `S22` y `S23`. Acá esa razón es la más literal de las cuatro: **el grace existe porque el cobro del período en curso falló**, así que no hay período pagado que sostener — el último que se pagó ya se consumió, que es precisamente por lo que la fila está en este estado. **Y es la única de las tres bajas directas que corta servicio de verdad**: `GRACE_PERIOD` **sí emite fuente** (`12-contrato…` §2.6, *«el §20 da servicio entero»*), a diferencia de `PAUSED` por `CUSTOMER_REQUEST` y de `SUSPENDED`, así que la pantalla lo dice antes de confirmar (`B/19` §4, fila 8). **Se cancela en el proveedor de inmediato**, con la regla de relectura de `S17`; **sobre un pagador manual no se manda nada**, como en `S23`, porque no hay débito que detener (`B/06` §7). **Apaga el reloj del §4**: sin esta fila el intento caía en la regla 1 del núcleo —marca con motivo `TRANSICIÓN_NO_DECLARADA`— mientras el reloj del grace seguía corriendo hacia `SUSPENDED` con una persona mirando el caso. **Y si la fila es la predecesora de una sucesión en curso, dispara `S18`**, igual que `S23`: `S19` retiene pagos desde `GRACE_PERIOD` y desde `SUSPENDED`, así que es la **misma** rama 6 de `B/12` §5.3 y no una séptima. **Idempotente**, como `S12` |
 | S25 | `PAUSED` — **con cualquiera de los dos motivos** | **el mismo evento de `S10`**: llega el fin de la pausa, o la persona vuelve antes | `CANCELLED` | **el plan al que la fila está anclada ya NO se presta** — su vertical fue discontinuada (`B/10` §4.3) — **y es la guarda complementaria de la de `S10`**, no una condición aparte: las dos leen el mismo dato y no se pueden satisfacer a la vez | **`S10` no puede reanudar sobre un plan que no existe**, y ésta es la fila que ejecuta ese final (`DEC-SUB-015`). **No se manda `PUT status=authorized`**: se **cancela** el preapproval, con la regla de relectura de `S17` —`EX-11` mide que una pausada rechaza toda modificación **y sí deja cancelar**—, y por eso el preapproval no se cancela el día 0 del anuncio sino acá: mientras está pausada **no cobra** (`PS-2`), así que dejarla viva no cuesta plata. **Se escribe `fin_real` en la `subscription_pause`** con ese día, igual que `S22` y por la misma razón: los topes del §26.3 sobreviven a cancelar y volver a suscribirse (`DEC-SUB-004`). **Y corre igual si la persona no vuelve nunca**: el tope de la pausa es nuestro reloj (`PS-4`), así que el evento llega solo. **Libera el candado `A`**, con lo que el alta nueva entra por `S1` si en esa vertical queda algo que comprar. **Y si el motivo era `COURTESY` con días sin entregar, la cortesía NO se pierde: se DIFIERE** —se le escribe el `saldo_días` y `S9` la re-emite sobre la fila nueva cuando llegue a `ACTIVE`— por el mismo mecanismo de `DEC-GRANT-007` (`DEC-GRANT-010`, `B/14` §4.6). **Idempotente**, como `S12` |
+| S26 | **toda fila viva de la vertical —PRINCIPAL y DE COMPLEMENTO— en `ACTIVE` o `GRACE_PERIOD`**; la `PAUSED` **no entra** (`DEC-SUB-015`, §3.3) | `SUPER_ADMIN` **discontinúa la vertical** (`B/10` §4.3) | `CANCEL_SCHEDULED` | — | **se cancela el preapproval en el proveedor de inmediato**, con la regla de relectura de `S17` — es el día 0 del §4.3, y a partir de ahí *«el proveedor no emite un cobro más en la vertical»*—; **sobre un pagador manual no se manda nada**, porque no hay débito que detener (`B/06` §7). **La fecha de fin de servicio NO es la de `DEC-SUB-009` fila por fila: es UNA sola para toda la vertical**, la fórmula del `B/10` §4.3 —`max(día 60 desde el anuncio, el último día ya pagado por cualquier compromiso vivo)`—, y es lo único que separa este acto de `S11`: allá la fecha sale del período de esa persona. El servicio **sigue entero** hasta ese día, porque `CANCEL_SCHEDULED` **sí emite fuente** (`12-contrato…` §2.6), y `S12` lo consuma. **Y el grace deja de correr hacia `SUSPENDED` sin ninguna cláusula nueva**: `S6` sale de `GRACE_PERIOD` y esta fila ya sacó a la suscripción de ahí, que es exactamente lo que el borde 3 del `B/10` §4.5 promete —*«lo que no pasa es que el reloj del grace la empuje a `SUSPENDED` por efecto de la discontinuación»*—. Lo adeudado **sigue su camino normal**: `S5` entra a esta fila desde `GRACE_PERIOD` y ya no puede, así que el pago que llegue se resuelve como el de cualquier `CANCEL_SCHEDULED`. **Idempotente**, como `S12` |
+| S27 | **toda fila viva de la vertical —de las dos clases— en `SUSPENDED`** | **el mismo evento de `S26`** | `CANCELLED` | — | **acá no hay servicio ni cobertura que retirar, y por eso no pasa por `CANCEL_SCHEDULED`**: el §21 ya cortó el servicio y `SUSPENDED` **no emite ninguna fuente** (`12-contrato…` §2.6), así que mandarla al piso le **devolvería** hasta 60 días de servicio **gratis** a quien dejó de pagar — el piso del `B/10` §4.4 existe porque *«perder el servicio entero es estrictamente peor que un aumento»*, y acá no hay ninguno que perder. **Es la misma forma de `S23` y por la misma razón**, con la fecha de fin de servicio **en el día del anuncio**. **Se cancela el preapproval si seguía vivo**, con la regla de relectura de `S17`; **sobre un pagador manual no se manda nada**. **Libera el candado `A`** y **cierra la ventana de `MP4`**, igual que `S23` — y acá eso no le quita nada, porque lo que la reapertura devolvería es un servicio que la vertical deja de prestar. La deuda por servicio **ya prestado** sigue su camino: no se perdona ni se persigue más fuerte (`B/10` §4.5, bordes 2 y 3). **Idempotente**, como `S12` |
+| S28 | **toda fila viva de la vertical —de las dos clases— en `PENDING_AUTHORIZATION`** | **el mismo evento de `S26`** | `ABANDONED` | — | **el alta no se puede completar**: el día 0 la vertical *«deja de admitir altas»* (`B/10` §4.3), y terminar ese checkout sería un alta nueva sobre una vertical cerrada. **Tampoco pasa por `CANCEL_SCHEDULED`**, por la razón de `S27` llevada al extremo: `PENDING_AUTHORIZATION` **no emite fuente** y el contrato ya descartó emitirla llamándola *«la respuesta cara»* por 72 h (`12-contrato…` §2.6) — por 60 días y sin que nadie haya autorizado ni pagado, no se discute. **Se cancela el preapproval en el proveedor**, por lo mismo que lo cancela `S3`: sin eso queda una autorización viva que puede cobrar. **Y si la fila era de un pagador manual, su primera cuota se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7), igual que en `S3`. **Y si era una sucesora, su predecesora está en `CANCEL_SCHEDULED` por `S26`**, así que la sucesión la cierra `S18` cuando `S12` la consuma — no hace falta ningún evento nuevo. **Lo que NO hace es cerrar un saldo de cortesía**: ver abajo. **Idempotente**, como `S12` |
 
 **La muerte de la predecesora y el cierre de la sucesión son DOS actos, y por eso son dos
 filas.** `S17` mata a la predecesora; `S18` cierra la sucesión. Escribirlos como uno solo es lo
@@ -605,6 +614,52 @@ borra nunca** (`B/10` §4.5, borde 4). O sea que *«el plan se sigue prestando»
 el estado de esa vertical, no contra el flag de vendible: un plan **retirado** del catálogo
 (`B/10` §3) se sigue prestando —*«las suscripciones vivas no se mueven»*— y esta guarda lo deja
 del lado de `S10`, que es lo correcto.
+
+#### La discontinuación de una vertical tiene TRES filas, y el destino cambia con lo que cada estado emite
+
+**`B/10` §4.3 ORDENA el movimiento y hasta acá ninguna transición numerada lo ejecutaba.** *«Cada
+suscripción viva que pueda llegar a `CANCEL_SCHEDULED` se cancela en el proveedor de inmediato y
+pasa a ese estado»* es una instrucción de un capítulo sobre esta tabla, y **`S11` no la cumple**:
+su evento es *«pide la baja»*, o sea un acto del cliente sobre su propia fila, y esto lo decide
+`SUPER_ADMIN` sobre **la cartera entera de una vertical**. Por la regla 1 del núcleo, lo que la
+tabla no declara **no pasa**: el movimiento caía en la marca `TRANSICIÓN_NO_DECLARADA` desde
+`ACTIVE`, desde `GRACE_PERIOD`, desde `SUSPENDED` y desde `PENDING_AUTHORIZATION` — los cuatro, no
+sólo el `PAUSED` que `DEC-SUB-015` ya había sacado del acto. **`S26`, `S27` y `S28` lo ejecutan.**
+
+**Un acto, tres filas, y el precedente es la baja.** `S22`, `S23` y `S24` son *«el mismo acto de
+`S11`»* escrito tres veces porque **el desenlace cambia con el estado**; acá pasa lo mismo y por
+una razón que se puede leer en una tabla ya escrita —la de qué emite cada estado
+(`12-contrato…` §2.6)—:
+
+| `desde` | ¿emite fuente hoy? | `hacia` | qué pasaría con el destino de al lado |
+|---|---|---|---|
+| `ACTIVE` · `GRACE_PERIOD` | **sí**, las dos | `CANCEL_SCHEDULED` (`S26`) | cortar hoy le retiraría un servicio que está usando y que en el grace **paga el §20** |
+| `SUSPENDED` | **no** | `CANCELLED` (`S27`) | `CANCEL_SCHEDULED` **emite**, así que le devolvería 60 días de servicio gratis a quien dejó de pagar |
+| `PENDING_AUTHORIZATION` | **no** | `ABANDONED` (`S28`) | ídem, y sobre alguien que **nunca autorizó ni pagó nada** |
+| `PAUSED` | irrelevante acá | **ninguno** — no entra al acto | `DEC-SUB-015`: el §3.3 prohíbe `PAUSED → CANCEL_SCHEDULED`, y su final es `S25` |
+
+**Escribirlo como una sola fila con un `desde` de cuatro estados era la lectura obvia y es la que
+regala servicio.** El `hacia` es uno por fila (la forma que el resto de la tabla usa), así que un
+`desde` de cuatro obliga a un destino único, y el único que sirve para `ACTIVE` **emite**. La
+diferencia no la decide una preferencia: la decide qué tiene hoy cada cliente, que es un dato del
+contrato de cobertura y no de este capítulo.
+
+**Las tres alcanzan a las filas DE COMPLEMENTO además de a las principales**, que es lo que el §3
+de este capítulo obliga a contestar a toda transición con `desde` de conjunto — y acá la respuesta
+la da el capítulo que ordena el acto: *«lo mismo con cada suscripción de complemento viva en ella»*
+(`B/10` §4.3), **una por una, porque cada addon recurrente es su propia autorización**
+(`DEC-ADDON-002`). La **instancia** no necesita nada nuevo: se apaga por el camino que `B/16` §4.2
+ya declara cuando su suscripción deja de sostenerla, y `S21` **no escribe nada** sobre una fila que
+ya está `CANCELLED`.
+
+**Y `S28` NO cierra ningún saldo de cortesía, aunque se parezca a `S3`.** El cierre de
+`DEC-GRANT-011` cuelga de un hecho que acá no ocurre —*«venció la ventana de autorización»*— y su
+población es la del cambio de plan. Acá el saldo queda **diferido sobre una vertical que ya no
+admite altas**, que es **exactamente** el desenlace que `DEC-GRANT-010` declaró y que el owner
+eligió **no** cerrar, con su razón escrita: *«una vertical no la vamos a discontinuar nunca, y si
+algún día decidimos eso, lo veremos en el momento»*. **Es el mismo saldo colgado por otra puerta**,
+y la puerta de `S25` ya lo declara así en `B/14` §4.6. Cerrarlo acá sería resolver por la mitad
+—y en silencio— la única pregunta que esa decisión dejó abierta a propósito.
 
 #### `S13` alcanza a toda fila viva PRINCIPAL, no a una — y no alcanza a los complementos
 
@@ -2040,11 +2095,12 @@ releyendo y comparando campo por campo cada campo que se mandó**, porque está 
   fila termina cuando la pausa termina, por **`S25`** (§3.2). **El §3.3 no cede**: sigue sin
   existir `PAUSED → CANCEL_SCHEDULED`, y la contradicción se resolvió corrigiendo la instrucción
   que lo pedía, no la prohibición.
-- **Pero la otra mitad SIGUE ABIERTA: el acto de la discontinuación no tiene fila numerada para
-  NINGÚN estado, no sólo para `PAUSED`.** `B/10` §4.3 manda las demás vivas a `CANCEL_SCHEDULED`
-  y **`S11` no lo ejecuta**: su evento es *«pide la baja»*, o sea un acto del cliente sobre su
-  propia fila, y esto lo decide `SUPER_ADMIN` sobre la cartera entera de una vertical. Por la
-  regla 1 del núcleo, hoy ese movimiento cae en la marca desde `ACTIVE`, desde `GRACE_PERIOD`,
-  desde `SUSPENDED` y desde `PENDING_AUTHORIZATION` igual que caía desde `PAUSED`. **`DEC-SUB-015`
-  no resolvió esto y no pretendía hacerlo**: resolvió a quién alcanza el piso, no qué transición
-  lo ejecuta. Queda declarado, y va como pregunta al owner.
+- ~~**Pero la otra mitad SIGUE ABIERTA: el acto de la discontinuación no tiene fila numerada para
+  NINGÚN estado, no sólo para `PAUSED`.**~~ **CERRADA** por la FASE 9-bis-5 (defecto `F3` del
+  censo), y **no era una pregunta al owner**: `B/10` §4.3 ordena el movimiento, `S11` no lo ejecuta
+  —su evento es *«pide la baja»*, un acto del cliente sobre su propia fila, y esto lo decide
+  `SUPER_ADMIN` sobre la cartera entera de una vertical— y lo único que faltaba eran las filas.
+  **Son tres y no una** —`S26`, `S27` y `S28` (§3.2)—, porque el destino cambia con lo que cada
+  estado emite: `ACTIVE` y `GRACE_PERIOD` al piso de `CANCEL_SCHEDULED`, `SUSPENDED` a `CANCELLED`
+  y `PENDING_AUTHORIZATION` a `ABANDONED`. **`DEC-SUB-015` no resolvió esto y no pretendía
+  hacerlo**: resolvió a quién alcanza el piso, no qué transición lo ejecuta.
