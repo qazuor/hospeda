@@ -94,9 +94,11 @@ para retirar un plan sin mecanismo nuevo.
 
 **Las dos columnas de `vertical` no son de adorno: son la mitad declarada de la frontera.**
 `admite_altas` y `fin_de_servicio` las **lee billing** (`B/10` §4.6) y hasta ahora no existían en
-ninguna entidad. Son dos de los seis campos de la dirección inversa del contrato
+ninguna entidad. Son dos de los **siete** campos de la dirección inversa del contrato
 (`12-contrato-de-cobertura.md` §4.1), que transporta **política y estado de catálogo, nunca
-capacidades**.
+capacidades**. *(Decía «seis»: es la misma cifra caduca que la regla de vigilancia del §4.2 del
+contrato llevaba en su mitad inversa, y se recontó entera sobre el bloque del §4.1 —cinco de
+`políticaDePlan` más dos de `situaciónDeVertical`—, no sumándole uno.)*
 
 **El plan de trial no es una entidad aparte.** Es un `plan` con su versión, marcado **no
 vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se derivan en cada
