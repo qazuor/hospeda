@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_57",
-        "number": 57,
-        "createdAt": "2026-09-23T21:35:00.000Z",
+        "id": "ver_claude_opencode_migration_58",
+        "number": 58,
+        "createdAt": "2026-09-23T21:50:00.000Z",
         "author": "opencode",
-        "reason": "registrar dry-run de consolidación de Hospeda",
+        "reason": "auditar separación qz y adapter Hospeda",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_56"
+        "basedOnVersion": "ver_claude_opencode_migration_57"
     },
     "data": {
         "sections": [
@@ -514,7 +514,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate121: frontera qz/hops y distribución por capas documentada. Gate218: `start-issue` ahora lee `issues.teamKey` desde `.qz/project.json` para normalizar IDs sin asumir HOS; conserva HOS como fallback legacy y no expone secretos. Gate219: `close-issue --plan` también lee `branches.protected` para decidir si una branch tiene PR propio, con fallback `main/staging`; el JSON expone la decisión y la lista usada. Se agregó `project-config.ts` como lector seguro del adapter. La extracción completa de worktrees/envs/DB/Linear queda diferida hasta validar con un segundo proyecto; no se duplicará lógica ni se copiarán secretos.",
+                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Se documentó el orden seguro de extracción; falta validar con un segundo proyecto fixture.",
                             "done": false
                         }
                     ]

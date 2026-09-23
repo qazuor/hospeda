@@ -3631,3 +3631,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Engram recomienda `hospeda` como canonical y no detectó otro grupo similar.
 - No se aplicó la consolidación: queda como mutación separada para revisar el
   ownership de las dos memorias de `Hospeda` y aprobar el cambio explícitamente.
+
+## Gate 218 · Auditoría `qz` / adapter Hospeda
+
+- `.qz/project.json` ya declara prefijos `qz-` y `hops-`, pero el núcleo aún
+  contiene defaults Hospeda para Linear, nombres de worktrees, DB, servidores,
+  stats y checkout protegido.
+- Se identificaron los acoplamientos y el orden seguro de extracción en
+  `docs/migration/qz-generic-adapter-audit-2026-09-23.md`.
+- No se renombraron comandos ni se generaron symlinks: primero hace falta
+  extraer la configuración y validar el núcleo contra un proyecto fixture.
