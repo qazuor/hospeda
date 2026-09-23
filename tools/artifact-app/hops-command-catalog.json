@@ -35,7 +35,7 @@
                 "title": "Regla de uso",
                 "data": {
                     "tone": "info",
-                    "text": "Antes de reconstruir contexto o lanzar comandos manuales, usá la contraparte hops-* del agente. Para verificar cambios, empezá por hops verify --changed."
+                    "text": "Antes de reconstruir contexto o lanzar comandos manuales, usá la contraparte hops-* del agente. Para verificar cambios, empezá por hops verify --changed; si otro agente consumirá el resultado, agregá --json."
                 }
             },
             {
@@ -89,7 +89,7 @@
                         },
                         {
                             "label": "3 · Verificación",
-                            "detail": "hops verify --changed; --full queda reservado para casos justificados."
+                            "detail": "hops verify --changed; --json para agentes; --full queda reservado para casos justificados."
                         },
                         {
                             "label": "4 · CI",
