@@ -62,13 +62,13 @@ más margen, de una sola toma.
 
 | # | Grabar | Tipo | Videos |
 |:-:|---|:-:|---|
-| P1 | Home | scroll | V2 V3 V4 V9 |
+| P1 | Home | scroll | V2 V3 V4 V6 V9 |
 | P2 | Listado de alojamientos | scroll | V2 V8 V30 |
 | P3 | Buscador con filtros aplicados | acción | V30 |
 | P4 | Buscador en lenguaje natural | acción | V30 |
 | P5 | **Ficha de alojamiento completa**, sección por sección | scroll | V7 V8 V9 V10 |
 | P6 | Botón de contacto → WhatsApp abriéndose | acción | V9 V18 |
-| P7 | Página de destino | scroll | V2 V8 V29 V33 |
+| P7 | Página de destino | scroll | V2 V6 V8 V29 V33 |
 | P8 | Gastronomía: listado y ficha | scroll | V2 V26 V29 |
 | P9 | Experiencias: listado y ficha | scroll | V2 V27 V29 |
 | P10 | Agenda de eventos | scroll | V2 V29 V34 |
