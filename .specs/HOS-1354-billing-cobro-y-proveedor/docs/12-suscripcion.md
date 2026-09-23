@@ -512,10 +512,10 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras trece, que es lo que faltaba.** Un
+> **Y la marca que las tres abren se distingue de las otras catorce, que es lo que faltaba.** Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó —una de las otras trece—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras catorce—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.
