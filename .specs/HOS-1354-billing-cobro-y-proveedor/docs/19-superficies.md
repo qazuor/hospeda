@@ -192,7 +192,7 @@ de algo que este diseño creó:
 
 | qué | por qué existe |
 |---|---|
-| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, TODOS los pagos que lleva colgados, CUÁNTOS son, el monto TOTAL y QUÉ PROPONE EL SISTEMA** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los cinco motivos que significan *«hay plata del cliente que devolver»*** — **y con ellos la marca del 14 cuya rama es `DEVOLVER`**, que desde `DEC-RF-004` es el **único** caso de un motivo de afuera de los cinco en el que esperar le cuesta al cliente, y que llega acá con la rama ya resuelta por quien escribió la marca. **Ese orden se lee entonces sobre la marca y no sólo sobre el motivo**, que es la misma partición que la tabla de defaults de abajo. **Y una fila del listado puede llevar además un VÍNCULO, cuando el diagnóstico fino de ese motivo está declarado afuera de la marca**: hoy es el motivo **7** y su evento crítico, y el vínculo se resuelve con lo que la marca ya guarda (`DEC-RF-005`, y la fila del 7 en la tabla de abajo). **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las marcas del corpus —**trece** entonces, **catorce** hoy— llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
+| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, TODOS los pagos que lleva colgados, CUÁNTOS son, el monto TOTAL y QUÉ PROPONE EL SISTEMA** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los seis motivos que significan *«hay plata del cliente que devolver»*** (`B/02` §2.5, última columna). **Ese orden se lee ENTERO sobre el motivo**, que es lo que `DEC-RF-006` devolvió: el caso que `DEC-RF-004` había dejado afuera de la columna —la marca de `S21`, cuya propuesta dependía del disparador— es hoy **el motivo 15**, con su `SÍ` propio, y ordena como los otros cinco. **Y una fila del listado puede llevar además un VÍNCULO, cuando el diagnóstico fino de ese motivo está declarado afuera de la marca**: hoy es el motivo **7** y su evento crítico, y el vínculo se resuelve con lo que la marca ya guarda (`DEC-RF-005`, y la fila del 7 en la tabla de abajo). **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las marcas del corpus —**trece** entonces, **quince** hoy— llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
 
 **Y una marca con motivo llega con un DEFAULT, que es lo último que le faltaba.** Un motivo dice
 *qué pasó*; la persona que abre el caso además necesita saber **qué debería hacer**, y hasta la
@@ -207,7 +207,8 @@ puso el default, y es **DEVOLVER**.
 | `COBRO_POSTERIOR_AL_GRANT` | **devolver** (`B/05` C3) |
 | `COBRO_DURANTE_CORTESÍA` | **devolver** — es el camino que `DEC-GRANT-007` eligió por escrito para el riesgo que aceptó (`B/02` §2.5, motivo 12) |
 | `PAGO_TARDÍO_RECHAZADO` | **devolver** — sus cuatro condiciones sólo fallan con el pago ya acreditado sobre un período que no compró (`B/05` §3). **Con una salida declarada**: si lo que falló es la condición **2** y el monto de más es un precio nuevo que no se propagó, lo que corresponde es aceptarlo y reactivar, y **cuál de las cuatro falló está en el evento crítico** (`NUCLEO/08` §4.3), no en el motivo — **y el listado ENLAZA a ese evento** (`DEC-RF-005`): la persona ve el motivo y, al lado, un vínculo a la condición que falló, en vez de tener que ir a buscarla. **El vínculo no copia el dato y la marca no gana ninguna columna**: `B/05` §3 dice *«cuál de las cuatro condiciones falló va en el evento y no en el motivo»* y eso **no cambia**; lo que resuelve el vínculo es **dónde está el evento**, y se resuelve con lo que la marca ya guarda —la suscripción, el motivo y `puesta_en` (`B/02` §2.2)—, porque `S14` abre la marca y emite el evento crítico **en el mismo acto** (`B/03` §3.2). Esta fila necesita el vínculo porque su diagnóstico fino está **declarado afuera de la marca**, que es lo que `B/05` §3 decidió y esta decisión no toca |
-| `COMPLEMENTO_CON_PERÍODO_COBRADO` | **depende del disparador, y es el único de la tabla que no se lee en una casilla** (`DEC-RF-004`). **`DEVOLVER`** en **dos** casos: cuando la instancia llegó a `CANCELLED` porque **se revocó el grant que era su título** —la tercera cláusula de `A5`—, y cuando llegó **huérfana** —la segunda— **porque a su título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación de `DEC-RF-004` del 2026-09-23). En los dos el cliente no hizo nada y pierde días que pagó. **NO devolver** en el resto —`A6`, la primera cláusula de `A5`, y la segunda cuando al título lo mató cualquiera de las **otras nueve** transiciones de `B/16` §4.3—, y no es una laguna: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»*, con `DEC-GRANT-001` y el §3.4 de ese capítulo como precedente. **Los cuatro disparadores están enumerados uno por uno, con su lado, en `B/03` §3.2**, *«la propuesta del 14 depende del disparador»*, que es también donde se reparte el 2. La persona confirma la propuesta que le toca o ve la razón para apartarse. **Y la fila dice en voz alta CUÁNDO apartarse, porque lo que queda del disparador 2 tampoco es homogéneo** (`DEC-RF-004`, la condición obligatoria de su ampliación): de las **doce** transiciones que sacan al título de las filas vivas, **cinco no son un acto del cliente**, y las **dos** que la partición no alcanza siguen proponiendo `NO DEVOLVER` — **`S17`**, que es nuestra, y **`S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`**. **Por el criterio de la propia decisión esas dos irían a `DEVOLVER` y quedan del otro lado por MECANISMO**: la transición que mata al título no nombra la causa —`S12` sólo ve *«llegó la fecha de fin de servicio»* y `S17` sólo ve *«la sucesora quedó autorizada»*— y `S21` conoce la cláusula de `A5` que disparó, **no cuál de las doce mató al título tres saltos antes**; hacérsela llegar es mecanismo nuevo, y es justo lo que la discontinuación **no** necesita, porque su acto recorre las filas una por una o su guarda la nombra. **Un default es una propuesta y no una sentencia**; lo que no puede ser es una propuesta que contradice el criterio **en silencio**, y por eso esos dos caminos se leen acá y no se deducen. **Y el piso de 60 días no los salva**: la discontinuación que llega por `S26` → `S12` sí lo trae (`B/10` §4.3 y §4.4), pero es el de la **principal** y no el del complemento, que es otra fila y pudo haber cobrado su período |
+| `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN` (motivo **15**) | **devolver** — la instancia llegó a `CANCELLED` porque **se revocó el grant que era su título** —la tercera cláusula de `A5`— o porque **a su objetivo lo mató la discontinuación de la vertical** —`S25`, `S27` o `S28`—. **En los dos el cliente no hizo nada y pierde días que pagó**, y en los dos **la causa la conoce el acto mismo**, así que `S21` escribe este motivo sin trazar nada hacia atrás (`DEC-RF-006`; `B/03` §3.2, *«cuál de los dos motivos abre `S21`»*) |
+| `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA` (motivo **14**) | **no devolver**, y no es una laguna: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»*, con `DEC-GRANT-001` y el §3.4 de ese capítulo como precedente. Cubre `A6`, la primera cláusula de `A5` y la orfandad causada por cualquiera de las **otras nueve** transiciones de `B/16` §4.3. **Los cuatro disparadores están enumerados uno por uno, con el motivo que le toca a cada uno, en `B/03` §3.2**. La persona confirma la propuesta o ve la razón para apartarse. **Y la fila dice en voz alta CUÁNDO apartarse, porque su población no es homogénea** (`DEC-RF-004`, la condición obligatoria, que `DEC-RF-006` mudó entera a este motivo): de las **doce** transiciones que sacan al título de las filas vivas, **cinco no son un acto del cliente**, y **dos de esas cinco caen acá** — **`S17`**, que es nuestra, y **`S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`**. **Por el criterio de la propia decisión esas dos irían al 15 y quedan acá por MECANISMO**: la transición que mata al título no nombra la causa —`S12` sólo ve *«llegó la fecha de fin de servicio»* y `S17` sólo ve *«la sucesora quedó autorizada»*— y `S21` conoce la cláusula de `A5` que disparó, **no cuál de las doce mató al título tres saltos antes**; hacérsela llegar es mecanismo nuevo, y es justo lo que la discontinuación **no** necesita, porque su acto recorre las filas una por una o su guarda la nombra. **Un default es una propuesta y no una sentencia**; lo que no puede ser es una propuesta que contradice el criterio **en silencio**, y por eso esos dos caminos se leen acá y no se deducen. **Y el piso de 60 días no los salva**: la discontinuación que llega por `S26` → `S12` sí lo trae (`B/10` §4.3 y §4.4), pero es el de la **principal** y no el del complemento, que es otra fila y pudo haber cobrado su período |
 | `PAGO_PENDIENTE_SIN_RAMA` | **nada**, y es el único: por definición es el caso que **ninguna** de las seis ramas alcanzó (`B/09` §3, segunda comprobación) |
 
 **El default se propone sobre TODOS los pagos de la marca, no sobre el primero.** Una marca lleva
@@ -220,47 +221,43 @@ bien su trabajo cerraba el caso con el resto adentro.
 **El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.** La persona confirma —o se niega, con
 lo que vea delante— y el sistema **no dispara ningún reembolso solo**. Lo que cambia es que ahora
 encuentra **una propuesta escrita** en vez de una marca muda: *«acá el default es éste, y la
-persona confirma salvo que haya razón para no hacerlo»*. **Las filas de la tabla son siete y se
-reparten en tres formas, recontadas sobre la tabla de arriba**: en **cinco** el default es
-**devolver** y no depende de nada más que el motivo; **una** —el 14— **no tiene un default sino
-dos**, y cuál le toca lo decide **de qué disparador vino la marca y, en el segundo, qué transición
-mató al título** (`DEC-RF-004` y su ampliación); y **una** —`PAGO_PENDIENTE_SIN_RAMA`— no propone
-nada. Cada una por la razón que su fila escribe.
+persona confirma salvo que haya razón para no hacerlo»*. **Las filas de la tabla son ocho y se
+reparten en tres formas, recontadas sobre la tabla de arriba**: en **seis** el default es
+**devolver**; en **una** —el 14— es **no devolver**; y **una** —`PAGO_PENDIENTE_SIN_RAMA`— no
+propone nada. **En las siete que proponen algo, la propuesta no depende de nada más que el
+motivo.** Cada una por la razón que su fila escribe.
 
-**Y esa sexta fila es la que le quita a esta tabla la forma de columna plana, así que conviene
-decirlo antes de que alguien la lea así.** Hasta `DEC-RF-004` el default se leía **por motivo**:
-con el motivo en la mano alcanzaba una fila para saber qué se propone. El 14 es **el primero del
-catálogo cuyo default se lee por RAMA**, o sea que sobre él *«¿qué propone el sistema?»* no tiene
-respuesta sin mirar además **con qué rama llegó la marca**. **Lo que eso NO significa**: no es
-mecanismo nuevo en producción —la rama la decide quien escribe la marca, y en los dos caminos la
-conoce en ese mismo acto: `S21` conoce la cláusula de `A5` que disparó, y en la orfandad por
-discontinuación la causa la deja la transición que mata al título, que **es** la discontinuación
-(`B/03` §3.2)— ni cambia lo que la marca transporta al barrido, ni mueve las dos
-cifras del `B/02` §2.5, que siguen siendo **catorce** motivos y **cinco** que devuelven plata
-(recontadas ahí).
+**Y esta tabla volvió a ser una columna plana con `DEC-RF-006`, así que conviene decirlo porque
+durante una vuelta no lo fue.** `DEC-RF-004` había dejado **un** motivo cuyo default se leía por
+RAMA: sobre él *«¿qué propone el sistema?»* no tenía respuesta sin mirar además con qué rama llegó
+la marca. La partición del motivo en dos —el **14** y el **15** del `B/02` §2.5— pone esa
+distinción **en el motivo mismo**, que es una enumeración cerrada y que quien abre la marca escribe
+en el acto. **Lo que la partición no hace**: no agrega mecanismo en producción —`S21` ya elegía
+entre las dos propuestas con lo que sabía en ese acto, y lo único que cambia es **en qué campo lo
+deja**— ni cambia lo que la marca transporta al barrido. **Lo que sí mueve son las dos cifras del
+`B/02` §2.5**, recontadas enteras ahí: **quince** motivos y **seis** que devuelven plata.
 
-**Y no reabre el defecto que `DEC-RF-003` acababa de cerrar, aunque tenga la misma forma.** Lo que
-allá falló fue *«una misma marca, con un mismo motivo, con dos indicaciones distintas según **una
-rama que el listado no muestra**»* (`B/12` §5.3): la rama 6 llegaba muda porque el listado no sabía
-que existía. **La diferencia es exactamente ésa y no otra**: la rama del 14 **viaja con la
-marca** —se conoce en el acto de escribirla (`B/03` §3.2) y el `NUCLEO/08` §3 la asienta—, así
-que la persona ve **cuál** de las dos propuestas le toca y por qué. Un default por rama con la rama
-a la vista es lo contrario de una marca muda; lo que sigue prohibido es la rama invisible, y por eso
-`G-R1-F` falla si la marca del 14 llega sin su rama o con la otra (`B/20` §2).
+**Y con eso el defecto que `DEC-RF-003` cerró queda cerrado por construcción, en vez de por una
+cláusula.** Lo que allá falló fue *«una misma marca, con un mismo motivo, con dos indicaciones
+distintas según **una rama que el listado no muestra**»* (`B/12` §5.3): la rama 6 llegaba muda
+porque el listado no sabía que existía. **Un default por rama con la rama a la vista no era eso, y
+por eso era admisible; dos motivos distintos ya no son ni siquiera eso**, porque lo que el listado
+muestra —el motivo— **es** lo que decide la propuesta. Lo que sigue prohibido es la distinción
+invisible, y ahora no hay ninguna que pueda serlo.
 
 **Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
-era indistinguible de las otras trece y **el pago se quedaba**; una marca con motivo y sin default
+era indistinguible de las otras catorce y **el pago se quedaba**; una marca con motivo y sin default
 reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué se espera de ella
 **no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
 
-**Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El 14 es el
-caso en su rama `NO DEVOLVER` —`A6`, la primera cláusula de `A5` y la orfandad que no causó la
+**Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El **14** es
+el caso —`A6`, la primera cláusula de `A5` y la orfandad que no causó la
 discontinuación—: `B/16` §4.4 decidió la regla —*«el período ya pagado no se reembolsa»*— y dejó la
 excepción en manos de una persona, así que lo que el listado le pone delante es **esa regla
 escrita**, con el pago y el monto al lado, en vez de una casilla vacía. La diferencia con
-`PAGO_PENDIENTE_SIN_RAMA` es que allá **no hay regla** que proponer y acá sí. **En la otra rama —la
-revocación del grant, y la orfandad que causó la discontinuación de la vertical— la propuesta es
-devolver**, y tampoco es una casilla vacía: es la otra regla, la de `DEC-RF-004` y su ampliación.
+`PAGO_PENDIENTE_SIN_RAMA` es que allá **no hay regla** que proponer y acá sí. **Y el 15 —la
+revocación del grant, y la orfandad que causó la discontinuación de la vertical— tampoco es una
+casilla vacía**: es la otra regla, la de `DEC-RF-004`, su ampliación y `DEC-RF-006`.
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma
