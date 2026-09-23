@@ -254,12 +254,13 @@ reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué 
 **no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
 
 **Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El 14 es el
-caso en **tres** de sus cuatro disparadores: `B/16` §4.4 decidió la regla —*«el período ya pagado no
-se reembolsa»*— y dejó la excepción en manos de una persona, así que lo que el listado le pone
-delante es **esa regla escrita**, con el pago y el monto al lado, en vez de una casilla vacía. La
-diferencia con `PAGO_PENDIENTE_SIN_RAMA` es que allá **no hay regla** que proponer y acá sí. **En el
-cuarto —la revocación del grant— la propuesta es devolver**, y tampoco es una casilla vacía: es la
-otra regla, la de `DEC-RF-004`.
+caso en su rama `NO DEVOLVER` —`A6`, la primera cláusula de `A5` y la orfandad que no causó la
+discontinuación—: `B/16` §4.4 decidió la regla —*«el período ya pagado no se reembolsa»*— y dejó la
+excepción en manos de una persona, así que lo que el listado le pone delante es **esa regla
+escrita**, con el pago y el monto al lado, en vez de una casilla vacía. La diferencia con
+`PAGO_PENDIENTE_SIN_RAMA` es que allá **no hay regla** que proponer y acá sí. **En la otra rama —la
+revocación del grant, y la orfandad que causó la discontinuación de la vertical— la propuesta es
+devolver**, y tampoco es una casilla vacía: es la otra regla, la de `DEC-RF-004` y su ampliación.
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma
