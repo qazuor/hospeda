@@ -798,9 +798,13 @@ la corrida: hace que **el camino del final también funcione sobre una corrida q
 reanudó**.
 
 **Nada de esto alcanza a `S21`, y por eso `S21` sí puede decir *«idempotente»* a secas.** Su
-efecto es **una** escritura sobre **una** entidad —la columna de estado de la suscripción de
-complemento—, y su condición es sobre el estado de la instancia, que `S21` no toca. No hay dos
-mitades que puedan quedar separadas.
+condición es sobre el estado de la instancia, que `S21` no toca, así que no hay dos mitades que
+puedan quedar separadas. **Y sus escrituras son dos desde que abre la marca del motivo 14** —la
+columna de estado de la suscripción de complemento, y la marca con su pago colgado—, **y las dos
+son idempotentes por separado**: sobre una fila que ya está `CANCELLED` la primera no escribe nada,
+y la segunda la sostiene la base —`UNIQUE(subscription_id, motivo)` sobre las marcas abiertas y
+`UNIQUE(marca, pago)` sobre lo que cuelga (`B/02` §2.2)—, así que una corrida repetida no abre una
+segunda marca ni cuelga dos veces el mismo pago.
 
 #### El complemento que sobrevive a su instancia: por qué `S21` es una fila de ESTA tabla
 
