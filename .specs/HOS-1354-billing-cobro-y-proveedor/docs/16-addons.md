@@ -686,14 +686,15 @@ ya declaran —con la regla de relectura de `S17`— **es la de esta fila**. `S2
 proveedor**: escribe el estado local que faltaba. Duplicarla serían dos llamadas por el mismo
 recurso; omitir la fila dejaba el estado sin declarar, que es lo que este § cierra.
 
-**El período ya cobrado no se reembolsa — con DOS excepciones declaradas, y las dos son de
-`DEC-RF-004`.** La regla vale donde el complemento se pierde **por un acto del propio cliente**;
+**El período ya cobrado no se reembolsa — con DOS excepciones declaradas, y desde `DEC-RF-006` las
+dos viven en un MOTIVO propio de la marca, el 15** (`B/02` §2.5). La regla vale donde el complemento
+se pierde **por un acto del propio cliente**;
 **no** vale cuando la instancia llega a `CANCELLED` por la **tercera** cláusula de `A5` —**se revoca
 el grant que era su título**—, ni cuando llega por la **segunda** —**queda huérfana**— **y a su
 título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación del
 2026-09-23). En las dos el cliente no hizo nada y pierde días que pagó. Los **cuatro** disparadores
-de `S21` están enumerados uno por uno, con el lado de cada uno —y el segundo con su reparto interno—
-en `B/03` §3.2, *«la propuesta del 14 depende del disparador»*. **Y el resto no es todo *«un acto
+de `S21` están enumerados uno por uno, con el motivo de cada uno —y el segundo con su reparto interno—
+en `B/03` §3.2, *«cuál de los dos motivos abre `S21`»*. **Y el resto no es todo *«un acto
 del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla **dos**
 caminos nuestros —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`— **por mecanismo y no
 por criterio**, porque ahí la transición que mata al título no nombra su causa; el § de `B/03` los
@@ -708,16 +709,18 @@ corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo
 
 **Y esa vía tiene desde ahora quién la dispare, que es lo que le faltaba para existir.** Cuando el
 último cobro del complemento paga **un período que todavía no terminó**, `S21` abre la marca
-`requiere_conciliación` con motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO`** (`B/02` §2.5, motivo 14)
-con ese pago colgado, y el listado accionable la muestra con **el default que le corresponde a su
-rama** —**devolver** cuando se revocó el grant y cuando la orfandad la causó la discontinuación,
-**NO devolver** en el resto, que es la regla del párrafo de arriba escrita (`DEC-RF-004`)— más el
+`requiere_conciliación` con ese pago colgado y con **uno de sus DOS motivos** (`B/02` §2.5):
+**`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** —el **15**— cuando se revocó
+el grant o cuando la orfandad la causó la discontinuación, y
+**`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`** —el **14**— en el resto, que es la regla del
+párrafo de arriba escrita. El listado accionable muestra **el default de ese motivo**
+—devolver y no devolver, respectivamente— más el
 pago y el monto (`B/19` §6). Hasta acá esa frase nombraba
 una vía que **ninguna transición ni comprobación del corpus abría**, y desde que la enumeración de
 motivos es **cerrada** eso dejó de ser una omisión discutible: `G-R1-F` rechaza una marca cuyo
 motivo no esté en esa tabla (`B/20` §2), y ninguno de los trece era éste. **La marca no decide
-nada** —lo que trae es una propuesta, que según la rama es devolver o no devolver (`DEC-RF-004`), y
-la confirma una persona en los cuatro disparadores— **y tampoco agrega una
+nada** —lo que trae es una propuesta, que según el motivo es devolver o no devolver (`DEC-RF-006`),
+y la confirma una persona en los cuatro disparadores— **y tampoco agrega una
 comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
@@ -728,7 +731,7 @@ de puertas a un estado terminal de `B/09` §3 —que hoy tiene **quince**, desde
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
 sin emitir nada (`EX-15`). Vuelve al barrido por la **salvedad 1**, no por la 4, porque su fila es
 terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona — **y, cuando `S21`
-abre la marca del motivo 14, también por la 2**, que es la que le pone reloj al caso mientras nadie
+abre su marca —el motivo 14 o el 15—, también por la 2**, que es la que le pone reloj al caso mientras nadie
 lo resuelve. **Y `S21` no
 agrega ninguna comprobación de cero llamadas**: la corrida que ejecuta `A5` y muere antes de `S21`
 la cubre esa misma salvedad 1, que es la única que ve una fila de complemento todavía `ACTIVE`
