@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_43",
-        "number": 43,
-        "createdAt": "2026-09-23T17:00:00.000Z",
+        "id": "ver_claude_opencode_migration_44",
+        "number": 44,
+        "createdAt": "2026-09-23T17:20:00.000Z",
         "author": "opencode",
-        "reason": "validar guards de scripts",
+        "reason": "revalidar permisos V1",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_42"
+        "basedOnVersion": "ver_claude_opencode_migration_43"
     },
     "data": {
         "sections": [
@@ -596,7 +596,7 @@
                             "title": "Revisar permisos OpenCode",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Reducir bash wildcard y mantener bloqueos de secretos, Git destructivo y producción.",
-                            "notes": "Gate117: runtime V1 revalidado en filesystem escribible; opencode.json conserva 15 reglas bash y 14 read. Gate213: la política fue contrastada con la documentación V1; se documentó una matriz propuesta con `bash` ask por defecto, allowlist de diagnósticos, ask para instalación/Docker/DB/GitHub/Git mutante y deny para fuerza/destrucción/producción. No se aplicó todavía: requiere backup, prueba aislada de precedencia y rollback.",
+                            "notes": "Gate117: runtime V1 revalidado en filesystem escribible; opencode.json conserva 15 reglas bash y 14 read. Gate213: la política fue contrastada con la documentación V1; se documentó una matriz propuesta con `bash` ask por defecto, allowlist de diagnósticos, ask para instalación/Docker/DB/GitHub/Git mutante y deny para fuerza/destrucción/producción. No se aplicó todavía: requiere backup, prueba aislada de precedencia y rollback. Gate261: revalidación efectiva de agentes V1 documentada en docs/migration/opencode-permission-gate.md; reviewers están segmentados, pero el comodín global bash sigue pendiente de endurecimiento.",
                             "done": false
                         },
                         {
