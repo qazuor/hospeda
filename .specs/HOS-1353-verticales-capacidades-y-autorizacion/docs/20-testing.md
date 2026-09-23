@@ -63,7 +63,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1. **Lo construye `B8`** de la otra épica, que es la unidad del tope de pausa (`B/descomposicion.md` §2.8) — **la celda de `V9` que lo nombraba *«el de `D16`»* se retira**, porque `V9` corre antes de que ese número exista (`F-8eC2-004`, `descomposicion.md` §2.7) |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
-| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los cuatro hechos** del cap. 01 §1.2 (núcleo). **(b) Consumidores**: una lectura de la columna que **no figure entre los cinco consumidores** que el cap. 02 §2.5 enumera y cierra. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»* o *«lector fuera del inventario»*, nunca uno solo para las dos | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los cuatro hechos y en ninguna otra parte»*, *«y la leen cinco consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
+| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los cuatro hechos** del cap. 01 §1.2 (núcleo). **(b) Consumidores**: una lectura de la columna que **no figure entre los cinco consumidores** que el cap. 02 §2.5 enumera y cierra. **(c) Consumidores que dejaron de serlo**: uno de esos **cinco** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los cuatro hechos y en ninguna otra parte»*, *«y la leen cinco consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
 
 **`G-R6` llega a este catálogo por una columna concreta y no por simetría, y conviene decir cuál.**
 Nació en `B/20` §2 acotado a las seis tablas de billing, porque el crítico que lo motivó era de
@@ -107,31 +107,34 @@ estaba pegado al de sus hermanos. Acá es lo mismo: el sujeto de `R6` son *«las
 condición lee»* y el de éste es **quién toca una columna, escribiéndola o leyéndola**, pero la
 columna es la misma, el día es el mismo, y `G-R6` **ya declaró por escrito que no lo cubre**.
 
-**Vigila las DOS mitades de esa lista, y la segunda llegó después con una razón propia.** La
-cuarta enmienda de `DEC-TEST-001` le sumó los **consumidores** al mismo guard, y el argumento no es
-la simetría: **las dos mitades fallan distinto y la segunda falla peor**. Un escritor fuera de la
-lista **mueve el reloj** cuando no corresponde — grave, y todavía reparable mientras la ficha
-exista. Un consumidor que nadie registró **lee el reloj y decide con él**, y el consumidor más caro
-de esta columna **es el hard delete del día 180** (cap. 02 §4.1): un lector no inventariado es **un
-lugar que borra contenido sin que la lista sepa que existe**. Es además la mitad que el precedente
-ya cubre — `G-R1-E` vigila exactamente eso para los inventarios del núcleo.
+**Vigila las DOS mitades de esa lista y, sobre la de lectores, las DOS DIRECCIONES: son tres
+predicados.** La cuarta enmienda de `DEC-TEST-001` le sumó los **consumidores** al mismo guard, y el
+argumento no es la simetría: **las dos mitades fallan distinto y la segunda falla peor**. Un
+escritor fuera de la lista **mueve el reloj** cuando no corresponde — grave, y todavía reparable
+mientras la ficha exista. Un consumidor que nadie registró **lee el reloj y decide con él**, y el
+consumidor más caro de esta columna **es el hard delete del día 180** (cap. 02 §4.1): un lector no
+inventariado es **un lugar que borra contenido sin que la lista sepa que existe**. Es además la
+mitad que el precedente ya cubre — `G-R1-E` vigila exactamente eso para los inventarios del núcleo.
+La tercera, *(c)*, es esa misma mitad leída al revés y entró en esta pasada; su razón está cuatro
+párrafos más abajo.
 
 **El mensaje dice QUÉ MITAD falló, y la condición no es cosmética: es el §2.1 sobre este mismo
-guard.** Un guard que vigila dos cosas y falla con un solo texto **afirma más de lo que su
-predicado verificó en esa corrida** —el que lo lee no sabe si le sobra un escritor o le falta una
-fila de lectores, que son dos arreglos distintos en dos capítulos distintos—, y es **la misma regla
-con la que `DEC-TEST-001` rechazó el segundo guard** que evaluó. Sin mensaje diferenciado, la
-enmienda que agrega la mitad se contradice con la entrada que la contiene. Así que son **dos
-predicados con dos textos**, en un guard con un id.
+guard.** Un guard que vigila varias cosas y falla con un solo texto **afirma más de lo que su
+predicado verificó en esa corrida** —el que lo lee no sabe si le sobra un escritor, si le falta una
+fila de lectores o si se le fue un lector declarado, que son tres arreglos distintos en dos
+capítulos distintos—, y es **la misma regla con la que `DEC-TEST-001` rechazó el segundo guard** que
+evaluó. Sin mensaje diferenciado, la enmienda que agrega la mitad se contradice con la entrada que
+la contiene. Así que son **tres predicados con tres textos**, en un guard con un id.
 
-**Se rompe a propósito dos veces, una por mitad, y cada una tiene que dar SU mensaje.** *(a)* Se le
-agrega la escritura a **`PB2`** —la ficha que cae al perder cobertura (cap. 03 §9)—, que es el
-quinto escritor más creíble de todos: *«la ficha acaba de quedar inactiva, sellemos el instante»* se
+**Se rompe a propósito tres veces, una por predicado, y cada una tiene que dar SU mensaje.** *(a)* Se
+le agrega la escritura a **`PB2`** —la ficha que cae al perder cobertura (cap. 03 §9)—, que es el
+escritor de más creíble de todos: *«la ficha acaba de quedar inactiva, sellemos el instante»* se
 lee bien y **corre el día 90 y el día 180 hacia adelante en cada caída**, con lo cual una ficha que
 va y viene no llega nunca al borrado. *(b)* Se le agrega un **lector** que la lista no nombra —el
 caso barato es una superficie que quiera mostrar *«hace cuánto está inactiva»*— **sin** su fila en
-el cap. 02 §2.5. Las dos tienen que poner el guard en rojo, y **un rojo de (a) con el texto de (b),
-o al revés, es el guard fallando su propia condición**: se prueba mirando el texto, no el exit code.
+el cap. 02 §2.5. *(c)* Se le **saca la lectura al día 180** dejando su fila intacta en el cap. 02
+§2.5. Las tres tienen que poner el guard en rojo, y **un rojo de una con el texto de otra es el
+guard fallando su propia condición**: se prueba mirando el texto, no el exit code.
 
 **Y hay que decir lo que sigue SIN verificar, porque se lee de más.** **No verifica que los cuatro
 hechos tengan quien los ejecute**, que es justo la mitad que `G-R6` deja abierta. Comprobarlo pide
@@ -140,9 +143,35 @@ que la declaración **esté**, nunca que sea cierta — que es **exactamente la 
 `DEC-TEST-001` rechazó** para el segundo guard de esa decisión. Así que `G-R6` y `G-R6-B` juntos
 certifican *«alguien la mueve»*, *«nadie de más la mueve»* y *«nadie de más la lee»*, **nunca *«los
 cuatro la mueven»***: quitarle la escritura a uno de los cuatro —al recálculo del hecho 2, por
-ejemplo, que el cap. 02 §4.2 regla 4 declara **en dos momentos y no en uno**— deja a los dos en
-verde. **La mitad que falta es la misma en las dos listas**: ninguna de las dos comprueba que sus
-miembros declarados **existan**, sólo que no haya intrusos.
+ejemplo, que el cap. 02 §4.2 regla 4 declara **en tres momentos y no en uno**— deja a los dos en
+verde.
+
+**Y la mitad que falta NO es la misma en las dos listas, que es lo que esta pasada separa.** El
+renglón de acá decía que ninguna de las dos comprueba que sus miembros declarados **existan**, y la
+simetría no se sostiene:
+
+- **Para escritores es la forma rechazada y sigue rechazada.** Comprobar que un hecho tenga quien lo
+  ejecute pide que cada escritura **declare cuál de los cuatro ejecuta**, y un guard estático sólo
+  puede comprobar que la declaración **esté** — exactamente el segundo guard que `DEC-TEST-001`
+  rechazó. Queda afuera, con su razón.
+- **Para lectores es un HECHO comprobable y entra: es la mitad *(c)*.** *«El día 180 no lee
+  `listing.inactiva_desde`»* es un rojo verificable **sin pedirle a nadie que declare nada** —se
+  mira si la lectura está, igual que la mitad *(b)* mira si sobra una—, que es el mismo criterio con
+  el que esa decisión aceptó este guard y rechazó el otro. La mitad quedó afuera por analogía con un
+  caso que no es el mismo.
+
+**Y la dirección importa, porque es la que se paga con contenido.** La *(b)* atrapa a un lector que
+nadie inventarió; la *(c)* atrapa a un lector inventariado que **desapareció** — y el día que el hard
+delete del día 180 deje de leer la columna, por un refactor, un rename o una reescritura del
+cálculo, **el guard seguía verde y la lista seguía diciendo que ese lector está ahí**. Es el patrón
+*«un inventario que afirma completitud sin tenerla»* aplicado a la defensa del único acto
+irreversible del programa. **Se rompe a propósito sacándole al día 180 su lectura de la columna sin
+tocar el cap. 02 §2.5**, y el rojo tiene que decir *«lector declarado que ya no lee»* y nombrarlo.
+
+**Y `G-R6-B` sigue sin afirmar nada sobre ejecutores, con tres mitades igual que con dos.** La
+*(c)* cuenta **lecturas**, no actos: que el hecho 2 tenga sus tres ejecutores (`V/02` §4.2, regla 4)
+no lo verifica este guard ni ningún otro, y decirlo acá es lo que impide que las tres mitades se
+lean como *«la lista entera está vigilada»*.
 
 **Y `B/20` §2 lo repite como referencia cruzada por la razón de `G-R5` y no por simetría**: lo que
 puede romperlo se escribe **en la otra épica**. Dos lugares medidos. `B/10` §4.3 es donde está

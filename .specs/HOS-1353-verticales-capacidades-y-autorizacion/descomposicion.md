@@ -103,12 +103,13 @@ escribirlo sin poder probarlo.
 ### 2.5 `G-R6-B` va con V6 y no con V9, y las dos candidatas eran razonables
 
 `G-R6-B` (`20` §2) falla si **algo toca `listing.inactiva_desde` desde un lugar que las listas
-cerradas no nombran**: una **escritura** que no sea uno de los cuatro hechos del `01` §1.2 (núcleo),
-o una **lectura** que no figure entre los cinco consumidores del `02` §2.5 (cuarta enmienda de
-`DEC-TEST-001`). Las dos unidades que lo podían reclamar son **V6**, que crea la columna
+cerradas no nombran, o si un lugar que ellas nombran dejó de tocarla**: una **escritura** que no sea
+uno de los cuatro hechos del `01` §1.2 (núcleo), una **lectura** que no figure entre los cinco
+consumidores del `02` §2.5 (cuarta enmienda de `DEC-TEST-001`), o **uno de esos cinco que ya no
+lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
 (`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, y la relectura de
-`PB4`/`PB5` es el segundo momento del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña del
-`01` §1.2 y del reloj que la **lee**.
+`PB4`/`PB5` es uno de los tres momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
+del `01` §1.2 y del reloj que la **lee**.
 
 **Va con V6 por la regla 1 leída entera**: el guard protege **las piezas que tocan la columna**, no
 las listas como texto, y **V6 es la unidad donde nacen las primeras** — la columna, sus escrituras
