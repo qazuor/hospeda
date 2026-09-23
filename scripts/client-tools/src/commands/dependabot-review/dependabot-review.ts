@@ -116,7 +116,8 @@ export type DependabotRecommendation = 'close' | 'no-spec' | 'create-issue' | 'b
 
 export function recommend(pr: DependabotPr, evidence?: PrEvidence): DependabotRecommendation {
     if (pr.isDraft || pr.mergeStateStatus === 'DIRTY') return 'blocked';
-    if (pr.baseRefName !== 'staging' && pr.baseRefName !== 'main') return 'blocked';
+    if (!pr.baseRefName || !['develop', 'staging', 'main'].includes(pr.baseRefName))
+        return 'blocked';
     if (/revert|supersed|duplicate|obsolete/i.test(pr.title)) return 'close';
     if (
         versionImpact(pr.title) === 'major' ||

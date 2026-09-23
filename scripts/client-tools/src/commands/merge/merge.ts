@@ -123,6 +123,9 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const adapter = await loadProjectAdapter(context.repoRoot);
     const expectedBase = adapter?.branches?.base ?? 'staging';
+    const integrationBranches = new Set(
+        adapter?.branches?.promotion ?? ['develop', 'staging', 'main']
+    );
     const cwd = context.worktree?.path ?? context.repoRoot;
     const worktree = context.worktree;
 
@@ -141,7 +144,7 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
         );
         return 1;
     }
-    if (worktree.branch === 'staging' || worktree.branch === 'main') {
+    if (integrationBranches.has(worktree.branch)) {
         if (json) {
             process.stdout.write(
                 `${JSON.stringify({ branch: worktree.branch, error: 'branch sin PR propio', readOnly: true })}\n`
