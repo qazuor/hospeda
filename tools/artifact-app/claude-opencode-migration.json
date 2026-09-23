@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate128: `BASE_SHA`, filtros explícitos y working-directory corregidos. `verify --changed` completo termina sin tests de apps/packages no afectados; client-tools pasó 300 tests/738 assertions y server-tools 334 tests/501 assertions, todos sin fallos. Gate138: `bunx tsc --noEmit` pasó en client-tools y server-tools. Hubo un timeout aislado bajo ejecución encadenada, pero las repeticiones completas pasaron. El agente debe usar verify antes de verificar manualmente.",
+                            "notes": "Gate128: `BASE_SHA`, filtros explícitos y working-directory corregidos. `verify --changed` completo termina sin tests de apps/packages no afectados; client-tools pasó 300 tests/738 assertions y server-tools 334 tests/501 assertions, todos sin fallos. Gate138: `bunx tsc --noEmit` pasó en client-tools y server-tools. Gate215: `hops verify` agrega `--json` y `--list --json`; devuelve un único contrato en stdout con status, pasos, fallos, paquetes afectados y `mutations: none`, mientras los logs de los checks no contaminan la salida del agente. El agente debe usar verify antes de verificar manualmente.",
                             "done": true
                         },
                         {

@@ -293,7 +293,7 @@
             "description": "Ejecuta las verificaciones que usa CI",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "d4dd717814b9df353a239f15ee4c49a80443ab536f28c4e24a85464b68e020cd"
+            "sha256": "4cd6cde42eeb1a3d4cd86394656a8c2b3baec2a15a896b99525563947c894a7b"
         },
         {
             "id": "hops-wt-clean",
