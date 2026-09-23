@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_44",
-        "number": 44,
-        "createdAt": "2026-09-23T17:20:00.000Z",
+        "id": "ver_claude_opencode_migration_45",
+        "number": 45,
+        "createdAt": "2026-09-23T17:45:00.000Z",
         "author": "opencode",
-        "reason": "revalidar permisos V1",
+        "reason": "validar guards de dominio",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_43"
+        "basedOnVersion": "ver_claude_opencode_migration_44"
     },
     "data": {
         "sections": [
@@ -588,7 +588,7 @@
                             "title": "Endurecer pre-commit",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
-                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. Gate212: el pre-commit ahora valida de forma condicional y read-only el manifest cross-client de comandos cuando cambia `.opencode/commands` o su manifest, y `.qz/project.json` cuando cambia el adaptador; ambos checks pasaron (`plan --check`, `validate-project`, shell syntax). La arquitectura por capas sigue pendiente para drift de envs, operaciones peligrosas y la política final de permisos. Gate260: `pnpm test:scripts` pasó 16 archivos, 256 tests y 0 fallos; el primer intento en el runner fue EROFS de Vitest y la repetición writable confirmó el resultado.",
+                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. Gate212: el pre-commit ahora valida de forma condicional y read-only el manifest cross-client de comandos cuando cambia `.opencode/commands` o su manifest, y `.qz/project.json` cuando cambia el adaptador; ambos checks pasaron (`plan --check`, `validate-project`, shell syntax). La arquitectura por capas sigue pendiente para drift de envs, operaciones peligrosas y la política final de permisos. Gate260: `pnpm test:scripts` pasó 16 archivos, 256 tests y 0 fallos; el primer intento en el runner fue EROFS de Vitest y la repetición writable confirmó el resultado. Gate262: `pnpm check:guards` ejecutó todos los guards de dominio; el log completo terminó con todos los checks en `All checks passed` (el runner truncó el código final, sin fallos reportados).",
                             "done": false
                         },
                         {
