@@ -154,7 +154,7 @@ de algo que este diseño creó:
 
 | qué | por qué existe |
 |---|---|
-| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, TODOS los pagos que lleva colgados, CUÁNTOS son, el monto TOTAL y QUÉ PROPONE EL SISTEMA** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los cinco motivos que significan *«hay plata del cliente que devolver»***, que son los únicos en los que esperar le cuesta al cliente. **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las **trece** marcas del corpus llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
+| el **listado accionable** de las marcas `requiere_conciliación` **abiertas** | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa — **y el MOTIVO de cada marca, desde cuándo está abierta y, en las que devuelven plata, TODOS los pagos que lleva colgados, CUÁNTOS son, el monto TOTAL y QUÉ PROPONE EL SISTEMA** (`B/02` §2.2 y §2.5). Se ordena poniendo **adelante los cinco motivos que significan *«hay plata del cliente que devolver»***, que son los únicos en los que esperar le cuesta al cliente. **Y la unidad del listado es la MARCA, no la fila**: una suscripción con dos marcas abiertas aparece dos veces, y `S15` levanta una por vez. Hasta la FASE 9-bis-4 la columna era un booleano y las marcas del corpus —**trece** entonces, **catorce** hoy— llegaban acá indistinguibles: el *«reembolso por confirmar»* que `S18` abre se leía igual que una divergencia de monto |
 
 **Y una marca con motivo llega con un DEFAULT, que es lo último que le faltaba.** Un motivo dice
 *qué pasó*; la persona que abre el caso además necesita saber **qué debería hacer**, y hasta la
@@ -185,7 +185,7 @@ encuentra **una propuesta escrita** en vez de una marca muda: *«el default es d
 persona confirma salvo que haya razón para no hacerlo»*.
 
 **Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
-era indistinguible de las otras doce y **el pago se quedaba**; una marca con motivo y sin default
+era indistinguible de las otras trece y **el pago se quedaba**; una marca con motivo y sin default
 reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué se espera de ella
 **no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
 

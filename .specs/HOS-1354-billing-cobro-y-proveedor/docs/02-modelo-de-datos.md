@@ -644,7 +644,7 @@ entitlements**, que `V/02` §1.2 impide.
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras doce marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras trece marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -656,10 +656,10 @@ misma forma y le faltaba la misma columna.**
 #### El catálogo, contado sobre los escritores que hay hoy
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
-**siete** de los trece casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
-de la pausa lo trae `S8` o `S9`. Los otros **seis** los abren actos que **no son `S14`** — `S18` y
-las **seis** comprobaciones de cero llamadas del `B/09` §3 —, y el propio `S19` declara por escrito
-que su caso **no es una divergencia**.
+**siete** de los catorce casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros **siete** los abren actos que **no son `S14`** — `S18`,
+las **seis** comprobaciones de cero llamadas del `B/09` §3 y **`S21`** —, y el propio `S19` declara
+por escrito que su caso **no es una divergencia**.
 
 | # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
 |---|---|---|---|---|

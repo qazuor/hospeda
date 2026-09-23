@@ -139,7 +139,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son trece motivos y **cuatro** tienen una confirmación de reembolso encima |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son catorce motivos y **cinco** tienen una confirmación de reembolso encima |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
@@ -165,7 +165,7 @@ que no son éste:
 
 | qué | quién lo hace | dónde |
 |---|---|---|
-| **abrir** la marca —con motivo **`REEMBOLSO_POR_CONFIRMAR`** y **la referencia al pago**— sobre la predecesora que lo retiene, un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como **quinto** efecto del cierre de la sucesión | `B/03` §3.2, `B/02` §2.5, `B/12` §5.3 **ramas 1, 5 y 6** |
+| **abrir** la marca —con motivo **`REEMBOLSO_POR_CONFIRMAR`** y **el pago colgado de ella**— sobre la predecesora que lo retiene, un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como **quinto** efecto del cierre de la sucesión | `B/03` §3.2, `B/02` §2.5, `B/12` §5.3 **ramas 1, 5 y 6** |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
 | **re-emitir una cortesía DIFERIDA** sobre la fila que acaba de autorizar — **la sucesora** de un cambio de plan, o **el alta nueva** de quien perdió su plan porque se discontinuó su vertical | **`S9`**, por su segundo disparador y por el **tercero** — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila, **por ninguno de los dos caminos** | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4 y §4.6, `DEC-GRANT-007`, `DEC-GRANT-010` |
 
@@ -284,10 +284,10 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
   dice. La lista de arriba contemplaba el pago tardío que **falla**; éste es el que **sale bien**
   y deja plata por devolver.
   **Y desde la FASE 9-bis-4 esos tres datos no viven sólo acá**: la marca los **guarda** —el
-  motivo `REEMBOLSO_POR_CONFIRMAR` y la referencia al pago, cap. 02 (billing) §2.5—, que es lo que
+  motivo `REEMBOLSO_POR_CONFIRMAR` y el pago colgado de ella, cap. 02 (billing) §2.2 y §2.5—, que es lo que
   los pone también en el **listado accionable**, el canal primario de `DEC-OBS-001`. Mientras
   fueron sólo campos de un evento, el canal que la persona mira de verdad recibía **una fila
-  `CANCELLED` marcada e indistinguible de las otras doce marcas**;
+  `CANCELLED` marcada e indistinguible de las otras trece marcas**;
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas

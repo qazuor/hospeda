@@ -537,7 +537,7 @@ definía**.
 | **`requiere_conciliación`** | el **predicado derivado** *«esta suscripción tiene **al menos una** marca abierta»* | se evalúa sobre las marcas de la fila; **no hay ninguna columna con ese nombre** | conservar verbatim las frases del corpus que ya decían *«la marca `requiere_conciliación`»*, que siguen siendo exactas |
 
 > **El plural es el punto, y por eso el término es *«abierta»* y no *«puesta»*.** El corpus escribe
-> **trece** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5) y **cinco de ellos
+> **catorce** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5) y **cinco de ellos
 > significan *«hay plata del cliente que devolver»***. Con un booleano, dos casos simultáneos eran
 > uno solo y `S15` los apagaba juntos; el que se perdía era el del dinero, porque es el que ninguna
 > superficie nombraba. *«Puesta»* describe una casilla; *«abierta»* describe **un caso**, que es lo

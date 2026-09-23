@@ -72,9 +72,9 @@ sólo dice de quién es. Y está medido que se puede hacer sobre una suscripció
 persona.** Es el criterio del owner aplicado por tercera vez: **la línea no es «automático contra
 manual», es «toca plata o no toca plata»**.
 
-> **Y la marca dice CUÁL de las trece cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
+> **Y la marca dice CUÁL de las catorce cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. Cinco de los trece motivos significan *«hay plata del cliente que devolver»*,
+> indistinguibles**. Cinco de los catorce motivos significan *«hay plata del cliente que devolver»*,
 > y ésos son los que la demora le cobra al cliente.
 
 ---
