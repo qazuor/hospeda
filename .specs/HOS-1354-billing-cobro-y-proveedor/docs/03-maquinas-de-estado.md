@@ -1952,7 +1952,8 @@ revés.
 checkout del addon.** El camino, con todos sus pasos declarados: alguien `ACTIVE` —el único
 estado desde el que se puede comprar (`B/16` §2.2)— contrata un addon recurrente, `A1` lo lleva a
 `PENDING_AUTHORIZATION` con la misma ventana que `S3` —y sus **dos** plazos, §3.4 punto 1—, y **dentro de esa ventana su suscripción
-principal deja de ser fila viva**. Cualquiera de las seis transiciones del `B/16` §4.3 sirve, y
+principal deja de ser fila viva**. Cualquiera de las **doce** transiciones del `B/16` §4.3 sirve
+—recontadas sobre la enumeración de ese §—, y
 dos no necesitan que nadie toque un botón: `S12` es un reloj y `S16` llega con el cobro real, que
 `PA-3` mide **entre 26 y 44 minutos** después de autorizar. El disparador de la orfandad se
 disparaba ahí y **no encontraba a quién aplicarle**: la instancia estaba en
