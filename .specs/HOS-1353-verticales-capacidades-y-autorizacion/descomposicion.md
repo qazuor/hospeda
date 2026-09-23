@@ -368,6 +368,17 @@ la unidad se declara terminada.
 > propósito el día que nace, incluso cuando la fila que se le saca es de una unidad de la otra
 > épica. Eso es lo que vuelve exigible esta condición en `V4`, que lleva tres guards cuyo dominio
 > son **las nueve** máquinas.
+>
+> **Y hay una segunda condición de la misma forma, sobre los ESCRITORES** (`DEC-TEST-002`):
+> **una unidad no está terminada mientras alguna escritura que sus capítulos le declaran a una de
+> sus transiciones no esté implementada.** Vale para las nueve, es independiente de qué construye
+> cada una, y sale de la columna de **capítulos** del §2 igual que ésta sale de la de `guards`. Es
+> la contrapartida exacta de lo que el §2.8 acaba de resolver: `G-R6` lee *«el corpus»* como **las
+> tablas que los capítulos declaran** —sin eso nace en rojo sobre el camino normal—, y el precio
+> es que **un escritor declarado que nadie implementa pasa en verde**. **El desarrollo, con por qué
+> es un criterio y no un guard, está en**
+> [`B/descomposicion.md`](../HOS-1354-billing-cobro-y-proveedor/descomposicion.md) §4, que es donde
+> vive el caso medido: la fecha del próximo cobro y `MP5`.
 
 | # | la unidad está lista cuando… |
 |---|---|
