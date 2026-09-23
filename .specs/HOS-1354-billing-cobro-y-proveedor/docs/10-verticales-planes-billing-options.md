@@ -158,6 +158,19 @@ donde está la razón):
 era verdadera y dejaba sin destino a dos de los cuatro estados**: el calificativo se escribió para
 sacar a la `PAUSED` —lo de abajo— y se leía como si las otras tres fueran al mismo lugar.
 
+**Y este acto DEJA UNA MARCA AL PASAR, que es lo único que le agregó la ampliación de `DEC-RF-004`
+del 2026-09-23.** Cuando `S27` o `S28` sacan al título de las filas vivas y con eso dejan huérfano
+un complemento cuyo último cobro paga **un período que todavía no terminó**, la marca que `S21`
+abre sale en la rama **`DEVOLVER`** (`B/03` §3.2, `B/02` §2.5 motivo 14). **No es mecanismo nuevo,
+y por eso se pudo hacer acá y no en los otros caminos**: este acto **recorre las filas una por
+una** —la frase de arriba ya dice *«lo mismo con cada suscripción de complemento viva en ella»*—,
+así que la causa se escribe en el momento en que la fila se toca y **nadie la traza hacia atrás**.
+**Y la `PAUSED`, que no entra acá, llega al mismo lado por su cuenta**: `S25` lleva la
+discontinuación **en su propia guarda** —*«el plan ya no se presta»*—, así que sabe por qué mata al
+título sin necesitar este acto. La razón de plata está en `B/03` §3.2: `S27` y `S28` son los **dos**
+caminos en que la principal no recibe el piso del §4.4, así que esa propuesta es lo único que la
+persona tiene delante.
+
 #### La pausada NO entra al piso, y eso es legal
 
 **El calificativo de arriba no es un matiz: hasta la FASE 9-bis-4 este § decía *«cada suscripción
