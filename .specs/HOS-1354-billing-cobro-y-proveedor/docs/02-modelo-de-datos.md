@@ -663,7 +663,7 @@ que su caso **no es una divergencia**.
 
 | # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
 |---|---|---|---|---|
-| 1 | `REEMBOLSO_POR_CONFIRMAR` | **`S18`** al cerrar la sucesión, ramas 1, 5 y 6 de `B/12` §5.3 | confirmar el reembolso del pago que `S19` retuvo, por la puerta por la que entró (§2.3) | **SÍ**, y el monto está determinado |
+| 1 | `REEMBOLSO_POR_CONFIRMAR` | **`S18`** al cerrar la sucesión, ramas 1, 5 y 6 de `B/12` §5.3 | confirmar el reembolso del pago que `S19` retuvo, por la puerta por la que entró (§2.3) | **SÍ**, y el monto está determinado — **es la suma de los pagos colgados de la marca** (§2.2), que acá es **uno**: `S19` retiene el del período impago |
 | 2 | `COBRO_POSTERIOR_A_LA_BAJA` | `S14`, desde `C2` del `B/05` §2 | confirmar el reembolso de un cobro que llegó después de cancelar | **SÍ** |
 | 3 | `COBRO_POSTERIOR_AL_GRANT` | `S14`, desde `C3` del `B/05` §2 | ídem, sobre un cobro posterior a un *Free Forever* | **SÍ** |
 | 4 | `PAGO_PENDIENTE_SIN_RAMA` | la **segunda** comprobación del `B/09` §3, cuando la rama no es determinable | decidir el destino de un pago retenido por `S19` que ninguna de las seis ramas alcanzó | **puede**, y es la persona quien lo decide |
