@@ -344,9 +344,12 @@ existiendo**: el día que el hard delete del §4.1 dejara de leer la columna —
 rename o una reescritura del cálculo— **el guard seguía verde y este renglón seguía diciendo que ese
 lector está ahí**. Es la mitad *(c)* de `G-R6-B` (cap. 20 §2), y quien **saque** una lectura saca su
 fila de acá en el mismo acto, igual que quien la agrega. *(Para los cuatro **escritores** la
-dirección simétrica sigue deliberadamente afuera, y la razón está en el cap. 20 §2: comprobar que un
-hecho tenga quien lo ejecute pide una declaración, y de eso un guard estático sólo puede verificar
-que esté.)*
+dirección simétrica sigue deliberadamente afuera **del guard**, y la razón está en el cap. 20 §2:
+comprobar que un hecho tenga quien lo ejecute pide una declaración, y de eso un guard estático sólo
+puede verificar que esté. **Lo que la vigila desde `DEC-TEST-002` es un criterio de terminación** —
+ninguna unidad se declara lista con un escritor declarado y sin implementar—, que no es un guard y
+por eso la razón de arriba no lo alcanza: `descomposicion.md` §4, con el desarrollo en
+`B/descomposicion` §4.)*
 
 ---
 
