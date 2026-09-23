@@ -4319,13 +4319,52 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-013 — Otorgar un `Free Forever` CIERRA el saldo de una cortesía diferida del mismo beneficiario
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso, que nació con `DEC-GRANT-007`**: desde que la cortesía se **difiere** en
+  `courtesy_grant.saldo_días` en vez de re-apuntarse, existe una población nueva —un saldo esperando
+  una fila— y `B/14` §4.3 dice *«otorgar un grant termina cualquier cortesía vigente»* **terminándola
+  cancelando la suscripción que la pausaba** (`S13`). **Sobre un saldo diferido no hay suscripción
+  que cancelar**: la regla, tal como estaba escrita, **no alcanzaba al caso**.
+- **Decisión**: `S13` **cierra** el saldo diferido del beneficiario en cada vertical que el acto
+  ancla, con `saldo_cerrado_en` y `motivo_cierre = GRANT_PERMANENTE_OTORGADO`. **Esos días no
+  vuelven.**
+- **Por qué, y la razón la midió la familia 4 recorriendo el mecanismo**: el censo suponía que
+  dejarlo vivo produciría *«un regalo de más»*. **No es así.** Después de que `S13` cancela la
+  sucesora, **ninguna de las dos rutas de re-emisión de `S9` vuelve a alcanzar ese saldo**, y la
+  sexta comprobación del barrido tampoco lo ve, porque resuelve *«la fila que tenía que recibirlo»*
+  con esas mismas dos preguntas. Dejarlo abierto no era ser generoso: era dejar ***«un instrumento
+  sin dueño, sin vencimiento y sin nadie que lo mire»*** — la forma que `B/16` §1.3 rechaza por
+  escrito y que este mismo día se descartó **dos veces** (`DEC-GRANT-011` y `DEC-SUB-016`).
+- **Lo que cuesta, y es el riesgo aceptado**: el beneficiario pierde días firmados por `SUPER_ADMIN`
+  **al recibir algo estrictamente mejor**, y **si el `Free Forever` después se revoca, esos días no
+  vuelven** — queda sin el grant y sin la cortesía. **Se acepta**, con el mismo remedio que
+  `DEC-GRANT-011`: `SUPER_ADMIN` puede volver a otorgar la cortesía por el **primer disparador de
+  `S9`**, que es un acto que ya existe.
+- **Las dos alternativas, y por qué no**:
+  - **Ampliar el tercer disparador de `S9`** para que el saldo vuelva a ser alcanzable si el grant se
+    revoca: cierra el agujero de arriba, pero es **mecanismo nuevo** en una transición que ya tiene
+    tres disparadores, **y el caso que cubre es doble hipótesis** — hay que otorgar un `Free Forever`
+    a alguien con cortesía diferida **y después** revocárselo. Si ocurre, el remedio manual existe.
+  - **Dejar el saldo vivo sin ampliar nada**: es exactamente el huérfano silencioso descrito arriba.
+- **Cómo se tomó, y va dicho**: la familia 4 de la 9-bis-5 **la tomó sin consultar**, declarándola
+  como decisión de plata y pidiendo ratificación — el censo había marcado esta lectura como *«la que
+  sube `E2` a `ALTA`»*. El owner la ratificó el 2026-09-23. Mismo criterio de registro que
+  `DEC-ENT-002`: **que la haya tomado un agente no la vuelve menos decisión.**
+- **Origen**: `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E2`, la familia 4 de la FASE
+  9-bis-5 (`4df8b55f2d`) y la ratificación del owner del 2026-09-23 entre las tres opciones que se le
+  presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **95** |
+| Decisiones tomadas | **96** |
 | De metodología | 12 |
-| Funcionales | 83 |
+| Funcionales | 84 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
