@@ -644,6 +644,12 @@ regala servicio.** El `hacia` es uno por fila (la forma que el resto de la tabla
 diferencia no la decide una preferencia: la decide qué tiene hoy cada cliente, que es un dato del
 contrato de cobertura y no de este capítulo.
 
+**Y las tres NO agregan ningún par con dos filas**, así que el conteo de `NUCLEO/03` §1 regla 7
+—**cuatro**, con `S10`/`S25` como el último— **no se mueve**: un par es `(desde, evento)`, y las
+tres comparten el evento pero **no el `desde`**, que es disjunto por construcción entre ellas y
+contra toda otra fila de la tabla, porque ninguna otra tiene este evento. `G-R4` no tiene nada que
+dirimir acá.
+
 **Las tres alcanzan a las filas DE COMPLEMENTO además de a las principales**, que es lo que el §3
 de este capítulo obliga a contestar a toda transición con `desde` de conjunto — y acá la respuesta
 la da el capítulo que ordena el acto: *«lo mismo con cada suscripción de complemento viva en ella»*
