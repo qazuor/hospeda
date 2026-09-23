@@ -706,7 +706,9 @@ de puertas a un estado terminal de `B/09` §3 —que hoy tiene **trece**, desde 
 `S24` y `S25` le agregaron las suyas (`B/03` §3.2)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
 sin emitir nada (`EX-15`). Vuelve al barrido por la **salvedad 1**, no por la 4, porque su fila es
-terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona. **Y `S21` no
+terminal **junto con su instancia**, que es justo el sujeto que la 1 selecciona — **y, cuando `S21`
+abre la marca del motivo 14, también por la 2**, que es la que le pone reloj al caso mientras nadie
+lo resuelve. **Y `S21` no
 agrega ninguna comprobación de cero llamadas**: la corrida que ejecuta `A5` y muere antes de `S21`
 la cubre esa misma salvedad 1, que es la única que ve una fila de complemento todavía `ACTIVE`
 colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-GRANT-007`
