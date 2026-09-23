@@ -11,7 +11,8 @@ fase: 9-bis-5
 # Rastro — la segunda tanda corta de decisiones
 
 **Base**: `10dbdcc54f` (el commit del owner con las cinco decisiones del cierre de la quinta vuelta).
-**Los quince commits son míos**: `git log --format="%an %ad %h %s" 10dbdcc54f..HEAD` no devuelve
+**Los catorce commits de arriba son míos, y el de este rastro es el quinceavo**:
+`git log --format="%an %ad %h %s" 10dbdcc54f..HEAD` no devuelve
 ningún commit del owner entre medio. **El decision log no se tocó**, y tampoco el PDR, la matriz,
 los informes de la 8-bis-5, los rastros de la 9-bis-4 ni los seis rastros anteriores de esta tanda.
 
