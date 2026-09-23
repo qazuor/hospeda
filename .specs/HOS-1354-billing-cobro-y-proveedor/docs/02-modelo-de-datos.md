@@ -345,7 +345,7 @@ el período que la cuota tenía y el que pasó a cubrir.
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente, **y el ancla del grant que sea su título, si lo es** | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. **El ancla del título apunta a `permanent_grant_vertical` y sí es anulable**: nula cuando el título es el ordinario de esa vertical, no nula cuando el addon vive de un grant. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
-| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** y **`saldo_días`** (anulable) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6). **`S25` es su segundo escritor**, con la misma columna y la misma forma: la pausa que no puede reanudar sobre un plan retirado difiere la cortesía en vez de perderla, y `S9` la re-emite sobre el alta nueva (`DEC-GRANT-010`, `B/14` §4.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
+| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa**, **`saldo_días`** (anulable) y **el cierre de ese saldo: `saldo_cerrado_en` y `motivo_cierre`** (las dos anulables, `DEC-GRANT-011`) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6). **`S25` es su segundo escritor**, con la misma columna y la misma forma: la pausa que no puede reanudar sobre un plan retirado difiere la cortesía en vez de perderla, y `S9` la re-emite sobre el alta nueva (`DEC-GRANT-010`, `B/14` §4.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`). **Las dos columnas del cierre van juntas** —las dos nulas o las dos escritas—, igual que las tres de la revocación del grant, y **sólo se escriben sobre un `saldo_días` no nulo**: cerrar es un desenlace del saldo, no del instrumento |
 | **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en`, quién la firmó y su `motivo_de_revocación`, en texto libre** (`DEC-GRANT-008`) | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Las tres columnas de la revocación van juntas**: las tres nulas o las tres escritas — ninguna de las tres se escribe sola. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas**. **`UNIQUE(beneficiario) WHERE revocado_en IS NULL`**: a lo sumo **un grant vivo** por beneficiario, y lo garantiza la base (`DEC-GRANT-009`) |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable. **El ancla no tiene estado propio**: es ***ancla viva*** si y sólo si su grant lo es (`NUCLEO/01` §2.4), y **la fila sobrevive a la revocación** |
 
@@ -455,6 +455,27 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
     `COURTESY`—, y la predecesora está `CANCELLED`, que no emite nada (`12-contrato…` §2.6). Es la
     diferencia con el grant, que sí necesitó decirlo (`12-contrato…` §2.8): un grant emite por sí
     mismo, una cortesía emite **por la fila que pausa**.
+- **`courtesy_grant.saldo_cerrado_en` y `courtesy_grant.motivo_cierre`** (las dos anulables) —
+  **el saldo diferido tiene un desenlace que no es la re-emisión, y hasta `DEC-GRANT-011` no tenía
+  dónde asentarse.** Si la fila que tenía que recibir el saldo nunca llega a `ACTIVE` —la sucesora
+  abandona el checkout y `S3` la manda a `ABANDONED`—, el saldo se **cierra**: se escribe la fecha
+  y el motivo, y esa cortesía **ya no se re-emite nunca**. `S9` no puede tomarla y la **sexta**
+  comprobación del `B/09` §3 no la levanta, porque las dos leen *«cortesía diferida»* y el término
+  excluye la cerrada (`NUCLEO/01` §2.6).
+  - **`motivo_cierre` es una enumeración CERRADA, y hoy tiene un solo valor**:
+    **`VENTANA_DE_AUTORIZACIÓN_VENCIDA`**, que escribe `S3` (`B/03` §3.2). Misma regla que el
+    catálogo de motivos de la marca (§2.5): **un cerrador nuevo agrega su valor acá en el mismo
+    acto en que se escribe**, y el conteo se recalcula. La enumeración con un miembro no es una
+    puerta vacía: **es la lista de los actos a los que se les permite terminar una concesión que
+    firmó `SUPER_ADMIN`**, y su trabajo principal es decir quién **no** está en ella — por eso
+    `B/14` §4.3 puede afirmar que otorgar un grant **no** cierra un saldo diferido sin que eso
+    dependa de que nadie se equivoque: un cierre desde ahí no tendría motivo que escribir, y
+    `G-R1-F` lo rechaza (`B/20` §2).
+  - **Y por qué cerrada, si `DEC-GRANT-008` eligió texto libre para la revocación de un grant.**
+    La razón que esa decisión escribe es que *«son concesiones firmadas a mano por `SUPER_ADMIN`»*,
+    o sea que **hay una persona escribiendo el motivo**. Acá no la hay: el que cierra es una
+    **transición**, y un texto libre que escribe una transición es una frase enlatada — un valor de
+    enumeración con más pasos, y encima ilegible para un guard.
 - **`courtesy_grant.subscription_id`** — el mecanismo ya la presuponía y la fila no la guardaba.
   `DEC-GRANT-003` implementa la cortesía *«pausando en el proveedor y sosteniendo el servicio de
   nuestro lado»* y `B/14` §4.3 confirma que sobre un grant no se otorga porque *«no queda nada que
