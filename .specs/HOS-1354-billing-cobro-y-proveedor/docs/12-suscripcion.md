@@ -547,6 +547,17 @@ que `DEC-RF-002` declara normal:
 > pendiente que reevaluar. Lo que antes mandaba ese caso a *«si la rama no es determinable, se
 > pone la marca»* del backstop de `B/09` §3 —o sea a una persona, sin que ningún texto lo
 > anticipara— era justamente que esta rama no existía.
+>
+> **Y la 2 tiene desde la FASE 9-bis-5 un segundo disparador, que llega al MISMO destino por otro
+> mecanismo.** `S28` (`B/03` §3.2) mata a la sucesora cuando se discontinúa la vertical, así que la
+> sucesión termina igual que si hubiera vencido la ventana. **Lo que cambia es dónde está la
+> predecesora**: `S26` la acaba de mandar a `CANCEL_SCHEDULED` en el mismo acto, así que *«reactiva»*
+> —lo que la 2 hace— **no aplica**, porque no hay grace del que salir. **Y no hace falta**: una
+> `CANCEL_SCHEDULED` **emite cobertura** hasta la fecha de fin de servicio de la vertical
+> ([`12-contrato…`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+> §2.6), que el `B/10` §4.3 garantiza en **al menos 60 días**, así que el pago retenido **le queda y
+> le paga el período que está usando** — que es exactamente lo que la 2 decide. **Mismo destino,
+> mecanismo distinto, y por eso es la misma rama y no una séptima.**
 
 **Y la rama 6 tiene desde la FASE 9-bis-4 DOS filas y sigue siendo UNA rama, que es una
 distinción que este § ya usa.** `S24` —la baja pedida en medio del grace, `DEC-SUB-014`— produce

@@ -237,8 +237,8 @@ ausencia. **Y el plazo no se escribe en el texto**: `DEC-SUB-016` le dio a esa v
 duraciones según el método de pago, así que el correo lleva la **fecha** de vencimiento de esa
 persona — la regla 2 del §4 del cap. 19 aplicada acá.
 
-**El de la pausa discontinuada existe porque es la única persona a la que el cierre de la vertical
-NO le llega por los tres avisos de `DEC-MP-002`.** Esos tres cuelgan de una **fecha de fin de
+**El de la pausa discontinuada existe porque a esa persona el cierre de la vertical NO le llega
+por los tres avisos de `DEC-MP-002`.** Esos tres cuelgan de una **fecha de fin de
 servicio**, y la pausada no tiene ninguna: `DEC-SUB-015` la dejó afuera del piso justamente porque
 la máquina no la puede llevar a `CANCEL_SCHEDULED` (cap. 03 §3.3, épica de billing). Sin esta
 fila, la única persona de la vertical cuyo plan desaparece **sin que nada se lo diga** sería la
