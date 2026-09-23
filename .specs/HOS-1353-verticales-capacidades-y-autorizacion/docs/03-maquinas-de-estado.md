@@ -340,16 +340,42 @@ segunda rama de `PB2`, y tres meses después **vuelve a Premium y paga el precio
 `cubierto` fue verdadero de punta a punta —un upgrade es una sucesión, y la predecesora emite
 hasta que `S17` la mata (`12-contrato…` §2.6)—, así que **no hay ningún cambio de `cubierto` que
 disparar**. Con `PB3` pidiendo sólo ese cambio, las tres se quedaban en
-`UNPUBLISHED_BY_BILLING`, desde donde no salía ninguna otra fila —`PB1` sale sólo de `DRAFT`—, el
-día 90 `PB4` las archivaba y el día 180 el hard delete les borraba el contenido. **Paga el plan
-más caro y recibe el más chico, indefinidamente y sin que nada lo señale** (`DEC-DATA-003`).
+`UNPUBLISHED_BY_BILLING`, desde donde no salía ninguna otra fila —`PB1` sale sólo de `DRAFT`—, y
+ahí se quedaban **para siempre**. **Paga el plan más caro y recibe el más chico, indefinidamente y
+sin que nada lo señale** (`DEC-DATA-003`). *(Este renglón decía además que el día 90 `PB4` las
+archivaba y el día 180 el hard delete les borraba el contenido, y es falso para este sujeto por la
+razón del recuadro de abajo: la relectura de `PB4` encuentra cubierto al dueño y no archiva. El
+daño es el encierro, no el borrado, y alcanza solo.)*
 
-**`PB7` la lleva también, y no es una extensión de la decisión sino su condición.** La mitad
-`UNPUBLISHED_BY_BILLING` del `desde` de `PB4` es exactamente la población del excedente: si `PB7`
-se quedara con el evento único, la ficha del excedente archivada el día 90 **tampoco** volvería, y
-el borrado del día 180 seguiría vivo un estado más adentro — que es lo que `DEC-DATA-002` declaró
-cerrado con *«vuelve sola por `PB7` y nunca se borra»*. La frase es verdadera para el que perdió
-cobertura y era falsa para el del excedente; con las dos disyunciones es verdadera para los dos.
+**`PB7` la lleva también, y no es una extensión de la decisión sino su condición** (`DEC-DATA-004`,
+punto `B2`). Si `PB7` se quedara con el evento único, **una ficha que ya está en `ARCHIVED` y cuyo
+dueño ya recuperó la cobertura no tendría cómo volver el día que el cupo crezca**: `cubierto` ya
+pasó a verdadero —no queda ningún cambio que disparar— y lo único que se mueve después es el cupo.
+Se quedaría ahí para siempre, que es el mismo encierro de `PB3` **un estado más adentro**, y es lo
+que `DEC-DATA-002` declaró cerrado con *«vuelve sola por `PB7` y nunca se borra»*.
+
+> ⚠️ **La población de esa segunda rama hay que nombrarla bien, porque la primera versión de este
+> párrafo la nombró mal y tres lugares del corpus se apoyaron en esa premisa.** Decía que *«la
+> mitad `UNPUBLISHED_BY_BILLING` del `desde` de `PB4` es exactamente la población del excedente»*,
+> y **no lo es: la ficha del excedente de un dueño CUBIERTO no llega nunca al día 90.** `PB4` relee
+> la cobertura antes de archivar y la encuentra verdadera —el excedente es la única causa que
+> **no** cambia `cubierto`—, así que no archiva y **reinicia el reloj**. Esa mitad del `desde` de
+> `PB4` alcanza a la ficha que bajó por la **primera** rama de `PB2` —se perdió la cobertura— y
+> siguió sin cobertura noventa días.
+>
+> **La población real de la segunda rama de `PB7` existe, y es la que la vuelve necesaria**: una
+> ficha archivada **mientras su dueño no estaba cubierto** —el caso de la pausa larga que la
+> sección de abajo desarrolla: **4 pausas-mes** son unos 120 días contra los 90 de `PB4`—, que **al
+> volver la cobertura no entra en el cupo** y se queda en `ARCHIVED` con su reloj reiniciado, y a
+> la que **después le crece el cupo**. Ahí `cubierto` no cambia y el cupo sí, que es exactamente el
+> evento que la segunda rama declara.
+>
+> **Lo que se corrige es el sujeto de la razón, no la conclusión**, así que `DEC-DATA-004` `B2`
+> queda en pie tal como se ratificó: la rama sigue siendo **la condición** de `DEC-DATA-003` y no
+> una extensión. **Y la ficha del excedente de un dueño cubierto no se archiva ni se borra, a
+> propósito**: vuelve por la segunda rama de **`PB3`**, un estado antes, y mientras tanto su reloj
+> se reinicia —*«las que no entran no se borran»*, abajo, y cap. 02 §4.2 regla 4—. El hard delete
+> del día 180 **no la alcanza nunca**, que es el lado conservador y el que el diseño eligió.
 
 **Qué NO cambia, y conviene contarlo para que nadie lo recuente.** La rama nueva **no toca
 `cubierto`** —lo lee, no lo mueve—, así que no consume ni devuelve ningún trial (`T2`, `T5` y `T6`
