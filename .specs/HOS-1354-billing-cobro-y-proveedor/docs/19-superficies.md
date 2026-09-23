@@ -207,7 +207,7 @@ puso el default, y es **DEVOLVER**.
 | `COBRO_POSTERIOR_AL_GRANT` | **devolver** (`B/05` C3) |
 | `COBRO_DURANTE_CORTESÍA` | **devolver** — es el camino que `DEC-GRANT-007` eligió por escrito para el riesgo que aceptó (`B/02` §2.5, motivo 12) |
 | `PAGO_TARDÍO_RECHAZADO` | **devolver** — sus cuatro condiciones sólo fallan con el pago ya acreditado sobre un período que no compró (`B/05` §3). **Con una salida declarada**: si lo que falló es la condición **2** y el monto de más es un precio nuevo que no se propagó, lo que corresponde es aceptarlo y reactivar, y **cuál de las cuatro falló está en el evento crítico** (`NUCLEO/08` §4.3), no en el motivo |
-| `COMPLEMENTO_CON_PERÍODO_COBRADO` | **NO devolver** — es el único que propone lo contrario, y no es una laguna: `B/16` §4.4 ya decidió que *«el período ya pagado no se reembolsa»*, con `DEC-GRANT-001` y el §3.4 de ese capítulo como precedente. La persona confirma esa regla o ve la razón para apartarse |
+| `COMPLEMENTO_CON_PERÍODO_COBRADO` | **depende del disparador, y es el único de la tabla que no se lee en una casilla** (`DEC-RF-004`). **`DEVOLVER`** cuando la instancia llegó a `CANCELLED` porque **se revocó el grant que era su título** —la tercera cláusula de `A5`—: ahí el cliente no hizo nada y pierde días que pagó. **NO devolver** en los otros **tres** disparadores —`A6`, y la primera y la segunda cláusula de `A5`—, y no es una laguna: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»*, con `DEC-GRANT-001` y el §3.4 de ese capítulo como precedente. **Los cuatro disparadores están enumerados uno por uno, con su lado, en `B/03` §3.2**, *«la propuesta del 14 depende del disparador»*. La persona confirma la propuesta que le toca o ve la razón para apartarse |
 | `PAGO_PENDIENTE_SIN_RAMA` | **nada**, y es el único: por definición es el caso que **ninguna** de las seis ramas alcanzó (`B/09` §3, segunda comprobación) |
 
 **El default se propone sobre TODOS los pagos de la marca, no sobre el primero.** Una marca lleva
@@ -220,9 +220,21 @@ bien su trabajo cerraba el caso con el resto adentro.
 **El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.** La persona confirma —o se niega, con
 lo que vea delante— y el sistema **no dispara ningún reembolso solo**. Lo que cambia es que ahora
 encuentra **una propuesta escrita** en vez de una marca muda: *«acá el default es éste, y la
-persona confirma salvo que haya razón para no hacerlo»*. **En cinco de las siete filas de la tabla
-ese default es devolver**; el 14 propone lo contrario y `PAGO_PENDIENTE_SIN_RAMA` no propone nada,
-cada uno por la razón que su fila escribe.
+persona confirma salvo que haya razón para no hacerlo»*. **Las filas de la tabla son siete y se
+reparten en tres formas, recontadas sobre la tabla de arriba**: en **cinco** el default es
+**devolver** y no depende de nada más que el motivo; **una** —el 14— **no tiene un default sino
+dos, según cuál de sus cuatro disparadores haya corrido** (`DEC-RF-004`); y **una**
+—`PAGO_PENDIENTE_SIN_RAMA`— no propone nada. Cada una por la razón que su fila escribe.
+
+**Y esa sexta fila es la que le quita a esta tabla la forma de columna plana, así que conviene
+decirlo antes de que alguien la lea así.** Hasta `DEC-RF-004` el default se leía **por motivo**:
+con el motivo en la mano alcanzaba una fila para saber qué se propone. El 14 es **el primero del
+catálogo cuyo default se lee por RAMA**, o sea que sobre él *«¿qué propone el sistema?»* no tiene
+respuesta sin mirar además **de qué disparador vino la marca**. **Lo que eso NO significa**: no es
+mecanismo nuevo en producción —la rama la decide el disparador, que `S21` ya conoce en el acto de
+escribir la marca (`B/03` §3.2)— ni cambia lo que la marca transporta al barrido, ni mueve las dos
+cifras del `B/02` §2.5, que siguen siendo **catorce** motivos y **cinco** que devuelven plata
+(recontadas ahí).
 
 **Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
 era indistinguible de las otras trece y **el pago se quedaba**; una marca con motivo y sin default
@@ -230,10 +242,12 @@ reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué 
 **no hace nada**. Por eso el único que llega sin propuesta es el que no puede tener una.
 
 **Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El 14 es el
-caso: `B/16` §4.4 decidió la regla —*«el período ya pagado no se reembolsa»*— y dejó la excepción
-en manos de una persona, así que lo que el listado le pone delante es **esa regla escrita**, con el
-pago y el monto al lado, en vez de una casilla vacía. La diferencia con `PAGO_PENDIENTE_SIN_RAMA`
-es que allá **no hay regla** que proponer y acá sí.
+caso en **tres** de sus cuatro disparadores: `B/16` §4.4 decidió la regla —*«el período ya pagado no
+se reembolsa»*— y dejó la excepción en manos de una persona, así que lo que el listado le pone
+delante es **esa regla escrita**, con el pago y el monto al lado, en vez de una casilla vacía. La
+diferencia con `PAGO_PENDIENTE_SIN_RAMA` es que allá **no hay regla** que proponer y acá sí. **En el
+cuarto —la revocación del grant— la propuesta es devolver**, y tampoco es una casilla vacía: es la
+otra regla, la de `DEC-RF-004`.
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma
