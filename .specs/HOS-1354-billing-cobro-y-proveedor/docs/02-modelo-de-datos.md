@@ -280,8 +280,8 @@ conserva su hecho, y lo que registra la devolución es la fila de `refund` con *
 confirmó** — que es lo que `DEC-RF-002` exige y lo único que distingue este camino del
 automático que esa decisión rechazó.
 
-**Y la fila de `manual_payment` nace VACÍA de registro, porque desde `MP5` la crea un reloj y no
-una persona.** La cuota se abre al inicio del período —*«el mismo instante en que el proveedor
+**Y la fila de `manual_payment` nace VACÍA de registro, porque desde `MP5` la crea el sistema y no
+una persona** —un reloj de la segunda cuota en adelante, el alta la primera (`B/03` §7.2)—. La cuota se abre al inicio del período —*«el mismo instante en que el proveedor
 habría cobrado»*, `B/03` §7.2— y recién `MP1` o `MP4` escriben quién la registró, cuándo y con
 qué comprobante: esos tres eran *«lo que guarda»* la fila y **no se pueden escribir al crearla**,
 así que son anulables y nulos mientras esté `AWAITING`. **El período sí se escribe al crearla, y

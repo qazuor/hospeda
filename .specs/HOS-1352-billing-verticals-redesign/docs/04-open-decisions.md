@@ -300,8 +300,12 @@ que sí se congela: **el crédito se computa sobre pagos acreditados, nunca sobr
 transcurridos** · ~~`E-SUB-06`~~ **cerrado por el cap. 12 §6**: se **encola hasta la reanudación** y **la pausa NO se bloquea** — bloquearla sería negarle un derecho de su plan para poder subirle el precio, y eso no se puede escribir en un aviso. El aviso de reanudación dice cuándo **y cuánto**, y la ventana de 60 días se corre hacia adelante, nunca se recorta · ~~`M-SUB-02`~~ **cerrado por el cap. 12 §2** (es una cola **nuestra, de entitlements**: lo único diferido es el descenso de capacidades, porque `DEC-SUB-008` muta el monto ya. A lo sumo una, con las cuatro colisiones resueltas) · ~~`E-SUB-01`~~ **disuelto por el cap. 12 §3** (la pregunta presuponía que el precio se aplica al ejecutar; `DEC-SUB-008` decidió lo contrario, así que rige el vigente **al pedirlo** — y un aumento posterior lo alcanza por la puerta del §29, no por ésta) · ~~`E-SUB-02`~~ **cerrado por el cap. 12 §7** (la premisa ya no es cierta: `DEC-SUB-010` decidió que los días no usados se pierden, así que no hay período extendido. **Cancelar estando pausado termina el servicio en el acto** — el §26.1 ya lo detuvo y no queda nada que sostener) ·
 ~~`R-SUB-01`~~ **cerrado por el cap. 12 §4 — y NO cerraba**: el §20 da servicio completo durante
 el grace sin atarlo a haber pagado nunca, así que eran **10 días gratis por intento, repetibles**.
-La regla que lo cierra: **el grace no es un beneficio de entrada** — un primer cobro fallido para
-un `user + vertical` sin ningún pago acreditado va directo a `SUSPENDED` · ~~`M-SUB-03`~~ **cerrado por el cap. 10 §4** (se
+La regla que lo cierra: **el grace no es un beneficio de entrada** — un primer cobro rechazado
+**de esa autorización** va directo a **`CHARGE_DECLINED`**, que es terminal (cap. 03 §3.1, `S16`;
+la lectura por `user + vertical` y el destino `SUSPENDED` se retiraron los dos), y sobre un
+**pagador manual**, que no tiene autorización, la misma regla la ejecuta su primera cuota, que se
+abre antes de que la fila llegue a `ACTIVE` y muere en `ABANDONED` si nadie transfiere
+(cap. 03 §7.2) · ~~`M-SUB-03`~~ **cerrado por el cap. 10 §4** (se
 deja de cobrar antes de dejar de prestar: el anuncio cancela en el proveedor en el acto y el
 servicio se sostiene hasta `max(60 días, el último día ya pagado)`; nadie se migra, la fila de
 `vertical` no se borra nunca, y acortar la cola exige reembolsar, por caso)

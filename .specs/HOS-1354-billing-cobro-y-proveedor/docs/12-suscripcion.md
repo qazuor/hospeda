@@ -206,6 +206,15 @@ el trial tampoco, porque no está usando trial.
 > autorización** se rechaza no pasa por `GRACE_PERIOD`: va a **`CHARGE_DECLINED`**, que es
 > terminal.
 
+**La regla es sobre el grace; `CHARGE_DECLINED` es su remedio, y no es el único.** La distinción
+importa porque hay una población sin autorización: el **pagador manual** del §17.2, que *«no tiene
+débito en el proveedor»* (`B/06` §7). Ahí `S16` no tiene sujeto y `CHARGE_DECLINED` tiene población
+vacía, y de eso **no** se sigue que la regla no se aplique — se sigue que necesita otro ejecutor.
+El suyo está escrito en `B/03` §7.2 (*«cómo entra el grace»*): **su primera cuota se abre antes de
+que la fila llegue a `ACTIVE`**, así que `S4` no la alcanza, no hay grace, y si nadie transfiere la
+ventana termina en **`ABANDONED`** — terminal, no vivo, y el reintento es un alta nueva, igual que
+acá.
+
 **La condición se lee POR AUTORIZACIÓN, y su dueño es `B/03` §3.1**, que la escribió entera con su
 fundamento. Acá decía *«para un `user + vertical` sin ningún pago acreditado»* —la historia de la
 persona—, y el cambio la corrigió en la tabla de transiciones sin volver a este §: el proveedor
@@ -278,10 +287,14 @@ Dos consecuencias que el diseño tiene que absorber:
 1. **«Primer cobro» se cuenta por autorización, y el abuso que la versión histórica temía lo
    frena otra cosa.** Contarlo por `user + vertical` era defenderse de que cancelar y volver a
    suscribirse reseteara el contador; lo que cierra ese ciclo no es el contador sino el destino:
-   cada reintento muere en `CHARGE_DECLINED` sin pasar por `GRACE_PERIOD`, así que **no hay diez
-   días que cosechar** por más veces que se repita, y el servicio recibido se mide en los minutos
-   de `PA-3`. El contador histórico, en cambio, le cobraba el abuso al cliente legítimo que vuelve
-   (§4.3).
+   **cada reintento muere sin pasar por `GRACE_PERIOD`**, así que **no hay diez días que cosechar**
+   por más veces que se repita. Son **dos destinos y no uno**, según haya autorización o no: el que
+   autorizó y no cobró muere en `CHARGE_DECLINED`, y el servicio que recibió se mide en los minutos
+   de `PA-3`; el **pagador manual** que nunca transfiere muere en `ABANDONED` al vencer su ventana,
+   y el servicio que recibió es **ninguno**, porque su primera cuota se abre antes de que la fila
+   llegue a `ACTIVE` (`B/03` §7.2). Escribir la garantía sobre un solo destino la dejaba sin sujeto
+   justo sobre la población que no tiene autorización. El contador histórico, en cambio, le cobraba
+   el abuso al cliente legítimo que vuelve (§4.3).
 2. **Se cuenta sobre pagos acreditados, nunca sobre fechas.** Un período transcurrido no es un
    período pagado, y confundirlos es lo que abre el agujero de §5.
 3. **El aviso es distinto.** A quien esta autorización nunca le cobró —haya sido cliente antes o
