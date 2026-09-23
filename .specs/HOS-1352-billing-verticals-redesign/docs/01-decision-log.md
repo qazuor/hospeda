@@ -4630,6 +4630,31 @@ Cada entrada lleva, según §3.4:
 - **Origen**: la tanda corta 3 de la FASE 9-bis-5, que declaró el hueco en `B/03` §3.2 y no lo
   resolvió por ser decisión de modelo, y la elección del owner del 2026-09-23 entre las tres
   opciones que se le presentaron — eligió la 3, que era la recomendada.
+- ***Precisado el 2026-09-23, y corrige la redacción de esta entrada: la partición es POR DEFAULT,
+  no por disparador.*** El texto de arriba describe los dos motivos **hablando sólo del disparador
+  2**, y eso deja fuera la **tercera cláusula de `A5`** (la revocación del grant), que el motivo 14
+  también cubría y que **`DEC-RF-004` ya manda a `DEVOLVER`**. Si la revocación quedara en el motivo
+  que no devuelve, **ese motivo tendría dos propuestas** y *«el default vuelve a ser por motivo»*
+  —que esta entrada afirma dos veces— sería **falso**. El reparto correcto, ratificado por el owner:
+  - **14 · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`** → `NO DEVOLVER`.
+  - **15 · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** → `DEVOLVER`.
+
+  **Ninguno de los dos hereda el nombre pelado, y es deliberado**: el nombre viejo sobrevive en este
+  log y en los rastros, que están fuera del corpus y no se editan. Dejárselo al residual lo habría
+  **estrechado en silencio**; con los dos sufijados, una aparición del nombre viejo **no está en la
+  tabla** y `G-R1-F` la rechaza. Medido: `rg -P 'COMPLEMENTO_CON_PERÍODO_COBRADO(?!_)'` sobre los 46
+  archivos del corpus devuelve **cero**.
+  **Y por qué no TRES motivos** —revocación, discontinuación y resto por separado, que era la otra
+  opción—: hoy las dos causas caen del mismo lado **por la misma razón** (la causa no la puso el
+  cliente), así que sería una fila más para mantener en quince lugares por una distinción que **no
+  discrimina ninguna propuesta**. Si alguna vez merecen defaults distintos, se parte entonces.
+  Elección del owner del 2026-09-23 entre dos opciones — eligió la 1, que era la recomendada.
+- **Y `G-R1-F` gana una cláusula que esta entrada no pedía, con el owner enterado**: vigila que
+  **las dos marcas no se abran a la vez sobre la misma fila**, que es lo que el `UNIQUE` dejó de
+  excluir. **Se deja, por dos razones**: no es un guard nuevo —`G-R1-F` ya existe y ya corre, se
+  amplía su predicado—, y lo que reemplaza es **un argumento en prosa**, que es la forma que el
+  programa lleva cinco vueltas midiendo que se olvida. El argumento de por qué no puede ocurrir
+  queda igual escrito en `B/02` §2.2 y `B/03` §3.2; la cláusula es lo que lo vuelve comprobable.
 
 ---
 
