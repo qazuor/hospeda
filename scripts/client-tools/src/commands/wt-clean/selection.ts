@@ -14,7 +14,7 @@ export const CONFIRM_WORD = 'borrar';
  * of the deletion list. Deleting it silently breaks the tool doing the
  * deleting.
  */
-const PROTECTED_BRANCHES = new Set(['staging', 'main', 'master']);
+const PROTECTED_BRANCHES = new Set(['develop', 'staging', 'main', 'master']);
 
 /**
  * Whether a worktree is protected from deletion by its branch.

@@ -129,7 +129,7 @@ export async function runBranchPlan({
     const declaredPromotion =
         config.branches?.promotion ?? ([config.branches?.base, 'main'].filter(Boolean) as string[]);
     const declaredBackMerge = config.branches?.backMerge ?? [
-        { from: 'main', to: config.branches?.base ?? 'staging' }
+        { from: 'main', to: config.branches?.base ?? 'develop' }
     ];
     const allowed =
         kind === 'promote'
