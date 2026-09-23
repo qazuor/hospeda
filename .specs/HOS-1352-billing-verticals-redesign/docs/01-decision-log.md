@@ -3997,12 +3997,88 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-012 — La justificación de una aparición cubre el CUANTIFICADOR de la cita y no afirma nada que no esté verificado en ella
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende `DEC-METH-011`, que no la deroga.** `DEC-METH-011` hizo que el rastro existiera; ésta
+  dice qué tiene que decir cada línea.
+- **Lo que `DEC-METH-011` compró, medido en la FASE 8-bis-5 y acreditado antes que nada**: se
+  ejecutó entera —**47 de 47** commits que editan el corpus nombrados en alguno de los diez
+  rastros, **1.030** apariciones justificadas una por una— y **es la razón por la que esta decisión
+  se puede escribir**. Los ocho informes revisaron **887** líneas y exhibieron **16 líneas falsas
+  distintas, con archivo y línea**. Con *«72 apariciones justificadas una por una»* en un mensaje de
+  commit, ninguna de las 16 era señalable. **Es la primera vez que el programa mide la CALIDAD de
+  una resolución y no sólo su existencia** — entre 1,8 % y 3,1 % de falsas.
+- **Y la serie bajó por primera vez en cinco vueltas**: **6 de 8** críticos distintos vienen de la
+  tanda anterior, contra 12/12, 13/14, 17/17 y 25/25. Los dos que no vienen son de clases que el
+  programa nunca había producido: una **medición externa** (`RC-5`) y una **lectura del conjunto**
+  (la dirección inversa del contrato sin constructor).
+- **El problema que queda, y es dónde se movió el agujero**: la regla **llega al lugar correcto en
+  4 de los 6** críticos y **resuelve mal**. No es que no se ejecute —ése era el diagnóstico de
+  `DEC-METH-011`— ni que no alcance: la aparición está en el rastro, recorrida, con su justificación
+  escrita, y la justificación es falsa. Dos formas:
+  1. **la resolución dice MENOS que la cita** — verifica un sujeto más angosto que el que la cita
+     cuantifica (se verificó que los tres avisos *estuvieran*, no que los lectores *fueran cinco*);
+  2. **la resolución dice MÁS que la cita** — le agrega una garantía que nadie verificó
+     (*«…y ahora esa ficha además tiene cómo volver cuando el cupo se libere»*), y esa cláusula
+     nueva es la que cierra el caso en falso.
+- **Decisión**: la justificación de cada aparición no corregida **responde por la cláusula entera
+  que cita —su cuantificador incluido— y no afirma nada que no esté verificado en la cita misma.**
+- **La forma operativa, sacada de las cuatro que fallaron**: **la justificación no puede empezar con
+  *«lo que cambió es…»***. Las tres del modo por delta empiezan así —*«lo que cambió es de dónde se
+  lee»*, *«lo que cambió es el motivo»*, *«lo que cambia es el alcance del remedio»*—. **Nombrar el
+  cambio y descartarlo en la misma frase es la firma del modo.**
+- **Y la forma correcta no hay que inventarla: ya está escrita, por el mismo equipo, en el mismo
+  artefacto.** Dos líneas del 2 % bueno son el patrón a copiar: *«la cláusula que la salva es la que
+  ella misma escribe»* (`rastro-f21d5d828.md` sobre `B/02` §2.2, que además **enumera los seis
+  sitios que deliberadamente no tocó y por qué**) y *«si alguna se hubiera escrito como «el último»
+  o «de seis», sería falsa»* (`rastro-032f761e0.md` sobre los ordinales del espejo).
+- **Lo que compra, y el número sale de una medición y no de una estimación**: **4 de los 6** críticos
+  de la vuelta y **9 de las 16** líneas falsas. Es más de lo que ninguna corrección propuesta hasta
+  hoy compró.
+- **El costo, y es la razón de haberla elegido sola**: **dos renglones de la regla y ningún trabajo
+  nuevo por aparición.** No pide recorrer más apariciones: pide que la justificación de cada una
+  responda por la cláusula entera. **No agrega ningún mecanismo que alguien tenga que acordarse de
+  correr**, que es exactamente el criterio con que `DEC-MP-003` descartó la columna *«quién pausó»*.
+- **Las tres que NO van, y qué se acepta al dejarlas afuera** — el owner eligió esta sola por encima
+  de la opción que la combinaba con la segunda:
+  1. **El barrido de caducidad** (cada línea nombra el `archivo §` del objeto sobre el que afirma, y
+     un barrido al cierre re-evalúa las que ese archivo tocó después). **Se acepta que las 6
+     caducidades sigan**: una línea verdadera el día que se escribió que un commit POSTERIOR de la
+     misma tanda vuelve falsa, sin que nadie edite ni el capítulo ni el rastro. Ninguna de las seis
+     produjo un crítico; lo que producen es **la sensación de que el corpus está verificado cuando
+     no lo está**. **Se descartó porque agrega mecanismo** —una columna y un comando al cierre— y el
+     programa lleva cinco vueltas midiendo que lo que hay que acordarse de escribir se olvida. Se
+     detectarán en la vuelta siguiente, como hasta ahora.
+     ⚠️ **Y si alguna vez se implementa, no con `git log -S` sobre la cita**: se midió sobre las dos
+     caducidades más limpias y **devolvió cero en las dos**, porque la caducidad no cambia la cita,
+     cambia lo que la hace verdadera, que vive en otro archivo.
+  2. **Levantar la exclusión de la prosa que el commit escribe o edita.** Compra **2 de los 6**,
+     contra los 5 de 12 que se le estimaron en la 8-bis-4: **la medición corrigió a la recomendación
+     anterior**, que la ponía primera. Sigue siendo la de costo más alto —un commit que escribe tres
+     párrafos tendría que justificar cada afirmación que hace—. **El agujero se achicó solo**: de
+     5 de 9 a 2 de 6.
+  3. **Ampliar el alcance al decision log.** Es el **cuarto desenlace**, que ninguna vuelta había
+     visto: el sexto sitio de *«`G-R4` sigue contando tres»* vive en este mismo archivo, que el
+     alcance del rastro excluye por definición. Compra 2 conteos falsos. **Se descarta como está y
+     queda acotada a futuro**: lo que habría que vigilar del log no es toda aparición sino **las
+     cifras del bloque `## Resumen`**; las razones internas de cada decisión son registro histórico
+     y caducarlas sería borrar el rastro del programa.
+- **Origen**: la FASE 8-bis-5, `22-fase-8-bis-5/C1-la-costura.md` §4.5 (Corrección E), y la elección
+  del owner del 2026-09-23 entre las tres opciones que se le presentaron. **Eligió la 2 —la enmienda
+  sola, sin el barrido—, apartándose de la recomendación de `C1`**, que proponía las dos juntas. La
+  razón del owner es la que el programa ya tiene medida y escrita: **entre dos correcciones, la que
+  no agrega mecanismo.** El riesgo aceptado son las seis caducidades, declarado arriba para que se
+  pueda evaluar después.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **88** |
-| De metodología | 11 |
+| Decisiones tomadas | **89** |
+| De metodología | 12 |
 | Funcionales | 77 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
