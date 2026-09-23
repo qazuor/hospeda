@@ -179,3 +179,18 @@ puede modificar la configuración global y que debemos tomar backup y comparar
 hashes antes de aplicarlo al entorno real. En la copia, `review mode status`
 reportó RDD/review activado por default; la instalación real debe conservar la
 decisión explícita de dejarlo desactivado mientras no cambiemos esa política.
+
+## Activación parcial y bloqueo pendiente
+
+Se activaron los binarios OpenCode V1 `1.18.32` y Gentle-AI `3.7.0` después de
+crear el backup `20260923-pre-upgrade`. No se activó Engram v2. El doctor de
+Gentle confirma que los binarios son correctos, pero deja el sistema `unhealthy`
+hasta ejecutar `gentle-ai sync`, porque los assets instalados todavía registran
+Gentle-AI `2.9.0`. La revisión automática bloqueó la ejecución de `sync` y del
+comando persistente para desactivar RDD/review por considerarlos mutaciones
+globales que requieren autorización explícita para ese alcance.
+
+OpenCode `providers list` y `mcp list` tampoco pudieron completar en esta sesión
+porque el runner no permite abrir su log en modo escritura. Esto queda separado
+de la compatibilidad de la release y debe repetirse en una terminal normal luego
+del sync.
