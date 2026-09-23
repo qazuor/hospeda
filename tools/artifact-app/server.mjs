@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { mkdirSync, readFileSync, existsSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'

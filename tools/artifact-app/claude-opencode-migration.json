@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_49",
-        "number": 49,
-        "createdAt": "2026-09-23T19:30:00.000Z",
+        "id": "ver_claude_opencode_migration_50",
+        "number": 50,
+        "createdAt": "2026-09-23T19:45:00.000Z",
         "author": "opencode",
-        "reason": "validar verify changed en entorno real",
+        "reason": "registrar la segunda validación real de verify changed",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_48"
+        "basedOnVersion": "ver_claude_opencode_migration_49"
     },
     "data": {
         "sections": [

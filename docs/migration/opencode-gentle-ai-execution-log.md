@@ -3565,3 +3565,19 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El endurecimiento restante (drift de envs, operaciones peligrosas y política
   final de permisos) continúa separado para evitar falsos positivos y cambios
   persistentes no aprobados.
+
+## Gate 213 · `verify --changed` después de separar la deuda de Biome
+
+- El lint real de CI del paquete `admin` terminó con código 0; quedaron sólo
+  warnings informativos de supresiones antiguas y un hint.
+- La configuración compartida de Biome excluye `.specs` del lint de paquetes y
+  desactiva únicamente `noUndeclaredEnvVars` en los archivos de configuración
+  de Vitest; el override de tooling reduce falsos positivos de scripts
+  auxiliares sin relajar el código de producto.
+- `hops verify --changed --only lint --json` devolvió `status: passed`,
+  `mutations: none`; el typecheck aislado también devolvió `status: passed` y
+  `pnpm check:guards` pasó previamente.
+- La corrida completa interactiva supera el límite de tiempo del runner antes
+  de imprimir su contrato final; no se interpreta como fallo de código. Queda
+  una repetición completa fuera de ese límite como validación final antes de
+  marcar el checklist como terminado.

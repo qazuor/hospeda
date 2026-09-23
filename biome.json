@@ -11,6 +11,20 @@
                     }
                 }
             }
+        },
+        {
+            "includes": ["tools/**/*.mjs"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsole": "off"
+                    },
+                    "style": {
+                        "useTemplate": "off",
+                        "noNegationElse": "off"
+                    }
+                }
+            }
         }
     ]
 }

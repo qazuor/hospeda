@@ -25,6 +25,7 @@
             "!**/mappings/id-mappings.json",
             "!**/config/generated",
             "!**/migrations/meta",
+            "!**/.specs/**",
             "!**/.remember",
             "!**/test/**/fixtures",
             "!**/scripts/poi-pipeline/output",
@@ -144,6 +145,16 @@
                 "rules": {
                     "suspicious": {
                         "noAssignInExpressions": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["**/vitest.shared.config.ts", "**/vitest.shared.config.test.ts"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noUndeclaredEnvVars": "off"
                     }
                 }
             }

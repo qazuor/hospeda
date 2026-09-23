@@ -110,7 +110,10 @@ export function parseWorktreePorcelain({
             flush();
             path = line.slice('worktree '.length).trim();
         } else if (line.startsWith('branch ')) {
-            branch = line.slice('branch '.length).trim().replace(/^refs\/heads\//, '');
+            branch = line
+                .slice('branch '.length)
+                .trim()
+                .replace(/^refs\/heads\//, '');
         } else if (line.trim() === 'detached') {
             detached = true;
         }
@@ -177,7 +180,7 @@ export function buildWorktrees({
             // Git first, state file only as a last resort: the state file
             // records what the branch was at creation, and a worktree that was
             // switched since would report the old name with full confidence.
-            branch: entry.branch !== '' ? entry.branch : (state.branch ?? ''),
+            branch: entry.branch === '' ? (state.branch ?? '') : entry.branch,
             detached: entry.detached,
             database: state.db ?? null,
             servers
