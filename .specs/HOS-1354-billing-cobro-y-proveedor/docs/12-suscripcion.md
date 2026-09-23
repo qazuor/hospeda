@@ -330,9 +330,11 @@ mejorar su plan. La salida:
 
 **«Un día como mínimo» no alcanzaba, y el número no era el problema: era el instante en que se
 comprueba.** La precondición se verifica **cuando la fila nace** y tiene que seguir siendo cierta
-**hasta que el cliente autorice**, que puede ser **71 horas después** (`S3`). Con un día, durante
-el 97 % de esa ventana la fecha ya pasó — y `EX-39` mide que **no se puede mover**: las fechas son
-inmutables también sobre un preapproval `pending`.
+**hasta que el cliente autorice**, que puede ser **casi 72 horas después sobre un pagador con
+tarjeta y casi 7 días corridos después sobre un pagador manual** (`S3`, con sus **dos** plazos
+según el método de pago — `B/03` §3.4 punto 1, `DEC-SUB-016`). Con un día, la fecha ya pasó durante
+el **97 %** de la primera de esas dos ventanas y durante **más** de la segunda — y `EX-39` mide que
+**no se puede mover**: las fechas son inmutables también sobre un preapproval `pending`.
 
 **Por qué atado a la ventana y no a un número nuevo.** La ventana es configuración (`B/03` §3.4,
 punto 1) y su valor sale de dos restricciones ya escritas; un segundo número elegido a mano se
