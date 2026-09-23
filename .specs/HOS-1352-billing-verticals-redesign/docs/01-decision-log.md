@@ -4275,13 +4275,53 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-004 — El motivo 14 no tiene UN default: tiene dos ramas, y la que devuelve es la que el cliente no causó
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso, abierto por la familia 3 de la 9-bis-5**: al cerrar `F-8eB1-004` el reembolso que `S21`
+  declara posible ganó por fin su motivo —el **14**, `COMPLEMENTO_CON_PERÍODO_COBRADO`— y se le puso
+  un default **uniforme en NO DEVOLVER**, que es lo que `B/16` §4.4 ya había decidido. **Pero `S21`
+  tiene cuatro disparadores y no son equivalentes.**
+- **La asimetría, que es lo que decide**: en unos el **cliente actuó** —borró su ficha (`A6`, y
+  `DEC-ADDON-001` ya declara que el complemento *«se consume»*) o pidió la baja (primera cláusula de
+  `A5`)—. En la **tercera cláusula de `A5`**, en cambio, **se revoca el grant que era su título: el
+  cliente no hizo nada y pierde los días que pagó.**
+- **Decisión**: el motivo 14 **deja de tener un default único** y pasa a tener **dos ramas**:
+  - **`DEVOLVER`** cuando la causa es la **revocación del grant** (tercera cláusula de `A5`);
+  - **`NO DEVOLVER`** en los demás disparadores de `S21`, donde el complemento se pierde por un acto
+    del propio cliente.
+  **La tanda que la implemente enumera los cuatro disparadores y dice de qué lado cae cada uno**, sin
+  dejar ninguno implícito.
+- **Por qué, y la razón ya estaba escrita en el programa**: *si la pérdida la causa un acto
+  deliberado NUESTRO y la persona no puso plata nueva → se declara y no se repara; **si la persona
+  PUSO PLATA → se le da salida***. En la tercera cláusula **las dos mitades apuntan al mismo lado**:
+  la persona puso plata **y** la pérdida la causa un acto deliberado nuestro. Es el mismo criterio
+  con que se resolvieron `DEC-TRIAL-009`, `DEC-ADDON-005` y `DEC-GRANT-011`, aplicado a un caso que
+  cae del otro lado.
+- **Las dos alternativas, y por qué no**:
+  - **Dejarlo uniforme en NO DEVOLVER** —costo cero—: se descarta porque **contradice el criterio en
+    silencio**. Un default uniforme no es neutral: **esconde que hay un caso en el que nadie del otro
+    lado hizo nada**, y lo esconde justo donde hay plata del cliente.
+  - **Devolver siempre en el motivo 14**: contradice `DEC-ADDON-001`, que ya declaró consumido el
+    complemento de quien borra su propia ficha.
+- **Lo que cuesta, dicho**: el motivo 14 es el primero del catálogo con **default por rama** en vez
+  de por motivo, así que **hay que recorrer todo lo que cite *«el default del 14»*** y la tabla de
+  defaults deja de poder leerse como una columna plana. Es trabajo de rastro, no mecanismo nuevo en
+  producción: la rama la decide el disparador, que la transición ya conoce.
+- **Origen**: la familia 3 de la FASE 9-bis-5 (`8835bc26a`, `76ee57f12`), que dejó la partición
+  explícitamente sin hacer por ser *«decisión de plata, no lectura del corpus»*, y la elección del
+  owner del 2026-09-23 entre las tres opciones que se le presentaron — eligió la 2, que era la
+  recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **94** |
+| Decisiones tomadas | **95** |
 | De metodología | 12 |
-| Funcionales | 82 |
+| Funcionales | 83 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
