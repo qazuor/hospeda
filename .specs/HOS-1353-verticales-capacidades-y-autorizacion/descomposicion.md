@@ -52,7 +52,7 @@ condicionan**: se apoyan en ella.
 | # | unidad | qué deja funcionando | capítulos | guards |
 |---|---|---|---|---|
 | **V1** | **El catálogo y su doble guard** | el enum de verticales, su espejo en base, y el catálogo de claves de entitlement y limit en código | `02` §1 (núcleo) · `10` §1 | `G1` `G3` `G8` |
-| **V2** | **El catálogo de planes** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible | `02` §2.1 · `10` §2 | **`G-R3`** |
+| **V2** | **El catálogo de planes, y la dirección inversa del contrato** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible — **y las tres consultas con que billing lee este catálogo**: `políticaDePlan`, `situaciónDeVertical` y `direcciónDeCambio`, que devuelve **un veredicto** y nunca los valores | `02` §2.1 · `10` §2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §4.1 | **`G-R3`** |
 | **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
 | **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
 | **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
@@ -276,6 +276,50 @@ máquinas existentes en cada momento»* es exactamente la lectura que produce el
 sea informativo hasta que las nueve estén»* compra meses en los que nadie lo mira. **La asignación a
 V4 no se mueve**: era independiente de la salida elegida, y lo sigue siendo.
 
+### 2.9 La dirección inversa del contrato la construye V2, y hasta esta pasada no la construía nadie
+
+**El contrato tiene dos direcciones y sólo una tenía constructor.** Lo que billing **empuja** a
+verticales lo construye `B4` del otro lado y lo recibe `V4`; lo que billing **LEE** de verticales
+—las tres consultas del [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+§4.1— **no figuraba en la columna de capítulos de ninguna de las 22 unidades del programa**, medido
+con `rg -c "direcciónDeCambio|situaciónDeVertical|políticaDePlan"` sobre el corpus: **cero en los
+dos `spec.md`, cero en las dos `descomposicion.md`, cero en los 24 capítulos y cero en el núcleo**.
+Y la pieza sin constructor no era una menor: el propio contrato la llama *«la única regla que decide
+**qué se le cobra a alguien y qué día**»*.
+
+**Va con V2 porque las tres consultas leen las tablas que V2 construye, y ninguna otra.** Recorrido
+campo por campo:
+
+| consulta | qué lee | de qué unidad es esa tabla |
+|---|---|---|
+| `políticaDePlan` → `díasDeGrace`, `díasDeTrial`, `permitePausa`, `vigente`, `vendible` | columnas de `plan_version` | `02` §2.1 — **V2** |
+| `situaciónDeVertical` → `admiteAltas`, `finDeServicio` | las **dos columnas de `vertical`** que el contrato obligó a crear | `02` §2.1 — **V2** |
+| `direcciónDeCambio(origen, destino)` → `SUBE \| BAJA` | `plan_version_entitlement` y `plan_version_limit` de **las dos** versiones | `02` §2.1 — **V2** |
+
+**Los siete campos son de `02` §2.1, que es capítulo de V2**, así que ésta es la unidad más
+temprana en la que las tres consultas se pueden escribir — y la regla 1 del §1.1, leída sobre una
+pieza en vez de sobre un guard, pide exactamente eso: **nace con su sujeto y no contra él**.
+
+**Y la tercera no es una excepción aunque su REGLA esté escrita del otro lado.** *«La dirección se
+deriva del delta entre las dos versiones, no del `rank` … cualquier baja manda»* vive hoy en
+`B/10` §3.5, que es capítulo de **B12, la última unidad del camino crítico de billing**, mientras
+**su consumidor es `B8`, cinco unidades antes**. Eso no la vuelve de B12: el contrato ya decidió de
+quién es el acto —*«La comparación la hace verticales, que es dueño de las tablas, y billing recibe
+un **VEREDICTO**»*—, y **quién ejecuta una comparación y dónde está escrito su criterio son dos
+preguntas distintas**, que es la misma forma que el §2.5 usa para `G-R6-B` y el §2.7 para `G-R5`.
+Lo que V2 construye es **la consulta y su respuesta**; `B/10` §3.5 queda como el § que declara el
+criterio y `B12` como su lector tardío.
+
+**Lo que esto evita, y está escrito en el propio contrato:** sin la consulta, lo único que `B8`
+tiene a mano al cambiar de plan es el `rank`, y el diseño ya midió el desenlace de derivar la
+dirección de ahí — *«un plan más caro puede bajar un límite al rediseñarse, y entonces al cliente
+**se le recorta algo en silencio mientras se le cobra como mejora**»*. Con el camino de upgrade
+tomado por error, además, **el excedente cae sin el aviso previo** que el de downgrade obliga.
+
+**Y no mueve ninguna asignación de guard.** Ninguno de los 29 tiene por sujeto el contrato de
+frontera (§4.2 del contrato, dicho allá), así que esta fila agrega **capítulos a una unidad**, no un
+dueño de guard. Es un reparto de trabajo, que es lo que este documento hace.
+
 ---
 
 ## 3. El orden, y qué se puede hacer en paralelo
@@ -306,7 +350,7 @@ la unidad se declara terminada.
 | # | la unidad está lista cuando… |
 |---|---|
 | **V1** | agregar una clave al código sin agregarla a la base **falla**, y al revés también; y nombrar una vertical sin implementar su ítem del Eje 2 **falla** |
-| **V2** | dos versiones vendibles y vigentes con el mismo `rank` en la misma vertical **son imposibles**, no un empate a desempatar |
+| **V2** | dos versiones vendibles y vigentes con el mismo `rank` en la misma vertical **son imposibles**, no un empate a desempatar; y **`direcciónDeCambio` contesta `BAJA` sobre un par de versiones donde el destino tiene `rank` MAYOR y un solo limit menor** —si contesta `SUBE`, está leyendo el `rank` y no el delta (§2.9)—, con `políticaDePlan` y `situaciónDeVertical` contestando los otros cinco campos sin que ninguna devuelva un entitlement ni un limit |
 | **V3** | una clave que suma y una que no acumulan **distinto**, y la que no acumula **favorece al cliente**; y revocar una fuente invalida el caché de ese `user + vertical` |
 | **V4** | un trial vence de verdad, `cobertura()` pasa de sí a no por sí sola, y un segundo trial para el mismo `user + vertical` **es imposible** |
 | **V5** | un recurso ajeno, uno archivado y uno inexistente **contestan lo mismo al que no es su dueño** —y una ficha `ARCHIVED` le acepta a **su** dueño verla, exportarla y reactivarla **aunque no tenga ninguna fuente de clase `TÍTULO`**, porque la versión de piso lo otorga (`02` §2.1)—; y una cuenta inhabilitada no puede averiguar qué permisos tiene probando operaciones |

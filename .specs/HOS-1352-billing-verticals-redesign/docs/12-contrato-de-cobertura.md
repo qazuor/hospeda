@@ -719,6 +719,15 @@ columna que verticales cambió nadie se entera hasta que rompe.
 **Dos columnas que esto obliga a crear**, del lado de verticales, porque `B/10` §4.6 ya las lee y
 no existen: `vertical.admite_altas` y `vertical.fin_de_servicio`.
 
+**Y quién construye las tres consultas se dice acá, porque no decirlo las dejó sin dueño durante
+cuatro días y cuatro vueltas del ciclo.** **Las construye `V2`**, la segunda unidad de la épica de
+verticales (`V/descomposicion.md` §2.9): los **siete** campos son columnas de `V/02` §2.1, que es
+capítulo suyo, así que es la unidad más temprana en la que las tres se pueden escribir. **La regla
+de `direcciónDeCambio` está escrita en `B/10` §3.5 y eso no la muda de dueño**: el veredicto lo
+emite verticales —es la frase de arriba— y su consumidor es `B8`, cinco unidades antes que la
+unidad a la que ese capítulo pertenece. Un contrato que declara una dirección y no dice quién la
+implementa deja la mitad cara sin constructor, que es exactamente lo que pasó con ésta.
+
 **Esto no muta `DEC-ARCH-006`: escribe la mitad que faltaba.** Aquella decisión declaró que la
 frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una sola vía.
 
