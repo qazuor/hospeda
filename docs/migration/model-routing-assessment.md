@@ -58,3 +58,18 @@ tareas acotadas. OpenKilo se habilita sólo como perfil experimental para tareas
 no sensibles y con límites de contexto/red. No conviene instalar tres gateways
 al mismo tiempo ni dejar que Gentle reasigne silenciosamente sus aliases
 `opus`/`sonnet`/`haiku`.
+
+### Revalidación de selección de modelos — 2026-09-23
+
+OpenCode V1 mantiene un `opencode.json` sin provider/model explícito. La
+consulta previa en terminal writable identificó OpenAI OAuth y GitHub Copilot
+como integraciones disponibles, sin exponer credenciales. El cache de
+`~/.gentle-ai/cache/model-variants.json` contiene catálogos de muchos
+proveedores, incluidos GLM y DeepSeek, pero ese cache es descubrimiento de
+variantes y no prueba autenticación, disponibilidad ni autorización para
+usarlos.
+
+La configuración efectiva no tiene fallback automático declarado. Se mantiene
+la recomendación: OpenAI por suscripción para tareas críticas; GLM/DeepSeek sólo
+como perfiles explícitos después de benchmark; OpenKilo/Kilo separado y sólo
+para tareas no sensibles. No se activó ningún provider adicional.

@@ -29,3 +29,13 @@
 5. Registrar proveedor/modelo en el reporte sin registrar credenciales ni prompts sensibles.
 
 No se instalaron proveedores ni se modificó auth.
+
+## Revalidación de runtime actualizado — 2026-09-23
+
+OpenCode `1.18.32`, Gentle-AI `3.7.0` y Engram `2.0.0` están activos. El
+`opencode.json` no declara provider/model/fallback; el cache de variantes de
+Gentle contiene nombres de GLM y DeepSeek, pero no demuestra acceso ni debe
+confundirse con providers configurados. No se activó ningún fallback.
+
+El gate sigue pendiente hasta ejecutar el benchmark controlado con perfiles
+explícitos, límites de datos y medición de costo/latencia/calidad.
