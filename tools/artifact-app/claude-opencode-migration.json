@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_38",
-        "number": 38,
-        "createdAt": "2026-09-19T00:00:00.000Z",
+        "id": "ver_claude_opencode_migration_39",
+        "number": 39,
+        "createdAt": "2026-09-23T16:00:00.000Z",
         "author": "opencode",
-        "reason": "definir trazabilidad Linear specs y Gentle SDD",
+        "reason": "curación activa verificada de Engram lote A",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_37"
+        "basedOnVersion": "ver_claude_opencode_migration_38"
     },
     "data": {
         "sections": [
@@ -89,7 +89,7 @@
                             "category": "OpenCode + Gentle-AI",
                             "description": "Instalar la versión actual fuera de carpetas especiales y verificar runtime.",
                             "notes": "V2.0.3 quedó preservado en backup; no es el runtime operativo actual porque Gentle-AI 2.9.0 requiere plugins V1.",
-                            "done": false
+                            "done": true
                         },
                         {
                             "id": "opencode-v1-rollback",
@@ -176,7 +176,7 @@
                             "title": "Validar releases candidatas en aislamiento",
                             "category": "Actualización y rollback",
                             "description": "Probar Gentle-AI y Engram nuevos sin tocar la instalación activa ni la DB real.",
-                            "notes": "Gate249: OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0 verificados en staging. Engram v2 migró una copia mediante ENGRAM_DATA_DIR; stats/search/context/MCP explícitos por hospeda funcionaron y la integridad quedó ok. Gentle 3.7.0 sync en HOME temporal regeneró 40 assets y confirmó review/RDD on por default. Gate250: backup fresco 20260923-pre-upgrade creado; OpenCode 1.18.32 y Gentle-AI 3.7.0 activados, Engram sigue 1.20.0. Gate251: launcher user-owned respaldado, sync global completado con 59 assets, doctor 8/8 healthy, MCP Engram v1 operativo y RDD/review global off. Background agents OpenCode quedaron on según Gentle; Pi no se instaló. Gate252: Engram 2.0.0 activado con migración de esquema íntegra; stats/search/MCP explícitos por hospeda funcionan. Doctor conserva 7 hallazgos históricos (sin repair ni borrados). OpenCode mcp/providers list siguen pendientes de repetir fuera del runner read-only. Gate253: bootstrap pins y @opencode-ai/plugin/sdk quedaron alineados a OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0; verify pasa sin leer secretos. Gate254: los 6079 bloqueos de doctor corresponden a mutaciones legacy de sync Cloud, no a 6079 memorias actuales; observations tiene 33 sin contenido, 16 sin título y 1 sin tipo. No se reparó ni borró nada. Gate255: lote A actual contiene 49 filas únicas; inventario temporal sólo de metadatos generado en /tmp. Gate256: copia v2 consistente reconstruida con SQLite Backup API; 48/49 filas tienen decisión previa y la nueva fila sin type es 965. Gate257: 45 ruidosas más 965 soft-deleted sólo en copia v2; 668, 3553 y 3708 revalidadas con títulos propuestos. DB activa intacta.",
+                            "notes": "Gate249: OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0 verificados en staging. Engram v2 migró una copia mediante ENGRAM_DATA_DIR; stats/search/context/MCP explícitos por hospeda funcionaron y la integridad quedó ok. Gentle 3.7.0 sync en HOME temporal regeneró 40 assets y confirmó review/RDD on por default. Gate250: backup fresco 20260923-pre-upgrade creado; OpenCode 1.18.32 y Gentle-AI 3.7.0 activados, Engram sigue 1.20.0. Gate251: launcher user-owned respaldado, sync global completado con 59 assets, doctor 8/8 healthy, MCP Engram v1 operativo y RDD/review global off. Background agents OpenCode quedaron on según Gentle; Pi no se instaló. Gate252: Engram 2.0.0 activado con migración de esquema íntegra; stats/search/MCP explícitos por hospeda funcionan. Doctor conserva 7 hallazgos históricos (sin repair ni borrados). OpenCode mcp/providers list siguen pendientes de repetir fuera del runner read-only. Gate253: bootstrap pins y @opencode-ai/plugin/sdk quedaron alineados a OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0; verify pasa sin leer secretos. Gate254: los 6079 bloqueos de doctor corresponden a mutaciones legacy de sync Cloud, no a 6079 memorias actuales; observations tiene 33 sin contenido, 16 sin título y 1 sin tipo. No se reparó ni borró nada. Gate255: lote A actual contiene 49 filas únicas; inventario temporal sólo de metadatos generado en /tmp. Gate256: copia v2 consistente reconstruida con SQLite Backup API; 48/49 filas tienen decisión previa y la nueva fila sin type es 965. Gate257: 45 ruidosas más 965 soft-deleted sólo en copia v2; 668, 3553 y 3708 revalidadas con títulos propuestos. Gate258: lote A aplicado de forma controlada en DB activa; 45 entradas ruidosas + 965 soft-deleted, 668/3553/3708 tituladas, backup en 20260923-pre-curation-batch-a. La entrada nueva 9720 (session_summary vacío de hospeda2) fue respaldada y soft-deleted con el comando oficial. Verificación posterior: integrity_check=ok y active_incomplete=0. Las mutaciones Cloud legacy siguen sin repararse/reproducirse.",
                             "done": false
                         },
                         {

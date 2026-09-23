@@ -253,10 +253,9 @@ con IDs y metadatos, sin títulos ni contenidos:
 `/tmp/engram-current-incomplete-20260923.csv`.
 
 Las decisiones humanas previas del lote A siguen registradas en la copia de
-revisión de septiembre. No se aplicaron a la DB activa después del upgrade; la
-próxima acción correcta es reconstruir una copia v2, revalidar esas decisiones
-por ID y ejecutar cualquier soft-delete o ajuste sólo sobre la copia antes de
-considerar importarlo.
+revisión de septiembre. Se reconstruyó una copia v2, se revalidaron por ID y
+se aplicaron a la DB activa sólo después de verificar la copia y crear un
+backup binario nuevo.
 
 La copia v2 se reconstruyó con SQLite Backup API y pasó `integrity_check = ok`.
 El cruce por ID encontró decisiones previas para 48 de las 49 filas actuales.
@@ -272,10 +271,14 @@ En la copia se revalidaron además las tres entradas `vigente-con-ajuste`:
 | 3553 | Regla de testing acotado: no ejecutar suites completas | `AGENTS.md`/skill de testing; conservar en Engram como preferencia del usuario |
 | 3708 | Regla SSR para Leaflet y módulos browser-only con `clientOnly` | skill de TanStack Start/SSR; conservar en Engram como gotcha técnico |
 
-Las 45 entradas clasificadas como ruido más la `965` quedaron soft-deleted sólo
-en la copia v2 y la copia conserva `integrity_check = ok`. Los tres títulos
-propuestos todavía no se escribieron, porque la DB activa no debe recibir ningún
-cambio hasta cerrar la revisión completa del lote.
+Las 45 entradas clasificadas como ruido más la `965` quedaron soft-deleted en
+la DB activa mediante `engram delete`/transacción controlada; los tres títulos
+vigentes se actualizaron en la DB activa. El backup previo está en
+`~/.local/state/hospeda-opencode-migration/backups/20260923-pre-curation-batch-a`.
+Después apareció la observación `9720`, un `session_summary` vacío de
+`hospeda2`; se respaldó por separado y se soft-deleted con el comando oficial.
+La copia de verificación posterior pasa `PRAGMA integrity_check = ok` y tiene
+`active_incomplete = 0`. No se repararon ni reprodujeron las mutaciones Cloud.
 
 ## Pines versionados alineados
 
