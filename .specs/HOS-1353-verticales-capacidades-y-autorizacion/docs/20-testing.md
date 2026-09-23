@@ -153,7 +153,10 @@ simetría no se sostiene:
 - **Para escritores es la forma rechazada y sigue rechazada.** Comprobar que un hecho tenga quien lo
   ejecute pide que cada escritura **declare cuál de los cuatro ejecuta**, y un guard estático sólo
   puede comprobar que la declaración **esté** — exactamente el segundo guard que `DEC-TEST-001`
-  rechazó. Queda afuera, con su razón.
+  rechazó. Queda afuera **del catálogo de guards**, con su razón — **y desde `DEC-TEST-002` la
+  cubre un criterio de terminación**, que no es un guard y por eso la objeción no lo alcanza: lo
+  contesta una persona al declarar lista la unidad (`descomposicion.md` §4, con el desarrollo en
+  `B/descomposicion` §4).
 - **Para lectores es un HECHO comprobable y entra: es la mitad *(c)*.** *«El día 180 no lee
   `listing.inactiva_desde`»* es un rojo verificable **sin pedirle a nadie que declare nada** —se
   mira si la lectura está, igual que la mitad *(b)* mira si sobra una—, que es el mismo criterio con
