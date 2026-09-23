@@ -65,6 +65,32 @@ Y **lo global se muestra como global**: un addon de scope `USER` o `GLOBAL`, o u
 entitlement global (cap. 15 §3, épica de verticales), no pertenece a ninguna vertical. Mostrarlo
 dentro de una es sugerir que se pierde con ella.
 
+### 3.1 La cortesía DIFERIDA se muestra, y con su condición
+
+**El §46 manda mostrar la cortesía, y desde `DEC-GRANT-007` hay una que existe y no está
+corriendo.** Entre que `S18` cierra la sucesión y que `S9` la re-emite sobre la sucesora, la
+persona **tiene días firmados y no tiene cortesía vigente** (`NUCLEO/01` §2.6). Lo que esta
+pantalla muestra en esa ventana lo fija `DEC-GRANT-012`:
+
+| qué se muestra | de dónde sale | qué dice |
+|---|---|---|
+| la **cortesía diferida**, en la vertical de la suscripción que la firmó | `courtesy_grant.saldo_días` no nulo y sin cerrar (cap. 02 §2.4, `NUCLEO/01` §2.6) | ***«te quedan N días, que empiezan a correr cuando completes el pago»*** — el saldo **con la condición que lo activa**, nunca a secas |
+
+**Las tres mitades de esa frase son la decisión, y ninguna es adorno.** El **saldo** porque son
+días que la persona ya tiene firmados y esconderlos es esconderle algo suyo; la **condición**
+porque *«te quedan N días»* sin decir desde cuándo corren es la clase de promesa que
+`NUCLEO/07` §5.3 manda anticipar —es lo que el proveedor hace cuando anuncia *«Pagaste la
+suscripción»* sobre un cobro que nunca ocurrió (`EX-3`)—; y que la condición sea **completar el
+pago** porque es exactamente el acto que evita la pérdida: si la ventana de autorización vence, el
+saldo **se cierra y no vuelve** (`DEC-GRANT-011`, `S3`). **Ésta es la única de las formas posibles
+que le da a la persona la información con la que evitar esa pérdida**, y decirlo empuja además a
+terminar el checkout.
+
+**Y cuando el saldo ya se cerró, esta pantalla deja de mostrarlo**: no es una cortesía diferida
+(`NUCLEO/01` §2.6) y seguir mostrando *«te quedan N días»* sería la promesa que el párrafo de
+arriba rechaza. **Lo que sí se dice, una vez y por el canal en que la persona no está mirando la
+pantalla, es que se cerró** — es la fila 18 del §4.
+
 ---
 
 ## 4. Lo que hay que decir, y no es una mejora de UX
@@ -96,11 +122,23 @@ ser.**
 | 16 | el **cambio de plan** con un checkout abierto | que **no se ofrece**: *«terminá o cancelá el checkout que tenés abierto»* | cap. 03 §3.3.1 |
 | 16-bis | el **alta nueva** tras un primer cobro rechazado, **teniendo un cambio de plan en curso** | lo mismo que la 16, y por una razón distinta: la sucesora sigue viva y **puede autorizar**, así que un alta nueva serían **dos preapprovals cobrando**. Ofrecer *«empezar de nuevo»* acá —que es lo que el cap. 12 §4.4 pide en el caso general— es ofrecer el doble cobro | cap. 03 §3.2 y §3.3.1, cap. 12 §4.4 |
 | 17 | el **cambio de plan** estando pausado | que **no se ofrece**: *«reanudá tu suscripción para cambiar de plan»* | cap. 03 §3.3.1 |
+| 18 | al **vencer la ventana de autorización sin que el alta se haya completado** (`S3`, cap. 03 §3.2) | **tres cosas, y la tercera sólo a veces**: que el alta **no quedó hecha** y que **no se le cobró nada**; que **el plazo que tenía venció**, con **su** fecha y no una global —el plazo **no es el mismo para los dos métodos de pago** (`DEC-SUB-016`), así que el aviso lleva el vencimiento de esa persona y nunca una cifra escrita a mano—, y que **puede volver a empezar**; **y si tenía una cortesía diferida, que esos N días se cerraron y no vuelven** (`DEC-GRANT-011`), **con el número dicho** — es la misma cifra que «Mi Suscripción» le venía mostrando por el §3.1 | cap. 03 §3.2 (`S3`) y §3.4 punto 1, `DEC-SUB-016`, `DEC-GRANT-011`, `DEC-GRANT-012`, `NUCLEO/07` §6 |
 
-**Los tres últimos son avisos de una operación que NO se ofrece, y por eso están acá.** En los
-tres la persona **no queda bloqueada** —puede terminar o abandonar el checkout, puede reanudar—,
-así que lo único que faltaba era **decir el no en voz alta** con su motivo, en vez de que la
-operación falle sin explicación o, peor, que alguien construya un mecanismo para un camino que el
+**La 18 cierra DOS huecos que se abrieron el mismo día y por eso es una fila y no dos.**
+`DEC-SUB-016` dejó sin escribir *«qué se le dice a quien se le venció la ventana»* y `DEC-GRANT-012`
+dejó sin escribir *«qué se le dice cuando el saldo se cierra»* — y **son el mismo instante**: la
+transición que vence la ventana es la que cierra el saldo (`S3`). Mandar dos avisos por un solo
+hecho es la forma de que el segundo llegue como una sorpresa después del primero.
+
+**Y la tercera cosa es la que hace defendible a `DEC-GRANT-011`.** Esa decisión le quita a alguien
+días que `SUPER_ADMIN` le firmó, apoyada en que **el acto que corta es suyo**; si además se
+enterara por no verlos más en la pantalla, el acto sería suyo y el silencio nuestro. **El número va
+dicho** porque decir *«perdiste los días de cortesía»* sin cuántos eran es pedirle que se acuerde.
+
+**Los tres que van del 16 al 17 son avisos de una operación que NO se ofrece, y por eso están
+acá.** En los tres la persona **no queda bloqueada** —puede terminar o abandonar el checkout, puede
+reanudar—, así que lo único que faltaba era **decir el no en voz alta** con su motivo, en vez de que
+la operación falle sin explicación o, peor, que alguien construya un mecanismo para un camino que el
 proveedor no admite (`EX-11`).
 
 ### 4.1 Dos reglas sobre cómo se dicen
