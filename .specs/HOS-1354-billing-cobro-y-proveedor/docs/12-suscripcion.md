@@ -478,7 +478,7 @@ sobre sus filas numeradas**, que es la corrección que trajo la quinta:
 
 | cómo termina la sucesión | qué pasa con el pago pendiente | por qué |
 |---|---|---|
-| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa, y lo confirma una persona** (`DEC-RF-002`): **`S18`, en el mismo acto del cierre, le abre a la PREDECESORA** —la dueña del pago— **una marca `requiere_conciliación` con motivo `REEMBOLSO_POR_CONFIRMAR`**, que lleva **la referencia al pago que hay que devolver** (`B/02` §2.5), y el caso entra al canal de conciliación; el sistema **no ejecuta el reembolso solo** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
+| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa, y lo confirma una persona** (`DEC-RF-002`): **`S18`, en el mismo acto del cierre, le abre a la PREDECESORA** —la dueña del pago— **una marca `requiere_conciliación` con motivo `REEMBOLSO_POR_CONFIRMAR`**, con **el pago colgado de ella** (`B/02` §2.2 y §2.5), y el caso entra al canal de conciliación; el sistema **no ejecuta el reembolso solo** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
 | **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** — y lo dispara **`S3`**, que reevalúa el pago pendiente en el acto | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca que `S14` ya abrió | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso. **Y *«junto con»* sólo es verdad si las dos marcas se ven**: cuando `S15` resuelve la traba y `S18` cierra, la predecesora queda con **dos marcas abiertas** —la de la traba y el `REEMBOLSO_POR_CONFIRMAR` que abre el cierre—, y `S15` levanta **una por vez** (`B/02` §2.2 y §2.5). Con un booleano, resolver la traba apagaba el reembolso en el mismo gesto |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
@@ -509,11 +509,11 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras diez, que es lo que faltaba.** Un
+> **Y la marca que las tres abren se distingue de las otras trece, que es lo que faltaba.** Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
 > aplicó —una de las otras trece—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
-> la marca es una fila con motivo, reloj y **la referencia al pago** (`B/02` §2.2 y §2.5). **Las
+> la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.
 
