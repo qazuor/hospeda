@@ -72,12 +72,13 @@ sólo dice de quién es. Y está medido que se puede hacer sobre una suscripció
 persona.** Es el criterio del owner aplicado por tercera vez: **la línea no es «automático contra
 manual», es «toca plata o no toca plata»**.
 
-> **Y la marca dice CUÁL de las catorce cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
+> **Y la marca dice CUÁL de las quince cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. Cinco de los catorce motivos significan *«hay plata del cliente que devolver»*,
-> y ésos son los que la demora le cobra al cliente — **más la marca del 14 cuya rama es `DEVOLVER`**
-> desde `DEC-RF-004`, que es la única de esa lista que **no** se decide mirando el motivo sino **el
-> disparador y, en el de la orfandad, qué transición mató al título** (`B/03` §3.2).
+> indistinguibles**. Seis de los quince motivos significan *«hay plata del cliente que devolver»*,
+> y ésos son los que la demora le cobra al cliente. **Los seis se leen en la última columna de esa
+> tabla y ninguno pide mirar otra cosa**: `DEC-RF-004` había dejado uno que sí —la marca que abre
+> `S21`, cuya propuesta dependía del disparador—, y `DEC-RF-006` lo partió en dos motivos, de los
+> cuales el **15** es el que entra a esta lista.
 
 ---
 
