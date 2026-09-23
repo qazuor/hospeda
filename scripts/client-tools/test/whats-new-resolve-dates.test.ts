@@ -147,4 +147,42 @@ export const whatsNewEntries = [
 `;
         expect(() => resolvePublishedAtMarkers({ content, mergedAt: 'not-a-real-date' })).toThrow();
     });
+
+    it('never touches the module docblock prose above the entries declaration (regression: first real run resolved a phantom entry)', () => {
+        // The real catalog's module docblock documents the marker semantics
+        // and therefore contains the literal in prose. The 2026-09-11 first
+        // real run (34647242767) resolved it as a phantom first entry: it
+        // took the merge timestamp itself, shifted every real entry one extra
+        // hour back, and rewrote a doc comment in the committed catalog.
+        const content = `/**
+ * Entries with publishedAt: 'on-promotion' are invisible until a
+ * promotion resolves the marker; every other byte is copied through.
+ */
+export const whatsNewEntries = [
+    {
+        id: '2026-09-10-newest',
+        publishedAt: 'on-promotion',
+        title: { es: 'newest' }
+    },
+    {
+        id: '2026-09-10-oldest',
+        publishedAt: 'on-promotion',
+        title: { es: 'oldest' }
+    }
+];
+`;
+
+        const result = resolvePublishedAtMarkers({ content, mergedAt: MERGED_AT });
+
+        expect(result.resolvedCount).toBe(2);
+        expect(result.resolvedIds).toEqual(['2026-09-10-newest', '2026-09-10-oldest']);
+        // The docblock prose keeps the literal, byte-identical.
+        expect(result.updatedContent).toContain(
+            "Entries with publishedAt: 'on-promotion' are invisible until a"
+        );
+        expect(result.updatedContent).not.toContain("'(unknown id)'");
+        // The topmost REAL entry gets the merge timestamp itself — the phantom
+        // no longer steals it and shifts the real entries an hour back.
+        expect(result.updatedContent).toContain(`publishedAt: '${MERGED_AT}'`);
+    });
 });
