@@ -52,7 +52,7 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | # | hecho | de dónde se lee | por qué reinicia |
 |---|---|---|---|
 | 1 | un **acto del dueño** sobre la ficha: crearla, editarla, publicarla, despublicarla, exportarla, reactivarla | el registro append-only de eventos de dominio (cap. 08 §1.3), que ya los guarda todos por el criterio 2 del §1.1 | alguien la está usando, que es lo contrario de estar inactiva |
-| 2 | **`cubierto` pasa a verdadero** | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | volver a estar cubierto **es** dejar de estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
+| 2 | **la cobertura se comprueba verdadera** — un ESTADO leído, nunca un cambio detectado | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | estar cubierto **es** no estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
 | 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
 
@@ -65,6 +65,40 @@ mismo guard, con un mensaje propio** (cuarta enmienda de `DEC-TEST-001`). **No l
 ése cruza las columnas que una condición
 **lee** contra las que alguna transición **escribe**, y de estos cuatro hechos **sólo el tercero es
 una transición**, así que queda verde por ése solo — está medido y dicho en `V/20` §2.
+
+**El hecho 2 es un ESTADO COMPROBADO y no un cambio detectado, y hasta esta pasada estaba enunciado
+de una manera y ejecutado de la otra.** Decía *«`cubierto` pasa a verdadero»* —un cambio— y **sus
+dos escrituras declaradas comprueban un valor**: el recálculo escribe *«cuando vuelve a preguntar y
+**trae** `cubierto` verdadero»* y `PB4`/`PB5` escriben *«si el `user + vertical` **está** cubierto»*
+(`V/02` §4.2 regla 4, `V/03` §9). Los dos enunciados producen sistemas distintos y **no hay una
+tercera lectura**, así que queda elegido el que sus ejecuciones ya usaban, por tres razones:
+
+1. **El cambio no es observable donde más hace falta.** El que ejecuta relee *porque el aviso se
+   puede haber perdido* —el párrafo de abajo—, y sin el aviso no hay ningún cambio que detectar: lo
+   único que tiene delante es un valor. Enunciarlo como cambio vuelve **inejecutable** la única red
+   contra el modo de falla que el propio diseño declara frecuente.
+2. **El §3 del contrato ya lo ordena así.** Prohíbe decidir con lo que trae el evento y manda
+   **preguntar el estado**; un predicado de cambio obliga a recordar el valor anterior, que es
+   precisamente la memoria que ese § no quiere que nadie guarde.
+3. **Y es lo que vuelve legítimas las escrituras que ya existen.** Con el predicado de cambio, la
+   relectura de `PB4`/`PB5` **no es ninguno de los cuatro hechos** —en el momento de archivar
+   `cubierto` no cambia, ya vale verdadero— y `G-R6-B` mitad *(a)* se pondría en rojo **sobre la
+   red y no sobre el defecto**, con lo que la salida obvia del que lo vea es sacar la relectura y
+   reabrir el borrado que `DEC-DATA-002` cerró.
+
+> ⚠️ **Y esto NO toca el evento de `PB3` ni el de `PB7`, que siguen siendo un CAMBIO.** Una
+> transición se dispara por un cambio —es lo que la hace una transición— y las dos lo dicen así en
+> `V/03` §9. Lo que se separa acá es que **la misma frase estaba nombrando dos cosas distintas**: el
+> evento de una máquina, que ocurre una vez y en un instante, y el hecho de un reloj, que cualquiera
+> que actúe sobre él tiene que poder comprobar **en el momento de actuar**, las veces que haga falta.
+
+**Y la lista enumera HECHOS, no ejecutores, que es lo que hace bien definida a la mitad *(a)* de
+`G-R6-B`.** El guard rechaza *«una escritura que no sea uno de los cuatro hechos»*: la pregunta que
+contesta es **de cuál de los cuatro es** la escritura, nunca **quién** la hizo. Un hecho puede tener
+más de un ejecutor sin que la lista crezca —el 2 los tiene— y por eso el guard **no** cuenta
+escritores: cuenta hechos. *(El propio `V/20` §2 ya declara que ninguno de los dos guards verifica
+que los cuatro hechos tengan quien los ejecute; eso es una comprobación distinta y sigue sin
+hacerse.)*
 
 **El hecho 2 se lee de la CONSULTA y nunca del aviso, y ésa es la diferencia entre reiniciar el
 reloj y creerle a un mensaje.** El §3 del contrato lo prohíbe con todas las letras —*«el evento no

@@ -592,7 +592,8 @@ Es lo único que billing le **empuja** a verticales. Lleva qué fuente cambió y
 alimenta **tres** cosas que ya existen en el diseño: la transición `PB2` de publicación, la lista de
 invalidación del caché (cap. 02 §3.2) —que es la **misma lista** que dispara el reconciliador de
 excedentes (cap. 15 §4.2), *«una lista, dos consumidores»*— y **el reloj de inactividad**, cuyo
-hecho 2 es *«`cubierto` pasa a verdadero»* (`NUCLEO/01` §1.2).
+hecho 2 es *«la cobertura se comprueba verdadera»* (`NUCLEO/01` §1.2) — un estado leído, no un
+cambio detectado, a diferencia del **evento** de `PB2`, `PB3` y `PB7`, que sí es un cambio.
 
 **El evento no reemplaza la consulta.** El reconciliador *«no se dispara por evento: se dispara
 por condición»* (cap. 15 §4.2): el aviso dice que hay que recalcular, y el recálculo vuelve a

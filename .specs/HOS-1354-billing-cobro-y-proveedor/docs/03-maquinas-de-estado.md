@@ -442,8 +442,8 @@ mitad más cara de una garantía: el contenido publicable de la ficha de quien p
 
 **El desenlace que la ausencia dejaba, recorrido:** el día 120 nuestro reloj manda el `PUT` y no
 se aplica. La fila se queda `PAUSED`, `cubierto` sigue falso, el reloj de inactividad de
-verticales **no se reinicia** —su único hecho aplicable acá es `cubierto` pasando a verdadero
-(`NUCLEO/01` §1.2, hecho 2)— y sigue corriendo hacia el día 180, que borra el contenido
+verticales **no se reinicia** —su único hecho aplicable acá es la cobertura comprobada verdadera
+(`NUCLEO/01` §1.2, hecho 2), y acá se comprueba falsa— y sigue corriendo hacia el día 180, que borra el contenido
 (`V/02` §4.1). **El cliente queda sin servicio y sin cobro desde el día 120**, y a nadie le llega
 nada que lo nombre.
 

@@ -397,8 +397,9 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 
 **Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una
 frase de esta tabla: cap. 01 §1.2 la define y enumera **los cuatro hechos que la reinician**. El
-que más importa acá es el segundo —**`cubierto` pasando a verdadero**—, porque es el que impide
-que el día 180 alcance a alguien que volvió.
+que más importa acá es el segundo —**la cobertura comprobada verdadera**, un estado leído y no un
+cambio detectado (cap. 01 §1.2)—, porque es el que impide que el día 180 alcance a alguien que
+volvió.
 
 **Y se cuentan sobre una columna, no sobre una derivación: `listing.inactiva_desde`** (§2.5). El
 día 90 es `inactiva_desde + 90` y el 180 es `inactiva_desde + 180`; **el trabajo que hace el reloj
@@ -452,10 +453,11 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    hard delete del día 180 se defiende con las dos salidas, y para el sujeto del borrado las dos
    tienen que ser alcanzables, no sólo estar escritas.**
 4. **La vuelta reinicia el reloj, y el reinicio cuelga del hecho, no de la transición.** Lo que
-   reinicia la inactividad es **`cubierto` pasando a verdadero** (cap. 01 §1.2, hecho 2), aunque
-   `PB7` no llegue a disparar porque el cupo no alcanza. Sin esta regla, el que reanuda con un
-   plan más chico se queda con la ficha archivada **y con el reloj del día 180 corriendo**, que es
-   el mismo desenlace que la regla 3 viene a evitar.
+   reinicia la inactividad es **la cobertura comprobada verdadera** (cap. 01 §1.2, hecho 2) —un
+   estado leído, no un cambio detectado—, aunque `PB7` no llegue a disparar porque el cupo no
+   alcanza. Sin esta regla, el que reanuda con un plan más chico se queda con la ficha archivada
+   **y con el reloj del día 180 corriendo**, que es el mismo desenlace que la regla 3 viene a
+   evitar.
 
    **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en dos momentos, no en
    uno**: cuando el recálculo que el aviso despierta vuelve a preguntar y trae `cubierto`

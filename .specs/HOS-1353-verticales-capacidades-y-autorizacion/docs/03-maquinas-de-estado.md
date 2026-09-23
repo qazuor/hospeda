@@ -431,9 +431,10 @@ pedírselo a nadie. Una columna denormalizada es libertad de implementación, nu
 fuente.
 
 **Las dos reinician el reloj, y `PB7` ni siquiera hace falta que dispare para que se reinicie.**
-El hecho que reinicia la inactividad es **`cubierto` pasando a verdadero** (cap. 01 §1.2, núcleo,
-hecho 2), no la transición: si el cupo no alcanza y la ficha se queda abajo, el reloj se reinicia
-igual. Atarlo a `PB7` habría dejado el borrado vivo justo para el que vuelve con un plan más
+El hecho que reinicia la inactividad es **la cobertura comprobada verdadera** (cap. 01 §1.2,
+núcleo, hecho 2) —un estado leído, no un cambio detectado, que es por lo que cualquiera que actúe
+sobre el reloj lo puede comprobar en el momento de actuar—, no la transición: si el cupo no alcanza
+y la ficha se queda abajo, el reloj se reinicia igual. Atarlo a `PB7` habría dejado el borrado vivo justo para el que vuelve con un plan más
 chico.
 
 **Qué queda del caso de la pausa, medido y no estimado.** El reloj **no se detiene** durante la
