@@ -85,7 +85,7 @@ predicado de `G-R6` · *«quinto escritor»*.
 construidos con `fd -e md` sobre los tres directorios quitando los informes de fase (`14-…` a
 `23-…`), el PDR, las probes, **el decision log y la matriz** (que el alcance de `DEC-METH-011`
 excluye por definición y que las reglas duras prohíben tocar). Con y sin backticks, **incluidos los
-nueve archivos que la familia toca**.
+once archivos del corpus que la familia toca**, contados con `git diff --name-only`.
 
 **Medido sobre el árbol en `93eb0a1dc`**: **320** líneas con al menos una aparición, repartidas en
 **187** párrafos; **55** los tocaron los commits de la familia, **132** no, y son los que van abajo.
