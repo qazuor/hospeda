@@ -243,6 +243,21 @@ contenido, 16 sin título y 1 sin tipo; 25 están sin proyecto y 24 pertenecen a
 `hospeda`. Esas cifras sí corresponden a la curación de memoria pendiente y no
 deben confundirse con el backlog de replay Cloud.
 
+## Lote A actual para revisión humana
+
+Al abrir Engram v2, la intersección entre esos criterios produjo **49 filas
+únicas** (32 sólo sin contenido, 15 sólo sin título, una sólo sin tipo y una
+sin contenido ni título). Todas están activas y tienen sesión asociada; 25 no
+tienen proyecto y 24 pertenecen a `hospeda`. Se generó un inventario temporal
+con IDs y metadatos, sin títulos ni contenidos:
+`/tmp/engram-current-incomplete-20260923.csv`.
+
+Las decisiones humanas previas del lote A siguen registradas en la copia de
+revisión de septiembre. No se aplicaron a la DB activa después del upgrade; la
+próxima acción correcta es reconstruir una copia v2, revalidar esas decisiones
+por ID y ejecutar cualquier soft-delete o ajuste sólo sobre la copia antes de
+considerar importarlo.
+
 ## Pines versionados alineados
 
 El bootstrap reproducible quedó alineado con el runtime activo: OpenCode
