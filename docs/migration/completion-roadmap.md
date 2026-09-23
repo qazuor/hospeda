@@ -21,8 +21,11 @@ pruebas que requieren infraestructura o trabajo posterior a la adopción.
 6. Aprobar la decisión `.specs` + Linear con Gentle SDD sólo selectivo; no
    migrar masivamente mientras no haya evidencia de beneficio.
 7. Endurecer permisos y pre-commit; definir allow/ask/deny.
-8. Terminar el comando de artifacts desde lenguaje natural y verificar que el
-   agente lea el estado interactivo.
+8. El flujo de artifacts desde lenguaje natural ya está definido en la skill
+   `visual-artifact` y en `/hops-artifact-create`: el agente investiga, produce
+   `artifact/v1`, valida secretos y composición, y el renderer genera el HTML.
+   Falta una prueba conversacional end-to-end con el agente y una fuente real
+   como Linear antes de marcarlo como cierre definitivo.
 9. Ejecutar los gates integrales y el rollback drill.
 
 ## Puede esperar sin bloquear el uso diario
