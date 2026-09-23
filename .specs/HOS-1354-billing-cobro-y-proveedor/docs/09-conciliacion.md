@@ -448,9 +448,9 @@ rama de fallo de `S10` no escribe ninguna de las dos. Si `S25` corriera sin escr
 > produce. Su desenlace es la marca —una persona—, nunca una reanudación automática a ciegas.
 
 **Y una sexta, que tampoco le pregunta nada al proveedor: la cortesía diferida que nadie
-re-emitió.** Si hay un `courtesy_grant` con **`saldo_días` no nulo** —o sea **diferido**, `B/02`
-§2.4 y `NUCLEO/01` §2.6— y **ya existe la fila que tenía que recibirlo, en `ACTIVE`**, `S9` no
-corrió: se abre la **marca**
+re-emitió.** Si hay un `courtesy_grant` con **`saldo_días` no nulo y `saldo_cerrado_en` nulo** —o
+sea **diferido**, `B/02` §2.4 y `NUCLEO/01` §2.6— y **ya existe la fila que tenía que recibirlo, en
+`ACTIVE`**, `S9` no corrió: se abre la **marca**
 con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía y las dos
 suscripciones están todas en nuestra base— y cubre el único estado que
 `DEC-GRANT-007` puede dejar colgado: **la fila nueva cobra el precio entero por días que
@@ -485,13 +485,19 @@ listado accionable. **El saldo queda diferido y declarado**, con su pregunta al 
 > entra por su propia marca, `COBRO_DURANTE_CORTESÍA`, que es el riesgo que `DEC-GRANT-007` aceptó
 > por escrito.
 >
-> **Y el caso en que la sucesora NO llega a `ACTIVE` no es de esta comprobación.** Si abandona el
-> checkout, `S3` la manda a `ABANDONED` y la cortesía queda diferida sin ninguna suscripción a la
-> que volver — **el beneficiario ya no tiene ninguna fila viva en esa vertical**, así que no hay
-> obligación de pago que no cobrar, que es la razón exacta con que `DEC-GRANT-004` (2) bloquea
-> otorgar una cortesía sobre una pausa. **Qué se hace con ese saldo —se cierra, o espera a que la
-> persona se suscriba de nuevo— no está decidido**, y no se decide acá: queda como pregunta al
-> owner.
+> **Y el caso en que la sucesora NO llega a `ACTIVE` no es de esta comprobación, y desde
+> `DEC-GRANT-011` tampoco es un caso abierto.** Si abandona el checkout, `S3` la manda a
+> `ABANDONED` y el beneficiario **ya no tiene ninguna fila viva en esa vertical**, así que no hay
+> obligación de pago que no cobrar —la razón exacta con que `DEC-GRANT-004` (2) bloquea otorgar una
+> cortesía sobre una pausa—. **Ese saldo se CIERRA en la misma transición que manda la fila a
+> `ABANDONED`** (`S3`, `B/03` §3.2), con `saldo_cerrado_en` y su `motivo_cierre`, y quien vuelva a
+> suscribirse no recupera esos días (`DEC-GRANT-011`, owner, 2026-09-23). **Esta comprobación no lo
+> ve y no tiene que verlo**: el saldo cerrado deja de ser *«cortesía diferida»* (`NUCLEO/01` §2.6),
+> que es el término del que sale su población. **Lo que este § declaraba abierto era exactamente
+> eso**, y la decisión eligió cerrar antes que esperar, porque un saldo esperando es *«un
+> instrumento abierto sin fecha de cierre»* —la forma que `B/16` §1.3 rechaza por escrito— y esta
+> comprobación, que es la única que mira una cortesía, **exige que la fila receptora ya exista en
+> `ACTIVE`**, así que no lo levantaría nunca.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.
