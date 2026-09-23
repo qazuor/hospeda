@@ -215,9 +215,18 @@ FASE 10, y por tres razones:
 
 **Lo que con esto NO verifica, dicho para que nadie lo lea de más**: que el escritor declarado esté
 **implementado**. Una condición cuya escritura vive en una tabla que todavía es sólo un capítulo
-**pasa en verde**, y eso es deliberado — la clase *«lo declarado no está construido»* es otra, no la
-vigila este guard y **no la vigila ninguno**. Es el §2.1 sobre este mismo guard: el texto con que
+**pasa en verde**, y eso es deliberado — la clase *«lo declarado no está construido»* es otra y **no
+la vigila ningún guard de este catálogo**. Es el §2.1 sobre este mismo guard: el texto con que
 falla no puede afirmar más de lo que el predicado verifica.
+
+**Y esa clase dejó de estar sin vigilancia, aunque siga sin guard** (`DEC-TEST-002`). No se resolvió
+con un guard nuevo porque uno que compare escritores **declarados** contra **implementados** sólo
+puede correr cuando exista el código, o sea FASE 10 en adelante: hasta entonces no vigila nada. Se
+resolvió con un **criterio de terminación** —*«una unidad no está terminada mientras alguna
+escritura que sus capítulos le declaran a una de sus transiciones no esté implementada»*,
+`descomposicion.md` §4—, que actúa **cuando la unidad se declara lista** y no cuando alguien lee un
+dato vacío en producción. **Lo que este guard verifica no cambia**, y el párrafo de arriba sigue
+diciendo exactamente lo que su predicado hace.
 
 **Y su dominio son las NUEVE máquinas de las dos épicas, no las seis tablas de ésta.** Nació
 acotado a billing porque el crítico que lo motivó era de billing y nadie planteó la extensión; la
@@ -245,8 +254,11 @@ las dos direcciones, que es lo que esta pasada le agregó**: la *(b)* rechaza un
 inventario no nombra, y la *(c)* rechaza que uno de los **cinco declarados** haya dejado de leer —
 el día que el hard delete del día 180 deje de leer la columna, el guard seguía verde y la lista
 seguía diciendo que ese lector está ahí—. Para **escritores** la dirección simétrica sigue
-rechazada, y con la razón de siempre: comprobar que un hecho tenga quien lo ejecute pide una
-declaración, y un guard estático sólo puede comprobar que esté. **La razón entera, con sus
+rechazada **como guard**, y con la razón de siempre: comprobar que un hecho tenga quien lo ejecute
+pide una declaración, y un guard estático sólo puede comprobar que esté. **Lo que la vigila desde
+`DEC-TEST-002` no es un guard sino un criterio de terminación** (`descomposicion.md` §4), y por eso
+la objeción no lo alcanza: lo contesta una persona al declarar lista la unidad, con el código
+delante. **La razón entera, con sus
 tres casos que lo hacen fallar a propósito —uno por predicado— y lo que sigue sin verificar, está escrita
 en `V/20` §2**, que es donde vive la columna; acá alcanza con decir por qué figura en este catálogo:
 **lo que puede romper la lista se escribe de este lado** —el cap. 10 §4.3 y el cap. 03 §7.1—, y un
