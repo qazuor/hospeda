@@ -63,3 +63,23 @@ No se aplica esta matriz todavía: el cambio global debe hacerse con backup,
 una sesión de prueba y rollback. El motivo es evitar que un ajuste de
 permisos interrumpa `hops`, Gentle o el flujo de worktrees antes de verificar
 la precedencia efectiva de las reglas en OpenCode V1.
+
+## Revalidación efectiva de agentes — 2026-09-23
+
+La configuración activa sigue usando el permiso global `bash: "*": "allow"`
+con excepciones `ask` para Git mutante y transporte remoto. Las reglas de
+lectura sensible continúan bloqueando `.env*`, `.ssh`, credenciales, secretos y
+claves privadas.
+
+Se verificó además la separación de agentes: `explore`, `jd-judge-a`,
+`jd-judge-b` y `review-refuter` no pueden ejecutar shell ni escribir; los
+agentes de review por riesgo tienen permiso global denegado; `review-validator`
+permite únicamente `gentle-ai review inspect-candidate` y mantiene edición,
+write y task bloqueados. `gentle-orchestrator` sólo puede lanzar los agentes
+explicitamente enumerados.
+
+Conclusión: la segmentación de subagentes es adecuada, pero el comodín global
+de Bash sigue siendo demasiado amplio para cerrar la migración. El próximo
+cambio seguro es probar una copia de configuración con default `ask` y una
+allowlist mínima de diagnósticos, conservando rollback. No se modificó aún la
+configuración activa ni se ejecutaron operaciones mutantes para probarla.
