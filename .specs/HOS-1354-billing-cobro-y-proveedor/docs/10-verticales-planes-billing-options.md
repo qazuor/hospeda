@@ -213,6 +213,24 @@ del dueño y con el aviso de archivado, día 180 hard delete de lo eliminable.
 de una vertical discontinuada es el cuarto de los hechos que reinician la inactividad
 (`NUCLEO/01` §1.2). Contar su ausencia desde antes lo castigaría por una decisión nuestra.
 
+**Y lo ejecuta este barrido, que es la parte que faltaba decir.** *«Arranca el reloj»* era una
+afirmación sobre el reloj y no el efecto de nada: el hecho 4 tenía **de dónde leerse**
+—`vertical.fin_de_servicio` (`V/02` §2.1)— y **no tenía quién lo escribiera** en ninguna de las dos
+épicas. Así que el barrido de este día, además de despublicar y de consumar las bajas, **le escribe
+`listing.inactiva_desde` a cada ficha de la vertical** con el instante del fin de servicio
+(`V/02` §2.5). Tres precisiones, porque cada una tapa una lectura que sale mal:
+
+1. **La escritura es del barrido, no de `PB2`.** `PB2` es una transición de publicación, y
+   **`PB2` escribiendo esta columna es el caso con el que `V/20` §2 manda probar `G-R6-B` en rojo**.
+   Los dos actos corren el mismo día y sobre las mismas fichas, y son actos distintos.
+2. **Y no es un escritor de más.** Es el **hecho 4** de la lista cerrada del `NUCLEO/01` §1.2, así
+   que `G-R6-B` mitad *(a)* lo acepta por la lista: lo que esa lista cierra son los hechos, y cada
+   hecho puede tener su ejecutor.
+3. **Sin ella el borrado se adelanta hasta 90 días.** Entre dos evaluaciones de `PB4` hay 90 días,
+   así que la fecha que la columna trae al llegar este día puede tener esa antigüedad: el hard
+   delete caería en `fin_de_servicio + 90` en vez de en `+ 180`, sobre una población a la que **los
+   tres avisos de `DEC-MP-002` le dijeron cómo exportar** y hasta cuándo.
+
 ### 4.4 Por qué esa fórmula y no un prorrateo
 
 **El piso de 60 días** es el de `DEC-MP-002`. Perder el servicio entero es estrictamente peor

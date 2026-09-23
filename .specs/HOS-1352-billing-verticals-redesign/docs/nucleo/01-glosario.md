@@ -54,7 +54,7 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | 1 | un **acto del dueño** sobre la ficha: crearla, editarla, publicarla, despublicarla, exportarla, reactivarla | el registro append-only de eventos de dominio (cap. 08 §1.3), que ya los guarda todos por el criterio 2 del §1.1 | alguien la está usando, que es lo contrario de estar inactiva |
 | 2 | **la cobertura se comprueba verdadera** — un ESTADO leído, nunca un cambio detectado | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | estar cubierto **es** no estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
-| 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
+| 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale. **Lo ejecuta el barrido del día del fin de servicio** (`B/10` §4.3), que es un **camino de servicio** y no una transición | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
 
 **Que la lista sea cerrada lo verifica un guard, `G-R6-B` (`V/20` §2), y no la memoria del que
 escribe.** Una escritura de `listing.inactiva_desde` que no sea uno de estos cuatro lo pone en
@@ -126,6 +126,17 @@ lo que `PB4` archiva lo recupera `PB8`, y lo que el día 180 borra no lo recuper
 lugares dicen ahora lo mismo. **Y la relectura que trae la cobertura verdadera no es un escritor
 intruso**: escribe el **hecho 2**, del que es uno de sus tres ejecutores, así que `G-R6-B` mitad
 *(a)* la acepta por la lista y no por una excepción.
+
+**Y el hecho 4 ya tiene ejecutor declarado, que hasta esta pasada no lo tenía en ninguna de las dos
+épicas.** Tener **de dónde leerse** y tener **quién lo escriba** son dos cosas distintas, y el 4
+tenía la primera —`vertical.fin_de_servicio`— y no la segunda: `B/10` §4.3 describía el día
+(*«arranca el reloj de retención del §25»*, *«y arranca acá, no antes»*) como una afirmación sobre
+el reloj, sin ser el efecto de ninguna fila ni de ningún barrido nombrado. Lo único que corre ese
+día es `PB2`, y **`PB2` escribiendo esta columna es exactamente el caso con que `V/20` §2 manda
+probar `G-R6-B` en rojo**, así que no podía ser. Sin ejecutor, el hard delete caía sobre la fecha
+vieja —**hasta 90 días antes** de la que los tres avisos de la discontinuación le prometieron al
+cliente—. Lo escribe **el barrido del día del fin de servicio** (`B/10` §4.3), sobre las fichas de
+la vertical, en el mismo acto en que `PB2` las despublica y **como escritura suya, no de `PB2`**.
 
 **Los otros tres hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
 append-only de eventos de dominio (cap. 08 §1.3), el 3 de la propia máquina de publicación y el 4
