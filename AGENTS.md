@@ -28,7 +28,7 @@
 
 - Linear es la fuente de verdad operativa para el trabajo desde julio de 2026. Conservá la trazabilidad entre `HOS-NNN`, branch, worktree, spec y cierre.
 - Diferenciá `HOS-NNN` (specs de Hospeda) de `BETA-NNN` (feedback); no infieras el equipo por la palabra “issue”.
-- Los PR destinados a `staging` deben llevar el work tag correspondiente (`[HOS-NNN]` o `[NOSPEC:slug]`) y pasar CI antes del merge.
+- Los PR normales se destinan a `develop`; los PR directos a `staging` requieren una intención urgente explícita. Todos deben llevar el work tag correspondiente (`[HOS-NNN]` o `[NOSPEC:slug]`) y pasar CI antes del merge.
 - El flujo `hops` y los scripts de `scripts/client-tools` automatizan worktrees, variables, puertos, bases y limpieza. Reutilizalos antes de iniciar procesos manualmente.
 - Antes de `start-issue`, `close-issue` o crear un worktree, consultá `hops env --drift --json`. Si devuelve `missing`, `obsolete`, `needsValue` o `mismatched`, detené la operación y reportá sólo nombres y estados; pedí al humano los valores que requieran secreto.
 - `hospeda-staging` es la fuente fija de tooling y entorno local. `hops update` debe ejecutarse al comenzar una sesión o cuando el preflight indique que el checkout está atrasado.

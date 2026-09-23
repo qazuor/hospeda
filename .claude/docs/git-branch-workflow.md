@@ -6,11 +6,12 @@
 
 Every change follows this 6-step flow:
 
-1. **Cut a worktree/branch from `staging`** (NOT from `main`).
+1. **Cut a worktree/branch from `develop`** by default (NOT from `main`). Use
+   `--base staging` only for an explicitly urgent path.
 2. Make changes in that branch.
 3. Leave everything green on that branch (typecheck + lint + tests).
-4. Open a PR.
-5. Merge the PR into `staging`.
+4. Open a PR to `develop` by default.
+5. Promote `develop` into `staging` only after the requested integration gate.
 6. Only AFTER the change has been observed in `staging` for a while AND the user explicitly says so, merge `staging` into `main`.
 
 ## The Branches
@@ -18,20 +19,21 @@ Every change follows this 6-step flow:
 | Branch | Purpose | Who merges here |
 |--------|---------|-----------------|
 | `main` | Production-equivalent baseline. Stable. | Only `staging` → `main`, on user instruction |
-| `staging` | Integration line. CI green at all times. | All feature/fix branches via PR |
-| `feature/*`, `fix/*`, `spec/SPEC-NNN-*`, etc. | Branched from `staging`. One change per branch. | N/A (this is where work happens) |
+| `staging` | Promotion and urgent integration line. | `develop` → `staging`, or an explicitly urgent PR |
+| `develop` | Default integration line for completed issues. | Feature/fix branches via PR |
+| `feature/*`, `fix/*`, `spec/SPEC-NNN-*`, etc. | Branched from `develop` by default. | N/A (this is where work happens) |
 
 `main` is NOT the integration target. Treat it as "what production should look like once we've validated it in staging".
 
 ## The 6-Step Flow (Detailed)
 
-### 1. Cut the branch from `staging`
+### 1. Cut the branch from `develop`
 
 Always start from a fresh `staging`:
 
 ```bash
-git checkout staging
-git pull origin staging
+git checkout develop
+git pull origin develop
 
 # Branch naming follows conventional commits prefix:
 # feat/<slug>, fix/<slug>, refactor/<slug>, chore/<slug>, docs/<slug>, test/<slug>, ci/<slug>
@@ -68,9 +70,10 @@ If you touched DB schema, also: `pnpm db:fresh-dev` and run the relevant integra
 gh pr create --base staging --title "..." --body "..."
 ```
 
-PR target is ALWAYS `staging`, never `main`.
+PR target is `develop` by default. A direct `staging` target requires an urgent
+intent; `main` is reserved for promotion or hotfixes.
 
-### 5. Merge to `staging`
+### 5. Promote through `staging`
 
 After review + CI green:
 
@@ -131,23 +134,24 @@ This is the ONLY case where a branch is cut from `main` directly. Document the r
 
 ## Worktree Policy Interaction
 
-This workflow supersedes the "ask first" worktree policy for formal specs (which already default to worktree-on). For non-spec work, the global "ask first" rule from `AGENTS.md` still applies — but when a worktree IS created, the base branch is `staging`, not `main`.
+This workflow supersedes the "ask first" worktree policy for formal specs (which already default to worktree-on). For non-spec work, the global "ask first" rule from `AGENTS.md` still applies — but when a worktree IS created, the base branch is `develop`, not `main`.
 
 ## Why This Workflow
 
-- **`staging` is the integration line**: it absorbs the noise of integration (merge conflicts, accidental regressions) without dragging `main` along.
+- **`develop` is the default integration line**: it absorbs normal issue work before a deliberate promotion to `staging`.
+- **`staging` is the promotion and urgent line**: it can receive a deliberate bypass without dragging `main` along.
 - **`main` represents validated state**: anything in `main` has soaked in `staging` first.
 - **Hotfix path stays clean**: when production breaks, the fix goes to `main` first and is back-merged.
-- **Worktree-from-staging means feature branches diverge LESS**: when you branch from `staging` (which already has recent integration), your branch is closer to its merge target than if you branched from a stale `main`.
+- **Worktree-from-develop keeps normal work aligned**: the branch starts from the default integration line.
 
 ## Anti-Patterns
 
-- ❌ Branching `feature/*` from `main` — always branch from `staging`.
-- ❌ Opening PRs targeting `main` — always target `staging`.
+- ❌ Branching `feature/*` from `main` — always branch from `develop` unless explicitly urgent.
+- ❌ Opening ordinary PRs targeting `main` — target `develop`; use `staging` only for a documented bypass.
 - ❌ Auto-merging `staging` → `main` after every PR — wait for user signal.
-- ❌ Force-pushing to `main` or `staging` — both are protected by policy.
+- ❌ Force-pushing to `main`, `staging` or `develop`.
 - ❌ Skipping the green check before PR — CI will fail and waste cycles.
-- ❌ Cutting hotfixes from `staging` — hotfixes go from `main` and back-merge.
+- ❌ Cutting hotfixes from `staging` — hotfixes go from `main` and back-merge through `staging` and `develop`.
 
 ## See Also
 
