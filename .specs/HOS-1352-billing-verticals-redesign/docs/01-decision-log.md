@@ -4098,7 +4098,11 @@ Cada entrada lleva, según §3.4:
 - **Lo que cuesta, dicho en voz alta**: al beneficiario se le pierden días que **`SUPER_ADMIN` le
   firmó**, y el abandono puede ser un error de checkout —una pestaña que se cierra, un pago que se
   cae— y no una decisión. **Se acepta**: quien firmó la cortesía puede volver a otorgarla, que es
-  un acto que ya existe (`S13`) y no necesita mecanismo nuevo.
+  un acto que ya existe —el **primer disparador de `S9`**, *«`SUPER_ADMIN` otorga cortesía»*— y no
+  necesita mecanismo nuevo.
+  > **Corregido el 2026-09-23**: esta línea decía `S13`, que es el acto de otorgar un **`Free
+  > Forever`** y no una cortesía. Lo detectó la familia 4 de la 9-bis-5 y lo verifiqué contra
+  > `B/03` §3.2. **El argumento no cambia** —el acto existe igual—, sólo la referencia era falsa.
 - **Las dos alternativas, y por qué no**:
   - **Dejar el saldo esperando** a que la persona se suscriba de nuevo: **es la forma que `B/16`
     §1.3 rechaza por escrito** —*«un instrumento abierto sin fecha de cierre»*— y hoy **ninguna
