@@ -169,7 +169,7 @@ que no son éste:
 | **abrir** la marca —con motivo **`COMPLEMENTO_CON_PERÍODO_COBRADO`** y el pago colgado— sobre la **suscripción de complemento** que muere con un período cobrado **sin terminar** | **`S21`**, en el mismo acto en que la lleva a `CANCELLED` | `B/03` §3.2, `B/02` §2.5 **motivo 14**, `B/16` §4.4, `DEC-ADDON-004` |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
 | **re-emitir una cortesía DIFERIDA** sobre la fila que acaba de autorizar — **la sucesora** de un cambio de plan, o **el alta nueva** de quien perdió su plan porque se discontinuó su vertical | **`S9`**, por su segundo disparador y por el **tercero** — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila, **por ninguno de los dos caminos** | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4 y §4.6, `DEC-GRANT-007`, `DEC-GRANT-010` |
-| **CERRAR el saldo de una cortesía diferida** cuya sucesora abandonó el checkout, con `saldo_cerrado_en` y su `motivo_cierre` | **`S3`**, en el mismo acto en que la manda a `ABANDONED` — **no hay persona en el camino, y por eso el motivo es una enumeración cerrada y no el texto libre de `DEC-GRANT-008`** | `B/03` §3.2, `B/02` §2.4, `DEC-GRANT-011` |
+| **CERRAR el saldo de una cortesía diferida**, con `saldo_cerrado_en` y su `motivo_cierre` | **`S3`** cuando la sucesora abandonó el checkout, y **`S13`** cuando un grant pasa a cubrir esa vertical — **son los dos valores de la enumeración cerrada** (`B/02` §2.4), y es cerrada y no el texto libre de `DEC-GRANT-008` porque **no hay una persona escribiendo el motivo** | `B/03` §3.2, `B/02` §2.4, `B/14` §4.3, `DEC-GRANT-011` |
 
 Las **cinco** son actos **de sistema**, no de admin, y por eso no suman filas —el renglón decía
 *«las dos»*, la tabla ya tenía tres cuando `DEC-GRANT-010` sumó la re-emisión, pasó a cuatro con la
@@ -180,7 +180,7 @@ su motivo — el registro de auditoría dice qué acto ocurrió y cuándo, y **a
 preguntarle por qué**. **Ninguna de las dos que abren una marca es `S14`**: su
 evento es *«divergencia que toca plata o estado»*, y ni el pago que `S19` retiene ni el período del
 complemento que muere son divergencias — los dos son casos **diseñados**, y `S19` lo declara por
-escrito. La tercera es un job, la cuarta es un efecto de `S9` y la quinta, uno de `S3`. Lo que sí es de esta
+escrito. La tercera es un job, la cuarta es un efecto de `S9` y la quinta, uno de `S3` y de `S13`. Lo que sí es de esta
 tabla son los dos actos con que una persona **cierra** el caso: **reembolsar** y **levantar la
 marca**, cada uno con su fila, su permiso y su confirmación. Sin las dos mitades de arriba, esas
 dos filas describen un trámite que nadie empieza.
@@ -193,8 +193,10 @@ dos filas describen un trámite que nadie empieza.
 
    **Las tres escrituras sobre un grant tienen cada una su frase, y ninguna se deduce de la otra**:
    otorgar y anclar **cancelan la suscripción que el beneficiario paga** en cada vertical
-   alcanzada (`S13`) y **terminan la cortesía que tuviera vigente ahí** (`B/14` §4.3) — el estado
-   en el proveedor pasa a `cancelled` y el cliente recibe el correo del proveedor por su cuenta
+   alcanzada (`S13`), **terminan la cortesía que tuviera vigente ahí** y **cierran el saldo de una
+   cortesía DIFERIDA que estuviera esperando ahí** —días que `SUPER_ADMIN` firmó y que todavía no
+   se entregaron, así que la frase los nombra con su número (`B/14` §4.3, `B/02` §2.4)—. Y el estado
+   en el proveedor pasa a `cancelled`, así que el cliente recibe el correo del proveedor por su cuenta
    (`EX-3`)—; revocar corta el servicio. Quien ancla una vertical tiene que leer, antes de
    firmar, **qué cobro deja de ocurrir**, porque ése es el acto que hoy nadie ve: el grant ya
    existía y la pantalla parece decir que sólo se agrega algo.

@@ -253,6 +253,51 @@ toca nadie**: el acto alcanza una vertical, no la cartera. Se dice acá porque *
 se lee como el único momento en que un grant empieza a cubrir, y desde que el scope es el conjunto
 de anclas **son dos**.
 
+#### Y sobre una cortesía DIFERIDA no hay suscripción que cancelar: lo que se cierra es el SALDO
+
+**La regla de arriba cuantifica sobre *«cortesía vigente»*, y desde `DEC-GRANT-007` existe una que
+no lo es.** Una **cortesía diferida** —`saldo_días` no nulo y sin cerrar, `NUCLEO/01` §2.6— no
+pausa nada: su suscripción está `CANCELLED` y **no emite ninguna fuente**. Así que el mecanismo que
+la frase de arriba nombra —*«termina porque `S13` cancela esa suscripción»*— **no tiene sujeto**:
+la suscripción que la pausaba ya está muerta, y la que iba a recibir el saldo todavía no existe o
+`S13` la acaba de cancelar junto con las demás. **No es una elección entre políticas: es una regla
+cuyo sujeto no existe**, sobre una población que `DEC-GRANT-007` creó el mismo día.
+
+**Qué pasa entonces, y la respuesta sale de recorrer los dos caminos de re-emisión, no de
+preferir.** `S9` sólo puede re-emitir un saldo por **dos** rutas (`B/03` §3.2): la del segundo
+disparador —la cortesía apunta a una fila cuyo `sucedida_por` es **esta**— y la del tercero —la
+fila que apunta murió **por `S25`** y el beneficiario tiene otra en `ACTIVE` en la misma vertical—.
+Si el saldo **sobreviviera** al grant, después de `S13` **ninguna de las dos vuelve a matchear
+nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13`, y la predecesora no murió por
+`S25`. Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía
+que recibirlo»* con esas mismas dos preguntas. El saldo quedaría **sin dueño, sin vencimiento y sin
+nadie que lo mire** — palabra por palabra la forma que `DEC-GRANT-011` descartó ese mismo día, y
+que `B/16` §1.3 rechaza por escrito como *«un instrumento abierto sin fecha de cierre»*.
+
+**Entonces el grant CIERRA el saldo, y el cierre se declara.** Se escriben `saldo_cerrado_en` y
+`motivo_cierre = GRANT_PERMANENTE_OTORGADO` (`B/02` §2.4) sobre cada cortesía diferida del
+beneficiario **en una vertical que el acto ancla** —el mismo alcance que `S13`, ni más ni menos— y
+el efecto vive en `S13` porque es la transición que ya recorre ese conjunto (`B/03` §3.2). **Lo
+mismo vale para anclarle una vertical nueva a un grant vivo**, que es el otro momento en que un
+grant empieza a cubrir.
+
+**Por qué esto no le saca nada a nadie, que es la objeción obvia.** Lo que el saldo sostiene son
+días **sin cobrar**, y el grant es *«cancelar toda obligación de pago»* **para siempre** (§35.3):
+mientras el grant viva, esos días no valen nada porque no hay ningún cobro que evitar — es
+exactamente el argumento con que este mismo § prohíbe **otorgar** una cortesía sobre un grant. Y si
+el grant después se revoca, el desenlace es el que `DEC-TRIAL-009` ya fijó para el instrumento
+hermano: **recibir el grant lo consume y la revocación no lo devuelve**, porque durante el grant la
+persona **recibió la cobertura completa**. La diferencia con `DEC-GRANT-010` —donde el saldo sí se
+conserva— es esa y se puede leer al pie: allá **el regalo no empezó a entregarse** y quien lo
+interrumpe somos nosotros retirando un servicio; acá se entregó, y de más.
+
+**Y se declara en los dos lugares donde el acto se mira**: la confirmación de otorgar y la de
+anclar lo dicen antes de firmar (`NUCLEO/08` §3.1, que cubre las dos, y `B/19` §4 fila 13-bis, que
+es la del anclaje), porque quien firma
+tiene que saber que está terminando una concesión de `SUPER_ADMIN` que todavía no se entregó; y
+queda asentado en la fila, que es lo que `DEC-GRANT-008` pide de toda revocación. **Lo que no se
+hace es cerrarlo en silencio**, que es la única lectura de este caso que sería indefendible.
+
 ### 4.4 Cortesía temporal + cambio de plan
 
 **Una cortesía vigente sobrevive al cambio de plan, y NO lo hace re-apuntándose**

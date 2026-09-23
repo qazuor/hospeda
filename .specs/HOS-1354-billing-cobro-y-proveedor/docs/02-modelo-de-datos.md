@@ -456,21 +456,27 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
     diferencia con el grant, que sí necesitó decirlo (`12-contrato…` §2.8): un grant emite por sí
     mismo, una cortesía emite **por la fila que pausa**.
 - **`courtesy_grant.saldo_cerrado_en` y `courtesy_grant.motivo_cierre`** (las dos anulables) —
-  **el saldo diferido tiene un desenlace que no es la re-emisión, y hasta `DEC-GRANT-011` no tenía
-  dónde asentarse.** Si la fila que tenía que recibir el saldo nunca llega a `ACTIVE` —la sucesora
-  abandona el checkout y `S3` la manda a `ABANDONED`—, el saldo se **cierra**: se escribe la fecha
-  y el motivo, y esa cortesía **ya no se re-emite nunca**. `S9` no puede tomarla y la **sexta**
-  comprobación del `B/09` §3 no la levanta, porque las dos leen *«cortesía diferida»* y el término
-  excluye la cerrada (`NUCLEO/01` §2.6).
-  - **`motivo_cierre` es una enumeración CERRADA, y hoy tiene un solo valor**:
-    **`VENTANA_DE_AUTORIZACIÓN_VENCIDA`**, que escribe `S3` (`B/03` §3.2). Misma regla que el
-    catálogo de motivos de la marca (§2.5): **un cerrador nuevo agrega su valor acá en el mismo
-    acto en que se escribe**, y el conteo se recalcula. La enumeración con un miembro no es una
-    puerta vacía: **es la lista de los actos a los que se les permite terminar una concesión que
-    firmó `SUPER_ADMIN`**, y su trabajo principal es decir quién **no** está en ella — por eso
-    `B/14` §4.3 puede afirmar que otorgar un grant **no** cierra un saldo diferido sin que eso
-    dependa de que nadie se equivoque: un cierre desde ahí no tendría motivo que escribir, y
-    `G-R1-F` lo rechaza (`B/20` §2).
+  **el saldo diferido tiene desenlaces que no son la re-emisión, y hasta `DEC-GRANT-011` no tenían
+  dónde asentarse.** Cuando la fila que tenía que recibir el saldo **no va a existir nunca**, el
+  saldo se **cierra**: se escribe la fecha y el motivo, y esa cortesía **ya no se re-emite**. `S9`
+  no puede tomarla y la **sexta** comprobación del `B/09` §3 no la levanta, porque las dos leen
+  *«cortesía diferida»* y el término excluye la cerrada (`NUCLEO/01` §2.6).
+  - **`motivo_cierre` es una enumeración CERRADA y hoy tiene DOS valores**, uno por cada acto que
+    puede cerrar un saldo:
+
+    | `motivo_cierre` | quién lo escribe | cuándo |
+    |---|---|---|
+    | **`VENTANA_DE_AUTORIZACIÓN_VENCIDA`** | **`S3`** (`B/03` §3.2) | la sucesora abandonó el checkout, así que no hay ninguna fila viva en esa vertical a la que volver (`DEC-GRANT-011`) |
+    | **`GRANT_PERMANENTE_OTORGADO`** | **`S13`** (`B/03` §3.2) | un *Free Forever* pasa a cubrir esa vertical —otorgado o con la vertical recién anclada—, así que no queda ningún cobro que la cortesía pueda evitar (`B/14` §4.3) |
+
+    Misma regla que el catálogo de motivos de la marca (§2.5): **un cerrador nuevo agrega su fila
+    acá en el mismo acto en que se escribe**, y el conteo se recalcula, nunca se incrementa. **Lo
+    que la enumeración compra no es el nombre: es que cerrar sea un acto ENUMERADO**, así que un
+    camino que se lleve puesta una concesión de `SUPER_ADMIN` sin estar en esta tabla **no tiene
+    motivo que escribir** y `G-R1-F` lo rechaza (`B/20` §2). Los desenlaces que **no** cierran
+    siguen sin fila acá y esa ausencia se lee: el saldo que difirió `S25` sobre una vertical
+    discontinuada **queda diferido y sin emitir**, declarado y no resuelto (`DEC-GRANT-010`,
+    `B/14` §4.6).
   - **Y por qué cerrada, si `DEC-GRANT-008` eligió texto libre para la revocación de un grant.**
     La razón que esa decisión escribe es que *«son concesiones firmadas a mano por `SUPER_ADMIN`»*,
     o sea que **hay una persona escribiendo el motivo**. Acá no la hay: el que cierra es una

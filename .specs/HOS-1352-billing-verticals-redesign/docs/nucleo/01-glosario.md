@@ -602,14 +602,15 @@ y los tres preguntan lo mismo.
 > sucesión que declarar (`DEC-GRANT-010`, cap. 02 (billing) §2.4).
 >
 > **Y el saldo CERRADO no es una tercera clase de cortesía: es la diferida que ya no va a
-> volver.** `DEC-GRANT-011` le dio desenlace al saldo cuya sucesora abandona el checkout —`S3`
-> escribe `saldo_cerrado_en` y su `motivo_cierre`, cap. 02 (billing) §2.4— y **el término lo deja
-> afuera a propósito**: si *«cortesía diferida»* siguiera siendo *«saldo no nulo»* a secas, los
-> **dos** lugares que leen el término para hacer algo —el segundo disparador de `S9` y la sexta
-> comprobación del barrido— seguirían persiguiendo un saldo que la decisión dio por terminado.
+> volver.** El saldo tiene **dos** cierres —la sucesora que abandona el checkout (`S3`,
+> `DEC-GRANT-011`) y el grant que pasa a cubrir esa vertical (`S13`, cap. 14 (billing) §4.3)—, los
+> dos escriben `saldo_cerrado_en` y su `motivo_cierre` (cap. 02 (billing) §2.4), y **el término los
+> deja afuera a propósito**: si *«cortesía diferida»* siguiera siendo *«saldo no nulo»* a secas,
+> los **dos** lugares que leen el término para hacer algo —el segundo disparador de `S9` y la sexta
+> comprobación del barrido— seguirían persiguiendo un saldo que ya tuvo desenlace.
 > **Se estrecha el término en vez de borrar el `saldo_días`** porque los días cerrados son el
 > registro de qué se perdió, y el aviso que se le manda al beneficiario los nombra
-> (cap. 19 (billing) §4, fila 18).
+> (cap. 19 (billing) §4, fila 18, y en el otro cierre la confirmación del §3.1 de este capítulo).
 
 #### El inventario de consumidores de «cortesía diferida»
 
@@ -626,7 +627,7 @@ no son conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su fil
 | 6 | el **cruce cortesía × cambio de plan** | cap. 14 (billing) §4.4 | es el § que lo explica entero, con su población y su riesgo aceptado |
 | 7 | el **efecto de `S25`** | cap. 03 (billing) §3.2 | **es el SEGUNDO ESCRITOR**: la pausa que no se puede reanudar sobre un plan que ya no se presta difiere la cortesía en vez de perderla (`DEC-GRANT-010`, cap. 14 (billing) §4.6) |
 | 8 | el **tercer disparador de `S9`** | cap. 03 (billing) §3.2 | *«un alta nueva del mismo beneficiario y la misma vertical tiene una cortesía diferida esperándola»* — mismo acto que el 2, distinta forma de llegar a la fila: por beneficiario + vertical, porque ahí no hubo sucesión |
-| 9 | el **cierre del saldo en `S3`** | cap. 03 (billing) §3.2 | **es el ÚNICO que SACA una fila del término**: la sucesora abandonó el checkout, el saldo se cierra y esa cortesía deja de ser diferida (`DEC-GRANT-011`) |
+| 9 | el **cierre del saldo**, en `S3` y en `S13` | cap. 03 (billing) §3.2 | **son los DOS únicos que SACAN una fila del término**: la sucesora abandonó el checkout (`DEC-GRANT-011`) o un grant pasó a cubrir esa vertical (`B/14` §4.3), el saldo se cierra y esa cortesía deja de ser diferida |
 | 10 | la **superficie de «Mi Suscripción»** | cap. 19 (billing) §3 | es el único consumidor que **no** decide nada con el término: lo **muestra** — *«te quedan N días, que empiezan a correr cuando completes el pago»* (`DEC-GRANT-012`) |
 
 ---
