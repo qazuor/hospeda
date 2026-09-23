@@ -269,7 +269,8 @@ define**: *«el corpus»* son **las tablas que los capítulos declaran**, no el 
 construido. `S10` tiene fila en `B/03` §7.2 desde antes de que nadie escriba una línea de `B8`, así
 que entre `B5` y `B8` el guard está **verde**, y el defecto que lo motivó —una columna que **ningún
 lugar del diseño** escribe— lo sigue atrapando entero. Lo que a cambio **no** verifica, y está dicho
-allá, es que el escritor declarado esté implementado.
+allá, es que el escritor declarado esté implementado — **que desde `DEC-TEST-002` lo exige el
+criterio de terminación de su unidad y no un guard** (§4, y el desarrollo en `B/descomposicion` §4).
 
 **Y ninguna de las dos salidas que este § proponía se toma.** *«Que el guard evalúe sobre las
 máquinas existentes en cada momento»* es exactamente la lectura que produce el rojo, y *«que su rojo
