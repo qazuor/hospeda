@@ -4161,13 +4161,53 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-DATA-004 — Se ratifican las tres formas que la tanda eligió sin consultar: la rama de `PB7`, el orden del cupo y la lista de los cinco
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **Por qué esta decisión existe**: la tanda 9-bis-4 tomó tres elecciones de forma y las dejó
+  escritas como preguntas al owner en sus rastros, sin que nadie las registrara. El censo de la
+  FASE 8-bis-5 las levantó (`22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md`, §§ `B2`, `B3`,
+  `H1`). **Las tres se ratifican tal como están escritas**, y esta entrada existe para que la
+  ratificación quede asentada y no vuelvan a abrirse.
+- **`B2` — la segunda rama de `PB7` es la CONDICIÓN de `DEC-DATA-003`, no una extensión.** Queda
+  como está en `V/03` §9. La razón: la mitad `UNPUBLISHED_BY_BILLING` del `desde` de `PB4` **es** la
+  población del excedente, así que sin esa rama la frase de `DEC-DATA-002` —*«vuelve sola por `PB7`
+  y nunca se borra»*— sería falsa justo para ese sujeto. Leerla como extensión costaría **una
+  enmienda registrada a una decisión `ACCEPTED`**, que es una decisión ganando alcance sin que su
+  entrada lo diga — lo que `DEC-METH-011` pide no hacer en silencio.
+- **`B3` — el criterio de orden entre `PB3` y `PB7` queda en «vuelve primero lo que cayó al
+  final»**, con el origen sin desempatar. La razón no es la inercia sino una propiedad verificable
+  que el texto ya declara: ***«el conjunto que queda publicado depende sólo del cupo y no del
+  camino»*** (`V/03` §9). Cualquier otro criterio —antigüedad, elección del dueño, el origen
+  desempatando— cuesta tres lugares (`V/03` §9, `V/15` §4.3 y las filas 8 y 19 de `V/19`) **y pierde
+  esa propiedad**: el resultado pasaría a depender de por cuántos planes pasó el cliente.
+- **`H1` — la lista de los cinco consumidores de `inactiva_desde` queda como está**, con los dos
+  avisos de schedule y la superficie del archivado contados por separado, y con la explicación al
+  lado para que nadie la lea como lista corta y la «arregle». Reescribirla agrupando los tres avisos
+  cuesta tres lugares (`V/02` §2.5, `NUCLEO/01` §1.2 y la referencia cruzada de `B/20` §2) y
+  **`G-R6-B` cuenta exactamente lo mismo**: compra legibilidad, no vigilancia. **Está medido**, no
+  estimado.
+- **El criterio común, escrito para no volver sobre esto**: las tres alternativas descartadas
+  compran legibilidad o encuadre y **ninguna compra una comprobación nueva**; las tres cuestan tres
+  lugares o una enmienda a una decisión cerrada. **Entre dos formas que el guard no distingue, queda
+  la que ya está escrita.**
+- **Lo que esta decisión NO ratifica, y va dicho porque vive al lado**: el defecto `H2` del censo
+  —`G-R6-B` vigila que no haya intrusos pero **no comprueba que sus lectores declarados sigan
+  existiendo**, así que el día que el hard delete deje de leer `inactiva_desde` el guard sigue
+  verde—. Eso **no es una elección de forma**: es un defecto `MEDIA` y lo arregla la tanda.
+- **Origen**: el censo de la FASE 8-bis-5 §§ `B2`, `B3` y `H1` —levantados de `rastro-5836ec219.md`
+  §4 puntos 2 y 3 y de `rastro-31ce26bb2.md` §8 punto 1—, y la ratificación del owner del
+  2026-09-23.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **91** |
+| Decisiones tomadas | **92** |
 | De metodología | 12 |
-| Funcionales | 79 |
+| Funcionales | 80 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
