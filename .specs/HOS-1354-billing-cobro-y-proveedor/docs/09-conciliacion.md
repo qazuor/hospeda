@@ -74,7 +74,7 @@ manual», es «toca plata o no toca plata»**.
 
 > **Y la marca dice CUÁL de las trece cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. Cuatro de los trece motivos significan *«hay plata del cliente que devolver»*,
+> indistinguibles**. Cinco de los trece motivos significan *«hay plata del cliente que devolver»*,
 > y ésos son los que la demora le cobra al cliente.
 
 ---

@@ -638,7 +638,7 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: trece motivos sobre la misma casilla, y cuatro de ellos devuelven plata
+### 2.5 La marca de conciliación: trece motivos sobre la misma casilla, y cinco de ellos devuelven plata
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
@@ -669,7 +669,7 @@ que su caso **no es una divergencia**.
 | 4 | `PAGO_PENDIENTE_SIN_RAMA` | la **segunda** comprobación del `B/09` §3, cuando la rama no es determinable | decidir el destino de un pago retenido por `S19` que ninguna de las seis ramas alcanzó | **puede**, y es la persona quien lo decide |
 | 5 | `DIVERGENCIA_DE_MONTO` | `S14`, desde la comparación de monto del `B/09` §3 | decidir qué monto vale y mutarlo o aceptarlo | no, **y el cobro equivocado sigue saliendo todos los meses** |
 | 6 | `TRANSICIÓN_NO_DECLARADA` | `S14`, desde la comparación de estado del `B/09` §3 **y desde la regla 1 del `NUCLEO/03` §1** | decidir qué estado vale y ejecutar la transición de la tabla que lo permita (`S15`) | no |
-| 7 | `PAGO_TARDÍO_RECHAZADO` | `S14`, desde el `B/05` §3 | leer **cuál de las cuatro condiciones falló** y resolver | no |
+| 7 | `PAGO_TARDÍO_RECHAZADO` | `S14`, desde el `B/05` §3 | leer **cuál de las cuatro condiciones falló** y resolver | **SÍ** — ver abajo, *«por qué el 7 no puede llevar «no»»* |
 | 8 | `REANUDACIÓN_NO_APLICADA` | `S14`, desde la rama de fallo de `S10`; **y la quinta comprobación** del `B/09` §3 | reanudar a mano o reclamarle al proveedor — el cliente está **sin servicio y sin cobro** | no |
 | 9 | `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA` | la **primera** comprobación del `B/09` §3 | cerrar la sucesión que `S18` no cerró, antes de que el candado `A` vacío deje entrar un alta nueva | no |
 | 10 | `FAN_OUT_DE_GRANT_INCOMPLETO` | la **tercera** comprobación del `B/09` §3 | reanudar `S13` / `S20` — el beneficiario **paga todos los meses algo declarado gratis** | no, pero **hay un cobro que cortar** |
@@ -682,13 +682,42 @@ su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) fal
 transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla. **Los dos
 últimos llegaron con `DEC-GRANT-007` y son el ejemplo de por qué la regla dice *«se recalcula»***:
 el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifras de este §
-—trece motivos, cuatro que devuelven plata— se volvieron a contar sobre la tabla.
+—trece motivos, cinco que devuelven plata— se volvieron a contar sobre la tabla.
+
+#### Por qué el 7 no puede llevar «no»
+
+**Las cuatro condiciones del `B/05` §3 sólo fallan con el pago ya acreditado**, y eso no es una
+lectura: el § se titula *«Qué hace seguro a un **pago tardío**»* y arranca *«Un pago tardío es
+seguro de reactivar si y sólo si se cumplen las cuatro»*. Recorridas una por una: la **1** falla
+sobre una fila `CANCELLED`, `ABANDONED` o ya `ACTIVE` —el pago existe y la fila no lo puede
+recibir—; la **2** falla porque el monto **no** coincide —hay un monto, distinto—; la **3** falla
+porque hay otra fila viva y el cliente *«queda pagando dos veces por la misma vertical»*; la **4**
+falla porque *«hay otro pago acreditado para el mismo período: **es un doble cobro**»*. **No hay
+forma de llegar a este motivo sin plata del cliente en nuestra cuenta sobre un período que no
+compró.**
+
+**Llevaba `no` y eso lo mandaba al peor de los dos desenlaces.** El listado ordena adelante los
+motivos con `SÍ` *«porque son los únicos en los que esperar le cuesta al cliente»* (`B/19` §6) y
+sólo ésos llevan default: con `no`, el 7 llegaba **último y sin ninguna propuesta**, que es el
+estado que ese mismo § declara **ya fallido** —*«la persona que no sabe qué se espera de ella no
+hace nada»*—. Y es literalmente el desenlace que la columna `motivo` vino a cerrar: el párrafo de
+arriba dice que con un booleano *«el pago se quedaba»* porque la marca era indistinguible; sobre el
+7 la marca **era distinguible y decía que no había plata**, que es peor.
+
+**Su default es DEVOLVER, con la excepción nombrada y no tapada.** De las cuatro formas de fallar,
+tres no admiten otra salida —el pago no compra nada sobre una fila terminal o ya activa, no compra
+nada cuando hay otra fila viva cobrando, y no compra nada cuando el período ya estaba pago—. La
+cuarta, la condición **2**, sí: si el monto de más es *«un cambio de precio no propagado»* (`B/05`
+§3), lo que corresponde es **aceptarlo y reactivar**, no devolver. Eso no pide un motivo aparte,
+porque **cuál de las cuatro falló va en el evento crítico** y no en el motivo (`B/05` §3,
+`NUCLEO/08` §4.3), y porque el default **no ejecuta nada**: la persona confirma o se niega
+(`DEC-RF-002`, `DEC-RF-003`). Lo que se elige acá es contra qué se niega.
 
 #### Qué cambia con el motivo, además de que se pueda leer
 
 1. **El listado accionable deja de ser homogéneo.** `B/19` §6 muestra el motivo, **el default de
    lo que el sistema propone** (`DEC-RF-003`) y ordena primero
-   los **cuatro** motivos con `SÍ` en la última columna —1, 2, 3 y 12—, que son los únicos donde
+   los **cinco** motivos con `SÍ` en la última columna —1, 2, 3, **7** y 12—, que son los únicos donde
    **esperar le cuesta plata al cliente**.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
    apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`

@@ -97,7 +97,7 @@ en `RECONCILIATION_REQUIRED` es **textualmente una decisión destructiva automá
 >
 > **Y la marca no es un booleano: es una fila con MOTIVO y con RELOJ** (`reconciliation_mark`,
 > `B/02` §2.2 y §2.5). Este corpus escribe **trece** marcas distintas sobre la misma casilla y
-> **cuatro de ellas significan *«hay plata del cliente que devolver»***; sin el motivo llegaban
+> **cinco de ellas significan *«hay plata del cliente que devolver»***; sin el motivo llegaban
 > todas iguales al listado accionable de `B/19` §6. `requiere_conciliación` pasa a nombrar el
 > **predicado** —*«la fila tiene al menos una marca abierta»*, `NUCLEO/01` §2.5—, así que cada
 > frase de este capítulo que dice *«se pone la marca `requiere_conciliación`»* sigue diciendo lo

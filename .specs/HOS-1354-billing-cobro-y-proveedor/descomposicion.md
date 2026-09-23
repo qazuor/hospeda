@@ -97,7 +97,7 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
    marca `requiere_conciliación`, con su MOTIVO** (`02` §2.5), y la mira una persona. Es el criterio
    del owner —*«toca plata o no toca plata»*— aplicado adentro de la épica que toca plata entera.
    **El motivo es parte de la regla**: el corpus escribe trece marcas distintas sobre la misma
-   casilla y **cuatro** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
+   casilla y **cinco** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
    iguales a la bandeja y las que se perdían eran ésas.
 
 ---
