@@ -57,13 +57,33 @@ async function divergence(
         : null;
 }
 
+async function checkoutState(repoRoot: string): Promise<{ branch: string | null; clean: boolean }> {
+    const runner = localRunner();
+    const [branch, status] = await Promise.all([
+        runner.execCapture({
+            command: 'git',
+            args: ['symbolic-ref', '--quiet', '--short', 'HEAD'],
+            cwd: repoRoot
+        }),
+        runner.execCapture({
+            command: 'git',
+            args: ['status', '--porcelain', '--untracked-files=all'],
+            cwd: repoRoot
+        })
+    ]);
+    return {
+        branch: branch.code === 0 ? branch.stdout.trim() || null : null,
+        clean: status.code === 0 && status.stdout.trim() === ''
+    };
+}
+
 function parseArgs(
     argv: readonly string[],
     kind: BranchPlanKind
 ): { from?: string; to?: string; json: boolean; plan: boolean } {
     const positional = argv.filter((arg) => !arg.startsWith('--'));
-    const fromAt = argv.findIndex((arg) => arg === '--from');
-    const toAt = argv.findIndex((arg) => arg === '--to');
+    const fromAt = argv.indexOf('--from');
+    const toAt = argv.indexOf('--to');
     const fromFlag =
         argv.find((arg) => arg.startsWith('--from='))?.slice(7) ??
         (fromAt >= 0 ? argv[fromAt + 1] : undefined);
@@ -132,6 +152,18 @@ export async function runBranchPlan({
         toRef: to ? await refState(context.repoRoot, to) : 'missing'
     };
     const diff = from && to ? await divergence(context.repoRoot, from, to) : null;
+    const checkout = await checkoutState(context.repoRoot);
+    const preconditions = {
+        clean: checkout.clean,
+        refsAvailable: state.fromRef !== 'missing' && state.toRef !== 'missing',
+        divergenceKnown: diff !== null,
+        safeToPrepare:
+            allowed &&
+            checkout.clean &&
+            diff !== null &&
+            state.fromRef !== 'missing' &&
+            state.toRef !== 'missing'
+    };
     const result = {
         kind,
         readOnly: true,
@@ -140,10 +172,17 @@ export async function runBranchPlan({
         declaredPromotion,
         declaredBackMerge,
         ...state,
+        checkout,
         divergence: diff,
-        actions: allowed
-            ? ['comparar commits y checks', 'preparar PR de promoción', 'esperar aprobación humana']
-            : ['corregir el par de ramas en el adapter', 'no crear PR ni ejecutar merge']
+        preconditions,
+        actions:
+            allowed && preconditions.safeToPrepare
+                ? [
+                      'comparar commits y checks',
+                      'preparar PR de promoción',
+                      'esperar aprobación humana'
+                  ]
+                : ['resolver precondiciones del plan', 'no crear PR ni ejecutar merge']
     };
     if (args.json) process.stdout.write(`${JSON.stringify(result)}\n`);
     else

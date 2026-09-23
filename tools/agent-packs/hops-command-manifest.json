@@ -61,7 +61,7 @@
             "description": "Plan read-only de back-merge entre ramas declaradas",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "ad4a490920ef59405852c442c8a70cb222ffa38e4bf70e11e6274640b1e056f9"
+            "sha256": "7a4061d7e538735831eabf12a0d743c73b0945c177e6707862d065c353773486"
         },
         {
             "id": "hops-ci",
@@ -213,7 +213,7 @@
             "description": "Plan read-only de promoción entre ramas declaradas",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "888548eb323d3cabcd6fd6ff5f66df2ba5496d257cbc8af5214145002ec34c58"
+            "sha256": "a70d155733f53fc5254932e7076c7bf1b5be6cd1c4eef0c27f119c3a4cde4243"
         },
         {
             "id": "hops-recap",
