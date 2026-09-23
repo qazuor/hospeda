@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { runnerFor } from '../../lib/runner.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
@@ -15,7 +16,26 @@ const WORKFLOW = '.github/workflows/ci.yml';
 const JOBS = ['lint', 'guards', 'typecheck'] as const;
 
 /** Branch the diff is measured against. */
-const BASE = 'origin/staging';
+const FALLBACK_BASE = 'origin/staging';
+
+/** Resolves the configured integration base without fetching or mutating Git. */
+async function resolveBaseRef({
+    cwd,
+    branch
+}: {
+    readonly cwd: string;
+    readonly branch: string;
+}): Promise<string> {
+    for (const candidate of [`origin/${branch}`, branch]) {
+        const result = await run({
+            command: 'git',
+            args: ['rev-parse', '--verify', candidate],
+            cwd
+        });
+        if (result.ok) return candidate;
+    }
+    return `origin/${branch}`;
+}
 
 /**
  * Resource ceiling applied to every test run.
@@ -79,13 +99,15 @@ function readWorkflow({ repoRoot }: { readonly repoRoot: string }): string | nul
  * @returns Package directory names, empty when nothing or on failure.
  */
 export async function changedPackages({
-    cwd
+    cwd,
+    baseRef = FALLBACK_BASE
 }: {
     readonly cwd: string;
+    readonly baseRef?: string;
 }): Promise<readonly string[]> {
     const diff = await run({
         command: 'git',
-        args: ['diff', '--name-only', `${BASE}...HEAD`],
+        args: ['diff', '--name-only', `${baseRef}...HEAD`],
         cwd,
         timeoutMs: 60_000
     });
@@ -164,6 +186,9 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const runner = runnerFor({ target });
     const cwd = context.worktree?.path ?? context.repoRoot;
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const baseBranch = adapter?.branches?.base ?? 'staging';
+    const baseRef = await resolveBaseRef({ cwd, branch: baseBranch });
 
     const yaml = readWorkflow({ repoRoot: cwd });
     if (yaml === null) {
@@ -184,7 +209,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const full = rest.includes('--full');
     const wantsTests =
         rest.includes('--changed') || rest.includes('--tests') || full || only === 'tests';
-    const changed = full || !wantsTests ? [] : await changedPackages({ cwd });
+    const changed = full || !wantsTests ? [] : await changedPackages({ cwd, baseRef });
     const tests =
         only === undefined || only === 'tests'
             ? testStep({ wanted: wantsTests, full, changed })
@@ -218,7 +243,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
                     status: 'planned',
                     workflow: WORKFLOW,
                     mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
-                    base: BASE,
+                    base: baseRef,
                     changedPackages: changed,
                     steps: plannedSteps,
                     skipped: plan.skipped.map((step) => ({ name: step.name, reason: step.reason })),
@@ -279,7 +304,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
             // verify has the same contract: use the configured local base so
             // those guards do not fail closed merely because they are outside
             // GitHub Actions.
-            env: { BASE_SHA: process.env.BASE_SHA ?? BASE }
+            env: { BASE_SHA: process.env.BASE_SHA ?? baseRef }
         } as const;
         const code = json ? (await runner.execCapture(job)).code : await runner.exec(job);
         results.push({ job: step.job, name: step.name, code, passed: code === 0 });
@@ -291,7 +316,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
                         status: 'failed',
                         workflow: WORKFLOW,
                         mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
-                        base: BASE,
+                        base: baseRef,
                         changedPackages: changed,
                         steps: results,
                         skipped: plan.skipped.map((item) => ({
@@ -319,7 +344,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
                 status: 'passed',
                 workflow: WORKFLOW,
                 mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
-                base: BASE,
+                base: baseRef,
                 changedPackages: changed,
                 steps: results,
                 skipped: plan.skipped.map((item) => ({ name: item.name, reason: item.reason })),
@@ -335,7 +360,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         );
     } else if (tests === null) {
         process.stderr.write(
-            `\n${pc.dim(`Sin tests: no hay cambios en apps/ ni packages/ contra ${BASE}.`)}\n`
+            `\n${pc.dim(`Sin tests: no hay cambios en apps/ ni packages/ contra ${baseRef}.`)}\n`
         );
     }
     return 0;
