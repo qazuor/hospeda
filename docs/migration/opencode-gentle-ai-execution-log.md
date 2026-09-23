@@ -3584,3 +3584,18 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   fallo del proyecto. El checklist puede conservar este gate como validado;
   los tests de paquetes siguen siendo opt-in y deben pedirse con `--changed` o
   `--full` cuando correspondan.
+
+## Gate 214 · Bootstrap y distribución cross-client revalidados
+
+- `ai-dev-workstation-bootstrap.sh --verify` pasó con OpenCode `1.18.32`,
+  Gentle-AI `3.7.0` y Engram `2.0.0`; no leyó valores secretos ni produjo
+  mutaciones.
+- `tools/agent-packs/plan.mjs --check` e `install.mjs --check` detectaron
+  OpenCode, Claude y Codex, validaron 36 comandos, cero fuentes faltantes,
+  cero duplicados y cero drift de hashes.
+- `tools/qz/validate-project.mjs` confirmó el adapter Hospeda y sus tres
+  servidores (`api`, `admin`, `web`) sin errores.
+- Esto valida la base read-only y el contrato de distribución. El instalador
+  aplicable, la restauración de Engram, la instalación de clientes y la
+  generación de archivos siguen bloqueados hasta implementar backup, apply y
+  rollback explícitos.
