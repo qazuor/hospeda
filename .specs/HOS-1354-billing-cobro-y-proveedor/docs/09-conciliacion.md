@@ -75,7 +75,9 @@ manual», es «toca plata o no toca plata»**.
 > **Y la marca dice CUÁL de las catorce cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
 > indistinguibles**. Cinco de los catorce motivos significan *«hay plata del cliente que devolver»*,
-> y ésos son los que la demora le cobra al cliente.
+> y ésos son los que la demora le cobra al cliente — **más la marca del 14 cuya rama es `DEVOLVER`**
+> desde `DEC-RF-004`, que es la única de esa lista que **no** se decide mirando el motivo sino el
+> disparador (`B/03` §3.2).
 
 ---
 
