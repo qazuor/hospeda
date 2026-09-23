@@ -559,12 +559,12 @@ predecesora ya murió (§4.2).
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
-> | **una de las diez transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **una de las doce transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
 > | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata o **`S28`** la corta al discontinuarse la vertical | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
-> **La lista no agrega ninguna transición al disparador de arriba**: las diez son las que
+> **La lista no agrega ninguna transición al disparador de arriba**: las doce son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
 > tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
 > momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.
