@@ -152,3 +152,13 @@ con el binario v2.
 El staging queda pendiente de la prueba funcional: ejecutar Gentle con una
 configuración global clonada, comparar assets antes/después de `sync`, y migrar
 una copia de Engram v1 a v2 para comparar proyectos, conteos, búsquedas y MCP.
+
+### Incidente de validación aislada
+
+El archive de Engram contiene helpers además del ejecutable principal. Una
+primera comprobación demasiado amplia intentó ejecutar un helper de Cloud con el
+argumento `version`; falló porque no existe configuración Cloud y no llegó a
+sincronizar. No se ejecutaron comandos de migración, repair, import, export ni
+sync sobre Engram. La DB activa pasó después `PRAGMA integrity_check = ok` en
+modo immutable. El procedimiento definitivo debe seleccionar únicamente los
+binarios principales por nombre y nunca ejecutar todos los archivos extraídos.
