@@ -169,6 +169,8 @@ vence.
 |---|---|
 | **Entitlement** | Una capability, booleana o **medida** (`DEC-ENT-001`). Puede venir de plan, herencia de Turista VIP, addon, cortesía o grant (§36); mientras al menos una fuente lo otorgue, sigue activo. |
 | **Entitlement medido** | El que tiene costo marginal por uso. Declara **dos** cuotas: la del plan y la del trial, menor (`DEC-ENT-001`). La cuota se resetea **todos los meses**, sea cual sea el ciclo de pago, y lo no usado se pierde (`DEC-ENT-002`). |
+| **Clase de una clave** | Cuál de **dos** es, y la lista es cerrada: **`COMERCIAL`** o **`DE_ACCESO`**. Se declara **con la clave, en el catálogo**, igual que su scope y su estrategia de agregación (`V/15` §3.4), y por la misma razón que aquéllas: es una propiedad del **significado** de la clave y no de cada plan. Es lo que `G-R3` lee. |
+| **Clave de la clase comercial** | La que al ejercerse **produce o sostiene presencia pública** en su vertical, o **consume** un limit o la cuota de un entitlement medido. Es lo que se vende, y es lo que **ninguna de las dos versiones no vendibles** puede otorgar (`V/02` §2.1). Su complemento es **`DE_ACCESO`**: existir, **recuperar lo propio** y **volver a contratar**, que es exactamente lo que la versión de piso otorga y nada más. |
 | **Limit** | Un tope numérico con scope explícito. **Se acumulan** entre fuentes (§37). Al desaparecer una fuente se recalcula el límite efectivo. |
 | **Addon: producto** | La definición: capability, precio, recurrencia, verticales compatibles, duración, efectos, tipo de scope (§39). |
 | **Addon: instancia** | Lo que un User concreto tiene: dueño, objetivo, inicio, fin, estado, pago (§39). |

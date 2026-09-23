@@ -211,6 +211,16 @@ no hay que entender qué significan, igual que `G-R6` no necesita entender qué 
 (`B/20` §2). Y **no** verifica que otorgar esas dos claves alcance para ejecutar `PB8` ni el alta —
 eso son los nueve pasos del cap. 17 §3.5 y este guard no los recorre—; verifica que **estén**.
 
+**Y la `(a)` recién ahora se puede formar, que es la otra mitad del arreglo.** *«Clave de la clase
+comercial»* era un término **sin definición en ningún capítulo y sin atributo en el catálogo**:
+quien construyera el guard tenía que inventar la clasificación clave por clave, y la primera que le
+tocaba era la que la lista del piso acababa de agregar. Si la clasificaba comercial, el guard se
+ponía en rojo sobre el catálogo **correcto** y la salida obvia era sacar la clave — que es el
+crítico que el cap. 02 §2.1 cerró. **La clase es hoy el cuarto atributo declarado de una clave**
+(cap. 15 §3.4), con dos valores y lista cerrada, y su definición está en el glosario al lado de la
+de *«entitlement medido»*, que es la otra mitad del mismo predicado (`NUCLEO/01` §1.6). El guard lee
+un atributo; no juzga.
+
 **Se rompe a propósito tres veces, una por mitad, y cada una tiene que dar SU mensaje.** *(a)* se le
 siembra a la versión de piso de una vertical una clave comercial cualquiera. *(b)* se le **saca** a
 esa misma versión la clave *«recuperar lo suyo»*, que es exactamente el catálogo con el que el hard

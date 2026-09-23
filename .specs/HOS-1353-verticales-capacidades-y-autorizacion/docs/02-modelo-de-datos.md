@@ -207,6 +207,15 @@ objeto es **una ficha que la persona ya tenía**, nunca una nueva. Es del mismo 
 una suscripción»*: una capacidad de **recuperación**, que es literalmente para lo que esta versión
 existe.
 
+**Y desde esta pasada eso no es un razonamiento sobre un caso: es la clase declarada de las dos
+claves.** *«Clase comercial»* era un término que el predicado de `G-R3` usaba y que **ningún
+capítulo definía ni ningún atributo del catálogo llevaba** —su mitad gemela, *«entitlement medido»*,
+sí tiene entrada de glosario—, así que el guard no se podía formar sin que el que lo construyera
+inventara la clasificación, y la primera clave sobre la que la tenía que aplicar era justamente ésta.
+**La clase es ahora el cuarto atributo que una clave declara en el catálogo** (cap. 15 §3.4), con
+dos valores y lista cerrada, y las dos claves del piso están declaradas **`DE_ACCESO`** ahí. El
+párrafo de arriba deja de ser el criterio y pasa a ser **por qué** la declaración dice lo que dice.
+
 **Y por el lado que OTORGA sí lo toca, que es la pregunta que agregar esta fila obligaba a hacerse
 y no se hizo.** *«¿Esto rompe el guard?»* y *«¿quién se entera si esto no está?»* son dos preguntas
 distintas, y hasta esta pasada el guard sólo contestaba la primera: su enunciado era **negativo

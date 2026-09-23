@@ -214,6 +214,52 @@ la clave es global.
 El scope de la clave dice **dónde vale**; la fuente dice **por cuánto tiempo**. Son preguntas
 distintas y cada una la contesta quien corresponde.
 
+### 3.4 Y cada clave declara además su CLASE, que es lo que `G-R3` lee
+
+**`G-R3` prohíbe que las dos versiones no vendibles otorguen *«una clave de la clase comercial»*
+(cap. 02 §2.1), y hasta esta pasada el corpus no decía qué hace comercial a una clave.** No estaba
+en el glosario —donde *«entitlement medido»*, la otra mitad del mismo predicado, **sí** tiene
+entrada (`NUCLEO/01` §1.6)— ni era un atributo que este capítulo declarara. Así que el guard **no se
+podía formar**: o no se construía —y las dos versiones que toda la plataforma recibe quedaban sin
+vigilancia, que es el punto único de falla que el cap. 02 §2.1 declara— o el que lo construyera
+**inventaba la clasificación**, clave por clave, con un criterio que nadie escribió y que la clave
+siguiente resolvería distinto.
+
+**La clase es el CUARTO atributo que una clave declara en el catálogo, y la lista de valores es
+cerrada:**
+
+| clase | qué es | ejemplos |
+|---|---|---|
+| **`COMERCIAL`** | su ejercicio **produce o sostiene presencia pública** en la vertical, o **consume** un limit o la cuota de un entitlement medido | publicar una ficha (`PB1`), destacarla, las fotos, la prioridad de ordenamiento |
+| **`DE_ACCESO`** | su ejercicio **no** produce presencia pública y **no** consume nada: sólo deja **existir**, **recuperar lo propio** y **volver a contratar** | *«contratar una suscripción»* y *«recuperar lo suyo»* — las dos claves del piso (cap. 02 §2.1) |
+
+**Vive con la clave y no con el plan por la razón del §2.3, palabra por palabra.** Si la declarara
+el plan, dos planes de la misma vertical podrían declarar clases distintas para la misma clave y
+entonces **la clave significaría dos cosas** — y acá el desenlace es peor que un límite ambiguo: es
+que `G-R3` dé verde sobre un catálogo y rojo sobre el mismo catálogo según qué plan mire.
+
+**Y no contradice *«lo único que vive en código es el conjunto de nombres»*** (`NUCLEO/02` §1.2),
+que es el apartamiento con que el §64.15 quedó reescrito. Esa frase prohíbe que en código vivan
+**valores, precios y asignaciones** —*«qué plan otorga qué clave, con qué valor, en qué vertical, a
+qué precio»*, que es la otra columna de esa misma tabla—, no que una clave declare qué es. El scope
+y la estrategia de agregación ya viven ahí desde la FASE 9 por esa misma lectura; la clase es el
+cuarto del mismo tipo y **no dice qué otorga ningún plan**.
+
+**Y hay que decir con precisión qué gana el guard con esto y qué NO gana**, porque leerlo de más
+sería la forma que `DEC-TEST-001` rechazó. **Gana** poder preguntar *«¿esta clave está declarada
+`COMERCIAL`?»* sobre el catálogo, sin entender qué significa la clave — la misma comprobación
+estructural que `G-R6` hace sobre columnas (`B/20` §2). **No gana** verificar que la clasificación
+esté bien juzgada: un desarrollador que declare `DE_ACCESO` a la clave de publicar rompe el guard
+igual que uno que le declare el scope equivocado, y contra eso el control es la revisión del PR, no
+el guard. **Lo que cambia no es que la clasificación sea infalible: es que se hace UNA vez, en el
+catálogo, a la vista, en vez de reinventarse adentro del guard en cada clave.**
+
+**Las dos claves del piso quedan clasificadas acá y no en el guard**, que es lo que impide que el
+que lo construya tenga que decidirlo: *«contratar una suscripción»* y *«recuperar lo suyo»* son
+**`DE_ACCESO`**, y el argumento de tres premisas que el cap. 02 §2.1 escribe para la segunda
+—no publica, no cuenta contra ningún limit, su objeto es una ficha que la persona ya tenía— deja de
+ser un razonamiento sobre un caso y pasa a ser **la aplicación del criterio de esta tabla**.
+
 ---
 
 ## 4. El excedente es un servicio transversal · cierra `M-ENT-02`
@@ -382,8 +428,10 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
 ## Lo que este capítulo NO cierra
 
 - **Cuáles son las claves de cada vertical** —el ítem 4 del Eje 2 (cap. 10 §1)— es configuración,
-  no diseño: acá está que el subconjunto se declara por vertical y que cada clave lleva scope,
-  estrategia de agregación y `enforcementStrategy`.
+  no diseño: acá está que el subconjunto se declara por vertical y que cada clave lleva **cuatro**
+  atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—.
+  *(Eran tres hasta esta pasada; la clase entró porque sin ella el predicado de `G-R3` no se podía
+  formar.)*
 - **Si el mes de una cuota corre por calendario o por aniversario** sigue abierto desde
   `DEC-ENT-002` (implicación 2).
 - **Qué es una suscripción «válida» para comprar un addon** (`A-ADDON-02`) es del capítulo 16 (épica de billing).
