@@ -194,3 +194,18 @@ OpenCode `providers list` y `mcp list` tampoco pudieron completar en esta sesió
 porque el runner no permite abrir su log en modo escritura. Esto queda separado
 de la compatibilidad de la release y debe repetirse en una terminal normal luego
 del sync.
+
+## Sync global completado
+
+Con autorización explícita se respaldó el launcher user-owned en
+`20260923-pre-upgrade/gentle-ai-opencode-launcher-v1` y se ejecutó `gentle-ai
+sync` con la release `3.7.0`. Gentle actualizó 59 assets administrados para
+OpenCode, Engram, SDD, skills, permisos, GGA, tema y persona. El doctor quedó
+saludable: 8 checks correctos, 0 fallos y 0 warnings; el handshake MCP de Engram
+v1 respondió correctamente.
+
+La política global RDD/review quedó explícitamente `off`. El launcher administrado
+de Gentle dejó background agents de OpenCode activos (`policy effective: on`),
+coherente con usar OpenCode y no instalar Pi. La configuración global de
+OpenCode fue modificada por el sync y queda respaldada para comparar cualquier
+personalización propia antes de cerrar la migración.
