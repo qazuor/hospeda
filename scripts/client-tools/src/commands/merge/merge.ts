@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { findPr, type PrLookup } from '../../lib/github.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
 import { evaluateMergeGate, exitCodeForGate, type MergeGateResult } from './gate.ts';
@@ -28,7 +29,7 @@ ${pc.bold('Uso')}
 
 ${pc.bold('Qué mira')}
 
-  ${pc.dim('· Que esté abierto, no sea draft y apunte a staging.')}
+  ${pc.dim('· Que esté abierto, no sea draft y apunte a la base de integración declarada.')}
   ${pc.dim('· mergeable / mergeStateStatus, reconsultando mientras den UNKNOWN:')}
   ${pc.dim('  GitHub los calcula recién cuando se los pide, y contesta UNKNOWN')}
   ${pc.dim('  en la primera consulta. Leer eso como «se puede» es fail-open.')}
@@ -120,6 +121,8 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
     const { target, rest } = extractTarget({ argv });
     const { name: worktreeName } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const expectedBase = adapter?.branches?.base ?? 'staging';
     const cwd = context.worktree?.path ?? context.repoRoot;
     const worktree = context.worktree;
 
@@ -176,7 +179,7 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
         return 1;
     }
 
-    const result = evaluateMergeGate({ pr: found });
+    const result = evaluateMergeGate({ pr: found, expectedBase });
     if (json) {
         process.stdout.write(
             `${JSON.stringify({
