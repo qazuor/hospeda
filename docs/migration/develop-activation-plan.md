@@ -56,3 +56,8 @@ La referencia local `develop` ya fue creada desde `staging`. Todavía no se hizo
 push ni se cambiaron workflows, CI, Linear o reglas remotas. La activación
 operacional sigue siendo la fase 0 remota: publicar la rama, revisar
 protección/CI y ejecutar las pruebas E2E antes de retirar el bypass temporal.
+
+La configuración versionada ya incluye `develop` en los triggers de CI y E2E, y
+Dependabot apunta allí las actualizaciones normales. El workflow automático de
+back-merge `staging -> develop` queda pendiente de aprobación explícita porque
+requiere permisos de escritura y abre PRs en GitHub.

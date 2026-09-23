@@ -1,21 +1,21 @@
 # Dependabot configuration.
 #
-# Version updates open PRs against `staging` (the integration line), NOT the
-# default branch `main`. All work in this repo flows through `staging` first;
+# Version updates open PRs against `develop` (the integration line), NOT the
+# default branch `main`. Ordinary work flows through `develop`, then staging;
 # `main` is the validated baseline promoted from `staging`.
 #
 # NOTE: `target-branch` only governs *version updates* (the grouped weekly bumps
-# below) — those land on `staging`. It does NOT govern *security updates*:
+# below) — those land on `develop`. It does NOT govern *security updates*:
 # GitHub opens those against the default branch `main`, ignoring `target-branch`.
 # That is expected platform behavior. A `dependabot` PR based on `main` is, by
 # construction, a security update; it may merge to `main` (CI green) and MUST be
-# back-merged into `staging` afterward via `.github/workflows/sync-main-to-staging.yml`.
+# back-merged into `staging` and then `develop` afterward.
 # See the "Dependabot security exception" section in AGENTS.md for the full rule.
 version: 2
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
-    target-branch: 'staging'
+    target-branch: 'develop'
     schedule:
       interval: 'weekly'
       day: 'monday'
@@ -152,7 +152,7 @@ updates:
 
   - package-ecosystem: 'github-actions'
     directory: '/'
-    target-branch: 'staging'
+    target-branch: 'develop'
     schedule:
       interval: 'weekly'
       day: 'monday'

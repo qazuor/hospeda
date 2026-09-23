@@ -15,10 +15,12 @@ on:
   push:
     branches:
       - main
+      - develop
       - staging
   pull_request:
     branches:
       - main
+      - develop
       - staging
     types:
       - opened
@@ -39,7 +41,7 @@ on:
       baseline_ref:
         description: 'Branch to diff against for the seed dual-write and semgrep baseline checks'
         required: false
-        default: 'staging'
+        default: 'develop'
         type: string
 
 # Cancel in-progress runs for the same PR when a new push arrives.
