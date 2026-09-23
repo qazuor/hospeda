@@ -12,7 +12,7 @@ fase: 9-bis-5
 
 Implementa **`DEC-GRANT-011`** (el saldo que nadie completó) y **`DEC-GRANT-012`** (la cortesía se
 muestra con su condición), y cierra los defectos **`E2`** (`MEDIA`) y **`F3`** (`ALTA`) del censo de
-la FASE 8-bis-5. **Quince commits sobre el corpus de diseño**, más el de este rastro, sobre **trece**
+la FASE 8-bis-5. **Dieciséis commits sobre el corpus de diseño**, más el de este rastro, sobre **trece**
 archivos.
 
 ---
@@ -35,6 +35,7 @@ archivos.
 | `53df8414ce` | **`F3`** — las dos puertas terminales nuevas entran al barrido; tres conteos recontados |
 | `4c52873b73` | **`F3`** — la fila 18 y el correo cubren el segundo camino a `ABANDONED`; y por qué las tres filas no mueven los pares con dos filas |
 | `dac3debb90` | premisas ajenas: **cinco**, todas del barrido (§5) |
+| `458ce804f8` | premisa ajena: el **tercer** lugar donde vive *«la sucesora venció su ventana o la mató `S13`»*, que el barrido de cierre encontró después de corregir los otros dos |
 
 > **Un commit que está en el rango y NO es de esta familia**: `5843142454` (*«el motivo 14 devuelve
 > cuando la causa no la puso el cliente»*, `DEC-RF-004`) lo escribió el owner sobre el **decision
@@ -381,7 +382,7 @@ discontinuación lo hacen en pasado —*«quedó anotado ahí, sin decidir»*, *
 | 9 | `B/10` §4.3, el día 0 | *«cada suscripción viva **que pueda llegar a `CANCEL_SCHEDULED`** … pasa a ese estado»* | tres destinos según lo que cada estado emite, en tabla, y por qué el calificativo se leía mal | `3075b5a84d` |
 | 10 | `B/09` §3 y `B/16` §4.4 | *«**trece** puertas»*, *«**diez** filas «no»»*, *«**nueve** de las diez»* | **quince**, **doce** y **once de las doce**, recontadas sobre la tabla | `53df8414ce` |
 | 11 | `B/16` §4.2 | *«las transiciones que la cumplen son **las diez** que sacan a una principal de las filas vivas»* | **las doce**, con `S27` y `S28` — y **`S26` explícitamente afuera**, porque `CANCEL_SCHEDULED` sigue siendo fila viva | `dac3debb90` |
-| 12 | `B/03` §3.2 y `B/16` §4.2 | *«la sucesora venció su ventana (`S3`) o la mató `S13`»*, en **los dos** lugares donde se enumera | gana el tercer camino, **`S28`** | `dac3debb90` |
+| 12 | `B/03` §3.2, `B/16` §4.2 y `B/02` §2.2 | *«la sucesora venció su ventana (`S3`) o la mató `S13`»*, en **los tres** lugares donde se enumera — el tercero es **donde el término se define**, y lo encontró el barrido de cierre después de corregir los otros dos | los tres ganan el tercer camino, **`S28`** | `dac3debb90` · `458ce804f8` |
 | 13 | `NUCLEO/07` §6 | *«el de la pausa discontinuada existe porque es **la única persona** a la que el cierre de la vertical no le llega por los tres avisos»* | deja de ser *«la única»*: a quien tiene un checkout abierto tampoco le corre una fecha de fin de servicio | `dac3debb90` |
 
 **Y una que no es una premisa ajena sino un hueco que el arreglo abre y cierra en el mismo commit**:
