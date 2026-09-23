@@ -3674,3 +3674,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   sandbox expone el home como solo lectura. No se cambiaron permisos ni se
   copiaron bases; en una sesión normal basta arrancar ambos procesos con el
   mismo `ARTIFACT_DATA_DIR` escribible.
+
+## Gate 222 · Preflight del template activo
+
+- `bash scripts/worktree/template.sh status hospeda_template` devolvió
+  `migrationJournal: missing` y `manifest: null`.
+- Esto confirma que el guard de `wt-create` debe rechazar el fast clone hasta
+  construir y promover una candidata con journal y fingerprint válidos.
+- La consulta al daemon Docker quedó bloqueada por permisos del entorno; no se
+  reconstruyó, promovió ni modificó ninguna base.
+- El E2E de worktree/template queda pendiente de una sesión con Docker/Postgres
+  accesible y una promoción explícita de candidata.
