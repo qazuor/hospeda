@@ -3957,13 +3957,53 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-004 — Lo que se le dice al cliente cuando el alta rebota sale del `status_detail`, no de un texto único
+
+- **Fecha**: 2026-09-22 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso, medido sobre nosotros mismos el 2026-09-21/22**: tres intentos de alta en producción,
+  **dos rechazados con `cc_rejected_high_risk`** — el **scoring antifraude del proveedor**, no la
+  tarjeta—. Lo que MP le muestra al cliente es *«Por motivos de seguridad, tu pago fue rechazado.
+  Te recomendamos pagar con el medio de pago y dispositivo que solés usar para compras online»*. Y
+  el preapproval queda **`cancelled` en ~83 segundos**, irreversible (`PA-5`, `EX-3`).
+- **Lo que faltaba**: `S16` ya sabe que *«el proveedor la canceló al rechazarlo»*, pero **no
+  distingue POR QUÉ la rechazó**, y las causas piden decirle cosas opuestas a la persona:
+  - **`cc_rejected_high_risk`** → **no tiene que tocar nada de su tarjeta**: probar más tarde, otro
+    dispositivo, o escribirnos.
+  - **`payment_method_not_ready`, fondos, vencimiento** → **sí tiene que revisar su medio de pago**.
+- **Decisión**: **el mensaje se deriva del `status_detail`, con un mapa explícito y un texto
+  genérico obligatorio** para los detalles que no estén en el mapa.
+- **El motivo, y no es cosmético**: a una causa le pedís que **cambie** algo y a la otra que **no
+  cambie nada**. Mostrar *«revisá tu tarjeta»* a alguien rechazado por scoring lo manda a arreglar
+  algo que funciona — y como el preapproval ya murió, **cada reintento suyo crea uno nuevo que el
+  scoring vuelve a rechazar**. Eso no es hipotético: **es exactamente lo que nos pasó tres veces
+  seguidas la noche del 21**.
+- **Las dos alternativas:**
+  - **Un solo mensaje neutro** para todos los rechazos: nunca miente y no cuesta mantenimiento,
+    pero **al que sí tiene un problema de tarjeta no le dice cómo resolverlo**, y va a reintentar
+    igual, creando otra alta muerta.
+  - **Dejarlo sin especificar**, como está hoy: en la práctica termina siendo *«revisá tu tarjeta»*,
+    que es el default de la industria y **el peor posible para el caso `high_risk`**.
+- **Lo que hay que tener en cuenta al escribir el mapa**: **`RC-6` midió que el `status_detail`
+  cambia entre intentos** —es el del último, no el del primero—. En el **alta** eso no molesta,
+  porque hay un solo intento y el preapproval muere ahí; **en una renovación sí**, y el mapa no
+  debe leerse temprano.
+- **Lo que esta decisión NO cierra**: (1) **el contenido del mapa** —qué `status_detail` existen y
+  cómo se agrupan— que se llena con lo medido y no se inventa; y (2) **qué hacemos para que el
+  cliente no cree altas muertas en serie** cuando el scoring lo rechaza. La segunda es un problema
+  de producto propio y no tiene decisión todavía.
+- **Origen**: los tres intentos de alta de la sonda 49 del 2026-09-21/22, y la elección del owner
+  del 2026-09-22 entre las tres opciones que se le presentaron — eligió la 1, que era la
+  recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **87** |
+| Decisiones tomadas | **88** |
 | De metodología | 11 |
-| Funcionales | 76 |
+| Funcionales | 77 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
