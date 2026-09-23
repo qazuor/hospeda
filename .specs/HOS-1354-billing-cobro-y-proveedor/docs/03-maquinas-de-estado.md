@@ -121,7 +121,7 @@ Y una nota de registro que sigue valiendo:
 |---|---|---|---|---|---|
 | S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`) | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización** (`B/12` §5.2). **Y si es de pagador manual, acá se abre su PRIMERA cuota** —la cláusula *(b)* de `MP5` (§7)—, que es el espejo del primer cobro que en un pagador con tarjeta ocurre antes de `S2`: tiene que estar registrada para que la fila llegue a `ACTIVE`, así que abrirla es parte del alta y no del reloj |
 | S2 | `PENDING_AUTHORIZATION` | webhook de autorizada, confirmado por relectura | `ACTIVE` | — | arranca el período; la fila **pasa a emitir fuente** (`12-contrato…` §2.6) y ese cambio de cobertura es lo que mueve el trial, si había uno (`V/03` §2, `T2`) — esta tabla **no dispara** una transición de la otra épica |
-| S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | pasaron **72 h** sin autorizar | se cancela el preapproval en el proveedor; la fila se conserva —**con su `sucede_a` puesto, si era una sucesora**, porque es el registro fiel y porque ningún predicado lo lee sin exigir que la fila esté viva—. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**: es la rama 2 de `B/12` §5.3 y el que hace que *«el tope es la ventana»* sea una condición y no una intención. **Y si la fila era de un pagador manual, su primera cuota —abierta acá y nunca registrada— se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7): sin eso quedaría un `AWAITING` colgando de una suscripción muerta. **Y si esta fila era la SUCESORA de una sucesión y la predecesora tenía una cortesía que `S18` DIFIRIÓ, el saldo se cierra acá**: se le escriben `saldo_cerrado_en` y `motivo_cierre = VENTANA_DE_AUTORIZACIÓN_VENCIDA` (`B/02` §2.4), con lo que la cortesía deja de ser *«diferida»* (`NUCLEO/01` §2.6) y **`S9` no la puede re-emitir nunca más** — quien vuelva a suscribirse **no recupera esos días** (`DEC-GRANT-011`). **Se le avisa en el mismo correo que le dice que la ventana venció** (`B/19` §4 fila 18, `NUCLEO/07` §6) |
+| S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | **venció la ventana de autorización de esa fila, y no es una sola: son DOS plazos según el método de pago** — **72 h** para el pagador con tarjeta y **7 días corridos** para el pagador manual (`DEC-SUB-016`, §3.4 punto 1). La condición se lee **sobre el método de la fila**, nunca contra una cifra global | se cancela el preapproval en el proveedor; la fila se conserva —**con su `sucede_a` puesto, si era una sucesora**, porque es el registro fiel y porque ningún predicado lo lee sin exigir que la fila esté viva—. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**: es la rama 2 de `B/12` §5.3 y el que hace que *«el tope es la ventana»* sea una condición y no una intención. **Y si la fila era de un pagador manual, su primera cuota —abierta acá y nunca registrada— se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7): sin eso quedaría un `AWAITING` colgando de una suscripción muerta. **Y si esta fila era la SUCESORA de una sucesión y la predecesora tenía una cortesía que `S18` DIFIRIÓ, el saldo se cierra acá**: se le escriben `saldo_cerrado_en` y `motivo_cierre = VENTANA_DE_AUTORIZACIÓN_VENCIDA` (`B/02` §2.4), con lo que la cortesía deja de ser *«diferida»* (`NUCLEO/01` §2.6) y **`S9` no la puede re-emitir nunca más** — quien vuelva a suscribirse **no recupera esos días** (`DEC-GRANT-011`). **Se le avisa en el mismo correo que le dice que la ventana venció** (`B/19` §4 fila 18, `NUCLEO/07` §6) |
 | S4 | `ACTIVE` | un cobro falla — **y en un pagador manual eso es que `MP5` abrió la cuota del período y no hay pago acreditado contra ella** (§7.2): no hay débito que rebote, así que el evento se lee sobre la cuota y no sobre el proveedor. **Sobre la PRIMERA cuota de un pagador manual no corre**, y no hace falta una condición nueva para eso: esa cuota se abre en `PENDING_AUTHORIZATION` y el `desde` de esta fila es `ACTIVE` (§7.2, *«cómo entra el grace»*) | `GRACE_PERIOD` | — | arranca el reloj del §4; el servicio **sigue entero** (§20) |
 | S5 | `GRACE_PERIOD` | entra el pago, **o se reevalúa uno que quedó pendiente** por `S19` | `ACTIVE` | las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se apaga el reloj |
 | S6 | `GRACE_PERIOD` | se agota el reloj | `SUSPENDED` | **no hay un pago acreditado del período pendiente de resolución** por `S19` | §21: sin listado público, sin edición, sin creación, sin entitlements comerciales; datos conservados y billing accesible |
@@ -146,7 +146,7 @@ Y una nota de registro que sigue valiendo:
 | S25 | `PAUSED` — **con cualquiera de los dos motivos** | **el mismo evento de `S10`**: llega el fin de la pausa, o la persona vuelve antes | `CANCELLED` | **el plan al que la fila está anclada ya NO se presta** — su vertical fue discontinuada (`B/10` §4.3) — **y es la guarda complementaria de la de `S10`**, no una condición aparte: las dos leen el mismo dato y no se pueden satisfacer a la vez | **`S10` no puede reanudar sobre un plan que no existe**, y ésta es la fila que ejecuta ese final (`DEC-SUB-015`). **No se manda `PUT status=authorized`**: se **cancela** el preapproval, con la regla de relectura de `S17` —`EX-11` mide que una pausada rechaza toda modificación **y sí deja cancelar**—, y por eso el preapproval no se cancela el día 0 del anuncio sino acá: mientras está pausada **no cobra** (`PS-2`), así que dejarla viva no cuesta plata. **Se escribe `fin_real` en la `subscription_pause`** con ese día, igual que `S22` y por la misma razón: los topes del §26.3 sobreviven a cancelar y volver a suscribirse (`DEC-SUB-004`). **Y corre igual si la persona no vuelve nunca**: el tope de la pausa es nuestro reloj (`PS-4`), así que el evento llega solo. **Libera el candado `A`**, con lo que el alta nueva entra por `S1` si en esa vertical queda algo que comprar. **Y si el motivo era `COURTESY` con días sin entregar, la cortesía NO se pierde: se DIFIERE** —se le escribe el `saldo_días` y `S9` la re-emite sobre la fila nueva cuando llegue a `ACTIVE`— por el mismo mecanismo de `DEC-GRANT-007` (`DEC-GRANT-010`, `B/14` §4.6). **Idempotente**, como `S12` |
 | S26 | **toda fila viva de la vertical —PRINCIPAL y DE COMPLEMENTO— en `ACTIVE` o `GRACE_PERIOD`**; la `PAUSED` **no entra** (`DEC-SUB-015`, §3.3) | `SUPER_ADMIN` **discontinúa la vertical** (`B/10` §4.3) | `CANCEL_SCHEDULED` | — | **se cancela el preapproval en el proveedor de inmediato**, con la regla de relectura de `S17` — es el día 0 del §4.3, y a partir de ahí *«el proveedor no emite un cobro más en la vertical»*—; **sobre un pagador manual no se manda nada**, porque no hay débito que detener (`B/06` §7). **La fecha de fin de servicio NO es la de `DEC-SUB-009` fila por fila: es UNA sola para toda la vertical**, la fórmula del `B/10` §4.3 —`max(día 60 desde el anuncio, el último día ya pagado por cualquier compromiso vivo)`—, y es lo único que separa este acto de `S11`: allá la fecha sale del período de esa persona. El servicio **sigue entero** hasta ese día, porque `CANCEL_SCHEDULED` **sí emite fuente** (`12-contrato…` §2.6), y `S12` lo consuma. **Y el grace deja de correr hacia `SUSPENDED` sin ninguna cláusula nueva**: `S6` sale de `GRACE_PERIOD` y esta fila ya sacó a la suscripción de ahí, que es exactamente lo que el borde 3 del `B/10` §4.5 promete —*«lo que no pasa es que el reloj del grace la empuje a `SUSPENDED` por efecto de la discontinuación»*—. Lo adeudado **sigue su camino normal**: `S5` entra a esta fila desde `GRACE_PERIOD` y ya no puede, así que el pago que llegue se resuelve como el de cualquier `CANCEL_SCHEDULED`. **Idempotente**, como `S12` |
 | S27 | **toda fila viva de la vertical —de las dos clases— en `SUSPENDED`** | **el mismo evento de `S26`** | `CANCELLED` | — | **acá no hay servicio ni cobertura que retirar, y por eso no pasa por `CANCEL_SCHEDULED`**: el §21 ya cortó el servicio y `SUSPENDED` **no emite ninguna fuente** (`12-contrato…` §2.6), así que mandarla al piso le **devolvería** hasta 60 días de servicio **gratis** a quien dejó de pagar — el piso del `B/10` §4.4 existe porque *«perder el servicio entero es estrictamente peor que un aumento»*, y acá no hay ninguno que perder. **Es la misma forma de `S23` y por la misma razón**, con la fecha de fin de servicio **en el día del anuncio**. **Se cancela el preapproval si seguía vivo**, con la regla de relectura de `S17`; **sobre un pagador manual no se manda nada**. **Libera el candado `A`** y **cierra la ventana de `MP4`**, igual que `S23` — y acá eso no le quita nada, porque lo que la reapertura devolvería es un servicio que la vertical deja de prestar. La deuda por servicio **ya prestado** sigue su camino: no se perdona ni se persigue más fuerte (`B/10` §4.5, bordes 2 y 3). **Idempotente**, como `S12` |
-| S28 | **toda fila viva de la vertical —de las dos clases— en `PENDING_AUTHORIZATION`** | **el mismo evento de `S26`** | `ABANDONED` | — | **el alta no se puede completar**: el día 0 la vertical *«deja de admitir altas»* (`B/10` §4.3), y terminar ese checkout sería un alta nueva sobre una vertical cerrada. **Tampoco pasa por `CANCEL_SCHEDULED`**, por la razón de `S27` llevada al extremo: `PENDING_AUTHORIZATION` **no emite fuente** y el contrato ya descartó emitirla llamándola *«la respuesta cara»* por 72 h (`12-contrato…` §2.6) — por 60 días y sin que nadie haya autorizado ni pagado, no se discute. **Se cancela el preapproval en el proveedor**, por lo mismo que lo cancela `S3`: sin eso queda una autorización viva que puede cobrar. **Y si la fila era de un pagador manual, su primera cuota se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7), igual que en `S3`. **Y si era una sucesora, su predecesora está en `CANCEL_SCHEDULED` por `S26`**, así que la sucesión la cierra `S18` cuando `S12` la consuma — no hace falta ningún evento nuevo. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**, igual que en `S3` y por la **misma rama 2** de `B/12` §5.3 — con la precisión que ese § escribe: la predecesora está en `CANCEL_SCHEDULED` por `S26`, así que el pago **le queda** en vez de reactivar. **Lo que NO hace es cerrar un saldo de cortesía**: ver abajo. **Idempotente**, como `S12` |
+| S28 | **toda fila viva de la vertical —de las dos clases— en `PENDING_AUTHORIZATION`** | **el mismo evento de `S26`** | `ABANDONED` | — | **el alta no se puede completar**: el día 0 la vertical *«deja de admitir altas»* (`B/10` §4.3), y terminar ese checkout sería un alta nueva sobre una vertical cerrada. **Tampoco pasa por `CANCEL_SCHEDULED`**, por la razón de `S27` llevada al extremo: `PENDING_AUTHORIZATION` **no emite fuente** y el contrato ya descartó emitirla llamándola *«la respuesta cara»* por lo que dure la ventana de `S3` —**72 h o 7 días corridos**, según el método de pago (§3.4 punto 1)— (`12-contrato…` §2.6) — por 60 días y sin que nadie haya autorizado ni pagado, no se discute. **Se cancela el preapproval en el proveedor**, por lo mismo que lo cancela `S3`: sin eso queda una autorización viva que puede cobrar. **Y si la fila era de un pagador manual, su primera cuota se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7), igual que en `S3`. **Y si era una sucesora, su predecesora está en `CANCEL_SCHEDULED` por `S26`**, así que la sucesión la cierra `S18` cuando `S12` la consuma — no hace falta ningún evento nuevo. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**, igual que en `S3` y por la **misma rama 2** de `B/12` §5.3 — con la precisión que ese § escribe: la predecesora está en `CANCEL_SCHEDULED` por `S26`, así que el pago **le queda** en vez de reactivar. **Lo que NO hace es cerrar un saldo de cortesía**: ver abajo. **Idempotente**, como `S12` |
 
 **La muerte de la predecesora y el cierre de la sucesión son DOS actos, y por eso son dos
 filas.** `S17` mata a la predecesora; `S18` cierra la sucesión. Escribirlos como uno solo es lo
@@ -177,7 +177,7 @@ no hay un tercer estado»*— y **puso la precondición sobre la predecesora**, 
 recorrió. El tercer estado existía y era caro: `sucede_a` no nulo con la sucesión terminada y
 nada que pudiera limpiarlo.
 
-**Mientras la sucesora espera autorización —hasta 72 h— la predecesora se sigue moviendo, y se
+**Mientras la sucesora espera autorización —hasta que vence su ventana, §3.4 punto 1— la predecesora se sigue moviendo, y se
 mueve sola.** Recorrí las salidas de los tres estados desde los que una fila **puede ser sucedida**
 —`ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, el conjunto que `G-R1-A` vigila— y son
 **ocho** las transiciones de esta tabla que la sacan de ahí sin que nadie declare una sucesión:
@@ -258,7 +258,7 @@ está entre los vivos— y el segundo `INSERT` lo rechaza la base, que es la pre
 punto 4 necesita para ser verdadera. Lo que el cliente ve entonces **no es *«empezar de nuevo»***:
 es el aviso del §3.3.1, *«terminá o cancelá el checkout que tenés abierto»*, con su enlace para
 retomar y su fecha de vencimiento. No queda bloqueado —abandonar lo deja en `ABANDONED`, que no es
-vivo, y desde ahí el alta nueva entra sin pelear con nada— y el tope es la ventana: 72 h.
+vivo, y desde ahí el alta nueva entra sin pelear con nada— y el tope es la ventana de esa fila (§3.4 punto 1).
 
 **Y no se cierra una sucesión que todavía podría no ocurrir: se cierra una que ya no tiene otro
 final.** La predecesora está muerta por su propia cuenta, sin reversa (`CANCELLED` no revive,
@@ -383,7 +383,7 @@ una ya cancelada por decisión de la persona, `D7` está cumplido y no hay nada 
 
 **La predecesora llega a la sucesión desde `GRACE_PERIOD`, y su cuota impaga sigue en `recycling`
 del lado del proveedor**, que la reintenta solo (`B/12` §1.3, medido). Si entra durante la ventana
-de 72 h, `S5` la devolvía a `ACTIVE` —y `S7`, si `S6` ya la había pasado a `SUSPENDED`—: dos filas
+de autorización, `S5` la devolvía a `ACTIVE` —y `S7`, si `S6` ya la había pasado a `SUSPENDED`—: dos filas
 vivas, el crédito de la sucesora ya computado en cero, y un período pagado que `S17` se lleva
 puesto. Es el daño que `B/12` §5.3 describe entero.
 
@@ -446,11 +446,11 @@ son **cuatro** y el cuarto lo agregó `S25`, no esta puerta (`NUCLEO/03` §1 reg
 
 **Y `S6` lleva su condición por el mismo motivo**: con el pago acreditado y pendiente, el reloj del
 grace mandaría a `SUSPENDED` —que no emite fuente (`12-contrato…` §2.6)— a alguien que pagó el
-período. El tope es la ventana: 72 h, y después el pago se resuelve por una de las seis ramas de
+período. El tope es la ventana de esa fila (§3.4 punto 1), y después el pago se resuelve por una de las seis ramas de
 `B/12` §5.3.
 
 **Y el tope está escrito como condición, no sólo como intención, porque hay QUIÉN lo hace
-vencer.** *«Después de 72 h»* no era ninguna condición de `S19`, `S5`, `S6` ni `S7`: las cuatro
+vencer.** *«Después de que venza la ventana»* no era ninguna condición de `S19`, `S5`, `S6` ni `S7`: las cuatro
 cuelgan de dos booleanos —*«¿hay una sucesora viva apuntándome?»* y *«¿hay un pago pendiente por
 `S19`?»*— y ninguno se apaga por el paso del tiempo. Los apagan **cuatro** actos declarados, uno
 por rama. **Las ramas son SEIS desde la FASE 9-bis-4 y los actos distintos siguen siendo cuatro**,
@@ -923,7 +923,7 @@ predicado: se ata al estado de llegada de la instancia**, que es donde las tres 
 —más `A6`— ya confluyen.
 
 **`A3` no entra, y no por olvido.** Lleva la instancia a `ABANDONED`, y ahí la fila de complemento
-ya tiene transición propia: es `S3`, la misma ventana de 72 h, con su misma cancelación en el
+ya tiene transición propia: es `S3`, la misma ventana —con sus **dos** plazos, §3.4 punto 1—, con su misma cancelación en el
 proveedor. **`A4` tampoco**, y su población es vacía: un preapproval propio existe sólo si el cobro
 es `PERIÓDICO`, y `PERIÓDICO` + `DÍAS_FIJOS` **no existe** (`B/16` §1.2 y §1.3).
 
@@ -1068,10 +1068,29 @@ El §5.6 define el modelo actual —Hospeda crea el preapproval y después manda
 que **esta ventana existe siempre, por diseño**, y es donde se pierde gente. `M-SUB-01` pedía
 cuatro cosas y acá están las cuatro:
 
-1. **Duración máxima: 72 horas.** Es configuración, no constante (§9), y vive en las opciones
-   globales de billing. El valor sale de dos restricciones: tiene que ser más largo que
-   cualquier demora del proveedor —medida hasta ~33 min— y más corto que el ciclo más corto que
-   vendemos, para que una ventana abierta nunca se superponga con un cobro.
+1. **Duración máxima: son DOS y no una, según el método de pago** (`DEC-SUB-016`). **72 horas para
+   el pagador con tarjeta** y **7 días corridos para el pagador manual**. Las dos son
+   configuración, no constante (§9), y viven en las opciones globales de billing. Las dos
+   respetan las mismas dos restricciones: más largas que cualquier demora del proveedor —medida
+   hasta ~33 min— y más cortas que el ciclo más corto que vendemos, para que una ventana abierta
+   nunca se superponga con un cobro.
+
+   **Por qué el pagador manual no puede compartir las 72 h.** Esa cifra se eligió para el tiempo
+   que tarda alguien en **completar un checkout**; lo que la ventana del pagador manual espera es
+   otro hecho físico: **que se acredite una transferencia bancaria**, que en Argentina no ocurre
+   en 72 h si el envío cae antes de un fin de semana largo. El costo de equivocarse es asimétrico
+   —se pierde a alguien que **ya decidió pagar**, contra tener una fila pendiente unos días más—,
+   y la fila pendiente no cuesta servicio: durante la ventana **no emite fuente**
+   ([`12-contrato…`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+   §2.6), que es lo que el §7.2 exige para que la regla se sostenga con cualquiera de las dos.
+
+   **Y son días CORRIDOS, no hábiles.** Un plazo en días hábiles obliga a un calendario de
+   feriados que el programa no tiene y que nadie va a mantener — el mismo criterio con que este
+   diseño viene descartando mecanismo.
+
+   **Consecuencia que hay que leer junto con el punto 3**: el vencimiento es **de esa fila**, así
+   que ninguna superficie puede escribir el plazo a mano. Lo que se muestra y lo que se avisa es
+   **la fecha** — el §3.4 punto 3 acá, `B/19` §4 fila 18 y `NUCLEO/07` §6.
 2. **Limpieza**: un job recorre las vencidas, las lleva a `ABANDONED` y **cancela el preapproval
    en el proveedor**. Sin ese segundo paso queda una autorización viva que puede cobrar.
 3. **Qué ve la persona mientras tanto**: su vertical en estado «esperando que completes el
@@ -1219,6 +1238,8 @@ manuales**. Lo único propio es cómo se constata el pago.
 **los mismos días configurables** que el resto (`DEC-SUB-002` vale igual acá) — **con una
 excepción, y es la primera cuota**: ahí no hay grace, porque el grace no es un beneficio de entrada
 (`B/12` §4.3) y la fila todavía no dio servicio; lo que corre ahí es la ventana de autorización
+—que **sobre un pagador manual dura 7 días corridos y no 72 h** (`DEC-SUB-016`, §3.4 punto 1),
+porque lo que espera es que se acredite una transferencia y no que alguien termine un checkout—
 (§7.2, *«cómo entra el grace»*). **Y además se notifica al admin** — que es el único caso donde una
 notificación es parte del flujo y no un efecto colateral, porque sin ella nadie va a registrar
 nada. **Desde `MP5` eso tiene sujeto y momento**: el reloj crea la cuota y el aviso sale sobre
@@ -1560,11 +1581,14 @@ tiene abierto—, y esta regla **la ata por adelantado**: **esa fila no puede ll
 la primera cuota registrada**. Va escrito acá porque es acá donde alguien la escribiría sin verla.
 **El que cuenta es el pago acreditado y nunca la fecha**, que es el punto 2 del mismo §4.5.
 
-**Y la duración de esa ventana no se elige acá.** La única declarada hoy es la de `S3` —**72 h**—,
-que se escribió para el tiempo que tarda alguien en completar un checkout, no para el que tarda una
-transferencia en acreditarse. Cambiarla es una cifra de producto, así que queda nombrada y no
-resuelta: la regla se sostiene con cualquiera de las dos, porque lo que la sostiene es que la fila
-**no dé servicio** durante la ventana, no cuánto dura.
+**Y la duración de esa ventana ya está elegida, y no es la de `S3` para el pagador con tarjeta.**
+Era la única declarada —**72 h**, escrita para el tiempo que tarda alguien en completar un
+checkout, no para el que tarda una transferencia en acreditarse—, y `DEC-SUB-016` la partió: sobre
+un pagador manual la ventana de `S3` dura **7 días corridos** (§3.4 punto 1). **La regla de este §
+no cambia ni depende de la cifra**: lo que la sostiene es que la fila **no dé servicio** durante la
+ventana, y eso vale igual con 72 h que con 7 días. Lo que la cifra cambia es a quién se pierde: con
+las 72 h, el pagador manual que transfiere un viernes muere en `ABANDONED` y tiene que rehacer el
+alta entera.
 
 #### Qué mueve la fecha del próximo cobro: tres escrituras, y ninguna cuarta
 
@@ -1841,7 +1865,7 @@ La obligación 2 de `DEC-METH-008`, contestada por escrito:
 |---|---|---|---|---|
 | A1 | *(sin fila)* | se contrata | `PENDING_AUTHORIZATION` | exige una suscripción principal válida y compatible (§38). **Nunca durante un trial** (§10.5) |
 | A2 | `PENDING_AUTHORIZATION` | se autoriza | `ACTIVE` | recurrente: su propio preapproval (`DEC-ADDON-002`). De única vez: su propio cobro |
-| A3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | mismas 72 h que S3 |
+| A3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | **la misma ventana que `S3`**, con sus **dos** plazos según el método de pago (§3.4 punto 1) |
 | A4 | `ACTIVE` | llega su fecha de fin | `EXPIRED` | **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`) |
 | A5 | **toda instancia con una autorización que puede cobrar: `PENDING_AUTHORIZATION` y `ACTIVE`** (ver abajo, *«la instancia que autoriza después»*) | se da de baja, queda huérfano, **o se revoca el grant del que cuelga el ancla que era su título** | `CANCELLED` | **Son tres eventos y el tercero es nuevo** (ver abajo, *«el addon cuyo título era el ancla»*). **El tercero nombra la REVOCACIÓN y no *«el retiro del ancla»***, porque *«desanclar no está declarado»* (`12-contrato…` §2.8, `B/02` §2.4) y una transición no puede esperar un acto que ningún catálogo produce: revocar es el acto declarado —fila del grant permanente del `NUCLEO/08` §3— y **retira todas las anclas del instrumento de una vez**, que es lo que el ancla-título de esta instancia necesita. §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las **seis** transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16`, `S17` y el espejo del §10.1—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3). **Y la suscripción de complemento de la instancia que se apaga queda `CANCELLED` en el mismo acto, por `S21`** (§3.2): **el preapproval que este efecto cancela es el de esa fila**, así que la llamada es **una sola** y no se manda dos veces |
 | A6 | `ACTIVE` | se borra la ficha destino | `CANCELLED` | **se consume**: no se libera ni se reasigna (`DEC-ADDON-001`), y el borrado **tiene que advertir qué addons se pierden y por cuánto**. **Su suscripción de complemento también queda `CANCELLED` en el acto, por `S21`** (§3.2) — misma regla y misma razón que en `A5`: el addon complementa algo que ya no está |
@@ -1852,10 +1876,10 @@ revés.
 
 #### La instancia que autoriza después de que su título murió: por qué `A5` no sale sólo de `ACTIVE`
 
-**El `desde` de `A5` decía `ACTIVE` y nada más, y eso dejaba entera la ventana de 72 h del
+**El `desde` de `A5` decía `ACTIVE` y nada más, y eso dejaba entera la ventana de autorización del
 checkout del addon.** El camino, con todos sus pasos declarados: alguien `ACTIVE` —el único
 estado desde el que se puede comprar (`B/16` §2.2)— contrata un addon recurrente, `A1` lo lleva a
-`PENDING_AUTHORIZATION` con las mismas 72 h que `S3`, y **dentro de esa ventana su suscripción
+`PENDING_AUTHORIZATION` con la misma ventana que `S3` —y sus **dos** plazos, §3.4 punto 1—, y **dentro de esa ventana su suscripción
 principal deja de ser fila viva**. Cualquiera de las seis transiciones del `B/16` §4.3 sirve, y
 dos no necesitan que nadie toque un botón: `S12` es un reloj y `S16` llega con el cobro real, que
 `PA-3` mide **entre 26 y 44 minutos** después de autorizar. El disparador de la orfandad se
