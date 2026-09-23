@@ -3662,3 +3662,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La suite de `scripts/client-tools` terminó con 306 tests, 0 fallos y 772
   assertions. Una corrida anterior tuvo un timeout aislado en un test de
   proceso; la repetición completa pasó y no dejó procesos persistentes.
+
+## Gate 221 · Artifact server y almacenamiento persistente
+
+- `tools/artifact-app/server.mjs` y `publish-bundle.mjs` comparten el contrato
+  `ARTIFACT_DATA_DIR`; el directorio por defecto sigue siendo
+  `~/.local/share/opencode-artifacts`.
+- El bundle de migración valida correctamente y el servidor ya implementa
+  galería, snapshots, restauración, autoreload y eventos persistentes.
+- La publicación desde esta sesión no pudo escribir la SQLite global porque el
+  sandbox expone el home como solo lectura. No se cambiaron permisos ni se
+  copiaron bases; en una sesión normal basta arrancar ambos procesos con el
+  mismo `ARTIFACT_DATA_DIR` escribible.
