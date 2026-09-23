@@ -52,7 +52,7 @@ El contrato y el bypass ya están implementados de forma reversible:
 - El adapter declara `develop -> staging -> main`, con `main` protegida y
   `main -> staging`/`staging -> develop` como back-merges declarados.
 
-La rama `develop` todavía no se creó ni se publicó. Tampoco se cambiaron
-workflows, CI, Linear o reglas remotas. La activación operacional sigue siendo
-la fase 0 y requiere crear la rama desde `staging`, revisar protección/CI y
-ejecutar las pruebas E2E antes de retirar el bypass temporal.
+La referencia local `develop` ya fue creada desde `staging`. Todavía no se hizo
+push ni se cambiaron workflows, CI, Linear o reglas remotas. La activación
+operacional sigue siendo la fase 0 remota: publicar la rama, revisar
+protección/CI y ejecutar las pruebas E2E antes de retirar el bypass temporal.

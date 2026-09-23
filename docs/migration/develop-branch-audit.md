@@ -1,15 +1,16 @@
 # Verificación actualizada — 2026-09-22
 
-La auditoría read-only confirmó que `develop` todavía no existe ni localmente ni
-en `origin`. El contrato de configuración ya quedó preparado para que `develop`
-sea la base por defecto de nuevos issues; la rama real aún debe activarse en una
-etapa separada. `main` continúa siendo la única rama protegida declarada por el
-adapter durante esta transición.
+La auditoría confirmó que la referencia local `develop` ya fue creada desde el
+checkout local de `staging` (`c01849bad`). Todavía no existe `origin/develop`.
+El contrato de configuración usa `develop` como base por defecto de nuevos
+issues; la publicación remota y sus reglas de protección siguen pendientes.
+`main` continúa siendo la única rama protegida declarada por el adapter durante
+esta transición.
 
-La activación requiere una decisión explícita y una etapa separada: crear la rama,
-ajustar GitHub/CI, validar template y env, y probar start/close issue. Mientras
-tanto, `start-issue` acepta `--base staging` para un trabajo urgente que deba
-saltear `develop`.
+La activación remota requiere una decisión explícita y una etapa separada:
+publicar la rama, ajustar GitHub/CI, validar template y env, y probar
+start/close issue. Mientras tanto, `start-issue` acepta `--base staging` para un
+trabajo urgente que deba saltear `develop`.
 
 ## Auditoría para agregar `develop`
 

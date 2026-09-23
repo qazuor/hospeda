@@ -466,7 +466,7 @@
                             "title": "Agregar develop como rama de integración intermedia",
                             "category": "Git, Linear y promoción",
                             "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
-                            "notes": "Gate202: auditoría read-only del 2026-09-22 confirmó que develop no existe localmente ni en origin. Gate220: `.qz/project.json` y el fallback legacy declaran `develop` como base por defecto, `main` como única rama protegida, promoción ordenada `develop → staging → main` y back-merge `main → staging`/`staging → develop`. `start-issue` acepta `--base staging` para urgencias y `wt-create.sh` recibe una base explícita validada; si la base aún no existe, informa el estado y sugiere el bypass. No se creó ni publicó la rama develop y la activación Git/CI queda pendiente.",
+                            "notes": "Gate202: auditoría read-only del 2026-09-22 confirmó que develop no existía. Gate220: `.qz/project.json` y el fallback legacy declaran `develop` como base por defecto, `main` como única rama protegida, promoción ordenada `develop → staging → main` y back-merge `main → staging`/`staging → develop`. `start-issue` acepta `--base staging` para urgencias y `wt-create.sh` recibe una base explícita validada; si la base aún no existe, informa el estado y sugiere el bypass. Gate221: se creó la referencia local `develop` desde `staging` (`c01849bad`); `origin/develop`, GitHub/CI y la prueba E2E remota siguen pendientes.",
                             "done": false
                         },
                         {
