@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_42",
-        "number": 42,
-        "createdAt": "2026-09-23T16:40:00.000Z",
+        "id": "ver_claude_opencode_migration_43",
+        "number": 43,
+        "createdAt": "2026-09-23T17:00:00.000Z",
         "author": "opencode",
-        "reason": "validar client-tools completo",
+        "reason": "validar guards de scripts",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_41"
+        "basedOnVersion": "ver_claude_opencode_migration_42"
     },
     "data": {
         "sections": [
@@ -588,7 +588,7 @@
                             "title": "Endurecer pre-commit",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
-                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. Gate212: el pre-commit ahora valida de forma condicional y read-only el manifest cross-client de comandos cuando cambia `.opencode/commands` o su manifest, y `.qz/project.json` cuando cambia el adaptador; ambos checks pasaron (`plan --check`, `validate-project`, shell syntax). La arquitectura por capas sigue pendiente para drift de envs, operaciones peligrosas y la política final de permisos.",
+                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. Gate212: el pre-commit ahora valida de forma condicional y read-only el manifest cross-client de comandos cuando cambia `.opencode/commands` o su manifest, y `.qz/project.json` cuando cambia el adaptador; ambos checks pasaron (`plan --check`, `validate-project`, shell syntax). La arquitectura por capas sigue pendiente para drift de envs, operaciones peligrosas y la política final de permisos. Gate260: `pnpm test:scripts` pasó 16 archivos, 256 tests y 0 fallos; el primer intento en el runner fue EROFS de Vitest y la repetición writable confirmó el resultado.",
                             "done": false
                         },
                         {
