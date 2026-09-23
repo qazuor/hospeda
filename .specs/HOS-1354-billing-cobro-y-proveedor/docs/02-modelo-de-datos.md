@@ -130,7 +130,7 @@ parten la vida de la relación en cuatro, sin superponerse:
 
 - `sucede_a` no nulo **en una fila viva** → **sucesión en curso**. La escribe `S1`, la limpia `S18`.
 - `sucede_a` no nulo **en una fila que ya no es viva** → **sucesión muerta sin cerrarse**: la
-  sucesora venció su ventana (`S3`) o la mató `S13`, y **nadie limpia el puntero**. Es deliberado —
+  sucesora venció su ventana (`S3`), la mató `S13` o la cortó `S28` al discontinuarse la vertical, y **nadie limpia el puntero**. Es deliberado —
   `S13` lo llama *«el registro fiel de lo que pasó»* (`B/03` §3.2)— y es la razón por la que **el
   adjetivo «viva» es parte del predicado y no un adorno**: sin él, la predecesora de una sucesión
   que murió sigue siendo *«la predecesora de una sucesión en curso»* para siempre, con `S5`, `S6` y
