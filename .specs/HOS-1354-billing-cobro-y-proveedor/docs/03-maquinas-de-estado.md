@@ -115,7 +115,7 @@ Y una nota de registro que sigue valiendo:
 |---|---|---|---|---|---|
 | S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`) | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización** (`B/12` §5.2). **Y si es de pagador manual, acá se abre su PRIMERA cuota** —la cláusula *(b)* de `MP5` (§7)—, que es el espejo del primer cobro que en un pagador con tarjeta ocurre antes de `S2`: tiene que estar registrada para que la fila llegue a `ACTIVE`, así que abrirla es parte del alta y no del reloj |
 | S2 | `PENDING_AUTHORIZATION` | webhook de autorizada, confirmado por relectura | `ACTIVE` | — | arranca el período; la fila **pasa a emitir fuente** (`12-contrato…` §2.6) y ese cambio de cobertura es lo que mueve el trial, si había uno (`V/03` §2, `T2`) — esta tabla **no dispara** una transición de la otra épica |
-| S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | pasaron **72 h** sin autorizar | se cancela el preapproval en el proveedor; la fila se conserva —**con su `sucede_a` puesto, si era una sucesora**, porque es el registro fiel y porque ningún predicado lo lee sin exigir que la fila esté viva—. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**: es la rama 2 de `B/12` §5.3 y el que hace que *«el tope es la ventana»* sea una condición y no una intención. **Y si la fila era de un pagador manual, su primera cuota —abierta acá y nunca registrada— se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7): sin eso quedaría un `AWAITING` colgando de una suscripción muerta |
+| S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | pasaron **72 h** sin autorizar | se cancela el preapproval en el proveedor; la fila se conserva —**con su `sucede_a` puesto, si era una sucesora**, porque es el registro fiel y porque ningún predicado lo lee sin exigir que la fila esté viva—. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto**: es la rama 2 de `B/12` §5.3 y el que hace que *«el tope es la ventana»* sea una condición y no una intención. **Y si la fila era de un pagador manual, su primera cuota —abierta acá y nunca registrada— se cierra en el mismo acto**, por la segunda cláusula de `MP3` (§7): sin eso quedaría un `AWAITING` colgando de una suscripción muerta. **Y si esta fila era la SUCESORA de una sucesión y la predecesora tenía una cortesía que `S18` DIFIRIÓ, el saldo se cierra acá**: se le escriben `saldo_cerrado_en` y `motivo_cierre = VENTANA_DE_AUTORIZACIÓN_VENCIDA` (`B/02` §2.4), con lo que la cortesía deja de ser *«diferida»* (`NUCLEO/01` §2.6) y **`S9` no la puede re-emitir nunca más** — quien vuelva a suscribirse **no recupera esos días** (`DEC-GRANT-011`). **Se le avisa en el mismo correo que le dice que la ventana venció** (`B/19` §4 fila 18, `NUCLEO/07` §6) |
 | S4 | `ACTIVE` | un cobro falla — **y en un pagador manual eso es que `MP5` abrió la cuota del período y no hay pago acreditado contra ella** (§7.2): no hay débito que rebote, así que el evento se lee sobre la cuota y no sobre el proveedor. **Sobre la PRIMERA cuota de un pagador manual no corre**, y no hace falta una condición nueva para eso: esa cuota se abre en `PENDING_AUTHORIZATION` y el `desde` de esta fila es `ACTIVE` (§7.2, *«cómo entra el grace»*) | `GRACE_PERIOD` | — | arranca el reloj del §4; el servicio **sigue entero** (§20) |
 | S5 | `GRACE_PERIOD` | entra el pago, **o se reevalúa uno que quedó pendiente** por `S19` | `ACTIVE` | las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se apaga el reloj |
 | S6 | `GRACE_PERIOD` | se agota el reloj | `SUSPENDED` | **no hay un pago acreditado del período pendiente de resolución** por `S19` | §21: sin listado público, sin edición, sin creación, sin entitlements comerciales; datos conservados y billing accesible |
@@ -256,7 +256,34 @@ final.** La predecesora está muerta por su propia cuenta, sin reversa (`CANCELL
 `CHARGE_DECLINED` lo canceló el proveedor de forma terminal, y la baja que el espejo escribe **la
 decidió el proveedor**), así que *«fue sucedida»* es el
 registro fiel. Si después la sucesora abandona, la persona queda sin fila viva y puede dar de alta
-de nuevo — el mismo desenlace que tendría si nunca hubiera declarado la sucesión.
+de nuevo — **el mismo desenlace que tendría si nunca hubiera declarado la sucesión, con una sola
+excepción y es la de abajo**: si la predecesora tenía una cortesía, declarar la sucesión la dejó
+**diferida**, y el abandono la **cierra** (`DEC-GRANT-011`). Para todo lo demás —el candado, el
+alta nueva, lo que puede comprar— la sucesión abandonada no deja rastro.
+
+#### El saldo de una cortesía que nadie completó se CIERRA en `S3`
+
+**`S18` deja la cortesía esperando y `S9` la re-emite cuando la sucesora llega a `ACTIVE`
+(`DEC-GRANT-007`) — pero desde `PENDING_AUTHORIZATION` hay DOS salidas y la segunda no lleva a
+`ACTIVE`.** `S3` manda la sucesora a `ABANDONED`, que es terminal, y ahí queda un `courtesy_grant`
+con `saldo_días` y **ninguna fila viva en esa vertical a la que volver**. `DEC-GRANT-011` decidió
+el desenlace: **el saldo se cierra en el mismo acto**, con `saldo_cerrado_en` y su `motivo_cierre`
+(`B/02` §2.4), y **quien vuelva a suscribirse no recupera esos días**.
+
+**Es el criterio que el programa viene aplicando, leído sobre este caso**: la persona **no puso
+plata** y el acto que corta es **suyo** —abandonar el checkout—, así que se declara y no se repara.
+Es el mismo desenlace que `DEC-TRIAL-009` (*«revocar un grant no devuelve el trial»*) y por las
+mismas razones. **Lo que cuesta va dicho**: el abandono puede ser un error —una pestaña que se
+cierra— y no una decisión, y quien firmó la cortesía **puede volver a otorgarla**, que es un acto
+que ya existe —el **primer** disparador de `S9`— y no necesita mecanismo nuevo.
+
+**Y no alcanza al saldo que difirió `S25`, que tiene su propio desenlace declarado.** Aquél espera
+**un alta nueva** en la vertical que se discontinuó (`DEC-GRANT-010`, `B/14` §4.6), y una vertical
+discontinuada **queda cerrada a altas para siempre** (`B/10` §4.5, borde 4): ahí **no llega a
+existir ninguna fila en `PENDING_AUTHORIZATION`** que pueda vencer su ventana, así que esta regla
+no tiene sujeto sobre esa población. Ese saldo **sigue diferido y sin emitir**, que es lo que
+`DEC-GRANT-010` declaró y el owner eligió no cerrar. **Los dos saldos se escriben con la misma
+columna y terminan distinto**, y por eso se dice acá en vez de dejarlo a la lectura.
 
 **Las cinco escrituras de `S18` no corren todas por todos los caminos, y las dos últimas son las
 que se reparten.** Las tres primeras —`sucedida_por`, limpiar `sucede_a` y el re-apunte de las
