@@ -258,6 +258,12 @@ próxima acción correcta es reconstruir una copia v2, revalidar esas decisiones
 por ID y ejecutar cualquier soft-delete o ajuste sólo sobre la copia antes de
 considerar importarlo.
 
+La copia v2 se reconstruyó con SQLite Backup API y pasó `integrity_check = ok`.
+El cruce por ID encontró decisiones previas para 48 de las 49 filas actuales.
+La única entrada nueva es la observación `965`, detectada por v2 como sin
+`type`; debe revisarse por separado. Las otras 48 decisiones siguen pendientes
+de reaplicación controlada sobre la copia, no sobre la DB activa.
+
 ## Pines versionados alineados
 
 El bootstrap reproducible quedó alineado con el runtime activo: OpenCode
