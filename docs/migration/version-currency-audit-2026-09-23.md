@@ -2,16 +2,17 @@
 
 Fecha de consulta: 2026-09-23.
 
-Esta auditoría es read-only. No actualiza binarios, no ejecuta `sync`, no
-modifica configuraciones y no toca la base de Engram.
+La consulta inicial fue read-only. Posteriormente se ejecutó la actualización
+controlada con backups, `gentle-ai sync` y migración de Engram documentada en
+este mismo archivo; no se modificaron secretos ni se activó Cloud.
 
 ## Estado instalado
 
 | Componente | Instalado | Canal actual del plan | Estado |
 |---|---:|---|---|
-| OpenCode | 1.18.31 | V1 | Una versión V1 detrás de la última release consultada |
-| Gentle-AI | 2.9.0 | V1-compatible | Muy atrasado; la línea estable actual es 3.7.0 |
-| Engram | 1.20.0 | SQLite local | Muy atrasado; la línea estable actual es 2.0.0 |
+| OpenCode | 1.18.32 | V1 | Activo y alineado con la release verificada |
+| Gentle-AI | 3.7.0 | V1-compatible | Activo, sincronizado y validado por doctor |
+| Engram | 2.0.0 | SQLite local | Activo; integridad ok y lote A curado |
 
 ## Fuentes actuales
 

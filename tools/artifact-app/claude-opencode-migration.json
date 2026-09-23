@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_39",
-        "number": 39,
-        "createdAt": "2026-09-23T16:00:00.000Z",
+        "id": "ver_claude_opencode_migration_40",
+        "number": 40,
+        "createdAt": "2026-09-23T16:10:00.000Z",
         "author": "opencode",
-        "reason": "curación activa verificada de Engram lote A",
+        "reason": "alinear documentación con runtime actualizado",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_38"
+        "basedOnVersion": "ver_claude_opencode_migration_39"
     },
     "data": {
         "sections": [
@@ -95,7 +95,7 @@
                             "id": "opencode-v1-rollback",
                             "title": "Activar OpenCode V1 compatible con Gentle",
                             "category": "OpenCode + Gentle-AI",
-                            "description": "Usar OpenCode V1.18.31 como runtime operativo hasta que Gentle-AI publique plugins V2.",
+                            "description": "Usar OpenCode V1.18.32 como runtime operativo compatible con Gentle-AI 3.7.0.",
                             "notes": "Hecho y verificado: binario oficial, seis plugins V1 restaurados, DB V2 preservada, DB V1 creada, models/TUI funcionan. Rollback a V2 disponible desde backups.",
                             "done": true
                         },
@@ -104,7 +104,7 @@
                             "title": "Instalar Gentle-AI completo",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Instalar preset y componentes oficiales compatibles con OpenCode.",
-                            "notes": "Gentle-AI 2.9.0 sigue instalado. El runtime operativo usa OpenCode V1.18.31 para mantener compatibilidad con sus plugins V1; no ejecutar sync sin revisar compatibilidad.",
+                            "notes": "Gentle-AI 3.7.0 activo y sincronizado. El runtime operativo usa OpenCode V1.18.32 V1; doctor pasa sin warnings y RDD/review queda explícitamente off.",
                             "done": true
                         },
                         {
@@ -112,7 +112,7 @@
                             "title": "Actualizar ejecutable Engram",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Instalar Engram actual sin modificar la DB histórica.",
-                            "notes": "Engram 1.20.0 activo; DB original preservada.",
+                            "notes": "Engram 2.0.0 activo; DB migrada con backup, integrity_check=ok y lote A curado.",
                             "done": true
                         },
                         {
