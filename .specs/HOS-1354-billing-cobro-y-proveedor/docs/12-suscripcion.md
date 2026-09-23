@@ -603,21 +603,23 @@ acá el período se pagó: por eso `S6` lleva la condición en `B/03` §3.2. No 
 el tope de la ventana— y sin ella el arreglo de este § crea, más chica, la misma
 suspensión que vino a impedir.
 
-### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y no hay corrección
+### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y que haya corrección depende de quién tiene la fecha
 
 El crédito se computa **al crear** la sucesora (`DEC-SUB-006`), y la ventana de autorización dura
 **72 h sobre un pagador con tarjeta y 7 días corridos sobre un pagador manual** (`B/03` §3.4
 punto 1, `DEC-SUB-016`). Si la predecesora renueva dentro de esa ventana, el crédito quedó corto
-**por un ciclo entero**. Corregirlo exigiría mover la fecha de cobro de la sucesora, que en ese
-momento está `pending`.
+**por un ciclo entero**. Corregirlo exige mover la fecha de cobro de la sucesora, **y de quién sea
+esa fecha depende que se pueda**: sobre un pagador con tarjeta es un dato del proveedor sobre un
+preapproval `pending`, y está medido que no se mueve; sobre un pagador manual es **una columna
+nuestra**, y ahí sí se corrige (`DEC-SUB-017`).
 
-> **La exposición no es la misma para los dos, y hay que decirlo porque la cifra la partió
+> **La medición cubre UNA de las dos poblaciones, y hay que decirlo porque la partió
 > `DEC-SUB-016` después de que esta medición se hiciera.** La sonda 48 midió un **preapproval**, y
 > un pagador manual no tiene ninguno (`B/06` §7): sobre él la ventana dura **más del doble** y la
-> fecha del próximo cobro es **una columna nuestra** (`B/03` §7.2, *«qué mueve la fecha»*), no un
-> dato del proveedor. **Lo que este § afirma queda acotado a lo medido**: sobre el preapproval
-> `pending` no hay corrección posible. **Si la hay sobre la copia local de un pagador manual es una
-> pregunta abierta**, y este § no la contesta.
+> fecha del próximo cobro es **una columna nuestra** (`B/03` §7.2, *«qué mueve la fecha del próximo
+> cobro»*), no un dato del proveedor. **Extender a esa población una conclusión medida sobre la
+> otra es fabricar un hecho**, así que las dos ramas van escritas aparte y cada una dice sobre qué
+> se apoya.
 
 **Se midió si eso se puede hacer, y no se puede.** Sonda 48, sandbox, 2026-09-19, registrada como
 `EX-39`, sobre un preapproval `pending`:
@@ -635,14 +637,50 @@ objeto no acepta nada»*. Entró el monto, así que **lo bloqueado son las fecha
 > **La inmutabilidad de las fechas no depende del estado.** Vale igual sobre una `pending` que
 > sobre una autorizada, así que `start_date` sirve **sólo al crear**, y punto.
 
-**Entonces la salida no es corregir: es no llegar a ese caso.** Cuando falten pocos días para la
-renovación de la predecesora, el cambio de plan se ofrece con **ventana reducida**, de modo que la
-autorización no pueda cruzar la fecha de cobro. Cuántos días es *«pocos»* queda por definir: **es
-un número, no un mecanismo**.
+**Entonces, sobre el pagador con tarjeta, la salida no es corregir: es no llegar a ese caso.**
+Cuando falten pocos días para la renovación de la predecesora, el cambio de plan se ofrece con
+**ventana reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. Cuántos días
+es *«pocos»* queda por definir: **es un número, no un mecanismo**. **Y la ventana reducida vale
+para las dos poblaciones**, porque no llegar al caso sigue siendo más barato que corregirlo.
 
 **Una trampa del método, anotada porque cuesta cara**: el aviso *«doscientos que no aplicó»* saltaba
 también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
 es que **`last_modified` no se haya movido**, no que la fecha siga igual.
+
+#### Y sobre el pagador manual sí hay corrección, porque acá no hay proveedor que no nos deje
+
+**El argumento entero de arriba no tiene sujeto en esta población.** Un pagador manual **no tiene
+preapproval** (`B/06` §7), así que no hay ningún objeto del proveedor cuyas fechas estén
+bloqueadas: la fecha del próximo cobro de su sucesora es **una columna nuestra** (`B/02` §2.2).
+Aceptar acá el crédito corto obligaría a declarar como causa **el límite del proveedor**, que en
+esta población **no existe**.
+
+> **Sobre una sucesora de pagador manual el crédito se RECOMPUTA en el instante en que su fecha
+> del próximo cobro se estrena**, contra los pagos que la predecesora tenga acreditados **a ese
+> instante**, y no contra los que tenía en el acto de creación (`DEC-SUB-017`).
+
+**No agrega un escritor, y eso es lo que la vuelve barata.** Sobre un pagador manual esa fecha la
+estrena **`MP1`**, al registrar la primera cuota —la escritura de `S2` tiene acá población vacía,
+porque su evento es un webhook de autorizada y no hay preapproval que autorice (`B/03` §7.2)—, así
+que la recomputación viaja en una escritura que **ya ocurre**: las escrituras de esa columna siguen
+siendo las que `B/02` §2.2 declara —*«son tres y no hay una cuarta»*— y no hay columna nueva.
+
+**Y no contradice la forma congelada del §5.2**, que es lo primero que hay que comprobar: *«el
+crédito se computa a partir de los pagos acreditados, nunca a partir de los días transcurridos»*.
+Recomputar más tarde lee **los mismos pagos acreditados**, sólo que ya incluye el que entró adentro
+de la ventana. Lo que se mueve es **cuándo se lee**, no contra qué — que es justamente lo que esa
+forma prohíbe mirar.
+
+**Y no toca `D8` ni el guard que lo vigila.** La corrección sólo puede empujar la fecha **hacia
+adelante** —el ciclo que la predecesora renovó se suma al crédito—, y `D8` exige que sea
+**futura** (`G-R1-B`, `B/20` §2): una fecha que se aleja no puede violar una precondición de
+posterioridad.
+
+**Y hay una razón de forma que pesa igual que la de mecanismo.** Con `DEC-SUB-016` **nosotros**
+alargamos esa ventana de 72 h a **7 días corridos** sobre esta misma población, o sea que acá el
+crédito corto **crece por una decisión propia**. Aceptar sin corregir lo que uno mismo agrandó es
+distinto de aceptar lo que impone un tercero: lo primero hay que corregirlo o dejar de llamarlo una
+restricción externa.
 
 ---
 
