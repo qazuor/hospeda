@@ -703,7 +703,7 @@ por escrito que su caso **no es una divergencia**.
 | 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
 | 12 | `COBRO_DURANTE_CORTESÍA` | `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`) | confirmar el reembolso de un cobro sobre días que `SUPER_ADMIN` había regalado | **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió |
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
-| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y es el único motivo del catálogo cuya PROPUESTA depende del disparador y no del motivo** (`DEC-RF-004`): de los **cuatro** disparadores de `S21`, el de la **revocación del grant** propone devolver y los otros tres no (`B/03` §3.2, *«la propuesta del 14 depende del disparador»*) |
+| 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y es el único motivo del catálogo cuya PROPUESTA depende del disparador y no del motivo** (`DEC-RF-004`): de los **cuatro** disparadores de `S21`, el de la **revocación del grant** propone devolver entero, y el de la **orfandad** se PARTE —propone devolver cuando al título lo mató la discontinuación de su vertical (`S25`, `S27` o `S28`) y no devolver en las otras nueve transiciones de `B/16` §4.3—; los otros dos no proponen devolver (`B/03` §3.2, *«la propuesta del 14 depende del disparador»*) |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
@@ -717,7 +717,9 @@ tabla de arriba.** El 14 pasó a tener **default por rama** y eso **no** mueve n
 la enumeración sigue teniendo **catorce** filas, y los **cinco** que devuelven plata son los que
 llevan **SÍ** en la última columna —el 1, el 2, el 3, el 7 y el 12—, mientras el 14 sigue con
 **puede**, que es la casilla que ya tenía antes de la partición. Lo que `DEC-RF-004` cambia vive en
-la tabla de defaults del `B/19` §6, no acá.
+la tabla de defaults del `B/19` §6, no acá. **Y la ampliación del 2026-09-23 —que parte además el
+disparador de la orfandad— tampoco las mueve**, por lo mismo: agranda la población de la rama que
+devuelve y no toca ni cuántos motivos hay ni cuáles llevan `SÍ`.
 
 **El 14 llegó por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una
@@ -764,7 +766,8 @@ porque **cuál de las cuatro falló va en el evento crítico** y no en el motivo
    lo que el sistema propone** (`DEC-RF-003`) y ordena primero
    los **cinco** motivos con `SÍ` en la última columna —1, 2, 3, **7** y 12—, donde **esperar le
    cuesta plata al cliente**, **y con ellos la marca del 14 en su rama `DEVOLVER`** (`DEC-RF-004`):
-   es el único caso en que eso se decide mirando el **disparador** y no el motivo, y por eso no
+   es el único caso en que eso se decide mirando **la rama con la que la marca llegó** y no el
+   motivo —el disparador, y en el de la orfandad además qué transición mató al título— y por eso no
    aparece en la última columna de la tabla de arriba, que se lee por motivo.
 2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
    apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`
