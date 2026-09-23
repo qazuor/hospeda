@@ -311,7 +311,7 @@ en una épica, mantenida a mano contra los cambios de la otra, es el punto de fa
 arreglo hecho por racimos.
 
 **Pero el hecho dice CUÁNDO preguntar y no contesta la pregunta, y las dos filas del reloj releen
-antes de actuar.** El §3 del contrato prohíbe decidir con lo que trae el aviso —*«un consumidor que
+antes de actuar — y no son las únicas que releen, sólo las únicas que tienen fila acá.** El §3 del contrato prohíbe decidir con lo que trae el aviso —*«un consumidor que
 decidiera con lo que trae el evento estaría creyéndole a un mensaje en vez de al estado»*—, y `PB4`
 y `PB5` **deciden lo más caro que decide esta máquina**: el día 90 es el primer escalón del hard
 delete del día 180 (cap. 02 §4.1). Así que las dos, en el momento de ejecutar, **vuelven a pedirle

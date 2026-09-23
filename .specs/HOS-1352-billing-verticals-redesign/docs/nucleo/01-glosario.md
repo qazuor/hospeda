@@ -59,8 +59,9 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 **Que la lista sea cerrada lo verifica un guard, `G-R6-B` (`V/20` §2), y no la memoria del que
 escribe.** Una escritura de `listing.inactiva_desde` que no sea uno de estos cuatro lo pone en
 rojo, y quien agregue un hecho nuevo agrega su fila acá **en el mismo acto**. Es la misma regla que
-los cuatro inventarios del §2.4, §2.5 y §2.6, con la diferencia de que **lo que se enumera acá son
-escritores**: la lista de **lectores** de la misma columna vive en `V/02` §2.5 y **la vigila el
+los cuatro inventarios del §2.4, §2.5 y §2.6, con la diferencia de que **lo que se enumera acá es el
+lado que ESCRIBE, y son hechos y no ejecutores** —un hecho puede tener varios, y el 2 tiene tres—:
+la lista de **lectores** de la misma columna vive en `V/02` §2.5 y **la vigila el
 mismo guard, con un mensaje propio** (cuarta enmienda de `DEC-TEST-001`). **No la vigila `G-R6`**:
 ése cruza las columnas que una condición
 **lee** contra las que alguna transición **escribe**, y de estos cuatro hechos **sólo el tercero es

@@ -254,6 +254,14 @@ igual que uno que le declare el scope equivocado, y contra eso el control es la 
 el guard. **Lo que cambia no es que la clasificación sea infalible: es que se hace UNA vez, en el
 catálogo, a la vista, en vez de reinventarse adentro del guard en cada clave.**
 
+**Y el atributo vive donde viven los otros tres: en el catálogo de claves, que es código
+(`NUCLEO/02` §1.2).** Hay que decirlo porque `G-R3` lo lee y `G-R3` se construye en **`V2`**,
+mientras que este § es capítulo de **`V3`**: **el atributo está desde `V1`**, que es la unidad que
+deja el catálogo de claves funcionando (`descomposicion.md` §2), así que el guard **no nace antes
+que el dato que compara** — que es exactamente el error que `G-R5` cometió y el criterio 2 de la
+quinta enmienda de `DEC-TEST-001` prohíbe. Lo que este § agrega es **la regla**, no el lugar; son
+dos preguntas distintas, como ya quedó escrito para `G-R6-B` y `G-R5`.
+
 **Las dos claves del piso quedan clasificadas acá y no en el guard**, que es lo que impide que el
 que lo construya tenga que decidirlo: *«contratar una suscripción»* y *«recuperar lo suyo»* son
 **`DE_ACCESO`**, y el argumento de tres premisas que el cap. 02 §2.1 escribe para la segunda
