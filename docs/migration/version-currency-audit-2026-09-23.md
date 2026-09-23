@@ -96,3 +96,35 @@ no está incluido.
 No se debe usar `@latest` directamente en producción de la workstation sin
 registrar primero la versión resuelta, checksum, release notes y procedimiento de
 rollback.
+
+## Evaluación de compatibilidad con lo ya implementado
+
+La actualización no exige rehacer la arquitectura de Hops, Linear, worktrees,
+envs, ramas, artifacts ni los comandos `hops-*`. Esas piezas ejecutan scripts
+versionados del proyecto y no dependen de internals de Gentle-AI. Sí exige una
+actualización controlada y una nueva ronda de validación:
+
+| Componente | ¿Rompe automáticamente lo actual? | Cambio necesario |
+|---|---|---|
+| OpenCode V1 `1.18.31 → 1.18.32` | No esperado | Actualizar el pin y repetir smoke de TUI, MCP, providers y comandos. Es un parche de la misma línea V1. |
+| Gentle-AI `2.9.0 → 3.6.1` | No por los scripts Hops; sí puede cambiar el comportamiento del agente | Sincronizar assets administrados, revisar ODD y fijar explícitamente la decisión RDD/review. Revalidar `AGENTS.md`, skills, SDD, handoff y arranque de OpenCode. |
+| Engram `1.20.0 → 2.0.0` | No es un reemplazo transparente | Migrar el esquema sobre una copia restaurada, comprobar proyectos y búsquedas, y hacer explícito el scoping del proyecto Hospeda en MCP/wrappers. |
+
+El punto más delicado es Engram: el wrapper `hops engram` puede seguir delegando
+los subcomandos, pero la resolución de proyectos de v2 es más estricta. Las
+llamadas que antes dependían de un proyecto implícito o de mezclar proyectos
+históricos deben probarse con un selector explícito. La DB activa no se debe
+abrir con v2 hasta completar la copia verificable y la prueba de restauración.
+
+Gentle-AI 3.6.1 tampoco invalida los comandos propios, pero `gentle-ai sync`
+puede regenerar assets globales administrados por Gentle. Por eso debemos
+comparar hashes antes/después y verificar que no sobrescriba silenciosamente
+los comandos, skills y agentes específicos de Hospeda. La configuración de
+review/RDD se debe registrar como decisión explícita; no conviene aceptar el
+nuevo default por accidente.
+
+Conclusión operativa: no hay que rediseñar lo ya hecho, pero tampoco es seguro
+actualizar los tres binarios y asumir que todo seguirá igual. La actualización
+requiere adaptación de pins, migración de Engram, revisión de assets de Gentle y
+una batería de regresión. Hasta completar esos pasos, la instalación actual se
+mantiene como rollback.
