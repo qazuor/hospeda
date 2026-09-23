@@ -3219,7 +3219,13 @@ Cada entrada lleva, según §3.4:
   §10.1 nunca la alcanza.
 - **Las cuatro cosas de mecánica, resueltas:**
   1. **Fila propia `MP4`**, no `MP1` ampliado: los efectos difieren de verdad (`S5` desde grace,
-     `S7` desde suspendida). `G-R4` sigue contando **tres** pares.
+     `S7` desde suspendida). `G-R4` sigue contando ~~**tres**~~ **cuatro** pares.
+     - ***Corregido el 2026-09-23***: eran tres el día que se escribió y **hoy son cuatro** — el
+       cuarto lo creó `S25` (`DEC-SUB-015`). La FASE 9-bis-5 recontó el conjunto entero contra la
+       tabla de `NUCLEO/03` §1 regla 7 y corrigió los **cuatro** sitios del corpus; **éste era el
+       quinto y vive fuera de él**, que es el *«cuarto desenlace»* que `DEC-METH-012` dejó
+       declarado: la aparición que el alcance del rastro excluye por definición. **La razón de la
+       decisión no depende de la cifra** — `MP4` sigue sin agregar ningún par.
   2. **Va a `ACTIVE` directo, y es seguro por construcción**: el pagador manual **no tiene débito
      en el proveedor**, así que `PA-5` no tiene sujeto; y si lo hubiera y estuviera cancelado, la
      fila ya no estaría en `SUSPENDED` —el barrido diario la lee y el espejo del §10.1 la habría
@@ -3343,6 +3349,17 @@ Cada entrada lleva, según §3.4:
     alcance al remedio hasta una población en la que su propio motivo no existe. **La mitad (2) de
     la decisión no cambia**: el que vuelve sigue pagando el período que arranca y no los que pasó
     suspendido.
+  - ***Enmendado otra vez el 2026-09-23 por la FASE 9-bis-5 (crítico `F-8fB1-001`): el tope se
+    RETIRÓ entero.*** El tope dejaba la fecha del próximo cobro **en el instante de la
+    reactivación**, que es exactamente el valor con el que dispara `MP5`, cuya condición es *«ya
+    llegó»*: el que se reabría tras una suspensión larga pagaba el período que pasó suspendido **y**
+    el que arrancaba, y `S4` lo devolvía al grace el mismo día. **Un tope sobre una fecha que otra
+    condición lee como «ya llegó» no es un tope: es un disparador.** Hoy el mecanismo es una
+    **REIMPUTACIÓN de la cuota**: si el período que la cuota cubre ya terminó, `MP4` la reimputa al
+    período que arranca en la reactivación antes de registrarla, y el avance de un ciclo sale de
+    ahí. La fecha queda en *reactivación + 1 ciclo*. **La mitad (2) se sigue cumpliendo literal**, y
+    por un mecanismo que esta viñeta no nombraba. Implementado en `B/03` §7.2 (`7a92b4da4`); **el
+    texto vigente es el del capítulo.**
 - **Sin aviso nuevo**: el catálogo de `NUCLEO/07` §6 no gana fila. El aviso del §30 al admin no
   cambia de momento — lo que `MP5` le aporta es **el sujeto que no tenía**.
 - **Y de paso cierra la otra mitad de `F-8B2-018`**: cómo entra el grace de un pagador manual. No
@@ -4296,6 +4313,20 @@ Cada entrada lleva, según §3.4:
     del propio cliente.
   **La tanda que la implemente enumera los cuatro disparadores y dice de qué lado cae cada uno**, sin
   dejar ninguno implícito.
+- **Ampliado el 2026-09-23, ya medidos los cuatro**: `A5` 1ª cláusula *(se da de baja)*, `A5` 2ª
+  *(queda huérfana)*, `A5` 3ª *(se revoca el grant que era su título)* y `A6` *(se borra la ficha
+  destino)*. **La 3ª va a `DEVOLVER`; las otras tres a `NO DEVOLVER`.**
+  **Y la 2ª NO es homogénea, lo que el owner decidió aceptar con una condición.** De las seis
+  transiciones que dejan huérfano un addon (`B/16` §4.3), **dos no son del cliente**: `S17` es
+  nuestra, y `S12` puede venir de un `CANCEL_SCHEDULED` que puso `S26` al discontinuar la vertical.
+  Por el criterio de esta misma decisión esas dos irían a `DEVOLVER`, y **quedan en `NO DEVOLVER`
+  por MECANISMO**: `S21` conoce la cláusula de `A5` que la disparó, **no cuál de las seis mató al
+  título tres saltos antes**, y hacerle llegar esa causa es mecanismo nuevo.
+  **La condición, y es obligatoria**: la fila del motivo 14 **dice en voz alta que esos dos caminos
+  existen**, para que quien resuelve pueda apartarse del default sabiendo cuándo. Un default es una
+  propuesta y no una sentencia; lo que no puede ser es una propuesta que contradice el criterio **en
+  silencio**. Elección del owner del 2026-09-23 entre tres opciones — eligió la 1, con esta
+  condición agregada.
 - **Por qué, y la razón ya estaba escrita en el programa**: *si la pérdida la causa un acto
   deliberado NUESTRO y la persona no puso plata nueva → se declara y no se repara; **si la persona
   PUSO PLATA → se le da salida***. En la tercera cláusula **las dos mitades apuntan al mismo lado**:
@@ -4391,13 +4422,143 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-005 — El listado ENLAZA al evento que dice cuál condición falló, y no lo copia en la marca
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: el motivo 7 (`PAGO_TARDÍO_RECHAZADO`) quedó en `DEVOLVER` con **cuatro condiciones**
+  que pueden fallar, y una de ellas —un precio nuevo no propagado— no es culpa del cliente del mismo
+  modo que las otras. Hoy **cuál de las cuatro falló se libra a que la persona lea el evento
+  crítico**.
+- **La regla que el corpus ya tiene escrita, y que verifiqué**: `B/05` §3 dice textual ***«Cuál de
+  las cuatro condiciones falló va en el evento y no en el motivo»***.
+- **Decisión**: **el listado ENLAZA al evento**. La persona ve el motivo y un vínculo a la condición
+  que falló. **La marca no guarda ese dato.**
+- **Por qué**: resuelve el problema real —que quien resuelve tiene que ir a buscarlo— **sin
+  contradecir `B/05` §3 y sin duplicar** información que ya existe en otro lado. Es superficie, no
+  modelo: una fila de `B/19`, cero columnas nuevas.
+- **Las dos alternativas, y por qué no**:
+  - **Que la marca guarde cuál condición falló** y el listado proponga distinto por condición:
+    **contradice una regla escrita del corpus**, que habría que enmendar explícitamente, y duplica
+    un dato con dos fuentes que pueden divergir.
+  - **Dejarlo como está**, con la persona leyendo el evento por su cuenta: es correcto y es lo que
+    hay, pero deja el trabajo de encontrarlo del lado de quien resuelve, todas las veces.
+- **Origen**: la familia 3 de la FASE 9-bis-5, y la elección del owner del 2026-09-23 entre las tres
+  opciones que se le presentaron — eligió la 3, que era la recomendada.
+
+---
+
+### DEC-SUB-017 — El crédito corto del pagador manual SÍ se corrige, porque su fecha es una columna nuestra
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: `B/12` §5.4 concluye *«no hay corrección»* apoyándose en la **sonda 48**, que midió un
+  **preapproval `pending`** del proveedor. **El pagador manual no tiene preapproval**: su fecha del
+  próximo cobro es una **columna nuestra**. La tanda corta de la 9-bis-5 acotó esa conclusión a lo
+  que la medición cubre en vez de extenderla, y dejó el caso abierto.
+- **Decisión**: **se abre la corrección local para el pagador manual.** Sobre el preapproval
+  `pending` del proveedor la conclusión de `B/12` §5.4 no cambia; sobre la copia local, sí se
+  corrige.
+- **Por qué, y es el punto entero**: el argumento que sostiene *«no hay corrección»* es **«el
+  proveedor no nos deja»**, y acá **no hay proveedor que no nos deje**. Extender una conclusión
+  medida sobre un sujeto a otro que no comparte su mecanismo es fabricar un hecho.
+- **Y hay una razón de forma que pesa igual**: con `DEC-SUB-016` **nosotros** alargamos esa ventana
+  de 72 h a **7 días corridos**. Aceptar un crédito corto que **crece por decisión propia** es
+  distinto de aceptar uno que impone un tercero. Lo primero hay que corregirlo o dejar de llamarlo
+  una restricción externa.
+- **Las dos alternativas, y por qué no**:
+  - **Aceptar el crédito corto también acá**, declarándolo con causa: la causa que se declararía
+    —el límite del proveedor— **no existe en esta población**.
+  - **Medirlo antes de decidir** (cuántos días se pierden en el peor caso): defendible, pero la
+    corrección es barata y el caso ya está identificado; medir primero sólo retrasa.
+- **Origen**: la tanda corta de la FASE 9-bis-5, que acotó la conclusión de `B/12` §5.4 a lo medido,
+  y la elección del owner del 2026-09-23 entre las tres opciones que se le presentaron — eligió la
+  1, que era la recomendada.
+
+---
+
+### DEC-TEST-002 — Un escritor DECLARADO y no implementado bloquea la terminación de su unidad, y no lo vigila un guard
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **De dónde sale**: la familia 1 de la 9-bis-5 arregló que `G-R6` naciera en rojo sobre el camino
+  normal (`I1`), fijando su dominio en **las tablas que los capítulos declaran** en vez del
+  subconjunto construido. **La contrapartida quedó declarada y es real**: un escritor que el capítulo
+  declara pero que nadie implementa **pasa en verde**, y esa clase no la vigila nada.
+- **Decisión**: **es un criterio de terminación, no un guard.** Ninguna unidad se declara lista si
+  deja un escritor declarado sin implementar.
+- **Por qué, y son dos razones**:
+  1. **Actúa en el momento correcto** — cuando se declara lista la unidad, no cuando alguien lee un
+     dato vacío en producción.
+  2. **No inventa mecanismo**: la familia 5 acaba de convertir *«asignar un guard»* en *«exigirlo
+     para terminar»* (los 29 guards pasaron a ser exigibles en los dos §4), y esto es **la misma
+     forma aplicada a los escritores**.
+- **Las dos alternativas, y por qué no**:
+  - **Un guard nuevo** que compare escritores declarados contra implementados: **sólo puede correr
+    cuando exista el código**, o sea FASE 10 en adelante, y hasta entonces no vigila nada.
+  - **Aceptar la contrapartida** sin hacer nada: una columna con escritor declarado y sin
+    implementar **no la detecta nadie** hasta que alguien lea el dato vacío.
+- **Origen**: la familia 1 de la FASE 9-bis-5, que dejó la contrapartida declarada y la mandó a
+  `DEC-TEST-001`, y la elección del owner del 2026-09-23 entre las tres opciones que se le
+  presentaron — eligió la 3, que era la recomendada.
+
+---
+
+### DEC-ARCH-008 — Los tres inventarios de `NUCLEO/01` son capítulo de la unidad `B3`
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: `NUCLEO/01` §2.4, §2.5 y §2.6 **no eran capítulo de ninguna de las 22 unidades**, y
+  `G-R1-E` / `G-R1-F` los cuentan. Es el defecto `I3` del censo, **reportado por dos vueltas**
+  (`F-8dC2-002`).
+- **Decisión**: los tres §§ son **capítulo de `B3`**.
+- **Por qué, y las tres razones son verificables**:
+  1. **El propio texto declara su lado**: `NUCLEO/01` §2.4 dice *«Todos están del lado de billing y
+     sobre filas de billing»*.
+  2. **`B3` ya es dueña de `B/02` §2.5** desde la familia 3 (`669a78ccc`), por la misma razón: es
+     donde vive el dato que esos dos guards cuentan.
+  3. **Hay precedente de la misma forma**: `NUCLEO/01` §1.2 → `V9`.
+- **Por qué costaba decidirlo**: `DEC-ARCH-006` hace que asignar un capítulo del núcleo a una unidad
+  de una épica sea una decisión de frontera, no de conveniencia. Por eso el agente la declaró en vez
+  de darla por obvia.
+- **Cómo se tomó**: la familia 5 **la tomó sin consultar** y pidió ratificación; el owner la ratificó
+  el 2026-09-23. **Cuarto caso del patrón en esta tanda**, con `DEC-ENT-002`, `DEC-GRANT-013` y
+  `DEC-GRANT-014`.
+- **Origen**: `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`I3`, la familia 5 de la FASE
+  9-bis-5 (`b91a7b251c`) y la ratificación del owner del 2026-09-23 entre las tres opciones que se le
+  presentaron — eligió la 1, que era la recomendada.
+
+---
+
+### DEC-SUB-018 — La suscripción SUSPENDIDA no entra al piso de una vertical discontinuada: va a `CANCELLED`
+
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: al escribir las tres transiciones de la discontinuación (`S26`, `S27`, `S28`, cerrando
+  `F3`), la familia 4 mandó la **suspendida** a `CANCELLED` y **no al piso de 60 días**, con el
+  criterio de que **al piso va sólo quien hoy tiene servicio**.
+- **Decisión**: **se ratifica.** La suspendida va a `CANCELLED`.
+- **Por qué**: el piso de 60 días es una **compensación por un servicio que se interrumpe**, y quien
+  está suspendido **no lo tiene**. El reparto lo decide la tabla de qué emite cada estado
+  (`12-contrato…` §2.6), que es un árbitro verificable y no un criterio de quien escribe.
+- **Lo que cuesta, y va declarado**: esa persona **pierde la ventana de `MP4` para regularizar y
+  volver**. Se acepta.
+- **Las dos alternativas, y por qué no**:
+  - **Mandarla al piso como al resto**: le damos 60 días de servicio a quien no estaba pagando, y
+    contradice la tabla de cobertura que decidió el reparto entero.
+  - **Darle la ventana de `MP4` antes de cancelar** —si regulariza, entra al piso; si no,
+    `CANCELLED`—: es la más justa en abstracto, y **agrega mecanismo** para una población que es la
+    intersección de dos casos raros: estar suspendido **y** que justo discontinuemos esa vertical,
+    que es un acto que el owner ya declaró que no va a ocurrir. `DEC-GRANT-010` sentó el precedente
+    de declarar con causa en ese mismo escenario.
+- **Origen**: la familia 4 de la FASE 9-bis-5 (`a577de930e`, `3075b5a84d`, `53df8414ce`) y la
+  ratificación del owner del 2026-09-23 entre las tres opciones que se le presentaron — eligió la 1,
+  que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **97** |
+| Decisiones tomadas | **102** |
 | De metodología | 12 |
-| Funcionales | 85 |
+| Funcionales | 90 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
