@@ -53,6 +53,14 @@ El tercero parece distinto y no lo es: el §21 dice que un plan suspendido queda
 comerciales»*, así que **suspendido es no tener cobertura**, y los beneficios heredados de Turista
 VIP se pierden porque su fuente dejó de otorgar — no por una regla aparte.
 
+> ⚠️ **Esta tabla NO es el censo de quién consume el hecho, y confundirlas costó la regla de
+> vigilancia del §4.2.** Lo que enumera son **los cuatro nombres con que el diseño pedía el hecho
+> antes de que este contrato existiera**, y por eso es una tabla histórica que no crece: su valor
+> es mostrar que eran uno solo. **El censo vivo de quién consume `cubierto` es la fila de la
+> tabla del §2.1**, que hoy es más larga que ésta y lo va a seguir siendo. Un lector que quiera
+> saber **cuántos lugares hay hoy** tiene que ir al §2.1; contar acá le da una cifra congelada
+> el día que nació el documento.
+
 **Una precisión que el primer renglón dejó de cumplir literalmente.** Desde que existen las tres
 clases de fuente (§2.4), **el paso 5 ya no pregunta por `cubierto`**: pregunta si hay alguna fuente
 de la que resolver capacidades, y eso incluye el piso, que no otorga cobertura. Los otros tres
@@ -91,13 +99,23 @@ que alguien pueda olvidar.**
 
 | campo | qué es | quién lo necesita |
 |---|---|---|
-| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2) |
+| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2) |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
 | **`hasta`** | uno de cuatro valores, y ninguno es «sin fecha» a secas (§2.6) | los avisos con ventana (cap. 15 §4.4) |
+
+> **La fila de `cubierto` es EL censo de sus consumidores, y va sin número a propósito.** La
+> versión anterior enumeraba seis y omitía a `PB4`, `PB5` y el hard delete —los tres relectores que
+> el §3 y `NUCLEO/01` §1.2 declaran—, mientras el §1.1 contaba cuatro y el §4.2 vigilaba contra el
+> cuatro. **Tres censos del mismo objeto, y el único mecanismo que existe para detectar que el
+> corte se filtra contaba contra el más viejo.** Acá no hay cifra que se pueda caducar: quien
+> agregue un consumidor **agrega su sintagma a esta fila en el mismo acto**, y la regla de
+> vigilancia del §4.2 pregunta *«¿está en esta fila?»*, nunca *«¿son todavía N?»*. Es la misma
+> forma que los cuatro inventarios de `NUCLEO/01` §2.4–§2.6 usan para lo mismo, con la diferencia
+> de que aquéllos tienen guard y éste no (§4.2).
 
 ### 2.2 `fuentes` es una lista, y eso no es de más
 
@@ -706,12 +724,35 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 
 ### 4.2 La regla de vigilancia, en las dos direcciones
 
-> **Regla de vigilancia**: si aparece un quinto lugar que necesita algo de billing **y no es este
-> hecho**, es señal de que el corte se está filtrando. Se mira, no se resuelve en el lugar.
+> **Regla de vigilancia**: si aparece **un lugar que necesita algo de billing y no figura en la
+> fila `cubierto` del §2.1** —y no es este hecho—, es señal de que el corte se está filtrando. Se
+> mira, no se resuelve en el lugar.
 >
-> **Y en la otra dirección**: si billing necesita leer de verticales algo que no está en los seis
-> campos del §4.1, vale lo mismo. Una lectura no declarada es un acoplamiento que nadie está
-> mirando.
+> **Y en la otra dirección**: si billing necesita leer de verticales algo que no está entre **los
+> siete campos** del §4.1, vale lo mismo. Una lectura no declarada es un acoplamiento que nadie
+> está mirando.
+
+**Las dos mitades estaban ancladas en un número y las dos lo tenían mal**, que es lo peor que le
+puede pasar a la única regla que existe para enterarse de que `DEC-ARCH-005` dejó de valer. La
+mitad de ida decía *«un quinto lugar»* contra el §1.1, que cuenta cuatro **nombres viejos** y no
+consumidores; la mitad de vuelta decía *«los seis campos»* contra un §4.1 que dice, nueve renglones
+más arriba, ***«Son siete campos en tres preguntas»*** — y **los dos que no contaba eran
+`vigente`/`vendible`, que el mismo § declara *«la diferencia entre que el acoplamiento se cortara o
+siguiera llegando»***.
+
+**El arreglo no es corregir los dos números: es sacarle el número a la mitad que puede vivir sin
+él.** La mitad de ida pregunta ahora por **pertenencia a un censo que se mantiene** (§2.1), que no
+caduca cuando aparece el consumidor siguiente. La mitad de vuelta **sí** lleva número, porque lo
+que enumera es un bloque cerrado de tres firmas que el §4.1 escribe entero en un solo lugar: ahí el
+riesgo no es que el conteo caduque sino que las dos cifras diverjan, y la defensa es que **el
+número vive en el §4.1 y acá se lo cita, nunca se lo repite de memoria**.
+
+> ⚠️ **Y lo que esta regla NO tiene, dicho para que nadie la lea como una defensa ejecutable**:
+> **ningún guard del programa tiene por sujeto este contrato.** Recorridos los dos catálogos
+> (`V/20` §2 y `B/20` §2), los guards cuentan tablas de transiciones, columnas, claves y montos;
+> ninguno compara *«lo que un § afirma»* contra *«lo que otro § enumera»*. La regla de vigilancia
+> es **prosa que alguien tiene que leer**, y por eso su enunciado se escribe sin cifras
+> congeladas: es lo único que se puede hacer por ella sin un guard.
 
 ---
 
