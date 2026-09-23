@@ -1005,18 +1005,40 @@ el cliente pagó el período—, que es el mismo criterio con que se resolvieron
 
 **Y el 2 cae del lado de NO DEVOLVER por una razón que NO es *«el cliente actuó»*, porque medido
 contra `B/16` §4.2 eso sería falso.** La orfandad se resuelve contra la muerte del objetivo, y las
-transiciones que sacan a la principal de las filas vivas son **seis** (`B/16` §4.3): `S3`, `S12`,
-`S13`, `S16`, `S17` y el espejo del §10.1. **Dos de las seis no son del cliente** —`S17` es nuestra,
-y `S12` puede venir de un `CANCEL_SCHEDULED` que puso `S26` al discontinuar la vertical—, así que
-decir *«acá siempre actuó el cliente»* sería una afirmación falsa sobre dos de los seis caminos. La
-razón por la que igual propone **NO DEVOLVER** es otra, y es de mecanismo: **`S21` conoce la
-cláusula de `A5` que disparó, no cuál de las seis transiciones mató al título tres saltos antes**.
-Partir el 2 exigiría que la marca transportara una causa que la transición no tiene — mecanismo
-nuevo en producción, que es exactamente lo que `DEC-RF-004` dijo que **no** estaba comprando. **Y
-la propuesta no ejecuta nada** (`DEC-RF-002`): la persona la confirma o se aparta de ella, y los dos
-caminos nuestros llegan con su propia plata ya resuelta en otro lado —la discontinuación con el
-piso de **60 días** del `B/10` §4.3 y §4.4, y la baja que `S17` ejecuta con las **seis** ramas de
-`B/12` §5.3, que abren el motivo **1** y no éste—.
+transiciones que sacan a la principal de las filas vivas son **doce**, recontadas sobre la
+enumeración de `B/16` §4.3: `S3`, `S12`, `S13`, `S16`, `S17`, el espejo del §10.1, `S22`, `S23`,
+`S24`, `S25`, `S27` y `S28`. **Varias no son del cliente, y van nombradas una por una porque
+`DEC-RF-004` lo exige**: `S17` es nuestra; `S12` puede venir de un `CANCEL_SCHEDULED` que puso
+`S26` al discontinuar la vertical; y `S25`, `S27` y `S28` **son el mismo acto nuestro** —el fin de
+una pausa sobre un plan que ya no se presta y las dos terminales de la discontinuación (`B/10`
+§4.3, `DEC-SUB-015`, `DEC-SUB-018`)—. Así que decir *«acá siempre actuó el cliente»* sería una
+afirmación falsa sobre **cinco** de los doce caminos, y no sobre dos.
+
+> **La cifra de la decisión y la del corpus no coinciden, y queda dicho acá con su medición.**
+> `DEC-RF-004` escribió su condición sobre *«las seis transiciones que dejan huérfano un addon»* y
+> sobre *«dos que no son del cliente»*. **Las seis son el primer tramo de la enumeración de `B/16`
+> §4.3** —el que existía antes de que la FASE 9-bis-4 agregara `S22`, `S23`, `S24` y `S25` y la
+> 9-bis-5 agregara `S27` y `S28`—, y ese § dice **doce** en su propia línea de encabezado. **La
+> decisión no cambia por eso**: su criterio es que un default uniforme no puede contradecir en
+> silencio al criterio de plata, y con cinco caminos vale más que con dos. **Lo que cambia es el
+> tamaño de lo que hay que decir en voz alta**, y por eso esta enumeración es de doce.
+
+La razón por la que el 2 igual propone **NO DEVOLVER** es de mecanismo y no cambió: **`S21` conoce
+la cláusula de `A5` que disparó, no cuál de las doce transiciones mató al título tres saltos
+antes**. Partir el 2 exigiría que la marca transportara una causa que la transición no tiene —
+mecanismo nuevo en producción, que es exactamente lo que `DEC-RF-004` dijo que **no** estaba
+comprando. **Y la propuesta no ejecuta nada** (`DEC-RF-002`): la persona la confirma o se aparta de
+ella.
+
+**Y de los cinco caminos nuestros, sólo algunos llegan con su propia plata resuelta en otro lado,
+así que conviene decir cuáles no.** La baja que `S17` ejecuta abre el motivo **1** con las **seis**
+ramas de `B/12` §5.3 y no éste; y la discontinuación que llega por `S26` → `S12` trae el piso de
+**60 días** del `B/10` §4.3 y §4.4. **`S27` y `S28` no traen ninguno de los dos**: `DEC-SUB-018`
+decidió que la suspendida **no entra al piso** y va directo a `CANCELLED`, y `S28` tampoco pasa por
+él —*«sobre alguien que nunca autorizó ni pagó nada»* (§3.2)—. Que la **principal** no tenga nada
+que compensar no dice nada sobre el **complemento**, que es otra fila y pudo haber cobrado su
+período: ahí el default del 14 es lo único que la persona tiene delante, y por eso tiene que llegar
+sabiendo que ése es un camino nuestro.
 
 > **La rama que devuelve no tiene población vacía, y conviene decir dónde vive**, porque el §
 > siguiente demuestra que sobre un addon **convertido a $0** `S21` no encuentra fila viva. Son dos
