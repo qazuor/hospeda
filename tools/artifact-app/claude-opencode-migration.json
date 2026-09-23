@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_51",
-        "number": 51,
-        "createdAt": "2026-09-23T20:05:00.000Z",
+        "id": "ver_claude_opencode_migration_52",
+        "number": 52,
+        "createdAt": "2026-09-23T20:20:00.000Z",
         "author": "opencode",
-        "reason": "actualizar evaluación de OpenKilo OpenChamber PTY y voz",
+        "reason": "registrar auditoría de dependencias y supply chain",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_50"
+        "basedOnVersion": "ver_claude_opencode_migration_51"
     },
     "data": {
         "sections": [
@@ -628,7 +628,7 @@
                             "title": "Auditar dependencias y supply chain",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Revisar plugins, MCPs y paquetes antes de agregarlos al stack.",
-                            "notes": "Pendiente por plugin seleccionado.",
+                            "notes": "Gate269: `pnpm audit --prod --json` read-only encontró 45 advisories: 1 critical, 26 high, 19 moderate y 1 low. Astro 7.1.6 (<7.2.8) es la prioridad crítica; también sharp 0.35.3, Hono 4.13.0, Vitest 4.1.10, Tiptap 3.29.2, js-yaml, svgo y xmldom requieren correcciones mínimas. No se ejecutó audit --fix ni se modificaron lockfiles; queda pendiente resolver en issues separados.",
                             "done": false
                         }
                     ]
