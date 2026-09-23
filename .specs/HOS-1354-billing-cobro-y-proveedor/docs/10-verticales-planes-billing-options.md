@@ -139,12 +139,24 @@ sigue sale de acá.
 Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 
 **Día 0 — el anuncio.** La vertical deja de admitir altas y trials. Y en el mismo acto, **cada
-suscripción viva que pueda llegar a `CANCEL_SCHEDULED` se cancela en el proveedor de inmediato** y
-pasa a ese estado
-(`DEC-SUB-009`), con su fecha de fin de servicio sostenida de nuestro lado. Desde ese instante
-**el proveedor no emite un cobro más** en la vertical. Lo mismo con cada suscripción de
-complemento viva en ella (`DEC-ADDON-002`: cada addon recurrente es su propia autorización, así
-que cada una se cancela por su cuenta).
+suscripción viva se cancela en el proveedor de inmediato**, con la fecha de fin de servicio
+sostenida de nuestro lado. Desde ese instante **el proveedor no emite un cobro más** en la
+vertical. Lo mismo con cada suscripción de complemento viva en ella (`DEC-ADDON-002`: cada addon
+recurrente es su propia autorización, así que cada una se cancela por su cuenta).
+
+**A qué estado va cada una lo ejecutan TRES transiciones, y no todas al piso** (`B/03` §3.2, que es
+donde está la razón):
+
+| desde | quién lo ejecuta | hacia | por qué no todas al mismo lado |
+|---|---|---|---|
+| `ACTIVE` · `GRACE_PERIOD` | **`S26`** | `CANCEL_SCHEDULED` | son las que **hoy tienen servicio** (`12-contrato…` §2.6), y el piso del §4.4 existe para ellas |
+| `SUSPENDED` | **`S27`** | `CANCELLED`, con fin de servicio **el día del anuncio** | no tiene servicio desde el §21, así que el piso se lo **devolvería** gratis |
+| `PENDING_AUTHORIZATION` | **`S28`** | `ABANDONED` | nunca autorizó ni pagó, y la vertical acaba de dejar de admitir altas |
+| `PAUSED` | **nadie, acá** | — | no entra al acto (`DEC-SUB-015`, abajo); termina en `S25` cuando la pausa termina |
+
+**Y esa primera frase decía *«cada suscripción viva que pueda llegar a `CANCEL_SCHEDULED`»*, que
+era verdadera y dejaba sin destino a dos de los cuatro estados**: el calificativo se escribió para
+sacar a la `PAUSED` —lo de abajo— y se leía como si las otras tres fueran al mismo lugar.
 
 #### La pausada NO entra al piso, y eso es legal
 
