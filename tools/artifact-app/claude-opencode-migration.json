@@ -168,7 +168,7 @@
                             "title": "Auditar compatibilidad de upgrades Gentle/Engram/OpenCode",
                             "category": "Actualización y rollback",
                             "description": "Determinar qué cambia al pasar a las últimas versiones sin asumir compatibilidad transparente.",
-                            "notes": "Gate248: OpenCode V1 1.18.32 no requiere rediseño; Gentle-AI 3.6.1 requiere sync controlado, revisión de ODD y decisión explícita sobre RDD/review; Engram 2.0.0 requiere migración de esquema sobre una copia, scoping explícito de proyectos y regresión de MCP/wrappers. Evaluación documentada en docs/migration/version-currency-audit-2026-09-23.md. No se actualizó ningún binario.",
+                            "notes": "Gate248: OpenCode V1 1.18.32 no requiere rediseño; Gentle-AI 3.7.0 requiere sync controlado, revisión de ODD, validación de selección de modelos y decisión explícita sobre RDD/review; Engram 2.0.0 requiere migración de esquema sobre una copia, scoping explícito de proyectos y regresión de MCP/wrappers. Evaluación documentada en docs/migration/version-currency-audit-2026-09-23.md. Las tres releases candidatas quedaron descargadas y verificadas en staging, pero no se activó ningún binario.",
                             "done": true
                         },
                         {

@@ -10,7 +10,7 @@ modifica configuraciones y no toca la base de Engram.
 | Componente | Instalado | Canal actual del plan | Estado |
 |---|---:|---|---|
 | OpenCode | 1.18.31 | V1 | Una versión V1 detrás de la última release consultada |
-| Gentle-AI | 2.9.0 | V1-compatible | Muy atrasado; la línea estable actual es 3.6.1 |
+| Gentle-AI | 2.9.0 | V1-compatible | Muy atrasado; la línea estable actual es 3.7.0 |
 | Engram | 1.20.0 | SQLite local | Muy atrasado; la línea estable actual es 2.0.0 |
 
 ## Fuentes actuales
@@ -21,7 +21,9 @@ modifica configuraciones y no toca la base de Engram.
 
 ## Hallazgos Gentle-AI
 
-La release estable actual consultada es `v3.6.1`.
+La release estable actual consultada inicialmente era `v3.6.1`; durante la
+preparación del staging apareció `v3.7.0`, publicada el 23/09/2026, que pasa a
+ser la candidata vigente.
 
 - `v3.0.0` convirtió ODD en el protocolo predeterminado y simplificó SDD.
 - `v3.5.0` activó RDD/review por defecto, salvo que exista una configuración que
@@ -29,6 +31,10 @@ La release estable actual consultada es `v3.6.1`.
 - `v3.6.0` corrigió hooks, sincronización de assets y rutas de provisioning.
 - `v3.6.1` mejoró los diagnósticos del registro de skills de OpenCode, eliminó
   una herramienta Pi conflictiva y ajustó el routing proporcional de ODD.
+- `v3.7.0` agrega selección configurable de modelos nativos para agentes y
+  reviewers en Claude Code, OpenCode y Codex, y corrige replay de autoridad bajo
+  contención de locks. Declara no tener breaking changes; mantiene módulo `/v3`
+  y provider contract `1.2.0`.
 - La documentación oficial indica ejecutar `gentle-ai sync` después de actualizar
   para alinear binario, skills, reviewers y runtime assets.
 
@@ -107,7 +113,7 @@ actualización controlada y una nueva ronda de validación:
 | Componente | ¿Rompe automáticamente lo actual? | Cambio necesario |
 |---|---|---|
 | OpenCode V1 `1.18.31 → 1.18.32` | No esperado | Actualizar el pin y repetir smoke de TUI, MCP, providers y comandos. Es un parche de la misma línea V1. |
-| Gentle-AI `2.9.0 → 3.6.1` | No por los scripts Hops; sí puede cambiar el comportamiento del agente | Sincronizar assets administrados, revisar ODD y fijar explícitamente la decisión RDD/review. Revalidar `AGENTS.md`, skills, SDD, handoff y arranque de OpenCode. |
+| Gentle-AI `2.9.0 → 3.7.0` | No por los scripts Hops; sí puede cambiar el comportamiento del agente | Sincronizar assets administrados, revisar ODD, validar los nuevos selectores de modelos y fijar explícitamente la decisión RDD/review. Revalidar `AGENTS.md`, skills, SDD, handoff y arranque de OpenCode. |
 | Engram `1.20.0 → 2.0.0` | No es un reemplazo transparente | Migrar el esquema sobre una copia restaurada, comprobar proyectos y búsquedas, y hacer explícito el scoping del proyecto Hospeda en MCP/wrappers. |
 
 El punto más delicado es Engram: el wrapper `hops engram` puede seguir delegando
@@ -116,7 +122,7 @@ llamadas que antes dependían de un proyecto implícito o de mezclar proyectos
 históricos deben probarse con un selector explícito. La DB activa no se debe
 abrir con v2 hasta completar la copia verificable y la prueba de restauración.
 
-Gentle-AI 3.6.1 tampoco invalida los comandos propios, pero `gentle-ai sync`
+Gentle-AI 3.7.0 tampoco invalida los comandos propios, pero `gentle-ai sync`
 puede regenerar assets globales administrados por Gentle. Por eso debemos
 comparar hashes antes/después y verificar que no sobrescriba silenciosamente
 los comandos, skills y agentes específicos de Hospeda. La configuración de
@@ -128,3 +134,21 @@ actualizar los tres binarios y asumir que todo seguirá igual. La actualización
 requiere adaptación de pins, migración de Engram, revisión de assets de Gentle y
 una batería de regresión. Hasta completar esos pasos, la instalación actual se
 mantiene como rollback.
+
+## Resultado del staging inicial
+
+Se descargaron, sin activar, los siguientes artefactos oficiales:
+
+- OpenCode V1 `1.18.32`: checksum `3046e0404fdc60fb80307e7a47824ba07477364178a4d09baa8548496dd6d43b`.
+- Gentle-AI `3.7.0`: checksum `a730a61a43758f04cc9a4ac644945cc0e8652a1e33d6997a0a3d3f0044d2fff5`.
+- Engram `2.0.0`: checksum `23be1c2ce9739c455097ff864736213717b925b3e8821a988dfc619685a5abd5`.
+
+Los tres binarios aislados respondieron con su versión esperada. La validación
+se limitó a los ejecutables principales; los archives también contienen helpers
+y documentación que no deben ejecutarse como si fueran binarios. La DB activa de
+Engram pasó `PRAGMA integrity_check = ok` en modo SQLite immutable y no se abrió
+con el binario v2.
+
+El staging queda pendiente de la prueba funcional: ejecutar Gentle con una
+configuración global clonada, comparar assets antes/después de `sync`, y migrar
+una copia de Engram v1 a v2 para comparar proyectos, conteos, búsquedas y MCP.
