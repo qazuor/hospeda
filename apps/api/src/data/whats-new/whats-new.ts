@@ -152,6 +152,7 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3373
     {
         id: '2026-09-22-pages-recover-after-an-outage',
         publishedAt: 'on-promotion',
@@ -168,6 +169,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #3379
     {
         id: '2026-09-22-rss-feeds-signal-outages',
         publishedAt: 'on-promotion',
@@ -184,6 +186,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #3370
     {
         id: '2026-09-22-double-click-save-no-longer-errors',
         publishedAt: 'on-promotion',
