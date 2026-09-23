@@ -321,6 +321,15 @@ aviso perdido pasa así a costar un retraso en el reinicio y nunca un archivado 
 estos avisos se pierden lo declara el propio diseño en el otro consumidor de la misma lista
 (cap. 02 §3.2, regla 2).
 
+**Y son dos filas porque esta máquina tiene dos, no porque los actores del reloj sean dos: el
+tercero está afuera y es el que más caro sale.** *«Las dos»* de este párrafo cuantifica **las filas
+de esta tabla**, y es verdadero de las filas. El **hard delete del día 180** no es una transición de
+publicación —no mueve la ficha de estado: le borra el contenido (cap. 02 §4.1)— así que no puede
+tener fila acá, y **relee exactamente igual, por la misma razón y con el mismo efecto**: si la
+cobertura vuelve verdadera, no borra y escribe el hecho 2 (cap. 01 §1.2, núcleo; cap. 02 §4.2,
+regla 4). Leer *«las dos»* como *«los dos únicos que releen»* deja al único acto irreversible del
+programa decidiendo con un aviso que el propio diseño declara que se pierde.
+
 **Y el excedente queda como la única causa enumerada**, porque es la que **no** cambia `cubierto`:
 la persona sigue cubierta y lo que no le alcanza es el cupo.
 

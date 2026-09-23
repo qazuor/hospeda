@@ -297,6 +297,13 @@ que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia
 el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
 segunda fuente.
 
+**Se escribe en los cuatro HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
+crezca.** Lo que la lista cierra es **de qué hechos** puede ser una escritura, nunca **quién** la
+hace: el hecho 2 tiene **tres** ejecutores —el recálculo que el aviso despierta, la relectura de
+`PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4)— y los tres escriben el mismo hecho.
+Confundir las dos preguntas es lo que ponía a `G-R6-B` en rojo sobre la red y no sobre el defecto
+(cap. 01 §1.2, núcleo).
+
 **Y que sea cerrada lo verifica un guard, `G-R6-B` (cap. 20 §2), no la memoria del que escribe.**
 Quien agregue un escritor nuevo agrega su hecho a la lista del cap. 01 §1.2 **en el mismo acto**, o
 el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las columnas que una condición
@@ -314,6 +321,14 @@ superficie que imprime su fecha**, que es por qué el renglón dice «dos» sin 
 Este párrafo decía además que eran «los mismos cinco que el cap. 01 §1.2 enumera», y **ese § no los
 enumera**: enumera los cuatro hechos que la escriben y nombra de paso a tres de estos cinco —`PB4`,
 `PB5` y el día 180— al pedirles que relean antes de actuar.)*
+
+**Tres de los cinco leen y además escriben, y estar en esta lista no los saca de la otra.** `PB4`,
+`PB5` y el día 180 **releen la cobertura en el momento de ejecutar** y, si viene verdadera, no
+avanzan y escriben el hecho 2 (§4.2, regla 4). Las dos listas responden preguntas distintas —*«¿de
+qué hecho es esta escritura?»* y *«¿quién lee esta columna?»*— y **la misma pieza puede figurar en
+las dos sin que ninguna de las dos deje de ser cerrada**. La lista de los cinco **no se mueve por
+esto**: sigue siendo la de `DEC-DATA-004`, con los dos avisos de schedule y la superficie del
+archivado contados por separado.
 
 **Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
 un mensaje propio.** Es la mitad que la cuarta enmienda de `DEC-TEST-001` le sumó, y la razón es
@@ -459,10 +474,21 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    **y con el reloj del día 180 corriendo**, que es el mismo desenlace que la regla 3 viene a
    evitar.
 
-   **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en dos momentos, no en
+   **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en TRES momentos, no en
    uno**: cuando el recálculo que el aviso despierta vuelve a preguntar y trae `cubierto`
-   verdadero, y —como red— cuando `PB4` o `PB5` releen antes de archivar (cap. 03 §9). Los dos
-   preguntan; **ninguno de los dos le cree al aviso** (`12-contrato…` §3).
+   verdadero; —como red— cuando `PB4` o `PB5` releen antes de archivar (cap. 03 §9); y —como última
+   red— **cuando el hard delete del día 180 relee antes de borrar** (cap. 01 §1.2, núcleo). Los
+   tres preguntan; **ninguno de los tres le cree al aviso** (`12-contrato…` §3).
+
+   **El tercero es el que no puede faltar, y este renglón decía «dos» hasta esta pasada.** Los tres
+   momentos son la misma red aplicada a los tres actos que el reloj gobierna, y **el único
+   irreversible es el tercero**: si el aviso se pierde y el recálculo no corre, el día 90 archiva
+   —recuperable con `PB8`— pero el día 180 **borra el contenido publicable de un cliente que está
+   pagando**, y no hay `PB8` que traiga de vuelta lo que ya no está. Decir *«dos momentos, no en
+   uno»* dejaba la red sobre los dos actos baratos y la sacaba del caro, que es el orden exacto al
+   revés. La línea del núcleo que nombra a los tres ejecutores —*«`PB4`, `PB5` y el hard delete del
+   día 180 releen la cobertura … y, si está cubierta, reinician el reloj en vez de avanzar»*— era
+   **la única del corpus** que lo decía.
 
    **Su caso testigo es la pausa, y es la razón por la que estas dos reglas se escribieron
    juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha

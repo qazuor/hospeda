@@ -117,6 +117,16 @@ cae del lado caro —el aviso que no llega deja el reloj corriendo sobre alguien
 propio diseño ya declara que estos avisos se pierden (`V/02` §3.2, regla 2: *«si la invalidación
 falla, la operación de dominio no falla»*). Ahí cuesta rendimiento; acá costaría el contenido.
 
+**Son TRES los que releen, y hasta esta pasada esta línea era la única del corpus que lo decía.**
+Los otros cuatro lugares donde el mecanismo está escrito nombraban a **`PB4` y `PB5`** y contaban
+*«dos momentos, no en uno»* (`V/02` §4.2 regla 4, `V/02` §2.5, `V/03` §9 dos veces,
+`12-contrato…` §3), así que **la lectura mayoritaria del corpus dejaba al día 180 decidiendo con un
+aviso que el propio diseño declara que se pierde** — y es el único de los tres que no tiene vuelta:
+lo que `PB4` archiva lo recupera `PB8`, y lo que el día 180 borra no lo recupera nada. Los cinco
+lugares dicen ahora lo mismo. **Y la relectura que trae la cobertura verdadera no es un escritor
+intruso**: escribe el **hecho 2**, del que es uno de sus tres ejecutores, así que `G-R6-B` mitad
+*(a)* la acepta por la lista y no por una excepción.
+
 **Los otros tres hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
 append-only de eventos de dominio (cap. 08 §1.3), el 3 de la propia máquina de publicación y el 4
 de la columna `vertical.fin_de_servicio` (`V/02` §2.1). El 2 era **el único de los cuatro sin

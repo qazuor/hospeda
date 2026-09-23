@@ -605,9 +605,10 @@ proveedor.
 El reloj de inactividad decide **borrar** —el hard delete del día 180 (`V/02` §4.1)—, así que su
 hecho 2 se resuelve **preguntando `cubierto` en la respuesta del §2.1**, nunca leyéndolo del aviso,
 y el instante se escribe en `listing.inactiva_desde` (`V/02` §2.5). Y como un push se puede perder,
-**las dos filas que actúan sobre ese reloj vuelven a preguntar en el momento de ejecutar**
-(`V/03` §9, `PB4` y `PB5`): el aviso perdido cuesta un retraso en el reinicio, jamás un archivado
-sobre alguien que ya volvió.
+**los TRES actos que avanzan sobre ese reloj vuelven a preguntar en el momento de ejecutar**: las
+dos filas de `V/03` §9 —`PB4` y `PB5`— **y el hard delete del día 180** (`V/02` §4.1 y §4.2 regla
+4), que no es una fila de ninguna máquina y es el único irreversible. El aviso perdido cuesta un
+retraso en el reinicio, jamás un archivado —ni un borrado— sobre alguien que ya volvió.
 
 ---
 
