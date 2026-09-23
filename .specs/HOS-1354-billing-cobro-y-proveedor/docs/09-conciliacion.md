@@ -261,7 +261,7 @@ sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de res
 (`B/03` §3.2, `S19`) y ya **no** es la predecesora de una sucesión en curso —la sucesora murió, o
 la sucesión se cerró—, su destino estaba determinado y nadie lo ejecutó: se resuelve por la rama
 que le corresponda de las seis de `B/12` §5.3, y si la rama no es determinable, se abre la
-**marca** con motivo **`PAGO_PENDIENTE_SIN_RAMA`** (`B/02` §2.5), **con la referencia al pago**:
+**marca** con motivo **`PAGO_PENDIENTE_SIN_RAMA`** (`B/02` §2.5), **con el pago colgado de ella** (§2.2):
 es uno de los motivos sobre los que la persona puede terminar devolviendo plata, así que el
 listado no lo muestra como una divergencia más. Cuesta cero llamadas y cubre el único estado que el arreglo de `S19` puede dejar
 colgado: **un pago retenido para siempre**, que del lado del cliente se lee como un cobro sin
