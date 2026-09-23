@@ -3577,7 +3577,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `hops verify --changed --only lint --json` devolvió `status: passed`,
   `mutations: none`; el typecheck aislado también devolvió `status: passed` y
   `pnpm check:guards` pasó previamente.
-- La corrida completa interactiva supera el límite de tiempo del runner antes
-  de imprimir su contrato final; no se interpreta como fallo de código. Queda
-  una repetición completa fuera de ese límite como validación final antes de
-  marcar el checklist como terminado.
+- La corrida completa de guards se repitió en una sesión persistente y devolvió
+  `status: passed`, con 36 pasos y `mutations: none`; el typecheck y lint
+  aislados también devolvieron `status: passed`.
+- El primer intento truncado fue una limitación de captura de la sesión, no un
+  fallo del proyecto. El checklist puede conservar este gate como validado;
+  los tests de paquetes siguen siendo opt-in y deben pedirse con `--changed` o
+  `--full` cuando correspondan.
