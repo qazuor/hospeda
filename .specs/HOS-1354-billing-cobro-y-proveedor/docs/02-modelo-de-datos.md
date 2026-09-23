@@ -252,7 +252,9 @@ avanzaba un período.
   pausa, sin abrir cuota** —el espejo local de lo que el proveedor hace medido (`PS-6`) y
   `DEC-SUB-010` ya adoptó—. **Son tres y no hay una cuarta**: lo que la reapertura larga necesita
   no se escribe acá sino sobre el `período` de la cuota (§2.3, la **reimputación** de `MP4`), y el
-  avance sale después de ese período nuevo. **Su único lector es `MP5`.**
+  avance sale después de ese período nuevo. **Y la escritura de `S2` tiene acá población vacía**
+  —no hay webhook de autorizada sobre una suscripción sin preapproval—, así que sobre un pagador
+  manual **la estrena `MP1`** al registrar la primera cuota. **Su único lector es `MP5`.**
 
 ### 2.3 Dinero
 
@@ -295,7 +297,10 @@ anclada).
 a la idempotencia.** *«Ya existe una cuota para ese período»* —la condición de `MP5`— y
 *«`UNIQUE(subscription_id, período)`»* piden que dos períodos se puedan distinguir, y lo único que
 los distingue es cuándo arrancan. Al abrirse, la cuota copia la fecha del próximo cobro vigente
-(§2.2); al registrarse, esa fecha avanza. **Por eso el avance de `B/03` §7.2 no puede colisionar**:
+(§2.2) —**salvo la primera de un pagador manual, que se abre en el alta, cuando esa columna
+todavía no existe: su período es el instante del alta**, y es `MP1` al registrarla el que estrena
+la fecha (`B/03` §7.2)—; al registrarse, esa fecha avanza. **Por eso el avance de `B/03` §7.2 no
+puede colisionar**:
 deja siempre una fecha **estrictamente posterior** a la anterior, y las cuotas que existen son las
 de períodos que arrancaron antes.
 

@@ -210,10 +210,10 @@ el trial tampoco, porque no está usando trial.
 importa porque hay una población sin autorización: el **pagador manual** del §17.2, que *«no tiene
 débito en el proveedor»* (`B/06` §7). Ahí `S16` no tiene sujeto y `CHARGE_DECLINED` tiene población
 vacía, y de eso **no** se sigue que la regla no se aplique — se sigue que necesita otro ejecutor.
-El suyo está escrito en `B/03` §7.2 (*«cómo entra el grace»*): **su primera cuota se abre antes de
-que la fila llegue a `ACTIVE`**, así que `S4` no la alcanza, no hay grace, y si nadie transfiere la
-ventana termina en **`ABANDONED`** — terminal, no vivo, y el reintento es un alta nueva, igual que
-acá.
+El suyo está escrito en `B/03` §7.2 (*«cómo entra el grace»*): **su primera cuota la abre `S1`,
+antes de que la fila llegue a `ACTIVE`**, así que `S4` no la alcanza, no hay grace, y si nadie
+transfiere la ventana termina en **`ABANDONED`** — terminal, no vivo, y el reintento es un alta
+nueva, igual que acá.
 
 **La condición se lee POR AUTORIZACIÓN, y su dueño es `B/03` §3.1**, que la escribió entera con su
 fundamento. Acá decía *«para un `user + vertical` sin ningún pago acreditado»* —la historia de la
