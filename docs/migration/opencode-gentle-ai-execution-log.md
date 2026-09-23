@@ -3599,3 +3599,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   aplicable, la restauración de Engram, la instalación de clientes y la
   generación de archivos siguen bloqueados hasta implementar backup, apply y
   rollback explícitos.
+
+## Gate 215 · Limpieza autorizada del proyecto Engram `hospeda3`
+
+- La inspección read-only confirmó 108 observaciones activas en el proyecto
+  exacto `hospeda3`; los proyectos separados `hospeda3-*` no se incluyeron.
+- Se creó el backup binario verificable en
+  `~/.local/state/hospeda-opencode-migration/backups/20260923-pre-hospeda3-delete`.
+- Se ejecutó `engram delete project hospeda3` sin `--hard`: 108 observaciones
+  quedaron soft-deleted, sin prompts ni sesiones eliminadas.
+- `PRAGMA integrity_check` devolvió `ok`; el proyecto exacto quedó con cero
+  observaciones activas. Los proyectos `hospeda3-*`, externos y `tmp` siguen
+  pendientes de una decisión separada.
