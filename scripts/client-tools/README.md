@@ -42,6 +42,9 @@ así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exig
 | `test` | Ejecuta tests por categoría o paquete. |
 | `ci` | Consulta el estado del PR y sus checks, con espera opcional. |
 | `merge` | Dictamina si el PR está listo; no hace merge. |
+| `promote` | Planifica la promoción al siguiente eslabón (`develop` → `staging` → `main`); no hace push ni abre PR sin confirmación explícita. |
+| `back-merge` | Planifica un back-merge permitido por el adapter, por defecto `staging` → `develop`; no muta Git en modo plan. |
+| `dependabot-review` | Analiza PRs de Dependabot y los clasifica como cerrar, aplicar como NO-SPEC o convertir en issue. |
 | `env` | Comprueba variables necesarias sin imprimir secretos. |
 | `run` | Busca y ejecuta scripts del repo con argumentos explícitos. |
 | `db-start` / `db-stop` | Inicia o detiene Postgres y Redis compartidos. |
