@@ -162,3 +162,20 @@ sincronizar. No se ejecutaron comandos de migración, repair, import, export ni
 sync sobre Engram. La DB activa pasó después `PRAGMA integrity_check = ok` en
 modo immutable. El procedimiento definitivo debe seleccionar únicamente los
 binarios principales por nombre y nunca ejecutar todos los archivos extraídos.
+
+## Resultado de la prueba funcional aislada
+
+Engram `2.0.0` abrió una copia de backup mediante `ENGRAM_DATA_DIR`, migró su
+esquema y quedó íntegra. Funcionaron las consultas explícitas por proyecto:
+`stats --project hospeda`, `search --project hospeda`, `context --project hospeda`
+y el arranque MCP con `--project hospeda`. El diagnóstico v2 encontró warnings y
+bloqueos históricos (sesiones ambiguas, ownership y payloads legacy); no son
+fallos introducidos por la migración, pero impiden declarar la memoria limpia.
+
+Gentle-AI `3.7.0` ejecutó `sync` sólo dentro de un `HOME` temporal. Regeneró 40
+assets administrados, incluyendo `AGENTS.md`, `opencode.json`, comandos/skills
+SDD, plugin de skill registry y archivos compartidos. Esto confirma que el sync
+puede modificar la configuración global y que debemos tomar backup y comparar
+hashes antes de aplicarlo al entorno real. En la copia, `review mode status`
+reportó RDD/review activado por default; la instalación real debe conservar la
+decisión explícita de dejarlo desactivado mientras no cambiemos esa política.

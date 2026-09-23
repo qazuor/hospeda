@@ -172,6 +172,14 @@
                             "done": true
                         },
                         {
+                            "id": "staged-upgrade-functional-validation",
+                            "title": "Validar releases candidatas en aislamiento",
+                            "category": "Actualización y rollback",
+                            "description": "Probar Gentle-AI y Engram nuevos sin tocar la instalación activa ni la DB real.",
+                            "notes": "Gate249: OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0 verificados en staging. Engram v2 migró una copia mediante ENGRAM_DATA_DIR; stats/search/context/MCP explícitos por hospeda funcionaron y la integridad quedó ok. Gentle 3.7.0 sync en HOME temporal regeneró 40 assets y confirmó review/RDD on por default. La activación real queda pendiente de backup, comparación de hashes y decisión explícita.",
+                            "done": true
+                        },
+                        {
                             "id": "bootstrap-work-environment",
                             "title": "Instalador deja el entorno listo para trabajar",
                             "category": "Instalación y reproducibilidad",
