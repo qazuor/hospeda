@@ -3650,3 +3650,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   bloquearla ni disparar actualizaciones automáticas.
 - El gate de supply chain de la migración queda reservado para plugins, MCPs y
   herramientas que se agreguen al stack de agentes.
+
+## Gate 220 · Suite cross-client de `hops` revalidada
+
+- `tools/qz/validate-project.mjs` confirmó el adapter Hospeda sin errores,
+  mutaciones ni lectura de valores secretos.
+- `tools/agent-packs/plan.mjs --check` confirmó 36 comandos, sin fuentes
+  faltantes, duplicados ni drift entre OpenCode, Claude y Codex.
+- `tools/agent-packs/install.mjs --check` confirmó los destinos esperados y
+  mantuvo el modo apply bloqueado hasta contar con backup/rollback explícitos.
+- La suite de `scripts/client-tools` terminó con 306 tests, 0 fallos y 772
+  assertions. Una corrida anterior tuvo un timeout aislado en un test de
+  proceso; la repetición completa pasó y no dejó procesos persistentes.
