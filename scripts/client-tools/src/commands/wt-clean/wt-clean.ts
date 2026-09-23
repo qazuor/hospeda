@@ -1,5 +1,6 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { parseArgs } from './args.ts';
 import { freedMb, readFree } from './disk.ts';
 import {
@@ -83,6 +84,8 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
     }
 
     const currentPath = await resolveCurrentWorktree({ cwd: opts.repoPath });
+    const adapter = await loadProjectAdapter(opts.repoPath);
+    const protectedBranches = new Set(adapter?.branches?.promotion ?? ['staging', 'main']);
     const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
 
     if (interactive) p.intro(pc.bgCyan(pc.black(' hops-wt-clean ')));
@@ -108,7 +111,7 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
 
     const mainPath = worktrees.find((worktree) => worktree.isMain)?.path ?? opts.repoPath;
     const missing = worktrees.filter((worktree) => worktree.state === 'missing');
-    const choices = buildOptions({ worktrees });
+    const choices = buildOptions({ worktrees, protectedBranches });
 
     if (!interactive) {
         // No terminal means nothing can be selected, so the useful thing left
