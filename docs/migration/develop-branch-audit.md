@@ -1,11 +1,15 @@
 # Verificación actualizada — 2026-09-22
 
 La auditoría read-only confirmó que `develop` todavía no existe ni localmente ni
-en `origin`. El adapter activo sigue usando `staging` como base y rama protegida.
-No se creó la rama ni se modificaron GitHub, CI, Linear o workflows operativos.
+en `origin`. El contrato de configuración ya quedó preparado para que `develop`
+sea la base por defecto de nuevos issues; la rama real aún debe activarse en una
+etapa separada. `main` continúa siendo la única rama protegida declarada por el
+adapter durante esta transición.
 
 La activación requiere una decisión explícita y una etapa separada: crear la rama,
-actualizar el adapter, ajustar promoción/back-merge y validar start/close issue.
+ajustar GitHub/CI, validar template y env, y probar start/close issue. Mientras
+tanto, `start-issue` acepta `--base staging` para un trabajo urgente que deba
+saltear `develop`.
 
 ## Auditoría para agregar `develop`
 
@@ -13,8 +17,9 @@ El repositorio actual sólo conoce operacionalmente `staging` y `main`.
 
 ## Referencias críticas
 
-- `.claude/project.config.json` declara `staging` como `baseBranch` y protege
-  `main`/`staging`.
+- `.qz/project.json` declara `develop` como base, la cadena
+  `develop -> staging -> main` y sólo `main` como protegida; el archivo legacy
+  `.claude/project.config.json` conserva el mismo `baseBranch` para compatibilidad.
 - `start-issue`, `wt-create`, template DB y `update` cortan o sincronizan desde
   `staging`.
 - `merge` y sus gates esperan PRs hacia `staging`.
@@ -35,17 +40,18 @@ Agregar `develop` no es cambiar un nombre. Requiere separar tres conceptos:
 3. `promotionBranches`: `develop -> staging -> main`, con escapes directos a
    `staging` para urgencias explícitas.
 
-Los comandos futuros `qz start-issue`, `qz close-issue`, `qz promote` y
+Los comandos `qz start-issue`, `qz close-issue`, `qz promote` y
 `qz back-merge` deben leer esos valores del adapter. El adapter Hospeda puede
 mantener `staging` como base durante la transición hasta que la rama exista.
 
-No se modifica Git ni CI en esta etapa.
+No se creó la rama ni se modificó Git remoto, CI, Linear o protección de GitHub en
+esta etapa.
 
 ## Matriz de transición propuesta
 
 | Superficie | Hoy | Objetivo | Regla de compatibilidad |
 |---|---|---|---|
-| Base de `start-issue`/`wt-create` | `staging` | `develop` | Mientras `develop` no exista, resolver `issueBaseBranch` a `staging`. |
+| Base de `start-issue`/`wt-create` | `staging` | `develop` | El default ya es `develop`; `--base staging` es el bypass explícito hasta activar la rama. |
 | Cierre de issue | PR hacia `staging` | PR hacia `develop` | `--base` explícito permite urgencias directas a `staging`. |
 | Promoción | manual `staging → main` | `develop → staging → main` | Cada salto exige CI, mergeability y working tree limpio. |
 | Back-merge | `main → staging` | `main → staging` y `staging → develop` | Nunca hacer back-merge implícito durante un cierre de issue. |

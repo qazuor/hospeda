@@ -261,7 +261,7 @@
             "description": "Diagnóstico seguro para iniciar una issue en OpenCode",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "48b13d3d7842e68b9666f78a53b88790f265540ddaf921cee709f4453fed67f1"
+            "sha256": "8e5d7a49bcdf17c5e3ca2e5bb4fd2647e7208490351b821427caccbc98729ee7"
         },
         {
             "id": "hops-stats",

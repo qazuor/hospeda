@@ -138,7 +138,7 @@ export async function runBranchPlan({
                       to &&
                       declaredPromotion.includes(from) &&
                       declaredPromotion.includes(to) &&
-                      declaredPromotion.indexOf(to) > declaredPromotion.indexOf(from)
+                      declaredPromotion.indexOf(to) === declaredPromotion.indexOf(from) + 1
               )
             : Boolean(
                   from &&

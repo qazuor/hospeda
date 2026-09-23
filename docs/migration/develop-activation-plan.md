@@ -7,7 +7,7 @@ Este plan convierte la auditoría en una secuencia verificable. Su objetivo es i
 | Fase | Área | Resultado requerido |
 |---|---|---|
 | 0 | GitHub | `develop` existe desde `staging`, con protección y reglas de CI definidas |
-| 1 | Adapter | `.qz/project.json` o el adapter Hospeda declara `issueBase`, `integration`, promociones y ramas protegidas |
+| 1 | Adapter | `.qz/project.json` y el adapter Hospeda declaran `develop` como base, `staging` como integración urgente y la cadena de promociones |
 | 2 | Worktrees | `wt-create`, cleanup, template y env usan `issueBase`/`integration`, no una constante global |
 | 3 | Hops | `start-issue`, `close-issue`, `update`, `merge`, `verify`, `ci` y `recap` consumen el adapter |
 | 4 | CI | PRs a `develop`, `staging` y `main` tienen gates explícitos; no se heredan por coincidencia de texto |
@@ -41,6 +41,18 @@ Este plan convierte la auditoría en una secuencia verificable. Su objetivo es i
 - Un test E2E demuestra la ruta urgente directa a `staging` y su back-merge posterior.
 - El rollback consiste en volver el adapter a `staging`, sin borrar worktrees ni memoria.
 
-## Fuera de alcance actual
+## Estado de esta etapa
 
-No se crea la rama `develop`, no se cambian workflows, no se toca Linear y no se implementan aún los comandos. Primero debe aprobarse este contrato y decidirse la política de protección de la nueva rama.
+El contrato y el bypass ya están implementados de forma reversible:
+
+- `start-issue` usa `develop` por defecto y acepta `--base staging` o
+  `--base=staging`.
+- `wt-create.sh` acepta una tercera posición opcional para la base y valida el
+  nombre antes de crear el worktree.
+- El adapter declara `develop -> staging -> main`, con `main` protegida y
+  `main -> staging`/`staging -> develop` como back-merges declarados.
+
+La rama `develop` todavía no se creó ni se publicó. Tampoco se cambiaron
+workflows, CI, Linear o reglas remotas. La activación operacional sigue siendo
+la fase 0 y requiere crear la rama desde `staging`, revisar protección/CI y
+ejecutar las pruebas E2E antes de retirar el bypass temporal.

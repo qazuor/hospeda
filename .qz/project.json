@@ -8,7 +8,7 @@
         "provider": "linear",
         "teamKey": "HOS",
         "identifierPattern": "^HOS-[0-9]+$",
-        "baseBranch": "staging",
+        "baseBranch": "develop",
         "states": {
             "backlog": "Backlog",
             "inProgress": "In Progress",
@@ -17,14 +17,18 @@
         }
     },
     "branches": {
-        "base": "staging",
-        "protected": ["main", "staging"],
+        "base": "develop",
+        "protected": ["main"],
         "pattern": "{type}/{slug}",
-        "promotion": ["staging", "main"],
+        "promotion": ["develop", "staging", "main"],
         "backMerge": [
             {
                 "from": "main",
                 "to": "staging"
+            },
+            {
+                "from": "staging",
+                "to": "develop"
             }
         ]
     },

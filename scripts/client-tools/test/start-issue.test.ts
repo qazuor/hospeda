@@ -150,6 +150,13 @@ describe('parseStartIssueArgs', () => {
         expect(opts.type).toBe('fix');
     });
 
+    it('should accept an explicit base branch for urgent work', () => {
+        expect(parseStartIssueArgs({ argv: ['273', '--base', 'staging'] }).baseBranch).toBe(
+            'staging'
+        );
+        expect(parseStartIssueArgs({ argv: ['273', '--base=develop'] }).baseBranch).toBe('develop');
+    });
+
     it('should ignore a second positional that is not a branch type', () => {
         // Otherwise a typo silently becomes the branch prefix.
         expect(parseStartIssueArgs({ argv: ['273', 'fixx'] }).type).toBeNull();

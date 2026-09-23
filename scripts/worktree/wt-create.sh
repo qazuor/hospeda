@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wt-create.sh <type> <slug> — create a worktree from baseBranch, copy env,
+# wt-create.sh <type> <slug> [base] — create a worktree from baseBranch, copy env,
 # install, build, and init the worktree state file. Run from the MAIN repo.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,8 +11,14 @@ ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 
 TYPE="${1:?usage: wt-create.sh <type> <slug>}"
 SLUG="${2:?usage: wt-create.sh <type> <slug>}"
+OVERRIDE_BASE="${3:-}"
 
-BASE="$(jq -r '.baseBranch' "$CFG")"
+if [ -n "$OVERRIDE_BASE" ] && [[ ! "$OVERRIDE_BASE" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+  echo "ERROR: invalid base branch" >&2
+  exit 2
+fi
+
+BASE="${OVERRIDE_BASE:-$(jq -r '.baseBranch' "$CFG")}"
 PATHPAT="$(jq -r '.worktree.pathPattern' "$CFG")"
 BRANCHPAT="$(jq -r '.worktree.branchPattern' "$CFG")"
 BRANCH="${BRANCHPAT//\{type\}/$TYPE}"; BRANCH="${BRANCH//\{slug\}/$SLUG}"
