@@ -236,6 +236,15 @@ escribir la marca (`B/03` §3.2)— ni cambia lo que la marca transporta al barr
 cifras del `B/02` §2.5, que siguen siendo **catorce** motivos y **cinco** que devuelven plata
 (recontadas ahí).
 
+**Y no reabre el defecto que `DEC-RF-003` acababa de cerrar, aunque tenga la misma forma.** Lo que
+allá falló fue *«una misma marca, con un mismo motivo, con dos indicaciones distintas según **una
+rama que el listado no muestra**»* (`B/12` §5.3): la rama 6 llegaba muda porque el listado no sabía
+que existía. **La diferencia es exactamente ésa y no otra**: el disparador del 14 **viaja con la
+marca** —`S21` lo conoce en el acto de escribirla (`B/03` §3.2) y el `NUCLEO/08` §3 lo asienta—, así
+que la persona ve **cuál** de las dos propuestas le toca y por qué. Un default por rama con la rama
+a la vista es lo contrario de una marca muda; lo que sigue prohibido es la rama invisible, y por eso
+`G-R1-F` falla si la marca del 14 llega sin su rama o con la otra (`B/20` §2).
+
 **Y el default vacío es el que ya falló, así que no es una opción neutra.** La marca sin motivo
 era indistinguible de las otras trece y **el pago se quedaba**; una marca con motivo y sin default
 reproduce el mismo desenlace con más pasos, porque la persona que no sabe qué se espera de ella
