@@ -15,7 +15,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
 
 GREEN="\033[32m"
 YELLOW="\033[33m"
@@ -27,6 +26,51 @@ ok()   { printf "${GREEN}✓${RESET} %s\n" "$1"; }
 info() { printf "${DIM}→${RESET} %s\n" "$1"; }
 warn() { printf "${YELLOW}⚠${RESET} %s\n" "$1"; }
 err()  { printf "${RED}✗${RESET} %s\n" "$1" >&2; }
+
+MODE="install"
+case "${1:-}" in
+    --help|-h)
+        cat <<'EOF'
+Usage: install.sh [--check]
+
+  (sin argumentos)  instala dependencias, compila y copia hops al destino.
+  --check           valida herramientas, fuentes y destino sin escribir nada.
+  --help            muestra esta ayuda sin instalar ni compilar.
+EOF
+        exit 0
+        ;;
+    --check)
+        MODE="check"
+        ;;
+    "")
+        ;;
+    *)
+        err "Unknown option: $1 (use --help)"
+        exit 2
+        ;;
+esac
+
+cd "$SCRIPT_DIR"
+
+if [[ "$MODE" == "check" ]]; then
+    command -v bun >/dev/null 2>&1 || { err "bun is required but not found on PATH."; exit 1; }
+    for required in package.json bun.lock src/index.ts; do
+        [[ -e "$SCRIPT_DIR/$required" ]] || { err "missing $required"; exit 1; }
+    done
+    target_dir="${HOPS_TARGET:-${HOME}/.local/bin}"
+    target="$target_dir/hops"
+    printf 'server-tools install check\n'
+    printf 'source=%s\n' "$SCRIPT_DIR"
+    printf 'bun=%s\n' "$(bun --version)"
+    printf 'target=%s\n' "$target"
+    if [[ -x "$target" ]]; then
+        printf 'target.status=present\n'
+    else
+        printf 'target.status=missing\n'
+    fi
+    printf 'mutations=none\n'
+    exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # 1. Bun

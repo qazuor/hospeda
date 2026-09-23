@@ -36,6 +36,16 @@ The repo ships an `install.sh` that handles the whole flow: `bun install`,
 `bun build --compile`, drops the binary in your chosen location, and
 warns if it is not on `PATH`.
 
+Before installing, use the read-only checks:
+
+```bash
+./install.sh --help
+./install.sh --check
+```
+
+`--check` validates Bun, the lockfile, source files and the target path without
+installing dependencies, compiling, creating directories or replacing a binary.
+
 ```bash
 ssh -p 2222 qazuor@216.238.103.219
 curl -fsSL https://bun.sh/install | bash      # only the first time
