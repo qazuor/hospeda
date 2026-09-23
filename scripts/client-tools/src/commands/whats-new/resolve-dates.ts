@@ -50,6 +50,21 @@ export const ON_PROMOTION_MARKER = 'on-promotion';
  */
 const FIELD_RE = /\b(id|publishedAt)\s*:\s*(['"])([^'"]*)\2/g;
 
+/**
+ * The live-entries declaration every reader of the catalog anchors on — the
+ * same anchor `check-whats-new-catalog.sh` and `whats-new-gate.yml` use.
+ *
+ * The catalog's own module docblock documents the marker semantics and
+ * therefore CONTAINS the literal `publishedAt: 'on-promotion'` in prose
+ * ABOVE this declaration. Scanning the whole file (the original behaviour)
+ * resolved that prose as a phantom first entry on the first real run
+ * (2026-09-11): it took the merge timestamp itself, shifted every real entry
+ * one extra hour back, rewrote a doc comment in the committed catalog, and
+ * put `'(unknown id)'` first in the PR body. Everything before the
+ * declaration is documentation and is never touched.
+ */
+const ENTRIES_DECLARATION = 'export const whatsNewEntries';
+
 /** One resolved marker occurrence, positioned in the original content. */
 interface MarkerOccurrence {
     readonly start: number;
@@ -123,12 +138,20 @@ export function resolvePublishedAtMarkers({
     let currentId: string | null = null;
     let match: RegExpExecArray | null;
 
+    // Scan only from the live-entries declaration. Content above it (the
+    // module docblock) documents the marker and must never be rewritten. A
+    // file without the declaration (synthetic unit-test fixtures only) is
+    // scanned whole, preserving the function's behaviour on minimal inputs.
+    const declarationIndex = content.indexOf(ENTRIES_DECLARATION);
+    const scanStart = declarationIndex === -1 ? 0 : declarationIndex;
+    const scanContent = content.slice(scanStart);
+
     // Reset lastIndex explicitly — this is a module-level `g` regex reused
     // across calls, and a leftover lastIndex from a prior (e.g. thrown-mid-way)
     // call would silently skip a prefix of the next one.
     FIELD_RE.lastIndex = 0;
     // biome-ignore lint/suspicious/noAssignInExpressions: standard exec-loop idiom
-    while ((match = FIELD_RE.exec(content)) !== null) {
+    while ((match = FIELD_RE.exec(scanContent)) !== null) {
         const [full, key, quote, value] = match;
         if (key === 'id') {
             currentId = value ?? null;
@@ -137,8 +160,8 @@ export function resolvePublishedAtMarkers({
         // key === 'publishedAt'
         if (value === ON_PROMOTION_MARKER) {
             markers.push({
-                start: match.index,
-                end: match.index + full.length,
+                start: scanStart + match.index,
+                end: scanStart + match.index + full.length,
                 quote: quote ?? "'",
                 id: currentId
             });
