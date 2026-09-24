@@ -3962,7 +3962,9 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MP-003 — La pausa que hace el proveedor por mora lleva motivo propio, y no entra como pausa del cliente
 
-- **Fecha**: 2026-09-22 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-22 · **Estado**: ACCEPTED — su mitad abierta (*«qué hace el dunning con esa
+  fila»*) la cierra **`DEC-SUB-019`** (2026-09-24), y con ella esta pausa deja de ser un camino
+  esperado · **Decide**: owner
 - **El hecho que la motiva, medido el 2026-09-21/22** (`RN-2` y `GR-3` de la matriz): **el proveedor
   pausa la suscripción por su cuenta** cuando un ciclo agota sus cuatro reintentos y vence su
   ventana. Está en el mail al vendedor —*«se pausó… no recibimos el pago en la fecha original del
@@ -4988,13 +4990,64 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-019 — Al vencer el grace se cancela el preapproval: la suspensión corta el cobro, no sólo el servicio
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra la mitad abierta de `DEC-MP-003`**: *«qué hace el dunning con esa fila»*, que esperaba el
+  veredicto de la sonda 49.
+- **El hecho que la motiva**: la **sonda 49** (producción, 2026-09-24) midió que **la ventana de
+  reintentos del proveedor dura un ciclo**: el cobro de renovación de un preapproval de `2 days`
+  trae `expire_date` a **48,0 h** de creado, y los de `1 days` traían 24 h (`GR-3`). **Dos puntos, la
+  misma regla.** Para un plan mensual es extrapolación —~30 días—, y para uno anual daría un año,
+  que **no está medido**.
+- **El problema, y lo planteó el owner**: con un grace de 10 días y un plan mensual, **el proveedor
+  sigue reintentando 20 días después de que suspendimos**. Un reintento que entra el día 25 cobra un
+  mes entero, y como **la fecha del próximo cobro no se corre con los reintentos** (`EX-34`, y
+  `next_payment_date` avanzando igual sobre un cobro rechazado — `RN-3`, 2026-09-24), el día 30 cobra
+  **otro**. La persona paga un mes por unos días de servicio, después de haber estado suspendida.
+  **Un grace que no corta el cobro es una suspensión a medias.**
+- **Decisión**: **`S6`, sobre un pagador con tarjeta, cancela el preapproval en el proveedor en el
+  mismo acto en que suspende**, con la regla de relectura de `S17`. Antes de eso sigue preguntando si
+  cobró (`S6` con la lectura del `B/09` §4): si cobró, lo que corre es `S5`. **Si la cancelación
+  falla, `S6` no ocurre en esta corrida** y la fila sigue en `GRACE_PERIOD` hasta la próxima.
+  Volver exige **re-autorizar desde cero** por el checkout: es una sucesión, y `S17` encuentra el
+  preapproval ya `cancelled` y no manda nada (`D7`).
+- **Y una restricción que la hace funcionar**: **el grace de una versión de plan es siempre más corto
+  que su ciclo.** Si no, el proveedor pausa por mora con la fila todavía en `GRACE_PERIOD`, con
+  servicio completo y sin nadie que vaya a cobrar. Es **validación de configuración**, no mecanismo.
+- **Qué desaparece con esto**: con la restricción cumplida, **el proveedor nunca llega a pausar por
+  mora** una suscripción nuestra — cancelamos antes de que se le venza la ventana. La pausa con motivo
+  `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra** —el espejo tiene que saber leerla si ocurre, por
+  ejemplo si alguien reactiva un preapproval a mano—, pero deja de ser un camino que haya que diseñar.
+  Y deja de importar la extrapolación al plan anual: cortamos en el día del grace, no en el del
+  proveedor.
+- **Lo que se resigna, declarado**: **la recuperación automática después del grace.** A quien le entra
+  plata el día 15 ya no se le cobra solo: tiene que volver por el checkout. **Durante el grace nada
+  cambia**: un reintento que entra ahí sigue devolviendo la fila a `ACTIVE` por `S5`.
+- **Lo que cuesta**: suspender deja de ser un acto interno y pasa a llamar al proveedor. Es **una
+  llamada dentro de una transición que ya existe**, de la misma forma que `S23`; no es un job nuevo.
+- **Las alternativas, y por qué no**:
+  - **Dejar el preapproval vivo y que un reintento reactive** — era la recomendación anterior de la
+    misma sesión, antes de la pregunta del owner. **Es el camino que produce el cobro injusto**: la
+    reactivación automática tardía es justamente la que cobra un mes por días.
+  - **Reactivar automáticamente lo que el proveedor pausó**: agrega un job, le cobra a alguien
+    suspendido, y la deuda igual no se recupera (`RN-3`: tras reactivar, el proveedor cobra el ciclo
+    siguiente, no los adeudados).
+  - **Cancelar recién cuando el proveedor pausa**: deja el grace sin sentido por el mismo motivo que
+    la primera, y depende de la ventana que no está medida para el anual.
+- **Origen**: la pregunta del owner del 2026-09-24 —*«si la dejamos abierta, va a seguir intentando y
+  entonces nuestro período de gracia es medio mentira»*— sobre el veredicto de la sonda 49 del mismo
+  día.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **108** — las cinco del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **109** — las seis del 2026-09-24, con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 13 |
-| Funcionales | 95 |
+| Funcionales | 96 |
 | **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
