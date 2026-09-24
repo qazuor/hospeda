@@ -3878,3 +3878,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se requirió modificar instrucciones; el comportamiento observado en
   `EROFS` debe tratarse como bloqueo del entorno y no como motivo para saltar
   el gate o sustituirlo por una batería improvisada.
+
+## Gate 240 · Estado real de la separación `qz`
+
+- La auditoría del loader confirmó que `.qz/project.json` todavía sólo aporta
+  identidad, equipo y ramas al núcleo.
+- Worktrees y DB siguen leyendo configuración legacy y conservan defaults de
+  Hospeda; por eso no se habilitaron aliases `qz-*` ni se declaró completada la
+  separación genérica.
+- La próxima implementación debe ampliar el contrato tipado, migrar los
+  consumidores y probar un fixture de proyecto antes de reutilizar el núcleo
+  fuera de Hospeda.

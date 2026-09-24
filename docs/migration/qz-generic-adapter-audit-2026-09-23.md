@@ -45,3 +45,16 @@ El prefijo ya está declarado y los checks de manifest pasan, pero la separació
 real todavía no está implementada. No conviene renombrar comandos ni crear
 symlinks hasta extraer la configuración y añadir un proyecto fixture que pruebe
 que el núcleo no depende de Hospeda.
+
+## Revisión posterior · 2026-09-24
+
+La inspección del código confirma que el contrato declarativo todavía no es la
+única fuente: `project-config.ts` sólo consume identidad, equipo y ramas,
+mientras `worktree.ts` aún lee `.claude/project.config.json` y conserva
+fallbacks como `hospeda-postgres` y `HOSPEDA_DATABASE_URL`. Por lo tanto no se
+debe declarar completada la separación `qz` todavía.
+
+El próximo cambio correcto es ampliar el loader tipado para DB, worktrees,
+servidores y comandos, migrar cada consumidor a ese contrato y agregar un
+fixture de proyecto genérico. Hasta entonces, `hops` sigue siendo el adapter
+válido para Hospeda y no se crean aliases `qz-*` que puedan ocultar acoplamientos.
