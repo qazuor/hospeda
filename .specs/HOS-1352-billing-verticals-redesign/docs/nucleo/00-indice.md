@@ -3,7 +3,7 @@ title: Núcleo — mapa del programa y reglas de escritura
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-24
 status: CURRENT
 fase: 2
 ---
@@ -39,8 +39,9 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
-2. **una decisión registrada** en `01-decision-log.md` — son **54** al 2026-09-19, recontadas con
-   `rg -c "^### DEC-"` menos la plantilla del formato, y las `SUPERSEDED` no cuentan;
+2. **una decisión registrada** en `01-decision-log.md` — son **107** al 2026-09-24, recontadas con
+   `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
+   `DEC-SUB-001` y `DEC-SUB-005` enteras, y `DEC-MIG-001` sólo en lo que `DEC-MIG-003` reemplazó;
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
 
 **El registro de FASE 1B (`08`) no es fuente de diseño.** Un hallazgo de 1B puede aparecer en
