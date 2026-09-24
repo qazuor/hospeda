@@ -30,6 +30,13 @@ if (!config.worktree?.pathPattern || !config.worktree?.envSource) errors.push('w
 if (config.worktree?.envSource && typeof config.worktree.envSource.kind !== 'string') {
   errors.push('worktree.envSource:kind')
 }
+if (typeof config.worktree?.envSource?.kind === 'string') {
+  const kind = config.worktree.envSource.kind
+  if (!['none', 'protected-checkout', 'path'].includes(kind)) errors.push('worktree.envSource:unsupported-kind')
+  if (kind === 'path' && (typeof config.worktree.envSource.relativePath !== 'string' || config.worktree.envSource.relativePath.length === 0)) {
+    errors.push('worktree.envSource:relativePath')
+  }
+}
 if (config.worktree?.envSource?.kind === 'protected-checkout' && !config.worktree.envSource.checkoutName) {
   errors.push('worktree.envSource:checkoutName')
 }
