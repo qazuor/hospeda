@@ -1467,7 +1467,9 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MAIL-001 — Nuestro correo bloquea la acción sólo donde el del proveedor hace daño, y los correos falsos se anticipan
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — la premisa de su implicación 4 (*«no usamos los
+  planes del proveedor»*) tiene decisión propia desde el 2026-09-24, **`DEC-MP-007`**; la atribución
+  a `DEC-MP-002` de esa implicación es incorrecta · **Decide**: owner
 - **Problema**: el §42 se escribió como si fuéramos los únicos que le hablan al cliente, y la
   medición mostró que no. Además, **cinco decisiones anteriores** (`DEC-SUB-006`, `007`, `008`,
   `009` y `DEC-MP-002`) se apoyan en que «nuestro aviso sale antes», y ninguna definía qué pasa si
@@ -4948,13 +4950,51 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-007 — No usamos los planes del proveedor: cada preapproval se crea suelto, desde nuestra versión de plan
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **El problema, y no es nuevo: es una premisa que ya decidía alcance sin poder citarse.** Que no
+  usamos `preapproval_plan` —el plan del proveedor, un molde del que cuelgan suscripciones— aparecía
+  **una sola vez** en todo el diseño: la implicación 4 de `DEC-MAIL-001`, que la atribuye a
+  `DEC-MP-002`. **Esa atribución es falsa**: `DEC-MP-002` decide cuándo rige un aumento, no si se
+  usan los planes. `preapproval_plan` tiene **cero apariciones** en los capítulos de `HOS-1353`,
+  `HOS-1354` y el núcleo (recontado el 2026-09-24). Y de esa premisa dependían tres filas de la matriz
+  (`24-inventario-de-compensacion.md`, hallazgo transversal 2).
+- **Decisión**: **cada preapproval se crea sin plan del proveedor**, con su monto, su ciclo y su
+  `reason` propios, tomados de **nuestra** versión de plan (`D1`).
+- **Razones**:
+  1. **El catálogo es nuestro y está versionado.** Cambiar el ciclo o el precio de un plan publica
+     una versión nueva y **no mueve a nadie** (`D1`, `D13`); mover a alguien es cancelar y recrear
+     (`DEC-SUB-006`). El comportamiento que `EX-25` midió en el proveedor —el ciclo del plan cambia y
+     los suscriptos no— es **el mismo que nuestro modelo hace a propósito**, así que no hay nada que
+     compensar mientras no colguemos las suscripciones de un plan suyo.
+  2. **Con un plan del proveedor, la suscripción pierde lo propio en silencio** (`EX-22`): monto
+     distinto da `400`, y el resto se descarta sin avisar.
+  3. **El `reason` se controla por suscripción** (`DEC-MAIL-001` implicación 4): con planes, el texto
+     lo fijaría el plan y haría falta uno por combinación de vertical, tier y ciclo.
+  4. **Un aumento se aplica por suscripción de todos modos**: `DEC-MP-002` exige 60 días de aviso a
+     los existentes, así que la ventaja de los planes —un solo cambio que alcanza a todos (`EX-23`)—
+     no se podría usar.
+- **Lo que se resigna, declarado**: **`EX-27`**. `repetitions` (cantidad de cobros) y `billing_day`
+  (día fijo del mes) **no funcionan sin plan**. Hoy ninguno se usa: la duración de una promo la
+  llevamos nosotros mutando el monto (`DEC-MP-001`). Si algún día hiciera falta cobrar un día fijo
+  del mes, **esta decisión es la que hay que releer**.
+- **Qué cierra en el inventario de compensación**: `EX-22` y `EX-25` **no aplican** por esta
+  decisión; `EX-27` queda **resignada con causa**.
+- **La alternativa que se descartó**: declarar sólo `EX-25` con causa y dejar la premisa implícita.
+  Es más barata, pero si alguien usa planes del proveedor un día, **vuelven las tres filas sin que
+  nada lo avise**.
+- **Origen**: el inventario de compensación del 2026-09-24 y la elección del owner del mismo día.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **107** — las cuatro del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
+| Decisiones tomadas | **108** — las cinco del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 13 |
-| Funcionales | 94 |
+| Funcionales | 95 |
 | **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
