@@ -9,7 +9,7 @@ Fecha de relevamiento: 2026-09-24. El alcance es el **harness**: interfaz, contr
 | OpenCode | 1.18.32 | Es la instalación V1 que elegimos mantener por compatibilidad con Gentle-AI. La documentación oficial actual está orientada a V2; sus capacidades no deben asumirse automáticamente en V1. |
 | Codex CLI | 0.155.1 | CLI local de OpenAI, con sandbox y aprobación como límites de seguridad principales. |
 | Claude Code | 2.1.282 | CLI maduro con hooks, plugins, subagentes, equipos, MCP y worktrees nativos. |
-| Gentle Shell | no instalado | Harness separado, construido sobre Pi. No es un plugin de OpenCode ni una capa de OpenCode. |
+| Gentle Shell | no instalado | Candidato abierto: harness separado, construido sobre Pi. No es un plugin de OpenCode ni una capa de OpenCode. |
 
 ## Qué se está comparando
 
@@ -84,7 +84,7 @@ El coste es el acoplamiento: si la lógica de negocio de Hospeda queda en hooks,
 
 No es “Gentle-AI para OpenCode”. Es un harness Pi-native que integra ODD, agentes enfocados, estado, diff/uso, memoria, review y TDD dentro de su propia experiencia. Tiene sentido si elegimos Pi como runtime principal. Con OpenCode V1 como base, instalar Gentle Shell agregaría otra TUI, otro home de agente, otra forma de administrar sesiones y otra superficie de plugins.
 
-Para Hospeda lo dejaría fuera por ahora. Podemos adoptar sus ideas de ODD, revisión y evidencia mediante Gentle-AI + `qz/hops` sin introducir el runtime Pi. Se debe reevaluar sólo si decidimos cambiar de OpenCode a Pi, no como complemento casual.
+La opción queda abierta y merece una evaluación propia. No debe instalarse como complemento casual de OpenCode: hay que probarlo como harness alternativo completo, midiendo provisioning, memoria, Linear, `qz/hops`, worktrees, seguridad y ergonomía frente a OpenCode.
 
 ## Compatibilidad de Gentle-AI con cada harness
 
@@ -98,7 +98,7 @@ Gentle-AI 3.7.0 se evalúa como capa compatible, no como columna adicional de ha
 | SDD/OpenSpec | Disponible de forma explícita | Skills/scripts | Skills/commands | Opción Pi/Gentle |
 | GGA/review/RDD | Capa Gentle + scripts | Capa Gentle + scripts | Capa Gentle + hooks/plugins | Integrado |
 | Conflicto principal | TUI/plugins/worktrees duplicados | Configuración en evolución | Hooks/skills duplicados | Otro harness completo |
-| Recomendación | Capa principal actual | Cliente compatible | Compatibilidad temporal | No instalar ahora |
+| Recomendación | Capa principal actual | Cliente compatible | Compatibilidad temporal | Candidato abierto para evaluación |
 
 ## Puntuación para Hospeda
 
@@ -126,13 +126,13 @@ Las puntuaciones no significan que un harness sea “mejor” en abstracto. Clau
 3. **`qz/hops`**: autoridad portable para Linear, start/close issue, worktrees, env, DB template, puertos, guards, promoción de branches, handoff, recap y reportes.
 4. **Codex CLI**: cliente secundario para tareas seguras, automatización no interactiva y validaciones donde sandbox/approval sea prioritario.
 5. **Claude Code**: compatibilidad y rollback hasta cerrar la migración; no agregar lógica nueva exclusiva de Claude.
-6. **Gentle Shell**: no instalar ahora; reevaluar sólo con una decisión explícita de adoptar Pi como harness principal.
+6. **Gentle Shell**: evaluar como harness alternativo completo, con una instalación aislada y reversible; no mezclarlo con OpenCode hasta comparar los resultados.
 
 La regla de diseño es: **el harness ofrece la sesión; el repositorio y `qz/hops` ofrecen el proceso**. Así cambiar de OpenCode a Codex o Claude no cambia el estado de Linear, branches, worktrees, bases ni evidencias.
 
 ## Decisión
 
-Continuar con OpenCode como harness principal, Codex como segundo cliente de seguridad/automatización, Claude Code como compatibilidad temporal y Gentle Shell fuera del stack actual. No migrar workflows de Hospeda a features exclusivas de ningún harness. Mantenerlos en scripts versionados y adaptadores delgados para cada CLI.
+Continuar provisionalmente con OpenCode como harness principal, Codex como segundo cliente de seguridad/automatización, Claude Code como compatibilidad temporal y Gentle Shell como candidato abierto para evaluación controlada. No migrar workflows de Hospeda a features exclusivas de ningún harness. Mantenerlos en scripts versionados y adaptadores delgados para cada CLI.
 
 ## Fuentes primarias consultadas
 
