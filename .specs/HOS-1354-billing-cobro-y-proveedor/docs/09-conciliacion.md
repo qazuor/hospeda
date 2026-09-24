@@ -623,6 +623,14 @@ convertirse en el disparador de la re-vinculación.**
    al listado es *«todavía no se sabe»*, no *«no cobró»*—, así que la tolerancia deja de ser la que
    sostiene la corrección y pasa a ser sólo cuántas corridas se espera antes de mirarlo.
 
+   **Fijado por el owner el 2026-09-24: una corrida.** Si un cobro sigue en *«todavía no se sabe»*
+   en la corrida **siguiente** —o sea, más de un día después—, **se avisa** por el canal de
+   `DEC-OBS-001` (listado accionable y correo agregado, como un tipo más del resumen), **sin abrir
+   una marca**: no hay plata divergente que resolver todavía, sólo un dato que el proveedor no
+   terminó de publicar. El desfase medido es de **minutos**, así que un día de espera no debería
+   producir falsas alarmas; lo que avisa es un caso trabado. **El barrido sigue releyéndolo** cada
+   corrida hasta que se resuelva, igual que a una fila marcada (§3).
+
 ---
 
 ## 7. Frecuencia y orden
@@ -651,6 +659,6 @@ ninguno escribe salvo la reparación de vínculo del §2.4.
   deja la suscripción mientras lo hace.~~ **Actualizado el 2026-09-24**: ya se sabe cuántas veces
   reintenta y en qué estado deja la suscripción —cuatro intentos dentro de **un ciclo**, y al vencer
   **pausa** (`GR-3`, sonda 49)—, y con `DEC-SUB-019` el grace cancela el preapproval antes de que
-  eso pase. Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`; ninguna bloquea este capítulo. **Lo que queda
-  abierto es un número**: cuántas corridas espera el barrido un cobro *«todavía no se sabe»* antes
-  de mirarlo (§6.2).
+  eso pase. Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`; ninguna bloquea este capítulo. El número que
+  quedaba —cuántas corridas espera el barrido un cobro *«todavía no se sabe»*— **lo fijó el owner el
+  mismo día: una** (§6.2).
