@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_92",
-        "number": 120,
+        "id": "ver_claude_opencode_migration_93",
+        "number": 121,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "agregar resumen ejecutivo y bloqueos",
+        "reason": "cerrar develop remoto y consolidar Hospeda en Engram",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_91"
+        "basedOnVersion": "ver_claude_opencode_migration_92"
     },
     "data": {
         "sections": [
@@ -26,8 +26,8 @@
                 "title": "Estado de la migración",
                 "data": {
                     "eyebrow": "Resumen vivo · actualizado con cada gate",
-                    "title": "57 de 89 tareas completas",
-                    "description": "La base operativa de OpenCode + Gentle-AI, Engram y el adapter qz está funcionando. Quedan 32 tareas: principalmente decisión de specs/SDD, endurecimiento final, plugins y retiro de Claude."
+                    "title": "59 de 89 tareas completas",
+                    "description": "La base operativa de OpenCode + Gentle-AI, Engram y el adapter qz está funcionando. Quedan 30 tareas: principalmente decisión de specs/SDD, endurecimiento final, plugins y retiro de Claude."
                 }
             },
             {
@@ -36,9 +36,9 @@
                 "title": "Progreso",
                 "data": {
                     "metrics": [
-                        { "value": "64%", "label": "avance total" },
-                        { "value": "57", "label": "completas" },
-                        { "value": "32", "label": "pendientes" },
+                        { "value": "66%", "label": "avance total" },
+                        { "value": "59", "label": "completas" },
+                        { "value": "30", "label": "pendientes" },
                         { "value": "8", "label": "fases" },
                         { "value": "310 + 334", "label": "tests client/server en verde" }
                     ]
@@ -52,8 +52,8 @@
                     "columns": ["Fase", "Completas", "Pendientes", "Estado"],
                     "rows": [
                         ["0 · Relevamiento y seguridad", "6", "0", "completa"],
-                        ["1 · Instalación base", "11", "2", "avanzada"],
-                        ["2 · Memoria y conocimiento", "9", "4", "en revisión"],
+                        ["1 · Instalación base", "12", "1", "avanzada"],
+                        ["2 · Memoria y conocimiento", "10", "3", "en revisión"],
                         ["3 · Hops y workflow", "21", "5", "avanzada"],
                         ["4 · Specs y SDD", "1", "5", "decisión pendiente"],
                         ["5 · Guards y seguridad", "2", "4", "parcial"],
@@ -68,7 +68,7 @@
                 "title": "Bloqueos y decisiones que destraban el cierre",
                 "data": {
                     "tone": "warning",
-                    "text": "Bloqueo técnico: `develop` existe localmente pero `origin/develop` no está disponible; falta crear/verificar y proteger esa rama en el remoto. Decisiones humanas pendientes: elegir .specs vs Gentle SDD, aprobar la política final de permisos/plugins y definir cuándo retirar Claude. Mientras esas decisiones no se tomen, no se deben marcar como completas las fases 4 y 7."
+                    "text": "`origin/develop` ya existe y apunta al commit operativo integrado; queda verificar su protección con una sesión GitHub autenticada. Engram consolidó `Hospeda` → `hospeda` tras backup e integrity_check OK. Decisiones humanas pendientes: elegir .specs vs Gentle SDD, aprobar la política final de permisos/plugins y definir cuándo retirar Claude."
                 }
             },
             {
@@ -292,8 +292,8 @@
                             "title": "Clasificar proyectos Engram",
                             "category": "Engram + CLAUDE.md",
                             "description": "Separar Hospeda, worktrees, temporales y otros repos antes de consolidar.",
-                            "notes": "Gate120: clasificación agregada read-only: tmp 5.259; hospeda 2.986; sin proyecto 1.103; hospeda3 108; Asistia 55; new-asistia 27; restantes <=23 cada uno. Prioridad de revisión: tmp/sin proyecto, luego Hospeda por checkout y worktrees; externos separados. No se leyeron contenidos ni se ejecutaron mutaciones; revisión semántica y aprobación humana por lote siguen pendientes. Gate271: `hospeda3` exacto quedó sin observaciones activas tras backup y soft-delete autorizado; no se tocaron `hospeda3-*` ni proyectos no-Hospeda. Gate272: inventario estructural posterior: `hospeda` 3.045 activas, `Hospeda` 2, `tmp` 5.259 (99,9% passive/autosave), y 1.078 sin proyecto. Los namespaces auxiliares quedan sin consolidar por falta de evidencia semántica. Gate273: `projects consolidate --all --dry-run` encontró sólo `Hospeda` (2) → `hospeda` (3.045), con `hospeda` como canonical. No se aplicó la mutación; queda aprobación explícita.",
-                            "done": false
+                            "notes": "Gate120: clasificación agregada read-only: tmp 5.259; hospeda 2.986; sin proyecto 1.103; hospeda3 108; Asistia 55; new-asistia 27; restantes <=23 cada uno. Prioridad de revisión: tmp/sin proyecto, luego Hospeda por checkout y worktrees; externos separados. No se leyeron contenidos ni se ejecutaron mutaciones; revisión semántica y aprobación humana por lote siguen pendientes. Gate271: `hospeda3` exacto quedó sin observaciones activas tras backup y soft-delete autorizado; no se tocaron `hospeda3-*` ni proyectos no-Hospeda. Gate272: inventario estructural posterior: `hospeda` 3.045 activas, `Hospeda` 2, `tmp` 5.259 (99,9% passive/autosave), y 1.078 sin proyecto. Gate273: el dry-run encontró sólo `Hospeda` (2) → `hospeda`; quedó pendiente autorización. Gate298: backup de DB/WAL/SHM, dry-run exacto y consolidación autorizada completados; se fusionaron 2 observaciones, 1 sesión y 1 prompt. `Hospeda` ya no figura; `tmp`, `hospeda3-*` y externos no se tocaron. integrity_check=ok.",
+                            "done": true
                         },
                         {
                             "id": "engram-dedup",
@@ -533,8 +533,8 @@
                             "title": "Agregar develop como rama de integración intermedia",
                             "category": "Git, Linear y promoción",
                             "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
-                            "notes": "Gate202: auditoría read-only del 2026-09-22 confirmó que develop no existía. Gate220: `.qz/project.json` y el fallback legacy declaran `develop` como base por defecto, `main` como única rama protegida, promoción ordenada `develop → staging → main` y back-merge `main → staging`/`staging → develop`. `start-issue` acepta `--base staging` para urgencias y `wt-create.sh` recibe una base explícita validada; si la base aún no existe, informa el estado y sugiere el bypass. Gate221: se creó la referencia local `develop` desde `staging` (`c01849bad`); `origin/develop`, GitHub/CI y la prueba E2E remota siguen pendientes. Gate226: CI y E2E ahora disparan también para `develop`, y Dependabot dirige allí las actualizaciones normales. Gate227: AGENTS.md y la guía legacy de branches explican `develop` como default, `staging` como promoción/escape urgente y `main` como producción. Gate228: Dependabot-review, close-issue y merge reconocen las ramas de integración configuradas, incluyendo `develop`. Gate232: la comprobación read-only confirmó que `develop` y `staging` locales apuntan a `c01849bad`, mientras `origin/develop` no existe y `origin/staging` diverge (128 commits sólo locales y 1 sólo remoto); no se considera activada la rama remota ni segura la promoción. Gate233: las pruebas dirigidas de branch/promotion/start-issue/binarios pasaron 61/61 con 251 assertions. Gate234: `git ls-remote` no pudo verificar el estado remoto porque este entorno no resuelve `github.com`; no se ejecutó ningún fallback mutante. Gate236: el README de client-tools ahora documenta `develop` como base normal, `staging` como bypass urgente y `claude`, `opencode` y `codex` como agentes explícitos. El back-merge automático `staging → develop` queda pendiente de aprobación por sus permisos de escritura en GitHub. Gate264: la rama local `develop` existe, pero `origin/develop` todavía no está publicada; los planes read-only `promote develop staging` y `back-merge staging develop` devuelven JSON válido y bloquean por checkout dirty. No se hizo push ni se modificó GitHub.",
-                            "done": false
+                            "notes": "Gate202: auditoría read-only del 2026-09-22 confirmó que develop no existía. Gate220-236: adapter, CI, Dependabot, documentación y comandos quedaron preparados para `develop` como base normal y `staging` como bypass urgente. Gate297: se integró el tooling operativo desde `origin/staging` en el commit `3ab23c59ec2bdd97ab08c8864071683275ee1bb5`, se publicó `origin/develop` y `git ls-remote` confirmó la referencia. La protección de GitHub quedó sin verificar porque `gh` respondió 401; no se modificó esa política.",
+                            "done": true
                         },
                         {
                             "id": "promotion-backmerge-commands",

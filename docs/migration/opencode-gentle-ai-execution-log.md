@@ -4397,3 +4397,32 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   final de plugins/permisos y retiro de Claude.
 - El resumen es informativo; no cambia el estado de ningún checkbox ni crea
   tareas nuevas.
+
+## Gate 297 · Publicación y verificación de `develop`
+
+- Se integró el commit operativo `c01849bad7` sobre una rama temporal basada en
+  `origin/staging`, produciendo `3ab23c59ec2bdd97ab08c8864071683275ee1bb5`.
+- La referencia local `develop` quedó en ese commit y se publicó como
+  `origin/develop`; `git ls-remote` confirmó la referencia remota.
+- El checkout operativo `hospeda-staging` fue reconciliado con
+  `origin/staging` antes de publicar la rama. No se modificaron worktrees de
+  issues ni se creó un commit adicional en ellos.
+- La protección de GitHub no pudo verificarse con `gh`: la API respondió 401
+  Bad credentials. Queda pendiente revisar esa política con una sesión GitHub
+  autenticada; no se cambió ninguna protección.
+
+## Gate 298 · Consolidación autorizada de proyectos Engram
+
+- Se creó el backup binario de `/home/qazuor/.engram/engram.db` junto con
+  `engram.db-wal` y `engram.db-shm` en
+  `~/.local/state/hospeda-opencode-migration/backups/20260924-pre-hospeda-consolidation/`.
+- `PRAGMA integrity_check` devolvió `ok` antes y después de la operación.
+- El dry-run encontró exactamente un grupo: `Hospeda` (2 observaciones) →
+  `hospeda`. Se ejecutó sólo esa selección; el comando informó `Merged: 2 obs,
+  1 sessions, 1 prompts`.
+- La lista posterior ya no contiene el proyecto exacto `Hospeda`; `hospeda`
+  absorbió esas observaciones. `tmp`, `hospeda3-*` y proyectos externos no se
+  tocaron.
+- El conteo visible de `hospeda` siguió aumentando durante la comprobación por
+  agentes activos, por lo que los conteos son estructurales y no se usan como
+  snapshot histórico.
