@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_83",
-        "number": 111,
+        "id": "ver_claude_opencode_migration_84",
+        "number": 112,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "generar aliases qz desde registry único",
+        "reason": "validar prefijos de wrappers",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_82"
+        "basedOnVersion": "ver_claude_opencode_migration_83"
     },
     "data": {
         "sections": [

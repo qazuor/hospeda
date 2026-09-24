@@ -4313,3 +4313,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   implementaciones ni se rompe el modo `--local`.
 - Se agregaron pruebas de clasificación y se validaron typecheck, registry,
   sintaxis del instalador y manifests qz.
+
+## Gate 288 · Prefijos seguros para wrappers
+
+- El validador exige prefijos de comando con formato seguro (`Nombre-`), apto
+  para nombres de funciones Fish y aliases de shell.
+- Se rechazan separadores de ruta, espacios, comillas y prefijos sin guion
+  final antes de que el instalador los use.
+- Hospeda, el fixture genérico y un fixture temporal con prefijo inválido se
+  validaron con los resultados esperados; no se leyeron secretos.

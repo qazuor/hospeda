@@ -91,8 +91,9 @@ for (const [index, server] of (config.servers || []).entries()) {
     errors.push(`servers[${index}]:healthPath`)
   }
 }
-if (typeof config.commands?.genericPrefix !== 'string' || config.commands.genericPrefix.length === 0) errors.push('commands:genericPrefix')
-if (typeof config.commands?.projectPrefix !== 'string' || config.commands.projectPrefix.length === 0) errors.push('commands:projectPrefix')
+const commandPrefix = /^[A-Za-z][A-Za-z0-9_-]*-$/
+if (typeof config.commands?.genericPrefix !== 'string' || !commandPrefix.test(config.commands.genericPrefix)) errors.push('commands:genericPrefix')
+if (typeof config.commands?.projectPrefix !== 'string' || !commandPrefix.test(config.commands.projectPrefix)) errors.push('commands:projectPrefix')
 const serialized = JSON.stringify(config).toLowerCase()
 for (const forbidden of ['password', 'secret', 'token', 'privatekey', 'accesskey']) {
   if (serialized.includes(`"${forbidden}"`)) errors.push(`forbidden-field:${forbidden}`)
