@@ -6,6 +6,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
+QZ_CFG="$(wt_qz_config_path)"
 [ -n "$ROOT" ] || { echo "ERROR: not inside a git repo"; exit 1; }
 [ -f "$CFG" ] || { echo "ERROR: no .claude/project.config.json found"; exit 2; }
 
@@ -30,7 +31,21 @@ done
 #   - server without healthPath → one TCP port probe (/dev/tcp connect)
 # If the pid is alive but the serve-check fails, fall through to (re)start.
 # ---------------------------------------------------------------------------
-mapfile -t SRV_NAMES < <(jq -r '.servers[].name' "$CFG")
+if [ -f "$QZ_CFG" ] && jq -e '.servers | length > 0' "$QZ_CFG" >/dev/null 2>&1; then
+  mapfile -t SRV_NAMES < <(jq -r '.servers[].id' "$QZ_CFG")
+else
+  mapfile -t SRV_NAMES < <(jq -r '.servers[].name' "$CFG")
+fi
+
+server_health_path() {
+  local idx="$1" value
+  if [ -f "$QZ_CFG" ] && jq -e '.servers | length > 0' "$QZ_CFG" >/dev/null 2>&1; then
+    value="$(jq -r ".servers[$idx].healthPath // empty" "$QZ_CFG")"
+  else
+    value="$(jq -r ".servers[$idx].healthPath // empty" "$CFG")"
+  fi
+  printf '%s' "$value"
+}
 
 # srv_is_up <name> <index> — returns 0 only if pid alive AND serving.
 srv_is_up() {
@@ -43,7 +58,7 @@ srv_is_up() {
   # Pid not alive → process is gone.
   kill -0 "$pid" 2>/dev/null || return 1
   # Pid alive — verify the server is actually serving.
-  health_path="$(jq -r ".servers[$idx].healthPath // empty" "$CFG")"
+  health_path="$(server_health_path "$idx")"
   if [ -n "$health_path" ]; then
     # HTTP probe: one attempt, 2s timeout.
     curl -fsS --max-time 2 "http://localhost:${port}${health_path}" >/dev/null 2>&1 || return 1
@@ -260,7 +275,7 @@ wait_tcp() { # $1 port
 i=0
 for name in "${SRV_NAMES[@]}"; do
   port="${PORTS[$i]}"
-  health_path="$(jq -r ".servers[$i].healthPath // empty" "$CFG")"
+  health_path="$(server_health_path "$i")"
   printf "  waiting for %-8s (:%s) ... " "$name" "$port"
   if [ -n "$health_path" ]; then
     if wait_http "$port" "$health_path"; then

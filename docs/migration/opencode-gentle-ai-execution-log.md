@@ -4008,3 +4008,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El formato legacy (`name`, `startCmd`, `portEnvVar`) permanece como fallback.
 - Sintaxis Bash y lectura declarativa de `api`, `admin` y `web` validadas; no
   se reservaron puertos ni se iniciaron procesos.
+
+## Gate 254 · Health checks desde el adapter
+
+- `wt-up.sh` ahora usa nombres e `healthPath` de `servers[]` declarados en
+  `.qz/project.json`.
+- El formato legacy sigue siendo fallback y conserva TCP para servidores sin
+  ruta HTTP.
+- Sintaxis Bash y lectura de `api /health`, `admin` y `web` validadas; no se
+  iniciaron servidores ni se hicieron requests HTTP.
