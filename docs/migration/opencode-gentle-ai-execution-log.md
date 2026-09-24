@@ -4502,6 +4502,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   Los fallos se concentran en fixtures/contratos que esperan checkout Git,
   dependencias de entorno y pruebas de review; no deben confundirse con un
   E2E de Hospeda exitoso.
-- El smoke test agent-driven quedó pendiente porque el home aislado no tiene
-  un proveedor autenticado (`auth check` devolvió `not_ready`). La instalación
-  no lee ni copia credenciales de otros harnesses automáticamente.
+- El login posterior quedó confirmado: `gentle-shell --isolated auth check
+  --provider openai-codex` devolvió `ready`; la configuración selecciona
+  `openai-codex/gpt-5.5`. El archivo de auth existe en el home aislado y no se
+  expusieron sus valores.
+- El smoke test mínimo autenticado respondió `SMOKE_OK` usando sólo un prompt
+  inocuo. El smoke test que leería `AGENTS.md` y ejecutaría `qz/hops` no se
+  ejecutó porque requiere autorizar el envío de contenido del repositorio al
+  proveedor; queda pendiente como prueba explícita de integración.
+- El arranque mostró colisiones de `skill-creation` y tres temas. Ambas rutas
+  apuntan al mismo paquete temporal de `gentle-pi`, por lo que no hay evidencia
+  de dos versiones instaladas. Además, `settings.json` contiene dos entradas
+  de `gentle-engram` que resuelven al mismo directorio (`npm:gentle-engram` y
+  `npm:gentle-engram@0.1.15`); es una duplicación de configuración que conviene
+  limpiar antes de usar el shell como harness diario. No se modificó todavía.
