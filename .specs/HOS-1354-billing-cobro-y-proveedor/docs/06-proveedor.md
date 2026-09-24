@@ -382,7 +382,7 @@ nada (ver `RF-3`, abajo).
 |---|---|---|---|
 | **`RN-3`** | si recupera solo después del fallo | el diseño del grace | **EN CURSO**: se reactivó un sujeto el 2026-09-23 y se lee tras su cobro del **2026-09-24** |
 | **`GR-1`** | si se puede pagar durante el grace | ídem | necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner** |
-| **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila | ídem |
+| **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila. **En un pagador con tarjeta, `DEC-SUB-019` la contesta por diseño y no por medición**: `S6` cancela el preapproval en el mismo acto de suspender, así que un pago tardío del proveedor ya no tiene cómo llegar después de eso. Sigue `UNKNOWN` lo que queda afuera de ese diseño: el pagador manual y los bordes —un cobro ya en vuelo al momento de `S6`, un preapproval reactivado a mano— | ídem |
 | `RF-3` | reembolsar un pago de más de 180 días | ~~el caso viejo del cap. 13~~ **NADA, desde `DEC-RF-007`** | **el sujeto existe y es `167913214814`** (aprobado 2026-07-08, ARS 15, sin reembolsar): cumple 180 días el **2027-01-04**. **No se va a esperar**: `DEC-RF-007` decidió que esa operación **no se implementa** y la reparación es manual |
 
 > 📌 **Las cuatro que salieron, y cómo**: **`RN-2`** y **`GR-3`** cerraron el 2026-09-22 cuando la
