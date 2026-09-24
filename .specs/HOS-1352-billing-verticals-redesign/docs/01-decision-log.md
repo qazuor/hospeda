@@ -4821,13 +4821,71 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, y el cargo puntual queda declarado como destino
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Contesta la pregunta que gobierna el capítulo 13**, declarada en
+  `HOS-1354-.../spec.md` §5.1 como *«la primera pregunta cuando esta épica arranque»* y dejada
+  explícitamente abierta por el contrato de cobertura (§1.2 y §7). Literal: *«¿el capítulo 13 adopta el
+  **cargo puntual contra tarjeta guardada** como modelo canónico, tratando el mandato del proveedor
+  —lo que Mercado Pago hace hoy— como **modo degradado**?»*
+- **Por qué no se podía esquivar**: decide **quién tiene el reloj**, y eso no se esconde detrás de una
+  interfaz — **dos relojes sobre la misma autorización son el doble cobro** que `DEC-ARCH-004` declara
+  como riesgo nuestro.
+- **El hecho que la decide, y no es una preferencia de diseño**: `EX-31` (`NOT_SUPPORTED`, 2026-09-16).
+  El cobro recurrente con credencial guardada —que es exactamente el cargo puntual del modelo
+  canónico— **devuelve `403` en las cuatro formas de pedirlo**, con el mensaje idéntico *«The
+  application is not authorized to perform this type of payment»*, mientras **la misma orden sin esos
+  nodos entra con `201`** (`EX-30`, el control que lo distingue). **El rechazo es del PERMISO, no del
+  pedido: no hay forma de armar el request que lo evite.** Y la vía alternativa está cerrada por diseño
+  del proveedor: tokenizar una tarjeta guardada **exige recapturar el código de seguridad**, y un
+  `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real).
+- **Decisión**: **el reloj de cobro es del proveedor.** El **mandato** (`preapproval`) es el modelo
+  canónico del capítulo 13. El cargo puntual **no se descarta: queda declarado como destino**, con dos
+  cláusulas:
+  1. **Se pide la habilitación** de *«pagos automáticos»* por el canal comercial, **en paralelo y sin
+     bloquear nada**. Cuesta poco y cambia el techo del diseño.
+  2. **La interfaz del capítulo 13 no puede impedir la migración.** Es lo que `DEC-ARCH-004` ya exige
+     para el reembolso, aplicado acá: el modo canónico se elige hoy, **no se cementa**.
+- **🚧 El límite que esta decisión destapa, y va declarado porque es nuevo**: `DEC-MP-005` estableció
+  que *«lo que MP no hace lo suple nuestro lado»*. **Esto no se puede suplir.** Un permiso comercial no
+  se compensa con código, y las cuatro formas de pedirlo están medidas. **Es el primer caso donde esa
+  directriz se topa con un límite duro**, y conviene tenerlo presente antes de prometerla como
+  universal. Ironía que queda registrada: elegimos Mercado Pago porque Mobbex no nos habilitó, y el
+  modelo de cobro que preferiríamos no lo podemos usar porque Mercado Pago tampoco nos habilita.
+- **Lo que se ACEPTA al elegir esto**: **heredamos la política de reintentos del proveedor y no la
+  gobernamos** — medida en `GR-3`: cuatro intentos dentro de una ventana de 24 h, y lo que decide el
+  desenlace es **vencer la ventana**, no agotar los reintentos.
+- **Lo que se EVITA, y es el costo que la pregunta original no enumeraba** (`HOS-1354-.../spec.md`
+  §5.1): *«si el reloj es nuestro, **los reintentos también lo son, y son terreno regulado** — hay
+  códigos de rechazo que no se pueden reintentar nunca, hay techo de intentos por ventana y hay multas
+  por excederlo»*. Hoy eso lo absorbe Mercado Pago adentro del `preapproval`.
+- **Consecuencia sobre el resto del programa, y hay que decirla**: `HOS-1354-.../spec.md` §5.2 dejó
+  anotado que las filas del **cobro fallido** gobiernan el diseño del grace **sólo mientras el reloj
+  sea del proveedor** — con el reloj nuestro *«dejan de ser bloqueantes de diseño y pasan a ser una
+  nota del adaptador»*. **Con esta decisión siguen siendo bloqueantes**, y con ellas `RN-3` y la
+  [sonda 49](./mp-probes/probe-49-la-ventana-de-reintentos.mjs), que es la que separa *«ventana de
+  24 h»* de *«ventana de un ciclo»* y con eso decide qué hace el dunning (`DEC-MP-003`).
+- **Las dos alternativas, y por qué no:**
+  - **El reloj nuestro, con cargo puntual canónico**: **no está disponible**, medido 4 de 4. Y aun con
+    la habilitación otorgada, traería el terreno regulado de arriba — un scheduler de cobro, una
+    política de reintentos propia y el riesgo de multa —, o sea **mecanismo caro** a cambio de un
+    control que hoy no necesitamos.
+  - **Pedir la habilitación y decidir después**: difiere el capítulo 13 **otra vez**, y el canal es el
+    mismo que **no respondió** la consulta de `R-MP-01`. Diferir una decisión detrás de una respuesta
+    que no llega es lo que `DEC-MP-005` acaba de dejar de hacer.
+- **Origen**: la elección del owner del **2026-09-24** entre tres opciones que se le presentaron —
+  eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **105** — las dos del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
+| Decisiones tomadas | **106** — las tres del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
 | De metodología | 13 |
-| Funcionales | 92 |
+| Funcionales | 93 |
 | **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
