@@ -36,6 +36,9 @@ if (typeof config.worktree?.envSource?.kind === 'string') {
   if (kind === 'path' && (typeof config.worktree.envSource.relativePath !== 'string' || config.worktree.envSource.relativePath.length === 0)) {
     errors.push('worktree.envSource:relativePath')
   }
+  if (typeof config.worktree.envSource.relativePath === 'string' && (config.worktree.envSource.relativePath.startsWith('/') || config.worktree.envSource.relativePath.split(/[\\/]+/).includes('..'))) {
+    errors.push('worktree.envSource:unsafe-relativePath')
+  }
 }
 if (config.worktree?.envSource?.kind === 'protected-checkout' && !config.worktree.envSource.checkoutName) {
   errors.push('worktree.envSource:checkoutName')

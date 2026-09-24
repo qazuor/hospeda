@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 105,
+        "number": 106,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "validar tipos de fuente de envs",
+        "reason": "confinar rutas declarativas de envs al repositorio",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_104"
+        "basedOnVersion": "ver_claude_opencode_migration_105"
     },
     "data": {
         "sections": [

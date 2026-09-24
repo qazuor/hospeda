@@ -4261,3 +4261,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `path` como tipos de fuente de envs.
 - Una fuente `path` exige `relativePath`; los tipos desconocidos se rechazan.
 - La validación no copia archivos ni lee valores de env.
+
+## Gate 282 · Rutas de envs confinadas al repo
+
+- El validador rechaza `envSource.relativePath` absoluto o con segmentos `..`.
+- Esto evita que un adapter haga que la reconciliación copie archivos desde
+  fuera del proyecto.
+- `worktree.pathPattern` no comparte esta regla porque su uso previsto es
+  crear worktrees hermanos mediante `../`.
