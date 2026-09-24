@@ -538,22 +538,57 @@ configuración, como todos los del §42.
 
 ---
 
-## 4. Los tres modos de «cero cobros», y ninguno se distingue solo
+## 4. «¿Cobró?» se lee cobro por cobro, y el contador sólo dice si ya están todos
 
-Es la trampa mejor documentada de este carril, y casi produce dos conclusiones falsas durante la
-medición. `GET /authorized_payments/search?preapproval_id=` devuelve **cero** por tres causas
-distintas:
+> **Reescrito el 2026-09-24 (FASE 9-bis-5, familia 6, crítico `F-8fB3-001`).** La versión anterior
+> se titulaba *«Los tres modos de «cero cobros»»* y resolvía *«no cobró nunca»* con *«el preapproval
+> tiene `charged_quantity` en cero o nulo»*, y concluía que la conciliación *«concluye desde el
+> contador del preapproval»*. **`RC-5` la volvió falsa**: sobre `792eb0064a…`, cuyo único cobro se
+> rechazó, el contador quedó en **1** y la regla decía **«sí cobró»** sobre alguien que no pagó un
+> peso. Y la otra mitad —*«usa el endpoint para traer el detalle»*— se apoyaba en el `status` del
+> registro, que **`RC-6` midió que no dice si se cobró**. Las dos mitades estaban medidas como no
+> aptas.
 
-| causa | cómo se distingue |
+**Qué es cada cosa, medido.** El proveedor lleva **un registro por ciclo cobrado o intentado**
+(`authorized_payment`), y **los reintentos de ese ciclo quedan adentro del mismo registro**: el
+rechazo del 22/09 de los sujetos de `RN-3` es **un** registro con `retry_attempt: 4`, no cuatro.
+Y **`charged_quantity` cuenta esos registros**, no los cobros: el 2026-09-24, sobre los cuatro
+sujetos de producción que había, **5 contra 5, 5 contra 5, 7 contra 7 y 2 contra 2** (manifiesto
+de `RN-3`, fuera del repo, y la lectura de la sonda 49). Por eso contaba el rechazo como un cobro
+más: el rechazo **es** un registro.
+
+**De dónde sale cada respuesta:**
+
+| pregunta | se lee de | NO se lee de |
+|---|---|---|
+| **¿qué intentos hubo?** | el listado `GET /authorized_payments/search?preapproval_id=` —filtra bien por ese campo (`EX-16`)—, que da los ids | — |
+| **¿cobró ese intento?** | **`payment.status` = `approved`** del registro, **leído por id** con `GET /authorized_payments/{id}` (`EX-16`, invariante `D17`) | el **`status`** del registro —`scheduled`, `recycling`, `processed` dicen **en qué etapa está**, no el resultado (`RC-6`)—; el **`status_detail`** leído temprano —es el del **último** intento y cambia entre reintentos (`RC-6`)—; **`charged_quantity`** (`RC-5`); **`last_charged_date`**, que **se mueve con un cobro rechazado** (medido el 2026-09-24 sobre dos sujetos) |
+| **¿están todos los intentos?** | **`charged_quantity` del preapproval contra la cantidad de registros listados**: el contador se actualiza **antes** que el listado (medido: a las 21:33 decía `1` y el listado devolvía `0`; minutos después, `1`) | — |
+
+**Con eso, los modos de «cero cobros» son cuatro, y el que faltaba es el de `RC-5`:**
+
+| lo que se ve | qué es |
 |---|---|
-| **no cobró nunca** | el preapproval tiene `charged_quantity` en cero o nulo |
-| **lag**: cobró y el endpoint todavía no lo indexó | **el contador del preapproval se actualiza ANTES que el endpoint de cobros** — está medido: a las 21:33 decía `charged_quantity: 1` y el search devolvía 0; minutos después devolvía 1 |
-| **el id es de otra cuenta** | la lectura por id del preapproval falla |
+| contador en cero o nulo, listado vacío | **no hubo ningún intento**: no cobró nunca |
+| contador **igual** a los registros listados, y **ninguno** con `payment.status` = `approved` | **intentó y se rechazó**: no cobró |
+| contador **mayor** que los registros listados | **lag**: hay un intento que el listado todavía no indexó — **no se sabe todavía** |
+| la lectura por id del preapproval falla | **el id es de otra cuenta** |
 
-**La regla que sale de esto: la conciliación nunca concluye «no cobró» desde ese endpoint.**
-Concluye desde el contador del preapproval, y usa el endpoint para traer el detalle. Al revés, un
-reconciliador que vea subir el contador y vaya a buscar el cobro **no lo encuentra**, y eso no es
-una divergencia.
+**La regla:**
+
+- **«Cobró» sólo si hay un registro del período con `payment.status` = `approved`, leído por id.**
+- **«No cobró» sólo si el inventario está completo** —contador igual a registros listados— **y
+  ninguno está aprobado.**
+- **Cualquier otra cosa es «todavía no se sabe»**, y no es una divergencia: se relee en la corrida
+  siguiente. Quien consulta este § y necesita una respuesta para actuar —`S6`, que antes de
+  suspender pregunta si cobró— **trata «todavía no se sabe» como una lectura fallida y no actúa en
+  esa corrida** (`B/03` §3.2).
+
+**`charged_amount` no decide, pero sirve para verificar a mano**: sumó exactamente los aprobados
+en los cinco sujetos medidos —`0` con un único rechazo (`RC-5`), `75` sobre cinco cobros de 15 más
+un rechazo, y el 2026-09-24 `45`, `60` y `90`, siempre la suma de los `approved`—. No se usa como
+regla porque **no se midió cuándo se actualiza** respecto del listado, y un campo cuyo instante no
+conocemos no puede cerrar una pregunta de plata.
 
 ---
 
@@ -580,7 +615,13 @@ convertirse en el disparador de la re-vinculación.**
 2. **El cobro del proveedor llega tarde y el retraso es variable**: ~33 minutos en una renovación
    de sandbox, ~26 en producción, ~100 segundos en un alta. **El barrido no puede tratar como
    divergencia un cobro que todavía no apareció**, y por eso su ventana de tolerancia se fija
-   contra el retraso medido, no contra la fecha nominal.
+   contra el retraso medido, no contra la fecha nominal. **Y el retraso tiene forma, medida el
+   2026-09-24 en producción**: el proveedor cobra en **lotes al minuto `:02`**, en el primero
+   posterior a la hora de la fecha —trece renovaciones con fecha 13:13-13:28 `-04` entraron a las
+   14:01-14:02, y una con fecha 17:43 entró a las 18:02—. **No está medido que los lotes corran
+   todas las horas.** Con la regla del §4 esto ya no produce falsos positivos —un cobro que no llegó
+   al listado es *«todavía no se sabe»*, no *«no cobró»*—, así que la tolerancia deja de ser la que
+   sostiene la corrección y pasa a ser sólo cuántas corridas se espera antes de mirarlo.
 
 ---
 
@@ -599,9 +640,17 @@ ninguno escribe salvo la reparación de vínculo del §2.4.
 
 ## Lo que este capítulo NO cierra
 
-- **`RF-3` sigue `UNKNOWN`**: qué pasa al reembolsar un pago de más de 180 días. Alcanza a la
-  reparación de una divergencia vieja y es del capítulo 13.
-- **Las cinco filas del grace** (`RN-2`, `RN-3`, `GR-1`, `GR-2`, `GR-3`) se contestan el
+- ~~**`RF-3` sigue `UNKNOWN`**: qué pasa al reembolsar un pago de más de 180 días. Alcanza a la
+  reparación de una divergencia vieja y es del capítulo 13.~~ **`RF-3` sigue `UNKNOWN` pero ya no
+  bloquea**: `DEC-RF-007` decidió que reembolsar un cobro más viejo que el plazo del proveedor **no
+  se implementa**, la reparación es manual y con rastro. El capítulo 13 no existe: se repartió
+  (`nucleo/00-indice.md`).
+- ~~**Las cinco filas del grace** (`RN-2`, `RN-3`, `GR-1`, `GR-2`, `GR-3`) se contestan el
   2026-09-17. Hasta entonces, **la ventana de tolerancia del §6.2 no se puede fijar para el caso
   de un cobro fallido**, porque no se sabe cuántas veces reintenta el proveedor ni en qué estado
-  deja la suscripción mientras lo hace.
+  deja la suscripción mientras lo hace.~~ **Actualizado el 2026-09-24**: ya se sabe cuántas veces
+  reintenta y en qué estado deja la suscripción —cuatro intentos dentro de **un ciclo**, y al vencer
+  **pausa** (`GR-3`, sonda 49)—, y con `DEC-SUB-019` el grace cancela el preapproval antes de que
+  eso pase. Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`; ninguna bloquea este capítulo. **Lo que queda
+  abierto es un número**: cuántas corridas espera el barrido un cobro *«todavía no se sabe»* antes
+  de mirarlo (§6.2).
