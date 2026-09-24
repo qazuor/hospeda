@@ -9,10 +9,19 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
-[ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
+QZ_CFG="$(wt_qz_config_path)"
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || { echo "NO_CONFIG"; exit 2; }
 ACTION="${1:?usage: wt-db.sh <create|drop|refresh-template|ensure-ready|ensure-test-users|build-template|sync-dev-and-template>}"
 
-MODE="$(jq -r '.db.mode // "none"' "$CFG")"
+if [ -f "$CFG" ]; then
+  MODE="$(jq -r '.db.mode // "none"' "$CFG")"
+else
+  case "$(wt_qz_cfg '.database.strategy')" in
+    none|'') MODE="none" ;;
+    postgres-template) MODE="template" ;;
+    *) echo "ERROR: unsupported adapter database strategy without legacy config"; exit 2 ;;
+  esac
+fi
 [ "$MODE" = "none" ] && { echo "db.mode=none — nothing to do"; exit 0; }
 
 DOCKER="$(jq -r '.db.docker // false' "$CFG")"

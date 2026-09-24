@@ -4148,3 +4148,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   estado sin configuración legacy.
 - `wt-up.sh` se mantiene separado: todavía coordina DB/env legacy y requiere
   una adaptación adicional antes de declararlo genérico.
+
+## Gate 268 · Estrategia `none` en wt-db
+
+- `wt-db.sh` acepta un proyecto con sólo `.qz/project.json`.
+- La estrategia declarativa `none` termina con un no-op seguro; no intenta leer
+  credenciales ni abrir Docker/Postgres.
+- `postgres-template` sólo se traduce al modo existente cuando falta legacy;
+  sus credenciales, connection template y comandos destructivos siguen
+  requiriendo configuración legacy hasta definir su contrato.
+- No se ejecutó ninguna acción de DB; se validó únicamente la ruta de decisión
+  y la sintaxis.
