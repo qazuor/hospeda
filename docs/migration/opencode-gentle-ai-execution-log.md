@@ -3724,3 +3724,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   coincidentes con el binario, handshake MCP de Engram y espacio disponible.
 - La instalación actual de Gentle-AI queda saludable; no requiere `sync` ni
   `upgrade` inmediato.
+
+## Gate 227 · Corrección efectiva de la TUI de OpenCode
+
+- La validación runtime mostró que `~/.config/opencode/tui.json` tenía
+  `mouse: true` y bindings incompletos para Home/End.
+- Se creó un backup en
+  `~/.local/state/hospeda-opencode-migration/backups/tui-fix-20260924`.
+- Se aplicó la configuración solicitada: `mouse: false`,
+  `home,ctrl+a` para inicio de línea, `end,ctrl+e` para final de línea,
+  `ctrl+home` y `ctrl+end` para el prompt completo.
+- El plugin `gentle-logo.tsx`, atención y notificaciones quedaron intactos.
+- La TUI debe reiniciarse para leer la configuración nueva; no se ejecutaron
+  tareas del agente.
