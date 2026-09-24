@@ -43,11 +43,11 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.2.0",
+        "@types/node": "^26.6.1",
         "@vitest/coverage-v8": "^4.1.10",
         "culori": "^4.0.2",
         "tsup": "^8.5.1",
-        "tsx": "^4.23.11",
+        "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vitest": "^4.1.11",
         "zod": "^4.0.8"
