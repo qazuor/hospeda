@@ -45,7 +45,10 @@ export async function runCloseIssue({
     }
     const cwd = context.worktree.path;
     const adapter = await loadProjectAdapter(context.repoRoot);
-    const protectedBranches = adapter?.branches?.protected ?? ['main', 'staging', 'develop'];
+    const protectedBranches = [
+        ...(adapter?.branches?.protected ?? []),
+        ...(adapter?.branches?.promotion ?? ['develop', 'staging', 'main'])
+    ];
     const branch = await git(cwd, ['branch', '--show-current']);
     const issueFlag = argv.indexOf('--issue');
     const explicitIssue = issueFlag >= 0 ? argv[issueFlag + 1] : undefined;

@@ -4230,3 +4230,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Esto permite que un adapter declare ramas protegidas adicionales sin perder
   la protección histórica de la cadena de promoción.
 - No se eliminaron worktrees ni se ejecutó el selector interactivo.
+
+## Gate 278 · Preflight de close-issue y branches protegidas
+
+- `close-issue --plan` ahora combina `branches.protected` y
+  `branches.promotion`, igual que `hops-wt-clean`.
+- El preflight conserva la protección de la cadena de integración incluso si
+  un proyecto declara sólo una parte en `protected`.
+- No se actualizaron issues, PRs, ramas ni worktrees.

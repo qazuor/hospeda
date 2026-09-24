@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 101,
+        "number": 102,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "combinar ramas protegidas y de promoción en wt-clean",
+        "reason": "alinear close-issue con ramas protegidas del adapter",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_100"
+        "basedOnVersion": "ver_claude_opencode_migration_101"
     },
     "data": {
         "sections": [
