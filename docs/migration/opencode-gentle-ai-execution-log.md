@@ -3787,3 +3787,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Conclusión: no activar SDD globalmente todavía. Primero hay que adaptar su
   configuración o definir una capa híbrida que conserve `.specs` como fuente
   funcional y use OpenSpec sólo para cambios que lo necesiten.
+
+## Gate 232 · Revisión de instrucciones operativas
+
+- `AGENTS.md` ya declara `develop` como base normal, `.specs` como sistema
+  histórico y la migración SDD como decisión separada.
+- El comando `/hops-start-issue` documenta `develop` por defecto y
+  `--base staging` para urgencias.
+- `/hops-gentle-sdd-status` aclara que SDD/OpenSpec no reemplaza
+  automáticamente `.specs`.
+- No se encontraron referencias operativas activas a `CLAUDE.md` o `.qtm` en
+  la capa versionada de comandos e instrucciones.
+- La deriva queda confinada a `openspec/config.yaml` y no contamina el flujo
+  normal mientras SDD permanezca sin activar automáticamente.
