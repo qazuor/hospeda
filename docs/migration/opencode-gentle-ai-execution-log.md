@@ -4322,3 +4322,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   final antes de que el instalador los use.
 - Hospeda, el fixture genérico y un fixture temporal con prefijo inválido se
   validaron con los resultados esperados; no se leyeron secretos.
+
+## Gate 289 · Teardown de worktrees sin dependencia de Claude
+
+- `qz/hops wt-clean` busca primero `scripts/worktree/wt-remove.sh` dentro del
+  proyecto actual y sólo usa `~/.claude/skills/worktree/scripts/wt-remove.sh`
+  como compatibilidad legacy.
+- El mensaje de error ahora explica el contrato faltante del adapter, en vez
+  de asumir que Claude está instalado.
+- Typecheck, 72 pruebas enfocadas de `wt-clean`, sintaxis de scripts y
+  validación qz pasaron sin ejecutar ningún teardown real.

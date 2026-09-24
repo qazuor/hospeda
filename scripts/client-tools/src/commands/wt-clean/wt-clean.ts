@@ -74,11 +74,11 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
         return 0;
     }
 
-    const scriptPath = resolveRemoveScript();
+    const scriptPath = resolveRemoveScript(opts.repoPath);
     if (scriptPath === null) {
         process.stderr.write(
-            'ERROR: no encontré wt-remove.sh en ~/.claude/skills/worktree/scripts/.\n' +
-                'La skill worktree tiene que estar instalada para que esto funcione.\n'
+            'ERROR: no encontré scripts/worktree/wt-remove.sh en el proyecto ni el fallback legacy.\n' +
+                'El adapter necesita declarar o incluir una rutina de teardown de worktrees.\n'
         );
         return 1;
     }

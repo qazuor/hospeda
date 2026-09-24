@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_84",
-        "number": 112,
+        "id": "ver_claude_opencode_migration_85",
+        "number": 113,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "validar prefijos de wrappers",
+        "reason": "eliminar dependencia legacy de wt-clean",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_83"
+        "basedOnVersion": "ver_claude_opencode_migration_84"
     },
     "data": {
         "sections": [
