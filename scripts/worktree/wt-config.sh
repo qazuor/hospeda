@@ -123,9 +123,13 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   if [ -f "$cfg" ]; then
     echo "Config:     $cfg"
     if jq empty "$cfg" 2>/dev/null; then echo "Valid JSON: yes"; else echo "Valid JSON: NO"; exit 1; fi
-    echo "baseBranch: $(jq -r '.baseBranch // "?"' "$cfg")"
+    base_branch="$(wt_qz_cfg '.branches.base')"
+    [ -n "$base_branch" ] || base_branch="$(jq -r '.baseBranch // "?"' "$cfg")"
+    echo "baseBranch: $base_branch"
     echo "protected:  $(jq -r '(.protectedBranches // []) | join(", ")' "$cfg")"
-    echo "servers:    $(jq -r '[.servers[]?.name] | join(", ")' "$cfg")"
+    server_names="$(wt_qz_cfg '[.servers[]?.id] | join(", ")')"
+    [ -n "$server_names" ] || server_names="$(jq -r '[.servers[]?.name] | join(", ")' "$cfg")"
+    echo "servers:    $server_names"
     echo "db.mode:    $(jq -r '.db.mode // "none"' "$cfg")"
   else
     echo "Config:     MISSING ($cfg)"

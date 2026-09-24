@@ -4027,3 +4027,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La fuente protegida, el checkout y el script de reconciliación ya son
   declarativos; la migración de targets/defaults requiere un contrato separado
   que sólo permita nombres de archivos y claves, nunca valores.
+
+## Gate 256 · Diagnóstico de configuración desde el adapter
+
+- La salida standalone de `wt-config.sh` ahora prefiere base y nombres de
+  servidores desde `.qz/project.json`, manteniendo fallback legacy.
+- El diagnóstico sigue mostrando `db.mode` desde el config legacy porque la
+  estrategia declarativa todavía no tiene equivalencia completa con todos los
+  modos destructivos.
+- Sintaxis y ejecución read-only validadas; no se modificó configuración.
