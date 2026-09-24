@@ -4277,3 +4277,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se rechazan separadores de ruta y traversal antes de resolver la fuente de
   envs junto al repositorio principal.
 - No se resolvieron checkouts ni se copiaron archivos.
+
+## Gate 284 · Tipos estrictos de branches protegidas
+
+- El validador exige que `branches.base` sea un string no vacío.
+- Cada entrada de `branches.protected` debe ser un nombre de branch no vacío.
+- Esto evita protecciones silenciosamente inválidas en cleanup y closeout.
