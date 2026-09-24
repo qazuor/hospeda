@@ -13,6 +13,13 @@ export interface Job {
     readonly env?: Readonly<Record<string, string>>;
 }
 
+/** Result of a captured child-process execution. */
+export interface CapturedJobResult {
+    readonly code: number;
+    readonly stdout: string;
+    readonly stderr: string;
+}
+
 /**
  * Executes jobs, here or on the VPS.
  *
@@ -30,6 +37,8 @@ export interface Runner {
      * @returns The exit code.
      */
     exec(job: Job): Promise<number>;
+    /** Runs a job without inheriting terminal output. */
+    execCapture(job: Job): Promise<CapturedJobResult>;
 }
 
 /** Runs jobs on this machine. */
@@ -66,6 +75,32 @@ export function localRunner(): Runner {
                     if (code !== null) return done(code);
                     done(signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 1);
                 });
+            }),
+        execCapture: (job) =>
+            new Promise<CapturedJobResult>((resolve) => {
+                const child = spawn(job.command, [...job.args], {
+                    cwd: job.cwd,
+                    stdio: ['ignore', 'pipe', 'pipe'],
+                    env: job.env === undefined ? process.env : { ...process.env, ...job.env }
+                });
+                let stdout = '';
+                let stderr = '';
+                child.stdout?.setEncoding('utf8');
+                child.stderr?.setEncoding('utf8');
+                child.stdout?.on('data', (chunk: string) => {
+                    stdout += chunk;
+                });
+                child.stderr?.on('data', (chunk: string) => {
+                    stderr += chunk;
+                });
+                child.on('error', () => resolve({ code: 1, stdout, stderr }));
+                child.on('close', (code, signal) =>
+                    resolve({
+                        code: code ?? (signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 1),
+                        stdout,
+                        stderr
+                    })
+                );
             })
     };
 }

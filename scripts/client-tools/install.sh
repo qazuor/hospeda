@@ -12,12 +12,30 @@
 #
 #   --here   Point the functions at THIS checkout instead. For hacking on hops
 #            itself, where running the staging copy defeats the purpose.
+#   --strict-staging  Refuse the temporary fallback when staging has no
+#            client-tools yet. Intended for automated/bootstrap installs.
+#   --check  Validate the selected source without installing or writing fish
+#            functions.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FISH_FUNCTIONS="$HOME/.config/fish/functions"
 USE_HERE=0
-[ "${1:-}" = "--here" ] && USE_HERE=1
+STRICT_STAGING=0
+CHECK_ONLY=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --here) USE_HERE=1 ;;
+    --strict-staging) STRICT_STAGING=1 ;;
+    --check) CHECK_ONLY=1 ;;
+    --help|-h)
+      sed -n '2,14p' "$0"
+      exit 0
+      ;;
+    *) echo "ERROR: opción desconocida: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
 
 command -v bun >/dev/null 2>&1 || {
   echo "ERROR: bun no está en el PATH. Instalalo desde https://bun.sh"
@@ -40,14 +58,32 @@ else
   fi
   TOOLS="$STAGING_CLONE/scripts/client-tools"
   if [ ! -f "$TOOLS/package.json" ]; then
+    if [ "$STRICT_STAGING" -eq 1 ]; then
+      echo "ERROR: staging todavía no tiene scripts/client-tools; no uso un checkout alternativo." >&2
+      exit 3
+    fi
     echo "AVISO: staging todavía no tiene scripts/client-tools."
     echo "       Las funciones van a apuntar a este checkout hasta que se mergee."
     TOOLS="$HERE"
   fi
 fi
 
+if [ "$CHECK_ONLY" -eq 1 ]; then
+  [ -f "$TOOLS/package.json" ] || {
+    echo "ERROR: no encontré package.json en $TOOLS" >&2
+    exit 3
+  }
+  source_branch="$(git -C "$TOOLS" branch --show-current 2>/dev/null || true)"
+  source_commit="$(git -C "$TOOLS" rev-parse --short HEAD 2>/dev/null || true)"
+  source_dirty="$(git -C "$TOOLS" status --porcelain --untracked-files=no 2>/dev/null | head -1 || true)"
+  echo "OK: fuente client-tools=$TOOLS"
+  echo "OK: fuente branch=${source_branch:-detached} commit=${source_commit:-unknown} status=$([ -n "$source_dirty" ] && echo dirty || echo clean)"
+  echo "OK: modo check; no se instalaron dependencias ni se escribieron funciones de fish"
+  exit 0
+fi
+
 echo "== instalando dependencias en $TOOLS =="
-(cd "$TOOLS" && bun install)
+(cd "$TOOLS" && bun install --frozen-lockfile)
 
 mkdir -p "$FISH_FUNCTIONS"
 

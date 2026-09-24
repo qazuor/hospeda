@@ -5,8 +5,12 @@
 # Usage:
 #   ./scripts/copy-env-to-worktree.sh <dest-worktree-path>
 #
-# Reads `.worktreeinclude` from the repo root (cwd) and copies every existing
-# file listed there into <dest-worktree-path>, preserving directory structure.
+# Reads `.worktreeinclude` from the source repo and copies every existing file
+# listed there into <dest-worktree-path>, preserving directory structure. By
+# default the source repo is cwd; HOPS_ENV_SOURCE_ROOT may point at a trusted
+# local checkout that owns the operator's ignored env files. This keeps the
+# migration checkout free of secrets while allowing new worktrees to inherit a
+# deliberately selected local development environment.
 # Files missing in the source are reported and skipped; nothing is overwritten
 # blindly — existing destinations are skipped with a notice.
 #
@@ -21,11 +25,11 @@
 # the hook has already approved the command.
 #
 # Safety:
-# - Refuses to run if cwd is not a git repo root with a `.worktreeinclude`.
+# - Refuses to run if the source is not a git repo root with a `.worktreeinclude`.
 # - Refuses if <dest> doesn't exist or isn't a directory.
-# - Refuses if <dest> is the current repo (no self-copies).
-# - Never overwrites: existing files at the destination are reported and left
-#   alone, so you can re-run safely if some files were already copied.
+# - A self-copy is a no-op.
+# - Never overwrites existing values. With HOPS_ENV_RECONCILE=1, existing files
+#   are merged by appending only absent keys from the trusted source.
 
 set -euo pipefail
 
@@ -38,13 +42,37 @@ fi
 
 DEST="$1"
 
-if [[ ! -f ".worktreeinclude" ]]; then
-    echo "ERROR: .worktreeinclude not found in cwd. Run this from the repo root." >&2
+resolve_default_source() {
+    # The dedicated staging checkout is the stable local source of ignored
+    # values. Resolve it from the repository's primary worktree so this works
+    # from issue worktrees, the migration checkout, and staging itself.
+    local primary candidate
+    primary="$(git -C "$PWD" worktree list --porcelain 2>/dev/null \
+        | awk '/^worktree / { print $2; exit }')"
+    if [[ -n "$primary" ]]; then
+        candidate="$(dirname "$primary")/hospeda-staging"
+        if [[ -f "$candidate/.worktreeinclude" && ( -d "$candidate/.git" || -f "$candidate/.git" ) ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+    printf '%s\n' "$PWD"
+}
+
+SOURCE_ROOT="${HOPS_ENV_SOURCE_ROOT:-$(resolve_default_source)}"
+if [[ ! -d "$SOURCE_ROOT" ]]; then
+    echo "ERROR: env source '$SOURCE_ROOT' does not exist or is not a directory." >&2
+    exit 1
+fi
+SOURCE_ROOT="$(cd "$SOURCE_ROOT" && pwd -P)"
+
+if [[ ! -f "$SOURCE_ROOT/.worktreeinclude" ]]; then
+    echo "ERROR: .worktreeinclude not found in env source '$SOURCE_ROOT'." >&2
     exit 1
 fi
 
-if [[ ! -d ".git" && ! -f ".git" ]]; then
-    echo "ERROR: cwd is not a git repository root." >&2
+if [[ ! -d "$SOURCE_ROOT/.git" && ! -f "$SOURCE_ROOT/.git" ]]; then
+    echo "ERROR: env source is not a git repository root: $SOURCE_ROOT" >&2
     exit 1
 fi
 
@@ -54,12 +82,12 @@ if [[ ! -d "$DEST" ]]; then
 fi
 
 # Resolve both paths so we can compare without slash/trailing-slash noise.
-SRC_ABS="$(cd . && pwd -P)"
+SRC_ABS="$SOURCE_ROOT"
 DEST_ABS="$(cd "$DEST" && pwd -P)"
 
 if [[ "$SRC_ABS" == "$DEST_ABS" ]]; then
-    echo "ERROR: source and destination resolve to the same path: $SRC_ABS" >&2
-    exit 1
+    echo "Source and destination are the same checkout; env copy skipped."
+    exit 0
 fi
 
 # Sanity: the dest should itself be a git worktree (has .git as file or dir).
@@ -94,8 +122,20 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     fi
 
     if [[ -e "$dest_file" ]]; then
-        echo "  =  $line (already exists at destination, skipped)"
-        skipped_exists=$((skipped_exists + 1))
+        if [[ "${HOPS_ENV_RECONCILE:-0}" != "1" ]]; then
+            echo "  =  $line (already exists at destination, skipped)"
+            skipped_exists=$((skipped_exists + 1))
+            continue
+        fi
+        added=0
+        while IFS= read -r env_line || [[ -n "$env_line" ]]; do
+            [[ "$env_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+            env_key="${env_line%%=*}"
+            grep -qE "^${env_key}=" "$dest_file" 2>/dev/null && continue
+            printf '%s\n' "$env_line" >> "$dest_file"
+            added=$((added + 1))
+        done < "$src_file"
+        echo "  ↻  $line (merged $added missing keys)"
         continue
     fi
 
@@ -103,8 +143,9 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     cp -p "$src_file" "$dest_file"
     echo "  ✓  $line"
     copied=$((copied + 1))
-done < .worktreeinclude
+done < "$SRC_ABS/.worktreeinclude"
 
 echo
 echo "Done. copied=$copied  already-present=$skipped_exists  missing-in-source=$skipped_missing"
+echo "Source checkout: $SRC_ABS"
 echo "Destination: $DEST_ABS"

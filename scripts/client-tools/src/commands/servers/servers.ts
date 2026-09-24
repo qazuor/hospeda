@@ -14,10 +14,22 @@ const SCRIPTS = {
     down: 'wt-down.sh'
 } as const;
 
-/** Resolves a worktree-skill script, or `null` when the skill is not installed. */
-function scriptPath({ name }: { readonly name: string }): string | null {
-    const path = join(homedir(), '.claude', 'skills', 'worktree', 'scripts', name);
-    return existsSync(path) ? path : null;
+/** Resolves the versioned script first, with Claude as a temporary fallback. */
+function scriptPath({
+    name,
+    repoRoot,
+    worktreePath
+}: {
+    readonly name: string;
+    readonly repoRoot: string;
+    readonly worktreePath: string | null;
+}): string | null {
+    const candidates = [
+        join(repoRoot, 'scripts', 'worktree', name),
+        ...(worktreePath === null ? [] : [join(worktreePath, 'scripts', 'worktree', name)]),
+        join(homedir(), '.claude', 'skills', 'worktree', 'scripts', name)
+    ];
+    return candidates.find((path) => existsSync(path)) ?? null;
 }
 
 /** The help page. */
@@ -62,15 +74,6 @@ async function runServerScript({
         return 0;
     }
 
-    const script = scriptPath({ name: SCRIPTS[verb] });
-    if (script === null) {
-        process.stderr.write(
-            `${pc.red('ERROR:')} no encontré ${SCRIPTS[verb]} en ~/.claude/skills/worktree/scripts/.\n` +
-                'La skill worktree tiene que estar instalada.\n'
-        );
-        return 1;
-    }
-
     const { target, rest } = extractTarget({ argv });
     // `--wt` is parsed the same way the dispatcher parsed it, so the worktree
     // this acts on and the one the status bar named are the same by
@@ -79,6 +82,18 @@ async function runServerScript({
     const { name: worktreeName, rest: passthrough } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const runner = runnerFor({ target });
+
+    const script = scriptPath({
+        name: SCRIPTS[verb],
+        repoRoot: context.repoRoot,
+        worktreePath: context.worktree?.path ?? null
+    });
+    if (script === null) {
+        process.stderr.write(
+            `${pc.red('ERROR:')} no encontré ${SCRIPTS[verb]} en scripts/worktree ni en la compatibilidad de Claude.\n`
+        );
+        return 1;
+    }
 
     let worktree = context.worktree;
 

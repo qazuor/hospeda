@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
@@ -38,9 +38,10 @@ ${pc.bold('hops verify')} — todo lo que CI va a mirar, antes de subir
 
 ${pc.bold('Uso')}
 
-  hops verify [--full] [--only <job>] [--list]
+  hops verify [--changed] [--full] [--only <job>] [--list]
 
-  ${pc.bold('--tests')}       Suma los tests de los paquetes que tocaste. ${pc.dim('No van por default.')}
+  ${pc.bold('--changed')}     Corre tests de los paquetes afectados además de lint/guards/typecheck.
+  ${pc.bold('--tests')}       Alias explícito de --changed.
   ${pc.bold('--full')}        TODOS los tests, un paquete por vez. ${pc.dim('Son miles: dejalo')}
                 ${pc.dim('laburando y andá a hacer otra cosa.')}
   ${pc.bold('--only <job>')}  Sólo un job: ${JOBS.join(', ')}, tests.
@@ -71,7 +72,7 @@ function readWorkflow({ repoRoot }: { readonly repoRoot: string }): string | nul
 }
 
 /**
- * Lists the workspace packages touched since the base branch.
+ * Lists workspace package paths touched since the base branch.
  *
  * @param input.cwd - Directory to run git from.
  * @returns Package directory names, empty when nothing or on failure.
@@ -91,7 +92,9 @@ export async function changedPackages({
     const dirs = new Set<string>();
     for (const file of diff.stdout.split('\n')) {
         const match = /^(apps|packages)\/([^/]+)\//.exec(file.trim());
-        if (match?.[2] !== undefined) dirs.add(match[2]);
+        if (match?.[1] !== undefined && match[2] !== undefined) {
+            dirs.add(`${match[1]}/${match[2]}`);
+        }
     }
     return [...dirs].sort();
 }
@@ -131,11 +134,14 @@ function testStep({
         };
     }
     if (changed.length === 0) return null;
-    // `[ref]` without the leading dots: only what changed, never its dependents.
+    // Explicit path filters avoid Turbo's `[ref]` range selector, which can
+    // expand to every workspace when the branch diverges or global files
+    // changed. Build dependencies are still handled by the task graph.
+    const filters = changed.map((path) => `--filter=./${path}`).join(' ');
     return {
         job: 'tests',
         name: `Tests de lo que tocaste (${changed.join(', ')})`,
-        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 --filter='[${BASE}]'`
+        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 ${filters}`
     };
 }
 
@@ -168,7 +174,8 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const plan = planFromWorkflow({ yaml, jobs: [...jobs] });
 
     const full = rest.includes('--full');
-    const wantsTests = rest.includes('--tests') || full || only === 'tests';
+    const wantsTests =
+        rest.includes('--changed') || rest.includes('--tests') || full || only === 'tests';
     const changed = full || !wantsTests ? [] : await changedPackages({ cwd });
     const tests =
         only === undefined || only === 'tests'
@@ -218,7 +225,12 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         const code = await runner.exec({
             command: 'bash',
             args: ['-c', step.run],
-            cwd
+            cwd: step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
+            // CI injects BASE_SHA for guards that inspect the diff. Local
+            // verify has the same contract: use the configured local base so
+            // those guards do not fail closed merely because they are outside
+            // GitHub Actions.
+            env: { BASE_SHA: process.env.BASE_SHA ?? BASE }
         });
         if (code !== 0) {
             process.stderr.write(
@@ -231,7 +243,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
 
     if (tests === null && !wantsTests) {
         process.stderr.write(
-            `\n${pc.dim('Sin tests. Pedilos con --tests (sólo lo que tocaste) o --full (todo).')}\n`
+            `\n${pc.dim('Sin tests. Pedilos con --changed (sólo lo que tocaste) o --full (todo).')}\n`
         );
     } else if (tests === null) {
         process.stderr.write(

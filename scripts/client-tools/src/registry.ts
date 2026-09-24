@@ -56,6 +56,11 @@ export interface CommandEntry {
 /** Every command the client CLI exposes, in menu order. */
 export const COMMANDS: readonly CommandEntry[] = [
     {
+        name: 'artifact',
+        summary: 'Publica y lista artifacts locales versionados',
+        load: async () => (await import('./commands/artifact/command.ts')).artifactCommand
+    },
+    {
         name: 'stats',
         summary: 'Estadísticas del repo: código, tests, deuda, git, PRs, Linear',
         load: async () => (await import('./commands/stats/command.ts')).statsCommand
@@ -66,8 +71,39 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/wt-clean/command.ts')).wtCleanCommand
     },
     {
+        name: 'handoff',
+        summary: 'Prepara un handoff read-only de la sesión actual',
+        load: async () => (await import('./commands/handoff/command.ts')).handoffCommand
+    },
+    {
+        name: 'smoke-plan',
+        summary: 'Enumera gates de smoke requeridos por un issue (read-only)',
+        load: async () => (await import('./commands/smoke-plan/command.ts')).smokePlanCommand
+    },
+    {
+        name: 'context',
+        summary: 'Entrega contexto compacto y verificable de un issue/worktree',
+        load: async () => (await import('./commands/context/command.ts')).contextCommand
+    },
+    {
+        name: 'issue-preflight',
+        summary: 'Consulta Linear y recursos de un issue sin mutar nada',
+        load: async () =>
+            (await import('./commands/issue-preflight/command.ts')).issuePreflightCommand
+    },
+    {
+        name: 'recap',
+        summary: 'Resumen compacto read-only del worktree actual',
+        load: async () => (await import('./commands/recap/command.ts')).recapCommand
+    },
+    {
+        name: 'close-issue',
+        summary: 'Preflight read-only para cerrar un issue (requiere --plan)',
+        load: async () => (await import('./commands/close-issue/command.ts')).closeIssueCommand
+    },
+    {
         name: 'start-issue',
-        summary: 'Crea el worktree de un issue de Linear y abre Claude adentro',
+        summary: 'Crea el worktree de un issue de Linear y abre Claude u OpenCode',
         load: async () => (await import('./commands/start-issue/command.ts')).startIssueCommand
     },
     {
@@ -152,9 +188,24 @@ export const COMMANDS: readonly CommandEntry[] = [
     },
     {
         name: 'whats-new',
-        summary:
-            'Novedades: auditar la promoción, ver lo pendiente, retirar (audit | pending | drop)',
+        summary: 'Audita las novedades de promoción y muestra lo pendiente',
         load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
+    },
+    {
+        name: 'engram',
+        summary: 'Acceso seguro y descubrible a la memoria Engram',
+        load: async () => (await import('./commands/engram/command.ts')).engramCommand
+    },
+    {
+        name: 'gentle-status',
+        summary: 'Estado read-only de Gentle-AI, review y telemetría',
+        load: async () => (await import('./commands/gentle-status/command.ts')).gentleStatusCommand
+    },
+    {
+        name: 'gentle-sdd-status',
+        summary: 'Estado/routing SDD read-only de Gentle-AI',
+        load: async () =>
+            (await import('./commands/gentle-sdd-status/command.ts')).gentleSddStatusCommand
     }
 ];
 

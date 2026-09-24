@@ -1,0 +1,5 @@
+#!/usr/bin/env bun
+// Standalone alias for `hops artifact`.
+import { runCommand } from '../src/index.ts';
+
+process.exit(await runCommand({ name: 'artifact', argv: process.argv.slice(2) }));

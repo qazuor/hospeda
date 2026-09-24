@@ -6,6 +6,8 @@ export interface CiStep {
     readonly name: string;
     /** Shell command CI runs. */
     readonly run: string;
+    /** Directory declared by GitHub Actions, relative to the repository root. */
+    readonly workingDirectory?: string;
 }
 
 /** A step that cannot run here, and why. */
@@ -33,6 +35,7 @@ interface RawWorkflow {
 interface RawStep {
     readonly name?: string;
     readonly run?: string;
+    readonly ['working-directory']?: string;
 }
 
 /**
@@ -93,7 +96,7 @@ export function planFromWorkflow({
                 skipped.push({ job, name, reason: excluded.reason });
                 continue;
             }
-            steps.push({ job, name, run });
+            steps.push({ job, name, run, workingDirectory: raw['working-directory'] });
         }
     }
     return { steps, skipped };

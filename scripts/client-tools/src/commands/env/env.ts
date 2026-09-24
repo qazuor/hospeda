@@ -3,6 +3,7 @@ import { resolveRunContext } from '../../lib/context.ts';
 import { runnerFor } from '../../lib/runner.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
+import { collectEnvDrift } from './drift.ts';
 
 /**
  * The env checks, in the order that makes a failure informative.
@@ -41,8 +42,11 @@ ${pc.bold('Uso')}
 
   hops env [--wt <nombre>]
   hops env --add
+  hops env --drift [--json]
 
   ${pc.bold('--add')}    Muestra los pasos para agregar una variable nueva.
+  ${pc.bold('--drift')}  Compara nombres contra los templates sin mostrar valores.
+  ${pc.bold('--json')}   Con --drift devuelve un contrato para agentes.
   ${pc.bold('--help')}   Esta página.
 
 ${pc.bold('Chequeos')}
@@ -84,6 +88,31 @@ export async function runEnv({ argv }: { readonly argv: readonly string[] }): Pr
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const runner = runnerFor({ target });
     const cwd = context.worktree?.path ?? context.repoRoot;
+
+    if (rest.includes('--drift')) {
+        const report = collectEnvDrift({ root: cwd });
+        if (rest.includes('--json')) {
+            process.stdout.write(`${JSON.stringify(report)}\n`);
+        } else {
+            for (const file of report.files) {
+                const problems = [
+                    ...file.requiredMissing.map((key) => `falta obligatoria ${key}`),
+                    ...file.optionalMissing.map((key) => `opcional ausente ${key}`),
+                    ...file.obsolete.map((key) => `obsoleta ${key}`),
+                    ...file.needsValue.map((key) => `requiere valor ${key}`)
+                ];
+                process.stdout.write(
+                    `${file.file}: ${problems.length ? problems.join(', ') : 'limpio'}\n`
+                );
+            }
+            if (report.mismatched.length)
+                process.stdout.write(`cruzadas distintas: ${report.mismatched.join(', ')}\n`);
+            if (report.absentCrossChecks.length)
+                process.stdout.write(`cruzadas ausentes: ${report.absentCrossChecks.join(', ')}\n`);
+            process.stdout.write(`estado: ${report.clean ? 'limpio' : 'requiere atención'}\n`);
+        }
+        return report.clean ? 0 : 1;
+    }
 
     const failures: string[] = [];
     let done = 0;

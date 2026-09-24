@@ -32,7 +32,7 @@ export function normalizeIssueId({ raw }: { readonly raw: string }): string | nu
 /**
  * Picks the conventional-commit type from the issue's labels.
  *
- * Mirrors the `/startIssue` command's rule so a worktree created from the
+ * Mirrors the `/hops-start-issue` command's rule so a worktree created from the
  * terminal and one created from a Claude session get the same branch name.
  *
  * @param input.labels - Label names on the issue.

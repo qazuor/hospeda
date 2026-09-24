@@ -1,0 +1,5 @@
+#!/usr/bin/env bun
+// Standalone alias for `hops gentle-sdd-status`.
+import { runCommand } from '../src/index.ts';
+
+process.exit(await runCommand({ name: 'gentle-sdd-status', argv: process.argv.slice(2) }));
