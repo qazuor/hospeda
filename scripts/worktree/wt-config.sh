@@ -130,20 +130,29 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   [ -z "$root" ] && { echo "Not in a git repo"; exit 1; }
   echo "Repo root: $root"
   cfg="$(wt_config_path)"
-  if [ -f "$cfg" ]; then
-    echo "Config:     $cfg"
-    if jq empty "$cfg" 2>/dev/null; then echo "Valid JSON: yes"; else echo "Valid JSON: NO"; exit 1; fi
+  qz_cfg="$(wt_qz_config_path)"
+  if [ -f "$cfg" ] || [ -f "$qz_cfg" ]; then
+    [ -f "$cfg" ] && config_for_validation="$cfg" || config_for_validation="$qz_cfg"
+    echo "Config:     $config_for_validation"
+    if jq empty "$config_for_validation" 2>/dev/null; then echo "Valid JSON: yes"; else echo "Valid JSON: NO"; exit 1; fi
     base_branch="$(wt_base_branch)"
     [ -n "$base_branch" ] || base_branch="?"
     echo "baseBranch: $base_branch"
-    echo "protected:  $(jq -r '(.protectedBranches // []) | join(", ")' "$cfg")"
+    if [ -f "$qz_cfg" ]; then
+      protected="$(wt_qz_cfg '(.branches.protected // []) | join(", ")')"
+    else
+      protected="$(jq -r '(.protectedBranches // []) | join(", ")' "$cfg")"
+    fi
+    echo "protected:  $protected"
     server_names="$(wt_qz_cfg '[.servers[]?.id] | join(", ")')"
     [ -n "$server_names" ] || server_names="$(jq -r '[.servers[]?.name] | join(", ")' "$cfg")"
     echo "servers:    $server_names"
     db_strategy="$(wt_qz_cfg '.database.strategy')"
     [ -n "$db_strategy" ] || db_strategy="(legacy)"
     echo "db.strategy: $db_strategy"
-    echo "db.mode:    $(jq -r '.db.mode // "none"' "$cfg")"
+    db_mode="none"
+    [ -f "$cfg" ] && db_mode="$(jq -r '.db.mode // "none"' "$cfg")"
+    echo "db.mode:    $db_mode"
   else
     echo "Config:     MISSING ($cfg)"
     echo "→ infer from package.json + apps/*, show to user, then write it."

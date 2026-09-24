@@ -4167,3 +4167,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   diagnóstico; no crea archivos ni agrega variables por inferencia.
 - Cuando existe legacy, mantiene exactamente el comportamiento anterior.
 - Validado por sintaxis Bash; no se reescribieron envs.
+
+## Gate 270 · Diagnóstico adapter-only
+
+- `wt-config.sh` ahora acepta `.qz/project.json` como configuración válida
+  aunque no exista `.claude/project.config.json`.
+- El diagnóstico muestra base, branches protegidas, servidores, estrategia
+  declarativa y `db.mode=none` cuando no hay legacy.
+- Se mantuvo el fallback legacy y la operación sigue siendo read-only.
