@@ -4000,3 +4000,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   como fallback para compatibilidad.
 - Sintaxis Bash y diff limpio validados; no se ejecutaron instalaciones,
   builds, servidores ni worktrees.
+
+## Gate 253 · Definiciones de servidores desde el adapter
+
+- `wt-ports.sh` y `wt-servers.sh` ahora prefieren `servers[].id`,
+  `defaultPort`, `start` y `portEnv` de `.qz/project.json`.
+- El formato legacy (`name`, `startCmd`, `portEnvVar`) permanece como fallback.
+- Sintaxis Bash y lectura declarativa de `api`, `admin` y `web` validadas; no
+  se reservaron puertos ni se iniciaron procesos.

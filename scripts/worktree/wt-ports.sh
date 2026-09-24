@@ -7,6 +7,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$HERE/wt-config.sh"
 CFG="$(wt_config_path)"
+QZ_CFG="$(wt_qz_config_path)"
 [ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
 
 # Ports currently LISTENING on the host.
@@ -35,9 +36,14 @@ chosen_has() { local p="$1" c; for c in "${CHOSEN[@]:-}"; do [ "$c" = "$p" ] && 
 free_from() { local p="$1"; while is_used "$p" || chosen_has "$p"; do p=$((p+1)); done; echo "$p"; }
 
 # Start each server's search at defaultPort+100 to stay clearly off the defaults.
+if [ -f "$QZ_CFG" ] && jq -e '.servers | length > 0' "$QZ_CFG" >/dev/null 2>&1; then
+  SERVER_LIST="$(jq -r '.servers[] | "\(.id) \(.defaultPort)"' "$QZ_CFG")"
+else
+  SERVER_LIST="$(jq -r '.servers[] | "\(.name) \(.defaultPort)"' "$CFG")"
+fi
 while read -r name dport; do
   [ -z "$name" ] && continue
   port=$(free_from $(( dport + 100 )))
   CHOSEN+=("$port")
   echo "$name $port"
-done < <(jq -r '.servers[] | "\(.name) \(.defaultPort)"' "$CFG")
+done <<< "$SERVER_LIST"
