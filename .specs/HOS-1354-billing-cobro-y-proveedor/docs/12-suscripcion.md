@@ -450,7 +450,11 @@ enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la ap
 **Y son las dos transiciones, no una.** La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
 la ventana dura hasta vencer —**72 h o 7 días corridos**, `B/03` §3.4 punto 1— y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
 el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
-la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. Nombrar sólo `S5`
+la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. **Y desde `DEC-SUB-019`,
+en un pagador con tarjeta esa puerta ya no llega por el reciclado**: `S6` cancela el preapproval en
+el mismo acto de suspender, así que sobre una `SUSPENDED` lo que puede seguir entrando es el pago
+manual (`MP4`) o el caso de borde de un preapproval reactivado a mano — y por eso `S7` sigue
+necesitando el mismo bloqueo que `S5`, no porque el reciclado siga vivo ahí. Nombrar sólo `S5`
 dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se repite**, porque
 `S6` no corre sobre un pago pendiente (ver abajo): las dos transiciones se bloquean, no una.
 
