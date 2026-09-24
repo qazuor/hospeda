@@ -343,6 +343,14 @@ jobs:
         run: bash scripts/check-local-date-math.sh
       - name: Check the qzpay wave converges on one core (HOS-232)
         run: bash scripts/check-qzpay-wave-convergence.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above). Fails
+      # when admin's dependency tree resolves two copies of a Radix primitive
+      # with module-level state. Two focus-scope copies made a Select inside a
+      # Dialog trap focus forever. #3365 got there through lockfile drift alone,
+      # with no Radix bump, which neither package.json nor Dependabot can see.
+      - name: Check admin resolves one copy of each stateful Radix primitive (HOS-80)
+        run: pnpm check:radix-single-focus-scope
       - name: Check published contact addresses use hospeda.com.ar (HOS-928)
         run: bash scripts/check-hospeda-email-domain.sh
       # Not redundant with `pnpm check:guards`: this job runs each guard as its
