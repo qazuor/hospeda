@@ -4121,3 +4121,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   un servidor `app`; sirve para validar el contrato fuera de Hospeda.
 - La validación se ejecuta sólo contra archivos locales y no crea worktrees,
   ramas, bases ni procesos.
+
+## Gate 265 · Consumo TypeScript del fixture genérico
+
+- `project-config.test.ts` ahora carga el fixture genérico con
+  `loadProjectAdapter` y comprueba projectId, estrategia `none` y servidor
+  `app`.
+- Esto cubre el camino que usan los comandos qz, no sólo el validador CLI.
+- El test no necesita red, Linear, Git, PostgreSQL ni archivos de entorno.

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { loadProjectAdapter } from '../src/lib/project-config.ts';
 import { readDbConfig } from '../src/lib/worktree.ts';
 
 async function fixture(): Promise<string> {
@@ -45,5 +46,14 @@ describe('qz database adapter compatibility', () => {
             connStringTemplate: 'postgresql://legacy/{dbname}',
             connStringEnvVar: 'ADAPTER_DATABASE_URL'
         });
+    });
+
+    test('loads a generic adapter without a legacy project config', async () => {
+        const adapter = await loadProjectAdapter(
+            join(process.cwd(), 'tools/qz/fixtures/generic-project')
+        );
+        expect(adapter?.projectId).toBe('demo-project');
+        expect(adapter?.database?.strategy).toBe('none');
+        expect(adapter?.servers?.map((server) => server.id)).toEqual(['app']);
     });
 });
