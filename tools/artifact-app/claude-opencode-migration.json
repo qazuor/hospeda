@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_61",
-        "number": 61,
-        "createdAt": "2026-09-23T22:35:00.000Z",
+        "id": "ver_claude_opencode_migration_62",
+        "number": 62,
+        "createdAt": "2026-09-24T00:00:00.000Z",
         "author": "opencode",
-        "reason": "revalidar suite cross-client de hops y corregir alcance del audit",
+        "reason": "registrar Gate235 de verificación read-only del bootstrap y distribución",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_60"
+        "basedOnVersion": "ver_claude_opencode_migration_61"
     },
     "data": {
         "sections": [
@@ -734,7 +734,7 @@
                             "title": "Crear bootstrap reproducible",
                             "category": "Adopción progresiva",
                             "description": "Instalar/configurar en una PC nueva con manifest, backups, dry-run y rollback.",
-                            "notes": "La base ahora se llama scripts/bootstrap/ai-dev-workstation-bootstrap.sh porque no es exclusiva de OpenCode/Gentle-AI. La arquitectura acordada separa un instalador genérico de workstation (agentes CLI, Engram, configuración global, skills, permisos, guardrails, backups y manifests) de adaptadores por proyecto. Hospeda tendrá su propio adaptador para Hops, checkout, envs, DB/template y verificaciones. La etapa apply/restore sigue pendiente.",
+                            "notes": "La base ahora se llama scripts/bootstrap/ai-dev-workstation-bootstrap.sh porque no es exclusiva de OpenCode/Gentle-AI. La arquitectura acordada separa un instalador genérico de workstation (agentes CLI, Engram, configuración global, skills, permisos, guardrails, backups y manifests) de adaptadores por proyecto. Hospeda tendrá su propio adaptador para Hops, checkout, envs, DB/template y verificaciones. Gate235: --verify pasó con OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0; qz/agent-packs/artifact también pasaron en read-only. La etapa apply/restore sigue pendiente.",
                             "done": false
                         },
                         {

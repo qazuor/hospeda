@@ -3821,3 +3821,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Las rutas base de Engram, OpenCode, Gentle-AI, Claude y datos de OpenCode
   existen; no se leyeron valores secretos.
 - El modo apply del bootstrap sigue sin implementarse y no se ejecutó.
+
+## Gate 235 · Verificación read-only del bootstrap y distribución
+
+- `ai-dev-workstation-bootstrap.sh --verify` pasó con Bash, Git, jq, Bun,
+  Node, OpenCode `1.18.32`, Gentle-AI `3.7.0` y Engram `2.0.0`; los tres pins
+  coincidieron y no se leyeron valores secretos.
+- `tools/qz/validate-project.mjs` confirmó el adapter `hops`, los servidores
+  `api`, `admin` y `web`, y cero errores.
+- `tools/agent-packs/plan.mjs --check` e `install.mjs --check` confirmaron 36
+  comandos para OpenCode, Claude y Codex, sin faltantes, duplicados ni drift.
+- El bundle de artifacts validó `artifact/v1` correctamente.
+- No se instalaron paquetes, no se escribieron configuraciones globales y no
+  se ejecutó ningún modo `--apply`/`--restore`; el instalador real sigue siendo
+  un pendiente explícito.
