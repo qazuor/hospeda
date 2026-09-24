@@ -4555,3 +4555,28 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La prueba agent-driven equivalente a OpenCode sigue pendiente por la política
   de envío de payload al proveedor; las pruebas locales no sustituyen esa
   medición.
+
+## Gate 306 · Matriz amplia de Gentle Shell
+
+- Version/auth/packages/doctor: OK. `gentle-shell 3.7.0`, Pi `0.87.1`, Codex
+  OAuth `ready`, cuatro paquetes únicos y `gentle-ai doctor` 9/9.
+- Distribución cross-client: OK. `install.mjs --check` detectó OpenCode,
+  Claude y Codex, 36 commands y cero drift.
+- Hops read-only: `recap`, `context`, `env --drift`, `gentle-status`,
+  `gentle-sdd-status`, Engram doctor, proyectos y conflictos ejecutaron sin
+  mutaciones. `start-issue HOS-635 --dry-run` consultó Linear y propuso
+  `develop`; `close-issue --plan`, `promote --plan`, `back-merge --plan`,
+  `merge --plan` y `ci --json` respetaron sus gates.
+- Artifact: el servidor local y la galería respondieron; el artifact de
+  migración quedó en v298 y `artifact list/state` funcionó.
+- Suite completa de Gentle Shell sobre copia aislada: 3.349 tests, 3.235
+  pasantes, 25 fallos, 51 cancelados y 38 omitidos. Los fallos se concentran
+  en fixtures/provenance fuera del checkout, tests de proveedores/review que
+  requieren dependencias especiales, y un test de manifest que no encuentra
+  TypeScript en la copia temporal. No son fallos de la instalación de Hospeda.
+- `verify --changed` inició los 40 pasos reales y llegó a la fase de builds,
+  pero no completó en la ventana de ejecución; queda inconcluso, no verde.
+- La única prueba no ejecutada es la agent-driven con un prompt del repositorio
+  y salida de `qz/hops` enviada al modelo. La revisión de seguridad bloquea ese
+  payload aun con autorización general; requiere un permiso específico del
+  entorno para completarla.
