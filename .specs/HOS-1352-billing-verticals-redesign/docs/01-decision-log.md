@@ -4879,13 +4879,61 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-007 — El reembolso de un cobro viejo NO se implementa: pasado el plazo del proveedor, la reparación es manual
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra el bloqueo de `RF-3`**, que arrastraba el capítulo 13 —*«el §61 prohíbe implementar sobre
+  una fila `UNKNOWN`, así que el capítulo 13 tiene que tratar ese caso como no resuelto»* (`B/05`)—.
+- **El problema**: `RF-3` mide **hasta cuándo se puede reembolsar**. Lo medido es que **65 días
+  funciona**; la documentación de Mercado Pago dice **180 días desde la aprobación**, y el §58 no
+  acepta documentación. El **2026-09-24** se midió además **cuándo podría cerrarse**: el pago más
+  viejo de la cuenta de producción es `167913214814`, aprobado el **2026-07-08**, ARS 15 y sin
+  reembolsar, así que **cumple 180 días el 2027-01-04** — antes de esa fecha la fila no se puede
+  cerrar por ningún camino.
+- **La decisión del owner**: *«ni en pedo vamos a esperar a enero… asumimos que la documentación es
+  correcta y seguimos… me parece muy poco probable y por ende poco importante que debamos devolver
+  dinero más de 6 meses después, y si algún día pasa, lo manejaré a mano»*.
+- **Decisión, y se registra de una forma que NO es un apartamiento del método**: **el sistema no
+  ofrece la operación de reembolsar un cobro más viejo que el plazo del proveedor.** No es que se
+  implemente sobre documentación: **es que no se implementa**. Pasado el plazo, la reparación es
+  **manual y queda registrada**, como cualquier otra intervención sobre dinero (`DEC-RF-002`: la
+  confirma una persona).
+- **Por qué NO es un apartamiento del §58 ni del §61, y conviene leerlos textuales:**
+  - El §58 exige comprobar experimentalmente *«absolutamente todas las variantes **necesarias**»*.
+    Una variante que **no se implementa** no es necesaria.
+  - El §61 dice *«no comenzar implementación de una **capability crítica** mientras siga `UNKNOWN`»*.
+    Lo que esta decisión establece es que **reembolsar un cobro de más de seis meses no es una
+    capability crítica** del sistema — y eso es una lectura del §61, no una excepción a él.
+- **🔎 Y hay un argumento que nadie había hecho, que es el que vuelve segura la decisión: la
+  respuesta de `RF-3` NO cambia el diseño.** Si el plazo real fuera **menor** que 180 días, el
+  sistema intenta y el proveedor rechaza con un error **ya medido** (`RF-5`: `2063`, `2017`, `2084`,
+  con el `message` que no alcanza para distinguirlos) → cae al camino manual. Si fuera **mayor**, el
+  sistema rechaza algo que se podía hacer → cae al camino manual. **En los dos casos el desenlace es
+  el mismo**, así que el número exacto sólo mueve dónde está el corte, no qué hace el sistema.
+  **`RF-3` estaba bloqueando un diseño al que su respuesta no le cambia nada.**
+- **Lo que esta decisión SÍ obliga a escribir**, y va al capítulo que aloje la mecánica del
+  reembolso: (1) el sistema **no ofrece el botón** pasado el plazo, y lo dice en vez de fallar;
+  (2) si lo ofrece y el proveedor rechaza, el error **no se traga**: abre el camino manual con el
+  caso identificado; (3) la reparación manual **deja rastro**, porque el histórico de reembolsos es
+  nuestro — el buscador del proveedor cubre **sólo doce meses**.
+- **El riesgo aceptado, declarado para que se pueda evaluar después**: si el caso resulta más
+  frecuente de lo que el owner estima, **cada ocurrencia cuesta trabajo manual** y no hay alerta que
+  lo cuente. La conciliación del cap. 09 es la que lo vería primero.
+- **`RF-3` queda `UNKNOWN` y deja de bloquear.** No se cierra, porque **no se midió** y marcarla
+  `VERIFIED` sobre documentación sería exactamente lo que el §58 prohíbe. Lo que cambia es que su
+  respuesta ya no es condición de nada.
+- **Origen**: la respuesta explícita del owner del **2026-09-24**, sobre la medición del mismo día
+  que le puso sujeto y fecha a la fila.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **106** — las tres del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
+| Decisiones tomadas | **107** — las cuatro del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
 | De metodología | 13 |
-| Funcionales | 93 |
+| Funcionales | 94 |
 | **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
