@@ -95,6 +95,22 @@ capítulo: el reloj de pausa es nuestro (cap. 03 §5), el inventario a conciliar
 no aplican nada**. No es un proveedor que rechaza lo que no soporta: es un proveedor que acepta y
 descarta. De ahí sale la regla §4.1.
 
+### 3.1 Lo que no se puede suplir: un reloj de cobro propio
+
+Las ocho de arriba tienen un *«qué se hace en cambio»*. **Ésta no**, y va aparte por eso: el diseño
+**no** tiene su propio reloj de cobro porque **los dos caminos para tenerlo están medidos y cerrados,
+y los dos por permiso, no por diseño**:
+
+| camino | medido |
+|---|---|
+| **cobrar de forma recurrente con la tarjeta guardada, sin `preapproval`** | **`NOT_SUPPORTED`** (`EX-31`): `403` en las cuatro formas de pedirlo, con la misma orden sin esos nodos entrando en `201` (`EX-30`) — el rechazo es del **permiso** de la aplicación |
+| **cobrar desde la billetera del cliente (Wallet Connect)** | **`NOT_SUPPORTED`** (`EX-32`): el recurso existe, responde `403`, y la habilitación **no se puede pedir** |
+
+Por eso **el reloj de cobro es del proveedor y el mandato es el modelo canónico** (`DEC-MP-006`). Es
+el límite duro de la directriz de `DEC-MP-005`: **un permiso comercial no se compensa con código**. El
+cargo puntual queda declarado como destino, con la habilitación de *«pagos automáticos»* pedida en
+paralelo, y la interfaz de este capítulo **no puede impedir esa migración**.
+
 ---
 
 ## 4. Las cinco reglas duras de trato con este proveedor
