@@ -4535,3 +4535,23 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   exige autorización explícita para ese payload. Por ello la paridad de
   ejecución del agente queda pendiente, aunque la capa local y el runtime están
   instalados.
+
+## Gate 305 · Matriz comparable de comandos Gentle Shell
+
+- `qz/hops env --drift --json` ejecutó correctamente y devolvió un resultado
+  estructurado. Detectó sólo variables opcionales ausentes y las dos variables
+  obsoletas conocidas; no faltan variables obligatorias ni hay mismatches.
+- `qz/hops start-issue HOS-635 --no-claude --dry-run` consultó Linear, resolvió
+  el issue y confirmó base `develop`, branch y worktree propuestos sin crear
+  nada.
+- `qz/hops smoke-plan` requiere el identificador de issue; la invocación sin
+  `HOS-NNN` falló de forma controlada. La prueba con issue quedó pendiente de
+  repetir porque la ejecución paralela fue interrumpida por el gate largo de
+  `verify`.
+- `qz/hops verify --changed` inició los 40 pasos reales de CI. Con permisos de
+  escritura para la caché superó el bloqueo inicial de filesystem read-only,
+  pero la corrida fue demasiado extensa para completar en esta ventana y no se
+  considera verde.
+- La prueba agent-driven equivalente a OpenCode sigue pendiente por la política
+  de envío de payload al proveedor; las pruebas locales no sustituyen esa
+  medición.
