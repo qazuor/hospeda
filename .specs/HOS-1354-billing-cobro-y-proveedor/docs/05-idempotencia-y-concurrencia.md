@@ -104,7 +104,10 @@ la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de
   fecha sin cobrar—, y un cobro anterior a la pausa pagó el ciclo cuyos días no usados
   `DEC-SUB-010` ya se llevó **al pausar**, no al cancelar. No hay período que devolver ni que
   sostener.
-- **Desde `SUSPENDED` el cobro que entra es el que `S7` o `S19` esperaban, y llega tarde.** La
+- **Desde `SUSPENDED` el cobro que entra es el que `S7` o `S19` esperaban, y llega tarde.** **Y en
+  un pagador con tarjeta, desde `DEC-SUB-019` eso ya no es el reciclado**: `S6` canceló el
+  preapproval en el mismo acto de suspender, así que lo que puede llegar después es un cobro que
+  ya estaba en vuelo en el instante de `S6`, o el pago manual (`MP4`). La
   condición 1 del §3 rechaza `CANCELLED`, que es exactamente el tope que el cap. 03 §7.1 eligió:
   *«a partir de ahí el pago que llegue no reabre nada»*. Así que la plata está en nuestra cuenta
   sin período que darle: **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5)
@@ -223,6 +226,12 @@ implementación traza la línea en otro lado.
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
 | 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una **sucesora viva** con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
+
+**Y desde `DEC-SUB-019`, la mitad `SUSPENDED` de la condición 1 ya no la alcanza un webhook
+ordinario del proveedor en un pagador con tarjeta**: `S6` canceló el preapproval al suspender, así
+que lo que puede llegar ahí es el pago manual (`MP4`), un cobro que ya estaba en vuelo en el
+instante de `S6`, o el caso de borde de un preapproval reactivado a mano. Las condiciones no
+cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumplir.
 
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
 según en cuál de los dos estados de la condición 1 esté la fila, y se restituye la publicación.
