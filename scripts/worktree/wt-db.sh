@@ -35,7 +35,8 @@ FRESHCMD="$(jq -r '.db.freshCmd // empty' "$CFG")"
 # net in case the fingerprint has a bug or a misconfigured schemaFingerprintPaths
 # entry — configured per-project via .db.schemaSentinelTables (array of Postgres
 # table names); empty/absent = feature disabled.
-SENTINEL_TABLES="$(jq -r '.db.schemaSentinelTables // [] | join(" ")' "$CFG")"
+SENTINEL_TABLES="$(wt_qz_cfg '.database.schemaSentinelTables // [] | join(" ")')"
+[ -n "$SENTINEL_TABLES" ] || SENTINEL_TABLES="$(jq -r '.db.schemaSentinelTables // [] | join(" ")' "$CFG")"
 
 # Run a postgres CLI tool, in the container if docker, else locally.
 pg() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" "$@"; else "$@"; fi; }

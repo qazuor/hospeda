@@ -4094,3 +4094,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   adapter declarativo; se conservan en la configuración legacy protegida.
 - Validado por sintaxis Bash y lectura del campo `apps/api/.env.local`; no se
   modificaron envs ni se ejecutaron comandos de Postgres.
+
+## Gate 262 · Sentinels de schema en el adapter
+
+- `.qz/project.json` ahora declara `database.schemaSentinelTables` con las
+  tablas mínimas usadas para detectar una template incompleta.
+- `wt-db.sh` prioriza esa lista y mantiene `db.schemaSentinelTables` como
+  fallback legacy.
+- Sólo se movieron nombres de tablas; no hay credenciales ni valores de
+  conexión. Se validó JSON, sintaxis Bash y lectura read-only del adapter.
