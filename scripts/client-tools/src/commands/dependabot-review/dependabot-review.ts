@@ -2,6 +2,7 @@ import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
 import { gh } from '../../lib/github.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 
 type DependabotPr = {
     readonly number: number;
@@ -114,10 +115,13 @@ function riskOf(files: readonly string[]): 'low' | 'medium' | 'high' {
 
 export type DependabotRecommendation = 'close' | 'no-spec' | 'create-issue' | 'blocked';
 
-export function recommend(pr: DependabotPr, evidence?: PrEvidence): DependabotRecommendation {
+export function recommend(
+    pr: DependabotPr,
+    evidence?: PrEvidence,
+    integrationBranches: ReadonlySet<string> = new Set(['develop', 'staging', 'main'])
+): DependabotRecommendation {
     if (pr.isDraft || pr.mergeStateStatus === 'DIRTY') return 'blocked';
-    if (!pr.baseRefName || !['develop', 'staging', 'main'].includes(pr.baseRefName))
-        return 'blocked';
+    if (!pr.baseRefName || !integrationBranches.has(pr.baseRefName)) return 'blocked';
     if (/revert|supersed|duplicate|obsolete/i.test(pr.title)) return 'close';
     if (
         versionImpact(pr.title) === 'major' ||
@@ -152,6 +156,10 @@ export async function runDependabotReview({
         argv.find((arg) => arg.startsWith('--pr='))?.slice(5) ??
         (prAt >= 0 ? argv[prAt + 1] : undefined);
     const context = await resolveRunContext({ cwd: process.cwd(), target: 'local' });
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const integrationBranches = new Set(
+        adapter?.branches?.promotion ?? ['develop', 'staging', 'main']
+    );
     const result = await gh({
         cwd: context.repoRoot,
         args: [
@@ -240,7 +248,7 @@ export async function runDependabotReview({
                 base: pr.baseRefName ?? null,
                 head: pr.headRefName ?? null,
                 updatedAt: pr.updatedAt ?? null,
-                recommendation: recommend(pr, evidence),
+                recommendation: recommend(pr, evidence, integrationBranches),
                 versionImpact: versionImpact(pr.title),
                 risk: riskOf(evidence.files),
                 usage: await localUsage(context.repoRoot, pr.title),

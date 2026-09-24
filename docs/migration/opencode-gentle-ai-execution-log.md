@@ -4332,3 +4332,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   de asumir que Claude está instalado.
 - Typecheck, 72 pruebas enfocadas de `wt-clean`, sintaxis de scripts y
   validación qz pasaron sin ejecutar ningún teardown real.
+
+## Gate 290 · Dependabot respeta ramas del adapter
+
+- `dependabot-review` ahora obtiene la cadena de integración desde
+  `branches.promotion` y conserva el fallback histórico para repos legacy.
+- La recomendación no vuelve a asumir que toda instalación tiene exactamente
+  `develop`, `staging` y `main`.
+- Typecheck y las 4 pruebas de Dependabot pasaron; no se consultó ni modificó
+  GitHub durante esta validación.

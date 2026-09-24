@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
     extractReleaseNotesUrls,
+    recommend,
     versionImpact
 } from '../src/commands/dependabot-review/dependabot-review.ts';
 
@@ -26,5 +27,19 @@ describe('dependabot review evidence', () => {
 
     it('keeps semver classification independent from evidence parsing', () => {
         expect(versionImpact('Bump foo from 1.2.3 to 1.3.0')).toBe('minor');
+    });
+
+    it('uses the adapter promotion branches instead of hardcoded project branches', () => {
+        expect(
+            recommend(
+                {
+                    number: 1,
+                    title: 'Bump foo from 1.2.3 to 1.2.4',
+                    baseRefName: 'integration'
+                },
+                undefined,
+                new Set(['integration', 'release'])
+            )
+        ).toBe('no-spec');
     });
 });
