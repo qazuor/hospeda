@@ -26,7 +26,7 @@
                 "data": {
                     "eyebrow": "Comparativa de arquitectura y workflow · 24 septiembre 2026",
                     "title": "Cuatro harnesses, una capa común",
-                    "description": "OpenCode, Codex CLI, Claude Code y Gentle Shell son los harnesses comparados. Gentle-AI no compite como quinto harness: se evalúa como capa de metodología, memoria y provisioning que puede integrarse con algunos de ellos."
+                    "description": "OpenCode, Codex CLI, Claude Code y Gentle Shell son cuatro harnesses comparados en igualdad de condiciones. Gentle-AI no compite como quinto harness: se evalúa como capa de metodología, memoria y provisioning que puede integrarse con ellos."
                 }
             },
             {
@@ -35,11 +35,11 @@
                 "title": "Resultado para Hospeda",
                 "data": {
                     "metrics": [
-                        { "value": "1º", "label": "OpenCode como harness principal" },
-                        { "value": "2º", "label": "Codex como cliente seguro secundario" },
-                        { "value": "3º", "label": "Claude como compatibilidad y rollback" },
-                        { "value": "Abierto", "label": "Gentle Shell como candidato Pi-native" },
-                        { "value": "1", "label": "workflow común: qz/hops" }
+                        { "value": "4", "label": "harnesses evaluados en igualdad" },
+                        { "value": "1", "label": "capa Gentle-AI compatible" },
+                        { "value": "1", "label": "workflow común: qz/hops" },
+                        { "value": "0", "label": "ganadores declarados antes de las pruebas" },
+                        { "value": "100%", "label": "decisión basada en pruebas Hospeda" }
                     ]
                 }
             },
@@ -62,7 +62,7 @@
                         [
                             "OpenCode",
                             "1.18.32",
-                            "Candidato principal; V1 instalada por compatibilidad con Gentle-AI"
+                            "Candidato; V1 instalada por compatibilidad con Gentle-AI"
                         ],
                         [
                             "Codex CLI",
@@ -93,25 +93,25 @@
                             "OpenCode",
                             "Neutralidad, MCP, skills, commands, agentes y TUI configurable",
                             "V1 local frente a documentación V2; plugins/worktrees pueden divergir",
-                            "Principal"
+                            "Candidato en igualdad"
                         ],
                         [
                             "Codex CLI",
                             "Sandbox + approvals explícitos y buen soporte AGENTS.md",
                             "Centro de gravedad OpenAI y ecosistema en evolución",
-                            "Secundario"
+                            "Candidato en igualdad"
                         ],
                         [
                             "Claude Code",
                             "Hooks, plugins, equipos, subagentes, memoria y worktrees maduros",
                             "Lock-in en hooks, CLAUDE.md y plugins",
-                            "Compatibilidad/rollback"
+                            "Candidato en igualdad"
                         ],
                         [
                             "Gentle Shell",
-                            "ODD, memoria, review y TDD integrados en Pi",
-                            "Otro runtime, otra TUI y otro home; no es OpenCode",
-                            "Candidato abierto para evaluación controlada"
+                            "ODD, memoria, review, TDD, profiles y agentes integrados en Pi",
+                            "Otro runtime, otra TUI y otro home; debe probarse con qz/hops",
+                            "Candidato en igualdad"
                         ]
                     ]
                 }
@@ -366,9 +366,9 @@
                         ],
                         [
                             "Recomendación",
-                            "Capa principal actual",
-                            "Cliente compatible",
-                            "Compatibilidad temporal",
+                            "Capa compatible; validar",
+                            "Capa compatible; validar",
+                            "Capa compatible; validar",
                             "Evaluar como harness alternativo completo"
                         ]
                     ]
@@ -409,20 +409,20 @@
                 "data": {
                     "items": [
                         {
-                            "title": "OpenCode: principal",
-                            "content": "Mantener OpenCode V1 como TUI/harness diario mientras Gentle-AI siga siendo compatible. No copiar features V2 sin validación local."
+                            "title": "Cuatro candidatos al mismo nivel",
+                            "content": "OpenCode, Codex CLI, Claude Code y Gentle Shell deben probarse con el mismo flujo Hospeda, la misma memoria, los mismos scripts y los mismos criterios. No se declara ganador antes de esas pruebas."
                         },
                         {
-                            "title": "Codex: secundario seguro",
-                            "content": "Usarlo para tareas acotadas, validaciones y automatización donde sandbox y approvals sean prioritarios. Compartir AGENTS.md y qz/hops."
+                            "title": "Gentle Shell como harness completo",
+                            "content": "No se lo evalúa como plugin ni complemento de OpenCode. Se prueba su TUI, ODD, RDD, agentes, profiles, memoria, Playwright y workflows como runtime alternativo completo."
                         },
                         {
-                            "title": "Claude Code: compatibilidad",
-                            "content": "Mantenerlo disponible durante rollback y transición. No agregar lógica nueva exclusiva de Claude ni duplicar workflows."
+                            "title": "Capa común portable",
+                            "content": "AGENTS.md, qz/hops, Linear, worktrees, env, DB, puertos y guards deben permanecer fuera del harness para que la comparación sea justa y reversible."
                         },
                         {
-                            "title": "Gentle Shell: candidato abierto",
-                            "content": "Evaluarlo como harness alternativo completo y aislado. Medir provisioning, memoria, Linear, qz/hops, worktrees, seguridad y ergonomía frente a OpenCode antes de decidir."
+                            "title": "Prueba de igualdad",
+                            "content": "Cada harness debe completar los mismos escenarios end-to-end antes de asignarle el rol de principal, secundario o rollback."
                         },
                         {
                             "title": "Gentle-AI: capa, no competidor",
@@ -436,7 +436,7 @@
                 "type": "prose",
                 "title": "Fuentes y caveats",
                 "data": {
-                    "markdown": "**Fuentes primarias consultadas:** documentación de configuración, agentes, plugins y MCP de OpenCode; repositorio, seguridad, skills, AGENTS.md, MCP y plugins de Codex; documentación de configuración, skills, hooks, reglas, subagentes y worktrees de Claude Code; documentación de uso previsto, trigger rules, releases y Pi/Gentle Shell de Gentleman Programming.\n\n**Caveat principal:** OpenCode local es 1.18.32 (V1), mientras que la documentación pública actual describe V2 en varias áreas. La matriz marca esos puntos como caveat y exige prueba local antes de adoptarlos.\n\n**Decisión provisional:** OpenCode principal, Codex secundario, Claude compatibilidad/rollback, Gentle Shell como candidato abierto para evaluación aislada y Gentle-AI como capa compatible."
+                    "markdown": "**Fuentes primarias consultadas:** documentación de configuración, agentes, plugins y MCP de OpenCode; repositorio, seguridad, skills, AGENTS.md, MCP y plugins de Codex; documentación de configuración, skills, hooks, reglas, subagentes y worktrees de Claude Code; documentación de uso previsto, trigger rules, releases y Pi/Gentle Shell de Gentleman Programming.\n\n**Caveat principal:** OpenCode local es 1.18.32 (V1), mientras que la documentación pública actual describe V2 en varias áreas. La matriz marca esos puntos como caveat y exige prueba local antes de adoptarlos.\n\n**Decisión actual:** no hay ganador declarado. OpenCode, Codex CLI, Claude Code y Gentle Shell son candidatos al mismo nivel; Gentle-AI es la capa compatible y qz/hops es la capa portable."
                 }
             }
         ]

@@ -58,19 +58,19 @@ Estados usados: **Nativo** significa que forma parte del harness; **Extensión**
 | Portabilidad de workflows | Alta si el workflow vive en `qz/hops` | Alta si se invoca `qz/hops` | Alta si se invoca `qz/hops` | Baja para workflows diseñados fuera de Pi |
 | Coste de extensibilidad | Configuración/plugin/MCP; revisar compatibilidad V1/V2 | Skills/MCP/hooks/plugins; APIs oficiales en expansión | Hooks/plugins/marketplaces muy completos, pero mayor superficie | Ecosistema integrado, pero otro runtime |
 | Riesgo de lock-in | Medio por versión y plugins, bajo si la autoridad es `qz/hops` | Medio por CLI/ecosistema OpenAI | Alto si la lógica queda en hooks/CLAUDE.md/plugins | Alto: Pi + Gentle Shell + estructura propia |
-| Encaje con Hospeda | Alto como TUI principal junto a Gentle-AI y `qz/hops` | Alto como cliente secundario seguro y compatible con `AGENTS.md` | Alto como compatibilidad/rollback, no como autoridad futura | Bajo mientras el proyecto excluya Pi |
+| Encaje con Hospeda | Alto como candidato junto a Gentle-AI y `qz/hops` | Alto como candidato compatible con `AGENTS.md` | Alto como candidato con hooks y worktrees maduros | Alto como candidato si Pi encaja con el flujo |
 
 ## Fortalezas y límites por harness
 
 ### OpenCode
 
-Es el mejor candidato para la interfaz diaria de Hospeda porque combina TUI, configuración por proyecto, MCP, skills, commands, agentes y plugins sin obligar a que el workflow pertenezca a un proveedor de modelos. Su principal riesgo no es funcional sino de compatibilidad: tenemos V1 instalada y la documentación actual describe V2. Por eso no debemos copiar configuraciones V2 sin una prueba explícita en 1.18.32.
+Combina TUI, configuración por proyecto, MCP, skills, commands, agentes y plugins sin obligar a que el workflow pertenezca a un proveedor de modelos. Su riesgo principal es de compatibilidad: tenemos V1 instalada y la documentación actual describe V2. No debemos copiar configuraciones V2 sin una prueba explícita en 1.18.32.
 
 OpenCode debe ser el **cliente interactivo**, no la autoridad de branches, Linear, env, bases, puertos ni closeout. Esa autoridad debe permanecer en `qz/hops`, con salida JSON para los agentes y salida humana para nosotros. La existencia de snapshots, worktrees nativos o agentes no justifica crear una segunda implementación de esos flujos.
 
 ### Codex CLI
 
-Su diferencia más valiosa es la frontera de seguridad: approvals y sandbox son conceptos separados y explícitos. La CLI también tiene `AGENTS.md`, skills, MCP, hooks, plugins, perfiles, modo no interactivo, app-server, integraciones de GitHub y documentación para worktrees. Esto lo vuelve un cliente secundario muy útil para tareas acotadas, validaciones y operaciones donde queremos máxima fricción antes de ejecutar shell.
+Su diferencia más valiosa es la frontera de seguridad: approvals y sandbox son conceptos separados y explícitos. La CLI también tiene `AGENTS.md`, skills, MCP, hooks, plugins, perfiles, modo no interactivo, app-server, integraciones de GitHub y documentación para worktrees. Esto puede ser decisivo para tareas acotadas, validaciones y operaciones donde queremos máxima fricción antes de ejecutar shell.
 
 No conviene convertirlo en la autoridad del proyecto. La CLI evoluciona rápido, su centro de gravedad es OpenAI y la superficie de plugins/marketplaces todavía debe validarse en cada actualización. El mismo `AGENTS.md`, los mismos scripts `qz/hops` y los mismos guards permiten usar Codex sin duplicar workflows.
 
@@ -78,11 +78,11 @@ No conviene convertirlo en la autoridad del proyecto. La CLI evoluciona rápido,
 
 Es el harness más completo en automatización de ciclo de vida: reglas por path, skills bajo demanda, commands, subagentes aislados, agent teams, MCP, plugins, hooks de comandos/HTTP/MCP/prompt/subagente, memoria y worktrees. Esa riqueza explica por qué nuestro entorno anterior acumuló tanta lógica.
 
-El coste es el acoplamiento: si la lógica de negocio de Hospeda queda en hooks, `CLAUDE.md`, plugins o memoria específica de Claude, volveremos a tener divergencia entre clientes. Claude debe quedar como cliente de compatibilidad y rollback mientras validamos OpenCode/Codex; los comandos comunes deben invocar `qz/hops` y los guards deben funcionar fuera de Claude.
+El coste es el acoplamiento: si la lógica de negocio de Hospeda queda en hooks, `CLAUDE.md`, plugins o memoria específica de Claude, volveremos a tener divergencia entre clientes. Debe probarse con los mismos comandos comunes, que deben invocar `qz/hops`, y con los mismos guards que los demás harnesses.
 
 ### Gentle Shell
 
-No es “Gentle-AI para OpenCode”. Es un harness Pi-native que integra ODD, agentes enfocados, estado, diff/uso, memoria, review y TDD dentro de su propia experiencia. Tiene sentido si elegimos Pi como runtime principal. Con OpenCode V1 como base, instalar Gentle Shell agregaría otra TUI, otro home de agente, otra forma de administrar sesiones y otra superficie de plugins.
+No es “Gentle-AI para OpenCode”. Es un harness Pi-native que integra ODD, agentes enfocados, estado, diff/uso, memoria, review y TDD dentro de su propia experiencia. Debe evaluarse como runtime completo, con su TUI, home de agente, sesiones y superficie de plugins, en igualdad con los otros tres.
 
 La opción queda abierta y merece una evaluación propia. No debe instalarse como complemento casual de OpenCode: hay que probarlo como harness alternativo completo, midiendo provisioning, memoria, Linear, `qz/hops`, worktrees, seguridad y ergonomía frente a OpenCode.
 
@@ -115,24 +115,24 @@ Puntuación de 1 a 5, sólo para el uso del harness con nuestra arquitectura (no
 | Madurez para uso diario | 4 | 4 | 5 | 3 |
 | Riesgo de lock-in | 4 | 3 | 2 | 2 |
 | Compatibilidad con nuestra decisión ODD | 5 | 4 | 3 | 5 |
-| **Resultado recomendado** | **4.5** | **4.1** | **3.9** | **2.9** |
+| **Resultado preliminar de ajuste** | **4.5** | **4.1** | **3.9** | **2.9** |
 
-Las puntuaciones no significan que un harness sea “mejor” en abstracto. Claude gana en amplitud madura; Codex gana en la frontera sandbox/approval; Gentle Shell gana si se elige Pi; OpenCode gana como base neutral para nuestra arquitectura concreta.
+Las puntuaciones son una hipótesis inicial basada en documentación y arquitectura, no una decisión. Deben revalidarse con pruebas reales del mismo flujo Hospeda; en particular, Gentle Shell todavía no tuvo nuestra prueba end-to-end.
 
-## Arquitectura recomendada
+## Arquitectura a evaluar
 
-1. **OpenCode V1**: harness interactivo principal durante esta etapa de migración.
-2. **Gentle-AI 3.7.0**: capa de ODD, memoria Engram y componentes opcionales; SDD/OpenSpec sólo cuando se pida de forma explícita.
-3. **`qz/hops`**: autoridad portable para Linear, start/close issue, worktrees, env, DB template, puertos, guards, promoción de branches, handoff, recap y reportes.
-4. **Codex CLI**: cliente secundario para tareas seguras, automatización no interactiva y validaciones donde sandbox/approval sea prioritario.
-5. **Claude Code**: compatibilidad y rollback hasta cerrar la migración; no agregar lógica nueva exclusiva de Claude.
-6. **Gentle Shell**: evaluar como harness alternativo completo, con una instalación aislada y reversible; no mezclarlo con OpenCode hasta comparar los resultados.
+1. **OpenCode V1**: candidato en igualdad de condiciones.
+2. **Codex CLI**: candidato en igualdad de condiciones.
+3. **Claude Code**: candidato en igualdad de condiciones.
+4. **Gentle Shell**: candidato en igualdad de condiciones; probarlo como runtime Pi completo.
+5. **Gentle-AI 3.7.0**: capa de ODD, memoria Engram y componentes opcionales; SDD/OpenSpec sólo cuando se pida de forma explícita.
+6. **`qz/hops`**: autoridad portable para Linear, start/close issue, worktrees, env, DB template, puertos, guards, promoción de branches, handoff, recap y reportes.
 
 La regla de diseño es: **el harness ofrece la sesión; el repositorio y `qz/hops` ofrecen el proceso**. Así cambiar de OpenCode a Codex o Claude no cambia el estado de Linear, branches, worktrees, bases ni evidencias.
 
 ## Decisión
 
-Continuar provisionalmente con OpenCode como harness principal, Codex como segundo cliente de seguridad/automatización, Claude Code como compatibilidad temporal y Gentle Shell como candidato abierto para evaluación controlada. No migrar workflows de Hospeda a features exclusivas de ningún harness. Mantenerlos en scripts versionados y adaptadores delgados para cada CLI.
+No declarar ganador todavía. Probar OpenCode, Codex CLI, Claude Code y Gentle Shell con el mismo flujo, la misma memoria, el mismo `qz/hops`, los mismos guards y los mismos criterios de seguridad. No migrar workflows de Hospeda a features exclusivas de ningún harness. Mantenerlos en scripts versionados y adaptadores delgados para cada CLI.
 
 ## Fuentes primarias consultadas
 
