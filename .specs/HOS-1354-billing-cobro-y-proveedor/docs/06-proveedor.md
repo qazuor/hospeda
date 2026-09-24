@@ -155,6 +155,51 @@ se puede (`EX-3`, `RF-8`).
 **Regla para soporte, que sale directo de la medición: ante un reclamo, mirar el PAGO, nunca el
 correo.**
 
+### 4.6 Reembolsar tiene su propio contrato, y no se parece al del resto de la API
+
+Escrita el **2026-09-24**. Es la mecánica que este capítulo le delegaba al 13, y vive acá porque
+**es trato con el proveedor**: qué hay que mandarle, qué devuelve y cómo se lee lo que devuelve.
+Lo que el dominio decide con eso —cuándo se reembolsa y quién lo confirma— es `DEC-RF-001` y
+`DEC-RF-002`.
+
+**Seis cosas medidas, y cada una rompe una suposición razonable:**
+
+1. **`X-Idempotency-Key` es OBLIGATORIO** en `POST /v1/payments/{id}/refunds`: sin él, `400 code
+   4292`, **antes** de cualquier validación de negocio (`RF-4`, medido dos veces en dos sondas).
+   **Es la contracara exacta de `EX-17`**: el mismo header, en `/preapproval`, **se acepta y no hace
+   nada**. ⚠️ **La idempotencia de este proveedor es POR ENDPOINT y no se razona de uno al otro** —
+   suponer lo contrario da las dos formas del error: un doble reembolso, o un alta que se cree
+   protegida y no lo está.
+2. **Y se respeta de verdad**: la misma clave con el mismo cuerpo devuelve **`200` con cuerpo
+   vacío** y **ningún reembolso nuevo** (`RF-6`, confirmado contra el movimiento de la cuenta).
+   **Dos trampas para quien implemente**: el código es **`200` y no `201`**, así que un cliente que
+   sólo acepte `201` lo lee como fallo; y **el cuerpo vacío no trae el refund original**, así que
+   hay que releerlo si se lo necesita.
+3. **El parcial valida contra el SALDO, no contra el monto original** (`RF-2`): pedir 15 sobre un
+   pago de 5.000 con 10 de saldo da `400 code 2017`. **Y no hay monto mínimo** — ARS 5 entró sobre
+   pagos de 5.000 y de 7.500, lo que mató la hipótesis anterior de *«hay un mínimo entre 5 y 50»*.
+4. **El `message` NO alcanza para distinguir los errores** (`RF-5`): sobre un pago sin saldo, el
+   total sin body da **`2063`** y un `amount` mayor al saldo da **`2017`** — **y `amount` igual al
+   total ya devuelto da el mismo `2017`**, que son dos situaciones distintas compartiendo texto.
+   **Se decide por `code`, nunca por el texto.**
+5. **El `2084` no es una propiedad del pago** (`RF-8`): sobre **un mismo** pago de ARS 15,
+   `amount: 5` dio `2084` y `amount: 14` dio `201` minutos después. Cuatro hipótesis murieron.
+   **Consecuencia dura: un `2084` NO autoriza a marcar un pago como no reembolsable** — es lo que
+   la copy del §4.5 sugiere y los datos desmienten.
+6. **Un reembolso emite TRES entregas en DOS formatos** (`RF-7`): una de Webhooks
+   (`data.id=<pago>&type=payment`) y dos de IPN (`topic=payment` y `topic=merchant_order`).
+   **Deduplicar por tipo de evento no alcanza** — y esto se cruza con `WH-1` y `EX-2`: la clave es
+   la `version`, que hoy **nuestra capa no guarda** (ver el inventario de compensación).
+
+**Y una que no es del proveedor sino nuestra**: el **histórico de reembolsos es nuestro o no
+existe**, porque **el buscador del proveedor cubre sólo doce meses**.
+
+🚧 **Lo que esta sección NO cubre, por decisión y no por olvido**: **reembolsar un cobro más viejo
+que el plazo del proveedor**. `DEC-RF-007` decidió que **esa operación no se implementa** — el
+sistema no ofrece el botón, lo dice en vez de fallar, y la reparación es **manual y con rastro**.
+`RF-3` sigue `UNKNOWN` y **ya no bloquea**, porque su respuesta no cambia el diseño: con el plazo
+real por debajo o por encima de los 180 días, **los dos desenlaces caen al mismo camino manual**.
+
 ---
 
 ## 5. Los cuatro ciclos, la moneda y los impuestos · cierra `MP-01` y `M-MP-01`
@@ -305,24 +350,30 @@ filtrar el nombre de ningún endpoint hacia el dominio.
 
 ## 11. Lo que sigue `UNKNOWN`, y qué bloquea · cierra `M-MP-03`
 
-**Ocho filas de 89**, recontadas con el script y no a mano. El §61 es terminante: *«No comenzar
-implementación de una capability crítica mientras siga `UNKNOWN`»*.
+**Cuatro filas de 93**, recontadas con el script y no a mano (2026-09-24). El §61 es terminante:
+*«No comenzar implementación de una **capability crítica** mientras siga `UNKNOWN`»* — y la palabra
+que hace trabajo es **crítica**: una fila abierta sobre algo que **no se implementa** no bloquea
+nada (ver `RF-3`, abajo).
 
 | fila | qué falta saber | qué bloquea | cuándo se contesta |
 |---|---|---|---|
-| **`RN-2`** | qué hace el proveedor cuando un cobro falla | **el diseño del grace entero** | **hoy** |
-| **`RN-3`** | si recupera solo después del fallo | ídem | **hoy** |
-| **`GR-1`** | si se puede pagar durante el grace | ídem | **hoy** |
-| **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila | **hoy** |
-| **`GR-3`** | cuántas veces reintenta el proveedor, y en qué estado la deja | **cuántos días tiene que durar nuestro grace** | **hoy** |
-| `WH-5` | el comportamiento del proveedor ante un receptor caído prolongado | nada crítico | se fuerza con el interruptor del receptor |
-| `RF-3` | reembolsar un pago de más de 180 días | el caso viejo del cap. 13 | no existe un pago así todavía |
-| `EX-1` | si un `pending` vence solo | nada: la ventana es nuestra (§6) | hay un sujeto vivo desde el 2026-09-15 |
+| **`RN-3`** | si recupera solo después del fallo | el diseño del grace | **EN CURSO**: se reactivó un sujeto el 2026-09-23 y se lee tras su cobro del **2026-09-24** |
+| **`GR-1`** | si se puede pagar durante el grace | ídem | necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner** |
+| **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila | ídem |
+| `RF-3` | reembolsar un pago de más de 180 días | ~~el caso viejo del cap. 13~~ **NADA, desde `DEC-RF-007`** | **el sujeto existe y es `167913214814`** (aprobado 2026-07-08, ARS 15, sin reembolsar): cumple 180 días el **2027-01-04**. **No se va a esperar**: `DEC-RF-007` decidió que esa operación **no se implementa** y la reparación es manual |
 
-**Cinco de las ocho son el mismo hecho: un cobro que falla.** Y las cinco se contestan **el
-2026-09-17**, con dos sujetos independientes: `apagon`, en producción, con la tarjeta real
-apagada desde el home banking; y `renov-falla3`, en sandbox, con el monto llevado al techo para
-que el cobro sea impagable.
+> 📌 **Las cuatro que salieron, y cómo**: **`RN-2`** y **`GR-3`** cerraron el 2026-09-22 cuando la
+> tarjeta del owner empezó a rechazar sola —el cobro fallido que tres caminos deliberados no habían
+> podido fabricar—; **`EX-1`** el 2026-09-23 (un `pending` **no vence**); y **`WH-5`** el 2026-09-23,
+> sin usar el interruptor: **la evidencia estaba sin leer en la corrida del 2026-09-15**, porque la
+> 5ª entrega llegó a las 7 horas y la lectura se había cerrado antes.
+
+**Tres de las cuatro siguen siendo el mismo hecho: un cobro que falla.** ❌ **Y la previsión de que
+se contestaban el 2026-09-17 no se cumplió**: los dos sujetos que esta sección nombraba fallaron —
+`renov-falla3` **nunca estuvo armado** (la mutación al techo se había rechazado con `400` y nadie
+releyó), y `apagon` se cayó cuando el home banking del owner avisó que **los débitos automáticos se
+cobran igual** sobre una tarjeta pausada. **Lo destrabó el uso normal, cinco días después**: desde el
+2026-09-19 la tarjeta real del owner empezó a rechazar sola, y eso cerró `RN-2` y `GR-3` el 09-22.
 
 **Consecuencia para esta spec, declarada y no completada en silencio (§67):** el capítulo 12
 puede escribir la **política** del grace —cuántos días, qué pasa durante, cómo se sale— porque
@@ -330,10 +381,21 @@ eso lo fijan el §20 y `DEC-SUB-002`. **Lo que no puede fijar hasta esa lectura 
 nuestro grace con el del proveedor**: si él reintenta cuatro días y nosotros suspendemos a los
 tres, suspendemos a alguien que iba a pagar bien.
 
+> 📌 **Eso ya está medio contestado, y el resto se lee hoy.** `GR-3` midió la política entera:
+> **cuatro intentos dentro de una ventana de 24 h**, y lo que decide el desenlace es **vencer la
+> ventana**, no agotar los reintentos. Lo que falta es si esa ventana es **fija de 24 h** o es **el
+> ciclo** — los cinco sujetos medidos eran de ciclo diario, así que las dos hipótesis son
+> indistinguibles ahí. La [sonda 49](../../HOS-1352-billing-verticals-redesign/docs/mp-probes/probe-49-la-ventana-de-reintentos.mjs)
+> las separa con un sujeto de `2 days` y **se lee el 2026-09-24**. De su veredicto depende si un
+> `GRACE_PERIOD` de 7 días **lo sostiene alguien**: con ventana fija el proveedor se rinde al día
+> siguiente sin importar el plan.
+
 ---
 
 ## Lo que este capítulo NO cierra
 
-- **La mecánica del reembolso** es del capítulo 13, y arrastra `RF-3` en `UNKNOWN`.
+- ~~**La mecánica del reembolso** es del capítulo 13, y arrastra `RF-3` en `UNKNOWN`.~~ **Escrita
+  acá el 2026-09-24, en el §4.6**, porque es **trato con el proveedor** y no otra cosa. Y ya no
+  arrastra `RF-3`: `DEC-RF-007` sacó del alcance la operación que esa fila medía.
 - **La conciliación** es del capítulo 09.
 - **Los correos que el proveedor manda por su cuenta** son del capítulo 07.
