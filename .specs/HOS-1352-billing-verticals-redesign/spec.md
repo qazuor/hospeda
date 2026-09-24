@@ -21,10 +21,13 @@ areas:
 > | | | |
 > |---|---|---|
 > | **HOS-1353 · Verticales** | capacidades, entitlements, limits y autorización | **arranca ya** |
-> | **HOS-1354 · Billing** | cobro, suscripción y proveedor detrás de un adaptador | **espera la pasarela** |
+> | **HOS-1354 · Billing** | cobro, suscripción y proveedor detrás de un adaptador | **arranca: la pasarela se decidió** (`DEC-MP-005`) |
 >
-> El bloqueo que tenía detenido al programa —no saber con qué pasarela vamos a cobrar— **alcanza al
-> dinero y no alcanza a las capacidades** (`DEC-ARCH-005`).
+> El bloqueo que tenía detenido al programa —no saber con qué pasarela vamos a cobrar— **alcanzaba al
+> dinero y no a las capacidades** (`DEC-ARCH-005`), y **se levantó el 2026-09-24**: `DEC-MP-005` fijó
+> Mercado Pago, no por preferirlo sino porque la única alternativa con ventaja medida nunca habilitó
+> la cuenta. Con la misma decisión entró la directriz de que **lo que el proveedor no hace lo suple el
+> diseño**.
 >
 > **Pero autónomas para desarrollar no quiere decir separadas para liberar: las dos llegan a
 > producción juntas y terminadas** (`DEC-ARCH-007`). Ninguna sale sola.
@@ -132,8 +135,8 @@ El mapa completo, con qué define cada uno, está en
 | FASE 1A — análisis de dominio, sin mirar código | ✅ **25 de 25 preguntas** |
 | FASE 1B — discovery del sistema actual | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
 | FASE 1C — experimentación contra Mercado Pago | 🟡 **89 filas · 85 cerradas · 4 `UNKNOWN`** (recontado con `contar-filas-de-la-matriz.py` el 2026-09-24) — **tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`), que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
-| FASE 1C-bis — evaluación de proveedor | 🟡 **paso 4 de 6** |
-| FASE 2 — el diseño | 🟡 **21 de 22 capítulos**, desarmado en tres partes. Falta el `13` (Pagos) |
+| FASE 1C-bis — evaluación de proveedor | ✅ **cerrada el 2026-09-24 por `DEC-MP-005`** en el paso 4 de 6 — **no se completó, se cerró**: los dos pasos que faltaban dependían de una habilitación de Mobbex y de una respuesta de MP que nunca llegaron |
+| FASE 2 — el diseño | 🟡 **21 de 22 capítulos**, desarmado en tres partes. Falta el `13` (Pagos), que **ya no espera nada de afuera**: `DEC-MP-005` levantó la espera de pasarela y queda **una decisión de diseño** antes de escribirlo — quién tiene el reloj de cobro |
 | FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
 | FASE 5 · gap analysis · FASE 6 · rewrite/reuse · FASE 7 · estrategia | ⬜ **se parten limpio**: cada épica hace la suya |
 | FASE 8 · revisión adversarial · FASE 9 · diseño final | ⬜ cada épica la suya, **más una final sobre el conjunto** |

@@ -477,7 +477,7 @@ lo que las abrió para que nadie lo lea como una asignación inventada.
 ## 3. El orden, y qué se puede hacer en paralelo
 
 ```text
-B1 ──┐   ⛔ de acá para abajo, todo espera a que se decida la pasarela
+B1 ──┐   ✅ la pasarela se decidió (DEC-MP-005, 24/09): esto ya no espera
      ├──► B3 ──┬──► B4
 B2 ──┘   ✅    │
                └──► B5 ──┬──► B7 ──► B8 ──► B9 ──► B10 ──► B13 ──► B12
@@ -641,9 +641,11 @@ listas: una unidad lo está cuando todas sus dependencias están hechas.
 
 ## 6. Lo que esta descomposición NO decide
 
-- **Cuál es la pasarela**, que es lo que traba la construcción entera. Está en el paso 4 de 6 de la
-  evaluación, esperando la PRUEBA 0 y el KYC de Mobbex — **las dos en manos del owner**. Esta
-  descomposición dice qué se puede hacer mientras tanto (§2.3); no acelera la decisión.
+- ~~**Cuál es la pasarela**, que es lo que traba la construcción entera.~~ **DECIDIDA el 2026-09-24**:
+  `DEC-MP-005` fija **Mercado Pago**. La evaluación no se completó — se cerró en el paso 4 de 6,
+  porque la PRUEBA 0 y el KYC de Mobbex **nunca recibieron respuesta**, y MP tampoco contestó la
+  consulta de `R-MP-01`. Con la decisión entró la directriz de que **lo que el proveedor no hace lo
+  suple el diseño**, y con ella se destraba el capítulo 13 y la construcción de acá para abajo.
 - **El modelo canónico de cobro.** Es la pregunta de B6, y está planteada en la spec §5.1 con sus
   opciones y una recomendación. Esta descomposición la aísla; no la contesta.
 - **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del

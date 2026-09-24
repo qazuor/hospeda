@@ -14,9 +14,11 @@ parent: HOS-1352
 
 # Billing — cobro, suscripción y proveedor detrás de un adaptador
 
-> **Esta épica se sostiene sola en su diseño, y está bloqueada en un punto.** Trece capítulos
-> escritos, uno sin escribir, y el que falta es el que más depende de con qué pasarela vamos a
-> cobrar.
+> **Esta épica se sostiene sola en su diseño, y desde el 2026-09-24 ya no está bloqueada.** Trece
+> capítulos escritos, uno sin escribir —el `13` (Pagos)—, que se difirió porque era el que más
+> dependía de con qué pasarela íbamos a cobrar. **`DEC-MP-005` fijó Mercado Pago**, así que el `13`
+> se escribe entero. Lo que queda antes de escribirlo no viene de afuera: es **una decisión de
+> diseño**, quién tiene el reloj de cobro.
 >
 > **No sale a producción sola** (`DEC-ARCH-007`): las dos épicas llegan juntas y terminadas.
 
@@ -232,7 +234,9 @@ rama del paraguas**, nunca al revés hasta el final.
 
 ## 8. Lo que esta spec NO decide
 
-- **Cuál es la pasarela.** Está en el paso 4 de 6 de la evaluación.
+- ~~**Cuál es la pasarela.**~~ **DECIDIDA el 2026-09-24**: `DEC-MP-005` fija **Mercado Pago**, con la
+  directriz de que lo que el proveedor no hace lo suple el diseño. La evaluación se cerró en el paso
+  4 de 6 sin completarse, porque los dos pasos que faltaban dependían de respuestas que no llegaron.
 - **El modelo canónico de cobro.** Es §5.1, y está planteado con sus tres opciones y una
   recomendación.
 - **El orden de implementación.** Sale de las dependencias entre capítulos.

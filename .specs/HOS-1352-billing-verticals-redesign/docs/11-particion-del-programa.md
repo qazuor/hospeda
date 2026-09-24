@@ -282,8 +282,10 @@ integración continua; **cómo se integra sin activar** es materia de la FASE 7 
 
 ## 7. Lo que esta partición NO decide
 
-- **Cuál es la pasarela.** Sigue en [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md),
-  paso 4 de 6, esperando la PRUEBA 0 y el KYC de Mobbex.
+- ~~**Cuál es la pasarela.**~~ **DECIDIDA el 2026-09-24 por `DEC-MP-005`: Mercado Pago.** La PRUEBA 0
+  y el KYC de Mobbex que este punto esperaba **nunca recibieron respuesta**, así que
+  [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) se cerró en el paso 4 de 6 sin
+  completarse.
 - **Si el capítulo 13 adopta el cargo puntual como modelo canónico.** Está planteado y sin
   responder; es la primera pregunta de la épica de billing cuando arranque.
 - **Qué se reescribe y qué se reutiliza del código actual.** Eso es FASE 5 y tiene su gate propio

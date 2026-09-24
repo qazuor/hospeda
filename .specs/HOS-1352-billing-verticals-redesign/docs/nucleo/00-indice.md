@@ -103,15 +103,28 @@ Once capítulos: `02` modelo de datos sin el precio · `03` Trial, Publicación 
 Partner · `10` el Eje 2 · `11` trial · `15` entitlements y limits · `17` autorización ·
 `18` Partner · `19` superficies · `20` testing · `21` migración · `22` lo legal.
 
-### Épica de billing · `HOS-1354-…/docs/` — **espera la pasarela**
+### Épica de billing · `HOS-1354-…/docs/` — **ya no espera la pasarela** (`DEC-MP-005`, 2026-09-24)
 
 Trece capítulos: `02` las entidades de dinero · `03` Suscripción, Grace, Pausa, Pago, Pago manual,
 Addon y el no-retroceso · `05` idempotencia · `06` proveedor · `09` conciliación · `10` retiro de
 plan y vertical discontinuada · `12` suscripción · `14` promos, cortesías y grants · `16` addons ·
 `19` · `20` · `21` · `22`.
 
-**Falta el `13` (Pagos)**, el único capítulo sin escribir de los 22. Se difirió a propósito: es el
-que más depende de con qué pasarela vamos a cobrar.
+**Falta el `13` (Pagos)**, el único capítulo sin escribir de los 22. Se difirió a propósito porque
+era el que más dependía de con qué pasarela íbamos a cobrar — **y esa espera terminó el 2026-09-24
+con `DEC-MP-005`: el proveedor es Mercado Pago.** El `13` se escribe entero, no parcial.
+
+> ⚠️ **Y la razón del diferimiento era sólo parcialmente cierta, conviene saberlo antes de escribirlo.**
+> De las cinco cosas que le quedan al `13`, **tres no dependían de ninguna pasarela**: la transición
+> que lleva a `ACTIVE` a un pagador manual, la columna `período` que sostiene el candado
+> `UNIQUE(subscription_id, período)`, y **quién tiene el reloj de cobro** —la única obligación que el
+> [contrato de cobertura](../12-contrato-de-cobertura.md) §1.2 y §7 le deja por nombre—. Las dos que
+> sí dependían son las que tocan endpoints: la mecánica del reembolso y el checkout / `init_point`.
+> Este documento declaraba la dependencia como total mientras
+> [`10-evaluacion-de-proveedor.md:577-578`](../10-evaluacion-de-proveedor.md) declaraba *«no depende
+> de esto: se apoya en el 06, que está escrito por capacidades»*. **Las dos afirmaciones convivieron
+> contradiciéndose**; `DEC-MP-005` vuelve la disputa irrelevante, pero el reparto de arriba es el que
+> vale para escribir el capítulo.
 
 ---
 

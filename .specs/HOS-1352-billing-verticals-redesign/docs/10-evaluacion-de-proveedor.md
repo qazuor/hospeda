@@ -826,3 +826,32 @@ riesgo propio que MP no tiene.**
 
 **Lo que no se sabe y decide**: si el cobro a demanda paga 2,6 % o 3,9 %, y si los webhooks se
 firman.
+
+---
+
+## 9. Desenlace — 2026-09-24
+
+**Este documento se cierra en el paso 4 de 6, y NO porque se haya completado.**
+
+`DEC-MP-005` fijó **Mercado Pago** el 2026-09-24. Los dos pasos que faltaban dependían de cosas que
+nunca llegaron: **Mobbex no habilitó la cuenta y no hubo respuesta de soporte**, y Mercado Pago
+tampoco respondió la consulta abierta por `R-MP-01` (la discontinuación de la API de reembolsos).
+
+**La ventaja de Mobbex sigue medida y sigue siendo real** — el §8.1 se titula *«lo que cambia todo»*
+y no se retracta nada de él. Lo que no existe es la cuenta para usarla. **Decidir por Mercado Pago no
+es preferirlo**: es reconocer que la comparación no se puede terminar y que el programa no podía
+quedar detenido esperando a un tercero que no contesta.
+
+**Lo que este documento aporta de acá en adelante**, y es lo que lo vuelve un insumo vivo en vez de
+un archivo cerrado: el **§1** es el inventario de lo que hay que suplir. Las **9 fallas de integridad**
+de la categoría A, las **`NOT_SUPPORTED`** de la B y las **3 restricciones de mercado** de la C son,
+con la directriz de `DEC-MP-005`, **la lista de requisitos de diseño del lado nuestro** — no una lista
+de quejas sobre un candidato. La categoría C sigue valiendo tal cual: **esas tres no las arregla
+ningún proveedor**, así que tampoco las arregla haber elegido éste.
+
+**Y queda un riesgo asumido, declarado**: `R-MP-01`. Mientras MP era un candidato era un punto en
+contra; ahora es **el riesgo abierto del sistema**, y su tratamiento es del capítulo 13.
+
+> **Cuándo se reabre este documento**: si Mobbex habilita la cuenta, o si MP ejecuta la
+> discontinuación de `R-MP-01`. El adaptador de `DEC-ARCH-004` es lo que mantiene esa puerta abierta:
+> la decisión no casa al programa con el proveedor.

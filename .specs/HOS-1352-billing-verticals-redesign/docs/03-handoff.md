@@ -588,7 +588,7 @@ pasarela vamos a cobrar— **alcanza al dinero y no alcanza a las capacidades**.
 | | | |
 |---|---|---|
 | **HOS-1353 · Verticales** | capacidades, entitlements, limits, autorización | **arranca ya** |
-| **HOS-1354 · Billing** | cobro, suscripción, proveedor | **espera la pasarela** |
+| **HOS-1354 · Billing** | cobro, suscripción, proveedor | **arranca: la pasarela se decidió** (`DEC-MP-005`, 24/09) |
 | **HOS-1352** | este programa | **paraguas**, ya no se implementa |
 
 **`09-master-spec/` ya no existe.** El diseño vive en tres lugares:
@@ -667,6 +667,10 @@ casi entera aunque la épica siga bloqueada: suscripción, grace, pausa, promos,
 addons y conciliación ya están diseñados. **Lo único que no se puede cerrar es el capítulo 13**,
 que espera la pasarela y la pregunta de quién tiene el reloj de cobro.
 
+> ✅ **Superado el 2026-09-24**: `DEC-MP-005` fijó Mercado Pago, así que **el capítulo 13 ya no espera
+> la pasarela**. De las dos cosas que este párrafo nombraba, queda sólo la segunda: **quién tiene el
+> reloj de cobro**, que es decisión de diseño y no de proveedor.
+
 ---
 
 ## Histórico: 2026-09-18, madrugada — DEC-ARCH-004 y la evaluación de proveedor
@@ -704,9 +708,9 @@ había diferido justamente por esto. Ocho capítulos no citan ninguna medición 
 | 0 · bootstrap | andamiaje | ✅ |
 | 1A · domain analysis | el dominio sin código | ✅ 25 de 25 preguntas |
 | 1B · discovery | el billing que corre hoy | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
-| 1C · experimentación MP | medir al proveedor | 🟡 **90 filas · 82 cerradas · 8 `UNKNOWN`** — las ocho del camino del cobro fallido |
-| **1C-bis · evaluación de proveedor** | ¿nos quedamos o nos mudamos? | 🟡 paso 4 de 6 |
-| 2 · Master Spec | 22 capítulos | 🟡 **21 de 22** · falta el 13 |
+| 1C · experimentación MP | medir al proveedor | 🟡 **89 filas · 85 cerradas · 4 `UNKNOWN`** (script, 24/09) — tres del camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`) y `RF-3`, que necesita un pago de +180 días |
+| **1C-bis · evaluación de proveedor** | ¿nos quedamos o nos mudamos? | ✅ **cerrada el 24/09 por `DEC-MP-005`** en el paso 4 de 6 — nos quedamos con MP, porque la alternativa nunca habilitó la cuenta |
+| 2 · Master Spec | 22 capítulos | 🟡 **21 de 22** · falta el 13, que **ya no espera la pasarela** |
 | 3 a 10 | épicas → implementación | ⬜ sin empezar |
 
 **Conteos que se recuentan con script, nunca a mano**: la matriz con
