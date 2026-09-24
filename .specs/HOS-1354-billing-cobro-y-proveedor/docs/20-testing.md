@@ -153,7 +153,10 @@ el crédito de la sucesora ya computado en cero, y un período cobrado que `S17`
 reembolsar ese mismo pago **antes** de saber si la sucesión se consuma, que en la rama del
 abandono le devuelve al cliente el pago que lo salvaba y lo manda a `SUSPENDED`. **El guard existe
 porque la regla se ejecuta en cuatro lugares y no en uno**: `S5`, `S7`, el efecto de `MP1` y el de
-`MP4`, y el camino que la olvide en cualquiera de los cuatro produce el daño entero. Se rompe a
+`MP4`, y el camino que la olvide en cualquiera de los cuatro produce el daño entero. **`S7` sigue en
+la lista aunque el reciclado ya no llegue a una `SUSPENDED` de tarjeta** (`DEC-SUB-019`: `S6` cancela
+el preapproval al suspender): la alcanzan un cobro en vuelo en el instante de `S6` y un preapproval
+reactivado a mano, y sacarla del guard dejaría esos bordes sin vigilancia. Se rompe a
 propósito sacándole la condición a una sola de las cuatro.
 
 **Y el tercer lugar sólo es real porque `S19` admite las dos puertas del pago.** Este guard
