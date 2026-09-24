@@ -3962,9 +3962,10 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MP-003 — La pausa que hace el proveedor por mora lleva motivo propio, y no entra como pausa del cliente
 
-- **Fecha**: 2026-09-22 · **Estado**: ACCEPTED — su mitad abierta (*«qué hace el dunning con esa
-  fila»*) la cierra **`DEC-SUB-019`** (2026-09-24), y con ella esta pausa deja de ser un camino
-  esperado · **Decide**: owner
+- **Fecha**: 2026-09-22 · **Estado**: **SUPERSEDED EN PARTE por `DEC-MP-008`** (2026-09-24): se cae
+  el motivo `PROVIDER_DUNNING`, y la pausa del proveedor por mora se espeja con `S6`. Sobrevive el
+  diagnóstico y que esa pausa no entra por `S8`. Su mitad abierta (*«qué hace el dunning con esa
+  fila»*) la había cerrado antes **`DEC-SUB-019`** · **Decide**: owner
 - **El hecho que la motiva, medido el 2026-09-21/22** (`RN-2` y `GR-3` de la matriz): **el proveedor
   pausa la suscripción por su cuenta** cuando un ciclo agota sus cuatro reintentos y vence su
   ventana. Está en el mail al vendedor —*«se pausó… no recibimos el pago en la fecha original del
@@ -4992,7 +4993,9 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-019 — Al vencer el grace se cancela el preapproval: la suspensión corta el cobro, no sólo el servicio
 
-- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **precisada por `DEC-MP-008`** el mismo día: la pausa
+  `PROVIDER_DUNNING` que acá *«no se borra»* sí se borra, y el espejo la lee como `S6` · **Decide**:
+  owner
 - **Cierra la mitad abierta de `DEC-MP-003`**: *«qué hace el dunning con esa fila»*, que esperaba el
   veredicto de la sonda 49.
 - **El hecho que la motiva**: la **sonda 49** (producción, 2026-09-24) midió que **la ventana de
@@ -5041,16 +5044,55 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-008 — Una pausa del proveedor por mora es el fin del grace: se espeja con `S6`, sin motivo de pausa nuevo
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Supera EN PARTE a `DEC-MP-003`**: se cae el motivo de pausa `PROVIDER_DUNNING`. **Sobrevive** lo
+  que `DEC-MP-003` corrigió —que esa pausa **no** es una pausa del cliente y no puede entrar por
+  `S8`—, y sobrevive su diagnóstico entero (las cuatro consecuencias de leerla como
+  `CUSTOMER_REQUEST`).
+- **Qué cambió desde el 22/09**: `DEC-SUB-019` hizo que el grace corte el cobro, y que el grace sea
+  siempre más corto que el ciclo. Con eso **el proveedor no llega a pausar por mora en el camino
+  normal**: sólo en bordes —un webhook de cobro fallido que se perdió, y la fila sigue `ACTIVE` cuando
+  el proveedor pausa; o un preapproval reactivado a mano—. Y **el cliente no puede pausar desde el
+  proveedor** (`DEC-MAIL-001` implicación 3: no hay autogestión de su lado), así que un `paused` que
+  no pedimos nosotros **es mora**.
+- **Decisión**: **un `paused` leído en el proveedor sobre una fila `ACTIVE` o `GRACE_PERIOD` dispara
+  `S6`**: la fila pasa a `SUSPENDED` y se cancela el preapproval, con la misma regla de relectura. **El
+  proveedor ya se rindió, así que nuestro grace también terminó.**
+- **Por qué ahora sí cierra lo que `DEC-MP-003` descartó**: `DEC-MP-003` descartó mapear esa pausa a
+  `GRACE_PERIOD` porque dejaba *«un reloj corriendo hacia un pago imposible»*. **Mapearla a
+  `SUSPENDED` no tiene ese problema**: no hay reloj esperando un cobro, y es la misma respuesta que
+  `DEC-SUB-019` le da al caso normal.
+- **Las dos posiciones, porque esto enmienda una decisión del owner**:
+  - **La de `DEC-MP-003` (22/09)**: un motivo propio para una pausa que es distinta de las otras dos.
+    Era correcta con lo que se sabía entonces: el proveedor pausaba por mora **en el camino normal**
+    (medido 5 de 5, `RN-2`, `GR-3`), y nada lo evitaba.
+  - **La de ésta (24/09)**: con `DEC-SUB-019`, ese camino ya no existe. Llevar el motivo a los
+    capítulos exigía recorrer **22 apariciones en 9 archivos** que leen el motivo de pausa y diseñar
+    lo que `DEC-MP-003` había dejado abierto —servicio, salida, cupo—, **mecanismo nuevo para un
+    borde**. Reusar `S6` no agrega ninguno.
+- **Lo que se resigna**: distinguir en los datos *«suspendida porque venció nuestro grace»* de
+  *«suspendida porque el proveedor pausó primero»*. Las dos se ven igual: `SUSPENDED`, preapproval
+  cancelado. El registro de eventos (`NUCLEO/02`) guarda cuál de los dos disparadores corrió.
+- **Precisa también a `DEC-SUB-019`**, que decía que la pausa `PROVIDER_DUNNING` *«no se borra»*
+  porque el espejo tenía que saber leerla: **se borra**, y el espejo la lee como `S6`.
+- **Origen**: la familia 7 de la FASE 9-bis-5, y la elección del owner del 2026-09-24 entre tres
+  opciones —llevar el motivo como estaba decidido, esta enmienda, o dejar la decisión sin escribir—:
+  eligió la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **109** — las seis del 2026-09-24, con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **110** — las siete del 2026-09-24, con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 13 |
-| Funcionales | 96 |
-| **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
+| Funcionales | 97 |
+| **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
-| `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
+| `SUPERSEDED` | **4** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **9 de 9 cerradas** — `BD-MP-04` volvió al owner y la cerró `DEC-ADDON-002` |
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
