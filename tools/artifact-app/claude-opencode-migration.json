@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_90",
-        "number": 118,
+        "id": "ver_claude_opencode_migration_91",
+        "number": 119,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "validar suite integral de client-tools",
+        "reason": "validar suite integral de server-tools",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_89"
+        "basedOnVersion": "ver_claude_opencode_migration_90"
     },
     "data": {
         "sections": [

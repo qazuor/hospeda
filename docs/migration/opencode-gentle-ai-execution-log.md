@@ -4378,3 +4378,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   Engram, verify, merge gates, start/close issue y comandos de seguridad.
 - El test de Engram sólo verificó guardas de confirmación; no se ejecutó
   ninguna mutación de memoria.
+
+## Gate 295 · Regresión integral de server-tools
+
+- La suite completa de `scripts/server-tools` pasó **334 tests**, **501
+  expectativas** y **0 fallos** en 19 archivos.
+- El typecheck de server-tools también pasó.
+- Las pruebas cubrieron guards de targets, flags, DB, env reconciliation,
+  logs, backups y operaciones destructivas en modo simulado; no se conectó ni
+  modificó el VPS.
