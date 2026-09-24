@@ -50,6 +50,8 @@ describe('command prefixes', () => {
         expect(commandKind('start-issue')).toBe('generic');
         expect(commandKind('verify')).toBe('generic');
         expect(commandKind('db-update-template')).toBe('project');
+        expect(commandKind('stats')).toBe('project');
+        expect(commandKind('update')).toBe('project');
     });
 });
 

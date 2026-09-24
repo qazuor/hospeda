@@ -4360,3 +4360,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `hospeda_template_candidate` como valores implícitos.
 - Sólo se validó sintaxis y configuración; no se accedió a Postgres ni se creó
   ningún worktree.
+
+## Gate 293 · Clasificación honesta de comandos qz y Hops
+
+- `stats` y `update` dejan de aparecer como comandos genéricos: dependen de
+  reportes Hospeda/Linear y del checkout `staging`/`hospeda-staging`.
+- `start-issue`, `verify`, `worktree`, promoción y handoff siguen como
+  genéricos porque consumen el adapter declarativo.
+- Registry, typecheck y manifests pasaron; no se regeneraron wrappers ni se
+  instalaron aliases en la máquina.

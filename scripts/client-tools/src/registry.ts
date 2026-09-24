@@ -70,7 +70,6 @@ export const GENERIC_COMMANDS: ReadonlySet<string> = new Set([
     'promote',
     'back-merge',
     'run',
-    'update',
     'engram',
     'gentle-status',
     'gentle-sdd-status'
