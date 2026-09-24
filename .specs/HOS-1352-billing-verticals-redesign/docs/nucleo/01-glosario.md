@@ -272,7 +272,7 @@ Difieren en tres cosas medibles, y por eso no pueden compartir nombre:
 | estado | qué significa |
 |---|---|
 | **`TRIAL_EXPIRED`** | El trial terminó sin suscripción. Es el `SUSPENDED` del §10.6. |
-| **`SUSPENDED`** | El grace se agotó sin pago. Es el `SUSPENDED` del §20 y §21. |
+| **`SUSPENDED`** | El grace se agotó sin pago — **o el proveedor pausó por mora antes** (`DEC-MP-008`). Es el `SUSPENDED` del §20 y §21. **Sobre un pagador con tarjeta, el preapproval ya está cancelado** (`DEC-SUB-019`): la suspensión corta el cobro, no sólo el servicio. |
 
 **Las consecuencias del §21 valen para los dos por igual** —sin listado público, sin edición,
 sin creación, sin entitlements comerciales, datos conservados, Mi Cuenta en sólo lectura,
