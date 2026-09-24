@@ -3868,3 +3868,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se ejecutaron `remount`, `fsck`, cambios de permisos ni reparaciones.
 - La repetición de `verify --changed` queda pendiente de una sesión Ubuntu con
   `/` y `/home` escribibles o de una reparación administrada del host.
+
+## Gate 239 · Instrucción de verificación para agentes
+
+- `AGENTS.md` ya instruye usar `hops verify --changed` como ruta normal y
+  `--json` cuando el resultado lo consume otro agente.
+- `.opencode/commands/hops-verify.md` describe el mismo contrato y prohíbe
+  reconstruir manualmente el plan desde logs.
+- No se requirió modificar instrucciones; el comportamiento observado en
+  `EROFS` debe tratarse como bloqueo del entorno y no como motivo para saltar
+  el gate o sustituirlo por una batería improvisada.
