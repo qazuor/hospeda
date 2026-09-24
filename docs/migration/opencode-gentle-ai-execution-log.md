@@ -4351,3 +4351,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   una decisión explícita y una operación Git autorizada.
 - Queda como precondición de la migración: crear/verificar `develop` en el
   remoto y revisar la protección/CI antes de usar una máquina nueva.
+
+## Gate 292 · Eliminación de nombres Hospeda en el lock de templates
+
+- `wt-create` deriva el lock de plantilla del `projectId` del adapter y usa el
+  template declarado para construir el ejemplo de candidato.
+- El flujo genérico ya no muestra ni usa `hospeda-template.lock` ni
+  `hospeda_template_candidate` como valores implícitos.
+- Sólo se validó sintaxis y configuración; no se accedió a Postgres ni se creó
+  ningún worktree.

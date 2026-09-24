@@ -67,7 +67,10 @@ fi
 TEMPLATE_DB="$(wt_qz_cfg '.database.templateDatabase')"
 [ -n "$TEMPLATE_DB" ] || TEMPLATE_DB="$(jq -r '.db.templateDb // empty' "$CFG")"
 if [ -n "$TEMPLATE_DB" ] && command -v flock >/dev/null 2>&1; then
-  TEMPLATE_LOCK="${XDG_RUNTIME_DIR:-/tmp}/hospeda-template.lock"
+  PROJECT_ID="$(wt_qz_cfg '.projectId')"
+  [ -n "$PROJECT_ID" ] || PROJECT_ID="hospeda"
+  PROJECT_ID="$(printf '%s' "$PROJECT_ID" | tr -c 'A-Za-z0-9._-' '-')"
+  TEMPLATE_LOCK="${XDG_RUNTIME_DIR:-/tmp}/${PROJECT_ID}-template.lock"
   exec 9>"$TEMPLATE_LOCK"
   flock 9
   TEMPLATE_STATUS="$(bash "$HERE/template.sh" status "$TEMPLATE_DB" 2>/dev/null || true)"
@@ -76,7 +79,7 @@ if [ -n "$TEMPLATE_DB" ] && command -v flock >/dev/null 2>&1; then
   if [ -z "$CURRENT_TMPL_FP" ] || [ "$STORED_TMPL_FP" != "$CURRENT_TMPL_FP" ]; then
     echo "ERROR: DB template '$TEMPLATE_DB' is missing or stale for $START"
     echo "       Build and validate a candidate with:"
-    echo "       bash $HERE/template.sh build-candidate hospeda_template_candidate_<date>"
+    echo "       bash $HERE/template.sh build-candidate ${TEMPLATE_DB}_candidate_<date>"
     echo "       Then promote it explicitly before creating this worktree."
     exit 1
   fi
