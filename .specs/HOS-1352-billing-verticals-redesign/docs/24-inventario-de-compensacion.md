@@ -150,5 +150,7 @@ medida después de la última decisión de su dominio es candidata a estar sin c
   Necesitan su propio tratamiento.
 - **`R-MP-01`** — la API de reembolsos que MP anunció en discontinuación, con su guía de migración
   excluyendo explícitamente a las suscripciones. No es una carencia medida sino **un riesgo asumido**
-  por `DEC-MP-005`, y su tratamiento es del **capítulo 13**.
+  por `DEC-MP-005`, y su tratamiento está en **`HOS-1354` `06-proveedor.md` §10**, que lo cierra
+  (`04-open-decisions.md:313`). No es del capítulo 13: ese capítulo no existe (se repartió, ver
+  `nucleo/00-indice.md`).
 - **Qué hacer con las 7 que faltan.** Este documento las nombra; no las resuelve.
