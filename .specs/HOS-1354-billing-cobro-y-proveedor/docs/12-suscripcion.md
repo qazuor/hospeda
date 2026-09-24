@@ -79,9 +79,19 @@ relee y se escribe lo leído. No se intenta revertir —`PA-5` midió que cancel
 **irreversible**— y recuperar a esa persona **exige re-autorizar desde cero**, que es el camino
 de `DEC-SUB-006`.
 
-**La consecuencia operativa hay que decirla**: en el camino de mora, **cuándo se termina el
+~~**La consecuencia operativa hay que decirla**: en el camino de mora, **cuándo se termina el
 vínculo no lo decidimos nosotros**. Nuestro grace puede ser más largo que la paciencia del
-proveedor, y si lo es, la baja llega antes que nuestra suspensión.
+proveedor, y si lo es, la baja llega antes que nuestra suspensión.~~
+
+> **Reemplazado el 2026-09-24 por `DEC-SUB-019`: en el camino de mora el vínculo lo cortamos
+> NOSOTROS, al vencer el grace.** La sonda 49 midió que el proveedor reintenta durante **un ciclo**
+> y después **pausa** —no da de baja—, así que con un grace de 10 días sobre un plan mensual seguía
+> reintentando veinte días sobre una fila ya suspendida, y un reintento tardío cobraba un mes entero
+> por unos días de servicio. Ahora `S6` cancela el preapproval al suspender, y **el grace es siempre
+> más corto que el ciclo** (`B/03` §4), así que el proveedor no llega a decidir nada. **Este § y su
+> espejo no se borran**: son la respuesta si igual llega una baja o una pausa del proveedor —una
+> cancelación desde su panel, un preapproval reactivado a mano—, pero **dejan de ser la salida
+> esperada del camino de mora**.
 
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
 que llega a esta baja llega **desde `GRACE_PERIOD`**, que es de donde también llega la
