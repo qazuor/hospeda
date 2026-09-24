@@ -4426,3 +4426,21 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El conteo visible de `hospeda` siguió aumentando durante la comprobación por
   agentes activos, por lo que los conteos son estructurales y no se usan como
   snapshot histórico.
+
+## Gate 299 · Revalidación ODD, SDD y Gentle Shell
+
+- La documentación actual de Gentle-AI 3.7.0 confirma que **ODD es el flujo
+  cotidiano**, incluido el trabajo sustancial autorizado: explora, implementa
+  y verifica, y conserva un único documento recuperable bajo
+  `odd/tasks/<feature>.md` cuando hace falta reanudar.
+- SDD/OpenSpec no está retirado: sigue soportado como flujo explícito cuando la
+  persona pide proposal, spec, design, tasks y verify separados. No debe
+  activarse automáticamente por tamaño, incertidumbre o riesgo.
+- `gentle-ai sdd-status` local quedó en estado `unresolved` porque hay dos
+  cambios OpenSpec históricos ambiguos; no se seleccionó ni continuó ninguno.
+- Gentle Shell es un harness nativo de Pi (`gentle-shell`, paquete histórico
+  `gentle-pi`), con home, provisioning y credenciales propios. No es un plugin
+  de OpenCode y queda fuera de esta migración porque Pi fue descartado.
+- La propuesta se actualiza a: ODD por defecto, Linear + `.specs` como contrato
+  canónico de Hospeda, y SDD sólo con elección explícita. La tarea de decisión
+  permanece pendiente de aprobación humana.

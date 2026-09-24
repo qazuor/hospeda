@@ -590,7 +590,7 @@
                             "title": "Decidir .specs vs Gentle SDD",
                             "category": "Decisión de arquitectura",
                             "description": "Elegir conservar, adaptar, hibridar o usar SDD sólo en features complejas.",
-                            "notes": "Recomendación concreta documentada en specs-hybrid-decision.md: Linear + .specs siguen canónicos; Gentle SDD sólo para features complejas, con adapter y sin migración masiva. Requiere aprobación humana antes de implementar.",
+                            "notes": "Revalidación 2026-09-24 documentada en specs-hybrid-decision.md: Gentle-AI actual recomienda ODD como camino cotidiano, también para trabajo sustancial, con un único documento recuperable en odd/tasks/<feature>.md; SDD/OpenSpec sigue soportado sólo cuando se solicita explícitamente. La propuesta conserva Linear + `.specs` como contrato canónico, usa ODD para ejecución/resume y reserva SDD para fases formales. Gentle Shell es Pi-native y queda fuera de OpenCode. Requiere aprobación humana.",
                             "done": false
                         },
                         {
