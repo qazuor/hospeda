@@ -124,7 +124,7 @@ máquina de estados y una convención.
    con `S5`, con `S6`, con `S19` y con `S13`.
    **Su evento es el de la baja** —*«pide la baja»*, el mismo de `S11`—, que
    ninguna de esas filas declara: el de `S10` es *«llega el fin, o la persona vuelve antes»*, el de
-   `S5`, `S7` y `S19` es *«entra el pago»*, el de `S6` es *«se agota el reloj»* y el de `S13` es el
+   `S5`, `S7` y `S19` es *«entra el pago»*, el de `S6` es *«se agota el reloj»* —o, desde `DEC-MP-008`, *«se lee `paused` en el proveedor sin haberlo pedido»*, que tampoco es una baja— y el de `S13` es el
    otorgamiento de un grant. Así que cada uno
    de esos tres pares tiene **una sola** fila. **Y el octavo es el que más cerca estuvo de agregar
    una entrada a la tabla de arriba**: `GRACE_PERIOD` ya figura ahí, con el par
