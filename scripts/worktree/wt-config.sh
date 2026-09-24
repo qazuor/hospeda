@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# wt-config.sh — resolve repo root + load .claude/project.config.json.
+# wt-config.sh — resolve repo root + load the qz adapter (legacy fallback).
 # Source it as a lib:  source wt-config.sh; ROOT=$(wt_root); wt_cfg '.baseBranch'
 # Or run standalone:   wt-config.sh   (prints + validates; exit 2 if no config)
 
@@ -31,7 +31,22 @@ wt_base_branch() {
 }
 
 # --- worktree state file (gitignored, per worktree) ---
-wt_state_path() { echo "$(wt_root)/.claude/worktree-state.local.json"; }
+# Generic adapters keep runtime state under .qz. Hospeda's legacy checkout keeps
+# the old .claude location until its migration is complete.
+wt_state_dir() {
+  local root; root="$(wt_root)"
+  # Keep an existing legacy state authoritative during the transition. New
+  # declarative worktrees (which have no legacy state) start under .qz.
+  if [ -f "$root/.claude/worktree-state.local.json" ] &&
+     [ ! -f "$root/.qz/worktree-state.local.json" ]; then
+    echo "$root/.claude"
+  elif wt_have_qz_config; then
+    echo "$root/.qz"
+  else
+    echo "$root/.claude"
+  fi
+}
+wt_state_path() { echo "$(wt_state_dir)/worktree-state.local.json"; }
 wt_state_ensure() {
   local f; f="$(wt_state_path)"
   [ -f "$f" ] || { mkdir -p "$(dirname "$f")"; echo '{"branch":null,"createdAt":null,"servers":[],"db":null}' > "$f"; }

@@ -22,7 +22,8 @@ listening() {
 # Ports recorded by OTHER worktrees' state files.
 reserved() {
   git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}' | while read -r wt; do
-    f="$wt/.claude/worktree-state.local.json"
+    f="$wt/.qz/worktree-state.local.json"
+    [ -f "$f" ] || f="$wt/.claude/worktree-state.local.json"
     [ -f "$f" ] && jq -r '.servers[]?.port // empty' "$f" 2>/dev/null
   done
 }

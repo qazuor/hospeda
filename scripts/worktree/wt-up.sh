@@ -192,7 +192,7 @@ bash "$HERE/wt-env.sh" "${PORTS[@]}" || { echo "ERROR: wt-env.sh failed"; exit 1
 # ---------------------------------------------------------------------------
 # STEP 6 — extra feature env (worktree-extra-env.json, versioned, no secrets)
 # ---------------------------------------------------------------------------
-EXTRA_ENV_FILE="$ROOT/.claude/worktree-extra-env.json"
+EXTRA_ENV_FILE="$(wt_state_dir)/worktree-extra-env.json"
 if [ -f "$EXTRA_ENV_FILE" ]; then
   echo "-- applying worktree-extra-env.json"
   # Build server name->port map for placeholder substitution.
@@ -299,14 +299,14 @@ for name in "${SRV_NAMES[@]}"; do
     if wait_http "$port" "$health_path"; then
       echo "ready (HTTP ${health_path})"
     else
-      echo "TIMEOUT (still starting — check .claude/wt-logs/${name}.log)"
+      echo "TIMEOUT (still starting — check $(wt_state_dir | sed "s|$ROOT/||")/wt-logs/${name}.log)"
       HEALTH_FAILED=1
     fi
   else
     if wait_tcp "$port"; then
       echo "ready (TCP)"
     else
-      echo "TIMEOUT (still starting — check .claude/wt-logs/${name}.log)"
+      echo "TIMEOUT (still starting — check $(wt_state_dir | sed "s|$ROOT/||")/wt-logs/${name}.log)"
       HEALTH_FAILED=1
     fi
   fi

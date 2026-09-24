@@ -137,10 +137,12 @@ if [ -x "$CLIENT_TOOLS_INSTALL" ]; then
 fi
 
 # Init state file.
-mkdir -p "$WTPATH/.claude"
+STATE_DIR="$WTPATH/.qz"
+[ -f "$WTPATH/.qz/project.json" ] || STATE_DIR="$WTPATH/.claude"
+mkdir -p "$STATE_DIR"
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"
 jq -n --arg br "$BRANCH" --arg ts "$ts" \
-  '{branch:$br, createdAt:$ts, servers:[], db:null}' > "$WTPATH/.claude/worktree-state.local.json"
+  '{branch:$br, createdAt:$ts, servers:[], db:null}' > "$STATE_DIR/worktree-state.local.json"
 
 echo
 echo "DONE → $WTPATH"

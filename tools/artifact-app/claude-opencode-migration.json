@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_81",
-        "number": 109,
+        "id": "ver_claude_opencode_migration_82",
+        "number": 110,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "estabilizar prueba del adapter genérico",
+        "reason": "separar estado operativo qz de legacy",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_80"
+        "basedOnVersion": "ver_claude_opencode_migration_81"
     },
     "data": {
         "sections": [

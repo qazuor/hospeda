@@ -4291,3 +4291,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `bun test`.
 - `project-config.test.ts` pasó 2/2 y el `typecheck` de `scripts/client-tools`
   pasó sin errores.
+
+## Gate 286 · Estado operativo del adapter genérico
+
+- Los adapters con `.qz/project.json` guardan estado, logs y overrides runtime
+  bajo `.qz`; los repos legacy siguen usando `.claude` como fallback.
+- La resolución conserva un `worktree-state.local.json` legacy existente para
+  evitar perder el estado durante la transición; los worktrees nuevos qz no
+  heredan esa dependencia.
+- Se validó la sintaxis de todos los scripts de worktree, el manifest de
+  Hospeda y el fixture genérico; el test del adapter pasó 2/2.
