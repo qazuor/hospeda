@@ -307,6 +307,7 @@ avanzaba un período.
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
 | **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió, **salvo que `MP4` la haya reimputado** (abajo)—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe, y es además lo que hace que reimputar no cambie el monto esperado |
+| **`covered_period`** ✚ | suscripción, **el período cubierto —identificado por su fecha de inicio**, igual que en `manual_payment`—, **cuál de los dos cobros lo cubrió** (un `payment` **o** un `manual_payment`) y cuándo se acreditó | **`UNIQUE(subscription_id, período)`** — es el candado de `C5` (`B/05`), y **es la única razón por la que esta entidad existe**. Más un CHECK de que **exactamente una** de las dos referencias al cobro es no nula |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
@@ -347,6 +348,35 @@ la fecha (`B/03` §7.2)—; al registrarse, esa fecha avanza. **Por eso el avanc
 puede colisionar**:
 deja siempre una fecha **estrictamente posterior** a la anterior, y las cuotas que existen son las
 de períodos que arrancaron antes.
+
+**`covered_period` existe por una sola razón: el candado de `C5` no se podía escribir sin ella.**
+Agregada el **2026-09-24**. `C5` enfrenta **una fila de `payment` contra una de `manual_payment`**
+—un admin registrando mientras la persona paga por el proveedor— y **un `UNIQUE` de Postgres no
+abarca dos tablas**, así que el candado que `B/05` §C5 enunciaba **no tenía dónde vivir**. Poner
+`período` en `payment` tampoco alcanzaba: **dos `UNIQUE` separados no se excluyen entre sí**. Lo que
+se vuelve único no es el cobro sino **la cobertura del período**, y las dos clases de cobro escriben
+en la misma tabla contra el mismo `UNIQUE`.
+
+**Quién la escribe, y es siempre el acto que acredita:** `P1` (`PENDING → SUCCEEDED`, cap. 03 §6)
+para el cobro del proveedor, y `MP1` o `MP4` para el manual. **No la escribe el reloj al abrir la
+cuota**: una cuota `AWAITING` no cubre nada todavía, y reservar el período al abrirlo bloquearía al
+cobro del proveedor del mismo período — que es el escenario que `C5` viene a arbitrar, no a decidir
+de antemano.
+
+**Y el período de un cobro del proveedor se resuelve igual que el del manual: por su fecha de
+inicio**, que con `DEC-MP-006` —el reloj es del proveedor— es la fecha del próximo cobro que él
+tiene. ⚠️ **Se lee por id y nunca por `search`**: está medido que el buscador devuelve **menos
+campos** que el `GET` (`RC-4`), que ignora nuestra referencia (`RC-1`) y que devuelve un
+`next_payment_date` **desactualizado** respecto de la lectura directa.
+
+**Cuando `MP4` reimputa, la cobertura se mueve con la cuota** —son el mismo hecho— y **puede chocar
+con el `UNIQUE`. Ese choque es correcto y no es un error a evitar**: significa que el período al que
+se la quiere reimputar **ya está cubierto**, y lo que corresponde es no reimputar ahí.
+
+🚧 **Lo que esta entidad NO decide todavía, y es del capítulo 13**: **qué hace un reembolso con la
+cobertura.** Un reembolso **total** (`P3`) deja el período pagado y devuelto a la vez; uno **parcial**
+(`P4`) no. Liberar el período en el primer caso permite volver a cobrarlo; no liberarlo lo deja
+cubierto por un pago que ya no existe. **Las dos opciones mueven plata, así que no se decide acá.**
 
 **El `período` se escribe DOS veces y no una, y la segunda es la reimputación de `MP4`.** La
 primera es la de la creación, arriba. La segunda corre **sólo** cuando `MP4` registra un pago sobre

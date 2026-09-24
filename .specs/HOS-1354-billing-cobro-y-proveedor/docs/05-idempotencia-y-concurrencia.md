@@ -165,10 +165,24 @@ puerta al camino que el propio PDR recomienda.
 **Es el único de los seis que produce un doble cobro con dinero real**, y por eso es el único
 que se lleva a la base:
 
-**`UNIQUE(subscription_id, período) WHERE el pago está acreditado`.**
+**`UNIQUE(subscription_id, período)` sobre `covered_period`.**
 
 Un período de una suscripción admite **un solo pago acreditado**, y la base lo impide. El
 registro manual que llega segundo **falla**, no compite.
+
+> ❌ **Reformulado el 2026-09-24, porque como estaba escrito NO era implementable.** Este § decía
+> *«`UNIQUE(subscription_id, período) WHERE el pago está acreditado`»* **sin decir sobre qué tabla**,
+> y no hay ninguna que sirva: el escenario que el título describe enfrenta **una fila de `payment`
+> contra una de `manual_payment`**, y un `UNIQUE` de Postgres **no abarca dos tablas**. El defecto
+> era **independiente de la columna** `período` —que `B/02` §2.3 le agregó a `manual_payment` y que
+> `payment` sigue sin tener—: **aunque las dos la hubieran tenido, dos `UNIQUE` separados no se
+> excluyen entre sí**, que es justamente lo que este caso necesita.
+> **La red ahora es una tercera entidad, `covered_period`** (`B/02` §2.3): el cobro sigue viviendo en
+> su tabla y **lo único que se vuelve único es la COBERTURA del período**. Las dos clases de cobro
+> escriben ahí al acreditarse, contra el mismo `UNIQUE`, así que la exclusión mutua **la hace la
+> base** y no un chequeo — que es lo que este capítulo exige en todos lados y lo que `DEC-CONC-001`
+> decidió. Es también la razón por la que **no** se unificaron las dos tablas de cobro: sus máquinas
+> —`P1`-`P5` y `MP1`-`MP5`— son distintas y ninguna tenía que cambiar para cerrar esto.
 
 Además, la transición `AWAITING → REGISTERED` del capítulo 03 **no es incondicional**: antes de
 registrar se relee si hay un pago del proveedor acreditado o en vuelo para ese período, y si lo
