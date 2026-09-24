@@ -3761,3 +3761,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   seleccionó, aplicó, archivó ni eliminó ninguno.
 - Antes de activar SDD para Hospeda hay que clasificar esos cambios como
   trabajo vigente, histórico o fuera del alcance de la migración.
+
+## Gate 230 · Clasificación de cambios OpenSpec existentes
+
+- `host-web-foundation` fue identificado como una propuesta de producto de
+  Hospeda para dashboard host, navegación y promociones web; conserva proposal,
+  design y tasks.
+- `web-accommodation-editor-phase-c` fue identificado como trabajo de producto
+  del editor web de alojamientos; conserva tareas parcialmente completadas y
+  fases pendientes de geocoding, integración y pruebas.
+- Ambos cambios pertenecen al proyecto y no son artifacts de instalación ni
+  de la migración de agentes.
+- Se mantienen intactos. Gentle-AI no debe seleccionar uno automáticamente:
+  SDD deberá recibir el cambio explícito y su issue/alcance correspondiente.
