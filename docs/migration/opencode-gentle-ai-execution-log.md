@@ -4085,3 +4085,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   un worktree.
 - Validado con sintaxis Bash y lectura del adapter actual; no se inició
   Docker/Postgres ni se creó ningún worktree.
+
+## Gate 261 · Archivo de conexión declarativo
+
+- `wt-db.sh` ahora prioriza `database.connectionEnvFile` del adapter para
+  localizar el `.env` donde se escribe la URL de la DB del worktree.
+- Usuario, contraseña, host, puerto y template de conexión siguen fuera del
+  adapter declarativo; se conservan en la configuración legacy protegida.
+- Validado por sintaxis Bash y lectura del campo `apps/api/.env.local`; no se
+  modificaron envs ni se ejecutaron comandos de Postgres.
