@@ -4483,3 +4483,25 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se mantiene la separación de responsabilidades: ningún harness se convierte
   en la autoridad de Linear, branches, worktrees, env, DB, puertos o closeout;
   esas funciones continúan en `qz/hops`.
+
+## Gate 303 · Gentle Shell instalado y primera matriz
+
+- Se instaló `gentle-pi` 3.7.0, que expone `gentle-shell`, y Pi 0.87.1, que
+  resuelve la incompatibilidad de `pi-web-access` con Pi 0.85.1.
+- El modo usado es standalone/aislado: `/home/qazuor/.gentle-shell/agent`.
+  No se modificó `~/.pi/agent`, OpenCode, Codex, Claude Code ni el repositorio.
+- `gentle-shell --isolated setup` provisionó `gentle-engram`,
+  `pi-mcp-adapter` y `pi-web-access`. El home conserva `settings.json`,
+  `mcp.json` y el paquete `gentle-pi` separado.
+- `gentle-ai doctor` pasó 9/9 checks; Engram global respondió y el binario
+  local reportó `engram 2.0.0`.
+- `qz/hops` se ejecutó desde este worktree: `recap --json` y `context` pasaron
+  sin mutar el repositorio.
+- La suite propia del paquete, ejecutada desde una copia temporal fuera de
+  `node_modules`, llegó a 3.236 tests pasantes, 24 fallos y 51 cancelaciones.
+  Los fallos se concentran en fixtures/contratos que esperan checkout Git,
+  dependencias de entorno y pruebas de review; no deben confundirse con un
+  E2E de Hospeda exitoso.
+- El smoke test agent-driven quedó pendiente porque el home aislado no tiene
+  un proveedor autenticado (`auth check` devolvió `not_ready`). La instalación
+  no lee ni copia credenciales de otros harnesses automáticamente.

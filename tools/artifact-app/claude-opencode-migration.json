@@ -595,7 +595,7 @@
                             "title": "Decidir ODD por defecto y SDD excepcional",
                             "category": "Decisión de arquitectura",
                             "description": "Usar ODD como camino normal, Linear para tracking y `.specs` como contrato técnico; dejar SDD/OpenSpec sólo ante un pedido explícito.",
-                            "notes": "Decisión aprobada 2026-09-24 y aplicada en AGENTS.md, el plan y el contrato de trazabilidad. ODD es el default; SDD/OpenSpec no se inicia por tamaño, riesgo o incertidumbre. Gentle Shell queda fuera por ser Pi-native.",
+                            "notes": "Decisión aprobada 2026-09-24 y aplicada en AGENTS.md, el plan y el contrato de trazabilidad. ODD es el default; SDD/OpenSpec no se inicia por tamaño, riesgo o incertidumbre. Gentle Shell se evalúa como harness Pi-native separado, no como capa de OpenCode.",
                             "done": true
                         },
                         {
@@ -620,6 +620,14 @@
                             "category": "Decisión de arquitectura",
                             "description": "Usar ODD para ejecución normal y reservar Gentle SDD para un pedido explícito, sin duplicar `.specs`.",
                             "notes": "La política está aprobada y documentada; queda implementar el adaptador sólo si se solicita un caso SDD formal.",
+                            "done": false
+                        },
+                        {
+                            "id": "gentle-shell-evaluation",
+                            "title": "Instalar y probar Gentle Shell como harness equivalente",
+                            "category": "Decisión de arquitectura",
+                            "description": "Instalar Gentle Shell en home aislado y comparar sus capacidades con OpenCode, Codex CLI y Claude Code usando la misma capa qz/hops.",
+                            "notes": "Gate303: Gentle Shell 3.7.0 + Pi 0.87.1 instalados en ~/.gentle-shell/agent; setup provisionó gentle-engram, pi-mcp-adapter y pi-web-access. Doctor Gentle-AI 9/9 en verde. Faltan autenticación de Pi y pruebas agent-driven sobre Hospeda.",
                             "done": false
                         },
                         {
