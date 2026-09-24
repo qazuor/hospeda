@@ -9,7 +9,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
-[ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
+QZ_CFG="$(wt_qz_config_path)"
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || { echo "NO_CONFIG"; exit 2; }
 
 mapfile -t NAMES < <(wt_qz_cfg '.servers[]?.id')
 [ "${#NAMES[@]}" -gt 0 ] || mapfile -t NAMES < <(jq -r '.servers[].name' "$CFG")
@@ -38,7 +39,8 @@ upsert() { # $1 abs-file  $2 key  $3 value
 }
 
 # Emit "KEY<TAB>VALUE_TEMPLATE" pairs and rewrite each.
-jq -c '.portEnvWrites[]?' "$CFG" | while read -r entry; do
+if [ -f "$CFG" ]; then
+  jq -c '.portEnvWrites[]?' "$CFG" | while read -r entry; do
   rel=$(printf '%s' "$entry" | jq -r '.file')
   abs="$ROOT/$rel"
   echo "-> $rel"
@@ -48,5 +50,6 @@ jq -c '.portEnvWrites[]?' "$CFG" | while read -r entry; do
         upsert "$abs" "$k" "$val"
         echo "    $k = $val"
       done
-done
+  done
+fi
 echo "env rewrite done."

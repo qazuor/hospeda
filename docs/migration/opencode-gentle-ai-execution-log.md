@@ -4159,3 +4159,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   requiriendo configuración legacy hasta definir su contrato.
 - No se ejecutó ninguna acción de DB; se validó únicamente la ruta de decisión
   y la sintaxis.
+
+## Gate 269 · Env rewrite adapter-only
+
+- `wt-env.sh` acepta proyectos con sólo `.qz/project.json`.
+- Sin `portEnvWrites` legacy, termina como no-op y conserva la salida de
+  diagnóstico; no crea archivos ni agrega variables por inferencia.
+- Cuando existe legacy, mantiene exactamente el comportamiento anterior.
+- Validado por sintaxis Bash; no se reescribieron envs.
