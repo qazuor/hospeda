@@ -4516,3 +4516,22 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   de `gentle-engram` que resuelven al mismo directorio (`npm:gentle-engram` y
   `npm:gentle-engram@0.1.15`); es una duplicación de configuración que conviene
   limpiar antes de usar el shell como harness diario. No se modificó todavía.
+
+## Gate 304 · Capa qz/hops sincronizada en Gentle Shell
+
+- El home aislado ahora contiene los 36 prompt templates `hops-*` derivados de
+  `.opencode/commands`, el skill `hops-commands` y el manifest de integridad.
+  La fuente sigue siendo el repositorio; no se generaron variantes manuales.
+- Se eliminó la entrada redundante `npm:gentle-engram` y se conservó la versión
+  fijada `npm:gentle-engram@0.1.15`. `gentle-shell list` confirma cuatro paquetes
+  únicos: Engram, web access, Pi BTW y MCP adapter.
+- `gentle-shell auth check --provider openai-codex` continúa en `ready`.
+- `tools/agent-packs/install.mjs --check` pasó con los 36 comandos, sin drift y
+  detectó OpenCode, Claude Code y Codex.
+- `qz/hops recap --json` y `qz/hops context` pasaron desde el worktree de
+  migración. No modificaron archivos, Git, Linear ni Engram.
+- La prueba agent-driven que cargaría un prompt del repositorio o enviaría el
+  resultado de `recap` al modelo no se pudo ejecutar: el control de seguridad
+  exige autorización explícita para ese payload. Por ello la paridad de
+  ejecución del agente queda pendiente, aunque la capa local y el runtime están
+  instalados.
