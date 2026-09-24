@@ -8,7 +8,10 @@ source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 QZ_CFG="$ROOT/.qz/project.json"
 [ -n "$ROOT" ] || { echo "Not in a git repo"; exit 1; }
-[ -f "$CFG" ] || { echo "NO_CONFIG — create .claude/project.config.json first"; exit 2; }
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || {
+  echo "NO_CONFIG — create .qz/project.json (or legacy .claude/project.config.json) first"
+  exit 2
+}
 
 TYPE="${1:?usage: wt-create.sh <type> <slug>}"
 SLUG="${2:?usage: wt-create.sh <type> <slug>}"
@@ -91,12 +94,14 @@ git -C "$ROOT" worktree add "$WTPATH" -b "$BRANCH" "$START" || { echo "git workt
 # failed to apply on the very next /hops-start-issue run after merging. Falls back to
 # $CFG if the new worktree somehow has no config of its own.
 NEWCFG="$WTPATH/.claude/project.config.json"
-[ -f "$NEWCFG" ] || NEWCFG="$CFG"
+if [ ! -f "$NEWCFG" ]; then
+  [ -f "$CFG" ] && NEWCFG="$CFG" || NEWCFG=""
+fi
 
 # Copy env (script must run from ROOT, absolute dest). Prefer the declarative
 # adapter path; older checkouts continue using setup.envCopyScript.
-ECS="$(jq -r '.worktree.envSource.relativePath // empty' "$NEWCFG")"
-[ -n "$ECS" ] || ECS="$(jq -r '.setup.envCopyScript // empty' "$NEWCFG")"
+ECS="$(jq -r '.worktree.envSource.relativePath // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
+[ -n "$ECS" ] || [ -z "$NEWCFG" ] || ECS="$(jq -r '.setup.envCopyScript // empty' "$NEWCFG")"
 if [ -n "$ECS" ] && [ -f "$ROOT/$ECS" ]; then
   echo "Copying env via $ECS"
   ( cd "$ROOT" && bash "$ECS" "$WTPATH" ) || echo "WARN: env copy reported issues"
@@ -120,8 +125,8 @@ fi
 ADAPTER_CFG="$WTPATH/.qz/project.json"
 INSTALL="$(jq -r '.worktree.install // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
 BUILD="$(jq -r '.worktree.build // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
-[ -n "$INSTALL" ] || INSTALL="$(jq -r '.setup.install // empty' "$NEWCFG")"
-[ -n "$BUILD" ] || BUILD="$(jq -r '.setup.build // empty' "$NEWCFG")"
+[ -n "$INSTALL" ] || [ -z "$NEWCFG" ] || INSTALL="$(jq -r '.setup.install // empty' "$NEWCFG")"
+[ -n "$BUILD" ] || [ -z "$NEWCFG" ] || BUILD="$(jq -r '.setup.build // empty' "$NEWCFG")"
 [ -n "$INSTALL" ] && { echo "Running: $INSTALL"; ( cd "$WTPATH" && eval "$INSTALL" ) || { echo "install failed"; exit 1; }; }
 [ -n "$BUILD" ]   && { echo "Running: $BUILD";   ( cd "$WTPATH" && eval "$BUILD" )   || { echo "build failed"; exit 1; }; }
 

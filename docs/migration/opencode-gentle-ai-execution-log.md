@@ -4129,3 +4129,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `app`.
 - Esto cubre el camino que usan los comandos qz, no sólo el validador CLI.
 - El test no necesita red, Linear, Git, PostgreSQL ni archivos de entorno.
+
+## Gate 266 · wt-create acepta adapter sin `.claude`
+
+- `wt-create.sh` ya no exige que exista `.claude/project.config.json` si el
+  proyecto tiene `.qz/project.json`.
+- La ruta declarativa resuelve env source, install y build desde el adapter;
+  el config legacy sólo se consulta si existe.
+- No se ejecutó la creación de un worktree: el cambio se validó por sintaxis y
+  revisión de las rutas read-only para evitar Git, Docker, instalaciones o
+  escrituras accidentales.
