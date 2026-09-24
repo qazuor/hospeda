@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 100,
+        "number": 101,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "agregar guard de fixtures qz al pre-commit",
+        "reason": "combinar ramas protegidas y de promoción en wt-clean",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_99"
+        "basedOnVersion": "ver_claude_opencode_migration_100"
     },
     "data": {
         "sections": [

@@ -85,7 +85,10 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
 
     const currentPath = await resolveCurrentWorktree({ cwd: opts.repoPath });
     const adapter = await loadProjectAdapter(opts.repoPath);
-    const protectedBranches = new Set(adapter?.branches?.promotion ?? ['staging', 'main']);
+    const protectedBranches = new Set([
+        ...(adapter?.branches?.protected ?? []),
+        ...(adapter?.branches?.promotion ?? ['staging', 'main'])
+    ]);
     const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
 
     if (interactive) p.intro(pc.bgCyan(pc.black(' hops-wt-clean ')));

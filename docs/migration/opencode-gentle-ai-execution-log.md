@@ -4222,3 +4222,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `tools/qz/fixtures/*` con el mismo validador read-only.
 - Esto evita agregar ejemplos de adapters inválidos que luego oculten
   acoplamientos o rompan la documentación ejecutable.
+
+## Gate 277 · Protección declarativa de worktrees
+
+- `hops-wt-clean` ahora combina `branches.protected` y `branches.promotion`
+  para decidir qué branches nunca ofrece borrar.
+- Esto permite que un adapter declare ramas protegidas adicionales sin perder
+  la protección histórica de la cadena de promoción.
+- No se eliminaron worktrees ni se ejecutó el selector interactivo.
