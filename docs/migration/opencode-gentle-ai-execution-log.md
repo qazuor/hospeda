@@ -4058,3 +4058,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   cambió la fuente de nombres, sin mover valores ni leer secretos.
 - Se validó sintaxis Bash y el listado read-only de `api`, `admin` y `web`; no
   se modificaron archivos `.env` ni se reescribieron puertos.
+
+## Gate 259 · Contrato explícito para estrategia de base
+
+- `tools/qz/validate-project.mjs` valida que `database.strategy` sea un slug
+  estable y, cuando es `postgres-template`, exige container, template,
+  database name pattern y connection env var.
+- La validación no ejecuta Docker/Postgres ni interpreta estrategias
+  desconocidas como operaciones seguras; sólo rechaza configuraciones
+  incompletas antes de que los scripts destructivos las consuman.
+- Se mantuvo `db.mode` legacy para seleccionar acciones reales de drop/refresh;
+  la equivalencia completa queda pendiente de un contrato por estrategia y
+  pruebas de compatibilidad.
+- Validación realizada contra el adapter actual; no se tocaron bases,
+  templates, envs ni worktrees.

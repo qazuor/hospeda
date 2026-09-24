@@ -28,6 +28,18 @@ if (config.database && typeof config.database !== 'object') errors.push('databas
 if (config.database?.strategy !== undefined && typeof config.database.strategy !== 'string') {
   errors.push('database.strategy')
 }
+if (typeof config.database?.strategy === 'string') {
+  if (!/^[a-z][a-z0-9-]*$/.test(config.database.strategy)) {
+    errors.push('database.strategy:slug')
+  }
+  if (config.database.strategy === 'postgres-template') {
+    for (const key of ['container', 'templateDatabase', 'databaseNamePattern', 'connectionEnvVar']) {
+      if (typeof config.database[key] !== 'string' || config.database[key].length === 0) {
+        errors.push(`database:${key}:required-for-postgres-template`)
+      }
+    }
+  }
+}
 if (config.database?.templateDatabase !== undefined && typeof config.database.templateDatabase !== 'string') {
   errors.push('database.templateDatabase')
 }
