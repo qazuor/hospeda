@@ -85,7 +85,7 @@ Dos reglas de método que salen de los propios huecos y rigen este documento:
 ### El núcleo — acá · `docs/nucleo/`
 
 Lo que las dos épicas comparten. **No se parte**: un glosario en dos mitades deja de ser un
-glosario, y 51 invariantes numerados de corrido pierden lo único que los hace útiles, que es poder
+glosario, y 54 invariantes numerados de corrido pierden lo único que los hace útiles, que es poder
 preguntar **una vez** si están todos.
 
 | # | capítulo | qué define |
@@ -94,7 +94,7 @@ preguntar **una vez** si están todos.
 | `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los dos sentidos de «vivo», el criterio Eje 1 / Eje 2 |
 | `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, y el registro de eventos |
 | `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las nueve máquinas |
-| `04` | [invariantes](./04-invariantes.md) | los 51, con quién sostiene cada uno |
+| `04` | [invariantes](./04-invariantes.md) | los 54 (37 del §64 del PDR y 17 de las decisiones), con quién sostiene cada uno |
 | `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario |
 | `08` | [auditoría y observabilidad](./08-auditoria-y-observabilidad.md) | qué es auditable y los identificadores de correlación |
 
