@@ -110,21 +110,43 @@ Addon y el no-retroceso · `05` idempotencia · `06` proveedor · `09` conciliac
 plan y vertical discontinuada · `12` suscripción · `14` promos, cortesías y grants · `16` addons ·
 `19` · `20` · `21` · `22`.
 
-**Falta el `13` (Pagos)**, el único capítulo sin escribir de los 22. Se difirió a propósito porque
-era el que más dependía de con qué pasarela íbamos a cobrar — **y esa espera terminó el 2026-09-24
-con `DEC-MP-005`: el proveedor es Mercado Pago.** El `13` se escribe entero, no parcial.
+## ✅ El capítulo `13` (Pagos) NO existe, y no es un pendiente: se repartió
 
-> ⚠️ **Y la razón del diferimiento era sólo parcialmente cierta, conviene saberlo antes de escribirlo.**
-> De las cinco cosas que le quedan al `13`, **tres no dependían de ninguna pasarela**: la transición
-> que lleva a `ACTIVE` a un pagador manual, la columna `período` que sostiene el candado
-> `UNIQUE(subscription_id, período)`, y **quién tiene el reloj de cobro** —la única obligación que el
-> [contrato de cobertura](../12-contrato-de-cobertura.md) §1.2 y §7 le deja por nombre—. Las dos que
-> sí dependían son las que tocan endpoints: la mecánica del reembolso y el checkout / `init_point`.
-> Este documento declaraba la dependencia como total mientras
-> [`10-evaluacion-de-proveedor.md:577-578`](../10-evaluacion-de-proveedor.md) declaraba *«no depende
-> de esto: se apoya en el 06, que está escrito por capacidades»*. **Las dos afirmaciones convivieron
-> contradiciéndose**; `DEC-MP-005` vuelve la disputa irrelevante, pero el reparto de arriba es el que
-> vale para escribir el capítulo.
+**Resuelto el 2026-09-24. La FASE 2 está en 22 de 22.** El `13` figuró nueve días como *«el único
+capítulo sin escribir»* y como bloqueo del programa. Al abrirlo con sus ítems pendientes,
+**ninguno necesitó un capítulo nuevo**: cada uno tenía dueño en un capítulo ya escrito, y quedó
+**al lado de la regla que lo gobierna** en vez de a un archivo de distancia.
+
+| lo que el `13` debía | dónde vive |
+|---|---|
+| la transición que lleva a `ACTIVE` a un **pagador manual** | **`S29`**, `B/03` §3.2 |
+| la columna **`período`** y el candado `C5` | **`covered_period`**, `B/02` §2.3 y `B/05` §C5 |
+| qué hace un **reembolso con la cobertura** del período | `B/02` §2.3 y `B/05` §C5 |
+| la **mecánica del reembolso** contra el proveedor | **`B/06` §4.6** |
+| el **checkout** y el `init_point` | **ya estaban**: `B/06` §6 y §4.2 |
+| **quién tiene el reloj de cobro** | **`DEC-MP-006`**: es del proveedor |
+| reembolsar un cobro **más viejo que el plazo** | **`DEC-RF-007`**: no se implementa, es manual |
+| una **tarjeta cambiada sobre N preapprovals** | ❌ **retirado: deber mal atribuido** |
+
+**El último merece nombre propio, porque explica por qué el capítulo parecía más grande de lo que
+era.** `DEC-ADDON-002` implicación 3 le pasaba al `13` el deber de resolver un cambio de tarjeta que
+queda a medias sobre varios preapprovals. **Ese flujo no existe**: la implicación 1 de **esa misma
+decisión** dice *«no se tokeniza del lado del servidor… no manejamos datos de tarjeta»*, y cambiar la
+tarjeta exige un token. **`EX-36` mide que el PROVEEDOR puede; no que nosotros lo hagamos.** Una
+capacidad medida del proveedor se había vuelto un deber de diseño sin que nadie lo justificara.
+
+> 📌 **Dos lecciones de método.** La primera: *«el proveedor puede X»* **no es** *«nuestro diseño hace
+> X»* — es la misma forma del error que puso a `EX-24`, una fila que mide un **éxito**, en la lista de
+> carencias de [`10-evaluacion-de-proveedor.md`](../10-evaluacion-de-proveedor.md) §1. La segunda: un
+> capítulo que lleva mucho tiempo declarado como pendiente **puede ser contenido sin domicilio** en
+> vez de contenido sin escribir, y conviene preguntárselo antes de escribirlo.
+
+🚧 **Lo único que quedó abierto, y no estaba en ninguna fila de la matriz**: cuando el proveedor
+**pausa** por mora, `EX-11` midió que **rechaza toda modificación**. Nosotros no le cambiamos la
+tarjeta a nadie —ni queremos—, así que la pregunta es **si el cliente puede recuperar su medio de
+pago por su cuenta desde Mercado Pago sobre una suscripción ya pausada**. Si puede, el flujo existe
+y es del proveedor. **Si no puede, la suscripción está muerta** y la única salida es un alta nueva
+por el checkout. `RN-3` empieza a contestarlo.
 
 ---
 
@@ -139,7 +161,7 @@ con `DEC-MP-005`: el proveedor es Mercado Pago.** El `13` se escribe entero, no 
 | services · API | cada subdominio, más el `19` de cada épica |
 | jobs | cada subdominio |
 | provider · MP | `06` — billing |
-| manual payments | `13` — billing, **sin escribir** |
+| manual payments | **repartido, no hay `13`** (ver arriba): la máquina en `03` de billing y la transición **`S29`** que la cierra · la cuota y su período en `02` · el candado `C5` en `05` |
 | outbox | `07` del núcleo |
 | trial | `11` — verticales |
 | subscription · billing · pause · grace · cancellation | `12` — billing |
@@ -158,7 +180,9 @@ con `DEC-MP-005`: el proveedor es Mercado Pago.** El `13` se escribe entero, no 
 
 ## Estado
 
-**21 de 22 capítulos escritos.** El único que falta es el `13`.
+**22 de 22 capítulos escritos, desde el 2026-09-24.** El `13` **no llegó a existir como archivo**:
+lo que debía se repartió entre los capítulos que lo reclamaban, y una de sus piezas resultó un
+deber mal atribuido. El reparto completo está arriba, en su propia sección.
 
 El desarme se verificó antes de retirar los originales: **105 de 105 encabezados** presentes en
 alguna mitad, y el volumen de texto entre **1,06x y 1,29x** del de partida — el excedente es

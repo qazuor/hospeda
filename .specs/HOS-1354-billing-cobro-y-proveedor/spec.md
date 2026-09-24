@@ -59,7 +59,8 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 
-**Falta el `13` (Pagos)**, el único de los 22 sin escribir. Ver §5.
+✅ **El `13` (Pagos) NO existe, y no es un pendiente: se repartió** (2026-09-24). Ver §5.1 y el
+reparto completo en [`nucleo/00-indice.md`](../HOS-1352-billing-verticals-redesign/docs/nucleo/00-indice.md).
 
 ### 2.1 Lo que cita y no contiene
 

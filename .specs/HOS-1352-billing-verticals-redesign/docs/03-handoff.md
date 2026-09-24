@@ -710,7 +710,7 @@ había diferido justamente por esto. Ocho capítulos no citan ninguna medición 
 | 1B · discovery | el billing que corre hoy | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
 | 1C · experimentación MP | medir al proveedor | 🟡 **93 filas · 89 cerradas · 4 `UNKNOWN`** (script **arreglado**, 24/09: descartaba en silencio 4 filas con el id en negrita) — tres del camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`) y `RF-3`, que necesita un pago de +180 días |
 | **1C-bis · evaluación de proveedor** | ¿nos quedamos o nos mudamos? | ✅ **cerrada el 24/09 por `DEC-MP-005`** en el paso 4 de 6 — nos quedamos con MP, porque la alternativa nunca habilitó la cuenta |
-| 2 · Master Spec | 22 capítulos | 🟡 **21 de 22** · falta el 13, que **ya no espera la pasarela** |
+| 2 · Master Spec | 22 capítulos | ✅ **22 de 22** (24/09) · el `13` **nunca existió como archivo**: se repartió, y una de sus piezas era un deber mal atribuido |
 | 3 a 10 | épicas → implementación | ⬜ sin empezar |
 
 **Conteos que se recuentan con script, nunca a mano**: la matriz con
