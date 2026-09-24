@@ -3810,3 +3810,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `tools/agent-packs/install.mjs --check` confirmó destinos y backups
   requeridos; el modo apply continúa bloqueado deliberadamente.
 - El bundle del artifact de migración validó `artifact/v1` correctamente.
+
+## Gate 234 · Bootstrap reproducible verificado
+
+- `scripts/bootstrap/ai-dev-workstation-bootstrap.sh --verify` pasó en modo
+  read-only fuera del sandbox.
+- Bash, Git, jq, Bun, Node, OpenCode, Gentle-AI y Engram están presentes.
+- Los pins coinciden exactamente: OpenCode `1.18.32`, Gentle-AI `3.7.0` y
+  Engram `2.0.0`.
+- Las rutas base de Engram, OpenCode, Gentle-AI, Claude y datos de OpenCode
+  existen; no se leyeron valores secretos.
+- El modo apply del bootstrap sigue sin implementarse y no se ejecutó.
