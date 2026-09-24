@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_89",
-        "number": 117,
+        "id": "ver_claude_opencode_migration_90",
+        "number": 118,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "clasificar comandos qz y Hops con honestidad",
+        "reason": "validar suite integral de client-tools",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_88"
+        "basedOnVersion": "ver_claude_opencode_migration_89"
     },
     "data": {
         "sections": [

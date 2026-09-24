@@ -4369,3 +4369,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   genéricos porque consumen el adapter declarativo.
 - Registry, typecheck y manifests pasaron; no se regeneraron wrappers ni se
   instalaron aliases en la máquina.
+
+## Gate 294 · Regresión integral de client-tools
+
+- La suite completa de `scripts/client-tools` pasó **310 tests**, **782
+  expectativas** y **0 fallos** en 23 archivos.
+- Incluye CI, env drift, worktrees, DB, wrappers, registry, Dependabot,
+  Engram, verify, merge gates, start/close issue y comandos de seguridad.
+- El test de Engram sólo verificó guardas de confirmación; no se ejecutó
+  ninguna mutación de memoria.
