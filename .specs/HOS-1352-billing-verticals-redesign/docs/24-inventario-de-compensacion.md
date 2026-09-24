@@ -68,7 +68,7 @@ los ya suscriptos**—, y eso ya lo dice `EX-25`.
 
 ## El cruce
 
-### Compensadas — 23 de 25
+### Compensadas — 25 de 25
 
 > **Actualizado el 2026-09-24**: `EX-25` y `EX-27` pasaron acá desde la lista de abajo con
 > `DEC-MP-007`. Y **`EX-31` estaba mal clasificada**: figuraba *«sin rastro»*, pero `DEC-MP-006` la
@@ -102,13 +102,12 @@ los ya suscriptos**—, y eso ya lo dice `EX-25`.
 | `EX-15` | mutar el monto **no emite webhook** | **no hay nada que releer porque nada llega**: el cambio de precio que el proveedor aceptó y no aplicó se detecta por barrido, no por evento | `03-maquinas-de-estado.md` · `09-conciliacion.md` |
 | `EX-3` | correos al cliente que sus propios datos desmienten; pausa y cancelación llegan idénticas | el capítulo de outbox fija **qué avisamos nosotros y cuándo**, sabiendo qué manda el proveedor por su cuenta | `NUCLEO/07` · `NUCLEO/08` |
 | `RC-1` | el buscador ignora `external_reference`, devuelve todo, o devuelve un subconjunto plausible | **leer por id**, nunca por búsqueda | `02-modelo-de-datos.md` · `05-idempotencia-y-concurrencia.md` |
+| `RC-5` | `charged_quantity` cuenta **registros de cobro —incluido el rechazado—, no cobros** | **«cobró» se lee de `payment.status` = `approved`, registro por registro y por id**; el contador pasa a decir sólo **si el inventario de intentos está completo**, y lo que no está completo es *«todavía no se sabe»*. Corregido el 2026-09-24 (familia 6 de la 9-bis-5, crítico `F-8fB3-001`) | `09-conciliacion.md` §4 |
+| `RC-6` | el `status` de un `authorized_payment` **no dice si se cobró** | **se lee `payment.status`**, no el `status` del registro ni el `status_detail` temprano. Mismo arreglo | `09-conciliacion.md` §4 |
 
-### Sin compensación declarada — 2 de 25
+### Sin compensación declarada — 0 de 25
 
-| fila | qué no hace MP | estado en el corpus |
-|---|---|---|
-| **`RC-5`** 🚨 | `charged_quantity` cuenta **intentos, no cobros** | **El capítulo 09 sigue afirmando la regla que esta medición volvió falsa.** `09-conciliacion.md:549` resuelve *«no cobró nunca»* con *«el preapproval tiene `charged_quantity` en cero o nulo»* y concluye que la conciliación *«concluye desde el contador del preapproval»*. Aplicada al sujeto medido, **esa regla dice «sí cobró» sobre una suscripción que no cobró un peso**. La propia fila declara que se dejó *«como hallazgo para la FASE 8-bis-5 en vez de corregirse acá»* |
-| **`RC-6`** | el `status` de un `authorized_payment` **no dice si se cobró** | Única mención fuera de la matriz: `DEC-MP-004` usa un sub-hallazgo suyo (que el `status_detail` es el del último intento). **Ningún documento dice qué campo leemos en su lugar** |
+> Las dos últimas, `RC-5` y `RC-6`, se cerraron el 2026-09-24 con la reescritura del `B/09` §4.
 
 ---
 
@@ -122,6 +121,8 @@ falsa**, y el capítulo no se corrigió. Un hueco no hace nada; una regla falsa 
 
 Es además el caso que el `C1` de la 8-bis-5 identificó como **el primer crítico del programa producido
 por una medición externa y no por un arreglo** (`F-8fB3-001`).
+
+> ✅ **Corregido el 2026-09-24**: `09-conciliacion.md` §4 reescrito — ver la fila `RC-5` arriba.
 
 ### 2 · «No usamos los planes del proveedor» sostiene tres filas y no tiene decisión propia
 
