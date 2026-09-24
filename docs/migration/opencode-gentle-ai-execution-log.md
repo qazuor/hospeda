@@ -4283,3 +4283,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El validador exige que `branches.base` sea un string no vacío.
 - Cada entrada de `branches.protected` debe ser un nombre de branch no vacío.
 - Esto evita protecciones silenciosamente inválidas en cleanup y closeout.
+
+## Gate 285 · Prueba estable del adapter genérico
+
+- La prueba de `loadProjectAdapter` ahora resuelve el fixture genérico desde
+  la ubicación del test, sin depender del directorio desde el que se invoque
+  `bun test`.
+- `project-config.test.ts` pasó 2/2 y el `typecheck` de `scripts/client-tools`
+  pasó sin errores.

@@ -50,7 +50,7 @@ describe('qz database adapter compatibility', () => {
 
     test('loads a generic adapter without a legacy project config', async () => {
         const adapter = await loadProjectAdapter(
-            join(process.cwd(), 'tools/qz/fixtures/generic-project')
+            join(import.meta.dir, '../../../tools/qz/fixtures/generic-project')
         );
         expect(adapter?.projectId).toBe('demo-project');
         expect(adapter?.database?.strategy).toBe('none');
