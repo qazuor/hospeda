@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-23
+updated: 2026-09-24
 status: CURRENT
 ---
 
@@ -26,8 +26,8 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**89 filas: 50 `VERIFIED`, 13 parciales, 20 `NOT_SUPPORTED`, 6 `UNKNOWN`**, recontadas el
-   2026-09-23 con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano.
+   (**93 filas: 53 `VERIFIED`, 14 parciales, 22 `NOT_SUPPORTED`, 4 `UNKNOWN`**, recontadas el
+   2026-09-24 con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano.
    **Esta línea decía «90 · 49 · 13 · 20 · 8» y era falsa**: es un conteo congelado de los que el
    programa viene midiendo, y vivía en el documento que todo agente lee cuarto).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido
@@ -47,7 +47,114 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-23 — la 8-bis-5 y la 9-bis-5 corridas; la serie BAJÓ por primera vez
+## Última actualización: 2026-09-24, noche — la sonda 49 dio veredicto y el dunning quedó decidido
+
+### El próximo paso exacto
+
+1. **Las familias 6 y 7 de la 9-bis-5**, que ya no esperan nada — la sonda 49 contestó:
+   - **Familia 6 (crítico #7 = `RC-5`)**: el `B/09` §4 decide *«cobró o no»* con `charged_quantity`,
+     que **cuenta intentos, no cobros** (re-medido el 24/09 en los cuatro sujetos). **Pista medida
+     hoy**: `charged_amount` fue el único campo del resumen que **no** se movió con un rechazo;
+     `last_charged_date` **sí se mueve** con un cobro rechazado, así que tampoco sirve. `RC-6` va
+     con ella. **`S6` ya remite a la lectura del §4**: al corregirla, `S6` queda corregido solo.
+   - **Familia 7**: `DEC-MP-004` (el mensaje del alta rechazada) a los capítulos, y lo que queda de
+     `DEC-MP-003`. **Su mitad abierta la cerró `DEC-SUB-019`**, así que la familia es más chica:
+     el motivo `PROVIDER_DUNNING` sigue sin estar en la tabla §10.1 de `B/03` (la fila `paused` ×
+     `ACTIVE` todavía escribe `CUSTOMER_REQUEST`), pero ya no es un camino esperado.
+2. **La 8-bis-6**, con el corte de `DEC-METH-013`. ⚠️ Fijar **desde qué vuelta se cuentan las dos**
+   antes de arrancar: el texto no lo dice.
+3. **El hueco del cliente sobre una pausada** (punto 7 del recap del 24/09): ¿puede el cliente
+   recuperar su suscripción desde Mercado Pago? Sin fila en la matriz; pide una prueba del owner.
+   **`DEC-SUB-019` le bajó el peso**: con el grace más corto que el ciclo, el proveedor no llega a
+   pausar por mora.
+4. **FASE 5**, después la 6, y los cinco ítems que faltan de la FASE 7.
+
+**Sujetos vivos en producción** (lectura sólo con `GET`; token en `~/.mp-token-hos1352`, nunca
+imprimirlo):
+
+| sujeto | qué sigue midiendo | manifiesto |
+|---|---|---|
+| `04adf298…` (`RN-3`), reactivado, `authorized`, ciclo 1 día | cuántos reintentos y si vuelve a pausar; **presupuesto SIN TOPE mientras sirva para medir** (owner, 24/09 15:34) | `~/.hos1352-rn3-manifiesto.json` |
+| `f0be57a1…` (sonda 49), ciclo 2 días | el cobro del 24/09 18:02 `-04` salió **rechazado** (`cc_rejected_high_risk`); se ven los reintentos hasta el **26/09 18:02 `-04`** y si pausa al vencer. Presupuesto ARS 30 | `~/.hos1352-sonda-49-c.json` |
+
+Lectura de `RN-3`: `python3 mp-probes/leer-rn-3.py` desde `docs/` — sólo dos `GET` por sujeto
+(`/preapproval/{id}` y `/authorized_payments/search?preapproval_id=…&limit=10`), los tres sujetos
+de `RN-3` con sus ids completos. La sonda 49 se lee con
+`INTENTO=c MP_ACCESS_TOKEN=$(cat ~/.mp-token-hos1352) node mp-probes/probe-49-la-ventana-de-reintentos.mjs leer`.
+
+### Lo que se decidió el 24/09 — NO relitigar
+
+| decisión | en una línea |
+|---|---|
+| `DEC-MP-005` · MP por descarte | el proveedor es Mercado Pago; lo que MP no hace lo suple el diseño, con un límite duro: un permiso comercial no se compensa con código |
+| `DEC-MP-006` · reloj de cobro de MP | el mandato (`preapproval`) es el modelo canónico; el cargo puntual queda como destino |
+| `DEC-RF-007` · reembolso viejo manual | pasado el plazo del proveedor no se implementa; `RF-3` sigue `UNKNOWN` y no bloquea |
+| `DEC-METH-013` · cuándo se deja de girar | se corta cuando la tanda anterior deja de generar críticos; tope de dos vueltas |
+| **`DEC-MP-007` · sin planes de MP** | cada preapproval se crea suelto desde nuestra versión de plan; cierra `EX-22`/`EX-25` y resigna `EX-27` |
+| **`DEC-SUB-019` · el grace corta el cobro** | al vencer el grace, `S6` cancela el preapproval de un pagador con tarjeta; **el grace es siempre más corto que el ciclo**. Salió de una pregunta del owner: *«si la dejamos abierta, va a seguir intentando y nuestro período de gracia es medio mentira»* |
+
+Y cuatro reglas de capítulo, **sin decisión propia porque son sólo regla**, aprobadas por el owner:
+
+- **`S3` relee el preapproval antes de cancelar un alta vencida** (`B/03` §3.4): si ya está
+  `authorized`, corre `S2`.
+- **`S6` pregunta al proveedor si cobró antes de suspender**, con la lectura del `B/09` §4 y ninguna
+  otra; si la lectura falla, no suspende.
+- **`D17`** en el núcleo: lo que dice el proveedor no se escribe ni se actúa sin releerlo por id, y
+  se lee el campo que dice la verdad. **Pedido del owner.** Una excepción declarada: el barrido de
+  creaciones sin respuesta busca por correo y estado.
+- **Ventana reducida sólo para tarjeta** (`B/12` §5.4): la ventana de una sucesora vence a lo que
+  llegue primero entre sus 72 h y las 00:00 `-04` del día de cobro de la predecesora; con menos de
+  24 h, el cambio se ofrece después del cobro. **El pagador manual no se toca**: se le corrige la
+  fecha (`DEC-SUB-017`).
+
+### Lo que se midió el 24/09
+
+- **Sonda 49 — la ventana de reintentos del proveedor ES EL CICLO**: 48,0 h sobre un ciclo de 2
+  días (y 24 h sobre uno de 1 día, `GR-3`). **Mensual y anual son extrapolación**; con
+  `DEC-SUB-019` dejó de importar, porque cortamos en el día del grace.
+- **`RN-3` — reactivar una pausada por mora retoma el cobro en el ciclo siguiente y NO recupera lo
+  adeudado.** El intento posterior también fue rechazado, por riesgo (`cc_rejected_high_risk`).
+- **El proveedor cobra en LOTES al minuto `:02`, en el primero posterior a la hora de la fecha**:
+  trece renovaciones con fecha 13:13-13:28 `-04` entraron a las 14:01-14:02; la de la sonda 49, con
+  fecha 17:43, **no** entró a las 14:02 y sí a las 18:02. No está medido que los lotes corran todas
+  las horas.
+- **`next_payment_date` avanza aunque el cobro se rechace**, y `last_charged_date` se mueve con un
+  rechazo.
+
+### El inventario de compensación: 23 de 25, y dos de las siete que faltaban estaban mal clasificadas
+
+`24-inventario-de-compensacion.md`. Quedan **`RC-5` y `RC-6`**, las dos de la familia 6. De las siete
+*«sin compensación»*, **`EX-31` y `EX-39` ya tenían respuesta** (en `DEC-MP-006` y en `B/12` §5.4) y
+el inventario no las vio. **Leé la fila, no el resumen**: es el mismo modo de falla que el propio
+inventario documenta con `EX-24`.
+
+### Tres lecciones de método del 24/09
+
+1. **Una hora de lectura se ancla al instante en que el reloj arrancó, no al de la creación.** La
+   sonda 49 se creó a las 18:06 pero se autorizó a las 18:43 `-03`; el handoff anterior decía
+   *«después de las 18:06»* y la primera lectura salió vacía. Y encima el cobro cae en el **lote**
+   siguiente.
+2. **Un agente que corrige texto puede meter una afirmación nueva y falsa con forma de
+   corrección.** La propagación de `DEC-SUB-019` escribió cinco veces que un pagador con tarjeta
+   suspendido todavía tiene *«la puerta manual»*; **no la tiene**: las cuotas sólo existen para el
+   pagador manual (`MP5`). Se corrigió en los cinco lugares. Releé lo que el agente **escribió**, no
+   sólo lo que se le pidió.
+3. **Una regla que el owner no entiende puede tener la premisa mal puesta.** La ventana reducida
+   para el pagador manual obligaba a elegir entre dos mínimos malos; al explicarla con un ejemplo
+   apareció que el manual **no la necesita**, porque su fecha se corrige.
+
+### Pendientes del owner
+
+1. **El push de la rama**: `spec/HOS-1352-billing-verticals-redesign` va **208 commits adelante** de
+   `origin`.
+2. Las **12 etiquetas `status-blocked`** de Linear, la automatización **«On PR merge → Done»**, y
+   `DEC-CI-001` con el `CLAUDE.md` del repo — arrastrados del 23/09.
+3. **Engram no guarda**: rechaza escrituras por *«multiple active runtime sessions»*. Lo de este día
+   vive sólo acá y en Linear.
+
+---
+
+## Histórico: 2026-09-23 — la 8-bis-5 y la 9-bis-5 corridas; la serie BAJÓ por primera vez
 
 ### El próximo paso exacto, y tiene fecha
 
