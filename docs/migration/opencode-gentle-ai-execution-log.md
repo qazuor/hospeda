@@ -3707,3 +3707,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   staging: `002d09fd2b9628a29986a660c1f51f8a5042ff7fd54c8ab15b7b27de96c6cccc`.
 - Conclusión: `3.7.0` tiene integridad local verificable y coincide con el
   release upstream firmado. No se reemplaza porque ya es la versión instalada.
+
+## Gate 225 · Diagnóstico read-only de Gentle-AI
+
+- `gentle-ai doctor` fue lanzado como diagnóstico sin mutaciones.
+- En este sandbox no produjo salida ni terminó; se interrumpió después de
+  esperar sin modificar archivos ni configuración.
+- El resultado queda pendiente de repetir con el filesystem global escribible,
+  junto con la validación interactiva de OpenCode y los logs administrados.
