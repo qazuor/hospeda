@@ -10,6 +10,7 @@ export interface ProjectDatabaseAdapter {
     readonly connectionEnvFile?: string;
     readonly connectionEnvVar?: string;
     readonly schemaFingerprintPaths?: readonly string[];
+    readonly schemaSentinelTables?: readonly string[];
     readonly templateFingerprintPaths?: readonly string[];
 }
 

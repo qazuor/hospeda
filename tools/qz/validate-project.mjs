@@ -46,6 +46,11 @@ if (config.database?.templateDatabase !== undefined && typeof config.database.te
 if (config.database?.connectionEnvVar !== undefined && typeof config.database.connectionEnvVar !== 'string') {
   errors.push('database.connectionEnvVar')
 }
+for (const key of ['schemaFingerprintPaths', 'schemaSentinelTables', 'templateFingerprintPaths']) {
+  if (config.database?.[key] !== undefined && (!Array.isArray(config.database[key]) || config.database[key].some((value) => typeof value !== 'string' || value.length === 0))) {
+    errors.push(`database.${key}`)
+  }
+}
 if (!Array.isArray(config.servers) || config.servers.length === 0) errors.push('servers:empty')
 const serverIds = new Set()
 for (const [index, server] of (config.servers || []).entries()) {

@@ -4103,3 +4103,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   fallback legacy.
 - Sólo se movieron nombres de tablas; no hay credenciales ni valores de
   conexión. Se validó JSON, sintaxis Bash y lectura read-only del adapter.
+
+## Gate 263 · Tipo y validación de sentinels
+
+- `ProjectDatabaseAdapter` ahora incluye `schemaSentinelTables` para que los
+  consumidores TypeScript conozcan el campo declarativo.
+- `validate-project.mjs` valida como listas de strings no vacíos los paths de
+  fingerprint y los sentinels de schema.
+- La validación sigue siendo read-only y no interpreta nombres de tablas como
+  SQL ejecutable.
