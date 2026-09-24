@@ -4238,3 +4238,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El preflight conserva la protección de la cadena de integración incluso si
   un proyecto declara sólo una parte en `protected`.
 - No se actualizaron issues, PRs, ramas ni worktrees.
+
+## Gate 279 · Contrato tipado de promoción y back-merge
+
+- `ProjectAdapter` ahora tipa provider/pattern de issues y las listas de
+  promoción y back-merge de branches.
+- `validate-project.mjs` valida que promoción y back-merge tengan strings no
+  vacíos y pares `from`/`to` completos.
+- No se ejecutaron promociones, merges ni mutaciones externas.

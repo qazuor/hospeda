@@ -36,11 +36,17 @@ export interface ProjectServerAdapter {
 export interface ProjectAdapter {
     readonly projectId?: string;
     readonly adapter?: string;
-    readonly issues?: { readonly teamKey?: string };
+    readonly issues?: {
+        readonly provider?: string;
+        readonly teamKey?: string;
+        readonly identifierPattern?: string;
+    };
     readonly branches?: {
         readonly base?: string;
         readonly protected?: readonly string[];
+        readonly pattern?: string;
         readonly promotion?: readonly string[];
+        readonly backMerge?: readonly { readonly from?: string; readonly to?: string }[];
     };
     readonly database?: ProjectDatabaseAdapter;
     readonly worktree?: ProjectWorktreeAdapter;

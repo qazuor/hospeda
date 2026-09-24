@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 102,
+        "number": 103,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "alinear close-issue con ramas protegidas del adapter",
+        "reason": "tipar y validar promoción y back-merge",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_101"
+        "basedOnVersion": "ver_claude_opencode_migration_102"
     },
     "data": {
         "sections": [

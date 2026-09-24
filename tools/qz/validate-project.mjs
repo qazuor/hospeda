@@ -17,6 +17,13 @@ for (const key of ['schemaVersion', 'projectId', 'adapter', 'issues', 'branches'
 if (config.schemaVersion !== 1) errors.push('schemaVersion:unsupported')
 if (!config.issues?.provider || !config.issues?.teamKey) errors.push('issues:provider/teamKey')
 if (!config.branches?.base || !Array.isArray(config.branches?.protected)) errors.push('branches:base/protected')
+if (config.branches?.pattern !== undefined && typeof config.branches.pattern !== 'string') errors.push('branches.pattern')
+if (config.branches?.promotion !== undefined && (!Array.isArray(config.branches.promotion) || config.branches.promotion.some((branch) => typeof branch !== 'string' || branch.length === 0))) {
+  errors.push('branches.promotion')
+}
+if (config.branches?.backMerge !== undefined && (!Array.isArray(config.branches.backMerge) || config.branches.backMerge.some((merge) => !merge || typeof merge.from !== 'string' || typeof merge.to !== 'string' || merge.from.length === 0 || merge.to.length === 0))) {
+  errors.push('branches.backMerge')
+}
 if (!config.worktree?.pathPattern || !config.worktree?.envSource) errors.push('worktree:pathPattern/envSource')
 if (config.worktree?.envSource && typeof config.worktree.envSource.kind !== 'string') {
   errors.push('worktree.envSource:kind')
