@@ -298,8 +298,19 @@ describe('run', () => {
         expect(runOn(adminTree({ dialogScope: '1.1.12', selectScope: '1.1.7' }))).toBe(1);
     });
 
-    it('exits 1 when apps/admin is not in the lockfile', () => {
-        expect(runOn(lockfile([importer('apps/web', {})], []))).toBe(1);
+    it('exits 1 naming the missing importer when apps/admin is not in the lockfile', () => {
+        // Arrange
+        const text = lockfile([importer('apps/web', {})], []);
+
+        // Act
+        const code = runOn(text);
+
+        // Assert: the sentinel check would also exit 1 here, so pin the message
+        // too, or a lost importer check would point at the wrong cause.
+        expect(code).toBe(1);
+        expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain(
+            "importer 'apps/admin' is not in pnpm-lock.yaml"
+        );
     });
 
     it('exits 1 when the walk never reaches focus-scope', () => {
