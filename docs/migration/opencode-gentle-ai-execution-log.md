@@ -3835,3 +3835,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se instalaron paquetes, no se escribieron configuraciones globales y no
   se ejecutó ningún modo `--apply`/`--restore`; el instalador real sigue siendo
   un pendiente explícito.
+
+## Gate 236 · Suite operativa completa
+
+- `bun test scripts/client-tools`: 306 tests, 0 fallos, 772 assertions.
+- `bun test scripts/server-tools`: 334 tests, 0 fallos, 501 assertions.
+- La suite cubre CI/Dependabot, env drift, worktrees, DB/template, start/close
+  issue, verify, handoff, Engram guards, servidores, permisos de target y
+  distribución de binarios.
+- El resultado no habilita mutaciones reales: `close-issue` continúa siendo
+  preflight, `promote/back-merge` requieren checkout limpio y el template DB
+  sigue bloqueado hasta contar con metadata válida.
