@@ -4469,3 +4469,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   excepcional read-only; no ejecuta ninguna fase SDD.
 - El manifiesto cross-client se actualizó sin drift y la suite client-tools
   pasó 310 tests, 782 assertions y 0 fallos.
+
+## Gate 302 · Comparación de harnesses
+
+- Se relevó la capacidad de harness de OpenCode 1.18.32, Codex CLI 0.155.1,
+  Claude Code 2.1.282 y Gentle Shell/Gentle-AI 3.7.0 usando documentación
+  primaria actual y las instalaciones locales.
+- La comparación quedó documentada en
+  `docs/migration/harness-comparison-2026-09-24.md`.
+- La recomendación es OpenCode como harness principal, Codex como cliente
+  secundario orientado a sandbox/approval, Claude Code como compatibilidad y
+  rollback, y Gentle Shell fuera del stack mientras Pi siga descartado.
+- Se mantiene la separación de responsabilidades: ningún harness se convierte
+  en la autoridad de Linear, branches, worktrees, env, DB, puertos o closeout;
+  esas funciones continúan en `qz/hops`.
