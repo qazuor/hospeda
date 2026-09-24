@@ -26,6 +26,28 @@ Sólo se cuentan las filas cuya primera celda es un identificador de fila
 resumen y las de "qué espera cada decisión", que hablan DE las filas sin ser
 filas.
 
+CORREGIDO EL 2026-09-24 — el identificador puede venir en NEGRITA
+-----------------------------------------------------------------
+El patrón estaba anclado en `^`, así que una primera celda escrita `**GR-3**`
+—la forma que la matriz usa para DESTACAR una fila recién cerrada— no
+matcheaba, y la fila **se descartaba entera y en silencio**: ni se contaba ni
+aparecía en el aviso de "filas SIN estado reconocible", porque ese aviso es
+para filas que el patrón sí reconoce.
+
+Eran cuatro: `GR-3`, `RC-5`, `RC-6` y `RC-7`, las cuatro del 2026-09-22. El
+conteo devolvía **89 filas** contra **93** reales, y el error tenía un sesgo
+que lo vuelve peor que aleatorio: **el script era ciego justamente a las filas
+más nuevas**, porque la negrita es lo que marca lo recién cerrado.
+
+Y la consecuencia de método es al revés de lo que el programa asume: el bloque
+de resumen escrito A MANO nombraba a las cuatro correctamente, y el script
+—declarado la única fuente de conteo, precisamente para no sumar a mano— era
+el que estaba mal.
+
+Se tolera ahora cualquier combinación de `*`, `` ` `` y espacios alrededor del
+identificador, y se avisa de toda celda que parezca una fila y no se pueda
+clasificar.
+
     python3 contar-filas-de-la-matriz.py [ruta]
 """
 
@@ -37,7 +59,10 @@ ESTADOS = ("VERIFIED", "PARTIALLY_SUPPORTED", "NOT_SUPPORTED", "UNKNOWN")
 # El orden importa: `NOT_SUPPORTED` contiene `SUPPORTED`, y `PARTIALLY_SUPPORTED`
 # también, así que se buscan como palabra completa y del más largo al más corto.
 ORDEN = sorted(ESTADOS, key=len, reverse=True)
-ID = re.compile(r"^(PA|FR|RN|GR|PS|CN|PC|UP|DW|CT|GT|WH|RC|RF|EX)-\d+")
+# El identificador puede venir pelado (`GR-3`), en negrita (`**GR-3**`) o entre
+# backticks. Se tolera cualquier envoltorio de `*`, `` ` `` y espacios: anclar en
+# `^` sin ellos descartaba cuatro filas en silencio (ver el docstring).
+ID = re.compile(r"^[*`\s]*((?:PA|FR|RN|GR|PS|CN|PC|UP|DW|CT|GT|WH|RC|RF|EX)-\d+)")
 
 ruta = sys.argv[1] if len(sys.argv) > 1 else "06-mp-validation-matrix.md"
 
@@ -51,7 +76,7 @@ for linea in open(ruta, encoding="utf-8"):
     celdas = [c.strip() for c in linea.strip().strip("|").split("|")]
     if not celdas or not ID.match(celdas[0]):
         continue
-    fid = ID.match(celdas[0]).group(0)
+    fid = ID.match(celdas[0]).group(1)
     estado = None
     for celda in celdas[1:]:
         for e in ORDEN:
