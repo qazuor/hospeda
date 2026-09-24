@@ -3910,3 +3910,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Las pruebas de worktree/servidores/DB pasaron 35/35 y Biome pasó usando un
   cache temporal en `/tmp`; el cache normal sigue bloqueado por `EROFS`.
 - Ninguna base, env, Linear o worktree fue modificada.
+
+## Gate 243 · Contrato DB probado en aislamiento
+
+- Se agregó una prueba aislada que confirma la precedencia de los campos
+  declarativos del adapter y conserva los fallbacks legacy.
+- `project-config.test.ts`: 1/1 test, 1 assertion.
+- La prueba usa un fixture temporal bajo `/tmp`; no toca repositorios, bases,
+  envs ni configuración global.
