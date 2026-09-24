@@ -53,6 +53,13 @@
             "packages/db/src/schemas",
             "packages/db/src/billing/schemas.ts",
             "packages/db/src/migrations"
+        ],
+        "templateFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations",
+            "packages/seed/src",
+            "packages/billing/src/config"
         ]
     },
     "servers": [

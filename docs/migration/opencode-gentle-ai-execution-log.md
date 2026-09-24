@@ -3964,3 +3964,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   declara `templateFingerprintPaths`.
 - Sintaxis Bash y cálculo read-only del fingerprint pasaron; no se consultó ni
   modificó PostgreSQL.
+
+## Gate 249 · Fingerprint completo del template en el adapter
+
+- `.qz/project.json` ahora declara `database.templateFingerprintPaths` con las
+  rutas de schema, migraciones, seed y configuración de billing.
+- `wt-config.sh` prefiere esa lista tanto para el checkout actual como para
+  refs Git; el config legacy continúa como fallback.
+- El adapter pasó validación y se calcularon fingerprints read-only de schema y
+  template sin tocar PostgreSQL ni promover bases.
