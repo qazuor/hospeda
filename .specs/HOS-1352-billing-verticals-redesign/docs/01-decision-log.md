@@ -2527,7 +2527,16 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-METH-006 — La FASE 8 vuelve a correr sobre lo que la FASE 9 produjo, hasta que no aparezca ningún CRÍTICO nuevo
 
-- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED, con su **condición de corte del ciclo (punto 2)
+  ENMENDADA por `DEC-METH-008`** el mismo 2026-09-19 y **PRECISADA por `DEC-METH-013`** el
+  2026-09-24 · **Decide**: owner
+- 🚨 **Leer el punto 2 de esta entrada sin `DEC-METH-008` da el criterio equivocado, y ya hizo
+  tropezar a alguien.** El texto de abajo dice que el ciclo corta *«hasta que una pasada de FASE 8
+  no produzca ningún `CRITICA` nuevo»*, y **eso duró horas**: `DEC-METH-008` lo reemplazó **el
+  mismo día** por *«hasta que ningún `CRITICA` quede abierto sin causa declarada»*, porque el
+  criterio original **mide un stock cuando el generador es el acto de arreglar**. `DEC-METH-013`
+  (2026-09-24) es lo que le agrega la condición de atribución y la cota. **El punto 1 —cuándo
+  termina la FASE 9— no lo tocó ninguna de las dos.**
 - **⚠️ Apartamiento declarado del método**, que el PDR §65 define como **fases en secuencia**.
 - **Problema**: `DEC-METH-004` definió cuándo un **hallazgo** está resuelto, no cuándo la **fase**
   termina, y no preveía que la propia FASE 9 pudiera introducir defectos nuevos.
@@ -2558,58 +2567,7 @@ Cada entrada lleva, según §3.4:
   **las contradicciones viven ENTRE capítulos**, así que atacar sólo los textos corregidos la
   volvería ciega a justamente lo que el ciclo busca. Lo que la abarata no es recortar el alcance
   sino que **arranca con los 327 casos ya enumerados**: recorre dominios en vez de descubrirlos.
-- **✚ ENMIENDA del 2026-09-24 — qué quiere decir «nuevo»** · **Decide**: owner. El criterio de salida
-  del ciclo dice *«hasta que una pasada de FASE 8 no produzca ningún `CRITICA` **nuevo**»*, y **«nuevo»
-  admite dos lecturas que sobre la misma tanda dan resultados opuestos**. Sobre la 8-bis-5: leído como
-  *«no estaba antes»*, los **8** críticos son nuevos y el ciclo no cierra; leído como *«generado por la
-  tanda de arreglos anterior»*, son **6**, porque dos vienen de otro lado. **Se adopta la segunda
-  lectura**: «nuevo» = **generado por la tanda de arreglos anterior**. Con cuatro cláusulas:
-  1. **La atribución se dictamina contra los DIFFS**, nunca contra mensajes de commit. Un mensaje de
-     commit no es evidencia de lo que el commit hizo, y el programa ya midió el modo de falla inverso
-     —un rastro que declara *«sigue correcta»* sobre una aparición que sí cambió (`C1` §4.2, filas 5 y
-     3)—. El dictamen se hace abriendo el hunk.
-  2. **Tope de dos vueltas.** Si a la segunda la tanda sigue generando críticos, no se sigue girando.
-  3. **Lo que quede al tope se declara con causa, caso por caso, y lo lee el owner** — no se declara en
-     bloque ni por categoría.
-  4. **Un crítico de dinero no se declara con causa sin que lo lea el owner**, aunque el tope se haya
-     alcanzado. Es la única clase que no admite cierre administrativo.
-- **Por qué hacía falta precisarlo, y no es una formalidad**: durante cuatro vueltas el **100 %** (o el
-  93 %) de los críticos venía de la tanda anterior —**25 de 25 · 17 de 17 · 13 de 14 · 12 de 12**— y la
-  conclusión razonable era que el generador **era** el acto de arreglar. **La 8-bis-5 rompió la serie:
-  6 de 8** (`22-fase-8-bis-5/C1-la-costura.md:783`). Y los dos que la tanda no produjo son de **clases
-  que el programa nunca había tenido**: `F-8fB3-001`, el primer crítico producido por **una medición
-  externa** —`RC-5` midió `charged_quantity` en producción y volvió falsa una premisa del `B/09` §4 sin
-  que el capítulo cambiara una palabra— y `F-8fC2-001`, un hueco de cuatro días que **cuatro vueltas no
-  vieron**, de **la lectura del conjunto**. **Bajo la lectura literal esos dos mantienen el ciclo
-  girando para siempre**, porque ni la medición externa ni la lectura del conjunto se agotan arreglando
-  capítulos: son los otros dos generadores del programa, y no es el ciclo 8↔9 quien los cierra.
-- **Las dos alternativas, y por qué no:**
-  - **Dejar el criterio literal y decidir vuelta a vuelta qué cuenta como «nuevo»**: no cuesta nada
-    escribirlo, pero **las dos lecturas ya conviven en el corpus** y el ciclo cerraría o no según quién
-    esté de turno. Es el mismo defecto que `DEC-METH-004` tenía y que esta decisión vino a tapar.
-  - **Un tope duro de dos vueltas, con atribución o sin ella**: corta seguro, pero **agrega mecanismo**
-    —hay que contar vueltas y arbitrar el desenlace— y sobre todo **corta a ciegas**: sin la cláusula 1
-    el tope se alcanza igual con seis críticos generados que con cero, y esos dos estados no son lo
-    mismo.
-- **📌 Y esto no es una idea nueva: lo propuso la PRIMERA vuelta y nadie lo aplicó.**
-  [`17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md`](../docs/17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md)
-  §1.3 ya había medido que *«lo que baja no es el stock de defectos: es el tamaño de la tanda de
-  arreglos anterior»* y que **la condición de corte mide un stock mientras el generador es el acto de
-  arreglar** (l. 81-83); su §1.4 concluyó que *«con la condición escrita hoy, el ciclo no tiene
-  convergencia demostrada»* (l. 114-116). El §1.5 propuso **tres** remedios, y esta enmienda es el
-  **tercero**. **Los otros dos siguen sin aplicarse, cuatro vueltas después, y van declarados acá para
-  que no se pierdan otra vez**: (1) extender `DEC-METH-004` para que *«resuelto»* exija recorrer
-  **también el dominio que el arreglo crea**, no sólo el del problema —es lo que habría cazado cuatro
-  hallazgos **dentro** de la FASE 9, sin gastar una pasada entera— y (2) **medir la tasa, no el
-  conteo**: *«críticos nuevos por decisión aplicada»*, que en la 8-bis dio ≈ 0,76.
-- **Lo que esta enmienda NO toca**: el criterio de **fin de la FASE 9** (el punto 1 de la decisión: las
-  cuatro salidas de `DEC-METH-004` cerradas y ningún `CRITICA` abierto sin causa declarada). Son dos
-  criterios distintos y **se venían citando como uno solo** — el encargo del 2026-09-24 le atribuía al
-  ciclo el criterio de la fase, que es el que efectivamente no termina por construcción. El del ciclo
-  siempre fue *«ningún `CRITICA` nuevo»*, y es el que acá se precisa.
-- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`. La enmienda del
-  2026-09-24 sale de la elección del owner entre las tres opciones que se le presentaron ese día —
-  eligió la 2, que era la recomendada.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`.
 
 ---
 
@@ -4783,13 +4741,84 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-013 — Cuándo se DEJA DE GIRAR el ciclo 8↔9: cuando la tanda anterior dejó de generar críticos, con tope de dos vueltas
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Precisa `DEC-METH-008` punto 3** (la condición de corte del ciclo), que a su vez había enmendado
+  el punto 2 de `DEC-METH-006`. **No la reemplaza y no la contradice**: le agrega la pregunta que esa
+  condición no contesta.
+- **El problema, y es una distinción entre dos preguntas que se venían tratando como una:**
+  - `DEC-METH-008` punto 3 dice **cuándo se PUEDE CERRAR**: *«hasta que ningún `CRITICA` quede
+    abierto sin causa declarada»*. Es una condición sobre el **estado final** del corpus.
+  - **Lo que ninguna decisión dice es cuándo se DEJA DE GIRAR**, o sea en qué momento se pasa de
+    *«esto se arregla y se vuelve a auditar»* a *«esto se declara con causa y se cierra»*. Sin esa
+    segunda pregunta contestada, **la primera es satisfacible en cualquier vuelta** —basta declarar
+    causas— o en ninguna, y cuál de las dos ocurre depende de quién esté de turno.
+- **Decisión: se deja de girar cuando la tanda de arreglos anterior dejó de generar críticos.** Con
+  cuatro cláusulas:
+  1. **Un `CRITICA` cuenta como generado por la tanda anterior, y la atribución se dictamina contra
+     los DIFFS**, nunca contra mensajes de commit. El programa ya midió el modo de falla que esto
+     evita: un rastro que declara *«sigue correcta»* sobre una aparición que **sí** cambió
+     (`22-fase-8-bis-5/C1-la-costura.md` §4.2, filas 5 y 3). El dictamen se hace abriendo el hunk.
+  2. **Tope de dos vueltas.** Si a la segunda la tanda sigue generando críticos, no se sigue girando
+     igual: se pasa a declarar.
+  3. **Lo que quede se declara con causa, caso por caso, y lo elige el owner.** Esto **no es nuevo**:
+     es `DEC-METH-008` punto 4, y se repite acá porque es la salida a la que esta decisión conduce.
+  4. **Un `CRITICA` de dinero no se declara con causa sin que lo lea el owner**, aunque el tope se
+     haya alcanzado. **Es la única cláusula que agrega restricción**, y agrega la mínima: no obliga a
+     arreglarlo, obliga a que lo vea.
+- **Por qué la métrica es la atribución y no el conteo, y está medido**: durante cuatro vueltas el
+  **100 %** (o el 93 %) de los críticos venía de la tanda anterior — **25 de 25 · 17 de 17 · 13 de
+  14 · 12 de 12** —, y la conclusión razonable era que el generador **era** el acto de arreglar. **La
+  8-bis-5 rompió la serie: 6 de 8** (`22-fase-8-bis-5/C1-la-costura.md:783`). Los dos que la tanda no
+  produjo son de **clases que el programa nunca había tenido**: `F-8fB3-001`, el primer crítico
+  producido por **una medición externa** —`RC-5` midió `charged_quantity` en producción y volvió falsa
+  una premisa del `B/09` §4 **sin que el capítulo cambiara una palabra**— y `F-8fC2-001`, un hueco de
+  cuatro días que **cuatro vueltas no vieron**, de **la lectura del conjunto**. **Ni la medición
+  externa ni la lectura del conjunto se agotan arreglando capítulos**: son los otros dos generadores
+  del programa, y no es el ciclo 8↔9 quien los cierra. Contarlos para decidir si girar otra vez
+  mandaría a girar por algo que girar no arregla.
+- **Las dos alternativas, y por qué no:**
+  - **Dejar sólo `DEC-METH-008` punto 3**: no cuesta nada, pero **no acota las vueltas** y deja la
+    elección entre seguir y declarar sin criterio escrito. Es lo que hay hoy.
+  - **Un tope duro de dos vueltas, con atribución o sin ella**: corta seguro, pero **agrega
+    mecanismo** —hay que contar vueltas y arbitrar el desenlace— y **corta a ciegas**: sin la cláusula
+    1 el tope se alcanza igual con seis críticos generados que con cero, y esos dos estados no son lo
+    mismo.
+- **📌 De dónde sale, y la historia importa porque este corte ya se propuso tres veces.**
+  [`17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md`](./17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md)
+  §1.3 midió en la **primera** vuelta que *«lo que baja no es el stock de defectos: es el tamaño de la
+  tanda de arreglos anterior»* (l. 81-83) y su §1.4 concluyó que *«con la condición escrita hoy, el
+  ciclo no tiene convergencia demostrada»* (l. 114-116). Su §1.5 propuso **tres** remedios:
+  1. **extender `DEC-METH-004` al dominio que el ARREGLO crea** — ✅ **aplicado** por `DEC-METH-008`
+     puntos 1 y 2, el 2026-09-19;
+  2. **medir la tasa, no el conteo** (*«críticos nuevos por decisión aplicada»*, ≈ 0,76 en la 8-bis)
+     — ⬜ **sigue sin aplicarse**, y es lo único de los tres que queda. Se declara acá para que no se
+     pierda de vuelta: esta decisión usa la **atribución** (¿de dónde vino?) y no la **tasa**
+     (¿cuántos por decisión aplicada?), que son preguntas distintas y la segunda sigue sin medirse;
+  3. **cortar con causa declarada** — ✅ **aplicado** por `DEC-METH-008` punto 3, y **precisado por
+     esta decisión**.
+- **Origen**: la elección del owner del **2026-09-24** entre tres opciones — eligió la 2, que era la
+  recomendada. ⚠️ **Con una corrección de la que conviene dejar rastro**: las tres opciones se le
+  presentaron sobre la premisa de que el criterio del ciclo *«siempre fue: ningún `CRITICA` nuevo»* y
+  de que el encargo confundía ese criterio con el de fin de la FASE 9. **Esa premisa era falsa**:
+  `DEC-METH-008` había cambiado el criterio del ciclo a *«sin causa declarada»* cinco días antes, así
+  que el encargo citaba bien y quien lo corrigió leyó `DEC-METH-006` sin leer las decisiones que la
+  enmiendan. **El contenido de las cuatro cláusulas no cambió por eso** —el owner eligió sobre ellas y
+  siguen valiendo—; lo que cambió es a qué decisión precisan y con qué argumento. Es el mismo modo de
+  falla que ese mismo día se cazó en `DEC-MP-003`: **leer la decisión, no la paráfrasis** — con el
+  agregado de que acá no alcanzaba con leerla, había que leer **quién la enmendó**.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **104** — la del 2026-09-24 es **`DEC-MP-005`**: seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño |
-| De metodología | 12 |
+| Decisiones tomadas | **105** — las dos del 2026-09-24: **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño) y **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) |
+| De metodología | 13 |
 | Funcionales | 92 |
+| **Precisadas sin `SUPERSEDED`** | **1** — **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
