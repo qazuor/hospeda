@@ -52,16 +52,17 @@ progreso) mediante scripts/commands deterministas si se demuestra que el equipo
 la usa. No conviene reinstalar el plugin de Claude dentro de OpenCode como copia
 1:1.
 
-## Recomendación
+## Recomendación revisada tras ODD
 
-Adoptar **F con reglas de D y E**:
+Adoptar **ODD por defecto**, conservando sólo las partes útiles de D y E:
 
 1. Linear continúa siendo la fuente de verdad operativa y `HOS-NNN` el identificador.
 2. `.specs/HOS-NNN-*` continúa siendo el registro técnico canónico de Hospeda.
-3. Para features complejas, Gentle aporta exploration, proposal, design, tasks y verify; un adaptador debe enlazar cada change con `HOS-NNN` y `.specs` sin duplicar estados.
-4. Para bugs y tareas pequeñas, usar Linear + `hops`, sin SDD completo.
-5. `archive` de Gentle no debe borrar ni mover `.specs`; debe producir closeout compatible o un enlace explícito.
-6. Task Master no se migra por inercia: primero se prueba si sus gates y sync Linear siguen siendo necesarios frente al flujo SDD.
+3. ODD es el flujo cotidiano, también para trabajo sustancial: mantiene un documento recuperable y no obliga a una cadena de fases.
+4. Linear + `hops` gestionan identidad, tracking, worktrees, DB, puertos y cierre; `.specs` conserva el contrato técnico cuando hace falta.
+5. SDD/OpenSpec sólo entra ante un pedido explícito de fases formales; un adaptador debe enlazar cada change con `HOS-NNN` y `.specs` sin duplicar estados.
+6. `archive` de Gentle no debe borrar ni mover `.specs`; debe producir closeout compatible o un enlace explícito.
+7. Task Master no se migra por inercia: sólo se recuperan atajos si siguen aportando valor fuera de ODD.
 
 La decisión queda reversible porque no exige convertir las specs históricas ni
 crear una segunda fuente de verdad para el estado del issue.

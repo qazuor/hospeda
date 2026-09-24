@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_93",
-        "number": 121,
+        "id": "ver_claude_opencode_migration_95",
+        "number": 123,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "cerrar develop remoto y consolidar Hospeda en Engram",
+        "reason": "aplicar ODD por defecto y SDD excepcional en el workflow versionado",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_92"
+        "basedOnVersion": "ver_claude_opencode_migration_94"
     },
     "data": {
         "sections": [
@@ -27,7 +27,7 @@
                 "data": {
                     "eyebrow": "Resumen vivo · actualizado con cada gate",
                     "title": "59 de 89 tareas completas",
-                    "description": "La base operativa de OpenCode + Gentle-AI, Engram y el adapter qz está funcionando. Quedan 30 tareas: principalmente decisión de specs/SDD, endurecimiento final, plugins y retiro de Claude."
+                    "description": "La base operativa de OpenCode + Gentle-AI, Engram y el adapter qz está funcionando. Quedan 29 tareas: principalmente adaptación ODD/specs, endurecimiento final, plugins y retiro de Claude."
                 }
             },
             {
@@ -37,8 +37,8 @@
                 "data": {
                     "metrics": [
                         { "value": "66%", "label": "avance total" },
-                        { "value": "59", "label": "completas" },
-                        { "value": "30", "label": "pendientes" },
+                        { "value": "60", "label": "completas" },
+                        { "value": "29", "label": "pendientes" },
                         { "value": "8", "label": "fases" },
                         { "value": "310 + 334", "label": "tests client/server en verde" }
                     ]
@@ -55,7 +55,12 @@
                         ["1 · Instalación base", "12", "1", "avanzada"],
                         ["2 · Memoria y conocimiento", "10", "3", "en revisión"],
                         ["3 · Hops y workflow", "21", "5", "avanzada"],
-                        ["4 · Specs y SDD", "1", "5", "decisión pendiente"],
+                        [
+                            "4 · ODD, specs y SDD excepcional",
+                            "2",
+                            "4",
+                            "ODD aprobado; SDD excepcional"
+                        ],
                         ["5 · Guards y seguridad", "2", "4", "parcial"],
                         ["6 · Artifacts", "7", "2", "MVP operativo"],
                         ["7 · Validación y retiro", "0", "10", "pendiente"]
@@ -68,7 +73,7 @@
                 "title": "Bloqueos y decisiones que destraban el cierre",
                 "data": {
                     "tone": "warning",
-                    "text": "`origin/develop` ya existe y apunta al commit operativo integrado; queda verificar su protección con una sesión GitHub autenticada. Engram consolidó `Hospeda` → `hospeda` tras backup e integrity_check OK. Decisiones humanas pendientes: elegir .specs vs Gentle SDD, aprobar la política final de permisos/plugins y definir cuándo retirar Claude."
+                    "text": "`origin/develop` ya existe y apunta al commit operativo integrado; queda verificar su protección con una sesión GitHub autenticada. Engram consolidó `Hospeda` → `hospeda` tras backup e integrity_check OK. Decisiones humanas pendientes: aprobar la política final de permisos/plugins y definir cuándo retirar Claude. ODD queda aprobado como default; SDD/OpenSpec sólo entra por pedido explícito."
                 }
             },
             {
@@ -587,11 +592,11 @@
                         },
                         {
                             "id": "sdd-decision",
-                            "title": "Decidir .specs vs Gentle SDD",
+                            "title": "Decidir ODD por defecto y SDD excepcional",
                             "category": "Decisión de arquitectura",
-                            "description": "Elegir conservar, adaptar, hibridar o usar SDD sólo en features complejas.",
-                            "notes": "Revalidación 2026-09-24 documentada en specs-hybrid-decision.md: Gentle-AI actual recomienda ODD como camino cotidiano, también para trabajo sustancial, con un único documento recuperable en odd/tasks/<feature>.md; SDD/OpenSpec sigue soportado sólo cuando se solicita explícitamente. La propuesta conserva Linear + `.specs` como contrato canónico, usa ODD para ejecución/resume y reserva SDD para fases formales. Gentle Shell es Pi-native y queda fuera de OpenCode. Requiere aprobación humana.",
-                            "done": false
+                            "description": "Usar ODD como camino normal, Linear para tracking y `.specs` como contrato técnico; dejar SDD/OpenSpec sólo ante un pedido explícito.",
+                            "notes": "Decisión aprobada 2026-09-24 y aplicada en AGENTS.md, el plan y el contrato de trazabilidad. ODD es el default; SDD/OpenSpec no se inicia por tamaño, riesgo o incertidumbre. Gentle Shell queda fuera por ser Pi-native.",
+                            "done": true
                         },
                         {
                             "id": "spec-implementation",
@@ -611,10 +616,10 @@
                         },
                         {
                             "id": "sdd-hybrid",
-                            "title": "Diseñar lifecycle híbrido",
+                            "title": "Definir lifecycle ODD y excepción SDD",
                             "category": "Decisión de arquitectura",
-                            "description": "Usar Gentle SDD sólo donde aporte exploración/diseño/verificación sin duplicar `.specs`.",
-                            "notes": "Lifecycle híbrido concretado en spec-linear-traceability.md; implementación pendiente de aprobación.",
+                            "description": "Usar ODD para ejecución normal y reservar Gentle SDD para un pedido explícito, sin duplicar `.specs`.",
+                            "notes": "La política está aprobada y documentada; queda implementar el adaptador sólo si se solicita un caso SDD formal.",
                             "done": false
                         },
                         {

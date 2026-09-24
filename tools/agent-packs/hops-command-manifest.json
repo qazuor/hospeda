@@ -173,7 +173,7 @@
             "description": "Estado y routing SDD read-only de Gentle-AI",
             "clients": ["opencode", "claude", "codex"],
             "kind": "agent-wrapper",
-            "sha256": "93d712056737bf89c2ae4b29700b871e78f7c085ba2ebd1464d9695a493a7260"
+            "sha256": "29b34065606a088d2c1ea08b402e62725f0655e9dcfad5280da57279822c1ad1"
         },
         {
             "id": "hops-gentle-status",

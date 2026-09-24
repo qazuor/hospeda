@@ -6,7 +6,7 @@ Fecha: 2026-09-15.
 |---|---|---|---|
 | snapshots, rollback y trazabilidad | OpenCode snapshots, Git, worktrees | Git + worktrees para código; snapshots sólo para sesiones/configuración | no usar snapshots como fuente de verdad técnica |
 | lifecycle de worktrees | `hops`, `opencode-worktree`, `open-trees`, OpenChamber | `hops` + lifecycle versionado | no instalar otro gestor |
-| specs y tareas | `.specs`/Linear, Gentle SDD, taskmaster legacy | `.specs` + Linear; Gentle SDD sólo para cambios complejos | taskmaster no se reinstala 1:1 |
+| specs y tareas | `.specs`/Linear, ODD, Gentle SDD, taskmaster legacy | ODD para ejecución; Linear para tracking; `.specs` para contrato técnico | SDD sólo por pedido explícito; taskmaster no se reinstala 1:1 |
 | memoria y persistencia | Engram, MEMORY.md, sesiones OpenCode | Engram curado para decisiones; archivos para rollback/documentación | no importar MEMORY.md completo |
 | compaction/contexto | OpenCode compaction, dynamic-context-pruning, CodeGraph | compaction nativa + CodeGraph selectivo | pruning sólo si una medición demuestra beneficio |
 | agentes en background | Gentle agents, OpenCode agents, plugins background | agentes nativos de Gentle/OpenCode con pocos roles | no agregar delegación por defecto |

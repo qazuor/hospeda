@@ -33,7 +33,8 @@
 - Antes de `start-issue`, `close-issue` o crear un worktree, consultá `hops env --drift --json`. Si devuelve `missing`, `obsolete`, `needsValue` o `mismatched`, detené la operación y reportá sólo nombres y estados; pedí al humano los valores que requieran secreto.
 - `hospeda-staging` es la fuente fija de tooling y entorno local. `hops update` debe ejecutarse al comenzar una sesión o cuando el preflight indique que el checkout está atrasado.
 - Para validar cambios usá `hops verify --changed`; cuando el resultado lo consuma otro agente, usá `hops verify --changed --json` y no reconstruyas el plan leyendo logs manualmente.
-- `.specs/` contiene el sistema histórico de specs y sus metadatos. No lo elimines ni lo reestructures durante una tarea común; la migración hacia SDD se decide por separado.
+- Linear es el tracking operativo y `HOS-NNN` la identidad de trabajo. ODD es el flujo predeterminado de Gentle-AI: describí el resultado, explorá, implementá y verificá; usá un documento recuperable `odd/tasks/` sólo cuando el trabajo necesite sobrevivir una interrupción. `.specs/` conserva el contrato técnico duradero cuando corresponde.
+- SDD/OpenSpec está deprecado para el flujo normal de Hospeda: no lo inicies por tamaño, riesgo o incertidumbre. Sólo entra ante un pedido explícito de la persona para un lifecycle formal; no migres specs históricas ni dupliques tareas.
 - `AGENTS.md` es la única fuente canónica de instrucciones compartidas por Claude Code, OpenCode y Codex. El conocimiento especializado vive en skills y documentación; no dependas de `CLAUDE.md`.
 
 ## Documentación y mantenimiento

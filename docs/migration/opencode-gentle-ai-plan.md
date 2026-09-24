@@ -19,8 +19,9 @@ Este documento separa decisiones y trabajo futuro de las operaciones ya ejecutad
 - GLM, DeepSeek y Kilo se evaluarán para tareas simples, con límites de datos, costo y riesgo.
 - Linear, `hops`, worktrees y el lifecycle de Hospeda seguirán siendo una capa propia versionada y neutral respecto del agente.
 - El gestor existente de worktrees seguirá siendo el dueño de DBs, puertos, servidores y cleanup.
-- `.specs` se conservará. Gentle SDD se probará para features complejas, sin conversión masiva ni reemplazo automático de la historia existente.
-- Task-master no se migrará inicialmente. Se comparará con Gentle SDD antes de decidir si conservar partes de su comportamiento.
+- ODD será el flujo predeterminado. Linear será el tracking operativo y `.specs` conservará el contrato técnico duradero cuando corresponda.
+- Gentle SDD/OpenSpec queda deprecado para el uso normal: sólo se habilita ante un pedido explícito de lifecycle formal. No se inicia por tamaño, riesgo o incertidumbre, no se migran specs históricas y no se duplican tareas.
+- Task-master no se migrará inicialmente; sus atajos sólo se recuperarán si demuestran valor fuera de ODD.
 - `AGENTS.md` será la fuente principal de instrucciones para OpenCode y permanecerá corto.
 - `AGENTS.md` será la única fuente de instrucciones compartidas; no se mantendrá `CLAUDE.md`.
 - El conocimiento especializado se moverá a skills bajo demanda.
@@ -211,9 +212,9 @@ No se eliminará la DB del worktree antes de confirmar que el resto del teardown
 
 No se incorporarán `opencode-worktree` ni `open-trees` como segundo sistema.
 
-## Specs y Gentle SDD
+## ODD, specs y Gentle SDD
 
-Se usará un modelo híbrido:
+ODD será el modelo único de trabajo normal:
 
 ### Cambios pequeños
 
@@ -221,23 +222,18 @@ Se usará un modelo híbrido:
 Linear → hops start → implementación → tests → smoke si aplica → close
 ```
 
-### Cambios complejos
+### Pedido explícito de SDD
 
 ```text
 Linear HOS-NNN
-→ exploration
-→ proposal
-→ spec/design
-→ tasks
-→ implementation
-→ verification
-→ closeout
-→ archive
+→ SDD explícito solicitado por la persona
+→ exploration → proposal → spec/design → tasks
+→ implementation → verification → closeout → archive
 ```
 
-Gentle SDD podrá administrar fases de trabajo. `.specs` conservará el vínculo técnico, la identidad HOS, la aceptación, dependencias, smoke y closeout. No se hará conversión masiva de specs históricas.
+En el camino normal, ODD mantiene un único documento recuperable y `.specs` conserva el vínculo técnico, la identidad HOS, la aceptación, dependencias, smoke y closeout cuando la feature lo requiere. Gentle SDD no administra branches, Linear, DB, puertos ni worktrees. No se hará conversión masiva de specs históricas.
 
-Task-master se mantendrá fuera de la instalación inicial y se evaluará con tres tareas piloto: bug pequeño, feature multi-app y cambio de DB/billing.
+Task-master se mantendrá fuera de la instalación inicial; sus atajos sólo se recuperarán si demuestran valor fuera de ODD.
 
 ## Conocimiento y skills
 
@@ -378,9 +374,9 @@ Desacoplar scripts de `~/.claude`, corregir cleanup, salida estructurada y asoci
 
 Reducir `AGENTS.md`, conservar `CLAUDE.md`, migrar skills y revisar contradicciones.
 
-### Stage 7 — Specs/SDD
+### Stage 7 — ODD y specs
 
-Ejecutar pilotos y decidir task-master mediante evidencia.
+Validar el flujo ODD con Linear y `.specs`; mantener SDD/OpenSpec fuera del camino normal y sólo probarlo con una solicitud explícita.
 
 ### Stage 8 — Guards
 

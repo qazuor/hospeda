@@ -4444,3 +4444,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La propuesta se actualiza a: ODD por defecto, Linear + `.specs` como contrato
   canónico de Hospeda, y SDD sólo con elección explícita. La tarea de decisión
   permanece pendiente de aprobación humana.
+
+## Gate 300 · Decisión aprobada: ODD por defecto
+
+- El usuario aprobó el flujo **ODD por defecto**, con Linear como tracking
+  operativo y `.specs` como contrato técnico duradero cuando corresponda.
+- SDD/OpenSpec queda deprecado para el flujo normal: no se inicia por tamaño,
+  riesgo o incertidumbre y sólo entra ante un pedido explícito de lifecycle
+  formal. No se migran specs históricas ni se duplican tareas.
+- `AGENTS.md`, el plan de migración, el contrato Linear/spec, la compatibilidad
+  OpenSpec, el mapa de solapamientos y el command read-only de SDD fueron
+  actualizados para reflejar esa regla.
+- El artifact marcó la decisión como completa y conserva como pendientes la
+  implementación opcional del adaptador SDD, archive policy y cualquier prueba
+  formal solicitada en el futuro.

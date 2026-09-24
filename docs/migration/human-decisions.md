@@ -8,7 +8,7 @@ autoriza cambios por sí mismo.
 | Decisión | Opciones | Recomendación | Impacto | Reversibilidad |
 |---|---|---|---|---|
 | Memoria Engram | usar DB tal cual, sanear copia, export/import, no conectar todavía | sanear copia y mantener original intacta | alto: calidad del contexto y riesgo de ruido | alta si se conserva backup y no se toca original |
-| Fuente de specs | `.specs`, Gentle SDD, híbrido | `.specs` + Linear; Gentle SDD para features complejas | medio/alto: cambia lifecycle de planificación | alta sin conversión masiva |
+| Fuente de specs | `.specs`, ODD, Gentle SDD | ODD por defecto; Linear para tracking; `.specs` como contrato técnico; SDD sólo por pedido explícito | medio: define cuándo aparece documentación durable | alta sin conversión masiva |
 | Taskmaster | reinstalar, reemplazar, retirar | retirar inicialmente; recuperar sólo atajos medidos | medio: ergonomía y tracking interno | alta |
 | Linear | API/CLI, MCP, ambos | API/CLI determinista + MCP opcional | alto: workflow de issues | alta con dry-run/read-back |
 | Worktrees | `hops`, plugin OpenCode, híbrido | `hops` como única autoridad | alto: DB, puertos, cleanup | alta si se conserva contrato actual |
@@ -29,7 +29,7 @@ autoriza cambios por sí mismo.
 ## Aprobaciones necesarias antes de implementar
 
 1. aceptar la política de Engram y el procedimiento de revisión individual;
-2. confirmar `.specs` + Linear como fuente principal y Gentle SDD sólo selectivo;
+2. decisión aprobada: ODD por defecto, Linear + `.specs` como fuente operativa/técnica y SDD sólo por pedido explícito;
 3. aprobar el endurecimiento de permisos antes de abrir Hospeda;
 4. aprobar el primer alcance de `hops`/Linear read-only;
 5. decidir si se crea un repositorio global de tooling;

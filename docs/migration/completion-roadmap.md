@@ -18,8 +18,9 @@ pruebas que requieren infraestructura o trabajo posterior a la adopción.
    puertos, DB y cleanup.
 5. Restaurar los wrappers globales apuntando al checkout estable de `hops` y
    validarlos desde `hospeda-staging`.
-6. Aprobar la decisión `.specs` + Linear con Gentle SDD sólo selectivo; no
-   migrar masivamente mientras no haya evidencia de beneficio.
+6. Aplicar ODD como flujo predeterminado, Linear como tracking y `.specs` como
+   contrato técnico. Mantener SDD/OpenSpec fuera del camino normal y sólo
+   habilitarlo ante un pedido explícito; no migrar specs históricas.
 7. Endurecer permisos y pre-commit; definir allow/ask/deny.
 8. El flujo de artifacts desde lenguaje natural ya está definido en la skill
    `visual-artifact` y en `/hops-artifact-create`: el agente investiga, produce
@@ -34,7 +35,8 @@ pruebas que requieren infraestructura o trabajo posterior a la adopción.
 - GLM/DeepSeek/Ollama y OpenKilo;
 - OpenChamber, browser, Octto, TokenScope, Senses, type-inject, voz y demás
   plugins;
-- implementación completa de SDD híbrido y archive policy;
+- implementación opcional de SDD y archive policy sólo si se solicita un caso
+  formal;
 - retiro definitivo de Claude Code;
 - automatización total del bootstrap con instalación y login.
 
