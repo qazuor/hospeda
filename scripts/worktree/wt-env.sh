@@ -11,7 +11,8 @@ source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 [ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
 
-mapfile -t NAMES < <(jq -r '.servers[].name' "$CFG")
+mapfile -t NAMES < <(wt_qz_cfg '.servers[]?.id')
+[ "${#NAMES[@]}" -gt 0 ] || mapfile -t NAMES < <(jq -r '.servers[].name' "$CFG")
 declare -A PORT
 idx=0
 for n in "${NAMES[@]}"; do

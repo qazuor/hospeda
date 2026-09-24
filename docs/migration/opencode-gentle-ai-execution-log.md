@@ -4049,3 +4049,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   todavía la lógica destructiva de bases.
 - Se validó `bash -n` y ejecución read-only de `wt-config.sh`; no se borraron
   worktrees, bases ni templates.
+
+## Gate 258 · Orden declarativo de servidores para envs
+
+- `wt-env.sh` ahora toma los nombres de servidor desde `servers[].id` del
+  adapter, conservando el orden declarado para asociar puertos posicionales.
+- `portEnvWrites` y `devEnvDefaults` siguen en el config legacy; sólo se
+  cambió la fuente de nombres, sin mover valores ni leer secretos.
+- Se validó sintaxis Bash y el listado read-only de `api`, `admin` y `web`; no
+  se modificaron archivos `.env` ni se reescribieron puertos.
