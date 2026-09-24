@@ -3800,3 +3800,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   la capa versionada de comandos e instrucciones.
 - La deriva queda confinada a `openspec/config.yaml` y no contamina el flujo
   normal mientras SDD permanezca sin activar automáticamente.
+
+## Gate 233 · Distribución cross-client posterior a la integración SDD
+
+- `tools/qz/validate-project.mjs` pasó sin errores, mutaciones ni lectura de
+  valores secretos.
+- `tools/agent-packs/plan.mjs --check` confirmó 36 comandos, cero faltantes,
+  duplicados o drift para OpenCode, Claude y Codex.
+- `tools/agent-packs/install.mjs --check` confirmó destinos y backups
+  requeridos; el modo apply continúa bloqueado deliberadamente.
+- El bundle del artifact de migración validó `artifact/v1` correctamente.
