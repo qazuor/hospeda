@@ -1210,6 +1210,11 @@ cuatro cosas y acá están las cuatro:
    hasta ~33 min— y más cortas que el ciclo más corto que vendemos, para que una ventana abierta
    nunca se superponga con un cobro.
 
+   **Y la de una sucesora con tarjeta puede ser más corta**: vence a lo que llegue primero entre sus
+   72 h y el inicio del día del próximo cobro de su predecesora, y si queda menos que un mínimo el
+   cambio de plan no se ofrece hasta después de ese cobro (`B/12` §5.4). Sobre el pagador manual no
+   se acorta: su crédito corto se corrige (`DEC-SUB-017`).
+
    **Por qué el pagador manual no puede compartir las 72 h.** Esa cifra se eligió para el tiempo
    que tarda alguien en **completar un checkout**; lo que la ventana del pagador manual espera es
    otro hecho físico: **que se acredite una transferencia bancaria**, que en Argentina no ocurre
