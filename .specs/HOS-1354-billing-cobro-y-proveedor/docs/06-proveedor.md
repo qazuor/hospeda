@@ -24,7 +24,9 @@ El §57 pide que el dominio **no quede acoplado a Mercado Pago**, que soporte co
 MercadoPago, Manual y un proveedor futuro, y cierra con *«Sin sobrearquitectura»*.
 
 Este capítulo dice **qué le pide el dominio a un proveedor**, **qué de eso tiene el que
-usamos**, y **las reglas de trato que salen de haberlo medido** — 89 filas, 81 medidas.
+usamos**, y **las reglas de trato que salen de haberlo medido** — 93 filas, 89 medidas (recontadas
+el 2026-09-24). **Y desde `DEC-MP-005` el proveedor que usamos es Mercado Pago, decidido**: lo que
+este capítulo mide como faltante es, con esa decisión, **la lista de lo que suple nuestro lado**.
 
 ---
 
