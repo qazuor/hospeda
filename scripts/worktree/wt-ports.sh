@@ -8,7 +8,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/wt-config.sh"
 CFG="$(wt_config_path)"
 QZ_CFG="$(wt_qz_config_path)"
-[ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || { echo "NO_CONFIG"; exit 2; }
 
 # Ports currently LISTENING on the host.
 listening() {

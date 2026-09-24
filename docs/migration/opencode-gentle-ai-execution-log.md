@@ -4139,3 +4139,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se ejecutó la creación de un worktree: el cambio se validó por sintaxis y
   revisión de las rutas read-only para evitar Git, Docker, instalaciones o
   escrituras accidentales.
+
+## Gate 267 · Ports y servers aceptan adapter-only
+
+- `wt-ports.sh` y `wt-servers.sh` ya no exigen `.claude/project.config.json`
+  cuando existe `.qz/project.json`.
+- Con un adapter completo pueden resolver IDs, puertos, comandos de arranque y
+  estado sin configuración legacy.
+- `wt-up.sh` se mantiene separado: todavía coordina DB/env legacy y requiere
+  una adaptación adicional antes de declararlo genérico.

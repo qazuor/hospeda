@@ -9,7 +9,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 QZ_CFG="$(wt_qz_config_path)"
-[ -f "$CFG" ] || { echo "NO_CONFIG"; exit 2; }
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || { echo "NO_CONFIG"; exit 2; }
 ACTION="${1:?usage: wt-servers.sh start <ports...> | stop}"
 LOGDIR="$ROOT/.claude/wt-logs"; mkdir -p "$LOGDIR"
 
