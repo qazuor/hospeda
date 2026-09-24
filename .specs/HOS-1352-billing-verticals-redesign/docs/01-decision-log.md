@@ -4728,13 +4728,68 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MP-005 — Seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hecho que la fuerza, y no es una comparación**: **la única alternativa con ventaja medida no
+  está disponible.** `10-evaluacion-de-proveedor.md` §8.1 tituló *«lo que cambia todo: Mobbex tiene el
+  cobro a demanda que MP nos niega»* — y **Mobbex nunca habilitó la cuenta, sin respuesta de
+  soporte**. Mercado Pago tampoco respondió la consulta abierta por `R-MP-01`. La evaluación quedó en
+  **paso 4 de 6** y **no va a avanzar**, porque lo que falta depende de respuestas de terceros que no
+  llegan.
+- **Decisión, y son dos cosas:**
+  1. **Mercado Pago es el proveedor.** Se cierra la FASE 1C-bis.
+  2. **Directriz de diseño**: **lo que MP no hace lo suple nuestro lado**, hasta donde se pueda.
+- **Motivo, dicho con precisión porque importa para después**: esto **no es preferir Mercado Pago**.
+  Es reconocer que la comparación **no se puede terminar** y que el programa no puede quedar detenido
+  esperando a un tercero que no contesta. La ventaja de Mobbex sigue medida y sigue siendo real; lo
+  que no existe es la cuenta para usarla.
+- **Lo que esta decisión NO cuesta, y por eso se puede tomar hoy**: **ningún capítulo ya escrito.** El
+  capítulo 06 abstrajo al proveedor en **ocho capacidades definidas por lo que el dominio necesita, no
+  por lo que MP ofrece**, y la evaluación lo midió contra un candidato real: *«cambiar de pasarela no
+  invalida un solo capítulo de la spec»* (`10-evaluacion-de-proveedor.md:22-33`). Y **no compromete al
+  programa con MP para siempre**: el adaptador de `DEC-ARCH-004` sigue siendo la frontera, y esta
+  decisión se revisa si la habilitación aparece.
+- **La directriz no es un cambio de rumbo: le pone nombre a lo que el diseño ya venía haciendo.**
+  Siete compensaciones ya decididas, medidas en `10-evaluacion-de-proveedor.md:65-79`: el reloj de fin
+  de pausa es nuestro porque `PS-4` no auto-reanuda · `DEC-SUB-010` porque `EX-34` no deja correr la
+  fecha de una viva · `DEC-SUB-006` cancela y recrea porque `EX-21`/`EX-4`/`EX-24`/`EX-25` no dejan
+  mover de plan ni de ciclo · `DEC-ADDON-002` da un preapproval por addon porque `EX-5` sólo admite un
+  monto por autorización · `DEC-CONC-001` pone el candado del doble cobro de nuestro lado porque
+  `EX-17` no es idempotente · `DEC-GRANT-003` implementa la cortesía pausando porque `EX-35` no deja
+  ponerle trial a una viva · y **toda mutación se verifica releyendo**, porque los **9 casos** de la
+  categoría A1 aceptan y no aplican.
+- **Lo que esta decisión desbloquea**: el **capítulo 13 entero** (era el único de los 22 sin escribir,
+  diferido *«porque depende de con qué pasarela vamos a cobrar»*), el candado `C5` —la columna
+  `período`, que `15-fase-9/07-decisiones-del-owner.md:543-546` clasificaba como **bloqueo y no
+  pendiente**— y el cierre de la FASE 1C-bis.
+- **El riesgo que asume, declarado porque cambia de naturaleza con esta decisión**: **`R-MP-01`** — los
+  reembolsos viven en una API que **MP anunció en discontinuación**, y su guía de migración **excluye
+  explícitamente a las suscripciones**. Mientras MP era un candidato, era un punto en contra; ahora es
+  **el riesgo abierto del sistema**. El capítulo 06 ya mandó tratar esa capacidad como **reemplazable**
+  y prohibió que su interfaz filtre el nombre de ningún endpoint hacia el dominio (`06-proveedor.md`
+  l. 298-300); el capítulo 13 es donde eso se ejecuta.
+- **Las dos alternativas, y por qué no:**
+  - **Esperar la habilitación de Mobbex**: es la que tiene la ventaja medida, y **se descarta por no
+    tener fecha**. No hay respuesta de soporte, así que esperar no es un plazo: es una espera abierta,
+    y detrás de ella está el capítulo 13, el candado `C5` y la FASE 5.
+  - **Un merchant of record o un procesador internacional** (`§3.4`, `§3.5`): no se evaluaron a fondo
+    porque el paso 4 nunca llegó a ellos. Quedan vivos para el día que esta decisión se revise; hoy
+    elegirlos sería decidir con menos información que la que ya tenemos sobre MP.
+- **Origen**: la respuesta explícita del owner del **2026-09-24** — *«mobbex seguimos sin que nos
+  habiliten y no hay respuesta de soporte, MP tampoco nos respondieron nada… vamos con MP, intentando
+  lograr de nuestro lado suplir la mayor cantidad de problemas que MP tiene que ya conocemos»*. Es la
+  tercera fuente admitida por la regla 4.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **103** |
+| Decisiones tomadas | **104** — la del 2026-09-24 es **`DEC-MP-005`**: seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño |
 | De metodología | 12 |
-| Funcionales | 91 |
+| Funcionales | 92 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
