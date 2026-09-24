@@ -114,9 +114,15 @@ fi
 if [ "$need_install" -eq 1 ]; then
   echo "-- installing dependencies (node_modules missing or lockfile changed)"
   INSTALL="$(jq -r '.worktree.install // empty' "$ROOT/.qz/project.json" 2>/dev/null || true)"
-  INSTALL="${INSTALL:-pnpm install --frozen-lockfile}"
-  ( cd "$ROOT" && eval "$INSTALL" ) || { echo "ERROR: dependency install failed"; exit 1; }
-  [ -f "$LOCK" ] && wt_state_apply ".lockHash = \"$(sha1sum "$LOCK" | cut -d' ' -f1)\""
+  if [ -z "$INSTALL" ] && [ -f "$CFG" ]; then
+    INSTALL="$(jq -r '.setup.install // "pnpm install --frozen-lockfile"' "$CFG")"
+  fi
+  if [ -n "$INSTALL" ]; then
+    ( cd "$ROOT" && eval "$INSTALL" ) || { echo "ERROR: dependency install failed"; exit 1; }
+    [ -f "$LOCK" ] && wt_state_apply ".lockHash = \"$(sha1sum "$LOCK" | cut -d' ' -f1)\""
+  else
+    echo "  (no install command declared; skipping dependency install)"
+  fi
 fi
 
 # client-tools is outside the pnpm workspace and needs its own Bun install.

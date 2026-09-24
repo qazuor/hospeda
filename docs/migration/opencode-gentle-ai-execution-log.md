@@ -4199,3 +4199,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Si el adapter no declara `worktree.build`, omite el build con un mensaje
   explícito; si lo declara, lo ejecuta como antes.
 - No se iniciaron servidores ni se ejecutaron builds reales.
+
+## Gate 274 · Install explícito en wt-up adapter-only
+
+- `wt-up.sh` ejecuta instalación sólo si existe `worktree.install` en el
+  adapter o `setup.install` legacy.
+- El fallback `pnpm install --frozen-lockfile` queda limitado a proyectos que
+  sí tienen configuración legacy; un adapter genérico sin install declarado
+  informa y continúa sin inventar un gestor de paquetes.
+- No se ejecutaron instalaciones ni se modificaron `node_modules`.
