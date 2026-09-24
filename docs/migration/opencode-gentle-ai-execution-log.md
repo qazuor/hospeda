@@ -4301,3 +4301,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   heredan esa dependencia.
 - Se validó la sintaxis de todos los scripts de worktree, el manifest de
   Hospeda y el fixture genérico; el test del adapter pasó 2/2.
+
+## Gate 287 · Prefijos qz y Hops desde un registry único
+
+- `client-tools --commands` ahora publica también si cada comando es
+  `generic` o `project`.
+- El instalador genera aliases `qz-*` para comandos genéricos y conserva
+  `hops-*` como compatibilidad; los comandos de proyecto usan el prefijo
+  declarado por `.qz/project.json`.
+- Los aliases apuntan al binario real `hops-*`, así no se duplican
+  implementaciones ni se rompe el modo `--local`.
+- Se agregaron pruebas de clasificación y se validaron typecheck, registry,
+  sintaxis del instalador y manifests qz.

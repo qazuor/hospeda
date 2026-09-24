@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { COMMANDS, findCommand } from '../src/registry.ts';
+import { COMMANDS, commandKind, findCommand } from '../src/registry.ts';
 
 const BIN_DIR = join(import.meta.dir, '..', 'bin');
 
@@ -42,6 +42,14 @@ describe('findCommand', () => {
 
     it('should return undefined for an unknown name', () => {
         expect(findCommand({ name: 'nope' })).toBeUndefined();
+    });
+});
+
+describe('command prefixes', () => {
+    it('classifies adapter-driven commands as generic qz commands', () => {
+        expect(commandKind('start-issue')).toBe('generic');
+        expect(commandKind('verify')).toBe('generic');
+        expect(commandKind('db-update-template')).toBe('project');
     });
 });
 

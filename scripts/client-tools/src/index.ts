@@ -6,7 +6,7 @@ import { renderOpen, withStatusBar } from './lib/statusbar.ts';
 import { extractTarget } from './lib/target.ts';
 import { extractWorktreeFlag } from './lib/wt-flag.ts';
 import type { ClientCommand } from './registry.ts';
-import { COMMANDS, findCommand } from './registry.ts';
+import { COMMANDS, commandKind, findCommand } from './registry.ts';
 
 /** Flags that ask for the help page rather than running anything. */
 const HELP_FLAGS = ['--help', '-h'] as const;
@@ -162,7 +162,9 @@ export async function main({ argv }: { readonly argv: readonly string[] }): Prom
     // list that silently goes stale every time a command is added.
     if (first === '--commands') {
         for (const command of COMMANDS)
-            process.stdout.write(`${command.name}\t${command.summary}\n`);
+            process.stdout.write(
+                `${command.name}\t${command.summary}\t${commandKind(command.name)}\n`
+            );
         return 0;
     }
 

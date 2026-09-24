@@ -68,6 +68,14 @@ else
   fi
 fi
 
+PROJECT_ROOT="$(cd "$TOOLS/../.." 2>/dev/null && pwd)"
+GENERIC_PREFIX="qz-"
+PROJECT_PREFIX="hops-"
+if [ -f "$PROJECT_ROOT/.qz/project.json" ] && command -v jq >/dev/null 2>&1; then
+  GENERIC_PREFIX="$(jq -r '.commands.genericPrefix // "qz-"' "$PROJECT_ROOT/.qz/project.json")"
+  PROJECT_PREFIX="$(jq -r '.commands.projectPrefix // "hops-"' "$PROJECT_ROOT/.qz/project.json")"
+fi
+
 if [ "$CHECK_ONLY" -eq 1 ]; then
   [ -f "$TOOLS/package.json" ] || {
     echo "ERROR: no encontré package.json en $TOOLS" >&2
@@ -92,20 +100,20 @@ mkdir -p "$FISH_FUNCTIONS"
 # `--local` as the first argument runs the copy in the current repo instead,
 # which is what you want while developing hops itself.
 write_function() {
-  local name="$1" description="$2"
+  local name="$1" description="$2" binary_name="${3:-$1}"
   cat > "$FISH_FUNCTIONS/$name.fish" <<EOF
 function $name --description '$description'
     # Generado por scripts/client-tools/install.sh — no editar a mano.
     if test "\$argv[1]" = "--local"
         set -l here (git rev-parse --show-toplevel 2>/dev/null)
-        if test -n "\$here" -a -x "\$here/scripts/client-tools/bin/$name"
-            \$here/scripts/client-tools/bin/$name \$argv[2..]
+        if test -n "\$here" -a -x "\$here/scripts/client-tools/bin/$binary_name"
+            \$here/scripts/client-tools/bin/$binary_name \$argv[2..]
             return \$status
         end
         echo "hops: no encontré client-tools en el repo actual" >&2
         return 1
     end
-    $TOOLS/bin/$name \$argv
+    $TOOLS/bin/$binary_name \$argv
 end
 EOF
   echo "  $FISH_FUNCTIONS/$name.fish"
@@ -116,9 +124,17 @@ write_function hops 'Herramientas locales del monorepo (menu)'
 
 # The command list comes from the registry itself. A second list kept by hand
 # here is a list that goes stale the first time someone adds a command.
-while IFS=$'\t' read -r name summary; do
+while IFS=$'\t' read -r name summary kind; do
   [ -n "$name" ] || continue
   write_function "hops-$name" "$(printf '%s' "$summary" | tr -d "'")"
+  # Generic aliases are reusable across repositories. Keep hops-* as a
+  # compatibility alias while projects migrate to the configured prefixes.
+  if [ "$kind" = "generic" ] && [ "$GENERIC_PREFIX" != "hops-" ]; then
+    write_function "${GENERIC_PREFIX}${name}" "$(printf '%s' "$summary" | tr -d "'")" "hops-$name"
+  fi
+  if [ "$kind" = "project" ] && [ "$PROJECT_PREFIX" != "hops-" ]; then
+    write_function "${PROJECT_PREFIX}${name}" "$(printf '%s' "$summary" | tr -d "'")" "hops-$name"
+  fi
 done < <(bun "$TOOLS/src/index.ts" --commands)
 
 echo
@@ -128,6 +144,7 @@ echo
 echo "Probá:  hops             (menú)"
 echo "        hops --help      (lista de comandos)"
 echo "        hops update      (traer lo último de staging)"
+echo "        ${GENERIC_PREFIX}start-issue (alias genérico, según el adapter)"
 echo "        hops --local ... (correr la copia del repo donde estés parado)"
 echo
 echo "Las funciones se autocargan: no hace falta reiniciar la terminal."

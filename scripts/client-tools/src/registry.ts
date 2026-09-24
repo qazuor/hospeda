@@ -53,6 +53,33 @@ export interface CommandEntry {
     load(): Promise<ClientCommand>;
 }
 
+/** Commands whose behavior is adapter-driven and reusable outside Hospeda. */
+export const GENERIC_COMMANDS: ReadonlySet<string> = new Set([
+    'artifact',
+    'wt-clean',
+    'handoff',
+    'smoke-plan',
+    'context',
+    'issue-preflight',
+    'recap',
+    'close-issue',
+    'start-issue',
+    'verify',
+    'ci',
+    'merge',
+    'promote',
+    'back-merge',
+    'run',
+    'update',
+    'engram',
+    'gentle-status',
+    'gentle-sdd-status'
+] as const);
+
+export function commandKind(name: string): 'generic' | 'project' {
+    return GENERIC_COMMANDS.has(name) ? 'generic' : 'project';
+}
+
 /** Every command the client CLI exposes, in menu order. */
 export const COMMANDS: readonly CommandEntry[] = [
     {
