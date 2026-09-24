@@ -579,25 +579,19 @@ jobs:
     needs: build
     # Fork count on CI. Repo is public now, so every shard runs on its own
     # isolated ubuntu-latest VM (no shared-host-RAM concern from the old
-    # self-hosted leo-laptop era, see file-level comment above). Even so,
-    # apps/admin's shard 4/4 (under the previous 4-way split) OOM-crashed 3x
-    # in a row in native V8 memory (RegExpCompiler Zone allocator, NOT the JS
-    # heap — confirmed via --logHeapUsage staying flat at 330-500MB) after
-    # accumulating ~45 sequential test files in the same reused forked
-    # worker process, tipping over on a memory-heavy real-interaction test
-    # (userEvent + Radix Select portal in PromoCodeFormDialog.test.tsx).
-    # Bisected against every dependency bumped in dependabot PR #2019 (react,
-    # radix-ui, tailwind-merge/tailwindcss, sentry, tanstack-table/virtual,
-    # driver.js, posthog-js) with none isolating as the sole cause — this is
-    # a structural test-runner memory ceiling, not a specific package
-    # regression. Splitting 4-way -> 5-way (2026-07-03) lowers the average
-    # files-per-shard so fewer forks accumulate anywhere near the ~45-file
-    # danger zone; VITEST_MAX_FORKS lowered 2 -> 1 removes fork-vs-fork
-    # concurrent memory competition entirely within a shard; execArgv in
-    # vitest.shared.config.ts raises --max-old-space-size for more headroom.
-    # This mitigates likelihood, it does not eliminate the underlying
-    # accumulation — if it resurfaces as the suite grows, rebalance again or
-    # tune worker recycling instead of just adding another shard.
+    # self-hosted leo-laptop era, see file-level comment above).
+    # History (HOS-80): apps/admin's shard kept OOM-crashing on
+    # PromoCodeFormDialog.test.tsx (#2019, then #3365). It was first read as
+    # native memory accumulating across ~45 files in a reused fork, and
+    # mitigated with the 5-way split, VITEST_MAX_FORKS=1 and --max-old-space-size.
+    # The real cause was different. Under Vitest 4 with isolate: true (the
+    # default), every file gets a fresh fork, so nothing accumulates across
+    # files. The test itself looped forever: a Radix Select inside a Radix
+    # Dialog resolved to two different copies of @radix-ui/react-focus-scope,
+    # and each copy's focus trap stole focus back from the other with no end.
+    # Keep all of Radix on one version set (the dependabot `radix` group
+    # enforces this). A worker that dies on one file while its shard runs far
+    # longer than usual points to a hang in THAT file, not a memory ceiling.
     env:
       VITEST_MAX_FORKS: 1
     strategy:
