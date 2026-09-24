@@ -52,7 +52,7 @@ acá va la clasificación que decide si cambiar sirve.
 
 | # | qué | filas |
 |---|---|---|
-| A1 | **Acepta y no aplica**: devuelve `2xx` sobre operaciones que descarta en silencio | **9 casos**: `EX-5`, `EX-20`, `EX-21`, `EX-22`, `EX-24`, `EX-25`, `EX-27`, `EX-34`, `EX-35` |
+| A1 | **Acepta y no aplica**: devuelve `2xx` sobre operaciones que descarta en silencio | ~~9 casos~~ **8 casos**: `EX-5`, `EX-20`, `EX-21`, `EX-22`, `EX-25`, `EX-27`, `EX-34`, `EX-35`. ❌ **`EX-24` NO va acá, corregido el 2026-09-24**: está `VERIFIED` y mide que el ciclo de un plan **SÍ es editable** (*«verificado por relectura dos veces»*), o sea un éxito del proveedor. También está mal en la tabla de la categoría B, abajo |
 | A2 | **El buscador miente en tres direcciones**: devuelve TODO (ignora `external_reference`), devuelve NADA (`status` inválido → `200` con `total: 0`), o devuelve **un subconjunto plausible** (15 de 69). Ninguno da error | `RC-1`, `RC-4` |
 | A3 | **El `init_point` viene roto** y la API responde `201` con él. Bug abierto del proveedor | `EX-37` |
 | A4 | **Mutar el monto no emite webhook.** El proveedor le escribe al cliente en el acto y a nosotros no nos avisa nunca | `EX-15` + `EX-3` |
@@ -70,7 +70,7 @@ Las 19 `NOT_SUPPORTED`. Las que más condicionaron el diseño:
 |---|---|
 | **auto-reanudar una pausa** (`PS-4`) | el reloj de fin de pausa es nuestro, sí o sí |
 | **correr la fecha de cobro de una viva** (`EX-34`) | no se puede diferir nada; `DEC-SUB-010` se apoya en esto |
-| **mover de plan** (`EX-21`) y **cambiar el ciclo** (`EX-4`, `EX-24`, `EX-25`) | todo cambio de ciclo cancela y recrea (`DEC-SUB-006`) |
+| **mover de plan** (`EX-21`) y **cambiar el ciclo** (`EX-4`, ~~`EX-24`~~, `EX-25`) | todo cambio de ciclo cancela y recrea (`DEC-SUB-006`). ❌ **`EX-24` sacada el 2026-09-24**: mide que el ciclo del plan **sí se edita**. Y ⚠️ **`EX-25` NO está compensada por `DEC-SUB-006`**, que no la nombra — ver el [inventario de compensación](./24-inventario-de-compensacion.md) |
 | **una autorización cubre un solo monto** (`EX-5`) | cada addon recurrente es un preapproval aparte (`DEC-ADDON-002`) |
 | **la creación no es idempotente** (`EX-17`) | el candado contra el doble cobro es nuestro (`DEC-CONC-001`) |
 | **un `card_token` es de un solo uso** (`EX-12`) | cada reintento re-tokeniza |
@@ -841,6 +841,12 @@ tampoco respondió la consulta abierta por `R-MP-01` (la discontinuación de la 
 y no se retracta nada de él. Lo que no existe es la cuenta para usarla. **Decidir por Mercado Pago no
 es preferirlo**: es reconocer que la comparación no se puede terminar y que el programa no podía
 quedar detenido esperando a un tercero que no contesta.
+
+**El cruce ya está hecho**, y vive en su propio documento:
+[**`24-inventario-de-compensacion.md`**](./24-inventario-de-compensacion.md) — **25 carencias, 18
+compensadas, 7 sin respuesta de diseño**. Ahí está fila por fila, con la decisión que la cubre o la
+constancia de que no hay ninguna. Ese documento también corrigió dos errores de clasificación del §1
+de acá (ver `EX-24`).
 
 **Lo que este documento aporta de acá en adelante**, y es lo que lo vuelve un insumo vivo en vez de
 un archivo cerrado: el **§1** es el inventario de lo que hay que suplir. Las **9 fallas de integridad**
