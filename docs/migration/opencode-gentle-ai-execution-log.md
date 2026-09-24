@@ -4215,3 +4215,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   declarativas, límites de secretos, fallback legacy y validación mínima.
 - El documento queda como referencia para futuros adapters y para el instalador
   multi-proyecto.
+
+## Gate 276 · Guard de fixtures qz
+
+- El pre-commit ahora valida cualquier `.qz/project.json` bajo
+  `tools/qz/fixtures/*` con el mismo validador read-only.
+- Esto evita agregar ejemplos de adapters inválidos que luego oculten
+  acoplamientos o rompan la documentación ejecutable.

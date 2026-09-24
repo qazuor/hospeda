@@ -28,6 +28,16 @@ if [ -n "$STAGED_PROJECT_ADAPTER" ]; then
   node tools/qz/validate-project.mjs || exit 1
 fi
 
+STAGED_QZ_FIXTURES=$(git diff --cached --name-only --diff-filter=ACMR \
+  | grep -E '^tools/qz/fixtures/[^/]+/\.qz/project\.json$' || true)
+if [ -n "$STAGED_QZ_FIXTURES" ]; then
+  echo "🔍 Validating qz fixtures..."
+  printf '%s\n' "$STAGED_QZ_FIXTURES" | while IFS= read -r manifest; do
+    [ -n "$manifest" ] || continue
+    node tools/qz/validate-project.mjs "$(dirname "$(dirname "$manifest")")" || exit 1
+  done
+fi
+
 # 1.5. SPEC-092 T-090: detect raw ilike() usage that bypasses safeIlike() (BLOCKING)
 # Only run when at least one staged TypeScript file is touched — keeps non-code
 # commits (.md, .json, fixtures) cheap.

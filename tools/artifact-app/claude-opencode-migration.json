@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 99,
+        "number": 100,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "documentar el contrato portable del adapter qz",
+        "reason": "agregar guard de fixtures qz al pre-commit",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_98"
+        "basedOnVersion": "ver_claude_opencode_migration_99"
     },
     "data": {
         "sections": [
