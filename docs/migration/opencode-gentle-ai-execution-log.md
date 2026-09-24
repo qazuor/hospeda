@@ -3973,3 +3973,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   refs Git; el config legacy continúa como fallback.
 - El adapter pasó validación y se calcularon fingerprints read-only de schema y
   template sin tocar PostgreSQL ni promover bases.
+
+## Gate 250 · Fuente declarativa de envs para worktrees
+
+- `wt-create.sh` y `wt-up.sh` ahora prefieren
+  `worktree.envSource.relativePath` del adapter para resolver el script de
+  reconciliación de envs.
+- `HOPS_ENV_COPY_SCRIPT` conserva precedencia explícita y el script legacy
+  sigue siendo fallback.
+- Se validó sintaxis Bash y que el path declarado sea ejecutable; no se
+  copiaron archivos `.env` ni se leyeron valores.

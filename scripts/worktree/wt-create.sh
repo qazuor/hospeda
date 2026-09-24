@@ -92,8 +92,10 @@ git -C "$ROOT" worktree add "$WTPATH" -b "$BRANCH" "$START" || { echo "git workt
 NEWCFG="$WTPATH/.claude/project.config.json"
 [ -f "$NEWCFG" ] || NEWCFG="$CFG"
 
-# Copy env (script must run from ROOT, absolute dest).
-ECS="$(jq -r '.setup.envCopyScript // empty' "$NEWCFG")"
+# Copy env (script must run from ROOT, absolute dest). Prefer the declarative
+# adapter path; older checkouts continue using setup.envCopyScript.
+ECS="$(jq -r '.worktree.envSource.relativePath // empty' "$NEWCFG")"
+[ -n "$ECS" ] || ECS="$(jq -r '.setup.envCopyScript // empty' "$NEWCFG")"
 if [ -n "$ECS" ] && [ -f "$ROOT/$ECS" ]; then
   echo "Copying env via $ECS"
   ( cd "$ROOT" && bash "$ECS" "$WTPATH" ) || echo "WARN: env copy reported issues"

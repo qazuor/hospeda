@@ -117,7 +117,14 @@ fi
 
 # 0c — seed/merge .env.local files
 echo "-- preparing .env.local files"
-ENV_COPY_SCRIPT="${HOPS_ENV_COPY_SCRIPT:-$ROOT/scripts/copy-env-to-worktree.sh}"
+ADAPTER_ENV_SCRIPT="$(jq -r '.worktree.envSource.relativePath // empty' "$CFG" 2>/dev/null || true)"
+if [ -n "${HOPS_ENV_COPY_SCRIPT:-}" ]; then
+  ENV_COPY_SCRIPT="$HOPS_ENV_COPY_SCRIPT"
+elif [ -n "$ADAPTER_ENV_SCRIPT" ]; then
+  ENV_COPY_SCRIPT="$ROOT/$ADAPTER_ENV_SCRIPT"
+else
+  ENV_COPY_SCRIPT="$ROOT/scripts/copy-env-to-worktree.sh"
+fi
 [ -x "$ENV_COPY_SCRIPT" ] || { echo "ERROR: env copy script is not executable: $ENV_COPY_SCRIPT" >&2; exit 1; }
 HOPS_ENV_RECONCILE=1 bash "$ENV_COPY_SCRIPT" "$ROOT" || {
   echo "ERROR: trusted env copy failed" >&2
