@@ -3918,3 +3918,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `project-config.test.ts`: 1/1 test, 1 assertion.
 - La prueba usa un fixture temporal bajo `/tmp`; no toca repositorios, bases,
   envs ni configuración global.
+
+## Gate 244 · Validación declarativa de servidores
+
+- `tools/qz/validate-project.mjs` ahora verifica ids de servidor únicos,
+  puertos válidos, comandos `start` no vacíos y tipos de `healthPath`.
+- El adapter actual de Hospeda (`api`, `admin`, `web`) pasó sin errores.
+- El guard sólo lee `.qz/project.json`; no inicia servidores ni modifica
+  configuración.

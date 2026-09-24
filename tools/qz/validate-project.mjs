@@ -19,6 +19,22 @@ if (!config.issues?.provider || !config.issues?.teamKey) errors.push('issues:pro
 if (!config.branches?.base || !Array.isArray(config.branches?.protected)) errors.push('branches:base/protected')
 if (!config.worktree?.pathPattern || !config.worktree?.envSource) errors.push('worktree:pathPattern/envSource')
 if (!Array.isArray(config.servers) || config.servers.length === 0) errors.push('servers:empty')
+const serverIds = new Set()
+for (const [index, server] of (config.servers || []).entries()) {
+  if (!server || typeof server.id !== 'string' || server.id.length === 0) {
+    errors.push(`servers[${index}]:id`)
+    continue
+  }
+  if (serverIds.has(server.id)) errors.push(`servers[${index}]:duplicate-id:${server.id}`)
+  serverIds.add(server.id)
+  if (!Number.isInteger(server.defaultPort) || server.defaultPort < 1 || server.defaultPort > 65535) {
+    errors.push(`servers[${index}]:defaultPort`)
+  }
+  if (typeof server.start !== 'string' || server.start.length === 0) errors.push(`servers[${index}]:start`)
+  if (server.healthPath !== undefined && typeof server.healthPath !== 'string') {
+    errors.push(`servers[${index}]:healthPath`)
+  }
+}
 if (!config.commands?.genericPrefix || !config.commands?.projectPrefix) errors.push('commands:prefixes')
 const serialized = JSON.stringify(config).toLowerCase()
 for (const forbidden of ['password', 'secret', 'token', 'privatekey', 'accesskey']) {
