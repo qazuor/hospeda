@@ -30,6 +30,66 @@
                 }
             },
             {
+                "id": "empirical-results",
+                "type": "table",
+                "title": "Resultados empíricos de Gentle Shell en Hospeda",
+                "data": {
+                    "columns": ["Prueba", "Resultado", "Evidencia / límite"],
+                    "rows": [
+                        [
+                            "Instalación y doctor",
+                            "OK",
+                            "gentle-ai doctor: 9/9; home aislado ~/.gentle-shell/agent"
+                        ],
+                        [
+                            "Auth y modelo",
+                            "OK",
+                            "OpenAI Codex ready; gpt-5.5; smoke inocuo SMOKE_OK"
+                        ],
+                        [
+                            "Capa común qz/hops",
+                            "OK",
+                            "36 commands hops-*, skill, manifest y cero drift"
+                        ],
+                        [
+                            "Hops read-only",
+                            "OK",
+                            "recap, context, env --drift, Engram, gentle-status y SDD status"
+                        ],
+                        [
+                            "Linear/worktree",
+                            "OK",
+                            "start-issue HOS-635 --dry-run resolvió Linear y base develop sin mutar"
+                        ],
+                        [
+                            "Artifacts",
+                            "OK",
+                            "servidor local, galería, list/state y artifact de migración v300"
+                        ],
+                        [
+                            "Smoke agent-driven",
+                            "OK",
+                            "ejecutó exactamente qz/hops recap --json y separó verificado/inferido"
+                        ],
+                        [
+                            "Suite del paquete",
+                            "Mixto",
+                            "3.349 tests: 3.235 pass, 25 fail, 51 cancelled, 38 skipped"
+                        ],
+                        [
+                            "verify --changed",
+                            "Inconcluso",
+                            "inició los 40 pasos CI y llegó a builds; no terminó en la ventana"
+                        ],
+                        [
+                            "Conclusión",
+                            "Candidato viable",
+                            "integración real funciona; falta cerrar el gate largo de CI"
+                        ]
+                    ]
+                }
+            },
+            {
                 "id": "metrics",
                 "type": "metricGrid",
                 "title": "Resultado para Hospeda",
@@ -39,7 +99,7 @@
                         { "value": "1", "label": "capa Gentle-AI compatible" },
                         { "value": "1", "label": "workflow común: qz/hops" },
                         { "value": "0", "label": "ganadores declarados antes de las pruebas" },
-                        { "value": "100%", "label": "decisión basada en pruebas Hospeda" }
+                        { "value": "9", "label": "escenarios Gentle Shell probados en Hospeda" }
                     ]
                 }
             },
@@ -76,8 +136,8 @@
                         ],
                         [
                             "Gentle Shell",
-                            "no instalado",
-                            "Harness Pi-native; candidato separado, no plugin de OpenCode"
+                            "3.7.0 + Pi 0.87.1",
+                            "Harness Pi-native instalado en home aislado; candidato separado, no plugin de OpenCode"
                         ]
                     ]
                 }
@@ -110,8 +170,8 @@
                         [
                             "Gentle Shell",
                             "ODD, memoria, review, TDD, profiles y agentes integrados en Pi",
-                            "Otro runtime, otra TUI y otro home; debe probarse con qz/hops",
-                            "Candidato en igualdad"
+                            "Otro runtime, otra TUI y otro home; CI completo aún inconcluso",
+                            "Candidato viable; no reemplaza todavía al principal"
                         ]
                     ]
                 }
@@ -369,7 +429,7 @@
                             "Capa compatible; validar",
                             "Capa compatible; validar",
                             "Capa compatible; validar",
-                            "Evaluar como harness alternativo completo"
+                            "Validado como harness alternativo completo; mantener en evaluación"
                         ]
                     ]
                 }
@@ -436,7 +496,7 @@
                 "type": "prose",
                 "title": "Fuentes y caveats",
                 "data": {
-                    "markdown": "**Fuentes primarias consultadas:** documentación de configuración, agentes, plugins y MCP de OpenCode; repositorio, seguridad, skills, AGENTS.md, MCP y plugins de Codex; documentación de configuración, skills, hooks, reglas, subagentes y worktrees de Claude Code; documentación de uso previsto, trigger rules, releases y Pi/Gentle Shell de Gentleman Programming.\n\n**Caveat principal:** OpenCode local es 1.18.32 (V1), mientras que la documentación pública actual describe V2 en varias áreas. La matriz marca esos puntos como caveat y exige prueba local antes de adoptarlos.\n\n**Decisión actual:** no hay ganador declarado. OpenCode, Codex CLI, Claude Code y Gentle Shell son candidatos al mismo nivel; Gentle-AI es la capa compatible y qz/hops es la capa portable."
+                    "markdown": "**Fuentes primarias consultadas:** documentación de configuración, agentes, plugins y MCP de OpenCode; repositorio, seguridad, skills, AGENTS.md, MCP y plugins de Codex; documentación de configuración, skills, hooks, reglas, subagentes y worktrees de Claude Code; documentación de uso previsto, trigger rules, releases y Pi/Gentle Shell de Gentleman Programming.\n\n**Evidencia nueva:** Gentle Shell 3.7.0 + Pi 0.87.1 completaron instalación, doctor, auth, carga de 36 commands, qz/hops read-only, Linear dry-run, Engram, artifacts y smoke agent-driven real. `verify --changed` de Hospeda sigue inconcluso por duración.\n\n**Decisión actual:** no hay ganador declarado. OpenCode, Codex CLI, Claude Code y Gentle Shell siguen siendo candidatos; Gentle Shell ya es un candidato viable medido con Hospeda, pero no reemplaza al principal hasta cerrar CI completo. Gentle-AI es la capa compatible y qz/hops la capa portable."
                 }
             }
         ]
