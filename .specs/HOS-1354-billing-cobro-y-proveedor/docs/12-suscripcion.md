@@ -653,12 +653,14 @@ reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. **La
    ser la completa.
 
 **Por qué el corte es al inicio del día y no a la hora de la fecha**: el proveedor **no cobra a la hora
-exacta** de la fecha, sino en un **lote diario** —medido el 2026-09-24 sobre tres suscripciones de
-producción: los **trece cobros de renovación**, todos creados **entre las 14:01 y las 14:02 `-04`**,
-con fechas de cobro de las 13:13, 13:19 y 13:28 (manifiesto de `RN-3`, fuera del repo:
-`~/.hos1352-rn3-manifiesto.json`)—, y **no está medido** si ese lote alcanza a una fecha más tardía del mismo
-día. Cortar al inicio del día es correcto en los dos casos, y el costo es, como mucho, un día menos
-de ventana.
+exacta** de la fecha, sino en **lotes** —medido el 2026-09-24 en producción—: los **trece cobros de
+renovación** de tres suscripciones con fechas de las 13:13, 13:19 y 13:28 `-04` se crearon todos
+**entre las 14:01 y las 14:02** (manifiesto de `RN-3`, fuera del repo:
+`~/.hos1352-rn3-manifiesto.json`), y el de la sonda 49, con fecha de las **17:43**, **no** entró en el
+lote de las 14:02 y se creó a las **18:02:20**. Lo que eso sostiene: **el cobro cae en el primer lote
+posterior a la hora de la fecha**, y los lotes corren al minuto `:02`. **No está medido que corran
+TODAS las horas** — hay dos lotes observados, 14:02 y 18:02. El corte al inicio del día es correcto
+con cualquier cadencia, y es conservador: cuesta, como mucho, un día de ventana.
 
 **Por qué el mínimo es un criterio y no una medición**: nadie midió cuánto tarda una persona en
 completar el checkout — las 72 h tampoco salen de una medición. Ofrecer una ventana de pocas horas
