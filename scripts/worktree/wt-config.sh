@@ -20,6 +20,16 @@ wt_cfg() { # $1 = jq filter
   jq -r "$1 // empty" "$cfg"
 }
 
+# Declarative branch base, with the legacy config as a compatibility fallback.
+# Keeping this in one helper prevents teardown/refresh code from silently
+# diverging from wt-create's branch selection.
+wt_base_branch() {
+  local branch
+  branch="$(wt_qz_cfg '.branches.base')"
+  [ -n "$branch" ] || branch="$(wt_cfg '.baseBranch')"
+  printf '%s' "$branch"
+}
+
 # --- worktree state file (gitignored, per worktree) ---
 wt_state_path() { echo "$(wt_root)/.claude/worktree-state.local.json"; }
 wt_state_ensure() {
@@ -123,13 +133,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   if [ -f "$cfg" ]; then
     echo "Config:     $cfg"
     if jq empty "$cfg" 2>/dev/null; then echo "Valid JSON: yes"; else echo "Valid JSON: NO"; exit 1; fi
-    base_branch="$(wt_qz_cfg '.branches.base')"
-    [ -n "$base_branch" ] || base_branch="$(jq -r '.baseBranch // "?"' "$cfg")"
+    base_branch="$(wt_base_branch)"
+    [ -n "$base_branch" ] || base_branch="?"
     echo "baseBranch: $base_branch"
     echo "protected:  $(jq -r '(.protectedBranches // []) | join(", ")' "$cfg")"
     server_names="$(wt_qz_cfg '[.servers[]?.id] | join(", ")')"
     [ -n "$server_names" ] || server_names="$(jq -r '[.servers[]?.name] | join(", ")' "$cfg")"
     echo "servers:    $server_names"
+    db_strategy="$(wt_qz_cfg '.database.strategy')"
+    [ -n "$db_strategy" ] || db_strategy="(legacy)"
+    echo "db.strategy: $db_strategy"
     echo "db.mode:    $(jq -r '.db.mode // "none"' "$cfg")"
   else
     echo "Config:     MISSING ($cfg)"

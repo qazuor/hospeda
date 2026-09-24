@@ -4036,3 +4036,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   estrategia declarativa todavía no tiene equivalencia completa con todos los
   modos destructivos.
 - Sintaxis y ejecución read-only validadas; no se modificó configuración.
+
+## Gate 257 · Base declarativa compartida para teardown
+
+- `wt-config.sh` ahora expone `wt_base_branch`, que prioriza
+  `.qz/project.json` y mantiene `.claude/project.config.json` como fallback.
+- `wt-cleanup.sh` usa esa misma resolución al comparar cambios de schema/seed
+  antes de refrescar el template, evitando que creación y teardown puedan usar
+  ramas base distintas.
+- El diagnóstico standalone muestra `db.strategy` declarativo junto a
+  `db.mode` legacy para hacer visible la equivalencia pendiente sin cambiar
+  todavía la lógica destructiva de bases.
+- Se validó `bash -n` y ejecución read-only de `wt-config.sh`; no se borraron
+  worktrees, bases ni templates.

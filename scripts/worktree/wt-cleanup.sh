@@ -27,7 +27,7 @@ case "$SUB" in
 
     if [ -f "$CFG" ] && [ "$(jq -r '.db.mode // "none"' "$CFG")" != "none" ]; then
       if [ "$REFRESH" -eq 1 ]; then
-        BASE="$(jq -r '.baseBranch' "$CFG")"
+        BASE="$(wt_base_branch)"
         # Refresh the shared template only if this branch changed schema/seed.
         changed="$(git -C "$ROOT" diff --name-only "$BASE"...HEAD -- packages/db packages/seed 2>/dev/null)"
         if [ -n "$changed" ]; then
