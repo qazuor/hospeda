@@ -89,9 +89,11 @@ forma con backticks.
 - El handoff del 2026-09-24 dice que la familia 6 *«ya no espera nada»* y lista `RC-6` con ella:
   sigue siendo cierto y queda cumplido.
 
-## 7. Preguntas para el owner
+## 7. Preguntas para el owner — las dos contestadas el mismo día
 
-1. **¿Se agrega a la fila `RC-5` de la matriz la precisión *«cuenta registros, no intentos»*, con
-   la medición del 2026-09-24?** No cambia el estado (`NOT_SUPPORTED`) ni ningún conteo.
-2. **¿Cuántas corridas espera el barrido un cobro *«todavía no se sabe»* antes de mirarlo?** Es un
-   número, no un mecanismo (`B/09` §6.2).
+1. **¿Se agrega a la fila `RC-5` de la matriz la precisión *«cuenta registros, no intentos»*?** —
+   **Sí** (`28521b3ca4`). No cambió el estado ni ningún conteo.
+2. **¿Cuántas corridas espera el barrido un cobro *«todavía no se sabe»* antes de mirarlo?** —
+   **Una**; en la siguiente se avisa por el canal de `DEC-OBS-001`, sin abrir marca (`B/09` §6.2).
+   De tres opciones —avisar a la corrida siguiente, no avisar nunca, o un motivo de marca nuevo—
+   eligió la recomendada, que no agrega mecanismo.
