@@ -241,15 +241,22 @@ Lo que este capítulo agrega es qué sabemos del lado del proveedor:
 
 | | |
 |---|---|
-| **¿un `pending` vence solo?** | **`EX-1` sigue `UNKNOWN`.** Hay un sujeto vivo desde el 2026-09-15 esperando respuesta. **Por eso la ventana de autorización es NUESTRA y no del proveedor**: no se puede depender de un vencimiento que no está medido. **Y por eso `DEC-SUB-016` la pudo partir en dos plazos sin preguntarle nada al proveedor**: la cifra es nuestra en los dos casos |
+| **¿un `pending` vence solo?** | **NO, y está medido: `EX-1` cerró el 2026-09-23** como `PARTIALLY_SUPPORTED`. A los **8 días y 3 horas** el sujeto `bf9b6feba3…` seguía `pending`, con `last_modified` **congelado** un minuto después de crearse, `next_payment_date` **en la fecha original** y el `init_point` devolviéndose entero. **Lo único que quedó sin medir es si se puede reusar**, que exige completar el checkout. **La ventana de autorización es NUESTRA y no del proveedor** — y ahora no por prudencia sino porque **el proveedor no tiene ninguna**. Y por eso `DEC-SUB-016` la pudo partir en dos plazos sin preguntarle nada: la cifra es nuestra en los dos casos |
 | **¿se puede cancelar un `pending`?** | **sí**, 11 de 11 verificado por relectura (`EX-17`) |
 | **¿el checkout respeta una fecha de primer cobro futura?** | **sí**, `EX-33` `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador |
 | **¿el enlace que devuelve la API sirve?** | **no**, viene roto (`EX-37`, §4.2) |
 
-**La consecuencia de que `EX-1` siga abierto**: nuestro job de limpieza **cancela explícitamente**
-el preapproval al vencer la ventana. Si además el proveedor lo vence solo, la cancelación es un
-no-op; si no lo vence, es lo único que impide una autorización viva que puede cobrar. **Falla
-hacia el lado seguro sin saber la respuesta.**
+**La consecuencia, y la medición del 2026-09-23 la endureció.** Nuestro job de limpieza **cancela
+explícitamente** el preapproval al vencer la ventana. Eso se había escrito como *«falla hacia el
+lado seguro sin saber la respuesta»*, con la cancelación siendo **un no-op** si el proveedor
+vencía solo. **Ya no es un no-op: es lo único que mata la autorización.** `EX-1` midió que un
+`pending` **no vence nunca**, así que sin ese job quedaría **para siempre** un preapproval que
+alguien puede autorizar meses después —con el `init_point` todavía entero— y empezar a cobrar
+sobre un checkout que nadie recuerda haber abierto.
+
+> 📌 **Vale como precedente de método**: la decisión tomada sin el dato resultó **la misma** que se
+> habría tomado con él, pero **dejó de ser una precaución para volverse un requisito**. Lo que
+> cambia no es el diseño: es qué pasa si alguien lo borra por parecerle redundante.
 
 ---
 
