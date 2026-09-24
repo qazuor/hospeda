@@ -4711,12 +4711,22 @@ Cada entrada lleva, según §3.4:
 - **La directriz no es un cambio de rumbo: le pone nombre a lo que el diseño ya venía haciendo.**
   Siete compensaciones ya decididas, medidas en `10-evaluacion-de-proveedor.md:65-79`: el reloj de fin
   de pausa es nuestro porque `PS-4` no auto-reanuda · `DEC-SUB-010` porque `EX-34` no deja correr la
-  fecha de una viva · `DEC-SUB-006` cancela y recrea porque `EX-21`/`EX-4`/`EX-24`/`EX-25` no dejan
-  mover de plan ni de ciclo · `DEC-ADDON-002` da un preapproval por addon porque `EX-5` sólo admite un
-  monto por autorización · `DEC-CONC-001` pone el candado del doble cobro de nuestro lado porque
-  `EX-17` no es idempotente · `DEC-GRANT-003` implementa la cortesía pausando porque `EX-35` no deja
-  ponerle trial a una viva · y **toda mutación se verifica releyendo**, porque los **9 casos** de la
-  categoría A1 aceptan y no aplican.
+  fecha de una viva · `DEC-SUB-006` cancela y recrea porque `EX-21` no deja mover de plan y `EX-4` y
+  `EX-25` no dejan cambiar el ciclo de una viva ni alcanzar a los ya suscriptos · `DEC-ADDON-002` da un
+  preapproval por addon porque `EX-5` sólo admite un monto por autorización · `DEC-CONC-001` pone el
+  candado del doble cobro de nuestro lado porque `EX-17` no es idempotente · `DEC-GRANT-003` implementa
+  la cortesía pausando porque `EX-35` no deja ponerle trial a una viva · y **toda mutación se verifica
+  releyendo**, porque la categoría A1 acepta y no aplica.
+  > ❌ **Corregido el 2026-09-24, el mismo día en que se escribió: `EX-24` NO va en esa lista, y la
+  > primera redacción de esta entrada la incluía.** `EX-24` está `VERIFIED` y mide que **el ciclo de un
+  > plan SÍ es editable** —*«verificado por relectura dos veces: `1 days → 2 days` … y `1 months → 2
+  > months`»*—, o sea un ÉXITO del proveedor, no una carencia. El error se copió de
+  > `10-evaluacion-de-proveedor.md:73`, que agrupa *«cambiar el ciclo (`EX-4`, `EX-24`, `EX-25`)»* bajo
+  > lo que no se puede. **Y el mismo documento la lista entre los 9 casos de A1 *«acepta y no
+  > aplica»*** (l. 55), que también es falso por la misma razón: son **8**. Lo que sí vale de `EX-24`
+  > es su asimetría con `EX-25` —el ciclo del plan se edita pero **no alcanza a los ya suscriptos**—,
+  > y eso ya está en `EX-25`. **Lección: una fila `VERIFIED` puede estar catalogada como falla, y la
+  > única defensa es abrir la fila en vez de confiar en la tabla que la agrupa.**
 - **Lo que esta decisión desbloquea**: el **capítulo 13 entero** (era el único de los 22 sin escribir,
   diferido *«porque depende de con qué pasarela vamos a cobrar»*), el candado `C5` —la columna
   `período`, que `15-fase-9/07-decisiones-del-owner.md:543-546` clasificaba como **bloqueo y no
