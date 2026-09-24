@@ -1,0 +1,454 @@
+{
+    "schemaVersion": "artifact/v1",
+    "artifact": {
+        "id": "art_harness_comparison",
+        "project": "multi-project",
+        "slug": "harness-comparison",
+        "title": "OpenCode vs Codex vs Claude Code vs Gentle Shell",
+        "description": "Comparativa de harnesses para elegir el cliente de trabajo. Gentle-AI se analiza aparte como capa compatible, no como harness.",
+        "audience": "team"
+    },
+    "version": {
+        "id": "ver_harness_comparison_1",
+        "number": 1,
+        "createdAt": "2026-09-24T00:00:00.000Z",
+        "author": "opencode",
+        "reason": "corregir el alcance: cuatro harnesses y Gentle-AI como capa de integración",
+        "sourceHash": "sha256:harness-comparison-2026-09-24",
+        "rendererVersion": "artifact-app/0.1"
+    },
+    "data": {
+        "sections": [
+            {
+                "id": "hero",
+                "type": "hero",
+                "title": "Qué harness conviene usar",
+                "data": {
+                    "eyebrow": "Comparativa de arquitectura y workflow · 24 septiembre 2026",
+                    "title": "Cuatro harnesses, una capa común",
+                    "description": "OpenCode, Codex CLI, Claude Code y Gentle Shell son los harnesses comparados. Gentle-AI no compite como quinto harness: se evalúa como capa de metodología, memoria y provisioning que puede integrarse con algunos de ellos."
+                }
+            },
+            {
+                "id": "metrics",
+                "type": "metricGrid",
+                "title": "Resultado para Hospeda",
+                "data": {
+                    "metrics": [
+                        { "value": "1º", "label": "OpenCode como harness principal" },
+                        { "value": "2º", "label": "Codex como cliente seguro secundario" },
+                        { "value": "3º", "label": "Claude como compatibilidad y rollback" },
+                        { "value": "Fuera", "label": "Gentle Shell mientras no adoptemos Pi" },
+                        { "value": "1", "label": "workflow común: qz/hops" }
+                    ]
+                }
+            },
+            {
+                "id": "scope",
+                "type": "callout",
+                "title": "Cómo leer la comparación",
+                "data": {
+                    "tone": "info",
+                    "text": "No se comparan modelos, calidad de respuestas ni precios. Nativo significa que pertenece al harness; extensión significa plugin, MCP o configuración; externo significa que debe vivir en qz/hops. Gentle-AI se analiza sólo en la sección de compatibilidad."
+                }
+            },
+            {
+                "id": "versions",
+                "type": "table",
+                "title": "Versiones relevadas localmente",
+                "data": {
+                    "columns": ["Harness", "Versión", "Rol en la evaluación"],
+                    "rows": [
+                        [
+                            "OpenCode",
+                            "1.18.32",
+                            "Candidato principal; V1 instalada por compatibilidad con Gentle-AI"
+                        ],
+                        [
+                            "Codex CLI",
+                            "0.155.1",
+                            "Cliente alternativo con sandbox y approvals fuertes"
+                        ],
+                        [
+                            "Claude Code",
+                            "2.1.282",
+                            "Cliente maduro para compatibilidad, rollback y comparación"
+                        ],
+                        [
+                            "Gentle Shell",
+                            "no instalado",
+                            "Harness Pi-native; candidato separado, no plugin de OpenCode"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "executive",
+                "type": "table",
+                "title": "Resumen ejecutivo",
+                "data": {
+                    "columns": ["Harness", "Fortaleza principal", "Riesgo principal", "Decisión"],
+                    "rows": [
+                        [
+                            "OpenCode",
+                            "Neutralidad, MCP, skills, commands, agentes y TUI configurable",
+                            "V1 local frente a documentación V2; plugins/worktrees pueden divergir",
+                            "Principal"
+                        ],
+                        [
+                            "Codex CLI",
+                            "Sandbox + approvals explícitos y buen soporte AGENTS.md",
+                            "Centro de gravedad OpenAI y ecosistema en evolución",
+                            "Secundario"
+                        ],
+                        [
+                            "Claude Code",
+                            "Hooks, plugins, equipos, subagentes, memoria y worktrees maduros",
+                            "Lock-in en hooks, CLAUDE.md y plugins",
+                            "Compatibilidad/rollback"
+                        ],
+                        [
+                            "Gentle Shell",
+                            "ODD, memoria, review y TDD integrados en Pi",
+                            "Otro runtime, otra TUI y otro home; no es OpenCode",
+                            "No instalar ahora"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "detailed-matrix",
+                "type": "table",
+                "title": "Matriz detallada de capacidades",
+                "data": {
+                    "columns": [
+                        "Capacidad",
+                        "OpenCode",
+                        "Codex CLI",
+                        "Claude Code",
+                        "Gentle Shell"
+                    ],
+                    "rows": [
+                        [
+                            "Interfaz",
+                            "TUI + CLI; servidor/cliente en evolución",
+                            "TUI + CLI + no interactivo",
+                            "CLI/TUI + superficies de escritorio",
+                            "TUI completa de Pi"
+                        ],
+                        [
+                            "Instrucciones",
+                            "AGENTS.md; usarlo en vez de instructions en V2",
+                            "AGENTS.md jerárquico",
+                            "CLAUDE.md + rules",
+                            "Instrucciones de Pi/Gentle"
+                        ],
+                        [
+                            "Skills",
+                            "Nativos, globales, locales y URLs",
+                            "Nativos y registrables",
+                            "Nativos, bajo demanda",
+                            "Skills de Pi/Gentle"
+                        ],
+                        [
+                            "Commands",
+                            ".opencode/commands",
+                            "Slash commands y CLI",
+                            ".claude/commands y skills",
+                            "Commands de Pi"
+                        ],
+                        [
+                            "Agentes",
+                            "Primary/subagent, archivos Markdown",
+                            "Agentes, perfiles y app-server",
+                            "Subagentes, agent teams y plugins",
+                            "Agentes enfocados de Gentle"
+                        ],
+                        [
+                            "Hooks",
+                            "Plugins/config; validar detalle en V1",
+                            "Hooks gobernables y administrables",
+                            "Comando, HTTP, MCP, prompt y subagente",
+                            "Review/guardrails Pi-Gentle"
+                        ],
+                        [
+                            "MCP",
+                            "Local/remoto, OAuth, env y timeout",
+                            "CLI y config documentados",
+                            ".mcp.json, scopes y plugins",
+                            "A través de Pi"
+                        ],
+                        [
+                            "Plugins",
+                            "Paquetes y plugins locales",
+                            "Plugins y marketplaces",
+                            "Plugins y marketplaces maduros",
+                            "Paquetes Pi/Gentle"
+                        ],
+                        [
+                            "Permisos",
+                            "Allow/ask/deny ordenados",
+                            "Approval policy + sandbox",
+                            "Default, plan, acceptEdits, auto, bypass",
+                            "Política repartida en Pi/Gentle"
+                        ],
+                        [
+                            "Sandbox",
+                            "Depende del entorno; validar V1",
+                            "Frontera nativa más clara",
+                            "Permisos; no siempre sandbox de SO",
+                            "Depende de Pi/entorno"
+                        ],
+                        [
+                            "Worktrees",
+                            "Git integrado; plugins pueden cambiar estrategia",
+                            "Soporte documentado",
+                            "Worktrees nativos y worktreeinclude",
+                            "Workspace Pi, no wt-create"
+                        ],
+                        [
+                            "Env/DB/puertos",
+                            "No conoce Hospeda",
+                            "No conoce Hospeda",
+                            "No conoce Hospeda",
+                            "No conoce Hospeda"
+                        ],
+                        [
+                            "Snapshots/undo",
+                            "Documentado en V2; validar V1",
+                            "Recuperación y Git",
+                            "Checkpoints/sesiones/Git",
+                            "Historial Pi"
+                        ],
+                        [
+                            "Sesiones/compaction",
+                            "Sesiones y compaction según versión",
+                            "Resume, app-server y compaction",
+                            "Resume, memoria y compaction",
+                            "Estado del workspace Pi"
+                        ],
+                        [
+                            "Memoria",
+                            "Engram por MCP",
+                            "Engram por MCP",
+                            "Auto-memory o Engram por MCP",
+                            "Memoria integrada en Gentle/Pi"
+                        ],
+                        [
+                            "Browser/media",
+                            "MCP/plugins; media según versión",
+                            "MCP y entrada multimedia",
+                            "MCP/browser/adjuntos",
+                            "Depende de Pi"
+                        ],
+                        [
+                            "GitHub/CI",
+                            "Plugins/scripts",
+                            "GitHub Actions y app-server",
+                            "GitHub, PRs y automatización",
+                            "No es autoridad de entrega"
+                        ],
+                        [
+                            "Linear",
+                            "qz/hops o MCP",
+                            "qz/hops, API o MCP",
+                            "qz/hops, API, MCP o hooks",
+                            "Sin conector propio"
+                        ],
+                        [
+                            "Review/TDD",
+                            "Skills, agentes y guards externos",
+                            "Auto-review y security del ecosistema",
+                            "Hooks, review y subagentes",
+                            "Review/TDD integrados"
+                        ],
+                        [
+                            "Background",
+                            "Subagentes/plugins",
+                            "Agentes/app-server",
+                            "Agent teams/subagentes",
+                            "Background agents Pi"
+                        ],
+                        [
+                            "Status/notificaciones",
+                            "TUI y plugins",
+                            "CLI/app-server",
+                            "Statusline/hooks/plugins",
+                            "Status/diff/uso nativos"
+                        ],
+                        [
+                            "Observabilidad",
+                            "Config/plugins",
+                            "OpenTelemetry/logs",
+                            "Hooks/logs",
+                            "Depende de Pi/Gentle"
+                        ],
+                        ["Neutralidad", "Alta", "Media/baja", "Baja/media", "Baja"],
+                        [
+                            "Portabilidad",
+                            "Alta con AGENTS + qz/hops",
+                            "Alta con AGENTS + qz/hops",
+                            "Media; CLAUDE.md/hooks requieren adaptación",
+                            "Baja fuera de Pi"
+                        ],
+                        ["Lock-in", "Medio", "Medio", "Alto", "Alto"],
+                        [
+                            "Encaje Hospeda",
+                            "Alto",
+                            "Alto como secundario",
+                            "Alto como rollback",
+                            "Bajo actualmente"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "gentle-support",
+                "type": "table",
+                "title": "Cuánto soporta cada harness a Gentle-AI",
+                "data": {
+                    "columns": [
+                        "Capa Gentle-AI",
+                        "OpenCode",
+                        "Codex CLI",
+                        "Claude Code",
+                        "Gentle Shell"
+                    ],
+                    "rows": [
+                        [
+                            "Instalación/provisioning",
+                            "Soporte principal validado",
+                            "Soporte posible; validar installer y rutas",
+                            "Soporte existente del ecosistema",
+                            "Nativo porque es Pi/Gentle"
+                        ],
+                        [
+                            "ODD",
+                            "Usable mediante AGENTS, skills y commands",
+                            "Usable mediante AGENTS y skills",
+                            "Usable mediante CLAUDE.md/skills/hooks",
+                            "Flujo nativo y central"
+                        ],
+                        [
+                            "Engram",
+                            "MCP conectado",
+                            "MCP/configuración",
+                            "MCP/configuración",
+                            "Integración propia de Gentle/Pi"
+                        ],
+                        [
+                            "SDD/OpenSpec",
+                            "Disponible pero explícito",
+                            "Posible mediante skills/scripts",
+                            "Posible mediante skills/commands",
+                            "Disponible como opción Pi/Gentle"
+                        ],
+                        [
+                            "GGA/review/RDD",
+                            "Capa Gentle + scripts; no asumir nativo",
+                            "Capa Gentle + scripts",
+                            "Capa Gentle + hooks/plugins",
+                            "Integrado en la experiencia Gentle"
+                        ],
+                        [
+                            "Skill registry",
+                            "Provisionado por Gentle; paths deben validarse",
+                            "Instalable/adaptable",
+                            "Instalable/adaptable",
+                            "Provisionado por Gentle"
+                        ],
+                        [
+                            "Conflicto potencial",
+                            "TUI/plugins/worktrees duplicados",
+                            "Menor, pero config evoluciona",
+                            "Hooks/skills duplicados con Claude",
+                            "Máximo: otro harness completo"
+                        ],
+                        [
+                            "Recomendación",
+                            "Capa principal actual",
+                            "Cliente compatible",
+                            "Compatibilidad temporal",
+                            "No instalar ahora"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "harness-boundary",
+                "type": "callout",
+                "title": "Límite que no debemos cruzar",
+                "data": {
+                    "tone": "warning",
+                    "text": "Ningún harness debe convertirse en la autoridad de Linear, branches, worktrees, env, DB, puertos o closeout. OpenCode, Codex y Claude deben invocar qz/hops; Gentle Shell no debe crear una segunda implementación de esos workflows."
+                }
+            },
+            {
+                "id": "score",
+                "type": "table",
+                "title": "Puntuación para nuestro caso",
+                "data": {
+                    "columns": ["Criterio", "OpenCode", "Codex", "Claude Code", "Gentle Shell"],
+                    "rows": [
+                        ["AGENTS.md común", "5", "5", "3", "2"],
+                        ["Seguridad shell", "4", "5", "4", "3"],
+                        ["Extensibilidad", "5", "4", "5", "4"],
+                        ["MCP/integraciones", "5", "4", "5", "3"],
+                        ["Workflows portables", "5", "5", "4", "2"],
+                        ["Madurez diaria", "4", "4", "5", "3"],
+                        ["Riesgo lock-in", "4", "3", "2", "2"],
+                        ["Encaje ODD", "5", "4", "3", "5"],
+                        ["Resultado ponderado", "4.5", "4.1", "3.9", "2.9"]
+                    ]
+                }
+            },
+            {
+                "id": "decisions",
+                "type": "accordion",
+                "title": "Decisiones recomendadas",
+                "data": {
+                    "items": [
+                        {
+                            "title": "OpenCode: principal",
+                            "content": "Mantener OpenCode V1 como TUI/harness diario mientras Gentle-AI siga siendo compatible. No copiar features V2 sin validación local."
+                        },
+                        {
+                            "title": "Codex: secundario seguro",
+                            "content": "Usarlo para tareas acotadas, validaciones y automatización donde sandbox y approvals sean prioritarios. Compartir AGENTS.md y qz/hops."
+                        },
+                        {
+                            "title": "Claude Code: compatibilidad",
+                            "content": "Mantenerlo disponible durante rollback y transición. No agregar lógica nueva exclusiva de Claude ni duplicar workflows."
+                        },
+                        {
+                            "title": "Gentle Shell: fuera por ahora",
+                            "content": "No instalar mientras Pi no sea el harness elegido. Adoptar sus ideas de ODD, review y evidencia mediante Gentle-AI y qz/hops."
+                        },
+                        {
+                            "title": "Gentle-AI: capa, no competidor",
+                            "content": "Evaluar qué instala y configura sobre cada cliente, pero no incluirlo como una quinta columna de harness ni como autoridad del proyecto."
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "sources",
+                "type": "prose",
+                "title": "Fuentes y caveats",
+                "data": {
+                    "markdown": "**Fuentes primarias consultadas:** documentación de configuración, agentes, plugins y MCP de OpenCode; repositorio, seguridad, skills, AGENTS.md, MCP y plugins de Codex; documentación de configuración, skills, hooks, reglas, subagentes y worktrees de Claude Code; documentación de uso previsto, trigger rules, releases y Pi/Gentle Shell de Gentleman Programming.\n\n**Caveat principal:** OpenCode local es 1.18.32 (V1), mientras que la documentación pública actual describe V2 en varias áreas. La matriz marca esos puntos como caveat y exige prueba local antes de adoptarlos.\n\n**Decisión actual:** OpenCode principal, Codex secundario, Claude compatibilidad/rollback, Gentle Shell fuera del stack y Gentle-AI como capa compatible."
+                }
+            }
+        ]
+    },
+    "view": {
+        "tabs": ["comparison"],
+        "defaultTab": "comparison"
+    },
+    "capabilities": [],
+    "sources": [
+        "docs/migration/harness-comparison-2026-09-24.md",
+        "docs/migration/opencode-gentle-ai-plan.md",
+        "docs/migration/opencode-gentle-ai-execution-log.md"
+    ]
+}

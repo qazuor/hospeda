@@ -9,12 +9,11 @@ Fecha de relevamiento: 2026-09-24. El alcance es el **harness**: interfaz, contr
 | OpenCode | 1.18.32 | Es la instalación V1 que elegimos mantener por compatibilidad con Gentle-AI. La documentación oficial actual está orientada a V2; sus capacidades no deben asumirse automáticamente en V1. |
 | Codex CLI | 0.155.1 | CLI local de OpenAI, con sandbox y aprobación como límites de seguridad principales. |
 | Claude Code | 2.1.282 | CLI maduro con hooks, plugins, subagentes, equipos, MCP y worktrees nativos. |
-| Gentle-AI | 3.7.0 | No es un cuarto harness base: instala y coordina capacidades sobre distintos clientes. Su release actual es del 23-09-2026. |
 | Gentle Shell | no instalado | Harness separado, construido sobre Pi. No es un plugin de OpenCode ni una capa de OpenCode. |
 
 ## Qué se está comparando
 
-OpenCode, Codex y Claude Code son clientes/harnesses interactivos que abren sesiones de trabajo sobre un repositorio. Gentle Shell es una experiencia completa basada en Pi. Gentle-AI es una capa de metodología, configuración y automatización que puede convivir con más de un cliente; no debe confundirse con Gentle Shell.
+OpenCode, Codex, Claude Code y Gentle Shell son los cuatro harnesses comparados. Gentle Shell es una experiencia completa basada en Pi. Gentle-AI es una capa de metodología, configuración y automatización que puede convivir con más de un cliente; no debe confundirse con Gentle Shell ni contarse como un quinto harness.
 
 ## Matriz funcional detallada
 
@@ -86,6 +85,20 @@ El coste es el acoplamiento: si la lógica de negocio de Hospeda queda en hooks,
 No es “Gentle-AI para OpenCode”. Es un harness Pi-native que integra ODD, agentes enfocados, estado, diff/uso, memoria, review y TDD dentro de su propia experiencia. Tiene sentido si elegimos Pi como runtime principal. Con OpenCode V1 como base, instalar Gentle Shell agregaría otra TUI, otro home de agente, otra forma de administrar sesiones y otra superficie de plugins.
 
 Para Hospeda lo dejaría fuera por ahora. Podemos adoptar sus ideas de ODD, revisión y evidencia mediante Gentle-AI + `qz/hops` sin introducir el runtime Pi. Se debe reevaluar sólo si decidimos cambiar de OpenCode a Pi, no como complemento casual.
+
+## Compatibilidad de Gentle-AI con cada harness
+
+Gentle-AI 3.7.0 se evalúa como capa compatible, no como columna adicional de harness:
+
+| Capa Gentle-AI | OpenCode | Codex CLI | Claude Code | Gentle Shell |
+|---|---|---|---|---|
+| Instalación/provisioning | Soporte principal validado | Posible; validar rutas y launcher | Soporte existente del ecosistema | Nativo por Pi/Gentle |
+| ODD | AGENTS, skills y commands | AGENTS y skills | CLAUDE.md, skills y hooks | Flujo central |
+| Engram | MCP conectado | MCP/configuración | MCP/configuración | Integración Pi/Gentle |
+| SDD/OpenSpec | Disponible de forma explícita | Skills/scripts | Skills/commands | Opción Pi/Gentle |
+| GGA/review/RDD | Capa Gentle + scripts | Capa Gentle + scripts | Capa Gentle + hooks/plugins | Integrado |
+| Conflicto principal | TUI/plugins/worktrees duplicados | Configuración en evolución | Hooks/skills duplicados | Otro harness completo |
+| Recomendación | Capa principal actual | Cliente compatible | Compatibilidad temporal | No instalar ahora |
 
 ## Puntuación para Hospeda
 
