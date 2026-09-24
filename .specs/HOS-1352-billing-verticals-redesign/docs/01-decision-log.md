@@ -2591,6 +2591,17 @@ Cada entrada lleva, según §3.4:
     —hay que contar vueltas y arbitrar el desenlace— y sobre todo **corta a ciegas**: sin la cláusula 1
     el tope se alcanza igual con seis críticos generados que con cero, y esos dos estados no son lo
     mismo.
+- **📌 Y esto no es una idea nueva: lo propuso la PRIMERA vuelta y nadie lo aplicó.**
+  [`17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md`](../docs/17-fase-8-bis/C2-liberacion-coexistencia-y-migracion.md)
+  §1.3 ya había medido que *«lo que baja no es el stock de defectos: es el tamaño de la tanda de
+  arreglos anterior»* y que **la condición de corte mide un stock mientras el generador es el acto de
+  arreglar** (l. 81-83); su §1.4 concluyó que *«con la condición escrita hoy, el ciclo no tiene
+  convergencia demostrada»* (l. 114-116). El §1.5 propuso **tres** remedios, y esta enmienda es el
+  **tercero**. **Los otros dos siguen sin aplicarse, cuatro vueltas después, y van declarados acá para
+  que no se pierdan otra vez**: (1) extender `DEC-METH-004` para que *«resuelto»* exija recorrer
+  **también el dominio que el arreglo crea**, no sólo el del problema —es lo que habría cazado cuatro
+  hallazgos **dentro** de la FASE 9, sin gastar una pasada entera— y (2) **medir la tasa, no el
+  conteo**: *«críticos nuevos por decisión aplicada»*, que en la 8-bis dio ≈ 0,76.
 - **Lo que esta enmienda NO toca**: el criterio de **fin de la FASE 9** (el punto 1 de la decisión: las
   cuatro salidas de `DEC-METH-004` cerradas y ningún `CRITICA` abierto sin causa declarada). Son dos
   criterios distintos y **se venían citando como uno solo** — el encargo del 2026-09-24 le atribuía al
