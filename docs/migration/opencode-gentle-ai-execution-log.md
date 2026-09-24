@@ -4208,3 +4208,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   sí tienen configuración legacy; un adapter genérico sin install declarado
   informa y continúa sin inventar un gestor de paquetes.
 - No se ejecutaron instalaciones ni se modificaron `node_modules`.
+
+## Gate 275 · Contrato documentado del adapter
+
+- Se documentó `docs/migration/qz-adapter-contract.md` con las secciones
+  declarativas, límites de secretos, fallback legacy y validación mínima.
+- El documento queda como referencia para futuros adapters y para el instalador
+  multi-proyecto.
