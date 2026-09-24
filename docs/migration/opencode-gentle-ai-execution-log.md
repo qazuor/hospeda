@@ -4580,3 +4580,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   y salida de `qz/hops` enviada al modelo. La revisión de seguridad bloquea ese
   payload aun con autorización general; requiere un permiso específico del
   entorno para completarla.
+
+## Gate 307 · E2E agent-driven confirmado
+
+- El usuario ejecutó Gentle Shell en el worktree real con `--tools bash`,
+  `openai-codex/gpt-5.5` y el prompt read-only de `qz/hops recap --json`.
+- El agente ejecutó exactamente el comando solicitado, no leyó secretos, no
+  editó archivos, no hizo commits ni ejecutó mutaciones.
+- La salida JSON fue válida y el análisis distinguió correctamente hechos
+  verificados de inferencias (`dirty`, `issue`, `servers`).
+- Esto confirma la integración end-to-end Gentle Shell → Pi → OpenAI Codex →
+  bash → qz/hops → respuesta estructurada en Hospeda.
+- Queda inconcluso únicamente el gate largo `verify --changed`; no afecta la
+  prueba de integración del harness.
