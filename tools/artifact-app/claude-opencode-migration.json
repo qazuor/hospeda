@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_65",
-        "number": 65,
-        "createdAt": "2026-09-24T01:00:00.000Z",
+        "id": "ver_claude_opencode_migration_66",
+        "number": 66,
+        "createdAt": "2026-09-24T01:20:00.000Z",
         "author": "opencode",
-        "reason": "preparar contrato tipado de adapters qz sin migrar consumidores",
+        "reason": "migrar primer consumidor DB al adapter qz con fallback legacy",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_64"
+        "basedOnVersion": "ver_claude_opencode_migration_65"
     },
     "data": {
         "sections": [
@@ -514,7 +514,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Gate241: se amplió de forma no disruptiva el contrato tipado para database, worktree, servers y commands; los consumidores legacy aún no fueron migrados y falta validar con un segundo proyecto fixture.",
+                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Gate241: se amplió de forma no disruptiva el contrato tipado para database, worktree, servers y commands. Gate242: readDbConfig ya consume templateDatabase, container y connectionEnvVar desde el adapter con fallback legacy; falta migrar más consumidores y validar con un segundo proyecto fixture.",
                             "done": false
                         }
                     ]

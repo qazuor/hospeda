@@ -3900,3 +3900,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   assertions y `qz/validate-project.mjs` pasó sin errores.
 - Falta migrar consumidores por etapas y probar un fixture de segundo proyecto
   antes de habilitar comandos `qz-*` fuera de Hospeda.
+
+## Gate 242 · Primer consumidor DB compatible con el adapter
+
+- `readDbConfig` ahora usa, cuando existe, `database.templateDatabase`,
+  `database.container` y `database.connectionEnvVar` de `.qz/project.json`.
+- Los valores legacy de desarrollo, usuario y connection template permanecen
+  como fallback para no cambiar el comportamiento actual de Hospeda.
+- Las pruebas de worktree/servidores/DB pasaron 35/35 y Biome pasó usando un
+  cache temporal en `/tmp`; el cache normal sigue bloqueado por `EROFS`.
+- Ninguna base, env, Linear o worktree fue modificada.
