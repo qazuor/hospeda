@@ -2558,7 +2558,47 @@ Cada entrada lleva, según §3.4:
   **las contradicciones viven ENTRE capítulos**, así que atacar sólo los textos corregidos la
   volvería ciega a justamente lo que el ciclo busca. Lo que la abarata no es recortar el alcance
   sino que **arranca con los 327 casos ya enumerados**: recorre dominios en vez de descubrirlos.
-- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`.
+- **✚ ENMIENDA del 2026-09-24 — qué quiere decir «nuevo»** · **Decide**: owner. El criterio de salida
+  del ciclo dice *«hasta que una pasada de FASE 8 no produzca ningún `CRITICA` **nuevo**»*, y **«nuevo»
+  admite dos lecturas que sobre la misma tanda dan resultados opuestos**. Sobre la 8-bis-5: leído como
+  *«no estaba antes»*, los **8** críticos son nuevos y el ciclo no cierra; leído como *«generado por la
+  tanda de arreglos anterior»*, son **6**, porque dos vienen de otro lado. **Se adopta la segunda
+  lectura**: «nuevo» = **generado por la tanda de arreglos anterior**. Con cuatro cláusulas:
+  1. **La atribución se dictamina contra los DIFFS**, nunca contra mensajes de commit. Un mensaje de
+     commit no es evidencia de lo que el commit hizo, y el programa ya midió el modo de falla inverso
+     —un rastro que declara *«sigue correcta»* sobre una aparición que sí cambió (`C1` §4.2, filas 5 y
+     3)—. El dictamen se hace abriendo el hunk.
+  2. **Tope de dos vueltas.** Si a la segunda la tanda sigue generando críticos, no se sigue girando.
+  3. **Lo que quede al tope se declara con causa, caso por caso, y lo lee el owner** — no se declara en
+     bloque ni por categoría.
+  4. **Un crítico de dinero no se declara con causa sin que lo lea el owner**, aunque el tope se haya
+     alcanzado. Es la única clase que no admite cierre administrativo.
+- **Por qué hacía falta precisarlo, y no es una formalidad**: durante cuatro vueltas el **100 %** (o el
+  93 %) de los críticos venía de la tanda anterior —**25 de 25 · 17 de 17 · 13 de 14 · 12 de 12**— y la
+  conclusión razonable era que el generador **era** el acto de arreglar. **La 8-bis-5 rompió la serie:
+  6 de 8** (`22-fase-8-bis-5/C1-la-costura.md:783`). Y los dos que la tanda no produjo son de **clases
+  que el programa nunca había tenido**: `F-8fB3-001`, el primer crítico producido por **una medición
+  externa** —`RC-5` midió `charged_quantity` en producción y volvió falsa una premisa del `B/09` §4 sin
+  que el capítulo cambiara una palabra— y `F-8fC2-001`, un hueco de cuatro días que **cuatro vueltas no
+  vieron**, de **la lectura del conjunto**. **Bajo la lectura literal esos dos mantienen el ciclo
+  girando para siempre**, porque ni la medición externa ni la lectura del conjunto se agotan arreglando
+  capítulos: son los otros dos generadores del programa, y no es el ciclo 8↔9 quien los cierra.
+- **Las dos alternativas, y por qué no:**
+  - **Dejar el criterio literal y decidir vuelta a vuelta qué cuenta como «nuevo»**: no cuesta nada
+    escribirlo, pero **las dos lecturas ya conviven en el corpus** y el ciclo cerraría o no según quién
+    esté de turno. Es el mismo defecto que `DEC-METH-004` tenía y que esta decisión vino a tapar.
+  - **Un tope duro de dos vueltas, con atribución o sin ella**: corta seguro, pero **agrega mecanismo**
+    —hay que contar vueltas y arbitrar el desenlace— y sobre todo **corta a ciegas**: sin la cláusula 1
+    el tope se alcanza igual con seis críticos generados que con cero, y esos dos estados no son lo
+    mismo.
+- **Lo que esta enmienda NO toca**: el criterio de **fin de la FASE 9** (el punto 1 de la decisión: las
+  cuatro salidas de `DEC-METH-004` cerradas y ningún `CRITICA` abierto sin causa declarada). Son dos
+  criterios distintos y **se venían citando como uno solo** — el encargo del 2026-09-24 le atribuía al
+  ciclo el criterio de la fase, que es el que efectivamente no termina por construcción. El del ciclo
+  siempre fue *«ningún `CRITICA` nuevo»*, y es el que acá se precisa.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`. La enmienda del
+  2026-09-24 sale de la elección del owner entre las tres opciones que se le presentaron ese día —
+  eligió la 2, que era la recomendada.
 
 ---
 
