@@ -3858,3 +3858,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   se cambió la configuración de Turbo y no se alteraron archivos del proyecto.
 - El resultado queda pendiente de repetir en una sesión con el filesystem de
   trabajo escribible antes de considerar el gate E2E cerrado.
+
+## Gate 238 · Causa del bloqueo EROFS
+
+- `findmnt` confirmó que `/` es `ext4` montado con `ro,nosuid,nodev,relatime`;
+  `/home` y el worktree comparten ese mount.
+- `/tmp` está en `tmpfs` escribible, pero cambiar sólo el cache de Turbo no
+  resolvería la persistencia requerida por OpenCode y el resto del tooling.
+- No se ejecutaron `remount`, `fsck`, cambios de permisos ni reparaciones.
+- La repetición de `verify --changed` queda pendiente de una sesión Ubuntu con
+  `/` y `/home` escribibles o de una reparación administrada del host.
