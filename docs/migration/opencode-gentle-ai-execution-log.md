@@ -4017,3 +4017,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   ruta HTTP.
 - Sintaxis Bash y lectura de `api /health`, `admin` y `web` validadas; no se
   iniciaron servidores ni se hicieron requests HTTP.
+
+## Gate 255 · Límite seguro del adapter de envs
+
+- `wt-env-prepare.sh` todavía usa `portEnvWrites` y `devEnvDefaults` del
+  config legacy.
+- No se migró automáticamente esa sección: puede describir valores locales y
+  defaults sensibles, y `.qz/project.json` no debe contener secretos.
+- La fuente protegida, el checkout y el script de reconciliación ya son
+  declarativos; la migración de targets/defaults requiere un contrato separado
+  que sólo permita nombres de archivos y claves, nunca valores.
