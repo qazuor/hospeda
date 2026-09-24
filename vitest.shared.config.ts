@@ -19,9 +19,9 @@
  * constraint does not apply the same way — each shard runs in isolation —
  * but a single heavy test file can still exhaust one runner's RAM. CI sets
  * VITEST_MAX_FORKS=1 (lowered from 2, see .github/workflows/ci.yml test-unit
- * job env block) after apps/admin's test suite OOM-crashed in native V8
- * memory (RegExpCompiler Zone allocator) from accumulated native allocations
- * across many sequential test files reused within the same forked worker.
+ * job env block) after apps/admin's test suite OOM-crashed. That crash was
+ * later traced to an infinite Radix focus-trap loop in one test, not to
+ * memory accumulating across files (HOS-80). The cap stays as a safety margin.
  *
  * To override locally (e.g. on a beefier machine):
  *   VITEST_MAX_FORKS=6 pnpm test
@@ -94,12 +94,11 @@ export const sharedTestConfig = {
          */
         maxWorkers: resolveMaxForks(),
         /**
-         * Extra V8 heap headroom per forked worker. Raised after apps/admin's
-         * test suite OOM-crashed in native V8 memory (RegExpCompiler Zone
-         * allocator) on CI's default ubuntu-latest runner after accumulating
-         * ~45 sequential test files reused within the same forked process.
-         * Node's default old-space size on a 7GB CI runner is conservative;
-         * this gives more slack without changing test behavior.
+         * Extra V8 heap headroom per forked worker. Raised during the
+         * apps/admin shard OOM investigation (HOS-80), whose real cause was an
+         * infinite Radix focus-trap loop rather than heap pressure. Node's
+         * default old-space size on a 7GB CI runner is conservative; this
+         * gives more slack without changing test behavior.
          *
          * Vitest 4 (HOS-28): `execArgv` moved from `poolOptions.forks.execArgv`
          * to the top-level `execArgv` option as part of the pool rework.

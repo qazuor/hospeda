@@ -85,7 +85,8 @@ export default defineConfig({
         // every test file. The default ~2 GB ceiling is exceeded partway through
         // (observed OOM after ~11 files), so raise it here to make the suite
         // reliably runnable without an external NODE_OPTIONS flag. This is a
-        // ceiling bump, not a leak fix — per-file native-memory growth is HOS-80.
+        // ceiling bump, not a leak fix. (HOS-80 no longer covers this: its admin
+        // OOM turned out to be a Radix focus-trap loop, not memory growth.)
         // Vitest 4 (HOS-28): execArgv moved from poolOptions.forks to top-level.
         execArgv: ['--max-old-space-size=8192'],
         coverage: {
