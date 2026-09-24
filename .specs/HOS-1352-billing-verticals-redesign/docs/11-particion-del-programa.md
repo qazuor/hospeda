@@ -286,8 +286,10 @@ integración continua; **cómo se integra sin activar** es materia de la FASE 7 
   y el KYC de Mobbex que este punto esperaba **nunca recibieron respuesta**, así que
   [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) se cerró en el paso 4 de 6 sin
   completarse.
-- **Si el capítulo 13 adopta el cargo puntual como modelo canónico.** Está planteado y sin
-  responder; es la primera pregunta de la épica de billing cuando arranque.
+- ~~**Si el capítulo 13 adopta el cargo puntual como modelo canónico.**~~ **RESPONDIDA el 2026-09-24
+  por `DEC-MP-006`: no.** El modelo canónico es el **mandato del proveedor**, porque `EX-31` midió que
+  el cargo puntual contra credencial guardada **no está habilitado para nuestra aplicación** (`403` en
+  las cuatro formas de pedirlo). Queda declarado como destino, no descartado.
 - **Qué se reescribe y qué se reutiliza del código actual.** Eso es FASE 5 y tiene su gate propio
   (`DEC-METH-003`), que la partición no toca.
 - **El orden de implementación dentro de la épica de verticales.** Es su spec, no ésta.

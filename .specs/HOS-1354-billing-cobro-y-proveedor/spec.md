@@ -171,13 +171,23 @@ Ni siquiera el estado exacto de la suscripción: verticales no distingue `ACTIVE
 
 ## 5. Lo que no se puede cerrar todavía
 
-### 5.1 El capítulo 13 (Pagos), y la pregunta que lo gobierna
+### 5.1 El capítulo 13 (Pagos), y la pregunta que lo gobierna — ✅ CONTESTADA el 2026-09-24
 
 Es el único de los 22 sin escribir, y se difirió a propósito. **La primera pregunta cuando esta
 épica arranque:**
 
 > **¿El capítulo 13 adopta el cargo puntual contra tarjeta guardada como modelo canónico, tratando
 > el mandato del proveedor —lo que Mercado Pago hace hoy— como modo degradado?**
+
+<!-- -->
+
+> ✅ **Contestada por `DEC-MP-006`: NO. El reloj de cobro es del proveedor, y el mandato
+> (`preapproval`) es el modelo canónico.** No por preferencia: **`EX-31` midió que el cargo puntual
+> contra credencial guardada devuelve `403` en las cuatro formas de pedirlo**, y el rechazo es del
+> **permiso**, no del pedido — la misma orden sin esos nodos entra con `201`. El cargo puntual queda
+> **declarado como destino**, con la habilitación pedida en paralelo y con la obligación de que la
+> interfaz del capítulo 13 no impida migrar. **Lo que el §5.2 anota abajo sigue valiendo entonces**:
+> con el reloj del proveedor, las filas del cobro fallido **siguen siendo bloqueantes de diseño**.
 
 No se puede esquivar, porque decide **quién tiene el reloj**, y eso no se esconde detrás de una
 interfaz: **dos relojes sobre la misma autorización son el doble cobro** que `DEC-ARCH-004`
@@ -237,8 +247,8 @@ rama del paraguas**, nunca al revés hasta el final.
 - ~~**Cuál es la pasarela.**~~ **DECIDIDA el 2026-09-24**: `DEC-MP-005` fija **Mercado Pago**, con la
   directriz de que lo que el proveedor no hace lo suple el diseño. La evaluación se cerró en el paso
   4 de 6 sin completarse, porque los dos pasos que faltaban dependían de respuestas que no llegaron.
-- **El modelo canónico de cobro.** Es §5.1, y está planteado con sus tres opciones y una
-  recomendación.
+- ~~**El modelo canónico de cobro.**~~ **DECIDIDO el 2026-09-24 por `DEC-MP-006`**: es el **mandato
+  del proveedor**, y el reloj de cobro es suyo. Ver §5.1.
 - **El orden de implementación.** Sale de las dependencias entre capítulos.
 - **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5, con su gate propio
   (`DEC-METH-003`) — salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: **se absorbe**.

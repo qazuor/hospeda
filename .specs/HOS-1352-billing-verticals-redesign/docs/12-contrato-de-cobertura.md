@@ -73,6 +73,10 @@ El capítulo 13 tiene abierta una pregunta grande: si el reloj de cobro es nuest
 **Este contrato se escribe igual en los dos mundos** — en los dos hay un título con un estado y
 una fecha hasta la cual cubre. Se puede definir hoy sin prejuzgar el 13.
 
+> ✅ **Resuelta el 2026-09-24 por `DEC-MP-006`: el reloj es del proveedor.** Este § **no cambia**, y
+> eso es justamente lo que vale la pena registrar: **la independencia que afirmaba se cumplió** — el
+> contrato se escribió sin saber el desenlace y **no hubo que tocarlo cuando se supo**.
+
 ---
 
 ## 2. La pregunta, y lo que contesta
@@ -880,7 +884,7 @@ la implementación de arranque, ése es el día en que entra sin que nadie lo ve
   está de dónde sale el puntero, no qué se hace con él.
 - **Qué es una suscripción, una cortesía o un grant por dentro.** Son los capítulos 12 y 14, y son
   de billing. Acá está qué aportan, no cómo funcionan.
-- **Quién tiene el reloj de cobro.** Es el capítulo 13, sigue abierto, y este contrato se escribe
-  igual en los dos desenlaces (§1.2).
+- ~~**Quién tiene el reloj de cobro.**~~ **DECIDIDO el 2026-09-24 por `DEC-MP-006`: es del
+  proveedor.** Este contrato **no cambió una línea** por eso — que era lo que el §1.2 afirmaba.
 - **En qué package vive cada cosa.** Es FASE 5 y tiene su gate propio (`DEC-METH-003`). Lo que
   este documento fija es el contrato, no su domicilio.

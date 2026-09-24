@@ -144,7 +144,7 @@ El mapa completo, con qué define cada uno, está en
 
 **La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
 
-**105 decisiones** — 13 de metodología y 92 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 106
+**106 decisiones** — 13 de metodología y 93 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 107
 encabezados; el que sobra es la plantilla del formato, en la l. 26). Ninguna pregunta del owner
 queda abierta, y ningún bloqueante de diseño tampoco.
 
