@@ -4112,3 +4112,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   fingerprint y los sentinels de schema.
 - La validación sigue siendo read-only y no interpreta nombres de tablas como
   SQL ejecutable.
+
+## Gate 264 · Fixture de segundo proyecto
+
+- Se agregó `tools/qz/fixtures/generic-project`, un adapter mínimo sin
+  configuración `.claude`, equipo HOS, PostgreSQL ni secretos.
+- El fixture declara una base `none`, un worktree, un install/build genéricos y
+  un servidor `app`; sirve para validar el contrato fuera de Hospeda.
+- La validación se ejecuta sólo contra archivos locales y no crea worktrees,
+  ramas, bases ni procesos.
