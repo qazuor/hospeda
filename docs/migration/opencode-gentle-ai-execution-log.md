@@ -4458,3 +4458,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El artifact marcó la decisión como completa y conserva como pendientes la
   implementación opcional del adaptador SDD, archive policy y cualquier prueba
   formal solicitada en el futuro.
+
+## Gate 301 · Contratos y wrappers alineados con ODD
+
+- `AGENTS.md` ahora instruye ODD como ruta predeterminada, Linear como tracking
+  y `.specs` como contrato técnico cuando corresponde.
+- Los contratos de trazabilidad y compatibilidad OpenSpec ya no presentan SDD
+  como camino por complejidad: sólo se inicia ante una solicitud explícita.
+- `hops gentle-sdd-status` quedó descrito y rotulado como diagnóstico
+  excepcional read-only; no ejecuta ninguna fase SDD.
+- El manifiesto cross-client se actualizó sin drift y la suite client-tools
+  pasó 310 tests, 782 assertions y 0 fallos.
