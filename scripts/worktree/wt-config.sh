@@ -47,7 +47,8 @@ wt_schema_fingerprint() {
   local base="$1" cfg paths existing=()
   cfg="$(wt_config_path)"
   [ -f "$cfg" ] || return 0
-  mapfile -t paths < <(jq -r '.db.schemaFingerprintPaths[]? // empty' "$cfg" 2>/dev/null)
+  mapfile -t paths < <(wt_qz_cfg '.database.schemaFingerprintPaths[]?')
+  [ "${#paths[@]}" -eq 0 ] && mapfile -t paths < <(jq -r '.db.schemaFingerprintPaths[]? // empty' "$cfg" 2>/dev/null)
   [ "${#paths[@]}" -eq 0 ] && return 0
   local p
   for p in "${paths[@]}"; do
@@ -71,7 +72,8 @@ wt_schema_fingerprint_ref() {
   root="$(wt_root)"
   cfg="$(wt_config_path)"
   [ -f "$cfg" ] || return 0
-  mapfile -t paths < <(jq -r '.db.schemaFingerprintPaths[]? // empty' "$cfg" 2>/dev/null)
+  mapfile -t paths < <(wt_qz_cfg '.database.schemaFingerprintPaths[]?')
+  [ "${#paths[@]}" -eq 0 ] && mapfile -t paths < <(jq -r '.db.schemaFingerprintPaths[]? // empty' "$cfg" 2>/dev/null)
   [ "${#paths[@]}" -eq 0 ] && return 0
   tmp="$(mktemp -d)"
   git -C "$root" archive "$ref" -- "${paths[@]}" 2>/dev/null | tar -x -C "$tmp" 2>/dev/null

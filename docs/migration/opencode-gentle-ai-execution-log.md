@@ -3955,3 +3955,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `bash -n` pasó para los tres scripts y la resolución read-only devolvió los
   valores esperados de Hospeda.
 - No se ejecutaron Docker, PostgreSQL, migraciones ni promociones de template.
+
+## Gate 248 · Fingerprint de schema desde el adapter
+
+- `wt-config.sh` ahora prefiere `database.schemaFingerprintPaths` del adapter
+  para fingerprints live y sobre referencias Git.
+- El fingerprint de template conserva fallback legacy porque el adapter aún no
+  declara `templateFingerprintPaths`.
+- Sintaxis Bash y cálculo read-only del fingerprint pasaron; no se consultó ni
+  modificó PostgreSQL.
