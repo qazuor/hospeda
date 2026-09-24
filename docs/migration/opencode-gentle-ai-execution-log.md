@@ -3748,3 +3748,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   la selección avanzada de Gentle-AI `3.7.0` todavía no fue activada.
 - Queda como decisión posterior definir OpenAI para tareas complejas y evaluar
   GLM/DeepSeek/OpenKilo para tareas simples con límites explícitos.
+
+## Gate 229 · Estado efectivo de RDD y SDD
+
+- `gentle-ai review mode status` confirmó RDD/review apagado globalmente y sin
+  override local.
+- `gentle-ai review status` devolvió autoridad limpia: cero entries y cero
+  locks.
+- `gentle-ai sdd-status` funciona en modo read-only, pero marca selección
+  ambigua entre `host-web-foundation` y `web-accommodation-editor-phase-c`.
+- Ambos cambios existen bajo `openspec/changes/` con artifacts parciales; no se
+  seleccionó, aplicó, archivó ni eliminó ninguno.
+- Antes de activar SDD para Hospeda hay que clasificar esos cambios como
+  trabajo vigente, histórico o fuera del alcance de la migración.
