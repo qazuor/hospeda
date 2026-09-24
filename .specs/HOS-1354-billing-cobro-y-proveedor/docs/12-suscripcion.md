@@ -640,10 +640,37 @@ objeto no acepta nada»*. Entró el monto, así que **lo bloqueado son las fecha
 > sobre una autorizada, así que `start_date` sirve **sólo al crear**, y punto.
 
 **Entonces, sobre el pagador con tarjeta, la salida no es corregir: es no llegar a ese caso.**
-Cuando falten pocos días para la renovación de la predecesora, el cambio de plan se ofrece con
-**ventana reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. Cuántos días
-es *«pocos»* queda por definir: **es un número, no un mecanismo**. **Y la ventana reducida vale
-para las dos poblaciones**, porque no llegar al caso sigue siendo más barato que corregirlo.
+Cuando la renovación de la predecesora está cerca, el cambio de plan se ofrece con **ventana
+reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. **La regla, fijada el
+2026-09-24 por el owner:**
+
+1. **La ventana de la sucesora vence a lo que llegue primero**: sus 72 h (`B/03` §3.4 punto 1) **o
+   las 00:00 del día de la próxima fecha de cobro de la predecesora, en el huso del proveedor
+   (`-04`)**.
+2. **Si lo que queda es menor que un mínimo —configuración, hoy 24 h—, el cambio no se ofrece en
+   ese momento**: se ofrece **después** del cobro, y se le dice a la persona desde cuándo puede
+   hacerlo. Pasado el cobro, el crédito ya incluye lo que se pagó ese día, y la ventana vuelve a
+   ser la completa.
+
+**Por qué el corte es al inicio del día y no a la hora de la fecha**: el proveedor **no cobra a la hora
+exacta** de la fecha, sino en un **lote diario** —medido el 2026-09-24 sobre tres suscripciones de
+producción: los **trece cobros de renovación**, todos creados **entre las 14:01 y las 14:02 `-04`**,
+con fechas de cobro de las 13:13, 13:19 y 13:28 (manifiesto de `RN-3`, fuera del repo:
+`~/.hos1352-rn3-manifiesto.json`)—, y **no está medido** si ese lote alcanza a una fecha más tardía del mismo
+día. Cortar al inicio del día es correcto en los dos casos, y el costo es, como mucho, un día menos
+de ventana.
+
+**Por qué el mínimo es un criterio y no una medición**: nadie midió cuánto tarda una persona en
+completar el checkout — las 72 h tampoco salen de una medición. Ofrecer una ventana de pocas horas
+es ofrecer algo que se va a vencer; esperar al cobro **no le cuesta plata a la persona**, porque lo
+que pague ese día se le compensa por valor en el plan nuevo (`DEC-SUB-006`), sólo días de espera.
+
+**Sobre el pagador manual, en cambio, no hay ventana reducida.** Su fecha del próximo cobro es una
+columna nuestra, así que si la predecesora cobra dentro de la ventana **se corrige** (`DEC-SUB-017`).
+La reducida hace falta sólo donde no hay corrección posible; aplicarla también ahí obligaría a
+elegir un mínimo que choca con los 7 días de `DEC-SUB-016` — un fin de semana largo no entra en 72 h,
+y 7 días bloquearían el cambio casi siempre. **Esto reemplaza lo que decía antes este párrafo**
+(*«la ventana reducida vale para las dos poblaciones»*), por decisión del owner del mismo día.
 
 **Una trampa del método, anotada porque cuesta cara**: el aviso *«doscientos que no aplicó»* saltaba
 también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
