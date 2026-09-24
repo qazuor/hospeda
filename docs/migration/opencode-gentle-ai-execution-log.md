@@ -3774,3 +3774,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   de la migración de agentes.
 - Se mantienen intactos. Gentle-AI no debe seleccionar uno automáticamente:
   SDD deberá recibir el cambio explícito y su issue/alcance correspondiente.
+
+## Gate 231 · Incompatibilidades de `openspec/config.yaml`
+
+- La configuración OpenSpec fue generada el 2026-06-06 y conserva una raíz
+  antigua (`/home/qazuor/projects/WEBS/hospeda`).
+- Describe un workflow basado únicamente en `staging`, mientras que el estado
+  actual usa `develop` como base de issues y promoción `develop → staging →
+  main`.
+- Referencia `.qtm/specs`, `.qtm/tasks`, `CLAUDE.md` y versiones antiguas de
+  Biome/Vitest; Hospeda actual usa `.specs`, `AGENTS.md` y otras versiones.
+- Conclusión: no activar SDD globalmente todavía. Primero hay que adaptar su
+  configuración o definir una capa híbrida que conserve `.specs` como fuente
+  funcional y use OpenSpec sólo para cambios que lo necesiten.
