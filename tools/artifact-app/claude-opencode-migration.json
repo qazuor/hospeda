@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_74",
-        "number": 74,
-        "createdAt": "2026-09-24T04:00:00.000Z",
+        "id": "ver_claude_opencode_migration_75",
+        "number": 75,
+        "createdAt": "2026-09-24T04:20:00.000Z",
         "author": "opencode",
-        "reason": "usar fuente declarativa de envs en wt-create y wt-up",
+        "reason": "hacer configurable el checkout protegido de envs",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_73"
+        "basedOnVersion": "ver_claude_opencode_migration_74"
     },
     "data": {
         "sections": [
@@ -514,7 +514,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Gate241: se amplió de forma no disruptiva el contrato tipado para database, worktree, servers y commands. Gate242/243: readDbConfig consume templateDatabase, container y connectionEnvVar desde el adapter con fallback legacy y tiene prueba aislada de precedencia. Gate244/245: validate-project verifica servidores, fuente protegida de envs y tipos de worktree/DB. Gate246: wt-create prefiere base, patrón de branch y path del adapter con fallback legacy. Gate247: wt-db y template prefieren container, template, patrón y connection env del adapter. Gate248/249: los fingerprints de schema y template live/ref ahora prefieren las listas declarativas del adapter. Gate250: wt-create/wt-up prefieren worktree.envSource.relativePath con fallback legacy; falta migrar más consumidores y validar con un segundo proyecto fixture.",
+                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Gate241: se amplió de forma no disruptiva el contrato tipado para database, worktree, servers y commands. Gate242/243: readDbConfig consume templateDatabase, container y connectionEnvVar desde el adapter con fallback legacy y tiene prueba aislada de precedencia. Gate244/245: validate-project verifica servidores, fuente protegida de envs y tipos de worktree/DB. Gate246: wt-create prefiere base, patrón de branch y path del adapter con fallback legacy. Gate247: wt-db y template prefieren container, template, patrón y connection env del adapter. Gate248/249: los fingerprints de schema y template live/ref ahora prefieren las listas declarativas del adapter. Gate250: wt-create/wt-up prefieren worktree.envSource.relativePath con fallback legacy. Gate251: copy-env-to-worktree resuelve checkoutName desde el adapter con fallback a hospeda-staging; falta migrar más consumidores y validar con un segundo proyecto fixture.",
                             "done": false
                         }
                     ]

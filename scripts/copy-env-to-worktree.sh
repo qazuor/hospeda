@@ -46,11 +46,13 @@ resolve_default_source() {
     # The dedicated staging checkout is the stable local source of ignored
     # values. Resolve it from the repository's primary worktree so this works
     # from issue worktrees, the migration checkout, and staging itself.
-    local primary candidate
+    local primary candidate checkout_name
     primary="$(git -C "$PWD" worktree list --porcelain 2>/dev/null \
         | awk '/^worktree / { print $2; exit }')"
     if [[ -n "$primary" ]]; then
-        candidate="$(dirname "$primary")/hospeda-staging"
+        checkout_name="$(jq -r '.worktree.envSource.checkoutName // empty' "$primary/.qz/project.json" 2>/dev/null || true)"
+        checkout_name="${checkout_name:-hospeda-staging}"
+        candidate="$(dirname "$primary")/$checkout_name"
         if [[ -f "$candidate/.worktreeinclude" && ( -d "$candidate/.git" || -f "$candidate/.git" ) ]]; then
             printf '%s\n' "$candidate"
             return 0

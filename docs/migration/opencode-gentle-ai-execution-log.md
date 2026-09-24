@@ -3983,3 +3983,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   sigue siendo fallback.
 - Se validó sintaxis Bash y que el path declarado sea ejecutable; no se
   copiaron archivos `.env` ni se leyeron valores.
+
+## Gate 251 · Checkout protegido configurable
+
+- `copy-env-to-worktree.sh` ahora lee `worktree.envSource.checkoutName` del
+  adapter para resolver el checkout confiable de envs.
+- `hospeda-staging` permanece como fallback para instalaciones legacy.
+- Se validó sintaxis Bash y el nombre declarado; no se copiaron envs ni se
+  revelaron valores.
