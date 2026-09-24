@@ -307,7 +307,7 @@ avanzaba un período.
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
 | **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió, **salvo que `MP4` la haya reimputado** (abajo)—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe, y es además lo que hace que reimputar no cambie el monto esperado |
-| **`covered_period`** ✚ | suscripción, **el período cubierto —identificado por su fecha de inicio**, igual que en `manual_payment`—, **cuál de los dos cobros lo cubrió** (un `payment` **o** un `manual_payment`) y cuándo se acreditó | **`UNIQUE(subscription_id, período)`** — es el candado de `C5` (`B/05`), y **es la única razón por la que esta entidad existe**. Más un CHECK de que **exactamente una** de las dos referencias al cobro es no nula |
+| **`covered_period`** ✚ | suscripción, **el período cubierto —identificado por su fecha de inicio**, igual que en `manual_payment`—, **cuál de los dos cobros lo cubrió** (un `payment` **o** un `manual_payment`), cuándo se acreditó y **`liberado_en`** (anulable) | **`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL`** — es el candado de `C5` (`B/05`), y **es la única razón por la que esta entidad existe**. El parcial espeja el de `reconciliation_mark`, por la misma razón: **liberar no borra la fila, la marca**, así que el rastro de que ese período se cobró y se devolvió **sobrevive** para la conciliación. Más un CHECK de que **exactamente una** de las dos referencias al cobro es no nula |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
@@ -373,10 +373,24 @@ campos** que el `GET` (`RC-4`), que ignora nuestra referencia (`RC-1`) y que dev
 con el `UNIQUE`. Ese choque es correcto y no es un error a evitar**: significa que el período al que
 se la quiere reimputar **ya está cubierto**, y lo que corresponde es no reimputar ahí.
 
-🚧 **Lo que esta entidad NO decide todavía, y es del capítulo 13**: **qué hace un reembolso con la
-cobertura.** Un reembolso **total** (`P3`) deja el período pagado y devuelto a la vez; uno **parcial**
-(`P4`) no. Liberar el período en el primer caso permite volver a cobrarlo; no liberarlo lo deja
-cubierto por un pago que ya no existe. **Las dos opciones mueven plata, así que no se decide acá.**
+**Qué hace un reembolso con la cobertura: el TOTAL la libera, el PARCIAL no.** Decidido el
+2026-09-24. El reembolso total (`P3`, cap. 03 §6) escribe `liberado_en` y el período **vuelve a
+poder cobrarse**; el parcial (`P4`) **no toca nada**, porque algo de ese período se pagó y
+re-cobrarlo entero le cobraría de más a la persona.
+
+**El caso que lo obliga está medido y no es hipotético**: `DEC-RF-001` verificó que **reembolsar NO
+da de baja la suscripción**, así que un reembolso total sobre una fila viva es un escenario real, y
+**no liberar el período ahí es un mes gratis con plata nuestra**.
+
+**El riesgo que esta regla acepta, para que se pueda evaluar después**: un reembolso total hecho por
+error deja el período liberado y **el ciclo siguiente lo vuelve a cobrar**. Es recuperable —se
+reembolsa de nuevo— y **ninguna operación sobre dinero es automática** (`DEC-RF-002`: la confirma una
+persona), así que hay un humano entre el error y el cobro. La alternativa —que ningún reembolso
+libere— falla del otro lado y **sin humano que la frene**.
+
+⚠️ **Y el parcial deja una cobertura que vale menos de lo que el período cuesta.** No es un descuido:
+es el lado conservador elegido. Lo que **no** resuelve esta regla es qué hace la conciliación con esa
+fila, y eso es del cap. 09.
 
 **El `período` se escribe DOS veces y no una, y la segunda es la reimputación de `MP4`.** La
 primera es la de la creación, arriba. La segunda corre **sólo** cuando `MP4` registra un pago sobre

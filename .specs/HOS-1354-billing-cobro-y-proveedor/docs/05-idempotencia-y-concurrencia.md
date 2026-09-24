@@ -165,7 +165,7 @@ puerta al camino que el propio PDR recomienda.
 **Es el único de los seis que produce un doble cobro con dinero real**, y por eso es el único
 que se lleva a la base:
 
-**`UNIQUE(subscription_id, período)` sobre `covered_period`.**
+**`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL` sobre `covered_period`.**
 
 Un período de una suscripción admite **un solo pago acreditado**, y la base lo impide. El
 registro manual que llega segundo **falla**, no compite.
@@ -183,6 +183,10 @@ registro manual que llega segundo **falla**, no compite.
 > base** y no un chequeo — que es lo que este capítulo exige en todos lados y lo que `DEC-CONC-001`
 > decidió. Es también la razón por la que **no** se unificaron las dos tablas de cobro: sus máquinas
 > —`P1`-`P5` y `MP1`-`MP5`— son distintas y ninguna tenía que cambiar para cerrar esto.
+> **El `WHERE liberado_en IS NULL` no es un detalle**: un reembolso **total** libera el período
+> (`B/02` §2.3), y sin esa cláusula el candado le impediría a la persona volver a pagar un mes que
+> se le devolvió. El parcial **no** libera. Es el mismo parcial de `reconciliation_mark`, por la
+> misma razón: **liberar marca, no borra**, así que el rastro queda para la conciliación.
 
 Además, la transición `AWAITING → REGISTERED` del capítulo 03 **no es incondicional**: antes de
 registrar se relee si hay un pago del proveedor acreditado o en vuelo para ese período, y si lo
