@@ -68,12 +68,12 @@ los ya suscriptos**—, y eso ya lo dice `EX-25`.
 
 ## El cruce
 
-### Compensadas — 21 de 25
+### Compensadas — 22 de 25
 
 > **Actualizado el 2026-09-24**: `EX-25` y `EX-27` pasaron acá desde la lista de abajo con
 > `DEC-MP-007`. Y **`EX-31` estaba mal clasificada**: figuraba *«sin rastro»*, pero `DEC-MP-006` la
 > cita como el hecho que la decide (`01-decision-log.md:4858`). La búsqueda que armó esta lista no
-> la vio. Eran 18 y 7.
+> la vio. **`EX-32`** pasó con `06-proveedor.md` §3.1, que la nombra junto con `EX-31`. Eran 18 y 7.
 
 | fila | qué no hace MP | qué hacemos en su lugar | dónde está escrito |
 |---|---|---|---|
@@ -92,6 +92,7 @@ los ya suscriptos**—, y eso ya lo dice `EX-25`.
 | `EX-25` | el cambio de ciclo del plan **no alcanza a los ya suscriptos** | **no aplica, y nuestro modelo hace lo mismo a propósito**: el catálogo es nuestro y versionado, cambiar un plan publica una versión nueva y no mueve a nadie; mover a alguien es cancelar y recrear | `DEC-MP-007` · invariantes `D1` y `D13` · `DEC-SUB-006` |
 | `EX-27` | `repetitions` y `billing_day` no funcionan sin plan | ⚠️ **resignada con causa, no suplida**: es lo que se pierde por no usar planes. Hoy ninguno se usa —la duración de una promo la llevamos mutando el monto—; si algún día hiciera falta cobrar un día fijo del mes, se relee la decisión | `DEC-MP-007` · `DEC-MP-001` |
 | `EX-31` | no se puede cobrar de forma recurrente sin `preapproval`, con credencial guardada | ⚠️ **no se suple: es el límite duro de la directriz**. El reloj de cobro es del proveedor y el mandato es el modelo canónico; el cargo puntual queda **declarado como destino**, con la habilitación pedida en paralelo. **Un permiso comercial no se compensa con código** | `DEC-MP-006` |
+| `EX-32` | Wallet Connect no está disponible, y la habilitación no se puede pedir | ⚠️ **no se suple, por la misma razón que `EX-31`**: era el otro camino hacia un reloj de cobro propio, y el diseño lo declara cerrado junto con `EX-31` | `06-proveedor.md` §3.1 · `DEC-MP-006` |
 | `EX-34` | la fecha de una viva es inmutable: cuatro formas, cuatro `200`, nada escrito | la pausa se toma en **meses enteros** y la aritmética se compensa sola | `DEC-SUB-010` · `06-proveedor.md` §3 |
 | `EX-35` | no se le puede poner un `free_trial` a una viva | **la cortesía se implementa pausando** y sosteniendo el servicio de nuestro lado | `DEC-GRANT-003` |
 | `EX-37` | el `init_point` **viene roto** y la API responde `201` con él | **se sanea antes de mostrarlo, con un guard estático** — porque es un call site que cualquiera vuelve a escribir «bien» copiando lo que la API devuelve | `06-proveedor.md` §4 · invariante `D10` |
@@ -99,14 +100,13 @@ los ya suscriptos**—, y eso ya lo dice `EX-25`.
 | `EX-3` | correos al cliente que sus propios datos desmienten; pausa y cancelación llegan idénticas | el capítulo de outbox fija **qué avisamos nosotros y cuándo**, sabiendo qué manda el proveedor por su cuenta | `NUCLEO/07` · `NUCLEO/08` |
 | `RC-1` | el buscador ignora `external_reference`, devuelve todo, o devuelve un subconjunto plausible | **leer por id**, nunca por búsqueda | `02-modelo-de-datos.md` · `05-idempotencia-y-concurrencia.md` |
 
-### Sin compensación declarada — 4 de 25
+### Sin compensación declarada — 3 de 25
 
 | fila | qué no hace MP | estado en el corpus |
 |---|---|---|
 | **`RC-5`** 🚨 | `charged_quantity` cuenta **intentos, no cobros** | **El capítulo 09 sigue afirmando la regla que esta medición volvió falsa.** `09-conciliacion.md:549` resuelve *«no cobró nunca»* con *«el preapproval tiene `charged_quantity` en cero o nulo»* y concluye que la conciliación *«concluye desde el contador del preapproval»*. Aplicada al sujeto medido, **esa regla dice «sí cobró» sobre una suscripción que no cobró un peso**. La propia fila declara que se dejó *«como hallazgo para la FASE 8-bis-5 en vez de corregirse acá»* |
 | **`RC-6`** | el `status` de un `authorized_payment` **no dice si se cobró** | Única mención fuera de la matriz: `DEC-MP-004` usa un sub-hallazgo suyo (que el `status_detail` es el del último intento). **Ningún documento dice qué campo leemos en su lugar** |
 | **`EX-39`** | tampoco se mueve la fecha de una `pending`: la inmutabilidad **no depende del estado** | `12-suscripcion.md` §5.4 reconoce el hecho y `DEC-SUB-017` **excluye explícitamente** esta población: abre la corrección **sólo para el pagador manual**, y *«sobre el preapproval `pending` del proveedor la conclusión no cambia»* |
-| **`EX-32`** | Wallet Connect no está disponible | **Sin rastro.** Cero apariciones fuera de la matriz |
 
 ---
 
