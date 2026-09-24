@@ -23,6 +23,11 @@ else
   esac
 fi
 [ "$MODE" = "none" ] && { echo "db.mode=none — nothing to do"; exit 0; }
+[ -f "$CFG" ] || {
+  echo "ERROR: database strategy '$MODE' requires protected legacy DB credentials/config"
+  echo "       Keep secrets outside .qz/project.json; configure the project DB adapter before running DB actions."
+  exit 2
+}
 
 DOCKER="$(jq -r '.db.docker // false' "$CFG")"
 CONTAINER="$(wt_qz_cfg '.database.container')"

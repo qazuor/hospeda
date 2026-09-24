@@ -4184,3 +4184,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Cuando hay config legacy conserva reconciliación y `wt-env-prepare`.
 - La ejecución completa de `wt-up` sigue pendiente de pruebas en filesystem
   writable y no se inició ningún servidor.
+
+## Gate 272 · Bloqueo explícito de DB sin credenciales protegidas
+
+- `wt-db.sh` ahora rechaza explícitamente `postgres-template` cuando no existe
+  configuración legacy protegida con credenciales.
+- El rechazo ocurre antes de leer campos de conexión o ejecutar Docker/Postgres;
+  evita continuar con valores vacíos o errores ambiguos.
+- `database.strategy: none` sigue siendo un no-op adapter-only.
