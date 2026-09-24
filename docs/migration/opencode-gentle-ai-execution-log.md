@@ -3737,3 +3737,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El plugin `gentle-logo.tsx`, atención y notificaciones quedaron intactos.
 - La TUI debe reiniciarse para leer la configuración nueva; no se ejecutaron
   tareas del agente.
+
+## Gate 228 · Baseline runtime de OpenCode y model routing
+
+- OpenCode `1.18.32` respondió correctamente fuera del sandbox.
+- Providers visibles: OpenAI OAuth y GitHub Copilot por variable de entorno;
+  no se leyeron valores de autenticación.
+- MCPs `context7` y `engram` respondieron como `connected`.
+- `opencode.json` no contiene asignaciones explícitas de modelos ni routing;
+  la selección avanzada de Gentle-AI `3.7.0` todavía no fue activada.
+- Queda como decisión posterior definir OpenAI para tareas complejas y evaluar
+  GLM/DeepSeek/OpenKilo para tareas simples con límites explícitos.
