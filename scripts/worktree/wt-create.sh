@@ -116,8 +116,11 @@ if [ -x "$ENV_PREPARE" ]; then
 fi
 
 # Install + build inside the worktree (packages must build before dev).
-INSTALL="$(jq -r '.setup.install // empty' "$NEWCFG")"
-BUILD="$(jq -r '.setup.build // empty' "$NEWCFG")"
+ADAPTER_CFG="$WTPATH/.qz/project.json"
+INSTALL="$(jq -r '.worktree.install // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
+BUILD="$(jq -r '.worktree.build // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
+[ -n "$INSTALL" ] || INSTALL="$(jq -r '.setup.install // empty' "$NEWCFG")"
+[ -n "$BUILD" ] || BUILD="$(jq -r '.setup.build // empty' "$NEWCFG")"
 [ -n "$INSTALL" ] && { echo "Running: $INSTALL"; ( cd "$WTPATH" && eval "$INSTALL" ) || { echo "install failed"; exit 1; }; }
 [ -n "$BUILD" ]   && { echo "Running: $BUILD";   ( cd "$WTPATH" && eval "$BUILD" )   || { echo "build failed"; exit 1; }; }
 

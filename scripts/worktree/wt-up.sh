@@ -98,7 +98,9 @@ elif [ -f "$LOCK" ] && [ "$(sha1sum "$LOCK" | cut -d' ' -f1)" != "$(wt_state_get
 fi
 if [ "$need_install" -eq 1 ]; then
   echo "-- installing dependencies (node_modules missing or lockfile changed)"
-  ( cd "$ROOT" && pnpm install --frozen-lockfile ) || { echo "ERROR: pnpm install failed"; exit 1; }
+  INSTALL="$(jq -r '.worktree.install // empty' "$ROOT/.qz/project.json" 2>/dev/null || true)"
+  INSTALL="${INSTALL:-pnpm install --frozen-lockfile}"
+  ( cd "$ROOT" && eval "$INSTALL" ) || { echo "ERROR: dependency install failed"; exit 1; }
   [ -f "$LOCK" ] && wt_state_apply ".lockHash = \"$(sha1sum "$LOCK" | cut -d' ' -f1)\""
 fi
 
@@ -208,7 +210,10 @@ fi
 # wt-create.sh had drifted out of sync, breaking wt-create.sh); default matches
 # the packages-only filter so any project without the key set stays safe.
 # ---------------------------------------------------------------------------
-BUILD="$(jq -r '.setup.build // "pnpm exec turbo run build --filter=\"./packages/*\""' "$CFG")"
+BUILD="$(jq -r '.worktree.build // empty' "$ROOT/.qz/project.json" 2>/dev/null || true)"
+if [ -z "$BUILD" ]; then
+  BUILD="$(jq -r '.setup.build // "pnpm exec turbo run build --filter=\"./packages/*\""' "$CFG")"
+fi
 echo "-- building shared packages (turbo-cached): $BUILD"
 ( cd "$ROOT" && eval "$BUILD" ) || {
   echo "ERROR: packages build failed — aborting server start (fix build errors first)"

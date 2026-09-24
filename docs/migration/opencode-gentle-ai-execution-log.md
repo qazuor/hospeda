@@ -3991,3 +3991,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `hospeda-staging` permanece como fallback para instalaciones legacy.
 - Se validó sintaxis Bash y el nombre declarado; no se copiaron envs ni se
   revelaron valores.
+
+## Gate 252 · Instalación y build desde el adapter
+
+- `wt-create.sh` y `wt-up.sh` ahora prefieren `worktree.install` y
+  `worktree.build` de `.qz/project.json`.
+- Los comandos `setup.install`/`setup.build` y los defaults actuales siguen
+  como fallback para compatibilidad.
+- Sintaxis Bash y diff limpio validados; no se ejecutaron instalaciones,
+  builds, servidores ni worktrees.
