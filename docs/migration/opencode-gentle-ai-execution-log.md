@@ -4175,3 +4175,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El diagnóstico muestra base, branches protegidas, servidores, estrategia
   declarativa y `db.mode=none` cuando no hay legacy.
 - Se mantuvo el fallback legacy y la operación sigue siendo read-only.
+
+## Gate 271 · wt-up sin env source legacy
+
+- `wt-up.sh` acepta un proyecto con sólo `.qz/project.json`.
+- Si el adapter no declara `envSource.relativePath` y no existe legacy,
+  omite la copia/preparación de envs; no inventa archivos ni valores.
+- Cuando hay config legacy conserva reconciliación y `wt-env-prepare`.
+- La ejecución completa de `wt-up` sigue pendiente de pruebas en filesystem
+  writable y no se inició ningún servidor.

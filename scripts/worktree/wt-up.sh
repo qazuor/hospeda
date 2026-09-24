@@ -8,7 +8,7 @@ source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 QZ_CFG="$(wt_qz_config_path)"
 [ -n "$ROOT" ] || { echo "ERROR: not inside a git repo"; exit 1; }
-[ -f "$CFG" ] || { echo "ERROR: no .claude/project.config.json found"; exit 2; }
+[ -f "$CFG" ] || [ -f "$QZ_CFG" ] || { echo "ERROR: no qz or legacy project config found"; exit 2; }
 
 wt_state_ensure
 
@@ -134,20 +134,28 @@ fi
 
 # 0c — seed/merge .env.local files
 echo "-- preparing .env.local files"
-ADAPTER_ENV_SCRIPT="$(jq -r '.worktree.envSource.relativePath // empty' "$CFG" 2>/dev/null || true)"
+ADAPTER_ENV_SCRIPT="$(jq -r '.worktree.envSource.relativePath // empty' "$QZ_CFG" 2>/dev/null || true)"
 if [ -n "${HOPS_ENV_COPY_SCRIPT:-}" ]; then
   ENV_COPY_SCRIPT="$HOPS_ENV_COPY_SCRIPT"
 elif [ -n "$ADAPTER_ENV_SCRIPT" ]; then
   ENV_COPY_SCRIPT="$ROOT/$ADAPTER_ENV_SCRIPT"
-else
+elif [ -f "$CFG" ]; then
   ENV_COPY_SCRIPT="$ROOT/scripts/copy-env-to-worktree.sh"
+else
+  ENV_COPY_SCRIPT=""
 fi
-[ -x "$ENV_COPY_SCRIPT" ] || { echo "ERROR: env copy script is not executable: $ENV_COPY_SCRIPT" >&2; exit 1; }
-HOPS_ENV_RECONCILE=1 bash "$ENV_COPY_SCRIPT" "$ROOT" || {
-  echo "ERROR: trusted env copy failed" >&2
-  exit 1
-}
-bash "$HERE/wt-env-prepare.sh" || { echo "ERROR: wt-env-prepare.sh failed"; exit 1; }
+if [ -n "$ENV_COPY_SCRIPT" ]; then
+  [ -x "$ENV_COPY_SCRIPT" ] || { echo "ERROR: env copy script is not executable: $ENV_COPY_SCRIPT" >&2; exit 1; }
+  HOSPEDA_ENV_RECONCILE=1 bash "$ENV_COPY_SCRIPT" "$ROOT" || {
+    echo "ERROR: trusted env copy failed" >&2
+    exit 1
+  }
+else
+  echo "  (adapter has no env source; skipping env copy)"
+fi
+if [ -f "$CFG" ]; then
+  bash "$HERE/wt-env-prepare.sh" || { echo "ERROR: wt-env-prepare.sh failed"; exit 1; }
+fi
 
 # ---------------------------------------------------------------------------
 # STEP 2 — discover free ports (one per server, servers[] order)
