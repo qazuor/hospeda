@@ -89,9 +89,10 @@ proveedor, y si lo es, la baja llega antes que nuestra suspensión.~~
 > reintentando veinte días sobre una fila ya suspendida, y un reintento tardío cobraba un mes entero
 > por unos días de servicio. Ahora `S6` cancela el preapproval al suspender, y **el grace es siempre
 > más corto que el ciclo** (`B/03` §4), así que el proveedor no llega a decidir nada. **Este § y su
-> espejo no se borran**: son la respuesta si igual llega una baja o una pausa del proveedor —una
-> cancelación desde su panel, un preapproval reactivado a mano—, pero **dejan de ser la salida
-> esperada del camino de mora**.
+> espejo no se borran**: son la respuesta si igual llega una baja del proveedor —una cancelación
+> desde su panel, un preapproval reactivado a mano—, pero **dejan de ser la salida esperada del
+> camino de mora**. **Y una pausa del proveedor por mora no pasa por acá**: dispara `S6`, como el
+> fin del grace (`DEC-MP-008`).
 
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
 que llega a esta baja llega **desde `GRACE_PERIOD`**, que es de donde también llega la
