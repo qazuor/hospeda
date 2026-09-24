@@ -3926,3 +3926,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El adapter actual de Hospeda (`api`, `admin`, `web`) pasó sin errores.
 - El guard sólo lee `.qz/project.json`; no inicia servidores ni modifica
   configuración.
+
+## Gate 245 · Validación declarativa de worktree y DB
+
+- El guard ahora valida el tipo de fuente de envs, exige `checkoutName` para
+  fuentes `protected-checkout` y comprueba tipos de estrategia, template y
+  variable de conexión de la base.
+- El adapter actual pasó sin errores.
+- No se leyeron valores de envs ni secretos y no se ejecutaron operaciones de
+  Git, Docker o PostgreSQL.

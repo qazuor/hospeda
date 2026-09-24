@@ -18,6 +18,22 @@ if (config.schemaVersion !== 1) errors.push('schemaVersion:unsupported')
 if (!config.issues?.provider || !config.issues?.teamKey) errors.push('issues:provider/teamKey')
 if (!config.branches?.base || !Array.isArray(config.branches?.protected)) errors.push('branches:base/protected')
 if (!config.worktree?.pathPattern || !config.worktree?.envSource) errors.push('worktree:pathPattern/envSource')
+if (config.worktree?.envSource && typeof config.worktree.envSource.kind !== 'string') {
+  errors.push('worktree.envSource:kind')
+}
+if (config.worktree?.envSource?.kind === 'protected-checkout' && !config.worktree.envSource.checkoutName) {
+  errors.push('worktree.envSource:checkoutName')
+}
+if (config.database && typeof config.database !== 'object') errors.push('database:type')
+if (config.database?.strategy !== undefined && typeof config.database.strategy !== 'string') {
+  errors.push('database.strategy')
+}
+if (config.database?.templateDatabase !== undefined && typeof config.database.templateDatabase !== 'string') {
+  errors.push('database.templateDatabase')
+}
+if (config.database?.connectionEnvVar !== undefined && typeof config.database.connectionEnvVar !== 'string') {
+  errors.push('database.connectionEnvVar')
+}
 if (!Array.isArray(config.servers) || config.servers.length === 0) errors.push('servers:empty')
 const serverIds = new Set()
 for (const [index, server] of (config.servers || []).entries()) {
