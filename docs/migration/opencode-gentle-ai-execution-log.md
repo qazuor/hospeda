@@ -4269,3 +4269,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   fuera del proyecto.
 - `worktree.pathPattern` no comparte esta regla porque su uso previsto es
   crear worktrees hermanos mediante `../`.
+
+## Gate 283 · Nombre seguro del checkout protegido
+
+- `validate-project.mjs` exige que `envSource.checkoutName` sea un nombre de
+  checkout simple (`A-Z`, `a-z`, números, `.`, `_`, `-`).
+- Se rechazan separadores de ruta y traversal antes de resolver la fuente de
+  envs junto al repositorio principal.
+- No se resolvieron checkouts ni se copiaron archivos.

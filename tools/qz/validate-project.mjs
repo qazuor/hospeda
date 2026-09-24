@@ -43,6 +43,9 @@ if (typeof config.worktree?.envSource?.kind === 'string') {
 if (config.worktree?.envSource?.kind === 'protected-checkout' && !config.worktree.envSource.checkoutName) {
   errors.push('worktree.envSource:checkoutName')
 }
+if (config.worktree?.envSource?.checkoutName !== undefined && (typeof config.worktree.envSource.checkoutName !== 'string' || !/^[A-Za-z0-9._-]+$/.test(config.worktree.envSource.checkoutName))) {
+  errors.push('worktree.envSource:unsafe-checkoutName')
+}
 if (config.database && typeof config.database !== 'object') errors.push('database:type')
 if (config.database?.strategy !== undefined && typeof config.database.strategy !== 'string') {
   errors.push('database.strategy')
