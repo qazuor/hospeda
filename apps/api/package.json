@@ -90,7 +90,7 @@
         "@sentry/esbuild-plugin": "^5.4.0",
         "@types/bcryptjs": "^3.0.0",
         "@types/lru-cache": "^7.10.10",
-        "@types/node": "^26.2.0",
+        "@types/node": "^26.6.1",
         "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.21.0",
         "@types/pngjs": "^6.0.5",
@@ -99,7 +99,7 @@
         "@vitest/coverage-v8": "^4.1.10",
         "jsqr": "^1.4.0",
         "tsup": "^8.5.1",
-        "tsx": "^4.23.11",
+        "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^4.1.11"
