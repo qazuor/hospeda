@@ -3846,3 +3846,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El resultado no habilita mutaciones reales: `close-issue` continúa siendo
   preflight, `promote/back-merge` requieren checkout limpio y el template DB
   sigue bloqueado hasta contar con metadata válida.
+
+## Gate 237 · Comandos operativos en checkout real
+
+- `hops recap --json`, `hops context --json` y `hops handoff --plan --json`
+  respondieron correctamente en el checkout de migración.
+- `hops verify --changed` llegó al primer paso de CI (`turbo run lint`) pero no
+  pudo completar porque Turbo intentó escribir sus logs en un filesystem
+  reportado como `EROFS`; no fue un diagnóstico de lint del código.
+- El bloqueo es del entorno de ejecución actual. No se desactivó el cache, no
+  se cambió la configuración de Turbo y no se alteraron archivos del proyecto.
+- El resultado queda pendiente de repetir en una sesión con el filesystem de
+  trabajo escribible antes de considerar el gate E2E cerrado.

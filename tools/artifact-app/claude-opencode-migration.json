@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_63",
-        "number": 63,
-        "createdAt": "2026-09-24T00:20:00.000Z",
+        "id": "ver_claude_opencode_migration_64",
+        "number": 64,
+        "createdAt": "2026-09-24T00:40:00.000Z",
         "author": "opencode",
-        "reason": "registrar Gate236 de suite operativa completa",
+        "reason": "registrar Gate237 de comandos operativos y bloqueo EROFS",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_62"
+        "basedOnVersion": "ver_claude_opencode_migration_63"
     },
     "data": {
         "sections": [
@@ -734,7 +734,7 @@
                             "title": "Crear bootstrap reproducible",
                             "category": "Adopción progresiva",
                             "description": "Instalar/configurar en una PC nueva con manifest, backups, dry-run y rollback.",
-                            "notes": "La base ahora se llama scripts/bootstrap/ai-dev-workstation-bootstrap.sh porque no es exclusiva de OpenCode/Gentle-AI. La arquitectura acordada separa un instalador genérico de workstation (agentes CLI, Engram, configuración global, skills, permisos, guardrails, backups y manifests) de adaptadores por proyecto. Hospeda tendrá su propio adaptador para Hops, checkout, envs, DB/template y verificaciones. Gate235: --verify pasó con OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0; qz/agent-packs/artifact también pasaron en read-only. Gate236: client-tools 306/306 y server-tools 334/334 pasaron. La etapa apply/restore sigue pendiente.",
+                            "notes": "La base ahora se llama scripts/bootstrap/ai-dev-workstation-bootstrap.sh porque no es exclusiva de OpenCode/Gentle-AI. La arquitectura acordada separa un instalador genérico de workstation (agentes CLI, Engram, configuración global, skills, permisos, guardrails, backups y manifests) de adaptadores por proyecto. Hospeda tendrá su propio adaptador para Hops, checkout, envs, DB/template y verificaciones. Gate235: --verify pasó con OpenCode 1.18.32, Gentle-AI 3.7.0 y Engram 2.0.0; qz/agent-packs/artifact también pasaron en read-only. Gate236: client-tools 306/306 y server-tools 334/334 pasaron. Gate237: recap, context y handoff --plan funcionan; verify --changed quedó bloqueado por EROFS al escribir logs de Turbo, pendiente de repetir en un filesystem escribible. La etapa apply/restore sigue pendiente.",
                             "done": false
                         },
                         {
