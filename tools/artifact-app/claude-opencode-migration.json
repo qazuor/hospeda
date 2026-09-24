@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_64",
-        "number": 64,
-        "createdAt": "2026-09-24T00:40:00.000Z",
+        "id": "ver_claude_opencode_migration_65",
+        "number": 65,
+        "createdAt": "2026-09-24T01:00:00.000Z",
         "author": "opencode",
-        "reason": "registrar Gate237 de comandos operativos y bloqueo EROFS",
+        "reason": "preparar contrato tipado de adapters qz sin migrar consumidores",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_63"
+        "basedOnVersion": "ver_claude_opencode_migration_64"
     },
     "data": {
         "sections": [
@@ -514,7 +514,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Se documentó el orden seguro de extracción; falta validar con un segundo proyecto fixture.",
+                            "notes": "Gate274: auditoría read-only detectó que `.qz/project.json` ya declara `qz-`/`hops-`, pero el núcleo aún tiene defaults Hospeda en Linear, worktrees, DB, servers, stats y update. Gate241: se amplió de forma no disruptiva el contrato tipado para database, worktree, servers y commands; los consumidores legacy aún no fueron migrados y falta validar con un segundo proyecto fixture.",
                             "done": false
                         }
                     ]

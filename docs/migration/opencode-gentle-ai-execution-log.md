@@ -3889,3 +3889,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La próxima implementación debe ampliar el contrato tipado, migrar los
   consumidores y probar un fixture de proyecto antes de reutilizar el núcleo
   fuera de Hospeda.
+
+## Gate 241 · Contrato tipado inicial de adapters
+
+- `ProjectAdapter` ahora declara de forma no disruptiva las secciones
+  `database`, `worktree`, `servers` y `commands` de `.qz/project.json`.
+- Los consumidores legacy no fueron migrados todavía; `hops` mantiene su
+  comportamiento actual y los defaults de Hospeda no cambiaron.
+- Las pruebas dirigidas de registry/start-issue pasaron 37/37 con 216
+  assertions y `qz/validate-project.mjs` pasó sin errores.
+- Falta migrar consumidores por etapas y probar un fixture de segundo proyecto
+  antes de habilitar comandos `qz-*` fuera de Hospeda.

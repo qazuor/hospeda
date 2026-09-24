@@ -2,6 +2,35 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 /** Safe, non-secret project adapter fields consumed by generic commands. */
+export interface ProjectDatabaseAdapter {
+    readonly strategy?: string;
+    readonly container?: string;
+    readonly templateDatabase?: string;
+    readonly databaseNamePattern?: string;
+    readonly connectionEnvFile?: string;
+    readonly connectionEnvVar?: string;
+    readonly schemaFingerprintPaths?: readonly string[];
+}
+
+export interface ProjectWorktreeAdapter {
+    readonly pathPattern?: string;
+    readonly envSource?: {
+        readonly kind?: string;
+        readonly checkoutName?: string;
+        readonly relativePath?: string;
+    };
+    readonly install?: string;
+    readonly build?: string;
+}
+
+export interface ProjectServerAdapter {
+    readonly id?: string;
+    readonly portEnv?: string;
+    readonly defaultPort?: number;
+    readonly start?: string;
+    readonly healthPath?: string;
+}
+
 export interface ProjectAdapter {
     readonly projectId?: string;
     readonly adapter?: string;
@@ -10,6 +39,14 @@ export interface ProjectAdapter {
         readonly base?: string;
         readonly protected?: readonly string[];
         readonly promotion?: readonly string[];
+    };
+    readonly database?: ProjectDatabaseAdapter;
+    readonly worktree?: ProjectWorktreeAdapter;
+    readonly servers?: readonly ProjectServerAdapter[];
+    readonly commands?: {
+        readonly genericPrefix?: string;
+        readonly projectPrefix?: string;
+        readonly source?: string;
     };
 }
 
