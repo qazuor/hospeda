@@ -9,17 +9,68 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_91",
-        "number": 119,
+        "id": "ver_claude_opencode_migration_92",
+        "number": 120,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "validar suite integral de server-tools",
+        "reason": "agregar resumen ejecutivo y bloqueos",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_90"
+        "basedOnVersion": "ver_claude_opencode_migration_91"
     },
     "data": {
         "sections": [
+            {
+                "id": "migration-summary-hero",
+                "type": "hero",
+                "title": "Estado de la migración",
+                "data": {
+                    "eyebrow": "Resumen vivo · actualizado con cada gate",
+                    "title": "57 de 89 tareas completas",
+                    "description": "La base operativa de OpenCode + Gentle-AI, Engram y el adapter qz está funcionando. Quedan 32 tareas: principalmente decisión de specs/SDD, endurecimiento final, plugins y retiro de Claude."
+                }
+            },
+            {
+                "id": "migration-summary-stats",
+                "type": "metricGrid",
+                "title": "Progreso",
+                "data": {
+                    "metrics": [
+                        { "value": "64%", "label": "avance total" },
+                        { "value": "57", "label": "completas" },
+                        { "value": "32", "label": "pendientes" },
+                        { "value": "8", "label": "fases" },
+                        { "value": "310 + 334", "label": "tests client/server en verde" }
+                    ]
+                }
+            },
+            {
+                "id": "migration-summary-phases",
+                "type": "table",
+                "title": "Desglose por fase",
+                "data": {
+                    "columns": ["Fase", "Completas", "Pendientes", "Estado"],
+                    "rows": [
+                        ["0 · Relevamiento y seguridad", "6", "0", "completa"],
+                        ["1 · Instalación base", "11", "2", "avanzada"],
+                        ["2 · Memoria y conocimiento", "9", "4", "en revisión"],
+                        ["3 · Hops y workflow", "21", "5", "avanzada"],
+                        ["4 · Specs y SDD", "1", "5", "decisión pendiente"],
+                        ["5 · Guards y seguridad", "2", "4", "parcial"],
+                        ["6 · Artifacts", "7", "2", "MVP operativo"],
+                        ["7 · Validación y retiro", "0", "10", "pendiente"]
+                    ]
+                }
+            },
+            {
+                "id": "migration-summary-blockers",
+                "type": "callout",
+                "title": "Bloqueos y decisiones que destraban el cierre",
+                "data": {
+                    "tone": "warning",
+                    "text": "Bloqueo técnico: `develop` existe localmente pero `origin/develop` no está disponible; falta crear/verificar y proteger esa rama en el remoto. Decisiones humanas pendientes: elegir .specs vs Gentle SDD, aprobar la política final de permisos/plugins y definir cuándo retirar Claude. Mientras esas decisiones no se tomen, no se deben marcar como completas las fases 4 y 7."
+                }
+            },
             {
                 "id": "phase-fase-0-relevamiento-y-seguridad",
                 "type": "checklist",

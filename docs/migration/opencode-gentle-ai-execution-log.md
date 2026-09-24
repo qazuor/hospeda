@@ -4387,3 +4387,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Las pruebas cubrieron guards de targets, flags, DB, env reconciliation,
   logs, backups y operaciones destructivas en modo simulado; no se conectó ni
   modificó el VPS.
+
+## Gate 296 · Resumen ejecutivo dentro del artifact
+
+- El artifact ahora abre con métricas visibles: **89 tareas totales, 57
+  completas, 32 pendientes y 64% de avance**.
+- Incluye una tabla de avance por las ocho fases y un bloque explícito de
+  bloqueos/decisiones: `origin/develop` ausente, decisión specs/SDD, política
+  final de plugins/permisos y retiro de Claude.
+- El resumen es informativo; no cambia el estado de ningún checkbox ni crea
+  tareas nuevas.
