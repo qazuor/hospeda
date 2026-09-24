@@ -39,7 +39,7 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
-2. **una decisión registrada** en `01-decision-log.md` — son **107** al 2026-09-24, recontadas con
+2. **una decisión registrada** en `01-decision-log.md` — son **108** al 2026-09-24, recontadas con
    `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
    `DEC-SUB-001` y `DEC-SUB-005` enteras, y `DEC-MIG-001` sólo en lo que `DEC-MIG-003` reemplazó;
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
