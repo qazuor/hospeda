@@ -3715,3 +3715,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   esperar sin modificar archivos ni configuración.
 - El resultado queda pendiente de repetir con el filesystem global escribible,
   junto con la validación interactiva de OpenCode y los logs administrados.
+
+## Gate 226 · `gentle-ai doctor` fuera del sandbox
+
+- El diagnóstico oficial terminó correctamente fuera del sandbox restringido.
+- Resultado: 8 checks pasados, 0 fallos y 0 warnings.
+- Confirmó Gentle-AI `3.7.0`, GGA, Engram, OpenCode, `state.json`, assets
+  coincidentes con el binario, handshake MCP de Engram y espacio disponible.
+- La instalación actual de Gentle-AI queda saludable; no requiere `sync` ni
+  `upgrade` inmediato.
