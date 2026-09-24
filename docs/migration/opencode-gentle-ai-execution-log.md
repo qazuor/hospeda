@@ -4341,3 +4341,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `develop`, `staging` y `main`.
 - Typecheck y las 4 pruebas de Dependabot pasaron; no se consultó ni modificó
   GitHub durante esta validación.
+
+## Gate 291 · Auditoría de la rama develop
+
+- El checkout local tiene `develop` y `.qz/project.json` lo declara como base
+  y primer paso de promoción.
+- `origin/develop` no está presente en las referencias remotas disponibles.
+- No se creó, publicó ni modificó ninguna rama: la creación remota requiere
+  una decisión explícita y una operación Git autorizada.
+- Queda como precondición de la migración: crear/verificar `develop` en el
+  remoto y revisar la protección/CI antes de usar una máquina nueva.
