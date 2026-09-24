@@ -4246,3 +4246,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `validate-project.mjs` valida que promoción y back-merge tengan strings no
   vacíos y pares `from`/`to` completos.
 - No se ejecutaron promociones, merges ni mutaciones externas.
+
+## Gate 280 · Tipos mínimos del manifest qz
+
+- `validate-project.mjs` ahora exige `projectId`, `adapter`, `commands.genericPrefix`
+  y `commands.projectPrefix` como strings no vacíos.
+- Se evita aceptar manifests con claves presentes pero inutilizables para
+  descubrir comandos o seleccionar el adapter.
+- Validación read-only; no se ejecutaron comandos del proyecto.

@@ -15,6 +15,8 @@ for (const key of ['schemaVersion', 'projectId', 'adapter', 'issues', 'branches'
   if (!(key in config)) errors.push(`missing:${key}`)
 }
 if (config.schemaVersion !== 1) errors.push('schemaVersion:unsupported')
+if (typeof config.projectId !== 'string' || config.projectId.length === 0) errors.push('projectId:type')
+if (typeof config.adapter !== 'string' || config.adapter.length === 0) errors.push('adapter:type')
 if (!config.issues?.provider || !config.issues?.teamKey) errors.push('issues:provider/teamKey')
 if (!config.branches?.base || !Array.isArray(config.branches?.protected)) errors.push('branches:base/protected')
 if (config.branches?.pattern !== undefined && typeof config.branches.pattern !== 'string') errors.push('branches.pattern')
@@ -75,7 +77,8 @@ for (const [index, server] of (config.servers || []).entries()) {
     errors.push(`servers[${index}]:healthPath`)
   }
 }
-if (!config.commands?.genericPrefix || !config.commands?.projectPrefix) errors.push('commands:prefixes')
+if (typeof config.commands?.genericPrefix !== 'string' || config.commands.genericPrefix.length === 0) errors.push('commands:genericPrefix')
+if (typeof config.commands?.projectPrefix !== 'string' || config.commands.projectPrefix.length === 0) errors.push('commands:projectPrefix')
 const serialized = JSON.stringify(config).toLowerCase()
 for (const forbidden of ['password', 'secret', 'token', 'privatekey', 'accesskey']) {
   if (serialized.includes(`"${forbidden}"`)) errors.push(`forbidden-field:${forbidden}`)
