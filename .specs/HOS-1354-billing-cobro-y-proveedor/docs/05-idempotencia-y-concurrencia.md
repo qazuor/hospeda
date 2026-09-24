@@ -106,8 +106,9 @@ la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de
   sostener.
 - **Desde `SUSPENDED` el cobro que entra es el que `S7` o `S19` esperaban, y llega tarde.** **Y en
   un pagador con tarjeta, desde `DEC-SUB-019` eso ya no es el reciclado**: `S6` canceló el
-  preapproval en el mismo acto de suspender, así que lo que puede llegar después es un cobro que
-  ya estaba en vuelo en el instante de `S6`, o el pago manual (`MP4`). La
+  preapproval en el mismo acto de suspender, así que lo que puede llegar después es sólo un cobro
+  que ya estaba en vuelo en el instante de `S6` — el pago manual (`MP4`) es la puerta del pagador
+  manual, no la suya. La
   condición 1 del §3 rechaza `CANCELLED`, que es exactamente el tope que el cap. 03 §7.1 eligió:
   *«a partir de ahí el pago que llegue no reabre nada»*. Así que la plata está en nuestra cuenta
   sin período que darle: **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5)
@@ -229,8 +230,9 @@ implementación traza la línea en otro lado.
 
 **Y desde `DEC-SUB-019`, la mitad `SUSPENDED` de la condición 1 ya no la alcanza un webhook
 ordinario del proveedor en un pagador con tarjeta**: `S6` canceló el preapproval al suspender, así
-que lo que puede llegar ahí es el pago manual (`MP4`), un cobro que ya estaba en vuelo en el
-instante de `S6`, o el caso de borde de un preapproval reactivado a mano. Las condiciones no
+que lo que puede llegar ahí es sólo un borde —un cobro que ya estaba en vuelo en el instante de
+`S6`, o un preapproval reactivado a mano—. El pago manual (`MP4`) sigue alcanzando esa mitad, pero
+es la puerta del **pagador manual**, que no tiene preapproval. Las condiciones no
 cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumplir.
 
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
@@ -358,7 +360,8 @@ La versión anterior la eximía *«a propósito»*, con dos razones, y las dos s
 
 **Y su premisa empírica era falsa.** *«El pago tardío que reactiva a la predecesora es la evidencia
 de que la sucesión ya no hace falta»*: ese pago **no es un acto del cliente**, es una cuota en
-`recycling` que el proveedor reintenta solo (`B/12` §1.3, medido). El cliente que abrió el checkout
+`recycling` que el proveedor reintenta solo (`B/12` §1.3, medido) — y desde `DEC-SUB-019`, sobre un
+pagador con tarjeta, sólo mientras la predecesora sigue en `GRACE_PERIOD`. El cliente que abrió el checkout
 sigue pudiendo autorizarlo, y si lo hace, `S17` cancela la fila que el pago acaba de reactivar.
 
 **Y por la otra puerta, donde sí es un acto del cliente, la conclusión no cambia.** El pago del
