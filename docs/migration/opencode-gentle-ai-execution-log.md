@@ -3945,3 +3945,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se validó la sintaxis Bash y la resolución read-only produjo `develop`,
   `../hospeda-{slug}` y `{type}/{slug}`.
 - No se creó ningún worktree, branch, DB ni archivo de entorno.
+
+## Gate 247 · Scripts DB/template con fallback al adapter
+
+- `wt-config.sh` expone lectura segura de `.qz/project.json`.
+- `wt-db.sh` y `template.sh` prefieren desde el adapter el container, template,
+  patrón de nombre y variable de conexión; el config legacy sigue siendo
+  fallback para los campos que aún no están declarados allí.
+- `bash -n` pasó para los tres scripts y la resolución read-only devolvió los
+  valores esperados de Hospeda.
+- No se ejecutaron Docker, PostgreSQL, migraciones ni promociones de template.

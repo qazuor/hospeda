@@ -6,6 +6,13 @@
 wt_root() { git rev-parse --show-toplevel 2>/dev/null; }
 wt_config_path() { echo "$(wt_root)/.claude/project.config.json"; }
 wt_have_config() { [ -f "$(wt_config_path)" ]; }
+wt_qz_config_path() { echo "$(wt_root)/.qz/project.json"; }
+wt_have_qz_config() { [ -f "$(wt_qz_config_path)" ]; }
+wt_qz_cfg() { # $1 = jq filter; empty when no declarative adapter exists
+  local cfg; cfg="$(wt_qz_config_path)"
+  [ -f "$cfg" ] || return 0
+  jq -r "$1 // empty" "$cfg"
+}
 
 wt_cfg() { # $1 = jq filter
   local cfg; cfg="$(wt_config_path)"

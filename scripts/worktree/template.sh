@@ -18,10 +18,12 @@ ROOT="$(wt_root)"; CFG="$(wt_config_path)"
 
 ACTION="${1:?usage: template.sh status [db]|stamp <db> <fingerprint>|build-candidate <name>}"
 DOCKER="$(jq -r '.db.docker // false' "$CFG")"
-CONTAINER="$(jq -r '.db.container // empty' "$CFG")"
+CONTAINER="$(wt_qz_cfg '.database.container')"
+[ -n "$CONTAINER" ] || CONTAINER="$(jq -r '.db.container // empty' "$CFG")"
 DBUSER="$(jq -r '.db.user' "$CFG")"
 CONNTMPL="$(jq -r '.db.connStringTemplate' "$CFG")"
-TEMPLATE="$(jq -r '.db.templateDb // empty' "$CFG")"
+TEMPLATE="$(wt_qz_cfg '.database.templateDatabase')"
+[ -n "$TEMPLATE" ] || TEMPLATE="$(jq -r '.db.templateDb // empty' "$CFG")"
 
 pg() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" "$@"; else "$@"; fi; }
 pgsh() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" bash -c "$1"; else bash -c "$1"; fi; }
