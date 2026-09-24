@@ -61,7 +61,8 @@ fi
 # template DB. Missing metadata/journal is a legacy template and blocks create;
 # build/promote a candidate first. The lock serializes this check with a future
 # template promotion so a clone cannot race a rename.
-TEMPLATE_DB="$(jq -r '.db.templateDb // empty' "$CFG")"
+TEMPLATE_DB="$(wt_qz_cfg '.database.templateDatabase')"
+[ -n "$TEMPLATE_DB" ] || TEMPLATE_DB="$(jq -r '.db.templateDb // empty' "$CFG")"
 if [ -n "$TEMPLATE_DB" ] && command -v flock >/dev/null 2>&1; then
   TEMPLATE_LOCK="${XDG_RUNTIME_DIR:-/tmp}/hospeda-template.lock"
   exec 9>"$TEMPLATE_LOCK"

@@ -4072,3 +4072,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   pruebas de compatibilidad.
 - Validación realizada contra el adapter actual; no se tocaron bases,
   templates, envs ni worktrees.
+
+## Gate 260 · Template declarativo en wt-create
+
+- La comprobación de staleness de `wt-create.sh` ahora obtiene primero
+  `database.templateDatabase` del adapter y sólo usa `db.templateDb` como
+  fallback legacy.
+- Esto evita que un proyecto con adapter completo falle o consulte una DB
+  equivocada por conservar un nombre legacy distinto.
+- No se cambió la lógica de lock, fingerprint, status ni promoción; la
+  comprobación continúa siendo read-only hasta el momento posterior de crear
+  un worktree.
+- Validado con sintaxis Bash y lectura del adapter actual; no se inició
+  Docker/Postgres ni se creó ningún worktree.
