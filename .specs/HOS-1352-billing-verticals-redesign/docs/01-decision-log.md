@@ -1824,6 +1824,27 @@ Cada entrada lleva, según §3.4:
      queda con **parte de sus addons cobrando y parte no**: es un estado parcial que hay que
      reconciliar, y es un caso real porque a la gente se le vence la tarjeta. Lo que lo hace
      manejable es que **cada preapproval se lee solo**, así que el estado parcial es detectable.
+     > ❌ **Corregida el 2026-09-24: esta implicación describe un flujo que el diseño NO tiene, y
+     > se contradice con la implicación 1 de esta misma decisión.** Cambiar la tarjeta en el
+     > proveedor es `PUT {card_token_id}` (`EX-36`), o sea que exige **tener un token**, o sea
+     > **haber tokenizado**. Y la implicación 1 dice lo contrario con todas las letras:
+     > *«`DEC-SUB-006` movió la re-autorización al checkout, así que **no se tokeniza del lado del
+     > servidor** … **no manejamos datos de tarjeta**»*. **Las dos no pueden ser ciertas a la vez.**
+     > **`EX-36` mide que el PROVEEDOR permite cambiar la tarjeta; no que nosotros lo hagamos.**
+     > Confirmado por el owner el 2026-09-24: *«todo lo que es tarjeta lo maneja MP 100%, nosotros
+     > no tenemos idea de tarjeta vencida… ahí el user debe cambiar la tarjeta en su suscripción»*.
+     > **Lo que esta implicación decía queda sin efecto**, y con ella el deber que le pasaba al
+     > capítulo 13 (*«cómo se resuelve una tarjeta que se cambia sobre N preapprovals»*), que **era
+     > un deber mal atribuido**: no hay operación nuestra que pueda quedar a medias.
+     > **Lo que SÍ vale, y es el escenario real**: si el cliente no cambia la tarjeta, **cada
+     > suscripción falla por separado** y cada una corre su propio dunning (`GR-3`, `DEC-MP-003`) —
+     > el plan puede seguir andando y el addon caer, o al revés. Eso ya está diseñado.
+     > 🚧 **Y destapa un hueco que no está medido en ninguna fila**: una vez que el proveedor
+     > **pausa** por mora, `EX-11` midió que **rechaza toda modificación**. Nosotros no podemos
+     > cambiarle la tarjeta —ni queremos—, así que la pregunta es **si el cliente puede recuperar su
+     > medio de pago por su cuenta desde Mercado Pago sobre una suscripción pausada**. Si puede, el
+     > flujo existe y es del proveedor. **Si no puede, la suscripción está muerta** y la única salida
+     > es un alta nueva por el checkout. `RN-3` empieza a contestarlo.
   4. **El ciclo del addon se alinea al del plan sólo AL CREARLO** (`EX-34`). Después no se corrige.
   5. **El resumen de la tarjeta muestra un cargo por el plan y otro por cada addon.** Es lo que
      hace que cada cobro se explique solo en la conciliación, y a la vez lo que el cliente ve.

@@ -793,5 +793,8 @@ una regla: hace falta que nadie agregue esa transición.
   necesita**; lo que la medición va a cambiar es lo que se le explica a soporte.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en MORA** —no pausada— lo dejó
   abierto `DEC-MP-002` (implicación 6) y **sigue abierto**: el §6 resuelve la pausa, no el grace.
-- **El detalle del cobro contra el proveedor** —el checkout, el `init_point`, la verificación por
-  relectura— es del capítulo 13.
+- ~~**El detalle del cobro contra el proveedor** —el checkout, el `init_point`, la verificación por
+  relectura— es del capítulo 13.~~ **Está escrito en `B/06`, desde el 2026-09-24**: el checkout y su
+  ventana en su §6, el saneo del `init_point` en su §4.2, la verificación por relectura en su §4.1 —
+  y **la mecánica del reembolso en su §4.6**. Es **trato con el proveedor**, y por eso vive en el
+  capítulo del proveedor.

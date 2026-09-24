@@ -750,7 +750,15 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   `CANCELLED` en el acto** (`S21`, §4.4). **El caso en que la principal se va porque cae un grant lo
   resuelve el §3.4**, y ahí la respuesta es la otra: el objetivo sobrevive y lo que se apaga es
   el cobro.
-- **El checkout de una contratación** —y el `init_point` roto de `EX-37`, que alcanza a cada
-  addon— es del capítulo 13.
-- **Cómo se resuelve una tarjeta que se cambia sobre N preapprovals** y queda a medias
-  (`DEC-ADDON-002`, implicación 3) es del capítulo 13.
+- ~~**El checkout de una contratación** —y el `init_point` roto de `EX-37`, que alcanza a cada
+  addon— es del capítulo 13.~~ **Está escrito en `B/06`**: la ventana y sus dos plazos en su §6, y
+  el saneo del `init_point` en su §4.2, que ya declara que *«con `DEC-ADDON-002` deja de ser un call
+  site: cada contratación de addon necesita uno»*.
+- ~~**Cómo se resuelve una tarjeta que se cambia sobre N preapprovals** y queda a medias
+  (`DEC-ADDON-002`, implicación 3) es del capítulo 13.~~ **RETIRADO el 2026-09-24: era un deber mal
+  atribuido.** Esa implicación describía un flujo que el diseño **no tiene**, y se contradice con la
+  implicación 1 de su propia decisión —*«no se tokeniza del lado del servidor… no manejamos datos de
+  tarjeta»*—. **`EX-36` mide que el PROVEEDOR permite cambiar la tarjeta, no que nosotros lo
+  hagamos**, así que **no hay operación nuestra que pueda quedar a medias**. Lo que sí vale: si el
+  cliente no la cambia, **cada suscripción falla por separado** y corre su propio dunning (`GR-3`,
+  `DEC-MP-003`), que ya está diseñado. Ver la corrección completa en `DEC-ADDON-002`.
