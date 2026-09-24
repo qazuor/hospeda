@@ -3968,6 +3968,25 @@ Cada entrada lleva, según §3.4:
   se rinde al día siguiente sin importar el plan y **un `GRACE_PERIOD` de 7 días no lo sostiene
   nadie**; si resulta ser **el ciclo**, con un plan mensual hay un mes de margen y el grace se ata
   al ciclo. **Son dos diseños distintos y el dato llega en dos días.**
+- **Lo medido después, el 2026-09-23, y le sirve a lo que queda abierto** (aplicado a `GR-3` de la
+  matriz el 2026-09-24): **la pausa del proveedor SÍ se entera por webhook, 5 de 5.** Las cinco
+  pausas por mora de producción emitieron `subscription.updated` con latencias de **6,21 s, 6,78 s,
+  7,94 s, 12,30 s y 4,60 s** (la de `monto-baja`, dos veces). **Pero el cierre del ciclo fallido NO
+  emite nada, también 5 de 5**: la transición `scheduled → processed` —el instante en que el
+  proveedor se rinde— no produce evento, y el último `invoice.updated` de `7032113610` llegó **~5 h
+  antes** de que el ciclo se cerrara. **Los dos hechos apuntan al mismo lado y hay que leerlos
+  juntos**: el dunning puede arrancar por el aviso de la pausa, pero **no puede enterarse por la
+  factura** de que el cobro murió — ese hecho **se lee de la suscripción**. Nada de esto cambia lo
+  que esta decisión decide ni sus razones; acota **cómo** se va a poder implementar lo que declara
+  pendiente.
+  > 📌 **Y de paso corrige una cita ajena**: el §2 de
+  > [`RESULTS-2026-09-23.md`](../docs/mp-probes/RESULTS-2026-09-23.md) le atribuye a esta decisión la
+  > sospecha de que *«el `preapproval` puede no emitir `preapproval.updated`»*. **Esa frase no está
+  > escrita acá** y ninguna razón de esta decisión se apoya en ella — verificado el 2026-09-24 contra
+  > este mismo bloque. ⚠️ **El `rg` que lo probaba ya no se puede repetir tal cual**: antes de
+  > escribirse esta nota, `rg 'preapproval\.updated'` sobre el log entero devolvía **cero líneas**; a
+  > partir de acá devuelve **una, que es la de arriba**. Para repetirlo hay que excluir esta nota, o
+  > leer el bloque. **No hubo razón caducada que enmendar.**
 - **Origen**: la revisión de los mails de `info@mercadopago.com` y de la API de producción del
   2026-09-21/22 (`RN-2`, `GR-3`, `RC-5`, `RC-6`, `RC-7` de la matriz), y la elección del owner del
   2026-09-22 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
