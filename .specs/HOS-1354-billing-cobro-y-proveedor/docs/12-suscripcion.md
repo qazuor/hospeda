@@ -378,7 +378,9 @@ cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de vol
 `DEC-SUB-003` eligió que cambiar de plan sea *«una salida del problema en vez de un muro»*.
 
 **Pero perdonarla no la apaga, y eso hay que decirlo antes de que pase.** Mientras la predecesora
-siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar**. Si entra dentro de las
+siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar** — sobre un pagador con
+tarjeta, **sólo mientras siga en `GRACE_PERIOD`**: al suspender, `S6` cancela el preapproval y el
+reciclado se termina (`DEC-SUB-019`). Si entra dentro de las
 la ventana de autorización de la sucesión —**72 h o 7 días corridos, según el método de pago**
 (`B/03` §3.4 punto 1, `DEC-SUB-016`)—, el cliente **paga la deuda que le perdonamos**.
 
@@ -452,8 +454,11 @@ la ventana dura hasta vencer —**72 h o 7 días corridos**, `B/03` §3.4 punto 
 el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. **Y desde `DEC-SUB-019`,
 en un pagador con tarjeta esa puerta ya no llega por el reciclado**: `S6` cancela el preapproval en
-el mismo acto de suspender, así que sobre una `SUSPENDED` lo que puede seguir entrando es el pago
-manual (`MP4`) o el caso de borde de un preapproval reactivado a mano — y por eso `S7` sigue
+el mismo acto de suspender, así que sobre una `SUSPENDED` de tarjeta **no queda ninguna puerta
+ordinaria**: la manual (`MP4`) es del pagador manual —un pagador con tarjeta no tiene cuotas, `MP5`
+sólo las abre sobre suscripciones de pagador manual (`B/03` §7)—, y lo único que puede entrar es un
+borde: un cobro que ya estaba en vuelo en el instante de `S6`, o un preapproval reactivado a mano — y
+por eso `S7` sigue
 necesitando el mismo bloqueo que `S5`, no porque el reciclado siga vivo ahí. Nombrar sólo `S5`
 dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se repite**, porque
 `S6` no corre sobre un pago pendiente (ver abajo): las dos transiciones se bloquean, no una.
