@@ -234,14 +234,18 @@ fi
 # the packages-only filter so any project without the key set stays safe.
 # ---------------------------------------------------------------------------
 BUILD="$(jq -r '.worktree.build // empty' "$ROOT/.qz/project.json" 2>/dev/null || true)"
-if [ -z "$BUILD" ]; then
+if [ -z "$BUILD" ] && [ -f "$CFG" ]; then
   BUILD="$(jq -r '.setup.build // "pnpm exec turbo run build --filter=\"./packages/*\""' "$CFG")"
 fi
-echo "-- building shared packages (turbo-cached): $BUILD"
-( cd "$ROOT" && eval "$BUILD" ) || {
-  echo "ERROR: packages build failed — aborting server start (fix build errors first)"
-  exit 1
-}
+if [ -n "$BUILD" ]; then
+  echo "-- building shared packages (turbo-cached): $BUILD"
+  ( cd "$ROOT" && eval "$BUILD" ) || {
+    echo "ERROR: packages build failed — aborting server start (fix build errors first)"
+    exit 1
+  }
+else
+  echo "-- no build command declared; skipping build"
+fi
 
 # ---------------------------------------------------------------------------
 # STEP 8 — start servers

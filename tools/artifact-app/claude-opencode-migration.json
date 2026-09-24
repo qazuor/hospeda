@@ -10,13 +10,13 @@
     },
     "version": {
         "id": "ver_claude_opencode_migration_80",
-        "number": 96,
+        "number": 97,
         "createdAt": "2026-09-24T06:00:00.000Z",
         "author": "opencode",
-        "reason": "bloquear DB declarativa sin credenciales protegidas",
+        "reason": "hacer opcional el build de wt-up en adapter-only",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_95"
+        "basedOnVersion": "ver_claude_opencode_migration_96"
     },
     "data": {
         "sections": [

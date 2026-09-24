@@ -4192,3 +4192,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El rechazo ocurre antes de leer campos de conexión o ejecutar Docker/Postgres;
   evita continuar con valores vacíos o errores ambiguos.
 - `database.strategy: none` sigue siendo un no-op adapter-only.
+
+## Gate 273 · Build opcional en wt-up adapter-only
+
+- `wt-up.sh` ya no consulta `setup.build` si no existe configuración legacy.
+- Si el adapter no declara `worktree.build`, omite el build con un mensaje
+  explícito; si lo declara, lo ejecuta como antes.
+- No se iniciaron servidores ni se ejecutaron builds reales.
