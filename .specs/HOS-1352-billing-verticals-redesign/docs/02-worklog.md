@@ -1109,3 +1109,48 @@ apoyos sobre 15), la matriz intacta y el PDR sin tocar.
 **La propagación**, que es la salida 3 y 4: las fichas de las dos descomposiciones, los 22 issues y
 los artifacts **siguen describiendo el diseño de antes**. Va al final del ciclo, una sola vez,
 sobre un diseño que ya no se mueva — que es exactamente lo que `DEC-METH-006` §3 decidió.
+
+---
+
+## 2026-09-24 — la sonda 49 dio veredicto, el dunning quedó decidido y el inventario bajó a dos
+
+> **El worklog no tiene entradas del 20/09 al 23/09.** Lo de esos días está en `03-handoff.md`
+> (sección *«Histórico: 2026-09-23»* y anteriores) y en los rastros de `21-`, `22-` y `23-`. Esta
+> entrada cubre sólo la sesión de la tarde y noche del 24/09.
+
+### Mediciones (producción, sólo `GET` salvo lo que se dice)
+
+- **`RN-3`**: el sujeto reactivado el 23/09 volvió a intentar cobrar en el lote siguiente
+  (24/09 14:02 `-04`), **rechazado** por riesgo, sin recuperar los ciclos adeudados. Los dos
+  controles siguen pausados. El owner liberó el presupuesto **mientras sirva para medir**.
+- **Sonda 49**: `expire_date` a **48,0 h** sobre un ciclo de 2 días. **La ventana de reintentos es el
+  ciclo.**
+- **Cadencia de cobro**: lotes al minuto `:02`, en el primero posterior a la hora de la fecha.
+- **Campos del resumen**: `charged_quantity` y `last_charged_date` se mueven con un rechazo;
+  `charged_amount` no.
+
+### Decisiones (log de 107 a 109)
+
+`DEC-MP-007` (sin planes de MP) y `DEC-SUB-019` (al vencer el grace se cancela el preapproval, y el
+grace es más corto que el ciclo). Esta última salió de una pregunta del owner y **reemplazó la
+recomendación que se le había hecho minutos antes**, que dejaba el preapproval vivo; las dos
+posiciones están en la entrada.
+
+### Capítulos
+
+- `B/03`: `S3` relee antes de cancelar; `S6` pregunta si cobró y cancela el preapproval; la tabla
+  §10.1 gana el par `cancelled` × `SUSPENDED`; el grace se acota al ciclo.
+- `B/12`: ventana reducida sólo para tarjeta (§5.4); §1.4 reemplazado; la cadencia de cobro medida.
+- `B/06` §3.1: los dos caminos a un reloj de cobro propio, cerrados (`EX-31`, `EX-32`).
+- `B/05`, `B/19`, `B/20`: las «dos puertas» del pago impago son **una por método de pago**.
+- Núcleo: `D17` (lo del proveedor se relee por id) — 54 invariantes; índice recontado.
+- Inventario de compensación: de 18/7 a **23/2**.
+- Matriz: sólo la nota de `GR-2` (deja de bloquear para tarjeta); conteos sin cambio, 93/53/14/22/4.
+- `mp-probes/leer-rn-3.py`: el lector de `RN-3`, que vivía en el scratchpad.
+
+### Revisión
+
+Un agente de revisión en frío sobre `DEC-SUB-019` encontró seis lugares que seguían asumiendo que
+una suspendida de tarjeta podía reactivarse por un cobro reciclado; otro agente los corrigió y
+**metió un error nuevo** (una «puerta manual» para el pagador con tarjeta), que se corrigió a mano en
+los cinco lugares.
