@@ -131,7 +131,7 @@ El mapa completo, con qué define cada uno, está en
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio, sin mirar código | ✅ **25 de 25 preguntas** |
 | FASE 1B — discovery del sistema actual | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
-| FASE 1C — experimentación contra Mercado Pago | 🟡 **89 filas · 81 cerradas · 8 `UNKNOWN`** — cinco son el camino del cobro fallido, imposible de fabricar con Mercado Pago |
+| FASE 1C — experimentación contra Mercado Pago | 🟡 **89 filas · 85 cerradas · 4 `UNKNOWN`** (recontado con `contar-filas-de-la-matriz.py` el 2026-09-24) — **tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`), que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
 | FASE 1C-bis — evaluación de proveedor | 🟡 **paso 4 de 6** |
 | FASE 2 — el diseño | 🟡 **21 de 22 capítulos**, desarmado en tres partes. Falta el `13` (Pagos) |
 | FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
@@ -141,8 +141,9 @@ El mapa completo, con qué define cada uno, está en
 
 **La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
 
-**48 decisiones** — 3 de metodología y 45 funcionales. Ninguna pregunta del owner queda abierta, y
-ningún bloqueante de diseño tampoco.
+**103 decisiones** — 12 de metodología y 91 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 104
+encabezados; el que sobra es la plantilla del formato, en la l. 26). Ninguna pregunta del owner
+queda abierta, y ningún bloqueante de diseño tampoco.
 
 ## La decisión que reorientó el programa
 
