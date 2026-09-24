@@ -6,6 +6,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$HERE/wt-config.sh"
 ROOT="$(wt_root)"; CFG="$(wt_config_path)"
+QZ_CFG="$ROOT/.qz/project.json"
 [ -n "$ROOT" ] || { echo "Not in a git repo"; exit 1; }
 [ -f "$CFG" ] || { echo "NO_CONFIG — create .claude/project.config.json first"; exit 2; }
 
@@ -18,9 +19,16 @@ if [ -n "$OVERRIDE_BASE" ] && [[ ! "$OVERRIDE_BASE" =~ ^[A-Za-z0-9._/-]+$ ]]; th
   exit 2
 fi
 
-BASE="${OVERRIDE_BASE:-$(jq -r '.baseBranch' "$CFG")}"
-PATHPAT="$(jq -r '.worktree.pathPattern' "$CFG")"
-BRANCHPAT="$(jq -r '.worktree.branchPattern' "$CFG")"
+if [ -f "$QZ_CFG" ]; then
+  ADAPTER_BASE="$(jq -r '.branches.base // empty' "$QZ_CFG")"
+  ADAPTER_PATHPAT="$(jq -r '.worktree.pathPattern // empty' "$QZ_CFG")"
+  ADAPTER_BRANCHPAT="$(jq -r '.branches.pattern // empty' "$QZ_CFG")"
+else
+  ADAPTER_BASE=""; ADAPTER_PATHPAT=""; ADAPTER_BRANCHPAT=""
+fi
+BASE="${OVERRIDE_BASE:-${ADAPTER_BASE:-$(jq -r '.baseBranch' "$CFG")}}"
+PATHPAT="${ADAPTER_PATHPAT:-$(jq -r '.worktree.pathPattern' "$CFG")}"
+BRANCHPAT="${ADAPTER_BRANCHPAT:-$(jq -r '.worktree.branchPattern' "$CFG")}"
 BRANCH="${BRANCHPAT//\{type\}/$TYPE}"; BRANCH="${BRANCH//\{slug\}/$SLUG}"
 RELPATH="${PATHPAT//\{slug\}/$SLUG}"
 WTPATH="$(realpath -m "$ROOT/$RELPATH" 2>/dev/null || echo "$ROOT/$RELPATH")"

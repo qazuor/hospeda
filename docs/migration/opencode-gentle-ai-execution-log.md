@@ -3935,3 +3935,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El adapter actual pasó sin errores.
 - No se leyeron valores de envs ni secretos y no se ejecutaron operaciones de
   Git, Docker o PostgreSQL.
+
+## Gate 246 · `wt-create` consume base del adapter
+
+- `scripts/worktree/wt-create.sh` ahora prefiere `branches.base`,
+  `branches.pattern` y `worktree.pathPattern` de `.qz/project.json`.
+- La configuración legacy sigue siendo fallback para clones que todavía no
+  tengan adapter; el flujo Hospeda conserva `develop` y `--base staging`.
+- Se validó la sintaxis Bash y la resolución read-only produjo `develop`,
+  `../hospeda-{slug}` y `{type}/{slug}`.
+- No se creó ningún worktree, branch, DB ni archivo de entorno.
