@@ -95,8 +95,10 @@ de marca: **20**. Máquina de publicación: **6 estados, 12 transiciones**. Acci
 
 ### Pendientes del owner
 
-1. **Push de la rama: 292 commits** locales. Los del 24/09 llevan `Co-Authored-By` (contra el
-   `CLAUDE.md` global); los del 25/09 van sin atribución. Preguntar si reescribir los del 24/09.
+1. ✅ **Rama pusheada el 2026-09-25** (`90e4b326f5..2c9c58d946`, sin forzar; PR #3360 abierto). **El
+   owner decidió no reescribir** los commits con `Co-Authored-By` (70 del 23–24/09 y 35 ya pusheados):
+   reescribirlos cambiaba el hash de todo lo posterior y rompía las citas por hash de los documentos.
+   Desde el 25/09 los commits van sin atribución.
 2. Sujetos vivos: `RN-3` y la sonda 49 (se lee después del 26/09 18:02 `-04`); el cobro real de
    `ed00a8fd` el 26/09 (~00:02 `-04`).
 3. `.atl/` sin versionar en el worktree: no es de esta sesión.
