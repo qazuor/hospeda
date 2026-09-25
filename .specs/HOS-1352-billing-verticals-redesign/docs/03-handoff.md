@@ -47,7 +47,63 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-25, madrugada — la FASE 8 completa corrió y sus racimos R1 a R7 están resueltos
+## Última actualización: 2026-09-25, tarde — la FASE 8 completa está CERRADA: los 14 racimos y los 2 críticos resueltos
+
+### El próximo paso exacto
+
+1. **La FASE 8 completa (`DEC-METH-014`) está cerrada.** Los **14 racimos**, los **2 críticos sin
+   convergencia** y el registro de `D1` pasaron por el owner uno por uno. La tabla de cómo se
+   resolvió cada uno está en [`25-fase-8-completa/00-hallazgos.md`](./25-fase-8-completa/00-hallazgos.md) §5.
+2. **Método que rigió desde la tarde: `DEC-METH-015`** — los residuos **de borde** que deja un
+   arreglo se **declaran con su causa** en el «NO cierra» del capítulo y no se abren como
+   pendientes; sólo se trae al owner lo que toca plata, acceso o datos en el camino principal. Hay
+   decenas de residuos declarados así, repartidos en los «NO cierra» de `B/*`, `V/*` y el núcleo.
+3. **➡️ LO PRÓXIMO, por decidir con el owner:** `DEC-METH-013` dice que el tope de dos vueltas
+   empieza a contar **después** de esta revisión. La pregunta abierta es si corre una **8-bis**
+   sobre lo que se tocó hoy (fueron ~20 tandas de agentes sobre casi todos los capítulos) antes de
+   pasar a la **FASE 5** (gap analysis), la **6** y los cinco ítems que faltan de la **FASE 7**.
+4. **Tres correcciones de registro en el LOG que piden OK del owner** (el log no se toca sin él):
+   (a) `01-decision-log.md:2457` cita `V/02` §1.2 y el destino real es `NUCLEO/02` §1.2; (b) la fila
+   *«Apartamientos declarados del PDR | 7»* del resumen no cuenta `DEC-MAIL-001`; (c) el
+   `updated:` del frontmatter del log sigue en 2026-09-21.
+
+### Lo decidido el 25/09 (tarde) — NO relitigar
+
+| decisión | en una línea |
+|---|---|
+| **`DEC-SUB-021`** | en grace no se cambia de plan: se cambia la tarjeta; **supera a `DEC-SUB-003`** |
+| **`DEC-DATA-005`** | la retención sólo toca fichas; el usuario y sus datos no se tocan nunca |
+| **`DEC-METH-015`** | los residuos de borde se declaran, no se persiguen |
+| **`DEC-ARCH-009`** | reconciliador diario de cobertura en verticales (el aviso es rápido, el reconciliador es la red) |
+| **`DEC-TRIAL-010`** | el trial se convierte con el primer pago acreditado; suscribirse termina el trial |
+| precisiones | `DEC-SUB-006` (excepción a `D8`: la sucesora de un suspendido con tarjeta cobra al autorizar), `DEC-SUB-017` (el pago retenido queda como crédito, no se reembolsa), `DEC-SUB-020` 📌 (contracargo fuera de `ACTIVE`) |
+| registro | los IDs duplicados se renumeraron: `DEC-ARCH-010` (inventarios, 23/09) y `DEC-ENT-005` (clase de clave, 23/09); **cada referencia se clasificó por contexto** (8 cambiaron, 21 quedaron) |
+| reglas de capítulo | `PURGED` y `PB9`; borrado exige `ARCHIVED`; `MODERATED` (`PB10`/`PB11`); el dueño borra con `PB12`, siempre; publicar exige cobertura o trial arrancable; la vertical se lee de la ficha; lock por `user + vertical` en lo que ocupa cupo; la página de Partner se ve por entitlement; una vertical discontinuada no cubre a nadie; en un cambio de plan trabado emite sólo la sucesora; `S16` y `S31` cancelan de nuestro lado; el corte siembra `inactiva_desde` y filas de trial consumidas; promos no sobreviven a un cambio de plan |
+
+### Lo que se midió el 25/09 (tarde)
+
+- **Sonda 51** (`EX-41`, sandbox): `/v1/orders` es **idempotente por `X-Idempotency-Key`**; misma clave
+  con otro cuerpo → `409`; el `external_reference` **no deduplica**.
+- **`PA-6`** entró `UNKNOWN`: si el proveedor cancela ante un primer rechazo que no sea antifraude.
+
+### Conteos (recontados con script)
+
+Log **117 decisiones** (118 encabezados menos la plantilla; **117 IDs únicos**, sin duplicados):
+15 de metodología, 102 funcionales. Matriz **98 filas**: 55 `VERIFIED` · 14 `PARTIALLY` · 23
+`NOT_SUPPORTED` · 6 `UNKNOWN` (`PA-6`, `RN-3`, `GR-1`, `GR-2`, `RC-8`, `RF-3`). Catálogo de motivos
+de marca: **20**. Máquina de publicación: **6 estados, 12 transiciones**. Acciones administrativas: **13**.
+
+### Pendientes del owner
+
+1. **Push de la rama: 292 commits** locales. Los del 24/09 llevan `Co-Authored-By` (contra el
+   `CLAUDE.md` global); los del 25/09 van sin atribución. Preguntar si reescribir los del 24/09.
+2. Sujetos vivos: `RN-3` y la sonda 49 (se lee después del 26/09 18:02 `-04`); el cobro real de
+   `ed00a8fd` el 26/09 (~00:02 `-04`).
+3. `.atl/` sin versionar en el worktree: no es de esta sesión.
+
+---
+
+## Histórico: 2026-09-25, madrugada — la FASE 8 completa corrió y sus racimos R1 a R7 están resueltos
 
 ### El próximo paso exacto
 
