@@ -428,6 +428,15 @@ contrario de predecible — y `V/15` §4.3 ya declaró por qué no se inventa un
 cuenta para el cupo, así que ni ocupa lugar ni compite por él (`PB9`; FASE 8 completa,
 `F-8CA2-008`, owner 2026-09-25).
 
+**Qué cuenta para el cupo: las fichas en `PUBLISHED`, y ninguna otra** (FASE 8 completa, owner
+2026-09-25; lo que el corpus ya asumía, dicho en un solo lugar). Es la lectura que sostienen todas
+las filas que lo nombran: `PB2` **despublica** el excedente hasta entrar en el límite, `PB3` y `PB7`
+**publican** hasta llenarlo, `DEC-SUB-008` plantea el caso como *«5 fichas publicadas que baja a un
+plan de 3»*, publicar (`PB1`) es lo que **consume** un limit (`V/15` §3.4) y volver a `DRAFT` por
+`PB8` **no cuenta contra ningún limit** (`V/02` §2.1). Así que `DRAFT`, `UNPUBLISHED_BY_BILLING` y
+`ARCHIVED` **no ocupan lugar** —las dos últimas son candidatas que compiten por él— y `PURGED`, que
+es final, **ni ocupa lugar ni compite**.
+
 **El origen NO desempata, y es deliberado.** Una candidata en `ARCHIVED` y una en
 `UNPUBLISHED_BY_BILLING` entran en **la misma cola ordenada**, sin prioridad por el estado del que
 vienen. Lo único que las separa es **cuánto tardó nuestro reloj en archivar una y no la otra**, que

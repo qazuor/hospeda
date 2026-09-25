@@ -250,9 +250,11 @@ hubiera pasado por el archivado ni por su aviso. Lo cierran dos reglas juntas: *
 `ARCHIVED`** —eso lo dice la tabla del cap. 03 §9 y no necesita guard: es su `desde`— y **`N` se
 valida menor que 6 meses**, que es configuración y por eso lleva guard, igual que `D16`. **Se rompe
 a propósito** poniendo `N` en 6 meses, y el rojo tiene que nombrar a `PB5` y la cifra.
-⚠️ **Lo que no está decidido**: si la cota es **6 meses literal** o **el día del hard delete**
+~~⚠️ **Lo que no está decidido**: si la cota es **6 meses literal** o **el día del hard delete**
 —como `D16`, que compara contra el 180 y no contra un número fijo—. Hoy son lo mismo; el día que
-alguien mueva el 180, dejan de serlo. El predicado de arriba toma la letra del owner.
+alguien mueva el 180, dejan de serlo. El predicado de arriba toma la letra del owner.~~ **Cerrado
+el 2026-09-25 (owner, FASE 8 completa)**: **la cota es 6 meses literal**, como dice el predicado de
+arriba; **la unidad que lo construye sigue siendo `V6`**, y **no se agrega un invariante `D18`**.
 
 **`PB9` no mueve ni a `G-R6` ni a `G-R6-B`, revisado y no supuesto.** El hard delete pasó a ser
 una transición (`PB9`, cap. 03 §9; `F-8CA2-008`), pero **lee la columna igual que antes** —es el

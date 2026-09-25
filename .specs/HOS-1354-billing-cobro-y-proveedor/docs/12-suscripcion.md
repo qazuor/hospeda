@@ -195,8 +195,9 @@ reemplazable.
 completa, pendiente 8): escribe **`cobros_restantes = 0`** en la redención de promo que cuelga de
 ella (`B/02` §2.4), porque la promo no sobrevive a un cambio de plan (`B/14` §2.2). En el downgrade
 la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
-esperado de `B/14` §2.4 la seguiría restando. ⚠️ Qué monto espera el barrido **entre el pedido y
-este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).
+esperado de `B/14` §2.4 la seguiría restando. ~~⚠️ Qué monto espera el barrido **entre el pedido y
+este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).~~ **Entre el pedido y
+este acto, el monto esperado es el del plan vigente** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4).
 
 ---
 
@@ -493,13 +494,15 @@ paga el período que está usando. Anunciar sólo *«el cobro puede entrar»* �
 describe el hecho y esconde la única decisión que el cliente puede tomar al respecto. Alcanza a
 `NUCLEO/07` §6, fila *«cambio de plan con una cuota en reintento»*, y a `B/19` §4, fila 15.
 
-⚠️ **Desde `DEC-SUB-021` (owner 2026-09-25) este aviso se quedó sin su momento.** Está escrito para
+~~⚠️~~ **Desde `DEC-SUB-021` (owner 2026-09-25) este aviso se quedó sin su momento.** Está escrito para
 salir **antes de confirmar** el cambio sobre una predecesora que **ya** debía, y esa declaración no
 existe más. En los dos casos que siguen vigentes (§5.1) no hay cuota impaga al confirmar: en el
 primero la deuda nace **después**, por `S4`, con la sucesión ya en curso; en la `SUSPENDED` de
-tarjeta, `S6` cerró la puerta del reciclado (`DEC-SUB-019`) y la fila 15 ya la excluía. **Qué se le
+tarjeta, `S6` cerró la puerta del reciclado (`DEC-SUB-019`) y la fila 15 ya la excluía. ~~**Qué se le
 dice, y cuándo, a quien entra en el grace durante la ventana no está decidido**: el cobro puede
-entrar igual y las dos ramas de arriba le siguen tocando.
+entrar igual y las dos ramas de arriba le siguen tocando.~~ **Cerrado el 2026-09-25 (owner, FASE 8
+completa)**: **quien entra en el grace durante la ventana recibe los correos normales del grace,
+más una línea que dice que el cambio de plan sigue pendiente** (`NUCLEO/07` §6, `B/19` §4 fila 15).
 
 **Y el aviso le toca también al que paga a mano**, porque su puerta es la que el cliente abre a
 propósito: el que transfiere la cuota vieja mientras cambia de plan hace, con un acto suyo,

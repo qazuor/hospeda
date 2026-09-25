@@ -114,9 +114,9 @@ Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade
   el acto que aplica el cambio programado** (`B/12` §2): escribe **`cobros_restantes = 0`** en la
   redención de la fila (`B/02` §2.4), que es la forma que el modelo ya tenía de decir *«sin
   descuento»*, y desde ahí el monto esperado del §2.4 ya no la resta (orquestador, FASE 8 completa,
-  pendiente 8). ⚠️ **Entre el pedido —cuando `DEC-SUB-008` muta el monto— y ese acto, la redención
-  sigue con su contador**; qué monto espera el barrido en esa ventana no está escrito (*«lo que este
-  capítulo NO cierra»*).
+  pendiente 8). ~~⚠️~~ **Entre el pedido —cuando `DEC-SUB-008` muta el monto— y ese acto, la redención
+  sigue con su contador**; ~~qué monto espera el barrido en esa ventana no está escrito (*«lo que este
+  capítulo NO cierra»*)~~ **en esa ventana el monto esperado es el del plan NUEVO desde el pedido**, porque `DEC-SUB-008` muta el monto en el acto del pedido y deja para el fin del ciclo sólo los entitlements (FASE 8 completa, owner 2026-09-25; §2.4).
 
 **Y la persona NO puede volver a canjear el mismo código en la sucesora.** La redención no se
 borra —queda sobre la predecesora— y `UNIQUE(promo_code_id, user_id)` (`B/02` §2.4) es por user,
@@ -249,12 +249,16 @@ quién abrió la divergencia** (orquestador, FASE 8 completa, pendiente 8, deriv
 punto 4):
 
 - **si la abrió una mutación NUESTRA** —`S30`, o un aumento de precio de `DEC-MP-002`—, **reintenta
-  la mutación durante 3 días, contados desde esa transición** —por tiempo, no por corridas, como el
+  la mutación durante 3 días, contados desde esa transición** —**en un aumento, desde su fecha
+  efectiva** (FASE 8 completa, owner 2026-09-25); por tiempo, no por corridas, como el
   reintento de una cancelación nuestra (`B/09` §3)— y después abre la marca con motivo
   **`DIVERGENCIA_DE_MONTO`**. Es el mismo argumento del 📌 del punto 4: terminar un acto nuestro ya
   decidido no es reparar una divergencia;
 - **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto**, sin reintento: es
   una divergencia que nadie mandó, y el punto 4 la reserva a una persona.
+
+**Entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan
+vigente** (FASE 8 completa, owner 2026-09-25).
 
 **Sin columna nueva.**
 
@@ -671,11 +675,13 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
   5. ~~**Si *«no hay promos para el pagador manual»* alcanza también a la extensión de trial**
      (§32), que es el otro tipo de promo code (`NUCLEO/01`, *Promo code*) y no muta ningún monto.~~
      **Cerrado**: no la alcanza; la regla es sólo para las promos de monto (§2.5).
-- ⚠️ **Lo que la pendiente 8 deja abierto**, declarado:
-  1. **El monto esperado entre el pedido de un downgrade y el acto que lo aplica.** `DEC-SUB-008`
+- ~~⚠️~~ **Lo que la pendiente 8 dejaba abierto quedó cerrado** (FASE 8 completa, owner 2026-09-25):
+  1. ~~**El monto esperado entre el pedido de un downgrade y el acto que lo aplica.** `DEC-SUB-008`
      muta el monto al pedirlo y el contador se escribe en 0 recién al aplicar el cambio programado
      (`B/12` §2), así que en esa ventana la redención sigue viva según su contador; qué versión de
-     plan y qué promos lee el monto esperado ahí no está escrito.
-  2. **El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
+     plan y qué promos lee el monto esperado ahí no está escrito.~~ **Cerrado**: en esa ventana el
+     monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4).
+  2. ~~**El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
      `B/03` §3.2, así que *«desde esa transición»* no tiene todavía un instante registrado que el
-     barrido pueda leer para él; para `S30` y `S10` sí lo hay.
+     barrido pueda leer para él; para `S30` y `S10` sí lo hay.~~ **Cerrado**: los 3 días del
+     reintento de monto de un aumento corren desde su fecha efectiva (§2.4).

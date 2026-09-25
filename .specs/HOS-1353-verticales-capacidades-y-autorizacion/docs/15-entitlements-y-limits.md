@@ -334,7 +334,8 @@ contable**, no sólo para las fichas, por la misma generalización del párrafo 
 
 **El caso de las fichas tiene además dos orígenes y una sola cola.** `PB3` y `PB7` (cap. 03 §9)
 compiten por el mismo cupo: las candidatas de los dos estados entran **en la misma cola ordenada**,
-sin que el origen desempate. El desarrollo, con la razón, está en el cap. 03 §9, *«cuáles vuelven,
+sin que el origen desempate. **Y el cupo cuenta sólo las fichas en `PUBLISHED`** (cap. 03 §9; FASE
+8 completa, owner 2026-09-25). El desarrollo, con la razón, está en el cap. 03 §9, *«cuáles vuelven,
 cuando el cupo no alcanza para todas»*.
 
 ### 4.4 La ventana para elegir existe sólo cuando la fecha se sabía
