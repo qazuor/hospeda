@@ -5083,12 +5083,55 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
+
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Precisa `DEC-METH-006`** (qué revisa cada vuelta de la FASE 8) **y `DEC-METH-013`** (desde cuándo
+  cuenta el tope de dos vueltas). No reemplaza a ninguna de las dos.
+- **El problema**: cada 8-bis revisó **lo que la 9-bis anterior produjo** (`DEC-METH-006`), y eso tiene
+  un punto ciego: lo que se rompe **entre** partes que nadie tocó en la misma vuelta. **La 8-bis-5 lo
+  midió**: 2 de sus 8 críticos no los generó ningún arreglo —`F-8fB3-001`, de una medición externa
+  (`RC-5`), y `F-8fC2-001`, de la lectura del conjunto—, y `DEC-METH-013` escribió que esas dos clases
+  *«no las cierra el ciclo 8↔9»*.
+- **Por qué ahora**: tras cinco vueltas de arreglos locales el diseño está **completo** —22 de 22
+  capítulos, inventario de compensación 25 de 25, la 9-bis-5 cerrada, cobro, dunning y conciliación
+  definidos—. La primera FASE 8 revisó un diseño con huecos abiertos; ésta revisa uno terminado. Y el
+  mismo 24/09 aparecieron **tres textos vencidos lejos del arreglo** (las «dos puertas», *fila viva*,
+  la vuelta del suspendido). La pregunta la planteó el owner: *«hacer el análisis no sobre lo
+  modificado, sino sobre todo, de cero, como si fuese la primera revisión»*.
+- **Decisión**: una **FASE 8 completa** sobre el núcleo, las dos épicas y el contrato de cobertura
+  **en su estado vigente**, con agentes nuevos y **ciegos entre sí**, uno por vector:
+  - los ocho de la primera FASE 8, para poder comparar contra ella: `A1` acceso cruzado y
+    autorización · `A2` máquinas, carreras y huérfanos · `A3` datos, migración y acoplamiento ·
+    `B1` doble cobro y pérdida de pago · `B2` máquinas, idempotencia y carreras · `B3` conciliación,
+    datos y migración · `C1` la costura · `C2` liberación, coexistencia y migración;
+  - **y uno nuevo, `D1` — la coherencia del conjunto**: contradicciones entre capítulos, conteos
+    congelados, referencias sin destino, afirmaciones que contradicen la matriz.
+- **Reglas de la corrida**:
+  1. **Ciegos del historial**: no leen `14-`…`23-`, ni los rastros, ni los informes anteriores.
+  2. **El log de decisiones es un dato**: pueden señalar que una decisión rompe algo; no reabrirla
+     por preferencia. La matriz es la fuente de lo medido.
+  3. **Modelo Opus** para los nueve —decisión de costo del owner: una revisión adversarial que se
+     escapa cuesta más que los tokens.
+  4. Informes en `25-fase-8-completa/`, y un consolidado donde **la convergencia entre agentes
+     ciegos es la señal de severidad**, como en la primera.
+- **Relación con `DEC-METH-013`**: **el tope de dos vueltas empieza a contar DESPUÉS de esta
+  revisión.** Contesta la pregunta que el handoff del 24/09 dejaba abierta.
+- **El costo, declarado**: la primera FASE 8 dio **141** hallazgos. Ésta debería dar menos, pero
+  arreglarlos es trabajo de varias sesiones.
+- **La alternativa descartada**: una 8-bis-6 sobre los cambios del 24/09. Más barata, pero repite el
+  punto ciego que ya costó un crítico, justo después de la tanda más grande del programa.
+- **Origen**: la pregunta del owner del 2026-09-24 y su aprobación del texto y de la lista de
+  vectores el mismo día. Se arranca **en una sesión nueva, con contexto limpio**, a pedido suyo.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **110** — las siete del 2026-09-24, con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
-| De metodología | 13 |
+| Decisiones tomadas | **111** — las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| De metodología | 14 |
 | Funcionales | 97 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
