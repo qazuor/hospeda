@@ -1,0 +1,293 @@
+---
+title: Master Spec 21 — Migración
+linear: HOS-1353
+statusSource: linear
+created: 2026-09-17
+updated: 2026-09-20
+status: CURRENT
+fase: 2
+capitulo: 21
+cierra:
+  - M-MIG-01
+  - O-MIG-01
+  - R-MIG-01
+---
+
+# 21 · Migración
+
+Mitad **VERTICALES** del capítulo 21 del programa. La otra mitad vive en la otra épica.
+
+Este capítulo es corto por una razón que está medida: **no hay casi nada que migrar.**
+
+Los tres huecos que cierra se contestan con el mismo número, y el número no se hereda del PDR:
+se midió, y se re-midió al escribir este capítulo.
+
+---
+
+## 2. El trial ya consumido · cierra `M-MIG-01`
+
+### 2.1 La pregunta ya no tiene sujeto: NO SE MIGRA
+
+`M-MIG-01` preguntaba si alguien que consumió un trial bajo reglas distintas —otro alcance, otra
+duración, otro disparador— arrastra el consumo al modelo nuevo. **La pregunta se disuelve porque
+no se transcribe ninguna fila.**
+
+> **El sistema nuevo no hereda una sola fila. Las ocho suscripciones vivas se cancelan, y quien
+> tenga algo vivo se suscribe de nuevo.**
+
+### 2.2 Qué hizo posible la decisión, y no fue un criterio técnico
+
+Hasta que el owner aportó el dato, nadie sabía **de quién eran las ocho**. Con eso:
+
+| las ocho | quiénes son |
+|---|---|
+| **2 `comp`** | **del propio owner.** No hay un cliente real detrás de ninguna |
+| **3 `abandoned`** | no tienen **nada vivo** que migrar: abandonaron el checkout. **Verificado también del lado del proveedor** el 2026-09-24 (`B/21` §2.4) |
+| **3 `trialing`** | clientes reales, **y contactables** — el owner puede hablarles para que se resuscriban |
+
+Las tres `trialing` son las **únicas** con preapproval vivo (medido: 3 de 3, y ninguna de las otras
+cinco), y sobre ellas se apoyaba **todo lo pesado** de la migración: el punto de no retorno, el
+orden forzado y la ausencia de rollback. **Con las ocho recuperables por teléfono, esa carga no
+tiene sujeto.**
+
+### 2.3 Qué cuesta cada camino, y qué se pierde exactamente
+
+| | |
+|---|---|
+| **migrar** | escribir una unidad de trabajo nueva, el orden forzado, el punto de no retorno **por fila**, y aceptar que el rollback no existe pasado cierto paso |
+| **no migrar** | **tres llamadas** y dos cuentas propias |
+
+**Qué se pierde, medido:**
+
+- **Nada de plata.** No hay **un solo pago histórico**: ningún comprobante, ninguna serie que
+  reconstruir.
+- ~~**El «trial ya consumido» de seis personas** —las tres `abandoned` y las tres `trialing`—, que
+  sin migrarlo **podrían repetir trial**. Son seis personas conocidas, y tres ya habían abandonado
+  el checkout igual.~~ **Ya no se pierde** (FASE 8 completa, owner 2026-09-25): el corte escribe
+  una fila de `trial` **ya consumida** por cada dueño que tenía ficha o suscripción en el sistema
+  viejo (§2.4, *«el rastro de que ya fue cliente»*), y eso incluye a esas seis. No es migrar su
+  trial: es la misma forma que la lápida de billing.
+
+**El argumento de fondo no es de pereza**: se estaba construyendo una migración para **ocho filas
+sin un solo pago, todas de gente a la que se puede llamar**. Diseñarla, revisarla, ejecutarla y
+garantizar su rollback es desproporcionado frente a un mensaje. Y el beneficio extra es real: **el
+sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin estados viejos, sin
+dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
+disponible ahora**, mientras son ocho.
+
+### 2.4 Cómo amanece la población existente: se despublica, y se la llama
+
+**El programa nunca preguntó esto.** Sin fila de `trial`, el estado es `PRE_TRIAL` por
+construcción —*«`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene»* (`V/03` §2)—, así que ~~**el
+100 % de los usuarios de producción amanece ahí**~~ **amanece ahí todo el que no tenía ficha ni
+suscripción en el sistema viejo**; **el dueño que sí la tenía amanece en `TRIAL_CONVERTED`**, por la
+fila que el corte le escribe (abajo, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner
+2026-09-25). Lo que sigue razona sobre `PRE_TRIAL` y vale igual para ellos: `TRIAL_CONVERTED`
+tampoco emite fuente ni cubre (`V/03` §2, *«qué contesta el contrato en cada estado»*). Y el evento que los sacaría **ya ocurrió**: `T1`
+dispara con *«la ficha queda publicada»*, que es la **transición** de publicar, y sus fichas ya
+están publicadas.
+
+**Y la guarda nueva del par `T1`/`T6` no cambia esta conclusión, que es lo que hay que
+verificar.** Desde que `T1` exige `cubierto` **falso** y `T6` lo exige **verdadero** (`V/03` §2),
+el mismo evento podría mandar a alguien a `TRIAL_CONVERTED` en vez de a `TRIAL_ACTIVE`. **La
+conclusión se sostiene, pero por el argumento del párrafo de arriba y no por `cubierto`: el evento
+ya ocurrió, así que la mañana del corte no dispara NINGUNA de las dos.** Nadie publica una ficha
+que ya está publicada, y sin evento no hay transición — para las ocho filas por igual. `T7`
+tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende nada.
+
+**Dos correcciones sobre esta misma verificación, porque razonaba sobre el conjunto equivocado:**
+
+1. **No es cierto que «nadie tiene un título vivo».** Las ocho suscripciones se cancelan (§2.1),
+   sí, pero la otra mitad del corte **escribe dos `permanent_grant`** en el mismo acto —las dos
+   cortesías del owner, `B/21` §2.4— y un `GRANT` con `hasta: NO_VENCE` es de clase **`TÍTULO`**
+   (`12-contrato…` §2.4). Para esas dos cuentas `cubierto` es **verdadero** en cuanto el grant
+   existe. No cambia lo de abajo —no dispara ninguna transición—, pero sí cambia **cuál
+   dispararía** el día que publiquen algo nuevo, y eso es el punto 3.
+2. **Y por eso `PB2` tampoco las alcanza.** Con `cubierto` verdadero no hay cambio de cobertura
+   que despublique nada: **lo de abajo vale para seis de las ocho**, no para las ocho.
+3. **El orden entre la escritura de los dos grants y el paso 4 no está fijado en ningún lado, y
+   hay que fijarlo en el procedimiento del corte.** Si los grants se escriben **antes**, esas dos
+   cuentas nunca pierden cobertura; si se escriben **después**, pasan por una ventana con
+   `cubierto` falso en la que `PB2` les baja las fichas y `PB3` se las devuelve. Las dos ramas
+   terminan igual y el residuo es una despublicación visible de minutos sobre dos cuentas del
+   owner: **es un orden que hay que escribir, no una decisión de diseño**.
+
+~~**Lo que este § NO decide es qué pasa con el trial de esas dos cuentas.** Cubiertas por un grant,
+el día que publiquen una ficha dispara **`T6`** y su fila de `trial` nace **consumida**; y si ese
+grant se revocara alguna vez, quedarían sin grant y sin el trial que nunca usaron. Eso es un
+defecto de la máquina de trial, no del corte, **está abierto y lo decide el owner**. Acá sólo se
+declara que el corte pone a dos cuentas en esa posición, y que las dos son suyas y *«regenerables
+de cero»* (`B/21` §2.4) — que es lo que lo vuelve tolerable mientras se decide.~~ **El trial de esas
+dos cuentas lo resuelve la misma regla que el de todo dueño existente** (FASE 8 completa, owner
+2026-09-25): tenían suscripción —las dos `comp`— en el sistema viejo, así que **el corte les escribe
+la fila consumida** (abajo) y `T6` ya no dispara sobre ellas. Si el grant se revocara quedarían sin
+grant y sin trial, que es el §10.2 aplicado a quien ya fue cliente; las dos son del owner y
+*«regenerables de cero»* (`B/21` §2.4).
+
+**Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
+un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
+que **las fichas publicadas de Alojamiento se despublican la mañana del corte**. No es una
+ambigüedad entre dos ramas: es una consecuencia.
+
+> **Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
+> se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
+
+**Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
+puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
+**`PB7`**, con el mismo disparador y el mismo desenlace (`V/03` §9). No cambia el resultado, sino
+**de qué fila depende** — y conviene decirlo porque antes de la 9-bis-3 `PB7` no existía, así
+que una demora de tres meses en la agenda de llamados convertía *«vuelve sola»* en un incidente
+por cada cuenta.
+
+**Y el reloj de esas fichas arranca el día del corte, no el día que se crearon** (FASE 8 completa,
+`F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25). `listing.inactiva_desde` **no es anulable** (`V/02`
+§2.5), así que la migración estructural tiene que ponerle un valor a cada ficha que ya existe, y el
+único que la regla de la columna ofrecía —*«una ficha nace con el instante de su creación»*— es su
+`created_at`: con él, toda ficha creada más de 90 días antes del corte se archivaba y toda ficha de
+más de 180 **se borraba en la primera corrida**, antes de que sonara el teléfono y con los tres
+avisos de retención fechados en el pasado. **Toda ficha que existía el día del corte nace con
+`inactiva_desde` = el instante del corte.** Es la escritura `C` de la lista cerrada del
+`NUCLEO/01` §1.2 —**una sola vez, en la migración estructural del corte, y en ningún otro lugar**—,
+y `G-R6-B` la admite por ese lugar. *(Sobre las fichas publicadas, `PB2` escribe el mismo día el
+hecho 5 al despublicarlas, `NUCLEO/01` §1.2; la escritura `C` sigue haciendo falta porque la
+columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a ~~las que no estaban
+publicadas~~ **toda ficha preexistente, incluida la del dueño que ese día no pierde la cobertura**:
+el hecho 5 ya alcanza a las no publicadas de un dueño que la pierde —FASE 8 completa, owner
+2026-09-25—, pero sobre un dueño que no la pierde no ocurre.)*
+
+> ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
+> tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió
+> y ~~lo que `PB7` devuelve es una ficha vacía~~ la ficha quedó en `PURGED`, que es final: no la
+> devuelve nada (`V/03` §9, `PB9`; `F-8CA2-008`, cerrado por el owner el 2026-09-25). El límite de
+> la agenda sigue abierto igual. El hallazgo propone
+> declararlo como límite de la agenda (`F-8CA3-002`); **si se declara y cómo se vigila lo decide el
+> owner**. Y `DEC-MIG-004` retiró su defecto #7 con la causa *«no se transcribe ninguna»*: la ficha
+> sí sobrevive al corte y su reloj sí se siembra, así que esa causa no alcanza a esta columna — la
+> corrección del texto del log queda para el log.
+
+**Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
+contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
+igual** —es lo que decide todo este capítulo: son pocos, la mayoría **no pagó nunca**, y el owner
+**los conoce a todos**—, así que la siembra no ahorra una sola conversación. Agregar filas para
+evitar un efecto que la llamada ya resuelve es el mecanismo que el §56 pide no construir: *«no
+contaminar la arquitectura nueva para salvar unas pocas relaciones legacy»*. *(La fila de `trial`
+consumida que el corte sí escribe —abajo— no es esa siembra: no cubre ni deja ninguna ficha arriba;
+hace lo contrario, impedir un trial nuevo. FASE 8 completa, owner 2026-09-25.)*
+
+**Qué se pierde, dicho sin adornos**: la ficha de cada uno está abajo **desde el corte hasta que esa
+persona contrata**. Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
+aviso va **antes** del corte, no después.
+
+**Y qué se gana, que no es sólo ahorrarse la siembra**: el camino de vuelta —perder la cobertura,
+recuperarla, y que la ficha se republique sola— **se ejercita el primer día**, sobre un puñado de
+casos conocidos y con el owner al teléfono. Es exactamente cuando conviene descubrir que falla, si
+falla.
+
+**Consecuencia sobre la regla del capítulo, y es limpia**: ~~del lado de verticales **no se escribe
+ninguna fila**, así que *«el sistema nuevo no hereda una sola fila»* sigue siendo literal acá.~~
+del lado de verticales **no se transcribe ninguna fila viva**, que es la precisión de `DEC-MIG-003`
+(*«ninguna fila VIVA del sistema viejo pasa al nuevo»*).
+**Lo que sí se escribe es un valor de columna sobre filas que ya existen** —el `inactiva_desde` de
+arriba—, y por eso figura en la lista cerrada de escritores de esa columna como escritura propia
+(FASE 8 completa, `F-8CC2-003`, owner 2026-09-25), **y la fila de `trial` consumida de cada dueño
+existente** (abajo, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25). ~~La
+única excepción del programa es la lápida del `B/21` §2.5, y tiene su razón propia — hace
+reconocible un cobro viejo, que ninguna llamada puede evitar.~~ **Las filas nuevas que el corte
+escribe son dos clases, y ninguna es una transcripción**: la lápida del `B/21` §2.5, que hace
+reconocible un cobro viejo, y la fila de `trial` consumida, que hace reconocible a un cliente viejo.
+
+#### El rastro de que ya fue cliente: la fila de `trial` consumida que escribe el corte
+
+(FASE 8 completa, owner 2026-09-25; cierra `F-8CA2-013`.)
+
+**El defecto.** Sin fila de `trial`, el dueño con fichas publicadas amanecía en `PRE_TRIAL`, y al
+publicar cualquier borrador después del corte disparaba `T1` y recibía el trial entero: el
+principio que funda `T7` —quien ya ejerció el evento de activación no estrena trial (`V/03` §2)— se
+aplicaba en el encendido y no en el corte. La población no eran las seis personas del §2.3: era
+**toda la cartera**.
+
+> **El corte escribe una fila de `trial` ya consumida por cada dueño que tenía al menos una ficha
+> —o una suscripción— en el sistema viejo al momento del corte, por vertical.** Es el rastro de
+> que esa persona ya fue cliente, para que `T1` no le dé un trial nuevo (§10.2).
+
+- **Qué se escribe**: la misma fila que escriben `T6` y `T7` —en `TRIAL_CONVERTED`, **consumida**,
+  sin reloj y sin campaña (`V/03` §2)—, con el `user_id` del dueño, la vertical y **el hash del
+  correo normalizado** (cap. 02 §2.2).
+- **El hash**: se calcula sobre el correo de su cuenta al momento del corte, **normalizado como
+  manda `DEC-TRIAL-004`** —puntos y `+alias`— y con **la misma función** que usan `T1`, `T6` y
+  `T7`. Es la condición para que sirva: la guarda de las tres compara un hash contra otro (`V/03`
+  §2, *«el hash que ya consumió»*), y un hash calculado distinto no niega nada.
+- **Alcance, por vertical**: el `user + vertical` de cada ficha que ya existía el día del corte
+  —publicada o no, la misma población de la escritura `C` de arriba— y el de cada suscripción del
+  sistema viejo, **en las verticales cuyo plan de trial tiene días > 0 el día del corte**. En una
+  vertical con los días en cero —Partner hoy (`DEC-TRIAL-003`)— **no se escribe**: consumir ahí un
+  trial que la vertical todavía no ofrece es lo que `V/03` §2 (*«la tercera fila es nueva y es
+  deliberada»*) llama destruirlo antes de que nazca, y el día del encendido lo resuelve `T7`.
+- **Dónde y cuántas veces**: en la migración estructural del corte, **una sola vez**, como la
+  escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2) y como la lápida de billing (`B/21` §2.5).
+- **No es una migración, y `DEC-MIG-003` sigue en pie**: no se transcribe nada vivo —ni el trial
+  que alguien tuviera corriendo, ni su fecha, ni su plan—. Es un rastro, de la misma familia que la
+  lápida: la lápida hace reconocible un cobro viejo; esta fila hace reconocible a un cliente viejo.
+
+**Qué cambia la mañana del corte: nada visible.** `TRIAL_CONVERTED` no emite fuente, así que esas
+personas amanecen sin cobertura igual que en `PRE_TRIAL`, `PB2` despublica igual y la ficha vuelve
+cuando contratan (arriba). Lo que cambia es **el día que publican algo nuevo sin haber contratado**:
+`T1` no dispara —la persona no está en `PRE_TRIAL` y su hash ya tiene fila— y `PB1` no publica,
+porque no está cubierta ni arranca un trial (`V/03` §9; *«suscribite para publicar»*, cap. 19 §4
+fila 21).
+
+> ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
+> el camino principal, da acceso indebido ni borra datos):
+>
+> 1. **Dos cuentas del sistema viejo con el mismo correo normalizado en la misma vertical**: el
+>    `UNIQUE(hash_del_correo_normalizado, vertical)` (cap. 02 §2.2) admite una sola fila, y cuál de
+>    las dos la recibe no está escrito. La otra queda en `PRE_TRIAL` con su hash ya consumido —el
+>    caso de *«el hash que ya consumió»* (`V/03` §2)—, y sin cobertura tampoco publica. **Causa**: la
+>    regla se escribió por dueño y la restricción es por hash. Las dos terminan sin trial.
+> 2. **El ex-cliente de una vertical con los días en cero** (Partner hoy): el corte no le escribe
+>    fila, y el día del encendido `T7` lo alcanza sólo si ya ejerció el evento de activación, que
+>    Partner todavía no declara (`DEC-TRIAL-006`). **Causa**: la regla del corte hereda la
+>    restricción de `V/03` §2 para no destruir un trial que no existe. Qué hace el encendido con el
+>    ex-partner queda para el día del encendido (cap. 11 §8).
+> 3. **El procedimiento del corte** (`16-fase-7-del-paraguas.md` §4) no nombra esta escritura, y
+>    ese documento no se edita desde esta pasada. **Causa**: la decisión es posterior al
+>    procedimiento. Va con la escritura `C`, que tampoco tiene paso propio ahí.
+> 4. **Es una fila de `trial` en `TRIAL_CONVERTED` que ninguna transición produce**, igual que la
+>    lápida es la única `CANCELLED` que ninguna transición produce (`B/21` §2.5). Una enumeración de
+>    las filas `T` no la ve. **Causa**: es una escritura única del corte, no algo que pase en la vida
+>    de un trial. La máquina la lee igual que la de `T6`/`T7`: no sale nada de `TRIAL_CONVERTED`.
+
+### 2.5 La condición de caducidad, que es lo único que hay que vigilar
+
+> ⚠️ `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece.
+> Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está en unas veinte**, y
+> arriba de eso deja de ser viable.
+
+El aviso que el owner ya se comprometió a dar —*«si veo que empiezan a entrar registros nuevos, te
+aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir esta decisión.**
+
+---
+
+## 4. Lo que NO se migra, y no es una omisión
+
+- **Gastronomía, experiencia y partner**: cero filas. El rediseño de esas tres verticales no
+  toca un solo dato existente.
+- **La respuesta de la página de un partner que ya no tiene la presencia sí cambia, aunque no se
+  migre ningún dato** (FASE 8 completa, `F-8CA1-014`, owner 2026-09-25). El código de hoy
+  responde **410** al partner revocado —a propósito, para que un buscador retire la URL para
+  siempre— y 404 al resto (`apps/api/src/routes/partners/public/get-by-slug.ts`). El diseño exige
+  que ajeno, archivado e inexistente sean indistinguibles desde afuera (cap. 17 §1.2, precisión 1)
+  y que la lectura sin la clave de presencia responda 404 (cap. 18 §1.6), así que **la migración
+  lo cambia a 404**. Lo que se pierde con el cambio es esa señal de desindexación.
+- **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
+  §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
+  Eso es trabajo de FASE 5 y de código, no de datos.
+
+---
+
+## Lo que este capítulo NO cierra
+
+- **Cómo se le avisa a las tres personas y cuándo se cancelan sus suscripciones** es FASE 7: acá
+  está que no se migra, no el procedimiento de la conversación.
+- **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
+  (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.

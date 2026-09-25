@@ -1,0 +1,60 @@
+{
+  "sello": "hos1352-d-1789701352088",
+  "fecha": "2026-09-18T03:15:57.681Z",
+  "bitacora": [
+    {
+      "metodo": "GET",
+      "ruta": "/p/entity/operations?limit=25",
+      "status": 200,
+      "cuerpo": "{\"result\":true,\"data\":{\"docs\":[{\"_id\":\"6aaca9617b08c66a201bd15d\",\"uid\":\"15XQCHCML2U9T62MYG05KD\",\"operation\":\"payment.v2\",\"intentToken\":{\"_id\":\"6aaca9617b08c66a201bd153\",\"data\":{\"total\":300,\"currency\":\"ARS\",\"reference\":\"JPNJZSGUN0FZIYV5ZK_P5AEKAETK88NJVFCK0_20260918\",\"description\":\"Suscripción JS01 ( Nuevo Periodo )\",\"taxes\":[],\"subscription\":{\"subscription\":\"JPNJZSGUN0FZIYV5ZK\",\"subscriber\":\"P5AEKAETK88NJVFCK0\",\"execution\":\"82OOCAD6C4ZBSBNFRM\",\"u"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/subscriber/ZWOF5HCVGB12J5BGC0/execution?page=0",
+      "status": 200,
+      "cuerpo": "{\"result\":true,\"data\":{}}"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/execution?page=0",
+      "status": 404,
+      "cuerpo": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /p/subscriptions/BUKMU1DXUSY2J8CHTC/execution</pre>\n</body>\n</html>\n"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/subscriber/ZWOF5HCVGB12J5BGC0",
+      "status": 200,
+      "cuerpo": "{\"result\":true,\"data\":{\"subscriber\":{\"uid\":\"ZWOF5HCVGB12J5BGC0\",\"reference\":\"hos1352-1789701214886-sub1\",\"customerReference\":\"\",\"total\":0,\"taxes\":[],\"setupFee\":0,\"test\":true,\"startDate\":\"2026-09-18T03:00:00.000Z\",\"timeframe\":5,\"status\":\"active\",\"updated\":\"2026-09-18T03:13:44.071Z\",\"created\":\"2026-09-18T03:13:44.068Z\",\"webhook\":\"\",\"customerData\":{\"email\":\"sonda-hos1352@hospeda.com.ar\",\"name\":\"Sonda HOS1352\",\"identification\":\"12123123\"},\"agenda\":[{"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "cuerpo": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: a3c32a04-8dc4-48c6-b112-a98acd87436e\"}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "cuerpo": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: 8efb1915-9bfe-42ce-8ef1-8c29ad06a9bb\"}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "cuerpo": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: 3c27188d-5e67-416e-b1c9-d74ff1964437\"}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "cuerpo": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: a6269d0a-c445-4382-8a59-8453bbb21b92\"}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/checkout",
+      "status": 200,
+      "cuerpo": "{\"result\":true,\"data\":{\"id\":\"CHK:OIPBLK6P9OU4VZM03B\",\"url\":\"https://mobbex.com/p/checkout/v2/CHK:OIPBLK6P9OU4VZM03B\",\"description\":\"HOS-1352 sonda checkout\",\"currency\":\"ARS\",\"total\":150,\"timeout\":60,\"created\":1789701355395,\"intent\":{\"token\":\"623fdb61-4605-4484-a3d3-f30a3712e69b\"},\"paymentMethods\":[{\"group\":\"card\",\"subgroup\":\"card_input\",\"subgroup_title\":\"Tarjeta de Crédito/Débito\",\"subgroup_logo\":\"https://api.mobbex.com/r/images/9hiM319wTqJYNge29"
+    }
+  ]
+}

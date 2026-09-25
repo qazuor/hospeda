@@ -179,3 +179,6 @@ docs/marketing/placas/
 
 # Smoke tanda working state (canonical record lives in Linear comments)
 .smoke/
+
+# Cache local de wrangler (sonda 08 de HOS-1352) — no versionar
+.wrangler/

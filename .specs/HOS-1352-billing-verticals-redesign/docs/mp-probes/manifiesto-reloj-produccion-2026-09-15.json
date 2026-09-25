@@ -1,0 +1,18 @@
+{
+  "arrancado": "2026-09-15T23:35:36.086Z",
+  "entorno": "produccion",
+  "cuenta": "HOSPEDA_COM_AR (3497516165)",
+  "pagador": "qazuor@gmail.com",
+  "presupuestoAutorizado": 105,
+  "cobradoAlArrancar": 0,
+  "nota": "RC-1: el search de preapprovals IGNORA external_reference. Si se pierden estos ids no hay forma de volver a encontrar los sujetos por nuestra referencia, y se pierde el experimento. Copia viva en /tmp/hos1352-reloj-prod.json dentro del contenedor de la API, que NO sobrevive a un redeploy.",
+  "sujetos": [
+    { "slug": "renov-ok", "id": "6b293a9499d946f6ac159da7f8f4804e", "mide": "RN-1/RN-3: ¿vuelve a cobrar a las 24 h?", "montoInicial": 15 },
+    { "slug": "pausa-real", "id": "e9317ea5258343619611af995bd90bd1", "mide": "PS-2/4/5/6: pausada hoy, ¿cobra igual mañana? ¿se reanuda sola? ¿se corren las fechas?", "montoInicial": 15 },
+    { "slug": "monto-sube", "id": "d17e073e960044c1bf3fcd3d360a6fb7", "mide": "UP-1/UP-2: sube a 30 hoy, ¿cobra 15 o 30 mañana?", "montoInicial": 15 },
+    { "slug": "monto-baja", "id": "cbf2587484494206a38ba9d2aaedcdf3", "mide": "DW-1/DW-2 + CT-1/CT-3: baja al piso (15) hoy, ¿cobra 30 o 15 mañana?", "montoInicial": 30 },
+    { "slug": "cancelada", "id": "29744efad484496caf1c6326dbd9ac23", "mide": "GT-1: cancelada hoy, ¿cobra igual mañana? (next_payment_date NO se limpia)", "montoInicial": 15 },
+    { "slug": "end-date", "id": "47c59945d7634838bd74330ac34045ad", "mide": "CN-1 (la mitad que falta): nace con end_date ANTES del próximo cobro", "montoInicial": 15 },
+    { "slug": "sin-autorizar", "id": "f62d94e739c9496284217b53c6036bed", "mide": "EX-1: nunca se autoriza. ¿Vence? ¿Cuándo?", "montoInicial": 0 }
+  ]
+}

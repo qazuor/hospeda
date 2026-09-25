@@ -1,0 +1,17 @@
+{
+  "creado": "2026-09-17T16:47:02.826Z",
+  "entorno": "produccion",
+  "cuenta": "HOSPEDA_COM_AR (3497516165)",
+  "pagador": "qazuor@gmail.com",
+  "monto_por_ciclo": 500,
+  "ciclo": "1 days",
+  "presupuestoAutorizado": 500,
+  "nota": "RC-1: el search IGNORA external_reference. Sin este id no hay forma de reencontrar el sujeto.",
+  "sujetos": [
+    {
+      "slug": "sin-saldo",
+      "id": "3cbb1e6c9ce247b4aa85230ec5481bc6",
+      "external_reference": "HOS-1352-sin-saldo-20260917T164701Z"
+    }
+  ]
+}
