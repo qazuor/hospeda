@@ -405,7 +405,7 @@ nombre (*«`03` §5, S8–S12, **S17–S18**»*), y el inventario contra el que 
 —*«el inventario contra el que se verifica es `B/02` §2.6»* (`B/20` §2)— **también es capítulo de
 B8**. El criterio de terminación de B8 (§4) ya describe cuatro de las cinco escrituras, así que el
 guard y su sujeto se escriben en el mismo acto. Y el **sexto camino** que ganó con `DEC-GRANT-010`
-—`S25` difiriendo la cortesía con su `saldo_días`— llega **después**: el `saldo_días` cuelga del
+—`S25` difiriendo la cortesía con su `saldo_meses`— llega **después**: el `saldo_meses` cuelga del
 `courtesy_grant` (`02` §2.4) y la re-emisión es `S9`, los dos de **B9**, la unidad siguiente del
 camino crítico. Naciendo en B8 el guard **ve llegar** ese sexto camino en vez de heredarlo, que es
 exactamente lo que su fila pide: *«un guard escrito sobre un camino no mira el segundo»*.

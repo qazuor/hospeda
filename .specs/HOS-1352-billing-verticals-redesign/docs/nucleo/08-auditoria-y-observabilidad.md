@@ -133,7 +133,7 @@ si es destructiva o mueve dinero.**
 
 | acción | de dónde sale | ¿destructiva o mueve dinero? |
 |---|---|---|
-| otorgar o revocar una **cortesía temporal** | §34, `DEC-GRANT-002` | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo — **y CERRAR su saldo tampoco**, que es el efecto opuesto y lo hace `S3` (`DEC-GRANT-011`) |
+| otorgar o revocar una **cortesía temporal** — **en meses enteros y sólo sobre un plan mensual**; sobre un anual no está disponible (FASE 8 completa, `F-8CB1-001`; cap. 14 (billing) §4.7) | §34, `DEC-GRANT-002`, `DEC-GRANT-003` impl. 6 | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo — **y CERRAR su saldo tampoco**, que es el efecto opuesto y lo hace `S3` (`DEC-GRANT-011`) |
 | otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) — **y, con `includesAddons: true`, la de cada addon compatible que venía pagando** (`S20`, `B/16` §3.4) |
 | registrar un **pago manual** | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
@@ -194,7 +194,7 @@ dos filas describen un trámite que nadie empieza.
    **Las tres escrituras sobre un grant tienen cada una su frase, y ninguna se deduce de la otra**:
    otorgar y anclar **cancelan la suscripción que el beneficiario paga** en cada vertical
    alcanzada (`S13`), **terminan la cortesía que tuviera vigente ahí** y **cierran el saldo de una
-   cortesía DIFERIDA que estuviera esperando ahí** —días que `SUPER_ADMIN` firmó y que todavía no
+   cortesía DIFERIDA que estuviera esperando ahí** —~~días~~ meses que `SUPER_ADMIN` firmó y que todavía no
    se entregaron, así que la frase los nombra con su número (`B/14` §4.3, `B/02` §2.4)—. Y el estado
    en el proveedor pasa a `cancelled`, así que el cliente recibe el correo del proveedor por su cuenta
    (`EX-3`)—; revocar corta el servicio. Quien ancla una vertical tiene que leer, antes de

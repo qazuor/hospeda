@@ -844,7 +844,8 @@ servicio —el §26.1 detiene publicación, edición y servicio, y esa fila **no
 (`12-contrato…` §2.6)—; una `PAUSED` por `COURTESY` **sí emite**, como `tipo: CORTESÍA`, porque el
 servicio *«lo sostenemos nosotros»* (`DEC-GRANT-003`). Con la razón vieja el § decidía sólo la
 mitad de su sujeto; con ésta decide las dos, porque **en las dos el ciclo pagado ya se perdió al
-pausar**. Lo que la baja desde una cortesía sí corta son los días de cortesía que quedaban, y eso
+pausar**. Lo que la baja desde una cortesía sí corta son ~~los días~~ los meses de cortesía que quedaban
+(en meses desde la FASE 8 completa, `F-8CB1-001`), y eso
 se dice **antes de confirmar** (`B/19` §4, fila 8), con la misma forma que `DEC-GRANT-004` ya usa
 para el cruce vecino.
 

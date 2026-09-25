@@ -492,7 +492,7 @@ cuelga además la **redención de promo**, con el mismo modo de falla
 —silencioso, sin webhook y sin detector—, y durante una tanda entera la enumeración de efectos de
 `S18` nombró sólo a los complementos. **Y cuelga una tercera que desde `DEC-GRANT-007` NO se
 re-apunta**: la **cortesía vigente**, que `S18` cierra sobre la predecesora dejándole el saldo de
-días, para que `S9` la re-emita sobre la sucesora cuando autorice (`B/14` §4.4). El inventario completo, con qué se re-apunta y qué no, está
+~~días~~ meses (FASE 8 completa, `F-8CB1-001`), para que `S9` la re-emita sobre la sucesora cuando autorice (`B/14` §4.4). El inventario completo, con qué se re-apunta y qué no, está
 en `B/02` §2.6; acá queda dicho para que la promoción del addon **a efecto declarado** no se lea
 como que las otras dos ya estaban resueltas.
 

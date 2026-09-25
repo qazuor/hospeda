@@ -233,7 +233,7 @@ mirando.** La fila llega a `ABANDONED` por el job que recorre las vencidas (cap.
 motivo por el que existen el de *«reanudación tras pausa»* y el de la reapertura. Lleva la última
 frase porque ese mismo instante **cierra el saldo de una cortesía diferida** (`DEC-GRANT-011`), y
 este correo es el único lugar donde eso se le dice: sin él la persona se enteraría **por dejar de
-ver los días** en «Mi Suscripción» (cap. 19 §3.1, épica de billing), que es enterarse por una
+ver ~~los días~~ los meses** en «Mi Suscripción» (en meses desde la FASE 8 completa, `F-8CB1-001`) (cap. 19 §3.1, épica de billing), que es enterarse por una
 ausencia. **Y el plazo no se escribe en el texto**: `DEC-SUB-016` le dio a esa ventana **dos**
 duraciones según el método de pago, así que el correo lleva la **fecha** de vencimiento de esa
 persona — la regla 2 del §4 del cap. 19 aplicada acá.

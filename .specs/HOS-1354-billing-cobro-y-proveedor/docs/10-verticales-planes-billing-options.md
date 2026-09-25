@@ -198,8 +198,9 @@ son tres partes:**
    `ACTIVE` sobre un plan que ya no se presta, así que quien ejecuta ese final es **`S25`**
    (`B/03` §3.2): la manda a `CANCELLED`, le escribe el `fin_real` a la pausa y libera el candado
    `A`, con lo que un alta nueva entra por `S1` **si en esa vertical queda algo que comprar**.
-   **Y si la pausa era una CORTESÍA, los días sin entregar no se pierden**: `S25` los difiere en
-   `courtesy_grant.saldo_días` y `S9` re-emite la cortesía sobre el alta nueva cuando llegue a
+   **Y si la pausa era una CORTESÍA, ~~los días~~ los meses sin entregar no se pierden** (en meses
+   desde la FASE 8 completa, `F-8CB1-001`): `S25` los difiere en
+   `courtesy_grant.saldo_meses` y `S9` re-emite la cortesía sobre el alta nueva cuando llegue a
    `ACTIVE` — el mismo mecanismo de `DEC-GRANT-007`, sin inventar uno nuevo (`DEC-GRANT-010`,
    `B/14` §4.6). **Sobre una vertical discontinuada esa alta nueva no va a existir**, y eso está
    declarado ahí con su pregunta al owner.

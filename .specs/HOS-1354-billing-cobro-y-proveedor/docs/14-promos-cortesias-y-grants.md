@@ -22,7 +22,7 @@ como variantes de lo mismo. **No lo son, y toda la diferencia está en qué toca
 | instrumento | qué toca | con qué mecanismo |
 |---|---|---|
 | **promo de descuento** (§33) | el **monto** | se muta el monto en el proveedor (`DEC-MP-001`) |
-| **cortesía temporal** (§34) | el **cobro** | se **pausa** en el proveedor y el servicio lo sostenemos nosotros (`DEC-GRANT-003`) |
+| **cortesía temporal** (§34) | el **cobro** | se **pausa** en el proveedor y el servicio lo sostenemos nosotros (`DEC-GRANT-003`); **sólo sobre planes mensuales y en meses enteros** (§4.7, FASE 8 completa, `F-8CB1-001`) |
 | **grant permanente** (§35) | la **obligación** | se cancela toda obligación de pago cubierta (§35.3, `DEC-GRANT-001`) |
 
 Los cuatro huecos de este capítulo se contestan casi todos leyendo esa tabla.
@@ -256,7 +256,7 @@ de anclas **son dos**.
 #### Y sobre una cortesía DIFERIDA no hay suscripción que cancelar: lo que se cierra es el SALDO
 
 **La regla de arriba cuantifica sobre *«cortesía vigente»*, y desde `DEC-GRANT-007` existe una que
-no lo es.** Una **cortesía diferida** —`saldo_días` no nulo y sin cerrar, `NUCLEO/01` §2.6— no
+no lo es.** Una **cortesía diferida** —`saldo_meses` no nulo y sin cerrar, `NUCLEO/01` §2.6— no
 pausa nada: su suscripción está `CANCELLED` y **no emite ninguna fuente**. Así que el mecanismo que
 la frase de arriba nombra —*«termina porque `S13` cancela esa suscripción»*— **no tiene sujeto**:
 la suscripción que la pausaba ya está muerta, y la que iba a recibir el saldo todavía no existe o
@@ -282,8 +282,9 @@ mismo vale para anclarle una vertical nueva a un grant vivo**, que es el otro mo
 grant empieza a cubrir.
 
 **Por qué esto no le saca nada a nadie, que es la objeción obvia.** Lo que el saldo sostiene son
-días **sin cobrar**, y el grant es *«cancelar toda obligación de pago»* **para siempre** (§35.3):
-mientras el grant viva, esos días no valen nada porque no hay ningún cobro que evitar — es
+~~días~~ meses **sin cobrar** (en meses desde la FASE 8 completa, `F-8CB1-001`), y el grant es
+*«cancelar toda obligación de pago»* **para siempre** (§35.3): mientras el grant viva,
+~~esos días~~ esos meses no valen nada porque no hay ningún cobro que evitar — es
 exactamente el argumento con que este mismo § prohíbe **otorgar** una cortesía sobre un grant. Y si
 el grant después se revoca, el desenlace es el que `DEC-TRIAL-009` ya fijó para el instrumento
 hermano: **recibir el grant lo consume y la revocación no lo devuelve**, porque durante el grant la
@@ -302,7 +303,8 @@ hace es cerrarlo en silencio**, que es la única lectura de este caso que sería
 
 **Una cortesía vigente sobrevive al cambio de plan, y NO lo hace re-apuntándose**
 (`DEC-GRANT-007`, owner, 2026-09-21). `S18` la **cierra** sobre la predecesora y le escribe en
-`courtesy_grant.saldo_días` los días que le quedaban; **`S9` la re-emite sobre la sucesora cuando
+`courtesy_grant.saldo_meses` ~~los días~~ los meses que le quedaban (FASE 8 completa, `F-8CB1-001`;
+la fracción de mes queda abierta, `B/02` §2.4); **`S9` la re-emite sobre la sucesora cuando
 ésta autoriza** —o sea cuando llega a `ACTIVE`, que es exactamente el `desde` que `S9` ya tiene—,
 re-apuntando ahí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo
 (`B/03` §3.2, `B/02` §2.4 y §2.6). El instrumento no desapareció — **la suscripción que pausaba se
@@ -389,7 +391,7 @@ por la que `DEC-GRANT-007` descartó la alternativa de que la sucesora heredara 
 
 **Y no contradice `§4.3`**: allá la cortesía **termina** porque el grant cancela la suscripción y
 *«no queda nada que no cobrar»*. Acá sí queda: la sucesora cobra, y es exactamente lo que la
-cortesía existe para evitar por los días que le quedan.
+cortesía existe para evitar por ~~los días~~ los meses que le quedan.
 
 **Ni contradice a `S22`, que hace lo contrario con la misma cortesía.** Ahí la persona **pide la
 baja** estando pausada y la cortesía *«termina con ella»* (`B/03` §3.2) — no se difiere, porque no
@@ -408,7 +410,7 @@ tiene regla propia**: es el mismo techo.
 
 ### 4.6 Cortesía temporal + la vertical que se discontinúa
 
-**`SUPER_ADMIN` le firmó N días, la cortesía se implementa pausando (`DEC-GRANT-003`), y el plan
+**`SUPER_ADMIN` le firmó N ~~días~~ meses, la cortesía se implementa pausando (`DEC-GRANT-003`), y el plan
 sobre el que se la firmó deja de prestarse debajo.** Es el borde que `DEC-SUB-015` declaró abierto
 y que `DEC-GRANT-010` cierra: **la cortesía se difiere y se re-emite**, con **el mismo mecanismo
 del §4.4** y no con uno nuevo.
@@ -416,9 +418,9 @@ del §4.4** y no con uno nuevo.
 | qué pasa | quién lo hace |
 |---|---|
 | la pausa termina y no se puede reanudar — el plan ya no se presta | **`S25`** (`B/03` §3.2) |
-| la cortesía **no se pierde**: se le escribe el `saldo_días` que le quedaba y queda **diferida** | **`S25`**, que es su **segundo escritor** (`NUCLEO/01` §2.6) |
+| la cortesía **no se pierde**: se le escribe el `saldo_meses` que le quedaba (en meses desde `F-8CB1-001`; la fracción, abierta en `B/02` §2.4) y queda **diferida** | **`S25`**, que es su **segundo escritor** (`NUCLEO/01` §2.6) |
 | la persona elige de nuevo y su fila nueva llega a `ACTIVE` | `S1` + `S2` |
-| la cortesía se **re-emite** sobre esa fila: `subscription_id` a la nueva, `inicio` hoy, `fin` hoy + `saldo_días`, saldo a nulo, y la fila queda `PAUSED · COURTESY` | **`S9`**, por su **tercer** disparador |
+| la cortesía se **re-emite** sobre esa fila: `subscription_id` a la nueva, `inicio` hoy, `fin` hoy + `saldo_meses`, saldo a nulo, y la fila queda `PAUSED · COURTESY` | **`S9`**, por su **tercer** disparador |
 
 **Es literalmente el mismo mecanismo, y eso es la decisión y no una comodidad.** `DEC-GRANT-010`
 eligió *«el mismo mecanismo que `DEC-GRANT-007`»* con todas las letras: la misma columna, el
@@ -443,7 +445,7 @@ descarta `DEC-GRANT-010`: que la cortesía **corra hasta agotarse** mantiene viv
 hasta que termine el regalo, que es justo la garantía que `DEC-SUB-015` conservó; que **se pierda
 avisando** contradice el criterio.
 
-**El costo aceptado**: el plan que elija puede ser **más caro**, así que los N días valen más de
+**El costo aceptado**: el plan que elija puede ser **más caro**, así que los N ~~días~~ meses valen más de
 lo que valían el día que se firmaron. Es un sobrecosto nuestro, acotado, y consecuencia de una
 decisión nuestra.
 
@@ -452,13 +454,50 @@ decisión nuestra.
 > §4.3), y una vertical discontinuada **queda cerrada a altas para siempre** (`B/10` §4.5, borde
 > 4): su fila *«no se borra nunca»* y queda con la fecha de fin de servicio cumplida. O sea que
 > **en esa vertical no va a haber nunca una fila nueva que llegue a `ACTIVE`**, y el saldo se
-> queda diferido indefinidamente. No se pierde —la fila sigue ahí, con su firma y sus días— pero
+> queda diferido indefinidamente. No se pierde —la fila sigue ahí, con su firma y sus ~~días~~ meses— pero
 > **no emite nada**, porque una cortesía diferida no emite fuente (`NUCLEO/01` §2.6). Re-emitirla
 > en **otra** vertical no es una salida disponible: la cortesía transporta *«la versión anclada de
 > la suscripción que pausa»*, y hacerlo sería el defecto que `DEC-GRANT-006` rechazó por escrito
 > —*«nadie puede emitir la cortesía en una segunda vertical transportando la versión anclada de
 > la suscripción de la primera»*—. **Queda como pregunta al owner**, junto con la que `B/09` §3
 > ya dejó abierta para el saldo de una sucesora que abandona: son el mismo hueco por dos puertas.
+
+### 4.7 La unidad de la cortesía temporal: meses enteros, y sólo sobre planes mensuales
+
+**FASE 8 completa, `F-8CB1-001`, owner 2026-09-25** (`DEC-GRANT-003` impl. 6, `DEC-GRANT-004`
+punto 3). ~~La cortesía temporal se firmaba en *«días o meses»*~~ (`NUCLEO/01` §1.5).
+
+**Por qué no puede ser en días.** La cortesía se implementa **pausando** (`DEC-GRANT-003`), y en
+pausa el proveedor **se saltea las fechas de cobro enteras** que caen adentro (`PS-6`) y al
+reanudar **no corre la fecha** (`PS-5`). Entonces una cortesía **vale los cobros que cruza, no los
+días que promete**: diez días que no cruzan una fecha de cobro valen cero, y treinta días sobre un
+plan anual que cruzan la renovación regalan un año.
+
+| caso | regla |
+|---|---|
+| **la unidad** | **meses enteros**: N meses saltean exactamente N cobros |
+| **el plan** | **sólo mensual** — la misma validación de la pausa (`DEC-SUB-010`; el término del ciclo mensual de `puedePausar()`, `NUCLEO/01` §3). Es condición de `S9` por su primer disparador (`B/03` §3.2) |
+| **un plan anual** | **no se ofrece**: el admin ve que no está disponible y por qué, y `S9` no ocurre. Le quedan **la cortesía permanente** (el grant del §35) o **una promo sobre la renovación** |
+| **cortesía sobre cortesía** | **se suman meses**, no se reemplazan, y el aviso dice la **fecha de fin nueva** (`DEC-GRANT-004` punto 3) |
+| **la cortesía durante el trial** (§34.1) | **no cambia**: extiende el trial, que es nuestro, y **sigue en días** (§4.5, `DEC-GRANT-003` impl. 4 y 6) |
+| **la cortesía permanente** | **no cambia** (`DEC-GRANT-003` impl. 5) |
+
+**Y el saldo diferido hereda la unidad**: `courtesy_grant.saldo_meses` —antes `saldo_días`— guarda
+meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
+
+**Lo que esta regla deja abierto, sin resolver acá:**
+
+1. **La fracción de mes del saldo diferido.** `S18` y `S25` no están atados a un límite de mes,
+   así que lo que le queda a una cortesía al diferirse puede no ser un número entero de meses
+   (`B/02` §2.4).
+2. **La re-emisión sobre una fila de plan anual.** El segundo y el tercer disparador de `S9`
+   re-emiten un saldo sobre la sucesora o sobre el alta nueva (§4.4, §4.6); si esa fila es de un
+   plan anual, la regla de arriba dice que ahí la cortesía no se ofrece, y qué pasa con ese saldo
+   no está decidido (`B/03` §3.2, `S9`).
+3. **Cuántos términos de `puedePausar()` toma `S9`.** El owner fijó *«la misma validación de la
+   pausa»*; `puedePausar()` tiene además `permitePausa`, la cuota de pausa y la composición del
+   `B/06` §7, que deja afuera al pagador manual — y `B/03` §7 dice que sobre ese pagador la
+   cortesía sí tiene población (`B/03` §7, *«la pausa: no contradice el `B/06` §7»*).
 
 ---
 

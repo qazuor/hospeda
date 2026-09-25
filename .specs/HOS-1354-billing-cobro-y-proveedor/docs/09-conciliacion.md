@@ -453,13 +453,13 @@ rama de fallo de `S10` no escribe ninguna de las dos. Si `S25` corriera sin escr
 > produce. Su desenlace es la marca —una persona—, nunca una reanudación automática a ciegas.
 
 **Y una sexta, que tampoco le pregunta nada al proveedor: la cortesía diferida que nadie
-re-emitió.** Si hay un `courtesy_grant` con **`saldo_días` no nulo y `saldo_cerrado_en` nulo** —o
+re-emitió.** Si hay un `courtesy_grant` con **`saldo_meses` no nulo y `saldo_cerrado_en` nulo** —o
 sea **diferido**, `B/02` §2.4 y `NUCLEO/01` §2.6— y **ya existe la fila que tenía que recibirlo, en
 `ACTIVE`**, `S9` no corrió: se abre la **marca**
 con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía y las dos
 suscripciones están todas en nuestra base— y cubre el único estado que
-`DEC-GRANT-007` puede dejar colgado: **la fila nueva cobra el precio entero por días que
-`SUPER_ADMIN` había regalado**.
+`DEC-GRANT-007` puede dejar colgado: **la fila nueva cobra el precio entero por ~~días~~ meses que
+`SUPER_ADMIN` había regalado** (en meses desde la FASE 8 completa, `F-8CB1-001`).
 
 **Y *«la fila que tenía que recibirlo»* son DOS preguntas, una por cada disparador de `S9`**
 (`B/03` §3.2), porque los dos difieren justamente en cómo se llega a esa fila:

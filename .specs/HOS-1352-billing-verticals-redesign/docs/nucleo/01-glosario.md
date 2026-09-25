@@ -192,7 +192,7 @@ principal se va es el capítulo 16 (§41, `E-ADDON-04`).
 | término | qué es |
 |---|---|
 | **Promo code** | Un código que el User canjea. Dos tipos: extensión de trial y descuento (§31). |
-| **Cortesía temporal** | N días o meses de servicio sin cobrar, otorgados por `SUPER_ADMIN` (§34, `DEC-GRANT-002`). Se implementa **pausando** en el proveedor y sosteniendo el servicio de nuestro lado (`DEC-GRANT-003`). |
+| **Cortesía temporal** | N ~~días o meses~~ **meses enteros** de servicio sin cobrar, otorgados por `SUPER_ADMIN` (§34, `DEC-GRANT-002`), **sólo sobre planes mensuales** (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; `DEC-GRANT-003` impl. 6, cap. 14 (billing) §4.7). Se implementa **pausando** en el proveedor y sosteniendo el servicio de nuestro lado (`DEC-GRANT-003`). La cortesía durante el trial (§34.1) extiende el trial y sigue en días. |
 | **Grant permanente** | *Free Forever*. Sólo `SUPER_ADMIN` (§35). Se modela como entidad independiente, no como un plan. |
 
 Las tres se distinguen por **quién la inicia y cuánto dura**: la promo la canjea el User y es
@@ -200,7 +200,7 @@ acotada; la cortesía la firma `SUPER_ADMIN` y vence; el grant la firma `SUPER_A
 vence.
 
 > **«No vence» no es «no termina»: el grant termina por revocación y sólo por revocación, y esa
-> revocación se guarda.** La cortesía trae su fin escrito en la fila —*«días o meses, inicio,
+> revocación se guarda.** La cortesía trae su fin escrito en la fila —*«~~días o meses~~ meses, inicio,
 > fin»*— y el grant no tiene ninguno que anticipe nada, así que lo único que puede apagarlo es un
 > acto. Ese acto **deja marca**: `permanent_grant.revocado_en` (cap. 02 (billing) §2.4), que es lo
 > que vuelve evaluable *«grant vivo»* (§2.4). Leído como *«no tiene forma de dejar de estar
@@ -596,7 +596,7 @@ y los tres preguntan lo mismo.
 
 | término | qué es | dónde se enumera | para qué existe |
 |---|---|---|---|
-| **cortesía diferida** | un `courtesy_grant` con **`saldo_días` no nulo** y **`saldo_cerrado_en` nulo** | **no se enumera con estados: son dos columnas anulables** (cap. 02 (billing) §2.4). Corriente, diferida o **con el saldo cerrado**, no hay más valores | sostener los días que `SUPER_ADMIN` firmó **entre que la suscripción que pausaban muere y la siguiente autoriza** — sea la **sucesora** de un cambio de plan (`DEC-GRANT-007`) o el **alta nueva** de quien perdió su plan porque se discontinuó su vertical (`DEC-GRANT-010`) |
+| **cortesía diferida** | un `courtesy_grant` con **`saldo_meses` no nulo** y **`saldo_cerrado_en` nulo** | **no se enumera con estados: son dos columnas anulables** (cap. 02 (billing) §2.4). Corriente, diferida o **con el saldo cerrado**, no hay más valores | sostener los meses que `SUPER_ADMIN` firmó (en meses desde `F-8CB1-001`) **entre que la suscripción que pausaban muere y la siguiente autoriza** — sea la **sucesora** de un cambio de plan (`DEC-GRANT-007`) o el **alta nueva** de quien perdió su plan porque se discontinuó su vertical (`DEC-GRANT-010`) |
 | **cortesía vigente** | un `courtesy_grant` **no diferido** cuyo `fin` todavía no pasó | el `fin` de la fila, contra hoy | el predicado de siempre: *«¿este beneficiario está en cortesía hoy?»* |
 
 > **Una cortesía diferida NO es una cortesía vigente, y los dos términos conviven a propósito.**
@@ -616,7 +616,7 @@ y los tres preguntan lo mismo.
 > deja afuera a propósito**: si *«cortesía diferida»* siguiera siendo *«saldo no nulo»* a secas,
 > los **dos** lugares que leen el término para hacer algo —el segundo disparador de `S9` y la sexta
 > comprobación del barrido— seguirían persiguiendo un saldo que ya tuvo desenlace.
-> **Se estrecha el término en vez de borrar el `saldo_días`** porque los días cerrados son el
+> **Se estrecha el término en vez de borrar el `saldo_meses`** porque ~~los días cerrados~~ los meses cerrados son el
 > registro de qué se perdió, y el aviso que se le manda al beneficiario los nombra
 > (cap. 19 (billing) §4, fila 18, y en el otro cierre la confirmación del §3.1 de este capítulo).
 
@@ -627,16 +627,16 @@ no son conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su fil
 
 | # | quién | dónde | qué hace con el término |
 |---|---|---|---|
-| 1 | la **cuarta escritura de `S18`** | cap. 03 (billing) §3.2 | **es el PRIMER ESCRITOR**: cierra la cortesía sobre la predecesora y le escribe `saldo_días` |
+| 1 | la **cuarta escritura de `S18`** | cap. 03 (billing) §3.2 | **es el PRIMER ESCRITOR**: cierra la cortesía sobre la predecesora y le escribe `saldo_meses` |
 | 2 | el **segundo disparador de `S9`** | cap. 03 (billing) §3.2 | *«una sucesora recién autorizada tiene una cortesía diferida esperándola»* — y es el que **borra** el saldo al re-emitir |
 | 3 | la **fila de la cortesía** en el inventario del cierre | cap. 02 (billing) §2.6 | declara que **no se re-apunta**: se difiere |
 | 4 | la **sexta comprobación del barrido** | cap. 09 (billing) §3 | *«una cortesía diferida cuya sucesora, o cuyo alta nueva, ya está `ACTIVE`»* — `S9` no corrió, por el segundo disparador o por el tercero |
-| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un cierre —o una `S25`— que deja una cortesía vigente sin cerrar y sin `saldo_días`»* |
+| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un cierre —o una `S25`— que deja una cortesía vigente sin cerrar y sin `saldo_meses`»* |
 | 6 | el **cruce cortesía × cambio de plan** | cap. 14 (billing) §4.4 | es el § que lo explica entero, con su población y su riesgo aceptado |
 | 7 | el **efecto de `S25`** | cap. 03 (billing) §3.2 | **es el SEGUNDO ESCRITOR**: la pausa que no se puede reanudar sobre un plan que ya no se presta difiere la cortesía en vez de perderla (`DEC-GRANT-010`, cap. 14 (billing) §4.6) |
 | 8 | el **tercer disparador de `S9`** | cap. 03 (billing) §3.2 | *«un alta nueva del mismo beneficiario y la misma vertical tiene una cortesía diferida esperándola»* — mismo acto que el 2, distinta forma de llegar a la fila: por beneficiario + vertical, porque ahí no hubo sucesión |
 | 9 | el **cierre del saldo**, en `S3` y en `S13` | cap. 03 (billing) §3.2 | **son los DOS únicos que SACAN una fila del término**: la sucesora abandonó el checkout (`DEC-GRANT-011`) o un grant pasó a cubrir esa vertical (`B/14` §4.3), el saldo se cierra y esa cortesía deja de ser diferida |
-| 10 | la **superficie de «Mi Suscripción»** | cap. 19 (billing) §3 | es el único consumidor que **no** decide nada con el término: lo **muestra** — *«te quedan N días, que empiezan a correr cuando completes el pago»* (`DEC-GRANT-012`) |
+| 10 | la **superficie de «Mi Suscripción»** | cap. 19 (billing) §3 | es el único consumidor que **no** decide nada con el término: lo **muestra** — *«te quedan N meses, que empiezan a correr cuando completes el pago»* (`DEC-GRANT-012`; en meses desde `F-8CB1-001`) |
 
 ---
 
@@ -660,7 +660,7 @@ puedePausar(suscripción) =
   AND NOT hayUnaCortesíaVigente(suscripción)            (DEC-GRANT-004, caso 2 invertido)
 ```
 
-Cuatro precisiones, cada una con su fundamento:
+~~Cuatro~~ Cinco precisiones, cada una con su fundamento (la quinta, FASE 8 completa, `F-8CB1-001`):
 
 1. **El flag vive en la versión de plan, no en el plan.** Quitarle la pausa a un plan tiene
    efecto sobre lo que el cliente puede hacer, y `DEC-ARCH-001` fija que lo que tiene efecto se
@@ -682,6 +682,11 @@ Cuatro precisiones, cada una con su fundamento:
 4. **La pausa se pide en meses enteros** y empieza cuando el cliente la pide (`DEC-SUB-010`).
    No existe la pausa intra-ciclo: con el mínimo de un mes, la pausa que salía estrictamente
    peor que no pausar no se puede expresar.
+5. **La cortesía temporal usa la misma validación** (FASE 8 completa, `F-8CB1-001`, owner
+   2026-09-25; `DEC-GRANT-003` impl. 6): sólo sobre planes mensuales y en meses enteros, porque
+   también se implementa pausando. `S9` toma de esta función **el término del ciclo mensual**
+   (cap. 03 (billing) §3.2). ⚠️ Si toma además los otros términos —`permitePausa`, la cuota, y la
+   composición que deja afuera al pagador manual— **no está decidido** (cap. 14 (billing) §4.7).
 
 ---
 
