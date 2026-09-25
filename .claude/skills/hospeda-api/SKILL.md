@@ -58,6 +58,17 @@ el código y sus pruebas.
 not-found y fallas internas.
 - No filtres detalles de infraestructura al cliente.
 
+## Invariantes de billing y tests
+
+- Conservá el orden de middleware de autenticación, autorización, entitlements,
+  límites y handler; mover un gate cambia qué error observa el cliente.
+- Las rutas de negocio deben usar la respuesta estándar y su `ResponseFactory`;
+  `c.json()` directo queda reservado para infraestructura explícitamente
+  documentada, como healthchecks.
+- Un test de ruta que mockea `@repo/db` o no alcanza el handler no prueba el
+  contrato real: acompañalo con una prueba de integración cuando cambie un
+  gate, una transacción o una respuesta.
+
 ## Servicios y base de datos
 
 - La ruta coordina HTTP; la lógica de dominio vive en servicios.

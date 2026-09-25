@@ -25,6 +25,14 @@ trial, suscripciones o sincronización entre verticales.
 - Invalidaciones de cache y cambios de estado deben respetar las invariantes
   existentes.
 - Las tres verticales deben conservar paridad cuando la regla sea común.
+- La configuración de código es fuente de capacidades y defaults; después del
+  seed, los campos comerciales editables viven en la base y no deben ser
+  sobreescritos silenciosamente.
+- `billing_subscriptions.mp_subscription_id` identifica el preapproval de
+  MercadoPago tanto para planes mensuales como anuales; no lo confundas con el
+  slug del plan ni con un pago único.
+- Un cambio de límite o plan requiere revisar configuración, schema, servicio,
+  API, UI, seed y sus tests como una única matriz.
 
 ## Verificación
 

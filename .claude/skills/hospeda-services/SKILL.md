@@ -23,6 +23,13 @@ entidad utilizados por API, jobs o tareas de dominio.
 - Respetá actor, permisos, tenant y contexto de request.
 - Logging estructurado debe incluir contexto útil sin payloads sensibles.
 - Extensiones específicas deben ser pequeñas y cubrir invariantes de negocio.
+- Las autorizaciones se expresan con `PermissionEnum` granular; no uses el rol
+  como bypass, incluso para operaciones administrativas.
+- Un override de permiso administrativo debe conservar la llamada a `super` y
+  su orden; agregá un test de orden cuando exista.
+- Las llamadas externas quedan fuera de `withServiceTransaction`; compartí
+  datos entre hooks mediante `ctx.hookState`, no mediante estado mutable del
+  servicio.
 
 ## Testing
 

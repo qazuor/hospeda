@@ -35,6 +35,14 @@ queries, transacciones, seeds dependientes de estructura o bases de worktrees.
 - Preferí query builder y modelos compartidos; SQL crudo sólo cuando sea necesario
   y con parámetros seguros.
 - Operaciones que modifican varias entidades deben usar transacción.
+- Elegí un solo carril para cada cambio: migración Drizzle estructural, extra
+  idempotente para objetos que Drizzle no modela o migración de datos/seed.
+- Las búsquedas con `ilike` deben usar `safeIlike`; el helper crudo sólo puede
+  aparecer en el archivo de infraestructura autorizado.
+- `drizzle-kit push` es exclusivamente local; CI, staging y producción usan
+  migraciones versionadas.
+- Los errores de Drizzle pueden envolver el error original y perder su
+  `code`; probá el shape real antes de decidir por SQLSTATE.
 
 ## Worktrees y template
 
