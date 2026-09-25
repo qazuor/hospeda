@@ -98,13 +98,18 @@ recetas extensas. Su destino queda definido así:
 | Testing, smoke gates y CI | `qz-verify`, guards, workflows y `docs/testing/` | el agente invoca comandos; las matrices detalladas no viven en AGENTS |
 | Web/Admin/DB/Schemas/Services | skills de dominio + docs de paquete | ya extraído; sólo quedan comparaciones puntuales |
 | Environment configuration | `hospeda-config`, `hops env-*` y `ENV_REGISTRY` | los valores nunca se copian al conocimiento |
-| Spec/Task/Linear | `.specs/README.md`, Linear y `qz/hops` | validar contra ODD actual; no conservar instrucciones legacy de `.qtm` como workflow activo |
+| Spec/Task/Linear | `.specs/README.md`, `spec-workflow-migration.md`, Linear y `qz/hops` | ODD es el flujo normal; SDD/OpenSpec sólo por pedido explícito; no conservar instrucciones legacy de `.qtm` como workflow activo |
 | App-specific documentation y gotchas | `docs/`, runbooks o código | cargar bajo demanda, no en el contrato universal |
 
 Las secciones de billing, smoke-gates y spec/task contienen decisiones fechadas
 que deben validarse contra el workflow actual antes de retirar el archivo. Esta
 matriz clasifica su destino, pero no declara obsoleta una regla sólo por estar
 en `CLAUDE.md`.
+
+La política vigente para el último punto está desarrollada en
+[`spec-workflow-migration.md`](spec-workflow-migration.md). Ese documento tiene
+precedencia operativa sobre las recetas legacy que todavía describen SDD como
+obligatorio.
 
 ## Qué se convierte en comando o documentación
 
