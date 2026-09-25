@@ -5279,6 +5279,30 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-TRIAL-010 — El trial se convierte con el primer pago acreditado, y suscribirse termina el trial
+
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `T2` (`V/03` §2) convertía el trial **en el instante en que la suscripción pasaba a
+  `ACTIVE`**, antes de cualquier cobro. Si el primer cobro se rechazaba —llega entre 26 y 44 minutos
+  después de autorizar (`PA-3`)—, la suscripción moría en `CHARGE_DECLINED` y la persona quedaba
+  **sin suscripción y sin trial**, que ya no se devuelve (§10.2): una tarjeta rechazada le costaba el
+  trial entero (FASE 8 completa, racimo `R12`: `F-8CA2-006`, `F-8CC1-002`).
+- **Alternativas**: (1) el trial se convierte recién con el primer pago acreditado; (2) `S16`
+  revierte la conversión; (3) aceptarlo.
+- **Decisión**: **(1)**. **`T2` exige una suscripción con al menos un cobro acreditado**, no sólo
+  `ACTIVE`. Mientras tanto el trial sigue corriendo en paralelo; si el primer cobro se rechaza, la
+  persona **sigue en su trial** con los días que le quedaban. Es la regla de `B/12` §4.4 llevada al
+  trial: *«un primer cobro rechazado no es una suscripción con un problema, es un alta que no
+  ocurrió»*, y un alta que no ocurrió no consume el trial.
+- **Y la otra mitad, reafirmada por el owner el mismo día**: **suscribirse durante el trial termina
+  el trial.** Si el cobro sale bien, los días que quedaban **se pierden**: la persona eligió pagar
+  antes. El owner indicó que ya lo había decidido antes; **no estaba escrito en este log ni en `V/11`**,
+  y queda escrito acá. No se difiere el primer cobro al fin del trial: una fecha futura se convierte
+  sola en un *free trial* del proveedor (`EX-38`), que es lo que `HOS-1012` eliminó.
+- **Origen**: FASE 8 completa, racimo `R12`; elección del owner del 2026-09-25.
+
+---
+
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
 - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
@@ -5342,9 +5366,9 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **116** — con **`DEC-ARCH-009`** (2026-09-25: reconciliador diario de cobertura en verticales), **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **117** — con **`DEC-TRIAL-010`** (2026-09-25: el trial se convierte con el primer pago), **`DEC-ARCH-009`** (2026-09-25: reconciliador diario de cobertura en verticales), **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 15 |
-| Funcionales | 101 |
+| Funcionales | 102 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **5** — **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
