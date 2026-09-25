@@ -110,7 +110,13 @@ Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade
   termina `CANCELLED` (`B/03` §3.2, `B/02` §2.6). No es una escritura de `S18`: es la ausencia de
   una. La sucesora nace con el precio de lista, y ése es ahora el precio que corresponde;
 - **en el downgrade** la fila sobrevive (`DEC-SUB-008`) y la redención sigue colgando de ella.
-  ⚠️ **Qué la apaga ahí no está escrito** (ver *«lo que este capítulo NO cierra»*).
+  ~~⚠️ **Qué la apaga ahí no está escrito** (ver *«lo que este capítulo NO cierra»*).~~ **La apaga
+  el acto que aplica el cambio programado** (`B/12` §2): escribe **`cobros_restantes = 0`** en la
+  redención de la fila (`B/02` §2.4), que es la forma que el modelo ya tenía de decir *«sin
+  descuento»*, y desde ahí el monto esperado del §2.4 ya no la resta (orquestador, FASE 8 completa,
+  pendiente 8). ⚠️ **Entre el pedido —cuando `DEC-SUB-008` muta el monto— y ese acto, la redención
+  sigue con su contador**; qué monto espera el barrido en esa ventana no está escrito (*«lo que este
+  capítulo NO cierra»*).
 
 **Y la persona NO puede volver a canjear el mismo código en la sucesora.** La redención no se
 borra —queda sobre la predecesora— y `UNIQUE(promo_code_id, user_id)` (`B/02` §2.4) es por user,
@@ -227,18 +233,37 @@ llega **a él y no a nosotros**. `DEC-MAIL-001` ya decidió qué se hace con eso
   fila 7-bis). **Y se anticipa otra vez antes del último cobro con descuento**, con nuestro correo
   *«tu promo termina; desde el mes que viene pagás $X»* —$X es el monto sin esa promo, recalculado
   con las que siguen vivas—, transaccional (`NUCLEO/07` §6; FASE 8 completa, pendiente 7, owner
+  2026-09-25). **Sale 7 días antes del último cobro con descuento, y el plazo es configurable**;
+  **en una promo de «primer cobro» se unifica con el aviso del canje** (`B/19` §4, fila 7-bis),
+  porque ahí el último cobro con descuento es el primero (FASE 8 completa, pendiente 8, owner
   2026-09-25).
 
 **El monto esperado de una suscripción se deriva siempre, y no se guarda** (FASE 8 completa,
 pendiente 7, owner 2026-09-25): es **el precio de su versión de plan menos las promos vivas según
-su contador**, compuestas con la regla del §1.2. El barrido lo compara con el `transaction_amount`
-**releído por id**; si no coinciden, **reintenta la mutación durante 3 días** —se cuenta por
-tiempo, no por corridas, como el reintento de una cancelación nuestra (`B/09` §3)— y después abre
-la marca con motivo **`DIVERGENCIA_DE_MONTO`**. **Sin columna nueva.**
+su contador**, compuestas con la regla del §1.2. **Ese precio es el vigente de la versión, con los
+aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8). El barrido lo
+compara con el `transaction_amount` **releído por id**; si no coinciden, ~~**reintenta la mutación
+durante 3 días** —se cuenta por tiempo, no por corridas, como el reintento de una cancelación
+nuestra (`B/09` §3)— y después abre la marca con motivo **`DIVERGENCIA_DE_MONTO`**~~ **depende de
+quién abrió la divergencia** (orquestador, FASE 8 completa, pendiente 8, derivado de `DEC-CONC-002`
+punto 4):
+
+- **si la abrió una mutación NUESTRA** —`S30`, o un aumento de precio de `DEC-MP-002`—, **reintenta
+  la mutación durante 3 días, contados desde esa transición** —por tiempo, no por corridas, como el
+  reintento de una cancelación nuestra (`B/09` §3)— y después abre la marca con motivo
+  **`DIVERGENCIA_DE_MONTO`**. Es el mismo argumento del 📌 del punto 4: terminar un acto nuestro ya
+  decidido no es reparar una divergencia;
+- **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto**, sin reintento: es
+  una divergencia que nadie mandó, y el punto 4 la reserva a una persona.
+
+**Sin columna nueva.**
 
 **Si la promo se agota con la fila `PAUSED`, ese mes sale con descuento, y se acepta** (FASE 8
 completa, pendiente 7, owner 2026-09-25). Sobre una pausada el proveedor rechaza toda modificación
-(`EX-11`), así que la mutación falla: **se declara y no se encola nada**.
+(`EX-11`), así que la mutación falla: **se declara y no se encola nada**. **Y el barrido no compara
+el monto de una fila `PAUSED`**, porque ese mes con descuento ya se aceptó; **al reanudar, `S10` es
+la transición desde la que corren los 3 días** del reintento (`B/03` §3.2; orquestador, FASE 8
+completa, pendiente 8).
 
 > ~~⚠️ **Tres cosas que esta corrección no cierra, declaradas.**~~ **Las tres cosas que esta
 > corrección no cerraba quedaron cerradas por el owner el 2026-09-25** (FASE 8 completa, pendiente
@@ -247,18 +272,22 @@ completa, pendiente 7, owner 2026-09-25). Sobre una pausada el proveedor rechaza
 > ~~**Dos**: si la mutación no se aplica, el barrido la ve por **`DIVERGENCIA_DE_MONTO`** (`B/09`
 > §3) **sólo si el monto vigente de nuestra base ya refleja el contador en 0**, y cómo se deriva
 > ese monto no está escrito acá.~~ **Dos**: el monto esperado se deriva, y el barrido reintenta 3
-> días antes de marcar. ~~**Tres**: sobre una fila `PAUSED` el proveedor rechaza toda modificación
+> días antes de marcar — **sólo sobre una mutación nuestra** desde la pendiente 8 (arriba). ~~**Tres**: sobre una fila `PAUSED` el proveedor rechaza toda modificación
 > (`EX-11`), y qué pasa si una pausa entra entre el cobro y la mutación no está escrito.~~
 > **Tres**: ese mes sale con descuento, y se acepta. La transición que ejecuta la restitución es
 > de `B/03` (`S30`), por la regla 1 del núcleo. Lo que estas tres respuestas dejan abierto está en
 > *«lo que este capítulo NO cierra»*.
 
-### 2.5 El pagador manual no canjea promos
+### 2.5 El pagador manual no canjea promos de monto
 
 **No hay promos para el pagador manual** (FASE 8 completa, pendiente 7, owner 2026-09-25). El
 canje no se le ofrece (`B/19` §4, fila 7-bis). Es coherente con el mecanismo: la promo de
 descuento toca el **monto** mutándolo en el proveedor (`DEC-MP-001`, la tabla de arriba del
 capítulo), y el pagador manual **no tiene preapproval** (`B/05` §3) que mutar.
+
+**Y la regla es sólo para las promos de monto** (FASE 8 completa, pendiente 8, owner 2026-09-25):
+**la extensión de trial (§32) SÍ vale para el pagador manual**. No muta ningún monto, así que la
+razón de arriba no la alcanza.
 
 ---
 
@@ -611,26 +640,42 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en mora o en grace** sigue
   abierto desde `DEC-MP-002` (implicación 6).
 - **Compensar días sobre una suscripción en deuda** (`E-SUB-05`) es del capítulo 12.
-- ⚠️ **Lo que la pendiente 7 de la FASE 8 completa (owner 2026-09-25) deja abierto**, declarado:
-  1. **Qué apaga la promo en un downgrade.** Ahí la fila sobrevive (`DEC-SUB-008`) y la redención
+- ~~⚠️ **Lo que la pendiente 7 de la FASE 8 completa (owner 2026-09-25) deja abierto**, declarado:~~
+  **Lo que la pendiente 7 dejaba abierto quedó cerrado en la pendiente 8 de la FASE 8 completa**
+  (owner 2026-09-25 para el 4 y el 5; orquestador para el 1, el 2 y el 3):
+  1. ~~**Qué apaga la promo en un downgrade.** Ahí la fila sobrevive (`DEC-SUB-008`) y la redención
      sigue colgando de ella, así que el monto esperado del §2.4 —que resta las promos vivas según
      su contador— **la seguiría descontando**. Ningún acto escribe su fin: el downgrade no tiene
      fila en la tabla de `B/03` §3.2 (lo trata el cap. 12) y, por la regla 1 del núcleo, lo que la
      tabla no declara no pasa. La única forma que el modelo ya tiene de decir *«sin descuento»*
-     es `cobros_restantes = 0` (`B/02` §2.4); escribirla ahí no está decidido.
-  2. **Desde cuándo corren los 3 días del reintento de monto** cuando la divergencia **no** la
+     es `cobros_restantes = 0` (`B/02` §2.4); escribirla ahí no está decidido.~~ **Cerrado**: el
+     acto que aplica el cambio programado (`B/12` §2) escribe `cobros_restantes = 0` (§2.2).
+  2. ~~**Desde cuándo corren los 3 días del reintento de monto** cuando la divergencia **no** la
      abrió una transición nuestra. En el reintento de cancelación el origen es el instante de la
      transición que la decidió (`B/09` §3); para `S30` hay transición, pero para un monto que
      diverge sin ninguna (el downgrade del punto 1, o un cambio que nadie pidió) no hay instante
-     registrado, y la regla es *«sin columna nueva»*.
-  3. **El barrido sobre una fila `PAUSED` con la promo agotada.** El §2.4 acepta que ese mes salga
+     registrado, y la regla es *«sin columna nueva»*.~~ **Cerrado**: el reintento de 3 días vale
+     sólo para mutaciones nuestras —`S30` o un aumento de `DEC-MP-002`— y cuenta desde esa
+     transición; cualquier otra divergencia abre `DIVERGENCIA_DE_MONTO` en el acto (§2.4).
+  3. ~~**El barrido sobre una fila `PAUSED` con la promo agotada.** El §2.4 acepta que ese mes salga
      con descuento y *«no se encola nada»*; pero el monto esperado ya no descuenta esa promo y el
      `transaction_amount` sí, así que el barrido vería la divergencia, sus reintentos fallarían por
      `EX-11` y a los 3 días abriría `DIVERGENCIA_DE_MONTO` mientras dure la pausa. Si el reloj se
-     suspende sobre una `PAUSED`, o si la comparación la saltea, no está escrito.
-  4. **El schedule del correo *«tu promo termina»***: sale antes del último cobro con descuento,
+     suspende sobre una `PAUSED`, o si la comparación la saltea, no está escrito.~~ **Cerrado**: la
+     comparación saltea las filas `PAUSED`, y al reanudar los 3 días corren desde `S10` (§2.4).
+  4. ~~**El schedule del correo *«tu promo termina»***: sale antes del último cobro con descuento,
      y cuántos días antes no está decidido (`NUCLEO/07` §6). **Y sobre una promo de «primer
      cobro»** ese último cobro es el primero, así que el aviso cae junto con el del canje (`B/19`
-     §4, fila 7-bis); si se manda igual no está decidido.
-  5. **Si *«no hay promos para el pagador manual»* alcanza también a la extensión de trial**
-     (§32), que es el otro tipo de promo code (`NUCLEO/01`, *Promo code*) y no muta ningún monto.
+     §4, fila 7-bis); si se manda igual no está decidido.~~ **Cerrado**: 7 días antes,
+     configurable; en una promo de «primer cobro» se unifica con el aviso del canje (§2.4).
+  5. ~~**Si *«no hay promos para el pagador manual»* alcanza también a la extensión de trial**
+     (§32), que es el otro tipo de promo code (`NUCLEO/01`, *Promo code*) y no muta ningún monto.~~
+     **Cerrado**: no la alcanza; la regla es sólo para las promos de monto (§2.5).
+- ⚠️ **Lo que la pendiente 8 deja abierto**, declarado:
+  1. **El monto esperado entre el pedido de un downgrade y el acto que lo aplica.** `DEC-SUB-008`
+     muta el monto al pedirlo y el contador se escribe en 0 recién al aplicar el cambio programado
+     (`B/12` §2), así que en esa ventana la redención sigue viva según su contador; qué versión de
+     plan y qué promos lee el monto esperado ahí no está escrito.
+  2. **El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
+     `B/03` §3.2, así que *«desde esa transición»* no tiene todavía un instante registrado que el
+     barrido pueda leer para él; para `S30` y `S10` sí lo hay.

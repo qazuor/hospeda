@@ -191,6 +191,13 @@ el `rank` ni un delta que billing compute sobre las tablas de verticales (FASE 8
 mutación del monto más cancelar el descenso programado**. La cola es cancelable, no sólo
 reemplazable.
 
+**Y el acto que aplica el descenso programado termina la promo de la fila** (orquestador, FASE 8
+completa, pendiente 8): escribe **`cobros_restantes = 0`** en la redención de promo que cuelga de
+ella (`B/02` §2.4), porque la promo no sobrevive a un cambio de plan (`B/14` §2.2). En el downgrade
+la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
+esperado de `B/14` §2.4 la seguiría restando. ⚠️ Qué monto espera el barrido **entre el pedido y
+este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).
+
 ---
 
 ## 3. El precio que cambia entre programar y ejecutar · cierra `E-SUB-01`
@@ -536,9 +543,10 @@ no arranca la sucesión en `GRACE_PERIOD`** (`DEC-SUB-021`, owner 2026-09-25): l
 la ventana, por `S4` —fila 11 de las nueve que `B/03` §3.2 recorre—, y sobre ella corre `S5`. **Y
 puede estar en `SUSPENDED`**: porque la sucesión se declaró desde una `SUSPENDED` de tarjeta
 (`G-R1-A`), o porque `S6` corrió por su tercer evento —el contracargo, que la guarda de la sucesión
-en curso no frena; desde el 📌 de `DEC-SUB-020` la sucesora **también se corta**, con una
+en curso no frena; desde el 📌 de `DEC-SUB-020` la sucesora **también se corta**, ~~con una
 transición que todavía no está escrita (`B/03`, *«lo que esta mitad NO cierra»*; FASE 8 completa,
-pendiente 6, owner 2026-09-25)—; por sus dos primeros, `S6` **no ocurre** mientras la sucesión esté en curso
+pendiente 6, owner 2026-09-25)~~ **por `S31`** (`B/03` §3.2; FASE 8 completa, pendiente 8, owner
+2026-09-25)—; por sus dos primeros, `S6` **no ocurre** mientras la sucesión esté en curso
 (`B/03` §3.2, owner 2026-09-24). Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. **Y desde `DEC-SUB-019`,
 en un pagador con tarjeta esa puerta ya no llega por el reciclado**: `S6` cancela el preapproval en
@@ -641,7 +649,7 @@ que `DEC-RF-002` declara normal:
 | rama | qué acto lo dispara | sobre qué fila |
 |---|---|---|
 | 1 · la sucesora autoriza | **`S18`** (efecto 5) | **la predecesora**, `CANCELLED` |
-| 2 · la sucesora vence su ventana | **`S3`** (efecto) | la predecesora, viva |
+| 2 · la sucesora vence su ventana | **`S3`** (efecto) — **o `S31`** (efecto), cuando un contracargo corta a la predecesora y `S31` corta a la sucesora (`B/03` §3.2; FASE 8 completa, pendiente 8, owner 2026-09-25) | la predecesora, viva |
 | 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
 | 4 · cae un grant | **`S13`** (efecto) | las dos |
 | 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 5), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |

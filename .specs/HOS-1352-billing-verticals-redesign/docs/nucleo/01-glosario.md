@@ -509,6 +509,7 @@ detecta comparando contra los seis.
 | 18 | el **`desde` de `A5`** | cap. 03 (billing) §8 | *«toda instancia con una autorización que puede cobrar»* — es el **único consumidor cuyo sujeto es SÓLO una instancia de addon** —el 19 la nombra también, pero junto con una suscripción—, así que su enumeración es la de **dos**, no la de seis. Decía `ACTIVE` y nada más, y la mitad que faltaba —`PENDING_AUTHORIZATION`— es la ventana de autorización por la que un complemento nacía cobrando sobre un título ya muerto |
 | 19 | el **alcance de `S20`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** del beneficiario … cuya instancia esté en uno de sus dos estados vivos»* — es el **único consumidor con dos sujetos a la vez**: enumera **los seis** para la suscripción de complemento y **los dos** para la instancia, y ninguna de las dos enumeraciones sirve para la otra. Es el reverso exacto del 1: `S13` dice *«principal»* para dejar los complementos afuera, `S20` dice *«de complemento»* para que sean los únicos adentro |
 | 20 | el **`desde` de `S21`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** de la que cuelga una instancia de addon»* — enumera **los seis**, los de la suscripción, y **no enumera** el conjunto de la instancia: la nombra por un **estado terminal concreto**, `CANCELLED`, que es su condición. Por eso el 19 sigue siendo *«el único consumidor con dos sujetos a la vez»*: acá el segundo sujeto no aporta una enumeración de *«fila viva»*, aporta su opuesto. **Y no necesita el adjetivo que el 1 sí necesita**: de una fila principal no cuelga ninguna instancia, así que el conjunto queda partido por el sujeto y no por una acotación |
+| 21 ✚ | el **`desde` de `S31`** | cap. 03 (billing) §3.2 | la **sucesora viva** de una sucesión en curso cuya predecesora un contracargo acaba de cortar: `PENDING_AUTHORIZATION`, o `ACTIVE` con `S17` sin confirmar (FASE 8 completa, pendiente 8, owner 2026-09-25) |
 
 **B · Preguntan «¿hay OTRA fila viva apuntándola?».** El error posible es **omitir el adjetivo**,
 y es el que ya ocurrió: sin él el predicado **no tiene forma de dejar de cumplirse**, porque nada
@@ -701,9 +702,10 @@ y los tres preguntan lo mismo.
 > sucesión que declarar (`DEC-GRANT-010`, cap. 02 (billing) §2.4).
 >
 > **Y el saldo CERRADO no es una tercera clase de cortesía: es la diferida que ya no va a
-> volver.** El saldo tiene **tres** cierres —la sucesora que abandona el checkout (`S3`,
-> `DEC-GRANT-011`), el grant que pasa a cubrir esa vertical (`S13`, cap. 14 (billing) §4.3) y el
-> destino de plan anual (`S18` o el `S2` del alta, FASE 8 completa)—, los tres escriben `saldo_cerrado_en` y su `motivo_cierre` (cap. 02 (billing) §2.4), y **el término los
+> volver.** El saldo tiene ~~**tres**~~ **cuatro** cierres —la sucesora que abandona el checkout (`S3`,
+> `DEC-GRANT-011`), el grant que pasa a cubrir esa vertical (`S13`, cap. 14 (billing) §4.3), el
+> destino de plan anual (`S18` o el `S2` del alta, FASE 8 completa) y **la sucesora que se corta
+> porque un contracargo cortó a su predecesora** (`S31`, FASE 8 completa, pendiente 8)—, los ~~tres~~ cuatro escriben `saldo_cerrado_en` y su `motivo_cierre` (cap. 02 (billing) §2.4), y **el término los
 > deja afuera a propósito**: si *«cortesía diferida»* siguiera siendo *«saldo no nulo»* a secas,
 > los **dos** lugares que leen el término para hacer algo —el segundo disparador de `S9` y la sexta
 > comprobación del barrido— seguirían persiguiendo un saldo que ya tuvo desenlace.
@@ -726,8 +728,9 @@ no son conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su fil
 | 6 | el **cruce cortesía × cambio de plan** | cap. 14 (billing) §4.4 | es el § que lo explica entero, con su población y su riesgo aceptado |
 | 7 | el **efecto de `S25`** | cap. 03 (billing) §3.2 | **es el SEGUNDO ESCRITOR**: la pausa que no se puede reanudar sobre un plan que ya no se presta difiere la cortesía en vez de perderla (`DEC-GRANT-010`, cap. 14 (billing) §4.6) |
 | 8 | el **tercer disparador de `S9`** | cap. 03 (billing) §3.2 | *«un alta nueva del mismo beneficiario y la misma vertical tiene una cortesía diferida esperándola»* — mismo acto que el 2, distinta forma de llegar a la fila: por beneficiario + vertical, porque ahí no hubo sucesión |
-| 9 | el **cierre del saldo**, en `S3` y en `S13` | cap. 03 (billing) §3.2 | **son los DOS únicos que SACAN una fila del término**: la sucesora abandonó el checkout (`DEC-GRANT-011`) o un grant pasó a cubrir esa vertical (`B/14` §4.3), el saldo se cierra y esa cortesía deja de ser diferida |
+| 9 | el **cierre del saldo**, en `S3` y en `S13` | cap. 03 (billing) §3.2 | **~~son los DOS únicos que~~ SACAN una fila del término** (no son los únicos: el cierre de `S31` es el 11, pendiente 8; y el de `S18`/`S2` por plan anual, FASE 8 completa, tampoco figura acá): la sucesora abandonó el checkout (`DEC-GRANT-011`) o un grant pasó a cubrir esa vertical (`B/14` §4.3), el saldo se cierra y esa cortesía deja de ser diferida |
 | 10 | la **superficie de «Mi Suscripción»** | cap. 19 (billing) §3 | es el único consumidor que **no** decide nada con el término: lo **muestra** — *«te quedan N meses, que empiezan a correr cuando completes el pago»* (`DEC-GRANT-012`; en meses desde `F-8CB1-001`) |
+| 11 ✚ | el **cierre del saldo en `S31`** | cap. 03 (billing) §3.2 | **saca una fila del término**, como el 9: la sucesora que esperaba el saldo se corta porque un contracargo cortó a su predecesora, y el saldo se cierra con `motivo_cierre = CONTRACARGO_DE_LA_PREDECESORA` (cap. 02 (billing) §2.4; FASE 8 completa, pendiente 8, owner 2026-09-25) |
 
 ---
 

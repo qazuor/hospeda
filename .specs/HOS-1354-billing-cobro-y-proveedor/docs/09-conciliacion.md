@@ -106,7 +106,7 @@ salvedades de abajo devuelven al barrido**:
 | se compara | contra | si difieren |
 |---|---|---|
 | estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se abre la **marca** con motivo **`TRANSICIÓN_NO_DECLARADA`** (`B/02` §2.5). **Salvo el par de una cancelación nuestra sin confirmar** —fila terminal de las salvedades 1 o 4, **o fila en `CANCEL_SCHEDULED` por `S11` o `S26`** (owner 2026-09-25), contra un preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—: ahí **se reintenta la cancelación** y la marca se abre recién a los 3 días de la transición que decidió la cancelación, con motivo **`CANCELACIÓN_SIN_CONFIRMAR`** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
-| ~~monto vigente~~ **monto esperado, derivado**: el precio de la versión de plan menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**— | `transaction_amount`, **releído por id** | ~~se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`**~~ **se reintenta la mutación durante 3 días**, contados por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25) — es el caso que no avisa por ningún canal. ⚠️ Desde qué instante corren los 3 días cuando la divergencia no la abrió una transición nuestra, y qué pasa sobre una fila `PAUSED` (`EX-11`), queda abierto en `B/14` (*«lo que este capítulo NO cierra»*) |
+| ~~monto vigente~~ **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—. **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8) | `transaction_amount`, **releído por id** | ~~se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`**~~ **si la divergencia la abrió una mutación NUESTRA** —`S30`, o un aumento de precio de `DEC-MP-002`— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. ~~⚠️ Desde qué instante corren los 3 días cuando la divergencia no la abrió una transición nuestra, y qué pasa sobre una fila `PAUSED` (`EX-11`), queda abierto en `B/14` (*«lo que este capítulo NO cierra»*)~~ **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). ⚠️ **Lo que queda** —el instante de un aumento, que no tiene fila en `B/03` §3.2, y el monto esperado en medio de un downgrade— está en *«lo que este capítulo NO cierra»* de `B/14` |
 | fecha del próximo cobro | `next_payment_date` | se registra; **no es por sí sola una divergencia**, porque el proveedor la mueve solo en casos medidos (`PS-6`) |
 | cobros del período | los `authorized_payments` del preapproval | ver §4. **Y si la lectura del §4 ve un registro con `payment.status` = `approved` que nosotros no tenemos acreditado** —sin fila de `payment`, o con la fila en `PENDING`—, **el barrido no lo escribe**: se abre la **marca** con motivo **`COBRO_SIN_REGISTRAR`** (`B/02` §2.5) y lo asienta una persona (`DEC-CONC-002` punto 4; FASE 8 completa, `F-8CB3-003`). Antes no había motivo para *«cobro que no tenemos»* y el caso no tenía ningún camino a la base. **Salvo cuando esa lectura es la de *«cobró»* de `S6` sobre una fila en `GRACE_PERIOD` y corre `S5`**: `S5` asienta el cobro en el mismo acto, y si no puede, no ocurre en esa corrida (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25) |
 | ~~la `version` del recurso~~ **el `last_modified` del recurso** | ~~la última que aplicamos~~ **el de la última relectura, guardado en `provider_link`** (`B/02` §2.2) | si el del proveedor es posterior, **el recurso cambió sin avisarnos**: se relee entero. **Era la `version` y no puede serlo**: la lectura por id **no trae `version`** —viene en el cuerpo del webhook (`EX-2`)— y lo que trae es `last_modified` (`RC-9`, `NOT_SUPPORTED`, producción 2026-09-25; FASE 8 completa, `F-8CB3-010`). ⚠️ **Que `last_modified` se mueva con una mutación de monto no está medido**: el caso de `EX-15` lo sigue viendo la fila del monto |
@@ -481,12 +481,13 @@ caso visto por el otro lado (`B/02` §2.5)—. Cuesta cero llamadas —la
 pausa y la suscripción están las dos en nuestra base— y cubre el único estado que **la salida que
 devuelve el servicio** puede dejar colgado.
 
-**Las otras tres salidas de `PAUSED` no producen ese estado, y por eso la comprobación no las
+**Las otras ~~tres~~ cuatro salidas de `PAUSED` no producen ese estado, y por eso la comprobación no las
 nombra.** `S22` —la baja—, `S13` —el grant— y **`S25`** —el fin de la pausa sobre un plan que ya
-no se presta (`DEC-SUB-015`)— mandan la fila a `CANCELLED`, así que la tercera
+no se presta (`DEC-SUB-015`)— mandan la fila a `CANCELLED`, **y `S6` —un contracargo sobre una
+cortesía, desde la pendiente 8 (owner 2026-09-25)— la manda a `SUSPENDED`**, así que la tercera
 condición de arriba (*«su suscripción sigue en `PAUSED`»*) **deja de cumplirse** y el caso sale
-del detector por donde corresponde. `S22` y `S25` además escriben el `fin_real` de la pausa, que
-es la primera condición. Una pausa cerrada por cualquiera de las tres **no queda colgada y no
+del detector por donde corresponde. `S22`, `S25` **y `S6`** además escriben el `fin_real` de la pausa, que
+es la primera condición. Una pausa cerrada por cualquiera de las ~~tres~~ cuatro **no queda colgada y no
 produce un falso positivo**.
 
 **Y `S25` es la que más cerca estuvo de volverla ciega**, así que conviene decir por qué no lo
@@ -584,7 +585,7 @@ dentro de la ventana, el barrido lo relee por id** y compara su estado:
 | lo que lee | qué se hace |
 |---|---|
 | lo mismo que tenemos | nada |
-| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD`, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) —**aunque sea la predecesora de una sucesión en curso**—; **si está en `CANCEL_SCHEDULED`, pasa a `CANCELLED` ya por `S12`**; en cualquier otro estado, sólo la marca (FASE 8 completa, pendiente 6, owner 2026-09-25). **Vale igual sobre un pago `PARTIALLY_REFUNDED`** |
+| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD` **—o en `PAUSED` con motivo `COURTESY`** (pendiente 8, owner 2026-09-25)—, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) —**aunque sea la predecesora de una sucesión en curso**—; **si está en `CANCEL_SCHEDULED`, pasa a `CANCELLED` ya por `S12`**; **en los dos casos, si es la predecesora de una sucesión en curso, `S31` corta a su sucesora** (pendiente 8); en cualquier otro estado, sólo la marca (FASE 8 completa, pendiente 6, owner 2026-09-25). **Vale igual sobre un pago `PARTIALLY_REFUNDED`** |
 | **reembolsado, o con más reembolsado que nuestros `refund`**, sin que el reembolso haya pasado por nuestro flujo | **`S14` abre la marca `REEMBOLSO_FUERA_DEL_FLUJO`** (`B/02` §2.5), **sin suspender**: fue un acto nuestro, no del cliente (`DEC-SUB-020`, *«lo que NO decide»*; `DEC-RF-007`). El `refund` que falta lo asienta la persona |
 
 **La ventana es un parámetro configurable, y su longitud NO está medida.** No hay en la matriz una
@@ -844,8 +845,11 @@ inmediato** de `NUCLEO/08` §4.1, que es una lista cerrada; si debería, es del 
   la plata; si el segundo debería ser un motivo con `SÍ` —y con default en `B/19` §6— no se decidió.~~
   **Cerrado el 2026-09-25 (owner)**: el segundo es el motivo **20**, `COBRO_DUPLICADO`, con `SÍ` y
   default de devolución (`B/02` §2.5, `B/19` §6; FASE 8 completa, pendiente 6, owner 2026-09-25).
-- **El 19 conserva *«puede»* sin que nadie lo haya re-decidido.** Era la casilla del motivo
-  mezclado; sin el segundo camino, si el cobro sin asiento debería llevar *«no»* no se decidió.
+- ~~**El 19 conserva *«puede»* sin que nadie lo haya re-decidido.** Era la casilla del motivo
+  mezclado; sin el segundo camino, si el cobro sin asiento debería llevar *«no»* no se decidió.~~
+  **Cerrado el 2026-09-25 (orquestador, FASE 8 completa, pendiente 8)**: lleva **no** —la plata
+  entró bien, falta asentarla—, y la columna se recontó entera: siete SÍ, tres puede, diez no
+  (`B/02` §2.5).
 - ~~**Mientras esa marca no se resuelve, `S6` puede leer «cobró» sobre un cobro sin fila** y correr
   `S5` (`B/03` §3.2): la suscripción se reactiva por un pago que todavía no está asentado. El
   asiento lo hace la persona que resuelve la marca; que `S5` espere a esa fila no está escrito.~~
