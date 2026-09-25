@@ -39,6 +39,10 @@ con el código y con los tokens actuales.
 - Conservá los tipos de `App.Locals` y los contratos de datos de la ruta.
 - Respetá los orígenes de cada archivo indicado en la sección de procedencia de
   `apps/web/CLAUDE.md`.
+- El HTML SSR debe contener los datos críticos antes de hidratar; no uses
+  placeholders como fuente inicial de precios, conteos, ratings o badges.
+- `client:only` sólo corresponde a contenido no indexable o cuando el contenido
+  indexable ya existe en markup Astro hermano.
 
 ## UI, estilos y accesibilidad
 
@@ -67,6 +71,15 @@ con el código y con los tokens actuales.
   JSON-LD.
 - Verificá que metadata y contenido renderizado coincidan con el locale y la
   ruta real.
+- Las facetas en URL deben canonicalizar orden, límites y combinación OR/AND;
+  los helpers de canonical/noindex son la fuente de esa decisión.
+
+## Variables públicas
+
+- Las variables `HOSPEDA_*` nunca llegan al browser. En Astro usá el acceso
+  tipado de `src/lib/env.ts`, no `import.meta.env` directo.
+- `PUBLIC_*` es explícitamente público; revisá el registry y los build args
+  antes de agregar una variable nueva.
 
 ## Testing y verificación
 

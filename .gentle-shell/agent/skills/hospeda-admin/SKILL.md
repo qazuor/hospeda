@@ -45,6 +45,8 @@ está modificando.
 - No accedas a APIs browser-only durante SSR.
 - Conservá permisos, roles y redirecciones; no agregues bypass para simplificar
   una prueba.
+- El SSR debe crear estado por request cuando corresponda; no uses singletons
+  de datos o clientes que compartan estado entre requests.
 
 ## Formularios, tablas y UX
 
@@ -63,7 +65,16 @@ está modificando.
   uses `GET /` como sustituto.
 - Conservá la configuración de build con Nitro/Vite y los comandos declarados
   por el proyecto.
+- El plugin `nitro/vite` y la salida `.output/server/index.mjs` son parte del
+  contrato de despliegue; no los reemplaces por un SSR Vite genérico.
 - No pongas valores de entorno en código ni commits.
+
+## Variables y build inicial
+
+- `VITE_*` queda embebido en el cliente; los secretos permanecen en variables
+  server-side `HOSPEDA_*` y nunca se duplican en `VITE_*`.
+- Después de un checkout fresco, construí los paquetes workspace no aliased
+  antes de `pnpm dev`; de lo contrario el SSR puede fallar por `dist/` ausente.
 
 ## Testing y verificación
 
