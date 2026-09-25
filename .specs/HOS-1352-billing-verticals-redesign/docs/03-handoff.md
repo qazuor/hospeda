@@ -47,7 +47,69 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-24, noche — la sonda 49 dio veredicto, el dunning quedó decidido y la 9-bis-5 cerró
+## Última actualización: 2026-09-25, madrugada — la FASE 8 completa corrió y sus racimos R1 a R7 están resueltos
+
+### El próximo paso exacto
+
+1. **La FASE 8 completa (`DEC-METH-014`) corrió**: nueve agentes Opus ciegos, **133 hallazgos, 15
+   críticos** (la primera dio 141 y 48). Informes y consolidado en
+   [`25-fase-8-completa/`](./25-fase-8-completa/00-hallazgos.md); las 323 citas textuales se
+   verificaron con script (`verificar_citas.py`, fuera del repo) y todas existen.
+2. **Racimos resueltos con el owner, uno por uno**: `R1` (grace de tarjeta desde el primer
+   rechazo), `R2` (censo del corte desde el proveedor, planes viejos cancelados, paso 0 y rama de
+   aborto), `R3` (`S6`/`S7` frente al cobro en vuelo y la sucesión; el suspendido con tarjeta
+   vuelve por sucesión, aunque tenga marca), `R4` (cortesía temporal sólo en planes mensuales y en
+   meses; saldo redondeado para arriba; sobre anual se pierde con aviso), `R5` (el correo no
+   bloquea sin destinatario; el barrido reintenta nuestras cancelaciones hasta 3 días), `R6`
+   (addon `LISTING` muere con la principal, promos con contador y `S30`, addon de única vez por
+   `/v1/orders`, entidad `addon`), `R7` (conciliación, y `DEC-SUB-020`: el contracargo suspende en
+   el acto).
+3. **➡️ LO PRÓXIMO: `R8`** (cambio de plan: quién decide la dirección, y el grace — `DEC-SUB-003`
+   contra la sucesión), después `R9`–`R14`, los dos críticos sin convergencia (`F-8CA1-001`,
+   `F-8CA2-004`) y el registro. El orden y los miembros de cada racimo están en el consolidado §2.
+4. **Residuos declarados en el corpus, pendientes de triage** (los dejaron los agentes de R6 y R7
+   en los «NO cierra» de `B/14` §2.4, `B/16`, `B/09` y `B/03`): promos apiladas, pausa entre cobro
+   y mutación, idempotencia de `/v1/orders` (**pide sonda en sandbox**), contracargo sobre
+   predecesora/pausada/terminal, las dos poblaciones de `COBRO_SIN_REGISTRAR`, el barrido de
+   creaciones que busca `authorized`, el registro de corridas sin entidad y **el vigía de la vida
+   del barrido sin mecanismo elegido**.
+
+### Lo decidido el 25/09 — NO relitigar
+
+| decisión | en una línea |
+|---|---|
+| **`DEC-SUB-020` · contracargo** | al leer `charged_back` releído por id, `S6` en el acto sin grace + marca; `reimbursed` vuelve por checkout |
+| precisiones con OK del owner | `DEC-MIG-003` (orden del corte: paso 0, 1a, censo del proveedor), `DEC-GRANT-003` impl. 6 y `DEC-GRANT-004` (meses, sólo mensual, sólo el término del ciclo), `DEC-MAIL-001` punto 1 (sin destinatario no bloquea), `DEC-CONC-002` punto 4 (terminar una cancelación nuestra no es reparar una divergencia) |
+| reglas de capítulo | `S7` → `CANCEL_SCHEDULED` para el cobro en vuelo sobre un preapproval cancelado; la protección de la sucesión dura una sola ventana; los plazos del barrido se miden por **tiempo** (3 días / 1 día), no por corridas |
+
+### Lo que se midió el 25/09 (producción, `GET` salvo lo dicho)
+
+- **Cartera real**: de las 8 filas, sólo `ed00a8fd` cobra el 26/09; las dos `LANZAMIENTO60` están
+  extendidas **también en MP** (25/11 y 30/11); las 3 `abandoned` no tienen preapproval. **Apareció
+  `f6d89f71…`, del owner, sin fila local, con ARS 18.000 a punto de cobrar: se canceló (con OK) sin
+  que cobrara.** Los 5 `preapproval_plan` viejos seguían vendiendo.
+- **Sonda 50** (`EX-40`): un plan se cancela por API, **es reversible** (contra la documentación), y
+  el link del cancelado muestra *«no está aceptando suscripciones»* (verificado en Chrome).
+- **`RC-9`**: `GET /preapproval/{id}` **no trae `version`** (trae `last_modified`).
+- **`RC-8`**: contracargo, sólo documental (`UNKNOWN`).
+
+### Conteos (recontados con script)
+
+Log **112 decisiones** (113 encabezados menos la plantilla; **110 IDs únicos**: `DEC-ARCH-008` y
+`DEC-ENT-002` están duplicados, `F-8CD1-008`, sin resolver). 14 de metodología, 98 funcionales.
+Matriz **96 filas**: 54 `VERIFIED` · 14 `PARTIALLY` · 23 `NOT_SUPPORTED` · 5 `UNKNOWN` (`RN-3`,
+`GR-1`, `GR-2`, `RC-8`, `RF-3`). Catálogo de motivos de marca: **19**. Tabla del espejo: 11 filas.
+
+### Pendientes del owner
+
+1. Push de la rama (**~270 commits** locales). Los del 24/09 llevan `Co-Authored-By` (contra su
+   `CLAUDE.md`): preguntarle si reescribirlos; los del 25/09 van **sin** atribución.
+2. Sujetos vivos: los de abajo siguen igual (`RN-3`, sonda 49 hasta el 26/09 18:02 `-04`).
+3. Un directorio `.atl/` sin versionar apareció en el worktree el 25/09; no es de esta sesión.
+
+---
+
+## Histórico: 2026-09-24, noche — la sonda 49 dio veredicto, el dunning quedó decidido y la 9-bis-5 cerró
 
 ### El próximo paso exacto
 
