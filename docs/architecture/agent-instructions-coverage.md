@@ -86,3 +86,39 @@ legacy al skill.
 3. Comparar los dominios restantes y marcar cada sección legacy como `migrada`,
    `documentación`, `guard`, `obsoleta` o `pendiente`.
 4. Sólo después de esa revisión evaluar la eliminación de `CLAUDE.md`.
+
+## Guards ya existentes
+
+La auditoría no propone duplicar controles que ya están activos. El repositorio ya
+protege varias invariantes mediante `pnpm check:guards` y sus pasos individuales:
+
+| Invariante | Control existente |
+|---|---|
+| `safeIlike` y wildcard injection | `scripts/check-unsafe-ilike.sh` |
+| variables, schemas y ejemplos de entorno | `check-env-*`, `env:doctor` y tests de `packages/config` |
+| paridad i18n y placeholders | `check-i18n-key-coverage.ts` y tests de `packages/i18n` |
+| Cloudinary y placeholders de media | `check-cloudinary-isolation.sh`, `check-bare-cloudinary-img.sh`, `check-local-media-placeholders.sh` |
+| trial, preapproval, planes y billing | `check-no-trial-to-mp.sh`, `check-no-plan-id-to-own-preapproval.sh`, `check-no-price-trial-days.ts`, guards de billing |
+| schemas de seed y migraciones | `check-seed-migration-schema-probe.sh` y tests de `packages/seed` |
+| dialogs, formularios y UI | `check-dialog-panel.ts`, `check-form-error-cleared-on-submit.ts`, `check-no-native-dialogs.ts` |
+| CSP y nonce | `check-csp-patterns.sh`, `check-no-inline-nonce.sh` |
+| cambios de product domain | guards `product-domain-*`, `addon-*` y `subscription-domain-*` |
+
+## Gaps reales que quedan
+
+- No existe todavía un guard general que detecte permisos de API implementados
+  por roles directos. Hay que delimitar primero excepciones legítimas de UI,
+  jobs y configuración antes de crear uno fail-closed.
+- No existe un guard general para prohibir `c.json()` en todos los handlers: hay
+  helpers y middleware que lo necesitan. Debe limitarse a rutas de negocio y
+  excluir infraestructura explícitamente.
+- Healthcheck `/healthz`, plugin Nitro y singleton SSR están documentados pero no
+  tienen un único guard transversal.
+- La regla de seeds locales contra staging/producción requiere una decisión
+  operativa antes de bloquearla automáticamente; el riesgo ya está documentado.
+- El fingerprint del template de DB se valida en el workflow de worktree, pero
+  todavía debe quedar enlazado como gate visible de `closeIssue`/`update`.
+
+No se agregaron guards especulativos en esta etapa. Los existentes se enlazarán a
+los skills y los gaps se implementarán sólo después de definir su alcance para no
+crear falsos positivos ni listas de excepciones que vuelvan el control fail-open.
