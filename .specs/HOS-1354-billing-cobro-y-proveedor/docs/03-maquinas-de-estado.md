@@ -204,8 +204,10 @@ es** la enumeración completa de esta tabla.
 **La 3 y la 4 no necesitan que nadie toque un botón —las dos son relojes—**, y la 6 llega con el
 cobro real, que `PA-3` mide **entre 26 y 44 minutos** después de autorizar: en esa media hora un
 cambio de plan es legal y la predecesora todavía está `ACTIVE`. **La 7 no la decide nadie de este
-lado**: `GR-3` —la política de reintentos del proveedor— *«sigue `UNKNOWN`»* (`B/12` §1.5), así que
-cuándo llega no se puede acotar. **La 8 es la única de las ocho que decide el propio cliente
+lado**: es una baja del proveedor. ~~`GR-3` *«sigue `UNKNOWN`»*~~ —`GR-3` está `VERIFIED` desde el
+2026-09-22 y la ventana de reintentos dura un ciclo (`B/12` §1.5)—, pero por mora el proveedor
+**pausa**, no da de baja, así que esta fila sólo llega por una cancelación desde su panel o un
+preapproval tocado a mano, y **cuándo llega no se puede acotar**. **La 8 es la única de las ocho que decide el propio cliente
 sobre su propia fila** —pide la baja en medio del grace (`DEC-SUB-014`)—, y por eso no cabe en
 *«se mueve sola»*: lo que comparte con las otras cuatro terminales no es la causa sino el efecto.
 **Las tres primeras siguen siendo filas vivas y son el dominio de
@@ -1279,7 +1281,7 @@ quien está en medio de un cambio de plan no se lo suspende por eso (owner, 2026
 
 | | |
 |---|---|
-| **cuándo entra** | falla un cobro de una suscripción `ACTIVE` (§20) |
+| **cuándo entra** | falla un cobro de una suscripción `ACTIVE` (§20). **En un pagador con tarjeta, es el primer rechazo de un cobro de renovación, leído por id** (`B/12` §1.2, `D17`), no el fin de los reintentos del proveedor, que no emite evento (`GR-3`) |
 | **cuánto dura** | los días que declara **la versión de plan**, default **10** (`DEC-SUB-002`) — y **siempre menos que el ciclo de esa versión** (`DEC-SUB-019`): el proveedor reintenta durante **un ciclo** (sonda 49) y después pausa, así que un grace más largo dejaría la fila con servicio completo y sin nadie que vaya a cobrar. Es validación de la configuración |
 | **qué pasa durante** | §20: servicio activo, fichas publicadas, edición activa, entitlements activos, advertencias y correos |
 | **cómo sale bien** | entra el pago → `ACTIVE` |

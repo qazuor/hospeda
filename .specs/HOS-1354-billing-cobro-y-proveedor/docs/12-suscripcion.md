@@ -37,31 +37,48 @@ default. La transición S4 del capítulo 03 dice *«un cobro falla → `GRACE_PE
 nuestro reloj arranca en el primer rechazo y el suyo sigue corriendo, las dos ventanas quedan
 **concéntricas** y suspendemos a alguien a quien el proveedor todavía le está por cobrar bien.
 
-### 1.2 La regla, y está escrita para no depender de cuánto reintenta
+### 1.2 La regla: el reloj arranca en el primer rechazo, leído por id
 
-> **El reloj del grace arranca cuando el proveedor deja de reintentar, no cuando falla un
-> intento. Y eso se detecta releyendo el recurso, nunca contando días.**
+> **El reloj del grace de un pagador con tarjeta arranca en el primer rechazo de un cobro de
+> renovación, leído por id (`D17`)**: el registro de cobro del período, con su pago en
+> `rejected`. Un webhook sin releer no lo arranca.
 
-Es la misma disciplina que ya rige en toda la spec: la regla de no-retroceso del capítulo 03 §10
-—*un webhook es un aviso, no un estado*— y el invariante `D5` —*toda mutación se verifica
-releyendo*—. Acá se aplica a un veredicto ajeno: **no se predice, se observa.**
+~~**El reloj del grace arranca cuando el proveedor deja de reintentar, no cuando falla un
+intento.**~~ **Reemplazada el 2026-09-24** (FASE 8 completa, racimo `R1`: `F-8CB2-002`,
+`F-8CB3-002`, `F-8CB1-006`). La regla vieja esperaba un instante que **no se puede observar**:
+`GR-3` midió que el fin de los reintentos (`scheduled` → `processed`) no emite ningún evento, y que
+la pausa del proveedor cae **80-105 s antes** del `expire_date`. Esa pausa dispara `S6`
+(`DEC-MP-008`), así que con la regla vieja un pagador con tarjeta **nunca pasaba por el grace**:
+salía de `ACTIVE` directo a `SUSPENDED`, sin los días ni los avisos del §20.
 
-**Lo que esto compra**: si el proveedor reintenta cuatro veces o doce, si su ventana es de diez
-días o de quince, **el diseño no cambia**. Un número que no se usa no puede estar mal.
+**Lo que la regla vieja cuidaba lo cuidan hoy otras dos reglas, y ninguna es nueva.** El miedo
+del §1.1 era suspender a alguien a quien el proveedor todavía le está por cobrar bien. Pero:
 
-### 1.3 Y por eso un cobro en reintento es `PENDING`, no `FAILED`
+1. **El grace es siempre más corto que el ciclo** (`DEC-SUB-019`), y la ventana de reintentos del
+   proveedor **dura un ciclo** (`GR-3`, sonda 49). Los reintentos caen **dentro** de nuestro
+   grace, y si uno entra corre `S5`.
+2. **`S6` pregunta si cobró antes de suspender** (`B/03` §4, con la lectura del `B/09` §4). Si la
+   lectura falla, no suspende.
+
+La disciplina de siempre no cambia: la regla de no-retroceso del capítulo 03 §10 —*un webhook es un
+aviso, no un estado*— y el invariante `D5` —*toda mutación se verifica releyendo*—. **No se
+predice, se observa**, y lo que se observa ahora es un hecho que sí existe: el rechazo.
+
+### 1.3 El pago y la suscripción se mueven por separado
 
 El capítulo 03 §6 da cinco estados de pago —`PENDING`, `SUCCEEDED`, `FAILED`, `REFUNDED`,
 `PARTIALLY_REFUNDED`— y **no hace falta un sexto**:
 
 | lo que pasa | nuestro estado de pago | nuestra suscripción |
 |---|---|---|
-| el proveedor rechazó y **va a reintentar** | **`PENDING`** | sigue `ACTIVE` |
-| el proveedor **agotó sus reintentos** | `FAILED` | S4 → `GRACE_PERIOD`, y **ahí** arranca el reloj |
+| primer rechazo, y el proveedor **sigue reintentando** | **`PENDING`** | `S4` → `GRACE_PERIOD`, y **ahí** arranca el reloj |
+| un reintento entra | `SUCCEEDED` | `S5` → `ACTIVE` |
+| la ventana del proveedor vence sin cobro | `FAILED` | nada nuevo: ya estaba en grace, y con el grace más corto que el ciclo `S6` llegó antes |
 
-**`FAILED` significa «el proveedor se dio por vencido», no «un intento salió mal».** Con esa
-definición la máquina del capítulo 03 queda intacta y el estado intermedio del proveedor **no
-necesita existir de nuestro lado**: es suyo, y lo leemos.
+**`FAILED` sigue significando «el proveedor se dio por vencido», no «un intento salió mal»**, pero
+**deja de ser lo que dispara `S4`**. El estado intermedio del proveedor sigue sin existir de
+nuestro lado: el pago queda `PENDING` mientras la ventana está abierta, y la suscripción ya está en
+grace.
 
 **Ese estado tiene nombre y está medido: `recycling`.** Producción, 2026-09-17 19:12:34 `-04`: la
 cuota `7032034055` quedó en `status: recycling` con su pago en
@@ -105,15 +122,15 @@ sucesión sin `S17`, la sexta que dispara la re-evaluación del addon huérfano 
 
 ### 1.5 Lo que falta medir, y qué lo dispara
 
-`GR-3` —la política de reintentos del proveedor— **sigue `UNKNOWN`**. Hay documentación del
-proveedor que habla de reintentos y de una baja automática por impagos acumulados, y está anotada
-en la matriz **como fuente documental, sin verificar** (§58: *«NO alcanza documentación»*).
+~~`GR-3` —la política de reintentos del proveedor— **sigue `UNKNOWN`**.~~ **`GR-3` está
+`VERIFIED` desde el 2026-09-22, y la sonda 49 le agregó el segundo punto el 2026-09-24**: cuatro
+intentos dentro de una ventana que **dura un ciclo** (24,0 h sobre `1 days`, 48,0 h sobre
+`2 days`), y al vencerla el proveedor **pausa**. El §1.2 se reescribió con esa medición.
 
-**Esta sección no la usa.** Se escribió justamente para no necesitarla.
-
-**Lo que sí cambia con la medición** es una sola cosa, y es de operación, no de diseño: **cuánto
-tarda en promedio un cliente en caer**, que es lo que hay que poder explicarle a soporte. El
-disparador de re-medición está en la matriz.
+**Lo que sigue sin medir**: la ventana de un plan mensual o anual, que es extrapolación (~30 días,
+un año), y si la pausa cae también al vencer la ventana de un ciclo de 2 días. **Ninguna de las dos
+cambia el diseño**, porque el grace se corta antes (`DEC-SUB-019`). Lo que cambian es lo que se le
+explica a soporte.
 
 ---
 
@@ -838,8 +855,9 @@ una regla: hace falta que nadie agregue esa transición.
 
 ## Lo que este capítulo NO cierra
 
-- **`GR-3`**, la política de reintentos del proveedor, sigue `UNKNOWN`. **El diseño de §1 no la
-  necesita**; lo que la medición va a cambiar es lo que se le explica a soporte.
+- ~~**`GR-3`**, la política de reintentos del proveedor, sigue `UNKNOWN`.~~ **Cerrado**: `GR-3`
+  está `VERIFIED` y la ventana es el ciclo (§1.5). Queda sin medir la ventana mensual y anual, que
+  el diseño no necesita porque el grace se corta antes.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en MORA** —no pausada— lo dejó
   abierto `DEC-MP-002` (implicación 6) y **sigue abierto**: el §6 resuelve la pausa, no el grace.
 - ~~**El detalle del cobro contra el proveedor** —el checkout, el `init_point`, la verificación por
