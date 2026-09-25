@@ -240,6 +240,12 @@ publicadas o no cuando la pausa empezó** (FASE 8 completa, owner 2026-09-25).
 >    aviso repetido o uno que no cambia `cubierto` **corre el reloj hacia adelante** mientras la
 >    cobertura sigue ausente, y el borrado se atrasa sin límite. Qué distingue la primera relectura
 >    tras la pérdida de las siguientes **no está escrito**; es diseño, no redacción.
+>    **📌 Aceptado y declarado por el owner el 2026-09-25**: no se le agrega memoria. El error va
+>    hacia el lado seguro —**un aviso repetido puede ATRASAR el borrado de una ficha no publicada,
+>    nunca ADELANTARLO**—, así que el contenido vive más tiempo y nadie pierde nada. Mientras la
+>    cobertura sigue ausente, los avisos para ese `user + vertical` son los de un cambio, y no un
+>    goteo. Darle memoria costaba una columna por `user + vertical` con su ciclo, y el guard
+>    `G-R6-B` tendría que conocerla.
 
 ### 1.3 Catálogo comercial
 
