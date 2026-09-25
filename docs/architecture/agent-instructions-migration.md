@@ -63,6 +63,26 @@ La primera extracción ya está implementada para estos grupos. La etapa pendien
 es una auditoría de cobertura contra los documentos legacy, no la creación de
 archivos adicionales por defecto.
 
+## Legacy sin skill dedicado
+
+La comparación inicial de los archivos pequeños deja estas decisiones. Se
+mantienen durante la ventana de convivencia; esta tabla evita convertir cada
+paquete de configuración en un skill independiente.
+
+| Archivo | Clasificación | Destino | Motivo |
+|---|---|---|---|
+| `packages/biome-config/CLAUDE.md` | documentación/guard | `README.md`, Biome y pre-commit | Describe una configuración compartida que ya se ejecuta automáticamente. |
+| `packages/tailwind-config/CLAUDE.md` | candidato a integrar | `hospeda-ui` + `README.md` del paquete | Sus reglas son tokens y tema visual, no un workflow autónomo. |
+| `packages/typescript-config/CLAUDE.md` | documentación/invariante | `AGENTS.md`, `tsconfig` y docs de contribución | Las reglas estrictas son universales y el JSON es la fuente ejecutable. |
+| `packages/utils/CLAUDE.md` | documentación normal | README y tests del paquete | Son convenciones de librería puras; no requieren carga contextual frecuente. |
+| `packages/notifications/CLAUDE.md` | candidato a integrar | `hospeda-email`/`hospeda-services` + docs | La regla importante es centralizar transportes y validar payloads; no justifica otro skill. |
+| `packages/schemas/src/**/CLAUDE.md` | legacy obsoleto | eliminar después de la revisión | Sólo contienen bloques auto-generados de claude-mem, sin reglas del código. |
+| `packages/*/CLAUDE.md` bajo `node_modules` | externo | fuera del inventario | No pertenece al repositorio ni a su fuente de verdad. |
+
+Los dos candidatos a integrar todavía deben compararse con el contenido actual
+de `hospeda-ui`, `hospeda-email` y `hospeda-services` antes de modificar esos
+skills. No se crea un skill por cada configuración de tooling.
+
 ## Qué se convierte en comando o documentación
 
 | Contenido encontrado | Destino |
@@ -79,6 +99,7 @@ archivos adicionales por defecto.
 - [x] Inventariar los `CLAUDE.md` del repositorio y sus responsabilidades.
 - [x] Extraer los dominios principales a skills con pruebas de render para los cuatro clientes.
 - [ ] Comparar cada skill contra su `CLAUDE.md` de origen para evitar pérdida de reglas.
+- [x] Clasificar los `CLAUDE.md` pequeños sin skill dedicado y excluir los externos.
 - [x] Materializar la capa de conocimiento en OpenCode, Claude Code, Codex y Gentle Shell con `qz-kit project sync`.
 - [ ] Mover procedimientos a comandos/scripts y enlazarlos desde la documentación.
 - [ ] Ejecutar una ventana de convivencia para Claude, OpenCode, Codex y Gentle Shell.
