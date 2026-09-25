@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 const [command, ...args] = process.argv.slice(2)
 const aliases = { recap: ['stats', '--quick', '--json'] }
 const supported = new Set([
-  'artifact', 'back-merge', 'branch-plan', 'ci', 'close-issue', 'context',
+  'artifact', 'back-merge', 'ci', 'close-issue', 'context',
   'db-fresh', 'db-migrate', 'db-seed', 'db-start', 'db-stop', 'db-studio',
   'db-update-template', 'dependabot-review', 'engram', 'env',
   'gentle-sdd-status', 'gentle-status', 'handoff', 'issue-preflight', 'merge',
