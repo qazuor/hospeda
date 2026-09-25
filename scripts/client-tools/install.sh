@@ -126,13 +126,11 @@ write_function hops 'Herramientas locales del monorepo (menu)'
 # here is a list that goes stale the first time someone adds a command.
 while IFS=$'\t' read -r name summary kind; do
   [ -n "$name" ] || continue
-  write_function "hops-$name" "$(printf '%s' "$summary" | tr -d "'")"
-  # Generic aliases are reusable across repositories. Keep hops-* as a
-  # compatibility alias while projects migrate to the configured prefixes.
-  if [ "$kind" = "generic" ] && [ "$GENERIC_PREFIX" != "hops-" ]; then
+  # The standalone prefix is part of the project contract: qz-* is portable,
+  # hops-* belongs to Hospeda. Both wrappers invoke the same registry entry.
+  if [ "$kind" = "generic" ]; then
     write_function "${GENERIC_PREFIX}${name}" "$(printf '%s' "$summary" | tr -d "'")" "hops-$name"
-  fi
-  if [ "$kind" = "project" ] && [ "$PROJECT_PREFIX" != "hops-" ]; then
+  else
     write_function "${PROJECT_PREFIX}${name}" "$(printf '%s' "$summary" | tr -d "'")" "hops-$name"
   fi
 done < <(bun "$TOOLS/src/index.ts" --commands)
@@ -144,7 +142,7 @@ echo
 echo "Probá:  hops             (menú)"
 echo "        hops --help      (lista de comandos)"
 echo "        hops update      (traer lo último de staging)"
-echo "        ${GENERIC_PREFIX}start-issue (alias genérico, según el adapter)"
+echo "        ${GENERIC_PREFIX}start-issue (comando portable, según el adapter)"
 echo "        hops --local ... (correr la copia del repo donde estés parado)"
 echo
 echo "Las funciones se autocargan: no hace falta reiniciar la terminal."
