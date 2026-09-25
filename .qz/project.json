@@ -1,84 +1,72 @@
 {
-  "$schema": "https://qz.dev/schemas/project.v1.json",
-  "schemaVersion": 1,
-  "projectId": "hospeda",
-  "adapter": "hospeda",
-  "displayName": "Hospeda",
-  "issues": {
-    "provider": "linear",
-    "teamKey": "HOS",
-    "identifierPattern": "^HOS-[0-9]+$"
-  },
-  "branches": {
-    "base": "develop",
-    "protected": [
-      "main"
-    ],
-    "pattern": "{type}/{slug}",
-    "promotion": [
-      "develop",
-      "staging",
-      "main"
-    ],
-    "backMerge": [
-      {
-        "from": "main",
-        "to": "staging"
-      },
-      {
-        "from": "staging",
-        "to": "develop"
-      }
-    ]
-  },
-  "worktree": {
-    "pathPattern": "../hospeda-{slug}",
-    "envSource": {
-      "kind": "protected-checkout",
-      "checkoutName": "hospeda-staging"
+    "$schema": "https://qz.dev/schemas/project.v1.json",
+    "schemaVersion": 1,
+    "projectId": "hospeda",
+    "adapter": "hospeda",
+    "displayName": "Hospeda",
+    "issues": {
+        "provider": "linear",
+        "teamKey": "HOS",
+        "identifierPattern": "^HOS-[0-9]+$"
     },
-    "install": "pnpm install",
-    "build": "pnpm exec turbo run build --filter='./packages/*'"
-  },
-  "database": {
-    "strategy": "postgres-template",
-    "container": "hospeda-postgres",
-    "templateDatabase": "hospeda_template",
-    "databaseNamePattern": "worktree_hospeda_{slug}",
-    "connectionEnvVar": "HOSPEDA_DATABASE_URL",
-    "schemaFingerprintPaths": [
-      "packages/db/drizzle",
-      "packages/db/src"
+    "branches": {
+        "base": "develop",
+        "protected": ["main"],
+        "pattern": "{type}/{slug}",
+        "promotion": ["develop", "staging", "main"],
+        "backMerge": [
+            {
+                "from": "main",
+                "to": "staging"
+            },
+            {
+                "from": "staging",
+                "to": "develop"
+            }
+        ]
+    },
+    "worktree": {
+        "pathPattern": "../hospeda-{slug}",
+        "envSource": {
+            "kind": "protected-checkout",
+            "checkoutName": "hospeda-staging"
+        },
+        "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile)",
+        "build": "pnpm exec turbo run build --filter='./packages/*'"
+    },
+    "database": {
+        "strategy": "postgres-template",
+        "container": "hospeda-postgres",
+        "templateDatabase": "hospeda_template",
+        "databaseNamePattern": "worktree_hospeda_{slug}",
+        "connectionEnvVar": "HOSPEDA_DATABASE_URL",
+        "schemaFingerprintPaths": ["packages/db/drizzle", "packages/db/src"],
+        "templateFingerprintPaths": ["packages/db/drizzle", "packages/db/src"]
+    },
+    "servers": [
+        {
+            "id": "api",
+            "defaultPort": 3001,
+            "start": "pnpm --filter @hospeda/api dev --port {port}",
+            "healthPath": "/health"
+        },
+        {
+            "id": "web",
+            "defaultPort": 4321,
+            "start": "pnpm --filter @hospeda/web dev --port {port}",
+            "healthPath": "/"
+        },
+        {
+            "id": "admin",
+            "defaultPort": 3002,
+            "start": "pnpm --filter @hospeda/admin dev --port {port}",
+            "healthPath": "/"
+        }
     ],
-    "templateFingerprintPaths": [
-      "packages/db/drizzle",
-      "packages/db/src"
-    ]
-  },
-  "servers": [
-    {
-      "id": "api",
-      "defaultPort": 3001,
-      "start": "pnpm --filter @hospeda/api dev --port {port}",
-      "healthPath": "/health"
-    },
-    {
-      "id": "web",
-      "defaultPort": 4321,
-      "start": "pnpm --filter @hospeda/web dev --port {port}",
-      "healthPath": "/"
-    },
-    {
-      "id": "admin",
-      "defaultPort": 3002,
-      "start": "pnpm --filter @hospeda/admin dev --port {port}",
-      "healthPath": "/"
+    "commands": {
+        "genericPrefix": "qz-",
+        "projectPrefix": "hops-",
+        "source": "scripts/client-tools",
+        "dispatch": "node .qz/dispatch.mjs"
     }
-  ],
-  "commands": {
-    "genericPrefix": "qz-",
-    "projectPrefix": "hops-",
-    "source": "scripts/client-tools",
-    "dispatch": "node .qz/dispatch.mjs"
-  }
 }
