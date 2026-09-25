@@ -125,9 +125,10 @@ colgando de la instancia (`B/02` §2.3).
 
 **Lo que NO está medido, y por eso no se afirma:**
 
-- **la idempotencia de `/v1/orders`**: ninguna fila la mide, y la regla del §4.6 punto 1 prohíbe
+- ~~**la idempotencia de `/v1/orders`**: ninguna fila la mide, y la regla del §4.6 punto 1 prohíbe
   razonarla desde otro endpoint —*«la idempotencia de este proveedor es POR ENDPOINT»*—. **Queda
-  pendiente de sonda**;
+  pendiente de sonda**;~~ **la idempotencia de `/v1/orders` está medida desde el 2026-09-25**
+  (`EX-41`): por `X-Idempotency-Key`, y el `external_reference` no deduplica;
 - **su comportamiento en producción**: `EX-30` es de sandbox.
 
 ---
@@ -446,6 +447,6 @@ tres, suspendemos a alguien que iba a pagar bien.
   arrastra `RF-3`: `DEC-RF-007` sacó del alcance la operación que esa fila medía.
 - **La conciliación** es del capítulo 09.
 - **Los correos que el proveedor manda por su cuenta** son del capítulo 07.
-- **La idempotencia de `/v1/orders`**, el camino del addon de única vez (§3.2), **no está medida**
-  y queda pendiente de sonda (corrección de diseño, FASE 8 completa, `F-8CB1-008`). No figura en la
-  tabla del §11 porque ésa cuenta filas `UNKNOWN` de la matriz, y **esta pregunta no tiene fila**.
+- ~~**La idempotencia de `/v1/orders`**, el camino del addon de única vez (§3.2), **no está medida**
+  y queda pendiente de sonda (corrección de diseño, FASE 8 completa, `F-8CB1-008`).~~ **Cerrado el
+  2026-09-25 por `EX-41`** (sonda 51, sandbox): es idempotente por la clave. Queda sólo producción.

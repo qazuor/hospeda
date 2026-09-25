@@ -84,13 +84,15 @@ una suscripción, y un addon `UNA_VEZ` no tiene ninguna —ni principal propia n
 (§1.2)—; `B/02` §2.3 le agrega a `payment` la referencia a `addon_instance`, con un CHECK de que
 exactamente una de las dos es no nula.
 
-> ⚠️ **La idempotencia de `/v1/orders` NO está medida, y no se afirma.** Ninguna fila de la matriz
+> ~~⚠️ **La idempotencia de `/v1/orders` NO está medida, y no se afirma.** Ninguna fila de la matriz
 > la mide, y `B/06` §4.6 punto 1 lo dejó escrito para este proveedor: *«la idempotencia es POR
 > ENDPOINT y no se razona de uno al otro»* — `/preapproval` ignora el header (`EX-17`) y los
 > reembolsos lo exigen (`RF-4`). **Queda pendiente de sonda**, y hasta medirla una orden sin
 > respuesta es un cobro que **no se sabe si entró**: reenviarla puede cobrar dos veces y no
 > reenviarla puede dejar plata sin registrar. Tampoco hay todavía una recuperación declarada para
-> ese caso: la de `B/05` §1.2 pregunta por suscripciones.
+> ese caso: la de `B/05` §1.2 pregunta por suscripciones.~~
+>
+> **Medida el 2026-09-25 (`EX-41`, sonda 51, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`** —la misma clave con el mismo cuerpo devuelve la misma orden y un solo pago; con otro cuerpo, `409 idempotency_key_already_used`—, y el `external_reference` **no deduplica nada**. Así que la clave se acuña y se persiste antes de la llamada (`D4`), y **una orden sin respuesta se recupera reenviándola con la misma clave**: si ya existía, vuelve la misma; si no, se crea. Producción no está medida.
 
 ---
 
@@ -853,8 +855,9 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   cliente no la cambia, **cada suscripción falla por separado** y corre su propio dunning (`GR-3`,
   `DEC-MP-003`), que ya está diseñado. Ver la corrección completa en `DEC-ADDON-002`.
 - **El cobro de única vez por `/v1/orders` (§1.4) deja tres cosas abiertas**, declaradas y no
-  resueltas (corrección de diseño, FASE 8 completa, `F-8CB1-008`): **su idempotencia no está
+  resueltas (corrección de diseño, FASE 8 completa, `F-8CB1-008`): ~~**su idempotencia no está
   medida** y queda pendiente de sonda; **no hay recuperación declarada** para una orden sin
-  respuesta (`B/05` §1.2 pregunta por suscripciones); y **su pago no lo ve la conciliación ni
+  respuesta (`B/05` §1.2 pregunta por suscripciones);~~ **las dos primeras quedaron cerradas por
+  `EX-41`** (idempotente por la clave; una orden sin respuesta se reenvía con la misma clave); y **su pago no lo ve la conciliación ni
   admite una marca**, porque las dos cuelgan de suscripciones (`B/02` §2.3, `B/09`). **Y está
   medido sólo en sandbox** (`EX-30`).
