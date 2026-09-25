@@ -11,12 +11,24 @@
   },
   "branches": {
     "base": "develop",
-    "protected": ["main"],
+    "protected": [
+      "main"
+    ],
     "pattern": "{type}/{slug}",
-    "promotion": ["develop", "staging", "main"],
+    "promotion": [
+      "develop",
+      "staging",
+      "main"
+    ],
     "backMerge": [
-      { "from": "main", "to": "staging" },
-      { "from": "staging", "to": "develop" }
+      {
+        "from": "main",
+        "to": "staging"
+      },
+      {
+        "from": "staging",
+        "to": "develop"
+      }
     ]
   },
   "worktree": {
@@ -34,8 +46,14 @@
     "templateDatabase": "hospeda_template",
     "databaseNamePattern": "worktree_hospeda_{slug}",
     "connectionEnvVar": "HOSPEDA_DATABASE_URL",
-    "schemaFingerprintPaths": ["packages/db/drizzle", "packages/db/src"],
-    "templateFingerprintPaths": ["packages/db/drizzle", "packages/db/src"]
+    "schemaFingerprintPaths": [
+      "packages/db/drizzle",
+      "packages/db/src"
+    ],
+    "templateFingerprintPaths": [
+      "packages/db/drizzle",
+      "packages/db/src"
+    ]
   },
   "servers": [
     {
@@ -61,6 +79,6 @@
     "genericPrefix": "qz-",
     "projectPrefix": "hops-",
     "source": "scripts/client-tools",
-    "dispatch": "bun run scripts/client-tools/src/index.ts"
+    "dispatch": "node .qz/dispatch.mjs"
   }
 }
