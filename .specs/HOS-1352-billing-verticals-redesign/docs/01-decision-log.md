@@ -4615,6 +4615,10 @@ Cada entrada lleva, según §3.4:
 - **Origen**: la tanda corta de la FASE 9-bis-5, que acotó la conclusión de `B/12` §5.4 a lo medido,
   y la elección del owner del 2026-09-23 entre las tres opciones que se le presentaron — eligió la
   1, que era la recomendada.
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 8 completa)**: un pago de la predecesora
+  retenido por `S19` que entra a este recálculo **queda como crédito de la sucesora y no se
+  reembolsa** por la rama 1 de `B/12` §5.3. Sin esto, el mismo pago daba el mes como crédito y
+  además se devolvía.
 
 ---
 
