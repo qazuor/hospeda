@@ -26,7 +26,7 @@ cierra.
 
 ---
 
-## 1. El grace se compone con el del proveedor sin saber cuánto dura el suyo
+## 1. El grace se compone con el del proveedor, que dura un ciclo
 
 ### 1.1 El problema, y por qué es el más peligroso del capítulo
 

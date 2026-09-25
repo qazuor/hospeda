@@ -76,13 +76,18 @@ regla de `B/03` §3.4 punto 4 —*«se reusa la vigente»*— (`B/09` §7; FASE 
 
 ### C1 · Entra el pago mientras corre el proceso que suspende
 
-**No hace falta decidir un ganador: los dos órdenes terminan en el mismo estado.**
+~~**No hace falta decidir un ganador: los dos órdenes terminan en el mismo estado.**~~ **Los dos
+órdenes ya no terminan en el mismo estado, y está decidido qué pasa en cada uno** (FASE 8 completa,
+`F-8CD1-004`):
 
 - Si el pago se acredita primero, la transición `GRACE_PERIOD → SUSPENDED` **ya no corresponde**
   y no se ejecuta: la tabla del capítulo 03 se reevalúa contra el estado actual, no contra el
   que el proceso leyó al empezar.
-- Si la suspensión ocurre primero, el pago entra por `SUSPENDED → ACTIVE`, que es una
-  transición válida.
+- Si la suspensión ocurre primero, ~~el pago entra por `SUSPENDED → ACTIVE`, que es una
+  transición válida~~ `S6` ya canceló el preapproval (`DEC-SUB-019`), así que un cobro que igual
+  entra —estaba en vuelo— lleva la fila a **`CANCEL_SCHEDULED`**, no a `ACTIVE`: la persona recibe
+  el período que pagó y `S12` la termina (`S7`, owner 2026-09-25). El pagador manual, que no tiene
+  preapproval, sigue entrando por `S7` a `ACTIVE`.
 
 Lo único que hay que impedir es el intermedio: el proceso que suspende **relee y reevalúa dentro
 de la misma transacción que escribe**, con la versión de la fila. Si cambió, vuelve a leer.

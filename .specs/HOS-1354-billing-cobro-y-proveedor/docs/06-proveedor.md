@@ -439,6 +439,11 @@ tres, suspendemos a alguien que iba a pagar bien.
 > las separa con un sujeto de `2 days` y **se lee el 2026-09-24**. De su veredicto depende si un
 > `GRACE_PERIOD` de 7 días **lo sostiene alguien**: con ventana fija el proveedor se rinde al día
 > siguiente sin importar el plan.
+>
+> **📌 Contestado el 2026-09-24 (registrado en la matriz el 2026-09-25, `GR-3`): la ventana es EL
+> CICLO** —48,0 h sobre un ciclo de 2 días—, no 24 h fijas. Y el grace de tarjeta arranca en el
+> primer rechazo y es siempre más corto que el ciclo (`B/12` §1.2, `DEC-SUB-019`), así que lo
+> sostienen los reintentos del proveedor.
 
 ---
 
