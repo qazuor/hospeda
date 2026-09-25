@@ -76,7 +76,7 @@ manual», es «toca plata o no toca plata»**.
 `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌). Cuando una fila llegó a su estado
 terminal por una transición nuestra que manda cancelar el preapproval y la relectura lo ve
 todavía vivo, **el barrido vuelve a mandar esa cancelación** —con el correo antes y la relectura
-después— y **recién a la tercera corrida seguida sin confirmarla abre la marca** y avisa; **abierta
+después— y **si los 3 días de la transición que decidió la cancelación la relectura sigue sin verla `cancelled`, abre la marca** y avisa; **abierta
 la marca, deja de reintentar**. **Y vale igual para la fila que la cancelación dejó VIVA en
 `CANCEL_SCHEDULED`** —la de `S11` y `S26`—, sin esperar a que `S12` la vuelva terminal (owner
 2026-09-25). El caso entero, con su población, está en las salvedades 1 y 4 del §3 y en el
@@ -105,7 +105,7 @@ salvedades de abajo devuelven al barrido**:
 
 | se compara | contra | si difieren |
 |---|---|---|
-| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se abre la **marca** con motivo **`TRANSICIÓN_NO_DECLARADA`** (`B/02` §2.5). **Salvo el par de una cancelación nuestra sin confirmar** —fila terminal de las salvedades 1 o 4, **o fila en `CANCEL_SCHEDULED` por `S11` o `S26`** (owner 2026-09-25), contra un preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—: ahí **se reintenta la cancelación** y la marca se abre recién a la tercera corrida seguida, con motivo **`CANCELACIÓN_SIN_CONFIRMAR`** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
+| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se abre la **marca** con motivo **`TRANSICIÓN_NO_DECLARADA`** (`B/02` §2.5). **Salvo el par de una cancelación nuestra sin confirmar** —fila terminal de las salvedades 1 o 4, **o fila en `CANCEL_SCHEDULED` por `S11` o `S26`** (owner 2026-09-25), contra un preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—: ahí **se reintenta la cancelación** y la marca se abre recién a los 3 días de la transición que decidió la cancelación, con motivo **`CANCELACIÓN_SIN_CONFIRMAR`** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 | monto vigente | `transaction_amount` | se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** — es el caso que no avisa por ningún canal |
 | fecha del próximo cobro | `next_payment_date` | se registra; **no es por sí sola una divergencia**, porque el proveedor la mueve solo en casos medidos (`PS-6`) |
 | cobros del período | los `authorized_payments` del preapproval | ver §4. **Y si la lectura del §4 ve un registro con `payment.status` = `approved` que nosotros no tenemos acreditado** —sin fila de `payment`, o con la fila en `PENDING`—, **el barrido no lo escribe**: se abre la **marca** con motivo **`COBRO_SIN_REGISTRAR`** (`B/02` §2.5) y lo asienta una persona (`DEC-CONC-002` punto 4; FASE 8 completa, `F-8CB3-003`). Antes no había motivo para *«cobro que no tenemos»* y el caso no tenía ningún camino a la base |
@@ -150,10 +150,10 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 
 | # | qué vuelve al barrido | hasta cuándo | por qué la exención no la cubre |
 |---|---|---|---|
-| 1 | **la suscripción de complemento de una instancia de addon en estado terminal** — seleccionada **por el estado terminal de la instancia** y, desde `S21`, también **por el suyo propio** cuando llegó a `CANCELLED` junto con ella (`B/16` §4.4) | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación que `A5`/`A6` mandaron**, con el correo antes y la relectura después; **marca recién a la tercera corrida seguida** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
+| 1 | **la suscripción de complemento de una instancia de addon en estado terminal** — seleccionada **por el estado terminal de la instancia** y, desde `S21`, también **por el suyo propio** cuando llegó a `CANCELLED` junto con ella (`B/16` §4.4) | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación que `A5`/`A6` mandaron**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 | 2 | **una suscripción terminal con al menos una marca `requiere_conciliación` abierta** | hasta que una persona **las levante todas** (`S15`, que levanta **una por vez**) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre. **Y el reloj existe desde la FASE 9-bis-4**: es `puesta_en`, por marca (`B/02` §2.2 y §2.5). Mientras la marca era un booleano no había *«desde cuándo»*, así que esta salvedad declaraba como su razón de existir un dato que la base no tenía y el escalamiento de más abajo **no se podía evaluar** |
 | 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. Las ramas **1, 5 y 6** de `B/12` §5.3 dejan la predecesora en `CANCELLED` **con una marca `REEMBOLSO_POR_CONFIRMAR`** (`B/02` §2.5), así que sin esta salvedad los desenlaces que mueven dinero son los únicos que ningún proceso vuelve a mirar |
-| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **once** de las **doce** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`**, **`S22`**, **`S23`**, **`S24`**, **`S25`**, **`S27`**, **`S28`** y la lápida. **La duodécima, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras diez son principales** —`S27` y `S28` alcanzan a las dos clases (`B/10` §4.3), así que aportan filas a los dos lados—, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S23` y `S24` entran sólo cuando hubo llamada**: sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a la tercera corrida seguida** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
+| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **once** de las **doce** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`**, **`S22`**, **`S23`**, **`S24`**, **`S25`**, **`S27`**, **`S28`** y la lápida. **La duodécima, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras diez son principales** —`S27` y `S28` alcanzan a las dos clases (`B/10` §4.3), así que aportan filas a los dos lados—, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S23` y `S24` entran sólo cuando hubo llamada**: sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 
 **El reintento de una cancelación nuestra: lo que el barrido hace con las salvedades 1 y 4** (FASE
 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌). Las dos salvedades
@@ -171,11 +171,14 @@ terminal con el preapproval vivo. **Cuando la relectura lo ve vivo —`authorize
    relectura después**. **El correo sale UNA vez por cancelación, antes del primer intento**: un
    reintento no lo repite si ya se entregó, porque su ocurrencia es la transición que decidió la
    cancelación y no la corrida (`B/03` §3.2, precisión 3; owner 2026-09-25).
-2. **Si falla tres corridas seguidas**, recién entonces **abre la marca con motivo
+2. **Si los 3 días de la transición que decidió la cancelación la relectura todavía no la ve `cancelled`**, recién entonces **abre la marca con motivo
    `CANCELACIÓN_SIN_CONFIRMAR`** (`B/02` §2.5, motivo 16) **y avisa** por el canal de
-   `DEC-OBS-001`. *«Falla»* es que la corrida termine sin que la relectura vea `cancelled`: la
-   llamada no salió, el correo transitorio bloqueó la llamada, o la llamada salió y la relectura
-   sigue viendo el preapproval vivo. **Abierta la marca, el barrido deja de reintentar**: el caso
+   `DEC-OBS-001`. **El plazo se cuenta por tiempo, no por corridas** (owner 2026-09-25): el instante
+   de la transición ya está registrado —toda transición es auditable, con su *«cuándo»*
+   (`NUCLEO/08` §1.1 criterio 2 y §1.2)—, así que no hace falta ninguna columna, y si un día el
+   barrido no corre el plazo sigue corriendo igual. Mientras tanto, cada corrida en que la
+   relectura no ve `cancelled` —la llamada no salió, el correo transitorio la bloqueó, o salió y el
+   preapproval sigue vivo— reintenta. **Abierta la marca, el barrido deja de reintentar**: el caso
    es de una persona (owner 2026-09-25). La fila sigue en el barrido por la salvedad 2, pero para
    el reloj de la marca, no para volver a llamar.
 3. **Y la misma regla alcanza a la fila que la cancelación dejó VIVA**: la `CANCEL_SCHEDULED` de
@@ -193,12 +196,13 @@ terminal con el preapproval vivo. **Cuando la relectura lo ve vivo —`authorize
 **No toca plata**: cancelar no cobra ni devuelve nada, sólo impide cobros futuros. Es la frontera
 de §2.4 y no una excepción a ella.
 
-**Dónde se cuentan las corridas seguidas no está escrito todavía**, y no se inventó acá una
-columna. La marca tiene reloj propio (`puesta_en`, `B/02` §2.2), pero **no existe hasta la
-tercera corrida**, así que no puede contar las dos anteriores; y el conteo de corridas del §6.2
-—*«en la corrida siguiente»*— **tampoco declara dónde vive**. **Es decisión pendiente del owner**
-y queda en *«lo que este capítulo NO cierra»*. *(El registro de corridas del §7 dice cuándo corrió
-el barrido, no cuántas veces falló una fila: no la resuelve.)*
+~~**Dónde se cuentan las corridas seguidas no está escrito todavía**, y no se inventó acá una
+columna.~~ **Resuelto el 2026-09-25 por el owner: no se cuentan corridas, se mide tiempo** (punto
+2 de arriba). Por qué no se contaron corridas: la marca tiene reloj propio (`puesta_en`, `B/02`
+§2.2), pero no existe hasta que se abre, así que no puede contar lo anterior; el §6.2 tampoco
+declaraba dónde vivía su conteo; y el registro de corridas del §7 dice cuándo corrió el barrido,
+no cuántas veces falló una fila. Contar corridas pedía una columna nueva; medir tiempo no pide
+ninguna.
 
 > **La 4 es la que cierra el caso de `S13`, y por eso `S13` no necesita una rama de fallo propia
 > como la de `S17`.** `S17` puede no ocurrir porque su cierre depende de la cancelación; `S13`
@@ -722,7 +726,9 @@ convertirse en el disparador de la re-vinculación.**
    al listado es *«todavía no se sabe»*, no *«no cobró»*—, así que la tolerancia deja de ser la que
    sostiene la corrección y pasa a ser sólo cuántas corridas se espera antes de mirarlo.
 
-   **Fijado por el owner el 2026-09-24: una corrida.** Si un cobro sigue en *«todavía no se sabe»*
+   **Fijado por el owner el 2026-09-24: una corrida** —**precisado el 2026-09-25 a TIEMPO: más de
+   un día después del `date_created` del registro de cobro**, que el registro ya trae, así que no
+   hace falta contar corridas ni guardar nada—. Si un cobro sigue en *«todavía no se sabe»*
    en la corrida **siguiente** —o sea, más de un día después—, **se avisa** por el canal de
    `DEC-OBS-001` (listado accionable y correo agregado, como un tipo más del resumen), **sin abrir
    una marca**: no hay plata divergente que resolver todavía, sólo un dato que el proveedor no
@@ -807,12 +813,8 @@ inmediato** de `NUCLEO/08` §4.1, que es una lista cerrada; si debería, es del 
   lee `authorized_payments`, así que **ninguna de las tres partes lo alcanza**. Cómo se concilia una
   orden —y dónde se anota una divergencia sobre ella, si la marca cuelga de una suscripción— **no
   está escrito**.
-- **Dónde se cuentan las «tres corridas seguidas» del reintento de una cancelación nuestra**
-  (§3, salvedades 1 y 4; FASE 8 completa, `F-8CB1-013`). No hay columna ni reloj que lo sostenga:
-  `puesta_en` es de la marca y la marca no existe hasta la tercera corrida, y el §6.2 cuenta
-  *«la corrida siguiente»* sin declarar dónde. **No se inventó una columna**; queda para decidir.
-  **Sigue abierta: es decisión pendiente del owner** (2026-09-25), y vale también para la
-  `CANCEL_SCHEDULED` de `S11` y `S26`, que desde ese día entra en la misma regla.
+- ~~**Dónde se cuentan las «tres corridas seguidas» del reintento de una cancelación nuestra**~~ **Cerrado el 2026-09-25**: se mide tiempo, 3 días desde la transición y 1 día desde el registro de cobro del §6.2 (§3, punto 2), y vale también para la `CANCEL_SCHEDULED` de `S11` y `S26` (FASE 8
+  completa, `F-8CB1-013`).
 - ~~**Qué pasa con el reintento DESPUÉS de abrir la marca.** La regla dice que a la tercera corrida
   se abre la marca y se avisa; **no dice si el barrido sigue mandando la cancelación** mientras la
   marca está abierta. La fila sigue en el barrido igual, por la salvedad 2.~~ **CERRADA** por el

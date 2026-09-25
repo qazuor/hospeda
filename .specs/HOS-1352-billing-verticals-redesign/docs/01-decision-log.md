@@ -1445,7 +1445,7 @@ Cada entrada lleva, según §3.4:
      `B/03` llegan a su estado terminal *«pase lo que pase con la llamada»* (`B/09` §3), así que un
      timeout o un correo que no salió (`DEC-MAIL-001`) dejaba la fila `CANCELLED` con el preapproval
      vivo, y hasta que una persona mirara la marca **podía cobrar**. **El barrido reintenta esa
-     llamada** —con el correo antes y la relectura después— **hasta tres corridas seguidas**; recién
+     llamada** —con el correo antes y la relectura después— **hasta 3 días después de la transición** (tiempo y no corridas, precisado por el owner el mismo día); recién
      entonces abre la marca y avisa (`DEC-OBS-001`). **No toca plata**: cancelar no cobra ni
      devuelve nada, sólo impide cobros futuros. **Las dos posiciones, escritas**: la recomendación
      fue reintentar; la objeción, que el punto 4 reserva a una persona toda divergencia de estado.
