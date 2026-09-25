@@ -95,8 +95,10 @@ status: CURRENT
 
 ### Conteos (recontados con script)
 
-Log **112 decisiones** (113 encabezados menos la plantilla; **110 IDs únicos**: `DEC-ARCH-008` y
-`DEC-ENT-002` están duplicados, `F-8CD1-008`, sin resolver). 14 de metodología, 98 funcionales.
+Log **112 decisiones** (113 encabezados menos la plantilla; ~~**110 IDs únicos**: `DEC-ARCH-008` y
+`DEC-ENT-002` están duplicados, `F-8CD1-008`, sin resolver~~ **los duplicados se renumeraron el
+2026-09-25**: la segunda de cada par pasó a `DEC-ARCH-010` y `DEC-ENT-005`). 14 de metodología, 98
+funcionales.
 Matriz **96 filas**: 54 `VERIFIED` · 14 `PARTIALLY` · 23 `NOT_SUPPORTED` · 5 `UNKNOWN` (`RN-3`,
 `GR-1`, `GR-2`, `RC-8`, `RF-3`). Catálogo de motivos de marca: **19**. Tabla del espejo: 11 filas.
 
@@ -299,11 +301,11 @@ su rastro en [`23-fase-9-bis-5/`](./23-fase-9-bis-5/):
 ### El decision log pasó de 88 a 103 en un día
 
 Nuevas: `DEC-METH-012` (el cuantificador de la cita), `DEC-GRANT-011`/`-012`/`-013`/`-014`,
-`DEC-DATA-004`, `DEC-ENT-002`, `DEC-SUB-016`/`-017`/`-018`, `DEC-RF-004`/`-005`/`-006`,
-`DEC-TEST-002`, `DEC-ARCH-008`.
+`DEC-DATA-004`, `DEC-ENT-005`, `DEC-SUB-016`/`-017`/`-018`, `DEC-RF-004`/`-005`/`-006`,
+`DEC-TEST-002`, `DEC-ARCH-010`.
 
 **Cuatro de ellas las tomó un agente sin consultar, las declaró como tales y el owner las
-ratificó** (`DEC-ENT-002`, `DEC-GRANT-013`, `DEC-GRANT-014`, `DEC-ARCH-008`). Tienen entrada propia
+ratificó** (`DEC-ENT-005`, `DEC-GRANT-013`, `DEC-GRANT-014`, `DEC-ARCH-010`). Tienen entrada propia
 en vez de quedar en un commit: **que la haya tomado un agente no la vuelve menos decisión.**
 
 ### La regla que la sesión del 23/09 midió, y hay que aplicarla

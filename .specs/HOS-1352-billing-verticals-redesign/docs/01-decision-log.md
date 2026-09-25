@@ -4328,9 +4328,9 @@ Cada entrada lleva, según §3.4:
 
 ---
 
-### DEC-ENT-002 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
+### DEC-ENT-005 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
 
-- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner *(renumerada el 2026-09-25: se llamaba `DEC-ENT-002`, ID duplicado con otra decisión — FASE 8 completa, `F-8CD1-008`)*
 - **El problema que cierra**, el crítico #1 de la FASE 8-bis-5 (`F-8fA1-002`, `ALTA`): `G-R3` tiene
   por predicado *«la clave de la clase comercial…»* y **«clase comercial» se usaba en cuatro lugares
   y no estaba definida en ninguno**. El guard más cargado del programa **no podía formar su
@@ -4525,7 +4525,7 @@ Cada entrada lleva, según §3.4:
 - **Cómo se tomó, y va dicho**: la familia 4 de la 9-bis-5 **la tomó sin consultar**, declarándola
   como decisión de plata y pidiendo ratificación — el censo había marcado esta lectura como *«la que
   sube `E2` a `ALTA`»*. El owner la ratificó el 2026-09-23. Mismo criterio de registro que
-  `DEC-ENT-002`: **que la haya tomado un agente no la vuelve menos decisión.**
+  `DEC-ENT-005`: **que la haya tomado un agente no la vuelve menos decisión.**
 - **Origen**: `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E2`, la familia 4 de la FASE
   9-bis-5 (`4df8b55f2d`) y la ratificación del owner del 2026-09-23 entre las tres opciones que se le
   presentaron — eligió la 1, que era la recomendada.
@@ -4543,7 +4543,7 @@ Cada entrada lleva, según §3.4:
   `DEC-GRANT-008` es ***«concesiones firmadas a mano»*** — un humano explicando por qué revoca, que
   es justamente lo que un enum no puede capturar. **Acá el que cierra es una TRANSICIÓN.** Una
   persona necesita explicar; una transición sólo necesita **identificarse**.
-- **Lo que compra, y es el mismo movimiento que `DEC-ENT-002`**: convierte *«ningún otro acto puede
+- **Lo que compra, y es el mismo movimiento que `DEC-ENT-005`**: convierte *«ningún otro acto puede
   terminar una concesión de `SUPER_ADMIN`»* en algo que **un guard lee**, en vez de prosa que alguien
   tiene que acordarse de respetar. Una enumeración cerrada se gana el lugar cuando su trabajo es
   decir **quién NO está en ella**.
@@ -4559,7 +4559,7 @@ Cada entrada lleva, según §3.4:
     arriba; no necesita una decisión aparte.
 - **Cómo se tomó**: la familia 4 **la tomó sin consultar**, declarándola como decisión de modelo y
   pidiendo ratificación. El owner la ratificó el 2026-09-23. Tercer caso del mismo patrón en esta
-  tanda, con `DEC-ENT-002` y `DEC-GRANT-013`.
+  tanda, con `DEC-ENT-005` y `DEC-GRANT-013`.
 - **Origen**: la familia 4 de la FASE 9-bis-5 y la ratificación del owner del 2026-09-23 entre las
   tres opciones que se le presentaron — eligió la 1, que era la recomendada.
 
@@ -4648,9 +4648,9 @@ Cada entrada lleva, según §3.4:
 
 ---
 
-### DEC-ARCH-008 — Los tres inventarios de `NUCLEO/01` son capítulo de la unidad `B3`
+### DEC-ARCH-010 — Los tres inventarios de `NUCLEO/01` son capítulo de la unidad `B3`
 
-- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner *(renumerada el 2026-09-25: se llamaba `DEC-ARCH-008`, ID duplicado con otra decisión — FASE 8 completa, `F-8CD1-008`)*
 - **El caso**: `NUCLEO/01` §2.4, §2.5 y §2.6 **no eran capítulo de ninguna de las 22 unidades**, y
   `G-R1-E` / `G-R1-F` los cuentan. Es el defecto `I3` del censo, **reportado por dos vueltas**
   (`F-8dC2-002`).
@@ -4665,7 +4665,7 @@ Cada entrada lleva, según §3.4:
   de una épica sea una decisión de frontera, no de conveniencia. Por eso el agente la declaró en vez
   de darla por obvia.
 - **Cómo se tomó**: la familia 5 **la tomó sin consultar** y pidió ratificación; el owner la ratificó
-  el 2026-09-23. **Cuarto caso del patrón en esta tanda**, con `DEC-ENT-002`, `DEC-GRANT-013` y
+  el 2026-09-23. **Cuarto caso del patrón en esta tanda**, con `DEC-ENT-005`, `DEC-GRANT-013` y
   `DEC-GRANT-014`.
 - **Origen**: `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`I3`, la familia 5 de la FASE
   9-bis-5 (`b91a7b251c`) y la ratificación del owner del 2026-09-23 entre las tres opciones que se le
