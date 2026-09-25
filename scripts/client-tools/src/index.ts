@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { resolveRunContext, runBarContext } from './lib/context.ts';
@@ -7,6 +9,30 @@ import { extractTarget } from './lib/target.ts';
 import { extractWorktreeFlag } from './lib/wt-flag.ts';
 import type { ClientCommand } from './registry.ts';
 import { COMMANDS, commandKind, findCommand } from './registry.ts';
+
+function configuredPrefixes(): { generic: string; project: string } {
+    let current = resolve(process.cwd());
+    while (true) {
+        const manifest = join(current, '.qz', 'project.json');
+        if (existsSync(manifest)) {
+            try {
+                const config = JSON.parse(readFileSync(manifest, 'utf8')) as {
+                    commands?: { genericPrefix?: string; projectPrefix?: string };
+                };
+                return {
+                    generic: config.commands?.genericPrefix ?? 'qz-',
+                    project: config.commands?.projectPrefix ?? 'hops-'
+                };
+            } catch {
+                break;
+            }
+        }
+        const parent = dirname(current);
+        if (parent === current) break;
+        current = parent;
+    }
+    return { generic: 'qz-', project: 'hops-' };
+}
 
 /** Flags that ask for the help page rather than running anything. */
 const HELP_FLAGS = ['--help', '-h'] as const;
@@ -19,7 +45,12 @@ function renderHelp(): string {
     const rows = COMMANDS.map(
         (command) => `  ${pc.bold(`hops ${command.name}`.padEnd(width))}${command.summary}`
     ).join('\n');
-    const aliases = COMMANDS.map((command) => `  hops-${command.name}`).join('\n');
+    const prefixes = configuredPrefixes();
+    const aliases = COMMANDS.map((command) => {
+        const prefix =
+            commandKind(command.name) === 'generic' ? prefixes.generic : prefixes.project;
+        return `  ${prefix}${command.name}`;
+    }).join('\n');
     return `
 ${pc.bold('hops')} — herramientas de desarrollo del monorepo Hospeda
 

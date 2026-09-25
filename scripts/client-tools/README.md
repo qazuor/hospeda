@@ -16,13 +16,14 @@ hops stats --section code # un comando directo
 Cada comando existe **además** como binario propio, con los mismos argumentos:
 
 ```bash
+qz-start-issue HOS-273
 hops-stats
-hops-wt-clean
-hops-start-issue 273
+hops-db-start
 ```
 
-No son atajos que dupliquen lógica: son alias que entran por el mismo dispatcher,
-así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exige.
+No son implementaciones duplicadas: todos los wrappers entran por el mismo
+dispatcher. `qz-*` identifica comandos portables y `hops-*` comandos propios de
+Hospeda; los prefijos se leen desde `.qz/project.json`.
 
 ## Comandos
 
