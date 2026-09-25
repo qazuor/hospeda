@@ -322,3 +322,35 @@ completo), y cada coincidencia se releyó por id.
   llegó a cobrar.
 - **Los cinco `preapproval_plan` viejos siguen `active` y con `init_point`**: es la condición de
   `F-8CC2-001`, medida.
+
+---
+
+## 5. Cómo se resolvió cada racimo · 2026-09-25
+
+Todos los racimos pasaron por el owner, uno por uno, y **ninguno quedó abierto**. Lo que un arreglo
+dejó de borde se declaró con su causa en el «NO cierra» de su capítulo (`DEC-METH-015`).
+
+| racimo | cómo se resolvió | dónde quedó |
+|---|---|---|
+| **R1** · grace de tarjeta | el grace arranca en el **primer rechazo leído por id**; la sonda 49 entró a la matriz (`GR-3`, `RC-7`, `RN-1`, `RN-3`) | `B/12` §1.2–1.3, `B/03` §4 |
+| **R2** · el corte ciego al proveedor | censo desde el **recorrido del proveedor**, planes viejos cancelados (sonda 50, `EX-40`: reversible), **paso 0** y rama de aborto | `DEC-MIG-003` 📌, `16-fase-7…` §4.2 |
+| **R3** · `S6` contra el cobro en vuelo | `S7` lleva a `CANCEL_SCHEDULED` con el período pagado; la protección de la sucesión, una sola ventana; el suspendido con tarjeta vuelve por sucesión, aun con marca | `B/03` `S6`/`S7`, `G-R1-A` |
+| **R4** · cortesía | sólo en planes **mensuales** y en **meses** enteros; saldo redondeado para arriba; sobre anual se pierde con aviso | `DEC-GRANT-003`/`-004` 📌, `B/14` §4.7 |
+| **R5** · el correo bloquea la cancelación | sin destinatario no bloquea; **el barrido reintenta nuestras cancelaciones 3 días** y después marca (motivo 16) | `DEC-MAIL-001`, `DEC-CONC-002` 📌 |
+| **R6** · promos y addons | addon `LISTING` muere con la principal; promos con contador y `S30`; **las promos no sobreviven a un cambio de plan**; addon de única vez por `/v1/orders`, **idempotente por la clave** (sonda 51, `EX-41`) | `B/14`, `B/16` |
+| **R7** · conciliación | contracargo **`DEC-SUB-020`**; `last_modified` en vez de `version` (`RC-9`); `search` sólo por correo; comprobante con emisor; vigía externo del barrido; motivos 17–20 | `B/09`, `B/03` §6 |
+| **R8** · cambio de plan en grace | **`DEC-SUB-021`**: en grace no se cambia de plan, se cambia la tarjeta; la dirección la da el veredicto; en un cambio trabado emite sólo la sucesora | `B/12` §5, contrato |
+| **R9** · el reloj que borra | el reloj arranca al **perder la cobertura** (hecho 5, para toda ficha del dueño); el corte siembra la fecha del corte; **`DEC-DATA-005`**: la retención sólo toca fichas; `PURGED` | `N/01` §1.2, `V/02` §4 |
+| **R10** · la cobertura que no avisa | **`DEC-ARCH-009`**: reconciliador diario de cobertura en verticales | `V/03` §9 |
+| **R11** · la vertical discontinuada | una vertical cerrada **no cubre a nadie** desde su fin de servicio | contrato §2.6, `B/10` §4.3 |
+| **R12** · el trial quemado | **`DEC-TRIAL-010`**: el trial se convierte con el primer pago; suscribirse termina el trial; `S16` cancela de nuestro lado (`PA-6`); el corte siembra trials consumidos | `V/03` §2, `V/11` §9 |
+| **R13** · la página de Partner | sin máquina: se ve mientras exista el entitlement | `V/18` §1.6 |
+| **R14** · los cupos | lock por `user + vertical` en toda transición que ocupa cupo | `V/03` §9 |
+| `F-8CA1-001` | la vertical se lee **de la ficha**, nunca del pedido | `V/17` §1.2 |
+| `F-8CA2-004` | estado **`MODERATED`**; el dueño borra con `PB12` a `PURGED`, siempre, con o sin plan | `V/03` §9 |
+| registro | IDs duplicados renumerados (`DEC-ARCH-010`, `DEC-ENT-005`) | log |
+
+**Decisiones nuevas del día**: `DEC-SUB-020`, `DEC-SUB-021`, `DEC-DATA-005`, `DEC-METH-015`,
+`DEC-ARCH-009`, `DEC-TRIAL-010`. **Precisadas**: `DEC-MIG-003`, `DEC-GRANT-003`, `DEC-GRANT-004`,
+`DEC-MAIL-001`, `DEC-CONC-002`, `DEC-SUB-006`, `DEC-SUB-017`, `DEC-SUB-020`. **Superada**:
+`DEC-SUB-003`. **Matriz**: `EX-40`, `EX-41`, `PA-6`, `RC-8`, `RC-9`, y la sonda 49 registrada.
