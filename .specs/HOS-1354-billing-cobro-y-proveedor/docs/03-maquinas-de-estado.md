@@ -125,7 +125,7 @@ Y una nota de registro que sigue valiendo:
 | S4 | `ACTIVE` | un cobro falla — **y en un pagador manual eso es que `MP5` abrió la cuota del período y no hay pago acreditado contra ella** (§7.2): no hay débito que rebote, así que el evento se lee sobre la cuota y no sobre el proveedor. **Sobre la PRIMERA cuota de un pagador manual no corre**, y no hace falta una condición nueva para eso: esa cuota se abre en `PENDING_AUTHORIZATION` y el `desde` de esta fila es `ACTIVE` (§7.2, *«cómo entra el grace»*) | `GRACE_PERIOD` | — | arranca el reloj del §4; el servicio **sigue entero** (§20) |
 | S5 | `GRACE_PERIOD` | entra el pago, **o se reevalúa uno que quedó pendiente** por `S19` | `ACTIVE` | las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se apaga el reloj |
 | S6 | `GRACE_PERIOD` — **o `ACTIVE`, sólo por el segundo evento** | se agota el reloj — **o se lee `paused` en el proveedor sin haberlo pedido nosotros**: el proveedor se rindió por mora, y nuestro grace también terminó (`DEC-MP-008`). El cliente no puede pausar desde el proveedor (`DEC-MAIL-001`), así que ese `paused` **es** mora; la fila puede estar todavía en `ACTIVE` si el webhook del cobro fallido se perdió | `SUSPENDED` | **no hay un pago acreditado del período pendiente de resolución** por `S19` — **y, en un pagador con tarjeta, la relectura en el proveedor no muestra un cobro acreditado del período** (un pagador manual no tiene preapproval: su cobro es la cuota, y `MP2` ya lo resuelve un admin), hecha **con la lectura del `B/09` §4 y ninguna otra**. Si lo muestra, el webhook se perdió o llegó tarde: **`S6` no ocurre** y lo que corre es `S5`, con sus condiciones. **Si la lectura falla —o contesta *«todavía no se sabe»*, que es lo que el §4 del `B/09` devuelve cuando el inventario de intentos no está completo—, `S6` no ocurre en esta corrida** y se reintenta en la siguiente, como `S17` (`B/09` §3); **si en la corrida siguiente sigue sin saberse, se avisa** por el canal de `DEC-OBS-001`, sin abrir marca (`B/09` §6.2, owner 2026-09-24). **Y por cualquiera de los dos eventos, `S6` no ocurre mientras la fila sea la predecesora de una sucesión en curso** —una sucesora viva apuntándola— (owner, 2026-09-24): si la sucesión se consuma, `S17` la cancela como siempre, y si la sucesora muere, `S6` corre en la corrida siguiente; por el segundo evento, además, el preapproval pausado ya no cobra. **Pero la protección dura una sola ventana**: si el reloj del grace ya venció mientras corría una sucesión, una sucesión declarada después **no lo vuelve a frenar**, y `S6` corre en la primera corrida (FASE 8 completa, `F-8CB1-005`; §4) | §21: sin listado público, sin edición, sin creación, sin entitlements comerciales; datos conservados y billing accesible. **Y en un pagador con tarjeta, se cancela el preapproval en el proveedor en el mismo acto**, con la regla de relectura de `S17` (`DEC-SUB-019`): la suspensión corta **el cobro**, no sólo el servicio, así que ningún reintento del proveedor cobra después un mes entero sobre una fila suspendida. **Si la cancelación falla, `S6` no ocurre en esta corrida** y la fila sigue donde estaba — `GRACE_PERIOD`, o `ACTIVE` por el segundo evento. Volver es re-autorizar por el checkout: una sucesión, y `S17` encuentra el preapproval ya `cancelled` (`D7`) |
-| S7 | `SUSPENDED` | regulariza, **o se reevalúa un pago que quedó pendiente** por `S19` — **«regulariza» es la cuota del pagador manual (`MP4`)**; un pagador con tarjeta **no vuelve por acá**: `S6` le canceló el preapproval (`DEC-SUB-019`), así que vuelve por el checkout como **sucesora** (`S1` → `S2` → `S17`), y `S7` sólo lo alcanzan los bordes —un cobro en vuelo en el instante de `S6`, un preapproval reactivado a mano— | `ACTIVE` — **o `CANCEL_SCHEDULED`** si el cobro entró sobre un preapproval que `S6` ya canceló (la relectura lo da `cancelled`): la persona **recibe el período que pagó**, con fin de servicio en el fin de ese período, y `S12` la termina; para seguir, vuelve por el checkout. Así el espejo no la cancela antes de tiempo, porque `cancelled` × `CANCEL_SCHEDULED` es el par esperado (§10.1) (owner, 2026-09-25; FASE 8 completa, `F-8CB1-003`, `F-8CB2-004`, `F-8CD1-004`) | el cobro entró de verdad **y** las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se restituye la publicación |
+| S7 | `SUSPENDED` | regulariza, **o se reevalúa un pago que quedó pendiente** por `S19` — **«regulariza» es la cuota del pagador manual (`MP4`)**; un pagador con tarjeta **no vuelve por acá**: `S6` le canceló el preapproval (`DEC-SUB-019`), así que vuelve por el checkout como **sucesora** (`S1` → `S2` → `S17`) —la sucesión que `G-R1-A` le admite a una `SUSPENDED` sólo si es de pagador con tarjeta y su preapproval se relee por id como `cancelled` (`B/20` §2; FASE 8 completa, `F-8CB1-002`, owner 2026-09-25)—, y `S7` sólo lo alcanzan los bordes —un cobro en vuelo en el instante de `S6`, un preapproval reactivado a mano— | `ACTIVE` — **o `CANCEL_SCHEDULED`** si el cobro entró sobre un preapproval que `S6` ya canceló (la relectura lo da `cancelled`): la persona **recibe el período que pagó**, con fin de servicio en el fin de ese período, y `S12` la termina; para seguir, vuelve por el checkout. Así el espejo no la cancela antes de tiempo, porque `cancelled` × `CANCEL_SCHEDULED` es el par esperado (§10.1) (owner, 2026-09-25; FASE 8 completa, `F-8CB1-003`, `F-8CB2-004`, `F-8CD1-004`) | el cobro entró de verdad **y** las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso** | se restituye la publicación |
 | S8 | `ACTIVE` | la persona pide pausar | `PAUSED` *(motivo `CUSTOMER_REQUEST`)* | `puedePausar()` (capítulo 01 (núcleo) §3) | se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`) |
 | S9 | `ACTIVE` | **tres disparadores, un mismo acto**: `SUPER_ADMIN` otorga cortesía; **una sucesora recién autorizada tiene una cortesía DIFERIDA esperándola** — una `courtesy_grant` con `saldo_días` no nulo cuyo `subscription_id` apunta a una fila cuyo `sucedida_por` es esta (`B/02` §2.4 y §2.6, `DEC-GRANT-007`)—; **o una fila recién autorizada que NO es sucesora de nadie tiene una cortesía diferida del MISMO beneficiario y la MISMA vertical, cuya suscripción murió por `S25`** (`DEC-GRANT-010`, `B/14` §4.6). **Los dos últimos difieren sólo en cómo se llega a esta fila** —por `sucedida_por` el segundo, por beneficiario + vertical el tercero, porque ahí no hubo sucesión que declarar— y hacen exactamente lo mismo | `PAUSED` *(motivo `COURTESY`)* | no hay pausa vigente (`DEC-GRANT-004`) — **y ni una sucesora recién autorizada ni un alta nueva tienen ninguna**, así que el segundo y el tercer disparador corren sin tocar la condición | se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`). **Por el segundo disparador —y por el tercero, con la misma escritura— se re-emite la cortesía diferida**: `subscription_id` pasa a esta fila, `inicio` es hoy, `fin` es hoy + `saldo_días`, y **`saldo_días` vuelve a nulo**. Es la misma fila de `courtesy_grant`, entera, con la firma de `SUPER_ADMIN` original — no una cortesía nueva, así que el §35.4 sigue auditando **por grant**. **Riesgo aceptado y declarado por `DEC-GRANT-007`, y vale igual por el tercer disparador**: entre `S2` y este acto el proveedor **puede cobrar** el primer pago, y ese cobro se devuelve **por el camino que ya existe** —la marca con motivo `COBRO_DURANTE_CORTESÍA` y la confirmación de una persona, `B/02` §2.5 y `DEC-RF-002`—, sin inventar un mecanismo para evitarlo |
 | S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | **el plan al que la fila está anclada se sigue prestando** —es la guarda que la separa de `S25`, ver abajo— **y el `PUT` se aplicó, confirmado por relectura** — la misma regla que `S17` | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) — **y en un pagador manual ese día lo fija esta misma transición**, porque no hay proveedor que lo corra: la fecha del próximo cobro (`B/02` §2.2) avanza **tantos ciclos como hayan vencido durante la pausa, sin abrir cuota**, que es el espejo local de `PS-6` y lo que esa misma decisión ya eligió para el pagador con tarjeta —*«se le cobra normal en el ciclo siguiente»*—. Sin eso el reloj le abriría al volver la cuota de un período que transcurrió adentro de la cortesía (§7.2, *«qué mueve la fecha del próximo cobro»*). **Si la relectura sigue viendo `paused`, `S10` NO ocurre**: la fila se queda en `PAUSED` y **se pone la marca `requiere_conciliación` con motivo `REANUDACIÓN_NO_APLICADA`** (`S14`, `B/02` §2.5), porque una reanudación que no se aplicó le corta el servicio y el cobro a la vez — ver abajo |
@@ -179,25 +179,29 @@ recorrió. El tercer estado existía y era caro: `sucede_a` no nulo con la suces
 nada que pudiera limpiarlo.
 
 **Mientras la sucesora espera autorización —hasta que vence su ventana, §3.4 punto 1— la predecesora se sigue moviendo, y se
-mueve sola.** Recorrí las salidas de los tres estados desde los que una fila **puede ser sucedida**
-—`ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, el conjunto que `G-R1-A` vigila— y son
-**ocho** las transiciones de esta tabla que la sacan de ahí sin que nadie declare una sucesión:
+mueve sola.** Recorrí las salidas de los ~~tres~~ **cuatro** estados desde los que una fila **puede ser sucedida**
+—`ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` y **`SUSPENDED` de pagador con tarjeta con el
+preapproval releído `cancelled`**, el conjunto que `G-R1-A` vigila (`B/20` §2; el cuarto, FASE 8
+completa, `F-8CB1-002`, owner 2026-09-25)— y son
+~~**ocho**~~ **diez** las transiciones de esta tabla que la sacan de ahí sin que nadie declare una sucesión:
 
 | # | desde | transición | hacia | ¿sigue siendo fila viva? |
 |---|---|---|---|---|
 | 1 | `ACTIVE` | `S8` — la persona pide pausar | `PAUSED` | **sí** |
 | 2 | `ACTIVE` | `S9` — `SUPER_ADMIN` otorga cortesía | `PAUSED` | **sí** |
-| 3 | `GRACE_PERIOD` · `ACTIVE` | `S6` — se agota el reloj **o el proveedor pausó por mora** (`DEC-MP-008`), **salvo que haya un pago pendiente por `S19` o que la relectura en el proveedor muestre el cobro** | `SUSPENDED` | **sí** |
+| 3 | `GRACE_PERIOD` · `ACTIVE` | `S6` — se agota el reloj **o el proveedor pausó por mora** (`DEC-MP-008`), **salvo que haya un pago pendiente por `S19` o que la relectura en el proveedor muestre el cobro**. **Sólo saca del conjunto a una de pagador manual**: la de tarjeta llega a una `SUSPENDED` con el preapproval cancelado, que es el cuarto estado de declaración (`F-8CB1-002`) | `SUSPENDED` | **sí** |
 | 4 | `CANCEL_SCHEDULED` | `S12` — llega la fecha de fin de servicio | `CANCELLED` | **no** |
 | 5 | cualquiera de los cinco | `S13` — *Free Forever* | `CANCELLED` | **no** |
 | 6 | `ACTIVE` | `S16` — el primer cobro de esa autorización se rechaza | `CHARGE_DECLINED` | **no** |
 | 7 | `ACTIVE` · `GRACE_PERIOD` | **el espejo de la baja decidida por el proveedor** (§10.1) — **ya no es la salida esperada del camino de mora**: desde `DEC-SUB-019` la corta `S6` antes; queda para la baja que igual llegue del proveedor (`B/12` §1.4) | `CANCELLED` | **no** |
 | 8 | `GRACE_PERIOD` | `S24` — **pide la baja en medio del grace** (`DEC-SUB-014`) | `CANCELLED` | **no** |
+| 9 | `SUSPENDED` *(tarjeta)* | `S23` — **pide la baja estando suspendida**, o la ejecuta un admin (FASE 8 completa, `F-8CB1-002`) | `CANCELLED` | **no** |
+| 10 | `SUSPENDED` *(tarjeta)* | `S27` — `SUPER_ADMIN` **discontinúa la vertical** (`B/10` §4.3) (FASE 8 completa, `F-8CB1-002`) | `CANCELLED` | **no** |
 
 **La séptima no tiene fila numerada en esta tabla, y no por eso deja de ser una transición de
 ella**: el §10.1 declara que *«espejar un estado leído por id es una transición declarada de esta
-tabla»*, y el par `cancelled` × *(cualquier estado vivo que no sea `CANCEL_SCHEDULED`)* manda
-espejar cuando no hay baja programada. Enumerar el dominio **sobre las filas numeradas** la deja
+tabla»*, y el par `cancelled` × *(cualquier estado vivo que no sea `CANCEL_SCHEDULED` ni
+`SUSPENDED`)* manda espejar cuando no hay baja programada. Enumerar el dominio **sobre las filas numeradas** la deja
 afuera, y es el error de método que costó una rama entera en `B/12` §5.3: la tabla numerada **no
 es** la enumeración completa de esta tabla.
 
@@ -207,12 +211,28 @@ cambio de plan es legal y la predecesora todavía está `ACTIVE`. **La 7 no la d
 lado**: es una baja del proveedor. ~~`GR-3` *«sigue `UNKNOWN`»*~~ —`GR-3` está `VERIFIED` desde el
 2026-09-22 y la ventana de reintentos dura un ciclo (`B/12` §1.5)—, pero por mora el proveedor
 **pausa**, no da de baja, así que esta fila sólo llega por una cancelación desde su panel o un
-preapproval tocado a mano, y **cuándo llega no se puede acotar**. **La 8 es la única de las ocho que decide el propio cliente
-sobre su propia fila** —pide la baja en medio del grace (`DEC-SUB-014`)—, y por eso no cabe en
-*«se mueve sola»*: lo que comparte con las otras cuatro terminales no es la causa sino el efecto.
+preapproval tocado a mano, y **cuándo llega no se puede acotar**. ~~**La 8 es la única de las ocho que decide el propio cliente
+sobre su propia fila**~~ **La 8 y la 9 son las únicas de las diez que puede decidir el propio cliente
+sobre su propia fila** —pide la baja en medio del grace (`DEC-SUB-014`), o estando suspendida (`S23`, que también
+puede ejecutar un admin)—, y por eso no caben en
+*«se mueve sola»*: lo que comparten con las otras terminales no es la causa sino el efecto.
 **Las tres primeras siguen siendo filas vivas y son el dominio de
-`S17`** —por eso su `desde` son cinco estados y no tres—; **las cinco últimas ya no lo son, y ahí
+`S17`** —por eso su `desde` son cinco estados y no ~~tres~~ cuatro—; **las ~~cinco~~ siete últimas ya no lo son, y ahí
 `S17` simplemente no aplica: no hay nada que cancelar y no hay nada que matar.**
+
+**Las salidas de `SUSPENDED`, recorridas contra la tabla** (FASE 8 completa, `F-8CB1-002`, owner
+2026-09-25). Con la `SUSPENDED` de tarjeta como cuarto estado de declaración, sus salidas son
+éstas, y sólo **dos** agregan una fila:
+
+| transición | ¿agrega una fila? | por qué, según la tabla |
+|---|---|---|
+| `S7` | **no** | su condición exige que la fila **no** sea la predecesora de una sucesión en curso; mientras lo sea, el pago que entre queda retenido por `S19` y no la saca de ningún lado |
+| `S13` | **no** | ya es la fila 5: su `desde` es *«toda fila viva PRINCIPAL»*, `SUSPENDED` incluida |
+| `S14` · `S15` · `S19` | **no** | van a **el mismo estado** |
+| `S17` | **no** | es la sucesión consumándose, no una salida sin ella |
+| `S23` | **sí — fila 9** | `SUSPENDED` → `CANCELLED`, pedida por el cliente o ejecutada por un admin |
+| `S27` | **sí — fila 10** | `SUSPENDED` → `CANCELLED`, por la discontinuación de la vertical |
+| el espejo (§10.1) | **no** | `cancelled` × `SUSPENDED` es *«nada: es lo esperado»*; `authorized` × `SUSPENDED` es una marca —o el estado de `S19`— sin cambio de estado; `pending` × `SUSPENDED` es divergencia y marca; y `paused` × `SUSPENDED` no figura, así que también es marca. Ningún par la mueve |
 
 **Y las tres primeras tienen desde la FASE 9-bis-4 una SEGUNDA salida que no es `S17`, porque la
 persona puede irse.** Una predecesora que quedó en `PAUSED` (filas 1 y 2) o en `SUSPENDED`
@@ -220,22 +240,31 @@ persona puede irse.** Una predecesora que quedó en `PAUSED` (filas 1 y 2) o en 
 autorizado**, o sea por el mismo camino de `S12`, `S16` y el espejo — se muere sola. Por eso las
 dos están nombradas en el segundo evento de `S18`, que es lo que cierra la sucesión y evita que el
 candado `A` quede vacío; y por eso `B/12` §5.3 tiene desde entonces una **sexta** rama, la de una
-predecesora que pide la baja ella misma y además retenía un pago por `S19`. **No entran como filas
+predecesora que pide la baja ella misma y además retenía un pago por `S19`. ~~**No entran como filas
 9 y 10 de la tabla de arriba**: esa tabla recorre las salidas de los **tres** estados desde los
 que una fila puede ser sucedida, y `PAUSED` y `SUSPENDED` no son ninguno de los tres — se llega a
-ellos **por** esas filas. Lo que cambia no es el dominio de la tabla sino que su columna de la
+ellos **por** esas filas.~~ **`S22` no entra en la tabla de arriba**: esa tabla recorre las salidas de
+los estados desde los que una fila puede ser sucedida, y `PAUSED` no es ninguno — se llega a él
+**por** esas filas. **`S23` sí entra desde la FASE 8 completa, como fila 9, pero sólo desde una
+`SUSPENDED` de tarjeta**, que pasó a ser estado de declaración (`F-8CB1-002`); la `SUSPENDED` de
+pagador manual a la que se llega por la fila 3 sigue sin serlo. Lo que cambia no es el dominio de la tabla sino que su columna de la
 derecha —*«¿sigue siendo fila viva?»*— dejó de significar *«y de ahí sólo sale por `S17`»*.
 
 **`S24` sí entra, y la diferencia con sus dos hermanas es de dominio y no de criterio**:
-`GRACE_PERIOD` **es** uno de los tres estados desde los que una fila puede ser sucedida, así que
+`GRACE_PERIOD` **es** uno de los ~~tres~~ estados desde los que una fila puede ser sucedida, así que
 la baja que sale de ahí es una salida de esta tabla y se cuenta como la octava. Es la misma
-razón por la que `S22` y `S23` no se cuentan, leída al derecho.
+razón por la que ~~`S22` y `S23` no se cuentan~~ `S22` no se cuenta y `S23` se cuenta sólo desde la
+`SUSPENDED` de tarjeta, leída al derecho.
 
-**`S18` corre en SIETE de las ocho, y la que falta sigue siendo `S13`.** En las tres primeras corre después
-de `S17`, que es el que hace verdadera su condición. En `S12`, en `S16`, en **el espejo** y en
-**`S24`** corre
+~~**`S18` corre en SIETE de las ocho, y la que falta sigue siendo `S13`.**~~ **`S18` corre en OCHO
+de las diez: se suma `S23`, que su segundo evento ya nombraba. Las que faltan son `S13` y
+`S27`** (FASE 8 completa, `F-8CB1-002`). En las tres primeras corre después
+de `S17`, que es el que hace verdadera su condición. En `S12`, en `S16`, en **el espejo**, en
+**`S24`** y en **`S23`** corre
 **sin `S17` y sin esperar a que la sucesora autorice**, que es el segundo evento de su fila y el §
-siguiente explica por qué tiene que ser así. En `S13` **no corre**, y no es una excepción olvidada:
+siguiente explica por qué tiene que ser así. **En `S27` el segundo evento de `S18` no la nombra**, y
+el mismo acto alcanza a la sucesora por `S28` o por `S26` según su estado; este § no razona todavía
+ese caso. En `S13` **no corre**, y no es una excepción olvidada:
 `S13` alcanza a **toda fila viva principal** del beneficiario, o sea también a la sucesora, así que
 no queda ninguna sucesora viva a la que pasarle el origen (ver más abajo, *«`S13` alcanza a toda
 fila viva PRINCIPAL»*).

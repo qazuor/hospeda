@@ -403,7 +403,8 @@ tarde: el barrido, una revisión manual o un reconciliador leen lo mismo que el 
 **Y esa segunda mitad se lee sobre las DOS columnas, porque `sucedida_por` todavía no existe
 mientras la sucesión está en curso.** Leerla sólo sobre `sucedida_por` deja pasar el caso
 contrario al que arregla: **hasta la FASE 9-bis-3, `S18` sólo la escribía con la sucesora
-`ACTIVE`**, y la tabla de ocho transiciones de `B/03` §3.2 enumera **cuatro** por las que la
+`ACTIVE`**, y la tabla de ~~ocho~~ transiciones de `B/03` §3.2 —diez desde la FASE 8 completa
+(`F-8CB1-002`)— enumera, entre otras, **cuatro** por las que la
 predecesora deja de ser fila viva **antes** de eso y sola — `S12` (le llegó la fecha de fin de
 servicio), `S13` (*Free Forever*), `S16` (el primer cobro de su autorización se rechaza, y
 `PA-3` mide que ese cobro llega **entre 26 y 44 minutos** después de autorizar, o sea dentro de la

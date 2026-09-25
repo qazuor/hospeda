@@ -357,7 +357,9 @@ dos la alcanza. No hay caso en que haya que pausar un preapproval que todavía n
    muere por `S17` y `S18` cierra.
 
 **Cómo se llega, contado sobre la tabla que el propio `B/03` §3.2 ya publica.** `G-R1-A` sólo deja
-declarar una sucesión desde `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}` (`B/20` §2), así que la
+declarar una sucesión desde `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}` y desde una `SUSPENDED` de
+pagador con tarjeta con el preapproval releído `cancelled` (`B/20` §2; FASE 8 completa,
+`F-8CB1-002`), así que la
 predecesora **no está `PAUSED` cuando se declara** — está `ACTIVE`. Después, **dentro de la ventana
 de autorización** —**72 h o 7 días corridos**, según el método de pago (`B/03` §3.4 punto 1)—,
 `SUPER_ADMIN` otorga la cortesía: es la **fila 2** de la tabla de recorrido del `B/03`
@@ -427,7 +429,8 @@ mantener los dos sincronizados.
 **Lo único que cambia es cómo se llega a la fila nueva, y hay que decirlo porque es la diferencia
 que un lector va a buscar.** En el §4.4 la sucesora se alcanza por `predecesora.sucedida_por`, que
 `S18` escribe en el mismo acto. **Acá no hay sucesión**: `G-R1-A` sólo deja declarar una desde
-`ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`, y ésta estaba `PAUSED`. La fila nueva es **un alta
+`ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o una `SUSPENDED` de pagador con tarjeta con el
+preapproval releído `cancelled` (FASE 8 completa, `F-8CB1-002`), y ésta estaba `PAUSED`. La fila nueva es **un alta
 nueva** (`S1`), y se la alcanza por **el beneficiario y la vertical** de la suscripción muerta
 —que la cortesía sigue apuntando, porque `subscription_id` no es anulable y la fila `CANCELLED`
 **no se borra**—.

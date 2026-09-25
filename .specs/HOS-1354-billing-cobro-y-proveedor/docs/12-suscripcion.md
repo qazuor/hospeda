@@ -616,7 +616,9 @@ Y ponerla sobre la sucesora tenía un costo que la otra no tiene: *«mientras la
 sobre una fila, ningún `sucede_a` puede apuntarla»* (`B/02` §2.2), o sea que el cliente que
 **acaba** de cambiar de plan no podría volver a cambiarlo hasta que una persona resuelva un caso
 que es de su plata y no de su plan. Sobre la predecesora esa regla es vacua: está `CANCELLED`, y
-`G-R1-A` ya sólo deja declarar una sucesión desde `ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`.
+`G-R1-A` ya sólo deja declarar una sucesión desde `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o
+una `SUSPENDED` de pagador con tarjeta con el preapproval releído `cancelled` (FASE 8 completa,
+`F-8CB1-002`).
 
 **Y la predecesora es terminal, así que el reloj de la marca la tiene que alcanzar.** Por eso
 `B/09` §3 devuelve al barrido las suscripciones terminales con la marca puesta o con un pago

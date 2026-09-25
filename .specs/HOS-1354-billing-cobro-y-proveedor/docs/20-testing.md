@@ -53,7 +53,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G11 | se le pide un **trial al proveedor** | `D12` |
 | G12 | se importa el **SDK de la pasarela fuera del adaptador** | `DEC-ARCH-004`, condición A. Lo construye `B1` (`B/descomposicion.md` §2) |
 | G13 | la implementación **de arranque** de `cobertura()` llega a producción | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. Lo construye `B4` (`B/descomposicion.md` §2), que es donde aparece la segunda implementación — **no puede nacer en `V4`**, porque mientras la de arranque es la única, un guard que prohíba su llegada a producción falla desde el primer día |
-| G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`) |
+| G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}` **y no es una `SUSPENDED` de pagador con tarjeta cuyo preapproval se releyó por id como `cancelled`** —la única `SUSPENDED` admitida; la de pagador manual y toda `PAUSED` siguen afuera (FASE 8 completa, `F-8CB1-002`, owner 2026-09-25)—, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`, **`S6`**, **`S7`**), `DEC-SUB-019` |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento o la **redención de promo** sin re-apuntar, **o una cortesía vigente sin cerrar y sin `saldo_días`** —ésa **no** se re-apunta, `DEC-GRANT-007`—, o un **pago pendiente por `S19` sin una marca `requiere_conciliación` abierta con motivo `REEMBOLSO_POR_CONFIRMAR`** —la marca sin el motivo **pasaba el guard y no ordenaba nada**—; **o `S25` mata una `PAUSED · COURTESY` con días sin entregar y no le escribe el `saldo_días`** (`DEC-GRANT-010`) | `D15`, cap. 03 §3.2 (`S18` y `S25`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002` |
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
@@ -69,22 +69,35 @@ cada uno.** *(Eran cinco hasta la FASE 9-bis-4. `G-R1-F` llegó con el motivo de
 único de los seis cuyo sujeto no es `sucede_a` sino `reconciliation_mark`; está acá y no en otro
 racimo porque la marca que más caro sale sin motivo es **la que `S18` abre al cerrar una
 sucesión**.)*
-`G-R1-A` impide **declarar** una sucesión desde una `SUSPENDED` —autorización de estado
+~~`G-R1-A` impide **declarar** una sucesión desde una `SUSPENDED` —autorización de estado
 indeterminado— o desde una `PAUSED`, donde `EX-11` mide que **el proveedor rechaza toda
 modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el momento de
-escribirla en vez de al insertar.
+escribirla en vez de al insertar.~~
+`G-R1-A` impide **declarar** una sucesión desde una `PAUSED`, donde `EX-11` mide que **el
+proveedor rechaza toda modificación**, y desde una `SUSPENDED` de **pagador manual**, que vuelve
+por `MP4` y `S7` y no por sucesión (cap. 03 §3.2); y de paso impide la cadena, que la clave `B` ya
+rechaza, en el momento de escribirla en vez de al insertar. **Desde una `SUSPENDED` de pagador con
+tarjeta sí deja declararla, con una condición: que su preapproval se relea por id como
+`cancelled` en ese acto.** La razón vieja —*«autorización de estado indeterminado»*— no vale para
+esa población desde `DEC-SUB-019`: `S6` le cancela el preapproval en el mismo acto de suspender y
+lo verifica releyendo, así que el estado ya no es indeterminado — y sin esta puerta la persona no
+tenía por dónde volver, porque `S7` sólo la alcanza en los bordes (FASE 8 completa, `F-8CB1-002`,
+owner 2026-09-25).
 
 **`G-R1-A` vigila el ACTO de declarar, no una propiedad permanente de la fila**, y la diferencia
 no es de matiz: la sucesión dura **hasta que vence la ventana de autorización** —**72 h o 7 días
-corridos**, según el método de pago (cap. 03 §3.4 punto 1)—, y en esa ventana **ocho transiciones normales
-sacan a una predecesora perfectamente legal del conjunto de tres** —`S8` y `S9` la pausan, `S6` la
-suspende, y `S12`, `S13`, `S16`, el espejo de la baja decidida por el proveedor (cap. 03 §10.1) y
-**`S24`** —la baja que la propia persona pide en medio del grace—
-la matan; el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
+corridos**, según el método de pago (cap. 03 §3.4 punto 1)—, y en esa ventana ~~**ocho transiciones normales
+sacan a una predecesora perfectamente legal del conjunto de tres**~~ **diez transiciones normales
+mueven a una predecesora perfectamente legal del conjunto de declaración** —`S8` y `S9` la pausan, `S6` la
+suspende —y eso la saca del conjunto **sólo si es de pagador manual**: la `SUSPENDED` de tarjeta
+con el preapproval cancelado está adentro—, y `S12`, `S13`, `S16`, el espejo de la baja decidida por el proveedor (cap. 03 §10.1),
+**`S24`** —la baja que la propia persona pide en medio del grace— y, desde una `SUSPENDED` de
+tarjeta, **`S23`** —la baja pedida estando suspendida— y **`S27`** —la discontinuación de la
+vertical— la matan (las dos últimas, FASE 8 completa, `F-8CB1-002`); el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
 numeradas**—. Leído como
 propiedad permanente, el guard se ponía en rojo sobre el camino normal, **exactamente durante la
 ventana en que nadie lo puede distinguir de un rojo real**, y un guard que falla sobre el camino
-normal es un guard que alguien va a relajar. Leído sobre el acto, el conjunto de tres es el
+normal es un guard que alguien va a relajar. Leído sobre el acto, el conjunto de declaración es el
 dominio correcto y coincide con el que `S1` exige.
 
 `G-R1-B` es **`D8` hecho verificable en vez de recordable**, y

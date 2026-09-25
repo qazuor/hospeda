@@ -366,12 +366,16 @@ vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede au
 
 **Con una salvedad que conviene decir en vez de suponerla, porque la predecesora se puede morir
 sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes ni contra
-el proveedor: de las **ocho** transiciones que la mueven durante la ventana, **cuatro la sacan de
+el proveedor: de las ~~**ocho**~~ **diez** transiciones que la mueven durante la ventana, **cuatro la sacan de
 las filas vivas sin que nadie declare nada** —`S12`, `S13`, `S16` y **el espejo de la baja que
 decide el proveedor** (`B/03` §3.2 y §10.1)—. **La octava, `S24`, también la saca y no entra en
 esa cuenta**: ahí el cliente **pidió la baja él mismo** en medio del grace (`DEC-SUB-014`), así
 que caer al piso no es algo que le pase sin que nadie declare nada — es la consecuencia del acto
-que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. En esas cuatro la predecesora deja de
+que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. **La novena y la décima —`S23` y
+`S27`, desde una `SUSPENDED` de pagador con tarjeta, que es estado de declaración desde la FASE 8
+completa (`F-8CB1-002`)— tampoco entran**, y no por la causa sino porque no le cambian nada a la
+cobertura: `SUSPENDED` ya no emitía ninguna fuente (§2.6), así que el piso lo tenía desde antes de
+morir. En esas cuatro la predecesora deja de
 emitir y la sucesora todavía no emite, así que **el cliente cae al piso (§2.5) por lo que le quede
 de ventana**, hasta que autorice o abandone. No es un hueco nuevo, ni una consecuencia de que el
 cierre de la sucesión pase a correr antes de la autorización —`PENDING_AUTHORIZATION` no emite ni
@@ -398,11 +402,12 @@ resolver la cancelación —no elegir qué fuente vale—. Lo que no puede pasar
 sin nombrar, porque entonces el techo de lo que alguien puede tener depende de si una llamada al
 proveedor salió bien.
 
-**Y no es alcanzable por ningún otro camino.** Las **ocho** transiciones que mueven a la
-predecesora durante la ventana de autorización —`S8`, `S9`, `S6`, `S12`, `S13`, `S16`, `S24` y el espejo
+**Y no es alcanzable por ningún otro camino.** Las ~~**ocho**~~ **diez** transiciones que mueven a la
+predecesora durante la ventana de autorización —`S8`, `S9`, `S6`, `S12`, `S13`, `S16`, `S24`, el espejo
 del
-`B/03` §10.1, que es la que la tabla numerada del §3.2 no lista— la dejan en un estado que **no
-emite** en siete de los ocho casos; la excepción es
+`B/03` §10.1, que es la que la tabla numerada del §3.2 no lista, y `S23` y `S27` (FASE 8 completa,
+`F-8CB1-002`)— la dejan en un estado que **no
+emite** en ~~siete de los ocho~~ nueve de los diez casos; la excepción es
 `S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`. Y en
 todas, si
 la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a

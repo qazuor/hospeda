@@ -337,9 +337,10 @@ no en caminos, y las columnas nacen todas en el mismo acto.
 *«vigila el ACTO de declarar, no una propiedad permanente de la fila»* (`B/20` §2), y el acto es la
 segunda rama de la condición de `S1` —*«no hay otro origen vivo para ese `user + vertical`, **o la
 fila declara una sucesión** (`sucede_a`)»*— que vive en `03` §3.2, adentro del `03` §3.1–§3.4 de
-B3. B3 es la **tercera** unidad del §3, así que las **ocho** transiciones que después sacan a una
-predecesora del conjunto de tres —`S8` y `S9`, `S6`, `S12`, `S13`, `S16`, el espejo del §10.1 y
-`S24`— llegan repartidas entre B7, B8 y B9, todas **después**.
+B3. B3 es la **tercera** unidad del §3, así que las ~~**ocho**~~ **diez** transiciones que después sacan a una
+predecesora del conjunto de ~~tres~~ declaración —`S8` y `S9`, `S6`, `S12`, `S13`, `S16`, el espejo del §10.1,
+`S24` y, desde la FASE 8 completa (`F-8CB1-002`), `S23` y `S27`— llegan repartidas en unidades
+posteriores —B7, B8, B9 y, para `S27`, B12—, todas **después**.
 
 **`G-R1-B` va con B3 porque depende de una columna de B3 y compara contra la ventana de B3.** El
 catálogo lo dice: es *«`D8` hecho verificable en vez de recordable, y por eso **depende de la
