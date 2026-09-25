@@ -33,9 +33,13 @@ vertical (catálogo, espejo del enum)
                                  ├──< plan_version_entitlement
                                  └──< plan_version_limit
 
-addon_version ──┬──< addon_version_entitlement
-                └──< addon_version_limit
+addon ──< addon_version ──┬──< addon_version_entitlement
+                          └──< addon_version_limit
 ```
+
+> **`addon` es la entidad madre que `addon_version` no tenía** (corrección de diseño, FASE 8
+> completa, `F-8CA3-011`). El diagrama decía ~~`addon_version ──┬──< …`~~, una versión suelta sin
+> nada de lo que ser versión.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
@@ -44,7 +48,8 @@ addon_version ──┬──< addon_version_entitlement
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
 | **`plan_version_limit`** | qué clave limita y con qué valor | ídem |
-| **`addon_version`** | **qué otorga un addon y con qué valores**: vigencia, tipo de scope. **Inmutable** | una instancia **ancla** su versión, igual que una suscripción ancla la suya |
+| **`addon`** ✚ | identidad y cosmética: slug, nombre, descripción. **Muta libremente** (`DEC-ARCH-001`) — es el `plan` del catálogo de addons (FASE 8 completa, `F-8CA3-011`) | `UNIQUE(slug)` |
+| **`addon_version`** | **de qué `addon` es versión** (no anulable) y **qué otorga ese addon y con qué valores**: vigencia, tipo de scope. **Inmutable** | una instancia **ancla** su versión, igual que una suscripción ancla la suya |
 | **`addon_version_entitlement`** | qué clave otorga el addon | `UNIQUE(addon_version_id, clave)`; la clave existe en el catálogo |
 | **`addon_version_limit`** | qué clave limita y con qué valor | ídem |
 
@@ -66,6 +71,22 @@ dos épicas venía a impedir.
 
 **La versión es inmutable**, por `DEC-ARCH-001` tal cual: *«se versiona lo que tiene efecto»*.
 Cambiar de 30 a 40 fotos tiene efecto sobre lo que el cliente puede hacer, así que crea versión.
+
+**Y una versión es versión DE algo, que es lo que faltaba** (corrección de diseño, FASE 8 completa,
+`F-8CA3-011`). El catálogo de planes tenía `plan ──< plan_version` y el de addons tenía la versión
+suelta: la única relación era `addon_product.version_id`, del lado de billing. Sin madre,
+*«se publica una versión nueva»* (§3.2, disparadores de invalidación) no tenía sujeto, y el linaje
+que la inmutabilidad promete no estaba en ninguna tabla. **`addon` es esa madre y copia la forma de
+`plan` y nada más**: la identidad y la cosmética mutan libremente, lo que tiene efecto vive en la
+versión. **De `plan` no copia dos cosas, y las dos por un motivo del propio patrón**:
+
+- **no lleva vertical ni orden en la pricing**: un addon declara **varias** verticales compatibles
+  y eso es de billing (`addon_product`, `B/02` §2.4), así que su unicidad es `UNIQUE(slug)` y no
+  `UNIQUE(vertical, slug)`;
+- **no lleva la marca `vigente` de `plan_version`**: en el catálogo de addons **qué versión se vende
+  hoy ya tiene columna** —`addon_product.version_id` (`B/02` §2.4)—, y una segunda marca daría dos
+  respuestas a la misma pregunta. Lo que el linaje sí exige de ese puntero está escrito allá: que
+  sólo se re-apunte a otra versión **del mismo `addon`**.
 
 **Y la instancia la ancla de verdad, que hasta ahora no podía.** *«La instancia ancla su versión»*
 estaba escrito en las dos épicas y **ninguna tabla lo permitía**: el único camino a `addon_version`
@@ -383,7 +404,7 @@ Invalidan la entrada de un `user + vertical`:
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
 | **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope |
-| **se publica una versión nueva de un `addon_version`** | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
+| **se publica una versión nueva de ~~un `addon_version`~~ un `addon`** (su madre desde la FASE 8 completa, `F-8CA3-011`, §2.1) | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
 
 **Las cuatro últimas son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
 escribió cuando toda fuente colgaba de una suscripción o de un trial, y **las cuatro nuevas no

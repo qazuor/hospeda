@@ -102,7 +102,7 @@ Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade
 |---|---|
 | **porcentual** | se **recalcula sobre el precio nuevo** — un porcentaje es una relación, no un importe |
 | **monto fijo** | se traslada tal cual, sujeto al piso del §1.3 |
-| el contador de **N cobros** | **sigue donde estaba**: cambiar de plan no consume un cobro |
+| el contador de **N cobros** —`promo_redemption.cobros_restantes`, `B/02` §2.4 (corrección de diseño, FASE 8 completa, `F-8CB1-007`)— | **sigue donde estaba**: cambiar de plan no consume un cobro. Lo único que lo mueve es un cobro confirmado (§2.4) |
 
 **El veredicto es el mismo en las dos direcciones y el mecanismo no.** En el downgrade el contador
 sigue donde estaba porque **la fila sobrevive**; en el upgrade, porque **la sucesora lo hereda**.
@@ -118,7 +118,8 @@ mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecu
 1. **`S18` re-apunta `promo_redemption.subscription_id` a la sucesora**, en el mismo acto en que
    escribe `sucedida_por` y re-apunta los complementos (`B/03` §3.2, `B/02` §2.6). La redención
    sigue siendo **una** —`UNIQUE(promo_code_id, user_id)` no se toca— y el contador de N cobros no
-   se consume, porque no hubo cobro.
+   se consume, porque no hubo cobro: `cobros_restantes` viaja con la fila sin tocarse (`B/02`
+   §2.4).
 2. **El descuento se vuelve a aplicar sobre el monto de la sucesora**, con la regla de este mismo
    §: porcentual se **recalcula** sobre el precio nuevo, fijo se **traslada** sujeto al piso del
    §1.3. No es opcional: `DEC-MP-001` aplica el descuento **mutando el monto en el proveedor**, y
@@ -158,6 +159,46 @@ nadie pactó.** Si no se puede expresar, termina.
 **Y se muestra antes de confirmar el cambio**, con el precio que va a pagar. El checkout de
 `DEC-SUB-006` ya le muestra un importe concreto; lo que hay que agregar es que **ese importe ya no
 lleva el descuento**, o el cliente lo descubre en el resumen de su tarjeta.
+
+### 2.4 Cuándo termina una promo de «primer cobro» o de «N cobros»
+
+> **Corrección de diseño, FASE 8 completa, `F-8CB1-007`.** El §33 pide descuentos de *«primer
+> cobro»* y de *«N cobros»*, este capítulo hablaba de *«el contador de N cobros»* (§2.2) y **el
+> modelo no tenía contador**: nada contaba cuántos cobros quedaban y nada restituía el precio, así
+> que toda promo acotada se volvía `forever`.
+
+**El contador es `promo_redemption.cobros_restantes`** (`B/02` §2.4): **nulo** es `forever`, **N > 0**
+son N cobros con descuento por delante y **0** es agotado. Se inicializa al canjear con la duración
+del código, y *«primer cobro»* es N = 1.
+
+**Se decrementa UNA vez por cobro confirmado, y «confirmado» tiene una sola lectura**: un pago
+`approved` **leído por id** (`B/09` §4), en el mismo acto que lo acredita. No lo mueven ni un
+cambio de plan (§2.2) ni una cortesía (§4.2), porque en ninguno de los dos hay cobro.
+
+**Al llegar a 0 se muta el monto del preapproval al precio completo.** El proveedor lo permite
+sobre una autorizada sin pedir consentimiento nuevo: `PC-1` lo midió (1500 → 2200 → 15 → 1500,
+todos `200`, verificado por relectura, y re-verificado en producción) y `PC-3` confirma que la
+suscripción sigue `authorized`. Como toda mutación, **se verifica releyendo** (`D5`, `B/06` §4.1):
+mutar el monto **no emite webhook** (`EX-15`), así que la relectura es la única confirmación.
+
+**Y el proveedor le escribe al pagador por su cuenta.** `CT-3` lo midió en producción: todo cambio
+de monto dispara un correo de Mercado Pago que dice *«El vendedor Hospeda cambió el monto»*, y le
+llega **a él y no a nosotros**. `DEC-MAIL-001` ya decidió qué se hace con eso, en sus dos puntos:
+
+- **punto 1: nuestro correo NO bloquea la mutación** —bloquea sólo antes de cancelar—, así que la
+  restitución corre aunque el correo falle;
+- **punto 2: el correo del proveedor se ANTICIPA, no se desmiente.** Al canjear una promo acotada
+  la persona tiene que saber **cuántos cobros lleva el descuento, qué monto paga después** y que
+  cuando termine **va a recibir un correo del proveedor avisando el cambio de monto** (`B/19` §4,
+  fila 7-bis).
+
+> ⚠️ **Tres cosas que esta corrección no cierra, declaradas.** **Una**: con dos promos apiladas
+> (§1.2), *«precio completo»* al agotarse una debería leerse como *«el monto sin ésta»*; este § no
+> lo escribe. **Dos**: si la mutación no se aplica, el barrido la ve por **`DIVERGENCIA_DE_MONTO`**
+> (`B/09` §3) **sólo si el monto vigente de nuestra base ya refleja el contador en 0**, y cómo se
+> deriva ese monto no está escrito acá. **Tres**: sobre una fila `PAUSED` el proveedor rechaza toda
+> modificación (`EX-11`), y qué pasa si una pausa entra entre el cobro y la mutación no está
+> escrito. La transición que ejecuta la restitución es de `B/03`, por la regla 1 del núcleo.
 
 ---
 
@@ -218,7 +259,8 @@ Y no hay pérdida, porque **no hay cobro que descontar**: mientras corre la cort
 nada. Entonces:
 
 **el descuento se suspende con la cortesía y se reanuda al volver, con su contador intacto** —
-ningún cobro ocurrió, así que ningún cobro se consumió.
+ningún cobro ocurrió, así que ningún cobro se consumió. Y no hace falta una regla para eso: el
+contador —`cobros_restantes`— sólo se decrementa con un cobro confirmado (§2.4).
 
 ### 4.3 Cortesía temporal + grant permanente
 

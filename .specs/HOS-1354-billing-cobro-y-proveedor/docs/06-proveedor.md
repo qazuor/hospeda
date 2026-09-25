@@ -111,6 +111,25 @@ el límite duro de la directriz de `DEC-MP-005`: **un permiso comercial no se co
 cargo puntual queda declarado como destino, con la habilitación de *«pagos automáticos»* pedida en
 paralelo, y la interfaz de este capítulo **no puede impedir esa migración**.
 
+### 3.2 Lo que sí se usa sin preapproval: el cobro de ÚNICA VEZ por `/v1/orders`
+
+> **Corrección de diseño, FASE 8 completa, `F-8CB1-008`.** Este capítulo sólo tenía contrato para
+> `preapproval`, y el addon de cobro `UNA_VEZ` (`B/16` §1.2) no pasa por uno.
+
+**El mismo endpoint que el §3.1 cierra para lo recurrente sirve para lo único.** La matriz lo deja
+escrito en su cabecera —*«el cobro de ÚNICA VEZ por `/v1/orders` funciona sin ninguna habilitación
+especial, así que un addon one-time no necesita pasar por `preapproval`»*— y `EX-30` lo midió: una
+orden con tarjeta tokenizada y sin `customer` devolvió `201` y la relectura dijo
+`processed/accredited`. **Es el camino del addon `UNA_VEZ`** (`B/16` §1.4), y su pago se registra
+colgando de la instancia (`B/02` §2.3).
+
+**Lo que NO está medido, y por eso no se afirma:**
+
+- **la idempotencia de `/v1/orders`**: ninguna fila la mide, y la regla del §4.6 punto 1 prohíbe
+  razonarla desde otro endpoint —*«la idempotencia de este proveedor es POR ENDPOINT»*—. **Queda
+  pendiente de sonda**;
+- **su comportamiento en producción**: `EX-30` es de sandbox.
+
 ---
 
 ## 4. Las cinco reglas duras de trato con este proveedor
@@ -135,7 +154,9 @@ válido**, el cliente no se suscribe, y no hay ningún error de nuestro lado. Se
 mostrarlo, **con un guard estático** — porque es un call site que cualquiera vuelve a escribir
 «bien» copiando lo que la API devuelve.
 
-Y con `DEC-ADDON-002` deja de ser un call site: **cada contratación de addon necesita uno**.
+Y con `DEC-ADDON-002` deja de ser un call site: **cada contratación de addon ~~necesita uno~~
+recurrente necesita uno** —la de única vez no crea preapproval: va por `/v1/orders` (§3.2,
+corrección de diseño, FASE 8 completa, `F-8CB1-008`)—.
 
 ### 4.3 Nunca se le pide un trial
 
@@ -422,3 +443,6 @@ tres, suspendemos a alguien que iba a pagar bien.
   arrastra `RF-3`: `DEC-RF-007` sacó del alcance la operación que esa fila medía.
 - **La conciliación** es del capítulo 09.
 - **Los correos que el proveedor manda por su cuenta** son del capítulo 07.
+- **La idempotencia de `/v1/orders`**, el camino del addon de única vez (§3.2), **no está medida**
+  y queda pendiente de sonda (corrección de diseño, FASE 8 completa, `F-8CB1-008`). No figura en la
+  tabla del §11 porque ésa cuenta filas `UNKNOWN` de la matriz, y **esta pregunta no tiene fila**.

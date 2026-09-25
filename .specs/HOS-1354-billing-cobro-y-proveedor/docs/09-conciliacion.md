@@ -368,7 +368,11 @@ su único dueño.
 > addon de scope `LISTING`,
 > `USER` o `GLOBAL` cuyo título era un grant: su objetivo es una ficha o una cuenta que **siguen
 > existiendo**, así que la condición de orfandad **no se cumple nunca** y una comprobación
-> escrita sólo sobre el objetivo no encuentra a nadie. Es la misma delegación: el predicado de la
+> escrita sólo sobre el objetivo no encuentra a nadie. **Desde la FASE 8 completa, para
+> `LISTING` esto vale sólo cuando el dueño no tiene fila principal en esa vertical**
+> (`F-8CA2-003`, owner 2026-09-25): su orfandad remite ahora a la condición de
+> `VERTICAL_SUBSCRIPTION` sobre la principal de la vertical de la ficha (`B/16` §4.2), así que la
+> primera mitad de esta comprobación también lo ve — sin cambiar el enunciado, que delega. Es la misma delegación: el predicado de la
 > tercera cláusula vive en `B/03` §8, no acá. **Y se lee igual de barata con el enunciado nuevo**:
 > que el grant del ancla siga vivo es un dato de nuestra base **desde que es una columna**
 > —`permanent_grant.revocado_en`, `B/02` §2.4—, así que la comprobación sigue costando **cero
@@ -662,3 +666,10 @@ ninguno escribe salvo la reparación de vínculo del §2.4.
   eso pase. Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`; ninguna bloquea este capítulo. El número que
   quedaba —cuántas corridas espera el barrido un cobro *«todavía no se sabe»*— **lo fijó el owner el
   mismo día: una** (§6.2).
+- **El pago del addon de única vez no está en el inventario de este capítulo** (corrección de
+  diseño, FASE 8 completa, `F-8CB1-008`). Se cobra por `/v1/orders`, sin preapproval (`B/16` §1.4),
+  y su `payment` cuelga de la instancia y no de una suscripción (`B/02` §2.3): el §2.1 arma el
+  inventario de suscripciones, el §2.2 detecta huérfanas por *«un preapproval desconocido»* y el §4
+  lee `authorized_payments`, así que **ninguna de las tres partes lo alcanza**. Cómo se concilia una
+  orden —y dónde se anota una divergencia sobre ella, si la marca cuelga de una suscripción— **no
+  está escrito**.

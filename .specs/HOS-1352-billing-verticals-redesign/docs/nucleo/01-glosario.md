@@ -414,7 +414,7 @@ detecta comparando contra los seis.
 | 2 | el **`desde` de `S17`** | cap. 03 (billing) §3.2 | *«la predecesora, si sigue siendo fila viva»* — las cinco alcanzables |
 | 3 | la **condición de cierre de `S18`** | cap. 03 (billing) §3.2 | *«la predecesora ya no es fila viva»* |
 | 4 | el **`desde` de `S18`** | cap. 03 (billing) §3.2 | la **sucesora viva**: `ACTIVE`, o `PENDING_AUTHORIZATION` si la predecesora murió sola |
-| 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* |
+| 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* — **desde la FASE 8 completa la lee también la fila `LISTING`**, que remite a este mismo predicado sobre la principal de la vertical de la ficha en vez de reescribirlo (`F-8CA2-003`, owner 2026-09-25): el consumidor es el mismo, no uno nuevo |
 | 6 | la **condición 3 del pago tardío** | cap. 05 (billing) §3 | *«no hay otra fila viva principal del mismo `user + vertical`»* — las seis, `PENDING_AUTHORIZATION` incluido |
 | 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V, **ni una fila viva DE COMPLEMENTO de un addon compatible con V** si el grant lleva `includesAddons: true`»* — el detector de la ejecución parcial de `S13` **y de `S20`**, que corren en el mismo acto. Las dos mitades enumeran **los seis**: las dos filas son suscripciones. **Y el *«ancla viva»* de su predicado es el OTRO término**, con su propio inventario (más abajo): este comentario enumeraba los dos *«vivos»* que sabía nombrar y dejaba el tercero pasar dentro de la misma frase |
 | 18 | el **`desde` de `A5`** | cap. 03 (billing) §8 | *«toda instancia con una autorización que puede cobrar»* — es el **único consumidor cuyo sujeto es SÓLO una instancia de addon** —el 19 la nombra también, pero junto con una suscripción—, así que su enumeración es la de **dos**, no la de seis. Decía `ACTIVE` y nada más, y la mitad que faltaba —`PENDING_AUTHORIZATION`— es la ventana de autorización por la que un complemento nacía cobrando sobre un título ya muerto |
@@ -431,7 +431,7 @@ limpia `sucede_a` cuando la sucesora se muere (`B/02` §2.2, cuarto estado de la
 | 8 | la **condición de `S19`** | cap. 03 (billing) §3.2 | ídem — y es el que entró sin el adjetivo |
 | 9 | la **tabla de los cuatro estados de la relación** | cap. 03 (billing) §3.2 | qué candado ocupa cada uno |
 | 10 | la **salvedad de la fila `authorized × GRACE_PERIOD·SUSPENDED`** | cap. 03 (billing) §10.1 | si marcar es un falso positivo |
-| 11 | la **segunda mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«y no hay una fila viva con `sucede_a` apuntándola»* — el único que lo escribió bien desde el principio |
+| 11 | la **segunda mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«y no hay una fila viva con `sucede_a` apuntándola»* — el único que lo escribió bien desde el principio — **desde la FASE 8 completa la lee también la fila `LISTING`**, que remite a este mismo predicado sobre la principal de la vertical de la ficha en vez de reescribirlo (`F-8CA2-003`, owner 2026-09-25): el consumidor es el mismo, no uno nuevo |
 | 12 | la **segunda mitad de la condición 3** | cap. 05 (billing) §3 | *«una sucesora viva que ya autorizó»* |
 | 13 | el **sujeto de la regla de `B/12` §5.3** | cap. 12 (billing) §5.3 | *«la predecesora de una sucesión en curso»* |
 | 14 | **`G-R1-D`** | cap. 20 (billing) §2 | el mismo predicado, como guard |
@@ -482,7 +482,7 @@ mitad de `G-R1-E` (`B/20` §2).
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
 | 1 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«si un beneficiario tiene un **ancla viva** en la vertical V y además una fila viva principal suya en V —o una de complemento compatible, con `includesAddons: true`— el fan-out no terminó de correr»* |
-| 2 | la **tercera mitad de la condición de orfandad** | cap. 16 (billing) §4.2 | *«ningún grant permanente la releva: no hay en esa vertical **un grant vivo** que valga como título»* — nombra el instrumento y **pregunta por una vertical**, así que el conjunto que evalúa es el del ancla |
+| 2 | la **tercera mitad de la condición de orfandad** | cap. 16 (billing) §4.2 | *«ningún grant permanente la releva: no hay en esa vertical **un grant vivo** que valga como título»* — nombra el instrumento y **pregunta por una vertical**, así que el conjunto que evalúa es el del ancla — **desde la FASE 8 completa la lee también la fila `LISTING`**, que remite a este mismo predicado sobre la principal de la vertical de la ficha en vez de reescribirlo (`F-8CA2-003`, owner 2026-09-25): el consumidor es el mismo, no uno nuevo |
 | 3 | la **excepción del §2.4 de addons** | cap. 16 (billing) §2.4 | *«un grant permanente vale como título en lugar de la suscripción `ACTIVE`»*, y **vale sólo donde el grant ancló** (§4.2): sin ancla viva en esa vertical no hay título |
 | 4 | la **incompatibilidad cortesía × grant** | cap. 14 (billing) §4.3 | *«sobre un grant no se otorga cortesía»* — el predicado es *«hay un **ancla viva** en la vertical de esa suscripción»*, porque lo que lo justifica es que no quede obligación de pago, y sobre un grant **revocado** sí queda |
 
