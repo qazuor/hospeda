@@ -270,7 +270,8 @@ afirmación sobre el reloj y no el efecto de nada: el hecho 4 tenía **de dónde
    owner 2026-09-25). **Así que el 5 tiene ahora el mismo alcance que el barrido sobre cada dueño
    que ese día pierde la cobertura**: los dos escriben el mismo instante en todas sus fichas. El
    barrido sigue siendo el único que alcanza al dueño que ese día **ya** estaba sin cobertura —ahí
-   no ocurre ningún 5— y el único que no depende del aviso. Los dos actos corren el mismo día y son
+   no ocurre ningún 5— y el único que no depende del aviso **para escribir ese día**: sin aviso, el 5
+   lo escribe el reconciliador diario de cobertura al día siguiente (`V/03` §9, `DEC-ARCH-009`). Los dos actos corren el mismo día y son
    actos distintos.
 2. **Y no es un escritor de más.** Es el **hecho 4** de la lista cerrada del `NUCLEO/01` §1.2, así
    que `G-R6-B` mitad *(a)* lo acepta por la lista: lo que esa lista cierra son los hechos, y cada

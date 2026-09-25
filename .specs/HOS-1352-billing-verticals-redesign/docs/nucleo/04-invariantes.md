@@ -166,8 +166,10 @@ estaba abajo —el excedente de un dueño cubierto, el borrador— se lo escribe
 aviso despierta, sin pasar por `PB2`. **Por eso ahora alcanza**: la desigualdad que `D16` compara
 parte del primer día de la pausa, y ese día es el valor de la columna en **todas** las fichas que
 el borrado puede tocar, no sólo en la publicada. Lo que sigue sin cubrir no es de alcance sino de
-disparo —si el aviso de la caída se pierde, nadie escribe el hecho 5— y está en el ⚠️ del cap. 01
-§1.2, puntos 2 y 3.
+disparo —si el aviso de la caída se pierde, ~~nadie escribe el hecho 5~~ **lo escribe el
+reconciliador diario de cobertura al día siguiente, salvo al dueño que sólo tiene borradores**
+(`DEC-ARCH-009`; `V/03` §9)— y está en el ⚠️ del cap. 01 §1.2, puntos 2 y 3. **El día de atraso no
+rompe `D16`**: corre el arranque del reloj hacia adelante, que aleja el borrado.
 
 **Y `D16` tiene un alcance exacto que conviene no estirar: compara dos cifras de CATÁLOGO, no el
 tiempo que una fila lleva pausada.** El arreglo de `F-8cC1-001` descansa sobre **dos** premisas

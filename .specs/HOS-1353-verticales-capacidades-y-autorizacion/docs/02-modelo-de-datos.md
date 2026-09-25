@@ -314,7 +314,8 @@ cinco» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son t
 publicación y el cuarto es de la otra épica~~ tres de los cinco hechos no son transiciones de
 publicación —el 1, el 2 y el 4, y a éste lo ejecuta la otra épica— (FASE 8 completa, `F-8CA2-001`,
 owner 2026-09-25), **y el 5 lo es sólo a medias**: sobre la ficha publicada lo ejecuta `PB2`, y
-sobre las que no lo estaban el recálculo que el aviso despierta, que no es una transición (FASE 8
+sobre las que no lo estaban el recálculo que el aviso despierta —o, si el aviso se perdió, el
+reconciliador diario de cobertura (cap. 03 §9, `DEC-ARCH-009`)—, que no son transiciones (FASE 8
 completa, owner 2026-09-25). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
 programa** no puede ser un valor que nadie guarda.
 
@@ -344,10 +345,12 @@ segunda fuente.
 
 **Se escribe en los ~~cuatro~~ cinco HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
 crezca.** Lo que la lista cierra es **de qué hechos** puede ser una escritura, nunca **quién** la
-hace: el hecho 2 tiene **tres** ejecutores —el recálculo que el aviso despierta, la relectura de
-`PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4)— y los tres escriben el mismo hecho;
-**y el 5 tiene dos** —la primera rama de `PB2` sobre la publicada y el recálculo sobre las demás
-(FASE 8 completa, owner 2026-09-25)—.
+hace: el hecho 2 tiene ~~**tres**~~ **cuatro** ejecutores —el recálculo que el aviso despierta, la relectura de
+`PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4), **y el reconciliador diario de
+cobertura** (cap. 03 §9, `DEC-ARCH-009`)— y los ~~tres~~ **cuatro** escriben el mismo hecho;
+**y el 5 tiene ~~dos~~ tres** —la primera rama de `PB2` sobre la publicada y el recálculo sobre las demás
+(FASE 8 completa, owner 2026-09-25), **y el reconciliador diario sobre las demás cuando el aviso se
+perdió**, en el mismo acto en que corre `PB2` (`DEC-ARCH-009`, owner 2026-09-25)—.
 Confundir las dos preguntas es lo que ponía a `G-R6-B` en rojo sobre la red y no sobre el defecto
 (cap. 01 §1.2, núcleo).
 
@@ -357,9 +360,9 @@ el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las colum
 **lee** contra las que alguna transición **escribe**, y de estos ~~cuatro hechos **uno solo es una
 transición**, así que queda verde por ése~~ ~~cinco hechos **dos son transiciones** —el 3 y el 5—, así
 que queda verde por cualquiera de ellos~~ cinco hechos **el 3 es una transición y el 5 lo es a
-medias** —`PB2` sobre la publicada, el recálculo sobre las demás (FASE 8 completa, owner
-2026-09-25)—, así que queda verde por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni
-al recálculo que ejecuta el 5** — está dicho en el cap. 20 §2 y
+medias** —`PB2` sobre la publicada, el recálculo **o el reconciliador diario** sobre las demás (FASE 8 completa, owner
+2026-09-25; `DEC-ARCH-009`)—, así que queda verde por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni
+a los dos ejecutores del 5 que no son transición** — está dicho en el cap. 20 §2 y
 es el motivo entero de que exista `G-R6-B`.
 
 **Y la leen ~~cinco~~ SEIS consumidores, y esta lista también es cerrada** (recontada en la FASE 8
@@ -391,7 +394,12 @@ cifra del log queda por corregir en el log.)*
 
 **Y el hecho 5 no le agrega un lector**: `PB2` **escribe** la columna en su primera rama y no la
 lee (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), **y el recálculo que lo escribe en las no
-publicadas tampoco**: lee `cubierto`, no el reloj (owner 2026-09-25). **Tampoco la escritura `C` del corte**, que
+publicadas tampoco**: lee `cubierto`, no el reloj (owner 2026-09-25). **Ni el reconciliador diario
+de cobertura**, que escribe el 2 y el 5 comparando el estado de las fichas con `cubierto` y el cupo,
+nunca con esta columna (cap. 03 §9, `DEC-ARCH-009`): **los lectores siguen siendo seis**. **Y los dos
+avisos previos de retención, que ya eran los lectores (4) y (5), no cambian de lista** por releer
+además `cubierto` antes de salir (FASE 8 completa, `F-8CA2-015`, owner 2026-09-25; cap. 07 §6,
+núcleo): esa relectura lee la cobertura, no esta columna. **Tampoco la escritura `C` del corte**, que
 no lee nada: pone el valor de arranque.
 
 **Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
@@ -446,8 +454,9 @@ Invalidan la entrada de un `user + vertical`:
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
 | **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope |
 | **se publica una versión nueva de ~~un `addon_version`~~ un `addon`** (su madre desde la FASE 8 completa, `F-8CA3-011`, §2.1) | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
+| **el reconciliador diario de cobertura encuentra una diferencia y corre una transición** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25) | es la red del aviso perdido y de la fuente con `hasta: fecha` que vence sin transición (`12-contrato…` §2.6): **ninguna de las filas de arriba ocurrió**, así que sin ésta la entrada seguía otorgando lo que el contrato ya no emite (FASE 8 completa, `F-8CA1-007`, `F-8CC1-009`). Invalida **sólo** cuando encuentra la diferencia; la fecha que vence sin producir ninguna queda declarada en el ⚠️ de ese § |
 
-**Las cuatro últimas son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
+**Las cuatro ~~últimas~~ en negrita anteriores a la del reconciliador diario son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
 escribió cuando toda fuente colgaba de una suscripción o de un trial, y **las cuatro nuevas no
 cuelgan de ninguno**. El caso más caro está medido contra el propio capítulo, que declara que un
 error acá *«es de seguridad y no de rendimiento»*: **si a la versión de piso se le sembró una clave
@@ -606,15 +615,17 @@ sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009
    **y con el reloj del día 180 corriendo**, que es el mismo desenlace que la regla 3 viene a
    evitar.
 
-   **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en TRES momentos, no en
+   **El reinicio es una escritura en `inactiva_desde` (§2.5) y se ejecuta en ~~TRES~~ CUATRO momentos, no en
    uno**: cuando el recálculo que el aviso despierta vuelve a preguntar y trae `cubierto`
-   verdadero; —como red— cuando `PB4` o `PB5` releen antes de archivar (cap. 03 §9); y —como última
+   verdadero; **—sin aviso— cuando el reconciliador diario de cobertura encuentra la vuelta y corre
+   `PB3`/`PB7`** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25); —como red— cuando `PB4` o `PB5` releen antes de archivar (cap. 03 §9); y —como última
    red— **cuando el hard delete del día 180 relee antes de borrar** (cap. 01 §1.2, núcleo). Los
-   tres preguntan; **ninguno de los tres le cree al aviso** (`12-contrato…` §3).
+   ~~tres~~ cuatro preguntan; **ninguno de los ~~tres~~ cuatro le cree al aviso** (`12-contrato…` §3).
 
-   **El tercero es el que no puede faltar, y este renglón decía «dos» hasta esta pasada.** Los tres
-   momentos son la misma red aplicada a los tres actos que el reloj gobierna, y **el único
-   irreversible es el tercero**: si el aviso se pierde y el recálculo no corre, el día 90 archiva
+   **El ~~tercero~~ último es el que no puede faltar, y este renglón decía «dos» hasta esta pasada.** ~~Los tres
+   momentos son~~ **Las dos relecturas son** la misma red aplicada a los tres actos que el reloj gobierna —`PB4`,
+   `PB5` y el día 180; el reconciliador no es uno de esos actos: no avanza sobre el reloj, restituye—, y **el único
+   irreversible es el ~~tercero~~ del día 180**: si el aviso se pierde y el recálculo no corre, el día 90 archiva
    —recuperable con `PB8`— pero el día 180 **borra el contenido publicable de un cliente que está
    pagando**, y no hay `PB8` que traiga de vuelta lo que ya no está. Decir *«dos momentos, no en
    uno»* dejaba la red sobre los dos actos baratos y la sacaba del caro, que es el orden exacto al

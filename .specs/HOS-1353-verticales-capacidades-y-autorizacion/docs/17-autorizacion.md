@@ -273,6 +273,31 @@ bajo mientras la propiedad se compruebe y medio si nadie la comprueba. La altern
 —que cada transición del reloj resuelva por su cuenta— es exactamente cómo se generan las
 exenciones por ruta: cada job inventando su propia respuesta al paso 5.
 
+**Y las transiciones del sistema que dispara un EVENTO no son de esta clase, y se declaran acá**
+(FASE 8 completa, `F-8CA1-009`, owner 2026-09-25). Son **`PB2`, `PB3` y `PB7`** (cap. 03 §9), **el
+reconciliador de excedentes** (cap. 15 §4.2) y **el reconciliador diario de cobertura** (cap. 03
+§9, `DEC-ARCH-009`) cuando las corre: su actor es el sistema, pero su evento es un cambio de
+cobertura o de cupo, no el paso del tiempo —`PB7` lo dice de sí misma en el cap. 03 §9, y el
+reconciliador diario corre por calendario pero no cambia el evento de ninguna—.
+
+> **En ellas los pasos 5, 6 y 7 se evalúan sobre el SUJETO, que es el dueño de la ficha, con el
+> sistema como actor.** Es la regla general del §3.2 —*«los pasos 5, 6 y 7 se evalúan sobre el
+> sujeto»*— sin caer en ninguna de las dos excepciones: las doce acciones del cap. 08 §3 y la clase
+> del reloj de este §.
+
+**No es una clase nueva: es declarar que no están en ninguna de las dos excepciones**, que es lo
+que la regla 3 del §3.2 exige hacer por escrito. Y es la lectura que las filas ya pedían: `PB3` y
+`PB7` publican *«y el cupo alcanza»*, y el cupo es del dueño. Evaluado sobre el actor —la analogía
+con el reloj, que era la única disponible—, el paso 7 miraba el cupo de un actor que no tiene
+ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorga»* no las alcanza**:
+`PB3` y `PB7` otorgan, y por eso mismo su paso 7 se evalúa sobre quien paga el cupo.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: la regla 1 del §3.2 exige, cuando
+> `actor ≠ sujeto`, **un permiso de esa acción concreta**, y está escrita para una persona. Cómo lo
+> cumple un actor de sistema —en esta clase y en la del reloj, que tienen el mismo `actor ≠
+> sujeto`— no está escrito. No da acceso a ninguna persona: el §3.3 ya le prohíbe al sistema las
+> doce acciones del cap. 08 §3.
+
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
 El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las **12

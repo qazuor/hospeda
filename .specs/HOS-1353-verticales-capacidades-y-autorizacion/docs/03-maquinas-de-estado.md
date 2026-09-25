@@ -327,7 +327,9 @@ la cobertura al contrato**: si el `user + vertical` está cubierto, no archivan 
 reloj** escribiendo `listing.inactiva_desde` (cap. 02 §2.5, hecho 2 del cap. 01 §1.2, núcleo). Un
 aviso perdido pasa así a costar un retraso en el reinicio y nunca un archivado indebido — y que
 estos avisos se pierden lo declara el propio diseño en el otro consumidor de la misma lista
-(cap. 02 §3.2, regla 2).
+(cap. 02 §3.2, regla 2). **La relectura no restituye**: si el aviso perdido era el de la vuelta, la
+ficha que está abajo la republica **el reconciliador diario de cobertura** (final de este §;
+`DEC-ARCH-009`), no `PB4`.
 
 ~~**Y son dos filas porque esta máquina tiene dos, no porque los actores del reloj sean dos: el
 tercero está afuera y es el que más caro sale.** *«Las dos»* de este párrafo cuantifica **las filas
@@ -538,8 +540,11 @@ archivaba el día 5 de la pausa y se borraba el día 95. ~~**Vale para la ficha 
 cuando la pausa empezó**; la que ya estaba abajo no pasa por `PB2` y queda abierta en el cap. 01
 §1.2 (núcleo).~~ **Vale para toda ficha del dueño en esa vertical** (FASE 8 completa, owner
 2026-09-25): la que ya estaba abajo —el borrador, la excedente— no pasa por `PB2`, y el mismo
-instante se lo escribe el recálculo que el aviso despierta (cap. 01 §1.2, núcleo, hecho 5). Lo que
-queda abierto allá es el disparo —el aviso perdido y el aviso repetido—, no el alcance.
+instante se lo escribe el recálculo que el aviso despierta (cap. 01 §1.2, núcleo, hecho 5). ~~Lo que
+queda abierto allá es el disparo —el aviso perdido y el aviso repetido—, no el alcance.~~ **El
+aviso perdido tiene red desde `DEC-ARCH-009`**: el reconciliador diario de cobertura (abajo) corre
+`PB2` y escribe el hecho 5 hasta un día después, salvo para el dueño que sólo tiene borradores. Lo
+que queda allá es el aviso repetido, que el owner aceptó, no el alcance.
 
 **Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
 esta misma tanda:**
@@ -567,6 +572,118 @@ Una ficha publicada y cubierta no acumula inactividad, así que esa mitad sólo 
 que quedó **publicada sin cobertura** — el caso que `DEC-MIG-004` mide como defecto 1, *«`PB2` no
 dispara la mañana del corte y la cartera queda publicada sin cobertura»*. Es la red, y por eso se
 queda.
+
+### El reconciliador diario de cobertura: el aviso es rápido, el reconciliador es la red
+
+`DEC-ARCH-009` (owner 2026-09-25; FASE 8 completa, racimo `R10`: `F-8CA2-002`, `F-8CC1-005`,
+`F-8CA1-007`, `F-8CC1-009`).
+
+**Vive acá y no en el cap. 15 §4, y la razón es qué ejecuta.** Lo que hace es correr `PB2`, `PB3` y
+`PB7`, que son filas de esta tabla, y escribir `listing.inactiva_desde` e invalidar el caché, que
+son del cap. 02 §2.5 y §3.2. El cap. 15 §4.2 define **el reconciliador de excedentes**, que se
+dispara por el recálculo del conjunto efectivo y **sólo** por él; ponerle al lado una pieza que se
+dispara por calendario y que hace además la primera rama de las tres transiciones confundiría dos
+piezas que el corpus ya nombra *«el reconciliador»* con un solo sentido. Por eso éste lleva nombre
+propio —**el reconciliador diario de cobertura**— y lo construye **V6**, la unidad de esta tabla
+(`descomposicion.md` §2).
+
+**Qué agujero tapa.** El aviso *«la cobertura de (user, vertical) cambió»* (`12-contrato…` §3) es
+lo único que billing le empuja a verticales y no tiene transporte durable. Tres cosas quedaban sin
+red: **(1)** si se perdía el aviso de que la cobertura **volvió**, `PB3`/`PB7` no disparaban, `PB4`
+releía, encontraba al dueño cubierto y **reiniciaba el reloj sin republicar**, y el dueño no tiene
+transición propia para salir de `UNPUBLISHED_BY_BILLING` —`PB1` sale sólo de `DRAFT`—: pagaba y
+sus fichas no se veían, sin límite (`F-8CA2-002`, `F-8CC1-005`); **(2)** una fuente con `hasta:
+fecha` que deja de emitirse porque la fecha pasó **no es una transición**, así que no produce aviso
+ni invalida el caché (`F-8CA1-007`, `F-8CC1-009`); **(3)** si se perdía el aviso de la caída, nadie
+escribía el hecho 5 del cap. 01 §1.2 (núcleo).
+
+> **Una vez por día, el reconciliador le pregunta al contrato por cada dueño de la población, lo
+> compara con el estado de sus fichas y, si no coinciden, corre la transición que el aviso habría
+> disparado.** Tapa los tres agujeros sin importar por qué hay diferencia —aviso perdido, fecha
+> vencida o un camino que nadie previó—, porque se apoya en la pregunta y no en un mensaje.
+
+**La población**: todo `user + vertical` con al menos una ficha que **no** esté en `DRAFT` ni en
+`PURGED` —o sea, en `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED`—. `DRAFT` queda afuera
+porque ninguna transición del sistema lo publica (`PB1` es un acto del dueño); `PURGED`, porque es
+final.
+
+**La pregunta** es la del `12-contrato…` §2.1: `cubierto`, y el cupo que el cap. 15 resuelve sobre
+`fuentes`. **Se hace en vivo y nunca contra el caché**: el caché es justamente lo que puede estar
+viejo (`F-8CA1-007`).
+
+**Qué compara, y qué corre en cada diferencia:**
+
+| lo que encuentra | qué corre | qué escribe en `listing.inactiva_desde` |
+|---|---|---|
+| `cubierto` **falso** y al menos una ficha en `PUBLISHED` | **`PB2`, primera rama**, sobre cada ficha publicada | el **hecho 5**: `PB2` sobre la publicada, y el reconciliador sobre las demás fichas del dueño en la vertical, **en el mismo acto** |
+| `cubierto` **verdadero**, menos fichas en `PUBLISHED` que el cupo, y candidatas en `UNPUBLISHED_BY_BILLING` o en `ARCHIVED` con el origen que `PB7` exige | **`PB3`** / **`PB7`**, por la rama que corresponda, con el criterio de *«cuáles vuelven»* de arriba | el **hecho 2**, en todas las fichas del dueño en la vertical; la que vuelve a `PUBLISHED` recibe además el **hecho 3**, que es de la propia transición |
+| `cubierto` **verdadero** y más fichas en `PUBLISHED` que el cupo | **`PB2`, segunda rama** (el excedente) | **nada**: la cobertura sigue verdadera y esa rama no es ningún hecho (cap. 01 §1.2, núcleo) |
+| ninguna de las tres | nada | nada |
+
+Y cuando corre algo, **invalida la entrada del caché de ese `user + vertical`** (cap. 02 §3.2).
+
+**Es un ejecutor adicional, y la distinción entre hecho y ejecutor es lo que hace que no mueva
+nada más.**
+
+- **De las transiciones.** `PB2`, `PB3` y `PB7` no ganan filas ni cambian su evento: el de la
+  primera rama de cada una sigue siendo **el cambio** de `cubierto` (el ⚠️ del cap. 01 §1.2,
+  núcleo), y la diferencia que el reconciliador encuentra —una ficha publicada sin cobertura, o
+  abajo con cobertura y cupo— es **la huella de un cambio que no se entregó**. Así que `G-R4` no
+  gana ningún par. **Y no son de la clase del reloj** (cap. 17 §3.4), aunque el reconciliador corra
+  por calendario: el calendario decide **cuándo mira**, no cuál es el evento. Las de esa clase son
+  las que tienen **al tiempo como evento** —`T3`, `PB4`, `PB5` y `PB9`—, así que `G-R3-B`, que
+  lee las tablas, no ve ninguna transición nueva que otorgue. Sobre quién se evalúan los pasos 5–7
+  cuando las corre él lo declara el cap. 17 §3.4.
+- **De los hechos del reloj.** Escribe el **2** y el **5** del cap. 01 §1.2 (núcleo) y **ningún
+  hecho nuevo**: la lista sigue en cinco, más la escritura `C` del corte, y `G-R6-B` mitad *(a)* lo
+  admite por la lista. Lo que crece es la cuenta de ejecutores: el **2** pasa a tener **cuatro** y
+  el **5**, **tres** (cap. 02 §2.5). **No lee `listing.inactiva_desde`** —compara estados de ficha,
+  no el reloj—, así que los **seis** lectores del cap. 02 §2.5 no se mueven, y la mitad *(b)* no
+  tiene nada que objetar. `G-R6` tampoco: el reconciliador no es una transición y no agrega ninguna
+  condición que lea una columna.
+- **De «fila viva»** (`NUCLEO/01` §2.4). No es consumidor: le pregunta al contrato y **nunca lee una
+  fila de billing**, que es donde viven todos los consumidores de ese inventario.
+
+**Por qué el hecho 5 se escribe sólo junto con `PB2`, y no cada vez que lee `cubierto` falso.** La
+ficha publicada **es** la memoria de que antes había cobertura: `PB2` la encuentra una sola vez, la
+baja, y al día siguiente ya no hay diferencia. Sobre una ficha que ya estaba abajo no hay estado
+que lo recuerde, y escribir el hecho 5 cada vez que la relectura trae falso **correría el reloj
+todos los días**: ninguna ficha de un dueño sin cobertura llegaría nunca al archivado ni al día
+180. Es el goteo que el ⚠️ punto 3 del cap. 01 §1.2 (núcleo) acepta que no ocurre porque los
+avisos son los de un cambio; con un disparo diario ocurriría, así que la regla de la tabla es la
+que lo impide.
+
+**El vigía es el del barrido de billing** (`B/09` §7.1): el mismo monitor de cron externo, con la
+misma regla —el reconciliador le hace ping al terminar una corrida completa y el monitor alerta si
+pasan 26 h sin ping—. Si el reconciliador no corre, las tres redes se apagan a la vez y en
+silencio, que es el mismo modo de falla que ese § le reprocha al barrido. Lo que ese § deja abierto
+del vigía —la elección concreta, si el plan contratado lo incluye y por qué canal llega la alerta—
+vale igual acá.
+
+**El costo aceptado es de `DEC-ARCH-009`: hasta un día de atraso** en todo lo que el aviso no
+cubrió. El instante que escribe es el de la corrida y no el del cambio, así que en el reloj el
+atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
+
+> ⚠️ **Lo que el reconciliador NO cierra** (declarado con su causa por `DEC-METH-015`; ninguno
+> mueve plata en el camino principal, da acceso indebido en él ni borra datos):
+>
+> 1. **El dueño que sólo tiene borradores está fuera de la población.** Si se pierde el aviso de
+>    su caída, nadie le escribe el hecho 5 a sus fichas en `DRAFT`: no hay ficha publicada que
+>    delate la diferencia. Su red sigue siendo la relectura de `PB5` y la de `PB9` sobre el reloj
+>    viejo, como antes de este §.
+> 2. **La fecha que vence sin transición se corrige sólo si produce una diferencia de fichas.** Si
+>    el dueño no tiene ninguna ficha publicada, o no está en la población, o la persona no tiene
+>    fichas, el reconciliador no encuentra nada y **no invalida**: la entrada del caché sigue
+>    otorgando hasta que corra el job atascado (`S12`, `T3` o el de un addon `DÍAS_FIJOS`) o
+>    venza la red de tiempo del cap. 02 §3.2. Pasa sólo cuando esa primera línea falla.
+> 3. **La máquina de trial no la corre.** `DEC-ARCH-009` nombra `PB2`, `PB3` y `PB7`. Si se pierde
+>    el aviso de un título que aparece durante el trial, `T2` no dispara y la persona tiene dos
+>    títulos —su plan y el del trial— hasta que `T3` vence el trial; si se pierde durante
+>    `TRIAL_EXPIRED`, `T5` no corta la campaña de recuperación.
+> 4. **No sabe por qué el cupo alcanza.** Si el dueño libera un lugar con `PB6`, al día siguiente
+>    encuentra candidatas y cupo y corre `PB3`/`PB7`. Es la letra de la segunda rama de las dos
+>    —*«el cupo vuelve a alcanzar sin que `cubierto` cambie»*— y el riesgo de republicar lo que el
+>    dueño no quería está aceptado por `DEC-DATA-003` (cap. 15 §4.4).
 
 ---
 

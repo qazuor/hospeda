@@ -103,7 +103,7 @@ que alguien pueda olvidar.**
 
 | campo | qué es | quién lo necesita |
 |---|---|---|
-| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2) |
+| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT` y `PURGED` (`V/03` §9, `DEC-ARCH-009`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
@@ -312,13 +312,27 @@ puede elegir qué decir:
 
 | valor | cuándo | qué tiene que entender el aviso |
 |---|---|---|
-| **`fecha`** | el fin ya está determinado: `CANCEL_SCHEDULED` con la fecha de `DEC-SUB-009`, fin de cortesía, vencimiento de un addon `DÍAS_FIJOS`, fin del trial | hay ventana, y es ésta |
+| **`fecha`** | el fin ya está determinado: `CANCEL_SCHEDULED` con la fecha de `DEC-SUB-009`, fin de cortesía, vencimiento de un addon `DÍAS_FIJOS`, fin del trial | ~~hay ventana, y es ésta~~ **esta fuente deja de emitirse ese día** —el fin de la **emisión**, no el de la cobertura: otra fuente puede tomar su lugar—; **si eso abre una ventana para elegir lo decide `V/15` §4.4**, que se la da al vencimiento de un addon y al fin de una cortesía, y no al fin del trial (FASE 8 completa, `F-8CC1-008`, owner 2026-09-25) |
 | **`NO_VENCE`** | grant permanente, título `BASE` | no hay ventana **porque no hay fin por calendario** — que no es lo mismo que *«no se apaga»*: un grant se apaga al revocarse, sin anticipación (§2.8) |
 | **`SIN_FECHA_CONOCIDA`** | suscripción `ACTIVE`, addon `MIENTRAS_VIVA_LA_SUSCRIPCIÓN` | no hay ventana **porque todavía no se sabe** |
 | **`SIN_EMPEZAR`** | la fuente de trial en `PRE_TRIAL` | no hay ventana **porque el reloj no arrancó** |
 
-`V/15` §4.4 reparte las ventanas exactamente por esa diferencia: *«vencimiento de un addon · fin de
-una cortesía»* tienen ventana; *«revocación de un grant»* no.
+`V/15` §4.4 reparte las ventanas ~~exactamente por esa diferencia~~ **sobre esa diferencia, pero no
+la copia**: *«vencimiento de un addon · fin de una cortesía»* tienen ventana; *«revocación de un
+grant»* no; **y *«fin del trial»* tampoco, aunque su `hasta` sea una `fecha`** —se aplica en el acto
+(`V/15` §4.4)—. Este renglón decía *«exactamente»* y ponía el fin del trial entre los que tienen
+ventana, y los dos documentos se contradecían; **manda `V/15` §4.4**, que es el consumidor que
+decide la ventana (§2.1, fila `hasta`), y es coherente con la máquina de trial, que agenda su propia
+campaña previa (`T1`) y aplica la pérdida en el acto (`T3`, `V/03` §2) (FASE 8 completa,
+`F-8CC1-008`, owner 2026-09-25).
+
+⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: la fuente `CORTESÍA` de una `PAUSED`
+por `COURTESY` tiene `hasta: fecha`, y **lo normal ese día es `S10`**, que vuelve a `ACTIVE` y
+emite `SUSCRIPCIÓN` **con la misma versión anclada** (`B/02` §2.4): no se pierde nada. Como el
+estado de la suscripción no cruza (§4), verticales no puede saberlo, y el aviso con ventana que
+`V/15` §4.4 le da al fin de una cortesía **anuncia una pérdida que en ese caso no ocurre**. Qué
+dice el aviso en ese caso no está escrito; no mueve plata, no da acceso y no borra nada
+(`F-8CC1-008`).
 
 > **El `hasta` es el fin de la emisión, no una etiqueta: una fuente con `hasta: fecha` deja de
 > aparecer en `fuentes` cuando esa fecha pasa.**
@@ -330,6 +344,15 @@ ruidosamente, regala, y que ningún aviso muestra porque el aviso sólo mira la 
 desenlace del trial que quedaba en `TRIAL_ACTIVE` sin salida alcanzable (`V/03` §2). La máquina que
 emite la fuente es la responsable de tener salida; este renglón es la segunda línea, para que un
 estado atascado se note como fuente que se apaga en vez de como capacidad que no se apaga nunca.
+
+**Y la segunda línea sólo la ve quien pregunta, así que tiene que haber quien pregunte** (FASE 8
+completa, `F-8CA1-007`, `F-8CC1-009`, owner 2026-09-25). Que la fecha pase **no es una
+transición**: no emite el aviso del §3 ni invalida el caché (`V/02` §3.2), y los consumidores que
+actúan —`PB2`, el caché y el reconciliador de excedentes— no se enteraban hasta que corriera el
+job atascado. **Lo que la lleva hasta ellos es el reconciliador diario de cobertura** (`V/03` §9,
+`DEC-ARCH-009`): pregunta en vivo una vez por día, encuentra `cubierto` falso contra fichas
+publicadas, corre `PB2` e invalida la entrada. Con un día de atraso, y **sólo si la fecha vencida
+produce una diferencia de fichas**; lo que no la produce queda declarado en el ⚠️ de ese §.
 
 #### Qué emite cada estado de la suscripción — los nueve, sin huecos
 
@@ -654,11 +677,27 @@ evento: la cobertura de (user, vertical) cambió
 ```
 
 Es lo único que billing le **empuja** a verticales. Lleva qué fuente cambió y en qué dirección, y
-alimenta **tres** cosas que ya existen en el diseño: la transición `PB2` de publicación, la lista de
+alimenta ~~**tres**~~ **cuatro** cosas que ya existen en el diseño: la transición `PB2` de publicación, la lista de
 invalidación del caché (cap. 02 §3.2) —que es la **misma lista** que dispara el reconciliador de
-excedentes (cap. 15 §4.2), *«una lista, dos consumidores»*— y **el reloj de inactividad**, cuyo
+excedentes (cap. 15 §4.2), *«una lista, dos consumidores»*—, **el reloj de inactividad**, cuyo
 hecho 2 es *«la cobertura se comprueba verdadera»* (`NUCLEO/01` §1.2) — un estado leído, no un
-cambio detectado, a diferencia del **evento** de `PB2`, `PB3` y `PB7`, que sí es un cambio.
+cambio detectado, a diferencia del **evento** de `PB2`, `PB3` y `PB7`, que sí es un cambio— **y la
+máquina de trial**, cuyos `T2` y `T5` disparan cuando aparece una fuente viva de clase `TÍTULO`
+(`V/03` §2 los ata a este mismo aviso). La cuarta faltaba, y quien implementara el emisor contra
+esta lista podía no despertar al trial: la persona se suscribía y quedaba con dos títulos hasta
+que el trial venciera (FASE 8 completa, `F-8CC1-011`, owner 2026-09-25).
+
+**El aviso es rápido; la red es el reconciliador diario de cobertura** (`DEC-ARCH-009`, owner
+2026-09-25; `V/03` §9). El aviso no tiene transporte durable —el outbox del núcleo es de correos—,
+así que **perderlo es un caso declarado, no un incidente**, y una vez por día verticales vuelve a
+preguntar por cada dueño con fichas fuera de `DRAFT` y `PURGED`, compara con el estado de sus
+fichas y, si no coinciden, corre la transición que el aviso habría disparado —`PB7`/`PB3`
+republican, `PB2` despublica—, escribe el reloj (hechos 2 y 5) e invalida el caché. **No es un
+quinto consumidor del aviso**: no lo escucha; es la pregunta del §2.1 hecha por calendario, y
+figura en esa fila. Cubre por igual el aviso perdido, la fecha que vence sin transición (§2.6) y
+cualquier camino que nadie previó, **con hasta un día de atraso**. Lo que no cubre —la máquina de
+trial, el dueño que sólo tiene borradores, el caché sin diferencia de fichas— está declarado en el
+⚠️ de ese §.
 
 **El evento no reemplaza la consulta.** El reconciliador *«no se dispara por evento: se dispara
 por condición»* (cap. 15 §4.2): el aviso dice que hay que recalcular, y el recálculo vuelve a
@@ -674,6 +713,10 @@ y el instante se escribe en `listing.inactiva_desde` (`V/02` §2.5). Y como un p
 dos filas de `V/03` §9 —`PB4` y `PB5`— **y el hard delete del día 180** (`V/02` §4.1 y §4.2 regla
 4), que no es una fila de ninguna máquina y es el único irreversible. El aviso perdido cuesta un
 retraso en el reinicio, jamás un archivado —ni un borrado— sobre alguien que ya volvió.
+**Y la relectura no restituye**: reinicia el reloj y deja la ficha donde está, así que hasta la
+FASE 8 completa el aviso perdido de la vuelta dejaba la ficha de un cliente que paga abajo para
+siempre. **La republica el reconciliador diario, al día siguiente** (`F-8CA2-002`, `F-8CC1-005`,
+`DEC-ARCH-009`).
 
 **Y desde la FASE 8 completa el reloj recibe del mismo evento un segundo hecho, y ése sí cuelga del
 cambio** (`F-8CA2-001`, owner 2026-09-25). Cuando `PB2` baja una ficha porque `cubierto` pasó a
@@ -684,11 +727,18 @@ que `PB2` no toca, se lo escribe **el recálculo que este mismo aviso despierta*
 (FASE 8 completa, owner 2026-09-25). No contradice la regla de arriba —`PB2` es una transición, y una transición se
 dispara por un cambio—, pero tiene la debilidad que la regla vino a tapar para el hecho 2: **si el
 aviso de la caída se pierde, ~~`PB2` no dispara y~~ ni `PB2` dispara ni el recálculo corre, y**
-nadie escribe el hecho 5, y no hay relectura que
-lo sostenga. **Y el recálculo tiene una segunda**: sobre una ficha no publicada no hay estado que
+~~nadie escribe el hecho 5, y no hay relectura que
+lo sostenga~~ **ese día nadie escribe el hecho 5. Lo escribe el reconciliador diario de cobertura
+al día siguiente** (`DEC-ARCH-009`, `V/03` §9): encuentra la ficha publicada sin cobertura, corre
+`PB2` y escribe el hecho 5 en todas las fichas del dueño en la vertical, en el mismo acto. **Queda
+sin red el dueño que sólo tiene borradores**, que no está en su población y no tiene ficha
+publicada que delate la diferencia (declarado en el ⚠️ de `V/03` §9). **Y el recálculo tiene una
+segunda**: sobre una ficha no publicada no hay estado que
 recuerde que antes había cobertura, así que distinguir la relectura en falso que sigue a la caída
-de la que sigue a un aviso repetido no está escrito. Las dos quedan abiertas en el `NUCLEO/01`
-§1.2.
+de la que sigue a un aviso repetido no está escrito. ~~Las dos quedan abiertas en el `NUCLEO/01`
+§1.2.~~ **Ésa la aceptó el owner** (`NUCLEO/01` §1.2, ⚠️ punto 3), y es la que obliga al
+reconciliador a escribir el hecho 5 **sólo** junto con `PB2`: con un disparo diario, escribirlo cada
+vez que relee falso correría el reloj todos los días.
 
 ---
 

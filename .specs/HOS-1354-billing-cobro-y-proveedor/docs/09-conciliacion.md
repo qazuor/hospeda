@@ -811,6 +811,10 @@ monitoreo de crons no está verificado**, y **por qué canal llega la alerta** �
 de `DEC-OBS-001`— no está decidido. **Y tampoco entra en la excepción del correo
 inmediato** de `NUCLEO/08` §4.1, que es una lista cerrada; si debería, es del owner.
 
+**El mismo monitor vigila el reconciliador diario de cobertura de verticales** (`V/03` §9;
+`DEC-ARCH-009`, owner 2026-09-25), con la misma regla: ping al terminar una corrida completa,
+alerta a las 26 h sin ping. Lo que este § deja abierto del vigía vale igual para él.
+
 ---
 
 ## Lo que este capítulo NO cierra

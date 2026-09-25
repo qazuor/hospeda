@@ -287,7 +287,9 @@ se dispara cuando el conjunto efectivo de un `user + vertical` se recalcula, y a
 conjunto y el límite dejaron de coincidir — en las DOS direcciones.**
 
 Y no hace falta una lista nueva: **es la misma lista que invalida el caché** (cap. 02 §3.2), con
-sus siete entradas. Una lista, dos consumidores. Que a veces se dispare sin nada que hacer es
+~~sus siete entradas~~ **todas sus entradas** —eran siete cuando se escribió; la FASE 9 le sumó
+cuatro y `DEC-ARCH-009` la del reconciliador diario de cobertura, y el número vive allá, no acá
+(FASE 8 completa, owner 2026-09-25)—. Una lista, dos consumidores. Que a veces se dispare sin nada que hacer es
 gratis; que falte un disparo es una capacidad regalada o un límite incumplido.
 
 **Que actuara *«sólo si algo bajó»* era la mitad del trabajo, y la que faltaba costaba caro.** El
@@ -446,3 +448,10 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
 - **Qué es una suscripción «válida» para comprar un addon** (`A-ADDON-02`) es del capítulo 16 (épica de billing).
 - **El orden de aplicación entre promo, cortesía y grant** (`A-PROMO-01`, `A-PROMO-02`) es del
   capítulo 14 (épica de billing): acá se agregan **capacidades**, allá se compone **dinero**.
+- **Qué dice el aviso con ventana del fin de una cortesía cuando detrás viene `S10`** (FASE 8
+  completa, `F-8CC1-008`, owner 2026-09-25; declarado por `DEC-METH-015`). La tabla del §4.4 le da
+  ventana al fin de una cortesía, y lo normal ese día es que la suscripción se reanude con la misma
+  versión anclada: no se pierde nada. Verticales no puede saberlo —el estado de la suscripción no
+  cruza, `12-contrato…` §4—, así que el aviso anuncia una pérdida que en ese caso no ocurre. El
+  desarrollo está en el `12-contrato…` §2.6. **El fin del trial va sin ventana, como dice el §4.4**:
+  el contrato decía lo contrario y se alineó a esta tabla.

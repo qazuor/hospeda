@@ -55,7 +55,7 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | 2 | **la cobertura se comprueba verdadera** — un ESTADO leído, nunca un cambio detectado | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | estar cubierto **es** no estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
 | 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale. **Lo ejecuta el barrido del día del fin de servicio** (`B/10` §4.3), que es un **camino de servicio** y no una transición | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
-| 5 | ~~la ficha **deja de estar publicada porque perdió la cobertura** — la **primera rama de `PB2`**, *«`cubierto` pasa a falso»* (cap. 03 §9, épica de verticales). **No la segunda**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25)~~ **el dueño pierde la cobertura en la vertical de la ficha** —el `cubierto` del contrato pasa a falso para ese `user + vertical`—, y se escribe en **toda** ficha del dueño en esa vertical, **publicada o no**: la publicada, el borrador y la excedente que ya estaba abajo arrancan juntas el mismo instante (FASE 8 completa, owner 2026-09-25). **Dos ejecutores, un hecho**: sobre la ficha publicada lo escribe **la primera rama de `PB2`** (cap. 03 §9, épica de verticales), que es la que la baja; sobre las que no estaban publicadas lo escribe **el recálculo que el mismo aviso despierta** (`12-contrato…` §3), **sin transición de publicación**. **No lo escribe la segunda rama de `PB2`**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (`F-8CA2-001`, `F-8CA3-001`) | la propia máquina, para la publicada; **el aviso de la caída más la relectura** del contrato, para las demás | es el instante en que la ficha **deja de estar a la vez publicada y cubierta**, que es donde la definición de arriba y el propio hecho 3 —*«su reloj arranca recién cuando deja de estarlo»*— dicen que el reloj arranca. Sin él la columna guardaba **el último reinicio**, que sobre una ficha publicada y cubierta lo escribe la relectura de `PB4` y puede tener **hasta 90 días** en el instante de la caída: una pausa de 120 días terminaba en el hard delete a mitad de la pausa (`120 + 90 > 180`). **Y en las que no estaban publicadas es el mismo instante por la misma razón**: el borrador guardaba hasta `N` meses (la relectura de `PB5`) y la excedente hasta 90 días (la de `PB4`), y la pausa las alcanzaba igual. **Es la regla que el hecho 4 ya aplicaba a la discontinuación, generalizada** a toda pérdida de cobertura **y con su mismo alcance: todas las fichas** |
+| 5 | ~~la ficha **deja de estar publicada porque perdió la cobertura** — la **primera rama de `PB2`**, *«`cubierto` pasa a falso»* (cap. 03 §9, épica de verticales). **No la segunda**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25)~~ **el dueño pierde la cobertura en la vertical de la ficha** —el `cubierto` del contrato pasa a falso para ese `user + vertical`—, y se escribe en **toda** ficha del dueño en esa vertical, **publicada o no**: la publicada, el borrador y la excedente que ya estaba abajo arrancan juntas el mismo instante (FASE 8 completa, owner 2026-09-25). ~~**Dos ejecutores, un hecho**~~ **Tres ejecutores, un hecho**: sobre la ficha publicada lo escribe **la primera rama de `PB2`** (cap. 03 §9, épica de verticales), que es la que la baja; sobre las que no estaban publicadas lo escribe **el recálculo que el mismo aviso despierta** (`12-contrato…` §3), **sin transición de publicación**; **y si el aviso se perdió, el reconciliador diario de cobertura**, que corre `PB2` y escribe las demás en el mismo acto (`V/03` §9; `DEC-ARCH-009`, owner 2026-09-25). **No lo escribe la segunda rama de `PB2`**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (`F-8CA2-001`, `F-8CA3-001`) | la propia máquina, para la publicada; **el aviso de la caída más la relectura** del contrato, para las demás —**o, sin aviso, la pregunta diaria del reconciliador** (`DEC-ARCH-009`)— | es el instante en que la ficha **deja de estar a la vez publicada y cubierta**, que es donde la definición de arriba y el propio hecho 3 —*«su reloj arranca recién cuando deja de estarlo»*— dicen que el reloj arranca. Sin él la columna guardaba **el último reinicio**, que sobre una ficha publicada y cubierta lo escribe la relectura de `PB4` y puede tener **hasta 90 días** en el instante de la caída: una pausa de 120 días terminaba en el hard delete a mitad de la pausa (`120 + 90 > 180`). **Y en las que no estaban publicadas es el mismo instante por la misma razón**: el borrador guardaba hasta `N` meses (la relectura de `PB5`) y la excedente hasta 90 días (la de `PB4`), y la pausa las alcanzaba igual. **Es la regla que el hecho 4 ya aplicaba a la discontinuación, generalizada** a toda pérdida de cobertura **y con su mismo alcance: todas las fichas** |
 | C | **la escritura única del corte**: toda ficha que ya existía el día del corte **nace en el modelo nuevo con `inactiva_desde` = el instante del corte**, nunca con su `created_at` (FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25; `V/21` §2.4) | la migración estructural del corte, **una vez** y en ningún otro lugar | **no es un reinicio** —ese día a la ficha no le pasa nada—: es el valor de arranque de una columna no anulable sobre filas que ya existían. Con `created_at`, toda ficha de más de 180 días se archivaba y se borraba **en la primera corrida** después del corte, con los tres avisos de retención fechados en el pasado |
 
 **Por qué el corte es una fila `C` y no un sexto hecho** (FASE 8 completa, `F-8CC2-003`, owner
@@ -72,7 +72,7 @@ del corte— y **la misma escritura en cualquier otro lugar es un escritor fuera
 escribe.** Una escritura de `listing.inactiva_desde` que no sea uno de estos ~~cuatro~~ cinco
 —o la escritura `C` del corte, en su lugar— lo pone en rojo, y quien agregue un hecho nuevo agrega su fila acá **en el mismo acto**. Es la misma regla que
 los cuatro inventarios del §2.4, §2.5 y §2.6, con la diferencia de que **lo que se enumera acá es el
-lado que ESCRIBE, y son hechos y no ejecutores** —un hecho puede tener varios, y el 2 tiene tres—:
+lado que ESCRIBE, y son hechos y no ejecutores** —un hecho puede tener varios, y el 2 tiene ~~tres~~ **cuatro** (el cuarto, el reconciliador diario de cobertura, `DEC-ARCH-009`)—:
 la lista de **lectores** de la misma columna vive en `V/02` §2.5 y **la vigila el
 mismo guard, con un mensaje propio** (cuarta enmienda de `DEC-TEST-001`). **No la vigila `G-R6`**:
 ése cruza las columnas que una condición
@@ -82,8 +82,8 @@ son transiciones** (el quinto es la primera rama de `PB2`; FASE 8 completa, `F-8
 2026-09-25), así que queda verde por cualquiera de los dos y no mira a los otros tres~~ **cinco
 hechos sólo el tercero es una transición entera; el quinto lo es a medias** —sobre la ficha
 publicada lo ejecuta la primera rama de `PB2`, y sobre las demás el recálculo que el aviso
-despierta, que **no** es una transición (FASE 8 completa, owner 2026-09-25)—, así que queda verde
-por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni al ejecutor del quinto que no es
+despierta **o el reconciliador diario de cobertura** (`DEC-ARCH-009`), que **no** son transiciones (FASE 8 completa, owner 2026-09-25)—, así que queda verde
+por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni a los ejecutores del quinto que no son
 transición** — está medido y dicho en `V/20` §2.
 
 **El hecho 2 es un ESTADO COMPROBADO y no un cambio detectado, y hasta esta pasada estaba enunciado
@@ -117,9 +117,11 @@ tercera lectura**, así que queda elegido el que sus ejecuciones ya usaban, por 
 la escritura `C` del corte, en su lugar—: la pregunta que contesta es **de cuál de los ~~cuatro~~
 cinco es** la escritura, nunca **quién** la hizo. Un hecho puede tener
 más de un ejecutor sin que la lista crezca —el 2 los tiene, **y desde la FASE 8 completa el 5
-también: `PB2` y el recálculo** (owner 2026-09-25)— y por eso el guard **no** cuenta
+también: `PB2` y el recálculo** (owner 2026-09-25)**, y desde `DEC-ARCH-009` el reconciliador diario
+de cobertura en los dos**— y por eso el guard **no** cuenta
 escritores: cuenta hechos. Que el 5 pasara de una ficha a todas las del dueño en la vertical
-**agregó un ejecutor y ningún hecho**: la lista sigue en cinco. **Y la misma transición puede
+**agregó un ejecutor y ningún hecho**: la lista sigue en cinco. **El reconciliador tampoco agrega
+ninguno** (owner 2026-09-25): es un ejecutor más del 2 y del 5. **Y la misma transición puede
 escribir un hecho en una rama y ninguno en la otra**: `PB2` escribe el hecho 5 cuando baja la ficha
 porque `cubierto` pasó a falso, y **nada** cuando la baja por el excedente, donde la cobertura sigue
 verdadera; esa segunda escritura sería un escritor fuera de la lista (FASE 8 completa,
@@ -151,8 +153,12 @@ Los otros cuatro lugares donde el mecanismo está escrito nombraban a **`PB4` y 
 aviso que el propio diseño declara que se pierde** — y es el único de los tres que no tiene vuelta:
 lo que `PB4` archiva lo recupera `PB8`, y lo que el día 180 borra no lo recupera nada. Los cinco
 lugares dicen ahora lo mismo. **Y la relectura que trae la cobertura verdadera no es un escritor
-intruso**: escribe el **hecho 2**, del que es uno de sus tres ejecutores, así que `G-R6-B` mitad
-*(a)* la acepta por la lista y no por una excepción.
+intruso**: escribe el **hecho 2**, del que es uno de sus ~~tres~~ **cuatro** ejecutores —el cuarto es
+el reconciliador diario de cobertura (`DEC-ARCH-009`), que **no** es uno de los tres que releen:
+no avanza sobre el reloj, pregunta para restituir—, así que `G-R6-B` mitad
+*(a)* la acepta por la lista y no por una excepción. **Y los dos avisos previos de retención
+también releen desde la FASE 8 completa** (`F-8CA2-015`, owner 2026-09-25; cap. 07 §6), **sin ser
+de los tres**: no escriben la columna ni avanzan el reloj, sólo no salen si el dueño está cubierto.
 
 **Y el hecho 4 ya tiene ejecutor declarado, que hasta esta pasada no lo tenía en ninguna de las dos
 épicas.** Tener **de dónde leerse** y tener **quién lo escriba** son dos cosas distintas, y el 4
@@ -175,7 +181,8 @@ que ese día pierde la cobertura —el de una suscripción viva, que consuma su 
 §4.3)—, así que sobre ése los dos escriben el mismo instante en todas sus fichas. **El 4 no se
 retira por eso**, por dos razones: alcanza también al dueño que ese día **no** pierde nada porque ya
 estaba sin cobertura, sobre el que el 5 no ocurre; y no depende del aviso, y el 5 sí (el ⚠️ de
-abajo, punto 2).
+abajo, punto 2) —sin aviso, el 5 lo escribe el reconciliador diario **al día siguiente**, y el 4
+escribe **el día** del fin de servicio (`DEC-ARCH-009`)—.
 
 **Los otros ~~tres~~ hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
 append-only de eventos de dominio (cap. 08 §1.3), el 3 **y el 5** de la propia máquina de
@@ -223,14 +230,21 @@ publicadas o no cuando la pausa empezó** (FASE 8 completa, owner 2026-09-25).
 >    precisión sin cerrar**: *«todas»* incluye por la letra a las fichas ya `ARCHIVED` del dueño,
 >    que la decisión no nombró aparte —nombró el borrador y la excedente—.
 > 2. **El hecho 5 cuelga de ~~que `PB2` dispare, y `PB2` dispara por el CAMBIO de `cubierto`~~ un
->    aviso, en sus dos ejecutores**: `PB2` dispara por el CAMBIO de `cubierto` (`V/03` §9), y el
+>    aviso, en sus dos ejecutores** *(hoy tres: el tercero es el reconciliador diario)* —**cerrado con la red por `DEC-ARCH-009`** (owner 2026-09-25),
+>    salvo un borde declarado abajo; el texto que sigue queda como registro—: `PB2` dispara por el CAMBIO de `cubierto` (`V/03` §9), y el
 >    recálculo de las no publicadas corre porque el aviso lo despierta; los dos dependen de un
 >    aviso que el diseño declara que se pierde (`V/02` §3.2). Si se
 >    pierde, la ficha queda publicada sin cobertura —el defecto 1 de `DEC-MIG-004`—, nadie escribe
 >    el hecho 5 **en ninguna de las fichas del dueño**, y la red que ~~la~~ **las** alcanza es `PB4`
 >    —o `PB5` para el borrador—, sobre el reloj viejo: el
->    adelanto que este hecho vino a cerrar sobrevive en ese caso. A diferencia del
->    hecho 2, este hecho **no tiene relectura** que lo sostenga.
+>    adelanto que este hecho vino a cerrar sobrevive en ese caso. ~~A diferencia del
+>    hecho 2, este hecho **no tiene relectura** que lo sostenga.~~ **Ahora la tiene**: el
+>    reconciliador diario de cobertura (`V/03` §9) encuentra al día siguiente la ficha publicada
+>    sin cobertura, corre `PB2` y escribe el hecho 5 en todas las fichas del dueño en la vertical,
+>    en el mismo acto. **El borde que queda, declarado con su causa (`DEC-METH-015`)**: el dueño
+>    que **sólo** tiene borradores no está en la población del reconciliador —fichas fuera de
+>    `DRAFT` y `PURGED`— y no tiene ficha publicada que delate la diferencia, así que su red sigue
+>    siendo `PB5` y `PB9` sobre el reloj viejo.
 > 3. **El recálculo escribe un CAMBIO sin la memoria que lo detecta** (nuevo con la decisión del
 >    owner, 2026-09-25). `PB2` sabe que hubo pérdida porque la ficha estaba en `PUBLISHED` —el
 >    estado es la memoria— y un aviso repetido la encuentra ya abajo y no hace nada. Sobre una

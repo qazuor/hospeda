@@ -56,10 +56,10 @@ condicionan**: se apoyan en ella.
 | **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
 | **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
 | **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
-| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** **`G-R5-B`** *(el `N` de `PB5`, que V6 construye; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25)* |
+| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos — **y el reconciliador diario de cobertura**, que una vez por día corre `PB2`/`PB3`/`PB7` donde el aviso no llegó, escribe los hechos 2 y 5, invalida el caché y le hace ping al monitor de cron externo (`03` §9; `DEC-ARCH-009`, owner 2026-09-25) | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** **`G-R5-B`** *(el `N` de `PB5`, que V6 construye; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25)* |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), ~~la anonimización,~~ **el día 180 como la fila `PB9` hacia `PURGED`, que sólo borra el contenido de la ficha (`DEC-DATA-005`; FASE 8 completa, `F-8CA2-008`)**, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical —o, si el aviso se perdió, el reconciliador diario de cobertura, de V6 (`DEC-ARCH-009`)—; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), ~~la anonimización,~~ **el día 180 como la fila `PB9` hacia `PURGED`, que sólo borra el contenido de la ficha (`DEC-DATA-005`; FASE 8 completa, `F-8CA2-008`)**, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -109,10 +109,11 @@ uno de los ~~cuatro~~ cinco hechos del `01` §1.2 (núcleo) ni la escritura `C` 
 `DEC-TEST-001`; recontados en la FASE 8 completa, `F-8CD1-009`), o **uno de esos ~~cinco~~ seis que
 ya no lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
 (`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, **la primera rama de
-`PB2` es ~~el quinto~~ uno de los dos ejecutores del quinto** —el otro es el recálculo que el aviso
-despierta, sobre las fichas del dueño que no estaban publicadas— (FASE 8 completa, `F-8CA2-001`,
+`PB2` es ~~el quinto~~ uno de los ~~dos~~ tres ejecutores del quinto** —~~el otro es~~ los otros son el recálculo que el aviso
+despierta, sobre las fichas del dueño que no estaban publicadas, **y el reconciliador diario de
+cobertura, cuando el aviso se perdió** (`DEC-ARCH-009`)— (FASE 8 completa, `F-8CA2-001`,
 owner 2026-09-25), y la relectura de
-`PB4`/`PB5` es uno de los tres momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
+`PB4`/`PB5` es uno de los ~~tres~~ cuatro momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
 del `01` §1.2 y del reloj que la **lee**.
 
 **Va con V6 por la regla 1 leída entera**: el guard protege **las piezas que tocan la columna**, no

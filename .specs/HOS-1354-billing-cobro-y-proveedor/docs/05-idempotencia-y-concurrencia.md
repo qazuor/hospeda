@@ -263,7 +263,10 @@ es la puerta del **pagador manual**, que no tiene preapproval. Las condiciones n
 cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumplir.
 
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
-según en cuál de los dos estados de la condición 1 esté la fila, y se restituye la publicación.
+según en cuál de los dos estados de la condición 1 esté la fila, y ~~se restituye la publicación~~
+**por `S7`** la fila vuelve a emitir fuente —`GRACE_PERIOD` no había dejado de emitir (`12-contrato…`
+§2.6)—, y la publicación la restituyen `PB3`/`PB7` si el cupo alcanza (`V/03`
+§9; FASE 8 completa, `F-8CA2-016`, owner 2026-09-25).
 **Si falla cualquiera**, se pone la marca `requiere_conciliación` con motivo `PAGO_TARDÍO_RECHAZADO`
 (cap. 03 §3.2, `S14`; `B/02` §2.5) —**salvo el caso que el §2 ya nombra con otro motivo, y la regla
 de desempate está abajo**— y el evento

@@ -64,7 +64,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1. **Lo construye `B8`** de la otra épica, que es la unidad del tope de pausa (`B/descomposicion.md` §2.8) — **la celda de `V9` que lo nombraba *«el de `D16`»* se retira**, porque `V9` corre antes de que ese número exista (`F-8eC2-004`, `descomposicion.md` §2.7) |
 | **G-R5-B** | el **`N` de `PB5`** que declara la configuración, pasado a días, **no es menor que 6 meses** | cap. 03 §9 (`PB5`), cap. 02 §4.1; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **Misma forma que `G-R5`**: compara una cifra de configuración contra una cota, y ninguna búsqueda de texto lo vería cambiar. **Lo construye `V6`**, la unidad que construye `PB5` y su `N` (`descomposicion.md` §2) |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas, y contra **las tablas que los capítulos declaran** y no contra el subconjunto ya construido (`B/20` §2) | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
-| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ cinco hechos** del cap. 01 §1.2 (núcleo) **ni la escritura `C` del corte en la migración estructural del corte** —el quinto, ~~**la primera rama de `PB2`**~~ **la pérdida de cobertura del dueño en la vertical**, entra a la lista **con sus dos ejecutores** —la primera rama de `PB2` sobre la ficha publicada y el recálculo que el aviso despierta sobre las demás del dueño— y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
+| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ cinco hechos** del cap. 01 §1.2 (núcleo) **ni la escritura `C` del corte en la migración estructural del corte** —el quinto, ~~**la primera rama de `PB2`**~~ **la pérdida de cobertura del dueño en la vertical**, entra a la lista **con sus ~~dos~~ tres ejecutores** —la primera rama de `PB2` sobre la ficha publicada y el recálculo que el aviso despierta sobre las demás del dueño, **y el reconciliador diario de cobertura sobre las demás cuando el aviso se perdió** (cap. 03 §9, `DEC-ARCH-009`)— y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **El reconciliador no agrega ningún hecho**: escribe el 2 y el 5, y la mitad *(a)* lo admite por la lista. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
 
 **`G-R6` llega a este catálogo por una columna concreta y no por simetría, y conviene decir cuál.**
 Nació en `B/20` §2 acotado a las seis tablas de billing, porque el crítico que lo motivó era de
@@ -87,11 +87,11 @@ vuelve a `PUBLISHED` por `PB1`, `PB3` o `PB7`— ~~**y el quinto** —la primera
 completa, `F-8CA2-001`, owner 2026-09-25— son transiciones~~ es una transición entera, **y el
 quinto lo es a medias**: sobre la ficha publicada lo ejecuta la primera rama de `PB2`
 (`F-8CA2-001`), y sobre las demás fichas del dueño en la vertical el recálculo que el aviso
-despierta, que no es una transición (FASE 8 completa, owner 2026-09-25). El primero se lee del registro de
+despierta **o el reconciliador diario de cobertura** (`DEC-ARCH-009`), que no son transiciones (FASE 8 completa, owner 2026-09-25). El primero se lee del registro de
 eventos de dominio, el segundo de la respuesta del contrato y el cuarto de
 `vertical.fin_de_servicio`; la escritura del corte es de la migración. Así que sobre
 `inactiva_desde` el guard queda **verde por ~~el tercero solo~~ cualquiera de los dos** —`PB1`/`PB3`/`PB7`
-o `PB2`—, sin mirar al recálculo que ejecuta la otra mitad del quinto, y lo que
+o `PB2`—, sin mirar ~~al recálculo que ejecuta~~ **a los dos ejecutores —el recálculo y el reconciliador diario— de** la otra mitad del quinto, y lo que
 certifica es *«alguien la mueve»*, nunca *«los ~~cuatro~~ cinco hechos la escriben»*. Es el §2.1
 aplicado a su propio mensaje: el texto con que falla no puede afirmar más de lo que el predicado
 verifica. **Que los otros tres escritores estén es lo que vigila el cap. 02 §2.5**, que los enumera
@@ -167,7 +167,7 @@ que la declaración **esté**, nunca que sea cierta — que es **exactamente la 
 `DEC-TEST-001` rechazó** para el segundo guard de esa decisión. Así que `G-R6` y `G-R6-B` juntos
 certifican *«alguien la mueve»*, *«nadie de más la mueve»* y *«nadie de más la lee»*, **nunca *«los
 ~~cuatro~~ cinco la mueven»***: quitarle la escritura a uno de los ~~cuatro~~ cinco —al recálculo del hecho 2, por
-ejemplo, que el cap. 02 §4.2 regla 4 declara **en tres momentos y no en uno**— deja a los dos en
+ejemplo, que el cap. 02 §4.2 regla 4 declara **en ~~tres~~ cuatro momentos y no en uno**— deja a los dos en
 verde.
 
 **Y la mitad que falta NO es la misma en las dos listas, que es lo que esta pasada separa.** El
@@ -196,7 +196,7 @@ irreversible del programa. **Se rompe a propósito sacándole al día 180 su lec
 tocar el cap. 02 §2.5**, y el rojo tiene que decir *«lector declarado que ya no lee»* y nombrarlo.
 
 **Y `G-R6-B` sigue sin afirmar nada sobre ejecutores, con tres mitades igual que con dos.** La
-*(c)* cuenta **lecturas**, no actos: que el hecho 2 tenga sus tres ejecutores (`V/02` §4.2, regla 4)
+*(c)* cuenta **lecturas**, no actos: que el hecho 2 tenga sus ~~tres~~ cuatro ejecutores (`V/02` §4.2, regla 4)
 no lo verifica este guard ni ningún otro, y decirlo acá es lo que impide que las tres mitades se
 lean como *«la lista entera está vigilada»*.
 
@@ -207,7 +207,7 @@ tope de la reapertura en que la lista **sea** cerrada —*«`DEC-DATA-002` le pu
 cuatro hechos de reinicio con lista cerrada»* —hoy cinco, `B/03` §7.1 ya lo dice así—, y de ahí sale que el tope *«ya no es monótono»*—.
 Un ~~quinto~~ escritor **nuevo** agregado desde billing rompe las dos cosas **sin que nadie abra
 este capítulo**. *(El quinto hecho, el de la FASE 8 completa, no salió de billing: ~~es `PB2`, de
-esta épica~~ sus dos ejecutores —`PB2` y el recálculo que el aviso despierta— son de esta épica —
+esta épica~~ sus ~~dos~~ tres ejecutores —`PB2`, el recálculo que el aviso despierta y el reconciliador diario de cobertura (`DEC-ARCH-009`)— son de esta épica —
 `F-8CA2-001`, owner 2026-09-25.)*
 
 **`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
