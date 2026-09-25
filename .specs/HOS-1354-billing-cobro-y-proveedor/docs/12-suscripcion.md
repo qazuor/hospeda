@@ -281,9 +281,8 @@ Quien nunca pagó no tiene una relación que retener, y el servicio que recibió
 completa, `F-8CC1-010`): su primer cobro nace **después del vencimiento de su ventana** (`D8`,
 §5.2), así que entre que autoriza —`S2`, y desde ahí emite— y ese primer cobro pueden pasar **hasta
 las 72 h de la ventana**, más el lote del proveedor (§5.4). Cuánto de eso pagó ya la persona depende
-del crédito de `DEC-SUB-006`: con crédito cero —la sucesora de una `SUSPENDED` de tarjeta, §5.4—
-no cubre nada (⚠️ y el §5.4 dice de esa sucesora que *«cobra su primer ciclo al autorizar»*, que no
-se concilia con `D8`: queda anotado allá). Si ese primer cobro se rechaza, muere en `CHARGE_DECLINED` como un alta, pero con
+del crédito de `DEC-SUB-006`. **La sucesora de una `SUSPENDED` de tarjeta, que tiene crédito cero, no
+entra acá: cobra al autorizar, como un alta** (excepción a `D8`, §5.2 (owner 2026-09-25; FASE 8 completa, `F-8CB1-002`)). Si ese primer cobro se rechaza, muere en `CHARGE_DECLINED` como un alta, pero con
 días y no minutos de servicio de esa autorización. ⚠️ **Que una sucesora sin crédito no emita hasta
 su primer pago sería política, y no está decidido**: esto corrige la afirmación, no la regla.
 
@@ -336,7 +335,8 @@ Dos consecuencias que el diseño tiene que absorber:
    **cada reintento muere sin pasar por `GRACE_PERIOD`**, así que **no hay diez días que cosechar**
    por más veces que se repita. Son **dos destinos y no uno**, según haya autorización o no: el que
    autorizó y no cobró muere en `CHARGE_DECLINED`, y el servicio que recibió se mide en los minutos
-   de `PA-3` —**si era un alta**; si era una sucesora con tarjeta, en lo que va de su autorización
+   de `PA-3` —**si era un alta, o la sucesora de una `SUSPENDED` de tarjeta**, que cobra al autorizar
+   como un alta (§5.2); si era cualquier otra sucesora con tarjeta, en lo que va de su autorización
    a su primer cobro, que `D8` pone después de su ventana: hasta 72 h (§4.3; FASE 8 completa,
    `F-8CC1-010`)—; el **pagador manual** que nunca transfiere muere en `ABANDONED` al vencer su ventana,
    y el servicio que recibió es **ninguno**, porque su primera cuota se abre antes de que la fila
@@ -418,6 +418,17 @@ que vigila `D8` a **saber de dónde viene cada sucesión** para saber qué exigi
 forma es un guard que alguien va a leer mal. Así vale para toda sucesión, venga de donde venga,
 `D8` queda en una línea sin excepciones, y el costo —que el cliente espere un día para el primer
 cobro del plan nuevo— es **a su favor**.
+
+> **📌 Una excepción, decidida por el owner el 2026-09-25 contra el argumento de arriba** (FASE 8
+> completa, `F-8CB1-002`): **la sucesora de una `SUSPENDED` de pagador con tarjeta cuyo preapproval
+> se releyó `cancelled` cobra al autorizar, como un alta nueva.** Las dos razones de `D8` no existen
+> ahí: **no hay otro preapproval que pueda cobrar en paralelo** —`S6` lo canceló y se verificó—, y
+> **no hay crédito que cubra la espera**, así que con `D8` el moroso que vuelve recibía hasta 72 h
+> de servicio sin pagar, y si su primer cobro se rechazaba, gratis. **Las dos posiciones**: este §
+> sostenía que una rama en la precondición obliga al guard a *«saber de dónde viene cada
+> sucesión»*; la excepción responde que el guard **ya lo sabe** —es la misma condición que
+> `G-R1-A` lee para admitir la declaración—, así que `G-R1-B` la lee igual y no agrega una forma
+> nueva. El resto de las sucesiones sigue con `D8` sin cambios.
 
 **La forma verificable, y es la que hay que congelar:**
 
@@ -816,12 +827,9 @@ piezas de este § se resuelven solas, y conviene decirlo para que nadie las apli
   renovación que pueda cruzar la autorización, así que la ventana es la entera, **72 h**.
 - **El crédito de `DEC-SUB-006` es cero.** El crédito es *«lo pagado sin usar»*, y a un suspendido
   no le queda nada pagado: el período en curso es justamente el que no pagó, y los días de grace
-  fueron servicio sin cobro. La sucesora nace **sin fecha de primer cobro diferida** y cobra su
-  primer ciclo al autorizar. ⚠️ **Esta última frase no se concilia con `D8`** —*«toda sucesora nace
-  con fecha de primer cobro posterior al vencimiento de su ventana»*, §5.2, que vigila `G-R1-B`—:
-  sin crédito, la fecha no se corre **más allá** de la ventana, pero tampoco puede caer antes de su
-  vencimiento. Anotado al revisar `F-8CC1-010` (FASE 8 completa); cuál de las dos lecturas vale no
-  está decidido acá.
+  fueron servicio sin cobro. La sucesora nace **sin fecha de primer cobro diferida** y **cobra su
+  primer ciclo al autorizar, como un alta**: es la **única excepción a `D8`**, decidida por el owner
+  y escrita en §5.2 (owner 2026-09-25; FASE 8 completa, `F-8CB1-002`).
 
 #### Y sobre el pagador manual sí hay corrección, porque acá no hay proveedor que no nos deje
 

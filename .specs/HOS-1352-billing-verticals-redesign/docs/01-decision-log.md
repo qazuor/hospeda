@@ -1089,6 +1089,13 @@ Cada entrada lleva, según §3.4:
   después. Si el checkout la resetea, la compensación no se puede ejecutar por esta vía **y el
   cliente paga dos veces**. Se mide en sandbox, sin costo, completando un checkout a mano una vez.
 - **Origen**: punto 1 del contraste PDR ↔ proveedor · §19 · `BD-SUB-01`.
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 8 completa, `F-8CB1-002`)**: la precondición
+  de seguridad que esta decisión hizo nacer —`D8`, *«toda sucesora nace con fecha de primer cobro
+  posterior al vencimiento de su ventana»*— **tiene una excepción**: la sucesora de una `SUSPENDED`
+  de pagador con tarjeta cuyo preapproval se releyó `cancelled` **cobra al autorizar**, como un
+  alta. Ahí no hay preapproval viejo que pueda cobrar en paralelo ni crédito que cubra la espera.
+  Las dos posiciones están en `B/12` §5.2: la uniformidad de la precondición, contra no regalarle
+  días a un moroso que vuelve.
 
 ### DEC-SUB-007 — El upgrade se ejecuta con el mismo mecanismo que el cambio de ciclo
 
