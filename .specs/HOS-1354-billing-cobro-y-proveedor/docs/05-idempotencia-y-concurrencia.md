@@ -305,7 +305,8 @@ los dos §§ leyera quien implementara.
 ésta, con la sucesión en curso.** Ése no es un caso ambiguo sino uno **diseñado**, el del `B/12`
 §5.3, y su desenlace está declarado: el pago **se registra y queda pendiente de resolución**
 (cap. 03 §3.2, `S19`), **sin marca y sin evento crítico**. Poner la marca ahí sería tratar el camino
-normal del cambio de plan desde grace como un incidente — y además rompería cosas: una fila marcada
+normal ~~del cambio de plan desde grace~~ de una sucesión cuya predecesora entra en el grace durante
+la ventana —desde el grace ya no se declara, `DEC-SUB-021`— como un incidente — y además rompería cosas: una fila marcada
 **no puede ser sucedida** (`B/03` §3.3) y acá ya hay un `sucede_a` apuntándola. Cualquier **otra**
 forma de fallar la 3 —otra fila viva que no es su sucesora, o la segunda mitad— sigue siendo
 divergencia y sigue poniendo la marca.
@@ -375,7 +376,8 @@ La versión anterior la eximía *«a propósito»*, con dos razones, y las dos s
    nota eximía el caso que la condición describe.
 2. **Su argumento era de tiempo, no de seguridad.** *«Todavía no puede cobrar»* es cierto —`D8` le
    exige fecha de primer cobro futura—, pero el daño no es que la sucesora cobre **ahora**: es que
-   la predecesora vuelva a `ACTIVE` con el crédito de la sucesora **ya computado en cero**, que es
+   la predecesora vuelva a `ACTIVE` con el crédito de la sucesora **ya computado ~~en cero~~ sin ese
+   pago** (en cero cuando se declaraba desde el grace, que `DEC-SUB-021` cerró), que es
    lo que `B/12` §5.3 mide y no se puede corregir después (`B/12` §5.4: las fechas del proveedor
    son inmutables, `EX-39`).
 

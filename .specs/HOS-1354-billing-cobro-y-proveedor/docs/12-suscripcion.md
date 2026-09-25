@@ -114,8 +114,10 @@ proveedor, y si lo es, la baja llega antes que nuestra suspensión.~~
 > fin del grace (`DEC-MP-008`).
 
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
-que llega a esta baja llega **desde `GRACE_PERIOD`**, que es de donde también llega la
-predecesora de un cambio de plan en mora — o sea la población de `S19`. Espejar esa baja es una
+que llega a esta baja llega **desde `GRACE_PERIOD`**, que es ~~de donde también llega la
+predecesora de un cambio de plan en mora~~ donde también puede estar la predecesora de una
+sucesión —ya no porque la declaró desde ahí, que `DEC-SUB-021` (owner 2026-09-25) cerró, sino
+porque entró en el grace **durante** la ventana, por `S4`— — o sea la población de `S19`. Espejar esa baja es una
 **transición declarada** de la tabla del cap. 03 (§10.1), y por eso aparece en cuatro lugares que
 la enumeraban sin ella: es la séptima del dominio que el §3.2 recorre por el lado de la
 predecesora, un tercer camino por el que la predecesora **se muere sola** y `S18` cierra la
@@ -150,6 +152,12 @@ descenso de capacidades**, más la elección del cliente sobre qué conserva.
 
 **Es una cola nuestra, de entitlements. No es una cola de cambios en el proveedor** — el
 proveedor no tiene ninguna.
+
+**Qué es un downgrade y qué un upgrade no lo decide este capítulo**: es el veredicto
+`direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA` que emite verticales
+(`12-contrato…` §4.1, `DEC-ARCH-008`), y lo que billing hace con cada uno está en `B/10` §3.5. Ni
+el `rank` ni un delta que billing compute sobre las tablas de verticales (FASE 8 completa,
+`F-8CD1-003`).
 
 ### 2.2 A lo sumo uno, y las cuatro colisiones
 
@@ -269,7 +277,15 @@ o abandonar ese checkout, y el §4.4 lo dice.
 El §20 describe una política de **retención**: alguien que venía pagando y tuvo un problema.
 Quien nunca pagó no tiene una relación que retener, y el servicio que recibió se mide en minutos
 —el cobro real llega **entre 26 y 44 minutos** después de autorizar (`PA-3`, re-medido el
-2026-09-17)—, no en días.
+2026-09-17)—, no en días. **Eso vale para un alta, y no para una sucesora con tarjeta** (FASE 8
+completa, `F-8CC1-010`): su primer cobro nace **después del vencimiento de su ventana** (`D8`,
+§5.2), así que entre que autoriza —`S2`, y desde ahí emite— y ese primer cobro pueden pasar **hasta
+las 72 h de la ventana**, más el lote del proveedor (§5.4). Cuánto de eso pagó ya la persona depende
+del crédito de `DEC-SUB-006`: con crédito cero —la sucesora de una `SUSPENDED` de tarjeta, §5.4—
+no cubre nada (⚠️ y el §5.4 dice de esa sucesora que *«cobra su primer ciclo al autorizar»*, que no
+se concilia con `D8`: queda anotado allá). Si ese primer cobro se rechaza, muere en `CHARGE_DECLINED` como un alta, pero con
+días y no minutos de servicio de esa autorización. ⚠️ **Que una sucesora sin crédito no emita hasta
+su primer pago sería política, y no está decidido**: esto corrige la afirmación, no la regla.
 
 **Se eligió hacia dónde falla.** Conceder el grace falla hacia **diez días gratis por intento,
 repetibles**. Negarlo falla hacia que un cliente legítimo con la tarjeta rechazada tenga que
@@ -320,7 +336,9 @@ Dos consecuencias que el diseño tiene que absorber:
    **cada reintento muere sin pasar por `GRACE_PERIOD`**, así que **no hay diez días que cosechar**
    por más veces que se repita. Son **dos destinos y no uno**, según haya autorización o no: el que
    autorizó y no cobró muere en `CHARGE_DECLINED`, y el servicio que recibió se mide en los minutos
-   de `PA-3`; el **pagador manual** que nunca transfiere muere en `ABANDONED` al vencer su ventana,
+   de `PA-3` —**si era un alta**; si era una sucesora con tarjeta, en lo que va de su autorización
+   a su primer cobro, que `D8` pone después de su ventana: hasta 72 h (§4.3; FASE 8 completa,
+   `F-8CC1-010`)—; el **pagador manual** que nunca transfiere muere en `ABANDONED` al vencer su ventana,
    y el servicio que recibió es **ninguno**, porque su primera cuota se abre antes de que la fila
    llegue a `ACTIVE` (`B/03` §7.2). Escribir la garantía sobre un solo destino la dejaba sin sujeto
    justo sobre la población que no tiene autorización. El contador histórico, en cambio, le cobraba
@@ -338,22 +356,43 @@ Dos consecuencias que el diseño tiene que absorber:
 
 ### 5.1 El residuo
 
-`DEC-SUB-003` permite cambiar de plan estando en `GRACE_PERIOD` —es el camino de recuperación— y
+~~`DEC-SUB-003` permite cambiar de plan estando en `GRACE_PERIOD` —es el camino de recuperación— y
 `DEC-SUB-006` compensa los días pagados al cambiar de ciclo. Cruzarlos deja la pregunta: **¿qué se
-compensa sobre alguien que debe?**
+compensa sobre alguien que debe?**~~
+
+**Desde `DEC-SUB-021` (owner 2026-09-25) el residuo cambió de población.** `DEC-SUB-003` —que
+permitía cambiar de plan en `GRACE_PERIOD`— quedó superada: **desde el grace no se declara una
+sucesión**, primero se regulariza (`B/03` §3.3.1 y §4). Todo lo que en este § suponía **declarar
+desde el grace** queda sin población por declaración, y va tachado. **Lo que sigue vigente** son
+los dos casos en que una sucesión todavía convive con una deuda:
+
+- **la predecesora LLEGA al grace durante la ventana**, por `S4`, sobre una sucesión declarada en
+  `ACTIVE` (`B/03` §3.2, fila 11). Con tarjeta, la ventana reducida del §5.4 corta la ventana antes
+  del próximo cobro, así que este caso pide que nos enteremos tarde de la autorización (§5.4,
+  `F-8CB1-004`); con pago manual, sin ventana reducida, es el caso ordinario;
+- **la predecesora es una `SUSPENDED` de tarjeta** con el preapproval releído `cancelled`, desde la
+  que `G-R1-A` sí deja declarar (`F-8CB1-002`).
+
+`DEC-SUB-006` compensa los días pagados al cambiar de plan o de ciclo, y la pregunta sigue siendo
+la misma sobre esos dos casos: **¿qué se compensa sobre alguien que debe?**
 
 ### 5.2 Se disuelve leyendo la fórmula que ya existe
 
 `DEC-SUB-006` compensa **por valor**, y define el crédito como **lo pagado sin usar**.
 
-**En grace, el período en curso no se pagó** — un cobro falló, que es la definición del estado.
+~~**En grace, el período en curso no se pagó** — un cobro falló, que es la definición del estado.
 Entonces el crédito es **cero**, y no hace falta ninguna regla nueva: la fórmula ya dice
-*«pagado»*.
+*«pagado»*.~~ **Sobre una predecesora que debe, el período en curso no se pagó** —un cobro falló—.
+Entonces ese período no aporta crédito, y no hace falta ninguna regla nueva: la fórmula ya dice
+*«pagado»*. **Desde `DEC-SUB-021` el crédito CERO al declarar ya no sale del grace sino de la
+`SUSPENDED` de tarjeta** (§5.4, *«sobre una predecesora `SUSPENDED` de tarjeta»*); la predecesora
+que llega al grace durante la ventana ya tenía su crédito computado en `ACTIVE`.
 
 **Y ese cero choca con `D8`, así que hay una regla que sí hace falta.** Con crédito cero la fecha
 de primer cobro de la sucesora cae **hoy**, y `D8` exige que sea **futura** — dos reglas correctas
-que no se pueden cumplir a la vez, y quien choca contra las dos es alguien en mora que quiere
-mejorar su plan. La salida:
+que no se pueden cumplir a la vez, y quien choca contra las dos es ~~alguien en mora que quiere
+mejorar su plan~~ alguien sin nada pagado que vuelve o cambia de plan —desde `DEC-SUB-021`, el
+suspendido con tarjeta—. La salida, que **vale para toda sucesión** y no depende de esa población:
 
 > **Toda sucesora nace con fecha de primer cobro POSTERIOR AL VENCIMIENTO DE SU VENTANA DE
 > AUTORIZACIÓN.** Ninguna puede cobrar antes de que su propia ventana se cierre.
@@ -373,7 +412,7 @@ ventana cambie, y **es verificable sin contexto**: `G-R1-B` compara la fecha gua
 vencimiento de la ventana de esa misma fila.
 
 **Por qué uniforme y no una precondición distinta según de dónde venga la sucesión.** Declarar que
-*«desde grace la precondición es otra»* es más exacto conceptualmente, **y por eso es peor**: le
+*«desde ~~grace~~ una predecesora que debe la precondición es otra»* es más exacto conceptualmente, **y por eso es peor**: le
 mete una rama a la precondición de seguridad del mecanismo más caro del sistema, y obliga al guard
 que vigila `D8` a **saber de dónde viene cada sucesión** para saber qué exigir. Un guard con esa
 forma es un guard que alguien va a leer mal. Así vale para toda sucesión, venga de donde venga,
@@ -394,8 +433,10 @@ El cobro que falló era de un período que **se prestó entero** — el §20 da 
 durante el grace. Es servicio regalado, que es la dirección que ese mismo grace ya eligió.
 
 **No se compensa con el cobro nuevo ni se cobra aparte.** Perseguirlo exigiría un mecanismo de
-cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de volver a pagar** — y
-`DEC-SUB-003` eligió que cambiar de plan sea *«una salida del problema en vez de un muro»*.
+cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de volver a pagar**. ~~— y
+`DEC-SUB-003` eligió que cambiar de plan sea *«una salida del problema en vez de un muro»*.~~ (La
+segunda razón era `DEC-SUB-003`, superada por `DEC-SUB-021`, owner 2026-09-25; la primera alcanza
+sola.)
 
 **Pero perdonarla no la apaga, y eso hay que decirlo antes de que pase.** Mientras la predecesora
 siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar** — sobre un pagador con
@@ -434,6 +475,14 @@ paga el período que está usando. Anunciar sólo *«el cobro puede entrar»* �
 describe el hecho y esconde la única decisión que el cliente puede tomar al respecto. Alcanza a
 `NUCLEO/07` §6, fila *«cambio de plan con una cuota en reintento»*, y a `B/19` §4, fila 15.
 
+⚠️ **Desde `DEC-SUB-021` (owner 2026-09-25) este aviso se quedó sin su momento.** Está escrito para
+salir **antes de confirmar** el cambio sobre una predecesora que **ya** debía, y esa declaración no
+existe más. En los dos casos que siguen vigentes (§5.1) no hay cuota impaga al confirmar: en el
+primero la deuda nace **después**, por `S4`, con la sucesión ya en curso; en la `SUSPENDED` de
+tarjeta, `S6` cerró la puerta del reciclado (`DEC-SUB-019`) y la fila 15 ya la excluía. **Qué se le
+dice, y cuándo, a quien entra en el grace durante la ventana no está decidido**: el cobro puede
+entrar igual y las dos ramas de arriba le siguen tocando.
+
 **Y el aviso le toca también al que paga a mano**, porque su puerta es la que el cliente abre a
 propósito: el que transfiere la cuota vieja mientras cambia de plan hace, con un acto suyo,
 exactamente lo que al otro le hace el reciclado del proveedor. Alcanza a las mismas dos filas
@@ -469,9 +518,15 @@ la alcanza y la regla era vacua— y dejaba intacta la reactivación de la únic
 cobro le puede llegar. Desde `B/02` §2.2 el lado se lee sin ambigüedad y por eso la regla se
 enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la apunta uno**.
 
-**Y son las dos transiciones, no una.** La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
+**Y son las dos transiciones, no una.** ~~La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
 la ventana dura hasta vencer —**72 h o 7 días corridos**, `B/03` §3.4 punto 1— y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
-el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
+el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—.~~ **La predecesora ya
+no arranca la sucesión en `GRACE_PERIOD`** (`DEC-SUB-021`, owner 2026-09-25): llega ahí **durante**
+la ventana, por `S4` —fila 11 de las nueve que `B/03` §3.2 recorre—, y sobre ella corre `S5`. **Y
+puede estar en `SUSPENDED`**: porque la sucesión se declaró desde una `SUSPENDED` de tarjeta
+(`G-R1-A`), o porque `S6` corrió por su tercer evento —el contracargo, que la guarda de la sucesión
+en curso no frena—; por sus dos primeros, `S6` **no ocurre** mientras la sucesión esté en curso
+(`B/03` §3.2, owner 2026-09-24). Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. **Y desde `DEC-SUB-019`,
 en un pagador con tarjeta esa puerta ya no llega por el reciclado**: `S6` cancela el preapproval en
 el mismo acto de suspender, así que sobre una `SUSPENDED` de tarjeta **no queda ninguna puerta
@@ -486,8 +541,9 @@ dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se
 **Sin esta regla el cobro hacía dos daños, no uno.** El primero es el que el aviso anticipa: el
 cliente paga la deuda que le perdonamos. El segundo no lo anticipaba nadie — **la reactivación
 devuelve la predecesora a `ACTIVE`**, así que en plena sucesión la persona queda con **las dos
-vivas**, y el crédito de la sucesora **ya se computó en cero** suponiendo que ese período no se iba
-a pagar nunca. O sea: paga un período entero que **no le compra nada**, y la fórmula que lo ignoró
+vivas**, y el crédito de la sucesora **ya se computó ~~en cero~~ sin ese pago** —en cero cuando se
+declaraba desde el grace; desde `DEC-SUB-021`, en `ACTIVE`, antes de que ese período existiera—
+suponiendo que ese período no se iba a pagar nunca. O sea: paga un período entero que **no le compra nada**, y la fórmula que lo ignoró
 ya no se puede corregir (§5.4: las fechas del proveedor son inmutables, `EX-39`).
 
 #### El destino del pago lo decide el cierre de la sucesión, no su llegada
@@ -621,9 +677,9 @@ Y ponerla sobre la sucesora tenía un costo que la otra no tiene: *«mientras la
 sobre una fila, ningún `sucede_a` puede apuntarla»* (`B/02` §2.2), o sea que el cliente que
 **acaba** de cambiar de plan no podría volver a cambiarlo hasta que una persona resuelva un caso
 que es de su plata y no de su plan. Sobre la predecesora esa regla es vacua: está `CANCELLED`, y
-`G-R1-A` ya sólo deja declarar una sucesión desde `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o
+`G-R1-A` ya sólo deja declarar una sucesión desde `ACTIVE`, ~~`GRACE_PERIOD`,~~ `CANCEL_SCHEDULED` o
 una `SUSPENDED` de pagador con tarjeta con el preapproval releído `cancelled` (FASE 8 completa,
-`F-8CB1-002`).
+`F-8CB1-002`; `GRACE_PERIOD` salió con `DEC-SUB-021`, owner 2026-09-25).
 
 **Y la predecesora es terminal, así que el reloj de la marca la tiene que alcanzar.** Por eso
 `B/09` §3 devuelve al barrido las suscripciones terminales con la marca puesta o con un pago
@@ -647,7 +703,10 @@ vencimiento del grace, `S6` mandaría a `SUSPENDED` —que **no emite fuente** (
 acotar el servicio regalado a quien no pagó (§4.3: *«el grace no es un beneficio de entrada»*), y
 acá el período se pagó: por eso `S6` lleva la condición en `B/03` §3.2. No es una gracia extra —es
 el tope de la ventana— y sin ella el arreglo de este § crea, más chica, la misma
-suspensión que vino a impedir.
+suspensión que vino a impedir. **Desde `DEC-SUB-021` el cruce es más raro y sigue siendo posible**:
+la predecesora ya no llega a la sucesión con el reloj avanzado, sino que entra en el grace **durante**
+la ventana (`S4`), así que el reloj arranca adentro de ella y la cruza sólo si el grace configurado
+de esa versión es más corto que lo que le queda de ventana (`B/03` §4, *«cuánto dura»*).
 
 ### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y que haya corrección depende de quién tiene la fecha
 
@@ -711,6 +770,31 @@ completar el checkout — las 72 h tampoco salen de una medición. Ofrecer una v
 es ofrecer algo que se va a vencer; esperar al cobro **no le cuesta plata a la persona**, porque lo
 que pague ese día se le compensa por valor en el plan nuevo (`DEC-SUB-006`), sólo días de espera.
 
+**La ventana reducida protege el instante en que la persona autoriza, no el instante en que nos
+enteramos** (FASE 8 completa, `F-8CB1-004`). Lo que evita el doble cobro no es el corte sino
+`S17`, y `S17` corre cuando **nosotros** vemos la autorización: por el webhook, por la relectura
+de `S3` o por el barrido. Con el webhook demorado —`WH-2` midió demoras de días—, quien autoriza a
+las 23:58 del día anterior al cobro deja a la predecesora `ACTIVE` con su preapproval vivo cuando
+corre el lote, y **las dos cobran el mismo período**: la predecesora en su lote y la sucesora al
+vencer su ventana, con un crédito computado sin ese pago. **La corrección mecánica, sobre lo que
+ya existe**: **el job de `S3` relee por id el preapproval de toda sucesora con tarjeta de ventana
+reducida EN SU CORTE** —las 00:00 `-04` del día del cobro de la predecesora— **y antes del primer
+lote en que ese cobro puede caer**, que corre al minuto `:02` de la primera hora posterior a la
+hora de la fecha (`B/03` §3.4 punto 2). Si la ve `authorized`, `S3` no ocurre y corre `S2`, como su
+fila ya manda (`B/03` §3.2), y `S2` dispara `S17` sobre la predecesora antes de ese lote. ⚠️ **Lo que
+esto no cierra, y no está decidido**: si la fecha del cobro cae apenas pasadas las 00:00, el margen
+es de **dos minutos** —y no está medido que los lotes corran todas las horas—; y si la cancelación
+de `S17` falla, `S17` no ocurre en esa corrida (`B/09` §3) y la predecesora cobra igual. En los dos
+casos ese cobro **no tiene detector**: entra `SUCCEEDED` sobre una fila que `S17` después cierra con
+relectura, y el barrido la deja exenta (`B/09` §3). La otra salida que propone el hallazgo —marcar
+el cobro de una predecesora que entra **después** de la autorización de su sucesora— pide un motivo
+de marca nuevo, y eso es una decisión.
+
+**Y la predecesora en `GRACE_PERIOD` ya no es un caso de este §** (`DEC-SUB-021`, owner
+2026-09-25): desde el grace no se declara una sucesión, así que la pregunta de qué es *«la próxima
+fecha de cobro»* de una predecesora con la cuota en reciclaje —que el revisor de la costura dejó
+fuera de su vector en la FASE 8 completa— no tiene población al declarar.
+
 **Sobre el pagador manual, en cambio, no hay ventana reducida.** Su fecha del próximo cobro es una
 columna nuestra, así que si la predecesora cobra dentro de la ventana **se corrige** (`DEC-SUB-017`).
 La reducida hace falta sólo donde no hay corrección posible; aplicarla también ahí obligaría a
@@ -733,7 +817,11 @@ piezas de este § se resuelven solas, y conviene decirlo para que nadie las apli
 - **El crédito de `DEC-SUB-006` es cero.** El crédito es *«lo pagado sin usar»*, y a un suspendido
   no le queda nada pagado: el período en curso es justamente el que no pagó, y los días de grace
   fueron servicio sin cobro. La sucesora nace **sin fecha de primer cobro diferida** y cobra su
-  primer ciclo al autorizar.
+  primer ciclo al autorizar. ⚠️ **Esta última frase no se concilia con `D8`** —*«toda sucesora nace
+  con fecha de primer cobro posterior al vencimiento de su ventana»*, §5.2, que vigila `G-R1-B`—:
+  sin crédito, la fecha no se corre **más allá** de la ventana, pero tampoco puede caer antes de su
+  vencimiento. Anotado al revisar `F-8CC1-010` (FASE 8 completa); cuál de las dos lecturas vale no
+  está decidido acá.
 
 #### Y sobre el pagador manual sí hay corrección, porque acá no hay proveedor que no nos deje
 

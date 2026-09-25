@@ -366,12 +366,16 @@ vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede au
 
 **Con una salvedad que conviene decir en vez de suponerla, porque la predecesora se puede morir
 sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes ni contra
-el proveedor: de las ~~**ocho**~~ **diez** transiciones que la mueven durante la ventana, **cuatro la sacan de
+el proveedor: de las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que la mueven durante la ventana
+(recontadas con `DEC-SUB-021`, owner 2026-09-25: `GRACE_PERIOD` dejó de ser estado de declaración,
+así que `S6` y `S24` salen de la cuenta de `B/03` §3.2 y `S4` entra), **cuatro la sacan de
 las filas vivas sin que nadie declare nada** —`S12`, `S13`, `S16` y **el espejo de la baja que
-decide el proveedor** (`B/03` §3.2 y §10.1)—. **La octava, `S24`, también la saca y no entra en
-esa cuenta**: ahí el cliente **pidió la baja él mismo** en medio del grace (`DEC-SUB-014`), así
+decide el proveedor** (`B/03` §3.2 y §10.1)—. ~~**La octava, `S24`, también la saca y no entra en
+esa cuenta**~~ **`S24` también la saca y tampoco entra en esa cuenta** —ya no es una de las nueve,
+pero sigue ocurriendo sobre una predecesora que llegó al grace durante la ventana—: ahí el cliente **pidió la baja él mismo** en medio del grace (`DEC-SUB-014`), así
 que caer al piso no es algo que le pase sin que nadie declare nada — es la consecuencia del acto
-que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. **La novena y la décima —`S23` y
+que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. ~~**La novena y la décima**~~ **Las
+otras dos terminales —`S23` y
 `S27`, desde una `SUSPENDED` de pagador con tarjeta, que es estado de declaración desde la FASE 8
 completa (`F-8CB1-002`)— tampoco entran**, y no por la causa sino porque no le cambian nada a la
 cobertura: `SUSPENDED` ya no emitía ninguna fuente (§2.6), así que el piso lo tenía desde antes de
@@ -395,20 +399,42 @@ estado que tenía, y sigue cubriendo a quien estaba cubierto»*. Las dos emiten.
 > sólo en ese caso.** El contrato no las desempata: `fuentes` las devuelve a las dos y el pliegue
 > de `V/15` §2.2 las agrega como a cualquier otro par.
 
-**No se desempata porque en esa rama el cliente está pagando las dos**, y desempatar sería la
-única forma de cobrarle dos planes y darle uno. Tampoco hay decisión de cobertura que tomar: la
+~~**No se desempata porque en esa rama el cliente está pagando las dos**, y desempatar sería la
+única forma de cobrarle dos planes y darle uno.~~ **La razón que se daba —*«en esa rama el cliente
+está pagando las dos»*— es falsa, y se tacha** (FASE 8 completa, `F-8CC1-007`, `F-8CA1-012`). La
+sucesora nació con **el crédito de lo pagado y no usado de la predecesora** (`DEC-SUB-006`,
+computado al crearla, `B/12` §5.4), que le corrió la fecha de primer cobro: lo que la predecesora
+sigue emitiendo durante el incidente es un período **que ya se transfirió como crédito**, y la
+sucesora todavía no cobró nada por sí misma. Y si la predecesora está en `GRACE_PERIOD` —llegó ahí
+durante la ventana por `S4`, `B/03` §3.2—, su período en curso **ni siquiera se pagó**. En ninguno
+de los dos casos el cliente paga dos planes.
+
+⚠️ **Y con la razón corregida, la regla de sumar da más capacidad de la pagada**: con `SUMA`, un
+Básico de 5 fichas más un Premium de 20 le dan 25 pagando uno solo, hasta que una persona resuelve
+la marca y el excedente cae (`F-8CC1-007`); sobre una predecesora en grace, el cupo de un período
+impago se suma al de la sucesora (`F-8CA1-012`). **La regla no se cambia acá**: las dos salidas que
+proponen los hallazgos —desempatar por la sucesora, que es la que tiene el crédito, o no sumar una
+predecesora en `GRACE_PERIOD`— cambian qué cubre el contrato, y **quedan pendientes** con estos dos
+casos. Mientras tanto la regla sigue siendo la de arriba: las dos fuentes se agregan.
+
+~~Tampoco hay decisión de cobertura que tomar:~~ **El otro argumento sigue en pie**: la
 rama es un incidente declarado, con la marca puesta y una persona mirándolo, y su salida es
 resolver la cancelación —no elegir qué fuente vale—. Lo que no puede pasar es que el caso quede
 sin nombrar, porque entonces el techo de lo que alguien puede tener depende de si una llamada al
 proveedor salió bien.
 
-**Y no es alcanzable por ningún otro camino.** Las ~~**ocho**~~ **diez** transiciones que mueven a la
-predecesora durante la ventana de autorización —`S8`, `S9`, `S6`, `S12`, `S13`, `S16`, `S24`, el espejo
+**Y no es alcanzable por ningún otro camino.** Las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que mueven a la
+predecesora durante la ventana de autorización —`S8`, `S9`, ~~`S6`,~~ **`S4`**, `S12`, `S13`, `S16`, ~~`S24`,~~ el espejo
 del
 `B/03` §10.1, que es la que la tabla numerada del §3.2 no lista, y `S23` y `S27` (FASE 8 completa,
-`F-8CB1-002`)— la dejan en un estado que **no
-emite** en ~~siete de los ocho~~ nueve de los diez casos; la excepción es
-`S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`. Y en
+`F-8CB1-002`; recontadas con `DEC-SUB-021`)— la dejan en un estado que **no
+emite** en ~~siete de los ocho~~ ~~nueve de los diez casos; la excepción es~~ **siete de los nueve
+casos; las excepciones son dos**:
+`S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`, **y
+`S4`, que la deja en `GRACE_PERIOD`, que emite la misma `SUSCRIPCIÓN` que emitía en `ACTIVE`** —una
+sola: la sucesora, en `PENDING_AUTHORIZATION`, todavía no emite—. **`S6` —por su tercer evento, el único
+que la guarda de la sucesión en curso no frena (`B/03` §3.2)— y `S24` siguen pudiendo ocurrir desde
+ese grace y no cambian la conclusión**: las dos la dejan sin emitir (`SUSPENDED`, `CANCELLED`). Y en
 todas, si
 la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a
 `CANCELLED`.
@@ -696,7 +722,8 @@ direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA
 #### La tercera pregunta: subir o bajar lo contesta verticales
 
 **Es la que faltaba, y su ausencia era el acoplamiento más caro de los dos lados.** La regla que
-decide **cuándo se cobra** un cambio de plan está en `B/10` §3.5 y dice, textual, que *«la dirección
+decide **cuándo se cobra** un cambio de plan está en `B/10` §3.5 y ~~dice~~ decía, textual (hasta
+la FASE 8 completa, `F-8CC1-013`, que lo alineó con el veredicto), que *«la dirección
 se deriva del delta entre las dos versiones, **no del `rank`**»* — *«si algo baja, un limit, un
 entitlement, una cuota, sigue el camino de downgrade; si nada baja, el de upgrade»*, y **cualquier
 baja manda**.
@@ -715,7 +742,11 @@ comportan dos planes entre sí**, que es la misma clase de dato que `permitePaus
 **Las dos alternativas, y por qué no**: derivar la dirección del `rank` es barato y **el diseño ya
 lo rechazó por escrito** —un plan más caro puede bajar un límite al rediseñarse, y entonces al
 cliente **se le recorta algo en silencio mientras se le cobra como mejora**; y un plan retirado no
-tiene `rank` comparable, que es el único caso donde la regla hace falta—. Y dejar que billing lea
+tiene `rank` comparable, ~~que es el único caso donde la regla hace falta~~ que es el caso donde el
+`rank` ni siquiera contesta—. **El veredicto rige TODO cambio de plan, no sólo el del plan
+retirado**: el primer motivo —el rediseño que baja un límite— es sobre dos planes vendibles con
+`rank`, así que *«el único caso»* contradecía la frase que lo precedía (FASE 8 completa,
+`F-8CD1-003`; `DEC-ARCH-008`). Y dejar que billing lea
 las dos tablas es **el acoplamiento exacto que partir el programa en dos épicas venía a impedir**:
 sería la primera excepción declarada al corte, y la regla de vigilancia del §4.2 se dispara con
 ella.

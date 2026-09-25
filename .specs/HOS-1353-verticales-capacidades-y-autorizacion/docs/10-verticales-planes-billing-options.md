@@ -92,7 +92,7 @@ va a usar sin repetirla:
 | **la pricing** (§47) y todo camino de alta | la **versión vigente** de cada plan de la vertical, **y sólo si es vendible** |
 | **una fuente `SUSCRIPCIÓN`** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
 | **la derivación del plan de trial** (§10.3) | las versiones **vigentes y vendibles**, la de `rank` más alto y la más baja (`DEC-ARCH-002`) |
-| **la comparación de tiers** (§27, §28) | los `rank` de las versiones **vigentes y vendibles** |
+| **la comparación de tiers** (§27, §28) | ~~los `rank` de las versiones **vigentes y vendibles**~~ **las dos versiones del cambio** —la anclada de origen y la de destino— **y no su `rank`**: la dirección de un cambio de plan es el veredicto `direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE \| BAJA`, que esta épica computa por el delta de sus entitlements y limits —**cualquier baja manda**— y billing recibe sin leer las tablas (`12-contrato-de-cobertura.md` §4.1, `DEC-ARCH-008`; FASE 8 completa, `F-8CD1-003`) |
 | **un grant permanente** (§35) | la **versión vigente** del plan que ancló **en esa vertical**, **sea vendible o no** (`12-contrato-de-cobertura.md` §2.8) |
 | **una fuente `BASE`, y una fuente de trial en `PRE_TRIAL`** | la versión vigente de la de **piso** y la de **pre-trial** de la vertical, **no vendibles por construcción** (cap. 02 §2.1) |
 
@@ -125,7 +125,9 @@ si la resolución les exigiera `vendible`, **nadie tendría nada**, nunca.
 > separado.
 
 Con ese enunciado las **seis** filas quedan del lado correcto sin excepción: la pricing, la
-derivación del plan de trial y la comparación de tiers **venden**, y piden las dos; la fuente
+derivación del plan de trial y la comparación de tiers **venden**, y piden las dos —la comparación,
+**sobre la versión de destino**: la de origen es la anclada, que resuelve lo que la persona tiene y
+por eso no pide `vendible` (el caso del plan retirado, `B/10` §3.5; FASE 8 completa, `F-8CD1-003`)—; la fuente
 `SUSCRIPCIÓN`, el grant y las dos versiones no vendibles **resuelven lo que alguien tiene**, y
 ninguna pide `vendible`. Lo que cambia entre esas tres últimas es sólo **cuál versión** toman: la
 suscripción, la que ancló; el grant y las no vendibles, la vigente.

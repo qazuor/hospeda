@@ -90,12 +90,20 @@ en vez de algo que se acumula sin que nadie lo sepa.
 Es el borde real del retiro, y necesita regla propia: **su versión no participa del `rank`**
 (`DEC-ARCH-002`), así que la pregunta *«¿es upgrade o downgrade?»* no tiene respuesta por orden.
 
-**La dirección se deriva del delta entre las dos versiones, no del `rank`:**
+~~**La dirección se deriva del delta entre las dos versiones, no del `rank`:**~~
+**La dirección no la deriva billing: la decide el veredicto de verticales,
+`direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA`** (`12-contrato…` §4.1,
+`DEC-ARCH-008`; FASE 8 completa, `F-8CD1-003`, `F-8CC1-013`). Verticales lo computa por el delta
+entre las dos versiones —no por el `rank`—, porque las tablas que se comparan son suyas; **billing
+nunca lee `plan_version_entitlement` ni `plan_version_limit`** y recibe sólo `SUBE` o `BAJA`. **Y
+rige todo cambio de plan, no sólo éste**: el plan retirado es el caso donde el `rank` ni siquiera
+contesta, no el único donde el veredicto hace falta. Lo que sigue es **qué hace billing con cada
+veredicto**, y el criterio con el que verticales lo emite:
 
-- **si algo baja** —un limit, un entitlement, una cuota de un entitlement medido— el cambio sigue
+- **si algo baja** (veredicto `BAJA`) —un limit, un entitlement, una cuota de un entitlement medido— el cambio sigue
   el camino de downgrade (`DEC-SUB-008`): el monto se muta ya, las capacidades bajan al fin del
   ciclo y el excedente se avisa antes de tocarlo;
-- **si nada baja**, sigue el camino de upgrade (`DEC-SUB-007`): inmediato.
+- **si nada baja** (veredicto `SUBE`), sigue el camino de upgrade (`DEC-SUB-007`): inmediato.
 
 **Cualquier baja manda.** Un cambio en el que suben tres claves y baja una es un downgrade a
 todos los efectos, porque el excedente que hay que avisar existe igual y el camino de upgrade no
@@ -319,7 +327,8 @@ por escrito y no sea un botón más del panel.
 ## Lo que este capítulo NO cierra
 
 - **El detalle del cambio de plan** —cómo se ejecuta contra el proveedor, qué se compensa— es del
-  capítulo 12 (épica de billing). Acá está sólo la regla de dirección para el caso del plan
-  retirado.
+  capítulo 12 (épica de billing). Acá está sólo ~~la regla de dirección para el caso del plan
+  retirado~~ qué hace billing con el veredicto de dirección —que rige todo cambio de plan y lo emite
+  verticales (`12-contrato…` §4.1, `DEC-ARCH-008`)—, escrita junto al caso del plan retirado.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en mora** sigue abierto: lo dejó
   anotado `DEC-MP-002` y no lo cierra este capítulo.

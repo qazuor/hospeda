@@ -337,9 +337,11 @@ no en caminos, y las columnas nacen todas en el mismo acto.
 *«vigila el ACTO de declarar, no una propiedad permanente de la fila»* (`B/20` §2), y el acto es la
 segunda rama de la condición de `S1` —*«no hay otro origen vivo para ese `user + vertical`, **o la
 fila declara una sucesión** (`sucede_a`)»*— que vive en `03` §3.2, adentro del `03` §3.1–§3.4 de
-B3. B3 es la **tercera** unidad del §3, así que las ~~**ocho**~~ **diez** transiciones que después sacan a una
-predecesora del conjunto de ~~tres~~ declaración —`S8` y `S9`, `S6`, `S12`, `S13`, `S16`, el espejo del §10.1,
-`S24` y, desde la FASE 8 completa (`F-8CB1-002`), `S23` y `S27`— llegan repartidas en unidades
+B3. B3 es la **tercera** unidad del §3, así que las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que después sacan a una
+predecesora del conjunto de ~~tres~~ declaración —`S8` y `S9`, ~~`S6`,~~ **`S4`**, `S12`, `S13`, `S16`, el espejo del §10.1,
+~~`S24`~~ y, desde la FASE 8 completa (`F-8CB1-002`), `S23` y `S27`; recontadas con `DEC-SUB-021`
+(owner 2026-09-25), que sacó a `GRACE_PERIOD` del conjunto: `S6` y `S24` salen de la cuenta y
+`S4` entra (`03` §3.2)— llegan repartidas en unidades
 posteriores —B7, B8, B9 y, para `S27`, B12—, todas **después**. **`S22`, `S23` y `S24` van con B8**: son la baja que pide la persona estando pausada, suspendida o en el grace, y B8 es la unidad de *«darse de baja»*. La tabla de unidades no las nombraba; se agregaron a la columna de B8 en la FASE 8 completa.
 
 **`G-R1-B` va con B3 porque depende de una columna de B3 y compara contra la ventana de B3.** El
@@ -514,7 +516,10 @@ camino excepcional del capítulo 13. Dejó de serlo: `B/12` §5.3 movió el disp
 la sucesión**, `S19` creó el pago retenido, y `DEC-RF-002` declaró el camino **normal** —*«va a
 pasar seguido sobre el camino de recuperación que `DEC-SUB-003` diseñó para que no fuera un
 muro»*—. Esa rama vive en **B7**, que está en el camino crítico, y su desenlace es un reembolso,
-que es **B6**.
+que es **B6**. (`DEC-SUB-003` fue superada por `DEC-SUB-021`, owner 2026-09-25: desde el grace ya
+no se declara una sucesión. **El pago retenido sigue teniendo población** —la predecesora de una
+sucesión declarada en `ACTIVE` que entra en el grace durante la ventana, `B/03` §3.2—, así que la
+dependencia de `B6` no cambia; lo que cambia es cuán seguido pasa, y eso no está medido.)
 
 **El bloqueo alcanza a la ejecución, no al disparador, y la línea es exacta:**
 
@@ -528,7 +533,8 @@ que es **B6**.
 
 O sea: **B7 puede quedar entera y correcta con B6 sin empezar**, y lo que queda pendiente es que
 la persona que confirma el reembolso tenga con qué ejecutarlo. Lo que **no** se puede es liberar
-el cambio de plan desde grace sin B6 y llamarlo completo: habría casos acumulándose en el canal de
+~~el cambio de plan desde grace~~ la sucesión —cuyo pago retenido llega desde que la predecesora
+entra en el grace durante la ventana (`DEC-SUB-021`)— sin B6 y llamarlo completo: habría casos acumulándose en el canal de
 conciliación sin herramienta que los cierre.
 
 **Y el criterio de terminación de B7 quedó describiendo el comportamiento que la tanda

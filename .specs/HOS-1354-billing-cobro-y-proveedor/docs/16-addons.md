@@ -116,14 +116,19 @@ Comprar un addon **toca plata**, así que se elige hacia dónde falla: **hacia n
 | `CANCEL_SCHEDULED` | **no** | se conoce la fecha en que se va; venderle un addon ahí es fabricar un huérfano con fecha |
 | trial, sin suscripción | **no** | §38, invariante §64.7 y capítulo 11 (épica de verticales) §5 |
 
-### 2.3 Por qué `GRACE_PERIOD` no vale si ahí sí se puede cambiar de plan
+### 2.3 Por qué `GRACE_PERIOD` no vale ~~si ahí sí se puede cambiar de plan~~
 
-Parece incoherente con `DEC-SUB-003`, que permite cambiar de plan en grace, y no lo es:
+**Desde `DEC-SUB-021` (owner 2026-09-25) la incoherencia que este § desarmaba ya no se plantea**:
+en el grace tampoco se cambia de plan —primero se regulariza, `B/03` §3.3.1 y §4—, así que los dos
+actos quedan del mismo lado. La fila de arriba no cambia. Lo que sigue es el argumento de cuando
+`DEC-SUB-003` lo permitía, y queda tachado:
 
-**cambiar de plan en grace es la salida del problema** —bajarse a algo más barato es cómo alguien
+~~Parece incoherente con `DEC-SUB-003`, que permite cambiar de plan en grace, y no lo es:~~
+
+~~**cambiar de plan en grace es la salida del problema** —bajarse a algo más barato es cómo alguien
 se recupera de un impago, y por eso esa decisión lo permite con cobro inmediato—. **Comprar un
 addon es lo contrario: gastar más.** La misma regla aplicada a dos actos que van en direcciones
-opuestas daría el mismo resultado, y por eso la regla no es el estado: es qué hace el acto.
+opuestas daría el mismo resultado, y por eso la regla no es el estado: es qué hace el acto.~~
 
 ### 2.4 Y hay una excepción, forzada por el §35.3
 
@@ -467,7 +472,7 @@ tarde: el barrido, una revisión manual o un reconciliador leen lo mismo que el 
 mientras la sucesión está en curso.** Leerla sólo sobre `sucedida_por` deja pasar el caso
 contrario al que arregla: **hasta la FASE 9-bis-3, `S18` sólo la escribía con la sucesora
 `ACTIVE`**, y la tabla de ~~ocho~~ transiciones de `B/03` §3.2 —diez desde la FASE 8 completa
-(`F-8CB1-002`)— enumera, entre otras, **cuatro** por las que la
+(`F-8CB1-002`), nueve desde `DEC-SUB-021` (owner 2026-09-25), con las cuatro de abajo intactas— enumera, entre otras, **cuatro** por las que la
 predecesora deja de ser fila viva **antes** de eso y sola — `S12` (le llegó la fecha de fin de
 servicio), `S13` (*Free Forever*), `S16` (el primer cobro de su autorización se rechaza, y
 `PA-3` mide que ese cobro llega **entre 26 y 44 minutos** después de autorizar, o sea dentro de la
