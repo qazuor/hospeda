@@ -76,6 +76,10 @@ informada. Es el mismo criterio que `DEC-TRIAL-006` aplicó al botón *Empezar*.
 **reactiva**, y como §10.2 no admite devolver el trial, alguien puede quedar **sin ficha y sin
 trial**. El hueco preguntaba si eso amerita una excepción al §10.2.
 
+**La baja por moderación tiene fila desde la FASE 8 completa**: es `PB10`, que lleva la ficha a
+`MODERATED`, y de ahí sólo un admin la saca, a `DRAFT` (`PB11`; cap. 03 §9; `F-8CA2-004`, owner
+2026-09-25). **Ninguna de las dos toca la máquina de trial**: lo que sigue vale igual.
+
 ### 2.2 No hay excepción, porque no son el mismo caso
 
 Hay dos bajas distintas y tratarlas igual es el error:
@@ -410,7 +414,7 @@ abre la puerta del §8.1:
 
 | # | qué | por qué no se puede dejar para después |
 |---|---|---|
-| 1 | **declarar el evento de activación** de la vertical, si todavía no lo declaró | el §10.4 lo exige, y sin él `T7` no tiene hecho que buscar en el pasado. Para Partner el candidato anotado es la aprobación del admin (`DEC-TRIAL-003`, implicación 1) |
+| 1 | **declarar el evento de activación** de la vertical, si todavía no lo declaró | el §10.4 lo exige, y sin él `T7` no tiene hecho que buscar en el pasado. Para Partner el candidato anotado es la aprobación del admin (`DEC-TRIAL-003`, implicación 1), **y la declaración tiene que decir también qué cuenta como *«ya ejerció»* para un partner dado de alta por el camino B**, que no pasa por la postulación: sin eso `T7` no lo alcanza (cap. 18 §1.5; FASE 8 completa, `F-8CA2-012`) |
 | 2 | **publicar la versión del plan de trial con días > 0** | es el encendido. Desde ese instante `T1` puede disparar sobre cualquiera que publique |
 | 3 | **ejecutar `T7` sobre la cohorte** | entre el paso 2 y éste, cualquier ex-cliente que publique se lleva un trial completo. La ventana tiene que ser **cero**: los tres pasos son **un solo acto**, no tres tareas |
 

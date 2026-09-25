@@ -193,7 +193,7 @@ mora (`DEC-MAIL-001`, `EX-3`).
 ## 6. Admin
 
 El §48 enumera veintiuna cosas que el admin debe poder **inspeccionar**. Las **acciones** —que el
-§48 no enumera aunque el resto del PDR se las asigne— son las doce del capítulo 08 §3 (núcleo),
+§48 no enumera aunque el resto del PDR se las asigne— son las ~~doce~~ trece del capítulo 08 §3 (núcleo) (la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25),
 cada una con permiso propio, auditoría y confirmación explícita si es destructiva o mueve dinero.
 
 Tres cosas que el panel necesita mostrar y que no son inspección de una entidad, sino la salida

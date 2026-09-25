@@ -77,6 +77,9 @@ ser.**
 
 ## Lo que este capítulo NO cierra
 
-- **El ciclo de publicación de la presencia de Partner** (cap. 18, épica de verticales): que
+- ~~**El ciclo de publicación de la presencia de Partner** (cap. 18, épica de verticales): que
   existe y que la da el plan Gold está decidido; cómo se publica es diseño de producto, no de
-  billing.
+  billing.~~ **La presencia de Partner no tiene ciclo de publicación, y la regla vive en el cap. 18
+  §1.6** (épica de verticales): la lectura pública pregunta por el entitlement de presencia y, si
+  falta, responde que no existe. Este capítulo y aquél se remitían el uno al otro; ahora éste
+  remite y aquél decide (FASE 8 completa, `R13`, owner 2026-09-25).

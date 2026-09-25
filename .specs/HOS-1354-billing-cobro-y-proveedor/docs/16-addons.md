@@ -438,6 +438,9 @@ algo que ya no está»*, y sin que ningún barrido lo viera, porque la instancia
   `CANCELLED` y `S21` la suscripción de complemento (§4.3, §4.4). **Si la persona vuelve, lo
   contrata de nuevo**: no se reanuda nada.
 - **`A6` no cambia**: el borrado de la ficha sigue siendo la otra puerta, y sigue *«consumiendo»*.
+  **Y desde la FASE 8 completa ese borrado tiene transición**: es `PB12`, *«el dueño la borra»*,
+  que lleva la ficha a `PURGED` (`V/03` §9; `F-8CA2-004`, owner 2026-09-25). Hasta ahí *«la ficha
+  se borró»* no lo ejecutaba ninguna fila.
 
 > **Lo que esta mitad no alcanza, dicho para que no se lea de más.** Se evalúa sobre **una fila
 > principal**, así que cuando el dueño **no tiene ninguna** en esa vertical —el beneficiario de un

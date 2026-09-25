@@ -150,20 +150,22 @@ si es destructiva o mueve dinero.**
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
 | **extender un trial** | §32 | no |
+| **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2 | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
 | **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero |
 
-**La tabla tiene DOCE filas y cada fila es UNA acción, aunque varias nombren más de una escritura.**
-*«Otorgar o revocar»*, *«pausar o reanudar»*, *«aprobar o rechazar»* y ahora *«otorgar, anclar o
-revocar»* son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las cinco
-líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— siguen
-diciendo **doce** y siguen siendo exactas. **Lo que no se puede es ejecutar una escritura que no
+~~**La tabla tiene DOCE filas**~~ **La tabla tiene TRECE filas** —la decimotercera, moderar una
+ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25)— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
+*«Otorgar o revocar»*, *«pausar o reanudar»*, *«aprobar o rechazar»*, ~~y ahora~~ *«otorgar, anclar o
+revocar»* **y *«moderar o levantar la moderación»*** son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las cinco
+líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— ~~siguen
+diciendo **doce** y siguen siendo exactas~~ **dicen trece desde la misma pasada**. **Lo que no se puede es ejecutar una escritura que no
 esté nombrada en ninguna fila**: una escritura sin fila no tiene permiso que pedir, no es capacidad
 del actor —así que sus pasos 5-7 caen sobre el sujeto y la vuelven inejecutable— y **no le está
 prohibida a un actor de sistema**, que son las tres cosas que esta tabla reparte. Por eso anclar
 una vertical a un grant entra **acá** y no sólo en la prosa del contrato que lo declaró.
 
 **Y lo que le pone un caso ADELANTE a esa persona no es una fila de esta tabla: es un efecto de
-transición, así que siguen siendo doce.** La distinción hay que decirla porque `DEC-RF-002`
+transición, así que ~~siguen siendo doce~~ no suma filas.** La distinción hay que decirla porque `DEC-RF-002`
 convirtió el reembolso del pago pendiente en **el desenlace de un camino que el sistema alcanza
 solo** —antes era un acto que alguien pedía—, y una acción con permiso, auditoría y confirmación
 declarados **no sirve de nada si nadie enruta el caso**. El enrutado existe y está en dos lugares
@@ -229,7 +231,8 @@ dos filas describen un trámite que nadie empieza.
    MOTIVO, en texto libre** (`B/02` §2.4, `DEC-GRANT-008`). **Las anclas no se borran**: dejan de
    ser anclas vivas todas a la vez. Y la regla que
    esta tabla ya imponía sigue igual —*«lo que no se puede es ejecutar una escritura que no esté
-   nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una décimotercera.
+   nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una ~~décimotercera~~ fila más
+   (la decimotercera que la tabla tiene hoy es la de moderar, que es otra acción).
 
    **El motivo es la mitad que la auditoría necesitaba y el registro de auditoría no da.** Ese
    registro dice **qué acto ocurrió, cuándo y quién lo hizo**; lo que no dice —ni puede— es

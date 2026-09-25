@@ -86,9 +86,65 @@ números y una declaración que `DEC-TRIAL-003` planifica cambiar.
 **El día que Partner encienda su trial, el §10.5 pasa a alcanzarlo y el procedimiento ya está
 escrito**: capítulo 11 §8 — declarar el evento, publicar la versión con días `> 0` y ejecutar
 `T7`, los tres como **un solo acto**. Para Partner el candidato a evento de activación es la
-aprobación del admin (`DEC-TRIAL-003`, implicación 1), así que `T7` alcanzaría a **los partners ya
-aprobados**, que es lo correcto: ya fueron clientes y no les corresponde estrenar el trial el día
+aprobación del admin (`DEC-TRIAL-003`, implicación 1), así que `T7` alcanzaría a ~~**los partners ya
+aprobados**~~ **los partners que ya ejercieron el hecho que se declare**, que es lo correcto: ya fueron clientes y no les corresponde estrenar el trial el día
 que se enciende.
+
+**Y eso no son todos los partners ya aprobados** (FASE 8 completa, `F-8CA2-012`, owner
+2026-09-25). `T7` busca en el registro el hecho declarado (`V/03` §2), y **el camino B del §17.3
+—alta directa del admin— no pasa por la postulación** (§2.2): si el hecho que se declare es la
+aprobación de la postulación (`PP2`, cap. 03 §11), un partner del camino B no lo tiene, y `T7` no
+lo alcanza. **Hoy no cambia nada**, porque los días están en cero y ninguna de las tres salidas de
+`PRE_TRIAL` puede ocurrir; **es una condición del encendido**: el paso 1 del cap. 11 §8.3 —declarar
+el evento— tiene que decir también qué cuenta como *«ya ejerció»* para un partner del camino B.
+
+### 1.6 La presencia no tiene máquina de estados: la lectura pregunta por el entitlement
+
+FASE 8 completa, racimo `R13`: `F-8CA1-005`, `F-8CA2-005`, `F-8CA3-006`, `F-8CA2-012`,
+`F-8CA1-014`; owner 2026-09-25.
+
+**El hueco**: este capítulo decía que el ciclo de publicación de la presencia era del capítulo 19,
+y el 19 decía que era de éste. Ninguno lo tenía, así que **un Gold que dejaba de pagar, o que
+bajaba a Silver, seguía publicado**: `PB2` es de fichas (cap. 03 §9) y el reconciliador de
+excedentes trabaja con limits (cap. 15 §4.2), y la presencia no es ninguna de las dos cosas —es el
+entitlement booleano del §1.2—.
+
+> **La página propia de Partner Gold no tiene máquina de estados. La lectura pública pregunta si
+> el partner tiene HOY el entitlement de presencia pública (§1.2), desde el caché del conjunto
+> efectivo que ya existe (cap. 02 §3), y si no lo tiene responde que no existe: 404.**
+
+- **El contenido se conserva.** No se baja, no se archiva y no se borra nada: lo único que cambia
+  es la respuesta de la lectura.
+- **Si vuelve a Gold, la página reaparece sola**, sin ninguna transición: la próxima lectura
+  encuentra la clave en el conjunto efectivo.
+- **404 y no otra respuesta**: un partner que no tiene la clave es indistinguible desde afuera de
+  uno que no existe, que es la precisión 1 del paso 4 del cap. 17 §1.2. El código de hoy responde
+  410 al partner revocado, y la migración lo cambia (`V/21` §4; `F-8CA1-014`).
+- **La invalidación la llevan el aviso y el reconciliador diario** (`DEC-ARCH-009`). El aviso
+  alcanza los casos de este hueco sin nada nuevo: toda transición de la suscripción y todo cambio
+  de plan invalidan la entrada del `user + vertical` (cap. 02 §3.2), así que el Gold que pasa a
+  `SUSPENDED` y el que baja a Silver dejan de tener la clave en la próxima lectura. **Y si el aviso
+  se pierde, o la fuente vence por fecha sin transición**, la red es el reconciliador diario de
+  cobertura, que desde esta decisión incluye a cada partner con presencia cargada: resuelve en
+  vivo el entitlement, lo compara con el caché y, si no coinciden, invalida (cap. 03 §9, con hasta
+  un día de atraso).
+
+**Por qué alcanza sin máquina**: la visibilidad de la página es exactamente *«¿el conjunto efectivo
+otorga la clave?»*, y esa pregunta ya tiene dueño, fuente y caché. Lo que faltaba no era un estado:
+era que alguien la hiciera en la lectura.
+
+> ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
+> el camino principal, da acceso indebido ni borra datos):
+>
+> 1. **La presencia no tiene reloj de retención.** No tiene `inactiva_desde` ni ninguna fila de
+>    `PB4`/`PB5`/`PB9` que la alcance, así que el contenido de un partner que dejó de ser Gold se
+>    conserva sin fin (`F-8CA3-006`). La decisión dice que se conserva; hasta cuándo no.
+> 2. **La entidad del contenido de la presencia no está declarada en el cap. 02 §2.5**, que declara
+>    sólo `listing` (`F-8CA3-006`). La regla de arriba no la necesita —lee el entitlement, no el
+>    contenido—, pero el modelo no está escrito.
+> 3. **Entre la pérdida de la clave y la invalidación**, si el aviso se pierde, la página sigue
+>    visible hasta la corrida siguiente del reconciliador: hasta un día, el costo que
+>    `DEC-ARCH-009` aceptó.
 
 ---
 
@@ -183,10 +239,13 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
 
 ## Lo que este capítulo NO cierra
 
-- **El ciclo de publicación de la presencia** es del capítulo 19: acá está que existe, que la da
-  el plan Gold y que no es una ficha.
+- ~~**El ciclo de publicación de la presencia** es del capítulo 19: acá está que existe, que la da
+  el plan Gold y que no es una ficha.~~ **La presencia no tiene ciclo de publicación: lo cierra el
+  §1.6**, y el capítulo 19 remite acá (FASE 8 completa, `R13`, owner 2026-09-25). Lo que el §1.6
+  deja declarado con su causa está en su ⚠️.
 - **Cómo se registra un pago manual** es del capítulo 13 (épica de billing).
 - **Si algún día Partner enciende su trial**, tiene que declarar su evento de activación
   (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo. **Cuál** es ese evento sigue
-  abierto; **qué hay que hacer ese día** no: es el capítulo 11 §8, y los partners ya aprobados
-  quedan resueltos por `T7`.
+  abierto; **qué hay que hacer ese día** no: es el capítulo 11 §8, y los partners ~~ya aprobados~~
+  que ya ejercieron el hecho declarado quedan resueltos por `T7` — **los del camino B, sólo si la
+  declaración dice qué cuenta para ellos** (§1.5; `F-8CA2-012`).

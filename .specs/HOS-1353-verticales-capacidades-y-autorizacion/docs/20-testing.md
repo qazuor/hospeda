@@ -48,7 +48,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | # | qué falla si se rompe | de dónde sale |
 |---|---|---|
 | G1 | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 | cap. 01 §4.4 (núcleo) |
-| G2 | una operación de dominio **no declara** su contexto de vertical | cap. 17 §2.3 (épica de verticales) |
+| G2 | **dos mitades, con dos mensajes**. **(a)** una operación de dominio **no declara** su contexto de vertical; **(b)** una operación **sobre una ficha** toma su contexto de vertical **del pedido y no de la ficha** (FASE 8 completa, `F-8CA1-001`, owner 2026-09-25) | cap. 17 §2.3 y §1.2 precisión 6 (épica de verticales) |
 | G3 | una clave usada en código **no existe en la base**, o una de la base **no existe en el catálogo** — las dos direcciones | cap. 02 §1.2 |
 | G4 | una transición de suscripción o de trial **escribe roles** | cap. 17 §4.4 (épica de verticales) |
 | G5 | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes | cap. 15 §4.2 (épica de verticales) |

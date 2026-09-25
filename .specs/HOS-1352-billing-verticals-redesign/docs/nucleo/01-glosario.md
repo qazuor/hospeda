@@ -44,7 +44,7 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | **Vertical comercial** | La que puede participar de planes y billing (§6). Hoy son las cinco. |
 | **Vertical con ficha** | Alojamiento, Gastronomía, Experiencia (§6). |
 | **Ficha** | Recurso publicable con **exactamente un** User dueño (§6). No hay multi-dueño. Un User puede tener varias. |
-| **Presencia de Partner** | La página propia de Partner Gold (§17.1). El §17.1 ordena **no** forzarla al modelo `Ficha` pese al parecido, así que es una entidad distinta con su propio ciclo de publicación. |
+| **Presencia de Partner** | La página propia de Partner Gold (§17.1). El §17.1 ordena **no** forzarla al modelo `Ficha` pese al parecido, así que es una entidad distinta ~~con su propio ciclo de publicación~~. **No tiene máquina de estados**: la lectura pública pregunta si el partner tiene **hoy** el entitlement de presencia y, si no, responde que no existe; el contenido se conserva y la página vuelve sola si vuelve a Gold (`V/18` §1.6; FASE 8 completa, `F-8CA1-005`, `F-8CA2-005`, `F-8CA3-006`, owner 2026-09-25). |
 | **Inactividad** (de una ficha) | El tiempo que lleva **sin estar a la vez publicada y cubierta**, contado desde **el más reciente** de los ~~cuatro~~ **cinco** hechos que la reinician —y, en una ficha que ya existía el día del corte, **desde el corte** si ninguno de los cinco ocurrió después (la escritura `C` de la tabla de abajo; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25)—. Es el reloj del §25 —*«desde que queda efectivamente inactiva»*— el que disparan `PB4` (día 90) y `PB5`, y sobre el que se cuenta el día 180 (cap. 02 §4, épica de verticales). **Ese instante es un dato y tiene dónde vivir: la columna `listing.inactiva_desde`** (`V/02` §2.5). |
 
 **Los ~~cuatro~~ cinco hechos que reinician la inactividad, más la escritura única del corte, y la lista es cerrada:**
@@ -251,7 +251,7 @@ publicadas o no cuando la pausa empezó** (FASE 8 completa, owner 2026-09-25).
 >    sin cobertura, corre `PB2` y escribe el hecho 5 en todas las fichas del dueño en la vertical,
 >    en el mismo acto. **El borde que queda, declarado con su causa (`DEC-METH-015`)**: el dueño
 >    que **sólo** tiene borradores no está en la población del reconciliador —fichas fuera de
->    `DRAFT` y `PURGED`— y no tiene ficha publicada que delate la diferencia, así que su red sigue
+>    `DRAFT`, `PURGED` **y `MODERATED`** (`F-8CA2-004`)— y no tiene ficha publicada que delate la diferencia, así que su red sigue
 >    siendo `PB5` y `PB9` sobre el reloj viejo.
 > 3. **El recálculo escribe un CAMBIO sin la memoria que lo detecta** (nuevo con la decisión del
 >    owner, 2026-09-25). `PB2` sabe que hubo pérdida porque la ficha estaba en `PUBLISHED` —el
@@ -421,7 +421,7 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 > entidad con estados propios»*, y lo es — hay una decisión humana en el medio, así que `APROBADA`
 > y `RECHAZADA` no son el mismo dato con distinto signo. Se agrega al núcleo en vez de declararse
 > en su subdominio, que es la regla del índice.
-| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` · **`PURGED`** — el quinto, final: la ficha cuyo contenido borró el día 180 (`PB9`), que no se republica ni cuenta para el cupo; desde la FASE 8 completa (`F-8CA2-008`, `DEC-DATA-005`, owner 2026-09-25; `V/03` §9) |
+| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` · **`PURGED`** · **`MODERATED`** — el quinto, final: la ficha cuyo contenido borró el día 180 (`PB9`) **o su dueño (`PB12`)**, que no se republica ni cuenta para el cupo; desde la FASE 8 completa (`F-8CA2-008`, `DEC-DATA-005`, owner 2026-09-25; `V/03` §9). **El sexto, `MODERATED`**: la ficha que un admin bajó con motivo (`PB10`); no la republica el dueño ni el sistema, no cuenta para el cupo y sólo un admin la saca, a `DRAFT` (`PB11`) (`F-8CA2-004`, owner 2026-09-25) |
 | **Postulación de Partner** | `PENDIENTE` · `APROBADA` · `RECHAZADA` |
 | **Grace** | no es una máquina propia: es el sub-estado `GRACE_PERIOD` de Suscripción, con su reloj |
 | **Pausa** | no es una máquina propia: es el sub-estado `PAUSED` de Suscripción, **con un motivo obligatorio** |

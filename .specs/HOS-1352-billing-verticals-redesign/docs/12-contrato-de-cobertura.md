@@ -801,12 +801,12 @@ no corre la máquina de trial (`V/03` §9, ⚠️ punto 3).
 **El aviso es rápido; la red es el reconciliador diario de cobertura** (`DEC-ARCH-009`, owner
 2026-09-25; `V/03` §9). El aviso no tiene transporte durable —el outbox del núcleo es de correos—,
 así que **perderlo es un caso declarado, no un incidente**, y una vez por día verticales vuelve a
-preguntar por cada dueño con fichas fuera de `DRAFT` y `PURGED`, compara con el estado de sus
+preguntar por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`F-8CA2-004`), compara con el estado de sus
 fichas y, si no coinciden, corre la transición que el aviso habría disparado —`PB7`/`PB3`
 republican, `PB2` despublica—, escribe el reloj (hechos 2 y 5) e invalida el caché. **No es un
 quinto consumidor del aviso**: no lo escucha; es la pregunta del §2.1 hecha por calendario, y
 figura en esa fila. Cubre por igual el aviso perdido, la fecha que vence sin transición (§2.6) y
-cualquier camino que nadie previó, **con hasta un día de atraso**. Lo que no cubre —la máquina de
+cualquier camino que nadie previó, **con hasta un día de atraso**. **Y a cada partner con presencia cargada** le resuelve en vivo el entitlement de presencia y, si el caché dice otra cosa, lo invalida: la presencia no tiene máquina (`V/18` §1.6, `V/03` §9; FASE 8 completa, `R13`, owner 2026-09-25). Lo que no cubre —la máquina de
 trial, el dueño que sólo tiene borradores, el caché sin diferencia de fichas— está declarado en el
 ⚠️ de ese §.
 

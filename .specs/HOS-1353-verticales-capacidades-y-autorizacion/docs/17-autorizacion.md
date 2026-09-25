@@ -60,7 +60,7 @@ falla.
 
 | # | paso | qué pregunta | si falla |
 |---|---|---|---|
-| — | **contexto de vertical** | *(precondición estructural, §2)* | la operación no se puede expresar |
+| — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre una ficha, la vertical se lee de la ficha y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la de la ficha, **no existe**, con la respuesta del paso 4 |
 | 1 | **quién es** | ¿hay un actor? | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | inhabilitada, o correo sin verificar |
 | 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
@@ -69,7 +69,8 @@ falla.
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
 | 7 | **limits** | ¿le queda cupo? | excedido |
 
-**Cinco precisiones que el orden hace cumplir:**
+~~**Cinco precisiones que el orden hace cumplir:**~~ **Seis precisiones que el orden hace cumplir**
+(la sexta, FASE 8 completa, `F-8CA1-001`, owner 2026-09-25):
 
 1. **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
    inexistente son indistinguibles desde afuera. Contestar *«no es tuyo»* confirma que el
@@ -78,7 +79,7 @@ falla.
    **«Desde afuera» es la mitad que hay que decir, porque `ARCHIVED` dejó de ser un estado
    sin salida.** El paso 4 pregunta tres cosas y una es *«¿está en un estado que acepta
    esto?»*: una ficha `ARCHIVED` **acepta de su dueño verla, exportarla y reactivarla**
-   —`PB8`, cap. 03 §9— y rechaza todo lo demás. Es lo que `DEC-DATA-001` promete con *«el
+   —`PB8`, cap. 03 §9— **y borrarla** —`PB12`, desde la FASE 8 completa (`F-8CA2-004`)— y rechaza todo lo demás. Es lo que `DEC-DATA-001` promete con *«el
    dueño la sigue viendo»* y lo que el §4.1 de este capítulo ya sostiene al no revocarle el
    rol. Sin esta línea, *«archivado responde no existe»* se lee como que lo responde
    **también al dueño**, y entonces la promesa no la puede cumplir nadie y `PB8` es
@@ -101,7 +102,11 @@ falla.
    tiene, las que contestan *«sin permiso»* no.
 3. **Los limits van últimos porque son los únicos que necesitan contar.** Todos los pasos
    anteriores se responden con lo que ya está resuelto; éste lee datos. Ponerlo antes hace
-   trabajo que la mayoría de los rechazos no necesita.
+   trabajo que la mayoría de los rechazos no necesita. **Y contar no alcanza si se cuenta afuera**:
+   en una transición que ocupa cupo —`PB1`, `PB3`, `PB7`— los pasos 5 a 7 se evalúan **dentro de
+   un lock por `user + vertical`** que `PB2` también toma, o dos publicaciones simultáneas leen el
+   mismo conteo y pasan las dos (cap. 03 §9, *«publicar ocupa cupo bajo un lock»*; FASE 8
+   completa, `F-8CA1-006`, `F-8CA2-010`, `F-8CA2-009`, owner 2026-09-25).
 4. **El paso 5 no decide capacidades: decide si hay de dónde resolverlas.** Una fuente viva es la
    que el contrato de cobertura devuelve con su referencia (cap. 01 (núcleo) §2.4 — y **no** es
    una *fila* viva, que es otra cosa y no cruza la frontera); **qué otorga esa referencia es el
@@ -118,6 +123,23 @@ falla.
    que **lo que otorga cada versión es dato del catálogo, no una rama del código** (§1.3 y `V/02`
    §1.2), y que un guard verifica que las dos versiones no vendibles de cada vertical —la de
    pre-trial y la de piso— no otorguen ninguna clave comercial.
+6. **En una operación sobre una ficha, la vertical no viene del pedido: se lee de la ficha**
+   (FASE 8 completa, `F-8CA1-001`, owner 2026-09-25). Es el primer paso de la cadena —la fila de
+   la precondición— y va **antes de mirar la cobertura**, porque los pasos 5 a 7 se resuelven
+   sobre `user + vertical` y la vertical tiene que ser la verdadera antes de preguntar nada con
+   ella. Si el pedido declara otra, **no existe**: la misma respuesta que el paso 4 da a una ficha
+   ajena, por la misma razón de la precisión 1 —contestar *«es de otra vertical»* confirma que el
+   identificador existe—. En el contrato de errores de la API es **404 y no 403**, y sale **en el
+   escalón de existencia**, después de la autenticación y del permiso de ruta
+   (`apps/api/docs/error-contract.md`, *«the order is the contract»*): la vertical se resuelve
+   primero, y el rechazo por no coincidir se entrega con el del paso 4.
+
+   **El caso que cierra**: con Alojamiento pago, publicar una ficha de Gastronomía **declarando**
+   Alojamiento pasaba los pasos 5 a 7 contra Alojamiento, publicaba gratis y consumía cupo de la
+   vertical equivocada; como `PB2` mira el cambio de `cubierto` **de la vertical de la ficha**, que
+   nunca cambió, nada la bajaba, y editarla cada 89 días reiniciaba el único reloj que la
+   alcanzaba (`F-8CA1-001`). El dato para comparar ya existía: `listing` guarda su vertical
+   (`V/02` §2.5).
 
 ### 1.3 Los nueve se resuelven en un solo lugar
 
@@ -144,7 +166,11 @@ protege contra accidentes: protege contra los que alguien previó.
 ### 2.2 La forma
 
 **Ninguna operación de dominio se puede expresar sin su contexto de vertical.** Es obligatorio en
-la firma, no un parámetro opcional ni un valor que se deduzca del recurso.
+la firma, no un parámetro opcional ~~ni un valor que se deduzca del recurso~~. **Y en una operación
+sobre una ficha, ese contexto es la vertical de la ficha, leída de la ficha**: la que el pedido
+declare no decide nada, y si no coincide la operación responde *no existe* (§1.2, precisión 6;
+FASE 8 completa, `F-8CA1-001`, owner 2026-09-25). *«No se deduce del recurso»* dejaba la defensa
+de este § apoyada en que la vertical declarada fuera la verdadera, y nada lo comprobaba.
 
 Y se apoya en algo que el núcleo ya decidió: **la resolución de entitlements y limits es por
 `user + vertical`** (cap. 02 §3.1). No existe *«resolvé las capacidades de esta persona»* sin
@@ -183,6 +209,11 @@ Tiene un gemelo en el capítulo 01 §4.4, y los dos juntos forman la pinza:
 
 Uno acota quién **puede** hablar de verticales; el otro obliga a que las operaciones lo hagan.
 
+**Y éste tiene una segunda mitad** (FASE 8 completa, `F-8CA1-001`, owner 2026-09-25): falla si una
+operación **sobre una ficha** toma su contexto de vertical **del pedido y no de la ficha**. La
+primera mitad sólo mira que la vertical se declare, y declararla no era el defecto: el defecto era
+que nadie comparaba la declarada con la del recurso (`G2`, cap. 20 §2).
+
 ### 2.4 El caso global, que parece la excepción y no lo es
 
 Un addon de scope `USER` o `GLOBAL` (§40) y un entitlement de scope global (`M-ENT-03`,
@@ -220,13 +251,14 @@ no una excepción a la lista.
 **Cuatro reglas, y ninguna es opcional:**
 
 1. **`actor ≠ sujeto` exige un permiso de esa acción concreta**, no una condición general de
-   «es administrador». Las doce acciones del capítulo 08 §3 llevan permiso propio, una por una.
+   «es administrador». Las ~~doce~~ **trece** acciones del capítulo 08 §3 llevan permiso propio, una por una
+   (la decimotercera, moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25).
 2. **Toda operación con `actor ≠ sujeto` es auditable sin excepción**, con los campos del
    capítulo 08 §1.2. El `actor` es uno de ellos, y es lo que convierte *«alguien otorgó esta
    cortesía»* en *«esta persona la otorgó»*.
 3. **El admin no hereda los entitlements del sujeto.** Los pasos 5, 6 y 7 se evalúan **sobre el
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
-   hacer. La excepción está declarada y es acotada: **las doce acciones del capítulo 08 §3 son
+   hacer. La excepción está declarada y es acotada: **las ~~doce~~ trece acciones del capítulo 08 §3 son
    capacidades del actor**, no del sujeto — otorgar una cortesía no consulta si el cliente tiene
    derecho a una, porque su objeto es dárselo. **A qué clase pertenece una operación se declara,
    nunca se infiere.**
@@ -243,9 +275,11 @@ Dos actores más, y nombrarlos evita que alguien los trate como ausencia de acto
 | **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15 |
 | **el sistema** | los jobs y los webhooks operan sin persona detrás. Llevan su propio identificador de actor y sus dos identificadores de correlación (cap. 08 §2.3) |
 
-**Un actor de sistema no puede ejecutar ninguna de las doce acciones del capítulo 08 §3.** Las
-doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toca plata lo
-confirma una persona. Un job que pudiera otorgar una cortesía convierte ese invariante en una
+**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ trece acciones del capítulo 08 §3.** ~~Las
+doce mueven dinero o conceden servicio~~ Doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toca plata lo
+confirma una persona. La decimotercera, moderar una ficha (`PB10`/`PB11`, cap. 03 §9), no toca
+plata: le quita a alguien su presencia pública por decisión nuestra, y la decisión es de un admin
+por cómo está escrita (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25). Un job que pudiera otorgar una cortesía convierte ese invariante en una
 sugerencia.
 
 ### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
@@ -256,7 +290,7 @@ reloj**, y esos tres pasos preguntan por el título, las capacidades y el cupo *
 existe**.
 
 > **Las transiciones disparadas por el reloj son una segunda clase de operación, evaluada por
-> analogía con las doce acciones administrativas: los pasos 5, 6 y 7 se resuelven sobre la
+> analogía con las ~~doce~~ trece acciones administrativas: los pasos 5, 6 y 7 se resuelven sobre la
 > capacidad del ACTOR, no sobre la del sujeto.**
 
 **La clase se declara transición por transición**, nunca se infiere — es la regla que este mismo
@@ -282,7 +316,7 @@ reconciliador diario corre por calendario pero no cambia el evento de ninguna—
 
 > **En ellas los pasos 5, 6 y 7 se evalúan sobre el SUJETO, que es el dueño de la ficha, con el
 > sistema como actor.** Es la regla general del §3.2 —*«los pasos 5, 6 y 7 se evalúan sobre el
-> sujeto»*— sin caer en ninguna de las dos excepciones: las doce acciones del cap. 08 §3 y la clase
+> sujeto»*— sin caer en ninguna de las dos excepciones: las ~~doce~~ trece acciones del cap. 08 §3 y la clase
 > del reloj de este §.
 
 **No es una clase nueva: es declarar que no están en ninguna de las dos excepciones**, que es lo
@@ -296,12 +330,12 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 > `actor ≠ sujeto`, **un permiso de esa acción concreta**, y está escrita para una persona. Cómo lo
 > cumple un actor de sistema —en esta clase y en la del reloj, que tienen el mismo `actor ≠
 > sujeto`— no está escrito. No da acceso a ninguna persona: el §3.3 ya le prohíbe al sistema las
-> doce acciones del cap. 08 §3.
+> ~~doce~~ trece acciones del cap. 08 §3.
 
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
-El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las **12
-acciones administrativas**, que son **la excepción, no el conjunto**. Y hay una regla en uso que
+El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ **13**
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.

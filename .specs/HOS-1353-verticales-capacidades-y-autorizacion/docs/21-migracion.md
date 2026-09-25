@@ -192,6 +192,13 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
 
 - **Gastronomía, experiencia y partner**: cero filas. El rediseño de esas tres verticales no
   toca un solo dato existente.
+- **La respuesta de la página de un partner que ya no tiene la presencia sí cambia, aunque no se
+  migre ningún dato** (FASE 8 completa, `F-8CA1-014`, owner 2026-09-25). El código de hoy
+  responde **410** al partner revocado —a propósito, para que un buscador retire la URL para
+  siempre— y 404 al resto (`apps/api/src/routes/partners/public/get-by-slug.ts`). El diseño exige
+  que ajeno, archivado e inexistente sean indistinguibles desde afuera (cap. 17 §1.2, precisión 1)
+  y que la lectura sin la clave de presencia responda 404 (cap. 18 §1.6), así que **la migración
+  lo cambia a 404**. Lo que se pierde con el cambio es esa señal de desindexación.
 - **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
   Eso es trabajo de FASE 5 y de código, no de datos.

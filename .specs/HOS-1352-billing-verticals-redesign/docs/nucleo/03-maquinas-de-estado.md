@@ -93,7 +93,8 @@ máquina de estados y una convención.
    que el guard hace falta**: entró en la FASE 9-bis-4 por una decisión del owner sobre planes
    retirados, no por nadie que estuviera mirando esta tabla.
 
-   **Compartir el `desde` no es compartir el par, y hay ocho casos vivos que lo piden dicho.**
+   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ nueve casos vivos que lo piden dicho**
+   (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25).
    `T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
    trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
    par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila. `S18` (`B/03` §3.2) sale desde la
@@ -134,11 +135,16 @@ máquina de estados y una convención.
    de esos tres pares tiene **una sola** fila. **Y el octavo es el que más cerca estuvo de agregar
    una entrada a la tabla de arriba**: `GRACE_PERIOD` ya figura ahí, con el par
    `(GRACE_PERIOD, entra el pago)` — pero el par de `S24` es **otro**, porque su evento es otro, y
-   un `desde` que ya aparece en la tabla no arrastra a las filas nuevas que salen de él. En los
-   ocho casos no hay guardas que
-   dirimir. **La tabla de arriba sí ganó una entrada, y no por ninguno de estos ocho**: la ganó
+   un `desde` que ya aparece en la tabla no arrastra a las filas nuevas que salen de él. **Y el
+   noveno son `PB10`, `PB11` y `PB12` (`V/03` §9)**: `PB10` —un admin modera la ficha— y `PB12`
+   —el dueño la borra— salen de `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` y `ARCHIVED`, que
+   comparten `desde` con casi toda esa tabla, pero sus eventos no los declara ninguna otra fila;
+   y `PB11` —un admin levanta la moderación— es la única que sale de `MODERATED`. Así que cada
+   uno de sus pares tiene **una sola** fila. En los
+   ~~ocho~~ nueve casos no hay guardas que
+   dirimir. **La tabla de arriba sí ganó una entrada, y no por ninguno de estos ~~ocho~~ nueve**: la ganó
    `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`. Lo que este guard cuenta
-   son **pares**, no estados de origen, y esa es exactamente la diferencia entre los ocho casos de
+   son **pares**, no estados de origen, y esa es exactamente la diferencia entre los ~~ocho~~ nueve casos de
    este párrafo y la cuarta fila de la tabla.
 
 ---
