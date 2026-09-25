@@ -5127,6 +5127,41 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-020 — Un contracargo suspende en el acto, sin grace, y lo sigue una persona
+
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: un pago que ya registramos puede cambiar después —el cliente desconoce el cargo en
+  su banco (contracargo), o alguien lo reembolsa desde el panel del proveedor— y **nadie lo
+  compara**: la fila sigue `SUCCEEDED`, el período sigue cubierto y el servicio sigue (FASE 8
+  completa, `F-8CB3-009`). No había una sola línea sobre contracargos en el corpus, la matriz ni el
+  log.
+- **Contexto**: **documental, no medido** (fila `RC-8`, `UNKNOWN`): según la documentación del
+  proveedor, un contracargo pasa el pago a `charged_back` con detalle `in_process`, y al resolverse
+  a `settled` (perdimos) o `reimbursed` (ganamos); hay un aviso propio (`topic_chargebacks_wh`). No
+  se puede fabricar a voluntad: exige una disputa real. **Por la regla 3 de este log, esta decisión
+  NO fija cómo se comporta el proveedor**: fija qué hacemos nosotros cuando leemos ese estado, y la
+  detección se apoya en `RC-8` con su salvedad declarada.
+- **Alternativas**: (1) suspender en el acto, sin grace; (2) tratarlo como un cobro impago y entrar
+  al grace; (3) esperar el resultado de la disputa sin tocar nada.
+- **Decisión**: **(1)**. Al leer `charged_back` en un pago acreditado, **releído por id** (`D17`),
+  corre **`S6`** por un disparador nuevo: servicio cortado y **preapproval cancelado**, para no
+  seguir cobrándole a una tarjeta que disputa nuestros cargos. Además se abre una **marca** para que
+  una persona siga el caso. Si la disputa se resuelve a nuestro favor (`reimbursed`), la persona
+  vuelve por el checkout como cualquier suspendido con tarjeta (sucesión desde `SUSPENDED`,
+  `G-R1-A`).
+- **Motivo**: el grace existe para *«alguien que venía pagando y tuvo un problema»* (§20); quien
+  desconoce un cargo no está en esa situación. Esperar la disputa (3) deja semanas de servicio
+  completo con un preapproval que sigue cobrando. Y (1) reusa `S6` tal como está: un disparador
+  más, ningún estado nuevo.
+- **Lo que NO decide**: el pago reembolsado desde el panel sin pasar por nuestro flujo se detecta
+  igual (el barrido relee los pagos acreditados) pero va a una persona con una marca, sin
+  suspender: fue un acto nuestro, no del cliente (`DEC-RF-007`).
+- **Origen**: FASE 8 completa, racimo `R7`, `F-8CB3-009`; elección del owner del 2026-09-25 entre
+  las tres alternativas, tras descartar ese mismo día *«detectar y mandar a una persona»* y
+  *«declararlo fuera de alcance»*.
+
+---
+
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
 - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
@@ -5174,9 +5209,9 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **111** — las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **112** — con **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 14 |
-| Funcionales | 97 |
+| Funcionales | 98 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **4** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
