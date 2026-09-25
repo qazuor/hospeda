@@ -36,6 +36,22 @@ Los archivos bajo `node_modules` o dependencias externas no forman parte de la f
 
 Los skills serán project-locales y se cargarán bajo demanda. Cada uno debe tener un objetivo claro, señales de activación, fuentes de verdad y una sección de verificación. No debe copiar comandos que ya exponga `qz` o `hops`, ni repetir las reglas universales de `AGENTS.md`.
 
+La fuente portable del proyecto se alojará en `.qz/knowledge/`. Su contrato se declara en `.qz/project.json` y puede renderizarse para cada CLI sin copiarlo a mano:
+
+```json
+{
+  "knowledge": {
+    "root": ".qz/knowledge",
+    "instructions": "AGENTS.md",
+    "skillsDir": "skills",
+    "agentsDir": "agents",
+    "commandsDir": "commands"
+  }
+}
+```
+
+El renderer genérico es `qz-kit project render`. Produce el layout compatible de OpenCode, Claude Code, Codex y Gentle Shell en un directorio indicado, sin tocar el repositorio fuente. La instalación sincronizada de esa salida queda para la siguiente etapa, después de extraer y revisar los skills.
+
 Orden recomendado de extracción:
 
 1. `hospeda-api`, `hospeda-web` y `hospeda-admin`.
