@@ -1201,7 +1201,9 @@ alguien va a leer mal.
 **Dos cosas que el §11 sigue prohibiendo y conviene no confundir con la excepción**: una sucesora
 **no puede ser sucedida mientras viva** (el candado `B` la rechaza sin ninguna regla extra), y una
 fila **con una marca `requiere_conciliación` abierta no puede ser sucedida** —cualquiera sea su motivo, y ningún `sucede_a`
-puede apuntarla—, salvo desde `CANCEL_SCHEDULED` y con la relectura que `B/02` §2.2 exige. **Las
+puede apuntarla—, salvo desde `CANCEL_SCHEDULED` **o desde una `SUSPENDED` de pagador con tarjeta**
+(FASE 8 completa, `F-8CB1-002`, owner 2026-09-25), y en los dos casos con la relectura que `B/02`
+§2.2 exige. **Las
 dos se enuncian sobre la columna y no sobre el verbo *«declarar»***, que en este corpus nombra a
 la sucesora en `S1` y a la predecesora acá: la regla de vocabulario está en `B/02` §2.2 y la
 escribió un doble cobro.

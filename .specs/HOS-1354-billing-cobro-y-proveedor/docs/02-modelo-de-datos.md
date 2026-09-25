@@ -234,9 +234,15 @@ en vez de aflojarla.
 `sucede_a` puede apuntarla** — o sea que esa fila no puede ser sucedida. Cancelar y recrear con una divergencia de plata sin resolver es
 exactamente el movimiento que `DEC-CONC-002` parte 4 manda que mire una persona.
 
-**La excepción, y es una sola, y lleva una verificación que no es opcional**: una fila marcada
-**puede suceder cuando está en `CANCEL_SCHEDULED`, si una relectura del preapproval por su id
-confirma que efectivamente está cancelado**.
+~~**La excepción, y es una sola, y lleva una verificación que no es opcional**~~ **La excepción
+—una regla con dos estados desde la FASE 8 completa— lleva una verificación que no es opcional**:
+una fila marcada **puede ser sucedida cuando está en `CANCEL_SCHEDULED`, si una relectura del
+preapproval por su id confirma que efectivamente está cancelado**. **Y por la misma razón, y con la
+misma relectura, cuando es una `SUSPENDED` de pagador con tarjeta**: `S6` le canceló el preapproval,
+así que no queda ningún cobro viejo que pueda correr en paralelo con la sucesora. Sin esto, un
+suspendido con una marca abierta no podía volver a pagar hasta que un admin la cerrara; la marca
+queda colgada de su fila vieja y se resuelve igual (FASE 8 completa, `F-8CB1-002`, owner
+2026-09-25).
 
 **La verificación es lo que la vuelve segura, y sin ella la excepción se apoyaba en lo que la marca
 pone en duda.** El razonamiento era *«en ese estado `S11` ya canceló el preapproval, así que el
