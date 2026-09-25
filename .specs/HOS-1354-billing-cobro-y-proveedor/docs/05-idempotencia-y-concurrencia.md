@@ -55,7 +55,17 @@ hay un timeout. Reintentar son dos cobros; no reintentar deja a alguien que pag�
 **Sólo se resuelve preguntándole al proveedor, y no por nuestra referencia.** Su buscador
 **ignora `external_reference`** (`RC-1`), así que la pregunta *«¿ya creé ésta?»* no tiene
 respuesta. La que sí la tiene es **«¿este pagador tiene alguna suscripción autorizada que yo no
-tenga registrada?»**, por correo del pagador y estado, que sí filtran y se componen.
+tenga registrada?»**, ~~por correo del pagador y estado, que sí filtran y se componen~~ **filtrando
+en el proveedor SÓLO por correo del pagador y el estado de NUESTRO lado** (FASE 8 completa,
+`F-8CB3-011`, `F-8CB2-014`, `F-8CB1-014`). `RC-1` midió que `payer_email` filtra —basura → 0—,
+pero que el filtro por `status` **devuelve un subconjunto en producción**: `cancelled` trajo **15
+de 69** sin ninguna señal. Así que se trae lo del pagador sin filtro de estado, se descarta lo que
+ya tenemos registrado por id, y el estado se filtra sobre lo que queda. ⚠️ **Lo que no está
+medido**: que el filtro por `payer_email` sea **completo** en producción —el subconjunto de `RC-1`
+se midió sobre el de estado—, así que **una búsqueda vacía no prueba que la suscripción no
+exista**. Y la otra mitad de `F-8CB1-014` —en el modelo del checkout una creación deja un
+`pending`, no un `authorized` (`PA-1`, `EX-1`)— **no se resolvió acá**: cambiar el estado que se
+busca no es una corrección de filtro (*«lo que este capítulo NO cierra»* de `B/09`).
 
 ---
 
@@ -199,8 +209,19 @@ para que el admin entienda lo que pasó en vez de ver un error.
 
 ### C6 · Dos instancias procesan el mismo evento en paralelo
 
-Lo resuelve `UNIQUE(proveedor, id_del_hecho)`: la segunda instancia falla al insertar y no hace
-nada más. **Sin lock y sin coordinación.**
+Lo resuelve `UNIQUE(proveedor, id_del_hecho)`: la segunda instancia falla al insertar ~~y no hace
+nada más~~. **Sin lock y sin coordinación.**
+
+**Pero fallar al insertar no es «no hacer nada»: el mismo id puede traer OTRO estado** (FASE 8
+completa, `F-8CB3-003`). Un cobro rechazado queda `PENDING` (`B/12` §1.3) y su reintento se aprueba
+**dentro del mismo registro, con el mismo id** (`B/09` §4). Si el choque se leyera como duplicado,
+`P1` no corría nunca y la plata quedaba sin asiento, sin `covered_period` y sin comprobante. Así
+que **ante el choque se relee la fila existente**: si está `PENDING` y la lectura por id dice
+`approved`, **corre `P1` sobre ESA fila** (`B/03` §6); si ya estaba `SUCCEEDED`, era un duplicado
+de verdad y no se hace nada. Las dos instancias paralelas siguen sin coordinarse: la escritura de
+`P1` sobre la fila usa la concurrencia optimista del cap. 03 §10.3, y la segunda que llegue
+encuentra el `SUCCEEDED`. **Y si el cobro aprobado lo ve primero el barrido y no un evento**, no lo
+escribe él: abre la marca `COBRO_SIN_REGISTRAR` (`B/02` §2.5, `B/09` §3).
 
 Con dos advertencias medidas:
 

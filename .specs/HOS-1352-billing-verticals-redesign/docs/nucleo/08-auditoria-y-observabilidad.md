@@ -139,7 +139,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ **dieciséis** motivos (el 16 desde `F-8CB1-013`, FASE 8 completa, owner 2026-09-25) y **seis** tienen una confirmación de reembolso encima — **y los seis se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ **diecinueve** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25) y **seis** tienen una confirmación de reembolso encima — **y los seis se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
@@ -167,7 +167,7 @@ que no son éste:
 |---|---|---|
 | **abrir** la marca —con motivo **`REEMBOLSO_POR_CONFIRMAR`** y **el pago colgado de ella**— sobre la predecesora que lo retiene, un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como **quinto** efecto del cierre de la sucesión | `B/03` §3.2, `B/02` §2.5, `B/12` §5.3 **ramas 1, 5 y 6** |
 | **abrir** la marca —con uno de **dos** motivos y el pago colgado— sobre la **suscripción de complemento** que muere con un período cobrado **sin terminar** | **`S21`**, en el mismo acto en que la lleva a `CANCELLED`. **Cuál de los dos escribe es lo que decide lo que el listado propone**, y desde `DEC-RF-006` eso es **el motivo** y no una rama: **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** —devolver— si la instancia murió por la **revocación del grant** o **huérfana porque a su título lo mató la discontinuación de la vertical** —`S25`, `S27` o `S28`—, y **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`** —no devolver— en el resto. **Son cinco casos a distinguir y no cuatro**: los cuatro disparadores, con el de la orfandad partido en dos | `B/03` §3.2, `B/02` §2.5 **motivos 14 y 15**, `B/16` §4.4, `DEC-ADDON-004`, `DEC-RF-004`, `DEC-RF-006` |
-| **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
+| **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente — **y como el reloj vive adentro del barrido, que el barrido corra lo vigila OTRO proceso**: si pasan 26 h sin una corrida completa, avisa (FASE 8 completa, `F-8CB3-007`) | `B/09` §3, salvedades 2 y 3; **`B/09` §7.1** |
 | **re-emitir una cortesía DIFERIDA** sobre la fila que acaba de autorizar — **la sucesora** de un cambio de plan, o **el alta nueva** de quien perdió su plan porque se discontinuó su vertical | **`S9`**, por su segundo disparador y por el **tercero** — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila, **por ninguno de los dos caminos** | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4 y §4.6, `DEC-GRANT-007`, `DEC-GRANT-010` |
 | **CERRAR el saldo de una cortesía diferida**, con `saldo_cerrado_en` y su `motivo_cierre` | **`S3`** cuando la sucesora abandonó el checkout, **`S13`** cuando un grant pasa a cubrir esa vertical, y **`S18`** o el **`S2`** del alta cuando el destino es de plan anual (FASE 8 completa) — **son los tres valores de la enumeración cerrada** (`B/02` §2.4), y es cerrada y no el texto libre de `DEC-GRANT-008` porque **no hay una persona escribiendo el motivo** | `B/03` §3.2, `B/02` §2.4, `B/14` §4.3, `DEC-GRANT-011` |
 
@@ -298,7 +298,8 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
   motivo `REEMBOLSO_POR_CONFIRMAR` y el pago colgado de ella, cap. 02 (billing) §2.2 y §2.5—, que es lo que
   los pone también en el **listado accionable**, el canal primario de `DEC-OBS-001`. Mientras
   fueron sólo campos de un evento, el canal que la persona mira de verdad recibía **una fila
-  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ quince marcas**;
+  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ ~~quince~~ dieciocho marcas** (diecinueve
+  motivos desde la FASE 8 completa, cap. 02 (billing) §2.5);
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas

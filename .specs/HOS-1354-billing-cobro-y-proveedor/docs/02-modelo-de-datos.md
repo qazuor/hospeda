@@ -48,12 +48,17 @@ a la restricción no obliga a nada.
 | **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila**. **Los dos motivos de `S21` —el 14 y el 15 del §2.5— no conviven, y no es esta clave la que lo impide**: abajo |
 | **`reconciliation_mark_payment`** | la marca y **un** pago que hay que devolver — FK a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) —, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta, las dos anulables | **`UNIQUE(marca, pago)`**: el mismo pago no se cuelga dos veces de la misma marca. Una marca lleva **cero, uno o N**: cero en los motivos que no piden pago, **N cuando el hecho que la abre se repite ciclo a ciclo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
-| **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
+| **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, **la última `version` del recurso que aplicamos** —la de un webhook, que es donde viene (`EX-2`)— **y el `last_modified` de la última relectura por id**, que es lo que compara el barrido porque la relectura no trae `version` (`RC-9`; FASE 8 completa, `F-8CB3-010`) | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
 > La `version` es el contador monótono por recurso que trae cada evento (`EX-2`). Guardarla es lo
-> que permite descartar un evento viejo sin gastar una relectura (cap. 03 §10.1) y lo que hace
+> que permite descartar un evento viejo sin gastar una relectura (cap. 03 §10.1) ~~y lo que hace
 > visible el caso en que el recurso cambió **sin** que el proveedor avisara — mutar el monto lo
-> salta sin emitir ninguna entrega (`EX-15`).
+> salta sin emitir ninguna entrega (`EX-15`)~~. **Lo segundo no lo puede hacer**: el caso sin aviso
+> se ve releyendo, y **la relectura por id no trae `version`** (`RC-9`, `NOT_SUPPORTED`, producción
+> 2026-09-25). Lo que trae es **`last_modified`**, y por eso el vínculo guarda también el de la
+> última relectura: es contra ese que el barrido compara (`B/09` §3; FASE 8 completa,
+> `F-8CB3-010`). ⚠️ **Que `last_modified` se mueva con una mutación de monto no está medido**; la
+> divergencia de monto la sigue viendo la comparación directa del monto (`B/09` §3).
 
 **La marca es una por `(fila, motivo)` y los HECHOS que la sostienen son N, y por eso el pago dejó
 de ser una columna.** La restricción de arriba es correcta y no se toca: dos marcas abiertas del
@@ -294,7 +299,10 @@ avanzaba un período.
 - **Con débito**, las fechas las tiene el proveedor y son inmutables para nosotros (`EX-39`,
   `B/12` §5.4): la columna es **una copia**, y quien la escribe es la lectura del barrido —*«se
   registra»*, `B/09` §3—. **Ninguna regla del diseño la lee para decidir**, porque la decisión de
-  cobrar es del proveedor.
+  cobrar es del proveedor. *(FASE 8 completa, `F-8CB1-012`: la frase era falsa en dos lugares. El
+  período de `covered_period` ya no sale de esta copia sino del registro de cobro (§2.3,
+  `F-8CB3-005`), y la fecha de fin de servicio de `S11` tampoco (`B/03` §3.2); **`B/12` §5.4 la
+  sigue leyendo** para cortar la ventana de una sucesión, y eso no se tocó acá.)*
 - **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
   que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
@@ -310,15 +318,34 @@ avanzaba un período.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`payment`** | ~~suscripción~~ **suscripción o instancia de addon** —la segunda sólo para el addon de cobro `UNA_VEZ`, que no tiene suscripción (corrección de diseño, FASE 8 completa, `F-8CB1-008`)—, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2. **Más un CHECK de que exactamente una de las dos referencias —`subscription_id` o `addon_instance_id`— es no nula**, la misma forma que `covered_period` usa para sus dos cobros |
+| **`payment`** | ~~suscripción~~ **suscripción o instancia de addon** —la segunda sólo para el addon de cobro `UNA_VEZ`, que no tiene suscripción (corrección de diseño, FASE 8 completa, `F-8CB1-008`)—, monto, moneda, estado del cap. 03 §6 —**seis** desde `CHARGED_BACK` (FASE 8 completa, `F-8CB3-009`)—, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado. **Qué id es el del hecho** (FASE 8 completa, `F-8CB3-003`): en un cobro de suscripción, **el del registro de cobro** (`authorized_payment`), porque es el que la matriz permite afirmar estable —un registro por ciclo, con los reintentos adentro (`RC-5`, precisado el 2026-09-24; `EX-16`)—; **el id del pago embebido** (`payment.id`) se guarda **aparte**, porque es contra ése que se reembolsa (`POST /v1/payments/{id}/refunds`, `B/06` §4.6) y se relee un contracargo. ⚠️ **Si el pago embebido cambia de id entre reintentos no está medido**, y por eso no es la clave | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2, **que no descarta el mismo id con otro estado**: lo relee y, si pasó a `approved`, corre `P1` sobre la fila existente (`B/05` C6). **Más un CHECK de que exactamente una de las dos referencias —`subscription_id` o `addon_instance_id`— es no nula**, la misma forma que `covered_period` usa para sus dos cobros |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
 | **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió, **salvo que `MP4` la haya reimputado** (abajo)—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe, y es además lo que hace que reimputar no cambie el monto esperado |
 | **`covered_period`** ✚ | suscripción, **el período cubierto —identificado por su fecha de inicio**, igual que en `manual_payment`—, **cuál de los dos cobros lo cubrió** (un `payment` **o** un `manual_payment`), cuándo se acreditó y **`liberado_en`** (anulable) | **`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL`** — es el candado de `C5` (`B/05`), y **es la única razón por la que esta entidad existe**. El parcial espeja el de `reconciliation_mark`, por la misma razón: **liberar no borra la fila, la marca**, así que el rastro de que ese período se cobró y se devolvió **sobrevive** para la conciliación. Más un CHECK de que **exactamente una** de las dos referencias al cobro es no nula |
-| **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
+| **`receipt`** | ~~pago~~ **el cobro que certifica —un `payment` o un `manual_payment`—**, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`). **Lo emiten `P1`, `MP1` y `MP4`** (cap. 03 §6 y §7), en la misma transacción que acredita (FASE 8 completa, `F-8CB3-006`) | `UNIQUE(numero)`, sin huecos. **Más un CHECK de que exactamente una de las dos referencias es no nula**, la forma de `refund` y `covered_period`. **Y el `UNIQUE` no impide huecos: los impide el contador** (abajo) |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
 **El monto es entero**, en la unidad mínima de la moneda. No hay decimales de punto flotante en
 ninguna columna de dinero.
+
+**El comprobante cuelga del cobro que certifica, y ese cobro puede no ser un `payment`** (FASE 8
+completa, `F-8CB3-006`). Es el mismo defecto que el `refund` tenía y que abajo está corregido: la
+columna decía *«pago»* y la única entidad con ese nombre es `payment`, así que **la cuota de un
+pagador manual —Partner, efectivo, transferencia— no tenía comprobante posible**, contra una
+obligación que `DEC-LEGAL-001` pone *«por cada cobro»*. Y ninguna transición lo emitía: ahora lo
+nombran entre sus efectos **`P1`** para el cobro del proveedor —incluido el del addon de única
+vez— y **`MP1` y `MP4`** para el manual. **No confundir con el *«comprobante»* de
+`manual_payment`**: ése es la prueba que sube el admin al registrar, no el documento que emitimos.
+
+**Sin huecos: el mecanismo mínimo es un contador en una fila, no una secuencia.** Una secuencia de
+base avanza aunque la transacción se revierta, y con dos contenedores sirviendo tráfico
+(`DEC-CONC-001`) deja un hueco en cada rollback; un `UNIQUE(numero)` sólo impide repetir, no
+saltear. **El número sale de una fila contador que se incrementa en la MISMA transacción que
+escribe el `receipt`**: si la transacción se revierte, el incremento se revierte con ella, y el
+bloqueo de esa fila ordena a los dos contenedores. **El costo, declarado**: las emisiones se
+serializan sobre esa fila. ⚠️ **Si *«sin huecos»* es requisito legal o sólo aspiración** no lo
+dice ningún texto leído; el mecanismo se declara porque la restricción ya estaba escrita, y la
+pregunta queda para el owner (anotada en *«lo que este capítulo NO cierra»* de `B/22`).
 
 **El `refund` cuelga del pago que se devuelve, y ese pago puede no ser un `payment`.** La
 versión anterior decía sólo *«pago»* y la única entidad con ese nombre es `payment`, que es *«el
@@ -384,11 +411,32 @@ cuota**: una cuota `AWAITING` no cubre nada todavía, y reservar el período al 
 cobro del proveedor del mismo período — que es el escenario que `C5` viene a arbitrar, no a decidir
 de antemano.
 
-**Y el período de un cobro del proveedor se resuelve igual que el del manual: por su fecha de
+~~**Y el período de un cobro del proveedor se resuelve igual que el del manual: por su fecha de
 inicio**, que con `DEC-MP-006` —el reloj es del proveedor— es la fecha del próximo cobro que él
-tiene. ⚠️ **Se lee por id y nunca por `search`**: está medido que el buscador devuelve **menos
-campos** que el `GET` (`RC-4`), que ignora nuestra referencia (`RC-1`) y que devuelve un
-`next_payment_date` **desactualizado** respecto de la lectura directa.
+tiene.~~ **Y el período de un cobro del proveedor se identifica por la fecha PROPIA del registro de
+cobro** —el `date_created` del `authorized_payment`, leído por id (`EX-16`)—, **nunca por la fecha
+del próximo cobro** (FASE 8 completa, `F-8CB3-005`, `F-8CB1-011`). La fecha del próximo cobro la
+corre el proveedor solo: sin cobrar en pausa (`PS-2`, `PS-6`) y sobre un cobro rechazado (`RN-3`),
+así que un cobro procesado después del avance quedaba etiquetado con el período **siguiente**, y el
+cobro siguiente podía chocar con él. El registro, en cambio, es **uno por ciclo con los reintentos
+adentro** (`RC-5`, precisado el 2026-09-24), así que su `date_created` **no se mueve con un
+reintento**: un cobro aprobado a las +18 h cae en el período de su registro, no en el de la fecha
+que el proveedor ya corrió. **Se eligió `date_created` y no `debit_date`** —las dos las trae el
+registro (`EX-16`)— porque de `debit_date` no está medido si cambia entre reintentos. ⚠️ **Se lee
+por id y nunca por `search`**: está medido que el buscador devuelve **menos campos** que el `GET`
+(`RC-4`), que ignora nuestra referencia (`RC-1`) y que devuelve un `next_payment_date`
+**desactualizado** respecto de la lectura directa.
+
+**Qué hace `P1` cuando la cobertura choca con el `UNIQUE`** (FASE 8 completa, `F-8CB1-011`). El
+cobro del proveedor **ya ocurrió**, así que la regla de `C5` para el registro manual —*«el que llega
+segundo falla, no compite»*— no le sirve: rechazarlo deja plata sin fila. **El pago pasa igual a
+`SUCCEEDED`, la cobertura no se escribe, y `S14` abre la marca `COBRO_SIN_REGISTRAR` (§2.5) con el
+pago colgado**: un período con dos cobros acreditados lo mira una persona (`DEC-CONC-002` punto 4).
+⚠️ **Las dos clases de cobro identifican su período con fechas de fuentes distintas** —la cuota
+manual, con la copia local de la fecha del próximo cobro (arriba); el cobro del proveedor, con la
+del registro—. El cruce de `C5` entre las dos sobre una misma suscripción tiene población casi
+vacía, porque `MP5` sólo abre cuotas para pagadores manuales; si alguna vez ocurre, las dos fechas
+no tienen por qué coincidir y el `UNIQUE` puede no verlo.
 
 **Cuando `MP4` reimputa, la cobertura se mueve con la cuota** —son el mismo hecho— y **puede chocar
 con el `UNIQUE`. Ese choque es correcto y no es un error a evitar**: significa que el período al que
@@ -791,16 +839,21 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: dieciséis motivos sobre la misma casilla, y seis de ellos devuelven plata
+### 2.5 La marca de conciliación: diecinueve motivos sobre la misma casilla, y seis de ellos devuelven plata
 
 > Eran **quince** hasta la FASE 8 completa: el 16, `CANCELACIÓN_SIN_CONFIRMAR`, llegó con
 > `F-8CB1-013` (owner 2026-09-25), y el catálogo se recontó entero sobre la tabla de abajo.
+> **Y eran dieciséis hasta la misma FASE 8 completa**: el 17, `CONTRACARGO`, llegó con
+> `DEC-SUB-020` y `F-8CB3-009`; el 18, `REEMBOLSO_FUERA_DEL_FLUJO`, con *«lo que NO decide»* de esa
+> misma decisión; y el 19, `COBRO_SIN_REGISTRAR`, con `F-8CB3-003` y `F-8CB1-011` (owner
+> 2026-09-25). Recontado otra vez entero sobre la tabla: **diecinueve**, y los **SÍ** siguen siendo
+> **seis**.
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras ~~catorce~~ quince marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras ~~catorce~~ ~~quince~~ dieciocho marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -812,8 +865,10 @@ misma forma y le faltaba la misma columna.**
 #### El catálogo, contado sobre los escritores que hay hoy
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
-**siete** de los ~~quince~~ dieciséis casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
-de la pausa lo trae `S8` o `S9`. Los otros ~~**ocho**~~ **nueve** los abren actos que **no son `S14`** — `S18`,
+~~**siete** de los quince, siete de los dieciséis~~ **diez** de los **diecinueve** casos de abajo —los tres
+nuevos, el 17, el 18 y el 19, los abre `S14` (FASE 8 completa, `F-8CB3-009`, `F-8CB3-003`,
+`DEC-SUB-020`)—; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros ~~**ocho**~~ **nueve** —de los diecinueve; el número no se movió— los abren actos que **no son `S14`** — `S18`,
 las **seis** comprobaciones de cero llamadas del `B/09` §3, **`S21`, que desde `DEC-RF-006` abre
 dos**, y **el reintento del barrido sobre las salvedades 1 y 4 del `B/09` §3, que abre el 16**
 (FASE 8 completa, `F-8CB1-013`) —, y el propio `S19` declara por escrito que su caso **no es una divergencia**.
@@ -835,7 +890,10 @@ dos**, y **el reintento del barrido sobre las salvedades 1 y 4 del `B/09` §3, q
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
 | 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** y la instancia **no** llegó a `CANCELLED` por ninguna de las dos causas del **15** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y dos de los caminos que caen acá son NUESTROS, y están acá por MECANISMO y no por criterio** —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`—: la transición que mata al título **no nombra su causa**, así que `S21` no tiene qué escribir (`DEC-RF-004`, la condición obligatoria; `B/03` §3.2, `B/19` §6) |
 | 15 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN` | **`S21`**, sobre la misma población, cuando la instancia llegó a `CANCELLED` **porque se revocó el grant que era su título** —tercera cláusula de `A5`— **o porque a su objetivo lo mató la discontinuación de la vertical** —`S25`, `S27` o `S28`— (`B/03` §3.2, `B/10` §4.3) | confirmar el reembolso de lo que queda del período | **SÍ**: en los dos casos **el cliente no hizo nada** y pierde días que pagó, y en los dos **la causa la conoce el acto mismo** —`S21` conoce la cláusula de `A5` que disparó, y la discontinuación la deja escrita la transición que mata al título—, así que `S21` escribe este motivo **sin trazar nada hacia atrás** (`DEC-RF-006`) |
-| 16 | `CANCELACIÓN_SIN_CONFIRMAR` | el **barrido** (`B/09` §3, salvedades 1 y 4), **a la tercera corrida seguida** en que no logra confirmar la cancelación que una transición nuestra ya mandó —la fila está terminal y la relectura sigue viendo el preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—. Antes de la tercera no abre nada: reintenta (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌) | cancelar a mano en el proveedor y **verificar releyendo por id** que quedó `cancelled` | no, **pero el preapproval vivo puede cobrar** |
+| 16 | `CANCELACIÓN_SIN_CONFIRMAR` | el **barrido** (`B/09` §3, salvedades 1 y 4), **a la tercera corrida seguida** en que no logra confirmar la cancelación que una transición nuestra ya mandó —la fila está terminal, **o en `CANCEL_SCHEDULED` por `S11` o `S26`** (owner 2026-09-25), y la relectura sigue viendo el preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—. Antes de la tercera no abre nada: reintenta; **abierta la marca, deja de reintentar** (owner 2026-09-25) (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌) | cancelar a mano en el proveedor y **verificar releyendo por id** que quedó `cancelled` | no, **pero el preapproval vivo puede cobrar** |
+| 17 | `CONTRACARGO` | **`S14`**, en el mismo acto que `P6` —y que `S6` por su tercer evento si la fila está en `ACTIVE` o `GRACE_PERIOD`—: se leyó `charged_back` en un pago acreditado, releído por id, por el aviso de contracargo o por la comprobación de pagos acreditados del `B/09` §3 (`B/03` §3.2 y §6; `DEC-SUB-020`; FASE 8 completa, `F-8CB3-009`, owner 2026-09-25) | **seguir la disputa**: si se gana (`reimbursed`, `P7`) o se pierde (`settled`), levantar la marca por `S15`; la vuelta de la persona, si la quiere, es por el checkout | **no**: la plata ya volvió al cliente por su banco. ⚠️ **Documental, no medido** (`RC-8`) |
+| 18 | `REEMBOLSO_FUERA_DEL_FLUJO` | **`S14`**, desde la comprobación de pagos acreditados del `B/09` §3: un pago nuestro `SUCCEEDED` que el proveedor da reembolsado —o con más reembolsado que nuestros `refund`— sin que haya pasado por nuestro flujo. **No suspende**: fue un acto nuestro, no del cliente (`DEC-SUB-020`, *«lo que NO decide»*; `DEC-RF-007`) | **asentar el `refund` que falta**, con quién lo confirmó, y recién ahí corre `P3` o `P4` (`B/03` §6) | **no**: la plata ya se devolvió; lo que falta es el asiento |
+| 19 | `COBRO_SIN_REGISTRAR` | **`S14`**, por **dos** caminos: **la comparación de cobros del período del `B/09` §3**, cuando la lectura del §4 de ese capítulo ve un registro con `payment.status` = `approved` que no tenemos acreditado —sin fila de `payment`, o con la fila en `PENDING`—; **y `P1`**, cuando la cobertura del cobro choca con el `UNIQUE` de `covered_period` (§2.3). Los dos son un cobro que entró **sin su asiento completo** (FASE 8 completa, `F-8CB3-003`, `F-8CB1-011`; `DEC-CONC-002` punto 4) | **asentar el cobro**: registrarlo o completar su cobertura, y decidir a qué período corresponde | **puede**: por el primer camino es un cobro al que le faltaba el asiento; por el segundo es un período con dos cobros acreditados, y ahí hay uno que no compró nada. ⚠️ **La casilla mezcla dos poblaciones** y no se partió sin decisión (`B/09`, *«lo que este capítulo NO cierra»*) |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
@@ -855,10 +913,17 @@ ya sabe. La tabla de defaults del `B/19` §6 vuelve a ser una columna plana, y *
 `SÍ` son exactamente las seis que ese § propone devolver**.
 
 **Y se movió una sola cifra con `F-8CB1-013`, recontadas otra vez las dos sobre la tabla** (FASE 8
-completa, owner 2026-09-25). La enumeración tiene **dieciséis** filas; los **SÍ** siguen siendo
+completa, owner 2026-09-25). La enumeración ~~tiene~~ tuvo **dieciséis** filas; los **SÍ** siguen siendo
 **seis** —el 1, el 2, el 3, el 7, el 12 y el 15—, porque el 16 lleva **no**: cancelar no devuelve
 ni cobra nada. **Su urgencia no es plata parada sino un cobro que todavía puede salir**, y por eso
 la última columna lo dice con la misma forma que el 10 y el 11.
+
+**Y se movió otra vez una sola cifra con el 17, el 18 y el 19, recontadas las dos sobre la tabla**
+(FASE 8 completa, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, owner 2026-09-25). La enumeración
+tiene **diecinueve** filas; los **SÍ** siguen siendo **seis** —el 1, el 2, el 3, el 7, el 12 y el
+15—, porque el 17 y el 18 llevan **no** —en los dos la plata ya salió de nuestra cuenta, por el
+banco o por el panel— y el 19 lleva **puede**, como el 4, el 13 y el 14. **`S14` pasa de siete a
+diez** —abre los tres— y **los que abren otros actos siguen siendo nueve**.
 
 **El 14 y el 15 llegaron por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una

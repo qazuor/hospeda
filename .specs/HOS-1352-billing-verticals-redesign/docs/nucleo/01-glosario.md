@@ -298,7 +298,7 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 |---|---|
 | **Trial** | `PRE_TRIAL` · `TRIAL_ACTIVE` · `TRIAL_CONVERTED` · `TRIAL_EXPIRED` |
 | **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `CHARGE_DECLINED`. **`RECONCILIATION_REQUIRED` no está en la lista porque no es un estado**: es la marca `requiere_conciliación` sobre la fila, que conserva el suyo — y **tampoco es un booleano**, es una fila con motivo y reloj (§2.5) |
-| **Pago** | `PENDING` · `SUCCEEDED` · `FAILED` · `REFUNDED` · `PARTIALLY_REFUNDED` |
+| **Pago** | `PENDING` · `SUCCEEDED` · `FAILED` · `REFUNDED` · `PARTIALLY_REFUNDED` · **`CHARGED_BACK`** — el sexto, un contracargo, desde la FASE 8 completa (`F-8CB3-009`, `DEC-SUB-020`; cap. 03 (billing) §6) |
 | **Pago manual** | `AWAITING` · `REGISTERED` · `DECLARED_UNPAID` |
 | **Addon (instancia)** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `EXPIRED` · `CANCELLED` |
 
@@ -545,8 +545,9 @@ definía**.
 | **`requiere_conciliación`** | el **predicado derivado** *«esta suscripción tiene **al menos una** marca abierta»* | se evalúa sobre las marcas de la fila; **no hay ninguna columna con ese nombre** | conservar verbatim las frases del corpus que ya decían *«la marca `requiere_conciliación`»*, que siguen siendo exactas |
 
 > **El plural es el punto, y por eso el término es *«abierta»* y no *«puesta»*.** El corpus escribe
-> ~~**quince**~~ **dieciséis** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5; el 16
-> desde `F-8CB1-013`, FASE 8 completa, owner 2026-09-25) y **seis de ellos
+> ~~**quince**~~ ~~**dieciséis**~~ **diecinueve** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5; el 16
+> desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE
+> 8 completa, owner 2026-09-25) y **seis de ellos
 > significan *«hay plata del cliente que devolver»***. Con un booleano, dos casos simultáneos eran
 > uno solo y `S15` los apagaba juntos; el que se perdía era el del dinero, porque es el que ninguna
 > superficie nombraba. *«Puesta»* describe una casilla; *«abierta»* describe **un caso**, que es lo
@@ -573,7 +574,7 @@ por lo que preguntan.
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
 | 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un pago pendiente por `S19` sin una marca abierta con motivo `REEMBOLSO_POR_CONFIRMAR`»* — **es el consumidor que el booleano volvía vacuo**: la marca sin motivo pasaba el guard |
-| 6 | el **listado accionable** | cap. 19 (billing) §6 | ordena por motivo, pone adelante los **seis** que devuelven plata (cap. 19 §6) y muestra **todos los pagos colgados de la marca con su monto total** y **el default de lo que el sistema propone** (`DEC-RF-003`) — **que desde `DEC-RF-006` se lee por motivo en los ~~quince~~ dieciséis** (el 16 desde `F-8CB1-013`, FASE 8 completa, owner 2026-09-25), porque el único que no se leía así, el que abre `S21`, se partió en **dos** motivos: el **14** propone no devolver y el **15** devolver (cap. 02 (billing) §2.5, cap. 03 (billing) §3.2) |
+| 6 | el **listado accionable** | cap. 19 (billing) §6 | ordena por motivo, pone adelante los **seis** que devuelven plata (cap. 19 §6) y muestra **todos los pagos colgados de la marca con su monto total** y **el default de lo que el sistema propone** (`DEC-RF-003`) — **que desde `DEC-RF-006` se lee por motivo en los ~~quince~~ ~~dieciséis~~ diecinueve** (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25), porque el único que no se leía así, el que abre `S21`, se partió en **dos** motivos: el **14** propone no devolver y el **15** devolver (cap. 02 (billing) §2.5, cap. 03 (billing) §3.2) |
 | 7 | el **escalamiento por reloj** | cap. 09 (billing) §3 | *«si sigue abierta pasado su plazo, escala»* — lee `puesta_en`, **por marca**, así que el plazo puede depender del motivo |
 | 8 | la **entrada del §22.1 para el reembolso por confirmar** | cap. 08 (núcleo) §4.3 | *«el monto a devolver, el pago que lo origina y por qué puerta entró»* — es el mismo dato que la marca ahora **guarda**, en vez de vivir sólo en un evento que pasa |
 | 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, que ningún levantado sea *«la fila»*, **que un hecho con plata sobre una marca abierta del mismo motivo se cuelgue de ELLA** y **que no se levante una marca con pagos colgados sin resolver** |

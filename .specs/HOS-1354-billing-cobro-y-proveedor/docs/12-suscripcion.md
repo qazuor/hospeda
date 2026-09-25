@@ -67,7 +67,9 @@ predice, se observa**, y lo que se observa ahora es un hecho que sí existe: el 
 ### 1.3 El pago y la suscripción se mueven por separado
 
 El capítulo 03 §6 da cinco estados de pago —`PENDING`, `SUCCEEDED`, `FAILED`, `REFUNDED`,
-`PARTIALLY_REFUNDED`— y **no hace falta un sexto**:
+`PARTIALLY_REFUNDED`— y **no hace falta un sexto** *para el reintento* *(el sexto que la máquina
+ganó, `CHARGED_BACK`, es del contracargo y no de esto — FASE 8 completa, `F-8CB3-009`,
+`DEC-SUB-020`, cap. 03 §6)*:
 
 | lo que pasa | nuestro estado de pago | nuestra suscripción |
 |---|---|---|
@@ -549,12 +551,13 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ quince, que es lo que
-> faltaba** (dieciséis motivos desde `F-8CB1-013`, FASE 8 completa, owner 2026-09-25;
+> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ dieciocho, que es lo que
+> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ diecinueve motivos: el 16 desde `F-8CB1-013` y el 17, el 18 y el
+> 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25;
 > `B/02` §2.5). Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó —una de las otras ~~catorce~~ quince—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras ~~catorce~~ ~~quince~~ dieciocho—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.
