@@ -87,5 +87,12 @@
         "projectPrefix": "hops-",
         "source": "scripts/client-tools",
         "dispatch": "node .qz/dispatch.mjs"
+    },
+    "knowledge": {
+        "root": ".qz/knowledge",
+        "instructions": "AGENTS.md",
+        "skillsDir": "skills",
+        "agentsDir": "agents",
+        "commandsDir": "commands"
     }
 }
