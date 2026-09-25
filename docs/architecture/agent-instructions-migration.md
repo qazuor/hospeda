@@ -83,6 +83,29 @@ Los dos candidatos a integrar todavía deben compararse con el contenido actual
 de `hospeda-ui`, `hospeda-email` y `hospeda-services` antes de modificar esos
 skills. No se crea un skill por cada configuración de tooling.
 
+## Mapa del `CLAUDE.md` raíz
+
+El archivo raíz contiene reglas activas mezcladas con referencias históricas y
+recetas extensas. Su destino queda definido así:
+
+| Sección | Destino | Tratamiento |
+|---|---|---|
+| Overview, stack y arquitectura | `AGENTS.md` + `docs/architecture/` | conservar sólo invariantes globales en AGENTS; la explicación larga queda en docs |
+| Route architecture y patrones API | `hospeda-api` + `apps/api/docs/` | el skill mantiene reglas; ejemplos y catálogo quedan junto al código |
+| Commands, `hops`, env, worktrees y promoción | `qz-*`/`hops-*` + `.qz/project.json` | el script es fuente ejecutable; el documento sólo explica límites |
+| Coding standards, Git y seguridad | `AGENTS.md`, guards y `docs/contributing/` | no duplicar listas de comandos en cada skill |
+| Billing y MercadoPago | `hospeda-billing`, `hospeda-api`, `docs/billing/` y runbooks | conservar invariantes; retirar narrativas de incidentes del contexto automático |
+| Testing, smoke gates y CI | `qz-verify`, guards, workflows y `docs/testing/` | el agente invoca comandos; las matrices detalladas no viven en AGENTS |
+| Web/Admin/DB/Schemas/Services | skills de dominio + docs de paquete | ya extraído; sólo quedan comparaciones puntuales |
+| Environment configuration | `hospeda-config`, `hops env-*` y `ENV_REGISTRY` | los valores nunca se copian al conocimiento |
+| Spec/Task/Linear | `.specs/README.md`, Linear y `qz/hops` | validar contra ODD actual; no conservar instrucciones legacy de `.qtm` como workflow activo |
+| App-specific documentation y gotchas | `docs/`, runbooks o código | cargar bajo demanda, no en el contrato universal |
+
+Las secciones de billing, smoke-gates y spec/task contienen decisiones fechadas
+que deben validarse contra el workflow actual antes de retirar el archivo. Esta
+matriz clasifica su destino, pero no declara obsoleta una regla sólo por estar
+en `CLAUDE.md`.
+
 ## Qué se convierte en comando o documentación
 
 | Contenido encontrado | Destino |
