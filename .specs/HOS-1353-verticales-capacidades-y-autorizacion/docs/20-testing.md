@@ -63,7 +63,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1. **Lo construye `B8`** de la otra épica, que es la unidad del tope de pausa (`B/descomposicion.md` §2.8) — **la celda de `V9` que lo nombraba *«el de `D16`»* se retira**, porque `V9` corre antes de que ese número exista (`F-8eC2-004`, `descomposicion.md` §2.7) |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas, y contra **las tablas que los capítulos declaran** y no contra el subconjunto ya construido (`B/20` §2) | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
-| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ cinco hechos** del cap. 01 §1.2 (núcleo) **ni la escritura `C` del corte en la migración estructural del corte** —el quinto, **la primera rama de `PB2`**, entra a la lista y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
+| **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ cinco hechos** del cap. 01 §1.2 (núcleo) **ni la escritura `C` del corte en la migración estructural del corte** —el quinto, ~~**la primera rama de `PB2`**~~ **la pérdida de cobertura del dueño en la vertical**, entra a la lista **con sus dos ejecutores** —la primera rama de `PB2` sobre la ficha publicada y el recálculo que el aviso despierta sobre las demás del dueño— y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
 
 **`G-R6` llega a este catálogo por una columna concreta y no por simetría, y conviene decir cuál.**
 Nació en `B/20` §2 acotado a las seis tablas de billing, porque el crítico que lo motivó era de
@@ -82,11 +82,15 @@ clase costó dinero; **acá cuesta datos sin vuelta**, y ésa es la diferencia q
 **Y hay que decir qué NO afirma el guard sobre esta columna, porque los ~~cuatro~~ cinco escritores
 no son ~~cuatro~~ cinco transiciones.** El predicado es *«al menos una transición la escribe»*, y
 de los ~~cuatro~~ cinco hechos de reinicio del cap. 01 §1.2 (núcleo) **sólo el tercero** —la ficha
-vuelve a `PUBLISHED` por `PB1`, `PB3` o `PB7`— **y el quinto** —la primera rama de `PB2`, FASE 8
-completa, `F-8CA2-001`, owner 2026-09-25— son transiciones. El primero se lee del registro de
+vuelve a `PUBLISHED` por `PB1`, `PB3` o `PB7`— ~~**y el quinto** —la primera rama de `PB2`, FASE 8
+completa, `F-8CA2-001`, owner 2026-09-25— son transiciones~~ es una transición entera, **y el
+quinto lo es a medias**: sobre la ficha publicada lo ejecuta la primera rama de `PB2`
+(`F-8CA2-001`), y sobre las demás fichas del dueño en la vertical el recálculo que el aviso
+despierta, que no es una transición (FASE 8 completa, owner 2026-09-25). El primero se lee del registro de
 eventos de dominio, el segundo de la respuesta del contrato y el cuarto de
 `vertical.fin_de_servicio`; la escritura del corte es de la migración. Así que sobre
-`inactiva_desde` el guard queda **verde por ~~el tercero solo~~ cualquiera de los dos**, y lo que
+`inactiva_desde` el guard queda **verde por ~~el tercero solo~~ cualquiera de los dos** —`PB1`/`PB3`/`PB7`
+o `PB2`—, sin mirar al recálculo que ejecuta la otra mitad del quinto, y lo que
 certifica es *«alguien la mueve»*, nunca *«los ~~cuatro~~ cinco hechos la escriben»*. Es el §2.1
 aplicado a su propio mensaje: el texto con que falla no puede afirmar más de lo que el predicado
 verifica. **Que los otros tres escritores estén es lo que vigila el cap. 02 §2.5**, que los enumera
@@ -142,7 +146,14 @@ adelante en cada caída»*— era la dirección correcta: sin ella el borrado ca
 escritura a **la rama del excedente de `PB2`**, que baja la ficha **con la cobertura verdadera**
 y por eso no es ningún hecho — y el rojo tiene que decir *«escritor fuera de la lista»* aunque la
 misma transición escriba legítimamente en su otra rama, que es lo que prueba que el guard cuenta
-hechos y no ejecutores. *(b)* Se le agrega un **lector** que la lista no nombra —el
+hechos y no ejecutores. **Y la prueba sigue valiendo después de que el hecho 5 pasara a alcanzar
+todas las fichas del dueño** (FASE 8 completa, owner 2026-09-25), revisada y no supuesta: la
+ficha excedente **sí** recibe ahora el hecho 5, pero **cuando el dueño pierde la cobertura**, y se
+lo escribe el recálculo que el aviso despierta; la rama del excedente de `PB2` corre con `cubierto`
+verdadero, así que en **su** instante no ocurrió ningún hecho y su escritura sigue fuera de la
+lista. Queda, además, más filosa: la misma ficha puede recibir una escritura legítima de un
+ejecutor y una ilegítima de otro, y el guard tiene que distinguirlas **por el hecho**, no por la
+ficha ni por la columna. *(b)* Se le agrega un **lector** que la lista no nombra —el
 caso barato es una superficie que quiera mostrar *«hace cuánto está inactiva»*— **sin** su fila en
 el cap. 02 §2.5. *(c)* Se le **saca la lectura al día 180** dejando su fila intacta en el cap. 02
 §2.5. Las tres tienen que poner el guard en rojo, y **un rojo de una con el texto de otra es el
@@ -194,8 +205,9 @@ escrito que el reloj *«arranca acá, no antes»*, que **es** el cuarto hecho; y
 tope de la reapertura en que la lista **sea** cerrada —*«`DEC-DATA-002` le puso a la inactividad
 cuatro hechos de reinicio con lista cerrada»* —hoy cinco, `B/03` §7.1 ya lo dice así—, y de ahí sale que el tope *«ya no es monótono»*—.
 Un ~~quinto~~ escritor **nuevo** agregado desde billing rompe las dos cosas **sin que nadie abra
-este capítulo**. *(El quinto hecho, el de la FASE 8 completa, no salió de billing: es `PB2`, de
-esta épica — `F-8CA2-001`, owner 2026-09-25.)*
+este capítulo**. *(El quinto hecho, el de la FASE 8 completa, no salió de billing: ~~es `PB2`, de
+esta épica~~ sus dos ejecutores —`PB2` y el recálculo que el aviso despierta— son de esta épica —
+`F-8CA2-001`, owner 2026-09-25.)*
 
 **`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
 arreglo de `F-8cC1-001` deja al cliente que pausa a salvo del borrado **porque 120 es menor que
@@ -212,8 +224,14 @@ cuenta falsa. **Desde el hecho 5 del cap. 01 §1.2 (núcleo; owner 2026-09-25) `
 `listing.inactiva_desde` en el instante en que baja la ficha por perder la cobertura**, que en una
 pausa es su primer día, y la desigualdad de `G-R5` pasa a ser la que de verdad separa a ese cliente
 del borrado. El guard no cambia de predicado: cambia que **ahora su premisa es verdadera**. Su
-alcance es el de `D16` —la ficha que estaba publicada al empezar la pausa—; la que ya estaba abajo
-queda abierta en el cap. 01 §1.2 (núcleo). **Es cruzado**: el tope vive
+alcance es el de `D16` ~~—la ficha que estaba publicada al empezar la pausa—; la que ya estaba abajo
+queda abierta en el cap. 01 §1.2 (núcleo)~~ —**toda ficha del dueño en esa vertical**, publicada o
+no, porque el hecho 5 es *«el dueño pierde la cobertura en la vertical»* y el recálculo que el aviso
+despierta le escribe el mismo instante a la que `PB2` no baja (FASE 8 completa, owner
+2026-09-25)—. **Por eso ahora alcanza**: el primer día de la pausa es el valor de la columna en
+todas las fichas que el borrado puede tocar, no sólo en la publicada. Lo que sigue abierto en el
+cap. 01 §1.2 (núcleo) es el disparo —el aviso perdido o repetido—, y `G-R5`, que compara dos
+cifras, no lo vería de ninguna forma. **Es cruzado**: el tope vive
 en el catálogo de billing y el día 180 en el capítulo 02 de esta épica, así que `B/20` §2 lo
 repite como referencia cruzada, igual que `G-R4`.
 

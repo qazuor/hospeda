@@ -313,7 +313,9 @@ reciente de los ~~cuatro~~ cinco hechos que la reinician»*, y **un «más recie
 cinco» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son transiciones de
 publicación y el cuarto es de la otra épica~~ tres de los cinco hechos no son transiciones de
 publicación —el 1, el 2 y el 4, y a éste lo ejecuta la otra épica— (FASE 8 completa, `F-8CA2-001`,
-owner 2026-09-25). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
+owner 2026-09-25), **y el 5 lo es sólo a medias**: sobre la ficha publicada lo ejecuta `PB2`, y
+sobre las que no lo estaban el recálculo que el aviso despierta, que no es una transición (FASE 8
+completa, owner 2026-09-25). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
 programa** no puede ser un valor que nadie guarda.
 
 **Se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra
@@ -329,7 +331,13 @@ cubierta tiene hasta 90 días, y el hard delete caía hasta 90 días antes de lo
 prometen (`F-8CA2-001`, `F-8CA3-001`). **Desde el owner 2026-09-25 `PB2` escribe el hecho 5 en su
 primera rama** —*«`cubierto` pasa a falso»*— **y no en la segunda** —el excedente, donde la
 cobertura sigue verdadera—; `G-R6-B` mitad *(a)* admite la primera por la lista y sigue rechazando
-la segunda (cap. 20 §2). No es una columna denormalizada de algo
+la segunda (cap. 20 §2). **Y el hecho 5 no es de la ficha que `PB2` baja sino del dueño que pierde
+la cobertura** (FASE 8 completa, owner 2026-09-25): se escribe en **toda** ficha suya en esa
+vertical, y a las que no estaban publicadas —el borrador, la excedente que ya estaba abajo— se lo
+escribe **el recálculo que el mismo aviso despierta**, sin transición de publicación. Es el mismo
+recálculo que ya ejecuta el hecho 2 cuando relee `cubierto` verdadero; con la relectura en falso
+tras el aviso de la caída ejecuta el 5 (cap. 01 §1.2, núcleo, con su ⚠️ punto 3 abierto). Sin esto,
+esas fichas quedaban con el último reinicio y el día 180 podía caer a mitad de una pausa. No es una columna denormalizada de algo
 que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia del cap. 03 §9 sobre
 el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
 segunda fuente.
@@ -337,7 +345,9 @@ segunda fuente.
 **Se escribe en los ~~cuatro~~ cinco HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
 crezca.** Lo que la lista cierra es **de qué hechos** puede ser una escritura, nunca **quién** la
 hace: el hecho 2 tiene **tres** ejecutores —el recálculo que el aviso despierta, la relectura de
-`PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4)— y los tres escriben el mismo hecho.
+`PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4)— y los tres escriben el mismo hecho;
+**y el 5 tiene dos** —la primera rama de `PB2` sobre la publicada y el recálculo sobre las demás
+(FASE 8 completa, owner 2026-09-25)—.
 Confundir las dos preguntas es lo que ponía a `G-R6-B` en rojo sobre la red y no sobre el defecto
 (cap. 01 §1.2, núcleo).
 
@@ -345,8 +355,11 @@ Confundir las dos preguntas es lo que ponía a `G-R6-B` en rojo sobre la red y n
 Quien agregue un escritor nuevo agrega su hecho a la lista del cap. 01 §1.2 **en el mismo acto**, o
 el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las columnas que una condición
 **lee** contra las que alguna transición **escribe**, y de estos ~~cuatro hechos **uno solo es una
-transición**, así que queda verde por ése~~ cinco hechos **dos son transiciones** —el 3 y el 5—, así
-que queda verde por cualquiera de ellos y no mira a los otros tres — está dicho en el cap. 20 §2 y
+transición**, así que queda verde por ése~~ ~~cinco hechos **dos son transiciones** —el 3 y el 5—, así
+que queda verde por cualquiera de ellos~~ cinco hechos **el 3 es una transición y el 5 lo es a
+medias** —`PB2` sobre la publicada, el recálculo sobre las demás (FASE 8 completa, owner
+2026-09-25)—, así que queda verde por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni
+al recálculo que ejecuta el 5** — está dicho en el cap. 20 §2 y
 es el motivo entero de que exista `G-R6-B`.
 
 **Y la leen ~~cinco~~ SEIS consumidores, y esta lista también es cerrada** (recontada en la FASE 8
@@ -375,7 +388,8 @@ exacta, que es la que el cap. 20 §2 y `B/20` §2 citan. *(`DEC-DATA-004` `H1` l
 cifra del log queda por corregir en el log.)*
 
 **Y el hecho 5 no le agrega un lector**: `PB2` **escribe** la columna en su primera rama y no la
-lee (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25). **Tampoco la escritura `C` del corte**, que
+lee (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), **y el recálculo que lo escribe en las no
+publicadas tampoco**: lee `cubierto`, no el reloj (owner 2026-09-25). **Tampoco la escritura `C` del corte**, que
 no lee nada: pone el valor de arranque.
 
 **Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
@@ -473,7 +487,7 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 
 **Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una
 frase de esta tabla: cap. 01 §1.2 la define y enumera **los ~~cuatro~~ cinco hechos que la
-reinician** (el quinto, *«la ficha deja de estar publicada porque perdió la cobertura»*, FASE 8
+reinician** (el quinto, ~~*«la ficha deja de estar publicada porque perdió la cobertura»*~~ *«el dueño pierde la cobertura en la vertical»*, escrito en todas sus fichas en ella (FASE 8 completa, owner 2026-09-25), FASE 8
 completa, `F-8CA2-001`, owner 2026-09-25). El
 que más importa acá es el segundo —**la cobertura comprobada verdadera**, un estado leído y no un
 cambio detectado (cap. 01 §1.2)—, porque es el que impide que el día 180 alcance a alguien que
@@ -578,7 +592,9 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    **Su caso testigo es la pausa, y es la razón por la que estas dos reglas se escribieron
    juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha
    el primer día **y en ese mismo acto escribe `inactiva_desde`** (cap. 01 §1.2, hecho 5; FASE 8
-   completa, `F-8CA2-001`, owner 2026-09-25) y `PB4` se la archiva el 90. *(Sin esa escritura la
+   completa, `F-8CA2-001`, owner 2026-09-25) —**y el recálculo escribe ese mismo instante en sus
+   fichas que no estaban publicadas**, borrador y excedente incluidos (owner 2026-09-25)— y `PB4`
+   se la archiva el 90. *(Sin esa escritura la
    columna guardaba el último reinicio, de hasta 90 días de antigüedad, y el 90 y el 180 caían
    hasta 90 días antes de lo que esta cuenta dice.)* El reloj **no se detiene** durante la pausa
    —verticales no sabe que hay una pausa detrás, y `DEC-TRIAL-008` con el §4 del contrato deciden

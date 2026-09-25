@@ -273,9 +273,12 @@ las dos anteriores, y `G-R6-B` la cuarta—, pero eso es la consecuencia y no el
 
 **Y `G-R6-B` es el guard de LA LISTA de esa misma columna —sus dos mitades, con tres predicados—, que existe porque el
 párrafo de arriba dejó dicho que `G-R6` no la cubre.** De los ~~cuatro~~ cinco hechos que escriben
-`listing.inactiva_desde` **~~sólo uno es una transición~~ dos son transiciones** —el 3 y, desde la
-FASE 8 completa, el 5, la primera rama de `PB2` (`F-8CA2-001`, owner 2026-09-25)—, así que el
-predicado *«al menos una transición la escribe»* queda verde por cualquiera de ellos y los otros
+`listing.inactiva_desde` **~~sólo uno es una transición~~ ~~dos son transiciones~~ uno es una
+transición y otro lo es a medias** —el 3, y desde la FASE 8 completa el 5, que sobre la ficha
+publicada lo ejecuta la primera rama de `PB2` (`F-8CA2-001`) y sobre las demás fichas del dueño el
+recálculo que el aviso despierta, que no es transición (owner 2026-09-25)—, así que el
+predicado *«al menos una transición la escribe»* queda verde por `PB1`/`PB3`/`PB7` o por `PB2`, no
+mira al recálculo, y los otros
 tres —el registro de eventos, la respuesta del contrato y `vertical.fin_de_servicio`— **no los mira
 nadie**. Lo único que los
 sostenía era la enumeración de `V/02` §2.5, y una lista cerrada sin guard es una promesa que este

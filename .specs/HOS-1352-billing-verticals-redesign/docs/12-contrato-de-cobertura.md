@@ -678,10 +678,17 @@ retraso en el reinicio, jamás un archivado —ni un borrado— sobre alguien qu
 **Y desde la FASE 8 completa el reloj recibe del mismo evento un segundo hecho, y ése sí cuelga del
 cambio** (`F-8CA2-001`, owner 2026-09-25). Cuando `PB2` baja una ficha porque `cubierto` pasó a
 falso, escribe el instante de la caída en `listing.inactiva_desde`: es el **hecho 5** del
-`NUCLEO/01` §1.2. No contradice la regla de arriba —`PB2` es una transición, y una transición se
+`NUCLEO/01` §1.2, **que es del dueño y no de la ficha** —*«el dueño pierde la cobertura en la
+vertical»*— **y se escribe en toda ficha suya en esa vertical**; a las que no estaban publicadas,
+que `PB2` no toca, se lo escribe **el recálculo que este mismo aviso despierta**, sin transición
+(FASE 8 completa, owner 2026-09-25). No contradice la regla de arriba —`PB2` es una transición, y una transición se
 dispara por un cambio—, pero tiene la debilidad que la regla vino a tapar para el hecho 2: **si el
-aviso de la caída se pierde, `PB2` no dispara y nadie escribe el hecho 5**, y no hay relectura que
-lo sostenga. Queda abierto en el `NUCLEO/01` §1.2.
+aviso de la caída se pierde, ~~`PB2` no dispara y~~ ni `PB2` dispara ni el recálculo corre, y**
+nadie escribe el hecho 5, y no hay relectura que
+lo sostenga. **Y el recálculo tiene una segunda**: sobre una ficha no publicada no hay estado que
+recuerde que antes había cobertura, así que distinguir la relectura en falso que sigue a la caída
+de la que sigue a un aviso repetido no está escrito. Las dos quedan abiertas en el `NUCLEO/01`
+§1.2.
 
 ---
 

@@ -259,11 +259,17 @@ afirmación sobre el reloj y no el efecto de nada: el hecho 4 tenía **de dónde
 1. **La escritura es del barrido, no de `PB2`.** `PB2` es una transición de publicación, y
    ~~**`PB2` escribiendo esta columna es el caso con el que `V/20` §2 manda probar `G-R6-B` en rojo**~~
    **desde la FASE 8 completa `PB2` sí escribe la columna en su primera rama** —el hecho 5 del
-   `NUCLEO/01` §1.2, *«la ficha deja de estar publicada porque perdió la cobertura»*
-   (`F-8CA2-001`, owner 2026-09-25)—, **pero sólo sobre las fichas que ese día estaban
+   `NUCLEO/01` §1.2, ~~*«la ficha deja de estar publicada porque perdió la cobertura»*~~
+   (`F-8CA2-001`, owner 2026-09-25)—, ~~**pero sólo sobre las fichas que ese día estaban
    publicadas**. El barrido escribe **cada ficha de la vertical**, publicada o no, y es el único que
-   alcanza a las que ya estaban abajo. Los dos actos corren el mismo día; sobre una ficha publicada
-   escriben el mismo instante, y son actos distintos.
+   alcanza a las que ya estaban abajo.~~ **y desde la misma pasada el hecho 5 es *«el dueño pierde
+   la cobertura en la vertical»* y alcanza a todas sus fichas en ella, publicadas o no** —a las que
+   ya estaban abajo se lo escribe el recálculo que el aviso despierta, no `PB2`— (FASE 8 completa,
+   owner 2026-09-25). **Así que el 5 tiene ahora el mismo alcance que el barrido sobre cada dueño
+   que ese día pierde la cobertura**: los dos escriben el mismo instante en todas sus fichas. El
+   barrido sigue siendo el único que alcanza al dueño que ese día **ya** estaba sin cobertura —ahí
+   no ocurre ningún 5— y el único que no depende del aviso. Los dos actos corren el mismo día y son
+   actos distintos.
 2. **Y no es un escritor de más.** Es el **hecho 4** de la lista cerrada del `NUCLEO/01` §1.2, así
    que `G-R6-B` mitad *(a)* lo acepta por la lista: lo que esa lista cierra son los hechos, y cada
    hecho puede tener su ejecutor.

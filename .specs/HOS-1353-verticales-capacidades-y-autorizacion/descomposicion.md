@@ -59,7 +59,7 @@ condicionan**: se apoyan en ella.
 | **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe `PB2`, de V6; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -109,7 +109,9 @@ uno de los ~~cuatro~~ cinco hechos del `01` §1.2 (núcleo) ni la escritura `C` 
 `DEC-TEST-001`; recontados en la FASE 8 completa, `F-8CD1-009`), o **uno de esos ~~cinco~~ seis que
 ya no lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
 (`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, **la primera rama de
-`PB2` es el quinto** (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), y la relectura de
+`PB2` es ~~el quinto~~ uno de los dos ejecutores del quinto** —el otro es el recálculo que el aviso
+despierta, sobre las fichas del dueño que no estaban publicadas— (FASE 8 completa, `F-8CA2-001`,
+owner 2026-09-25), y la relectura de
 `PB4`/`PB5` es uno de los tres momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
 del `01` §1.2 y del reloj que la **lee**.
 

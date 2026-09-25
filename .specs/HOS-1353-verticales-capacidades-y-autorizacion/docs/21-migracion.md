@@ -138,8 +138,10 @@ avisos de retención fechados en el pasado. **Toda ficha que existía el día de
 `NUCLEO/01` §1.2 —**una sola vez, en la migración estructural del corte, y en ningún otro lugar**—,
 y `G-R6-B` la admite por ese lugar. *(Sobre las fichas publicadas, `PB2` escribe el mismo día el
 hecho 5 al despublicarlas, `NUCLEO/01` §1.2; la escritura `C` sigue haciendo falta porque la
-columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a las que no estaban
-publicadas.)*
+columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a ~~las que no estaban
+publicadas~~ **toda ficha preexistente, incluida la del dueño que ese día no pierde la cobertura**:
+el hecho 5 ya alcanza a las no publicadas de un dueño que la pierde —FASE 8 completa, owner
+2026-09-25—, pero sobre un dueño que no la pierde no ocurre.)*
 
 > ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
 > tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió

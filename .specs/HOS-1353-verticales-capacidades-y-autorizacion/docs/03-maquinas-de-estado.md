@@ -291,7 +291,7 @@ billing mueve varias publicaciones a la vez.
 | # | desde | evento | hacia | nota |
 |---|---|---|---|---|
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
-| PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25) |
+| PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). **`PB2` es uno de los dos ejecutores del hecho 5, no el único**: el hecho es *«el dueño pierde la cobertura en la vertical»* y alcanza a **todas** sus fichas en ella; a las que no están en `PUBLISHED` —y por eso `PB2` no toca— se lo escribe el recálculo que el mismo aviso despierta, sin transición de esta máquina (owner 2026-09-25) |
 | PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza. **Es una disyunción de dos, simétrica a la de `PB2`** (`DEC-DATA-003`) |
 | PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | **relee la cobertura antes de archivar** (ver abajo). Sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
 | PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración. **Relee la cobertura antes de archivar**, igual que `PB4` |
@@ -497,9 +497,12 @@ orden es `D16` (cap. 04 §3, núcleo), no una cuenta que alguien tenga que rehac
 del cap. 01 §1.2, núcleo; FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). Hasta
 entonces no lo escribía nadie: el reloj guardaba el último reinicio, que la relectura de `PB4` pone
 cada 90 días sobre una ficha publicada y cubierta, y con 85 días de antigüedad al pausar la ficha se
-archivaba el día 5 de la pausa y se borraba el día 95. **Vale para la ficha que estaba publicada
+archivaba el día 5 de la pausa y se borraba el día 95. ~~**Vale para la ficha que estaba publicada
 cuando la pausa empezó**; la que ya estaba abajo no pasa por `PB2` y queda abierta en el cap. 01
-§1.2 (núcleo).
+§1.2 (núcleo).~~ **Vale para toda ficha del dueño en esa vertical** (FASE 8 completa, owner
+2026-09-25): la que ya estaba abajo —el borrador, la excedente— no pasa por `PB2`, y el mismo
+instante se lo escribe el recálculo que el aviso despierta (cap. 01 §1.2, núcleo, hecho 5). Lo que
+queda abierto allá es el disparo —el aviso perdido y el aviso repetido—, no el alcance.
 
 **Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
 esta misma tanda:**
