@@ -50,7 +50,7 @@ La fuente portable del proyecto se alojará en `.qz/knowledge/`. Su contrato se 
 }
 ```
 
-El renderer genérico es `qz-kit project render`. Produce el layout compatible de OpenCode, Claude Code, Codex y Gentle Shell en un directorio indicado, sin tocar el repositorio fuente. La instalación sincronizada de esa salida queda para la siguiente etapa, después de extraer y revisar los skills.
+El renderer genérico es `qz-kit project render`. Produce el layout compatible de OpenCode, Claude Code, Codex y Gentle Shell en un directorio indicado, sin tocar el repositorio fuente. La sincronización versionada se hace con `qz-kit project sync <proyecto> --plan|--check|--apply`; crea backup externo, rechaza sobrescrituras con drift salvo autorización explícita y no elimina recursos obsoletos automáticamente.
 
 Orden recomendado de extracción:
 
@@ -79,6 +79,7 @@ archivos adicionales por defecto.
 - [x] Inventariar los `CLAUDE.md` del repositorio y sus responsabilidades.
 - [x] Extraer los dominios principales a skills con pruebas de render para los cuatro clientes.
 - [ ] Comparar cada skill contra su `CLAUDE.md` de origen para evitar pérdida de reglas.
+- [x] Materializar la capa de conocimiento en OpenCode, Claude Code, Codex y Gentle Shell con `qz-kit project sync`.
 - [ ] Mover procedimientos a comandos/scripts y enlazarlos desde la documentación.
 - [ ] Ejecutar una ventana de convivencia para Claude, OpenCode, Codex y Gentle Shell.
 - [ ] Confirmar que los cuatro clientes leen `AGENTS.md` y los skills instalados.
