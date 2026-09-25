@@ -1,6 +1,6 @@
 # Auditoría de cobertura de skills
 
-La extracción inicial produjo 17 skills portables. Esta auditoría compara cada
+La extracción produjo 16 skills de dominio portables. Esta auditoría compara cada
 skill con su `CLAUDE.md` de origen. El objetivo no es copiar las 10.000 líneas de
 legacy, sino separar las reglas activas de los ejemplos históricos y detectar
 invariantes que no pueden perderse.
@@ -9,24 +9,24 @@ invariantes que no pueden perderse.
 
 | Dominio | Fuente | Skill | Cobertura inicial | Riesgo pendiente |
 |---|---:|---:|---|---|
-| API | 942 líneas | 92 | arquitectura, auth, errores y testing resumidos | gates de billing, permisos granulares y gotchas de tests requieren extracción explícita |
-| Web | 1.331 | 87 | Astro, islands, i18n, SEO, auth y UI resumidos | facets, publishing, rutas de cuenta y reglas visuales específicas aún dependen del legacy |
-| Admin | 812 | 83 | CRUD, SSR, auth, tablas y deploy resumidos | Nitro, healthcheck, build inicial y relation managers necesitan revisión puntual |
-| DB | 877 | 63 | migraciones, queries, transacciones y template resumidos | carriles de migración, `safeIlike`, enums, extras y reglas de billing necesitan guards/docs |
-| Schemas | 616 | 42 | organización, Zod y contratos resumidos | transforms y schemas de entidades complejas requieren comparación de consumidores |
-| Services | 1.358 | 41 | CRUD, errores, permisos y transacciones resumidos | reglas de permisos, `super`, `hookState` y dominios especializados requieren revisión |
-| Seeding | 935 | 42 | determinismo, fixtures y seguridad resumidos | matriz de usuarios, verticales, catálogo y prohibición de prod requieren guard |
-| Billing | 170 | 43 | límites, entitlements y paridad | revisar invariantes concretas contra tests y configuración |
-| Auth | 56 | 42 | actor, roles, permisos y sesión | cobertura suficiente; confirmar helpers reales |
-| i18n | 340 | 38 | locales, tipos, pluralización y formatos | revisar claves de dominio y validadores |
-| Email | 550 | 37 | layout, plantillas, auth y previews | catálogo de plantillas y configuración detallada requieren comparación |
-| Media | 140 | 31 | fachada, Cloudinary, retries y fallback | revisar presets concretos y carrera de avatar |
-| AI | 175 | 30 | providers, modelos, fail-loud y credenciales | sync de modelos y límites concretos requieren guard/documentación |
-| Observabilidad | 308 | 31 | logging, redacción y formatos | revisar campos/correlación usados por runbooks |
-| UI | 389 | 30 | tokens, iconos y accesibilidad | catálogo y reglas de animación son documentación normal, no skill global |
-| Config | 48 | 31 | registry, schemas, env públicas y drift | falta conectar un guard automático al close/update |
+| API | 942 líneas | 103 | arquitectura, auth, errores, billing y testing resumidos | guard transversal para roles directos y `c.json()` de negocio |
+| Web | 1.331 | 100 | Astro, islands, i18n, SEO, auth, facetas y variables públicas | publishing y rutas de cuenta muy específicas siguen en docs/legacy |
+| Admin | 812 | 94 | CRUD, SSR, auth, tablas, Nitro, healthcheck y build | relation managers específicos siguen en documentación del área |
+| DB | 877 | 71 | migraciones, queries, transacciones, `safeIlike` y template | hacer visible el fingerprint en `closeIssue`/`update` |
+| Schemas | 616 | 46 | organización, Zod, transforms y compatibilidad aditiva | consumidores complejos se validan por tests del área |
+| Services | 1.358 | 48 | CRUD, errores, permisos, `super`, `hookState` y transacciones | guards automáticos de permisos aún no son transversales |
+| Seeding | 935 | 49 | determinismo, fixtures, dual-write y seguridad | política automática contra staging/prod requiere decisión operativa |
+| Billing | 170 | 51 | límites, entitlements, paridad y estados | se mantiene validación por guards/tests existentes |
+| Auth | 56 | 42 | actor, roles, permisos y sesión | cobertura suficiente; confirmar helpers reales al tocar auth |
+| i18n | 340 | 38 | locales, tipos, pluralización y formatos | reglas de dominio poco frecuentes quedan en docs |
+| Email | 550 | 41 | layout, plantillas, auth, previews y transportes | catálogo detallado queda junto al paquete |
+| Media | 140 | 31 | fachada, Cloudinary, retries, fallback y avatar race | presets concretos quedan en configuración/docs |
+| AI | 175 | 30 | providers, modelos, fail-loud y credenciales | sync de modelos y límites se validan sólo al tocar AI |
+| Observabilidad | 308 | 33 | logging, redacción, formatos y correlación | campos específicos quedan en runbooks |
+| UI | 389 | 30 | tokens, iconos, accesibilidad y composición | catálogo y animaciones son documentación normal |
+| Config | 48 | 31 | registry, schemas, env públicas y drift | mantener reconciliación conectada a workflows |
 
-## Invariantes que deben extraerse antes de retirar legacy
+## Invariantes ya extraídos
 
 ### API y servicios
 
@@ -78,15 +78,17 @@ historial de issues, ejemplos de catálogo y notas de incidentes deben quedarse 
 `docs/` o junto al código. No se copiarán automáticamente todas las secciones
 legacy al skill.
 
-## Próximo paso
+## Próximos pasos
 
-1. Convertir las invariantes de seguridad, permisos, migraciones, env y seeds en
-   guards/tests.
+1. Convertir los gaps delimitados de seguridad y permisos en guards con
+   excepciones explícitas, evitando heurísticas fail-open.
 2. Mantener el mapa de verificaciones centralizado para no duplicar listas de
    guards dentro de cada skill.
-3. Comparar los dominios restantes y marcar cada sección legacy como `migrada`,
+3. Enlazar la validación del fingerprint de DB con `closeIssue`/`update` y
+   mostrar drift antes de reutilizar el template.
+4. Comparar los dominios restantes y marcar cada sección legacy como `migrada`,
    `documentación`, `guard`, `obsoleta` o `pendiente`.
-4. Sólo después de esa revisión evaluar la eliminación de `CLAUDE.md`.
+5. Sólo después de esa revisión evaluar la eliminación de `CLAUDE.md`.
 
 ## Guards ya existentes
 
