@@ -127,9 +127,28 @@ contrato define —`TÍTULO`, `BASE` y `COMPLEMENTO`— y lo hace a propósito
 (§4) necesitan verlas todas, incluso las que no van a otorgar nada. **Lo que este capítulo pliega
 no es esa lista.**
 
-> **El conjunto plegable de un `user + vertical` son sus fuentes de clase `TÍTULO` y `BASE`, más
+> ~~**El conjunto plegable de un `user + vertical` son sus fuentes de clase `TÍTULO` y `BASE`, más
 > las de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva. Sin título, los
-> complementos se descartan y no entran en ninguna de las cuatro estrategias del §2.2.**
+> complementos se descartan y no entran en ninguna de las cuatro estrategias del §2.2.**~~
+>
+> **El conjunto plegable de un `user + vertical` son sus fuentes de clase `TÍTULO` y `BASE`, más
+> las de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que NO sea de
+> `tipo: TRIAL`. Sin un título así, los complementos se descartan y no entran en ninguna de las
+> cuatro estrategias del §2.2.**
+
+**Por qué el trial no cuenta como título para los complementos** (FASE 8 completa, `F-8CA1-004`,
+`F-8CA2-011`, `F-8CC1-006`). La versión tachada admitía el complemento con **cualquier** título, y un
+trial corriendo **es** de clase `TÍTULO` (`12-contrato…` §2.4): un addon `USER` o `GLOBAL` comprado
+con la suscripción de otra vertical sumaba en la vertical en trial. **Eso es lo que `V/11` §5.3
+prohíbe** —*«un addon de scope `USER` o `GLOBAL` no aporta nada a una vertical cuyo único título es
+un trial»*— para no romper el §64.7, y **`V/11` es el dueño de la regla del trial, así que manda
+él**. La condición cubre los tres scopes de su tabla del §5.2, no sólo el de §5.3: la ficha en trial
+**no es objetivo elegible** de un addon `LISTING`, y el trial **no es una suscripción** de la que
+cuelgue un `VERTICAL_SUBSCRIPTION`. En los tres, lo que la vertical en trial recibe del addon es
+nada. **Falla hacia que el trial reciba de menos**, que es lo que el §10.5 pide (`V/11` §5.3).
+
+**Y NO cambia nada fuera del trial**: la suscripción —haya cobrado o no (`12-contrato…` §2.1,
+`cobrada`)—, la cortesía y el grant siguen siendo títulos que admiten complementos.
 
 Es la regla del contrato §2.4 —*«un complemento agrega sobre un título; sin título no agrega sobre
 nada»*— escrita **donde se ejecuta**. El pliegue lo hace este capítulo; una regla de pliegue que
@@ -156,7 +175,8 @@ antes; ésta es la del paso 6.
 
 **Y es la misma condición en los dos tramos del pliegue.** El conjunto efectivo se pliega en el
 tramo cacheado por `user + vertical` y un delta por ficha (`12-contrato…` §2.7); un addon de
-alcance `LISTING` entra en ese delta **sólo si el `user + vertical` tiene título vivo**. El corte
+alcance `LISTING` entra en ese delta **sólo si el `user + vertical` tiene título vivo** **que no sea
+un trial** (arriba). El corte
 en dos tramos es por dónde puede cortar el caché, no una segunda regla de admisión: si el descarte
 sólo rigiera en el primero, el suspendido conservaría sus addons de ficha.
 
@@ -167,8 +187,22 @@ por el apagado. El recálculo ya ocurre: *«toda transición de la máquina de s
 la lista de invalidación (cap. 02 §3.2) y la suspensión es una. Lo que baja lo reconcilia el §4.3
 como cualquier otra baja.
 
+> ⚠️ **Lo que el pliegue NO distingue, declarado por `DEC-METH-015`: el trial y la suscripción que
+> todavía no cobró** (`DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`,
+> `F-8CC1-002`). Desde que el trial se convierte con el primer pago acreditado y no con la
+> autorización (`V/03` §2), quien se suscribe durante el trial tiene **dos títulos a la vez**
+> hasta ese cobro —entre 26 y 44 minutos en un alta (`PA-3`)—: el del trial y el de su
+> suscripción. Este § los pliega como a cualquier par: las claves `SUMA` suman los dos cupos y
+> las de «no acumula» toman el más favorable, que en el trial es el plan vendible de `rank` más
+> alto (cap. 02 §2.1). **No duplica nada que no sumara ya con dos títulos cualesquiera**; lo que
+> abre es la ventana. Cuando el cobro entra (`T2`) o se rechaza (`S16`) una de las dos fuentes se
+> va, el conjunto baja y el §4.3 despublica lo que sobre. Los otros casos de la ventana —la
+> sucesora cuyo primer cobro difiere `D8`, la baja antes del primer cobro, el aviso perdido—
+> están en `V/03` §2, *«los 26–44 minutos»*.
+
 **El guard** — `G-R2`, en la lista de `V/20` §2: **ninguna de las cuatro estrategias recibe una
-fuente de clase `COMPLEMENTO` cuando el conjunto no tiene ninguna de clase `TÍTULO` viva.** Se
+fuente de clase `COMPLEMENTO` cuando el conjunto no tiene ninguna de clase `TÍTULO` viva** **que no
+sea de `tipo: TRIAL`** (FASE 8 completa, `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`). Se
 comprueba sobre la resolución y no sobre cada call site, porque `V/17` §1.3 ya obliga a que los
 pasos se resuelvan **en un solo lugar**; ese lugar es el sujeto del guard. Sin guard la regla queda
 donde estaba: escrita y nunca ejercida.

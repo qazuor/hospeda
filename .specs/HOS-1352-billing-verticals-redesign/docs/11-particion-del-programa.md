@@ -111,9 +111,10 @@ mismo documento.
 > avance**. Se retira en vez de actualizarse, porque actualizarla deja el generador en pie.
 
 **Nada más cruza la frontera.** No cruzan montos, ni estados de pago, ni ids del proveedor, ni
-fechas de cobro. **La regla de vigilancia vive en el contrato §4.2 y acá se la cita, no se la
+fechas de cobro —sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4
+(`DEC-TRIAL-010`)—. **La regla de vigilancia vive en el contrato §4.2 y acá se la cita, no se la
 repite**: si aparece **un lugar que necesita algo de billing y no figura en la fila `cubierto` del
-contrato §2.1** —y no es este hecho—, es señal de que el corte se está filtrando y hay que mirarlo,
+contrato §2.1** **ni en su fila `cobrada`** —y no es este hecho—, es señal de que el corte se está filtrando y hay que mirarlo,
 no resolverlo en el lugar.
 
 > **Este renglón decía *«un quinto lugar»* y era la tercera copia de una cifra que ya había
@@ -148,7 +149,8 @@ Tres cosas del lado verticales no se pueden ejercer hasta que exista billing. Va
 para que nadie las descubra como un bug:
 
 1. **El trial nunca convierte.** Las transiciones `T2` y `T5` del capítulo 03 §2 disparan cuando
-   se autoriza una suscripción. Sin billing, un trial sólo puede vencer.
+   ~~se autoriza una suscripción~~ aparece un título que convierte —una suscripción, recién con su
+   primer pago acreditado (`DEC-TRIAL-010`)—. Sin billing, un trial sólo puede vencer.
 2. **La reparación de un trial ya vencido no existe.** El capítulo 11 §2.3 la resuelve con una
    cortesía, que es un instrumento de billing. Alguien perjudicado por un error de moderación
    nuestro **después** de que su trial venció no tiene reparación hasta entonces. Mientras el

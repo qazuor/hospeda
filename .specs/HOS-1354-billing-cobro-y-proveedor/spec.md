@@ -164,7 +164,8 @@ quién sabe *cuál plan* tiene esta persona es esta épica. Devolver los entitle
 mudaría la resolución del capítulo 15 para este lado y sería la segunda fuente de algo que tiene
 que tener una sola.
 
-**No cruzan la frontera** montos, precios, estados de pago, ids del proveedor ni fechas de cobro.
+**No cruzan la frontera** montos, precios, estados de pago, ids del proveedor ni fechas de cobro
+—sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4 (`DEC-TRIAL-010`)—.
 Ni siquiera el estado exacto de la suscripción: verticales no distingue `ACTIVE` de
 `GRACE_PERIOD`, porque durante el grace **el servicio sigue**.
 

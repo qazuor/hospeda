@@ -24,7 +24,9 @@ resuelve **los ocho huecos que quedaron alrededor de ella**, y todos son variant
 pregunta: el §10.2 dice que el trial **no se devuelve nunca**, y no dice qué hacer en los casos
 donde eso se siente injusto o se puede explotar. El octavo —el §8, el día que una vertical
 enciende su trial— es el único que no pregunta por una persona sino por **un cambio de
-configuración**, y es por eso que tardó en aparecer.
+configuración**, y es por eso que tardó en aparecer. **El §9 no es un noveno hueco**: es una regla
+del owner que no estaba escrita —suscribirse durante el trial lo termina, y lo termina el cobro—
+(`DEC-TRIAL-010`, owner 2026-09-25).
 
 La respuesta de fondo es una sola y conviene tenerla a la vista antes de los casos:
 
@@ -289,8 +291,9 @@ verticales las indica claramente a las tres.
 
 ### 6.3 El corte al suscribirse es por vertical
 
-T2 y T5 ya cortan la campaña cuando **aparece una fuente viva de clase `TÍTULO`** en esa vertical
-(cap. 03 §2). Lo que hay que decir acá, porque es donde se equivoca: **corta la de esa vertical y
+T2 y T5 ya cortan la campaña cuando **aparece ~~una fuente viva de clase `TÍTULO`~~ un título que
+convierte** en esa vertical (cap. 03 §2) —**una suscripción, recién con su primer pago
+acreditado** (`DEC-TRIAL-010`, §9)—. Lo que hay que decir acá, porque es donde se equivoca: **corta la de esa vertical y
 ninguna otra.** Quien se suscribe a Alojamiento y sigue sin suscribirse en Gastronomía tiene que
 seguir recibiendo la de Gastronomía — el trial que no convirtió es el de allá.
 
@@ -299,7 +302,10 @@ como estaba escrito y dejaba afuera tres formas de quedar cubierto: la cortesía
 suscripción que **se recupera** desde `SUSPENDED` o **se reanuda** desde `PAUSED` sin que se
 autorice nada nuevo. En los tres casos la persona está cubierta y la campaña le sigue pidiendo que
 se suscriba. La fuente de la que sale la vertical es la misma que la del corte, así que la regla de
-*«esa vertical y ninguna otra»* no cambia.
+*«esa vertical y ninguna otra»* no cambia. **Y para una suscripción nueva el disparador ya no es su
+aparición sino su primer pago acreditado** (`DEC-TRIAL-010`, §9): entre la autorización y ese
+cobro la campaña previa sigue agendada, y sus hitos se cuentan en días, no en los minutos de
+`PA-3`.
 
 Con la consolidación de §6.2 eso se ve directo: la pieza del hito siguiente sale nombrando una
 vertical menos.
@@ -419,6 +425,41 @@ puerta está abierta, y no hace falta mala fe para encontrarla: se descubre sola
 —**apagar** un trial encendido, poner los días de nuevo en cero— **no está declarado y este § no lo
 declara**: no hay ninguna transición que salga de `TRIAL_ACTIVE` por un cambio de catálogo, y
 quien lo necesite tiene que decidir antes qué pasa con los relojes que ya están corriendo.
+
+---
+
+## 9. Suscribirse durante el trial termina el trial
+
+(`DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, racimo `R12`: `F-8CA2-006`, `F-8CC1-002`.)
+
+### 9.1 La regla, que el owner ya había decidido y no estaba escrita
+
+> **Suscribirse durante el trial termina el trial.** Si el primer cobro sale bien, **los días que
+> quedaban se pierden**: la persona eligió pagar antes.
+
+La ejecuta `T2` (cap. 03 §2): la suscripción que ya cobró es un título que convierte, y
+`TRIAL_CONVERTED` no tiene vuelta. **No se difiere el primer cobro al fin del trial** para
+respetar los días: una fecha futura se convierte sola en un *free trial* del proveedor (`EX-38`),
+que es lo que `HOS-1012` eliminó.
+
+### 9.2 Lo que termina el trial es el cobro, no la autorización
+
+**Si el primer cobro se rechaza, el trial sigue**, con los días que le quedaban. El rechazo lleva
+la suscripción a `CHARGE_DECLINED` (`S16`, `B/03` §3.2) y la persona queda en `TRIAL_ACTIVE`, como
+si no se hubiera suscripto: *«un primer cobro rechazado no es una suscripción con un problema, es
+un alta que no ocurrió»* (`B/12` §4.4), y un alta que no ocurrió no consume el trial. Lo que lo
+hace posible es un campo del contrato, `cobrada` (`12-contrato…` §2.1), porque la frontera no
+distinguía *«autorizó»* de *«cobró»*.
+
+**Mientras el cobro no llega** —entre 26 y 44 minutos en un alta (`PA-3`)— la persona tiene el
+trial y la suscripción a la vez, y el pliegue los suma. Está declarado donde se pliega (cap. 15
+§2.6) y en la máquina (cap. 03 §2, *«los 26–44 minutos»*).
+
+### 9.3 Lo que la superficie tiene que decir
+
+Las dos mitades se dicen **antes de confirmar el checkout** de alguien en trial: que al acreditarse
+el primer cobro **pierde los días que le quedaban**, y que si ese cobro se rechaza **sigue en su
+trial**. Es la fila 19-bis de `B/19` §4.
 
 ---
 

@@ -90,9 +90,14 @@ cobertura(user, vertical) → {
         alcance:    VERTICAL | LISTING | USER | GLOBAL
         objetivo:   la ficha, si alcance = LISTING; nada en los otros tres
         hasta:      fecha | NO_VENCE | SIN_FECHA_CONOCIDA | SIN_EMPEZAR
+        cobrada:    sí | no, si tipo = SUSCRIPCIÓN; nada en los otros cinco
     } ]
 }
 ```
+
+> **La fuente pasó de cinco campos a seis el 2026-09-25**, con `cobrada` (`DEC-TRIAL-010`; FASE 8
+> completa, `F-8CA2-006`, `F-8CC1-002`). La respuesta sigue teniendo **dos**: `cubierto` y
+> `fuentes`.
 
 Una sola pregunta, con la vertical **obligatoria en la firma** — no opcional, no deducible del
 recurso. Es la misma forma estructural que el capítulo 17 §2.2 le dio a toda operación de dominio,
@@ -110,6 +115,7 @@ que alguien pueda olvidar.**
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
 | **`hasta`** | uno de cuatro valores, y ninguno es «sin fecha» a secas (§2.6) | los avisos con ventana (cap. 15 §4.4) |
+| **`cobrada`** | en una fuente `SUSCRIPCIÓN`, si **esa fila** tiene **al menos un pago acreditado** —un cobro del proveedor aprobado, leído por id (`B/09` §4), o una cuota de pagador manual registrada (`MP1`, `B/03` §7)—; en los otros cinco `tipo`, nada. **No entra en la clase ni en `cubierto`** (abajo) | **`T2` y `T5`** de la máquina de trial, que convierten sólo con una suscripción que ya cobró (`V/03` §2; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`). **Esta fila es el censo de sus consumidores**, con la misma regla que la de `cubierto` (abajo) |
 
 > **La fila de `cubierto` es EL censo de sus consumidores, y va sin número a propósito.** La
 > versión anterior enumeraba seis y omitía a `PB4`, `PB5` y el hard delete —los tres relectores que
@@ -120,6 +126,37 @@ que alguien pueda olvidar.**
 > vigilancia del §4.2 pregunta *«¿está en esta fila?»*, nunca *«¿son todavía N?»*. Es la misma
 > forma que los cuatro inventarios de `NUCLEO/01` §2.4–§2.6 usan para lo mismo, con la diferencia
 > de que aquéllos tienen guard y éste no (§4.2).
+
+#### `cobrada`: un bit sobre la fila, y lo lee sólo la máquina de trial
+
+(`DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`.)
+
+**Qué problema resuelve.** `T2` convertía el trial en cuanto aparecía una fuente `SUSCRIPCIÓN`, y
+una suscripción emite desde `ACTIVE` (§2.6), **antes de cualquier cobro**: el primero llega entre
+26 y 44 minutos después de autorizar (`PA-3`, `B/12` §4.3). Si se rechazaba, la fila moría en
+`CHARGE_DECLINED` y la persona quedaba sin suscripción **y sin trial**, que no se devuelve. La
+frontera no distinguía *«autorizó»* de *«cobró»*, así que `T2` no tenía con qué esperar.
+
+**Qué es exactamente.** Un booleano **de la fila**, no de la persona ni del `user + vertical`: la
+misma lectura por autorización que `B/12` §4.3 hace para el primer cobro. Lo resuelve billing:
+`sí` si esa fila tiene al menos un pago acreditado, `no` si no. En un pagador manual es `sí`
+desde que la fila llega a `ACTIVE`, porque `S29` sólo la lleva ahí con la primera cuota registrada
+(`B/03` §3.2). Puede venir en `no` sobre una fila `ACTIVE` que todavía no cobró, sobre una
+`CANCEL_SCHEDULED` que se dio de baja antes del primer cobro y sobre una sucesora cuyo primer cobro
+difiere `D8` (`B/12` §4.3); sobre una `GRACE_PERIOD` no, porque `S4` exige un pago acreditado
+(`B/03` §3.2).
+
+**Lo que NO cambia, y es lo que lo vuelve seguro:**
+
+1. **La clase no se deriva de él.** Sigue saliendo del `tipo` y del `hasta` (§2.4): una
+   `SUSCRIPCIÓN` con `cobrada: no` es de clase `TÍTULO`.
+2. **`cubierto` no lo lee.** Quien acaba de autorizar está cubierto, como antes: `PB3` le
+   republica, el paso 6 le resuelve su plan y el reconciliador diario no ve ninguna diferencia.
+   El único consumidor es la conversión del trial.
+3. **No reabre `DEC-TRIAL-008`.** Aquella decisión rechazó un bit que distinguiera **los estados que
+   no emiten fuente** —el que separaría a un `SUSPENDED` de quien no tiene nada—. `cobrada` viaja
+   **dentro de una fuente que ya se emite**: no dice nada de las filas que no emiten, y esas
+   siguen siendo indistinguibles de no tener nada (§4).
 
 ### 2.2 `fuentes` es una lista, y eso no es de más
 
@@ -251,6 +288,11 @@ decirle que dependía de otra cosa.
 > definición; aquél es la ejecución, y lleva su guard (`G-R2`, `V/20` §2). La primera versión de
 > este arreglo se escribió sólo acá, y el capítulo que pliega siguió diciendo *«suma todas las
 > fuentes vivas»* durante toda una vuelta del ciclo.
+>
+> **Y el gate es más estricto que esta definición, a propósito**: un trial corriendo es `TÍTULO`
+> para `cubierto`, pero **no admite complementos** —`V/15` §2.6 los admite sólo con un título que no
+> sea de `tipo: TRIAL`—, porque `V/11` §5.3 es el dueño de la regla del trial (FASE 8 completa,
+> `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`).
 
 **El caso que NO cambia, y conviene decirlo**: un `GRANT` permanente **es** de clase `TÍTULO`, así
 que quien tiene *Free Forever* y un addon **conserva los dos**. Es exactamente la excepción que
@@ -742,10 +784,19 @@ invalidación del caché (cap. 02 §3.2) —que es la **misma lista** que dispar
 excedentes (cap. 15 §4.2), *«una lista, dos consumidores»*—, **el reloj de inactividad**, cuyo
 hecho 2 es *«la cobertura se comprueba verdadera»* (`NUCLEO/01` §1.2) — un estado leído, no un
 cambio detectado, a diferencia del **evento** de `PB2`, `PB3` y `PB7`, que sí es un cambio— **y la
-máquina de trial**, cuyos `T2` y `T5` disparan cuando aparece una fuente viva de clase `TÍTULO`
-(`V/03` §2 los ata a este mismo aviso). La cuarta faltaba, y quien implementara el emisor contra
+máquina de trial**, cuyos `T2` y `T5` disparan cuando aparece ~~una fuente viva de clase `TÍTULO`~~
+**un título que convierte** —una fuente viva de clase `TÍTULO` que no es la del trial y que, si es
+`SUSCRIPCIÓN`, trae `cobrada: sí` (`DEC-TRIAL-010`)— (`V/03` §2 los ata a este mismo aviso). La cuarta faltaba, y quien implementara el emisor contra
 esta lista podía no despertar al trial: la persona se suscribía y quedaba con dos títulos hasta
 que el trial venciera (FASE 8 completa, `F-8CC1-011`, owner 2026-09-25).
+
+**Y desde `DEC-TRIAL-010` hay un cambio de cobertura que no aparece ni apaga ninguna fuente, y
+también lleva aviso** (owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`): **el primer
+pago acreditado de una fila**, que pasa su `cobrada` de `no` a `sí` (§2.1). `cubierto` no se mueve,
+pero es el hecho que `T2` y `T5` esperan; sin aviso, `T2` quedaría esperando hasta que `T3` venciera
+el trial. Los otros tres consumidores lo reciben como cualquier otro —recalculan y vuelven a
+preguntar— y no encuentran nada que hacer. **Y el reconciliador diario de cobertura no es su red**:
+no corre la máquina de trial (`V/03` §9, ⚠️ punto 3).
 
 **El aviso es rápido; la red es el reconciliador diario de cobertura** (`DEC-ARCH-009`, owner
 2026-09-25; `V/03` §9). El aviso no tiene transporte durable —el outbox del núcleo es de correos—,
@@ -808,6 +859,11 @@ Declarado en positivo, porque es la mitad del valor de tener un contrato:
 
 **No cruzan** montos, precios, monedas, ciclos, estados de pago, ids del proveedor, fechas de
 cobro, medios de pago, comprobantes ni reembolsos.
+
+**Sobre cobros cruza un solo bit, y es declarado**: `cobrada`, *«esta fila ya tiene al menos un pago
+acreditado»* (§2.1; `DEC-TRIAL-010`, owner 2026-09-25). No dice cuándo, cuánto, cuántos ni cómo
+terminó ningún intento, y viaja sólo dentro de una fuente `SUSCRIPCIÓN` que ya se emite. Su único
+consumidor es la conversión del trial (`V/03` §2, `T2` y `T5`).
 
 Cuatro ausencias que parecen faltas y son decisiones:
 
@@ -914,8 +970,9 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 ### 4.2 La regla de vigilancia, en las dos direcciones
 
 > **Regla de vigilancia**: si aparece **un lugar que necesita algo de billing y no figura en la
-> fila `cubierto` del §2.1** —y no es este hecho—, es señal de que el corte se está filtrando. Se
-> mira, no se resuelve en el lugar.
+> fila `cubierto` del §2.1** ~~—y no es este hecho—~~ **ni en la fila `cobrada`** —y no es este
+> hecho— (`DEC-TRIAL-010`: la segunda fila es el censo del segundo dato que cruza), es señal de que
+> el corte se está filtrando. Se mira, no se resuelve en el lugar.
 >
 > **Y en la otra dirección**: si billing necesita leer de verticales algo que no está entre **los
 > siete campos** del §4.1, vale lo mismo. Una lectura no declarada es un acoplamiento que nadie

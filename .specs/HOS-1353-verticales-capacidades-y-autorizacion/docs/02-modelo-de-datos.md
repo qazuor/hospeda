@@ -303,6 +303,22 @@ deja de serlo. Aplicar el arreglo del trial primero y la restricción después a
 días o semanas— en la que la puerta está abierta, y no hace falta mala fe para encontrarla: se
 descubre sola.
 
+**Y la restricción ya no es la única que niega: la niegan antes las guardas** (FASE 8 completa,
+`F-8CA3-003`). Escrita sola, alcanzaba también a la escritura que **registra** un trial consumido:
+quien volvía con el mismo correo y contrataba antes de publicar chocaba con ella en `T6`, y ninguna
+máquina decía qué pasaba después. **`T1`, `T6` y `T7` exigen que el hash no tenga fila en esa
+vertical** (cap. 03 §2): si la tiene, ninguna dispara y la publicación sigue. El `UNIQUE` queda como
+la red de la base, no como la rama del diseño. El residuo —esa persona se queda en `PRE_TRIAL` para
+siempre— está declarado en el cap. 03 §2, *«el hash que ya consumió»*.
+
+**La FK de `trial.user_id` a `user` es `ON DELETE RESTRICT`** (FASE 8 completa, `F-8CA3-008`). De
+las tres conductas posibles es la única que no rompe una regla escrita: con `CASCADE` el borrado de
+la cuenta se lleva la fila y con ella el hash —el segundo trial vuelve por esa puerta—, y con
+`SET NULL` la fila deja de *«conservar el `user + vertical`»* que el §4.2 regla 2 le exige. Con
+`RESTRICT` la base no deja borrar un `user` que tenga una fila de `trial`, así que **el borrado de la
+cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la regla 2 ya dice
+(*«lo personal se anonimiza con el resto»*); ese proceso sigue sin diseñar (§4.1, ⚠️).
+
 ### 2.5 Publicación
 
 | entidad | qué guarda | restricciones |
@@ -661,9 +677,15 @@ son los que no dependen de que ningún camino de código se acuerde:
 | invariante del §64 | restricción |
 |---|---|
 | 1 · trial máximo una vez por `user + vertical` | `UNIQUE(user_id, vertical)` en `trial`, sin condición de estado |
-| 2 · borrar ficha no devuelve trial | la fila de `trial` no se borra nunca (§4.1) |
+| 2 · borrar ficha no devuelve trial | la fila de `trial` no se borra nunca (§4.1) — **la sostiene contra el borrado de la cuenta la FK `trial.user_id` → `user` con `ON DELETE RESTRICT`** (§2.2; FASE 8 completa, `F-8CA3-008`) |
 | 11 · una ficha tiene un único dueño | columna no anulable, no tabla de relación |
 | — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |
+
+> ⚠️ **Lo que la fila 2 NO tiene, declarado por `DEC-METH-015`** (FASE 8 completa, `F-8CA3-008`):
+> la FK impide que la fila caiga **por arrastre** del borrado de la cuenta, pero **ninguna
+> restricción declarada impide un `DELETE` directo sobre `trial`**. Hasta que exista una, esa mitad
+> del invariante depende de que ningún camino de código la borre, que es lo que este § dice que los
+> de arriba no hacen. Con qué se rechaza un `DELETE` directo no está decidido acá.
 
 **Los demás no los puede sostener la base** —dependen de la resolución en el servicio— y son el
 capítulo 04 (núcleo). Lo que importa es la distinción: los de arriba **no admiten un camino que los

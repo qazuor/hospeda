@@ -41,13 +41,13 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** **y la vertical admite altas** (`vertical.admite_altas`, cap. 02 §2.1; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
-| T2 | `TRIAL_ACTIVE` | **aparece una fuente viva de clase `TÍTULO` que no es la del trial** | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de esa fuente |
+| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** **y la vertical admite altas** (`vertical.admite_altas`, cap. 02 §2.1; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (cap. 02 §2.2; FASE 8 completa, `F-8CA3-003`) | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
+| T2 | `TRIAL_ACTIVE` | ~~**aparece una fuente viva de clase `TÍTULO` que no es la del trial**~~ **aparece un título que convierte**: una fuente viva de clase `TÍTULO` que no es la del trial **y que, si es de `tipo: SUSCRIPCIÓN`, trae `cobrada: sí`** —sea porque aparece así o porque una ya presente pasa a `sí` con su primer pago acreditado— (`12-contrato…` §2.1; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`) | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de esa fuente |
 | T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | **—** | arranca la campaña de recuperación y el reloj de retención; **la publicación la mueve `PB2`**, por el cambio de `cubierto` (§9) |
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
-| T5 | `TRIAL_EXPIRED` | **aparece una fuente viva de clase `TÍTULO`** | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; **la publicación la restituye `PB3`**, por el cambio de `cubierto` (§9) |
-| T6 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_CONVERTED` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **verdadero** | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
-| T7 | `PRE_TRIAL` | **el encendido: la vertical pasa los días de trial de su plan de trial de 0 a > 0** | `TRIAL_CONVERTED` | la persona **ya ejerció el hecho que la vertical declara como evento de activación**, en cualquier momento anterior al encendido — **`cubierto` no participa** | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
+| T5 | `TRIAL_EXPIRED` | ~~**aparece una fuente viva de clase `TÍTULO`**~~ **aparece un título que convierte**, en el mismo sentido que `T2` (`DEC-TRIAL-010`; abajo, *«`T5` espera el cobro igual que `T2`»*) | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; **la publicación la restituye `PB3`**, por el cambio de `cubierto` (§9) |
+| T6 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_CONVERTED` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **verdadero** **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (cap. 02 §2.2; FASE 8 completa, `F-8CA3-003`) | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
+| T7 | `PRE_TRIAL` | **el encendido: la vertical pasa los días de trial de su plan de trial de 0 a > 0** | `TRIAL_CONVERTED` | la persona **ya ejerció el hecho que la vertical declara como evento de activación**, en cualquier momento anterior al encendido — **`cubierto` no participa** — **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (`F-8CA3-003`) | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
 
 **Qué contesta el contrato de cobertura en cada estado.** El trial es **fuente viva en
 `PRE_TRIAL` y en `TRIAL_ACTIVE`, y en ningún otro estado**; lo que cambia entre los dos no es *si
@@ -110,6 +110,73 @@ estaba, en la segunda máquina que lo necesitaba.
 | `T3` | *«no hay suscripción autorizada»* | sin condición | `TRIAL_ACTIVE` **siempre** tiene salida: el reloj vence y punto |
 | `T6` | *«ya hay una suscripción viva»* | `cubierto` **verdadero** | deja de quemar el trial de quien no está cubierto por nada |
 
+### El trial se convierte con el primer pago acreditado, no con la autorización
+
+(`DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, racimo `R12`: `F-8CA2-006`, `F-8CC1-002`.)
+
+**El defecto.** `T2` convertía en cuanto aparecía un título, y una suscripción emite desde `ACTIVE`
+(`12-contrato…` §2.6), **antes de cualquier cobro**. El primero llega entre 26 y 44 minutos después
+de autorizar (`PA-3`, `B/12` §4.3); si se rechazaba, `S16` llevaba la fila a `CHARGE_DECLINED` y la
+persona quedaba **sin suscripción y sin trial**, que ya no se devuelve (§10.2). Una tarjeta
+rechazada le costaba el trial entero.
+
+> **Una fuente `SUSCRIPCIÓN` convierte el trial sólo si trae `cobrada: sí`** (`12-contrato…` §2.1).
+> Mientras tanto el trial **sigue corriendo**; si el primer cobro se rechaza, la persona **sigue en
+> `TRIAL_ACTIVE` con los días que le quedaban**.
+
+Es la regla de `B/12` §4.4 llevada al trial: *«un primer cobro rechazado no es una suscripción con
+un problema, es un alta que no ocurrió»*, y un alta que no ocurrió no consume el trial. **Las otras
+tres fuentes de clase `TÍTULO` —cortesía, grant y la suscripción que ya cobró— convierten como
+antes**: no tienen un primer cobro que esperar. Quien **recupera** (`S7`) o **reanuda** (`S10`)
+ya pagó alguna vez sobre esa fila, así que su fuente llega con `cobrada: sí`.
+
+**No rompe `G-R4-B`**: `cobrada` es un campo del contrato, no un estado de la suscripción, y la
+máquina sigue hablando sólo el vocabulario del contrato (arriba). **Y el cobro no se difiere al fin
+del trial** para no tener que esperar: una fecha futura se convierte sola en un *free trial* del
+proveedor (`EX-38`), que es lo que `HOS-1012` eliminó (`DEC-TRIAL-010`).
+
+#### `T5` espera el cobro igual que `T2`, aunque ahí no haya días que proteger
+
+La razón de `DEC-TRIAL-010` —no quemar los días que quedaban— no alcanza a `T5`: en
+`TRIAL_EXPIRED` no queda ningún día. **La cambia igual, por dos razones que salen de la fila:**
+
+1. **Sin el cambio, `T5` no dispararía nunca sobre quien se suscribió al final del trial.** Si la
+   suscripción aparece en `TRIAL_ACTIVE` con `cobrada: no`, `T2` no convierte; si `T3` vence el
+   trial antes del primer cobro, el título **ya había aparecido**, y un `T5` que espera *«aparece
+   un título»* no ve ningún evento: la persona quedaba en `TRIAL_EXPIRED` pagando, con la campaña
+   de recuperación de `T3` corriendo. Con `cobrada` en el evento, el primer pago la convierte.
+2. **Sobre un alta que no ocurrió, `T5` cortaba la campaña de recuperación** —su efecto— y dejaba
+   a la persona en `TRIAL_CONVERTED` sin título: justamente a quien intentó volver y no pudo.
+
+#### Los 26–44 minutos: dos títulos a la vez, y el pliegue los suma
+
+Mientras el primer cobro no llega, la persona tiene **dos fuentes de clase `TÍTULO`**: la del
+trial, que apunta al plan de trial —derivado del plan vendible de `rank` más alto (cap. 02 §2.1)—,
+y la de su suscripción `ACTIVE`. **`cubierto` es verdadero por las dos y ninguna se descarta**: el
+pliegue del cap. 15 §2.6 no distingue un título de otro, así que las claves `SUMA` suman los dos
+cupos y las de «no acumula» toman el más favorable. Es exactamente el caso que la viñeta de `T6`
+(abajo) describe como defecto —*«paga el básico y opera con las capacidades del premium»*—,
+abierto ahora por la ventana del primer cobro. El pliegue **no duplica** nada que no sumara ya con
+dos títulos cualesquiera; lo que cambia es que ahora la ventana existe.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`** (cap. 15 §2.6 lo repite donde se
+> pliega):
+>
+> 1. **Durante la ventana la persona tiene el cupo de los dos títulos sumado.** Si publica por
+>    encima del cupo que le va a quedar, al convertir (`T2`) o al rechazarse el cobro (`S16`) el
+>    conjunto efectivo baja y **el reconciliador de excedentes** despublica lo que sobra (cap. 15
+>    §4.3). Dura lo que tarde el primer cobro: los minutos de `PA-3` en un alta.
+> 2. **La ventana es más larga sobre una sucesora con tarjeta**: su primer cobro nace después del
+>    vencimiento de su ventana de autorización (`D8`, `B/12` §4.3), hasta 72 h, y mientras tanto
+>    trae `cobrada: no`. Alcanza a quien, estando en `TRIAL_ACTIVE`, cambia de plan antes de que un
+>    pago acreditado lo convierta.
+> 3. **Una `CANCEL_SCHEDULED` que se dio de baja antes del primer cobro no convierte nunca**: trae
+>    `cobrada: no` hasta que `S12` la termina, y el trial sigue su reloj. Es lo que `DEC-TRIAL-010`
+>    pide —no hubo alta—, y se declara porque la fuente cubre mientras tanto.
+> 4. **Si se pierde el aviso del primer pago** (`12-contrato…` §3), `T2` no dispara, el trial sigue
+>    hasta `T3` y la persona termina en `TRIAL_EXPIRED` con su suscripción; la red diaria no corre
+>    esta máquina (§9, ⚠️ punto 3).
+
 ### `T1` y `T6` comparten el par, y sus guardas son complementarias
 
 `T1` y `T6` comparten `desde` y `evento`, y es **el único par `(desde, evento)` con dos destinos
@@ -133,6 +200,7 @@ porque no hace falta ninguna.
 | declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
 | no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **hasta el encendido, que es lo que resuelve `T7`** |
 | declara evento y días > 0, **pero la vertical no admite altas** | **falso** | **ninguna de las dos**: `T1` exige `admite_altas` y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` (FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) |
+| declara evento y días > 0, **pero ya hay una fila de `trial` con el hash de su correo en esa vertical** | cualquiera | **ninguna de las dos**, y tampoco `T7`: las tres exigen que el hash no tenga fila. La persona se queda en `PRE_TRIAL` y **la publicación sigue** (FASE 8 completa, `F-8CA3-003`; abajo) |
 
 **La tercera fila es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
 vertical que declarara evento con los días en cero le escribía a un cliente la fila consumida de
@@ -164,6 +232,34 @@ trials»* (`B/10` §4.3)— seguía arrancando trials (`F-8CC1-001`).
 > —después, la fuente de `PRE_TRIAL` ya no se emite (arriba, *«qué contesta el contrato en cada
 > estado»*)— y en una vertical cerrada a altas sin discontinuar. No mueve plata; es un día de ficha
 > visible sin título, en una vertical sin altas.
+
+#### El hash que ya consumió: la rama que la base rechazaba sin que ninguna fila la declarara
+
+(FASE 8 completa, `F-8CA3-003`.) El `UNIQUE(hash_del_correo_normalizado, vertical)` del cap. 02
+§2.2 se escribió para **negar** un trial, y alcanzaba también a la escritura que **registra** uno
+consumido. Quien borró su cuenta y vuelve con el mismo correo tiene `user_id` nuevo y ninguna fila
+propia, pero su hash ya tiene la suya (cap. 02 §4.2 regla 2): si contrataba antes de publicar,
+`T6` intentaba escribir la fila consumida, **chocaba con el `UNIQUE`**, y ninguna máquina declaraba
+qué pasaba después — con `PB1` y `T6` en la misma transacción, **la persona pagaba y no podía
+publicar**.
+
+> **`T1`, `T6` y `T7` exigen que el hash del correo no tenga fila en esa vertical.** Si la tiene,
+> ninguna dispara: el trial ya está consumido por esa fila, **la publicación sigue** y la persona
+> se queda en `PRE_TRIAL`.
+
+Es la lectura literal de `DEC-TRIAL-004` —*«el email normalizado niega el trial»*— escrita como
+guarda en vez de como error de la base. **El par `T1`/`T6` sigue disjunto por `cubierto`**: la
+guarda nueva es la misma en las dos, así que no las separa ni las solapa.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **esa persona se queda en
+> `PRE_TRIAL` para siempre**, porque su `user_id` no tiene fila y ninguna transición la va a
+> escribir. Mientras esté cubierta no cambia nada. **Sin cobertura, su fuente de `PRE_TRIAL`
+> sigue llevando la capacidad de activación** (cap. 02 §2.1), así que `PB1` le publica, `T1` no
+> dispara y la ficha queda **publicada sin título hasta que el reconciliador diario de cobertura
+> la baja** al día siguiente (§9, `DEC-ARCH-009`) — **y puede repetirlo con otro borrador**. Es la
+> misma forma que el ⚠️ de arriba sobre la vertical cerrada a altas, en una población acotada: quien
+> borró su cuenta y volvió con el mismo correo. Que su fila de `trial` quede asociada a la cuenta
+> nueva no está escrito.
 
 #### La tercera fila no es un estado final: `T7` la cierra el día del encendido
 
@@ -711,9 +807,12 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    otorgando hasta que corra el job atascado (`S12`, `T3` o el de un addon `DÍAS_FIJOS`) o
 >    venza la red de tiempo del cap. 02 §3.2. Pasa sólo cuando esa primera línea falla.
 > 3. **La máquina de trial no la corre.** `DEC-ARCH-009` nombra `PB2`, `PB3` y `PB7`. Si se pierde
->    el aviso de un título que aparece durante el trial, `T2` no dispara y la persona tiene dos
->    títulos —su plan y el del trial— hasta que `T3` vence el trial; si se pierde durante
->    `TRIAL_EXPIRED`, `T5` no corta la campaña de recuperación.
+>    el aviso de un título que aparece durante el trial **—o, desde `DEC-TRIAL-010`, el del primer
+>    pago acreditado de su suscripción, que es el que ahora convierte (`12-contrato…` §3)—**, `T2`
+>    no dispara y la persona tiene dos títulos —su plan y el del trial— hasta que `T3` vence el
+>    trial; si se pierde durante `TRIAL_EXPIRED`, `T5` no corta la campaña de recuperación. **El
+>    reconciliador no se desalinea por `cobrada`**: compara `cubierto` y el cupo contra las fichas,
+>    y `cobrada` no mueve ninguno de los dos (`12-contrato…` §2.1).
 > 4. **No sabe por qué el cupo alcanza.** Si el dueño libera un lugar con `PB6`, al día siguiente
 >    encuentra candidatas y cupo y corre `PB3`/`PB7`. Es la letra de la segunda rama de las dos
 >    —*«el cupo vuelve a alcanzar sin que `cubierto` cambie»*— y el riesgo de republicar lo que el

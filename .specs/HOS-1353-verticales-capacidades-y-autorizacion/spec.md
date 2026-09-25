@@ -248,7 +248,8 @@ contrato §2.1 y hoy es más larga —lleva además `PB3`, `PB7`, `PB4`, `PB5` y
 vigilancia del §4.2 del contrato.
 
 **Nada más cruza la frontera**: ni montos, ni estados de pago, ni ids del proveedor, ni fechas de
-cobro. Ni siquiera el estado exacto de la suscripción — esta épica no distingue `ACTIVE` de
+cobro —sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4 (`DEC-TRIAL-010`)—.
+Ni siquiera el estado exacto de la suscripción — esta épica no distingue `ACTIVE` de
 `GRACE_PERIOD`, porque durante el grace el servicio sigue.
 
 ### 4.1 Cómo se construye sin que exista billing
@@ -280,7 +281,9 @@ uno que contesta siempre que no deja todo apagado.
 
 ### 4.2 Lo que queda inactivo, declarado y no escondido
 
-1. **El trial nunca convierte.** `T2` y `T5` disparan al autorizarse una suscripción.
+1. **El trial nunca convierte.** `T2` y `T5` disparan ~~al autorizarse una suscripción~~ cuando
+   aparece un título que convierte —una suscripción, recién con su primer pago acreditado
+   (`DEC-TRIAL-010`, `V/03` §2)—, y sin billing no aparece ninguno.
 2. **No hay reparación de un trial ya vencido**, porque se hace con una cortesía. Alguien
    perjudicado por un error de moderación **después** de que su trial venció no tiene reparación
    hasta que exista billing. Mientras el trial sigue vivo sí la tiene: la extensión `T4`.
