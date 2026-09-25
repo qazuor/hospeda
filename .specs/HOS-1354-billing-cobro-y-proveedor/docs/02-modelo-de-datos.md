@@ -791,13 +791,16 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: quince motivos sobre la misma casilla, y seis de ellos devuelven plata
+### 2.5 La marca de conciliación: dieciséis motivos sobre la misma casilla, y seis de ellos devuelven plata
+
+> Eran **quince** hasta la FASE 8 completa: el 16, `CANCELACIÓN_SIN_CONFIRMAR`, llegó con
+> `F-8CB1-013` (owner 2026-09-25), y el catálogo se recontó entero sobre la tabla de abajo.
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras catorce marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras ~~catorce~~ quince marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -809,10 +812,11 @@ misma forma y le faltaba la misma columna.**
 #### El catálogo, contado sobre los escritores que hay hoy
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
-**siete** de los quince casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
-de la pausa lo trae `S8` o `S9`. Los otros **ocho** los abren actos que **no son `S14`** — `S18`,
-las **seis** comprobaciones de cero llamadas del `B/09` §3 y **`S21`, que desde `DEC-RF-006` abre
-dos** —, y el propio `S19` declara por escrito que su caso **no es una divergencia**.
+**siete** de los ~~quince~~ dieciséis casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros ~~**ocho**~~ **nueve** los abren actos que **no son `S14`** — `S18`,
+las **seis** comprobaciones de cero llamadas del `B/09` §3, **`S21`, que desde `DEC-RF-006` abre
+dos**, y **el reintento del barrido sobre las salvedades 1 y 4 del `B/09` §3, que abre el 16**
+(FASE 8 completa, `F-8CB1-013`) —, y el propio `S19` declara por escrito que su caso **no es una divergencia**.
 
 | # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
 |---|---|---|---|---|
@@ -831,6 +835,7 @@ dos** —, y el propio `S19` declara por escrito que su caso **no es una diverge
 | 13 | `CORTESÍA_SIN_RE_EMITIR` | la **sexta** comprobación del `B/09` §3 | pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió | **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla |
 | 14 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA` | **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** y la instancia **no** llegó a `CANCELLED` por ninguna de las dos causas del **15** (`B/03` §3.2, `B/16` §4.4) | decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie** | **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y dos de los caminos que caen acá son NUESTROS, y están acá por MECANISMO y no por criterio** —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`—: la transición que mata al título **no nombra su causa**, así que `S21` no tiene qué escribir (`DEC-RF-004`, la condición obligatoria; `B/03` §3.2, `B/19` §6) |
 | 15 | `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN` | **`S21`**, sobre la misma población, cuando la instancia llegó a `CANCELLED` **porque se revocó el grant que era su título** —tercera cláusula de `A5`— **o porque a su objetivo lo mató la discontinuación de la vertical** —`S25`, `S27` o `S28`— (`B/03` §3.2, `B/10` §4.3) | confirmar el reembolso de lo que queda del período | **SÍ**: en los dos casos **el cliente no hizo nada** y pierde días que pagó, y en los dos **la causa la conoce el acto mismo** —`S21` conoce la cláusula de `A5` que disparó, y la discontinuación la deja escrita la transición que mata al título—, así que `S21` escribe este motivo **sin trazar nada hacia atrás** (`DEC-RF-006`) |
+| 16 | `CANCELACIÓN_SIN_CONFIRMAR` | el **barrido** (`B/09` §3, salvedades 1 y 4), **a la tercera corrida seguida** en que no logra confirmar la cancelación que una transición nuestra ya mandó —la fila está terminal y la relectura sigue viendo el preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—. Antes de la tercera no abre nada: reintenta (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌) | cancelar a mano en el proveedor y **verificar releyendo por id** que quedó `cancelled` | no, **pero el preapproval vivo puede cobrar** |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
@@ -840,14 +845,20 @@ el 12 es el riesgo que esa decisión aceptó y el 13 su detector, y las dos cifr
 volvieron a contar sobre la tabla en vez de sumarles dos.
 
 **Y las dos cifras SE MOVIERON con `DEC-RF-006`, recontadas enteras sobre la tabla de arriba.** El
-motivo único que `S21` abría se partió en **dos** —el 14 y el 15—, así que la enumeración tiene
-**quince** filas; y los que llevan **SÍ** en la última columna son **seis** —el 1, el 2, el 3, el
+motivo único que `S21` abría se partió en **dos** —el 14 y el 15—, así que la enumeración ~~tiene~~
+tuvo **quince** filas; y los que llevan **SÍ** en la última columna son **seis** —el 1, el 2, el 3, el
 7, el 12 y el **15**—, mientras el 14 se queda con **puede**, que es la casilla que el motivo único
 ya tenía. **Lo que la partición compra es que el default vuelva a leerse POR MOTIVO**: `DEC-RF-004`
 había dejado un motivo cuya propuesta no se podía resolver sin saber además de qué disparador vino
 la marca, y desde `DEC-RF-006` eso lo resuelve **quien escribe el motivo**, en el acto y con lo que
 ya sabe. La tabla de defaults del `B/19` §6 vuelve a ser una columna plana, y **las seis filas con
 `SÍ` son exactamente las seis que ese § propone devolver**.
+
+**Y se movió una sola cifra con `F-8CB1-013`, recontadas otra vez las dos sobre la tabla** (FASE 8
+completa, owner 2026-09-25). La enumeración tiene **dieciséis** filas; los **SÍ** siguen siendo
+**seis** —el 1, el 2, el 3, el 7, el 12 y el 15—, porque el 16 lleva **no**: cancelar no devuelve
+ni cobra nada. **Su urgencia no es plata parada sino un cobro que todavía puede salir**, y por eso
+la última columna lo dice con la misma forma que el 10 y el 11.
 
 **El 14 y el 15 llegaron por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una

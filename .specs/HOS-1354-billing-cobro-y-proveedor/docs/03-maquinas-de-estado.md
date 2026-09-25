@@ -102,7 +102,8 @@ en `RECONCILIATION_REQUIRED` es **textualmente una decisión destructiva automá
 > el estado que tenía, y sigue cubriendo a quien estaba cubierto (`B/02` §2.2).
 >
 > **Y la marca no es un booleano: es una fila con MOTIVO y con RELOJ** (`reconciliation_mark`,
-> `B/02` §2.2 y §2.5). Este corpus escribe **quince** marcas distintas sobre la misma casilla y
+> `B/02` §2.2 y §2.5). Este corpus escribe ~~**quince**~~ **dieciséis** marcas distintas sobre la misma casilla
+> (el 16 desde `F-8CB1-013`, FASE 8 completa, owner 2026-09-25) y
 > **seis de ellas significan *«hay plata del cliente que devolver»***; sin el motivo llegaban
 > todas iguales al listado accionable de `B/19` §6. `requiere_conciliación` pasa a nombrar el
 > **predicado** —*«la fila tiene al menos una marca abierta»*, `NUCLEO/01` §2.5—, así que cada
@@ -132,7 +133,7 @@ Y una nota de registro que sigue valiendo:
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`). **Antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
 | S13 | **toda fila viva PRINCIPAL** del beneficiario en **cada vertical que el acto ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos. **Las de complemento no entran** (ver abajo, *«y no alcanza a los complementos»*) | `SUPER_ADMIN` **otorga** un *Free Forever*, **o le ancla una vertical nueva a un grant vivo** (`12-contrato…` §2.8, `NUCLEO/01` §2.4) | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); **se cancela el preapproval de cada una** en el proveedor —autorizado o esperando autorización— con la misma regla de `S17`: si la relectura dice que ya está `cancelled`, no se manda nada; **y antes de cada llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, esa cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala; el acceso pasa a darlo el grant. **Y si alguna de las filas alcanzadas retenía un pago pendiente por `S19`, la bandera se apaga en el mismo acto, sin reembolso** — es la rama 4 de `B/12` §5.3, y apagarla es parte de la decisión: dejarla puesta sobre una `CANCELLED` deja un *«pendiente»* que ningún barrido alcanza y que todo conteo de pagos pendientes cuenta de más. **Y si el beneficiario tiene una cortesía DIFERIDA en alguna de las verticales que el acto ancla, su saldo se CIERRA acá**: `saldo_cerrado_en` y `motivo_cierre = GRANT_PERMANENTE_OTORGADO` (`B/02` §2.4). No es una cortesía **vigente** —ésa termina porque esta misma transición cancela la suscripción que la pausaba (`B/14` §4.3)—: es un saldo esperando una fila que después de este acto **ninguna de las dos rutas de re-emisión de `S9` vuelve a alcanzar**, así que dejarlo abierto lo dejaría sin dueño y sin vencimiento. **Escribir un cierre ya escrito no escribe nada**, como el resto de la fila. **Proceso idempotente y reanudable fila por fila**, con su detector en `B/09` §3 (ver abajo, *«la ejecución parcial»*) |
-| S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se abre una marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas**. **`S14` es el ACTO y no el motivo**: el motivo lo trae el caso que lo disparó —son **siete** de los quince de `B/02` §2.5— exactamente como el motivo de una pausa lo traen `S8` o `S9`. Una marca sin motivo declarado no es escribible: `G-R1-F` (`B/20` §2) la rechaza. **Y abrir es ACUMULATIVO**: si la fila ya tiene una marca abierta con ese motivo, `S14` **no abre una segunda y tampoco descarta el hecho** — le cuelga a la abierta el pago que el caso trae (`reconciliation_mark_payment`, `B/02` §2.2) y vuelve a emitir el §22.1. Sin eso el `UNIQUE` rechazaba el `INSERT` y **la plata del segundo cobro en adelante quedaba sin ninguna fila que la nombrara** |
+| S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se abre una marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas**. **`S14` es el ACTO y no el motivo**: el motivo lo trae el caso que lo disparó —son **siete** de los ~~quince~~ dieciséis de `B/02` §2.5 (FASE 8 completa, `F-8CB1-013`)— exactamente como el motivo de una pausa lo traen `S8` o `S9`. Una marca sin motivo declarado no es escribible: `G-R1-F` (`B/20` §2) la rechaza. **Y abrir es ACUMULATIVO**: si la fila ya tiene una marca abierta con ese motivo, `S14` **no abre una segunda y tampoco descarta el hecho** — le cuelga a la abierta el pago que el caso trae (`reconciliation_mark_payment`, `B/02` §2.2) y vuelve a emitir el §22.1. Sin eso el `UNIQUE` rechazaba el `INSERT` y **la plata del segundo cobro en adelante quedaba sin ninguna fila que la nombrara** |
 | S15 | cualquiera **con una marca abierta** | una persona resuelve | **el mismo estado** | intervención humana registrada, **y ningún pago colgado de esa marca sin resolver** | **se levanta UNA marca —la del motivo que esa persona resolvió—, no la fila**: se le escriben `levantada_en` y quién la levantó (`B/02` §2.2), y **las demás marcas abiertas siguen abiertas**. Con un booleano, resolver una divergencia de monto apagaba en el mismo gesto un `REEMBOLSO_POR_CONFIRMAR` que nadie había mirado. **Y la guarda es la mitad que faltaba**: una marca puede llevar **N** pagos colgados (`B/02` §2.2) y levantarla con alguno sin `resuelto_en` cierra el caso **con esa plata adentro**, que es exactamente lo que hacía la persona que resolvía bien el único pago que el listado le nombraba. Si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita** |
 | S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva**. **Lo que se le dice a la persona sale de POR QUÉ la rechazaron** —el `status_detail` de ese único intento, con un mapa y un genérico obligatorio (`DEC-MP-004`, `B/19` §4 fila 19)—: al rechazado por el antifraude del proveedor no se le pide que revise una tarjeta que funciona — **salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A` (§3.3.1) |
 | S17 | la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED` | su sucesora quedó **autorizada**, confirmado por relectura | `CANCELLED` | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada**. **Y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta y **`S17` no ocurre en esta corrida** —la misma puerta que la llamada fallida (`B/09` §3)— y su condición, que es sobre un estado, se vuelve a evaluar; si no hay destinatario, se cancela igual y el no-entregable se escala: es el caso por el que se precisó la regla, porque sin eso la predecesora no se cancelaba nunca y **cobraban las dos** |
@@ -178,7 +179,17 @@ empezar.
 (`DEC-MAIL-001` punto 1, precisado el 2026-09-25; FASE 8 completa, `F-8CB2-001`, `F-8CD1-006`).
 Es el correo *«antes de cancelar»* del catálogo de `NUCLEO/07` §6, y tiene dos ramas:
 
-- **si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta**;
+- **si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta**
+  — **y quién reintenta depende de la fila** (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25):
+  en las filas que llegan a su estado terminal *«pase lo que pase con la llamada»* —las **once**
+  de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`,
+  `S28` y la lápida) y, por la salvedad 1, la cancelación de `A5`/`A6` sobre la suscripción de
+  complemento de `S21`— **reintenta el barrido** (`B/09` §3), con este mismo correo antes y la
+  relectura después, **hasta tres corridas seguidas**; recién a la tercera abre la marca con
+  motivo `CANCELACIÓN_SIN_CONFIRMAR` (`B/02` §2.5) y avisa por `DEC-OBS-001`. En `S6` y `S17` la
+  fila no llega a terminal y reintenta la propia transición (precisión 2, abajo). **En `S11` y
+  `S26` la fila queda en `CANCEL_SCHEDULED`, viva**, y el barrido la reintenta recién cuando
+  `S12` la lleva a terminal: lo de antes está en *«lo que esta mitad NO cierra»*;
 - **si no hay destinatario** —rebote duro o cuenta borrada, que `NUCLEO/07` §4.2 suprime para
   siempre, incluso lo transaccional—, **el correo no bloquea**: se cancela igual, y el
   no-entregable se registra y se escala a una persona, como ya manda ese §. Sin esta rama, la
@@ -2310,7 +2321,7 @@ que tengamos nosotros, éstos son los pares y su veredicto:
 | leído en el proveedor | lo nuestro | qué se hace |
 |---|---|---|
 | `pending` | `PENDING_AUTHORIZATION` | nada: coinciden |
-| `pending` | cualquier otro | **divergencia real** — el proveedor no puede retroceder a pendiente. Marca |
+| `pending` | cualquier otro — **salvo la fila terminal de una cancelación nuestra, que tiene su par al final de esta tabla** | **divergencia real** — el proveedor no puede retroceder a pendiente. Marca |
 | `authorized` | `PENDING_AUTHORIZATION` | **`S2`**: espejar es la transición que ya existe |
 | `authorized` | `PAUSED` | **`S10`**: el proveedor reanudó. Espejar — y acá la condición de `S10` ya está cumplida, porque **esta lectura ES la relectura** que la fila pide. **El caso ciego es el contrario**, `paused` contra `PAUSED`: ahí los dos lados coinciden, esta tabla no ve nada y lo levanta la **quinta comprobación de cero llamadas** de `B/09` §3 |
 | `authorized` | `GRACE_PERIOD` · `SUSPENDED` | **divergencia real** — el preapproval está vivo y nuestro reloj dice que no cobró. Marca: es el caso que `B/12` §1.4 manda mirar. **Salvo que la fila sea la predecesora de una sucesión en curso —o sea con una sucesora VIVA apuntándola— y tenga un pago pendiente por `S19`**: ahí el cobro **sí** entró y está registrado, y el estado es el que `S19` declara — la premisa de esta fila (*«nuestro reloj dice que no cobró»*) es falsa para esa población, y marcarla sería un incidente sobre el camino normal. La salvedad **está acotada por la ventana**: muerta la sucesora, la fila deja de ser predecesora de una sucesión en curso y vuelve a esta fila con su premisa verdadera |
@@ -2318,13 +2329,15 @@ que tengamos nosotros, éstos son los pares y su veredicto:
 | `cancelled` | `CANCEL_SCHEDULED` | nada: es lo esperado, `S11` ya lo canceló. El servicio sigue hasta la fecha nuestra (`DEC-SUB-009`) |
 | `cancelled` | `SUSPENDED` | nada: es lo esperado, **`S6` ya lo canceló** al suspender (`DEC-SUB-019`). La fila sigue suspendida; volver es una sucesión |
 | `cancelled` | cualquier estado vivo que no sea `CANCEL_SCHEDULED` ni `SUSPENDED` | **`S12`** si hay una baja programada; si no, **espejar la baja decidida por el proveedor** (`B/12` §1.4) |
+| `authorized` · `paused` · `pending` | una fila **terminal** —`CANCELLED` o `ABANDONED`— a la que llevó **una transición nuestra que manda cancelar el preapproval**: las **once** de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`, `S28` y la lápida) y, por la salvedad 1, la suscripción de complemento que `S21` llevó a `CANCELLED` tras la cancelación de `A5`/`A6` | **reintentar la cancelación** —la del barrido, `B/09` §3, con el correo antes y la relectura después—; **la marca, con motivo `CANCELACIÓN_SIN_CONFIRMAR` (`B/02` §2.5), recién a la tercera corrida seguida**, y se avisa por `DEC-OBS-001`. **No es divergencia**: la cancelación ya la decidió una transición declarada y sólo falta que la llamada llegue (`DEC-CONC-002` punto 4, su 📌; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25). **Una fila terminal que no está en esa lista no entra en este par** —`S16` y el espejo de la fila anterior, que no mandaron ninguna cancelación, y `S17`, que llega a terminal sólo con la suya ya confirmada por relectura—: un preapproval vivo sobre ella sigue siendo divergencia real, y marca |
 
 > **Espejar un estado leído por id es una transición declarada de esta tabla, no un acto aparte.**
 > Lo que **no** figura acá es divergencia real, y ahí la marca es la respuesta correcta — deja de
 > ser un falso positivo y pasa a señalar lo que su nombre dice.
 >
-> **Y «de esta tabla» incluye el §3.2, con todo lo que eso arrastra.** La última fila —espejar la
-> baja que decidió el proveedor— **saca a una fila principal de las filas vivas**, así que es la
+> **Y «de esta tabla» incluye el §3.2, con todo lo que eso arrastra.** La ~~última~~ fila
+> `cancelled` × *«cualquier estado vivo…»* —espejar la baja que decidió el proveedor; era la última
+> hasta que `F-8CB1-013` agregó debajo el par de la cancelación nuestra sin confirmar— **saca a una fila principal de las filas vivas**, así que es la
 > séptima del dominio que el §3.2 recorre por el lado de la predecesora, la **sexta** de las que
 > disparan la re-evaluación del addon huérfano (`B/16` §4.3), un tercer camino por el que la
 > predecesora **se muere sola** y `S18` cierra la sucesión sin `S17`, y la **rama 5** de
@@ -2333,7 +2346,9 @@ que tengamos nosotros, éstos son los pares y su veredicto:
 
 **Por qué enumerar y no declarar que espejar es una excepción a la regla 1.** La excepción
 resolvía el choque en una línea y abría un camino que **escribe estado sin transición declarada**,
-que es exactamente lo que la regla 1 existe para impedir. Enumerar cuesta ocho filas y deja
+que es exactamente lo que la regla 1 existe para impedir. Enumerar cuesta ~~ocho~~ **diez** filas —recontadas sobre la tabla en la FASE 8 completa
+(`F-8CB1-013`, owner 2026-09-25): ya eran nueve antes de sumar la de la cancelación nuestra sin
+confirmar— y deja
 escrito **por qué cada caso cayó donde cayó**.
 
 ### 10.2 Los hechos puntuales sí necesitan orden, y lo toman del hecho
@@ -2364,6 +2379,13 @@ releyendo y comparando campo por campo cada campo que se mandó**, porque está 
 
 ## Lo que esta mitad NO cierra
 
+- **La cancelación de `S11` o `S26` que no llegó, mientras la fila sigue en `CANCEL_SCHEDULED`**
+  (FASE 8 completa, `F-8CB1-013`). El reintento del barrido que decidió el owner es sobre filas
+  **terminales** (`B/09` §3, salvedades 1 y 4), y ésta todavía no lo es: lo será por `S12`, que
+  está entre las once. Hasta entonces la relectura ve `authorized` contra `CANCEL_SCHEDULED`, un
+  par que la tabla del §10.1 no enumera y que por eso cae en *«divergencia real → marca»*. **No se
+  escribió un par nuevo** porque la decisión no alcanza a filas vivas; queda para decidir si ese
+  caso se reintenta igual o se marca.
 - **Los seis cruces del §52** son `E-CONC-01`, del capítulo 05. Acá quedan nombrados dos —el
   pago manual simultáneo al del proveedor, y el cambio de plan en grace— sin resolverlos.
 - ~~**La baja desde `GRACE_PERIOD` sigue sin fila.**~~ **CERRADA** por `DEC-SUB-014` (owner,
