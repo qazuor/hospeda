@@ -3,6 +3,7 @@
 #
 # Commands:
 #   status [db]                 Read manifest and health metadata.
+#   fingerprint                 Print the source fingerprint used by the template.
 #   stamp <db> <fingerprint>    Record the validated source fingerprint in <db>.
 #   build-candidate <name>      Build an isolated template candidate from empty.
 #   promote <candidate> [name]  Promote a validated candidate with --confirm.
@@ -43,6 +44,13 @@ status() {
   manifest="$(pgsh "psql -U $DBUSER -d $db -tAc \"SELECT json_build_object('template',template_name,'sourceCommit',source_commit,'fingerprint',fingerprint,'migrationCount',migration_count,'builtAt',built_at,'toolVersion',tool_version)::text FROM hospeda_tooling.template_manifest WHERE id=true\" 2>/dev/null" 2>/dev/null | sed '/^$/d' | head -1 || true)"
   printf '{"database":"%s","hasUsers":%s,"migrationJournal":"%s","manifest":%s}\n' \
     "$db" "$([ "${tables:-0}" = 1 ] && echo true || echo false)" "${journal:-missing}" "${manifest:-null}"
+}
+
+fingerprint() {
+  local fp
+  fp="$(wt_template_fingerprint "$ROOT")"
+  [ -n "$fp" ] || { echo "ERROR: cannot calculate template fingerprint"; exit 1; }
+  printf '%s\n' "$fp"
 }
 
 stamp() {
@@ -110,6 +118,7 @@ promote() {
 
 case "$ACTION" in
   status) status "${2:-$TEMPLATE}" ;;
+  fingerprint) fingerprint ;;
   stamp) [ "$#" -ge 3 ] || { echo "usage: template.sh stamp <db> <fingerprint> [commit]"; exit 2; }; stamp "$2" "$3" "${4:-unknown}" ;;
   build-candidate) [ "$#" -ge 2 ] || { echo "usage: template.sh build-candidate <name>"; exit 2; }; build_candidate "$2" ;;
   promote) [ "$#" -ge 2 ] || { echo "usage: template.sh promote <candidate> [active] --confirm"; exit 2; }; promote "$2" "${3:-$TEMPLATE}" "${4:-}" ;;

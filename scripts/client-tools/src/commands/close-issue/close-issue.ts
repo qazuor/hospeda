@@ -1,4 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import pc from 'picocolors';
 import type { RunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
@@ -15,6 +16,85 @@ function issueFromBranch(branch: string): string | null {
 async function git(cwd: string, args: string[]): Promise<string> {
     const result = await run({ command: 'git', args, cwd });
     return result.ok ? result.stdout.trim() : '';
+}
+
+type TemplateHealth = {
+    readonly status: 'not-configured' | 'unavailable' | 'untracked' | 'current' | 'drift';
+    readonly database?: string;
+    readonly sourceFingerprint?: string;
+    readonly manifestFingerprint?: string | null;
+    readonly reason?: string;
+};
+
+/**
+ * Reads the active template manifest and compares it with the source files.
+ * Both subcommands are read-only; an unavailable Docker/Postgres instance is
+ * reported as data so close-issue remains a preflight rather than a mutator.
+ */
+async function readTemplateHealth({
+    repoRoot,
+    templateDatabase
+}: {
+    readonly repoRoot: string;
+    readonly templateDatabase?: string;
+}): Promise<TemplateHealth> {
+    if (templateDatabase === undefined || templateDatabase.length === 0) {
+        return { status: 'not-configured' };
+    }
+    const script = join(repoRoot, 'scripts/worktree/template.sh');
+    if (!existsSync(script)) {
+        return {
+            status: 'unavailable',
+            database: templateDatabase,
+            reason: 'template.sh no existe'
+        };
+    }
+    const source = await run({
+        command: 'bash',
+        args: [script, 'fingerprint'],
+        cwd: repoRoot,
+        timeoutMs: 30_000
+    });
+    const active = await run({
+        command: 'bash',
+        args: [script, 'status', templateDatabase],
+        cwd: repoRoot,
+        timeoutMs: 30_000
+    });
+    if (!source.ok || !active.ok) {
+        return {
+            status: 'unavailable',
+            database: templateDatabase,
+            reason: source.ok ? active.error : source.error
+        };
+    }
+    try {
+        const status = JSON.parse(active.stdout.trim()) as {
+            readonly manifest?: { readonly fingerprint?: string } | null;
+        };
+        const sourceFingerprint = source.stdout.trim();
+        const manifestFingerprint = status.manifest?.fingerprint ?? null;
+        if (manifestFingerprint === null) {
+            return {
+                status: 'untracked',
+                database: templateDatabase,
+                sourceFingerprint,
+                manifestFingerprint
+            };
+        }
+        return {
+            status: manifestFingerprint === sourceFingerprint ? 'current' : 'drift',
+            database: templateDatabase,
+            sourceFingerprint,
+            manifestFingerprint
+        };
+    } catch {
+        return {
+            status: 'unavailable',
+            database: templateDatabase,
+            reason: 'status del template no devolvió JSON válido'
+        };
+    }
 }
 
 export async function runCloseIssue({
@@ -84,6 +164,10 @@ export async function runCloseIssue({
         mismatched: envReport.mismatched.length,
         absentCrossChecks: envReport.absentCrossChecks.length
     };
+    const template = await readTemplateHealth({
+        repoRoot: context.repoRoot,
+        templateDatabase: adapter?.database?.templateDatabase
+    });
     // Protected base branches do not have an issue PR of their own. Avoid asking GitHub
     // about them: an empty PR result would look like a missing closeout signal
     // instead of the structural fact that this is a protected base branch.
@@ -104,6 +188,12 @@ export async function runCloseIssue({
     if (state.ok && state.issue.labels.some((label) => label.startsWith('status-needs-smoke-')))
         actions.push('ejecutar y evidenciar los smoke gates pendientes');
     if (!envDrift.clean) actions.push('resolver drift de variables de entorno antes del cierre');
+    if (template.status === 'drift')
+        actions.push('actualizar o reconstruir el template antes de reutilizar bases');
+    else if (template.status === 'untracked')
+        actions.push('registrar el fingerprint del template antes del cierre');
+    else if (template.status === 'unavailable')
+        actions.push('verificar el estado del template cuando Docker/Postgres esté disponible');
     if (pr === 'none' && branch && !isProtectedBranch)
         actions.push('abrir o vincular el PR antes del cierre');
     else if (typeof pr === 'object' && 'error' in pr)
@@ -135,6 +225,7 @@ export async function runCloseIssue({
                       }
                     : { error: state.reason },
                 envDrift,
+                template,
                 pullRequest: pr,
                 actions,
                 readOnly: true
@@ -153,6 +244,9 @@ export async function runCloseIssue({
     process.stdout.write(`tasks/state: ${taskState ? 'presente' : 'ausente'}\n`);
     process.stdout.write(
         `env drift: ${envDrift.clean ? 'limpio' : `${envDrift.requiredMissing} obligatorias faltantes · ${envDrift.optionalMissing} opcionales ausentes · ${envDrift.obsolete} obsoletas · ${envDrift.needsValue} sin valor`}\n`
+    );
+    process.stdout.write(
+        `template: ${template.status}${template.database ? ` (${template.database})` : ''}${template.status === 'drift' ? ' — fingerprint distinto' : ''}\n`
     );
     process.stdout.write(
         `Linear: ${state.ok ? `${state.issue.stateName} (${state.issue.identifier})` : state.reason}\n`
