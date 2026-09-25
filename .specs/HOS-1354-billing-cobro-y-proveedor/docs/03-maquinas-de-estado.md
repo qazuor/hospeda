@@ -99,7 +99,10 @@ en `RECONCILIATION_REQUIRED` es **textualmente una decisión destructiva automá
 §22.1 prohíbe; y el candado dejaba de ver una autorización que seguía viva.
 
 > **`requiere_conciliación` es una marca sobre la fila, no un estado.** La fila conserva
-> el estado que tenía, y sigue cubriendo a quien estaba cubierto (`B/02` §2.2).
+> el estado que tenía, y sigue cubriendo a quien estaba cubierto (`B/02` §2.2) — **salvo la
+> predecesora de una sucesión cuya sucesora ya está `ACTIVE`**: ésa deja de emitir fuente aunque
+> su cancelación haya fallado y siga marcada (`12-contrato…` §2.6, rama posterior a la autorización;
+> owner 2026-09-25).
 >
 > **Y la marca no es un booleano: es una fila con MOTIVO y con RELOJ** (`reconciliation_mark`,
 > `B/02` §2.2 y §2.5). Este corpus escribe ~~**quince**~~ ~~**dieciséis**~~ **diecinueve** marcas distintas sobre la misma casilla

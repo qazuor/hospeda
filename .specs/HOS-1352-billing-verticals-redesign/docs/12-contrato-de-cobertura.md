@@ -393,11 +393,17 @@ frase de arriba —*«hasta que la nueva se autorice»*— cierra la ventana **a
 autorización, y hay una ventana **posterior**: cuando la sucesora ya autorizó pero la
 cancelación de la predecesora en el proveedor **falló**, `B/03` §3.2 deja las dos filas donde
 estaban, con la marca puesta, y `B/03` §3.1 es explícito en que una fila marcada *«conserva el
-estado que tenía, y sigue cubriendo a quien estaba cubierto»*. Las dos emiten.
+estado que tenía, y sigue cubriendo a quien estaba cubierto»*. ~~Las dos emiten.~~ **Emite sólo la
+sucesora** (owner 2026-09-25; FASE 8 completa, `F-8CC1-007`, `F-8CA1-012`): **una fila con una sucesora en `ACTIVE` apuntándola (`sucede_a`) no emite
+fuente**, aunque su cancelación en el proveedor haya fallado y siga marcada. El cambio de plan
+**ocurrió** en el momento en que la sucesora autorizó; lo que falta es sólo la llamada, y eso lo
+resuelven el reintento del barrido y la marca, no la cobertura.
 
-> **Dos fuentes `SUSCRIPCIÓN` de clase `TÍTULO` para el mismo `user + vertical` son posibles, y
+> ~~**Dos fuentes `SUSCRIPCIÓN` de clase `TÍTULO` para el mismo `user + vertical` son posibles, y
 > sólo en ese caso.** El contrato no las desempata: `fuentes` las devuelve a las dos y el pliegue
-> de `V/15` §2.2 las agrega como a cualquier otro par.
+> de `V/15` §2.2 las agrega como a cualquier otro par.~~ **Desde el 2026-09-25 no son posibles:**
+> en esta rama sólo emite la sucesora, así que `fuentes` nunca devuelve dos `SUSCRIPCIÓN` de clase
+> `TÍTULO` para el mismo `user + vertical`.
 
 ~~**No se desempata porque en esa rama el cliente está pagando las dos**, y desempatar sería la
 única forma de cobrarle dos planes y darle uno.~~ **La razón que se daba —*«en esa rama el cliente
@@ -409,13 +415,16 @@ sucesora todavía no cobró nada por sí misma. Y si la predecesora está en `GR
 durante la ventana por `S4`, `B/03` §3.2—, su período en curso **ni siquiera se pagó**. En ninguno
 de los dos casos el cliente paga dos planes.
 
-⚠️ **Y con la razón corregida, la regla de sumar da más capacidad de la pagada**: con `SUMA`, un
+~~⚠️ **Y con la razón corregida, la regla de sumar da más capacidad de la pagada**: con `SUMA`, un
 Básico de 5 fichas más un Premium de 20 le dan 25 pagando uno solo, hasta que una persona resuelve
 la marca y el excedente cae (`F-8CC1-007`); sobre una predecesora en grace, el cupo de un período
 impago se suma al de la sucesora (`F-8CA1-012`). **La regla no se cambia acá**: las dos salidas que
 proponen los hallazgos —desempatar por la sucesora, que es la que tiene el crédito, o no sumar una
 predecesora en `GRACE_PERIOD`— cambian qué cubre el contrato, y **quedan pendientes** con estos dos
-casos. Mientras tanto la regla sigue siendo la de arriba: las dos fuentes se agregan.
+casos. Mientras tanto la regla sigue siendo la de arriba: las dos fuentes se agregan.~~
+**Cerrado el 2026-09-25 por la primera salida**: manda la sucesora, que es la que tiene el crédito
+(owner 2026-09-25; FASE 8 completa, `F-8CC1-007`, `F-8CA1-012`). Un Básico de 5 fichas más un Premium de 20 dan **20**, lo que se paga, y cuando la marca
+se resuelve no cae ningún excedente que la persona no esperaba.
 
 ~~Tampoco hay decisión de cobertura que tomar:~~ **El otro argumento sigue en pie**: la
 rama es un incidente declarado, con la marca puesta y una persona mirándolo, y su salida es
