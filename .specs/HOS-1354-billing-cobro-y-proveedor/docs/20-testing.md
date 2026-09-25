@@ -456,7 +456,12 @@ manualmente todo billing»*. Los flujos críticos son los que mueven plata o cor
 1. alta y autorización de una suscripción, incluido **el checkout abandonado** que muere al vencer
    su ventana — **y son DOS plazos, así que son dos casos y no uno**: 72 h con tarjeta y 7 días
    corridos con pago manual (cap. 03, S3 y §3.4 punto 1, `DEC-SUB-016`);
-2. el ciclo completo de **impago**: cobro fallido → grace → suspensión → regularización;
+2. el ciclo completo de **impago**, y **son dos caminos de vuelta, uno por método de pago**: con
+   tarjeta, cobro fallido → grace → suspensión **con el preapproval cancelado** → vuelta por el
+   checkout como sucesora (`DEC-SUB-019`); con pago manual, cuota impaga → grace → suspensión →
+   regularización por `MP4`. **Y el caso de la pausa del proveedor por mora con la fila todavía en
+   `ACTIVE`** (`S6` por su segundo evento, `DEC-MP-008`), incluida la sucesión en curso que la
+   frena;
 3. **cambio de plan** y **cambio de ciclo**, que no son el mismo mecanismo (`DEC-SUB-006`,
    `DEC-SUB-007`, `DEC-SUB-008`);
 4. **pausa** y reanudación, las dos formas: al vencer y anticipada;
