@@ -892,7 +892,8 @@ Cada entrada lleva, según §3.4:
   3. **Cierra el hueco de `DEC-TRIAL-007`**: "archivar" un borrador por inactividad significa
      esto mismo — sale de circulación, el dueño lo sigue viendo, y no es borrar.
   4. **Qué es exactamente "dato operativo eliminable"** a los 180 sigue sin definirse
-     (`M-DATA-01`, abierta). Si la auditoría del §49 guarda copias del contenido, el hard
+     (`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la
+     ficha; el usuario y sus datos no se tocan nunca. Si la auditoría del §49 guarda copias del contenido, el hard
      delete puede no eliminar nada.
   5. Los dos avisos tapan el silencio entre el `+60` y el día 90 que señalaba `R-DATA-01`.
 - **Origen**: `C-DATA-01`.
@@ -5207,6 +5208,36 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-DATA-005 — La retención sólo toca fichas: el usuario y sus datos no se borran nunca
+
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra `M-DATA-01`**, que `DEC-DATA-001` implicación 4 dejó abierta: *«qué es exactamente "dato
+  operativo eliminable" a los 180»*.
+- **Problema**: el día 180 se cuenta **por ficha**, pero la lista de lo que borra (`V/02` §4.1)
+  incluía cosas **de la persona** —las preferencias de la cuenta, las señales de identidad— y
+  anonimizaba los datos personales dentro de eventos y outbox sin decir de qué eventos. Un dueño con
+  una ficha abandonada y otra paga perdía las preferencias de su cuenta al día 180 de la primera, y
+  podía ver anonimizados los eventos de su suscripción viva, incluido el aviso de aumento que
+  `NUCLEO/08` §1.3 tiene que poder demostrar (FASE 8 completa, `F-8CA3-009`).
+- **Alternativas**: (1) el día 180 borra sólo esa ficha, y lo de la persona cuando no le queda nada
+  vivo; (2) la retención no toca a la persona nunca.
+- **Decisión**: **(2)**, y es del owner, **más estricta que la recomendación (1)**. **El proceso de
+  archivar y purgar es sólo para fichas.** El usuario, sus preferencias, sus señales de identidad y
+  sus datos personales **no se tocan**, tampoco dentro de eventos o del outbox. El día 180 borra el
+  contenido de **esa** ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más.
+- **Las dos posiciones**: la recomendación ataba los datos de la persona a *«no le queda nada vivo
+  en ninguna vertical»*; el owner separa las dos cosas: la retención es de fichas, y el usuario no
+  es un dato operativo.
+- **Lo que NO decide**: la baja de la cuenta **pedida por el propio usuario** (y lo que la ley pida
+  para ella) es otro proceso y no lo cubre esta decisión.
+- **Acompañan, como reglas de capítulo aprobadas el mismo día** (FASE 8 completa): una ficha cuyo
+  contenido se borró pasa a un estado final **`PURGED`**, que no se republica ni cuenta para el cupo
+  (`F-8CA2-008`); y **el borrado exige `ARCHIVED`**, con el plazo de `PB5` validado **menor que 6
+  meses** (`F-8CA2-014`).
+- **Origen**: FASE 8 completa; respuesta del owner del 2026-09-25 al punto (c) de la pendiente 4.
+
+---
+
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
 - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
@@ -5254,9 +5285,9 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **113** — con **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **114** — con **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 14 |
-| Funcionales | 99 |
+| Funcionales | 100 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **5** — **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
