@@ -385,12 +385,14 @@ global es la **fuente**, nunca la operación, así que la regla no tiene excepci
 que era **decisión de diseño disfrazada**. Las seis preguntas legales quedan abiertas con su riesgo
 y con **qué cambia si la respuesta es la contraria** — tres cambian diseño, tres cambian un número.
 · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) ·
-~~`M-DATA-01`~~ **cerrado por el cap. 02** · ~~`M-LEGAL-01`~~ (el mecanismo ya lo fijó
+~~`M-DATA-01`~~ **cerrado por el cap. 02**, **y su alcance lo fija `DEC-DATA-005`** (owner
+2026-09-25: la retención sólo toca el contenido de las fichas, nunca a la persona) · ~~`M-LEGAL-01`~~ (el mecanismo ya lo fijó
 `DEC-RF-001`; la **baja tan simple como el alta** se compromete como diseño, con norma o sin ella.
 Abiertas: si cada renovación abre ventana nueva —**cambia el diseño**—, el plazo, y el **botón de
 arrepentimiento**, que no es una feature faltante sino **un incumplimiento si la norma aplica**) ·
 ~~`M-LEGAL-02`~~ (y **destapó un defecto real**: el correo es a la vez el único bloqueo de
-`DEC-TRIAL-004` y el primer dato que el cap. 02 §4 anonimiza, así que la fila de `trial` sobrevivía
+`DEC-TRIAL-004` y ~~el primer dato que el cap. 02 §4 anonimiza~~ un dato que el borrado de la
+cuenta anonimiza —desde `DEC-DATA-005` la retención ya no lo hace—, así que la fila de `trial` sobrevivía
 **sin poder reconocer a nadie**. Se guarda un **hash irreversible**, no el correo; el cap. 02 queda
 corregido. La pregunta al abogado pasa a ser si ese hash se puede conservar tras un borrado) ·
 ~~`M-LEGAL-03`~~ (**la prueba del aviso cierra sin abogado**: es el outbox del §44 con la clave del

@@ -562,8 +562,8 @@ unidad se declara terminada.
 > no puede fallar es un comentario con exit code 0»*). La regla 1 del §1.3 dice **cuándo** va cada
 > guard —*«con la pieza que protege, nunca al final»*— y hasta esta pasada **no había ningún lugar
 > donde se comprobara que había ido**: la asignación vivía sólo en una columna que nadie consulta
-> al declarar una unidad lista. **Los 29 guards están repartidos entre las 22 unidades —13 en esta
-> épica y 16 en la otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22
+> al declarar una unidad lista. **Los ~~29~~ 30 guards están repartidos entre las 22 unidades —13 en esta
+> épica y ~~16~~ 17 en la otra (el nuevo, `G-R5-B`, de `V6`; FASE 8 completa, owner 2026-09-25), contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22
 > criterios**, así que la quinta enmienda de `DEC-TEST-001` compró que todos tuvieran dueño y no
 > compró que alguno se construya. El desarrollo, del lado de verticales, está en
 > [`V/descomposicion.md`](../HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md) §4.

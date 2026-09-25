@@ -62,6 +62,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las nueve máquinas, en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
 | G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1. **Lo construye `B8`** de la otra épica, que es la unidad del tope de pausa (`B/descomposicion.md` §2.8) — **la celda de `V9` que lo nombraba *«el de `D16`»* se retira**, porque `V9` corre antes de que ese número exista (`F-8eC2-004`, `descomposicion.md` §2.7) |
+| **G-R5-B** | el **`N` de `PB5`** que declara la configuración, pasado a días, **no es menor que 6 meses** | cap. 03 §9 (`PB5`), cap. 02 §4.1; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **Misma forma que `G-R5`**: compara una cifra de configuración contra una cota, y ninguna búsqueda de texto lo vería cambiar. **Lo construye `V6`**, la unidad que construye `PB5` y su `N` (`descomposicion.md` §2) |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las **nueve** máquinas, en las dos épicas, y contra **las tablas que los capítulos declaran** y no contra el subconjunto ya construido (`B/20` §2) | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
 | **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ cinco hechos** del cap. 01 §1.2 (núcleo) **ni la escritura `C` del corte en la migración estructural del corte** —el quinto, ~~**la primera rama de `PB2`**~~ **la pérdida de cobertura del dueño en la vertical**, entra a la lista **con sus dos ejecutores** —la primera rama de `PB2` sobre la ficha publicada y el recálculo que el aviso despierta sobre las demás del dueño— y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
 
@@ -241,6 +242,25 @@ llamada al proveedor que puede no aplicarse. `G-R5` sigue en verde sobre una pau
 veinte días y no reanudó —las dos cifras que compara no cambiaron—, así que **esa mitad la cubren
 otras dos piezas y ninguna es un guard**: la rama de fallo de `S10` (`B/03` §3.2) y la **quinta**
 comprobación de cero llamadas del barrido (`B/09` §3).
+
+**`G-R5-B` es la misma clase sobre el otro reloj de la ficha** (FASE 8 completa, `F-8CA2-014`,
+owner 2026-09-25). `PB5` archiva un borrador a los `N` meses y el hard delete borra a los 180
+días, **sobre la misma columna**; con `N ≥ 6` meses el borrado alcanzaba a un borrador sin que
+hubiera pasado por el archivado ni por su aviso. Lo cierran dos reglas juntas: **`PB9` exige
+`ARCHIVED`** —eso lo dice la tabla del cap. 03 §9 y no necesita guard: es su `desde`— y **`N` se
+valida menor que 6 meses**, que es configuración y por eso lleva guard, igual que `D16`. **Se rompe
+a propósito** poniendo `N` en 6 meses, y el rojo tiene que nombrar a `PB5` y la cifra.
+⚠️ **Lo que no está decidido**: si la cota es **6 meses literal** o **el día del hard delete**
+—como `D16`, que compara contra el 180 y no contra un número fijo—. Hoy son lo mismo; el día que
+alguien mueva el 180, dejan de serlo. El predicado de arriba toma la letra del owner.
+
+**`PB9` no mueve ni a `G-R6` ni a `G-R6-B`, revisado y no supuesto.** El hard delete pasó a ser
+una transición (`PB9`, cap. 03 §9; `F-8CA2-008`), pero **lee la columna igual que antes** —es el
+lector *(3)* del cap. 02 §2.5, con otro nombre— y **no la escribe** salvo por la relectura que trae
+la cobertura verdadera, que es el hecho 2 y ya estaba en la lista. Así que los seis lectores y los
+cinco hechos quedan como estaban, y la mitad *(c)* se sigue rompiendo igual: sacándole a `PB9` su
+lectura de la columna. `G-R6` gana una condición más que lee `inactiva_desde`, escrita por las
+mismas transiciones que ya la escribían.
 
 **`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
 mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace

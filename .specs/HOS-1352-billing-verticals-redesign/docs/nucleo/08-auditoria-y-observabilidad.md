@@ -68,9 +68,15 @@ que el PDR lo necesita: el §29 tiene que poder **demostrar** que se avisó un a
 precio anterior, su precio nuevo y su fecha efectiva; y el §35.4 exige el registro del grant con
 su firmante.
 
-**La única escritura posterior admitida es la anonimización del día 180** (cap. 02 §4.1), que
+~~**La única escritura posterior admitida es la anonimización del día 180** (cap. 02 §4.1), que
 reemplaza datos personales y **no toca el tipo, la fecha, la entidad ni la causa**. Eso conserva
-el valor probatorio y cumple la retención.
+el valor probatorio y cumple la retención.~~ **La retención no escribe en este registro**: desde
+`DEC-DATA-005` (owner 2026-09-25) el día 180 sólo borra el contenido de una ficha, y los datos
+personales **no se tocan, tampoco dentro de eventos o del outbox** — así que el aviso de aumento
+que el §29 tiene que demostrar conserva su destinatario (FASE 8 completa, `F-8CA3-009`). ⚠️ Lo que
+queda pendiente: el borrado de la cuenta pedido por el propio usuario, que `V/02` §4.2 regla 2
+describe con *«lo personal se anonimiza con el resto»*, es un proceso que esa decisión **no
+cubre**; si alcanza a este registro, y con qué escritura, no lo dice ningún capítulo.
 
 ---
 

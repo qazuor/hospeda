@@ -145,7 +145,9 @@ el hecho 5 ya alcanza a las no publicadas de un dueño que la pierde —FASE 8 c
 
 > ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
 > tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió
-> y lo que `PB7` devuelve es una ficha vacía (`V/03` §9, `F-8CA2-008`). El hallazgo propone
+> y ~~lo que `PB7` devuelve es una ficha vacía~~ la ficha quedó en `PURGED`, que es final: no la
+> devuelve nada (`V/03` §9, `PB9`; `F-8CA2-008`, cerrado por el owner el 2026-09-25). El límite de
+> la agenda sigue abierto igual. El hallazgo propone
 > declararlo como límite de la agenda (`F-8CA3-002`); **si se declara y cómo se vigila lo decide el
 > owner**. Y `DEC-MIG-004` retiró su defecto #7 con la causa *«no se transcribe ninguna»*: la ficha
 > sí sobrevive al corte y su reloj sí se siembra, así que esa causa no alcanza a esta columna — la

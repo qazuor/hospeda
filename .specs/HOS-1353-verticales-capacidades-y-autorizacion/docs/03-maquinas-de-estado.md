@@ -294,10 +294,16 @@ billing mueve varias publicaciones a la vez.
 | PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). **`PB2` es uno de los dos ejecutores del hecho 5, no el único**: el hecho es *«el dueño pierde la cobertura en la vertical»* y alcanza a **todas** sus fichas en ella; a las que no están en `PUBLISHED` —y por eso `PB2` no toca— se lo escribe el recálculo que el mismo aviso despierta, sin transición de esta máquina (owner 2026-09-25) |
 | PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza. **Es una disyunción de dos, simétrica a la de `PB2`** (`DEC-DATA-003`) |
 | PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | **relee la cobertura antes de archivar** (ver abajo). Sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
-| PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración. **Relee la cobertura antes de archivar**, igual que `PB4` |
+| PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración, **validada menor que 6 meses** —el día 180 cae así siempre después del archivado y de su aviso—, y lo vigila `G-R5-B` (cap. 20 §2; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25). **Relee la cobertura antes de archivar**, igual que `PB4` |
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
 | **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás, **con la misma disyunción y por la misma razón** (ver abajo) |
 | **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla. **La autoriza la versión de piso**, que otorga *«recuperar lo suyo»* (cap. 02 §2.1): sin eso el paso 6 rechazaba a su única población, la que no paga |
+| **PB9** | `ARCHIVED` | día 180 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | **`PURGED`** | **es el hard delete** (cap. 02 §4.1): borra el contenido de esa ficha —textos, fotos, FAQ, horarios— y sus borradores, **y nada más**; nada de la persona (`DEC-DATA-005`). **Exige `ARCHIVED`**: sale sólo de ahí, así que el aviso del archivado salió siempre antes (`F-8CA2-014`). **Relee la cobertura antes de borrar**, igual que `PB4` y `PB5`: si está cubierta, no borra y reinicia el reloj. **`PURGED` es final**: ninguna fila sale de ahí —`PB3` y `PB7` no la toman— y **no cuenta para el cupo**; el dueño ve que la ficha existió y que se borró por inactividad (cap. 19 §4 fila 20). FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25 |
+
+**La máquina tiene cinco estados y nueve transiciones**: `DRAFT`, `PUBLISHED`,
+`UNPUBLISHED_BY_BILLING`, `ARCHIVED` y **`PURGED`**, y de `PB1` a **`PB9`**. Hasta la FASE 8
+completa eran cuatro y ocho: el hard delete del día 180 no tenía fila y dejaba la ficha vaciada en
+`ARCHIVED`, desde donde `PB7` la republicaba (`F-8CA2-008`, owner 2026-09-25).
 
 **`PB2` y `PB3` se disparan por el CAMBIO de `cubierto` —o por el del cupo—, no por una lista de
 transiciones**, y ése es el arreglo: las dos listas estaban **congeladas** y se quedaron cortas
@@ -311,25 +317,31 @@ sólo de `DRAFT`.
 en una épica, mantenida a mano contra los cambios de la otra, es el punto de falla favorito de un
 arreglo hecho por racimos.
 
-**Pero el hecho dice CUÁNDO preguntar y no contesta la pregunta, y las dos filas del reloj releen
-antes de actuar — y no son las únicas que releen, sólo las únicas que tienen fila acá.** El §3 del contrato prohíbe decidir con lo que trae el aviso —*«un consumidor que
+**Pero el hecho dice CUÁNDO preguntar y no contesta la pregunta, y ~~las dos filas del reloj releen
+antes de actuar — y no son las únicas que releen, sólo las únicas que tienen fila acá~~ las tres
+filas del reloj —`PB4`, `PB5` y `PB9`— releen antes de actuar.** El §3 del contrato prohíbe decidir con lo que trae el aviso —*«un consumidor que
 decidiera con lo que trae el evento estaría creyéndole a un mensaje en vez de al estado»*—, y `PB4`
-y `PB5` **deciden lo más caro que decide esta máquina**: el día 90 es el primer escalón del hard
-delete del día 180 (cap. 02 §4.1). Así que las dos, en el momento de ejecutar, **vuelven a pedirle
+y `PB5` **deciden lo más caro que decide esta máquina** ~~:~~ **después de `PB9`**: el día 90 es el primer escalón del hard
+delete del día 180 (cap. 02 §4.1). Así que ~~las dos~~ las tres, en el momento de ejecutar, **vuelven a pedirle
 la cobertura al contrato**: si el `user + vertical` está cubierto, no archivan y **reinician el
 reloj** escribiendo `listing.inactiva_desde` (cap. 02 §2.5, hecho 2 del cap. 01 §1.2, núcleo). Un
 aviso perdido pasa así a costar un retraso en el reinicio y nunca un archivado indebido — y que
 estos avisos se pierden lo declara el propio diseño en el otro consumidor de la misma lista
 (cap. 02 §3.2, regla 2).
 
-**Y son dos filas porque esta máquina tiene dos, no porque los actores del reloj sean dos: el
+~~**Y son dos filas porque esta máquina tiene dos, no porque los actores del reloj sean dos: el
 tercero está afuera y es el que más caro sale.** *«Las dos»* de este párrafo cuantifica **las filas
 de esta tabla**, y es verdadero de las filas. El **hard delete del día 180** no es una transición de
 publicación —no mueve la ficha de estado: le borra el contenido (cap. 02 §4.1)— así que no puede
 tener fila acá, y **relee exactamente igual, por la misma razón y con el mismo efecto**: si la
 cobertura vuelve verdadera, no borra y escribe el hecho 2 (cap. 01 §1.2, núcleo; cap. 02 §4.2,
 regla 4). Leer *«las dos»* como *«los dos únicos que releen»* deja al único acto irreversible del
-programa decidiendo con un aviso que el propio diseño declara que se pierde.
+programa decidiendo con un aviso que el propio diseño declara que se pierde.~~ **Y desde la FASE 8
+completa el tercero tiene fila: es `PB9`** (`F-8CA2-008`, owner 2026-09-25). El hard delete del día
+180 **mueve la ficha a `PURGED`** en vez de dejarla vaciada en `ARCHIVED`, y **relee exactamente
+igual que `PB4` y `PB5`, por la misma razón y con el mismo efecto**: si la cobertura vuelve
+verdadera, no borra y escribe el hecho 2 (cap. 01 §1.2, núcleo; cap. 02 §4.2, regla 4). Es el
+único acto irreversible del programa, y ahora la tabla lo dice en vez de dejarlo afuera.
 
 **Y el excedente queda como la única causa enumerada**, porque es la que **no** cambia `cubierto`:
 la persona sigue cubierta y lo que no le alcanza es el cupo.
@@ -412,6 +424,10 @@ entrada. Cualquier otro orden hace que el resultado dependa de por cuántos plan
 contrario de predecible — y `V/15` §4.3 ya declaró por qué no se inventa un segundo criterio:
 *«dos criterios distintos para la misma clase de problema es cómo se vuelve impredecible»*.
 
+**Una ficha `PURGED` no es candidata**: no está en el `desde` de `PB3` ni en el de `PB7`, y no
+cuenta para el cupo, así que ni ocupa lugar ni compite por él (`PB9`; FASE 8 completa,
+`F-8CA2-008`, owner 2026-09-25).
+
 **El origen NO desempata, y es deliberado.** Una candidata en `ARCHIVED` y una en
 `UNPUBLISHED_BY_BILLING` entran en **la misma cola ordenada**, sin prioridad por el estado del que
 vienen. Lo único que las separa es **cuánto tardó nuestro reloj en archivar una y no la otra**, que
@@ -441,6 +457,10 @@ regla 1 del cap. 03 §1 (núcleo) volver de ahí no era una operación: era un i
 seguía hasta el hard delete del día 180 (cap. 02 §4.1). El sujeto no era una ficha abandonada:
 era la de un cliente que no canceló nada.
 
+**`ARCHIVED` tiene además una tercera salida, que no es volver: `PB9`**, el hard delete del día
+180, hacia `PURGED`, que es final (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25). Las dos de
+vuelta siguen siendo dos.
+
 **Son dos filas y no una porque los dos caminos de vuelta no se pueden mezclar:**
 
 | | `PB7` | `PB8` |
@@ -451,8 +471,16 @@ era la de un cliente que no canceló nada.
 | para quién existe | el que pausó, el que recontrata, el que regularizó | el que quiere su ficha de vuelta sin pagar todavía, y el borrador que archivó `PB5` |
 | con qué la autoriza | su fuente de clase `TÍTULO`, que es la que acaba de volver | **la versión de piso**, *«recuperar lo suyo»* (cap. 02 §2.1) — su población **no tiene ninguna otra** |
 
-> ⚠️ **Abierto desde la FASE 8 completa: `PB7` y `PB3` no distinguen una ficha que el hard delete
-> ya vació** (`F-8CA2-008`; no resuelto acá). El hard delete del día 180 **no mueve el estado** —le
+> 📌 **Cerrado el 2026-09-25** (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25): el hard delete
+> es la fila **`PB9`** y lleva la ficha a **`PURGED`**, un estado final. `PB7` sale de `ARCHIVED` y
+> `PB3` de `UNPUBLISHED_BY_BILLING`, así que **ninguna de las dos la toma**; no entra en la cola
+> de cuáles vuelven ni **cuenta para el cupo**, y el dato que la guarda pedía es el estado mismo,
+> que escribe una transición —`G-R6` no tiene nada que objetar—. **Adónde va** la ficha es a
+> `PURGED`, y el dueño ve que existió y que se borró por inactividad (cap. 19 §4 fila 20). Y como
+> `PB9` exige `ARCHIVED`, una ficha en `UNPUBLISHED_BY_BILLING` no llega nunca vaciada a `PB3`.
+>
+> ~~⚠️ **Abierto desde la FASE 8 completa: `PB7` y `PB3` no distinguen una ficha que el hard delete
+> ya vació** (`F-8CA2-008`; no resuelto acá).~~ El texto original, como registro: el hard delete del día 180 **no mueve el estado** —le
 > borra el contenido y la deja en `ARCHIVED`—, y `PB7` sólo mira el origen. Si el dueño recupera
 > la cobertura después del día 180, `PB7` publica una página vacía, y por el criterio de vuelta
 > —*«la publicada menos recientemente»*, abajo— la vacía, que suele ser la más vieja, **ocupa el
@@ -461,7 +489,7 @@ era la de un cliente que no canceló nada.
 > ficha»* —el hard delete no es una transición, así que una guarda que lo leyera cae bajo `G-R6`
 > (`V/20` §2)—, y pide decidir adónde va esa ficha si no vuelve. El núcleo ya lo dice de un solo
 > lado: el correo de la reapertura avisa *«que el contenido no vuelve»* (`NUCLEO/07` §6), sin
-> decir si la ficha sí. Queda para el owner.
+> decir si la ficha sí. ~~Queda para el owner.~~
 
 **`PB7` no puede ignorar el origen, y ésa es toda la razón por la que lo mira.** A `ARCHIVED` se
 entra por dos puertas: `PB4`, desde una ficha que estaba a la vista, y `PB5`, desde un
@@ -515,10 +543,12 @@ esta misma tanda:**
    eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
    **una sola** fila y **`PB7`/`PB8` no agregan ninguno** a los pares con dos destinos, que desde la
    FASE 9-bis-4 son **cuatro** —el cuarto es `S10`/`S25` (`NUCLEO/03` §1 regla 7)—. Es el mismo caso que
-   `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo).
+   `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo). **`PB9` tampoco agrega ninguno**:
+   sale también de `ARCHIVED`, pero su evento —el día 180 de inactividad— no lo declara ninguna
+   otra fila (FASE 8 completa, `F-8CA2-008`).
 3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
-   *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` y `PB5`, y las
-   dos **quitan**; a `PB7` la disparan **un cambio de cobertura o un cambio de cupo**, igual que a
+   *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` ~~y `PB5`, y las
+   dos~~ , `PB5` y **`PB9`** (FASE 8 completa, `F-8CA2-008`), y las tres **quitan**; a `PB7` la disparan **un cambio de cobertura o un cambio de cupo**, igual que a
    `PB3`. **Ninguno de los dos es el reloj**: los dos son el recálculo del conjunto efectivo de un
    `user + vertical` (cap. 15 §4.2), que lo dispara un acto —el de la persona o el de billing— y
    no el paso del tiempo.

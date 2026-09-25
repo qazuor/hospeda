@@ -41,7 +41,10 @@ observación**.
 
 Las preguntas son tres —**finalidad declarada**, **plazo de conservación**, y **cómo se responde a
 un pedido de acceso o supresión que puede llegar antes de los 180 días del §25**— y la tercera
-destapa algo que no es legal sino nuestro. Está en §3.
+destapa algo que no es legal sino nuestro. Está en §3. *(Desde `DEC-DATA-005` los 180 días del
+§25 sólo alcanzan el contenido de las fichas, nunca los datos de la persona, así que la tercera
+pregunta ya no es de plazo contra la retención: es cómo se responde al pedido, que la retención no
+cubre.)*
 
 ---
 
@@ -52,14 +55,19 @@ destapa algo que no es legal sino nuestro. Está en §3.
 Tres piezas que por separado están bien y juntas se anulan:
 
 1. **`DEC-TRIAL-004`**: lo único que bloquea un trial nuevo es **el correo normalizado**.
-2. **Capítulo 02 §4.1**: al día 180 se **anonimizan** los datos personales —nombre, **correo**,
-   teléfono, dirección—.
+2. ~~**Capítulo 02 §4.1**: al día 180 se **anonimizan** los datos personales —nombre, **correo**,
+   teléfono, dirección—.~~ **Ya no**: desde `DEC-DATA-005` (owner 2026-09-25) la retención sólo
+   toca fichas, y el día 180 **no anonimiza nada** de la persona (cap. 02 §4.1).
 3. **Capítulo 02 §4.2, regla 2**: la fila de `trial` **sobrevive** al borrado de la cuenta,
    *«conserva el `user + vertical` y las fechas; lo personal se anonimiza con el resto»*.
 
-**El correo es a la vez el único bloqueo y el primer dato que se anonimiza.** Al día 180 —o antes,
-si llega un pedido de supresión— la fila de `trial` sigue ahí y **ya no puede reconocer a nadie**.
-La persona se registra de nuevo con la misma dirección y obtiene un trial nuevo.
+**El correo es a la vez el único bloqueo y ~~el primer dato que se anonimiza~~ un dato que el
+borrado de la cuenta anonimiza.** ~~Al día 180 —o antes, si llega un pedido de supresión—~~ **Al
+borrarse la cuenta, o si llega un pedido de supresión,** la fila de `trial` sigue ahí y **ya no
+puede reconocer a nadie**. La persona se registra de nuevo con la misma dirección y obtiene un
+trial nuevo. **El defecto sigue en pie sin la pieza 2**: la 3 alcanza sola (FASE 8 completa,
+`F-8CA3-009`). ⚠️ Esa baja pedida por el usuario es el proceso que `DEC-DATA-005` declara que no
+decide, y ningún capítulo la diseña: queda pendiente.
 
 **Y el capítulo 02 lo dice de frente**: la fila se conserva *«porque el trial no se devuelve, así
 que la evidencia de que se consumió tiene que sobrevivir al borrado o el borrado se convierte en
@@ -73,7 +81,7 @@ que se anonimiza.
 | | |
 |---|---|
 | **sirve para lo único que tiene que servir** | comparar un candidato contra lo consumido. `DEC-TRIAL-004` sólo necesita *«¿este correo ya consumió?»*, nunca *«¿cuál era?»* |
-| **sobrevive a la anonimización** | no hay nada que anonimizar: no se puede leer de vuelta |
+| **sobrevive a la anonimización** | no hay nada que anonimizar: no se puede leer de vuelta. La anonimización es la del borrado de la cuenta; la retención ya no anonimiza (`DEC-DATA-005`) |
 | **no cambia la decisión** | el bloqueo sigue siendo el correo normalizado, con sus mismos puntos y `+alias` |
 
 **El capítulo 02 §4 queda corregido en el mismo commit**: lo que la fila de `trial` conserva es el

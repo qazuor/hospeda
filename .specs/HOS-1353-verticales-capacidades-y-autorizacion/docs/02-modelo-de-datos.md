@@ -364,7 +364,9 @@ es el motivo entero de que exista `G-R6-B`.
 
 **Y la leen ~~cinco~~ SEIS consumidores, y esta lista también es cerrada** (recontada en la FASE 8
 completa, `F-8CD1-009`: el renglón decía «cinco» y enumeraba seis): **(1)** `PB4` (día 90) y
-**(2)** `PB5` (N meses) del cap. 03 §9, **(3)** el día 180 del §4.1 de este capítulo, **(4)** el
+**(2)** `PB5` (N meses) del cap. 03 §9, **(3)** el día 180 del §4.1 de este capítulo —desde la
+FASE 8 completa es la transición **`PB9`** del cap. 03 §9 (`F-8CA2-008`, owner 2026-09-25), y es
+**el mismo lector**: el recuento no cambia—, **(4)** el
 aviso previo **antes del día 90** y **(5)** el aviso previo **antes del día 180**, los dos de
 schedule del cap. 07 §6 (núcleo), y **(6)** la fecha que el cap. 19 §4 fila 18 obliga a
 imprimirle al cliente en el aviso al archivar — que es **`inactiva_desde` + 180** y hasta esta
@@ -476,7 +478,8 @@ no para decidir un movimiento de dinero.
 
 El §25 ordena soft delete a los 90 días y hard delete a los 180 de *«datos operativos
 eliminables»*, y manda conservar auditoría, pagos, registros obligatorios, información legal e
-historial necesario. Nunca define qué es eliminable.
+historial necesario. Nunca define qué es eliminable. **Lo define `DEC-DATA-005`** (owner
+2026-09-25): el contenido de una ficha y sus borradores, y **nunca** nada de la persona.
 
 **El riesgo concreto que esto cierra**: si la auditoría del §49 guardara eventos de dominio
 *completos* con su contenido, el hard delete no eliminaría nada y la promesa del §25 sería
@@ -501,12 +504,28 @@ preguntar en el momento de archivar (cap. 03 §9).
 
 | | qué | por qué |
 |---|---|---|
-| **Se borra** al día 180 | el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`) | es lo que el §25 llama operativo: sirve para prestar el servicio y el servicio terminó |
-| **Se anonimiza** al día 180 | los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección | el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso |
-| **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un hash irreversible del correo normalizado, no el correo** | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro |
+| **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
+| ~~**Se anonimiza** al día 180~~ | ~~los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección~~ **Este renglón sale de la retención**: el proceso de archivar y purgar **no anonimiza nada** (`DEC-DATA-005`) | ~~el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso~~ la retención es de fichas, y *«el usuario no es un dato operativo»* (`DEC-DATA-005`) |
+| **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un hash irreversible del correo normalizado, no el correo** —, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad (`DEC-TRIAL-004`) y sus datos personales, **también dentro de eventos de dominio y del outbox** (`DEC-DATA-005`) | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca (`DEC-DATA-005`); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
 
-> ⚠️ **Dos preguntas sobre esta tabla quedan abiertas desde la FASE 8 completa, y ninguna es de
-> redacción** (no resueltas acá):
+> 📌 **Cerradas el 2026-09-25** (FASE 8 completa, owner 2026-09-25). La 1 (`F-8CA3-009`) la
+> cierra **`DEC-DATA-005`**: la retención sólo toca fichas, y lo de la persona no se borra ni se
+> anonimiza nunca, así que ya no hay renglón que alcance a una ficha viva a través de su dueño.
+> La 2 (`F-8CA2-014`) la cierran las dos salidas **juntas**, como reglas de capítulo aprobadas el
+> mismo día: **el borrado exige `ARCHIVED`** —el aviso del archivado salió siempre antes— **y el
+> `N` de `PB5` se valida menor que 6 meses** (cap. 03 §9; lo vigila `G-R5-B`, cap. 20 §2). La
+> consecuencia que el punto 2 anotaba para la primera salida queda aceptada con ella: la ficha
+> publicada sin cobertura que `PB4` no alcanzó **no se borra** hasta que se archive.
+>
+> **Qué son «sus borradores»**, que era la otra mitad del punto 2: el corpus usa *«borrador»*
+> **sólo** para una ficha en `DRAFT` (`PB5`, `DEC-TRIAL-007`), y este capítulo no modela ediciones
+> sin publicar de una ficha —`listing` guarda un contenido (§2.5)—. Con la precondición, una ficha
+> en `DRAFT` se borra **sólo después de que `PB5` la archivó**, igual que cualquier otra. El
+> *«sus borradores»* de `DEC-DATA-005` es de **esa** ficha, así que si el modelo llegara a tener
+> ediciones sin publicar caerían con su contenido; **hoy no las declara**, y queda anotado.
+>
+> ~~⚠️ **Dos preguntas sobre esta tabla quedan abiertas desde la FASE 8 completa, y ninguna es de
+> redacción** (no resueltas acá):~~
 >
 > 1. **El día 180 es de UNA ficha y dos renglones alcanzan a la PERSONA** (`F-8CA3-009`). *«Las
 >    preferencias de la cuenta»* y *«las señales de identidad»* son de la cuenta, y *«los datos
@@ -527,17 +546,31 @@ preguntar en el momento de archivar (cap. 03 §9).
 >    configuración), y *«los borradores»* admite además dos lecturas —las fichas en `DRAFT` o las
 >    ediciones sin publicar de una ficha—. Elegir es de diseño; queda anotado.
 
-**El hash existe porque el correo es a la vez el único bloqueo y el primer dato que se anonimiza.**
+~~**El hash existe porque el correo es a la vez el único bloqueo y el primer dato que se anonimiza.**
 `DEC-TRIAL-004` decidió que sólo el correo normalizado niega un trial nuevo, y este mismo capítulo
 anonimiza el correo al día 180: la fila sobreviviría **sin poder reconocer a nadie**, que es
-exactamente el desenlace que conservarla venía a evitar. Un hash sirve para lo único que hace
+exactamente el desenlace que conservarla venía a evitar.~~ **El hash existe porque el correo es a
+la vez el único bloqueo y un dato que el borrado de la cuenta anonimiza.** `DEC-TRIAL-004` decidió
+que sólo el correo normalizado niega un trial nuevo. **La retención ya no anonimiza el correo**
+(`DEC-DATA-005`), pero el corpus declara otro camino que sí: **el borrado de la cuenta**, en el que
+la fila de `trial` sobrevive y *«lo personal se anonimiza con el resto»* (§4.2, regla 2), y el
+pedido de supresión que el cap. 22 §3 y el pliego legal (pregunta 5) ponen junto a él. Por ese
+camino la fila sobreviviría **sin poder reconocer a nadie**, que es exactamente el desenlace que
+conservarla venía a evitar. Un hash sirve para lo único que hace
 falta —«¿este correo ya consumió?», nunca «¿cuál era?»— y no hay nada que anonimizar en él. El
-capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
+capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo que queda pendiente**: ese
+camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
+que **no decide** (*«es otro proceso»*), y ningún capítulo lo diseña; la razón del hash descansa
+sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009`, owner
+2026-09-25).
 
 ### 4.2 Cuatro reglas que la lista necesita
 
 1. **Anonimizar no es borrar la fila.** El evento conserva su tipo, su fecha, su entidad y su
-   causa; lo que se reemplaza es el dato personal.
+   causa; lo que se reemplaza es el dato personal. **Desde `DEC-DATA-005` la retención no
+   anonimiza nada**, así que esta regla ya no tiene sujeto en el día 180; se conserva como estaba
+   para el borrado de la cuenta (regla 2), cuyo proceso esa decisión no cubre y queda pendiente
+   (FASE 8 completa, `F-8CA3-009`, owner 2026-09-25).
 2. **La fila de `trial` sobrevive al borrado de la cuenta.** Es la única entidad de este modelo
    que lo hace, y la razón está en el §10.2. Conserva el `user + vertical`, las fechas y **el hash
    del correo normalizado**; lo personal se anonimiza con el resto. El hash **no** se anonimiza —

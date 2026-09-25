@@ -340,9 +340,9 @@ de `DEC-TEST-001` —la que reparte los catorce sin unidad—, que es el último
 | | cuántos | quiénes |
 |---|---|---|
 | filas de `B/20` §2 | **16** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` `G-R6-B` |
-| filas de `V/20` §2 | **17** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` `G-R6` `G-R6-B` |
-| **guards distintos** | **29** | 16 + 17 menos las **cuatro** referencias cruzadas: `G-R4`, `G-R5`, `G-R6` y `G-R6-B` |
-| **con unidad que los construya** | **29** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`), `G-R5` (ver abajo) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) |
+| filas de `V/20` §2 | ~~**17**~~ **18** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` **`G-R5-B`** `G-R6` `G-R6-B` — `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25) |
+| **guards distintos** | ~~**29**~~ **30** | 16 + ~~17~~ 18 menos las **cuatro** referencias cruzadas: `G-R4`, `G-R5`, `G-R6` y `G-R6-B`. `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales |
+| **con unidad que los construya** | ~~**29**~~ **30** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`), `G-R5` (ver abajo) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) |
 | **sin unidad** | **0** | y es la primera vez en la serie. El reparto, unidad por unidad y con su razón medida, está en `V/descomposicion.md` §2.6 y en `B/descomposicion.md` §2.8 |
 
 **`G-R5` cambió de unidad y no de estado: era el único contado *«con unidad»* sin nombrarse.** La

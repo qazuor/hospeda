@@ -56,10 +56,10 @@ condicionan**: se apoyan en ella.
 | **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
 | **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
 | **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
-| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** |
+| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** **`G-R5-B`** *(el `N` de `PB5`, que V6 construye; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25)* |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), ~~la anonimización,~~ **el día 180 como la fila `PB9` hacia `PURGED`, que sólo borra el contenido de la ficha (`DEC-DATA-005`; FASE 8 completa, `F-8CA2-008`)**, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -321,7 +321,7 @@ dirección de ahí — *«un plan más caro puede bajar un límite al rediseñar
 **se le recorta algo en silencio mientras se le cobra como mejora**»*. Con el camino de upgrade
 tomado por error, además, **el excedente cae sin el aviso previo** que el de downgrade obliga.
 
-**Y no mueve ninguna asignación de guard.** Ninguno de los 29 tiene por sujeto el contrato de
+**Y no mueve ninguna asignación de guard.** Ninguno de los 29 *(hoy 30, con `G-R5-B`; FASE 8 completa)* tiene por sujeto el contrato de
 frontera (§4.2 del contrato, dicho allá), así que esta fila agrega **capítulos a una unidad**, no un
 dueño de guard. Es un reparto de trabajo, que es lo que este documento hace.
 
@@ -359,8 +359,9 @@ la unidad se declara terminada.
 > **no había ningún lugar donde se comprobara que había ido**: la asignación vivía sólo en una
 > columna que nadie consulta al declarar una unidad lista, así que las nueve se podían declarar
 > terminadas, una por una, con **cero** guards escritos, y el tablero del §5 las marcaba verdes.
-> **Los 29 guards del programa están repartidos entre las 22 unidades —16 en esta épica y 13 en la
-> otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22 criterios.**
+> **Los ~~29~~ 30 guards del programa están repartidos entre las 22 unidades —~~16~~ 17 en esta épica y 13 en la
+> otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22 criterios.** *(El
+> trigésimo es `G-R5-B`, de V6: FASE 8 completa, `F-8CA2-014`, owner 2026-09-25.)*
 >
 > **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
 > mismo conjunto, que es la clase de defecto que el contrato §2.1 acaba de cerrar. **La columna es

@@ -137,7 +137,7 @@ y el recálculo vuelve a preguntar**. Si `cubierto` viene verdadero, se escribe 
 `listing.inactiva_desde` (`V/02` §2.5).
 
 **Y como un aviso se puede perder, el que ACTÚA vuelve a preguntar antes de actuar.** `PB4`, `PB5`
-y el hard delete del día 180 **releen la cobertura del `user + vertical` en el momento de ejecutar**
+y el hard delete del día 180 —desde la FASE 8 completa, la fila `PB9` de `V/03` §9 (`F-8CA2-008`)— **releen la cobertura del `user + vertical` en el momento de ejecutar**
 y, si está cubierta, reinician el reloj en vez de avanzar. Es el mismo §3 aplicado al otro extremo,
 y es lo que vuelve el aviso perdido un retraso y no un borrado: sin esta relectura el modo de falla
 cae del lado caro —el aviso que no llega deja el reloj corriendo sobre alguien que volvió—, y el
@@ -366,7 +366,8 @@ programa, y ya estaba anticipado en el resumen de ese log antes de tener ID prop
 
 **Y el reloj de retención del §25 arranca igual en los dos.** El §25 dice *«desde que queda
 efectivamente inactiva»*, y las dos lo son: día 90 sale del sitio público conservando acceso
-del dueño, día 180 hard delete de lo eliminable, con dos avisos previos (`DEC-DATA-001`) y un
+del dueño, día 180 hard delete de lo eliminable —el contenido de la ficha y sus borradores, nunca
+nada de la persona, y la ficha pasa a `PURGED` (`DEC-DATA-005`, `V/03` §9 `PB9`)—, con dos avisos previos (`DEC-DATA-001`) y un
 tercero el día que se archiva (cap. 07 §6). *«Efectivamente inactiva»* es el término del §1.2:
 el reloj corre en los dos **y los dos lo reinician si la cobertura vuelve**, que es lo que
 separa a quien se fue de quien volvió.
@@ -392,7 +393,7 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 > entidad con estados propios»*, y lo es — hay una decisión humana en el medio, así que `APROBADA`
 > y `RECHAZADA` no son el mismo dato con distinto signo. Se agrega al núcleo en vez de declararse
 > en su subdominio, que es la regla del índice.
-| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` |
+| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` · **`PURGED`** — el quinto, final: la ficha cuyo contenido borró el día 180 (`PB9`), que no se republica ni cuenta para el cupo; desde la FASE 8 completa (`F-8CA2-008`, `DEC-DATA-005`, owner 2026-09-25; `V/03` §9) |
 | **Postulación de Partner** | `PENDIENTE` · `APROBADA` · `RECHAZADA` |
 | **Grace** | no es una máquina propia: es el sub-estado `GRACE_PERIOD` de Suscripción, con su reloj |
 | **Pausa** | no es una máquina propia: es el sub-estado `PAUSED` de Suscripción, **con un motivo obligatorio** |

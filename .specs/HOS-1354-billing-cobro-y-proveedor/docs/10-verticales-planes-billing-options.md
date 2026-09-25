@@ -243,7 +243,9 @@ servicio, qué pasa con la ficha y cómo exportarla.
 **El día del fin de servicio.** Las fichas pasan a `UNPUBLISHED_BY_BILLING` por PB2 del capítulo
 03 §9, las suscripciones consuman su `CANCELLED`, y arranca el reloj de retención del §25 con sus
 avisos (`DEC-DATA-001` y `NUCLEO/07` §6): día 90 fuera del sitio público conservando el acceso
-del dueño y con el aviso de archivado, día 180 hard delete de lo eliminable.
+del dueño y con el aviso de archivado, día 180 hard delete de lo eliminable —el contenido de cada
+ficha ya archivada y sus borradores, nunca nada de la persona, y la ficha pasa a `PURGED`
+(`DEC-DATA-005`; `V/03` §9 `PB9`; FASE 8 completa, owner 2026-09-25)—.
 
 **Y arranca acá, no antes**, aunque el dueño lleve meses sin tocar la ficha: el fin de servicio
 de una vertical discontinuada es el cuarto de los hechos que reinician la inactividad

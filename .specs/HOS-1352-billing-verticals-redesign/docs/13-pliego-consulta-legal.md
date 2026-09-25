@@ -157,8 +157,12 @@ reconstruir el dato.
 que aceptarla a sabiendas.
 
 **Sub-preguntas**: si se puede, ¿qué finalidad hay que declarar y con qué plazo de conservación? Y
-¿cómo se responde a un pedido de acceso o supresión que llegue **antes** de los plazos de
-retención que ya tenemos definidos (90 y 180 días)?
+¿cómo se responde a un pedido de acceso o supresión ~~que llegue **antes** de los plazos de
+retención que ya tenemos definidos (90 y 180 días)~~? **Un dato para contestarla**: los plazos de
+retención que tenemos definidos (90 y 180 días) **sólo alcanzan el contenido de las fichas**
+—textos, fotos, preguntas frecuentes, horarios—; **los datos de la persona no los borra ni los anonimiza
+ningún plazo nuestro** (decisión interna del 2026-09-25). El pedido de supresión llega, entonces,
+sobre datos que nuestra retención nunca toca.
 
 ---
 

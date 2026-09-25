@@ -111,8 +111,11 @@ máquina de estados y una convención.
    salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: los
    eventos de `PB7` son **dos** desde `DEC-DATA-003` —**el cambio de `cubierto`** y **que el cupo
    vuelva a alcanzar sin que `cubierto` cambie**— y el de `PB8` es **el acto del dueño de
-   reactivarla**; los **tres** son distintos entre sí y de todo lo demás, así que cada uno de esos
-   **tres** pares tiene **una sola** fila. **Las dos ramas de `PB7` tampoco compiten entre ellas**:
+   reactivarla**; ~~los **tres** son distintos entre sí y de todo lo demás, así que cada uno de esos
+   **tres** pares tiene **una sola** fila~~ **y desde la FASE 8 completa sale de ahí también `PB9`**,
+   el hard delete, cuyo evento es **el día 180 de inactividad** (`F-8CA2-008`, owner 2026-09-25):
+   los **cuatro** son distintos entre sí y de todo lo demás, así que cada uno de esos **cuatro**
+   pares tiene **una sola** fila. **Las dos ramas de `PB7` tampoco compiten entre ellas**:
    son dos eventos de la misma fila con el mismo destino, igual que las dos de `PB2` y las dos de
    `PB3`. **Y `S20` y
    `S21` (`B/03` §3.2) salen las dos de *«toda fila viva de complemento»***, que es el mismo
