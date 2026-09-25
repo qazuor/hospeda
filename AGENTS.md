@@ -25,6 +25,9 @@ adapter del proyecto. Este archivo contiene sólo invariantes globales.
 - Usar `qz`/`hops` antes de reconstruir manualmente un workflow existente.
 - Mantener Git como fuente de verdad técnica y no cambiar de branch sin una
   instrucción explícita.
+- Usar ODD como flujo normal; crear `.specs` sólo cuando el riesgo o la
+  complejidad lo justifique. SDD/OpenSpec es excepcional y requiere pedido
+  explícito.
 
 ## Reglas de implementación
 
