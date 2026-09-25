@@ -82,7 +82,7 @@ nada** (§66):
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
-| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: **97 filas, 92 cerradas, 5 `UNKNOWN`** (25/09, con `EX-40`, `EX-41`, `RC-8` y `RC-9`) |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: **98 filas, 92 cerradas, 6 `UNKNOWN`** (25/09, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`) |
 | 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
 | 9 | [`docs/08-phase-1b-code-discovery.md`](./docs/08-phase-1b-code-discovery.md) | El billing que corre hoy — **132 hallazgos**. **No es fuente de diseño** |
 | 10 | [`docs/10-evaluacion-de-proveedor.md`](./docs/10-evaluacion-de-proveedor.md) | La evaluación de reemplazo de Mercado Pago |
@@ -134,7 +134,7 @@ El mapa completo, con qué define cada uno, está en
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio, sin mirar código | ✅ **25 de 25 preguntas** |
 | FASE 1B — discovery del sistema actual | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
-| FASE 1C — experimentación contra Mercado Pago | 🟡 **97 filas · 92 cerradas · 5 `UNKNOWN`** (`EX-40`, `EX-41`, `RC-8` y `RC-9` sumadas a las 93 recontadas el 2026-09-24 con `contar-filas-de-la-matriz.py`, **después de arreglarlo**: descartaba en silencio cuatro filas cuyo identificador está en negrita) — **tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`), que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
+| FASE 1C — experimentación contra Mercado Pago | 🟡 **98 filas · 92 cerradas · 6 `UNKNOWN`** (`EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9` sumadas a las 93 recontadas el 2026-09-24 con `contar-filas-de-la-matriz.py`, **después de arreglarlo**: descartaba en silencio cuatro filas cuyo identificador está en negrita) — **tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`), que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
 | FASE 1C-bis — evaluación de proveedor | ✅ **cerrada el 2026-09-24 por `DEC-MP-005`** en el paso 4 de 6 — **no se completó, se cerró**: los dos pasos que faltaban dependían de una habilitación de Mobbex y de una respuesta de MP que nunca llegaron |
 | FASE 2 — el diseño | ✅ **22 de 22**, desarmado en tres partes (2026-09-24). El `13` (Pagos) **nunca llegó a existir como archivo**: sus ítems se repartieron entre los capítulos que los reclamaban —`S29` en el `03`, `covered_period` en el `02` y el `05`, la mecánica del reembolso en el `06` §4.6— y uno resultó **un deber mal atribuido**. El reparto completo está en [`nucleo/00-indice.md`](./docs/nucleo/00-indice.md) |
 | FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |

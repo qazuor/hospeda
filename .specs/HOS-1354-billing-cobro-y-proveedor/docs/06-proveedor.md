@@ -24,8 +24,8 @@ El §57 pide que el dominio **no quede acoplado a Mercado Pago**, que soporte co
 MercadoPago, Manual y un proveedor futuro, y cierra con *«Sin sobrearquitectura»*.
 
 Este capítulo dice **qué le pide el dominio a un proveedor**, **qué de eso tiene el que
-usamos**, y **las reglas de trato que salen de haberlo medido** — 97 filas, 92 medidas (recontadas
-el 2026-09-25, con `EX-40`, `EX-41`, `RC-8` y `RC-9`). **Y desde `DEC-MP-005` el proveedor que usamos es Mercado Pago, decidido**: lo que
+usamos**, y **las reglas de trato que salen de haberlo medido** — 98 filas, 92 medidas (recontadas
+el 2026-09-25, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`). **Y desde `DEC-MP-005` el proveedor que usamos es Mercado Pago, decidido**: lo que
 este capítulo mide como faltante es, con esa decisión, **la lista de lo que suple nuestro lado**.
 
 ---
@@ -395,9 +395,10 @@ filtrar el nombre de ningún endpoint hacia el dominio.
 
 ## 11. Lo que sigue `UNKNOWN`, y qué bloquea · cierra `M-MP-03`
 
-~~**Cuatro filas de 93**, recontadas con el script y no a mano (2026-09-24).~~ **Cinco filas de
-96**, según el recuento de la propia matriz del 2026-09-25: entró **`RC-8`**, el contracargo (FASE 8
-completa, `F-8CB3-009`). El §61 es terminante:
+~~**Cuatro filas de 93**, recontadas con el script y no a mano (2026-09-24).~~ ~~**Cinco filas de
+96**~~ **Seis filas de 98**, recontadas con el script el 2026-09-25: entraron **`RC-8`**, el
+contracargo (FASE 8 completa, `F-8CB3-009`), y **`PA-6`**, si el proveedor cancela ante cualquier
+primer rechazo. El §61 es terminante:
 *«No comenzar implementación de una **capability crítica** mientras siga `UNKNOWN`»* — y la palabra
 que hace trabajo es **crítica**: una fila abierta sobre algo que **no se implementa** no bloquea
 nada (ver `RF-3`, abajo).
@@ -408,6 +409,7 @@ nada (ver `RF-3`, abajo).
 | **`GR-1`** | si se puede pagar durante el grace | ídem | necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner** |
 | **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila. **En un pagador con tarjeta, `DEC-SUB-019` la contesta por diseño y no por medición**: `S6` cancela el preapproval en el mismo acto de suspender, así que un pago tardío del proveedor ya no tiene cómo llegar después de eso. Sigue `UNKNOWN` lo que queda afuera de ese diseño: el pagador manual y los bordes —un cobro ya en vuelo al momento de `S6`, un preapproval reactivado a mano— | ídem |
 | **`RC-8`** ✚ | qué estado lee el pago en un contracargo, qué aviso llega y en qué lectura aparece | **no bloquea la decisión**: `DEC-SUB-020` fija qué hacemos al leer `charged_back`, no cómo se comporta el proveedor (`B/03` §3.2 y §6, `B/09` §3). Lo que queda sin medir es la detección | **no se puede fabricar**: exige una disputa real con el emisor. Se contesta cuando ocurra una |
+| **`PA-6`** ✚ | si el proveedor cancela el preapproval ante **cualquier** primer rechazo, o sólo ante el antifraude | **no bloquea**: `S16` cancela el preapproval de nuestro lado ante el primer rechazo leído por id, y el barrido reintenta esa cancelación (FASE 8 completa, owner 2026-09-25) | **no se puede fabricar**: exige una tarjeta real sin saldo |
 | `RF-3` | reembolsar un pago de más de 180 días | ~~el caso viejo del cap. 13~~ **NADA, desde `DEC-RF-007`** | **el sujeto existe y es `167913214814`** (aprobado 2026-07-08, ARS 15, sin reembolsar): cumple 180 días el **2027-01-04**. **No se va a esperar**: `DEC-RF-007` decidió que esa operación **no se implementa** y la reparación es manual |
 
 > 📌 **Las cuatro que salieron, y cómo**: **`RN-2`** y **`GR-3`** cerraron el 2026-09-22 cuando la
