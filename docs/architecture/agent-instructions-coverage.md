@@ -12,7 +12,7 @@ invariantes que no pueden perderse.
 | API | 942 líneas | 103 | arquitectura, auth, errores, billing y testing resumidos | guard transversal para roles directos y `c.json()` de negocio |
 | Web | 1.331 | 100 | Astro, islands, i18n, SEO, auth, facetas y variables públicas | publishing y rutas de cuenta muy específicas siguen en docs/legacy |
 | Admin | 812 | 94 | CRUD, SSR, auth, tablas, Nitro, healthcheck y build | relation managers específicos siguen en documentación del área |
-| DB | 877 | 71 | migraciones, queries, transacciones, `safeIlike` y template | hacer visible el fingerprint en `closeIssue`/`update` |
+| DB | 877 | 71 | migraciones, queries, transacciones, `safeIlike` y template | `closeIssue --plan` ya informa drift; falta decidir si `update` también debe bloquear |
 | Schemas | 616 | 46 | organización, Zod, transforms y compatibilidad aditiva | consumidores complejos se validan por tests del área |
 | Services | 1.358 | 48 | CRUD, errores, permisos, `super`, `hookState` y transacciones | guards automáticos de permisos aún no son transversales |
 | Seeding | 935 | 49 | determinismo, fixtures, dual-write y seguridad | política automática contra staging/prod requiere decisión operativa |
@@ -84,8 +84,8 @@ legacy al skill.
    excepciones explícitas, evitando heurísticas fail-open.
 2. Mantener el mapa de verificaciones centralizado para no duplicar listas de
    guards dentro de cada skill.
-3. Enlazar la validación del fingerprint de DB con `closeIssue`/`update` y
-   mostrar drift antes de reutilizar el template.
+3. Evaluar si `hops update` debe mostrar o bloquear por drift del template; el
+   preflight de `closeIssue` ya lo informa sin mutar la base.
 4. Comparar los dominios restantes y marcar cada sección legacy como `migrada`,
    `documentación`, `guard`, `obsoleta` o `pendiente`.
 5. Sólo después de esa revisión evaluar la eliminación de `CLAUDE.md`.
