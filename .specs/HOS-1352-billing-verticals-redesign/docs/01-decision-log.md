@@ -1409,7 +1409,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-CONC-002 — La conciliación se apoya en NUESTRO inventario, detecta huérfanas por webhook, y sólo repara el vínculo
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **el punto 4, precisado el 2026-09-25** (FASE 8 completa, racimo `R5`; ver su 📌) · **Decide**: owner
 - **Problema**: el §23 pide un proceso periódico contra el proveedor que detecte webhooks
   faltantes, duplicados, pagos y suscripciones huérfanas, estados que no coinciden y preapprovals
   desconocidos. La forma canónica de hacerlo —dos extracciones paralelas, la nuestra y la del
@@ -1440,6 +1440,18 @@ Cada entrada lleva, según §3.4:
   4. **Sólo se repara el vínculo automáticamente.** Re-vincular una huérfana reescribiendo su
      `external_reference` no cambia plata ni estado: sólo dice de quién es. Toda divergencia de
      **monto, estado o cobro** emite `RECONCILIATION_REQUIRED` y la mira una persona.
+     **📌 Precisado el 2026-09-25, con OK del owner (FASE 8 completa, `F-8CB1-013`, racimo `R5`).
+     Terminar una cancelación NUESTRA ya decidida no es reparar una divergencia.** Once filas de
+     `B/03` llegan a su estado terminal *«pase lo que pase con la llamada»* (`B/09` §3), así que un
+     timeout o un correo que no salió (`DEC-MAIL-001`) dejaba la fila `CANCELLED` con el preapproval
+     vivo, y hasta que una persona mirara la marca **podía cobrar**. **El barrido reintenta esa
+     llamada** —con el correo antes y la relectura después— **hasta tres corridas seguidas**; recién
+     entonces abre la marca y avisa (`DEC-OBS-001`). **No toca plata**: cancelar no cobra ni
+     devuelve nada, sólo impide cobros futuros. **Las dos posiciones, escritas**: la recomendación
+     fue reintentar; la objeción, que el punto 4 reserva a una persona toda divergencia de estado.
+     Se resolvió leyendo que el acto ya estaba decidido por una transición declarada y sólo faltaba
+     que la llamada llegara. **Todo lo demás del punto 4 queda igual**: un preapproval vivo sobre
+     una fila que **nunca** mandamos cancelar sigue siendo divergencia, y la mira una persona.
 - **Motivo**:
   - La parte 1 **no es una elección**: está medida. Cualquier diseño que liste desde el proveedor
     va a procesar una fracción de la cartera y a terminar en verde.
