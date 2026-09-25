@@ -82,7 +82,8 @@ legacy al skill.
 
 1. Convertir las invariantes de seguridad, permisos, migraciones, env y seeds en
    guards/tests.
-2. Añadir referencias desde cada skill a los guards que lo verifican.
+2. Mantener el mapa de verificaciones centralizado para no duplicar listas de
+   guards dentro de cada skill.
 3. Comparar los dominios restantes y marcar cada sección legacy como `migrada`,
    `documentación`, `guard`, `obsoleta` o `pendiente`.
 4. Sólo después de esa revisión evaluar la eliminación de `CLAUDE.md`.
@@ -122,3 +123,25 @@ protege varias invariantes mediante `pnpm check:guards` y sus pasos individuales
 No se agregaron guards especulativos en esta etapa. Los existentes se enlazarán a
 los skills y los gaps se implementarán sólo después de definir su alcance para no
 crear falsos positivos ni listas de excepciones que vuelvan el control fail-open.
+
+## Mapa operativo skill → verificación
+
+Los skills apuntan a esta matriz como índice único. El agente debe ejecutar el
+guard específico cuando exista y `pnpm check:guards` antes de cerrar una tarea
+que cambie el dominio correspondiente.
+
+| Skill | Verificación principal | Estado |
+|---|---|---|
+| `hospeda-api`, `hospeda-services`, `hospeda-auth` | `pnpm check:guards`; revisión de permisos granulares y respuestas | guard transversal pendiente para roles directos y `c.json()` de negocio |
+| `hospeda-web`, `hospeda-admin`, `hospeda-ui` | `pnpm check:guards`; CSP, dialogs, formularios, iconos y patrones visuales | healthcheck/Nitro/SSR aún requieren guard delimitado |
+| `hospeda-db` | `scripts/check-unsafe-ilike.sh`, `check-seed-migration-schema-probe.sh`, `pnpm check:guards` | fingerprint de template debe quedar visible en `closeIssue`/`update` |
+| `hospeda-seeding` | guards de seed/migración y `pnpm check:guards` | política de bloqueo contra staging/prod requiere decisión operativa |
+| `hospeda-config` | `env:doctor`, `check-env-local`, `check-env-registry`, `pnpm check:guards` | operativo y ejecutado por CI/local |
+| `hospeda-billing` | guards de trial, preapproval, planes y dominios de producto | operativo; revisar excepciones sólo al cambiar billing |
+| `hospeda-i18n` | cobertura de claves/placeholders y `pnpm check:guards` | operativo |
+| `hospeda-media` | aislamiento Cloudinary, placeholders y `pnpm check:guards` | operativo |
+| `hospeda-observability`, `hospeda-email`, `hospeda-ai` | `pnpm check:guards` más tests del paquete afectado | detalles de campos y proveedores permanecen en docs del paquete |
+
+Este mapa no reemplaza la prueba del cambio: indica el control que debe
+acompañar al skill. Una brecha se mantiene como pendiente hasta que exista un
+guard con alcance claro y excepciones explícitas.
