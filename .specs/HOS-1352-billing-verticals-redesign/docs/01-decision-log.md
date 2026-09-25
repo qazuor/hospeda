@@ -2495,7 +2495,8 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MIG-003 — No se migra: las ocho filas se cancelan y quien tenga algo vivo se suscribe de nuevo
 
-- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED — **el orden del corte, precisado el 2026-09-24**
+  (FASE 8 completa, racimo `R2`; ver el punto *«El orden del corte»* abajo) · **Decide**: owner
 - **⚠️ Supersede en parte a `DEC-MIG-001`**, que definía qué hacer con la cartera existente.
 - **Problema**: se estaba diseñando la migración de la cartera actual —orden forzado, punto de no
   retorno por fila, y la aceptación de que el rollback no existe pasado cierto paso—, y **nadie
@@ -2539,6 +2540,15 @@ Cada entrada lleva, según §3.4:
 - **El orden del corte queda declarado** en `16-fase-7-del-paraguas.md` §4: cancelar en el
   proveedor, **verificar releyendo por id**, desplegar, y recién entonces escribir las lápidas. El
   segundo paso es el gate: si alguno no se pudo cancelar, el corte no avanza.
+  - **📌 Precisado el 2026-09-24, con OK del owner** (FASE 8 completa, racimo `R2`: `F-8CB3-001`,
+    `F-8CC2-001`, `F-8CC2-002`, `F-8CC2-004`). **El orden de base no cambia.** Gana tres cosas:
+    (1) un **paso 0**, el despliegue ensayado en staging y verde antes de cancelar nada; (2) un
+    **paso 1a**, cancelar los `preapproval_plan` viejos, que es reversible (`EX-40`); (3) **el
+    censo del paso 1 sale del recorrido sin filtro del proveedor**, no de nuestra base. Ese
+    recorrido encontró ese mismo día una autorización viva que la base no conocía. Y queda
+    declarada una **rama de aborto** si el despliegue falla: el costo, aceptado, es que los
+    clientes cancelados se re-suscriben sin trial, y **qué se hace con esa diferencia no está
+    decidido**. Detalle en `16-fase-7-del-paraguas.md` §4.2.
 - **⚠️ Condición de caducidad**: `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**,
   así que la cartera crece. Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está
   en unas veinte**, y arriba de eso deja de ser viable. El aviso que el owner ya se comprometió a
