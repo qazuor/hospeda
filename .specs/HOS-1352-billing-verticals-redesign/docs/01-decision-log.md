@@ -5245,6 +5245,36 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-009 — Un reconciliador diario de cobertura en verticales: el aviso es rápido, el reconciliador es la red
+
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el aviso *«la cobertura de (user, vertical) cambió»* (`12-contrato…` §3) es la
+  **única** señal que billing le empuja a verticales, y no tiene transporte declarado —el outbox
+  del núcleo es sólo de correos—. Tres agujeros (FASE 8 completa, racimo `R10`): (1) si se pierde
+  el aviso de que la cobertura **volvió**, la ficha de alguien que paga queda despublicada para
+  siempre —las relecturas de respaldo sólo existen en los actos que quitan— (`F-8CA2-002`,
+  CRÍTICO; `F-8CC1-005`); (2) una cobertura que **vence por fecha** —cortesía, trial, grant
+  temporal— no pasa por ninguna transición de billing y no genera aviso, así que el caché sigue
+  diciendo *«cubierto»* (`F-8CA1-007`, `F-8CC1-009`); (3) si se pierde el aviso de la caída, no se
+  escribe el hecho 5 del reloj de inactividad.
+- **Alternativas**: (1) un reconciliador diario en verticales que vuelve a preguntar al contrato y
+  corre la transición que el aviso habría disparado; (2) hacer durable el aviso (outbox con
+  reintentos hasta la confirmación) y un emisor diario de vencimientos; (3) sólo arreglar las
+  relecturas para que republiquen.
+- **Decisión**: **(1)**. Una vez por día, para cada dueño con fichas que no estén en `DRAFT` ni
+  `PURGED`, verticales **le pregunta al contrato** si está cubierto y con qué cupo, lo compara con el
+  estado de sus fichas y, si no coinciden, **corre la transición que el aviso habría disparado**
+  (`PB7`/`PB3` republican, `PB2` despublica), escribe el reloj de inactividad (hechos 2 y 5) e
+  invalida el caché. Lo vigila el mismo monitor de cron externo que el barrido de billing.
+- **Motivo**: una sola pieza tapa los tres agujeros **sin importar por qué hay diferencia** —aviso
+  perdido, fecha vencida o un error nuestro en un camino que nadie previó— y se apoya en la
+  pregunta al contrato, que es la fuente de verdad, no en un mensaje. La (2) hacía más confiable la
+  entrega pero **entregaba fielmente un aviso equivocado** si billing lo emitía mal, y eran dos
+  mecanismos. El costo aceptado: **hasta un día de atraso** en todo lo que el aviso no cubrió.
+- **Origen**: FASE 8 completa, racimo `R10`; elección del owner del 2026-09-25.
+
+---
+
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
 - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
@@ -5308,9 +5338,9 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **115** — con **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **116** — con **`DEC-ARCH-009`** (2026-09-25: reconciliador diario de cobertura en verticales), **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 15 |
-| Funcionales | 100 |
+| Funcionales | 101 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **5** — **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
