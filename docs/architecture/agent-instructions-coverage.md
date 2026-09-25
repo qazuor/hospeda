@@ -110,8 +110,12 @@ protege varias invariantes mediante `pnpm check:guards` y sus pasos individuales
 ## Gaps reales que quedan
 
 - No existe todavía un guard general que detecte permisos de API implementados
-  por roles directos. Hay que delimitar primero excepciones legítimas de UI,
-  jobs y configuración antes de crear uno fail-closed.
+  por roles directos. La auditoría de código confirmó usos legítimos en
+  resolución de identidad, signup, actores sintéticos, jobs, entitlements de
+  host y detección de guest. Un guard textual global produciría falsos
+  positivos; si se implementa, debe limitarse a checks de autorización dentro
+  de servicios/rutas y excluir construcción de actores, configuración y
+  resolución de identidad.
 - No existe un guard general para prohibir `c.json()` en todos los handlers: hay
   helpers y middleware que lo necesitan. Debe limitarse a rutas de negocio y
   excluir infraestructura explícitamente.
@@ -125,6 +129,15 @@ protege varias invariantes mediante `pnpm check:guards` y sus pasos individuales
 No se agregaron guards especulativos en esta etapa. Los existentes se enlazarán a
 los skills y los gaps se implementarán sólo después de definir su alcance para no
 crear falsos positivos ni listas de excepciones que vuelvan el control fail-open.
+
+### Resultado de la revisión de roles
+
+La regla sigue siendo que la autorización de servicios usa `PermissionEnum`.
+Las referencias a `RoleEnum` encontradas no se clasifican automáticamente como
+fallas: algunas construyen actores de sistema o fixtures, otras resuelven la
+identidad efectiva, aplican reglas de signup/entitlement o distinguen el actor
+guest. La revisión de un cambio de autorización debe confirmar el contexto, no
+limitarse a buscar el nombre del enum.
 
 ## Mapa operativo skill → verificación
 
