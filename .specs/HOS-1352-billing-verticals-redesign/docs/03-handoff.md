@@ -47,20 +47,20 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-24, noche — la sonda 49 dio veredicto y el dunning quedó decidido
+## Última actualización: 2026-09-24, noche — la sonda 49 dio veredicto, el dunning quedó decidido y la 9-bis-5 cerró
 
 ### El próximo paso exacto
 
-1. **Las familias 6 y 7 de la 9-bis-5**, que ya no esperan nada — la sonda 49 contestó:
-   - **Familia 6 (crítico #7 = `RC-5`)**: el `B/09` §4 decide *«cobró o no»* con `charged_quantity`,
-     que **cuenta intentos, no cobros** (re-medido el 24/09 en los cuatro sujetos). **Pista medida
-     hoy**: `charged_amount` fue el único campo del resumen que **no** se movió con un rechazo;
-     `last_charged_date` **sí se mueve** con un cobro rechazado, así que tampoco sirve. `RC-6` va
-     con ella. **`S6` ya remite a la lectura del §4**: al corregirla, `S6` queda corregido solo.
-   - **Familia 7**: `DEC-MP-004` (el mensaje del alta rechazada) a los capítulos, y lo que queda de
-     `DEC-MP-003`. **Su mitad abierta la cerró `DEC-SUB-019`**, así que la familia es más chica:
-     el motivo `PROVIDER_DUNNING` sigue sin estar en la tabla §10.1 de `B/03` (la fila `paused` ×
-     `ACTIVE` todavía escribe `CUSTOMER_REQUEST`), pero ya no es un camino esperado.
+1. ✅ **La 9-bis-5 está COMPLETA: siete familias de siete** (24/09, noche). Rastros de las dos
+   últimas: [`rastro-1ae75e92c4.md`](./23-fase-9-bis-5/rastro-1ae75e92c4.md) (familia 6: `B/09` §4
+   lee *«¿cobró?»* de `payment.status` registro por registro; `charged_quantity` cuenta
+   **registros** y sólo dice si el inventario está completo; lo que no está completo es *«todavía
+   no se sabe»* y se avisa a la corrida siguiente) y
+   [`rastro-dc73591e97.md`](./23-fase-9-bis-5/rastro-dc73591e97.md) (familia 7: **`DEC-MP-008`**
+   —la pausa del proveedor por mora dispara `S6`, sin motivo `PROVIDER_DUNNING`—, el mensaje del
+   alta rechazada en `B/19` fila 19 y `NUCLEO/07`, *fila viva* redefinida como *«ocupa el lugar»*, y
+   la vuelta de un suspendido con tarjeta por el checkout como sucesora). **Log: 110 decisiones.**
+   **Inventario de compensación: 25 de 25.**
 2. **La 8-bis-6**, con el corte de `DEC-METH-013`. ⚠️ Fijar **desde qué vuelta se cuentan las dos**
    antes de arrancar: el texto no lo dice.
 3. **El hueco del cliente sobre una pausada** (punto 7 del recap del 24/09): ¿puede el cliente
@@ -92,6 +92,7 @@ de `RN-3` con sus ids completos. La sonda 49 se lee con
 | `DEC-METH-013` · cuándo se deja de girar | se corta cuando la tanda anterior deja de generar críticos; tope de dos vueltas |
 | **`DEC-MP-007` · sin planes de MP** | cada preapproval se crea suelto desde nuestra versión de plan; cierra `EX-22`/`EX-25` y resigna `EX-27` |
 | **`DEC-SUB-019` · el grace corta el cobro** | al vencer el grace, `S6` cancela el preapproval de un pagador con tarjeta; **el grace es siempre más corto que el ciclo**. Salió de una pregunta del owner: *«si la dejamos abierta, va a seguir intentando y nuestro período de gracia es medio mentira»* |
+| **`DEC-MP-008` · la pausa de MP es el fin del grace** | un `paused` que no pedimos es mora y dispara `S6`, también desde `ACTIVE`; **supera en parte a `DEC-MP-003`**: se cae el motivo `PROVIDER_DUNNING`. No corre sobre la predecesora de una sucesión en curso |
 
 Y cuatro reglas de capítulo, **sin decisión propia porque son sólo regla**, aprobadas por el owner:
 
