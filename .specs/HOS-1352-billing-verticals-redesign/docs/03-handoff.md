@@ -61,8 +61,17 @@ status: CURRENT
    alta rechazada en `B/19` fila 19 y `NUCLEO/07`, *fila viva* redefinida como *«ocupa el lugar»*, y
    la vuelta de un suspendido con tarjeta por el checkout como sucesora). **Log: 110 decisiones.**
    **Inventario de compensación: 25 de 25.**
-2. **La 8-bis-6**, con el corte de `DEC-METH-013`. ⚠️ Fijar **desde qué vuelta se cuentan las dos**
-   antes de arrancar: el texto no lo dice.
+2. **➡️ LO PRÓXIMO: la FASE 8 COMPLETA desde cero (`DEC-METH-014`), en sesión nueva.** **No hay
+   8-bis-6.** Nueve agentes **Opus**, nuevos y **ciegos entre sí y del historial** (no leen `14-`…
+   `23-` ni rastros), sobre núcleo + las dos épicas + contrato de cobertura, uno por vector: `A1`
+   acceso cruzado y autorización · `A2` máquinas, carreras y huérfanos · `A3` datos, migración y
+   acoplamiento · `B1` doble cobro y pérdida de pago · `B2` máquinas, idempotencia y carreras · `B3`
+   conciliación, datos y migración · `C1` la costura · `C2` liberación, coexistencia y migración ·
+   **`D1` coherencia del conjunto** (nuevo). El log es un dato, no se reabre; la matriz es la fuente
+   de lo medido. Informes en `25-fase-8-completa/` + un consolidado por convergencia. **El tope de
+   dos vueltas de `DEC-METH-013` cuenta DESPUÉS de esta revisión.** Modelo de los informes previos:
+   `14-fase-8-adversarial/` (sólo para copiar el formato de informe — **no** se les pasa a los
+   agentes).
 3. **El hueco del cliente sobre una pausada** (punto 7 del recap del 24/09): ¿puede el cliente
    recuperar su suscripción desde Mercado Pago? Sin fila en la matriz; pide una prueba del owner.
    **`DEC-SUB-019` le bajó el peso**: con el grace más corto que el ciclo, el proveedor no llega a
