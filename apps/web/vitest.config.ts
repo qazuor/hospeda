@@ -9,9 +9,10 @@ import { defineConfig } from 'vitest/config';
 // astro/config re-injects plugin-react v5 internally even with a pnpm override,
 // so we bypass it entirely and build a minimal Vite config sufficient for
 // component tests in jsdom. Aliases mirror astro.config.mjs.
-const rootDir = resolve(__dirname, '../../');
+const rootDir = resolve(import.meta.dirname, '../../');
 
 export default defineConfig({
+    cacheDir: resolve(import.meta.dirname, '../../.vite/web'),
     plugins: [react()],
     resolve: {
         dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
@@ -19,19 +20,19 @@ export default defineConfig({
             // Astro virtual modules: provide minimal stubs so React island
             // tests that import view-transitions helpers don't fail to resolve.
             'astro:transitions/client': resolve(
-                __dirname,
+                import.meta.dirname,
                 'test/stubs/astro-transitions-client.ts'
             ),
             // Real virtual module provided by Astro's vite plugins at
             // build/dev time — stubbed so `src/middleware.ts` can be
             // imported and its `onRequest` exercised directly in tests
             // (see `test/middleware.test.ts`).
-            'astro:middleware': resolve(__dirname, 'test/stubs/astro-middleware.ts'),
+            'astro:middleware': resolve(import.meta.dirname, 'test/stubs/astro-middleware.ts'),
             // Same story for `getImage`, which `hero-images.ts` uses to build
             // the hero srcsets. The stub emits deterministic `/_image/?...`
             // URLs so the generated candidate strings can be asserted on.
-            'astro:assets': resolve(__dirname, 'test/stubs/astro-assets.ts'),
-            '@': resolve(__dirname, 'src'),
+            'astro:assets': resolve(import.meta.dirname, 'test/stubs/astro-assets.ts'),
+            '@': resolve(import.meta.dirname, 'src'),
             '@repo/config': resolve(rootDir, 'packages/config/src'),
             '@repo/icons': resolve(rootDir, 'packages/icons/src'),
             '@repo/utils': resolve(rootDir, 'packages/utils/src'),
