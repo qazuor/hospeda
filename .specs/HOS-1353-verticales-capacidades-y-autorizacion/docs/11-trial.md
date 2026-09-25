@@ -338,6 +338,9 @@ la persona recibió un aviso que dejó de ser cierto.
 sobre alguien en `TRIAL_EXPIRED` no tiene nada que extender: el §34.1 extiende **el trial**, y ahí
 ya no hay uno. Lo que un administrador puede darle a esa persona es una cortesía sobre la
 suscripción que tome después (§34.2) o un grant (§35), y **ninguna de las dos revive la campaña**.
+**Si esa suscripción es de plan anual, la cortesía no está disponible y queda el grant**: la
+cortesía temporal sólo existe sobre planes mensuales y en meses enteros (FASE 8 completa,
+`F-8CB1-001`, `DEC-GRANT-003` impl. 6, `B/14` §4.7).
 
 **El hueco se disuelve, no se contesta.** Y queda como invariante de implementación: si algún día
 apareciera un camino que extienda un trial vencido, este cruce volvería a existir — así que ese
