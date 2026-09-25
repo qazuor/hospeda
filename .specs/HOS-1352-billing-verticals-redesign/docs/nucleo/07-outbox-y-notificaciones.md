@@ -189,7 +189,11 @@ al cliente **por su cuenta y siempre primero** en cuatro momentos: **alta**, **c
    §64.25, acotada al único punto donde el correo del proveedor hace daño. Y **sale gratis**: la
    cancelación de la vieja ocurre cuando llega el webhook de que la nueva quedó autorizada, que
    es un momento que controlamos — si el correo falla, no se cancela y se reintenta, y el estado
-   intermedio no es destructivo porque las dos conviven (`EX-6`).
+   intermedio no es destructivo porque las dos conviven (`EX-6`). **Salvo que no haya a quién
+   mandarlo**: con rebote duro o cuenta borrada (§4.2) el reintento no tiene salida y dejaba a las
+   dos cobrando, así que ahí se cancela igual y el no-entregable se escala (FASE 8 completa,
+   `F-8CB2-001`, owner 2026-09-25). El bloqueo vale para **toda** cancelación que ejecutamos en el
+   proveedor, y cada fila de `B/03` que cancela lo lleva escrito.
 3. **Nuestra comunicación desambigua lo que el proveedor dejó ambiguo**: si pausamos por
    cortesía, se dice; si es por mora, se dice.
 
@@ -214,7 +218,7 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | renovación por venir | transaccional | 5 y 1 día antes. **El hito cuelga de la fecha del próximo cobro** (cap. 02 §2.2, épica de billing) y **esa fecha se mueve** —el proveedor la corre en los casos de `PS-6`, y sobre un pagador manual la mueven el pago registrado, la vuelta de una pausa y el tope de una reapertura tardía (cap. 03 §7.2)—, así que la ocurrencia la lleva, como todo schedule (§2) | §42.2 |
 | cobro fallido / grace | transaccional | configurable dentro de la ventana, **relativo al vencimiento** | §42.3, `DEC-SUB-002` |
 | aumento de precio | transaccional | **3 contactos**: al anunciar, a 30 días y a 7 días, cada uno con **la fecha de ese cliente** | `DEC-MP-002` |
-| antes de cancelar | transaccional | **bloquea la acción** | `DEC-MAIL-001` |
+| antes de cancelar | transaccional | **bloquea la acción** si falla de forma transitoria; **si no hay destinatario** (rebote duro o cuenta borrada, §4.2) **no bloquea**: se cancela y el no-entregable se escala | `DEC-MAIL-001` (precisada el 2026-09-25) |
 | excedente por downgrade | transaccional | al pedirlo, **con el criterio escrito**: se despublican las publicadas más recientemente | `DEC-SUB-008` |
 | reanudación tras pausa | transaccional | al reanudar. **Dice una sola cosa: qué día se le cobra** | `DEC-SUB-010` |
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |

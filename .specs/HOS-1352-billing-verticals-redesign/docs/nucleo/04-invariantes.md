@@ -101,7 +101,7 @@ ejecutando nada.**
 
 | # | invariante | dónde |
 |---|---|---|
-| 25 | el correo nunca controla una transacción de dominio | capítulo 07, con **una excepción decidida**: `DEC-MAIL-001` bloquea la acción **sólo antes de cancelar**, porque ahí el correo del proveedor hace daño. La excepción está declarada y acotada a un caso |
+| 25 | el correo nunca controla una transacción de dominio | capítulo 07, con **una excepción decidida**: `DEC-MAIL-001` bloquea la acción **sólo antes de cancelar**, porque ahí el correo del proveedor hace daño. La excepción está declarada y acotada a un caso — **y no bloquea si no hay destinatario** (rebote duro o cuenta borrada, capítulo 07 §4.2): ahí se cancela y el no-entregable se escala (FASE 8 completa, `F-8CB2-001`, owner 2026-09-25) |
 | 27 | *Free Forever* no activa addons automáticamente | capítulo 16 (billing) §3.2. **Intacto, y con una precisión que hace falta desde `S20`**: lo que el grant no hace solo es **encender** un addon que la persona no tiene. Convertir a costo $0 uno que **ya tenía comprado** (cap. 16 §3.4) no activa nada —la capacidad ya estaba andando y la persona ya la había elegido, con plata—: lo único automático ahí es **el fin de un cobro**, y eso el invariante nunca lo prohibió |
 | 28 | *Free Forever* puede incluir addons gratis | ídem, por el flag `includesAddons` (§35.2), y **en sus dos direcciones**: habilita a elegir addons gratis (cap. 16 §3.2) y **lleva a $0 los compatibles que ya se estaban pagando** (§3.4). Con el flag en `false` no pasa ninguna de las dos |
 | 29 | *Free Forever* puede tener scope parcial o global | ídem, y el scope *«todas las futuras»* se permite sin tope (`DEC-PROMO-002`) |

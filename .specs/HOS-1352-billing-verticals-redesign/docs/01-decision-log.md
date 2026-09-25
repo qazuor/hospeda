@@ -1469,7 +1469,8 @@ Cada entrada lleva, según §3.4:
 
 - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — la premisa de su implicación 4 (*«no usamos los
   planes del proveedor»*) tiene decisión propia desde el 2026-09-24, **`DEC-MP-007`**; la atribución
-  a `DEC-MP-002` de esa implicación es incorrecta · **Decide**: owner
+  a `DEC-MP-002` de esa implicación es incorrecta · **el punto 1, precisado el 2026-09-25** (FASE 8
+  completa, racimo `R5`; ver su 📌) · **Decide**: owner
 - **Problema**: el §42 se escribió como si fuéramos los únicos que le hablan al cliente, y la
   medición mostró que no. Además, **cinco decisiones anteriores** (`DEC-SUB-006`, `007`, `008`,
   `009` y `DEC-MP-002`) se apoyan en que «nuestro aviso sale antes», y ninguna definía qué pasa si
@@ -1495,6 +1496,14 @@ Cada entrada lleva, según §3.4:
   1. **Nuestro correo bloquea la acción SÓLO donde el del proveedor hace daño**: antes de
      **cancelar**, sí; antes de mutar un monto, no. Si el correo no sale, la cancelación no se
      ejecuta y se reintenta.
+     **📌 Precisado el 2026-09-25, con OK del owner (FASE 8 completa, `F-8CB2-001`,
+     `F-8CD1-006`).** El reintento supone una falla que pasa. **Si no hay a quién mandarlo** —rebote
+     duro o cuenta borrada, que `NUCLEO/07` §4.2 suprime para siempre, incluso lo transaccional—
+     **el correo no bloquea**: se cancela igual, y el no-entregable se registra y se escala a una
+     persona, como ya manda ese §. Sin esto, la predecesora de un cambio de plan de alguien con un
+     rebote duro no se cancelaba nunca y **cobraban las dos**. **Y el bloqueo vale para toda
+     cancelación que ejecutamos en el proveedor**, escrito como condición en cada fila de `B/03` que
+     cancela: antes vivía sólo acá y ninguna transición lo nombraba.
   2. **Los correos falsos del proveedor se ANTICIPAN, no se desmienten.** Nuestro correo de alta
      avisa que va a llegar uno diciendo que ya pagó, y da la fecha del primer cobro real.
   3. **El `reason` es copy, no un identificador.** Nunca lleva un id interno ni un slug.
