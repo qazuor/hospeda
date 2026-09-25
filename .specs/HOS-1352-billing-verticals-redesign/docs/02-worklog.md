@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -1154,3 +1154,58 @@ Un agente de revisión en frío sobre `DEC-SUB-019` encontró seis lugares que s
 una suspendida de tarjeta podía reactivarse por un cobro reciclado; otro agente los corrigió y
 **metió un error nuevo** (una «puerta manual» para el pagador con tarjeta), que se corrigió a mano en
 los cinco lugares.
+
+---
+
+## 2026-09-24 (noche) y 2026-09-25 — la FASE 8 completa corrió y sus racimos se resolvieron con el owner
+
+> Cubre desde `9b5e4d3c8f` (24/09 21:55) hasta `d5ae42ce62` (25/09 17:44). El detalle de cada
+> resolución está en [`25-fase-8-completa/00-hallazgos.md`](./25-fase-8-completa/00-hallazgos.md) §5
+> y en `03-handoff.md` (secciones del 25/09).
+
+### La FASE 8 completa (`DEC-METH-014`)
+
+Nueve agentes Opus, ciegos entre sí y del historial, uno por vector (`A1`…`D1`). **133 hallazgos, 15
+críticos** (la primera FASE 8 había dado 141 y 48). Se consolidaron en **14 racimos** por causa,
+más dos críticos sin convergencia y un resto de acceso fino, billing y registro. Las 323 citas
+textuales se verificaron con script: ninguna inventada.
+
+### Mediciones
+
+- **Cartera de producción** (24/09 22:05-22:15, sólo `SELECT` y `GET`): las 3 `abandoned` no tienen
+  preapproval; las dos `LANZAMIENTO60` están extendidas también en MP; sólo `ed00a8fd` cobra el
+  26/09. **Apareció `f6d89f71…`, del owner, sin fila local y a punto de cobrar ARS 18.000: se canceló
+  con OK del owner, sin que cobrara.** Los 5 `preapproval_plan` viejos seguían vendiendo.
+- **Sonda 50** (`EX-40`): un plan de MP se cancela por API y **es reversible**, contra la documentación.
+- **Sonda 51** (`EX-41`, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`; misma clave
+  con otro cuerpo da `409`; `external_reference` no deduplica.
+- **`RC-9`**: `GET /preapproval/{id}` no trae `version`, trae `last_modified`.
+- Entraron a la matriz la sonda 49 (`GR-3`, `RC-7`, `RN-1`, `RN-3`), `RC-8` y `PA-6` (`UNKNOWN`).
+
+### Decisiones (log de 111 a 117)
+
+Nuevas: `DEC-SUB-020` (contracargo), `DEC-SUB-021` (en grace no se cambia de plan; supera a
+`DEC-SUB-003`), `DEC-DATA-005` (la retención sólo toca fichas), `DEC-METH-015` (los residuos de borde
+se declaran), `DEC-ARCH-009` (reconciliador diario de cobertura), `DEC-TRIAL-010` (el trial se
+convierte con el primer pago). Precisadas: `DEC-MIG-003`, `DEC-GRANT-003`, `DEC-GRANT-004`,
+`DEC-MAIL-001`, `DEC-CONC-002`, `DEC-SUB-006`, `DEC-SUB-017`. **Registro**: los IDs duplicados se
+renumeraron a `DEC-ARCH-010` y `DEC-ENT-005`, clasificando cada referencia por contexto (8
+cambiaron, 21 quedaron); tres correcciones del log con OK del owner (`08e2a6ffb8`).
+
+### Capítulos
+
+Los 14 racimos, `F-8CA1-001`, `F-8CA2-004` y el registro de `D1` se resolvieron uno por uno, en ~20
+tandas de agentes sobre casi todos los capítulos de `B/*`, `V/*`, el núcleo y el contrato. Los
+residuos de borde quedaron declarados en los «NO cierra» de cada capítulo (`DEC-METH-015`).
+
+### Lo que no se hizo
+
+- La FASE 9 quedó a medias: **no se reejecutaron los caminos de los hallazgos** sobre el texto
+  corregido ni se declaró el dominio de los racimos nuevos (criterio de `DEC-METH-004`). Arrancó el
+  25/09 a la tarde en [`26-fase-9-completa/`](./26-fase-9-completa/).
+- Sub-specs, issues de Linear y artifacts siguen describiendo el diseño viejo.
+
+### Registro
+
+- Rama pusheada el 25/09 sin forzar (PR #3360). El owner decidió **no reescribir** los commits con
+  `Co-Authored-By` del 23-24/09; desde el 25/09 van sin atribución.
