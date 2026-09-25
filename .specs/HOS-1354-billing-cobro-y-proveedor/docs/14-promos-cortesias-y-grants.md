@@ -487,13 +487,13 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
 
 **Lo que esta regla deja abierto, sin resolver acá:**
 
-1. **La fracción de mes del saldo diferido.** `S18` y `S25` no están atados a un límite de mes,
-   así que lo que le queda a una cortesía al diferirse puede no ser un número entero de meses
-   (`B/02` §2.4).
-2. **La re-emisión sobre una fila de plan anual.** El segundo y el tercer disparador de `S9`
-   re-emiten un saldo sobre la sucesora o sobre el alta nueva (§4.4, §4.6); si esa fila es de un
-   plan anual, la regla de arriba dice que ahí la cortesía no se ofrece, y qué pasa con ese saldo
-   no está decidido (`B/03` §3.2, `S9`).
+1. ~~**La fracción de mes del saldo diferido.**~~ **Cerrado el 2026-09-25**: se redondea **para
+   arriba** (`B/02` §2.4), la dirección de error que `DEC-GRANT-003` ya había aceptado.
+2. ~~**La re-emisión sobre una fila de plan anual.**~~ **Cerrado el 2026-09-25**: **el saldo se
+   pierde y se avisa antes**. Si la sucesora es de plan anual, `S18` cierra el saldo con
+   `motivo_cierre = DESTINO_DE_PLAN_ANUAL`; si es un alta nueva de plan anual tras `S25`, lo cierra
+   su `S2`. En los dos casos la pantalla se lo dice a la persona antes de elegir el plan (`B/19` §4
+   fila 13-quater).
 3. ~~**Cuántos términos de `puedePausar()` toma `S9`.**~~ **Cerrado el 2026-09-25**: `S9` toma
    **sólo el término del ciclo mensual y los meses enteros** (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).
 

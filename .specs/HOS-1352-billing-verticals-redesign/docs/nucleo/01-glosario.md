@@ -610,9 +610,9 @@ y los tres preguntan lo mismo.
 > sucesión que declarar (`DEC-GRANT-010`, cap. 02 (billing) §2.4).
 >
 > **Y el saldo CERRADO no es una tercera clase de cortesía: es la diferida que ya no va a
-> volver.** El saldo tiene **dos** cierres —la sucesora que abandona el checkout (`S3`,
-> `DEC-GRANT-011`) y el grant que pasa a cubrir esa vertical (`S13`, cap. 14 (billing) §4.3)—, los
-> dos escriben `saldo_cerrado_en` y su `motivo_cierre` (cap. 02 (billing) §2.4), y **el término los
+> volver.** El saldo tiene **tres** cierres —la sucesora que abandona el checkout (`S3`,
+> `DEC-GRANT-011`), el grant que pasa a cubrir esa vertical (`S13`, cap. 14 (billing) §4.3) y el
+> destino de plan anual (`S18` o el `S2` del alta, FASE 8 completa)—, los tres escriben `saldo_cerrado_en` y su `motivo_cierre` (cap. 02 (billing) §2.4), y **el término los
 > deja afuera a propósito**: si *«cortesía diferida»* siguiera siendo *«saldo no nulo»* a secas,
 > los **dos** lugares que leen el término para hacer algo —el segundo disparador de `S9` y la sexta
 > comprobación del barrido— seguirían persiguiendo un saldo que ya tuvo desenlace.

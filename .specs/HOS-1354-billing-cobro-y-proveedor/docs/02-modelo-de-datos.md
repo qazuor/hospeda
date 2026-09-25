@@ -519,11 +519,11 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
     (`PS-5`): la cortesía vale los cobros que cruza, no los días. El saldo que difiere la cortesía
     hereda esa unidad. `DEC-GRANT-007`, `DEC-GRANT-010` y `DEC-GRANT-011` la citan con el nombre
     viejo, `saldo_días`; es la misma columna.
-  - ⚠️ **Abierto: la fracción de mes.** `S18` cierra la cortesía cuando la predecesora deja de
-    ser fila viva, y `S25` la difiere cuando termina la pausa; ninguno de los dos actos está atado
-    a un límite de mes, así que lo que le queda a la cortesía en ese instante **puede no ser un
-    número entero de meses**. Cómo se escribe ese resto —y, con él, qué `fin` le calcula `S9` al
-    re-emitir— **no está decidido**, y no se elige acá.
+  - **La fracción de mes se redondea PARA ARRIBA** (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25). `S18` y `S25` no están
+    atados a un límite de mes, así que lo que le queda a la cortesía puede no ser un número entero
+    de meses: se escribe el entero siguiente. A Juan, con 1 mes y 16 días por delante, se le guardan
+    **2**. Es la dirección de error que `DEC-GRANT-003` ya aceptó —falla regalando de más, nunca
+    cobrándole a quien se le prometió que no pagaba—, y `S9` re-emite con `fin = hoy + saldo_meses`.
   - **`subscription_id` sigue sin admitir nulo, y por eso el saldo es una columna aparte.** La
     regla de arriba —*«una fuente sin referencia resoluble no se puede expresar»*— no cede: la
     cortesía diferida **sigue apuntando a la predecesora**, que es el registro fiel de qué
@@ -546,13 +546,14 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
   saldo se **cierra**: se escribe la fecha y el motivo, y esa cortesía **ya no se re-emite**. `S9`
   no puede tomarla y la **sexta** comprobación del `B/09` §3 no la levanta, porque las dos leen
   *«cortesía diferida»* y el término excluye la cerrada (`NUCLEO/01` §2.6).
-  - **`motivo_cierre` es una enumeración CERRADA y hoy tiene DOS valores**, uno por cada acto que
-    puede cerrar un saldo:
+  - **`motivo_cierre` es una enumeración CERRADA y hoy tiene TRES valores** (recontados: eran dos
+    hasta la FASE 8 completa), uno por cada acto que puede cerrar un saldo:
 
     | `motivo_cierre` | quién lo escribe | cuándo |
     |---|---|---|
     | **`VENTANA_DE_AUTORIZACIÓN_VENCIDA`** | **`S3`** (`B/03` §3.2) | la sucesora abandonó el checkout, así que no hay ninguna fila viva en esa vertical a la que volver (`DEC-GRANT-011`) |
     | **`GRANT_PERMANENTE_OTORGADO`** | **`S13`** (`B/03` §3.2) | un *Free Forever* pasa a cubrir esa vertical —otorgado o con la vertical recién anclada—, así que no queda ningún cobro que la cortesía pueda evitar (`B/14` §4.3) |
+    | **`DESTINO_DE_PLAN_ANUAL`** | **`S18`**, si la sucesora es de plan anual; y **`S2`** del alta nueva de plan anual que habría recibido un saldo diferido por `S25` | sobre un plan anual no hay cortesía temporal (`DEC-GRANT-003` impl. 6), así que el saldo no tiene dónde re-emitirse. **Se pierde, y se le avisa antes**: la pantalla del cambio de plan o del checkout se lo dice y decide la persona (`B/19` §4 fila 13-quater) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25) |
 
     Misma regla que el catálogo de motivos de la marca (§2.5): **un cerrador nuevo agrega su fila
     acá en el mismo acto en que se escribe**, y el conteo se recalcula, nunca se incrementa. **Lo
