@@ -3,7 +3,7 @@ title: Master Spec 22 — Lo que queda en manos de la consulta legal
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 22
@@ -132,14 +132,18 @@ registra y se responde al instante; la plata sale con confirmación humana.
 | 4 | ¿hace falta el **botón de arrepentimiento**? | está fuera de alcance por decisión del owner | **es un incumplimiento, no una feature faltante** |
 | 6 | ¿hay **plazo de preaviso** obligatorio para un aumento? | los 60 días son **decisión comercial**, no normativa | sólo un número, **si es menor a 60** |
 
-**Las seis piden revisión profesional, no una búsqueda web.** Las tres que están en negrita
-—1, 2 y 4— cambian diseño o crean incumplimiento; las otras tres cambian un número o una promesa.
+~~**Las seis piden revisión profesional, no una búsqueda web.** Las tres que están en negrita
+—1, 2 y 4— cambian diseño o crean incumplimiento; las otras tres cambian un número o una promesa.~~
+**Cinco de las seis del pliego** (`D/13` §2; la 5, la del hash, es de `V/22` §4) **piden revisión
+profesional, no una búsqueda web.** Las tres que están en negrita —1, 2 y 4— cambian diseño o crean
+incumplimiento; las otras dos —3 y 6— cambian un número (FASE 9 completa, C-11, `F-8CB3-017`: la
+tabla tiene cinco filas).
 
 ---
 
 ## Lo que este capítulo NO cierra
 
-- **Las seis preguntas**, por definición. Lo que sí queda cerrado es **qué depende de cada una**,
+- ~~**Las seis preguntas**~~ **Las cinco preguntas de esta épica** (FASE 9 completa, C-11), por definición. Lo que sí queda cerrado es **qué depende de cada una**,
   que es lo que permite implementar el resto sin esperarlas.
 - **El comprobante no fiscal** ya lo decidió `DEC-LEGAL-001` y no se reabre: se emite por cada
   cobro, **nunca se lo llama factura fiscal**, y no tiene fecha ni disparador de revisión hasta

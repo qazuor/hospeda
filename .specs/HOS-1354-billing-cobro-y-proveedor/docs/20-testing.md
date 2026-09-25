@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -59,7 +59,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7`, el efecto de `MP1` o **el de `MP4`**— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`) y §7.1 (`MP4`), cap. 05 §3 condición 3 |
 | G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo de *«fila viva»*, *«grant vivo»* o *«ancla viva»* **no figura** en el inventario que le corresponde en `NUCLEO/01` §2.4 —son **dos** inventarios y cada término va al suyo—; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`, **`S20`** — el único que nombra **los dos** sujetos en un mismo predicado — y **`S21`**, que nombra la suscripción por su conjunto **vivo** y la instancia por un estado **terminal**, que es el caso en que el guard tiene que no pedir la enumeración de los dos) y §8 (`A5`) |
 | G-R1-F | un camino **abre la marca `requiere_conciliación` sin nombrar un motivo** de la enumeración cerrada del cap. 02 §2.5, o nombra **uno que no está en esa tabla**; o un camino **levanta** la marca sin decir **cuál** de las abiertas; o el **listado accionable** (cap. 19 §6) la muestra **sin motivo, sin `puesta_en`, sin TODOS los pagos que lleva colgados, sin su monto total o sin el default de `DEC-RF-003`** cuando el motivo es uno de los ~~**seis**~~ **siete** que devuelven plata (el séptimo, `COBRO_DUPLICADO`, desde la pendiente 6 de la FASE 8 completa, owner 2026-09-25) — **y desde `DEC-RF-006` esa cláusula los alcanza a todos sin excepción**, porque el caso que `DEC-RF-004` había dejado afuera de la columna es hoy el motivo **15** y lleva su `SÍ` propio (cap. 02 §2.5); **o `S21` abre los DOS motivos que le tocan —el 14 y el 15— sobre la misma suscripción**: son motivos distintos, así que el `UNIQUE(subscription_id, motivo)` **no los excluye** y la base los aceptaría, dejando dos propuestas contradictorias sobre el mismo pago — lo que los mantiene separados es que el disparador es **uno solo**, y el argumento está en cap. 02 §2.2; **o un camino que escribe un hecho con plata sobre una fila que ya tiene una marca abierta de ese mismo motivo no lo CUELGA de ella** —abrir una segunda, descartar el hecho o dejar que el `UNIQUE` lo rechace son las tres formas de perderlo (cap. 02 §2.2)—; **o un camino levanta una marca con algún pago colgado sin resolver** (cap. 03 §3.2, `S15`); **o un consumidor nuevo de *«marca abierta»* (`NUCLEO/01` §2.5) o de *«cortesía diferida»* (§2.6) no figura** en su inventario —son el **tercer** y el **cuarto** inventario del glosario y **ninguno** es de `G-R1-E`—; **o un camino CIERRA el saldo de una cortesía diferida sin escribir las DOS columnas del cierre** —`saldo_cerrado_en` y un `motivo_cierre` de la enumeración cerrada del cap. 02 §2.4—, **o lo cierra desde un acto que esa enumeración no nombra**: es la mitad que hace cumplir que otorgar un grant **no** cierre un saldo diferido (cap. 14 §4.3, `DEC-GRANT-011`) | cap. 02 §2.2, §2.4 y §2.5, cap. 03 §3.2 (**`S3`**, `S14`, `S15`, `S18`, **`S21`**, **`S25`**, **`S27`**, **`S28`**), cap. 09 §3, cap. 14 §4.3, **cap. 16 §4.3**, cap. 19 §6, `NUCLEO/01` §2.5 y §2.6, `DEC-RF-002`, `DEC-RF-003`, **`DEC-RF-006`**, `DEC-GRANT-011` |
-| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las nueve máquinas, en las dos épicas**, extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** — donde *«el corpus»* son **las tablas que los capítulos declaran**, nunca el subconjunto ya construido, o el guard nace en rojo sobre el camino normal entre `B5` y `B8` | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
+| **G-R6** | una **condición de transición lee una columna que NINGUNA transición escribe**. El guard recorre cada condición de las tablas de transiciones de **las ~~nueve~~ diez máquinas, en las dos épicas** (la décima, el reembolso de `B/03` §6.1: owner 2026-09-25, FASE 9 completa, 5a), extrae las columnas que lee y exige que **al menos una transición del corpus las escriba** — donde *«el corpus»* son **las tablas que los capítulos declaran**, nunca el subconjunto ya construido, o el guard nace en rojo sobre el camino normal entre `B5` y `B8` | `DEC-TEST-001` y su ampliación del mismo día, cap. 03 §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: figura también en `V/20` §2, que escribe la razón de la ampliación — ahí vive `listing.inactiva_desde`, la columna sobre la que se decide el borrado irreversible |
 | **G-R6-B** | **las dos mitades de la lista cerrada de `listing.inactiva_desde`, con tres predicados**: una **escritura** que no sea uno de los **~~cuatro~~ cinco hechos** del `NUCLEO/01` §1.2 **ni la escritura `C` del corte**; una **lectura** que no figure entre los **~~cinco~~ seis consumidores** del `V/02` §2.5; o **uno de esos ~~cinco~~ seis que ya no lee** la columna (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, `F-8CD1-009`, owner 2026-09-25). **El mensaje nombra el predicado que falló** | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; `V/02` §2.5. **Referencia cruzada**: lo define `V/20` §2, donde vive la columna. Figura acá porque **lo que puede romper la lista se escribe en esta épica**: el §4.3 del cap. 10 es donde está escrito que el reloj *«arranca acá, no antes»* —el cuarto hecho— **y, desde esta pasada, quién lo escribe: el barrido del día del fin de servicio, que es la única escritura de `listing.inactiva_desde` que sale de esta épica**; y el §7.1 del cap. 03 apoya el tope de la reapertura en que la lista **sea** cerrada |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **cuatro** tablas de transiciones de esta épica —`S`, `P`, `MP` y `A` del cap. 03; grace y pausa son sub-estados de suscripción sin tabla propia— (decía «seis»; recontado el 2026-09-25, FASE 8 completa, `F-8CD1-016`). El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | G-R5 | el **tope de una pausa** que declara el catálogo —cap. 03 §5 de **esta** épica—, pasado a días, **alcanza el día del hard delete** de la retención (`V/02` §4.1) | `D16` (cap. 04 §3, núcleo). **Referencia cruzada**: lo define `V/20` §2. Figura acá porque **el número que puede romperlo es de esta épica**: si alguien sube el tope de pausa y el guard sólo vive en el catálogo de la otra, el cambio se hace sin verlo. **Lo construye `B8`** (`B/descomposicion.md` §2.8), que es la unidad del cap. 03 §5 — **no `V9`**, que corre antes de que el tope exista (`F-8eC2-004`) |
@@ -86,11 +86,17 @@ owner 2026-09-25).
 
 **Y desde `DEC-SUB-021` impide también declararla desde `GRACE_PERIOD`** (owner 2026-09-25): en
 el grace no se cambia de plan, primero se regulariza —el pagador con tarjeta cambia la tarjeta
-(`EX-36`) y los reintentos del proveedor cobran con ella; el pagador manual paga su cuota—, y
+(`EX-36`) y los reintentos del proveedor cobran con ella, **condicionado a `GR-1`** (owner
+2026-09-25, FASE 9 completa, 3a: no está medido que el reintento de un registro ya abierto use la
+tarjeta nueva, y la superficie no lo promete); el pagador manual paga su cuota—, y
 recién en `ACTIVE` puede cambiar. La razón es la de la decisión: `S17` cancela la predecesora al
 **autorizar** la sucesora y `D8` difiere el primer cobro de ésta, así que si ese cobro falla —con
 la misma tarjeta que venía fallando— la persona se queda sin nada (FASE 8 completa, `F-8CD1-002`,
-`F-8CB1-009`). **El conjunto de declaración queda en tres**: `ACTIVE`, `CANCEL_SCHEDULED` y la
+`F-8CB1-009`). *(Desde la decisión 3c —owner 2026-09-25, FASE 9 completa— la sucesora declarada
+en `ACTIVE` o `CANCEL_SCHEDULED` cuya predecesora venía pagando ya no se queda sin nada si su
+primer cobro falla: va a `S4` y al grace, con el barrido releyendo su preapproval cada día (cap. 03
+§3.2). La razón de este párrafo sigue valiendo para el grace: desde ahí la tarjeta es la misma que
+viene fallando.)* **El conjunto de declaración queda en tres**: `ACTIVE`, `CANCEL_SCHEDULED` y la
 `SUSPENDED` de tarjeta con el preapproval releído `cancelled`, que **sí** sigue: ahí no hay
 preapproval que arreglar.
 
@@ -235,7 +241,7 @@ tres** — que es exactamente el estado en que `MP5` nació, y la prueba de que 
 
 **Y el corpus que recorre son las TABLAS DECLARADAS, no el subconjunto ya construido — sin esto el
 guard nace en rojo sobre el camino normal.** *«Al menos una transición **del corpus**»* se puede
-leer de dos maneras, y una de ellas lo vuelve inservible: el corpus son **nueve máquinas repartidas
+leer de dos maneras, y una de ellas lo vuelve inservible: el corpus son **~~nueve~~ diez máquinas repartidas
 en dos épicas que se construyen a lo largo de todo el programa**, así que una condición puede leer
 una columna cuyo escritor llega en una unidad posterior. El caso está medido en este mismo catálogo:
 **la fecha del próximo cobro tiene tres escrituras (cap. 03 §7.2) y una de ellas es `S10`, que
@@ -453,6 +459,14 @@ sus propios datos desmienten.**
 | piso **ARS 15**, techo **ARS 2.000.000**, con los mensajes exactos | `PC-2` |
 | otra moneda da `400` | `EX-18` |
 
+⚠️ **Las mentiras de la conciliación no están en esta tabla** (FASE 8 completa, `F-8CB3-015`;
+declarado por `DEC-METH-015`, FASE 9 completa, `DB-3`): el *«todavía no se sabe»* y el inventario de
+intentos (`RC-5`, `RC-6`, `RC-7`), la ventana de reintentos (`GR-3`), las entregas perdidas y
+reemplazadas (`WH-1`, `WH-2`, `WH-5`), la pausa y la fecha que avanza sin cobrar (`PS-2`, `PS-6`), y
+los campos `charged_quantity` y `last_charged`. El stub no las reproduce, así que el barrido de
+`B/09` se verifica contra un proveedor que no existe. **Causa**: la tabla se escribió antes de que la
+conciliación tuviera sus filas medidas.
+
 **El retraso variable del cobro merece su propia línea** porque es el que más código rompe: un
 test cuyo cobro llega en el mismo instante en que vence el período **nunca ejecuta** el camino que
 en producción se recorre siempre. El stub tiene que poder llegar tarde, y la suite tiene que
@@ -512,7 +526,8 @@ manualmente todo billing»*. Los flujos críticos son los que mueven plata o cor
 4. **pausa** y reanudación, las dos formas: al vencer y anticipada;
 5. **cancelación** con servicio sostenido hasta el fin del período (`DEC-SUB-009`);
 6. **revocación**: reembolso total más cancelación en un solo acto (`DEC-RF-001`);
-8. **contratación y vencimiento de un addon**, con el excedente que dispara.
+7. **contratación y vencimiento de un addon**, con el excedente que dispara (~~8~~ renumerado: la
+   lista saltaba del 6 al 8; FASE 9 completa, `DB-3`).
 
 **Lo que E2E no reemplaza** es el smoke contra el proveedor real: el §62.3 existe porque el stub y
 el real pueden divergir, y un E2E que corre contra el stub hereda esa divergencia entera.

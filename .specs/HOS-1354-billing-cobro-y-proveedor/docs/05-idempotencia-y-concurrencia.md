@@ -3,7 +3,7 @@ title: Master Spec 05 — Idempotencia y concurrencia
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 5
@@ -162,8 +162,11 @@ un cobro posterior a un regalo es material de reembolso, no de retención.
 **Y acá la repetición no es un borde: es la forma normal del caso.** `S13` *«no tiene rama de fallo
 declarada: su destino es `CANCELLED` pase lo que pase con la llamada»* (`B/09` §3), así que un
 *Free Forever* cuya cancelación en el proveedor no se aplicó deja al beneficiario *«pagando todos
-los meses algo declarado gratis»* — **un hecho por ciclo**, y ninguna transición reintenta la
-llamada sola. Los N cobros van todos a la **misma** marca, que es lo único que hace que la persona
+los meses algo declarado gratis»* — ~~**un hecho por ciclo**, y ninguna transición reintenta la
+llamada sola~~ **un hecho por ciclo si la cancelación sigue sin confirmarse**: el barrido la
+reintenta 3 días y después abre `CANCELACIÓN_SIN_CONFIRMAR` (`B/09` §3); los cobros que entren
+igual van a la misma marca (FASE 9 completa, C-R5-6: desde `F-8CB1-013` la reintenta el barrido).
+Los N cobros van todos a la **misma** marca, que es lo único que hace que la persona
 que la resuelve vea la deuda entera y no el primer mes.
 
 ### C4 · Se compra un addon mientras se aplica un downgrade que baja su base
@@ -267,8 +270,9 @@ que lo que puede llegar ahí es sólo un borde —un cobro que ya estaba en vuel
 es la puerta del **pagador manual**, que no tiene preapproval. Las condiciones no
 cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumplir.
 
-**Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
-según en cuál de los dos estados de la condición 1 esté la fila, y ~~se restituye la publicación~~
+**Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`)
+—**o `SUSPENDED → CANCEL_SCHEDULED` por `S7` si el preapproval ya está cancelado** (`C1`, `B/03`
+§3.2; FASE 9 completa, C7)—, según en cuál de los dos estados de la condición 1 esté la fila, y ~~se restituye la publicación~~
 **por `S7`** la fila vuelve a emitir fuente —`GRACE_PERIOD` no había dejado de emitir (`12-contrato…`
 §2.6)—, y la publicación la restituyen `PB3`/`PB7` si el cupo alcanza (`V/03`
 §9; FASE 8 completa, `F-8CA2-016`, owner 2026-09-25).
@@ -277,7 +281,7 @@ según en cuál de los dos estados de la condición 1 esté la fila, y ~~se rest
 de desempate está abajo**— y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero. **Cuál de las cuatro condiciones falló va en el evento y no en el motivo**: el motivo es lo
-que separa este caso de los otros doce en el listado, y el diagnóstico fino ya tiene su lugar
+que separa este caso de los otros ~~doce~~ veintiún motivos en el listado (recontado sobre `B/02` §2.5 en la FASE 9 completa), y el diagnóstico fino ya tiene su lugar
 declarado en `NUCLEO/08` §4.3.
 
 **Y un mismo pago tardío cae bajo ESTE § y bajo el §2, así que hace falta decir cuál motivo gana.**
@@ -293,7 +297,7 @@ que el pago llegó tarde.**
 
 | qué pasó | motivo |
 |---|---|
-| la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** — `S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1 | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
+| la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** — ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ **toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
 | **cualquier otra forma de fallar**: la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras | **`PAGO_TARDÍO_RECHAZADO`** |
 
@@ -421,10 +425,14 @@ condición 3 ya cumplida — el camino entero está en `B/12` §5.3.
 
 ## 4. Lo que este capítulo NO cierra
 
-- **El reembolso de un duplicado** lo confirma una persona (`DEC-CONC-001`) y su mecánica es del
-  capítulo 13.
+- ~~**El reembolso de un duplicado** lo confirma una persona (`DEC-CONC-001`) y su mecánica es del
+  capítulo 13.~~ **El reembolso de un duplicado** lo confirma una persona (`DEC-CONC-001`) y su
+  asiento es el de `B/02` §2.3, con la máquina de `B/03` §6.1 (FASE 9 completa, C-R7-5: el
+  capítulo 13 no existe, se repartió).
 - **La conciliación periódica** —lo que encuentra lo que estos cruces dejaron pasar— es del
   capítulo 09.
-- **`RF-3` sigue `UNKNOWN`**: no se sabe qué pasa al reembolsar un pago de más de 180 días,
+- ~~**`RF-3` sigue `UNKNOWN`**: no se sabe qué pasa al reembolsar un pago de más de 180 días,
   porque todavía no existe uno. El §61 prohíbe implementar sobre una fila `UNKNOWN`, así que el
-  capítulo 13 tiene que tratar ese caso como no resuelto.
+  capítulo 13 tiene que tratar ese caso como no resuelto.~~ **El de un cobro más viejo que el plazo
+  del proveedor no se implementa** (`DEC-RF-007`; `RF-3` sigue `UNKNOWN`): si hay que devolverlo,
+  se hace por fuera y se asienta por `RF4` (`B/03` §6.1) (FASE 9 completa, C-R7-5).

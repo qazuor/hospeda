@@ -3,7 +3,7 @@ title: Master Spec 10 — Verticales, planes y billing options
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 10
@@ -147,7 +147,11 @@ sigue sale de acá.
 Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 
 **Día 0 — el anuncio.** La vertical deja de admitir altas y trials —los trials, porque `T1` exige
-`admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25)—. Y en el mismo acto, **cada
+`admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25); **y las
+suscripciones, porque `S1` también lo exige, para el alta nueva y para la sucesión** (`B/03` §3.2;
+owner 2026-09-25, FASE 9 completa, 6a), y la pricing deja de ofrecer los planes de la vertical
+(`B/19` §7)—. Sin la guarda en `S1` una fila nacida después del anuncio quedaba `ACTIVE` con un
+preapproval vivo que cobraba pasado el fin de servicio, que es exactamente lo que el §4.2 prohíbe. Y en el mismo acto, **cada
 suscripción viva se cancela en el proveedor de inmediato**, con la fecha de fin de servicio
 sostenida de nuestro lado. Desde ese instante **el proveedor no emite un cobro más** en la
 vertical. Lo mismo con cada suscripción de complemento viva en ella (`DEC-ADDON-002`: cada addon
@@ -374,6 +378,11 @@ más allá de que ninguno de los dos vuelva atrás solo.
 | sí | sin fecha | **en operación** |
 | no | sin fecha | **cerrada a altas** — todos los planes retirados (§4.1); estable, puede durar años |
 | no | con fecha | **discontinuándose**, y cumplida la fecha, **discontinuada** |
+
+**Quién lee `admite_altas` en billing: `S1`** (`B/03` §3.2): la vertical que no admite altas no
+admite suscripciones nuevas ni sucesiones (owner 2026-09-25; FASE 9 completa, 6a). Es lo que hace
+verdadera la afirmación de `V/02` §2.1 —*«`admite_altas` y `fin_de_servicio` las lee billing»*—, que
+hasta acá ninguna fila de billing cumplía. `fin_de_servicio` lo lee la fórmula del §4.3.
 
 **La reversibilidad es de papel.** Revocar el anuncio antes de la fecha deja la fila como estaba,
 pero **no deshace las cancelaciones en el proveedor**: cada cliente tendría que volver a

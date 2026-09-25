@@ -3,7 +3,7 @@ title: Master Spec 12 — Suscripción
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 12
@@ -43,8 +43,15 @@ nuestro reloj arranca en el primer rechazo y el suyo sigue corriendo, las dos ve
 > renovación, leído por id (`D17`)**: el registro de cobro del período, con su pago en
 > `rejected`. Un webhook sin releer no lo arranca.
 
+**El reloj cuenta desde que lo leímos, no desde la fecha del rechazo** (FASE 9 completa, borde R1-b
+de `01`: la regla no decía cuál de las dos): es lo que se observa, y los correos del §42.3 son
+relativos al vencimiento (`B/03` §4). Con un aviso demorado (`WH-2`, hasta 14,3 días) el grace
+termina más tarde, y nunca después de la pausa del proveedor, que dispara `S6` por su segundo
+evento. **Y lo mismo vale para el primer cobro rechazado de una sucesora cuya predecesora venía
+pagando**, que desde la decisión 3c también entra al grace (§4.3; owner 2026-09-25).
+
 ~~**El reloj del grace arranca cuando el proveedor deja de reintentar, no cuando falla un
-intento.**~~ **Reemplazada el 2026-09-24** (FASE 8 completa, racimo `R1`: `F-8CB2-002`,
+intento.**~~ **Reemplazada el ~~2026-09-24~~ 2026-09-25** (FASE 8 completa, racimo `R1`, resuelto con el owner el 2026-09-25 —FASE 9 completa, C13—: `F-8CB2-002`,
 `F-8CB3-002`, `F-8CB1-006`). La regla vieja esperaba un instante que **no se puede observar**:
 `GR-3` midió que el fin de los reintentos (`scheduled` → `processed`) no emite ningún evento, y que
 la pausa del proveedor cae **80-105 s antes** del `expire_date`. Esa pausa dispara `S6`
@@ -55,8 +62,13 @@ salía de `ACTIVE` directo a `SUSPENDED`, sin los días ni los avisos del §20.
 del §1.1 era suspender a alguien a quien el proveedor todavía le está por cobrar bien. Pero:
 
 1. **El grace es siempre más corto que el ciclo** (`DEC-SUB-019`), y la ventana de reintentos del
-   proveedor **dura un ciclo** (`GR-3`, sonda 49). Los reintentos caen **dentro** de nuestro
-   grace, y si uno entra corre `S5`.
+   proveedor **dura un ciclo** (`GR-3`, sonda 49). ~~Los reintentos caen **dentro** de nuestro
+   grace, y si uno entra corre `S5`.~~ **Nuestro grace cae dentro de la ventana de reintentos del
+   proveedor**, así que durante todo el grace el proveedor sigue intentando, y si uno entra corre
+   `S5`; **cuántos de sus intentos caen dentro del grace de un plan mensual o anual no está
+   medido** (`GR-1`, `UNKNOWN`). **Lo que se resigna es el reintento que cae después**:
+   `DEC-SUB-019` lo resignó por escrito (FASE 9 completa, C3: la frase estaba al revés, y el miedo
+   del §1.1 no lo cuida ninguna regla para ese reintento).
 2. **`S6` pregunta si cobró antes de suspender** (`B/03` §4, con la lectura del `B/09` §4). Si la
    lectura falla, no suspende.
 
@@ -132,9 +144,14 @@ intentos dentro de una ventana que **dura un ciclo** (24,0 h sobre `1 days`, 48,
 `2 days`), y al vencerla el proveedor **pausa**. El §1.2 se reescribió con esa medición.
 
 **Lo que sigue sin medir**: la ventana de un plan mensual o anual, que es extrapolación (~30 días,
-un año), y si la pausa cae también al vencer la ventana de un ciclo de 2 días. **Ninguna de las dos
+un año), y si la pausa cae también al vencer la ventana de un ciclo de 2 días. ~~**Ninguna de las dos
 cambia el diseño**, porque el grace se corta antes (`DEC-SUB-019`). Lo que cambian es lo que se le
-explica a soporte.
+explica a soporte.~~ **La primera sí cambia el diseño desde `DEC-SUB-021`** (FASE 9 completa, C3):
+la única salida del grace para un pagador con tarjeta —cambiar la tarjeta y que un reintento cobre
+con ella— depende de cuántos reintentos caen dentro del grace, y eso es `GR-1`, `UNKNOWN`. **Por
+eso la salida queda condicionada a `GR-1`** y la pantalla y los correos del grace no prometen que
+el reintento use la tarjeta nueva (owner 2026-09-25; FASE 9 completa, 3a; `B/19` §4 filas 9 y
+17-bis). Se mide con el próximo rechazo mensual real. La segunda sigue sin cambiar el diseño.
 
 ---
 
@@ -252,6 +269,23 @@ el trial tampoco, porque no está usando trial.
 > autorización** se rechaza no pasa por `GRACE_PERIOD`: va a **`CHARGE_DECLINED`**, que es
 > terminal.
 
+**Salvo la sucesora de una predecesora que venía pagando** (owner 2026-09-25; FASE 9 completa,
+decisión 3c, **contra la recomendación del orquestador**). *Juan* paga Básico hace un año; pide
+Premium desde `ACTIVE` —o desde `CANCEL_SCHEDULED`, arrepentido—, autoriza, `S17` cancela Básico y
+`S18` re-apunta sus addons. Si el primer cobro de Premium, diferido por `D8`, se rechaza, con la
+regla de arriba corría `S16`: `CHARGE_DECLINED`, sin plan, con el addon huérfano y a empezar de
+cero, sobre alguien que tenía algo. **Desde 3c esa sucesora va a `S4` y entra al grace** (`B/03`
+§3.2, filas `S4` y `S16`), como una renovación. **Y tiene un control propio**, porque el proveedor
+pudo haber cancelado el preapproval al rechazar (`PA-6`, `UNKNOWN`) y entonces el grace no puede
+terminar en pago: **el barrido diario relee su preapproval por id, y si el proveedor lo canceló o
+lo pausó, el grace termina en el acto** —`S6`, cancelación de nuestro lado de lo que quede vivo y
+aviso de suspensión con *«volvé a suscribirte»*—, con la misma forma que `DEC-MP-008` (`B/09` §3).
+El riesgo de `PA-6` queda acotado a un día. **No alcanza** a la sucesora de una `SUSPENDED` de
+tarjeta —su predecesora dejó de pagar, y cobra al autorizar—, ni a la de una predecesora que nunca
+cobró, ni al pagador manual, que no llega a `ACTIVE` sin la cuota pagada (`S29`). La pantalla del
+cambio de plan no necesita advertir *«si el primer cobro no entra, vas a tener que volver a
+suscribirte»*: con 3c eso ya no pasa.
+
 **La regla es sobre el grace; `CHARGE_DECLINED` es su remedio, y no es el único.** La distinción
 importa porque hay una población sin autorización: el **pagador manual** del §17.2, que *«no tiene
 débito en el proveedor»* (`B/06` §7). Ahí `S16` no tiene sujeto y `CHARGE_DECLINED` tiene población
@@ -267,7 +301,8 @@ persona—, y el cambio la corrigió en la tabla de transiciones sin volver a es
 cancela por **el primer cobro de ese preapproval**, no por la historia. Con la lectura histórica,
 al cliente que ya pagó alguna vez, vuelve y le rebota la tarjeta se le daban diez días de servicio
 completo **sobre una autorización que el proveedor ya canceló de forma terminal** — un plazo que no
-puede terminar en pago. Leída por autorización cae donde corresponde, y su reintento es un alta
+puede terminar en pago. *(Nota, FASE 9 completa, C-R12-2: que el proveedor cancele está medido sólo
+ante el antifraude —`PA-6`—; la conclusión sigue en pie porque `S16` cancela de nuestro lado.)* Leída por autorización cae donde corresponde, y su reintento es un alta
 nueva igual que el del que nunca pagó.
 
 **El destino ya no es `SUSPENDED`, y el §4.4 explica por qué no podía serlo.** Mandarla ahí hacía
@@ -290,9 +325,12 @@ completa, `F-8CC1-010`): su primer cobro nace **después del vencimiento de su v
 §5.2), así que entre que autoriza —`S2`, y desde ahí emite— y ese primer cobro pueden pasar **hasta
 las 72 h de la ventana**, más el lote del proveedor (§5.4). Cuánto de eso pagó ya la persona depende
 del crédito de `DEC-SUB-006`. **La sucesora de una `SUSPENDED` de tarjeta, que tiene crédito cero, no
-entra acá: cobra al autorizar, como un alta** (excepción a `D8`, §5.2 (owner 2026-09-25; FASE 8 completa, `F-8CB1-002`)). Si ese primer cobro se rechaza, muere en `CHARGE_DECLINED` como un alta, pero con
-días y no minutos de servicio de esa autorización. ⚠️ **Que una sucesora sin crédito no emita hasta
-su primer pago sería política, y no está decidido**: esto corrige la afirmación, no la regla.
+entra acá: cobra al autorizar, como un alta** (excepción a `D8`, §5.2 (owner 2026-09-25; FASE 8 completa, `F-8CB1-002`)). Si ese primer cobro se rechaza, muere en `CHARGE_DECLINED` como un alta, ~~pero con
+días y no minutos de servicio de esa autorización~~ **con los minutos de `PA-3`** (FASE 9 completa, C5:
+la frase era de la versión anterior, y el §4.5 punto 1 ya decía minutos). ~~⚠️ **Que una sucesora sin crédito no emita hasta
+su primer pago sería política, y no está decidido**: esto corrige la afirmación, no la regla.~~
+**Lo que queda —la sucesora con POCO crédito, que emite antes de pagar la diferencia— está en *«lo
+que este capítulo NO cierra»*** (FASE 9 completa, borde R8-a).
 
 **Se eligió hacia dónde falla.** Conceder el grace falla hacia **diez días gratis por intento,
 repetibles**. Negarlo falla hacia que un cliente legítimo con la tarjeta rechazada tenga que
@@ -347,7 +385,9 @@ Dos consecuencias que el diseño tiene que absorber:
    frena otra cosa.** Contarlo por `user + vertical` era defenderse de que cancelar y volver a
    suscribirse reseteara el contador; lo que cierra ese ciclo no es el contador sino el destino:
    **cada reintento muere sin pasar por `GRACE_PERIOD`**, así que **no hay diez días que cosechar**
-   por más veces que se repita. Son **dos destinos y no uno**, según haya autorización o no: el que
+   por más veces que se repita. *(La sucesora de una predecesora que venía pagando sí pasa por el
+   grace desde la decisión 3c, §4.3; no reabre el ciclo, porque para llegar ahí hay que haber
+   pagado, y el barrido la corta en el día si el proveedor canceló.)* Son **dos destinos y no uno**, según haya autorización o no: el que
    autorizó y no cobró muere en `CHARGE_DECLINED`, y el servicio que recibió se mide en los minutos
    de `PA-3` —**si era un alta, o la sucesora de una `SUSPENDED` de tarjeta**, que cobra al autorizar
    como un alta (§5.2); si era cualquier otra sucesora con tarjeta, en lo que va de su autorización
@@ -637,14 +677,14 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve, que es lo que
-> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ ~~diecinueve motivos~~ veinte motivos: el 16 desde `F-8CB1-013` y el 17, el 18 y el
+> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ veintiún, que es lo que
+> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ ~~diecinueve motivos~~ ~~veinte motivos~~ veintidós motivos: el 16 desde `F-8CB1-013` y el 17, el 18 y el
 > 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde
-> la pendiente 6;
+> la pendiente 6; el 21 y el 22 desde la FASE 9 completa, 3d y `F-8CB2-003`;
 > `B/02` §2.5). Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó —una de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ veintiún—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.
@@ -812,14 +852,18 @@ ya existe**: **el job de `S3` relee por id el preapproval de toda sucesora con t
 reducida EN SU CORTE** —las 00:00 `-04` del día del cobro de la predecesora— **y antes del primer
 lote en que ese cobro puede caer**, que corre al minuto `:02` de la primera hora posterior a la
 hora de la fecha (`B/03` §3.4 punto 2). Si la ve `authorized`, `S3` no ocurre y corre `S2`, como su
-fila ya manda (`B/03` §3.2), y `S2` dispara `S17` sobre la predecesora antes de ese lote. ⚠️ **Lo que
+fila ya manda (`B/03` §3.2), y `S2` dispara `S17` sobre la predecesora antes de ese lote. ~~⚠️ **Lo que
 esto no cierra, y no está decidido**: si la fecha del cobro cae apenas pasadas las 00:00, el margen
 es de **dos minutos** —y no está medido que los lotes corran todas las horas—; y si la cancelación
 de `S17` falla, `S17` no ocurre en esa corrida (`B/09` §3) y la predecesora cobra igual. En los dos
 casos ese cobro **no tiene detector**: entra `SUCCEEDED` sobre una fila que `S17` después cierra con
 relectura, y el barrido la deja exenta (`B/09` §3). La otra salida que propone el hallazgo —marcar
 el cobro de una predecesora que entra **después** de la autorización de su sucesora— pide un motivo
-de marca nuevo, y eso es una decisión.
+de marca nuevo, y eso es una decisión.~~ **Lo que esto no cierra pasó a *«lo que este capítulo NO
+cierra»*, declarado como borde** (FASE 9 completa, borde R8-b): el margen de dos minutos y la
+cancelación de `S17` fallida. **Y la cancelación de `S17` que falla porque el correo previo agotó sus
+reintentos ya no deja cobrando a las dos**: desde la decisión 1 del owner (2026-09-25), un correo
+`failed` no bloquea la cancelación (`B/03` §3.2, *«el correo antes de cancelar»*, tercera rama).
 
 **Y la predecesora en `GRACE_PERIOD` ya no es un caso de este §** (`DEC-SUB-021`, owner
 2026-09-25): desde el grace no se declara una sucesión, así que la pregunta de qué es *«la próxima
@@ -997,7 +1041,9 @@ una regla: hace falta que nadie agregue esa transición.
 
 - ~~**`GR-3`**, la política de reintentos del proveedor, sigue `UNKNOWN`.~~ **Cerrado**: `GR-3`
   está `VERIFIED` y la ventana es el ciclo (§1.5). Queda sin medir la ventana mensual y anual, que
-  el diseño no necesita porque el grace se corta antes.
+  ~~el diseño no necesita porque el grace se corta antes~~ **desde `DEC-SUB-021` sí condiciona la
+  salida del grace con tarjeta: queda condicionada a `GR-1` y la superficie no la promete** (§1.5;
+  owner 2026-09-25, FASE 9 completa, 3a).
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en MORA** —no pausada— lo dejó
   abierto `DEC-MP-002` (implicación 6) y **sigue abierto**: el §6 resuelve la pausa, no el grace.
 - ~~**El detalle del cobro contra el proveedor** —el checkout, el `init_point`, la verificación por
@@ -1005,3 +1051,26 @@ una regla: hace falta que nadie agregue esa transición.
   ventana en su §6, el saneo del `init_point` en su §4.2, la verificación por relectura en su §4.1 —
   y **la mecánica del reembolso en su §4.6**. Es **trato con el proveedor**, y por eso vive en el
   capítulo del proveedor.
+- **Un primer rechazo cuyo aviso se pierde entero** (`WH-5`) no arranca el grace (FASE 9 completa,
+  borde R1-a de `01`; declarado por `DEC-METH-015`): la fila queda `ACTIVE` hasta que el proveedor
+  pausa al vencer su ventana —un ciclo— y sale por `S6` en su segundo evento, sin los días ni los
+  avisos del §20. **Causa**: el reloj arranca con una lectura por id (§1.2), y el barrido no mira
+  los rechazos —su fila *«cobros del período»* sólo actúa sobre un `approved` que no tenemos
+  (`B/09` §3)—. No es plata cobrada de más: es un ciclo de servicio sin cobrar, en una población de
+  borde (en el anual, la ventana de un año es extrapolación).
+- **Una sucesora con tarjeta cuyo crédito cubre menos que su ventana** emite desde `S2` hasta su
+  primer cobro sin haber pagado esa diferencia —hasta 72 h— (§4.3; FASE 9 completa, borde R8-a de
+  `01`; declarado por `DEC-METH-015`). **Causa**: `D8` pone el primer cobro después de la ventana y
+  el crédito puede ser menor. Una vez por cambio de plan y sobre alguien que venía pagando. Desde
+  `DEC-SUB-021` la sucesora **sin** crédito ya no existe (la de `SUSPENDED` cobra al autorizar), así
+  que lo que queda es la de **poco** crédito.
+- **La ventana reducida con dos minutos de margen, o con `S17` fallida** (§5.4; FASE 9 completa,
+  borde R8-b de `01`; declarado por `DEC-METH-015`). Si la fecha del cobro de la predecesora cae
+  apenas pasadas las 00:00, el margen entre la relectura del corte y el primer lote es de **dos
+  minutos** —y no está medido que los lotes corran todas las horas—; y si la cancelación de `S17`
+  falla por una causa transitoria, `S17` no ocurre en esa corrida (`B/09` §3) y la predecesora cobra
+  igual. En los dos casos ese cobro **no tiene detector**: entra `SUCCEEDED` sobre una fila que
+  `S17` después cierra con relectura, y el barrido la deja exenta. **Causa**: la corrección relee
+  en el corte, y el primer lote puede caer dos minutos después. Tiene que coincidir una autorización
+  en los últimos minutos, un webhook demorado y, o bien un cobro fechado a las 00:00-00:02, o una
+  cancelación de `S17` fallida: es doble cobro, sobre la intersección de tres bordes.
