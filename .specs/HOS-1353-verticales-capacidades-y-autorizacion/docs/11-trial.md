@@ -3,7 +3,7 @@ title: Master Spec 11 — Trial
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 11
@@ -19,14 +19,16 @@ cierra:
 
 # 11 · Trial
 
-La máquina está en el capítulo 03 §2 y sus **siete** transiciones no se repiten acá. Este capítulo
+La máquina está en el capítulo 03 §2 y sus ~~**siete**~~ **ocho** transiciones (la octava, `T8`:
+owner 2026-09-25, FASE 9 completa, decisión 6c) no se repiten acá. Este capítulo
 resuelve **los ocho huecos que quedaron alrededor de ella**, y todos son variantes de la misma
 pregunta: el §10.2 dice que el trial **no se devuelve nunca**, y no dice qué hacer en los casos
 donde eso se siente injusto o se puede explotar. El octavo —el §8, el día que una vertical
 enciende su trial— es el único que no pregunta por una persona sino por **un cambio de
 configuración**, y es por eso que tardó en aparecer. **El §9 no es un noveno hueco**: es una regla
 del owner que no estaba escrita —suscribirse durante el trial lo termina, y lo termina el cobro—
-(`DEC-TRIAL-010`, owner 2026-09-25).
+(`DEC-TRIAL-010`, owner 2026-09-25), **con su segunda puerta —suscribirse antes de publicar— cerrada
+en el §9.4** (FASE 9 completa, 6c).
 
 La respuesta de fondo es una sola y conviene tenerla a la vista antes de los casos:
 
@@ -232,8 +234,9 @@ El §10.5 dice *«no se permite adquirir addons mientras el user solamente está
 palabra **«solamente»** abre un caso que el PDR no resuelve: alguien en trial de Gastronomía
 **y** con un título comercial en Alojamiento —una fuente viva de clase `TÍTULO` que no es un
 trial— no está solamente en trial. Se dice así y no *«con suscripción viva»* porque la frase
-tiene que ser evaluable del lado de verticales: los dos sentidos de *«vivo»* están separados en
-el cap. 01 (núcleo) §2.4, y el que nombra filas de suscripción no cruza la frontera.
+tiene que ser evaluable del lado de verticales: ~~los dos sentidos de *«vivo»*~~ **dos de los cuatro
+sentidos de *«vivo»* —fila viva y fuente viva—** están separados en
+el cap. 01 (núcleo) §2.4 (FASE 9 completa, `C-14`), y el que nombra filas de suscripción no cruza la frontera.
 
 ### 5.2 Son dos preguntas y tienen respuestas distintas
 
@@ -464,6 +467,25 @@ trial y la suscripción a la vez, y el pliegue los suma. Está declarado donde s
 Las dos mitades se dicen **antes de confirmar el checkout** de alguien en trial: que al acreditarse
 el primer cobro **pierde los días que le quedaban**, y que si ese cobro se rechaza **sigue en su
 trial**. Es la fila 19-bis de `B/19` §4.
+
+### 9.4 Y suscribirse antes de publicar tampoco quema el trial
+
+(Owner 2026-09-25; FASE 9 completa, decisión 6c, `R12-OWNER-1`.)
+
+La regla del §9.2 tenía una segunda puerta. Quien se suscribe **antes de publicar** —el orden normal
+de quien entra pagando— y publica en la ventana de su primer cobro disparaba `T6`, que pedía sólo
+`cubierto` verdadero: la fila de `trial` nacía consumida, el cobro se rechazaba y la persona quedaba
+**sin suscripción y sin trial**, sin haberlo usado nunca.
+
+> **`T6` exige un título que convierte, como `T2`, y la fila la consume `T8` al primer pago
+> acreditado** (cap. 03 §2). Si el cobro se rechaza, la persona sigue en `PRE_TRIAL` y su próxima
+> publicación arranca el trial por `T1`: un alta que no ocurrió no consume el trial, por ninguna de
+> las dos puertas.
+
+**Y la superficie empuja al camino que no la necesita**, que es la mitad que agregó el owner: **el
+botón de suscribirse de una vertical en la que la persona todavía no publicó la manda a publicar**
+—y eso arranca el trial— en vez de al checkout (`V/19` §4, fila 23; su espejo, `B/19` §4). `T8`
+queda como red para quien llega al checkout por otro camino.
 
 ---
 

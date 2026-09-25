@@ -3,7 +3,7 @@ title: Master Spec 19 — Superficies: API, Web y Admin
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 19
@@ -65,6 +65,8 @@ ser.**
 | 19 | el aviso de **restitución**, cuando el cupo vuelve a alcanzar y las fichas se republican solas (`PB3`, `PB7`) | **cuáles volvieron**, **cuáles no** y **el criterio**: vuelve primero la que cayó al final, hasta llenar el cupo. Y que las que no entraron **siguen ahí y no se borran** | `DEC-DATA-003`, cap. 03 §9, cap. 15 §4.3, cap. 07 §6 (núcleo) |
 | 20 | Mi Cuenta, sobre una ficha **`PURGED`** (`PB9`, día 180) | **que la ficha existió y que su contenido se borró por inactividad** | `DEC-DATA-005`, cap. 03 §9 (`PB9`), cap. 02 §4.1; FASE 8 completa, `F-8CA2-008`, owner 2026-09-25 |
 | 21 | al **publicar** una ficha **sin estar cubierto y sin poder arrancar un trial** —`PB1` no publica: el dueño no está cubierto y esa publicación no dispara `T1` (ya consumió su trial, la vertical no admite altas, o el hash de su correo ya tiene fila)— | ***«suscribite para publicar»***: que la ficha **sigue en borrador** y que publicar pide una suscripción en esa vertical | cap. 03 §9 (`PB1`) y §2 (`T1`); FASE 8 completa, owner 2026-09-25 |
+| 22 | Mi Cuenta de Partner, **cuando la página o el carrusel dejan de mostrarlo** | **que no se borró nada**, que la presencia **vuelve sola** si recupera el plan que la otorga, y que mientras tanto responde como inexistente — **y, si la bajó un admin, que está moderada y por qué** (el motivo de la acción) | cap. 18 §1.6 (épica de verticales); FASE 9 completa, `R13`, `B4` del informe `08`; decisiones 7b y 7c |
+| 23 | el **botón de suscribirse** de una vertical —la pricing, un llamado a la acción— **cuando la persona todavía no publicó en esa vertical** —en general, no ejerció su evento de activación (cap. 10 §1, ítem 1)— | **no la manda al checkout: la manda a publicar** —a ejercer ese evento—, que arranca su trial (`T1`), y le dice que el trial arranca al publicar. El checkout queda para quien ya publicó o ya consumió su trial —el que no puede arrancar uno, porque publicar no se lo daría (fila 21)—. Quien llega al checkout por otro camino tiene la red de `T8`: su trial se consume al primer pago, no al publicar | cap. 03 §2 (`T1`, `T6`, `T8`); owner 2026-09-25, FASE 9 completa, decisión 6c (el espejo de billing es `B/19` §4) |
 
 ---
 
@@ -73,6 +75,7 @@ ser.**
 | qué | por qué existe |
 |---|---|
 | las **postulaciones de Partner atrasadas** y las **aprobadas sin reclamar** | nada vence por tiempo, así que la visibilidad es el único control (cap. 18 §2.3, §2.5, épica de verticales) |
+| **moderar o levantar la moderación de la presencia de un Partner**, con motivo | es la bajada deliberada que no mueve plata: sin ella, bajar una página era cancelar la suscripción. Es la misma acción administrativa que modera una ficha (`NUCLEO/08` §3; cap. 18 §1.6; owner 2026-09-25, FASE 9 completa, decisión 7c) |
 
 ---
 
@@ -83,4 +86,7 @@ ser.**
   billing.~~ **La presencia de Partner no tiene ciclo de publicación, y la regla vive en el cap. 18
   §1.6** (épica de verticales): la lectura pública pregunta por el entitlement de presencia y, si
   falta, responde que no existe. Este capítulo y aquél se remitían el uno al otro; ahora éste
-  remite y aquél decide (FASE 8 completa, `R13`, owner 2026-09-25).
+  remite y aquél decide (FASE 8 completa, `R13`, owner 2026-09-25). **Lo mismo el carrusel de la
+  home**, que lee la clave *«presencia en el carrusel»* (Gold y Silver), **y la presencia moderada**,
+  que no se ve en ninguna de las dos superficies (cap. 18 §1.6; FASE 9 completa, 7b y 7c). Lo que
+  este capítulo agrega es la fila 22.

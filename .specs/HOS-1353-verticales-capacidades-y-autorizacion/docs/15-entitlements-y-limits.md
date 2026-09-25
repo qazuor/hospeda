@@ -3,7 +3,7 @@ title: Master Spec 15 — Entitlements y limits
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 15
@@ -150,6 +150,15 @@ nada. **Falla hacia que el trial reciba de menos**, que es lo que el §10.5 pide
 **Y NO cambia nada fuera del trial**: la suscripción —haya cobrado o no (`12-contrato…` §2.1,
 `cobrada`)—, la cortesía y el grant siguen siendo títulos que admiten complementos.
 
+**El pliegue no mira `cobrada`, y lo que eso deja lo cierra la orfandad, no este §** (owner
+2026-09-25; FASE 9 completa, decisión 4d, que absorbe `R12-OWNER-2`). Un addon `USER` o `GLOBAL`
+comprado en los minutos que siguen a un alta cuyo primer cobro después se rechaza se quedaba
+cobrando sin aportar nada: sin título el pliegue lo descartaba, y su única condición de orfandad era
+*«la cuenta se borró»*. **Desde 4d queda huérfano si en ninguna vertical compatible de su producto
+hay una principal viva y cobrada ni un ancla viva** (`B/16` §4.2), así que `A5` lo corta. El
+descarte de este § y la orfandad de allá son las dos mitades: una deja de otorgar en el acto, la
+otra deja de cobrar.
+
 Es la regla del contrato §2.4 —*«un complemento agrega sobre un título; sin título no agrega sobre
 nada»*— escrita **donde se ejecuta**. El pliegue lo hace este capítulo; una regla de pliegue que
 viva sólo en el contrato es una frase, y **una frase no es un gate**.
@@ -243,7 +252,10 @@ pueda olvidar: hay una resolución que no se puede invocar sin el dato.
 Es el caso que motiva todo esto —la insignia que da el plan premium de Alojamiento— y no necesita
 regla nueva: el §36 ya dice que la capacidad vive *«mientras al menos una source exista»*. Si la
 única fuente era ese plan y el plan se va, la insignia se va, **en todas las verticales**, porque
-la clave es global.
+la clave es global. **Y se va también del caché de las otras verticales**, que es lo que esta
+frase prometía sin que nada lo cumpliera: la invalidación era por `user + vertical` y la entrada de
+Gastronomía seguía con la insignia de Alojamiento. **Desde la FASE 9 completa la invalidación es
+por `user`** (cap. 02 §3.2, regla 3; owner 2026-09-25, decisión 8a, `F-8CA1-003`).
 
 El scope de la clave dice **dónde vale**; la fuente dice **por cuánto tiempo**. Son preguntas
 distintas y cada una la contesta quien corresponde.
@@ -264,7 +276,7 @@ cerrada:**
 
 | clase | qué es | ejemplos |
 |---|---|---|
-| **`COMERCIAL`** | su ejercicio **produce o sostiene presencia pública** en la vertical, o **consume** un limit o la cuota de un entitlement medido | publicar una ficha (`PB1`), destacarla, las fotos, la prioridad de ordenamiento |
+| **`COMERCIAL`** | su ejercicio **produce o sostiene presencia pública** en la vertical, o **consume** un limit o la cuota de un entitlement medido | publicar una ficha (`PB1`), destacarla, las fotos, la prioridad de ordenamiento; **las dos presencias de Partner, la página y el carrusel** (cap. 18 §1.6; FASE 9 completa, 7b) |
 | **`DE_ACCESO`** | su ejercicio **no** produce presencia pública y **no** consume nada: sólo deja **existir**, **recuperar lo propio** y **volver a contratar** | *«contratar una suscripción»* y *«recuperar lo suyo»* — las dos claves del piso (cap. 02 §2.1) |
 
 **Vive con la clave y no con el plan por la razón del §2.3, palabra por palabra.** Si la declarara
@@ -322,7 +334,8 @@ conjunto y el límite dejaron de coincidir — en las DOS direcciones.**
 
 Y no hace falta una lista nueva: **es la misma lista que invalida el caché** (cap. 02 §3.2), con
 ~~sus siete entradas~~ **todas sus entradas** —eran siete cuando se escribió; la FASE 9 le sumó
-cuatro y `DEC-ARCH-009` la del reconciliador diario de cobertura, y el número vive allá, no acá
+cuatro, `DEC-ARCH-009` la del reconciliador diario de cobertura y la FASE 9 completa la del fin de
+servicio de una vertical (decisión 6b), y el número vive allá, no acá
 (FASE 8 completa, owner 2026-09-25)—. Una lista, dos consumidores. Que a veces se dispare sin nada que hacer es
 gratis; que falte un disparo es una capacidad regalada o un límite incumplido.
 
@@ -447,7 +460,12 @@ producto ajena a su deuda — y por esa misma decisión tampoco pudo haberlos co
 **El bloqueo de compra se levanta en el mismo instante de la suspensión.** `DEC-ENT-003` lo ata a
 que *«su plan comercial se lo dé»*, y un plan suspendido no otorga nada: el §21 dice *«sin
 entitlements comerciales»*. La propia decisión ya lo prevé —*«al perder el plan comercial,
-recupera la posibilidad de comprarlo»*—, y una suspensión es perder lo que el plan da.
+recupera la posibilidad de comprarlo»*—, y una suspensión es perder lo que el plan da. **Y el
+instante es de verdad el mismo, también desde Turista**: la suspensión invalida las entradas del
+`user` en todas sus verticales (cap. 02 §3.2, regla 3), así que la entrada `user + Turista` deja de
+llevar la herencia en la próxima lectura. Hasta la FASE 9 completa sólo se invalidaba la de la
+vertical suspendida y la de Turista seguía con VIP hasta la red de tiempo (owner 2026-09-25,
+decisión 8a, `F-8CA1-002`).
 
 Queda escrito acá porque la lectura contraria es fácil y cara: si alguien interpretara el bloqueo
 como atado a *«tiene un plan comercial»* en vez de a *«el plan se lo está dando»*, el suspendido
@@ -489,3 +507,10 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
   cruza, `12-contrato…` §4—, así que el aviso anuncia una pérdida que en ese caso no ocurre. El
   desarrollo está en el `12-contrato…` §2.6. **El fin del trial va sin ventana, como dice el §4.4**:
   el contrato decía lo contrario y se alineó a esta tabla.
+- **El fin de una suscripción en `CANCEL_SCHEDULED` no está en la tabla del §4.4** (FASE 9
+  completa, borde del informe `06`; declarado por `DEC-METH-015`, FASE 9 completa). El contrato lo
+  pone entre los `hasta: fecha` y remite la ventana acá (`12-contrato…` §2.6), y la tabla no lo
+  clasifica. La baja la pidió la persona y sus avisos son los de `B/19` §4; **este capítulo no le
+  promete una ventana para elegir qué fichas conservar, porque no queda título que conserve
+  ninguna**. **Causa**: la tabla se escribió sobre lo que se quita sin pedirlo. No mueve plata ni
+  acceso.

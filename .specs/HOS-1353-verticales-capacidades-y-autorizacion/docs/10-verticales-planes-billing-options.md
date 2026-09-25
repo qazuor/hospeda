@@ -3,7 +3,7 @@ title: Master Spec 10 — Verticales, planes y billing options
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 10
@@ -89,7 +89,7 @@ va a usar sin repetirla:
 
 | quién pregunta | qué lee |
 |---|---|
-| **la pricing** (§47) y todo camino de alta | la **versión vigente** de cada plan de la vertical, **y sólo si es vendible** |
+| **la pricing** (§47) y todo camino de alta | la **versión vigente** de cada plan de la vertical, **y sólo si es vendible** — **y nada, si la vertical no admite altas** (`vertical.admite_altas`, cap. 02 §2.1): la pricing no ofrece planes de esa vertical y dice *«esta vertical ya no admite altas»*, y `S1` rechaza el alta nueva y la sucesión (`B/03` §3.2; owner 2026-09-25, FASE 9 completa, decisión 6a) |
 | **una fuente `SUSCRIPCIÓN`** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
 | **la derivación del plan de trial** (§10.3) | las versiones **vigentes y vendibles**, la de `rank` más alto y la más baja (`DEC-ARCH-002`) |
 | **la comparación de tiers** (§27, §28) | ~~los `rank` de las versiones **vigentes y vendibles**~~ **las dos versiones del cambio** —la anclada de origen y la de destino— **y no su `rank`**: la dirección de un cambio de plan es el veredicto `direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE \| BAJA`, que esta épica computa por el delta de sus entitlements y limits —**cualquier baja manda**— y billing recibe sin leer las tablas (`12-contrato-de-cobertura.md` §4.1, `DEC-ARCH-008`; FASE 8 completa, `F-8CD1-003`) |

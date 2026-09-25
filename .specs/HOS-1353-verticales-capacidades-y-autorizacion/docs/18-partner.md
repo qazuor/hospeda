@@ -3,7 +3,7 @@ title: Master Spec 18 — Partner
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 18
@@ -40,10 +40,16 @@ el trial. Los tres hablan de algo que Partner no tiene.
 
 La presencia es **cero o una**, y lo que decide cuál es **el plan**, no un número:
 
-| plan | presencia pública |
-|---|---|
-| **Gold** | sí |
-| los demás | no |
+| plan | ~~presencia pública~~ página propia | **presencia en el carrusel** |
+|---|---|---|
+| **Gold** | sí | **sí** |
+| **Silver** | no | **sí** |
+| los demás | no | no |
+
+*(La tabla tenía una sola columna, *«presencia pública»*, y leída a la letra sacaba a Silver del
+carrusel **también cuando paga** —lo único que compra—, o lo dejaba sin regla. **El carrusel es una
+clave propia, *«presencia en el carrusel»*, que otorgan Gold y Silver**, con el mismo caché y el
+mismo reconciliador que la página (§1.6) — owner 2026-09-25; FASE 9 completa, decisión 7b.)*
 
 Modelarlo como un limit —*«máximo 1 presencia»*— invita a preguntar qué pasaría con 2, y la
 respuesta es que no es una cantidad: es una capacidad que se tiene o no se tiene. **Es un
@@ -76,10 +82,11 @@ cuatro scopes, así que agregar uno sería legítimo; no se agrega porque no hac
 trial.** Sus planes lo tienen en cero (`DEC-TRIAL-003`) y no declara evento de activación
 (`DEC-TRIAL-006`).
 
-**La garantía se escribe sobre las TRES salidas de `PRE_TRIAL`, no sobre `T1` sola.** Razonar por
+**La garantía se escribe sobre las ~~TRES~~ CUATRO salidas de `PRE_TRIAL`, no sobre `T1` sola.** Razonar por
 enumeración con la enumeración corta es exactamente cómo una garantía se vuelve falsa sin que
-nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara— y `T7`
-espera **el encendido**, que todavía no ocurrió (`V/03` §2). Ninguna de las tres puede ocurrir, y
+nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara—, `T7`
+espera **el encendido**, que todavía no ocurrió, **y `T8` —desde la FASE 9 completa, 6c— pide días
+de trial > 0 y el evento ya ejercido** (`V/03` §2). Ninguna de las ~~tres~~ cuatro puede ocurrir, y
 **la razón es la configuración de hoy, no una propiedad de Partner**: las tres dependen de dos
 números y una declaración que `DEC-TRIAL-003` planifica cambiar.
 
@@ -94,7 +101,7 @@ que se enciende.
 2026-09-25). `T7` busca en el registro el hecho declarado (`V/03` §2), y **el camino B del §17.3
 —alta directa del admin— no pasa por la postulación** (§2.2): si el hecho que se declare es la
 aprobación de la postulación (`PP2`, cap. 03 §11), un partner del camino B no lo tiene, y `T7` no
-lo alcanza. **Hoy no cambia nada**, porque los días están en cero y ninguna de las tres salidas de
+lo alcanza. **Hoy no cambia nada**, porque los días están en cero y ninguna de las ~~tres~~ cuatro salidas de
 `PRE_TRIAL` puede ocurrir; **es una condición del encendido**: el paso 1 del cap. 11 §8.3 —declarar
 el evento— tiene que decir también qué cuenta como *«ya ejerció»* para un partner del camino B.
 
@@ -113,24 +120,42 @@ entitlement booleano del §1.2—.
 > el partner tiene HOY el entitlement de presencia pública (§1.2), desde el caché del conjunto
 > efectivo que ya existe (cap. 02 §3), y si no lo tiene responde que no existe: 404.**
 
+**Y la misma regla gobierna el carrusel, con su propia clave** (owner 2026-09-25; FASE 9 completa,
+decisión 7b). El carrusel de la home lista **a quien tiene hoy la clave *«presencia en el
+carrusel»*** (§1.2: la otorgan Gold y Silver), leída del mismo caché y con el mismo reconciliador.
+Es una clave de clase `COMERCIAL` (cap. 15 §3.4): produce presencia pública. Sin ella el carrusel
+no tenía regla —`rg` de *«carrusel»* sobre las dos épicas, el núcleo, el contrato y el log daba
+cero— y un Silver que dejaba de pagar seguía en la home.
+
+**Y las dos se ven sólo si la presencia no está moderada** (owner 2026-09-25; FASE 9 completa,
+decisión 7c). La presencia lleva **un bit de moderación**, escrito **sólo** por la misma acción
+administrativa que `PB10` y `PB11` —moderar o levantar la moderación, con motivo (`NUCLEO/08` §3)—,
+y la lectura pasa a ser *«tiene la clave **y** no está moderada»*. **Sigue sin haber máquina**: es
+una condición más en la lectura, y el bit se lee en vivo, no desde el caché. Sin él, la única forma
+de bajar una página por contenido inadecuado era **cancelarle la suscripción** —mover plata para
+moderar—, que es lo que el código de hoy evita a propósito al revocar sin tocar el cobro.
+
 - **El contenido se conserva.** No se baja, no se archiva y no se borra nada: lo único que cambia
   es la respuesta de la lectura.
 - **Si vuelve a Gold, la página reaparece sola**, sin ninguna transición: la próxima lectura
   encuentra la clave en el conjunto efectivo.
-- **404 y no otra respuesta**: un partner que no tiene la clave es indistinguible desde afuera de
-  uno que no existe, que es la precisión 1 del paso 4 del cap. 17 §1.2. El código de hoy responde
+- **404 y no otra respuesta**: un partner que no tiene la clave —**o cuya presencia está moderada**,
+  7c— es indistinguible desde afuera de
+  uno que no existe, que es la precisión 1 del paso 4 del cap. 17 §1.2 —y su precisión 7: lo ajeno
+  existe sólo en estado público (FASE 9 completa, 8c)—. El código de hoy responde
   410 al partner revocado, y la migración lo cambia (`V/21` §4; `F-8CA1-014`).
 - **La invalidación la llevan el aviso y el reconciliador diario** (`DEC-ARCH-009`). El aviso
   alcanza los casos de este hueco sin nada nuevo: toda transición de la suscripción y todo cambio
   de plan invalidan la entrada del `user + vertical` (cap. 02 §3.2), así que el Gold que pasa a
   `SUSPENDED` y el que baja a Silver dejan de tener la clave en la próxima lectura. **Y si el aviso
   se pierde, o la fuente vence por fecha sin transición**, la red es el reconciliador diario de
-  cobertura, que desde esta decisión incluye a cada partner con presencia cargada: resuelve en
-  vivo el entitlement, lo compara con el caché y, si no coinciden, invalida (cap. 03 §9, con hasta
+  cobertura, que desde esta decisión incluye a cada partner ~~con presencia cargada~~ **con una clave
+  de presencia** —la página o el carrusel (FASE 9 completa, 7b)—: resuelve en
+  vivo ~~el entitlement~~ las claves, las compara con el caché y, si no coinciden, invalida (cap. 03 §9, con hasta
   un día de atraso).
 
 **Por qué alcanza sin máquina**: la visibilidad de la página es exactamente *«¿el conjunto efectivo
-otorga la clave?»*, y esa pregunta ya tiene dueño, fuente y caché. Lo que faltaba no era un estado:
+otorga la clave?»* —**y, desde la FASE 9 completa, *«y no está moderada»***, 7c—, y esa pregunta ya tiene dueño, fuente y caché. Lo que faltaba no era un estado:
 era que alguien la hiciera en la lectura.
 
 > ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
@@ -140,11 +165,24 @@ era que alguien la hiciera en la lectura.
 >    `PB4`/`PB5`/`PB9` que la alcance, así que el contenido de un partner que dejó de ser Gold se
 >    conserva sin fin (`F-8CA3-006`). La decisión dice que se conserva; hasta cuándo no.
 > 2. **La entidad del contenido de la presencia no está declarada en el cap. 02 §2.5**, que declara
->    sólo `listing` (`F-8CA3-006`). La regla de arriba no la necesita —lee el entitlement, no el
->    contenido—, pero el modelo no está escrito.
+>    sólo `listing` (`F-8CA3-006`). ~~La regla de arriba no la necesita —lee el entitlement, no el
+>    contenido—, pero el modelo no está escrito.~~ **La regla de la lectura no la necesita —lee el
+>    entitlement—, pero la población del reconciliador y el bit de moderación sí** (FASE 9 completa,
+>    contradicción 3 del informe `08`; decisión 7c): hasta que la entidad se declare, la población
+>    se lee como *«todo `user + Partner` cuya entrada del caché otorga una clave de presencia, o que
+>    tiene en Partner una fuente de clase `TÍTULO`»* (cap. 03 §9), y **el bit de moderación es una
+>    columna de esa entidad que el modelo todavía no escribe**. La migración del bit no tiene
+>    población: hoy Partner tiene cero filas (medido en el inventario de hechos del programa).
 > 3. **Entre la pérdida de la clave y la invalidación**, si el aviso se pierde, la página sigue
 >    visible hasta la corrida siguiente del reconciliador: hasta un día, el costo que
 >    `DEC-ARCH-009` aceptó.
+> 4. **El caché de la respuesta, no el de entitlements** (FASE 9 completa, `B3` del informe `08`;
+>    declarado por `DEC-METH-015`, FASE 9 completa). La página pública se sirve desde el caché del
+>    borde, y la invalidación de este § vacía el del conjunto efectivo, no ése. Como no hay escritura
+>    que dispare una purga, la bajada se ve con hasta la duración de su clase de caché de atraso (hoy
+>    ~2 h), además del día del punto 3. **Causa**: la regla cambia la respuesta y no escribe nada. No
+>    mueve plata, no da acceso a ninguna persona y no borra nada. *(Con el bit de moderación sí hay
+>    una escritura: purgar el borde en ese acto es libertad de implementación.)*
 
 ---
 
@@ -242,7 +280,9 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
 - ~~**El ciclo de publicación de la presencia** es del capítulo 19: acá está que existe, que la da
   el plan Gold y que no es una ficha.~~ **La presencia no tiene ciclo de publicación: lo cierra el
   §1.6**, y el capítulo 19 remite acá (FASE 8 completa, `R13`, owner 2026-09-25). Lo que el §1.6
-  deja declarado con su causa está en su ⚠️.
+  deja declarado con su causa está en su ⚠️. **Y el carrusel y la bajada deliberada del admin
+  tampoco**: el carrusel lee su propia clave y la presencia moderada no se ve (§1.6; FASE 9 completa,
+  7b y 7c).
 - **Cómo se registra un pago manual** es del capítulo 13 (épica de billing).
 - **Si algún día Partner enciende su trial**, tiene que declarar su evento de activación
   (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo. **Cuál** es ese evento sigue

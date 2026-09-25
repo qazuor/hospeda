@@ -3,7 +3,7 @@ title: Master Spec 08 — Auditoría y observabilidad
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 8
@@ -45,6 +45,11 @@ más.
 La tercera no es redundante: un admin **mirando** datos de un cliente no cambia nada y tiene que
 quedar registrado igual.
 
+**Y se registran además los actos del dueño sobre una ficha que no son transiciones** —crearla,
+editarla, exportarla—, aunque no cumplan ninguna de las tres: son el hecho 1 del reloj de
+inactividad (cap. 01 §1.2), que se lee de este registro. Sin esto el hecho 1 no tenía fuente para
+editar ni exportar (owner 2026-09-25; FASE 9 completa, decisión 8e, `F-8CA3-004`).
+
 ### 1.2 Los campos mínimos
 
 | campo | por qué |
@@ -54,12 +59,17 @@ quedar registrado igual.
 | **quién** | actor **y tipo de actor**: la persona dueña, un administrador, un job, o el proveedor |
 | **cuándo** | instante en UTC (cap. 07 §3) |
 | **correlación** | §2 de este capítulo |
-| **qué cambió** | los campos que cambiaron, con su valor anterior y el nuevo — **no una copia del contenido** |
+| **qué cambió** | los campos que cambiaron, con su valor anterior y el nuevo — **no una copia del contenido**. **En los campos de contenido de una ficha —textos, fotos, FAQ, horarios, la misma lista que el día 180 borra (`V/02` §4.1)— el evento guarda sólo el NOMBRE del campo, nunca sus valores**: el valor anterior y el nuevo quedan para los campos que no son contenido —estado, plan, monto, fechas— (owner 2026-09-25; FASE 9 completa, decisión 8e, `F-8CA3-004`) |
 | **por qué** | el motivo, cuando la operación lo admite: una cortesía, una cancelación, un reembolso |
 
-**El último campo de la tabla es una decisión de modelo con consecuencia directa**, ya tomada en
+**El ~~último~~ campo *«qué cambió»* de la tabla es una decisión de modelo con consecuencia directa**, ya tomada en
 el capítulo 02: si la auditoría guardara copias del contenido, el hard delete del §25 no
-eliminaría nada y la promesa del §25 sería decorativa.
+eliminaría nada y la promesa del §25 sería decorativa. **Y un delta de un campo de texto ES una
+copia del contenido**, dos veces: *«valor anterior y nuevo»* y *«no una copia»* no se podían cumplir
+juntos sobre una descripción. Cinco ediciones dejaban diez versiones del texto en un registro sin
+`delete` que la retención ya no toca (§1.3), y el día 180 borraba la ficha y no el texto. Por eso
+los campos de contenido guardan sólo su nombre: se pierde poder mostrar *«qué decía antes»*, que
+no lo pide ningún capítulo (FASE 9 completa, 8e).
 
 ### 1.3 Es inmutable, y por eso sirve
 
@@ -139,26 +149,31 @@ si es destructiva o mueve dinero.**
 
 | acción | de dónde sale | ¿destructiva o mueve dinero? |
 |---|---|---|
-| otorgar o revocar una **cortesía temporal** — **en meses enteros y sólo sobre un plan mensual**; sobre un anual no está disponible (FASE 8 completa, `F-8CB1-001`; cap. 14 (billing) §4.7) | §34, `DEC-GRANT-002`, `DEC-GRANT-003` impl. 6 | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo — **y CERRAR su saldo tampoco**, que es el efecto opuesto y lo hace `S3` (`DEC-GRANT-011`) |
+| otorgar o revocar una **cortesía temporal** — **en meses enteros y sólo sobre un plan mensual**; sobre ~~un anual~~ **uno no mensual —trimestral, semestral o anual—** no está disponible (FASE 8 completa, `F-8CB1-001`; cap. 14 (billing) §4.7; *«anual»* donde la regla dice *«no mensual»*, corregido en la FASE 9 completa, contradicción 1 de `R4` del informe `03`) | §34, `DEC-GRANT-002`, `DEC-GRANT-003` impl. 6 | **sí**: revocar deja al cliente sin la cortesía que le quedaba. **Re-emitir una cortesía diferida NO es una fila de esta tabla**: lo hace `S9` como efecto, con la firma original, y va en la tabla del enrutado de más abajo — **y CERRAR su saldo tampoco**, que es el efecto opuesto y lo hace `S3` (`DEC-GRANT-011`) |
 | otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) — **y, con `includesAddons: true`, la de cada addon compatible que venía pagando** (`S20`, `B/16` §3.4) |
 | registrar un **pago manual** | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ **veinte** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde la pendiente 6) y ~~**seis**~~ **siete** tienen una confirmación de reembolso encima — **y los ~~seis~~ siete se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ ~~**veinte**~~ **veintidós** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde la pendiente 6 —el 21 y el 22 desde la FASE 9 completa (`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y `PAUSA_NO_APLICADA`, `F-8CB2-003`)—) y ~~**seis**~~ **siete** tienen una confirmación de reembolso encima — **y los ~~seis~~ siete se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
 | **extender un trial** | §32 | no |
-| **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2 | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
-| **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero |
+| **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2 — **y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner 2026-09-25, FASE 9 completa, decisión 7c) | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva —**y desde la FASE 9 completa levantar la moderación reinicia el reloj de inactividad** (el hecho 6 del cap. 01 §1.2, decisión 5b), así que la frase es verdadera también después: antes, `PB11` → `PB5` → `PB9` borraba en días (`K-6`)—. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
+| **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero. **Confirmar es la transición `REQUESTED → CONFIRMED` del reembolso, `RF2`** (cap. 01 §2.2, cap. 03 (billing) §6.1; FASE 9 completa, 5a) |
+| **asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚ —el cobro del motivo 19 (`COBRO_SIN_REGISTRAR`): crear la fila de `payment` en `PENDING` con el id del registro y correr `P1` sobre ella; la devolución del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`), la de un `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por **`RF4`**, que nace en `EXECUTED` con el comprobante de la transferencia (cap. 03 (billing) §6.1) | motivos 18 y 19 del cap. 02 (billing) §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa, decisión 5a | **sí**: registra plata que ya se movió y lo que de eso se desprende —el comprobante, `covered_period`, el cierre del reembolso—. Sin esta fila las dos marcas mandaban a una persona a *«asentar»* con un acto que la tabla no nombraba, y *«lo que no se puede es ejecutar una escritura que no esté nombrada en ninguna fila»* (abajo) |
 
-~~**La tabla tiene DOCE filas**~~ **La tabla tiene TRECE filas** —la decimotercera, moderar una
-ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25)— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
+~~**La tabla tiene DOCE filas**~~ ~~**La tabla tiene TRECE filas** —la decimotercera, moderar una
+ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25)—~~ **La tabla tiene CATORCE filas**
+—la decimotercera, moderar una ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25), y
+la decimocuarta, asentar un cobro o una devolución hecha por fuera, desde la FASE 9 completa
+(decisión 5a; recontadas sobre la tabla)— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
 *«Otorgar o revocar»*, *«pausar o reanudar»*, *«aprobar o rechazar»*, ~~y ahora~~ *«otorgar, anclar o
-revocar»* **y *«moderar o levantar la moderación»*** son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las cinco
-líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— ~~siguen
-diciendo **doce** y siguen siendo exactas~~ **dicen trece desde la misma pasada**. **Lo que no se puede es ejecutar una escritura que no
+revocar»*, *«moderar o levantar la moderación»* —**sobre una ficha o sobre la presencia de un Partner,
+que es la misma acción con el mismo permiso** (7c)— **y *«asentar un cobro o una devolución»*** son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las ~~cinco~~
+líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 **y su ⚠️, §3.5** y `B/19` §6— ~~siguen
+diciendo **doce** y siguen siendo exactas~~ ~~**dicen trece desde la misma pasada**~~ **dicen catorce desde la FASE 9 completa** (las de `V/17`; la de `B/19` §6 es de la otra épica). **Lo que no se puede es ejecutar una escritura que no
 esté nombrada en ninguna fila**: una escritura sin fila no tiene permiso que pedir, no es capacidad
 del actor —así que sus pasos 5-7 caen sobre el sujeto y la vuelven inejecutable— y **no le está
 prohibida a un actor de sistema**, que son las tres cosas que esta tabla reparte. Por eso anclar
@@ -232,7 +247,8 @@ dos filas describen un trámite que nadie empieza.
    ser anclas vivas todas a la vez. Y la regla que
    esta tabla ya imponía sigue igual —*«lo que no se puede es ejecutar una escritura que no esté
    nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una ~~décimotercera~~ fila más
-   (la decimotercera que la tabla tiene hoy es la de moderar, que es otra acción).
+   (la decimotercera que la tabla tiene hoy es la de moderar, y la decimocuarta la de asentar, que
+   son otras acciones).
 
    **El motivo es la mitad que la auditoría necesitaba y el registro de auditoría no da.** Ese
    registro dice **qué acto ocurrió, cuándo y quién lo hizo**; lo que no dice —ni puede— es
@@ -270,7 +286,7 @@ enuncia el propio §22.1 al cerrar: *«que `SUPER_ADMIN` esté al tanto y pueda 
 |---|---|
 | **canal primario** | el **listado accionable en Admin**, que el §22.1 ya contempla. Cada entrada trae lo necesario para decidir sin reconstruir el diagnóstico — **incluido el estado real de la fila**, que la marca ya no pisa |
 | **el correo** | **agregado**, con límite de frecuencia: un resumen cada N minutos con el conteo por tipo y los sujetos afectados, en vez de uno por evento |
-| **la excepción** | un evento **único y grave** —un doble cobro real detectado, un reembolso que falló sobre una revocación— manda **su propio correo**, sin esperar la ventana |
+| **la excepción** | un evento **único y grave** —un doble cobro real detectado **(la marca con motivo `COBRO_DUPLICADO`, cap. 02 (billing) §2.5, motivo 20)**, un reembolso que falló sobre una revocación **(un `refund` de `DEC-RF-001` que llega a `FAILED` por `RF5`, cap. 03 (billing) §6.1)**— manda **su propio correo**, sin esperar la ventana (FASE 9 completa, `DB-4`; el `FAILED`, decisión 5a) |
 | **la agrupación** | por **tipo + sujeto**. Cientos de eventos de un mismo incidente colapsan en una línea con su conteo |
 | **lo que nunca se agrupa** | el **registro**. El evento crítico se escribe uno por uno, siempre. Lo que se agrupa es el aviso |
 
@@ -283,8 +299,9 @@ letra**. Queda registrado en `01-decision-log.md` (2026-09-17, aprobado por el o
 
 **La ventana de agregación es un riesgo declarado**: entre el primer evento y el resumen pasan
 hasta `N` minutos. Para lo que no puede esperar está la excepción, y **qué entra en esa excepción
-es una lista cerrada**: un doble cobro real detectado, y un reembolso que falló sobre una
-revocación.
+es una lista cerrada**: ~~un doble cobro real detectado, y un reembolso que falló sobre una
+revocación~~ **la marca con motivo `COBRO_DUPLICADO` (cap. 02 (billing) §2.5, motivo 20), y un
+`refund` de una revocación que llega a `FAILED`** (FASE 9 completa, `DB-4` y decisión 5a).
 
 ### 4.3 La información suficiente, en concreto
 
@@ -307,7 +324,7 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
   motivo `REEMBOLSO_POR_CONFIRMAR` y el pago colgado de ella, cap. 02 (billing) §2.2 y §2.5—, que es lo que
   los pone también en el **listado accionable**, el canal primario de `DEC-OBS-001`. Mientras
   fueron sólo campos de un evento, el canal que la persona mira de verdad recibía **una fila
-  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve marcas** (~~diecinueve~~ veinte
+  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ veintiuna marcas** (~~diecinueve~~ ~~veinte~~ veintidós
   motivos desde la FASE 8 completa, pendiente 6, cap. 02 (billing) §2.5);
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
@@ -332,3 +349,10 @@ alguien necesita saber cuando algo salió mal.
 
 - **Qué hace el reconciliador para detectar**, y con qué frecuencia, es el capítulo 09.
 - **Las superficies del Admin** —cómo se ven estas acciones y este listado— son del capítulo 19.
+- ~~**El reembolso que falla sobre una revocación tenía nombre y no productor**~~ **Cerrado por la
+  decisión 5a** (FASE 8 completa, `F-8CB3-016`; FASE 9 completa, `DB-4`). La excepción del §4.1 lo
+  nombraba y ninguna comprobación lo producía —**causa**: `DEC-RF-001` declaró el acto, no su
+  falla—. Desde la máquina del reembolso su productor es **`RF5`**, la llegada de un `refund` de una
+  revocación a `FAILED` (cap. 03 (billing) §6.1), que la fila declara como *«su productor»*. Lo que
+  este capítulo no dice es con qué plantilla sale ese correo inmediato: es del catálogo del cap. 07
+  §6, que no tiene fila para él.

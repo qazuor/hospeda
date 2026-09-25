@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -44,7 +44,7 @@ addon ──< addon_version ──┬──< addon_version_entitlement
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`vertical`** | el espejo en base del enum de código, **su evento de activación**, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
-| **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` |
+| **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` · **`UNIQUE(id, vertical)`**, para la FK compuesta del ancla de un grant de billing: *«el plan pertenece a esa vertical»* (`B/02` §2.4) sólo se puede expresar con ella (FASE 9 completa, `C-3`) |
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
 | **`plan_version_limit`** | qué clave limita y con qué valor | ídem |
@@ -115,7 +115,11 @@ para retirar un plan sin mecanismo nuevo.
 
 **Las dos columnas de `vertical` no son de adorno: son la mitad declarada de la frontera.**
 `admite_altas` y `fin_de_servicio` las **lee billing** (`B/10` §4.6) y hasta ahora no existían en
-ninguna entidad. **Desde la FASE 8 completa también las leen el contrato y la máquina de trial**:
+ninguna entidad. **Desde la FASE 9 completa la lectura de `admite_altas` por billing tiene fila**:
+**`S1`** exige `situaciónDeVertical(vertical).admiteAltas` para el alta nueva y para la sucesión
+(`B/03` §3.2; owner 2026-09-25, decisión 6a), y la pricing no ofrece planes de una vertical que no
+admite altas (cap. 10 §2). Hasta entonces la afirmación de este renglón no la cumplía ninguna fila
+de billing (informe `06`, contradicción 4). **Desde la FASE 8 completa también las leen el contrato y la máquina de trial**:
 el contrato deja de emitir toda fuente de título desde `fin_de_servicio` —billing lo lee por
 `situaciónDeVertical`, verticales directo para el trial— y `T1` exige `admite_altas`
 (`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). Son dos de los **siete** campos de la dirección inversa del contrato
@@ -171,10 +175,11 @@ direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum 
 otra mitad de esas dos condiciones es del **sujeto** —`cubierto`, y es lo que las vuelve
 disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el momento.
 Partner, que hoy tiene el trial en cero (`DEC-TRIAL-003`) y **ningún evento declarado**
-(`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las tres transiciones que salen de
+(`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las ~~tres~~ cuatro transiciones que salen de
 `PRE_TRIAL` dispara ahí hoy**, que es lo que impide quemarle el trial a alguien antes de que la
-vertical lo ofrezca. **Son tres y no dos**: `T1` y `T6` esperan el evento de activación, que
-Partner no declara, y `T7` espera **el encendido**, que todavía no ocurrió. El día que ocurra,
+vertical lo ofrezca. **Son ~~tres y no dos~~ cuatro**: `T1` y `T6` esperan el evento de activación, que
+Partner no declara, `T7` espera **el encendido**, que todavía no ocurrió, **y `T8` —desde la FASE
+9 completa, 6c— pide días de trial > 0 y el evento ya ejercido**, que tampoco se dan. El día que ocurra,
 `T7` es justamente la que resuelve a quien ya ejerció el evento (`V/03` §2, cap. 11 §8) — así que
 esta frase es verdadera **por la configuración de hoy**, no por una propiedad de Partner.
 
@@ -213,9 +218,15 @@ y pueda volver a contratar. Son **tres** cosas y la lista es cerrada:
 |---|---|---|
 | 1 | **ninguna capacidad comercial** | es la mitad en negativo, y la vigila `G-R3` |
 | 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir. **Que esté la vigila `G-R3`** |
-| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla, **reactivarla a borrador** (`PB8`, cap. 03 §9) **y borrarla** (`PB12`, cap. 03 §9) —el borrado se sumó a la fila: el dueño la borra siempre, con o sin plan, igual que la ve o la exporta (FASE 8 completa, owner 2026-09-25)— | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
+| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla, **reactivarla a borrador** (`PB8`, cap. 03 §9) **y borrarla** (`PB12`, cap. 03 §9) —el borrado se sumó a la fila: el dueño la borra ~~siempre,~~ con o sin plan, **desde cualquier estado salvo `MODERATED`** (`V/03` §9, ⚠️ de la moderación, punto 1; FASE 9 completa, `K-4`), igual que la ve o la exporta (FASE 8 completa, owner 2026-09-25)— | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
 
 Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`.
+
+**Leer lo propio no está en la lista, y no es un olvido** (owner 2026-09-25; FASE 9 completa,
+decisión 8d, `F-8CA1-013`). Un `SUSPENDED` que entra a su billing para regularizar resuelve contra
+esta versión, y ninguna de las tres filas es *«leer Mi Cuenta»* ni *«leer mi billing»*. **Las
+lecturas de lo propio —Mi Cuenta, su billing y sus fichas— no consultan el paso 6** (cap. 17 §3.5),
+así que no necesitan clave y la lista sigue cerrada en tres.
 
 **La tercera se agrega porque `PB8` la necesita y nadie más se la puede dar, y hay que decir de
 dónde sale el agujero.** `PB8` es una operación de dominio: escribe estado del negocio y es
@@ -227,7 +238,7 @@ Y su población declarada es **la que no tiene ninguna fuente de clase `TÍTULO`
 su ficha de vuelta sin pagar todavía»* (cap. 03 §9). Su conjunto efectivo **es** esta versión, así
 que si acá no está, el paso 6 la rechaza — y como el hecho 1 del reloj de inactividad es *«un acto
 del dueño … reactivarla»* (cap. 01 §1.2, núcleo), esa persona no puede ejecutar **ninguno** de los
-~~cuatro~~ cinco reinicios y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
+~~cuatro~~ ~~cinco~~ **seis** reinicios (el sexto, levantar una moderación, FASE 9 completa, 5b) y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
 
 **Y no toca `G-R3` por el lado que prohíbe, que es lo que hay que verificar antes de agregar nada
 acá.** El guard falla si esta versión otorga *«una clave de la clase comercial o un entitlement
@@ -252,7 +263,7 @@ distintas, y hasta esta pasada el guard sólo contestaba la primera: su enunciad
 entero** —*«ninguna … otorga»*— más un *«si y sólo si»* cuyo dominio es **una sola clave**, la de
 activación. Las filas 2 y 3 de la tabla de arriba no nombraban ningún guard, así que **un catálogo
 sembrado sin ellas pasaba en verde**. El desenlace está escrito dos párrafos más arriba para la fila
-3 —*«esa persona no puede ejecutar **ninguno** de los ~~cuatro~~ cinco reinicios y el día 180 le borra el
+3 —*«esa persona no puede ejecutar **ninguno** de los ~~cuatro~~ ~~cinco~~ seis reinicios y el día 180 le borra el
 contenido»*— y en el `12-contrato…` §2.5 para la fila 2 —*«queda afuera para siempre»*—. Es el mismo
 punto único de falla que el aviso de abajo declara, **leído en el sentido que nadie había escrito**:
 ahí la plataforma entera recibe de más, acá la población que menos puede defenderse recibe de menos.
@@ -284,7 +295,7 @@ ahí la plataforma entera recibe de más, acá la población que menos puede def
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el hash irreversible del correo normalizado** (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` y `T7` (cap. 03 §2) y, una sola vez, el corte**: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25) |
+| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el ~~hash irreversible~~ seudónimo determinístico del correo normalizado** —no permite leer el correo, pero reconoce a quien vuelve con el mismo (FASE 9 completa, `C-1`)— (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` ~~y `T7` (cap. 03 §2) y, una sola vez, el corte~~, `T7` y `T8` (cap. 03 §2; `T8` desde la FASE 9 completa, 6c)**~~: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25)~~. **El corte no escribe ninguna** (owner 2026-09-25; FASE 9 completa, decisión 2g): los dueños del sistema viejo arrancan como clientes nuevos, en `PRE_TRIAL` sin fila |
 
 **El piso del trinquete se guarda como referencia a versiones, nunca como copia de valores.** El
 §10.3 prohíbe copiar a mano y una copia además queda desactualizada (`DEC-TRIAL-002`).
@@ -308,8 +319,8 @@ descubre sola.
 **Y la restricción ya no es la única que niega: la niegan antes las guardas** (FASE 8 completa,
 `F-8CA3-003`). Escrita sola, alcanzaba también a la escritura que **registra** un trial consumido:
 quien volvía con el mismo correo y contrataba antes de publicar chocaba con ella en `T6`, y ninguna
-máquina decía qué pasaba después. **`T1`, `T6` y `T7` exigen que el hash no tenga fila en esa
-vertical** (cap. 03 §2): si la tiene, ninguna dispara y la publicación sigue **sólo si la persona
+máquina decía qué pasaba después. **`T1`, `T6` ~~y `T7`~~, `T7` y `T8` exigen que el hash no tenga fila en esa
+vertical** (cap. 03 §2; `T8` desde la FASE 9 completa, 6c): si la tiene, ninguna dispara y la publicación sigue **sólo si la persona
 está cubierta** —`PB1` exige cobertura o un `T1` que dispare (cap. 03 §9; FASE 8 completa, owner
 2026-09-25)—. El `UNIQUE` queda como
 la red de la base, no como la rama del diseño. El residuo —esa persona se queda en `PRE_TRIAL` para
@@ -327,27 +338,35 @@ cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la 
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | la FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**: es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
+| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**: es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
 
 **`inactiva_desde` es dónde vive el reloj del §25, y sin ella el hard delete del día 180 no es
 implementable.** La inactividad es un término del núcleo —cap. 01 §1.2— definida como *«el más
-reciente de los ~~cuatro~~ cinco hechos que la reinician»*, y **un «más reciente de ~~cuatro~~
-cinco» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son transiciones de
-publicación y el cuarto es de la otra épica~~ tres de los cinco hechos no son transiciones de
+reciente de los ~~cuatro~~ ~~cinco~~ **seis** hechos que la reinician»*, y **un «más reciente de ~~cuatro~~
+~~cinco~~ seis» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son transiciones de
+publicación y el cuarto es de la otra épica~~ tres de los ~~cinco~~ seis hechos no son transiciones de
 publicación —el 1, el 2 y el 4, y a éste lo ejecuta la otra épica— (FASE 8 completa, `F-8CA2-001`,
 owner 2026-09-25), **y el 5 lo es sólo a medias**: sobre la ficha publicada lo ejecuta `PB2`, y
 sobre las que no lo estaban el recálculo que el aviso despierta —o, si el aviso se perdió, el
 reconciliador diario de cobertura (cap. 03 §9, `DEC-ARCH-009`)—, que no son transiciones (FASE 8
-completa, owner 2026-09-25). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
+completa, owner 2026-09-25). **El 6 —se levanta la moderación— sí es una transición entera, `PB11`**
+(owner 2026-09-25; FASE 9 completa, decisión 5b). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
 programa** no puede ser un valor que nadie guarda.
 
-**Se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra
-parte.** Cada uno de los ~~cuatro~~ cinco del cap. 01 §1.2 le pone el instante en que ocurrió, y la
+**Se escribe en los ~~cuatro~~ ~~cinco~~ seis hechos —y en la escritura única del corte— y en ninguna otra
+parte.** Cada uno de los ~~cuatro~~ ~~cinco~~ seis del cap. 01 §1.2 le pone el instante en que ocurrió, y la
 escritura `C` le pone a cada ficha preexistente el instante del corte, una sola vez; nada más la
-toca (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25).
+toca (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25; el sexto, FASE 9 completa, 5b).
+
+**El sexto cierra una cadena que borraba sin que nada fallara** (owner 2026-09-25; FASE 9
+completa, decisión 5b, `OW-1`). La ficha moderada acumula inactividad —no está publicada— y ningún
+acto del reloj corre sobre ella; al levantarse la moderación volvía a `DRAFT` con el reloj de antes,
+y sobre un dueño sin cobertura `PB5` la archivaba esa misma noche y `PB9` la borraba en la corrida
+siguiente. **`PB11` escribe el instante en que se levanta**, con la razón del hecho 4: mientras
+estuvo moderada el dueño no podía actuar sobre ella.
 
 **El quinto es el que faltaba y levanta una prohibición que este § y el cap. 20 §2 sostenían.**
 Hasta la FASE 8 completa **`PB2` tenía prohibido escribir esta columna** —era el caso con que
@@ -368,7 +387,7 @@ que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia
 el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
 segunda fuente.
 
-**Se escribe en los ~~cuatro~~ cinco HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
+**Se escribe en los ~~cuatro~~ ~~cinco~~ seis HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
 crezca.** Lo que la lista cierra es **de qué hechos** puede ser una escritura, nunca **quién** la
 hace: el hecho 2 tiene ~~**tres**~~ **cuatro** ejecutores —el recálculo que el aviso despierta, la relectura de
 `PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4), **y el reconciliador diario de
@@ -384,9 +403,9 @@ Quien agregue un escritor nuevo agrega su hecho a la lista del cap. 01 §1.2 **e
 el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las columnas que una condición
 **lee** contra las que alguna transición **escribe**, y de estos ~~cuatro hechos **uno solo es una
 transición**, así que queda verde por ése~~ ~~cinco hechos **dos son transiciones** —el 3 y el 5—, así
-que queda verde por cualquiera de ellos~~ cinco hechos **el 3 es una transición y el 5 lo es a
+que queda verde por cualquiera de ellos~~ ~~cinco~~ **seis** hechos **el 3 es una transición y el 5 lo es a
 medias** —`PB2` sobre la publicada, el recálculo **o el reconciliador diario** sobre las demás (FASE 8 completa, owner
-2026-09-25; `DEC-ARCH-009`)—, así que queda verde por `PB1`/`PB3`/`PB7` o por `PB2` y no mira a los otros tres **ni
+2026-09-25; `DEC-ARCH-009`)—, **y el 6 es una transición, `PB11`** (FASE 9 completa, 5b), así que queda verde por `PB1`/`PB3`/`PB7`, por `PB2` **o por `PB11`** y no mira a los otros tres **ni
 a los dos ejecutores del 5 que no son transición** — está dicho en el cap. 20 §2 y
 es el motivo entero de que exista `G-R6-B`.
 
@@ -403,7 +422,7 @@ aviso al archivar**, el que `DEC-DATA-002` agregó: los avisos de
 retención son **tres** —`NUCLEO/07` §6— y acá entran **dos por el schedule y el tercero por la
 superficie que imprime su fecha**, que es por qué el renglón dice «dos» sin contradecir al núcleo.
 Este párrafo decía además que eran «los mismos cinco que el cap. 01 §1.2 enumera», y **ese § no los
-enumera**: enumera los ~~cuatro~~ cinco hechos que la escriben y nombra de paso a tres de estos
+enumera**: enumera los ~~cuatro~~ ~~cinco~~ seis hechos que la escriben y nombra de paso a tres de estos
 ~~cinco~~ seis —`PB4`, `PB5` y el día 180— al pedirles que relean antes de actuar.)*
 
 **Tres de los ~~cinco~~ seis leen y además escriben, y estar en esta lista no los saca de la otra.** `PB4`,
@@ -425,7 +444,8 @@ nunca con esta columna (cap. 03 §9, `DEC-ARCH-009`): **los lectores siguen sien
 avisos previos de retención, que ya eran los lectores (4) y (5), no cambian de lista** por releer
 además `cubierto` antes de salir (FASE 8 completa, `F-8CA2-015`, owner 2026-09-25; cap. 07 §6,
 núcleo): esa relectura lee la cobertura, no esta columna. **Tampoco la escritura `C` del corte**, que
-no lee nada: pone el valor de arranque.
+no lee nada: pone el valor de arranque. **Ni el hecho 6**: `PB11` escribe el instante en que se
+levanta la moderación y no lee la columna (FASE 9 completa, 5b).
 
 **Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
 un mensaje propio.** Es la mitad que la cuarta enmienda de `DEC-TEST-001` le sumó, y la razón es
@@ -438,7 +458,7 @@ contenido.** Hasta acá comprobaba que **no hubiera intrusos** y no que **los ~~
 siguieran existiendo**: el día que el hard delete del §4.1 dejara de leer la columna —por un refactor, un
 rename o una reescritura del cálculo— **el guard seguía verde y este renglón seguía diciendo que ese
 lector está ahí**. Es la mitad *(c)* de `G-R6-B` (cap. 20 §2), y quien **saque** una lectura saca su
-fila de acá en el mismo acto, igual que quien la agrega. *(Para los ~~cuatro~~ cinco **escritores** la
+fila de acá en el mismo acto, igual que quien la agrega. *(Para los ~~cuatro~~ ~~cinco~~ seis **escritores** la
 dirección simétrica sigue deliberadamente afuera **del guard**, y la razón está en el cap. 20 §2:
 comprobar que un hecho tenga quien lo ejecute pide una declaración, y de eso un guard estático sólo
 puede verificar que esté. **Lo que la vigila desde `DEC-TEST-002` es un criterio de terminación** —
@@ -465,21 +485,23 @@ Nada más se cachea: ni el catálogo, ni los planes, ni el estado de una suscrip
 TTL como defensa principal deja una ventana en la que un permiso revocado sigue funcionando, y
 esa ventana es exactamente el error de seguridad que este punto viene a evitar.
 
-Invalidan la entrada de un `user + vertical`:
+Invalidan ~~la entrada de un `user + vertical`~~ **las entradas del `user`, en todas sus verticales**
+(regla 3, abajo; owner 2026-09-25, FASE 9 completa, decisión 8a):
 
 | evento | por qué |
 |---|---|
 | cambio de plan o de ciclo | cambia la versión anclada |
 | toda transición de la máquina de suscripción | `ACTIVE`, `SUSPENDED` y `PAUSED` otorgan cosas distintas |
 | toda transición de la máquina de trial | ídem |
-| se otorga o se revoca una cortesía o un grant, **o se le ancla una vertical nueva a un grant vivo** | son fuentes independientes (§2.4). **El anclaje es la tercera escritura que cambia la cobertura** (`12-contrato…` §2.8) e invalida **la entrada de esa vertical**, que es justo la que hasta ese instante no tenía fuente `GRANT` |
+| se otorga o se revoca una cortesía o un grant, **o se le ancla una vertical nueva a un grant vivo** | son fuentes independientes (§2.4). **El anclaje es la tercera escritura que cambia la cobertura** (`12-contrato…` §2.8) e invalida ~~**la entrada de esa vertical**~~ **las del beneficiario** (regla 3) —**la de esa vertical** es justo la que hasta ese instante no tenía fuente `GRANT`— |
 | se activa o vence un addon | ídem |
 | se publica una versión nueva de un plan al que hay suscripciones ancladas | cambia lo que esa versión otorga |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
-| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope |
+| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: ~~invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope~~ **lo que cambia es la entrada de esa vertical; desde la regla 3 se invalidan igual todas las del beneficiario**, porque ese plan puede otorgar claves globales o herencia que valen en las otras (FASE 9 completa, 8a) |
 | **se publica una versión nueva de ~~un `addon_version`~~ un `addon`** (su madre desde la FASE 8 completa, `F-8CA3-011`, §2.1) | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
-| **el reconciliador diario de cobertura encuentra una diferencia y corre una transición** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25) | es la red del aviso perdido y de la fuente con `hasta: fecha` que vence sin transición (`12-contrato…` §2.6): **ninguna de las filas de arriba ocurrió**, así que sin ésta la entrada seguía otorgando lo que el contrato ya no emite (FASE 8 completa, `F-8CA1-007`, `F-8CC1-009`). Invalida **sólo** cuando encuentra la diferencia; la fecha que vence sin producir ninguna queda declarada en el ⚠️ de ese §. **Para un partner con presencia cargada, que no tiene fichas, la diferencia es entre el entitlement de presencia resuelto en vivo y el del caché** (cap. 18 §1.6; FASE 8 completa, `R13`, owner 2026-09-25) |
+| **el reconciliador diario de cobertura encuentra una diferencia y corre una transición** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25) | es la red del aviso perdido y de la fuente con `hasta: fecha` que vence sin transición (`12-contrato…` §2.6): **ninguna de las filas de arriba ocurrió**, así que sin ésta la entrada seguía otorgando lo que el contrato ya no emite (FASE 8 completa, `F-8CA1-007`, `F-8CC1-009`). Invalida **sólo** cuando encuentra la diferencia; la fecha que vence sin producir ninguna queda declarada en el ⚠️ de ese §. **Para un partner ~~con presencia cargada~~ con una clave de presencia, que no tiene fichas, la diferencia es entre ~~el entitlement de presencia~~ las dos claves de presencia —la página y el carrusel (decisión 7b)— resueltas en vivo y las del caché** (cap. 18 §1.6; FASE 8 completa, `R13`, owner 2026-09-25) |
+| **llega `vertical.fin_de_servicio`** (§2.1; owner 2026-09-25, FASE 9 completa, decisión 6b) | desde ese instante el contrato no emite en esa vertical ninguna fuente de título (`12-contrato…` §2.6), y **ninguna fila de arriba ocurre**: el grant no tiene transición ese día, la cortesía sigue `PAUSED` hasta `S25` y el trial sigue `TRIAL_ACTIVE` hasta `T3`. Sin esta fila, la entrada de quien cubría un grant, una cortesía o un trial seguía otorgando capacidades de una vertical cerrada hasta la red de tiempo, **en el camino principal de toda discontinuación** (residuo `γ` del informe `06`). **Invalida todas las entradas de esa vertical**, y lo ejecuta **el barrido del día del fin de servicio** (`B/10` §4.3), que ya recorre las fichas de la vertical ese día |
 
 **Las cuatro ~~últimas~~ en negrita anteriores a la del reconciliador diario son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
 escribió cuando toda fuente colgaba de una suscripción o de un trial, y **las cuatro nuevas no
@@ -490,15 +512,26 @@ plataforma la seguía recibiendo desde el caché.
 
 **La regla detrás, para que no vuelva a faltar una**: si una fuente puede cambiar **lo que otorga**
 sin que cambie **ninguna fila del `user + vertical`**, necesita su propia entrada. Las siete
-originales cubrían el caso contrario.
+originales cubrían el caso contrario. **La fila del fin de servicio es la regla aplicada otra vez**
+—cambia lo que otorgan tres fuentes sin que cambie ninguna fila—, y la regla 3 de abajo es la misma
+regla aplicada a su propio límite: una fuente que cambia lo que otorga **en otra vertical** (FASE 9
+completa, 6b y 8a).
 
-**Dos reglas sobre la invalidación:**
+~~**Dos reglas sobre la invalidación:**~~ **Tres reglas sobre la invalidación** (la tercera, owner
+2026-09-25; FASE 9 completa, decisión 8a):
 
 1. **Invalidar es borrar, no recalcular.** Recalcular dentro de la transacción que causó el
    cambio la vuelve más lenta y más frágil; la próxima lectura lo recalcula sola.
 2. **Si la invalidación falla, la operación de dominio no falla** —igual que con el correo
    (§43)— **pero la entrada se marca sospechosa y la próxima lectura la ignora.** Es la
    dirección segura: se paga rendimiento, nunca acceso.
+3. **La invalidación es por `user`, no por `user + vertical`.** Una fuente puede otorgar en una
+   vertical distinta de la suya —la herencia de Turista VIP, las claves globales (cap. 15 §3)—, así
+   que toda fila de esta tabla borra las entradas de **todas** las verticales del user. Cuesta una
+   relectura por vertical; ahorrarla es lo que dejaba a un suspendido con VIP y con la insignia
+   global de un plan que ya no pagaba (FASE 8 completa, `F-8CA1-002`, `F-8CA1-003`). **La única
+   fila que no es de un `user` es la del fin de servicio**, que invalida las de todos los users en
+   esa vertical: ahí el sujeto del cambio es la vertical.
 
 ### 3.3 Lo que el caché nunca hace
 
@@ -523,9 +556,9 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 ### 4.1 La lista
 
 **Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una
-frase de esta tabla: cap. 01 §1.2 la define y enumera **los ~~cuatro~~ cinco hechos que la
+frase de esta tabla: cap. 01 §1.2 la define y enumera **los ~~cuatro~~ ~~cinco~~ seis hechos que la
 reinician** (el quinto, ~~*«la ficha deja de estar publicada porque perdió la cobertura»*~~ *«el dueño pierde la cobertura en la vertical»*, escrito en todas sus fichas en ella (FASE 8 completa, owner 2026-09-25), FASE 8
-completa, `F-8CA2-001`, owner 2026-09-25). El
+completa, `F-8CA2-001`, owner 2026-09-25; **el sexto, *«se levanta la moderación»*, `PB11`**, FASE 9 completa, decisión 5b). El
 que más importa acá es el segundo —**la cobertura comprobada verdadera**, un estado leído y no un
 cambio detectado (cap. 01 §1.2)—, porque es el que impide que el día 180 alcance a alguien que
 volvió.
@@ -540,16 +573,22 @@ preguntar en el momento de archivar (cap. 03 §9).
 |---|---|---|
 | **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** (`PB12`, cap. 03 §9), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
 | ~~**Se anonimiza** al día 180~~ | ~~los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección~~ **Este renglón sale de la retención**: el proceso de archivar y purgar **no anonimiza nada** (`DEC-DATA-005`) | ~~el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso~~ la retención es de fichas, y *«el usuario no es un dato operativo»* (`DEC-DATA-005`) |
-| **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un hash irreversible del correo normalizado, no el correo** —, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad (`DEC-TRIAL-004`) y sus datos personales, **también dentro de eventos de dominio y del outbox** (`DEC-DATA-005`) | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca (`DEC-DATA-005`); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
+| **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un ~~hash irreversible~~ seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`) —, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad (`DEC-TRIAL-004`) y sus datos personales, **también dentro de eventos de dominio y del outbox** (`DEC-DATA-005`) | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca (`DEC-DATA-005`); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
 
 > 📌 **Cerradas el 2026-09-25** (FASE 8 completa, owner 2026-09-25). La 1 (`F-8CA3-009`) la
 > cierra **`DEC-DATA-005`**: la retención sólo toca fichas, y lo de la persona no se borra ni se
 > anonimiza nunca, así que ya no hay renglón que alcance a una ficha viva a través de su dueño.
 > La 2 (`F-8CA2-014`) la cierran las dos salidas **juntas**, como reglas de capítulo aprobadas el
-> mismo día: **el borrado exige `ARCHIVED`** —el aviso del archivado salió siempre antes— **y el
+> mismo día: **el borrado exige `ARCHIVED`** —el aviso del archivado salió siempre antes; **el
+> espacio entre los dos no está garantizado** (FASE 9 completa, `K-5`; `V/03` §9, ⚠️ de la
+> moderación, punto 7)— **y el
 > `N` de `PB5` se valida menor que 6 meses** (cap. 03 §9; lo vigila `G-R5-B`, cap. 20 §2). La
 > consecuencia que el punto 2 anotaba para la primera salida queda aceptada con ella: la ficha
-> publicada sin cobertura que `PB4` no alcanzó **no se borra** hasta que se archive.
+> publicada sin cobertura que `PB4` no alcanzó **no se borra** hasta que se archive. Y cuando se
+> archive, el día 180 puede estar ya vencido: `PB9` borra en la corrida siguiente, sin el espacio
+> que el aviso del archivado supone (FASE 9 completa, `B-3`; declarado por `DEC-METH-015`, FASE 9
+> completa). **Causa**: `PB9` cuenta sobre `inactiva_desde`, no sobre el instante del archivado.
+> Pasa sólo si el job del archivado estuvo caído más que su plazo.
 >
 > **Qué son «sus borradores»**, que era la otra mitad del punto 2: el corpus usa *«borrador»*
 > **sólo** para una ficha en `DRAFT` (`PB5`, `DEC-TRIAL-007`), y este capítulo no modela ediciones
@@ -591,7 +630,11 @@ la fila de `trial` sobrevive y *«lo personal se anonimiza con el resto»* (§4.
 pedido de supresión que el cap. 22 §3 y el pliego legal (pregunta 5) ponen junto a él. Por ese
 camino la fila sobreviviría **sin poder reconocer a nadie**, que es exactamente el desenlace que
 conservarla venía a evitar. Un hash sirve para lo único que hace
-falta —«¿este correo ya consumió?», nunca «¿cuál era?»— y no hay nada que anonimizar en él. El
+falta —«¿este correo ya consumió?», nunca «¿cuál era?»— ~~y no hay nada que anonimizar en él~~.
+**Pero no es irreversible en el sentido que importa: es un seudónimo determinístico**, y
+**reconoce a quien vuelve con el mismo correo** —es para eso que existe, y su `UNIQUE` lo exige
+determinístico— (FASE 9 completa, `C-1`). Cualquiera con un correo candidato calcula el hash y
+confirma si esa persona tuvo trial, y así lo tiene que leer la consulta legal (cap. 22 §3). El
 capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo que queda pendiente**: ese
 camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
 que **no decide** (*«es otro proceso»*), y ningún capítulo lo diseña; la razón del hash descansa

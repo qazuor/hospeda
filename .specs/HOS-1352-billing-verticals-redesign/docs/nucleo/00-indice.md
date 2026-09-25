@@ -39,10 +39,13 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
-2. **una decisión registrada** en `01-decision-log.md` — son **111** al 2026-09-24, recontadas con
+2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ **117** al
+   2026-09-25, recontadas con
    `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
-   `DEC-SUB-001` y `DEC-SUB-005` enteras, `DEC-MIG-001` sólo en lo que `DEC-MIG-003` reemplazó, y
-   `DEC-MP-003` sólo en lo que `DEC-MP-008` reemplazó;
+   ~~`DEC-SUB-001` y `DEC-SUB-005` enteras~~ `DEC-SUB-001`, **`DEC-SUB-003`** y `DEC-SUB-005`
+   enteras —`DEC-SUB-003` por `DEC-SUB-021`—, `DEC-MIG-001` sólo en lo que `DEC-MIG-003` reemplazó, y
+   `DEC-MP-003` sólo en lo que `DEC-MP-008` reemplazó (FASE 9 completa, `C-13`: la lista dejaba a
+   `DEC-SUB-003` como fuente, y es el lugar donde un implementador busca qué decisiones valen);
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
 
 **El registro de FASE 1B (`08`) no es fuente de diseño.** Un hallazgo de 1B puede aparecer en
@@ -61,7 +64,8 @@ organizada por subdominio reproduce en el papel la duplicación que el §1 nombr
 este programa.
 
 ~~**Y las dos épicas no se referencian entre sí.** Lo único que cruza es~~ **Las dos épicas sí
-se citan entre sí**: recontado el 2026-09-25, **74** líneas de `HOS-1354/docs` citan a verticales
+se citan entre sí**: recontado el 2026-09-25 —la cifra no pretende estar al día: se mueve con cada
+pasada (FASE 9 completa, `C-14`)—, **74** líneas de `HOS-1354/docs` citan a verticales
 (`` `V/NN` `` o *«épica de verticales»*) y **63** de `HOS-1353/docs` citan a billing (`` `B/NN` ``
 o *«épica de billing»*) (FASE 8 completa, `F-8CD1-014`). Lo que ninguna de las dos puede mutar
 sola es el contrato de cobertura
@@ -98,7 +102,7 @@ preguntar **una vez** si están todos.
 | `00` | este documento | el mapa y las reglas de escritura |
 | `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los cuatro conjuntos que nombra «vivo» (§2.4), el criterio Eje 1 / Eje 2 |
 | `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, y el registro de eventos |
-| `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las nueve máquinas |
+| `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las ~~nueve~~ diez máquinas (la décima, el reembolso: FASE 9 completa, 5a) |
 | `04` | [invariantes](./04-invariantes.md) | los 54 (37 del §64 del PDR y 17 de las decisiones), con quién sostiene cada uno |
 | `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario |
 | `08` | [auditoría y observabilidad](./08-auditoria-y-observabilidad.md) | qué es auditable y los identificadores de correlación |

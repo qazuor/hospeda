@@ -3,7 +3,7 @@ title: Master Spec 07 — Outbox y notificaciones
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 7
@@ -51,6 +51,12 @@ El §43 dice que el dominio no se frena, no que nadie se entere. Si un correo **
 suprimible** (§4) agota sus reintentos, eso es un evento que mira una persona — porque el
 cliente no recibió algo que teníamos la obligación de mandarle.
 
+**Y si ese correo era el que precede a una cancelación, el `failed` no la traba** (owner
+2026-09-25; FASE 9 completa, decisión 1): se cancela igual y se escala como no-entregable, igual
+que sin destinatario (§5.3, regla 2). El `failed` definitivo es, por definición de este outbox, una
+falla que no pasó, y esperarla dejaba `S17` y `S6` sin ocurrir nunca: cobraban las dos
+suscripciones, o el moroso conservaba el servicio sin límite.
+
 ---
 
 ## 2. Que se mande una sola vez · cierra `M-MAIL-02`
@@ -84,7 +90,7 @@ mandando dos. Lo que entra es **a qué día apunta el aviso**, no **cuándo se l
 entera y no tiene lista: **todo hito de schedule cuelga de una fecha, y toda fecha de la que
 cuelga un hito se puede mover**. El trial se extiende por `T4` (cap. 03), la renovación llega una
 vez por ciclo, y el reloj de retención se reinicia por cualquiera de los ~~**cuatro hechos**~~
-**cinco hechos** del §1.2 del cap. 01 (el quinto, FASE 8 completa, `F-8CA2-001`, owner 2026-09-25). Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
+~~**cinco hechos**~~ **seis hechos** del §1.2 del cap. 01 (el quinto, FASE 8 completa, `F-8CA2-001`, owner 2026-09-25; el sexto, FASE 9 completa, decisión 5b). Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
 vida del sujeto**, y ningún hito del catálogo del §6 cumple eso.
 
 > ⚠️ **Escrito como excepción por sujeto, esto ya falló una vez, y falló en silencio.** La versión
@@ -192,7 +198,10 @@ al cliente **por su cuenta y siempre primero** en cuatro momentos: **alta**, **c
    intermedio no es destructivo porque las dos conviven (`EX-6`). **Salvo que no haya a quién
    mandarlo**: con rebote duro o cuenta borrada (§4.2) el reintento no tiene salida y dejaba a las
    dos cobrando, así que ahí se cancela igual y el no-entregable se escala (FASE 8 completa,
-   `F-8CB2-001`, owner 2026-09-25). El bloqueo vale para **toda** cancelación que ejecutamos en el
+   `F-8CB2-001`, owner 2026-09-25). **Y salvo que el correo haya agotado sus reintentos** (`failed`
+   definitivo, §1.3): tampoco tiene salida —*«el reintento supone una falla que pasa»*, y ésta no
+   pasó—, así que se cancela igual y se escala como no-entregable, con la misma forma que la de
+   arriba (owner 2026-09-25; FASE 9 completa, decisión 1, que precisa `DEC-MAIL-001`). El bloqueo vale para **toda** cancelación que ejecutamos en el
    proveedor, y cada fila de `B/03` que cancela lo lleva escrito.
 3. **Nuestra comunicación desambigua lo que el proveedor dejó ambiguo**: si pausamos por
    cortesía, se dice; si es por mora, se dice.
@@ -216,13 +225,13 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | trial por vencer | transaccional | 10, 5, 2 y 0 días antes | §10.7 |
 | trial vencido — recuperación | **comercial** | +1, +5, +15, +30, +60 días, y **termina ahí** | §10.7 |
 | renovación por venir | transaccional | 5 y 1 día antes. **El hito cuelga de la fecha del próximo cobro** (cap. 02 §2.2, épica de billing) y **esa fecha se mueve** —el proveedor la corre en los casos de `PS-6`, y sobre un pagador manual la mueven el pago registrado, la vuelta de una pausa y el tope de una reapertura tardía (cap. 03 §7.2)—, así que la ocurrencia la lleva, como todo schedule (§2) | §42.2 |
-| cobro fallido / grace | transaccional | configurable dentro de la ventana, **relativo al vencimiento**. **Si la fila entró al grace con un cambio de plan en curso** —la predecesora que llega al grace durante la ventana, por `S4`—, **cada uno lleva además una línea que dice que el cambio de plan sigue pendiente** (FASE 8 completa, owner 2026-09-25) | §42.3, `DEC-SUB-002` |
+| cobro fallido / grace | transaccional | configurable dentro de la ventana, **relativo al vencimiento**. **Si la fila entró al grace con un cambio de plan en curso** —la predecesora que llega al grace durante la ventana, por `S4`—, **cada uno lleva además una línea que dice que el cambio de plan sigue pendiente** (FASE 8 completa, owner 2026-09-25). **Y ninguno promete que el reintento del proveedor use la tarjeta nueva**: que lo haga no está medido (`GR-1`), así que si el próximo intento no llega antes del fin del grace, el correo dice que va a tener que volver a suscribirse (owner 2026-09-25; FASE 9 completa, decisión 3a) | §42.3, `DEC-SUB-002` |
 | **suspendido por contracargo** ✚ | transaccional, **no suprimible** | **al suspender por un contracargo** (`S6` por su tercer evento, cap. 03 §3.2, épica de billing) — **y también al cortar por un contracargo una fila en `CANCEL_SCHEDULED`** (`S12` por su segundo evento): es el mismo correo (orquestador, FASE 8 completa, pendiente 8, derivado de `DEC-SUB-020`). **Es un correo propio y no el de mora**: el cobro entró y la persona lo desconoció ante su banco, así que el de mora le diría que no pagó. **Texto base, del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* | `DEC-SUB-020` (su 📌), cap. 19 §4 fila 10-ter (épica de billing); FASE 8 completa, pendiente 6, owner 2026-09-25 |
 | **la disputa se resolvió a favor de la persona** ✚ | transaccional | **al leer `settled`** sobre un pago en `CHARGED_BACK` (cap. 03 §6, épica de billing): la disputa se perdió para nosotros y el pago queda en `CHARGED_BACK`. **Texto base, del owner**: *«La disputa se resolvió a tu favor; tu suscripción sigue ~~cancelada~~ **suspendida**; podés volver cuando quieras.»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está `CANCELLED` (FASE 8 completa, owner 2026-09-25). ~~⚠️ Qué lectura ve `settled` no está escrito (cap. 03, *«lo que esta mitad NO cierra»*, épica de billing)~~ **Lo lee el barrido**, que relee los pagos en `CHARGED_BACK` hasta que su `status_detail` se resuelva (cap. 09 §3, épica de billing; FASE 8 completa, owner 2026-09-25) | FASE 8 completa, pendiente 8, owner 2026-09-25; cap. 19 §4 fila 10-ter (épica de billing) |
 | **la disputa se resolvió a nuestro favor** ✚ | transaccional | **al correr `P7`** —se leyó `reimbursed`— (cap. 03 §6, épica de billing): el cargo era correcto y el cobro vuelve a valer. **Texto base, del owner**: *«La disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá.»* | FASE 8 completa, pendiente 8, owner 2026-09-25; `DEC-SUB-020`; cap. 19 §4 fila 10-ter (épica de billing) |
 | aumento de precio | transaccional | **3 contactos**: al anunciar, a 30 días y a 7 días, cada uno con **la fecha de ese cliente** | `DEC-MP-002` |
 | **tu promo termina** ✚ | transaccional | **antes del último cobro con descuento** de una promo de «primer cobro» o de «N cobros» —el cobro con el que su contador llega a 0 (`promo_redemption.cobros_restantes`, cap. 02 §2.4, épica de billing)—. Dice *«tu promo termina; desde el mes que viene pagás $X»*, con **$X el monto sin esa promo, recalculado con las que siguen vivas** (cap. 14 §2.4, épica de billing). **Anticipa el correo del proveedor** que avisa el cambio de monto (`CT-3`; §5.3 regla 1, `DEC-MAIL-001` punto 2). Una promo `forever` no termina, así que no lo recibe. ~~⚠️ **Cuántos días antes, no está decidido**~~ **7 días antes, configurable**, como todo schedule de este catálogo; **en una promo de «primer cobro» no sale aparte: se unifica con el aviso del canje** (cap. 19 §4 fila 7-bis, épica de billing), porque ahí el último cobro con descuento es el primero (FASE 8 completa, pendiente 8, owner 2026-09-25) | FASE 8 completa, pendiente 7, owner 2026-09-25; cap. 03 §3.2 (`S30`) y cap. 19 §4 fila 7-bis (épica de billing) |
-| antes de cancelar | transaccional | **bloquea la acción** si falla de forma transitoria; **si no hay destinatario** (rebote duro o cuenta borrada, §4.2) **no bloquea**: se cancela y el no-entregable se escala | `DEC-MAIL-001` (precisada el 2026-09-25) |
+| antes de cancelar | transaccional | **bloquea la acción** si falla de forma transitoria; **si no hay destinatario** (rebote duro o cuenta borrada, §4.2) **o si agotó sus reintentos** (`failed` definitivo, §1.3) **no bloquea**: se cancela y el no-entregable se escala | `DEC-MAIL-001` (precisada el 2026-09-25; el `failed`, owner 2026-09-25, FASE 9 completa, decisión 1) |
 | excedente por downgrade | transaccional | al pedirlo, **con el criterio escrito**: se despublican las publicadas más recientemente | `DEC-SUB-008` |
 | reanudación tras pausa | transaccional | al reanudar. **Dice una sola cosa: qué día se le cobra** | `DEC-SUB-010` |
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
@@ -322,3 +331,9 @@ grace más corto (`DEC-SUB-002`).
 - **Qué pasa si un cliente responde un correo** — no hay canal de entrada modelado, y el §5.2
   mide que el proveedor manda todo a nuestra puerta. Queda anotado como superficie de soporte
   del capítulo 19, no como hueco de notificaciones.
+- **El envío es al menos una vez, no exactamente una** (FASE 8 completa, `F-8CB2-011`; declarado por
+  `DEC-METH-015`, FASE 9 completa). La clave del §2 impide encolar dos veces, no mandar dos: un
+  proceso que manda y muere antes de marcar `sent` pierde el `processing` por vencimiento (§1.2) y
+  la fila sale de nuevo. El daño es un correo repetido —también el que sale antes de cancelar
+  (cap. 03 (billing) §3.2, precisión 3)—, nunca una acción de dominio. **Causa**: el proveedor de
+  correo no está elegido y no se sabe si acepta una clave de idempotencia.

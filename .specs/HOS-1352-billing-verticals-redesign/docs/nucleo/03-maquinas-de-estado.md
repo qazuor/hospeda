@@ -3,7 +3,7 @@ title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -14,12 +14,13 @@ cierra:
 
 # 03 · Las máquinas de estado
 
-La mitad de núcleo del capítulo 03 del programa: las siete reglas de lectura que valen para todas las máquinas. Las máquinas mismas viven en la épica de verticales (Trial, Publicación, Postulación de Partner) o en la de billing (Suscripción, Grace, Pausa, Pago, Pago manual, Addon, la regla de no-retroceso).
+La mitad de núcleo del capítulo 03 del programa: las siete reglas de lectura que valen para todas las máquinas. Las máquinas mismas viven en la épica de verticales (Trial, Publicación, Postulación de Partner) o en la de billing (Suscripción, Grace, Pausa, Pago, Pago manual, Addon, **Reembolso**, la regla de no-retroceso).
 
 El §63 pide ocho explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
 Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*. Acá
-son **nueve**: la postulación de Partner (§11) se agregó al escribir el capítulo 18 (épica de
-verticales), con su razón escrita.
+son ~~**nueve**~~ **diez**: la postulación de Partner (§11) se agregó al escribir el capítulo 18 (épica de
+verticales), con su razón escrita, **y el reembolso —`REQUESTED → CONFIRMED → EXECUTED | FAILED`—
+en la FASE 9 completa** (owner 2026-09-25, decisión 5a; los estados, cap. 01 §2.2).
 
 Los nombres salen del capítulo 01 (núcleo) y **no se redefinen acá**. Lo que este capítulo agrega
 son las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condición, y con qué efecto.
@@ -38,8 +39,8 @@ máquina de estados y una convención.
    **La marca no es un estado, y tampoco un booleano**: es una fila con motivo y reloj, y el
    predicado *«tiene una marca abierta»* está definido en el capítulo 01 §2.5. Nombrar el motivo
    es obligatorio —`G-R1-F`—, porque sobre esa misma casilla el corpus escribe ~~**quince**~~
-   ~~**diecinueve**~~ **veinte** cosas distintas (cap. 02 (billing) §2.5, recontadas en la FASE 8 completa:
-   `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25) y
+   ~~**diecinueve**~~ ~~**veinte**~~ **veintidós** cosas distintas (cap. 02 (billing) §2.5, recontadas en la FASE 8 completa:
+   `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25; el 21 y el 22, FASE 9 completa) y
    ~~**seis**~~ **siete** de ellas significan *«hay plata del cliente que devolver»*.
    Que no sea un estado es la otra diferencia que la hace correcta: la fila conserva el
    estado que tenía, así que quien resuelve el caso no tiene que adivinar a dónde volver, y
@@ -51,7 +52,9 @@ máquina de estados y una convención.
    vive afuera de la columna.** Que viva afuera no lo vuelve la ausencia de un estado: **es un
    estado porque tiene reglas declaradas y una salida declarada, no porque tenga fila.** Es lo que
    la máquina de suscripción ya hace con su renglón `(sin fila)`, y lo que la de trial hace con
-   `PRE_TRIAL`.
+   `PRE_TRIAL`. **Y la máquina cuya fila nace ya en su estado inicial —la de publicación, cuya ficha
+   nace en `DRAFT` al crearla— tampoco tiene fila de nacimiento**: crear la fila no es una
+   transición sino el hecho 1 del cap. 01 §1.2, y la regla 1 no la alcanza (FASE 9 completa, `B-9`).
 3. **Una transición es atómica junto con sus efectos locales.** Los efectos remotos —el
    proveedor, el correo— nunca están dentro de esa transacción: el §43 lo ordena para el correo
    (*«Si falla mail: acción de dominio permanece»*) y el capítulo 05 (épica de billing) lo desarrolla para el
@@ -78,7 +81,7 @@ máquina de estados y una convención.
    convertir un defecto de diseño en un comportamiento, y convertirlo **en silencio**.
 
    **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
-   las tablas de transiciones de las nueve máquinas, en las dos épicas. Los pares con dos filas y
+   las tablas de transiciones de las ~~nueve~~ **diez** máquinas, en las dos épicas. Los pares con dos filas y
    dos destinos distintos que el diseño declara hoy son **cuatro**, en dos tablas:
 
    | par | las dos filas | qué las separa |
@@ -92,12 +95,12 @@ máquina de estados y una convención.
    regla se cumple sin una precedencia: difieren en el valor de **un booleano**, no en una
    combinación que alguien tenga que evaluar en orden. **Que sean cuatro y no cinco no es una
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
-   depende de que alguien vuelva a recorrer las nueve tablas a mano. **Y el cuarto es la prueba de
+   depende de que alguien vuelva a recorrer las ~~nueve~~ diez tablas a mano. **Y el cuarto es la prueba de
    que el guard hace falta**: entró en la FASE 9-bis-4 por una decisión del owner sobre planes
    retirados, no por nadie que estuviera mirando esta tabla.
 
-   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ nueve casos vivos que lo piden dicho**
-   (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25).
+   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ ~~nueve~~ diez casos vivos que lo piden dicho**
+   (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; el décimo, FASE 9 completa, 6c).
    `T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
    trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
    par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila. `S18` (`B/03` §3.2) sale desde la
@@ -143,11 +146,14 @@ máquina de estados y una convención.
    —el dueño la borra— salen de `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` y `ARCHIVED`, que
    comparten `desde` con casi toda esa tabla, pero sus eventos no los declara ninguna otra fila;
    y `PB11` —un admin levanta la moderación— es la única que sale de `MODERATED`. Así que cada
-   uno de sus pares tiene **una sola** fila. En los
-   ~~ocho~~ nueve casos no hay guardas que
-   dirimir. **La tabla de arriba sí ganó una entrada, y no por ninguno de estos ~~ocho~~ nueve**: la ganó
+   uno de sus pares tiene **una sola** fila. **Y el décimo es `T8` (`V/03` §2)**: sale de `PRE_TRIAL`,
+   que comparte `desde` con `T1`, `T6` y `T7`, pero su evento —*«aparece un título que convierte»*—
+   no lo declara ninguna otra fila de ese `desde`; `T2` declara el mismo evento, pero desde
+   `TRIAL_ACTIVE`, que es otro par (owner 2026-09-25; FASE 9 completa, decisión 6c). En los
+   ~~ocho~~ ~~nueve~~ diez casos no hay guardas que
+   dirimir. **La tabla de arriba sí ganó una entrada, y no por ninguno de estos ~~ocho~~ ~~nueve~~ diez**: la ganó
    `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`. Lo que este guard cuenta
-   son **pares**, no estados de origen, y esa es exactamente la diferencia entre los ~~ocho~~ nueve casos de
+   son **pares**, no estados de origen, y esa es exactamente la diferencia entre los ~~ocho~~ ~~nueve~~ diez casos de
    este párrafo y la cuarta fila de la tabla.
 
 ---

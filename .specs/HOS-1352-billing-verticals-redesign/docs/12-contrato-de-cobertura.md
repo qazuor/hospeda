@@ -3,7 +3,7 @@ title: El contrato de cobertura — la única frontera entre las dos épicas
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -99,23 +99,26 @@ cobertura(user, vertical) → {
 > completa, `F-8CA2-006`, `F-8CC1-002`). La respuesta sigue teniendo **dos**: `cubierto` y
 > `fuentes`.
 
-Una sola pregunta, con la vertical **obligatoria en la firma** — no opcional, no deducible del
-recurso. Es la misma forma estructural que el capítulo 17 §2.2 le dio a toda operación de dominio,
-y por el mismo motivo: **una resolución que no se puede invocar sin el dato no tiene un control
+Una sola pregunta, con la vertical **obligatoria en la firma** — no opcional~~, no deducible del
+recurso~~. Es la misma forma estructural que el capítulo 17 §2.2 le dio a toda operación de dominio;
+**y cuando la operación es sobre un recurso que guarda su vertical —una ficha, la presencia de un
+Partner, una instancia de addon—, quien pregunta le pasa la vertical leída del recurso** (cap. 17
+§1.2, precisión 6; FASE 9 completa, contradicción 1 del informe `08` y decisión 7a). *(Decía «no
+deducible del recurso», la frase que el cap. 17 §2.2 tachó.)* Y por el mismo motivo: **una resolución que no se puede invocar sin el dato no tiene un control
 que alguien pueda olvidar.**
 
 ### 2.1 Qué es cada campo, y quién lo consume
 
 | campo | qué es | quién lo necesita |
 |---|---|---|
-| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT` y `PURGED` (`V/03` §9, `DEC-ARCH-009`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
+| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
 | **`hasta`** | uno de cuatro valores, y ninguno es «sin fecha» a secas (§2.6) | los avisos con ventana (cap. 15 §4.4) |
-| **`cobrada`** | en una fuente `SUSCRIPCIÓN`, si **esa fila** tiene **al menos un pago acreditado** —un cobro del proveedor aprobado, leído por id (`B/09` §4), o una cuota de pagador manual registrada (`MP1`, `B/03` §7)—; en los otros cinco `tipo`, nada. **No entra en la clase ni en `cubierto`** (abajo) | **`T2` y `T5`** de la máquina de trial, que convierten sólo con una suscripción que ya cobró (`V/03` §2; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`). **Esta fila es el censo de sus consumidores**, con la misma regla que la de `cubierto` (abajo) |
+| **`cobrada`** | en una fuente `SUSCRIPCIÓN`, si **esa fila** tiene **al menos un pago acreditado** —un cobro del proveedor aprobado, leído por id (`B/09` §4), o una cuota de pagador manual registrada (`MP1`, `B/03` §7)—; en los otros cinco `tipo`, nada. **No entra en la clase ni en `cubierto`** (abajo) | **`T2` y `T5`** de la máquina de trial, que convierten sólo con una suscripción que ya cobró (`V/03` §2; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`); **y `T6` y `T8`**, que desde la FASE 9 completa piden un título que convierte para consumir la fila de `trial` (`V/03` §2; owner 2026-09-25, decisión 6c). **Esta fila es el censo de sus consumidores**, con la misma regla que la de `cubierto` (abajo) |
 
 > **La fila de `cubierto` es EL censo de sus consumidores, y va sin número a propósito.** La
 > versión anterior enumeraba seis y omitía a `PB4`, `PB5` y el hard delete —los tres relectores que
@@ -143,8 +146,10 @@ misma lectura por autorización que `B/12` §4.3 hace para el primer cobro. Lo r
 desde que la fila llega a `ACTIVE`, porque `S29` sólo la lleva ahí con la primera cuota registrada
 (`B/03` §3.2). Puede venir en `no` sobre una fila `ACTIVE` que todavía no cobró, sobre una
 `CANCEL_SCHEDULED` que se dio de baja antes del primer cobro y sobre una sucesora cuyo primer cobro
-difiere `D8` (`B/12` §4.3); sobre una `GRACE_PERIOD` no, porque `S4` exige un pago acreditado
-(`B/03` §3.2).
+difiere `D8` (`B/12` §4.3); sobre una `GRACE_PERIOD` ~~no, porque `S4` exige un pago acreditado
+(`B/03` §3.2)~~ **casi nunca**: `S4` exige un pago acreditado (`B/03` §3.2), **salvo sobre la
+sucesora cuya predecesora venía pagando**, que desde la FASE 9 completa entra al grace cuando su
+primer cobro se rechaza y llega ahí con `cobrada: no` (owner 2026-09-25, decisión 3c).
 
 **Lo que NO cambia, y es lo que lo vuelve seguro:**
 
@@ -152,7 +157,8 @@ difiere `D8` (`B/12` §4.3); sobre una `GRACE_PERIOD` no, porque `S4` exige un p
    `SUSCRIPCIÓN` con `cobrada: no` es de clase `TÍTULO`.
 2. **`cubierto` no lo lee.** Quien acaba de autorizar está cubierto, como antes: `PB3` le
    republica, el paso 6 le resuelve su plan y el reconciliador diario no ve ninguna diferencia.
-   El único consumidor es la conversión del trial.
+   El único consumidor es ~~la conversión del trial~~ **la máquina de trial**: la conversión (`T2`,
+   `T5`) y, desde la FASE 9 completa, el consumo de la fila (`T6`, `T8`; decisión 6c).
 3. **No reabre `DEC-TRIAL-008`.** Aquella decisión rechazó un bit que distinguiera **los estados que
    no emiten fuente** —el que separaría a un `SUSPENDED` de quien no tiene nada—. `cobrada` viaja
    **dentro de una fuente que ya se emite**: no dice nada de las filas que no emiten, y esas
@@ -413,7 +419,7 @@ volvió frecuente.
 | `SUSPENDED` | **no** | — | el §21 lo deja *«sin entitlements comerciales»* |
 | `CANCEL_SCHEDULED` | **sí** | **la fecha** de fin de servicio de `DEC-SUB-009` | es *«un dato nuestro»* y ya está determinado |
 | `CANCELLED` | **no** | — | terminada |
-| `CHARGE_DECLINED` | **no** | — | terminal, y el proveedor ya canceló el preapproval |
+| `CHARGE_DECLINED` | **no** | — | terminal, y ~~el proveedor ya canceló el preapproval~~ **`S16` canceló el preapproval —de nuestro lado, si el proveedor no lo había hecho—** (FASE 9 completa, `C12` del informe `01`; `B/03` §3.2) |
 
 > **Una suscripción esperando autorización NO emite fuente de cobertura.**
 
@@ -433,9 +439,13 @@ vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede au
 sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes ni contra
 el proveedor: de las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que la mueven durante la ventana
 (recontadas con `DEC-SUB-021`, owner 2026-09-25: `GRACE_PERIOD` dejó de ser estado de declaración,
-así que `S6` y `S24` salen de la cuenta de `B/03` §3.2 y `S4` entra), **cuatro la sacan de
+así que `S6` y `S24` salen de la cuenta de `B/03` §3.2 y `S4` entra), ~~**cuatro la sacan de
 las filas vivas sin que nadie declare nada** —`S12`, `S13`, `S16` y **el espejo de la baja que
-decide el proveedor** (`B/03` §3.2 y §10.1)—. ~~**La octava, `S24`, también la saca y no entra en
+decide el proveedor** (`B/03` §3.2 y §10.1)—~~ **tres la sacan de las filas vivas sin que nadie
+declare nada** —`S12`, `S16` y **el espejo de la baja que decide el proveedor** (`B/03` §3.2 y
+§10.1)—. **`S13` no**: también la saca, pero alcanza *«a toda fila viva principal del beneficiario,
+o sea también a la sucesora»* (`B/03` §3.2) y deja un `GRANT` de clase `TÍTULO`, así que el cliente
+no cae al piso (FASE 9 completa, `C-8`). ~~**La octava, `S24`, también la saca y no entra en
 esa cuenta**~~ **`S24` también la saca y tampoco entra en esa cuenta** —ya no es una de las nueve,
 pero sigue ocurriendo sobre una predecesora que llegó al grace durante la ventana—: ahí el cliente **pidió la baja él mismo** en medio del grace (`DEC-SUB-014`), así
 que caer al piso no es algo que le pase sin que nadie declare nada — es la consecuencia del acto
@@ -444,14 +454,15 @@ otras dos terminales —`S23` y
 `S27`, desde una `SUSPENDED` de pagador con tarjeta, que es estado de declaración desde la FASE 8
 completa (`F-8CB1-002`)— tampoco entran**, y no por la causa sino porque no le cambian nada a la
 cobertura: `SUSPENDED` ya no emitía ninguna fuente (§2.6), así que el piso lo tenía desde antes de
-morir. En esas cuatro la predecesora deja de
+morir. En esas ~~cuatro~~ tres la predecesora deja de
 emitir y la sucesora todavía no emite, así que **el cliente cae al piso (§2.5) por lo que le quede
 de ventana**, hasta que autorice o abandone. No es un hueco nuevo, ni una consecuencia de que el
 cierre de la sucesión pase a correr antes de la autorización —`PENDING_AUTHORIZATION` no emite ni
-antes ni después—: es lo que ya pasaba sin estar escrito. **Y se acepta**, porque las cuatro tienen
+antes ni después—: es lo que ya pasaba sin estar escrito. **Y se acepta**, porque las ~~cuatro~~ tres tienen
 la misma causa —el compromiso que sostenía la cobertura **terminó**— y la alternativa es la
 respuesta cara del párrafo de arriba. Lo que sí se exige es que la superficie lo diga: `B/19` §4,
-filas 16 y 16-bis.
+filas 16 y 16-bis —**que tienen que decirle que perdió la cobertura y que sus fichas vuelven
+cuando autorice**, no sólo que el cambio *«no se ofrece»* (FASE 9 completa, `C-8`)—.
 
 **Y la garantía termina donde termina la sucesión, así que hay que decir qué pasa después.** La
 frase de arriba —*«hasta que la nueva se autorice»*— cierra la ventana **anterior** a la
@@ -575,7 +586,12 @@ cambia para él, porque esa fuente ya era de clase `BASE`.
 (arriba): no hay aviso para los que cubría un grant, una cortesía o un trial. Las fichas las baja
 **el barrido del día del fin de servicio** (`B/10` §4.3), cuyo `PB2` ahora sí tiene su evento, y
 si no las baja, **el reconciliador diario de cobertura al día siguiente** (`V/03` §9,
-`DEC-ARCH-009`).
+`DEC-ARCH-009`). **Y el caché lo invalida el mismo barrido**: sin transición ni aviso, la entrada de
+quien cubría un grant, una cortesía o un trial seguía otorgando capacidades de la vertical cerrada
+—el reconciliador no la invalidaba, porque cuando corre las fichas ya están abajo y no encuentra
+diferencia—, así que la llegada de `vertical.fin_de_servicio` es una fila propia de la lista de
+invalidación, que borra todas las entradas de esa vertical (`V/02` §3.2; owner 2026-09-25, FASE 9
+completa, decisión 6b).
 
 > ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **el `hasta` no refleja la fecha de
 > fin de servicio.** Hasta el instante en que deja de emitirse, el grant sigue diciendo `NO_VENCE`
@@ -613,6 +629,13 @@ los dos que ya conviven, los cuatro scopes del §40 y el *«scope de verticales�
 | suscripción, cortesía, trial, `BASE` | — (cubren su vertical) | `VERTICAL` |
 | grant | *«scope de verticales»* (§35.1) | una fuente `VERTICAL` **por cada vertical de su scope**, y cada una transporta **el ancla de esa vertical** (§2.8) — nunca la de otra |
 | addon | los cuatro del §40 | `LISTING` · `VERTICAL` · `USER` · `GLOBAL` |
+
+**Una fuente `ADDON` de alcance `USER` o `GLOBAL` se emite sólo en las verticales compatibles de su
+producto** (`addon_product`, `B/02` §2.4). En una vertical no compatible no se emite, igual que un
+grant no transporta el ancla de otra vertical (§2.8). Lo vigila `G-R2-C` (`V/20` §2), gemelo de
+`G-R2-B` (owner 2026-09-25; FASE 9 completa, decisión 4e, `F-8CA1-008`). Sin esta línea, un addon
+`USER` compatible sólo con Alojamiento aparecía en la respuesta de Gastronomía y el pliegue le daba
+sus fotos a Gastronomía: *«no nombran objetivo»* (`V/11` §5.2) no dice a qué no llegan.
 
 **Y el mapeo del addon SÍ colapsa un nombre, así que decir *«no se renombra ninguno»* era falso
 para esa fila.** El scope nativo del §40 se llama `VERTICAL_SUBSCRIPTION` —*«el addon que cuelga de
@@ -806,8 +829,8 @@ fichas y, si no coinciden, corre la transición que el aviso habría disparado �
 republican, `PB2` despublica—, escribe el reloj (hechos 2 y 5) e invalida el caché. **No es un
 quinto consumidor del aviso**: no lo escucha; es la pregunta del §2.1 hecha por calendario, y
 figura en esa fila. Cubre por igual el aviso perdido, la fecha que vence sin transición (§2.6) y
-cualquier camino que nadie previó, **con hasta un día de atraso**. **Y a cada partner con presencia cargada** le resuelve en vivo el entitlement de presencia y, si el caché dice otra cosa, lo invalida: la presencia no tiene máquina (`V/18` §1.6, `V/03` §9; FASE 8 completa, `R13`, owner 2026-09-25). Lo que no cubre —la máquina de
-trial, el dueño que sólo tiene borradores, el caché sin diferencia de fichas— está declarado en el
+cualquier camino que nadie previó, **con hasta un día de atraso**. **Y a cada partner ~~con presencia cargada~~ con una clave de presencia** —la página o, desde la FASE 9 completa, el carrusel (decisión 7b); la población está en `V/03` §9— le resuelve en vivo ~~el entitlement de presencia~~ las dos claves y, si el caché dice otra cosa, lo invalida: la presencia no tiene máquina (`V/18` §1.6, `V/03` §9; FASE 8 completa, `R13`, owner 2026-09-25). Lo que no cubre —la máquina de
+trial, el dueño ~~que sólo tiene borradores~~ **sin ninguna ficha publicada** (FASE 9 completa, `B-1`), el caché sin diferencia de fichas— está declarado en el
 ⚠️ de ese §.
 
 **El evento no reemplaza la consulta.** El reconciliador *«no se dispara por evento: se dispara
@@ -820,9 +843,12 @@ proveedor.
 El reloj de inactividad decide **borrar** —el hard delete del día 180 (`V/02` §4.1)—, así que su
 hecho 2 se resuelve **preguntando `cubierto` en la respuesta del §2.1**, nunca leyéndolo del aviso,
 y el instante se escribe en `listing.inactiva_desde` (`V/02` §2.5). Y como un push se puede perder,
-**los TRES actos que avanzan sobre ese reloj vuelven a preguntar en el momento de ejecutar**: las
+**los TRES actos que avanzan sobre ese reloj vuelven a preguntar en el momento de ejecutar**: ~~las
 dos filas de `V/03` §9 —`PB4` y `PB5`— **y el hard delete del día 180** (`V/02` §4.1 y §4.2 regla
-4), que no es una fila de ninguna máquina y es el único irreversible. El aviso perdido cuesta un
+4), que no es una fila de ninguna máquina y es el único irreversible~~ **las tres filas del reloj**
+de `V/03` §9 —`PB4`, `PB5` y **`PB9`**, el hard delete del día 180 (`V/02` §4.1 y §4.2 regla 4),
+que es el único irreversible— (FASE 9 completa, `K-1`: desde la FASE 8 completa el hard delete es
+una fila). El aviso perdido cuesta un
 retraso en el reinicio, jamás un archivado —ni un borrado— sobre alguien que ya volvió.
 **Y la relectura no restituye**: reinicia el reloj y deja la ficha donde está, así que hasta la
 FASE 8 completa el aviso perdido de la vuelta dejaba la ficha de un cliente que paga abajo para
@@ -842,8 +868,10 @@ aviso de la caída se pierde, ~~`PB2` no dispara y~~ ni `PB2` dispara ni el rec�
 lo sostenga~~ **ese día nadie escribe el hecho 5. Lo escribe el reconciliador diario de cobertura
 al día siguiente** (`DEC-ARCH-009`, `V/03` §9): encuentra la ficha publicada sin cobertura, corre
 `PB2` y escribe el hecho 5 en todas las fichas del dueño en la vertical, en el mismo acto. **Queda
-sin red el dueño que sólo tiene borradores**, que no está en su población y no tiene ficha
-publicada que delate la diferencia (declarado en el ⚠️ de `V/03` §9). **Y el recálculo tiene una
+sin red el dueño ~~que sólo tiene borradores~~ sin ninguna ficha publicada** —el que sólo tiene
+borradores, que no está en su población, y el que tiene todas sus fichas en
+`UNPUBLISHED_BY_BILLING`, `ARCHIVED` o `MODERATED`, que sí está—: ninguno tiene ficha
+publicada que delate la diferencia (declarado en el ⚠️ de `V/03` §9; FASE 9 completa, `B-1`). **Y el recálculo tiene una
 segunda**: sobre una ficha no publicada no hay estado que
 recuerde que antes había cobertura, así que distinguir la relectura en falso que sigue a la caída
 de la que sigue a un aviso repetido no está escrito. ~~Las dos quedan abiertas en el `NUCLEO/01`
@@ -863,7 +891,8 @@ cobro, medios de pago, comprobantes ni reembolsos.
 **Sobre cobros cruza un solo bit, y es declarado**: `cobrada`, *«esta fila ya tiene al menos un pago
 acreditado»* (§2.1; `DEC-TRIAL-010`, owner 2026-09-25). No dice cuándo, cuánto, cuántos ni cómo
 terminó ningún intento, y viaja sólo dentro de una fuente `SUSCRIPCIÓN` que ya se emite. Su único
-consumidor es la conversión del trial (`V/03` §2, `T2` y `T5`).
+consumidor es ~~la conversión del trial (`V/03` §2, `T2` y `T5`)~~ **la máquina de trial** (`V/03`
+§2): `T2` y `T5`, **y desde la FASE 9 completa `T6` y `T8`** (decisión 6c).
 
 Cuatro ausencias que parecen faltas y son decisiones:
 
@@ -953,7 +982,10 @@ columna que verticales cambió nadie se entera hasta que rompe.
 no existen: `vertical.admite_altas` y `vertical.fin_de_servicio`. **Y desde la FASE 8 completa la
 implementación real del contrato lee `finDeServicio` por esta misma pregunta**, para dejar de
 emitir en una vertical discontinuada (§2.6; `F-8CC1-001`, owner 2026-09-25): es un consumidor más
-de un campo ya declarado, no un campo nuevo.
+de un campo ya declarado, no un campo nuevo. **Y desde la FASE 9 completa `S1` lee `admiteAltas`**:
+la vertical que no admite altas no admite suscripciones nuevas ni sucesiones (`B/03` §3.2; owner
+2026-09-25, decisión 6a). Hasta entonces *«la lee billing»* lo afirmaban `V/02` §2.1 y este § y no
+lo cumplía ninguna fila; también es un consumidor más de un campo ya declarado.
 
 **Y quién construye las tres consultas se dice acá, porque no decirlo las dejó sin dueño durante
 cuatro días y cuatro vueltas del ciclo.** **Las construye `V2`**, la segunda unidad de la épica de

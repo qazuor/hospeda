@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -81,11 +81,12 @@ cualquier regla comercial configurable.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** — no una copia del contenido | append-only |
+| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** — no una copia del contenido; **de los campos de contenido de una ficha, sólo el nombre** (cap. 08 §1.2; owner 2026-09-25, FASE 9 completa, decisión 8e) | append-only |
 | **`outbox`** | destinatario, plantilla, estado (`pending`, `processing`, `sent`, `failed`, `retry`), id del proveedor, intentos (§44) | |
 
 **`domain_event` guarda referencias y deltas, no copias del contenido**, y ésa es una decisión de
-modelo con consecuencia directa en la retención — se explica en §4.
+modelo con consecuencia directa en la retención — se explica en ~~§4~~ **`V/02` §4**, la retención
+(este capítulo no tiene §4; FASE 9 completa, `C-10`).
 
 ---
 

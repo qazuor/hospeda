@@ -3,7 +3,7 @@ title: Master Spec 22 — Lo que queda en manos de la consulta legal
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 22
@@ -76,12 +76,16 @@ que se anonimiza.
 
 ### 3.2 La corrección
 
-**Se guarda un hash irreversible del correo normalizado, no el correo.**
+**Se guarda un ~~hash irreversible~~ seudónimo determinístico del correo normalizado, no el correo**:
+no permite leer el correo, pero **reconoce a quien vuelve con el mismo correo** (FASE 9 completa,
+`C-1`). *(Decía «hash irreversible», y la palabra le vendía al abogado una premisa falsa: cualquiera
+con un correo candidato calcula el hash y confirma si esa persona tuvo trial —es la función del
+hash, y su `UNIQUE` lo exige determinístico—. Tiene que corregirse **antes de mandar el pliego**.)*
 
 | | |
 |---|---|
 | **sirve para lo único que tiene que servir** | comparar un candidato contra lo consumido. `DEC-TRIAL-004` sólo necesita *«¿este correo ya consumió?»*, nunca *«¿cuál era?»* |
-| **sobrevive a la anonimización** | no hay nada que anonimizar: no se puede leer de vuelta. La anonimización es la del borrado de la cuenta; la retención ya no anonimiza (`DEC-DATA-005`) |
+| **sobrevive a la anonimización** | ~~no hay nada que anonimizar: no se puede leer de vuelta~~ **no se puede leer de vuelta, pero sigue reconociendo a quien trae el mismo correo**: eso es lo que la anonimización del borrado de la cuenta no le saca, y lo que la consulta legal tiene que evaluar. La anonimización es la del borrado de la cuenta; la retención ya no anonimiza (`DEC-DATA-005`) |
 | **no cambia la decisión** | el bloqueo sigue siendo el correo normalizado, con sus mismos puntos y `+alias` |
 
 **El capítulo 02 §4 queda corregido en el mismo commit**: lo que la fila de `trial` conserva es el
@@ -91,7 +95,8 @@ que se anonimiza.
 
 No *«¿cómo declaramos la finalidad?»*, que es una pregunta sin filo, sino:
 
-> **¿Podemos conservar un hash irreversible del correo, después de borrada la cuenta y después de
+> **¿Podemos conservar un ~~hash irreversible~~ seudónimo determinístico del correo —que no permite
+> leerlo pero reconoce a quien vuelve con el mismo—, después de borrada la cuenta y después de
 > un pedido de supresión, con la única finalidad de no otorgar un segundo trial gratuito?**
 
 Es la formulación útil porque tiene dos respuestas y las dos tienen consecuencia escrita:
@@ -100,8 +105,10 @@ Es la formulación útil porque tiene dos respuestas y las dos tienen consecuenc
 - **si no se puede** — **el trial de por vida deja de ser sostenible tras un borrado**, y eso hay
   que aceptarlo explícitamente. `DEC-TRIAL-004` ya aceptó la mitad de esto en su implicación 1
   —*«se esquiva con una segunda dirección de correo; el trial de por vida del §10.2 queda como
-  intención, no como garantía»*—; sería la otra mitad, y **no cambiaría ningún mecanismo**, sólo lo
-  que se promete.
+  intención, no como garantía»*—; sería la otra mitad, y ~~**no cambiaría ningún mecanismo**, sólo lo
+  que se promete~~ **cambia un mecanismo**: hay que poder borrar el seudónimo de una fila que hoy se
+  declara íntegra (cap. 02 §4.1), con un escritor nuevo y una columna anulable, y el `UNIQUE` deja
+  de bloquear a esa persona (FASE 9 completa, `C-1`).
 
 ---
 
@@ -109,7 +116,7 @@ Es la formulación útil porque tiene dos respuestas y las dos tienen consecuenc
 
 | # | pregunta | qué depende | qué pasa si la respuesta es la contraria |
 |---|---|---|---|
-| 5 | ¿se puede conservar un **hash del correo** tras un borrado, para no regalar un segundo trial? | `DEC-TRIAL-004` y el cap. 02 §4 | no cambia ningún mecanismo: cambia lo que se promete |
+| 5 | ¿se puede conservar un **~~hash~~ seudónimo determinístico del correo** tras un borrado, para no regalar un segundo trial? | `DEC-TRIAL-004` y el cap. 02 §4 | ~~no cambia ningún mecanismo: cambia lo que se promete~~ **cambia un mecanismo** —un escritor nuevo que borra el seudónimo y una columna anulable— **y lo que se promete** (§3.3; FASE 9 completa, `C-1`) |
 
 ---
 
