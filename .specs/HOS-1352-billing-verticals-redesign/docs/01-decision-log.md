@@ -3,7 +3,7 @@ title: Decision Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -2454,8 +2454,8 @@ Cada entrada lleva, según §3.4:
 - **Por qué el trinquete**: seguir la vigente expone al beneficiario a que el plan **empeore** —una
   versión que reparte distinto le saca algo a quien tiene un «para siempre», **sin que nadie lo
   haya decidido para esa persona**—. El instrumento no es nuevo: es el piso de `V/15` §2.5.
-- **Por qué no la (3)**: sería **una segunda forma de declarar entitlements**, que `V/02` §1.2
-  prohíbe, y obligaría a mantener dos catálogos en sincronía para siempre. Es el defecto que este
+- **Por qué no la (3)**: sería **una segunda forma de declarar entitlements**, que ~~`V/02` §1.2~~ `NUCLEO/02` §1.2
+  *(referencia corregida el 2026-09-25: `V/02` no tiene §1.2)* prohíbe, y obligaría a mantener dos catálogos en sincronía para siempre. Es el defecto que este
   programa entero viene a corregir.
 - **La objeción que había que contestar, y se contesta con reglas que ya existen**: que un grant
   apunte a una versión de plan choca con `NUCLEO/01` §1.5 —*«se modela como entidad independiente,
@@ -5378,5 +5378,5 @@ Cada entrada lleva, según §3.4:
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
-| Apartamientos declarados del PDR | **7** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
+| Apartamientos declarados del PDR | **8** *(recontado el 2026-09-25: eran 7 porque faltaba `DEC-MAIL-001`)* — **`DEC-MAIL-001`** (§43 y §64.25: antes de cancelar, el correo **sí** bloquea la acción; el invariante 25 del núcleo la registra como la única que contradice un invariante del §64 de frente), `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
 | Decisiones de la FASE 9 | **6**, las seis del 2026-09-19 — `DEC-GRANT-005` (el grant anclado al plan, con trinquete), `DEC-CONC-003` (la marca, que **revisa una razón escrita del owner**), `DEC-SUB-011` (compromisos, no filas), `DEC-MIG-003` (no se migra), `DEC-METH-006` (el ciclo 8 ↔ 9) y `DEC-METH-007` (el gate de FASE 5, con criterio de dos filtros). Salieron de las 37 preguntas que los cinco racimos resueltos dejaron para el owner |
