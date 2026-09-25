@@ -22,6 +22,10 @@ verificación, reset de password o previews de correo.
 - No pongas API keys, tokens ni datos reales en previews o fixtures.
 - Los enlaces de autenticación deben conservar expiración y propósito.
 - Separá contenido de presentación y evitá HTML duplicado entre plantillas.
+- Todo envío de notificaciones debe pasar por los transportes y contratos
+  centralizados; no implementes un envío directo desde otra app o paquete.
+- Los errores de proveedor deben conservar retry/backoff y un resultado
+  observable sin registrar tokens, destinatarios completos ni payloads sensibles.
 
 ## Verificación
 

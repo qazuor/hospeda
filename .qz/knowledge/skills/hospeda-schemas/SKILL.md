@@ -24,6 +24,10 @@ validación Zod o tipos compartidos entre API, web y admin.
 - Los errores deben ser estables y útiles para los consumidores.
 - Cambios incompatibles requieren revisar API, admin, web, tests y datos existentes.
 - Mantené inferencia TypeScript desde Zod; no escribas tipos paralelos sin razón.
+- Los contratos publicados evolucionan de forma aditiva: no renombres, elimines
+  ni endurezcas un campo ya consumido sin una migración coordinada.
+- Los fixtures históricos deben seguir haciendo `safeParse` contra el schema
+  actual; si falla, tratá el cambio como ruptura de contrato.
 
 ## Verificación
 

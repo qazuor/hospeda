@@ -23,6 +23,8 @@ telemetría operativa.
 - Conservá correlación request/actor sin identificar de más.
 - Los errores deben mantener código, causa y contexto útil.
 - No agregues telemetría externa sin decisión explícita y documentación.
+- La redacción se aplica antes de serializar el evento; no alcanza con ocultar
+  campos sólo en el formatter de consola si también existe un sink persistente.
 
 ## Verificación
 
