@@ -62,7 +62,7 @@ status: CURRENT
    empieza a contar **después** de esta revisión. La pregunta abierta es si corre una **8-bis**
    sobre lo que se tocó hoy (fueron ~20 tandas de agentes sobre casi todos los capítulos) antes de
    pasar a la **FASE 5** (gap analysis), la **6** y los cinco ítems que faltan de la **FASE 7**.
-4. **Tres correcciones de registro en el LOG que piden OK del owner** (el log no se toca sin él):
+4. ✅ **Aplicadas con OK del owner el 2026-09-25 (commit `08e2a6ffb8`).** ~~**Tres correcciones de registro en el LOG que piden OK del owner** (el log no se toca sin él):~~
    (a) `01-decision-log.md:2457` cita `V/02` §1.2 y el destino real es `NUCLEO/02` §1.2; (b) la fila
    *«Apartamientos declarados del PDR | 7»* del resumen no cuenta `DEC-MAIL-001`; (c) el
    `updated:` del frontmatter del log sigue en 2026-09-21.
