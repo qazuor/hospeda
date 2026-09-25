@@ -99,20 +99,25 @@ importa:
 > contable**: el sistema que sabía qué era ese identificador ya no existe, y el nuevo nunca lo
 > conoció.
 
-Son **tres** las que pueden hacerlo —las únicas con preapproval vivo—, y el hecho de que sean pocas
-no cambia nada: **un cobro que entra sin asiento no es un problema de escala.**
+Son **tres** las que pueden hacerlo **según nuestra base** —las únicas con preapproval vivo en ella—,
+y el hecho de que sean pocas no cambia nada: **un cobro que entra sin asiento no es un problema de
+escala.** ⚠️ **Y la base no las ve todas**: el 2026-09-24 el recorrido del proveedor encontró una
+cuarta autorización viva que la base no conocía (§4.2), por eso el censo del paso 1b sale del
+proveedor.
 
 ### 4.2 El orden, y no es una preferencia
 
 | # | paso | quién lo hace | por qué en ese lugar |
 |---|---|---|---|
-| 1 | **cancelar los tres preapprovals en el proveedor** | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe |
+| 0 | **el despliegue, ensayado en staging y verde** | — | lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó (FASE 8 completa, `F-8CC2-004`) |
+| 1a | **cancelar los `preapproval_plan` viejos** | el sistema **viejo** o una llamada verificada | cierra los links públicos que siguen vendiendo; **es reversible** (sonda 50) y por eso va primero |
+| 1b | **cancelar TODOS los preapprovals vivos de la cuenta que no sean sondas**, tomados del **recorrido sin filtro del proveedor** y no de nuestra base | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe. El censo sale del proveedor porque la base no ve las autorizaciones que nunca se vincularon (`F-8CC2-002`, `F-8CB3-001`) |
 | 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled` | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`) |
 | 3 | **desplegar** | — | recién acá, y sólo si el paso 2 cerró |
 | 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados | el sistema **nuevo** | la fila es del esquema nuevo: no puede existir antes del paso 3 |
 
-**El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si alguno de los tres **no
-se pudo cancelar**, el corte **no avanza**. Es la misma forma que el programa ya usa en todas
+**El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si algún plan o preapproval
+**no se pudo cancelar**, el corte **no avanza**. Es la misma forma que el programa ya usa en todas
 partes —verificar releyendo en vez de creerle al código de estado— aplicada al único momento donde
 no hay vuelta atrás.
 
@@ -136,6 +141,32 @@ solas cuando cada dueño contrata. **El aviso va ANTES del paso 1**, no después
 acota cuánto tiempo queda abajo cada ficha. Las dos escriben filas del
 esquema nuevo, así que **las dos van después de desplegar** — y por eso el paso 3 no es el final
 del corte, aunque lo parezca.
+
+**Por qué el censo sale del proveedor, y no es una hipótesis.** El 2026-09-24 el recorrido sin
+filtro de los 108 preapprovals de la cuenta encontró una autorización viva, del propio owner, que
+la base no conocía: `f6d89f71…`, creada desde el link del plan Basic, con un cobro de ARS 18.000
+vencido esa misma noche. Se canceló antes de que cobrara (`25-fase-8-completa/00-hallazgos.md`
+§4). Con el censo de la base, ese preapproval **sobrevivía al corte y cobraba**. Y los cinco planes
+viejos seguían `active` con su link vendiendo, medido en el navegador.
+
+**Y el orden no se invierte, aunque el paso 1 sea irreversible.** La FASE 8 completa señaló
+(`F-8CC2-004`) que lo irreversible va antes de lo que puede fallar. El remedio no es cancelar al
+final, porque eso reabre la razón de arriba: el código que sabe cancelar se va con el despliegue.
+El remedio es el **paso 0** y una rama de aborto declarada.
+
+**La rama de aborto: si el paso 3 falla después del paso 1.**
+
+1. Se **reactivan los planes** del paso 1a. La sonda 50 midió que un plan cancelado vuelve a
+   `active` con un `PUT` y conserva su `init_point`. **Que el link vuelva a vender no se abrió en el
+   navegador**: se verifica en el ensayo del paso 0.
+2. El sistema viejo **sigue corriendo**: no se desplegó nada.
+3. Los clientes cuyos preapprovals se cancelaron en el paso 1b **se re-suscriben por el link
+   reactivado**. Ese acto no se puede deshacer (`PA-5`).
+4. **El costo, declarado y aceptado por el owner el 2026-09-24**: al re-suscribirse al mismo plan,
+   el proveedor **ya no les da el trial**, porque lo concede una vez por pagador y plan (medido en
+   producción el 2026-08-31, `HOS-1012`; está en el `CLAUDE.md` del repo), así que les cobra en el
+   acto. Con la cartera de hoy son tres clientes reales. **Qué se hace con esa diferencia no está
+   decidido.**
 
 ### 4.3 Lo que este orden NO resuelve
 

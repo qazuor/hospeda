@@ -122,7 +122,9 @@ cerrar.
 
 La opción no existía hasta que el owner dijo de quién eran las ocho: **dos son suyas** —sin cliente
 real detrás, regenerables de cero— y **las tres `trialing` son clientes contactables**. Las tres
-`abandoned` no tienen nada vivo. La migración estaba bien resuelta; lo que cambió es que **dejó de
+`abandoned` no tienen nada vivo — **verificado del lado del proveedor el 2026-09-24**, recorriendo
+los 108 preapprovals de la cuenta: ninguna de esas tres altas llegó a crear uno (una de esas
+personas volvió a suscribirse y es una de las tres `trialing`). La migración estaba bien resuelta; lo que cambió es que **dejó de
 hacer falta**. El detalle del costo de cada camino y de qué se pierde está en el §2 de la mitad de
 verticales.
 
@@ -156,8 +158,11 @@ fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
 > **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
 > escrita DESPUÉS de cancelarlo en el proveedor.**
 
-**Qué pasa sin ella, y es el caso que la justifica.** Las tres con preapproval vivo se cancelan en
-el proveedor y no queda rastro. Si alguna emite un cobro después del corte —porque la cancelación
+**Qué pasa sin ella, y es el caso que la justifica.** Los preapprovals vivos se cancelan en
+el proveedor y no queda rastro. **Cuáles son los saca el recorrido sin filtro del proveedor, no
+nuestra base**, y antes se cancelan los `preapproval_plan` viejos para cerrar sus links
+(`16-fase-7-del-paraguas.md` §4.2, pasos 1a y 1b): el 2026-09-24 ese recorrido encontró una
+autorización viva que la base no conocía, y los cinco planes viejos seguían vendiendo. Si alguna emite un cobro después del corte —porque la cancelación
 se aceptó y no se aplicó, o porque el cobro ya estaba en vuelo— **ese webhook llega como un
 preapproval desconocido**, y el sistema nuevo tiene **un solo camino automático** para un
 desconocido: re-vincularlo. El candidato más plausible del emparejamiento es **la suscripción nueva

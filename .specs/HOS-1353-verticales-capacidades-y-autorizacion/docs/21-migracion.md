@@ -42,7 +42,7 @@ Hasta que el owner aportó el dato, nadie sabía **de quién eran las ocho**. Co
 | las ocho | quiénes son |
 |---|---|
 | **2 `comp`** | **del propio owner.** No hay un cliente real detrás de ninguna |
-| **3 `abandoned`** | no tienen **nada vivo** que migrar: abandonaron el checkout |
+| **3 `abandoned`** | no tienen **nada vivo** que migrar: abandonaron el checkout. **Verificado también del lado del proveedor** el 2026-09-24 (`B/21` §2.4) |
 | **3 `trialing`** | clientes reales, **y contactables** — el owner puede hablarles para que se resuscriban |
 
 Las tres `trialing` son las **únicas** con preapproval vivo (medido: 3 de 3, y ninguna de las otras
