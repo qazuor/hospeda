@@ -7,7 +7,14 @@
     "issues": {
         "provider": "linear",
         "teamKey": "HOS",
-        "identifierPattern": "^HOS-[0-9]+$"
+        "identifierPattern": "^HOS-[0-9]+$",
+        "baseBranch": "develop",
+        "states": {
+            "backlog": "Backlog",
+            "inProgress": "In Progress",
+            "done": "Done",
+            "canceled": "Canceled"
+        }
     },
     "branches": {
         "base": "develop",
@@ -29,7 +36,8 @@
         "pathPattern": "../hospeda-{slug}",
         "envSource": {
             "kind": "protected-checkout",
-            "checkoutName": "hospeda-staging"
+            "checkoutName": "hospeda-staging",
+            "relativePath": "scripts/copy-env-to-worktree.sh"
         },
         "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile)",
         "build": "pnpm exec turbo run build --filter='./packages/*'"
@@ -38,29 +46,40 @@
         "strategy": "postgres-template",
         "container": "hospeda-postgres",
         "templateDatabase": "hospeda_template",
-        "databaseNamePattern": "worktree_hospeda_{slug}",
+        "databaseNamePattern": "worktree_{slug}",
+        "connectionEnvFile": "apps/api/.env.local",
         "connectionEnvVar": "HOSPEDA_DATABASE_URL",
-        "schemaFingerprintPaths": ["packages/db/drizzle", "packages/db/src"],
-        "templateFingerprintPaths": ["packages/db/drizzle", "packages/db/src"]
+        "schemaFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations"
+        ],
+        "schemaSentinelTables": ["gastronomies", "experiences"],
+        "templateFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations",
+            "packages/seed/src",
+            "packages/billing/src/config"
+        ]
     },
     "servers": [
         {
             "id": "api",
+            "portEnv": "API_PORT",
             "defaultPort": 3001,
-            "start": "pnpm --filter @hospeda/api dev --port {port}",
+            "start": "pnpm --filter hospeda-api dev",
             "healthPath": "/health"
+        },
+        {
+            "id": "admin",
+            "defaultPort": 3000,
+            "start": "pnpm --filter admin exec vite dev --port {port}"
         },
         {
             "id": "web",
             "defaultPort": 4321,
-            "start": "pnpm --filter @hospeda/web dev --port {port}",
-            "healthPath": "/"
-        },
-        {
-            "id": "admin",
-            "defaultPort": 3002,
-            "start": "pnpm --filter @hospeda/admin dev --port {port}",
-            "healthPath": "/"
+            "start": "env ASTRO_DEV_BACKGROUND=0 pnpm --filter hospeda-web exec astro dev --port {port}"
         }
     ],
     "commands": {

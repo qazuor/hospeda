@@ -14,7 +14,7 @@ export const CONFIRM_WORD = 'borrar';
  * of the deletion list. Deleting it silently breaks the tool doing the
  * deleting.
  */
-const PROTECTED_BRANCHES = new Set(['staging', 'main', 'master']);
+const PROTECTED_BRANCHES = new Set(['develop', 'staging', 'main', 'master']);
 
 /**
  * Whether a worktree is protected from deletion by its branch.
@@ -22,8 +22,14 @@ const PROTECTED_BRANCHES = new Set(['staging', 'main', 'master']);
  * @param input.branch - The checked-out branch.
  * @returns `true` when it must never be offered.
  */
-export function isProtectedBranch({ branch }: { readonly branch: string }): boolean {
-    return PROTECTED_BRANCHES.has(branch.trim());
+export function isProtectedBranch({
+    branch,
+    protectedBranches = PROTECTED_BRANCHES
+}: {
+    readonly branch: string;
+    readonly protectedBranches?: ReadonlySet<string>;
+}): boolean {
+    return protectedBranches.has(branch.trim());
 }
 
 /** One entry of the multiselect prompt. */
@@ -47,16 +53,18 @@ export interface WorktreeOption {
  * @returns One option per removable worktree.
  */
 export function buildOptions({
-    worktrees
+    worktrees,
+    protectedBranches
 }: {
     readonly worktrees: readonly WorktreeInfo[];
+    readonly protectedBranches?: ReadonlySet<string>;
 }): readonly WorktreeOption[] {
     return worktrees
         .filter(
             (worktree) =>
                 !worktree.isMain &&
                 worktree.state !== 'missing' &&
-                !isProtectedBranch({ branch: worktree.branch })
+                !isProtectedBranch({ branch: worktree.branch, protectedBranches })
         )
         .map((worktree) => ({
             value: worktree.path,

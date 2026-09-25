@@ -5,7 +5,8 @@ import { splitPassthrough } from './lib/passthrough.ts';
 import { renderOpen, withStatusBar } from './lib/statusbar.ts';
 import { extractTarget } from './lib/target.ts';
 import { extractWorktreeFlag } from './lib/wt-flag.ts';
-import { COMMANDS, findCommand } from './registry.ts';
+import type { ClientCommand } from './registry.ts';
+import { COMMANDS, commandKind, findCommand } from './registry.ts';
 
 /** Flags that ask for the help page rather than running anything. */
 const HELP_FLAGS = ['--help', '-h'] as const;
@@ -98,10 +99,26 @@ export async function runCommand({
         return 1;
     }
 
+    if (command.name === 'close-issue') {
+        return await withStatusBar({
+            context: runBarContext({ context }),
+            run: () => runCloseIssueWithContext(command, argv, context)
+        });
+    }
     return await withStatusBar({
         context: runBarContext({ context }),
         run: () => command.run(argv)
     });
+}
+
+async function runCloseIssueWithContext(
+    command: ClientCommand,
+    argv: readonly string[],
+    context: import('./lib/context.ts').RunContext
+): Promise<number> {
+    if (command.name !== 'close-issue') return command.run(argv);
+    const mod = await import('./commands/close-issue/close-issue.ts');
+    return mod.runCloseIssue({ argv, context });
 }
 
 /**
@@ -145,7 +162,9 @@ export async function main({ argv }: { readonly argv: readonly string[] }): Prom
     // list that silently goes stale every time a command is added.
     if (first === '--commands') {
         for (const command of COMMANDS)
-            process.stdout.write(`${command.name}\t${command.summary}\n`);
+            process.stdout.write(
+                `${command.name}\t${command.summary}\t${commandKind(command.name)}\n`
+            );
         return 0;
     }
 

@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { runnerFor } from '../../lib/runner.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
@@ -15,7 +16,26 @@ const WORKFLOW = '.github/workflows/ci.yml';
 const JOBS = ['lint', 'guards', 'typecheck'] as const;
 
 /** Branch the diff is measured against. */
-const BASE = 'origin/staging';
+const FALLBACK_BASE = 'origin/staging';
+
+/** Resolves the configured integration base without fetching or mutating Git. */
+async function resolveBaseRef({
+    cwd,
+    branch
+}: {
+    readonly cwd: string;
+    readonly branch: string;
+}): Promise<string> {
+    for (const candidate of [`origin/${branch}`, branch]) {
+        const result = await run({
+            command: 'git',
+            args: ['rev-parse', '--verify', candidate],
+            cwd
+        });
+        if (result.ok) return candidate;
+    }
+    return `origin/${branch}`;
+}
 
 /**
  * Resource ceiling applied to every test run.
@@ -38,13 +58,15 @@ ${pc.bold('hops verify')} — todo lo que CI va a mirar, antes de subir
 
 ${pc.bold('Uso')}
 
-  hops verify [--full] [--only <job>] [--list]
+  hops verify [--changed] [--full] [--only <job>] [--list] [--json]
 
-  ${pc.bold('--tests')}       Suma los tests de los paquetes que tocaste. ${pc.dim('No van por default.')}
+  ${pc.bold('--changed')}     Corre tests de los paquetes afectados además de lint/guards/typecheck.
+  ${pc.bold('--tests')}       Alias explícito de --changed.
   ${pc.bold('--full')}        TODOS los tests, un paquete por vez. ${pc.dim('Son miles: dejalo')}
                 ${pc.dim('laburando y andá a hacer otra cosa.')}
   ${pc.bold('--only <job>')}  Sólo un job: ${JOBS.join(', ')}, tests.
   ${pc.bold('--list')}        Muestra el plan y no corre nada.
+  ${pc.bold('--json')}        Devuelve un contrato estable para agentes; no mezcla logs de los checks.
   ${pc.bold('--help')}        Esta página.
 
 ${pc.bold('Los tests no corren por default')}
@@ -71,19 +93,21 @@ function readWorkflow({ repoRoot }: { readonly repoRoot: string }): string | nul
 }
 
 /**
- * Lists the workspace packages touched since the base branch.
+ * Lists workspace package paths touched since the base branch.
  *
  * @param input.cwd - Directory to run git from.
  * @returns Package directory names, empty when nothing or on failure.
  */
 export async function changedPackages({
-    cwd
+    cwd,
+    baseRef = FALLBACK_BASE
 }: {
     readonly cwd: string;
+    readonly baseRef?: string;
 }): Promise<readonly string[]> {
     const diff = await run({
         command: 'git',
-        args: ['diff', '--name-only', `${BASE}...HEAD`],
+        args: ['diff', '--name-only', `${baseRef}...HEAD`],
         cwd,
         timeoutMs: 60_000
     });
@@ -91,7 +115,9 @@ export async function changedPackages({
     const dirs = new Set<string>();
     for (const file of diff.stdout.split('\n')) {
         const match = /^(apps|packages)\/([^/]+)\//.exec(file.trim());
-        if (match?.[2] !== undefined) dirs.add(match[2]);
+        if (match?.[1] !== undefined && match[2] !== undefined) {
+            dirs.add(`${match[1]}/${match[2]}`);
+        }
     }
     return [...dirs].sort();
 }
@@ -131,11 +157,14 @@ function testStep({
         };
     }
     if (changed.length === 0) return null;
-    // `[ref]` without the leading dots: only what changed, never its dependents.
+    // Explicit path filters avoid Turbo's `[ref]` range selector, which can
+    // expand to every workspace when the branch diverges or global files
+    // changed. Build dependencies are still handled by the task graph.
+    const filters = changed.map((path) => `--filter=./${path}`).join(' ');
     return {
         job: 'tests',
         name: `Tests de lo que tocaste (${changed.join(', ')})`,
-        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 --filter='[${BASE}]'`
+        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 ${filters}`
     };
 }
 
@@ -152,13 +181,23 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     }
 
     const { target, rest } = extractTarget({ argv });
+    const json = rest.includes('--json');
     const { name: worktreeName } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const runner = runnerFor({ target });
     const cwd = context.worktree?.path ?? context.repoRoot;
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const baseBranch = adapter?.branches?.base ?? 'staging';
+    const baseRef = await resolveBaseRef({ cwd, branch: baseBranch });
 
     const yaml = readWorkflow({ repoRoot: cwd });
     if (yaml === null) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ readOnly: true, status: 'error', error: `workflow_missing:${WORKFLOW}`, mutations: 'none' })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(`${pc.red('ERROR:')} no encontré ${WORKFLOW} en ${cwd}.\n`);
         return 1;
     }
@@ -168,8 +207,9 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const plan = planFromWorkflow({ yaml, jobs: [...jobs] });
 
     const full = rest.includes('--full');
-    const wantsTests = rest.includes('--tests') || full || only === 'tests';
-    const changed = full || !wantsTests ? [] : await changedPackages({ cwd });
+    const wantsTests =
+        rest.includes('--changed') || rest.includes('--tests') || full || only === 'tests';
+    const changed = full || !wantsTests ? [] : await changedPackages({ cwd, baseRef });
     const tests =
         only === undefined || only === 'tests'
             ? testStep({ wanted: wantsTests, full, changed })
@@ -178,7 +218,41 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const groups = groupByJob({ steps: plan.steps });
     const total = plan.steps.length + (tests === null ? 0 : 1);
 
+    const plannedSteps = [
+        ...plan.steps.map((step) => ({
+            job: step.job,
+            name: step.name,
+            workingDirectory: step.workingDirectory ?? null
+        })),
+        ...(tests === null
+            ? []
+            : [
+                  {
+                      job: tests.job,
+                      name: tests.name,
+                      workingDirectory: tests.workingDirectory ?? null
+                  }
+              ])
+    ];
+
     if (rest.includes('--list')) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({
+                    readOnly: true,
+                    status: 'planned',
+                    workflow: WORKFLOW,
+                    mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
+                    base: baseRef,
+                    changedPackages: changed,
+                    steps: plannedSteps,
+                    skipped: plan.skipped.map((step) => ({ name: step.name, reason: step.reason })),
+                    total,
+                    mutations: 'none'
+                })}\n`
+            );
+            return 0;
+        }
         for (const group of groups) {
             process.stdout.write(`\n${pc.bold(group.job)}  ${pc.dim(`(${group.steps.length})`)}\n`);
             for (const step of group.steps) process.stdout.write(`  ${step.name}\n`);
@@ -194,6 +268,12 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     }
 
     if (total === 0) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ readOnly: true, status: 'error', error: only === undefined ? 'no_steps' : `unknown_job:${only}`, mutations: 'none' })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             only === undefined
                 ? `${pc.yellow('El workflow no tiene pasos ejecutables acá.')}\n`
@@ -208,6 +288,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     );
 
     let done = 0;
+    const results: { job: string; name: string; code: number; passed: boolean }[] = [];
     for (const step of [...plan.steps, ...(tests === null ? [] : [tests])]) {
         done += 1;
         process.stderr.write(
@@ -215,12 +296,39 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         );
         // Through a shell because CI's own steps are shell: several are `if
         // grep ...; then ... fi` one-liners, not single commands.
-        const code = await runner.exec({
+        const job = {
             command: 'bash',
             args: ['-c', step.run],
-            cwd
-        });
+            cwd: step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
+            // CI injects BASE_SHA for guards that inspect the diff. Local
+            // verify has the same contract: use the configured local base so
+            // those guards do not fail closed merely because they are outside
+            // GitHub Actions.
+            env: { BASE_SHA: process.env.BASE_SHA ?? baseRef }
+        } as const;
+        const code = json ? (await runner.execCapture(job)).code : await runner.exec(job);
+        results.push({ job: step.job, name: step.name, code, passed: code === 0 });
         if (code !== 0) {
+            if (json) {
+                process.stdout.write(
+                    `${JSON.stringify({
+                        readOnly: true,
+                        status: 'failed',
+                        workflow: WORKFLOW,
+                        mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
+                        base: baseRef,
+                        changedPackages: changed,
+                        steps: results,
+                        skipped: plan.skipped.map((item) => ({
+                            name: item.name,
+                            reason: item.reason
+                        })),
+                        total,
+                        failedStep: step.name,
+                        mutations: 'none'
+                    })}\n`
+                );
+            }
             process.stderr.write(
                 `\n${pc.red(`Falló: ${step.name}`)}\n` +
                     `${pc.dim(`Es el paso ${done} de ${total}. No sigo: lo que rompe primero suele explicar el resto.`)}\n`
@@ -229,13 +337,30 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         }
     }
 
+    if (json) {
+        process.stdout.write(
+            `${JSON.stringify({
+                readOnly: true,
+                status: 'passed',
+                workflow: WORKFLOW,
+                mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
+                base: baseRef,
+                changedPackages: changed,
+                steps: results,
+                skipped: plan.skipped.map((item) => ({ name: item.name, reason: item.reason })),
+                total,
+                mutations: 'none'
+            })}\n`
+        );
+    }
+
     if (tests === null && !wantsTests) {
         process.stderr.write(
-            `\n${pc.dim('Sin tests. Pedilos con --tests (sólo lo que tocaste) o --full (todo).')}\n`
+            `\n${pc.dim('Sin tests. Pedilos con --changed (sólo lo que tocaste) o --full (todo).')}\n`
         );
     } else if (tests === null) {
         process.stderr.write(
-            `\n${pc.dim(`Sin tests: no hay cambios en apps/ ni packages/ contra ${BASE}.`)}\n`
+            `\n${pc.dim(`Sin tests: no hay cambios en apps/ ni packages/ contra ${baseRef}.`)}\n`
         );
     }
     return 0;

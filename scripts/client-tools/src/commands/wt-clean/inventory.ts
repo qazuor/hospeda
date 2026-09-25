@@ -83,8 +83,17 @@ export function isRisky({ worktree }: { readonly worktree: WorktreeInfo }): bool
  * @param input.repoRoot - Any path inside the repository.
  * @returns The first existing candidate ref, falling back to `HEAD`.
  */
-export async function resolveBaseRef({ repoRoot }: { readonly repoRoot: string }): Promise<string> {
-    for (const candidate of BASE_CANDIDATES) {
+export async function resolveBaseRef({
+    repoRoot,
+    preferredBase
+}: {
+    readonly repoRoot: string;
+    readonly preferredBase?: string;
+}): Promise<string> {
+    const candidates = preferredBase
+        ? [`origin/${preferredBase}`, preferredBase, ...BASE_CANDIDATES]
+        : [...BASE_CANDIDATES];
+    for (const candidate of [...new Set(candidates)]) {
         const found = await run({
             command: 'git',
             args: ['rev-parse', '--verify', '--quiet', candidate],
@@ -257,11 +266,13 @@ export function sortForCleanup({
 export async function collectWorktrees({
     repoRoot,
     currentPath,
-    measureDisk = true
+    measureDisk = true,
+    preferredBase
 }: {
     readonly repoRoot: string;
     readonly currentPath: string | null;
     readonly measureDisk?: boolean;
+    readonly preferredBase?: string;
 }): Promise<readonly WorktreeInfo[]> {
     const listed = await run({
         command: 'git',
@@ -273,7 +284,7 @@ export async function collectWorktrees({
     const paths = parseWorktreePaths({ porcelain: listed.stdout });
     if (paths.length === 0) return [];
 
-    const base = await resolveBaseRef({ repoRoot });
+    const base = await resolveBaseRef({ repoRoot, preferredBase });
     // git always lists the main clone first, and that is the only reliable way
     // to identify it: the tool may well be running from inside a worktree.
     const mainPath = paths[0] ?? repoRoot;

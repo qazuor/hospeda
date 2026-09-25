@@ -22,6 +22,10 @@ describe('normalizeIssueId', () => {
         expect(normalizeIssueId({ raw: 'beta-96' })).toBe('BETA-96');
     });
 
+    it('should use the configured adapter team for bare issue numbers', () => {
+        expect(normalizeIssueId({ raw: '96', teamKey: 'QZ' })).toBe('QZ-96');
+    });
+
     it('should reject anything without a number', () => {
         expect(normalizeIssueId({ raw: 'HOS-' })).toBeNull();
         expect(normalizeIssueId({ raw: 'improve search' })).toBeNull();
@@ -146,20 +150,39 @@ describe('parseStartIssueArgs', () => {
         expect(opts.type).toBe('fix');
     });
 
+    it('should accept an explicit base branch for urgent work', () => {
+        expect(parseStartIssueArgs({ argv: ['273', '--base', 'staging'] }).baseBranch).toBe(
+            'staging'
+        );
+        expect(parseStartIssueArgs({ argv: ['273', '--base=develop'] }).baseBranch).toBe('develop');
+    });
+
     it('should ignore a second positional that is not a branch type', () => {
         // Otherwise a typo silently becomes the branch prefix.
         expect(parseStartIssueArgs({ argv: ['273', 'fixx'] }).type).toBeNull();
     });
 
-    it('should launch Claude with /startIssue by default', () => {
+    it('should not launch an agent by default', () => {
         const opts = parseStartIssueArgs({ argv: ['273'] });
-        expect(opts.launchClaude).toBe(true);
+        expect(opts.launchClaude).toBe(false);
+        expect(opts.agent).toBe('none');
         expect(opts.withStartIssue).toBe(true);
     });
 
     it('should honour --bare and --no-claude', () => {
         expect(parseStartIssueArgs({ argv: ['273', '--bare'] }).withStartIssue).toBe(false);
         expect(parseStartIssueArgs({ argv: ['273', '--no-claude'] }).launchClaude).toBe(false);
+        expect(parseStartIssueArgs({ argv: ['273', '--no-claude'] }).agent).toBe('none');
+    });
+
+    it('should select the requested agent explicitly', () => {
+        expect(parseStartIssueArgs({ argv: ['273'] }).agent).toBe('none');
+        expect(parseStartIssueArgs({ argv: ['273', '--agent', 'claude'] }).agent).toBe('claude');
+        expect(parseStartIssueArgs({ argv: ['273', '--agent', 'opencode'] }).agent).toBe(
+            'opencode'
+        );
+        expect(parseStartIssueArgs({ argv: ['273', '--agent', 'codex'] }).agent).toBe('codex');
+        expect(parseStartIssueArgs({ argv: ['273', '--codex'] }).agent).toBe('codex');
     });
 
     it('should default dryRun to false so a normal run actually creates', () => {

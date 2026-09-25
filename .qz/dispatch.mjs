@@ -15,13 +15,7 @@ if (!mapped) {
   process.exit(2)
 }
 
-const translatedArgs = command === 'verify'
-  ? args.filter((arg) => arg !== '--json').flatMap((arg) => arg === '--changed' ? ['--tests'] : [arg])
-  : args
-if (command === 'verify' && args.includes('--json')) {
-  console.error('qz Hospeda: verify todavía no tiene salida JSON; se ejecuta en formato humano.')
-}
-const result = spawnSync('bun', ['run', 'scripts/client-tools/src/index.ts', ...mapped, ...translatedArgs], {
+const result = spawnSync('bun', ['run', 'scripts/client-tools/src/index.ts', ...mapped, ...args], {
   cwd: process.cwd(),
   stdio: 'inherit'
 })
