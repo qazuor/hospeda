@@ -220,7 +220,7 @@ Y su población declarada es **la que no tiene ninguna fuente de clase `TÍTULO`
 su ficha de vuelta sin pagar todavía»* (cap. 03 §9). Su conjunto efectivo **es** esta versión, así
 que si acá no está, el paso 6 la rechaza — y como el hecho 1 del reloj de inactividad es *«un acto
 del dueño … reactivarla»* (cap. 01 §1.2, núcleo), esa persona no puede ejecutar **ninguno** de los
-cuatro reinicios y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
+~~cuatro~~ cinco reinicios y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
 
 **Y no toca `G-R3` por el lado que prohíbe, que es lo que hay que verificar antes de agregar nada
 acá.** El guard falla si esta versión otorga *«una clave de la clase comercial o un entitlement
@@ -245,7 +245,7 @@ distintas, y hasta esta pasada el guard sólo contestaba la primera: su enunciad
 entero** —*«ninguna … otorga»*— más un *«si y sólo si»* cuyo dominio es **una sola clave**, la de
 activación. Las filas 2 y 3 de la tabla de arriba no nombraban ningún guard, así que **un catálogo
 sembrado sin ellas pasaba en verde**. El desenlace está escrito dos párrafos más arriba para la fila
-3 —*«esa persona no puede ejecutar **ninguno** de los cuatro reinicios y el día 180 le borra el
+3 —*«esa persona no puede ejecutar **ninguno** de los ~~cuatro~~ cinco reinicios y el día 180 le borra el
 contenido»*— y en el `12-contrato…` §2.5 para la fila 2 —*«queda afuera para siempre»*—. Es el mismo
 punto único de falla que el aviso de abajo declara, **leído en el sentido que nadie había escrito**:
 ahí la plataforma entera recibe de más, acá la población que menos puede defenderse recibe de menos.
@@ -302,25 +302,39 @@ descubre sola.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | la FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 |
+| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | la FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**: es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
 
 **`inactiva_desde` es dónde vive el reloj del §25, y sin ella el hard delete del día 180 no es
 implementable.** La inactividad es un término del núcleo —cap. 01 §1.2— definida como *«el más
-reciente de los cuatro hechos que la reinician»*, y **un «más reciente de cuatro» no se deriva de
-ninguna máquina**: tres de los cuatro hechos no son transiciones de publicación y el cuarto es de
-la otra épica. Lo que decide **la única operación irreversible sobre datos del cliente de todo el
+reciente de los ~~cuatro~~ cinco hechos que la reinician»*, y **un «más reciente de ~~cuatro~~
+cinco» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son transiciones de
+publicación y el cuarto es de la otra épica~~ tres de los cinco hechos no son transiciones de
+publicación —el 1, el 2 y el 4, y a éste lo ejecuta la otra épica— (FASE 8 completa, `F-8CA2-001`,
+owner 2026-09-25). Lo que decide **la única operación irreversible sobre datos del cliente de todo el
 programa** no puede ser un valor que nadie guarda.
 
-**Se escribe en los cuatro hechos y en ninguna otra parte.** Cada uno de los cuatro del cap. 01
-§1.2 le pone el instante en que ocurrió; nada más la toca. No es una columna denormalizada de algo
+**Se escribe en los ~~cuatro~~ cinco hechos —y en la escritura única del corte— y en ninguna otra
+parte.** Cada uno de los ~~cuatro~~ cinco del cap. 01 §1.2 le pone el instante en que ocurrió, y la
+escritura `C` le pone a cada ficha preexistente el instante del corte, una sola vez; nada más la
+toca (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25).
+
+**El quinto es el que faltaba y levanta una prohibición que este § y el cap. 20 §2 sostenían.**
+Hasta la FASE 8 completa **`PB2` tenía prohibido escribir esta columna** —era el caso con que
+`G-R6-B` se probaba en rojo—, y el costo de esa prohibición era que la caída de cobertura no dejaba
+rastro en el reloj: la columna guardaba **el último reinicio**, que sobre una ficha publicada y
+cubierta tiene hasta 90 días, y el hard delete caía hasta 90 días antes de lo que los avisos
+prometen (`F-8CA2-001`, `F-8CA3-001`). **Desde el owner 2026-09-25 `PB2` escribe el hecho 5 en su
+primera rama** —*«`cubierto` pasa a falso»*— **y no en la segunda** —el excedente, donde la
+cobertura sigue verdadera—; `G-R6-B` mitad *(a)* admite la primera por la lista y sigue rechazando
+la segunda (cap. 20 §2). No es una columna denormalizada de algo
 que esté en otro lado —es **la** fuente— y por eso no cae en la advertencia del cap. 03 §9 sobre
 el origen de `PB4`/`PB5`, que sí está en el registro append-only y ahí la columna sería una
 segunda fuente.
 
-**Se escribe en los cuatro HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
+**Se escribe en los ~~cuatro~~ cinco HECHOS, y un hecho puede tener más de un ejecutor sin que la lista
 crezca.** Lo que la lista cierra es **de qué hechos** puede ser una escritura, nunca **quién** la
 hace: el hecho 2 tiene **tres** ejecutores —el recálculo que el aviso despierta, la relectura de
 `PB4`/`PB5` y la del hard delete del día 180 (§4.2, regla 4)— y los tres escriben el mismo hecho.
@@ -330,28 +344,39 @@ Confundir las dos preguntas es lo que ponía a `G-R6-B` en rojo sobre la red y n
 **Y que sea cerrada lo verifica un guard, `G-R6-B` (cap. 20 §2), no la memoria del que escribe.**
 Quien agregue un escritor nuevo agrega su hecho a la lista del cap. 01 §1.2 **en el mismo acto**, o
 el guard se pone en rojo. La lista **no** la vigila `G-R6`: ése cruza las columnas que una condición
-**lee** contra las que alguna transición **escribe**, y de estos cuatro hechos **uno solo es una
-transición**, así que queda verde por ése y no mira a los otros tres — está dicho en el cap. 20 §2 y
+**lee** contra las que alguna transición **escribe**, y de estos ~~cuatro hechos **uno solo es una
+transición**, así que queda verde por ése~~ cinco hechos **dos son transiciones** —el 3 y el 5—, así
+que queda verde por cualquiera de ellos y no mira a los otros tres — está dicho en el cap. 20 §2 y
 es el motivo entero de que exista `G-R6-B`.
 
-**Y la leen cinco consumidores, y esta lista también es cerrada**: `PB4`
-(día 90) y `PB5` (N meses) del cap. 03 §9, el día 180 del §4.1 de este capítulo, los **dos avisos
-previos** de schedule del cap. 07 §6 (núcleo) y la fecha que el cap. 19 §4 fila 18 obliga a
-imprimirle al cliente — que es **`inactiva_desde` + 180** y hasta esta pasada no tenía de dónde
-salir. *(El quinto **es** el aviso al archivar, el que `DEC-DATA-002` agregó: los avisos de
+**Y la leen ~~cinco~~ SEIS consumidores, y esta lista también es cerrada** (recontada en la FASE 8
+completa, `F-8CD1-009`: el renglón decía «cinco» y enumeraba seis): **(1)** `PB4` (día 90) y
+**(2)** `PB5` (N meses) del cap. 03 §9, **(3)** el día 180 del §4.1 de este capítulo, **(4)** el
+aviso previo **antes del día 90** y **(5)** el aviso previo **antes del día 180**, los dos de
+schedule del cap. 07 §6 (núcleo), y **(6)** la fecha que el cap. 19 §4 fila 18 obliga a
+imprimirle al cliente en el aviso al archivar — que es **`inactiva_desde` + 180** y hasta esta
+pasada no tenía de dónde salir. *(~~El quinto **es** el aviso al archivar,~~ **El sexto es el
+aviso al archivar**, el que `DEC-DATA-002` agregó: los avisos de
 retención son **tres** —`NUCLEO/07` §6— y acá entran **dos por el schedule y el tercero por la
 superficie que imprime su fecha**, que es por qué el renglón dice «dos» sin contradecir al núcleo.
 Este párrafo decía además que eran «los mismos cinco que el cap. 01 §1.2 enumera», y **ese § no los
-enumera**: enumera los cuatro hechos que la escriben y nombra de paso a tres de estos cinco —`PB4`,
-`PB5` y el día 180— al pedirles que relean antes de actuar.)*
+enumera**: enumera los ~~cuatro~~ cinco hechos que la escriben y nombra de paso a tres de estos
+~~cinco~~ seis —`PB4`, `PB5` y el día 180— al pedirles que relean antes de actuar.)*
 
-**Tres de los cinco leen y además escriben, y estar en esta lista no los saca de la otra.** `PB4`,
+**Tres de los ~~cinco~~ seis leen y además escriben, y estar en esta lista no los saca de la otra.** `PB4`,
 `PB5` y el día 180 **releen la cobertura en el momento de ejecutar** y, si viene verdadera, no
 avanzan y escriben el hecho 2 (§4.2, regla 4). Las dos listas responden preguntas distintas —*«¿de
 qué hecho es esta escritura?»* y *«¿quién lee esta columna?»*— y **la misma pieza puede figurar en
-las dos sin que ninguna de las dos deje de ser cerrada**. La lista de los cinco **no se mueve por
-esto**: sigue siendo la de `DEC-DATA-004`, con los dos avisos de schedule y la superficie del
-archivado contados por separado.
+las dos sin que ninguna de las dos deje de ser cerrada**. La lista de los ~~cinco~~ seis **no se
+mueve por esto**: sigue siendo la de `DEC-DATA-004`, con los dos avisos de schedule y la superficie
+del archivado contados por separado — **y contados así son seis, no cinco** (`F-8CD1-009`). El
+recuento no agrega ni saca ningún lector: corrige la cifra que `G-R6-B` mitad *(c)* necesita
+exacta, que es la que el cap. 20 §2 y `B/20` §2 citan. *(`DEC-DATA-004` `H1` los llama *«la lista de los cinco consumidores»*; esa
+cifra del log queda por corregir en el log.)*
+
+**Y el hecho 5 no le agrega un lector**: `PB2` **escribe** la columna en su primera rama y no la
+lee (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25). **Tampoco la escritura `C` del corte**, que
+no lee nada: pone el valor de arranque.
 
 **Y que esta mitad sea cerrada lo verifica el mismo guard que la otra, `G-R6-B` (cap. 20 §2), con
 un mensaje propio.** Es la mitad que la cuarta enmienda de `DEC-TEST-001` le sumó, y la razón es
@@ -360,11 +385,11 @@ figura acá decide con él** — y el lector más caro de esta columna es el har
 agregue una lectura de `inactiva_desde` agrega su fila **en el mismo acto**.
 
 **Y desde esta pasada el guard vigila esta mitad en las DOS direcciones, que es la que se paga con
-contenido.** Hasta acá comprobaba que **no hubiera intrusos** y no que **los cinco siguieran
-existiendo**: el día que el hard delete del §4.1 dejara de leer la columna —por un refactor, un
+contenido.** Hasta acá comprobaba que **no hubiera intrusos** y no que **los ~~cinco~~ seis
+siguieran existiendo**: el día que el hard delete del §4.1 dejara de leer la columna —por un refactor, un
 rename o una reescritura del cálculo— **el guard seguía verde y este renglón seguía diciendo que ese
 lector está ahí**. Es la mitad *(c)* de `G-R6-B` (cap. 20 §2), y quien **saque** una lectura saca su
-fila de acá en el mismo acto, igual que quien la agrega. *(Para los cuatro **escritores** la
+fila de acá en el mismo acto, igual que quien la agrega. *(Para los ~~cuatro~~ cinco **escritores** la
 dirección simétrica sigue deliberadamente afuera **del guard**, y la razón está en el cap. 20 §2:
 comprobar que un hecho tenga quien lo ejecute pide una declaración, y de eso un guard estático sólo
 puede verificar que esté. **Lo que la vigila desde `DEC-TEST-002` es un criterio de terminación** —
@@ -447,7 +472,9 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 ### 4.1 La lista
 
 **Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una
-frase de esta tabla: cap. 01 §1.2 la define y enumera **los cuatro hechos que la reinician**. El
+frase de esta tabla: cap. 01 §1.2 la define y enumera **los ~~cuatro~~ cinco hechos que la
+reinician** (el quinto, *«la ficha deja de estar publicada porque perdió la cobertura»*, FASE 8
+completa, `F-8CA2-001`, owner 2026-09-25). El
 que más importa acá es el segundo —**la cobertura comprobada verdadera**, un estado leído y no un
 cambio detectado (cap. 01 §1.2)—, porque es el que impide que el día 180 alcance a alguien que
 volvió.
@@ -463,6 +490,28 @@ preguntar en el momento de archivar (cap. 03 §9).
 | **Se borra** al día 180 | el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`) | es lo que el §25 llama operativo: sirve para prestar el servicio y el servicio terminó |
 | **Se anonimiza** al día 180 | los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección | el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso |
 | **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un hash irreversible del correo normalizado, no el correo** | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro |
+
+> ⚠️ **Dos preguntas sobre esta tabla quedan abiertas desde la FASE 8 completa, y ninguna es de
+> redacción** (no resueltas acá):
+>
+> 1. **El día 180 es de UNA ficha y dos renglones alcanzan a la PERSONA** (`F-8CA3-009`). *«Las
+>    preferencias de la cuenta»* y *«las señales de identidad»* son de la cuenta, y *«los datos
+>    personales dentro de un evento de dominio o de un registro de outbox»* no dice de qué eventos.
+>    Un dueño con una ficha archivada y otra paga y publicada perdería las preferencias de su
+>    cuenta el día 180 de la primera, y —según la lectura— vería anonimizados los eventos de su
+>    suscripción viva, incluido el aviso de aumento que `NUCLEO/08` §1.3 tiene que poder
+>    **demostrar** con destinatario. Al revés, los datos personales de la fila de `user` no están en
+>    ningún renglón. **Decidir cuándo muere lo que es de la persona** —por ficha, cuando no le queda
+>    ninguna viva, o con un disparador propio— es política de retención, no una corrección.
+> 2. **El hard delete y `PB5` no tienen orden entre sí** (`F-8CA2-014`). Este renglón borra
+>    *«los borradores»* el día 180 sin exigir `ARCHIVED`, y `PB5` archiva un borrador a los `N`
+>    meses con `N` configurable y sin cota contra 180 (cap. 03 §9). Con `N ≥ 6` meses, el día 180
+>    borra un borrador que nunca pasó por el archivado ni por su aviso; lo mismo si el job de `PB4`
+>    estuvo caído. Las dos salidas que se ven —exigir `ARCHIVED` como precondición del borrado, o
+>    una cota `N < 180 días` vigilada como `D16`— cambian cosas distintas (la primera deja sin
+>    borrar a la ficha publicada sin cobertura que `PB4` no alcanzó; la segunda restringe una
+>    configuración), y *«los borradores»* admite además dos lecturas —las fichas en `DRAFT` o las
+>    ediciones sin publicar de una ficha—. Elegir es de diseño; queda anotado.
 
 **El hash existe porque el correo es a la vez el único bloqueo y el primer dato que se anonimiza.**
 `DEC-TRIAL-004` decidió que sólo el correo normalizado niega un trial nuevo, y este mismo capítulo
@@ -528,7 +577,10 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
 
    **Su caso testigo es la pausa, y es la razón por la que estas dos reglas se escribieron
    juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha
-   el primer día y `PB4` se la archiva el 90. El reloj **no se detiene** durante la pausa
+   el primer día **y en ese mismo acto escribe `inactiva_desde`** (cap. 01 §1.2, hecho 5; FASE 8
+   completa, `F-8CA2-001`, owner 2026-09-25) y `PB4` se la archiva el 90. *(Sin esa escritura la
+   columna guardaba el último reinicio, de hasta 90 días de antigüedad, y el 90 y el 180 caían
+   hasta 90 días antes de lo que esta cuenta dice.)* El reloj **no se detiene** durante la pausa
    —verticales no sabe que hay una pausa detrás, y `DEC-TRIAL-008` con el §4 del contrato deciden
    que no lo sepa—, así que lo único que separa a ese cliente del borrado es que **120 < 180** y
    que reanudar reinicie. Las dos cifras son configuración: la desigualdad es el invariante `D16`

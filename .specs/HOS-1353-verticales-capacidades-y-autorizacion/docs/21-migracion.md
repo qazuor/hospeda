@@ -127,6 +127,28 @@ puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya n
 que una demora de tres meses en la agenda de llamados convertía *«vuelve sola»* en un incidente
 por cada cuenta.
 
+**Y el reloj de esas fichas arranca el día del corte, no el día que se crearon** (FASE 8 completa,
+`F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25). `listing.inactiva_desde` **no es anulable** (`V/02`
+§2.5), así que la migración estructural tiene que ponerle un valor a cada ficha que ya existe, y el
+único que la regla de la columna ofrecía —*«una ficha nace con el instante de su creación»*— es su
+`created_at`: con él, toda ficha creada más de 90 días antes del corte se archivaba y toda ficha de
+más de 180 **se borraba en la primera corrida**, antes de que sonara el teléfono y con los tres
+avisos de retención fechados en el pasado. **Toda ficha que existía el día del corte nace con
+`inactiva_desde` = el instante del corte.** Es la escritura `C` de la lista cerrada del
+`NUCLEO/01` §1.2 —**una sola vez, en la migración estructural del corte, y en ningún otro lugar**—,
+y `G-R6-B` la admite por ese lugar. *(Sobre las fichas publicadas, `PB2` escribe el mismo día el
+hecho 5 al despublicarlas, `NUCLEO/01` §1.2; la escritura `C` sigue haciendo falta porque la
+columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a las que no estaban
+publicadas.)*
+
+> ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
+> tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió
+> y lo que `PB7` devuelve es una ficha vacía (`V/03` §9, `F-8CA2-008`). El hallazgo propone
+> declararlo como límite de la agenda (`F-8CA3-002`); **si se declara y cómo se vigila lo decide el
+> owner**. Y `DEC-MIG-004` retiró su defecto #7 con la causa *«no se transcribe ninguna»*: la ficha
+> sí sobrevive al corte y su reloj sí se siembra, así que esa causa no alcanza a esta columna — la
+> corrección del texto del log queda para el log.
+
 **Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
 contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
 igual** —es lo que decide todo este capítulo: son pocos, la mayoría **no pagó nunca**, y el owner
@@ -144,7 +166,10 @@ casos conocidos y con el owner al teléfono. Es exactamente cuando conviene desc
 falla.
 
 **Consecuencia sobre la regla del capítulo, y es limpia**: del lado de verticales **no se escribe
-ninguna fila**, así que *«el sistema nuevo no hereda una sola fila»* sigue siendo literal acá. La
+ninguna fila**, así que *«el sistema nuevo no hereda una sola fila»* sigue siendo literal acá.
+**Lo que sí se escribe es un valor de columna sobre filas que ya existen** —el `inactiva_desde` de
+arriba—, y por eso figura en la lista cerrada de escritores de esa columna como escritura propia
+(FASE 8 completa, `F-8CC2-003`, owner 2026-09-25). La
 única excepción del programa es la lápida del `B/21` §2.5, y tiene su razón propia — hace
 reconocible un cobro viejo, que ninguna llamada puede evitar.
 

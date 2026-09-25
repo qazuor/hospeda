@@ -291,7 +291,7 @@ billing mueve varias publicaciones a la vez.
 | # | desde | evento | hacia | nota |
 |---|---|---|---|---|
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
-| PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo |
+| PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25) |
 | PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza. **Es una disyunción de dos, simétrica a la de `PB2`** (`DEC-DATA-003`) |
 | PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | **relee la cobertura antes de archivar** (ver abajo). Sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
 | PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración. **Relee la cobertura antes de archivar**, igual que `PB4` |
@@ -451,6 +451,18 @@ era la de un cliente que no canceló nada.
 | para quién existe | el que pausó, el que recontrata, el que regularizó | el que quiere su ficha de vuelta sin pagar todavía, y el borrador que archivó `PB5` |
 | con qué la autoriza | su fuente de clase `TÍTULO`, que es la que acaba de volver | **la versión de piso**, *«recuperar lo suyo»* (cap. 02 §2.1) — su población **no tiene ninguna otra** |
 
+> ⚠️ **Abierto desde la FASE 8 completa: `PB7` y `PB3` no distinguen una ficha que el hard delete
+> ya vació** (`F-8CA2-008`; no resuelto acá). El hard delete del día 180 **no mueve el estado** —le
+> borra el contenido y la deja en `ARCHIVED`—, y `PB7` sólo mira el origen. Si el dueño recupera
+> la cobertura después del día 180, `PB7` publica una página vacía, y por el criterio de vuelta
+> —*«la publicada menos recientemente»*, abajo— la vacía, que suele ser la más vieja, **ocupa el
+> cupo antes que las intactas**. El hallazgo propone que la guarda de `PB3`/`PB7` excluya lo
+> vaciado, y **no es mecánico**: pide un dato que diga *«el hard delete ya corrió sobre esta
+> ficha»* —el hard delete no es una transición, así que una guarda que lo leyera cae bajo `G-R6`
+> (`V/20` §2)—, y pide decidir adónde va esa ficha si no vuelve. El núcleo ya lo dice de un solo
+> lado: el correo de la reapertura avisa *«que el contenido no vuelve»* (`NUCLEO/07` §6), sin
+> decir si la ficha sí. Queda para el owner.
+
 **`PB7` no puede ignorar el origen, y ésa es toda la razón por la que lo mira.** A `ARCHIVED` se
 entra por dos puertas: `PB4`, desde una ficha que estaba a la vista, y `PB5`, desde un
 **borrador** que su dueño nunca publicó. Una vuelta automática que no las distinguiera
@@ -480,6 +492,14 @@ reanudar, `cubierto` vuelve a verdadero, el reloj se reinicia y `PB7` la republi
 primer día de la pausa y ese reinicio hay **120 días** contra los **180** del borrado, y las
 pausas encadenadas no acumulan porque cada reanudación reinicia. Que las dos cifras sigan en ese
 orden es `D16` (cap. 04 §3, núcleo), no una cuenta que alguien tenga que rehacer.
+
+**Y la cuenta mide desde el primer día de la pausa porque `PB2` escribe el reloj ese día** (hecho 5
+del cap. 01 §1.2, núcleo; FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). Hasta
+entonces no lo escribía nadie: el reloj guardaba el último reinicio, que la relectura de `PB4` pone
+cada 90 días sobre una ficha publicada y cubierta, y con 85 días de antigüedad al pausar la ficha se
+archivaba el día 5 de la pausa y se borraba el día 95. **Vale para la ficha que estaba publicada
+cuando la pausa empezó**; la que ya estaba abajo no pasa por `PB2` y queda abierta en el cap. 01
+§1.2 (núcleo).
 
 **Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
 esta misma tanda:**

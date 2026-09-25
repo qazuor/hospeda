@@ -83,8 +83,8 @@ mandando dos. Lo que entra es **a qué día apunta el aviso**, no **cuándo se l
 **La fecha objetivo va en la ocurrencia SIEMPRE, y no como excepción de un sujeto.** Es la regla
 entera y no tiene lista: **todo hito de schedule cuelga de una fecha, y toda fecha de la que
 cuelga un hito se puede mover**. El trial se extiende por `T4` (cap. 03), la renovación llega una
-vez por ciclo, y el reloj de retención se reinicia por cualquiera de los **cuatro hechos** del
-§1.2 del cap. 01. Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
+vez por ciclo, y el reloj de retención se reinicia por cualquiera de los ~~**cuatro hechos**~~
+**cinco hechos** del §1.2 del cap. 01 (el quinto, FASE 8 completa, `F-8CA2-001`, owner 2026-09-25). Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
 vida del sujeto**, y ningún hito del catálogo del §6 cumple eso.
 
 > ⚠️ **Escrito como excepción por sujeto, esto ya falló una vez, y falló en silencio.** La versión

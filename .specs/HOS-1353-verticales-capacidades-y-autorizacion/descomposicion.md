@@ -59,7 +59,7 @@ condicionan**: se apoyan en ella.
 | **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** |
 | **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
 | **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus cuatro hechos de reinicio**, la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe `PB2`, de V6; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), la anonimización, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -104,10 +104,12 @@ escribirlo sin poder probarlo.
 
 `G-R6-B` (`20` §2) falla si **algo toca `listing.inactiva_desde` desde un lugar que las listas
 cerradas no nombran, o si un lugar que ellas nombran dejó de tocarla**: una **escritura** que no sea
-uno de los cuatro hechos del `01` §1.2 (núcleo), una **lectura** que no figure entre los cinco
-consumidores del `02` §2.5 (cuarta enmienda de `DEC-TEST-001`), o **uno de esos cinco que ya no
-lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
-(`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, y la relectura de
+uno de los ~~cuatro~~ cinco hechos del `01` §1.2 (núcleo) ni la escritura `C` del corte, una
+**lectura** que no figure entre los ~~cinco~~ seis consumidores del `02` §2.5 (cuarta enmienda de
+`DEC-TEST-001`; recontados en la FASE 8 completa, `F-8CD1-009`), o **uno de esos ~~cinco~~ seis que
+ya no lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
+(`02` §2.5) y **escribe** en ella —`PB1`, `PB3` y `PB7` son el tercer hecho, **la primera rama de
+`PB2` es el quinto** (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), y la relectura de
 `PB4`/`PB5` es uno de los tres momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
 del `01` §1.2 y del reloj que la **lee**.
 
@@ -120,10 +122,10 @@ escrito»*. Puesto en V6, lo que puede aparecer después es **una pieza nueva** 
 lo que viene a rechazar.
 
 **Y la mitad de lectores refuerza la elección en vez de moverla, aunque sus consumidores nazcan
-tarde.** De los cinco, `PB4` y `PB5` son de V6; el día 180 y los dos avisos previos son de **V9**;
+tarde.** De los ~~cinco~~ seis, `PB4` y `PB5` son de V6; el día 180 y los dos avisos previos son de **V9**;
 la fecha que se le imprime al cliente es de **V8**. Un guard que naciera con el último de ellos
-llegaría cuando los cinco ya existen y **nacería con lista de excepciones**; naciendo en V6 ve
-llegar a los tres de afuera **uno por uno**, y cada uno tiene que traer su fila al `02` §2.5 para
+llegaría cuando los ~~cinco~~ seis ya existen y **nacería con lista de excepciones**; naciendo en V6 ve
+llegar a los ~~tres~~ cuatro de afuera **uno por uno**, y cada uno tiene que traer su fila al `02` §2.5 para
 pasar. Es el caso de libro del §2.1, con lectores en vez de escritores.
 
 **Lo que V9 conserva es su parte**: la lista del `01` §1.2 es su capítulo y el guard la cita; si

@@ -666,6 +666,14 @@ dos filas de `V/03` §9 —`PB4` y `PB5`— **y el hard delete del día 180** (`
 4), que no es una fila de ninguna máquina y es el único irreversible. El aviso perdido cuesta un
 retraso en el reinicio, jamás un archivado —ni un borrado— sobre alguien que ya volvió.
 
+**Y desde la FASE 8 completa el reloj recibe del mismo evento un segundo hecho, y ése sí cuelga del
+cambio** (`F-8CA2-001`, owner 2026-09-25). Cuando `PB2` baja una ficha porque `cubierto` pasó a
+falso, escribe el instante de la caída en `listing.inactiva_desde`: es el **hecho 5** del
+`NUCLEO/01` §1.2. No contradice la regla de arriba —`PB2` es una transición, y una transición se
+dispara por un cambio—, pero tiene la debilidad que la regla vino a tapar para el hecho 2: **si el
+aviso de la caída se pierde, `PB2` no dispara y nadie escribe el hecho 5**, y no hay relectura que
+lo sostenga. Queda abierto en el `NUCLEO/01` §1.2.
+
 ---
 
 ## 4. Lo que NO cruza la frontera

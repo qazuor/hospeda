@@ -452,7 +452,7 @@ lo que las abrió para que nadie lo lea como una asignación inventada.
    **RESUELTA**: los tres son capítulos de **B3**, y la fila del §2 lo dice (`01` §2.4, §2.5 y
    §2.6, núcleo). Lo medido que la abrió sigue siendo cierto y **llevaba dos vueltas reportado**
    —`F-8dC2-002` dice que cuatro capítulos del núcleo no son de ninguna unidad, y el veredicto de
-   la FASE 8-bis-4 *«`nucleo/01` entró por `V9`»* es cierto **del §1.2**, los cuatro hechos de
+   la FASE 8-bis-4 *«`nucleo/01` entró por `V9`»* es cierto **del §1.2**, los ~~cuatro~~ cinco hechos de
    reinicio, y no de los inventarios del §2—. Lo que faltaba era **una fila en el reparto**, igual
    que en el punto 1, y el dueño se elige con el mismo criterio que allá: **la unidad que construye
    los guards que los leen y los términos que enumeran**.

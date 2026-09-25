@@ -1481,8 +1481,10 @@ sostiene lo que sigue es S10.
 
 **Qué le pasa a la ficha mientras dura la pausa, porque esto no se puede escribir de un solo
 lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…` §2.6), así que
-`cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9). **Y el reloj de
-inactividad de verticales no se detiene**: si la pausa cruza el día 90, `PB4` la archiva.
+`cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9) **y en ese acto arranca el
+reloj de inactividad** —el hecho 5 del `NUCLEO/01` §1.2, FASE 8 completa, `F-8CA2-001`, owner
+2026-09-25—. **Y el reloj de inactividad de verticales no se detiene**: si la pausa cruza el día 90,
+`PB4` la archiva.
 Verticales no sabe que detrás de esa pérdida de cobertura hay una pausa, y `DEC-TRIAL-008`
 decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino **tres** cosas:
 **`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar; **el tope de una
@@ -1670,7 +1672,9 @@ tres razones y ninguna es de matiz:
    cuya presencia *«no es una ficha»* por orden del §17.1. Sobre esa población el tope propuesto
    **no existe**, que es peor que ser largo.
 2. **Ya no es monótono, y un tope que se reinicia solo no es un tope.** `DEC-DATA-002` le puso a
-   la inactividad **cuatro hechos de reinicio** con lista cerrada (`NUCLEO/01` §1.2), y el primero
+   la inactividad **cuatro hechos de reinicio** con lista cerrada (`NUCLEO/01` §1.2) —**hoy cinco**:
+   el quinto, *«la ficha deja de estar publicada porque perdió la cobertura»*, FASE 8 completa,
+   `F-8CA2-001`, owner 2026-09-25—, y el primero
    es *«un acto del dueño sobre la ficha»*: el suspendido que entra a editar su borrador corre su
    propio vencimiento hacia adelante, indefinidamente. Lo que se retiró en esa decisión fue,
    textual, *«que el reloj fuera monótono»*.
