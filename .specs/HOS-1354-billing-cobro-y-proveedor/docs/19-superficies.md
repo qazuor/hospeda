@@ -41,10 +41,10 @@ separarían en la primera decisión que alguien cambie en un solo lado.
 
 | superficie | qué lee | qué NO lee |
 |---|---|---|
-| **pricing** (§47) | la **versión vigente** de cada plan, y sólo si es vendible (cap. 10 §2) | nada de la suscripción de nadie |
+| **pricing** (§47) | la **versión vigente** de cada plan, y sólo si es vendible (`V/10` §2) | nada de la suscripción de nadie |
 | **Mi Cuenta** (§45) · **Mi Suscripción** (§46) | la **versión anclada** de la suscripción, su estado, y el conjunto efectivo de entitlements y limits | el catálogo vendible, salvo para ofrecer un cambio |
 
-Las dos primeras filas son la distinción del capítulo 10 §2 dicha desde la UI: **el catálogo es lo
+Las dos primeras filas son la distinción del capítulo 10 (épica de verticales) §2 dicha desde la UI: **el catálogo es lo
 que se puede comprar hoy; la suscripción es lo que se compró.** Una pantalla que las mezcle le
 muestra a alguien un precio que no es el suyo.
 

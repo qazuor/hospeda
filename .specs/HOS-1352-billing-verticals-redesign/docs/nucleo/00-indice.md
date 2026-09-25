@@ -3,7 +3,7 @@ title: Núcleo — mapa del programa y reglas de escritura
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-24
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 ---
@@ -60,9 +60,13 @@ Es el §7 aplicado al documento: *«Debe existir un único motor genérico de bi
 organizada por subdominio reproduce en el papel la duplicación que el §1 nombra como causa de
 este programa.
 
-**Y las dos épicas no se referencian entre sí.** Lo único que cruza es el contrato de cobertura
+~~**Y las dos épicas no se referencian entre sí.** Lo único que cruza es~~ **Las dos épicas sí
+se citan entre sí**: recontado el 2026-09-25, **74** líneas de `HOS-1354/docs` citan a verticales
+(`` `V/NN` `` o *«épica de verticales»*) y **63** de `HOS-1353/docs` citan a billing (`` `B/NN` ``
+o *«épica de billing»*) (FASE 8 completa, `F-8CD1-014`). Lo que ninguna de las dos puede mutar
+sola es el contrato de cobertura
 ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md)), que vive afuera de las dos
-justamente para que ninguna lo pueda mutar sola.
+justamente para eso.
 
 ## Cuándo un hueco se considera cerrado
 
@@ -92,7 +96,7 @@ preguntar **una vez** si están todos.
 | # | capítulo | qué define |
 |---|---|---|
 | `00` | este documento | el mapa y las reglas de escritura |
-| `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los dos sentidos de «vivo», el criterio Eje 1 / Eje 2 |
+| `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los cuatro conjuntos que nombra «vivo» (§2.4), el criterio Eje 1 / Eje 2 |
 | `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, y el registro de eventos |
 | `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las nueve máquinas |
 | `04` | [invariantes](./04-invariantes.md) | los 54 (37 del §64 del PDR y 17 de las decisiones), con quién sostiene cada uno |

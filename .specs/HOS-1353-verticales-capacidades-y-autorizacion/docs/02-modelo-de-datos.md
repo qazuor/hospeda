@@ -683,7 +683,7 @@ son los que no dependen de que ningún camino de código se acuerde:
 | 1 · trial máximo una vez por `user + vertical` | `UNIQUE(user_id, vertical)` en `trial`, sin condición de estado |
 | 2 · borrar ficha no devuelve trial | la fila de `trial` no se borra nunca (§4.1) — **la sostiene contra el borrado de la cuenta la FK `trial.user_id` → `user` con `ON DELETE RESTRICT`** (§2.2; FASE 8 completa, `F-8CA3-008`) |
 | 11 · una ficha tiene un único dueño | columna no anulable, no tabla de relación |
-| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |
+| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (`NUCLEO/03` §1, regla 2) |
 
 > ⚠️ **Lo que la fila 2 NO tiene, declarado por `DEC-METH-015`** (FASE 8 completa, `F-8CA3-008`):
 > la FK impide que la fila caiga **por arrastre** del borrado de la cuenta, pero **ninguna

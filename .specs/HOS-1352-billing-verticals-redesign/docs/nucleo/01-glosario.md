@@ -354,7 +354,7 @@ vence.
 ## 2. El glosario de estados · cierra `M-ARCH-01`
 
 El §63 pide ocho máquinas. El capítulo 03 define **nueve** — las ocho del §63 más la
-**Postulación de Partner**, que el capítulo 18 §5 declara agregada al núcleo. Acá se fijan **los
+**Postulación de Partner**, que el capítulo 18 (verticales) §2.1 declara agregada al núcleo. Acá se fijan **los
 nombres** y, sobre todo, se separa la colisión que el PDR trae.
 
 > **Precisado el 2026-09-19 (FASE 8, `F-8C1-011`).** Esta frase decía *«El §63 pide ocho
@@ -475,7 +475,7 @@ cada uno tiene un nombre propio que ya no se puede confundir con los otros.
 
 | término | qué es | dónde se enumera | para qué existe |
 |---|---|---|---|
-| **fila viva** | una fila —de suscripción o de instancia de addon— que **ocupa el lugar del usuario en esa vertical**: la que todavía tiene una autorización que puede cobrar, **o la suspendida, a la que tiene que apuntar la vuelta**. ~~que **todavía tiene una autorización de cobro que puede cobrar**~~ — **reescrito el 2026-09-24 por decisión del owner**: desde `DEC-SUB-019` una `SUSPENDED` de tarjeta **ya no puede cobrar** y sigue siendo viva, porque si dejara de serlo el candado se abriría y la vuelta entraría como un alta suelta, dejando **dos filas** en la misma vertical. Siendo viva, la vuelta **tiene** que entrar como sucesora y la suspendida se cierra al autorizarse (`S17`) | **son dos enumeraciones, una por sujeto.** De la **suscripción**, los **seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2). De la **instancia de addon**, los **dos**: `PENDING_AUTHORIZATION` y `ACTIVE` (cap. 03 (billing) §8) | el candado del §11: impedir un segundo `INSERT` sobre una autorización que sigue pudiendo cobrar |
+| **fila viva** | una fila —de suscripción o de instancia de addon— que **ocupa el lugar del usuario en esa vertical**: la que todavía tiene una autorización que puede cobrar, **o la suspendida, a la que tiene que apuntar la vuelta**. ~~que **todavía tiene una autorización de cobro que puede cobrar**~~ — **reescrito el 2026-09-24 por decisión del owner**: desde `DEC-SUB-019` una `SUSPENDED` de tarjeta **ya no puede cobrar** y sigue siendo viva, porque si dejara de serlo el candado se abriría y la vuelta entraría como un alta suelta, dejando **dos filas** en la misma vertical. Siendo viva, la vuelta **tiene** que entrar como sucesora y la suspendida se cierra al autorizarse (`S17`) | **son dos enumeraciones, una por sujeto.** De la **suscripción**, los **seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2). De la **instancia de addon**, los **dos**: `PENDING_AUTHORIZATION` y `ACTIVE` (cap. 03 (billing) §8) | el candado del §11: impedir un segundo `INSERT` ~~sobre una autorización que sigue pudiendo cobrar~~ **mientras una fila ocupa el lugar del usuario en esa vertical** —la que sigue pudiendo cobrar, o la suspendida a la que tiene que apuntar la vuelta— (FASE 8 completa, `F-8CD1-010`: esta columna no se había reescrito con la de al lado) |
 | **fuente viva** | una fuente que el contrato de cobertura **devuelve hoy** en `fuentes` | la lista de esa respuesta, resuelta en el momento ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2) | resolver la cobertura y las capacidades: los pasos 5 y 6 de la autorización |
 | **grant vivo** | un `permanent_grant` **que todavía no fue revocado** | **no se enumera con estados: es una columna.** `revocado_en` **nulo** (cap. 02 (billing) §2.4). No hay máquina de estados del grant y no hay más valores que esos dos | contestar **después del acto** si la concesión sigue en pie: los tres backstops de abajo, que corren en el barrido diario y no en el instante de revocar |
 | **ancla viva** | una fila de `permanent_grant_vertical` **cuyo grant está vivo** | **no tiene enumeración propia**: el ancla no lleva estado, así que se deriva **entera** del grant (cap. 02 (billing) §2.4) | preguntar por **una vertical concreta**, que es lo que el grant solo no contesta: el título es por vertical |
@@ -497,6 +497,10 @@ ninguna búsqueda **porque el lugar donde faltaba no lo nombraba**. La columna l
 **Los tres que quedan afuera de la primera lo están por la razón que le da su nombre**:
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
 canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
+**Y tampoco son la fila a la que tiene que apuntar la vuelta**, que es la otra mitad de la
+definición: la `SUSPENDED` de tarjeta tampoco puede cobrar desde `DEC-SUB-019` y sigue adentro
+**sólo** por esa mitad (fila de arriba). No poder cobrar ya no alcanza para quedar afuera (FASE 8
+completa, `F-8CD1-010`).
 
 **Y en la instancia de addon quedan afuera otros tres, por lo mismo**: `ABANDONED`, `EXPIRED` y
 `CANCELLED`. **La segunda enumeración se escribió cuando un consumidor la necesitó**, y la
@@ -550,6 +554,7 @@ limpia `sucede_a` cuando la sucesora se muere (`B/02` §2.2, cuarto estado de la
 | 14 | **`G-R1-D`** | cap. 20 (billing) §2 | el mismo predicado, como guard |
 | 15 | la **primera comprobación del barrido** | cap. 09 (billing) §3 | *«la predecesora a la que apunta ya no es fila viva»* |
 | 16 | la **partición en cuatro por columna** | cap. 02 (billing) §2.2 | la definición operativa de *«sucesión en curso»* |
+| 22 ✚ | la **guarda de sucesión de `S6`** | cap. 03 (billing) §3.2 | *«`S6` no ocurre mientras la fila sea la predecesora de una sucesión en curso —una sucesora viva apuntándola—»*, por los dos primeros eventos; por el tercero la guarda no corre (owner, 2026-09-24 y 2026-09-25). Estaba en la condición de `S6` y no acá (FASE 8 completa, `F-8CD1-010`) |
 
 **El grupo B es el que hay que mirar dos veces, y hay una razón medida.** Un predicado del grupo A
 que se equivoque enumera un conjunto y se compara contra seis nombres; uno del grupo B que se
@@ -607,7 +612,7 @@ mitad de `G-R1-E` (`B/20` §2).
 | 6 | el **evento de `S13`** | cap. 03 (billing) §3.2 | *«`SUPER_ADMIN` otorga un *Free Forever*, o le ancla una vertical nueva a un **grant vivo***»* — anclarle una vertical a uno revocado no es un acto: no hay instrumento al que agregarle nada |
 | 7 | el **evento de `S20`** | cap. 03 (billing) §3.2 | ídem — es el mismo acto, y por eso los dos comparten el evento |
 | 8 | la **tercera cláusula del evento de `A5`** | cap. 03 (billing) §8 | *«se revoca el grant del que cuelga el ancla que era su título»* — es **el escritor**, no un lector: es el acto que hace que el grant deje de estar vivo, y por eso figura acá |
-| 9 | la **invalidación del caché de entitlements** | cap. 02 (verticales) §2.4 | *«se otorga o se revoca … un grant, o se le ancla una vertical nueva a un **grant vivo***»* — es el único consumidor **fuera de billing**, y llega como evento, no como predicado: verticales no lee la columna (regla 1) |
+| 9 | la **invalidación del caché de entitlements** | cap. 02 (verticales) §3.2 | *«se otorga o se revoca … un grant, o se le ancla una vertical nueva a un **grant vivo***»* — es el único consumidor **fuera de billing**, y llega como evento, no como predicado: verticales no lee la columna (regla 1) |
 
 **Tres reglas de uso, porque la ambigüedad ya costó tres críticos distintos:**
 

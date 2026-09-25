@@ -3,7 +3,7 @@ title: Master Spec 04 — Invariantes
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 4
@@ -94,10 +94,11 @@ forma literal es inaplicable: no hay manera de evaluar una capacidad sin nombrar
 
 **Que el §64 mezcle las dos clases no es un defecto del PDR**: las siete son obligaciones
 reales. Lo que sí sería un defecto es tratarlas como si fueran verificables sobre el sistema y
-darlas por cumplidas porque nadie las contradijo. **Cinco de las 37 no se pueden comprobar
-ejecutando nada.**
+darlas por cumplidas porque nadie las contradijo. **Siete de las 37 no se pueden comprobar
+ejecutando nada** (decía «cinco»; recontado el 2026-09-25 contra esta tabla y el §5, FASE 8
+completa, `F-8CD1-013`).
 
-### 2.5 Los cinco de *Free Forever* (27, 28, 29) y los dos restantes (25, 31)
+### 2.5 Los cinco de subdominio: los tres de *Free Forever* (27, 28, 29) y los dos restantes (25, 31)
 
 | # | invariante | dónde |
 |---|---|---|
@@ -119,7 +120,7 @@ ejecutando nada.**
 
 ## 3. Los invariantes que agregan las decisiones
 
-El §64 se escribió antes de las 45 decisiones. Éstos no están en su lista y tienen el mismo
+El §64 se escribió antes de las 117 decisiones (decía «45»; recontado el 2026-09-25 sobre los encabezados `DEC-` de `01-decision-log.md`, FASE 8 completa, `F-8CD1-013`). Éstos no están en su lista y tienen el mismo
 peso, porque romperlos rompe algo que ya se decidió:
 
 | # | invariante | de dónde sale | dónde se hace cumplir |

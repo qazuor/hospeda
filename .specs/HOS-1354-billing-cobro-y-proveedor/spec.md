@@ -48,7 +48,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | `billing_option` —donde vive el precio—, suscripción, pausa, el vínculo con el proveedor, el dinero, addons y concesiones |
 | `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | **siete**: Suscripción, Grace, Pausa, Pago, Pago manual, Addon, y la regla de no-retroceso |
 | `05` | [idempotencia y concurrencia](./docs/05-idempotencia-y-concurrencia.md) | los tres mecanismos, los seis cruces del §52, y qué hace seguro a un pago tardío |
-| `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las cinco reglas duras de trato, el riesgo de plataforma |
+| `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las seis reglas duras de trato, el riesgo de plataforma |
 | `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los tres modos de «cero cobros», y el bug vivo que pasa a ser caso de uso |
 | `10` | [retiro de plan y vertical discontinuada](./docs/10-verticales-planes-billing-options.md) | retirar no mueve a nadie; discontinuar **deja de cobrar antes de dejar de prestar** |
 | `12` | [suscripción](./docs/12-suscripcion.md) | el grace, la cola de cambios programados, el precio que cambia entre programar y ejecutar |

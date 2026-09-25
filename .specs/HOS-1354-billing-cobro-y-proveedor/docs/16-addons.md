@@ -393,7 +393,7 @@ orfandad nunca lo miró.
 
 Un addon *+5 fichas* que vence deja a la persona con fichas publicadas por encima del límite del
 plan. **Eso es exactamente el reconciliador de excedentes del capítulo 15 (épica de verticales) §4**, y el vencimiento
-de un addon ya está en la lista que lo dispara (cap. 02 §3.2).
+de un addon ya está en la lista que lo dispara (`V/02` §3.2).
 
 Que el hueco no necesite mecanismo propio **es el resultado**, no una omisión: `M-ENT-02` existía
 porque el §28.1 escribía este mecanismo dentro del downgrade, y sacarlo de ahí resuelve éste sin

@@ -133,7 +133,7 @@ colgando de la instancia (`B/02` §2.3).
 
 ---
 
-## 4. Las cinco reglas duras de trato con este proveedor
+## 4. Las seis reglas duras de trato con este proveedor
 
 Salen de la medición, no del criterio. Cada una tiene su caso que la produjo.
 

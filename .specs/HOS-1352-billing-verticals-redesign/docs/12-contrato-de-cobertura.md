@@ -765,7 +765,7 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe, con su scope, su
 su firma. Lo que gana es la referencia que toda fuente tiene que tener.
 
 **Y por qué no dejar que el grant declare su propio juego de claves**: sería una segunda forma de
-declarar entitlements, que `V/02` §1.2 prohíbe, y obligaría a mantener dos catálogos en sincronía
+declarar entitlements, que `NUCLEO/02` §1.2 prohíbe, y obligaría a mantener dos catálogos en sincronía
 para siempre. Es el defecto que este programa viene a corregir.
 
 **Beneficio operativo**: regalar algo pasa a ser **elegir un plan concreto**, y queda auditado.

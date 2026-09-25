@@ -442,7 +442,7 @@ proporción, la regla nueva no funcionó; si baja, sí.
 
 | # | qué se rompe | qué hay que escribir |
 |---|---|---|
-| **21** | un cobro viejo que llega después del corte **se imputa a la suscripción nueva** de esa persona | **`APLICAR`, no discutir**: es la regla `R5-G`, ya escrita — el compromiso viejo se conserva como una `subscription` en `CANCELLED` **con su `provider_link`**, que es lo que vuelve resoluble el id viejo. Va en `B/21-migracion.md` §2 |
+| **21** | un cobro viejo que llega después del corte **se imputa a la suscripción nueva** de esa persona | **`APLICAR`, no discutir**: es la regla `R5-G`, ya escrita — el compromiso viejo se conserva como una `subscription` en `CANCELLED` **con su `provider_link`**, que es lo que vuelve resoluble el id viejo. Va en `B/21-migracion.md` §2.5 |
 | **22** | el día del corte **toda la cartera amanece en `PRE_TRIAL`** y el evento que la sacaría de ahí (publicar) **ya ocurrió**: o usan la plataforma gratis para siempre, o se despublican las doce fichas del catálogo | hay que **escribir cuál de las dos**, y no está decidido. **Va al owner antes de escribir** |
 | **23** | una autorización viva cobra **después** del despliegue que borró el código capaz de reconocerla: la plata entra y no queda ni servicio ni asiento | declarar **el orden entre cancelar las ocho y desplegar**, con su verificación. Va en `16-fase-7-del-paraguas.md`, que existe y está vacío |
 

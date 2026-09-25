@@ -9,9 +9,12 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-**FASE 1C en curso.** Tras las [sondas 01 a 41](./mp-probes/RESULTS-2026-09-15.md) del 2026-09-15
+**FASE 1C en curso.** ~~Tras las [sondas 01 a 41](./mp-probes/RESULTS-2026-09-15.md) del 2026-09-15
 y 09-16: **44 filas `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 14 `NOT_SUPPORTED`, 12 `UNKNOWN`**,
-sobre **84**.
+sobre **84**.~~ **Recontado el 2026-09-25 con
+[`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py): 55 filas `VERIFIED`, 14
+`PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, 6 `UNKNOWN`, sobre 98** (el desglose, en el
+[Resumen](#resumen); FASE 8 completa, `F-8CD1-012`).
 
 > **La pregunta de fondo quedó contestada, y en contra: el ciclo de cobro NO puede ser nuestro.**
 > El proveedor sí tiene un modelo donde el comercio decide cuándo cobrar —`/v1/orders` con
@@ -430,7 +433,10 @@ miden. Sondas [38](./mp-probes/probe-38-cobrar-sin-preapproval.mjs),
 
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
 2026-09-25, sobre **98** filas (**93** del recuento del 🚨 más **`EX-40`**, **`EX-41`**, **`PA-6`**, **`RC-8`** y **`RC-9`**) — el
-script se corrigió el 2026-09-24, ver el 🚨 de la tabla.
+script se corrigió el 2026-09-24, ver el 🚨 de la tabla. *(La nota de `EX-33` que dice que el
+conteo del script **«nunca estuvo mal»** habla de la novena `UNKNOWN` que esa nota descartaba, no
+de las cuatro filas en negrita que el 🚨 encontró: el script sí descartaba esas cuatro —FASE 8
+completa, `F-8CD1-012`.)*
 
 > ❌ **El cobro fallido NO tiene sujeto, y la versión anterior de este bloque decía que sí.**
 > Corregido el **2026-09-17 13:19 `-03`** con la corrida de la sonda 06. Ver `RN-2` para la
@@ -470,8 +476,12 @@ script se corrigió el 2026-09-24, ver el 🚨 de la tabla.
 > documenta que una cuota rechazada entra en estado **`recycling`**, con **hasta 4 reintentos en una
 > ventana de 10 días**, y que **tras 3 cuotas rechazadas da de baja la suscripción sola**. Va acá
 > como **fuente documental, NO medida** (§58: *«NO alcanza documentación»*). Dos consecuencias si se
-> confirma: la ventana del proveedor **mide lo mismo que nuestro grace** (10 días, §20), y la baja en
+> confirma: ~~la ventana del proveedor **mide lo mismo que nuestro grace** (10 días, §20), y~~ la baja en
 > mora **no la decide `DEC-SUB-009` sino el proveedor**.
+>
+> 📌 **La primera consecuencia la refutó la medición** (FASE 8 completa, `F-8CD1-012`): `GR-3`
+> (2026-09-22) midió **cuatro intentos en una ventana de 24 h**, no de 10 días, y su 📌 del
+> 2026-09-24 (sonda 49) midió que **la ventana dura un ciclo**, no 24 h fijas.
 
 <!-- -->
 
@@ -524,7 +534,9 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 **Dos de las cuatro bloqueantes de FASE 2 ya tienen sus filas cerradas** (`BD-MP-03` y
 `BD-MP-04`). La primera se decidió: `DEC-MP-001`. La segunda **no la cerró la medición** — le
 sobrevivió una elección de diseño y volvió al owner. Las otras dos (`BD-MP-01` pausa,
-`BD-MP-02` cortesía) siguen bloqueadas por el §61.
+`BD-MP-02` cortesía) ~~siguen bloqueadas por el §61~~ **se cerraron el 2026-09-16: `BD-MP-01` por
+`DEC-SUB-010` y `BD-MP-02` por `DEC-GRANT-003`** ([`04-open-decisions.md`](./04-open-decisions.md);
+FASE 8 completa, `F-8CD1-012`).
 
 Una lección de método que deja esto: *"la decide el experimento"* fue una clasificación
 **optimista**. Medir qué permite el proveedor cierra la pregunta técnica, y a veces deja dos

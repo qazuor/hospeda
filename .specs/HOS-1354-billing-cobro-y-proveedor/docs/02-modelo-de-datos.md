@@ -858,7 +858,7 @@ podía consultar.
 siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya estaba resuelto —
 `D13`: *«retirar un plan del catálogo no mueve ninguna suscripción»*. La alternativa, que el grant
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
-entitlements**, que `V/02` §1.2 impide.
+entitlements**, que `NUCLEO/02` §1.2 impide.
 
 ### 2.5 La marca de conciliación: veinte motivos sobre la misma casilla, y siete de ellos devuelven plata
 
@@ -1109,7 +1109,7 @@ son los que no dependen de que ningún camino de código se acuerde:
 | 19 · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment` |
 | — · a lo sumo **un grant vivo** por beneficiario | **`UNIQUE(beneficiario) WHERE revocado_en IS NULL` en `permanent_grant`** (§2.4, `DEC-GRANT-009`). No está en el §64 —el PDR no lo enuncia— y entra acá por la misma razón que los otros: es lo que hace que **los nueve consumidores de *«grant vivo»*** (`NUCLEO/01` §2.4) no puedan encontrar dos filas si alguno olvida el filtro |
 | 26 · producto ≠ instancia | son dos tablas, y la instancia no repite ningún campo del producto |
-| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |
+| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (`NUCLEO/03` §1, regla 2) |
 
 **Los demás no los puede sostener la base** —dependen de la resolución en el servicio— y son el
 capítulo 04 (núcleo). Lo que importa es la distinción: los de arriba **no admiten un camino que los
