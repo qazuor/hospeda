@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -63,58 +63,23 @@ cerró midiendo, que es la única forma en que se cierra una objeción de este t
 2026-09-26 (§3). Se re-verifica antes de implementar nada de FASE 10, con la consulta que el
 inventario deja escrita.
 
----
+**Y la re-verificación cuenta más que `billing_subscriptions` vivas** (FASE 8 completa,
+`F-8CA3-012`; FASE 9 completa, `DB-5` del informe 09): también las soft-deleted y las tablas que el
+corte descarta sin nombrar hasta ahora —compras de addon, canjes de promo, grants de destaque y
+`entity_subscriptions`—. Ya no es para decidir qué se conserva, porque no se conserva nada (§4;
+owner 2026-09-25, FASE 9 completa, `2a`): es para saber **a quién hay que llamar** y qué le toca
+perder a cada uno antes de que el corte lo descarte.
 
-## 3. El cobro durante el rediseño · cierra `R-MIG-01`
-
-### 3.1 El hueco cambia de forma cuando se lo mide
-
-`R-MIG-01` lo planteaba así: *«si hay débitos automáticos activos, siguen corriendo durante todo
-el programa»*, y lo llamaba **el riesgo operativo más grande del programa**.
-
-**No hay débitos corriendo.** Cero pagos en la historia del sistema. Lo que hay son **tres
-compromisos que todavía no cobraron**, con fecha:
-
-| compromiso | primer cobro |
-|---|---|
-| 1 | **2026-09-26** |
-| 2 | 2026-11-25 |
-| 3 | 2026-11-30 |
-
-### 3.2 Y entonces son tres problemas distintos, no uno
-
-**(a) Las ocho relaciones vivas.** No hay nada que parar ni que coexistir, y **tampoco nada que
-transcribir**: **no se migra ninguna** (§2.4). Las tres `abandoned` no tienen nada vivo, las dos
-`comp` son del owner, y las tres `trialing` son clientes contactables que se resuscriben. Ninguna
-de las tres opciones que el hueco planteaba —coexistencia de dos motores, corte con migración
-asistida, congelamiento— hace falta para éstas.
-
-**(b) El 2026-09-26.** Esa fecha llega **durante FASE 2 o 3**, y la implementación está en FASE 10
-(§65). O sea que **ese primer cobro de la historia del sistema ocurre bajo el sistema ACTUAL, no
-bajo éste.** No es una pregunta de migración: es una operación que necesita a alguien mirándola el
-día que pase. Este capítulo la registra con fecha para que no llegue por sorpresa.
-
-**(c) Las altas nuevas.** Es lo único de los tres que sigue abierto, y **no lo cierra esta spec.**
-
-### 3.3 Las altas nuevas son una decisión del owner, y se declara abierta
-
-Qué pasa con quien se suscriba **mientras dura el rediseño** es una decisión comercial, no
-técnica: congelar altas tiene costo de negocio, y no congelarlas agranda la cohorte que después
-hay que transcribir a mano —que es precisamente lo que hoy hace barata a la opción (a)—.
-
-Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido**:
-
-| # | opción | costo | riesgo |
-|---|---|---|---|
-| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | la cohorte crece, y con ella se vuelve inviable *«no migrar»*: hoy son 8 y el umbral medido está en unas 20 (§2.4) |
-| 2 | **congelar altas nuevas** hasta FASE 10 | comercial, y no es chico: tres verticales todavía no vendieron nada | cero cohorte nueva |
-| 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
-
-**No se completa en silencio** (§67). Queda declarada como decisión del owner en
-[`04-open-decisions.md`](../../HOS-1352-billing-verticals-redesign/docs/04-open-decisions.md) — la única que este capítulo abre en vez de
-cerrar.
+> 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
+> pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
+> corriendo»* del §3.1 describen la medición del 2026-09-17, no el estado del sistema. Los pagos
+> del sistema viejo no pasan al nuevo ni se conservan (§4).
 
 ---
+
+## 2. La cartera actual: no se migra, y lo que se conserva
+
+*(Los §2.1–2.3 de esta mitad se retiraron con la decisión de no migrar; los números §2.4 y §2.5 se conservan porque todo el diseño los cita así. Hasta el 2026-09-25 este §2 iba después del §3 y sin encabezado propio; se reordenó sin cambiar su texto — FASE 9 completa, `C-10`.)*
 
 ### 2.4 No se migra: se cancelan las ocho y quien tenga algo vivo se suscribe de nuevo
 
@@ -137,9 +102,10 @@ cortesías heredadas, son el caso normal**.
 **Y esas dos filas cruzan la frontera, así que la mitad de verticales las tiene que ver.** Un
 `GRANT` con `hasta: NO_VENCE` es de clase `TÍTULO` (`12-contrato…` §2.4), de modo que las dos
 cuentas amanecen con `cubierto` **verdadero**: no las alcanza `PB2` y, el día que publiquen algo,
-la transición que dispara es `T6` y no `T1`. La verificación completa —y el orden entre esta
-escritura y el paso 4, que hay que fijar en el procedimiento— está en la mitad de verticales,
-cap. 21 §2.4. Se dice acá porque **el efecto lo produce esta escritura y se observa allá**.
+la transición que dispara es `T6` y no `T1`. La verificación completa ~~—y el orden entre esta
+escritura y el paso 4, que hay que fijar en el procedimiento—~~ está en la mitad de verticales,
+cap. 21 §2.4; **el orden quedó fijado en el procedimiento**: los grants son el paso 3b, antes de
+las lápidas del paso 4 (`16-fase-7-del-paraguas.md` §4.2; FASE 9 completa, `DB-7`). Se dice acá porque **el efecto lo produce esta escritura y se observa allá**.
 
 **Con una precisión que no es de forma: un ANCLA por cada vertical de su scope, sobre UNA sola fila
 de grant.** Un grant ancla **un plan por vertical** (`12-contrato…` §2.8, `B/02` §2.4), porque un
@@ -152,10 +118,13 @@ pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
 
 ### 2.5 Cancelar no es olvidar: el compromiso viejo se conserva
 
-**Ésta es la única fila ~~que el sistema nuevo sí escribe~~ de billing que el sistema nuevo sí
-escribe** —del lado de verticales el corte escribe además una fila de `trial` ya consumida por cada
-dueño existente, que es el mismo tipo de rastro (`V/21` §2.4; FASE 8 completa, owner 2026-09-25)—,
-y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
+**Ésta es la única fila ~~que el sistema nuevo sí escribe~~ ~~de billing que el sistema nuevo sí
+escribe~~ de rastro que el corte escribe** —~~del lado de verticales el corte escribe además una
+fila de `trial` ya consumida por cada dueño existente, que es el mismo tipo de rastro (`V/21` §2.4;
+FASE 8 completa, owner 2026-09-25)~~ **los dos `permanent_grant` del §2.4 también son filas nuevas
+de billing, pero son cortesías vigentes, no rastro; y del lado de verticales el corte ya no escribe
+filas de `trial`, porque los clientes actuales se tratan como nuevos** (owner 2026-09-25; FASE 9
+completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
 
 > **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
 > escrita DESPUÉS de cancelarlo en el proveedor.**
@@ -167,9 +136,23 @@ nuestra base**, y antes se cancelan los `preapproval_plan` viejos para cerrar su
 autorización viva que la base no conocía, y los cinco planes viejos seguían vendiendo. Si alguna emite un cobro después del corte —porque la cancelación
 se aceptó y no se aplicó, o porque el cobro ya estaba en vuelo— **ese webhook llega como un
 preapproval desconocido**, y el sistema nuevo tiene **un solo camino automático** para un
-desconocido: re-vincularlo. El candidato más plausible del emparejamiento es **la suscripción nueva
+desconocido: re-vincularlo. ~~El candidato más plausible del emparejamiento es **la suscripción nueva
 de esa misma persona**, que acaba de contratar. **El cobro viejo se imputa como pago del ciclo
-nuevo: pagó dos veces y el sistema registra una.**
+nuevo: pagó dos veces y el sistema registra una.**~~ Sin regla, el candidato más plausible del
+emparejamiento era **la suscripción nueva de esa misma persona**, que acaba de contratar, y el cobro
+viejo se imputaba como pago del ciclo nuevo: pagó dos veces y el sistema registraba una.
+
+> **La regla de re-vinculación** (owner 2026-09-25; FASE 9 completa, `2b`; cierra `F-8CB3-008`):
+> **un desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra que no
+> tenga otro `provider_link` vivo. Todo otro desconocido abre la marca `requiere_conciliación`** y
+> lo mira una persona.
+
+Cada preapproval del sistema nuevo nace con nuestro `external_reference` (`PA-2`), así que una
+huérfana legítima siempre nombra su fila; lo que venga del sistema viejo —un cobro en vuelo sin
+lápida porque su id sólo estaba en el proveedor, una sonda que siguió viva— no la nombra y termina
+en una persona. **Ya no hay candidato plausible**: la suscripción nueva de la misma persona tiene su
+propio `provider_link` vivo, así que no puede recibir el cobro viejo. La precondición se escribe en
+el cap. 09 §2.4, que es donde vive la re-vinculación.
 
 Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancelado durante el
 corte»* en vez de *«huérfana»*. Y **no compite por el candado del §11**, porque `CANCELLED` no está
@@ -179,9 +162,13 @@ entre los estados vivos (cap. 02 §2.2).
 > `CANCELLED`, o sea un estado terminal, y *«los estados terminales de una suscripción no se
 > barren»* la sacaba del barrido **en el mismo acto de escribirla**: el capítulo le atribuía a un
 > mecanismo un trabajo que ese mecanismo tenía escrito que no hacía. La cubre la **salvedad 4**
-> del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra, hecha a mano y sin
-> nadie que verifique** ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
-> §4.2), así que vuelve al barrido **hasta que la relectura la vea `cancelled`**. Es exactamente
+> del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra**, ~~**hecha a mano y sin
+> nadie que verifique**~~ **la del sistema viejo en el paso 1b, verificada por el paso 2 releyendo
+> por id** ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
+> §4.2; FASE 9 completa, `CT-2`/`C-6`), así que vuelve al barrido **hasta que la relectura la vea
+> `cancelled`**. **Entra al barrido aunque el paso 2 ya la haya visto `cancelled`**, y no mueve
+> ninguna cifra del cap. 09: la escribe una persona, sin idempotencia ni registro de nuestro lado,
+> y la primera relectura del barrido es la que la confirma desde el sistema nuevo. Es exactamente
 > el caso que el párrafo de arriba describe —*«la cancelación se aceptó y no se aplicó»*—, y sin
 > la salvedad el único aviso llegaba **después del cobro**, por la vía del webhook del §2.2.
 >
@@ -209,16 +196,94 @@ se crea.
 
 **Lo único que sobrevive es de otro tamaño**: el **rollback del PROGRAMA** —qué se hace si hay que
 volver atrás el reemplazo entero del sistema de cobro— que no es el rollback de ocho filas y no se
-escribe acá.
+escribe acá. **Y ya está decidido: pasado el paso 3 del corte, sólo hacia adelante**; antes, la
+rama de aborto restaura el backup (`16-fase-7-del-paraguas.md` §4.2 y §4.3; owner 2026-09-25, FASE 9
+completa, `2c` y `2e`).
+
+---
+
+## 3. El cobro durante el rediseño · cierra `R-MIG-01`
+
+### 3.1 El hueco cambia de forma cuando se lo mide
+
+`R-MIG-01` lo planteaba así: *«si hay débitos automáticos activos, siguen corriendo durante todo
+el programa»*, y lo llamaba **el riesgo operativo más grande del programa**.
+
+**No hay débitos corriendo.** Cero pagos en la historia del sistema *(medido el 2026-09-17;
+caduca el 2026-09-26 con el compromiso 1, §1.3 — FASE 9 completa, `CT-6`)*. Lo que hay son **tres
+compromisos que todavía no cobraron**, con fecha:
+
+| compromiso | primer cobro |
+|---|---|
+| 1 | **2026-09-26** |
+| 2 | 2026-11-25 |
+| 3 | 2026-11-30 |
+
+### 3.2 Y entonces son tres problemas distintos, no uno
+
+**(a) Las ocho relaciones vivas.** No hay nada que parar ni que coexistir, y **tampoco nada que
+transcribir**: **no se migra ninguna** (§2.4). Las tres `abandoned` no tienen nada vivo, las dos
+`comp` son del owner, y las tres `trialing` son clientes contactables que se resuscriben. Ninguna
+de las tres opciones que el hueco planteaba —coexistencia de dos motores, corte con migración
+asistida, congelamiento— hace falta para éstas.
+
+**(b) El 2026-09-26.** Esa fecha llega **durante FASE 2 o 3**, y la implementación está en FASE 10
+(§65). O sea que **ese primer cobro de la historia del sistema ocurre bajo el sistema ACTUAL, no
+bajo éste.** No es una pregunta de migración: es una operación que necesita a alguien mirándola el
+día que pase. Este capítulo la registra con fecha para que no llegue por sorpresa.
+
+**(c) Las altas nuevas.** ~~Es lo único de los tres que sigue abierto, y **no lo cierra esta spec.**~~
+**Cerrado por el log**: se siguen tomando (`DEC-MIG-002`) y se resuelven como la cartera, sin
+transcribir (`DEC-MIG-003`, `DEC-MIG-004` #16) — §3.3 (FASE 9 completa, `C-9`).
+
+### 3.3 Las altas nuevas se siguen tomando (`DEC-MIG-002`) y se resuelven como la cartera (`DEC-MIG-003`, `DEC-MIG-004` #16)
+
+*(Título hasta el 2026-09-25: ~~«Las altas nuevas son una decisión del owner, y se declara
+abierta»~~. FASE 9 completa, `C-9`.)*
+
+Qué pasa con quien se suscriba **mientras dura el rediseño** es una decisión comercial, no
+técnica: congelar altas tiene costo de negocio, y no congelarlas agranda la cohorte que después
+hay que transcribir a mano —que es precisamente lo que hoy hace barata a la opción (a)—.
+
+Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido**:
+
+| # | opción | costo | riesgo |
+|---|---|---|---|
+| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | la cohorte crece, y con ella se vuelve inviable *«no migrar»*: hoy son 8 y el umbral medido está en unas 20 (~~§2.4~~ `V/21` §2.5; FASE 9 completa, `C-10`) |
+| 2 | **congelar altas nuevas** hasta FASE 10 | comercial, y no es chico: tres verticales todavía no vendieron nada | cero cohorte nueva |
+| 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
+
+**No se completa en silencio** (§67). ~~Queda declarada como decisión del owner en
+[`04-open-decisions.md`](../../HOS-1352-billing-verticals-redesign/docs/04-open-decisions.md) — la única que este capítulo abre en vez de
+cerrar.~~ **Y ya no está abierta**: el owner eligió la opción 1 (`DEC-MIG-002`, se siguen tomando
+altas en el sistema actual), y `DEC-MIG-003` le sacó la mitad cara —*«se transcriben a mano»*—: las
+altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como a la cartera
+(`DEC-MIG-004` #16; FASE 9 completa, `C-9`). Lo que sigue vigente es la condición de caducidad de
+`V/21` §2.5: si la cartera pasa de unas veinte, se vuelve a discutir.
 
 ---
 
 ## 4. Lo que NO se migra, y no es una omisión
 
 - **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que ~~se escribe~~ escribe billing es la lápida del
-  §2.5, que no es una transcripción: es el rastro del id que se canceló. **Verticales escribe el
-  otro rastro**, la fila de `trial` consumida (`V/21` §2.4; FASE 8 completa, owner 2026-09-25).
-- **Los pagos**: no hay ninguno.
+  §2.5, que no es una transcripción: es el rastro del id que se canceló, **y los dos
+  `permanent_grant` del §2.4**, que son cortesías del diseño nuevo. ~~**Verticales escribe el
+  otro rastro**, la fila de `trial` consumida (`V/21` §2.4; FASE 8 completa, owner 2026-09-25).~~
+  **Verticales no escribe filas de `trial`**: el corte trata a los clientes actuales como nuevos y
+  sólo les respeta la ficha (`V/21` §2.4; owner 2026-09-25, FASE 9 completa, `2g`).
+- **Los pagos**: ~~no hay ninguno.~~ los hay desde el 2026-09-26, bajo el sistema viejo (§1.3), y
+  **no se conservan** (FASE 9 completa, `CT-6` y `2a`).
+- **Las tablas viejas de billing, con todo lo que tengan adentro, y las columnas que las copian**
+  (owner 2026-09-25; FASE 9 completa, `2a`; cierra `F-8CB3-014`, `F-8CA3-007`, `F-8CC2-007`): **no
+  se conserva nada** —ni se transcribe, ni se congela en solo lectura, ni se exporta—. Eso abarca
+  `billing_*` entero (suscripciones, pagos, compras de addon, canjes de promo), los grants de
+  destaque, `entity_subscriptions` y las columnas denormalizadas que el código de hoy lee, como
+  `featured_by_entitlement`: el sistema nuevo no lee ninguna, y se retiran con el código que las lee
+  (FASE 5). *«Recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
+  vuelven a suscribir. Guardarlo sólo deja basura que después cuesta limpiar.»* **El corte no
+  necesita leerlas**: los ids que cancela salen del proveedor (`16-fase-7…` §4.2, paso 1b) y, desde
+  `2g`, no siembra trials consumidos, que era lo único que las leía. **Si algún día algo del corte
+  volviera a leerlas, corre antes de retirarlas.**
 - **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
   Eso es trabajo de FASE 5 y de código, no de datos.
@@ -227,7 +292,15 @@ escribe acá.
 
 ## Lo que este capítulo NO cierra
 
-- **Qué pasa con las altas nuevas durante el rediseño** (§3.3): decisión del owner, declarada
-  abierta.
+- ~~**Qué pasa con las altas nuevas durante el rediseño** (§3.3): decisión del owner, declarada
+  abierta.~~ Cerrado: §3.3 (FASE 9 completa, `C-9`).
+- **Un contracargo o un reclamo sobre un pago del sistema viejo no tiene comprobante del lado de
+  Hospeda después del corte** (declarado por `DEC-METH-015`, FASE 9 completa; `F-8CB3-014`,
+  `F-8CA3-007`). **Causa**: el owner decidió no conservar nada del sistema viejo (`2a`); la población
+  son los pocos pagos que el sistema actual cobre entre el 2026-09-26 y el corte, de clientes que el
+  owner llama uno por uno. El comprobante sigue existiendo del lado de MercadoPago.
+- **La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
+  allá. **Causa**: el cap. 09 es de otra pasada de esta misma ronda; hasta que la tenga, la regla vive
+  sólo en este capítulo.
 - **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
   (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
