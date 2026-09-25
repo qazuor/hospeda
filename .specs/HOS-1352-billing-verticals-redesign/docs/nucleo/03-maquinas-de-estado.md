@@ -38,9 +38,9 @@ máquina de estados y una convención.
    **La marca no es un estado, y tampoco un booleano**: es una fila con motivo y reloj, y el
    predicado *«tiene una marca abierta»* está definido en el capítulo 01 §2.5. Nombrar el motivo
    es obligatorio —`G-R1-F`—, porque sobre esa misma casilla el corpus escribe ~~**quince**~~
-   **diecinueve** cosas distintas (cap. 02 (billing) §2.5, recontadas en la FASE 8 completa:
-   `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`) y **seis** de ellas significan *«hay
-   plata del cliente que devolver»*.
+   ~~**diecinueve**~~ **veinte** cosas distintas (cap. 02 (billing) §2.5, recontadas en la FASE 8 completa:
+   `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25) y
+   ~~**seis**~~ **siete** de ellas significan *«hay plata del cliente que devolver»*.
    Que no sea un estado es la otra diferencia que la hace correcta: la fila conserva el
    estado que tenía, así que quien resuelve el caso no tiene que adivinar a dónde volver, y
    escribirla no es en sí misma una decisión destructiva automática — que es lo que el §22.1

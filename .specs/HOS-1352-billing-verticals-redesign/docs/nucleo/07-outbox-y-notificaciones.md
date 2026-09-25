@@ -129,7 +129,7 @@ tope diario. Y falta la distinción que ordena todo lo demás.
 
 | clase | cuáles | se suprimen |
 |---|---|---|
-| **Transaccional, no suprimible** | aviso de aumento (§29), fallo de cobro y avisos del grace (§20, §42.3), vencimiento de trial (§10.7 pre), los **tres** de la retención —los dos previos de `DEC-DATA-001` y el del archivado, §6—, confirmación de una operación que el cliente pidió, y el aviso que **precede** a una cancelación (`DEC-MAIL-001`) | **no**, salvo por §4.2 |
+| **Transaccional, no suprimible** | aviso de aumento (§29), fallo de cobro y avisos del grace (§20, §42.3), vencimiento de trial (§10.7 pre), los **tres** de la retención —los dos previos de `DEC-DATA-001` y el del archivado, §6—, confirmación de una operación que el cliente pidió, y el aviso que **precede** a una cancelación (`DEC-MAIL-001`), **y el de suspensión por contracargo** (§6; FASE 8 completa, pendiente 6, owner 2026-09-25) | **no**, salvo por §4.2 |
 | **Comercial, suprimible** | la campaña de recuperación post-trial del §10.7 (+1, +5, +15, +30, +60) | **sí** |
 
 **Mezclarlas es a la vez un problema legal y de reputación del dominio de envío**, y si se
@@ -217,6 +217,7 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | trial vencido — recuperación | **comercial** | +1, +5, +15, +30, +60 días, y **termina ahí** | §10.7 |
 | renovación por venir | transaccional | 5 y 1 día antes. **El hito cuelga de la fecha del próximo cobro** (cap. 02 §2.2, épica de billing) y **esa fecha se mueve** —el proveedor la corre en los casos de `PS-6`, y sobre un pagador manual la mueven el pago registrado, la vuelta de una pausa y el tope de una reapertura tardía (cap. 03 §7.2)—, así que la ocurrencia la lleva, como todo schedule (§2) | §42.2 |
 | cobro fallido / grace | transaccional | configurable dentro de la ventana, **relativo al vencimiento** | §42.3, `DEC-SUB-002` |
+| **suspendido por contracargo** ✚ | transaccional, **no suprimible** | **al suspender por un contracargo** (`S6` por su tercer evento, cap. 03 §3.2, épica de billing). **Es un correo propio y no el de mora**: el cobro entró y la persona lo desconoció ante su banco, así que el de mora le diría que no pagó. **Texto base, del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* | `DEC-SUB-020` (su 📌), cap. 19 §4 fila 10-ter (épica de billing); FASE 8 completa, pendiente 6, owner 2026-09-25 |
 | aumento de precio | transaccional | **3 contactos**: al anunciar, a 30 días y a 7 días, cada uno con **la fecha de ese cliente** | `DEC-MP-002` |
 | antes de cancelar | transaccional | **bloquea la acción** si falla de forma transitoria; **si no hay destinatario** (rebote duro o cuenta borrada, §4.2) **no bloquea**: se cancela y el no-entregable se escala | `DEC-MAIL-001` (precisada el 2026-09-25) |
 | excedente por downgrade | transaccional | al pedirlo, **con el criterio escrito**: se despublican las publicadas más recientemente | `DEC-SUB-008` |

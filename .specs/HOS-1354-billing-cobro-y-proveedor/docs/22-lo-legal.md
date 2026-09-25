@@ -146,6 +146,9 @@ registra y se responde al instante; la plata sale con confirmación humana.
   ARCA. **Quién lo emite ya está escrito** (FASE 8 completa, `F-8CB3-006`): `P1` para el cobro del
   proveedor y `MP1`/`MP4` para el manual (cap. 03 §6 y §7), colgando de un `payment` **o** de un
   `manual_payment` (cap. 02 §2.3), y numerado sin huecos por un contador en fila incrementado en la
-  misma transacción que emite. ⚠️ **Lo que queda para el owner**: si *«sin huecos»* es un requisito
+  misma transacción que emite. ~~⚠️ **Lo que queda para el owner**: si *«sin huecos»* es un requisito
   —legal o contable— o sólo una aspiración. El mecanismo se declaró porque la restricción ya estaba
-  escrita, y cuesta serializar las emisiones.
+  escrita, y cuesta serializar las emisiones.~~ **Cerrado el 2026-09-25 (owner)**: **el contador
+  serializado se mantiene** para la numeración correlativa sin huecos, **por decisión del owner
+  aunque no sea requisito legal**, y **no se lleva al pliego legal**: no es una de las preguntas del §4 (FASE 8 completa, pendiente 6, owner
+  2026-09-25; `B/02` §2.3).

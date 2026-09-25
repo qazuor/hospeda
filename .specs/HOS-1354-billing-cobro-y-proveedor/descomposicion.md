@@ -96,8 +96,8 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
 3. **Lo que toca plata no se ejecuta solo.** Toda divergencia de monto, estado o cobro **abre una
    marca `requiere_conciliación`, con su MOTIVO** (`02` §2.5), y la mira una persona. Es el criterio
    del owner —*«toca plata o no toca plata»*— aplicado adentro de la épica que toca plata entera.
-   **El motivo es parte de la regla**: el corpus escribe ~~quince~~ ~~dieciséis~~ diecinueve marcas distintas (FASE 8 completa: `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`) sobre la misma
-   casilla y **seis** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
+   **El motivo es parte de la regla**: el corpus escribe ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte marcas distintas (FASE 8 completa: `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25) sobre la misma
+   casilla y ~~**seis**~~ **siete** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
    iguales a la bandeja y las que se perdían eran ésas.
 
 ---
@@ -372,12 +372,13 @@ los dos actos que la abren y la levantan son `S14` y `S15`, que también son de 
 8-bis-4 lo midió y lo declaró suficiente** — *«la mitad *«`S14`–`S16` no caen en ningún rango
 numérico»* sigue, y **no la reporto**: `B3` las toma por sección (`03` §3.1–§3.4) y eso alcanza»*
 (`20-fase-8-bis-4/C2…`, veredicto de `F-8dC2-004`). Todo lo demás que el guard cuenta llega
-después: los ~~**siete**~~ **diez** motivos que `S14` trae de los casos que lo disparan —los tres
-nuevos, el 17, el 18 y el 19, llegan con `P1`, `P6` (`03` §6, **B5**), `S6` (**B7**) y el `09` §3
-(**B11**); FASE 8 completa, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`—, el **listado
+después: los ~~**siete**~~ ~~**diez**~~ **once** motivos que `S14` trae de los casos que lo disparan —los tres
+nuevos, el 17, el 18 y el 19, llegan con ~~`P1`,~~ `P6` (`03` §6, **B5**), `S6` (**B7**) y el `09` §3
+(**B11**); FASE 8 completa, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`; **y el 20, `COBRO_DUPLICADO`,
+con `P1` (**B5**)**, partido del 19 en la pendiente 6, owner 2026-09-25—, el **listado
 accionable** del `19` §6 (**B13**, la anteúltima del camino crítico) y los inventarios de *«marca
 abierta»* y *«cortesía diferida»* (**B9**). **Y la tabla que el guard lee es capítulo de B3, desde
-esta pasada.** El `02` §2.5 —los ~~quince~~ ~~dieciséis~~ diecinueve motivos— **no figuraba en la columna de capítulos de
+esta pasada.** El `02` §2.5 —los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte motivos— **no figuraba en la columna de capítulos de
 ninguna unidad** y era la primera de las dos preguntas del §2.9: `G-R1-F` compara contra esa
 enumeración para decidir si un motivo existe, así que quien construyera el guard se encontraba con
 una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la respuesta**: el propio
@@ -386,7 +387,7 @@ de B3 igual—, pero la tabla sí necesita dueño»*, y el dueño es el mismo qu
 §2.5 es **el catálogo de una columna que nace en el `02` §2.2**, y las dos únicas cosas que hay que
 saber para sembrarlo —qué motivos hay y quién abre cada uno— salen de `S14` y `S15`, que son de
 B3. **Con la parte que B3 no puede terminar sola, dicha**: ~~ocho de los quince~~ **nueve de los
-~~dieciséis~~ diecinueve** motivos los abren actos de otras unidades —`S18` (B8), `S21` (B10), **que desde
+~~dieciséis~~ ~~diecinueve~~ veinte** motivos los abren actos de otras unidades —`S18` (B8), `S21` (B10), **que desde
 `DEC-RF-006` abre dos**, ~~las seis comprobaciones del `09` §3 (B12)~~ **las comprobaciones de cero
 llamadas del `09` §3 —la tercera y la cuarta en B10, las otras en B11, que tiene el `09` entero—**
 y **el reintento del barrido sobre las salvedades 1 y 4 del `09` §3, que abre el 16** (FASE 8 completa, `F-8CB1-013`, owner

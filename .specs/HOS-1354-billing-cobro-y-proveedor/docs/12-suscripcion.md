@@ -536,7 +536,9 @@ no arranca la sucesión en `GRACE_PERIOD`** (`DEC-SUB-021`, owner 2026-09-25): l
 la ventana, por `S4` —fila 11 de las nueve que `B/03` §3.2 recorre—, y sobre ella corre `S5`. **Y
 puede estar en `SUSPENDED`**: porque la sucesión se declaró desde una `SUSPENDED` de tarjeta
 (`G-R1-A`), o porque `S6` corrió por su tercer evento —el contracargo, que la guarda de la sucesión
-en curso no frena—; por sus dos primeros, `S6` **no ocurre** mientras la sucesión esté en curso
+en curso no frena; desde el 📌 de `DEC-SUB-020` la sucesora **también se corta**, con una
+transición que todavía no está escrita (`B/03`, *«lo que esta mitad NO cierra»*; FASE 8 completa,
+pendiente 6, owner 2026-09-25)—; por sus dos primeros, `S6` **no ocurre** mientras la sucesión esté en curso
 (`B/03` §3.2, owner 2026-09-24). Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. **Y desde `DEC-SUB-019`,
 en un pagador con tarjeta esa puerta ya no llega por el reciclado**: `S6` cancela el preapproval en
@@ -618,13 +620,14 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ dieciocho, que es lo que
-> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ diecinueve motivos: el 16 desde `F-8CB1-013` y el 17, el 18 y el
-> 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25;
+> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve, que es lo que
+> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ ~~diecinueve motivos~~ veinte motivos: el 16 desde `F-8CB1-013` y el 17, el 18 y el
+> 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde
+> la pendiente 6;
 > `B/02` §2.5). Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó —una de las otras ~~catorce~~ ~~quince~~ dieciocho—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.

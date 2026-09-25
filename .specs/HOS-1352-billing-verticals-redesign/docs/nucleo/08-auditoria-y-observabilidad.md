@@ -145,7 +145,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ **diecinueve** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25) y **seis** tienen una confirmación de reembolso encima — **y los seis se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ **veinte** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde la pendiente 6) y ~~**seis**~~ **siete** tienen una confirmación de reembolso encima — **y los ~~seis~~ siete se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
@@ -304,8 +304,8 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
   motivo `REEMBOLSO_POR_CONFIRMAR` y el pago colgado de ella, cap. 02 (billing) §2.2 y §2.5—, que es lo que
   los pone también en el **listado accionable**, el canal primario de `DEC-OBS-001`. Mientras
   fueron sólo campos de un evento, el canal que la persona mira de verdad recibía **una fila
-  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ ~~quince~~ dieciocho marcas** (diecinueve
-  motivos desde la FASE 8 completa, cap. 02 (billing) §2.5);
+  `CANCELLED` marcada e indistinguible de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ diecinueve marcas** (~~diecinueve~~ veinte
+  motivos desde la FASE 8 completa, pendiente 6, cap. 02 (billing) §2.5);
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas

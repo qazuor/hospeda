@@ -85,15 +85,15 @@ cobra ni devuelve nada, sólo impide cobros futuros. **Un preapproval vivo sobre
 NUNCA mandamos cancelar sigue siendo divergencia de estado, y la mira una persona**, como dice el
 párrafo de arriba.
 
-> **Y la marca dice CUÁL de las ~~quince~~ ~~dieciséis~~ diecinueve cosas pasó** (`B/02` §2.5; el 16 llegó con
+> **Y la marca dice CUÁL de las ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte cosas pasó** (`B/02` §2.5; el 16 llegó con
 > `F-8CB1-013`, y el 17, el 18 y el 19 con `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8
-> completa, owner 2026-09-25). El criterio de arriba manda que
+> completa, owner 2026-09-25; y el 20, `COBRO_DUPLICADO`, con la pendiente 6). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. Seis de los ~~quince~~ ~~dieciséis~~ diecinueve motivos significan *«hay plata del cliente que devolver»*,
-> y ésos son los que la demora le cobra al cliente. **Los seis se leen en la última columna de esa
+> indistinguibles**. ~~Seis~~ Siete de los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte motivos significan *«hay plata del cliente que devolver»*,
+> y ésos son los que la demora le cobra al cliente. **Los ~~seis~~ siete se leen en la última columna de esa
 > tabla y ninguno pide mirar otra cosa**: `DEC-RF-004` había dejado uno que sí —la marca que abre
 > `S21`, cuya propuesta dependía del disparador—, y `DEC-RF-006` lo partió en dos motivos, de los
-> cuales el **15** es el que entra a esta lista.
+> cuales el **15** es el que entra a esta lista. El **20** entró con la pendiente 6 (owner 2026-09-25).
 
 ---
 
@@ -108,7 +108,7 @@ salvedades de abajo devuelven al barrido**:
 | estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se abre la **marca** con motivo **`TRANSICIÓN_NO_DECLARADA`** (`B/02` §2.5). **Salvo el par de una cancelación nuestra sin confirmar** —fila terminal de las salvedades 1 o 4, **o fila en `CANCEL_SCHEDULED` por `S11` o `S26`** (owner 2026-09-25), contra un preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—: ahí **se reintenta la cancelación** y la marca se abre recién a los 3 días de la transición que decidió la cancelación, con motivo **`CANCELACIÓN_SIN_CONFIRMAR`** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 | monto vigente | `transaction_amount` | se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** — es el caso que no avisa por ningún canal |
 | fecha del próximo cobro | `next_payment_date` | se registra; **no es por sí sola una divergencia**, porque el proveedor la mueve solo en casos medidos (`PS-6`) |
-| cobros del período | los `authorized_payments` del preapproval | ver §4. **Y si la lectura del §4 ve un registro con `payment.status` = `approved` que nosotros no tenemos acreditado** —sin fila de `payment`, o con la fila en `PENDING`—, **el barrido no lo escribe**: se abre la **marca** con motivo **`COBRO_SIN_REGISTRAR`** (`B/02` §2.5) y lo asienta una persona (`DEC-CONC-002` punto 4; FASE 8 completa, `F-8CB3-003`). Antes no había motivo para *«cobro que no tenemos»* y el caso no tenía ningún camino a la base |
+| cobros del período | los `authorized_payments` del preapproval | ver §4. **Y si la lectura del §4 ve un registro con `payment.status` = `approved` que nosotros no tenemos acreditado** —sin fila de `payment`, o con la fila en `PENDING`—, **el barrido no lo escribe**: se abre la **marca** con motivo **`COBRO_SIN_REGISTRAR`** (`B/02` §2.5) y lo asienta una persona (`DEC-CONC-002` punto 4; FASE 8 completa, `F-8CB3-003`). Antes no había motivo para *«cobro que no tenemos»* y el caso no tenía ningún camino a la base. **Salvo cuando esa lectura es la de *«cobró»* de `S6` sobre una fila en `GRACE_PERIOD` y corre `S5`**: `S5` asienta el cobro en el mismo acto, y si no puede, no ocurre en esa corrida (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25) |
 | ~~la `version` del recurso~~ **el `last_modified` del recurso** | ~~la última que aplicamos~~ **el de la última relectura, guardado en `provider_link`** (`B/02` §2.2) | si el del proveedor es posterior, **el recurso cambió sin avisarnos**: se relee entero. **Era la `version` y no puede serlo**: la lectura por id **no trae `version`** —viene en el cuerpo del webhook (`EX-2`)— y lo que trae es `last_modified` (`RC-9`, `NOT_SUPPORTED`, producción 2026-09-25; FASE 8 completa, `F-8CB3-010`). ⚠️ **Que `last_modified` se mueva con una mutación de monto no está medido**: el caso de `EX-15` lo sigue viendo la fila del monto |
 
 **Los estados terminales de una SUSCRIPCIÓN —`CANCELLED`, `ABANDONED` y `CHARGE_DECLINED`— no se
@@ -584,7 +584,7 @@ dentro de la ventana, el barrido lo relee por id** y compara su estado:
 | lo que lee | qué se hace |
 |---|---|
 | lo mismo que tenemos | nada |
-| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD`, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) |
+| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD`, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) —**aunque sea la predecesora de una sucesión en curso**—; **si está en `CANCEL_SCHEDULED`, pasa a `CANCELLED` ya por `S12`**; en cualquier otro estado, sólo la marca (FASE 8 completa, pendiente 6, owner 2026-09-25). **Vale igual sobre un pago `PARTIALLY_REFUNDED`** |
 | **reembolsado, o con más reembolsado que nuestros `refund`**, sin que el reembolso haya pasado por nuestro flujo | **`S14` abre la marca `REEMBOLSO_FUERA_DEL_FLUJO`** (`B/02` §2.5), **sin suspender**: fue un acto nuestro, no del cliente (`DEC-SUB-020`, *«lo que NO decide»*; `DEC-RF-007`). El `refund` que falta lo asienta la persona |
 
 **La ventana es un parámetro configurable, y su longitud NO está medida.** No hay en la matriz una
@@ -744,7 +744,7 @@ convertirse en el disparador de la re-vinculación.**
 |---|---|---|
 | **detección por webhook** | continua | es el camino principal (§2.2) |
 | **barrido de la cartera** | **diario** | es lo que `DEC-CONC-002` fijó, y alcanza para lo que diverge en silencio: un monto mal aplicado cuesta un ciclo, no un día |
-| **barrido de creaciones sin respuesta** | **cada pocos minutos** | es el estado intermedio de `DEC-CONC-001`: una creación que quedó sin respuesta puede haber cobrado, y ahí el tiempo sí importa. **Busca filtrando en el proveedor SÓLO por `payer_email`**, y el estado lo filtra de nuestro lado: el filtro `status` del proveedor devuelve un subconjunto en producción (`RC-1`; `B/05` §1.2; FASE 8 completa, `F-8CB3-011`, `F-8CB2-014`, `F-8CB1-014`). **Una búsqueda vacía no prueba que no exista**: la completitud del filtro por `payer_email` en producción no está medida |
+| **barrido de creaciones sin respuesta** | **cada pocos minutos** | es el estado intermedio de `DEC-CONC-001`: una creación que quedó sin respuesta puede haber cobrado, y ahí el tiempo sí importa. **Busca filtrando en el proveedor SÓLO por `payer_email`**, **sin filtro de estado**, y clasifica lo que vuelve de nuestro lado: el filtro `status` del proveedor devuelve un subconjunto en producción (`RC-1`; `B/05` §1.2; FASE 8 completa, `F-8CB3-011`, `F-8CB2-014`, `F-8CB1-014`). **Si encuentra un preapproval `pending`, se reusa en vez de crear otro**, como la vigente de `B/03` §3.4 punto 4 (FASE 8 completa, pendiente 6, owner 2026-09-25). **Una búsqueda vacía no prueba que no exista**: la completitud del filtro por `payer_email` en producción no está medida |
 
 **Toda búsqueda por `search` en este diseño filtra sólo por `payer_email`** (FASE 8 completa,
 `F-8CB3-011`, `F-8CB2-014`, `F-8CB1-014`). Es el único filtro que la matriz mide como filtro
@@ -780,12 +780,20 @@ correlación de corrida que `NUCLEO/08` §2.3 ya le pide a todo job, con cuatro 
 corrida siguiente (§6.2), pero una corrida que las dejó **no probó nada sobre ellas**.
 
 **Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que
-**no comparte ejecución con el barrido** y lo único que hace es leer ese registro. Avisa por el
-canal de `DEC-OBS-001` —el listado accionable y el correo agregado—. Las 26 h son el día del
-barrido más un margen; **el margen no está medido**. ⚠️ **El corpus no tiene un monitor de crons ni
+**no comparte ejecución con el barrido** ~~y lo único que hace es leer ese registro. Avisa por el
+canal de `DEC-OBS-001` —el listado accionable y el correo agregado—~~. Las 26 h son el día del
+barrido más un margen; **el margen no está medido**. ~~⚠️ **El corpus no tiene un monitor de crons ni
 de salud que reusar**: se buscó en `NUCLEO/08` y no hay ninguno. Así que el vigía se declara como
 requisito y **cómo se construye queda abierto**, con el riesgo que eso deja dicho: si el vigía
-también muere, nadie avisa de ninguno de los dos. **Y tampoco entra en la excepción del correo
+también muere, nadie avisa de ninguno de los dos.~~
+
+**El vigía es un monitor de cron EXTERNO** (FASE 8 completa, pendiente 6, owner 2026-09-25): **el barrido le hace ping al
+terminar una corrida completa**, y el monitor **alerta si pasan 26 h sin ping**. Corre fuera de
+nuestra ejecución, así que no muere con el barrido. **Primer candidato: Sentry Cron Monitoring**
+—Sentry ya está en el stack (`CLAUDE.md` de la raíz del repo, *«Monitoring: Sentry»*)—; **la
+elección concreta queda para la FASE 10**. ⚠️ **Que el plan de Sentry contratado incluya el
+monitoreo de crons no está verificado**, y **por qué canal llega la alerta** —el del monitor o el
+de `DEC-OBS-001`— no está decidido. **Y tampoco entra en la excepción del correo
 inmediato** de `NUCLEO/08` §4.1, que es una lista cerrada; si debería, es del owner.
 
 ---
@@ -830,17 +838,26 @@ inmediato** de `NUCLEO/08` §4.1, que es una lista cerrada; si debería, es del 
   después de acreditado un pago puede llegarle un contracargo. Y todo el comportamiento del
   proveedor en un contracargo es **documental** (`RC-8`, `UNKNOWN`): no se puede fabricar uno a
   voluntad.
-- **El motivo `COBRO_SIN_REGISTRAR` mezcla dos poblaciones** (`B/02` §2.5, motivo 19; FASE 8
+- ~~**El motivo `COBRO_SIN_REGISTRAR` mezcla dos poblaciones** (`B/02` §2.5, motivo 19; FASE 8
   completa, `F-8CB3-003`, `F-8CB1-011`): el cobro al que le faltaba el asiento y el que chocó con el
   `UNIQUE` de `covered_period`, que es un período con dos cobros. Lleva **puede** en la columna de
-  la plata; si el segundo debería ser un motivo con `SÍ` —y con default en `B/19` §6— no se decidió.
-- **Mientras esa marca no se resuelve, `S6` puede leer «cobró» sobre un cobro sin fila** y correr
+  la plata; si el segundo debería ser un motivo con `SÍ` —y con default en `B/19` §6— no se decidió.~~
+  **Cerrado el 2026-09-25 (owner)**: el segundo es el motivo **20**, `COBRO_DUPLICADO`, con `SÍ` y
+  default de devolución (`B/02` §2.5, `B/19` §6; FASE 8 completa, pendiente 6, owner 2026-09-25).
+- **El 19 conserva *«puede»* sin que nadie lo haya re-decidido.** Era la casilla del motivo
+  mezclado; sin el segundo camino, si el cobro sin asiento debería llevar *«no»* no se decidió.
+- ~~**Mientras esa marca no se resuelve, `S6` puede leer «cobró» sobre un cobro sin fila** y correr
   `S5` (`B/03` §3.2): la suscripción se reactiva por un pago que todavía no está asentado. El
-  asiento lo hace la persona que resuelve la marca; que `S5` espere a esa fila no está escrito.
-- **El barrido de creaciones sin respuesta busca un `authorized`**, y en el modelo del checkout una
+  asiento lo hace la persona que resuelve la marca; que `S5` espere a esa fila no está escrito.~~
+  **Cerrado el 2026-09-25 (owner)**: `S5` asienta el cobro en el mismo acto —lo lee por id y corre
+  `P1`, creando la fila si no existe—, y si no puede, no ocurre en esa corrida (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25).
+- ~~**El barrido de creaciones sin respuesta busca un `authorized`**, y en el modelo del checkout una
   creación deja un `pending` (`PA-1`, `EX-1`; FASE 8 completa, `F-8CB1-014`). El filtro se corrigió
   —sólo `payer_email`, estado de nuestro lado—; **qué estado se busca** no, porque eso no es una
-  corrección de filtro.
-- **El registro de corridas del §7.1 no tiene entidad en `B/02`**, y **el vigía que lo lee no tiene
-  mecanismo elegido**: el corpus no trae un monitor de crons que reusar (FASE 8 completa,
-  `F-8CB3-007`).
+  corrección de filtro.~~ **Cerrado el 2026-09-25 (owner)**: busca por `payer_email` sin filtro de
+  estado, clasifica de nuestro lado y, si encuentra un `pending`, lo reusa (§7; FASE 8 completa, pendiente 6, owner 2026-09-25).
+- **El registro de corridas del §7.1 no tiene entidad en `B/02`**~~, y **el vigía que lo lee no tiene
+  mecanismo elegido**: el corpus no trae un monitor de crons que reusar~~ (FASE 8 completa,
+  `F-8CB3-007`). **La mitad del vigía se cerró el 2026-09-25 (owner)**: es un monitor de cron
+  externo que recibe un ping por corrida completa (§7.1; FASE 8 completa, pendiente 6, owner 2026-09-25). Siguen abiertos la
+  elección concreta (FASE 10), si el plan contratado lo incluye y el canal de su alerta.
