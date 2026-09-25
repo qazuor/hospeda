@@ -300,5 +300,25 @@ Los nueve agentes, sin verse, describen la misma forma en sus *Key Learnings*:
 
 `C2` señala que las **tres filas `abandoned`** de producción tienen fin de trial el **26 y 27/09**.
 Por el mecanismo de `F-8CC2-002`, alguna podría tener una autorización viva sin vincular del lado del
-proveedor. **Consultarlo es una lectura `GET` sobre producción y lo decide el owner.** Nadie la
-ejecutó.
+proveedor.
+
+**Verificado el 2026-09-24 22:05-22:15 `-03`, con autorización del owner.** Se leyeron las 8 filas
+de `billing_subscriptions` y las 6 de `billing_pending_checkouts` de producción (sólo `SELECT`). Se
+recorrieron los **108** preapprovals de la cuenta sin filtro (`RC-1`: el recorrido sin filtro es el
+completo), y cada coincidencia se releyó por id.
+
+- **Las tres `abandoned` no tienen ningún preapproval**, ni vinculado ni suelto. Una de esas
+  personas volvió a suscribirse: es la `trialing` `71898260`.
+- **Las dos extensiones `LANZAMIENTO60` están también del lado del proveedor**: sus preapprovals
+  (`355606b1…`, `bcf180de…`) entraron por planes de 90 días y cobran el 25/11 y el 30/11. La
+  columna local `current_period_end` (27/09 y 01/10) está vieja y no gobierna el cobro.
+- **La única que cobra el 26/09 es `ed00a8fd`** (`2db139b5…`, ARS 18.000, `next_payment_date`
+  25/09 23:46 `-04`).
+- **Apareció una autorización viva que la base no conocía**: `f6d89f71…`, del propio owner
+  (pagador `5860436`), creada el 25/08 desde el link del plan Basic (ARS 18.000/mes), con cobro
+  vencido a las 20:25 `-04` del 24/09 y todavía sin cobrar. Es un caso real del mecanismo de
+  `F-8CC2-002`. Con OK del owner **se canceló a las 22:15 `-03`**: se releyó antes (`authorized`,
+  0 registros de cobro), se hizo el `PUT` (200) y se releyó después (`cancelled`, 0 registros). No
+  llegó a cobrar.
+- **Los cinco `preapproval_plan` viejos siguen `active` y con `init_point`**: es la condición de
+  `F-8CC2-001`, medida.
