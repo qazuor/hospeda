@@ -717,6 +717,19 @@ y 7 días bloquearían el cambio casi siempre. **Esto reemplaza lo que decía an
 también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
 es que **`last_modified` no se haya movido**, no que la fecha siga igual.
 
+#### Y sobre una predecesora `SUSPENDED` de tarjeta, este § no tiene caso
+
+Desde la FASE 8 completa, `G-R1-A` deja declarar una sucesión desde una `SUSPENDED` de pagador con
+tarjeta cuyo preapproval se releyó `cancelled` (`F-8CB1-002`). Sobre esa predecesora, las dos
+piezas de este § se resuelven solas, y conviene decirlo para que nadie las aplique:
+
+- **La ventana no se reduce.** No hay próxima fecha de cobro: `S6` canceló el preapproval. No hay
+  renovación que pueda cruzar la autorización, así que la ventana es la entera, **72 h**.
+- **El crédito de `DEC-SUB-006` es cero.** El crédito es *«lo pagado sin usar»*, y a un suspendido
+  no le queda nada pagado: el período en curso es justamente el que no pagó, y los días de grace
+  fueron servicio sin cobro. La sucesora nace **sin fecha de primer cobro diferida** y cobra su
+  primer ciclo al autorizar.
+
 #### Y sobre el pagador manual sí hay corrección, porque acá no hay proveedor que no nos deje
 
 **El argumento entero de arriba no tiene sujeto en esta población.** Un pagador manual **no tiene
