@@ -1662,7 +1662,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-GRANT-003 — La cortesía temporal se implementa PAUSANDO la suscripción en el proveedor, y el servicio lo sostenemos nosotros
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-25** (FASE 8 completa, racimo `R4`): la cortesía temporal sólo sobre planes **mensuales** y en **meses enteros**; la implicación 6 estaba equivocada (ver su 📌) · **Decide**: owner
 - **Problema**: el §34.2 pide **mantener el servicio sin cobrar** durante N días o meses, y es el
   único punto del PDR que ordena investigar antes de elegir: *«NO asumir implementación contra MP.
   Debe investigarse.»* El proveedor no tiene nada parecido a «no le cobres a este durante N ciclos».
@@ -1721,6 +1721,17 @@ Cada entrada lleva, según §3.4:
      deliberada: cancelar es irreversible, así que sirve para lo que no termina y no para lo que sí.
   6. Lo que `PS-6` mide —que el ciclo vencido en pausa se pierde— **acá no aplica**: durante la
      cortesía el servicio lo damos igual, que es el punto.
+     **📌 Precisado el 2026-09-25, con OK del owner (FASE 8 completa, `F-8CB1-001`): esta
+     implicación estaba equivocada.** El servicio lo damos igual, pero `PS-6` sí aplica **al
+     cobro**: en pausa el proveedor se saltea las fechas de cobro enteras que caen adentro, y al
+     reanudar no corre la fecha (`PS-5`). Entonces **una cortesía vale los cobros que cruza, no
+     los días que promete**: diez días que no cruzan una fecha valen cero, y treinta días sobre un
+     plan anual que cruzan la renovación regalan un año. **La regla**: la cortesía temporal se
+     otorga **sólo sobre planes mensuales y en meses enteros** —la misma validación de la pausa,
+     `DEC-SUB-010`—, así que N meses saltean exactamente N cobros. **Sobre un plan anual no se
+     ofrece**: el admin ve que no está disponible, y le quedan la cortesía permanente o una promo
+     sobre la renovación. **No aplica al §34.1**: durante el trial la cortesía extiende el trial,
+     que es nuestro, y sigue en días.
 - **Pendiente de medir, y no bloquea**: **si el proveedor le manda algún correo al cliente cuando
   pausamos su suscripción.** Si le llega un «tu suscripción fue pausada» en medio de un regalo, hay
   que anticiparlo (`DEC-MAIL-001`: los correos del proveedor se anticipan, no se desmienten).
@@ -1728,7 +1739,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-GRANT-004 — Cortesía y pausa se resuelven con validaciones nuestras: pausar cancela la cortesía avisando, y sobre una pausa no se otorga
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-25** (FASE 8 completa, racimo `R4`): el punto 3 suma **meses**, no días · **Decide**: owner
 - **Problema**: residuo que dejó abierto `DEC-GRANT-003`. La cortesía y la pausa del cliente
   **usan el mismo mecanismo** —pausar en el proveedor—, así que se pisan. Hay tres cruces:
   un cliente en cortesía que pide pausar, un cliente pausado que recibe una cortesía, y una
@@ -1744,7 +1755,7 @@ Cada entrada lleva, según §3.4:
      cortesía que le quedaba**, y elige. Si acepta, el grant se cancela y queda una pausa normal.
   2. **En pausa, el super admin intenta otorgar cortesía** → **se bloquea**, avisando que la
      suscripción está pausada.
-  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan**, y el aviso dice la
+  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la
      **fecha de fin nueva**, no «un mes más».
 - **Motivo**:
   - **(1) es la opción menos compleja, y esa es la razón.** La alternativa evaluada —prohibir
