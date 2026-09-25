@@ -5137,7 +5137,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-020 — Un contracargo suspende en el acto, sin grace, y lo sigue una persona
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (ver su 📌) · **Decide**: owner
 - **Problema**: un pago que ya registramos puede cambiar después —el cliente desconoce el cargo en
   su banco (contracargo), o alguien lo reembolsa desde el panel del proveedor— y **nadie lo
   compara**: la fila sigue `SUCCEEDED`, el período sigue cubierto y el servicio sigue (FASE 8
@@ -5167,6 +5167,13 @@ Cada entrada lleva, según §3.4:
 - **Origen**: FASE 8 completa, racimo `R7`, `F-8CB3-009`; elección del owner del 2026-09-25 entre
   las tres alternativas, tras descartar ese mismo día *«detectar y mandar a una persona»* y
   *«declararlo fuera de alcance»*.
+- **📌 Precisado el 2026-09-25, con OK del owner (pendiente 6 de la FASE 8 completa)**: **si la
+  fila da servicio, se corta en el acto; si no, sólo la marca.** Una fila en `CANCEL_SCHEDULED` pasa
+  a `CANCELLED` ya, sin esperar su fecha de fin; una pausada o terminal sólo abre la marca. **La
+  sucesión no lo frena**: un contracargo es una disputa, no una mora que el cambio de plan resuelva,
+  así que si la fila es predecesora de una sucesión en curso, `S6` corre igual y la sucesora también
+  se corta. Y el aviso a la persona es un **correo propio** —*«desconociste el cargo; mientras se
+  resuelve, suspendimos el servicio»*—, no el de mora, que le diría que no pagó.
 
 ---
 
