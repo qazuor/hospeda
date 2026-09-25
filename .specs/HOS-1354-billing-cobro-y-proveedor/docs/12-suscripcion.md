@@ -208,13 +208,16 @@ el `rank` ni un delta que billing compute sobre las tablas de verticales (FASE 8
 mutación del monto más cancelar el descenso programado**. La cola es cancelable, no sólo
 reemplazable.
 
-**Y el acto que aplica el descenso programado termina la promo de la fila** (orquestador, FASE 8
-completa, pendiente 8): escribe **`cobros_restantes = 0`** en la redención de promo que cuelga de
-ella (`B/02` §2.4), porque la promo no sobrevive a un cambio de plan (`B/14` §2.2). En el downgrade
+**Y ~~el acto que aplica el descenso programado~~ el pedido del descenso termina la promo de la fila** (orquestador, FASE 8
+completa, pendiente 8; **el pedido y no el acto**, FASE 9 completa, contradicción 1 de `03`
+§R6.5): escribe **`cobros_restantes = 0`** en la redención de promo que cuelga de
+ella (`B/02` §2.4), porque la promo no sobrevive a un cambio de plan (`B/14` §2.2), **en el mismo
+acto en que `DEC-SUB-008` muta el monto, y lo muta al precio de lista del plan nuevo, sin
+promos**. En el downgrade
 la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
 esperado de `B/14` §2.4 la seguiría restando. ~~⚠️ Qué monto espera el barrido **entre el pedido y
 este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).~~ **Entre el pedido y
-este acto, el monto esperado es el del plan vigente** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4).
+el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo).
 
 ---
 

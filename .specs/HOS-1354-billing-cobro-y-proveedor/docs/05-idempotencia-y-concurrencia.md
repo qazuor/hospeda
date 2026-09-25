@@ -70,6 +70,13 @@ busca no es una corrección de filtro (*«lo que este capítulo NO cierra»* de 
 se clasifica de nuestro lado; **si aparece uno `pending`, se reusa en vez de crear otro**, que es la
 regla de `B/03` §3.4 punto 4 —*«se reusa la vigente»*— (`B/09` §7; FASE 8 completa, pendiente 6, owner 2026-09-25).
 
+**Todo lo de arriba vale para `/preapproval`, que ignora el header de idempotencia (`EX-17`). El
+cobro de única vez por `/v1/orders` sí lo cubre un candado**: se reenvía con la misma
+`X-Idempotency-Key`, acuñada y persistida antes de la primera llamada, y si la orden ya existía
+vuelve la misma y hay **un solo pago** (`EX-41`, sonda 51, sandbox; `B/16` §1.4) (FASE 9
+completa, contradicción 3 de `03` §R6.5: el *«sólo se resuelve preguntándole al proveedor»* de
+este § era falso para las órdenes desde `EX-41`).
+
 ---
 
 ## 2. Los seis cruces del §52 · cierra `E-CONC-01`

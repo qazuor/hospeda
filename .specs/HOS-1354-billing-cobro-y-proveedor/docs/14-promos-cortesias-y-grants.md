@@ -3,7 +3,7 @@ title: Master Spec 14 — Promos, cortesías y grants
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 14
@@ -64,12 +64,23 @@ De ahí salen tres reglas, en orden:
 1. **El monto compuesto se valida contra el rango ANTES de mutar**, nunca se descubre por el
    `400`. Una mutación rechazada deja al cliente pagando el precio entero **en silencio**, porque
    `EX-15` midió que mutar no emite webhook: no hay aviso que nos entere.
-2. **Si el resultado cae por debajo del piso, el descuento NO se aplica mutando el monto.** Se
+2. ~~**Si el resultado cae por debajo del piso, el descuento NO se aplica mutando el monto.** Se
    ejecuta con el mecanismo de la cortesía: **pausar en el proveedor y sostener el servicio de
    nuestro lado** (`DEC-GRANT-003`). Bajar al piso en vez de pausar le cobraría **ARS 15 por
-   ciclo** a alguien a quien le dijimos que no iba a pagar.
-3. **Por lo tanto un descuento del 100 % no es un descuento: es una cortesía** por el período que
-   dure. No hace falta mecanismo nuevo — hace falta reconocer que ya existe.
+   ciclo** a alguien a quien le dijimos que no iba a pagar.~~ **Si el resultado cae por debajo del
+   piso, el canje —o el apilado— se RECHAZA al canjear, con el motivo en pantalla** (owner
+   2026-09-25; FASE 9 completa, 4b; `B/19` §4 fila 7-bis). La redacción anterior mandaba ejecutarlo
+   *«con el mecanismo de la cortesía»*, y no había transición que lo hiciera, no heredaba la
+   restricción a planes mensuales y **no terminaba nunca**: el contador de la promo sólo baja con
+   un cobro confirmado (§2.4) y en pausa no hay cobro. Bajar al piso sigue descartado: le cobraría
+   **ARS 15 por ciclo** a alguien a quien le dijimos que no iba a pagar. **Lo gratis ya tiene sus
+   dos instrumentos**: el trial y la cortesía. Como todo canje rechazado, **no se consume** (§3.4):
+   la persona conserva el código.
+3. ~~**Por lo tanto un descuento del 100 % no es un descuento: es una cortesía** por el período que
+   dure. No hace falta mecanismo nuevo — hace falta reconocer que ya existe.~~ **Por lo tanto un
+   descuento del 100 % no se canjea**: el resultado es cero, que el proveedor rechaza igual que el
+   piso (`PC-2`). Si lo que se quiere regalar es un período, el instrumento es la cortesía (§4.7),
+   que firma `SUPER_ADMIN` (4b).
 
 ---
 
@@ -111,12 +122,27 @@ Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade
   una. La sucesora nace con el precio de lista, y ése es ahora el precio que corresponde;
 - **en el downgrade** la fila sobrevive (`DEC-SUB-008`) y la redención sigue colgando de ella.
   ~~⚠️ **Qué la apaga ahí no está escrito** (ver *«lo que este capítulo NO cierra»*).~~ **La apaga
-  el acto que aplica el cambio programado** (`B/12` §2): escribe **`cobros_restantes = 0`** en la
+  ~~el acto que aplica el cambio programado~~ el pedido del downgrade** (`B/12` §2): escribe **`cobros_restantes = 0`** en la
   redención de la fila (`B/02` §2.4), que es la forma que el modelo ya tenía de decir *«sin
   descuento»*, y desde ahí el monto esperado del §2.4 ya no la resta (orquestador, FASE 8 completa,
-  pendiente 8). ~~⚠️~~ **Entre el pedido —cuando `DEC-SUB-008` muta el monto— y ese acto, la redención
-  sigue con su contador**; ~~qué monto espera el barrido en esa ventana no está escrito (*«lo que este
-  capítulo NO cierra»*)~~ **en esa ventana el monto esperado es el del plan NUEVO desde el pedido**, porque `DEC-SUB-008` muta el monto en el acto del pedido y deja para el fin del ciclo sólo los entitlements (FASE 8 completa, owner 2026-09-25; §2.4).
+  pendiente 8; **el pedido y no el acto**, FASE 9 completa, contradicción 1 de `03` §R6.5). ~~⚠️~~ ~~**Entre el pedido —cuando `DEC-SUB-008` muta el monto— y ese acto, la redención
+  sigue con su contador**;~~ ~~qué monto espera el barrido en esa ventana no está escrito (*«lo que este
+  capítulo NO cierra»*)~~ ~~**en esa ventana el monto esperado es el del plan NUEVO desde el pedido**, porque `DEC-SUB-008` muta el monto en el acto del pedido y deja para el fin del ciclo sólo los entitlements (FASE 8 completa, owner 2026-09-25; §2.4).~~
+  **La promo se termina en el mismo acto en que `DEC-SUB-008` muta el monto**: ese acto escribe
+  `cobros_restantes = 0` y muta al **precio de lista del plan nuevo**, sin promos. Así, entre el
+  pedido y el acto que aplica los entitlements al fin del ciclo, el monto esperado es **el del
+  plan nuevo, sin promos**, y el `transaction_amount` coincide. **Por qué se movió al pedido**:
+  había dos lecturas del mismo instante —*«el del plan NUEVO desde el pedido»* acá y *«el del plan
+  vigente»* en el §2.4, `B/12` §2 y `B/09` §3—, y la promo seguía viva según su contador hasta el
+  acto, así que el monto esperado la restaba mientras la pantalla prometía *«el importe nuevo ya no
+  lleva el descuento»* (`B/19` §4, fila 7); y en el acto *«`S30` no corre»*, así que si el monto
+  del pedido llevaba la promo nadie la sacaba.
+- **y en la vuelta del suspendido con tarjeta, aunque vuelva al MISMO plan** (owner 2026-09-25;
+  FASE 9 completa, 3b): esa vuelta es una sucesión desde `SUSPENDED` (`G-R1-A`), así que la cierra
+  `S18`, que no re-apunta la redención. **Se acepta y se dice** en el aviso de suspensión: *«si
+  tenías una promo, al volver la perdés»* (`B/19` §4, fila 10). La razón de arriba —*«la promo se
+  dio sobre el plan en que estaba»*— no aplica acá, porque la persona no cambia de plan; lo que
+  aplica es que no regularizó (`DEC-SUB-021`). **Anotado para el futuro**: ver cómo mejorarlo.
 
 **Y la persona NO puede volver a canjear el mismo código en la sucesora.** La redención no se
 borra —queda sobre la predecesora— y `UNIQUE(promo_code_id, user_id)` (`B/02` §2.4) es por user,
@@ -241,7 +267,10 @@ llega **a él y no a nosotros**. `DEC-MAIL-001` ya decidió qué se hace con eso
 **El monto esperado de una suscripción se deriva siempre, y no se guarda** (FASE 8 completa,
 pendiente 7, owner 2026-09-25): es **el precio de su versión de plan menos las promos vivas según
 su contador**, compuestas con la regla del §1.2. **Ese precio es el vigente de la versión, con los
-aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8). El barrido lo
+aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8). **Y el
+aumento de `DEC-MP-002` muta al monto esperado**, con la versión nueva: parte del precio de lista
+y vuelve a restar las promos vivas según su contador (FASE 9 completa, matiz de `F-8CB1-016` en
+`03` §R6.5: se deducía de que el reintento lo compara contra él, y ahora se dice). El barrido lo
 compara con el `transaction_amount` **releído por id**; si no coinciden, ~~**reintenta la mutación
 durante 3 días** —se cuenta por tiempo, no por corridas, como el reintento de una cancelación
 nuestra (`B/09` §3)— y después abre la marca con motivo **`DIVERGENCIA_DE_MONTO`**~~ **depende de
@@ -258,7 +287,9 @@ punto 4):
   una divergencia que nadie mandó, y el punto 4 la reserva a una persona.
 
 **Entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan
-vigente** (FASE 8 completa, owner 2026-09-25).
+~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; FASE 9 completa, contradicción 1
+de `03` §R6.5: en esa ventana el plan vigente es el viejo, y el pedido ya mutó al nuevo; la promo
+se termina en el pedido, §2.2).
 
 **Sin columna nueva.**
 
@@ -612,14 +643,15 @@ punto 3). ~~La cortesía temporal se firmaba en *«días o meses»*~~ (`NUCLEO/0
 pausa el proveedor **se saltea las fechas de cobro enteras** que caen adentro (`PS-6`) y al
 reanudar **no corre la fecha** (`PS-5`). Entonces una cortesía **vale los cobros que cruza, no los
 días que promete**: diez días que no cruzan una fecha de cobro valen cero, y treinta días sobre un
-plan anual que cruzan la renovación regalan un año.
+plan anual que cruzan la renovación regalan un año —y lo mismo, en tres o seis meses, sobre un
+trimestral o un semestral—.
 
 | caso | regla |
 |---|---|
 | **la unidad** | **meses enteros**: N meses saltean exactamente N cobros |
 | **el plan** | **sólo mensual** — la misma validación de la pausa (`DEC-SUB-010`; el término del ciclo mensual de `puedePausar()`, `NUCLEO/01` §3). Es condición de `S9` por su primer disparador (`B/03` §3.2) |
-| **un plan anual** | **no se ofrece**: el admin ve que no está disponible y por qué, y `S9` no ocurre. Le quedan **la cortesía permanente** (el grant del §35) o **una promo sobre la renovación** |
-| **cortesía sobre cortesía** | **se suman meses**, no se reemplazan, y el aviso dice la **fecha de fin nueva** (`DEC-GRANT-004` punto 3) |
+| **un plan ~~anual~~ no mensual** —trimestral, semestral o anual— | **no se ofrece**: el admin ve que no está disponible y por qué, y `S9` no ocurre. Le quedan **la cortesía permanente** (el grant del §35) o **una promo sobre la renovación** (la fila decía *«anual»* donde la regla dice *«sólo mensual»*; FASE 9 completa, contradicción 1 de `03` §R4.5) |
+| **cortesía sobre cortesía** | **se suman meses**, no se reemplazan, y el aviso dice la **fecha de fin nueva** (`DEC-GRANT-004` punto 3). **Lo ejecuta `S34`** (`B/03` §3.2): `S9` sale sólo de `ACTIVE` y exige *«no hay pausa vigente»*, así que la segunda cortesía no tenía transición (FASE 9 completa, contradicción 4 de `03` §R4.5) |
 | **la cortesía durante el trial** (§34.1) | **no cambia**: extiende el trial, que es nuestro, y **sigue en días** (§4.5, `DEC-GRANT-003` impl. 4 y 6) |
 | **la cortesía permanente** | **no cambia** (`DEC-GRANT-003` impl. 5) |
 
@@ -631,9 +663,11 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
 1. ~~**La fracción de mes del saldo diferido.**~~ **Cerrado el 2026-09-25**: se redondea **para
    arriba** (`B/02` §2.4), la dirección de error que `DEC-GRANT-003` ya había aceptado.
 2. ~~**La re-emisión sobre una fila de plan anual.**~~ **Cerrado el 2026-09-25**: **el saldo se
-   pierde y se avisa antes**. Si la sucesora es de plan anual, `S18` cierra el saldo con
-   `motivo_cierre = DESTINO_DE_PLAN_ANUAL`; si es un alta nueva de plan anual tras `S25`, lo cierra
-   su `S2`. En los dos casos la pantalla se lo dice a la persona antes de elegir el plan (`B/19` §4
+   pierde y se avisa antes**. Si la sucesora es de plan ~~anual~~ **no mensual —trimestral,
+   semestral o anual—**, `S18` cierra el saldo con
+   `motivo_cierre = ~~DESTINO_DE_PLAN_ANUAL~~ DESTINO_DE_PLAN_NO_MENSUAL`; si es un alta nueva de plan ~~anual~~ no mensual tras `S25`, lo cierra
+   su `S2` (FASE 9 completa, contradicción 1 de `03` §R4.5: con *«anual»*, un saldo que caía
+   sobre un trimestral o un semestral se re-emitía y `PS-6` lo volvía cero o un ciclo entero). En los dos casos la pantalla se lo dice a la persona antes de elegir el plan (`B/19` §4
    fila 13-quater).
 3. ~~**Cuántos términos de `puedePausar()` toma `S9`.**~~ **Cerrado el 2026-09-25**: `S9` toma
    **sólo el término del ciclo mensual y los meses enteros** (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).
@@ -657,8 +691,9 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
      su contador— **la seguiría descontando**. Ningún acto escribe su fin: el downgrade no tiene
      fila en la tabla de `B/03` §3.2 (lo trata el cap. 12) y, por la regla 1 del núcleo, lo que la
      tabla no declara no pasa. La única forma que el modelo ya tiene de decir *«sin descuento»*
-     es `cobros_restantes = 0` (`B/02` §2.4); escribirla ahí no está decidido.~~ **Cerrado**: el
-     acto que aplica el cambio programado (`B/12` §2) escribe `cobros_restantes = 0` (§2.2).
+     es `cobros_restantes = 0` (`B/02` §2.4); escribirla ahí no está decidido.~~ **Cerrado**: ~~el
+     acto que aplica el cambio programado~~ **el pedido del downgrade** (`B/12` §2) escribe `cobros_restantes = 0` (§2.2; el
+     pedido y no el acto desde la FASE 9 completa, contradicción 1 de `03` §R6.5).
   2. ~~**Desde cuándo corren los 3 días del reintento de monto** cuando la divergencia **no** la
      abrió una transición nuestra. En el reintento de cancelación el origen es el instante de la
      transición que la decidió (`B/09` §3); para `S30` hay transición, pero para un monto que
@@ -685,7 +720,14 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
      muta el monto al pedirlo y el contador se escribe en 0 recién al aplicar el cambio programado
      (`B/12` §2), así que en esa ventana la redención sigue viva según su contador; qué versión de
      plan y qué promos lee el monto esperado ahí no está escrito.~~ **Cerrado**: en esa ventana el
-     monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4).
+     monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4) —**y sin
+     promos**: el mismo pedido escribe `cobros_restantes = 0` (FASE 9 completa, contradicción 1 de
+     `03` §R6.5; el §2.4 decía *«plan vigente»*, que en esa ventana es el viejo).
+- **Si el cobro que agota una promo es el que saca a la fila del grace** (`S5`), el orden entre
+  `P1` y `S30` no está escrito: `S30` sale sólo de `ACTIVE` (FASE 9 completa, borde e4 de `03`
+  §R6.4; declarado por `DEC-METH-015`). Si `P1` corre antes, la mutación no ocurre y el barrido
+  abre `DIVERGENCIA_DE_MONTO` en el acto. **Causa**: `S30` se escribió sobre el cobro ordinario.
+  No mueve plata sin que una persona lo vea: la marca la pone delante.
   2. ~~**El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
      `B/03` §3.2, así que *«desde esa transición»* no tiene todavía un instante registrado que el
      barrido pueda leer para él; para `S30` y `S10` sí lo hay.~~ **Cerrado**: los 3 días del

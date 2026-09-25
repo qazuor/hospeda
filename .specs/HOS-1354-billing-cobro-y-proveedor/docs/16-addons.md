@@ -3,7 +3,7 @@ title: Master Spec 16 — Addons
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 fase: 2
 capitulo: 16
@@ -104,14 +104,14 @@ El §38 dice que los addons *«sólo pueden adquirirse teniendo una subscription
 compatible»*. **«Compatible» sí está definido** —el §39 hace que el producto declare sus
 *«compatible verticals»*—; **«válida» no**, y el estado importa mucho.
 
-### 2.2 Válida es `ACTIVE`, y sólo `ACTIVE`
+### 2.2 Válida es `ACTIVE` ~~, y sólo `ACTIVE`~~ **y cobrada**, y nada más
 
 Comprar un addon **toca plata**, así que se elige hacia dónde falla: **hacia no vender.**
 
 | estado (cap. 03 §3) | ¿vale? | por qué |
 |---|---|---|
 | `PENDING_AUTHORIZATION` | **no** | se comprarían complementos sobre algo que puede no autorizarse nunca; el capítulo 03 le da su ventana —**72 h o 7 días corridos, según el método de pago**, `B/03` §3.4 punto 1— y después muere |
-| **`ACTIVE`** | **sí** | es el único |
+| **`ACTIVE`** | **sí**, **si está cobrada**: tiene al menos un pago acreditado, o es la sucesora de una predecesora que venía pagando (la misma lectura de `S4`, `B/03` §3.2) | ~~es el único~~ es el único estado, y **no le alcanza estar `ACTIVE`** (owner 2026-09-25; FASE 9 completa, 4d, que absorbe `R12-OWNER-2` de `07`): el primer cobro llega entre 26 y 44 minutos después de autorizar (`PA-3`), y un addon `USER`/`GLOBAL` comprado en ese rato sobre un alta cuyo primer cobro después se rechaza (`S16`) quedaba cobrando sin título. Es la misma dirección que la fila de arriba: algo que puede no cobrar nunca. Costo aceptado: nadie compra addons en esos minutos |
 | `GRACE_PERIOD` | **no** | el servicio corre, pero hay un cobro que no entró: venderle algo más a quien no pudo pagar lo anterior es agrandarle la deuda |
 | `PAUSED` | **no** | el servicio está detenido: no hay nada que complementar. Y `EX-11` midió que estando pausada el proveedor **rechaza toda modificación** |
 | `SUSPENDED` | **no** | *«sin entitlements comerciales»* (§21) |
@@ -241,6 +241,15 @@ cuando el grant relevaba a una principal que `S13` había matado, revocarlo deja
 para `USER`/`GLOBAL` y para el `LISTING` **sin fila principal** en esa vertical (§4.2, *«lo que
 esta mitad no alcanza»*), y cuando las dos se cumplen en el mismo acto no duplican nada, por la
 misma razón que el §4.2 da para `VERTICAL_SUBSCRIPTION`.
+
+**Y desde la FASE 9 completa ninguno de los tres queda del todo en ese grupo** (owner 2026-09-25,
+4c y 4d). El `LISTING` se lee sobre el conjunto de las principales de su vertical, con ancla o
+sin fila principal (§4.2), y el `USER`/`GLOBAL` queda huérfano cuando en ninguna vertical
+compatible hay principal viva y cobrada ni ancla viva: revocar el grant que era su único título lo
+deja huérfano por el §4.2 **y** por la tercera cláusula a la vez. **La tercera cláusula sigue
+haciendo falta** para el caso que el §4.2 no ve: el que conserva otro título —volvió a suscribirse
+el mismo día, o tiene una principal en otra vertical compatible— y cuyo addon colgaba del ancla
+revocada (`B/03` §8, *«sigue siendo la revocación de SU grant, no la ausencia de título»*).
 
 > **Esa cláusula nombra la REVOCACIÓN, y no *«el retiro del ancla»*, por decisión del owner del
 > 2026-09-21.** Su primera redacción esperaba un acto —*«retirar un ancla»*— que **no existe en
@@ -373,7 +382,9 @@ necesita para apagarla el día que se revoque el grant (§3.3). En ~~`LISTING`,~
 es **para siempre y sin detector**, porque el objetivo nunca muere (§4.2) —**`LISTING` salió de la
 lista en la FASE 8 completa** (`F-8CA2-003`): el addon que `S20` convierte pagaba sobre una
 principal que `S13` mató, así que al revocar el grant queda huérfano por el §4.2 y lo ve la cuarta
-comprobación— y las dos comprobaciones
+comprobación; **y desde la FASE 9 completa `USER`/`GLOBAL` salen igual cuando al revocar no les
+queda principal viva y cobrada en ninguna vertical compatible** (4d), así que el *«para siempre»*
+queda sólo para el que conserva otro título— y las dos comprobaciones
 que podrían verlo miran cosas que en ese estado están sanas. Con el orden declarado, lo que queda
 es una instancia ya anclada y un complemento todavía vivo: reanudable, y **es la segunda fila de
 la tercera comprobación** (`B/09` §3). El dominio entero está en `B/03` §3.2, *«el orden de las
@@ -414,9 +425,9 @@ lo da el scope:
 
 | scope (§40) | queda huérfano cuando |
 |---|---|
-| `LISTING` | ~~la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna~~ **una de dos**: la ficha **se borró** —**cualquier llegada a `PURGED`**: `PB9`, el día 180, o `PB12`, el dueño (`V/03` §9; orquestador, FASE 8 completa, 2026-09-25)— — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna —, **o la suscripción principal de la vertical de la ficha cumple la condición de la fila de abajo**: dejó de ser fila viva, ninguna sucesión la releva y ningún grant permanente la releva, **leídas tal como están escritas ahí y no reescritas acá** (FASE 8 completa, `F-8CA2-003`, owner 2026-09-25) |
+| `LISTING` | ~~la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna~~ ~~**una de dos**: la ficha **se borró** —**cualquier llegada a `PURGED`**: `PB9`, el día 180, o `PB12`, el dueño (`V/03` §9; orquestador, FASE 8 completa, 2026-09-25)— — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna —, **o la suscripción principal de la vertical de la ficha cumple la condición de la fila de abajo**: dejó de ser fila viva, ninguna sucesión la releva y ningún grant permanente la releva, **leídas tal como están escritas ahí y no reescritas acá** (FASE 8 completa, `F-8CA2-003`, owner 2026-09-25)~~ **ninguna suscripción principal de ese `user + vertical` —la vertical de la ficha— es fila viva, y no hay ahí un ancla viva** (owner 2026-09-25; FASE 9 completa, 4c): se lee **sobre el conjunto de las principales, no sobre *«la»* principal**, así que una sucesora abandonada no deja huérfano el destaque de quien sigue pagando la predecesora, y una sucesión en curso lo releva por la fila que sigue viva. **El borrado de la ficha ya no está en esta fila**: lo ejecuta sólo `A6`, que lo **consume** (`DEC-ADDON-001`; `B/03` §8; FASE 9 completa, `K-9`, abajo) |
 | `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4), **ninguna sucesión la releva** —su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola**— **y ningún grant permanente la releva**: no hay en esa vertical un **grant vivo** —o sea un **ancla viva**: una fila de `permanent_grant_vertical` cuyo grant tenga `revocado_en` nulo (`NUCLEO/01` §2.4, `B/02` §2.4)— que valga como título (§2.4) |
-| `USER` · `GLOBAL` | la cuenta se borró |
+| `USER` · `GLOBAL` | ~~la cuenta se borró~~ **en ninguna vertical compatible de su producto** (`addon_product`, `B/02` §2.4) **hay una suscripción principal viva y cobrada** —con un pago acreditado, o sucesora de una que venía pagando: la lectura de §2.2— **ni un ancla viva** (owner 2026-09-25; FASE 9 completa, 4d, que absorbe `R12-OWNER-2`). **Y, como antes, si la cuenta se borró.** Con *«la cuenta se borró»* solamente, quien se daba de baja de todo seguía pagando el addon todos los meses: el pliegue lo descartaba sin título y ningún barrido lo veía, porque la instancia no era terminal |
 
 > **«Huérfano» acá es el addon cuyo objetivo murió.** No confundirlo con la *«huérfana»* del
 > capítulo 09 §2.2, que es un recurso **del proveedor sin fila nuestra**. Son dos palabras iguales
@@ -429,32 +440,59 @@ borra**, la condición no se cumplía, `A5` no corría y **el preapproval del co
 cobrando** un destaque sobre una ficha que no se ve — lo mismo que el §4.4 llama *«complementar
 algo que ya no está»*, y sin que ningún barrido lo viera, porque la instancia no era terminal.
 
-- **La segunda mitad no se reescribe: remite a la fila de `VERTICAL_SUBSCRIPTION`.** Es la misma
+- ~~**La segunda mitad no se reescribe: remite a la fila de `VERTICAL_SUBSCRIPTION`.** Es la misma
   condición —fila viva, sucesión y grant, las tres—, aplicada a **la suscripción principal del
-  dueño de la ficha en la vertical de la ficha**. Así la releva igual un upgrade (su sucesora la
-  releva) y un *Free Forever* que ancle esa vertical (el grant la releva), y la regla del §41 —no
-  cancelar *«ciegamente»*— se cumple por las mismas tres razones.
+  dueño de la ficha en la vertical de la ficha**.~~ **Desde la FASE 9 completa la mitad se lee sobre
+  el CONJUNTO** (owner 2026-09-25, 4c): huérfano si **ninguna** principal de ese `user + vertical`
+  es fila viva y no hay ancla viva ahí. Leída sobre *«la»* principal —la más reciente—, una
+  sucesora que abandona el checkout (`S3`) dejaba huérfano el destaque de quien seguía pagando la
+  predecesora `ACTIVE`, y `A5` le cancelaba el preapproval de forma irreversible (`PA-5`); en
+  producción hay 3 `abandoned` de 8 filas. Con el conjunto la releva igual un upgrade (la sucesora
+  o la predecesora siguen vivas) y un *Free Forever* que ancle esa vertical (el ancla viva), y la
+  regla del §41 —no cancelar *«ciegamente»*— se cumple por las mismas razones.
 - **Al quedar huérfano se le cancela el preapproval, como a los otros**: `A5` lleva la instancia a
   `CANCELLED` y `S21` la suscripción de complemento (§4.3, §4.4). **Si la persona vuelve, lo
   contrata de nuevo**: no se reanuda nada.
-- **`A6` no cambia**: el borrado de la ficha sigue siendo la otra puerta, y sigue *«consumiendo»*.
+- **`A6` no cambia** ~~: el borrado de la ficha sigue siendo la otra puerta~~ **de desenlace: el borrado de la ficha es ahora su ÚNICA puerta** (FASE 9 completa, `K-9`), y sigue *«consumiendo»*.
   **Y desde la FASE 8 completa ese borrado tiene transición**: ~~es `PB12`, *«el dueño la borra»*,
   que lleva la ficha a `PURGED` (`V/03` §9; `F-8CA2-004`, owner 2026-09-25)~~ **son dos**: `PB12`,
   *«el dueño la borra»* (`V/03` §9; `F-8CA2-004`, owner 2026-09-25), y `PB9`, el día 180. Hasta ahí
-  *«la ficha se borró»* no lo ejecutaba ninguna fila. **Es cualquier llegada a `PURGED`** —`PB9`, el hard delete del día 180, **o** `PB12`— y el addon
+  *«la ficha se borró»* no lo ejecutaba ninguna fila. **Es cualquier llegada a `PURGED`** —`PB9`, el hard delete del día 180, **o** `PB12`— ~~y el addon
   `LISTING` queda huérfano en los dos casos (orquestador, FASE 8 completa, 2026-09-25). Por `PB9`
   la orfandad es la segunda cláusula de `A5`, con el motivo **14** —a la ficha no la mató `S25`,
   `S27` ni `S28`—, que es **NO DEVOLVER**: el mismo desenlace de plata que `A6` (`B/03` §3.2,
   *«cuál de los DOS motivos abre `S21`»*). Que `PB9` sea además *«se borra la ficha destino»* de
-  `A6`, como `PB12`, no cambia la plata: las dos puertas escriben el 14.
+  `A6`, como `PB12`, no cambia la plata: las dos puertas escriben el 14.~~ **y la ejecuta sólo
+  `A6`**, desde `ACTIVE` o `PENDING_AUTHORIZATION`, con el motivo **14** en `S21` (orquestador,
+  FASE 8 completa, para *«cualquier llegada a `PURGED`»*; **`A6` sola**, FASE 9 completa, `K-9`
+  de `05`).
 
-> **Lo que esta mitad no alcanza, dicho para que no se lea de más.** Se evalúa sobre **una fila
+**Por qué el borrado salió de la orfandad (`K-9`).** Con las dos puertas, toda llegada a `PURGED`
+disparaba `A5` (huérfano, segunda cláusula) **y** `A6` (*«se borra la ficha destino»*), las dos
+desde `ACTIVE` y sin guardas disjuntas. La regla 7 del `NUCLEO/03` §1 dice que dos filas que
+comparten `(desde, evento)` tienen guardas disjuntas y que, si se solapan, *«el intento cae en la
+regla 1 —no se ejecuta»*: leída al pie de la letra, **ninguna corría y el addon seguía cobrando**.
+Las dos iban al mismo `CANCELLED` y `S21` escribía el mismo motivo 14, así que quitarle una no
+mueve plata; se le deja a `A6`, que es la que *«consume»* (`DEC-ADDON-001`) y la que ya tiene el
+aviso de qué addons se pierden. **El `NUCLEO/03` no cambia**: no queda un par compartido que
+declarar, y el conteo de pares de la regla 7 sigue igual.
+
+> ~~**Lo que esta mitad no alcanza, dicho para que no se lea de más.** Se evalúa sobre **una fila
 > principal**, así que cuando el dueño **no tiene ninguna** en esa vertical —el beneficiario de un
 > grant que eligió el addon gratis (§3.2) sin haber tenido suscripción ahí— la mitad **no tiene
 > sujeto**, y el corte al revocar sigue siendo el de la tercera cláusula de `A5` (§3.3), como hasta
 > acá. Y **qué fila es *«la»* principal cuando el dueño tuvo varias en esa vertical** se lee como la
 > **más reciente**: una fila vieja ya muerta, anterior a la que pagaba cuando compró el addon,
-> cumpliría la condición para siempre y lo cortaría sin motivo.
+> cumpliría la condición para siempre y lo cortaría sin motivo.~~
+>
+> **Leída sobre el conjunto (4c), la mitad ya no se queda sin sujeto ni necesita elegir una fila.**
+> Cuando el dueño **no tiene ninguna** principal en esa vertical —el beneficiario de un grant que
+> eligió el addon gratis (§3.2)— la condición se lee igual: *«ninguna principal viva»* se cumple y
+> lo que la frena es el ancla viva; al revocarse el grant, se cumple entera y el `LISTING` queda
+> huérfano por esta puerta **y** por la tercera cláusula de `A5`, que coinciden sin duplicar nada
+> (§3.3). Y ya no hace falta decidir cuál es *«la»* principal cuando hubo varias: una fila vieja
+> muerta no cuenta, porque basta **una** viva para relevar, y una sucesora abandonada tampoco
+> corta, porque la predecesora sigue viva (owner 2026-09-25; FASE 9 completa, 4c).
 
 **La condición se escribió de nuevo parte por parte, y cada una arregla lo contrario de la
 anterior.** Son **tres**: qué significa que el objetivo murió, qué lo releva por sucesión y qué lo
@@ -550,9 +588,16 @@ a huérfano y se corta — que es lo que §3.3 ya decidía por el otro camino.
 > **Desde la FASE 8 completa vale también para `LISTING` cuando tiene fila principal**
 > (`F-8CA2-003`, owner 2026-09-25): su orfandad remite a esta misma condición sobre la principal de
 > la vertical de la ficha, así que revocar el grant que la relevaba lo deja huérfano y ahí las dos
-> puertas coinciden como en `VERTICAL_SUBSCRIPTION`. El *«en `LISTING`, `USER` y `GLOBAL` el
+> puertas coinciden como en `VERTICAL_SUBSCRIPTION`. ~~El *«en `LISTING`, `USER` y `GLOBAL` el
 > objetivo nunca murió»* de arriba queda verdadero, sin salvedad, sólo para `USER`/`GLOBAL` y para
-> el `LISTING` sin fila principal en esa vertical.
+> el `LISTING` sin fila principal en esa vertical.~~
+>
+> **Y desde la FASE 9 completa vale para los cuatro scopes** (owner 2026-09-25, 4c y 4d): el
+> `LISTING` se lee sobre el conjunto de las principales y el ancla viva de su vertical —con o sin
+> fila principal—, y el `USER`/`GLOBAL` sobre las principales vivas y cobradas y las anclas vivas de
+> sus verticales compatibles. El *«nunca murió»* de arriba ya no es verdadero para ninguno: lo
+> que sigue siendo cierto es que la ficha y la cuenta siguen ahí, y por eso la tercera cláusula de
+> `A5` sigue haciendo falta para quien conserva otro título (§3.3).
 
 **La fila viva es parte del predicado, no un adorno.** En `S13` la sucesora también queda
 `CANCELLED` **con su `sucede_a` escrito** (`B/03` §3.2), así que un `sucede_a` apuntándola sin
@@ -610,6 +655,17 @@ El addon sigue su curso y **su reloj no se congela** (`DEC-ADDON-001`), con la c
 registrada de que un suspendido dos meses pierde dos meses de algo que pagó, y con la obligación
 de que el aviso de suspensión lo diga.
 
+**Pero la pausa que pide el cliente ya no lo deja cobrando** (owner 2026-09-25; FASE 9 completa,
+4a, `F-8CC1-004`). No lo deja huérfano —el objetivo existe—, pero durante esa pausa la principal no
+emite fuente y el pliegue descarta todo `COMPLEMENTO` sin título, así que el addon recurrente
+cobraba cada mes sin dar nada. **Se pausan también sus complementos recurrentes de esa vertical**
+—`VERTICAL_SUBSCRIPTION` y `LISTING`; `USER`/`GLOBAL` sólo si no les queda título sin pausar en
+otra vertical compatible—, **por los mismos meses**: la fila de complemento pasa a `PAUSED` por
+`S32` y vuelve por `S33` cuando la principal se reanuda (`B/03` §3.2 y §5). Es el argumento de
+`DEC-ADDON-004` —*«el addon COMPLEMENTA algo que ya no está»*, §4.4— aplicado a un producto que
+vendemos y no a una mora. **La suspensión no entra**: sigue como dice el párrafo de arriba. **Ni la
+pausa por cortesía**: la cortesía emite título, y el complemento se cobra y se recibe.
+
 ### 4.3 El huérfano recurrente se cancela en el proveedor, y esto es lo urgente
 
 `DEC-ADDON-002` implicación 6: **cancelar el plan NO cancela los addons.** Cada addon recurrente
@@ -627,8 +683,10 @@ distintos** y los tres se disparan del mismo lugar:
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
-—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son **las doce** que en
-`B/03` §3.2 sacan a una fila principal de las filas vivas: `S3`, `S12`, `S13`, `S16`, `S17`, **el
+—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ **las trece** que en
+`B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31` es la decimotercera**, la
+sucesora que un contracargo sobre su predecesora corta a `ABANDONED` o `CANCELLED` (FASE 9
+completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista)—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
 espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
 estando pausado, suspendido o en el grace— más **`S25`**, el fin de una pausa sobre un plan que ya
@@ -650,12 +708,12 @@ predecesora ya murió (§4.2).
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
-> | **una de las doce transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
-> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata o **`S28`** la corta al discontinuarse la vertical | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
+> | **una de las ~~doce~~ trece transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, **`S28`** la corta al discontinuarse la vertical **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
-> **La lista no agrega ninguna transición al disparador de arriba**: las doce son las que
+> **La lista no agrega ninguna transición al disparador de arriba**: las ~~doce~~ trece son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
 > tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
 > momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.
@@ -679,6 +737,18 @@ predecesora ya murió (§4.2).
 >    objetivo es la ficha—, así que el 1 y el 2 no las encuentran nunca, y sin este punto la mitad
 >    nueva del §4.2 no la leería ninguna transición: sólo la cuarta comprobación de `B/09` §3, al día
 >    siguiente, con el preapproval cobrando mientras tanto.
+> 4. **y, si esa fila es principal, las instancias `USER`/`GLOBAL` del mismo `user` cuyo producto
+>    declara compatible su vertical** (owner 2026-09-25; FASE 9 completa, 4d). Tampoco cuelgan de
+>    ninguna suscripción, y su condición —ninguna principal viva y cobrada ni ancla viva en ninguna
+>    vertical compatible— cambia cada vez que una principal de cualquiera de esas verticales sale de
+>    las filas vivas.
+>
+> **Y la sucesora de la decisión 3c no dispara nada de esto al rechazarse su primer cobro** (owner
+> 2026-09-25; FASE 9 completa, 3c): si su predecesora venía pagando, el primer cobro fallido la
+> lleva a `GRACE_PERIOD` por `S4` y no a `CHARGE_DECLINED` por `S16` (`B/03` §3.2), así que sigue
+> siendo fila viva y los complementos que `S18` le re-apuntó **no quedan huérfanos**. Si el grace
+> termina en `S6`, la fila queda `SUSPENDED`, que también es viva: el addon sigue el camino de
+> cualquier suspendido (§4.2).
 >
 > **El 2 no es un borde: es el único camino por el que el caso del §4.2 se cumple.** Los
 > complementos cuelgan de la **predecesora** hasta que `S18` los re-apunta, y `S18` no corrió
@@ -770,7 +840,8 @@ vacío**. El razonamiento completo, con las tres razones separadas, está en `B/
 cuelga el ancla que era su título** (§3.3). La orfandad mira el **objetivo** y la revocación mira el **título**, y
 atarse a una sola habría dejado el cobro vivo en los tres scopes —`LISTING`, `USER` y `GLOBAL`—
 donde el objetivo nunca muere (en `LISTING`, desde la FASE 8 completa, sólo cuando no tiene fila
-principal en esa vertical: §4.2, `F-8CA2-003`). **`A6` entra por la misma puerta y con la misma razón**: la ficha se
+principal en esa vertical: §4.2, `F-8CA2-003`; **desde la FASE 9 completa, en ninguno de los tres
+cuando no le queda otro título**, 4c y 4d, §4.2). **`A6` entra por la misma puerta y con la misma razón**: la ficha se
 borró, el addon *«se consume»* (`DEC-ADDON-001`) y su cobro no tiene a qué complementar. **`A3` no
 entra** —la instancia va a `ABANDONED` y la fila de complemento ya tiene su propia transición,
 `S3`, con la misma ventana y sus **dos** plazos (`B/03` §3.4 punto 1)— y **`A4` tampoco**, porque su población es vacía: un
@@ -847,7 +918,10 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   el objetivo del addon sobrevive — y cuando no sobrevive, **la fila de complemento queda
   `CANCELLED` en el acto** (`S21`, §4.4). **Para `LISTING` la principal sí entra en la pregunta
   desde la FASE 8 completa** (`F-8CA2-003`, owner 2026-09-25): no por su estado, sino porque su
-  orfandad remite a la condición de `VERTICAL_SUBSCRIPTION` leída sobre ella (§4.2). **El caso en que la principal se va porque cae un grant lo
+  orfandad remite a la condición de `VERTICAL_SUBSCRIPTION` leída sobre ella (§4.2) —**sobre el
+  conjunto de las principales de su vertical** desde la FASE 9 completa (4c)—, **y para
+  `USER`/`GLOBAL` también**: las principales vivas y cobradas de sus verticales compatibles (4d).
+  **Y la pausa que pide el cliente pausa sus complementos** (4a, §4.2). **El caso en que la principal se va porque cae un grant lo
   resuelve el §3.4**, y ahí la respuesta es la otra: el objetivo sobrevive y lo que se apaga es
   el cobro.
 - ~~**El checkout de una contratación** —y el `init_point` roto de `EX-37`, que alcanza a cada
@@ -870,3 +944,14 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   `EX-41`** (idempotente por la clave; una orden sin respuesta se reenvía con la misma clave); y **su pago no lo ve la conciliación ni
   admite una marca**, porque las dos cuelgan de suscripciones (`B/02` §2.3, `B/09`). **Y está
   medido sólo en sandbox** (`EX-30`).
+- **Qué hace un contracargo sobre el cobro de un addon periódico** (FASE 9 completa, borde 4 de
+  §R7.5.2 de `04`; declarado por `DEC-METH-015`). `P6` abre la marca `CONTRACARGO` sobre la
+  suscripción de complemento, que es la dueña del pago; si además corre `S6` sobre ella —y qué le
+  pasa a la instancia— no está escrito. **Causa**: `DEC-SUB-020` se decidió sobre la principal. El
+  monto es el de un addon y la marca ya lo pone delante de una persona.
+- **En qué verticales se emite un addon `USER`/`GLOBAL`** lo fija el contrato, no este capítulo:
+  sólo en las verticales compatibles de su producto (`12-contrato-de-cobertura.md` §2.7), con el
+  guard gemelo de `G-R2-B`, `G-R2-C` (`V/20` §2; owner 2026-09-25, FASE 9 completa, 4e,
+  `F-8CA1-008`). Lo que billing aporta es el dato: la lista de verticales compatibles de
+  `addon_product` (`B/02` §2.4), que es la misma que la orfandad del §4.2 lee desde 4d. Se nombra
+  acá para que nadie lea el §2.2 —*«compatible»* al comprar— como la regla de emisión.

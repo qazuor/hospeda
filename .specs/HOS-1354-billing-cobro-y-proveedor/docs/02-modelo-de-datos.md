@@ -47,7 +47,7 @@ a la restricción no obliga a nada.
 | **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**) y **la fecha de primer cobro con la que nació la fila**. **No lleva ninguna columna de conciliación**: la marca es una fila aparte —`reconciliation_mark`, abajo— y **`requiere_conciliación` pasa a ser un PREDICADO derivado**, *«esta fila tiene al menos una marca abierta»* (§2.5) | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
 | **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila**. **Los dos motivos de `S21` —el 14 y el 15 del §2.5— no conviven, y no es esta clave la que lo impide**: abajo |
 | **`reconciliation_mark_payment`** | la marca y **un** pago que hay que devolver — FK a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) —, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta, las dos anulables | **`UNIQUE(marca, pago)`**: el mismo pago no se cuelga dos veces de la misma marca. Una marca lleva **cero, uno o N**: cero en los motivos que no piden pago, **N cuando el hecho que la abre se repite ciclo a ciclo** |
-| **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
+| **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción. **La suscripción puede ser de complemento** desde la FASE 9 completa (owner 2026-09-25, 4a): `S32` le abre una con el mismo fin previsto que la de su principal (`B/03` §3.2). **Esas no cuentan contra los topes de `DEC-SUB-004`**, que se cuentan sobre las pausas de filas principales: la pausa que la persona pidió es una sola |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, **la última `version` del recurso que aplicamos** —la de un webhook, que es donde viene (`EX-2`)— **y el `last_modified` de la última relectura por id**, que es lo que compara el barrido porque la relectura no trae `version` (`RC-9`; FASE 8 completa, `F-8CB3-010`) | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
 > La `version` es el contador monótono por recurso que trae cada evento (`EX-2`). Guardarla es lo
@@ -489,7 +489,7 @@ el período que la cuota tenía y el que pasó a cubrir.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es **la versión que se vende hoy**: la que una compra nueva ancla | `version_id` **no es anulable**: sin ella el producto no se puede comprar. **Y sólo se re-apunta a otra versión DEL MISMO `addon`** —la entidad madre de `addon_version`, `V/02` §2.1 (corrección de diseño, FASE 8 completa, `F-8CA3-011`)—: re-apuntar es publicar una versión, no cambiar de addon. **NO es la referencia que transporta una fuente `ADDON`** — ésa la aporta la instancia |
+| **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es **la versión que se vende hoy**: la que una compra nueva ancla | `version_id` **no es anulable**: sin ella el producto no se puede comprar. **Y sólo se re-apunta a otra versión DEL MISMO `addon`** —la entidad madre de `addon_version`, `V/02` §2.1 (corrección de diseño, FASE 8 completa, `F-8CA3-011`)—: re-apuntar es publicar una versión, no cambiar de addon. **NO es la referencia que transporta una fuente `ADDON`** — ésa la aporta la instancia. **Nada impide que dos productos anclen versiones del mismo `addon`** —dos precios para la misma capacidad—: es legítimo y no rompe el linaje, porque la instancia ancla su versión (FASE 9 completa, borde k4 de `03` §R6.4). **Las verticales compatibles son además lo que leen la emisión de un `USER`/`GLOBAL`** (`12-contrato…` §2.7, 4e) **y su orfandad** (`B/16` §4.2, 4d) |
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente, **y el ancla del grant que sea su título, si lo es** | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. **El ancla del título apunta a `permanent_grant_vertical` y sí es anulable**: nula cuando el título es el ordinario de esa vertical, no nula cuando el addon vive de un grant. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`), **y la duración del §33 —primer cobro, N cobros o forever—, que es de dónde sale el valor inicial del contador de abajo** (corrección de diseño, FASE 8 completa, `F-8CB1-007`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción, **y `cobros_restantes` (anulable): nulo = forever; N > 0 = quedan N cobros con descuento; 0 = agotado** (corrección de diseño, FASE 8 completa, `F-8CB1-007`) | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». ~~**La suscripción se re-apunta en `S18`** (§2.6), **y el contador viaja con la fila sin tocarse**.~~ **La suscripción NO se re-apunta en `S18`: la promo se pierde con el cambio de plan** y la fila se queda sobre la predecesora, sin borrarse — así que el `UNIQUE` sigue impidiendo canjear el mismo código en la sucesora (§2.6, `B/14` §2.2; FASE 8 completa, pendiente 7, owner 2026-09-25). **`cobros_restantes` nunca es negativo** |
@@ -595,9 +595,13 @@ el precio, así que **toda promo acotada se volvía `forever`**.
   —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8
   completa, pendiente 8)— menos las promos vivas según este contador, y el barrido lo compara con
   el `transaction_amount` releído por id (`B/09` §3).
-- **Un downgrade lo pone en 0**: el acto que aplica el cambio programado (`B/12` §2) escribe
+- **Un downgrade lo pone en 0**: ~~el acto que aplica el cambio programado~~ **el pedido del
+  downgrade** (`B/12` §2) escribe
   `cobros_restantes = 0` en la redención de la fila, porque la promo no sobrevive a un cambio de
-  plan (`B/14` §2.2; orquestador, FASE 8 completa, pendiente 8). No es un cobro, así que no es
+  plan (`B/14` §2.2; orquestador, FASE 8 completa, pendiente 8), **en el mismo acto en que
+  `DEC-SUB-008` muta el monto, y lo muta al precio de lista del plan nuevo, sin promos** (FASE 9
+  completa, contradicción 1 de `03` §R6.5: escrito sobre el acto, la promo seguía restándose en
+  la ventana y nadie la sacaba del monto). No es un cobro, así que no es
   `P1` y `S30` no corre.
 - **Lo que NO lo mueve**, porque no hay cobro: ~~cambiar de plan (`B/14` §2.2) y~~ una cortesía en
   curso (`B/14` §4.2). **Un cambio de plan no lo mueve: termina la promo** (`B/14` §2.2; FASE 8
@@ -665,8 +669,8 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
     |---|---|---|
     | **`VENTANA_DE_AUTORIZACIÓN_VENCIDA`** | **`S3`** (`B/03` §3.2) | la sucesora abandonó el checkout, así que no hay ninguna fila viva en esa vertical a la que volver (`DEC-GRANT-011`) |
     | **`GRANT_PERMANENTE_OTORGADO`** | **`S13`** (`B/03` §3.2) | un *Free Forever* pasa a cubrir esa vertical —otorgado o con la vertical recién anclada—, así que no queda ningún cobro que la cortesía pueda evitar (`B/14` §4.3) |
-    | **`DESTINO_DE_PLAN_ANUAL`** | **`S18`**, si la sucesora es de plan anual; y **`S2`** del alta nueva de plan anual que habría recibido un saldo diferido por `S25` | sobre un plan anual no hay cortesía temporal (`DEC-GRANT-003` impl. 6), así que el saldo no tiene dónde re-emitirse. **Se pierde, y se le avisa antes**: la pantalla del cambio de plan o del checkout se lo dice y decide la persona (`B/19` §4 fila 13-quater) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25) |
-    | **`CONTRACARGO_DE_LA_PREDECESORA`** ✚ | **`S31`** (`B/03` §3.2) | un contracargo cortó a la predecesora y `S31` corta a la sucesora que esperaba el saldo; **ninguno de los otros tres valores describe este desenlace**: no venció ninguna ventana, no hay grant ni plan anual (FASE 8 completa, pendiente 8, owner 2026-09-25) |
+    | ~~**`DESTINO_DE_PLAN_ANUAL`**~~ **`DESTINO_DE_PLAN_NO_MENSUAL`** | **`S18`**, si la sucesora es de plan ~~anual~~ no mensual —trimestral, semestral o anual—; y **`S2`** del alta nueva de plan ~~anual~~ no mensual que habría recibido un saldo diferido por `S25` | sobre un plan ~~anual~~ que no es mensual no hay cortesía temporal (`DEC-GRANT-003` impl. 6: *«sólo mensual»*), así que el saldo no tiene dónde re-emitirse (el valor se renombró en la FASE 9 completa, contradicción 1 de `03` §R4.5: con *«anual»*, el trimestral y el semestral recibían el saldo; **el recuento de la enumeración no cambia**, sigue en cuatro). **Se pierde, y se le avisa antes**: la pantalla del cambio de plan o del checkout se lo dice y decide la persona (`B/19` §4 fila 13-quater) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25) |
+    | **`CONTRACARGO_DE_LA_PREDECESORA`** ✚ | **`S31`** (`B/03` §3.2) | un contracargo cortó a la predecesora y `S31` corta a la sucesora que esperaba el saldo; **ninguno de los otros tres valores describe este desenlace**: no venció ninguna ventana, no hay grant ni plan ~~anual~~ no mensual (FASE 8 completa, pendiente 8, owner 2026-09-25) |
 
     Misma regla que el catálogo de motivos de la marca (§2.5): **un cerrador nuevo agrega su fila
     acá en el mismo acto en que se escribe**, y el conteo se recalcula, nunca se incrementa. **Lo
@@ -1115,6 +1119,13 @@ comprobación de cero llamadas del `B/09` §3.
 | | qué | por qué |
 |---|---|---|
 | **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor | los cuatro primeros son obligación legal y contable |
+
+**La fila de arriba habla del modelo nuevo** —`payment`, `manual_payment`, `refund`, `provider_link`
+(§2.3)—, **no de las tablas del sistema viejo** (`billing_payments` y las demás). Del sistema viejo
+**no se conserva nada**, ni sus tablas ni las columnas que las copian: el owner lo decidió el
+2026-09-25 (FASE 9 completa, `2a`; `B/21` §4) —*«recién arrancamos; a los clientes que hay los
+contactamos en persona, de a uno, y se vuelven a suscribir»*—. Se aclara porque la fila se podía
+leer como una obligación sobre `billing_payments`.
 
 ---
 

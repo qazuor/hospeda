@@ -144,15 +144,17 @@ viejo se imputaba como pago del ciclo nuevo: pagó dos veces y el sistema regist
 
 > **La regla de re-vinculación** (owner 2026-09-25; FASE 9 completa, `2b`; cierra `F-8CB3-008`):
 > **un desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra que no
-> tenga otro `provider_link` vivo. Todo otro desconocido abre la marca `requiere_conciliación`** y
+> tenga otro `provider_link` vivo. Todo otro desconocido abre la marca `requiere_conciliación`** —con
+> motivo `TRANSICIÓN_NO_DECLARADA`, el 6 de `B/02` §2.5, el mismo que escribe el cap. 09 §2.4—, y
 > lo mira una persona.
 
 Cada preapproval del sistema nuevo nace con nuestro `external_reference` (`PA-2`), así que una
 huérfana legítima siempre nombra su fila; lo que venga del sistema viejo —un cobro en vuelo sin
 lápida porque su id sólo estaba en el proveedor, una sonda que siguió viva— no la nombra y termina
 en una persona. **Ya no hay candidato plausible**: la suscripción nueva de la misma persona tiene su
-propio `provider_link` vivo, así que no puede recibir el cobro viejo. La precondición se escribe en
-el cap. 09 §2.4, que es donde vive la re-vinculación.
+propio `provider_link` vivo, así que no puede recibir el cobro viejo. La precondición ~~se escribe en~~
+**está escrita en** el cap. 09 §2.4, que es donde vive la re-vinculación, con las mismas palabras
+(FASE 9 completa; verificado contra ese § en la misma pasada).
 
 Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancelado durante el
 corte»* en vez de *«huérfana»*. Y **no compite por el candado del §11**, porque `CANCELLED` no está
@@ -299,8 +301,9 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   `F-8CA3-007`). **Causa**: el owner decidió no conservar nada del sistema viejo (`2a`); la población
   son los pocos pagos que el sistema actual cobre entre el 2026-09-26 y el corte, de clientes que el
   owner llama uno por uno. El comprobante sigue existiendo del lado de MercadoPago.
-- **La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
+- ~~**La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
   allá. **Causa**: el cap. 09 es de otra pasada de esta misma ronda; hasta que la tenga, la regla vive
-  sólo en este capítulo.
+  sólo en este capítulo.~~ **Cerrado el 2026-09-25**: está escrita en el cap. 09 §2.4, con el motivo 6
+  (`TRANSICIÓN_NO_DECLARADA`), y las dos redacciones coinciden (FASE 9 completa, `2b`).
 - **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
   (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
