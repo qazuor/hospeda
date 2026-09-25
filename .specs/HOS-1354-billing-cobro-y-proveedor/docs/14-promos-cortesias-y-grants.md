@@ -557,6 +557,11 @@ del §4.4** y no con uno nuevo.
 | la persona elige de nuevo y su fila nueva llega a `ACTIVE` | `S1` + `S2` |
 | la cortesía se **re-emite** sobre esa fila: `subscription_id` a la nueva, `inicio` hoy, `fin` hoy + `saldo_meses`, saldo a nulo, y la fila queda `PAUSED · COURTESY` | **`S9`**, por su **tercer** disparador |
 
+**Y desde la fecha de fin de servicio la cortesía no cubre**, aunque la fila siga `PAUSED` hasta
+`S25`: ahí el contrato no emite ninguna fuente de título (`12-contrato…` §2.6; FASE 8 completa,
+`F-8CC1-001`, owner 2026-09-25). Qué significa eso para el `saldo_meses` está declarado en
+`B/10` §4.3, *«el día del fin de servicio»*.
+
 **Es literalmente el mismo mecanismo, y eso es la decisión y no una comodidad.** `DEC-GRANT-010`
 eligió *«el mismo mecanismo que `DEC-GRANT-007`»* con todas las letras: la misma columna, el
 mismo re-emisor, el mismo detector. Inventar un camino propio para este caso habría duplicado un

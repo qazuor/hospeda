@@ -485,6 +485,63 @@ la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la
   perpetua a alguien que ni empezó su prueba, y el error es en la dirección cara: **no falla
   ruidosamente, regala.**
 
+#### Una vertical discontinuada no cubre a nadie
+
+(FASE 8 completa, `F-8CC1-001`, `F-8CA2-007`, owner 2026-09-25.)
+
+> **Desde `vertical.fin_de_servicio` (`V/02` §2.1), el contrato no emite en esa vertical ninguna
+> fuente de `tipo` `TRIAL`, `SUSCRIPCIÓN`, `CORTESÍA` ni `GRANT`, cualquiera sea el estado que la
+> sostenga.** `cubierto` pasa a falso para todos en el mismo instante.
+
+**Manda sobre las tres tablas que dicen cuándo se emite cada fuente**: la de qué emite cada estado
+de la suscripción (arriba), la del grant (§2.8) y la del trial (`V/03` §2). Las tres deciden por el
+estado **de la fuente**, y la fecha de fin de servicio no es estado de ninguna: es de la vertical.
+Por eso hasta la FASE 8 completa tres fuentes la cruzaban cubriendo —el grant con `NO_VENCE` y su
+ancla viva, la cortesía de una `PAUSED · COURTESY` cuyo fin cae después (`B/10` §4.3: *«el caso
+normal»*) y el trial en curso—, y el día del fin de servicio `PB2` no podía bajarles las fichas:
+su evento, *«`cubierto` pasa a falso»*, para ellos no ocurría.
+
+**Lo que esta regla NO hace:**
+
+- **No revoca el grant.** `permanent_grant.revocado_en` sigue nulo y el ancla sigue viva
+  (`NUCLEO/01` §2.4): el grant **deja de cubrir esa vertical** y en las demás verticales de su
+  scope sigue emitiendo como antes. Tampoco es desanclar (§2.8): no se escribe ni se borra
+  ninguna fila.
+- **No mueve ningún estado.** La `PAUSED · COURTESY` sigue `PAUSED` hasta `S25` (`B/10` §4.3,
+  `DEC-SUB-015`) y el trial sigue `TRIAL_ACTIVE` hasta `T3`. Lo único que cambia es la emisión.
+- **No toca el título `BASE`** (§2.5), que no está en la lista y no cubre: es el que le deja al
+  dueño **recuperar lo suyo** (`PB8`) durante la retención que `B/10` §4.3 le promete
+  —*«conservando el acceso del dueño»*—. Las fuentes `ADDON` no necesitan regla propia: sin
+  título, el pliegue las descarta (§2.4).
+
+**Por la letra alcanza también a la fuente de `PRE_TRIAL`**, que es de `tipo: TRIAL` (§2.4): quien
+estaba en `PRE_TRIAL` pasa a resolver sus capacidades contra la versión de piso. `cubierto` no
+cambia para él, porque esa fuente ya era de clase `BASE`.
+
+**Quién lee la fecha, sin acoplamiento nuevo.** La regla no agrega ningún dato a la frontera:
+
+- **Las tres fuentes de billing** —`SUSCRIPCIÓN`, `CORTESÍA`, `GRANT`— las arma la implementación
+  real (§5.2), que lee la fecha por **`situaciónDeVertical(vertical).finDeServicio`**, uno de los
+  siete campos que el §4.1 ya declara y que `B/10` §4.6 ya lee. La mitad inversa de la regla de
+  vigilancia (§4.2) no se dispara: no hay campo nuevo.
+- **La fuente de trial** la resuelve verticales en las dos implementaciones (§5.1; §5.2 *«no toca
+  nada de lo construido»*), y lee su propia columna. No cruza nada.
+- **En la dirección de ida no cambia nada** (§4): billing no le empuja a verticales ningún dato
+  más.
+
+**Y el día que la fecha pasa no hay transición**, igual que con cualquier `hasta` que vence
+(arriba): no hay aviso para los que cubría un grant, una cortesía o un trial. Las fichas las baja
+**el barrido del día del fin de servicio** (`B/10` §4.3), cuyo `PB2` ahora sí tiene su evento, y
+si no las baja, **el reconciliador diario de cobertura al día siguiente** (`V/03` §9,
+`DEC-ARCH-009`).
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **el `hasta` no refleja la fecha de
+> fin de servicio.** Hasta el instante en que deja de emitirse, el grant sigue diciendo `NO_VENCE`
+> y la cortesía y el trial la fecha de su propio fin, así que el aviso con ventana que `V/15` §4.4 le da al
+> fin de una cortesía **puede anunciar una fecha posterior** a la real. Ponerle al `hasta` la
+> fecha de la vertical cambia el dominio de la tabla del §2.4 (un `GRANT` con `fecha`), y eso no
+> está decidido. No mueve plata, no da acceso —la emisión se corta igual— y no borra nada.
+
 ### 2.7 `alcance` y `objetivo`: la firma no cambia, la respuesta sí
 
 Una fuente de alcance `LISTING` —un addon comprado para una ficha— entra en un conjunto que se
@@ -610,7 +667,10 @@ borrar una fila.
 
 #### Un grant emite mientras está vivo, y revocarlo no borra sus anclas
 
-**La fuente `GRANT` de una vertical existe mientras el ancla de esa vertical esté VIVA.** *Vivo*
+**La fuente `GRANT` de una vertical existe mientras el ancla de esa vertical esté VIVA** —**y
+mientras esa vertical no haya llegado a su fin de servicio**, sin revocar nada: el ancla sigue
+viva (§2.6, *«una vertical discontinuada no cubre a nadie»*; FASE 8 completa, `F-8CC1-001`, owner
+2026-09-25)—. *Vivo*
 acá tiene definición y columna: `permanent_grant.revocado_en` nulo, con el término y su inventario
 de consumidores en `NUCLEO/01` §2.4 y la fila en `B/02` §2.4. **Un grant revocado no emite
 ninguna fuente**, en ninguna de sus N verticales, desde el instante de la revocación.
@@ -834,7 +894,10 @@ cortara o siguiera llegando**. Sin declararlo se pierde de vista, y el día que 
 columna que verticales cambió nadie se entera hasta que rompe.
 
 **Dos columnas que esto obliga a crear**, del lado de verticales, porque `B/10` §4.6 ya las lee y
-no existen: `vertical.admite_altas` y `vertical.fin_de_servicio`.
+no existen: `vertical.admite_altas` y `vertical.fin_de_servicio`. **Y desde la FASE 8 completa la
+implementación real del contrato lee `finDeServicio` por esta misma pregunta**, para dejar de
+emitir en una vertical discontinuada (§2.6; `F-8CC1-001`, owner 2026-09-25): es un consumidor más
+de un campo ya declarado, no un campo nuevo.
 
 **Y quién construye las tres consultas se dice acá, porque no decirlo las dejó sin dueño durante
 cuatro días y cuatro vueltas del ciclo.** **Las construye `V2`**, la segunda unidad de la épica de

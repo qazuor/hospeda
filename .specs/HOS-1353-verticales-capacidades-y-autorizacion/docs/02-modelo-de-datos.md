@@ -115,7 +115,10 @@ para retirar un plan sin mecanismo nuevo.
 
 **Las dos columnas de `vertical` no son de adorno: son la mitad declarada de la frontera.**
 `admite_altas` y `fin_de_servicio` las **lee billing** (`B/10` §4.6) y hasta ahora no existían en
-ninguna entidad. Son dos de los **siete** campos de la dirección inversa del contrato
+ninguna entidad. **Desde la FASE 8 completa también las leen el contrato y la máquina de trial**:
+el contrato deja de emitir toda fuente de título desde `fin_de_servicio` —billing lo lee por
+`situaciónDeVertical`, verticales directo para el trial— y `T1` exige `admite_altas`
+(`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). Son dos de los **siete** campos de la dirección inversa del contrato
 (`12-contrato-de-cobertura.md` §4.1), que transporta **política y estado de catálogo, nunca
 capacidades**. *(Decía «seis»: es la misma cifra caduca que la regla de vigilancia del §4.2 del
 contrato llevaba en su mitad inversa, y se recontó entera sobre el bloque del §4.1 —cinco de
@@ -159,7 +162,9 @@ suscripción.
 > vertical declara evento de activación y su plan de trial tiene días > 0.**
 
 Es la **mitad de catálogo** de la condición de `T1` —que `T6` comparte palabra por palabra
-(`V/03` §2)— expresada **como dato en vez de como rama**, y un guard la verifica en las dos
+(`V/03` §2)— expresada **como dato en vez de como rama** *(desde la FASE 8 completa `T1` exige
+además que la vertical admita altas, y esta capacidad **no** lo mira: el borde que eso deja está
+declarado en `V/03` §2; `F-8CC1-001`, owner 2026-09-25)*, y un guard la verifica en las dos
 direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum de verticales. La
 otra mitad de esas dos condiciones es del **sujeto** —`cubierto`, y es lo que las vuelve
 disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el momento.

@@ -177,12 +177,20 @@ sigue haciendo falta por las que ya estaban abajo ese día, a las que `PB2` no t
 el 5 alcanza a todas las fichas del dueño en la vertical** (FASE 8 completa, owner 2026-09-25) **los
 dos tienen el mismo alcance sobre cada dueño**: el barrido del 4 ya escribía **cada ficha de la
 vertical**, publicada o no (`B/10` §4.3), y el 5 escribe ahora cada ficha, publicada o no, del dueño
-que ese día pierde la cobertura —el de una suscripción viva, que consuma su `CANCELLED` (`B/10`
-§4.3)—, así que sobre ése los dos escriben el mismo instante en todas sus fichas. **El 4 no se
+que ese día pierde la cobertura —~~el de una suscripción viva, que consuma su `CANCELLED` (`B/10`
+§4.3)~~ **todo dueño que estaba cubierto en la vertical**: el de una suscripción viva, que consuma
+su `CANCELLED` (`B/10` §4.3), **y el de un grant, una cortesía o un trial, cuyas fuentes el contrato
+deja de emitir en esa fecha** (`12-contrato…` §2.6; FASE 8 completa, `F-8CC1-001`, owner
+2026-09-25)—, así que sobre ése los dos escriben el mismo instante en todas sus fichas. **Y es el
+mismo instante por construcción, no por coincidencia**: el contrato corta la cobertura **en**
+`vertical.fin_de_servicio`, así que el instante de la caída del 5 es el del 4. **El 4 no se
 retira por eso**, por dos razones: alcanza también al dueño que ese día **no** pierde nada porque ya
 estaba sin cobertura, sobre el que el 5 no ocurre; y no depende del aviso, y el 5 sí (el ⚠️ de
 abajo, punto 2) —sin aviso, el 5 lo escribe el reconciliador diario **al día siguiente**, y el 4
-escribe **el día** del fin de servicio (`DEC-ARCH-009`)—.
+escribe **el día** del fin de servicio (`DEC-ARCH-009`)—. **Cuando el 5 llega por el reconciliador,
+gana él**: escribe el instante de su corrida, hasta un día después del 4, y la inactividad cuenta desde
+**el más reciente** de los hechos (la definición de arriba). Es el atraso de un día que
+`DEC-ARCH-009` acepta, y cae del lado que atrasa el borrado, nunca del que lo adelanta (`V/03` §9).
 
 **Los otros ~~tres~~ hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
 append-only de eventos de dominio (cap. 08 §1.3), el 3 **y el 5** de la propia máquina de

@@ -41,7 +41,7 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
+| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** **y la vertical admite altas** (`vertical.admite_altas`, cap. 02 §2.1; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
 | T2 | `TRIAL_ACTIVE` | **aparece una fuente viva de clase `TÍTULO` que no es la del trial** | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de esa fuente |
 | T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | **—** | arranca la campaña de recuperación y el reloj de retención; **la publicación la mueve `PB2`**, por el cambio de `cubierto` (§9) |
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
@@ -64,6 +64,12 @@ hay título* sino **a qué versión de plan apunta**:
 no dispararía nunca y el criterio que `12-contrato-de-cobertura.md` §5.1 le pone a la
 implementación de arranque —*«los dos caminos se ejercen completos, porque un trial vence de
 verdad»*— quedaría sin objeto.
+
+**Y desde la fecha de fin de servicio de su vertical, `TRIAL_ACTIVE` tampoco es fuente viva**,
+aunque la máquina siga en ese estado hasta `T3`: el contrato no emite ahí ninguna fuente de título
+(`12-contrato…` §2.6, *«una vertical discontinuada no cubre a nadie»*; FASE 8 completa,
+`F-8CC1-001`, owner 2026-09-25). Por la letra de esa regla, `PRE_TRIAL` tampoco: quien estaba ahí
+resuelve contra la versión de piso.
 
 **Y la fila de arriba no abre la puerta inversa, porque no hay puerta**: nadie entra a
 `PRE_TRIAL`, se empieza ahí, y ninguna transición vuelve. Una cobertura que sólo existe en el
@@ -111,9 +117,11 @@ distintos de esta épica**, y uno de los **tres** que el diseño declara hoy —
 `S5`/`S19` y `S7`/`S19`, en la tabla de suscripción de la épica de billing, separados también por
 un booleano (`B/03` §3.2; la lista está en el cap. 03 (núcleo) §1 regla 7). Lo cuenta `G-R4` sobre
 las nueve tablas, no una lectura a mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
-disjuntas, y acá lo son **por construcción y no por acuerdo**: las dos piden la misma mitad de
+disjuntas, y acá lo son **por construcción y no por acuerdo**: ~~las dos piden la misma mitad de
 catálogo —la vertical declara evento y su plan de trial tiene días > 0— y difieren en el valor de
-**un booleano**, `cubierto`. No hay una regla de precedencia que alguien pueda olvidar leer,
+**un booleano**, `cubierto`.~~ las dos piden la mitad de catálogo —la vertical declara evento y su
+plan de trial tiene días > 0—, `T1` le suma que la vertical admita altas (abajo; FASE 8 completa,
+`F-8CC1-001`, owner 2026-09-25), y **lo que las separa es un booleano**, `cubierto`. No hay una regla de precedencia que alguien pueda olvidar leer,
 porque no hace falta ninguna.
 
 **Las tres consecuencias del par, recorridas** — la mitad de catálogo × los dos valores de
@@ -124,12 +132,38 @@ porque no hace falta ninguna.
 | declara evento y días > 0 | **falso** | `T1`: arranca el trial |
 | declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
 | no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **hasta el encendido, que es lo que resuelve `T7`** |
+| declara evento y días > 0, **pero la vertical no admite altas** | **falso** | **ninguna de las dos**: `T1` exige `admite_altas` y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` (FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) |
 
 **La tercera fila es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
 vertical que declarara evento con los días en cero le escribía a un cliente la fila consumida de
 un trial **que la vertical todavía no ofrece** — y el día que lo encendiera, esa persona ya no lo
 tenía. `DEC-TRIAL-003` contempla exactamente ese día para Partner. Consumir un beneficio que no
 existe no es consumirlo: es destruirlo antes de que nazca.
+
+**`T1` exige que la vertical admita altas, y `T6` y `T7` no** (FASE 8 completa, `F-8CC1-001`,
+owner 2026-09-25). El owner lo decidió para `T1` —si la vertical no admite altas, no arranca
+ningún trial— y dejó `T6`/`T7` para «si corresponde», y **no corresponde**, por lo que esas dos filas
+hacen: **ninguna arranca un trial**, las dos escriben la fila **consumida**, sin reloj y sin
+campaña. Exigirles `admite_altas` dejaría sin consumir el trial de quien ya ejerció el evento de
+activación, y es la puerta del §10.2 —*«un trial gratis para quien ya fue cliente»*— que `T6` y
+`T7` existen para cerrar.
+
+**El par sigue disjunto por construcción**, y por el mismo booleano: `T1` pide `cubierto` falso y
+`T6` verdadero. Lo que deja de ser verdad es que las dos cubran todos los casos de la mitad de
+catálogo: con la vertical cerrada a altas y `cubierto` falso **no dispara ninguna**, que es la
+cuarta fila de la tabla de arriba y el efecto buscado. Hasta esta pasada `T1` no miraba la
+situación de la vertical, y el día 0 de una discontinuación —*«la vertical deja de admitir altas y
+trials»* (`B/10` §4.3)— seguía arrancando trials (`F-8CC1-001`).
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **quien publica en una vertical
+> cerrada a altas sin estar cubierto queda publicado hasta un día.** La versión de pre-trial
+> sigue llevando la capacidad de activación —cap. 02 §2.1 la ata a *«declara evento y días > 0»*,
+> no a `admite_altas`—, así que `PB1` publica, `T1` no dispara y `cubierto` sigue falso: una ficha
+> publicada sin cobertura. **La baja el reconciliador diario de cobertura** al día siguiente, por
+> la primera rama de `PB2` (§9, `DEC-ARCH-009`). Pasa entre el día 0 y la fecha de fin de servicio
+> —después, la fuente de `PRE_TRIAL` ya no se emite (arriba, *«qué contesta el contrato en cada
+> estado»*)— y en una vertical cerrada a altas sin discontinuar. No mueve plata; es un día de ficha
+> visible sin título, en una vertical sin altas.
 
 #### La tercera fila no es un estado final: `T7` la cierra el día del encendido
 

@@ -146,7 +146,8 @@ sigue sale de acá.
 
 Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 
-**Día 0 — el anuncio.** La vertical deja de admitir altas y trials. Y en el mismo acto, **cada
+**Día 0 — el anuncio.** La vertical deja de admitir altas y trials —los trials, porque `T1` exige
+`admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25)—. Y en el mismo acto, **cada
 suscripción viva se cancela en el proveedor de inmediato**, con la fecha de fin de servicio
 sostenida de nuestro lado. Desde ese instante **el proveedor no emite un cobro más** en la
 vertical. Lo mismo con cada suscripción de complemento viva en ella (`DEC-ADDON-002`: cada addon
@@ -223,6 +224,10 @@ entera**, y acá se entera antes (`DEC-SUB-015`).
 
 **Y no se interrumpe la pausa para meterla al piso**, que era la tercera opción: eso es cortarle
 una pausa que pagó, o terminarle una cortesía antes de tiempo. **Acto nuestro, plata suya.**
+*(Sigue valiendo para la fila: la pausa no se interrumpe y queda `PAUSED` hasta `S25`. Pero desde
+la fecha de fin de servicio **la cortesía deja de cubrir** en esa vertical, porque ahí el contrato
+no emite ninguna fuente de título; lo decidió el owner y lo ejecuta el contrato, no esta fila —más
+abajo, *«el día del fin de servicio»*; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25.)*
 
 > **Esto NO es el retiro de un plan del §3, y conviene no leerlo así.** Retirar un plan del
 > catálogo **no mueve a ninguna suscripción** (§3.2) y **no tiene fecha de vencimiento** (§3.4):
@@ -246,6 +251,45 @@ avisos (`DEC-DATA-001` y `NUCLEO/07` §6): día 90 fuera del sitio público cons
 del dueño y con el aviso de archivado, día 180 hard delete de lo eliminable —el contenido de cada
 ficha ya archivada y sus borradores, nunca nada de la persona, y la ficha pasa a `PURGED`
 (`DEC-DATA-005`; `V/03` §9 `PB9`; FASE 8 completa, owner 2026-09-25)—.
+
+**Y ese día deja de cubrir TODO lo que cubría en la vertical, no sólo las suscripciones**
+(FASE 8 completa, `F-8CC1-001`, `F-8CA2-007`, owner 2026-09-25). Hasta esta pasada el acto
+recorría **suscripciones** (`S26`–`S28`) y nada más, así que tres fuentes cruzaban la fecha
+cubriendo y `PB2` no podía bajarles las fichas, porque su evento —*«`cubierto` pasa a falso»*— para
+ellas no ocurría. **Desde la fecha de fin de servicio el contrato deja de emitir toda fuente de
+título de la vertical** (`12-contrato…` §2.6, *«una vertical discontinuada no cubre a nadie»*), y
+con eso `cubierto` pasa a falso para todos:
+
+| lo que cubría el día anterior | qué le pasa | qué **no** le pasa |
+|---|---|---|
+| **grant permanente** anclado en la vertical | **deja de cubrir esa vertical**, por el contrato | **no se revoca**: el ancla sigue viva, y en las otras verticales de su scope sigue cubriendo |
+| **cortesía vigente** (`PAUSED · COURTESY` con fin posterior) | **deja de cubrir**, por el contrato | la fila **sigue `PAUSED`** hasta `S25`, como ordena `DEC-SUB-015`: la pausa no se interrumpe |
+| **trial en curso** (`TRIAL_ACTIVE`) | **deja de cubrir**, por el contrato | la máquina **no se mueve**: sigue en `TRIAL_ACTIVE` hasta `T3` |
+| suscripción en `CANCEL_SCHEDULED` por `S26` | consuma su `CANCELLED`, como antes | — (su fecha de fin de servicio ya era ésta) |
+
+**Las fichas de las tres primeras filas las baja este mismo barrido**, cuyo `PB2` ahora tiene su
+evento, y **si no las baja, el reconciliador diario de cobertura al día siguiente** (`V/03` §9,
+`DEC-ARCH-009`). **Y ningún trial arranca desde el día 0**: `T1` exige que la vertical admita altas
+(`V/03` §2), que es lo que el anuncio ya decía —*«la vertical deja de admitir altas y trials»*— y
+ninguna fila hacía cumplir.
+
+**No choca con las dos decisiones que ya tratan este día**, y conviene decir por qué:
+
+- **`DEC-SUB-018`** manda la suspendida a `CANCELLED` el día 0, y `SUSPENDED` ya no emitía fuente
+  (`12-contrato…` §2.6): la regla nueva no tiene nada que cortarle.
+- **`DEC-GRANT-010`** —el saldo de cortesía que `S25` difiere y `S9` re-emite sobre un alta
+  nueva— sigue igual: `S25` corre con el mismo evento y la misma guarda, y el saldo tampoco tiene
+  destino, porque la vertical queda cerrada a altas para siempre (§4.5, borde 4). Lo que cambia es
+  que **entre la fecha de fin de servicio y `S25` la cortesía no cubre**.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **el `saldo_meses` que escribe `S25`
+> no cuenta los meses que la regla nueva dejó sin cubrir.** `S25` difiere lo que le queda a la
+> pausa cuando termina (`B/14` §4.6), y entre la fecha de fin de servicio y ese día la cortesía ya
+> no cubría. Hoy no mueve plata ni da acceso: ese saldo no se emite en ninguna parte
+> (`DEC-GRANT-010`). **Importa el día que el owner resuelva el destino del saldo** —pagarlo en otra
+> vertical, declararlo perdido con aviso o convertirlo en crédito, las tres salidas que
+> `DEC-GRANT-010` dejó sin elegir—: ese día hay
+> que decidir también si el saldo se mide al fin de servicio o al fin de la pausa.
 
 **Y arranca acá, no antes**, aunque el dueño lleve meses sin tocar la ficha: el fin de servicio
 de una vertical discontinuada es el cuarto de los hechos que reinician la inactividad
