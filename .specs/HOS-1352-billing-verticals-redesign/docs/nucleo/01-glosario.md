@@ -685,8 +685,8 @@ puedePausar(suscripción) =
 5. **La cortesía temporal usa la misma validación** (FASE 8 completa, `F-8CB1-001`, owner
    2026-09-25; `DEC-GRANT-003` impl. 6): sólo sobre planes mensuales y en meses enteros, porque
    también se implementa pausando. `S9` toma de esta función **el término del ciclo mensual**
-   (cap. 03 (billing) §3.2). ⚠️ Si toma además los otros términos —`permitePausa`, la cuota, y la
-   composición que deja afuera al pagador manual— **no está decidido** (cap. 14 (billing) §4.7).
+   (cap. 03 (billing) §3.2), **y sólo ése**: ni `permitePausa`, ni la cuota, ni la composición que
+   deja afuera al pagador manual (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).
 
 ---
 

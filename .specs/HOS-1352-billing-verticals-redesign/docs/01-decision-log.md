@@ -1728,7 +1728,9 @@ Cada entrada lleva, según §3.4:
      los días que promete**: diez días que no cruzan una fecha valen cero, y treinta días sobre un
      plan anual que cruzan la renovación regalan un año. **La regla**: la cortesía temporal se
      otorga **sólo sobre planes mensuales y en meses enteros** —la misma validación de la pausa,
-     `DEC-SUB-010`—, así que N meses saltean exactamente N cobros. **Sobre un plan anual no se
+     `DEC-SUB-010`, **pero sólo su término del ciclo**: no gasta la cuota de pausas del cliente, no
+     depende de que el plan permita pausar y alcanza al pagador manual, porque es un regalo nuestro y
+     no un pedido suyo (owner, 2026-09-25)—, así que N meses saltean exactamente N cobros. **Sobre un plan anual no se
      ofrece**: el admin ve que no está disponible, y le quedan la cortesía permanente o una promo
      sobre la renovación. **No aplica al §34.1**: durante el trial la cortesía extiende el trial,
      que es nuestro, y sigue en días.

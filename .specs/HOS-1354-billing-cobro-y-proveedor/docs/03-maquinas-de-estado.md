@@ -1969,9 +1969,8 @@ lo contradice**:
 2. **Para `COURTESY` sí hay población, y no crear es lo que la cortesía significa.** `S9` no pasa
    por `puedePausar()`: su condición es *«no hay pausa vigente»* (`DEC-GRANT-004`) — **más, desde
    la FASE 8 completa (`F-8CB1-001`, owner 2026-09-25), el término del ciclo mensual y los meses
-   enteros** (§3.2, `S9`), que un pagador manual mensual cumple. ⚠️ Si `S9` debe tomar además los
-   otros términos de `puedePausar()` **no está decidido**: la composición del `B/06` §7 dejaría
-   afuera a esta misma población, y `permitePausa` y la cuota de pausa la acotarían. Ahí el
+   enteros** (§3.2, `S9`), que un pagador manual mensual cumple. **`S9` toma SÓLO ese término** de `puedePausar()`: ni
+   `permitePausa`, ni la cuota de pausa, ni la composición del `B/06` §7 (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra). Ahí el
    mecanismo de la cortesía es *«pausar en el proveedor y sostener el servicio de nuestro lado»*
    (`DEC-GRANT-003`), y sobre un pagador manual **la primera mitad no tiene sujeto** —es
    exactamente lo que el `B/06` §7 constata— **así que lo único que queda de la cortesía es la

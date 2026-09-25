@@ -494,10 +494,8 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
    re-emiten un saldo sobre la sucesora o sobre el alta nueva (§4.4, §4.6); si esa fila es de un
    plan anual, la regla de arriba dice que ahí la cortesía no se ofrece, y qué pasa con ese saldo
    no está decidido (`B/03` §3.2, `S9`).
-3. **Cuántos términos de `puedePausar()` toma `S9`.** El owner fijó *«la misma validación de la
-   pausa»*; `puedePausar()` tiene además `permitePausa`, la cuota de pausa y la composición del
-   `B/06` §7, que deja afuera al pagador manual — y `B/03` §7 dice que sobre ese pagador la
-   cortesía sí tiene población (`B/03` §7, *«la pausa: no contradice el `B/06` §7»*).
+3. ~~**Cuántos términos de `puedePausar()` toma `S9`.**~~ **Cerrado el 2026-09-25**: `S9` toma
+   **sólo el término del ciclo mensual y los meses enteros** (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).
 
 ---
 
