@@ -357,10 +357,12 @@ la promo el **monto**, la cortesía el **cobro**, el grant la **obligación**. �
 (porcentuales primero y fijos después — determinista, porque dentro de cada familia conmuta, y es
 el total más bajo. El piso es del proveedor y está medido: **ARS 15** (`PC-2`); se valida **antes**
 de mutar, y si no entra, el descuento se ejecuta con el mecanismo de la cortesía. **Un descuento
-del 100 % no es un descuento: es una cortesía**) · ~~`M-PROMO-02`~~ (con el mismo ciclo la promo
+del 100 % no es un descuento: es una cortesía**) · ~~`M-PROMO-02`~~ (~~con el mismo ciclo la promo
 sobrevive —porcentual se recalcula, fijo se traslada, el contador sigue—; **al cambiar de ciclo
 sobrevive sólo lo que se puede expresar sin convertir nada**, o sea el porcentual `forever` y nada
-más: elegir si «3 cobros» son tres meses o tres años es inventar un término que nadie pactó) ·
+más: elegir si «3 cobros» son tres meses o tres años es inventar un término que nadie pactó~~
+**la promo se pierde con todo cambio de plan —upgrade, downgrade o de ciclo— y se avisa antes de
+confirmar**: FASE 8 completa, pendiente 7, owner 2026-09-25, cap. 14 §2.2) ·
 ~~`E-PROMO-01`~~ (**gana el estado escrito, nunca la hora**: el canje vale si la fila sigue
 `TRIAL_ACTIVE` al escribir. Y la mitad que se olvida: el job re-lee la fecha **dentro de su
 transacción**, no la del lote) · ~~`A-PROMO-02`~~ (`stackable` rige **sólo entre promos**; lo demás

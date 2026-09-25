@@ -557,19 +557,23 @@ que cierra la sucesión (`B/03` §3.2). Antes decía *«en el mismo acto del upg
 cuál, y era lo único que separaba el camino normal del daño irreversible. Ahora, aunque el
 re-apunte se demore, `sucedida_por` ya dice que no hay huérfano.
 
-Es el mismo razonamiento que el contador de promos de `B/14` §2.2, y por la misma razón — **el
-objetivo del addon no desapareció, se sucedió**. La suscripción vieja y la nueva son la misma
+~~Es el mismo razonamiento que el contador de promos de `B/14` §2.2, y por la misma razón —~~ **El
+objetivo del addon no desapareció, se sucedió** (la promo ya no comparte este razonamiento: desde
+la pendiente 7 de la FASE 8 completa se pierde con el cambio de plan, `B/14` §2.2). La suscripción vieja y la nueva son la misma
 relación comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una
 baja**.
 
-**Y el complemento es UNA de las DOS cosas que `S18` re-apunta, no la única.** De una suscripción
+~~**Y el complemento es UNA de las DOS cosas que `S18` re-apunta, no la única.** De una suscripción
 cuelga además la **redención de promo**, con el mismo modo de falla
 —silencioso, sin webhook y sin detector—, y durante una tanda entera la enumeración de efectos de
-`S18` nombró sólo a los complementos. **Y cuelga una tercera que desde `DEC-GRANT-007` NO se
+`S18` nombró sólo a los complementos.~~ **Y el complemento es lo ÚNICO que `S18` re-apunta**: de
+una suscripción cuelga además la **redención de promo**, que desde la pendiente 7 de la FASE 8
+completa (owner 2026-09-25) **no se re-apunta: la promo se pierde con el cambio de plan** (`B/14`
+§2.2). **Y cuelga una tercera que desde `DEC-GRANT-007` NO se
 re-apunta**: la **cortesía vigente**, que `S18` cierra sobre la predecesora dejándole el saldo de
 ~~días~~ meses (FASE 8 completa, `F-8CB1-001`), para que `S9` la re-emita sobre la sucesora cuando autorice (`B/14` §4.4). El inventario completo, con qué se re-apunta y qué no, está
 en `B/02` §2.6; acá queda dicho para que la promoción del addon **a efecto declarado** no se lea
-como que las otras dos ya estaban resueltas.
+como que ~~las otras dos ya estaban resueltas~~ la redención y la cortesía siguen el mismo camino que el complemento.
 
 `DEC-SUB-007` impl. 4 lo había dejado explícitamente abierto —*«hay que decidir si siguen colgando
 del cliente o si hay que re-vincularlos»*—. Lo que **no** se decide acá es colgarlos **del

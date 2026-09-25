@@ -96,65 +96,92 @@ El §33 admite descuentos de *«N cobros»* y *«forever»*, y el PDR permite ca
 Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade: inmediato»*— significa
 **el arranque del checkout**, no la mutación del monto.
 
-### 2.2 Cambio de plan: la promo sobrevive
+### 2.2 Cambio de plan: ~~la promo sobrevive~~ la promo se pierde
 
-| tipo | qué pasa |
+> **FASE 8 completa, pendiente 7, owner 2026-09-25: las promos NO sobreviven a un cambio de
+> plan.** La promo se dio sobre el plan en que estaba; si la persona cambia de plan —upgrade,
+> downgrade o de ciclo (§2.3)—, **la promo se pierde**. Todo lo que la re-aplicaba sobre la
+> sucesora queda tachado abajo.
+
+**Qué pasa con la redención, mecanismo por mecanismo:**
+
+- **en el upgrade y en el cambio de ciclo** —cancelar y recrear—, **`S18` NO re-apunta
+  `promo_redemption.subscription_id`**: la redención se queda colgando de la predecesora, que
+  termina `CANCELLED` (`B/03` §3.2, `B/02` §2.6). No es una escritura de `S18`: es la ausencia de
+  una. La sucesora nace con el precio de lista, y ése es ahora el precio que corresponde;
+- **en el downgrade** la fila sobrevive (`DEC-SUB-008`) y la redención sigue colgando de ella.
+  ⚠️ **Qué la apaga ahí no está escrito** (ver *«lo que este capítulo NO cierra»*).
+
+**Y la persona NO puede volver a canjear el mismo código en la sucesora.** La redención no se
+borra —queda sobre la predecesora— y `UNIQUE(promo_code_id, user_id)` (`B/02` §2.4) es por user,
+no por suscripción: la regla del §31, *«Cada user: máximo un uso de cada código»*, sigue valiendo.
+El código que perdió al cambiar de plan ya lo usó.
+
+**Y se dice antes de confirmar el cambio**: *«si cambiás de plan, perdés tu promo»* (`B/19` §4,
+fila 7).
+
+| ~~tipo~~ | ~~qué pasa~~ |
 |---|---|
-| **porcentual** | se **recalcula sobre el precio nuevo** — un porcentaje es una relación, no un importe |
-| **monto fijo** | se traslada tal cual, sujeto al piso del §1.3 |
-| el contador de **N cobros** —`promo_redemption.cobros_restantes`, `B/02` §2.4 (corrección de diseño, FASE 8 completa, `F-8CB1-007`)— | **sigue donde estaba**: cambiar de plan no consume un cobro. Lo único que lo mueve es un cobro confirmado (§2.4) |
+| ~~**porcentual**~~ | ~~se **recalcula sobre el precio nuevo** — un porcentaje es una relación, no un importe~~ |
+| ~~**monto fijo**~~ | ~~se traslada tal cual, sujeto al piso del §1.3~~ |
+| ~~el contador de **N cobros** —`promo_redemption.cobros_restantes`, `B/02` §2.4 (corrección de diseño, FASE 8 completa, `F-8CB1-007`)—~~ | ~~**sigue donde estaba**: cambiar de plan no consume un cobro. Lo único que lo mueve es un cobro confirmado (§2.4)~~ |
 
-**El veredicto es el mismo en las dos direcciones y el mecanismo no.** En el downgrade el contador
+~~**El veredicto es el mismo en las dos direcciones y el mecanismo no.** En el downgrade el contador
 sigue donde estaba porque **la fila sobrevive**; en el upgrade, porque **la sucesora lo hereda**.
 Sin esa herencia el upgrade destruiría la promo en silencio — que es exactamente la *«destrucción
 silenciosa de bienes pagados»* que el rediseño del candado vino a cerrar. El objetivo de la promo
-no desapareció: **se sucedió**.
+no desapareció: **se sucedió**.~~
 
-**Y *«hereda»* nombra un resultado; el acto que lo produce es `S18`.** Hay que decirlo con esas
+~~**Y *«hereda»* nombra un resultado; el acto que lo produce es `S18`.** Hay que decirlo con esas
 palabras porque la regla 1 del núcleo es terminante —*«lo que la tabla de transiciones no declara,
 no pasa»*— y durante una tanda entera la herencia vivió sólo acá, en la prosa de este capítulo,
-mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecuta:
+mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecuta:~~
 
-1. **`S18` re-apunta `promo_redemption.subscription_id` a la sucesora**, en el mismo acto en que
+1. ~~**`S18` re-apunta `promo_redemption.subscription_id` a la sucesora**, en el mismo acto en que
    escribe `sucedida_por` y re-apunta los complementos (`B/03` §3.2, `B/02` §2.6). La redención
    sigue siendo **una** —`UNIQUE(promo_code_id, user_id)` no se toca— y el contador de N cobros no
    se consume, porque no hubo cobro: `cobros_restantes` viaja con la fila sin tocarse (`B/02`
-   §2.4).
-2. **El descuento se vuelve a aplicar sobre el monto de la sucesora**, con la regla de este mismo
+   §2.4).~~
+2. ~~**El descuento se vuelve a aplicar sobre el monto de la sucesora**, con la regla de este mismo
    §: porcentual se **recalcula** sobre el precio nuevo, fijo se **traslada** sujeto al piso del
    §1.3. No es opcional: `DEC-MP-001` aplica el descuento **mutando el monto en el proveedor**, y
    ese monto vive en el preapproval de la predecesora, que `S17` acaba de cancelar. La sucesora
-   nace con el precio de lista.
-3. **Y la mutación se verifica releyendo**, como toda mutación (`D5`, cap. 06). Es la única
+   nace con el precio de lista.~~
+3. ~~**Y la mutación se verifica releyendo**, como toda mutación (`D5`, cap. 06). Es la única
    defensa que hay: mutar el monto **no emite webhook** (`EX-15`), el aviso del §29 no corre
    porque no hubo aumento de precio, y **el barrido no lo ve** — compara *«monto vigente contra
    `transaction_amount`»* (`B/09` §3) y los dos coinciden, porque el monto vigente de la sucesora
    **es** el de lista. La divergencia es contra lo pactado, no contra el proveedor, y ningún
-   detector del diseño mira eso.
+   detector del diseño mira eso.~~
 
-**Y vale igual cuando `S18` corre con la sucesora todavía en `PENDING_AUTHORIZATION`** —el
+~~**Y vale igual cuando `S18` corre con la sucesora todavía en `PENDING_AUTHORIZATION`** —el
 segundo camino del cierre, cuando la predecesora se murió sola: **son cinco**, por `S12`, por
 `S16`, por el espejo de la baja decidida por el proveedor, **o porque ella misma pidió la baja
 estando pausada (`S22`) o suspendida (`S23`)** (`B/03` §3.2 y §10.1)—.
 Mutar el monto **sí funciona sobre un preapproval `pending`**: es el control de `EX-39`, que lo
 midió al probar lo contrario para las fechas —`transaction_amount` 2000 → 2500, con
-`last_modified` movido—. **Lo que no se puede mover son las fechas**, y el descuento no las toca.
+`last_modified` movido—. **Lo que no se puede mover son las fechas**, y el descuento no las toca.~~
 
-### 2.3 Cambio de ciclo: sobrevive sólo lo que se puede expresar sin convertir nada
+### 2.3 Cambio de ciclo: ~~sobrevive sólo lo que se puede expresar sin convertir nada~~ la promo se pierde, como en todo cambio de plan
 
-**Una promo sobrevive a un cambio de ciclo si y sólo si sus términos se pueden expresar en el
-ciclo nuevo sin convertir nada.**
+> **FASE 8 completa, pendiente 7, owner 2026-09-25**: el cambio de ciclo es un cambio de plan y
+> **ninguna promo lo sobrevive**, tampoco la porcentual `forever` (§2.2). La tabla de abajo queda
+> tachada; la pregunta del hueco —*«¿tres cobros en mensual pasando a anual significa tres
+> años?»*— ya no se hace, porque la promo no llega al ciclo nuevo.
 
-| promo | ¿sobrevive al cambio de ciclo? | por qué |
+~~**Una promo sobrevive a un cambio de ciclo si y sólo si sus términos se pueden expresar en el
+ciclo nuevo sin convertir nada.**~~
+
+| ~~promo~~ | ~~¿sobrevive al cambio de ciclo?~~ | ~~por qué~~ |
 |---|---|---|
-| **porcentual `forever`** | **sí** | *«20 % siempre»* significa exactamente lo mismo en cualquier ciclo |
-| porcentual, **N cobros** | **no** | *«3 cobros»* son tres meses o **tres años** según el ciclo |
-| monto fijo, N cobros | **no** | ídem |
-| monto fijo, `forever` | **no** | ARS 100 sobre un cobro anual no es el beneficio que se pactó sobre uno mensual |
+| ~~**porcentual `forever`**~~ | ~~**sí**~~ | ~~*«20 % siempre»* significa exactamente lo mismo en cualquier ciclo~~ |
+| ~~porcentual, **N cobros**~~ | ~~**no**~~ | ~~*«3 cobros»* son tres meses o **tres años** según el ciclo~~ |
+| ~~monto fijo, N cobros~~ | ~~**no**~~ | ~~ídem~~ |
+| ~~monto fijo, `forever`~~ | ~~**no**~~ | ~~ARS 100 sobre un cobro anual no es el beneficio que se pactó sobre uno mensual~~ |
 
-Es lo que responde la pregunta del hueco —*«¿tres cobros en mensual pasando a anual significa tres
+~~Es lo que responde la pregunta del hueco —*«¿tres cobros en mensual pasando a anual significa tres
 años?»*— sin elegir entre dos malas: **elegir cuál de los dos significa es inventar un término que
-nadie pactó.** Si no se puede expresar, termina.
+nadie pactó.** Si no se puede expresar, termina.~~
 
 **Y se muestra antes de confirmar el cambio**, con el precio que va a pagar. El checkout de
 `DEC-SUB-006` ya le muestra un importe concreto; lo que hay que agregar es que **ese importe ya no
@@ -172,10 +199,17 @@ son N cobros con descuento por delante y **0** es agotado. Se inicializa al canj
 del código, y *«primer cobro»* es N = 1.
 
 **Se decrementa UNA vez por cobro confirmado, y «confirmado» tiene una sola lectura**: un pago
-`approved` **leído por id** (`B/09` §4), en el mismo acto que lo acredita. No lo mueven ni un
-cambio de plan (§2.2) ni una cortesía (§4.2), porque en ninguno de los dos hay cobro.
+`approved` **leído por id** (`B/09` §4), en el mismo acto que lo acredita. No lo mueven ~~ni un
+cambio de plan (§2.2) ni~~ una cortesía (§4.2), porque ~~en ninguno de los dos~~ ahí no hay cobro.
+Un cambio de plan tampoco lo mueve: **termina la promo** (§2.2; FASE 8 completa, pendiente 7,
+owner 2026-09-25).
 
-**Al llegar a 0 se muta el monto del preapproval al precio completo.** El proveedor lo permite
+**Al llegar a 0 se muta el monto del preapproval ~~al precio completo~~ al monto sin esa promo,
+recalculado con las que siguen vivas** (FASE 8 completa, pendiente 7, owner 2026-09-25), con la
+misma regla de orden del §1.2 —porcentuales primero, fijos después—: *«700 y nunca 720»*. Sobre
+el ejemplo del §1.1 —ARS 1.000 con un 20 % y ARS 100—, si se agota la fija el monto pasa a
+**800**, y si se agota la porcentual pasa a **900**; con una sola promo, *«sin esa promo»* es el
+precio completo. El proveedor lo permite
 sobre una autorizada sin pedir consentimiento nuevo: `PC-1` lo midió (1500 → 2200 → 15 → 1500,
 todos `200`, verificado por relectura, y re-verificado en producción) y `PC-3` confirma que la
 suscripción sigue `authorized`. Como toda mutación, **se verifica releyendo** (`D5`, `B/06` §4.1):
@@ -190,15 +224,41 @@ llega **a él y no a nosotros**. `DEC-MAIL-001` ya decidió qué se hace con eso
 - **punto 2: el correo del proveedor se ANTICIPA, no se desmiente.** Al canjear una promo acotada
   la persona tiene que saber **cuántos cobros lleva el descuento, qué monto paga después** y que
   cuando termine **va a recibir un correo del proveedor avisando el cambio de monto** (`B/19` §4,
-  fila 7-bis).
+  fila 7-bis). **Y se anticipa otra vez antes del último cobro con descuento**, con nuestro correo
+  *«tu promo termina; desde el mes que viene pagás $X»* —$X es el monto sin esa promo, recalculado
+  con las que siguen vivas—, transaccional (`NUCLEO/07` §6; FASE 8 completa, pendiente 7, owner
+  2026-09-25).
 
-> ⚠️ **Tres cosas que esta corrección no cierra, declaradas.** **Una**: con dos promos apiladas
-> (§1.2), *«precio completo»* al agotarse una debería leerse como *«el monto sin ésta»*; este § no
-> lo escribe. **Dos**: si la mutación no se aplica, el barrido la ve por **`DIVERGENCIA_DE_MONTO`**
-> (`B/09` §3) **sólo si el monto vigente de nuestra base ya refleja el contador en 0**, y cómo se
-> deriva ese monto no está escrito acá. **Tres**: sobre una fila `PAUSED` el proveedor rechaza toda
-> modificación (`EX-11`), y qué pasa si una pausa entra entre el cobro y la mutación no está
-> escrito. La transición que ejecuta la restitución es de `B/03`, por la regla 1 del núcleo.
+**El monto esperado de una suscripción se deriva siempre, y no se guarda** (FASE 8 completa,
+pendiente 7, owner 2026-09-25): es **el precio de su versión de plan menos las promos vivas según
+su contador**, compuestas con la regla del §1.2. El barrido lo compara con el `transaction_amount`
+**releído por id**; si no coinciden, **reintenta la mutación durante 3 días** —se cuenta por
+tiempo, no por corridas, como el reintento de una cancelación nuestra (`B/09` §3)— y después abre
+la marca con motivo **`DIVERGENCIA_DE_MONTO`**. **Sin columna nueva.**
+
+**Si la promo se agota con la fila `PAUSED`, ese mes sale con descuento, y se acepta** (FASE 8
+completa, pendiente 7, owner 2026-09-25). Sobre una pausada el proveedor rechaza toda modificación
+(`EX-11`), así que la mutación falla: **se declara y no se encola nada**.
+
+> ~~⚠️ **Tres cosas que esta corrección no cierra, declaradas.**~~ **Las tres cosas que esta
+> corrección no cerraba quedaron cerradas por el owner el 2026-09-25** (FASE 8 completa, pendiente
+> 7). ~~**Una**: con dos promos apiladas (§1.2), *«precio completo»* al agotarse una debería leerse
+> como *«el monto sin ésta»*; este § no lo escribe.~~ **Una**: se lee así, y está escrito arriba.
+> ~~**Dos**: si la mutación no se aplica, el barrido la ve por **`DIVERGENCIA_DE_MONTO`** (`B/09`
+> §3) **sólo si el monto vigente de nuestra base ya refleja el contador en 0**, y cómo se deriva
+> ese monto no está escrito acá.~~ **Dos**: el monto esperado se deriva, y el barrido reintenta 3
+> días antes de marcar. ~~**Tres**: sobre una fila `PAUSED` el proveedor rechaza toda modificación
+> (`EX-11`), y qué pasa si una pausa entra entre el cobro y la mutación no está escrito.~~
+> **Tres**: ese mes sale con descuento, y se acepta. La transición que ejecuta la restitución es
+> de `B/03` (`S30`), por la regla 1 del núcleo. Lo que estas tres respuestas dejan abierto está en
+> *«lo que este capítulo NO cierra»*.
+
+### 2.5 El pagador manual no canjea promos
+
+**No hay promos para el pagador manual** (FASE 8 completa, pendiente 7, owner 2026-09-25). El
+canje no se le ofrece (`B/19` §4, fila 7-bis). Es coherente con el mecanismo: la promo de
+descuento toca el **monto** mutándolo en el proveedor (`DEC-MP-001`, la tabla de arriba del
+capítulo), y el pagador manual **no tiene preapproval** (`B/05` §3) que mutar.
 
 ---
 
@@ -551,3 +611,26 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en mora o en grace** sigue
   abierto desde `DEC-MP-002` (implicación 6).
 - **Compensar días sobre una suscripción en deuda** (`E-SUB-05`) es del capítulo 12.
+- ⚠️ **Lo que la pendiente 7 de la FASE 8 completa (owner 2026-09-25) deja abierto**, declarado:
+  1. **Qué apaga la promo en un downgrade.** Ahí la fila sobrevive (`DEC-SUB-008`) y la redención
+     sigue colgando de ella, así que el monto esperado del §2.4 —que resta las promos vivas según
+     su contador— **la seguiría descontando**. Ningún acto escribe su fin: el downgrade no tiene
+     fila en la tabla de `B/03` §3.2 (lo trata el cap. 12) y, por la regla 1 del núcleo, lo que la
+     tabla no declara no pasa. La única forma que el modelo ya tiene de decir *«sin descuento»*
+     es `cobros_restantes = 0` (`B/02` §2.4); escribirla ahí no está decidido.
+  2. **Desde cuándo corren los 3 días del reintento de monto** cuando la divergencia **no** la
+     abrió una transición nuestra. En el reintento de cancelación el origen es el instante de la
+     transición que la decidió (`B/09` §3); para `S30` hay transición, pero para un monto que
+     diverge sin ninguna (el downgrade del punto 1, o un cambio que nadie pidió) no hay instante
+     registrado, y la regla es *«sin columna nueva»*.
+  3. **El barrido sobre una fila `PAUSED` con la promo agotada.** El §2.4 acepta que ese mes salga
+     con descuento y *«no se encola nada»*; pero el monto esperado ya no descuenta esa promo y el
+     `transaction_amount` sí, así que el barrido vería la divergencia, sus reintentos fallarían por
+     `EX-11` y a los 3 días abriría `DIVERGENCIA_DE_MONTO` mientras dure la pausa. Si el reloj se
+     suspende sobre una `PAUSED`, o si la comparación la saltea, no está escrito.
+  4. **El schedule del correo *«tu promo termina»***: sale antes del último cobro con descuento,
+     y cuántos días antes no está decidido (`NUCLEO/07` §6). **Y sobre una promo de «primer
+     cobro»** ese último cobro es el primero, así que el aviso cae junto con el del canje (`B/19`
+     §4, fila 7-bis); si se manda igual no está decidido.
+  5. **Si *«no hay promos para el pagador manual»* alcanza también a la extensión de trial**
+     (§32), que es el otro tipo de promo code (`NUCLEO/01`, *Promo code*) y no muta ningún monto.
