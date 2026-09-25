@@ -152,8 +152,10 @@ pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
 
 ### 2.5 Cancelar no es olvidar: el compromiso viejo se conserva
 
-**Ésta es la única fila que el sistema nuevo sí escribe**, y no contradice *«no se hereda ninguna
-fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
+**Ésta es la única fila ~~que el sistema nuevo sí escribe~~ de billing que el sistema nuevo sí
+escribe** —del lado de verticales el corte escribe además una fila de `trial` ya consumida por cada
+dueño existente, que es el mismo tipo de rastro (`V/21` §2.4; FASE 8 completa, owner 2026-09-25)—,
+y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
 
 > **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
 > escrita DESPUÉS de cancelarlo en el proveedor.**
@@ -213,8 +215,9 @@ escribe acá.
 
 ## 4. Lo que NO se migra, y no es una omisión
 
-- **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que se escribe es la lápida del
-  §2.5, que no es una transcripción: es el rastro del id que se canceló.
+- **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que ~~se escribe~~ escribe billing es la lápida del
+  §2.5, que no es una transcripción: es el rastro del id que se canceló. **Verticales escribe el
+  otro rastro**, la fila de `trial` consumida (`V/21` §2.4; FASE 8 completa, owner 2026-09-25).
 - **Los pagos**: no hay ninguno.
 - **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.

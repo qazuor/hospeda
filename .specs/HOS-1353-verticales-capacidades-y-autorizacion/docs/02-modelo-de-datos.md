@@ -163,8 +163,10 @@ suscripción.
 
 Es la **mitad de catálogo** de la condición de `T1` —que `T6` comparte palabra por palabra
 (`V/03` §2)— expresada **como dato en vez de como rama** *(desde la FASE 8 completa `T1` exige
-además que la vertical admita altas, y esta capacidad **no** lo mira: el borde que eso deja está
-declarado en `V/03` §2; `F-8CC1-001`, owner 2026-09-25)*, y un guard la verifica en las dos
+además que la vertical admita altas, y esta capacidad **no** lo mira: ~~el borde que eso deja está
+declarado en `V/03` §2~~ el borde que eso dejaba —publicar sin cobertura en una vertical cerrada a
+altas— lo cerró la condición de `PB1`, que exige cobertura o un `T1` que dispare (`V/03` §9; FASE 8
+completa, owner 2026-09-25); `F-8CC1-001`, owner 2026-09-25)*, y un guard la verifica en las dos
 direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum de verticales. La
 otra mitad de esas dos condiciones es del **sujeto** —`cubierto`, y es lo que las vuelve
 disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el momento.
@@ -211,7 +213,7 @@ y pueda volver a contratar. Son **tres** cosas y la lista es cerrada:
 |---|---|---|
 | 1 | **ninguna capacidad comercial** | es la mitad en negativo, y la vigila `G-R3` |
 | 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir. **Que esté la vigila `G-R3`** |
-| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla y **reactivarla a borrador** (`PB8`, cap. 03 §9) | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
+| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla, **reactivarla a borrador** (`PB8`, cap. 03 §9) **y borrarla** (`PB12`, cap. 03 §9) —el borrado se sumó a la fila: el dueño la borra siempre, con o sin plan, igual que la ve o la exporta (FASE 8 completa, owner 2026-09-25)— | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
 
 Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`.
 
@@ -282,7 +284,7 @@ ahí la plataforma entera recibe de más, acá la población que menos puede def
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el hash irreversible del correo normalizado** (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo |
+| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el hash irreversible del correo normalizado** (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` y `T7` (cap. 03 §2) y, una sola vez, el corte**: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25) |
 
 **El piso del trinquete se guarda como referencia a versiones, nunca como copia de valores.** El
 §10.3 prohíbe copiar a mano y una copia además queda desactualizada (`DEC-TRIAL-002`).
@@ -307,7 +309,9 @@ descubre sola.
 `F-8CA3-003`). Escrita sola, alcanzaba también a la escritura que **registra** un trial consumido:
 quien volvía con el mismo correo y contrataba antes de publicar chocaba con ella en `T6`, y ninguna
 máquina decía qué pasaba después. **`T1`, `T6` y `T7` exigen que el hash no tenga fila en esa
-vertical** (cap. 03 §2): si la tiene, ninguna dispara y la publicación sigue. El `UNIQUE` queda como
+vertical** (cap. 03 §2): si la tiene, ninguna dispara y la publicación sigue **sólo si la persona
+está cubierta** —`PB1` exige cobertura o un `T1` que dispare (cap. 03 §9; FASE 8 completa, owner
+2026-09-25)—. El `UNIQUE` queda como
 la red de la base, no como la rama del diseño. El residuo —esa persona se queda en `PRE_TRIAL` para
 siempre— está declarado en el cap. 03 §2, *«el hash que ya consumió»*.
 

@@ -414,7 +414,7 @@ lo da el scope:
 
 | scope (§40) | queda huérfano cuando |
 |---|---|
-| `LISTING` | ~~la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna~~ **una de dos**: la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna —, **o la suscripción principal de la vertical de la ficha cumple la condición de la fila de abajo**: dejó de ser fila viva, ninguna sucesión la releva y ningún grant permanente la releva, **leídas tal como están escritas ahí y no reescritas acá** (FASE 8 completa, `F-8CA2-003`, owner 2026-09-25) |
+| `LISTING` | ~~la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna~~ **una de dos**: la ficha **se borró** —**cualquier llegada a `PURGED`**: `PB9`, el día 180, o `PB12`, el dueño (`V/03` §9; orquestador, FASE 8 completa, 2026-09-25)— — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna —, **o la suscripción principal de la vertical de la ficha cumple la condición de la fila de abajo**: dejó de ser fila viva, ninguna sucesión la releva y ningún grant permanente la releva, **leídas tal como están escritas ahí y no reescritas acá** (FASE 8 completa, `F-8CA2-003`, owner 2026-09-25) |
 | `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4), **ninguna sucesión la releva** —su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola**— **y ningún grant permanente la releva**: no hay en esa vertical un **grant vivo** —o sea un **ancla viva**: una fila de `permanent_grant_vertical` cuyo grant tenga `revocado_en` nulo (`NUCLEO/01` §2.4, `B/02` §2.4)— que valga como título (§2.4) |
 | `USER` · `GLOBAL` | la cuenta se borró |
 
@@ -438,9 +438,15 @@ algo que ya no está»*, y sin que ningún barrido lo viera, porque la instancia
   `CANCELLED` y `S21` la suscripción de complemento (§4.3, §4.4). **Si la persona vuelve, lo
   contrata de nuevo**: no se reanuda nada.
 - **`A6` no cambia**: el borrado de la ficha sigue siendo la otra puerta, y sigue *«consumiendo»*.
-  **Y desde la FASE 8 completa ese borrado tiene transición**: es `PB12`, *«el dueño la borra»*,
-  que lleva la ficha a `PURGED` (`V/03` §9; `F-8CA2-004`, owner 2026-09-25). Hasta ahí *«la ficha
-  se borró»* no lo ejecutaba ninguna fila.
+  **Y desde la FASE 8 completa ese borrado tiene transición**: ~~es `PB12`, *«el dueño la borra»*,
+  que lleva la ficha a `PURGED` (`V/03` §9; `F-8CA2-004`, owner 2026-09-25)~~ **son dos**: `PB12`,
+  *«el dueño la borra»* (`V/03` §9; `F-8CA2-004`, owner 2026-09-25), y `PB9`, el día 180. Hasta ahí
+  *«la ficha se borró»* no lo ejecutaba ninguna fila. **Es cualquier llegada a `PURGED`** —`PB9`, el hard delete del día 180, **o** `PB12`— y el addon
+  `LISTING` queda huérfano en los dos casos (orquestador, FASE 8 completa, 2026-09-25). Por `PB9`
+  la orfandad es la segunda cláusula de `A5`, con el motivo **14** —a la ficha no la mató `S25`,
+  `S27` ni `S28`—, que es **NO DEVOLVER**: el mismo desenlace de plata que `A6` (`B/03` §3.2,
+  *«cuál de los DOS motivos abre `S21`»*). Que `PB9` sea además *«se borra la ficha destino»* de
+  `A6`, como `PB12`, no cambia la plata: las dos puertas escriben el 14.
 
 > **Lo que esta mitad no alcanza, dicho para que no se lea de más.** Se evalúa sobre **una fila
 > principal**, así que cuando el dueño **no tiene ninguna** en esa vertical —el beneficiario de un

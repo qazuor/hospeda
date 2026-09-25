@@ -94,6 +94,9 @@ falla.
    puerta más adentro. La versión de piso la otorga: es la **tercera** cosa de su lista
    cerrada, *«recuperar lo suyo»* (cap. 02 §2.1), y **que la otorgue no es un hecho del catálogo de
    hoy sino una obligación con guard** — la mitad *(b)* de `G-R3` (cap. 20 §2) falla si falta.
+   **Y lo mismo para `PB12`, el borrado del dueño**: también escribe estado y pasa por el 6, y la
+   misma fila 3 del piso lo otorga —verla, exportarla, reactivarla **y borrarla**—, así que el
+   dueño borra su ficha con o sin plan (FASE 8 completa, owner 2026-09-25).
    Y es lo mismo para **exportar**, que `V/02`
    §4.2 regla 3 usa para justificar el borrado: es una lectura, no pasa por el 5 y **sí por los
    otros ocho** (§3.5).
@@ -110,7 +113,12 @@ falla.
 4. **El paso 5 no decide capacidades: decide si hay de dónde resolverlas.** Una fuente viva es la
    que el contrato de cobertura devuelve con su referencia (cap. 01 (núcleo) §2.4 — y **no** es
    una *fila* viva, que es otra cosa y no cruza la frontera); **qué otorga esa referencia es el
-   paso 6**. Ahí se separa quien puede publicar de quien sólo puede escribir borradores. Un paso 5 que
+   paso 6**. Ahí se separa quien puede publicar de quien sólo puede escribir borradores. **Y
+   publicar pide además la condición de su transición**, que no es un paso de esta cadena sino de
+   la máquina: `PB1` publica sólo si el dueño está cubierto o si esa publicación dispara `T1`, y si
+   no, no publica y la pantalla dice *«suscribite para publicar»* (cap. 03 §9, cap. 19 §4 fila 21;
+   FASE 8 completa, owner 2026-09-25). La cadena contesta *«¿puede?»*; la fila, *«¿esta transición
+   ocurre?»* (cap. 03 §1 regla 1, núcleo). Un paso 5 que
    contestara *«sin cobertura»* a alguien que tiene una fuente viva con conjunto efectivo vacío
    estaría dando el veredicto del 6 con el mensaje del 5 — y ésa es la forma exacta en que el paso
    5 dejó de tener respuesta para `PRE_TRIAL`.

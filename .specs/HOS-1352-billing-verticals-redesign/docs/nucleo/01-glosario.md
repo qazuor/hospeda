@@ -62,8 +62,9 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 2026-09-25). Es la forma que menos mueve la lista: **los cinco hechos siguen siendo lo que pasa en
 la vida de una ficha**, y cada cita que los cuenta dice «cinco» sin salvedad, mientras que la
 escritura del corte ocurre **una sola vez en la vida del programa** y no la puede repetir nada. Es
-la misma forma con que billing trata **la lápida** del corte —la única fila que el sistema nuevo
-hereda, nombrada aparte de las transiciones en toda lista que la cuenta (`B/21` §2.5, `B/09` §3)—.
+la misma forma con que billing trata **la lápida** del corte —la única fila ~~que el sistema nuevo
+hereda~~ de billing que el sistema nuevo escribe en el corte (verticales escribe la fila de `trial`
+consumida de cada dueño existente, `V/21` §2.4; FASE 8 completa, owner 2026-09-25), nombrada aparte de las transiciones en toda lista que la cuenta (`B/21` §2.5, `B/09` §3)—.
 Pero **no queda fuera de la lista**, porque lo que la lista cierra son las **escrituras** de la
 columna y ésta es una: `G-R6-B` mitad *(a)* la admite **por su lugar** —la migración estructural
 del corte— y **la misma escritura en cualquier otro lugar es un escritor fuera de la lista**.

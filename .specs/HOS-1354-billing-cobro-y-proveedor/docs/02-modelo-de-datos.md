@@ -209,8 +209,10 @@ simultánea**, que es lo que `DEC-CONC-001` fue a evitar.
 **Los «vivos» siguen siendo los mismos seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`,
 `PAUSED`, `SUSPENDED` y `CANCEL_SCHEDULED`. Quedan afuera `ABANDONED`, `CANCELLED` y
 `CHARGE_DECLINED`, los tres porque **no tienen autorización que pueda cobrar**: `S3` canceló el
-preapproval, la suscripción terminó, o el proveedor lo canceló de forma terminal al rechazar el
-primer cobro (`B/12` §4.4).
+preapproval, la suscripción terminó, o ~~el proveedor lo canceló de forma terminal al rechazar el
+primer cobro (`B/12` §4.4)~~ `S16` lo canceló al leer el primer cobro rechazado —de nuestro lado, o
+ya lo había hecho el proveedor, como ante el antifraude (`B/12` §4.4)—, con el reintento del barrido
+si la llamada falla (`B/03` §3.2; FASE 8 completa, owner 2026-09-25).
 
 > **Éste es el conjunto que `NUCLEO/01` §2.4 llama «fila viva» PARA UNA SUSCRIPCIÓN, y es de esta
 > épica.** El término tiene dos sujetos y **el otro se enumera en el cap. 03 §8**: una instancia

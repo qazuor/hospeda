@@ -311,6 +311,12 @@ el proveedor **cancela la suscripción en el mismo instante** en que manda la cu
 contradecirse**: un primer cobro rechazado **no es una suscripción con un problema, es un alta que
 no ocurrió**.
 
+**Lo medido es el rechazo por antifraude** (`cc_rejected_high_risk`); con otro motivo no se sabe si
+el proveedor cancela o reintenta (`PA-6`, `UNKNOWN`). **El diseño no depende de la respuesta**:
+`S16` corre sobre el primer rechazo leído por id y **cancela el preapproval de nuestro lado**, con el
+correo antes y la relectura de `S17`, y si la llamada falla la reintenta el barrido (`B/03` §3.2;
+`B/09` §3, salvedad 4; FASE 8 completa, owner 2026-09-25).
+
 Dos consecuencias que el diseño tiene que absorber:
 
 1. **El reintento del cliente es una suscripción NUEVA, con id nuevo.** No se recupera la anterior
