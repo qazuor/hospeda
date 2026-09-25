@@ -679,7 +679,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-003 — Cambiar de plan en grace está permitido, y es el camino de recuperación
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED por `DEC-SUB-021`** (2026-09-25): en grace no se cambia de plan; el camino de recuperación es cambiar la tarjeta · **Decide**: owner
 - **Problema**: §26 sólo permite pausar desde `ACTIVE`, pero el PDR no dice nada sobre cambiar
   de plan en `GRACE_PERIOD`. Si se prohíbe, el control impide el propio remedio — bajarse a un
   plan más barato es cómo alguien sale de un impago. Si se permite, hay dos abusos simétricos:
@@ -5162,6 +5162,44 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-SUB-021 — En grace no se cambia de plan: primero se regulariza, y el camino de la tarjeta es cambiarla
+
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Supera a `DEC-SUB-003`**, entera.
+- **Problema**: `DEC-SUB-003` (15/09) prometía que en grace se podía cambiar de plan con **cobro
+  inmediato** del plan nuevo y que, si fallaba, la persona **seguía en grace con el plan anterior**.
+  Esa decisión es anterior a la sucesión (`DEC-SUB-006`) y a `D8`, y nunca se reconcilió con ellas:
+  `D8` obliga a que la sucesora no cobre hasta que vence su ventana, y `S17` cancela la predecesora
+  al **autorizar**, no al cobrar. Si el primer cobro de la sucesora falla —y es la misma tarjeta que
+  venía fallando—, la sucesora muere en `CHARGE_DECLINED` con la predecesora ya `CANCELLED`: **la
+  persona se queda sin nada** (FASE 8 completa, `F-8CD1-002`, `F-8CB1-009`). Además, `DEC-SUB-003`
+  se tomó con `GR-1` en `UNKNOWN`.
+- **Contexto medido**: `EX-36` (**se puede cambiar la tarjeta de un preapproval sin recrearlo**) y
+  `GR-3` (**el proveedor reintenta durante un ciclo**, que con `DEC-SUB-019` cae dentro de nuestro
+  grace).
+- **Alternativas**: (1) en grace no se cambia de plan, primero se regulariza; (2) mantener la
+  promesa haciendo que `S17` cancele la predecesora recién cuando la sucesora **cobra**; (3)
+  mantener la promesa y aceptar el hueco.
+- **Decisión**: **(1)**. **Desde `GRACE_PERIOD` no se declara una sucesión.** El pagador con tarjeta
+  **cambia la tarjeta** (`EX-36`); los reintentos del proveedor cobran con ella, la fila vuelve a
+  `ACTIVE` por `S5`, y recién ahí puede cambiar de plan. El pagador manual **paga su cuota**. La
+  pantalla del cambio de plan, en grace, dice eso y no ofrece la operación.
+- **Motivo**: sigue cerrando los dos abusos que `DEC-SUB-003` quería cerrar —no se limpia el cobro
+  fallido ni se esquiva la deuda, porque se paga primero—, usa algo medido en vez de algo `UNKNOWN`,
+  y no agrega mecanismo. **Las dos posiciones**: `DEC-SUB-003` sostenía que *«bajarse a un plan más
+  barato es cómo alguien sale de un impago»*; ésta sostiene que la salida es la tarjeta, que es la
+  que el proveedor sostiene, y que un cambio de plan sobre una deuda abierta no tiene cómo
+  garantizar que la persona no se quede sin nada. La (2) se descartó porque deja hasta 72 h dos
+  preapprovals vivos, el viejo reintentando la deuda y el nuevo cobrando: el doble cobro que el
+  diseño evita.
+- **Lo que no cambia**: una sucesión declarada **en `ACTIVE`** cuya predecesora entra en grace
+  **durante** la ventana sigue su curso (la protección de `S6` de `B/03` §4 sigue viva para ella); y
+  el suspendido con tarjeta sigue volviendo por sucesión (`G-R1-A`), porque ahí no hay preapproval
+  que arreglar.
+- **Origen**: FASE 8 completa, racimo `R8`; elección del owner del 2026-09-25.
+
+---
+
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
 - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
@@ -5209,12 +5247,12 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **112** — con **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
+| Decisiones tomadas | **113** — con **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 14 |
-| Funcionales | 98 |
+| Funcionales | 99 |
 | **Precisadas sin `SUPERSEDED`** | **2** — **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), y **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
-| `SUPERSEDED` | **4** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
+| `SUPERSEDED` | **5** — **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **9 de 9 cerradas** — `BD-MP-04` volvió al owner y la cerró `DEC-ADDON-002` |
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
