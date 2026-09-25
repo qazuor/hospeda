@@ -59,6 +59,10 @@ Orden recomendado de extracción:
 3. `hospeda-billing`, `hospeda-auth`, `hospeda-i18n` y `hospeda-email`.
 4. `hospeda-media`, `hospeda-ai`, `hospeda-observability`, `hospeda-ui` y `hospeda-config`.
 
+La primera extracción ya está implementada para estos grupos. La etapa pendiente
+es una auditoría de cobertura contra los documentos legacy, no la creación de
+archivos adicionales por defecto.
+
 ## Qué se convierte en comando o documentación
 
 | Contenido encontrado | Destino |
@@ -73,7 +77,7 @@ Orden recomendado de extracción:
 
 - [x] Crear un `AGENTS.md` corto y universal.
 - [x] Inventariar los `CLAUDE.md` del repositorio y sus responsabilidades.
-- [ ] Extraer cada dominio a un skill con pruebas de activación y verificación.
+- [x] Extraer los dominios principales a skills con pruebas de render para los cuatro clientes.
 - [ ] Comparar cada skill contra su `CLAUDE.md` de origen para evitar pérdida de reglas.
 - [ ] Mover procedimientos a comandos/scripts y enlazarlos desde la documentación.
 - [ ] Ejecutar una ventana de convivencia para Claude, OpenCode, Codex y Gentle Shell.
