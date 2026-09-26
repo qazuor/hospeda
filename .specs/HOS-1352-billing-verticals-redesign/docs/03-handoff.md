@@ -78,6 +78,27 @@ status: CURRENT
    - Después, decidir con el owner si corre una **8-bis** (el tope de dos vueltas de
      `DEC-METH-013` cuenta desde acá), y recién ahí FASE 5, 6 y los cinco ítems de la FASE 7.
 
+### Actualización del 26/09 (madrugada) — `GR-1` medida y salida 4 hecha
+
+- **`GR-1` `VERIFIED`** (sonda 49, 26/09 00:31 `-04`): el owner cambió la tarjeta dentro de la ventana y
+  **el mismo registro de cobro rechazado pasó a aprobado**; el cambio de tarjeta **dispara el reintento en
+  el momento** (una muestra, hora del cambio informada por el owner). La salida *«cambiá la tarjeta»* de
+  `DEC-SUB-021` dejó de estar condicionada. Matriz **98: 56 · 15 · 23 · 4** (`PA-6`, `GR-2`, `RC-8`, `RF-3`).
+  Registro: `26-fase-9-completa/22-gr-1-medida.md`.
+- **Salida 4 de `DEC-METH-004` hecha** (opción 1 del owner: reescribir todo): los **27 artifacts**
+  republicados en sus mismas URLs contra el diseño vigente, y los **25 issues de Linear** con la
+  descripción reescrita. Etiquetas: `status-blocked` sacada de 12 issues; B6 (HOS-1369) sin
+  `status-needs-owner-decision` y sin «BLOQUEADA» en el título; áreas agregadas (`area-admin` V6,
+  `area-db` B8, `area-devops` B11). **Queda en HOS-1354** la etiqueta `status-needs-owner-decision`
+  (no estaba en la lista aprobada: preguntar si se saca).
+- **Contradicciones que dejó la salida 4, para la próxima vuelta**: quién construye `G13` (contrato §6.3
+  dice V4; las descomposiciones y `B/20`, B4); `11-particion` §1 y `DEC-ARCH-005` todavía justifican la
+  partición con «la pasarela sin decidir»; el handoff decía «cinco ítems de la FASE 7» y `16-fase-7` dice
+  4 pendientes de 6; el criterio de V4 en la descomposición («`cobrada: no` arranca el trial») se lee al
+  revés del cap. 03 §2; «nueve pasos» de la autorización son siete más una precondición.
+- **➡️ LO PRÓXIMO**: decidir con el owner si corre una **8-bis** (el tope de dos vueltas de
+  `DEC-METH-013` cuenta desde acá), y recién ahí FASE 5, 6 y los ítems pendientes de la FASE 7.
+
 ### Lo decidido el 25/09 (noche) — NO relitigar
 
 Decisiones nuevas en el log: `DEC-SUB-022` (la sucesora de quien venía pagando entra en grace si
