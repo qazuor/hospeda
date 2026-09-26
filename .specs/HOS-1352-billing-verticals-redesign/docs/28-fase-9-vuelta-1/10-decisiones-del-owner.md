@@ -64,3 +64,4 @@ donde están las opciones enteras, el costo y el ejemplo con Juan.
 | `Y-2` | si la regla 5 de `V/17` protege contra la misma persona con dos cuentas | **1** — se declara, con detector: el resumen de `DEC-OBS-001` lista cada acción administrativa que mueve plata, con actor y sujeto | sí |
 | L1–L6 | log: implicaciones 4 y 5 de `DEC-ARCH-006` (orden del empuje; `admiteDestaque`), 📌 de `DEC-SUB-010` (detector por regalo neto), 📌 de `DEC-RF-001` parte 4 (`S36` desde `PAUSED`), 📌 en `DEC-AUTH-002` (cuentas, no personas; detector); matriz: fila nueva `UNKNOWN` para medir el `expire` de la `Preference` (98 → 99, 5 `UNKNOWN`) | **OK** a las seis | — |
 | cláusula de `Y-2` | que el 📌 de `DEC-AUTH-002` diga que la confirmación por una segunda persona entra cuando haya otra persona con el permiso | **sí** | sí |
+| 📌 `DEC-CONC-002` | la lápida de recepción cancela su preapproval y entra en la salvedad 4 (`X-1`) | **OK** | — |

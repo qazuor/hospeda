@@ -1427,7 +1427,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-CONC-002 — La conciliación se apoya en NUESTRO inventario, detecta huérfanas por webhook, y sólo repara el vínculo
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **el punto 4, precisado el 2026-09-25** (FASE 8 completa, racimo `R5`; ver su 📌), **y otra vez el mismo día** (FASE 9 completa: la precondición de la re-vinculación y la cota de *«todavía no se sabe»*; ver su segundo 📌) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **el punto 4, precisado el 2026-09-25** (FASE 8 completa, racimo `R5`; ver su 📌), **y otra vez el mismo día** (FASE 9 completa: la precondición de la re-vinculación y la cota de *«todavía no se sabe»*; ver su segundo 📌), **y el 2026-09-26** (FASE 9 vuelta 1, `X-1`: la lápida de recepción cancela su preapproval; ver su tercer 📌) · **Decide**: owner
 - **Problema**: el §23 pide un proceso periódico contra el proveedor que detecte webhooks
   faltantes, duplicados, pagos y suscripciones huérfanas, estados que no coinciden y preapprovals
   desconocidos. La forma canónica de hacerlo —dos extracciones paralelas, la nuestra y la del
@@ -1491,6 +1491,13 @@ Cada entrada lleva, según §3.4:
        motivo nuevo, que entra al listado accionable. Es la forma del 📌 de arriba —reintentar y, a
        los 3 días, marcar— para un caso trabado que no es divergencia. Mientras tanto `S6` sigue sin
        actuar.
+     **📌 Precisado el 2026-09-26, con OK del owner (FASE 9 vuelta 1, `X-1` y `G3-2` de
+     `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** El desconocido que no nombra ninguna fila
+     tiene dónde asentarse: una **lápida de recepción**, que el handler escribe en `CANCELLED` con
+     el `payment` y la marca colgados. **El mismo acto manda cancelar su preapproval**; si la
+     llamada no se aplicó, la reintenta el barrido por la salvedad 4 del punto 4 —que desde
+     entonces cuenta las dos lápidas, la del corte y la de recepción— y a los 3 días marca
+     (`B/09` §2.4 y §3).
 - **Motivo**:
   - La parte 1 **no es una elección**: está medida. Cualquier diseño que liste desde el proveedor
     va a procesar una fracción de la cartera y a terminar en verde.
