@@ -1273,3 +1273,19 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   vencidas sacadas y áreas agregadas, con OK del owner. Un detalle corregido a mano: siete descripciones
   arrancaban con un comentario HTML copiado del ejemplo.
 - Pendiente: la 8-bis (sí/no) y `status-needs-owner-decision` en HOS-1354.
+
+## 2026-09-26 (día y noche) — la vuelta 1 del ciclo 8↔9: FASE 8, FASE 9 y la salida 4
+
+- **`DEC-MP-006`**: 📌 «sin destino pendiente» con OK del owner (la cláusula 2 se mantiene como
+  higiene); propagado con tachado + fecha.
+- **FASE 8 vuelta 1** desde cero (`27-`): 9 ciegos, 100 hallazgos (1 crítico), 12 racimos;
+  `verificar-citas.py` nuevo (acepta cita antes/después de la referencia, comillas rectas y
+  abreviaturas `B/NN`, `V/NN`, `N/NN`).
+- **FASE 9 vuelta 1** (`28-`): atribución (R1 generado por la tanda del 25/09), cinco grupos de
+  resolución, decisiones del owner en `28-…/10-`, aplicación en dos tandas + tres tandas de OK,
+  verificación de los 100 caminos (86/3/11), cierre de 23 casos vecinos. Log 126, matriz 99/5.
+- **Salida 4**: artifacts y Linear al día.
+- **Aprendido**: el caso vecino sigue siendo el generador (23 hoy contra 47 el 25/09): un mecanismo
+  nuevo copia la forma de otro sin sus reglas (el empuje de `PURGED` sin «después del commit»), y
+  una lista enumerada se vence con cada transición nueva (`S36`).
+- Pendiente: los tres arreglos chicos del handoff y la FASE 8 vuelta 2.
