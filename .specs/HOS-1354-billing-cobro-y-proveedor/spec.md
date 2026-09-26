@@ -218,22 +218,23 @@ declara como riesgo nuestro.
 reintentar nunca, hay techo de intentos por ventana y hay multas por excederlo. Hoy eso lo absorbe
 Mercado Pago dentro del `preapproval`.
 
-### 5.2 Las ~~ocho~~ seis filas que siguen `UNKNOWN`
+### 5.2 Las ~~ocho~~ ~~seis~~ cuatro filas que siguen `UNKNOWN`
 
 ~~De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
 un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: `RN-2`, `RN-3`,
 `GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
 **Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
-`DEC-METH-004`): **98 filas — 55 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ 5
-`UNKNOWN`** (`RN-3` cerró la noche del 25/09). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+`DEC-METH-004`): **98 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ 4
+`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
 fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
-nuevas. Las seis, y qué condiciona cada una:
+nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condicionando el grace;
+`GR-1` salió el 2026-09-26), y qué condiciona cada una:
 
 | fila | qué condiciona |
 |---|---|
 | `RN-3` · `GR-2` | la recuperación tras un cobro fallido y el pago tardío después de suspender (§22). Las lee el grace de `B7`; la cita de `RN-3` que usa `DEC-SUB-019` se lee *«observado, no registrado»* (su 📌 del 2026-09-25) |
-| `GR-1` | **condiciona `DEC-SUB-021`**: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido. Se mide con el próximo rechazo mensual real, y mientras tanto la pantalla y los correos del grace no lo prometen (owner 2026-09-25, 3a) |
+| ~~`GR-1`~~ | ~~**condiciona `DEC-SUB-021`**: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido. Se mide con el próximo rechazo mensual real, y mientras tanto la pantalla y los correos del grace no lo prometen (owner 2026-09-25, 3a)~~ (tachado 2026-09-26) **`VERIFIED` el 2026-09-26** (sonda 49): un pago dentro de la ventana cierra el ciclo fallido, y cambiar el medio dispara un reintento en el momento que cobra con el nuevo. `DEC-SUB-021` deja de estar condicionada y la pantalla puede decir que al cambiar la tarjeta se reintenta el cobro |
 | `PA-6` ✚ | si el proveedor cancela el preapproval ante cualquier primer rechazo. **No decide** `DEC-SUB-022`: decide **cuánto dura** el grace de la sucesora de quien venía pagando, y el barrido lo acota a un día (owner 2026-09-25, 3c) |
 | `RC-8` ✚ | qué estado lee el pago en un contracargo. **Fuente documental**: `DEC-SUB-020` fija qué hacemos al leerlo, no cómo se comporta el proveedor |
 | `RF-3` | el plazo máximo para reembolsar. **Ya no bloquea** (`DEC-RF-007`): pasado el plazo la operación no se ofrece y la reparación es manual, asentada por `RF4` (`DEC-RF-008`) |
@@ -284,8 +285,9 @@ rama del paraguas**, nunca al revés hasta el final.
 
 1. **Pedir la habilitación de *«pagos automáticos»*** por el canal comercial, en paralelo
    (`DEC-MP-006`, cláusula 1): es lo que volvería disponible el cargo puntual declarado como destino.
-2. **Medir `GR-1` con el próximo rechazo mensual real** (owner 2026-09-25, 3a): hasta entonces la
-   salida *«cambiá la tarjeta»* de `DEC-SUB-021` no se le promete al cliente.
+2. ~~**Medir `GR-1` con el próximo rechazo mensual real** (owner 2026-09-25, 3a): hasta entonces la
+   salida *«cambiá la tarjeta»* de `DEC-SUB-021` no se le promete al cliente.~~ (tachado 2026-09-26)
+   **Hecho el 2026-09-26**: `GR-1` `VERIFIED` con la sonda 49; la salida se le puede decir al cliente.
 
 ---
 

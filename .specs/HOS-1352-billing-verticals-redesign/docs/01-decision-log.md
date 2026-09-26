@@ -3,7 +3,7 @@ title: Decision Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-25
+updated: 2026-09-26
 status: CURRENT
 ---
 
@@ -5345,7 +5345,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-021 — En grace no se cambia de plan: primero se regulariza, y el camino de la tarjeta es cambiarla
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la salida *«cambiá la tarjeta»* queda **condicionada a `GR-1`**; el suspendido que vuelve pierde la promo; la sucesora declarada en `ACTIVE` la decide **`DEC-SUB-022`**; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la salida *«cambiá la tarjeta»* queda **condicionada a `GR-1`**; el suspendido que vuelve pierde la promo; la sucesora declarada en `ACTIVE` la decide **`DEC-SUB-022`**; ver su 📌) — **condición cerrada el 2026-09-26: `GR-1` `VERIFIED`** (ver su segundo 📌) · **Decide**: owner
 - **Supera a `DEC-SUB-003`**, entera.
 - **Problema**: `DEC-SUB-003` (15/09) prometía que en grace se podía cambiar de plan con **cobro
   inmediato** del plan nuevo y que, si fallaba, la persona **seguía en grace con el plan anterior**.
@@ -5398,6 +5398,16 @@ Cada entrada lleva, según §3.4:
      decisión dejaba con *«la persona se queda sin nada»*, lo decide **`DEC-SUB-022`**.
 
   La entrada no se edita en su contenido.
+- **📌 Cerrada 2026-09-26: `GR-1` `VERIFIED`, la salida *cambiá la tarjeta* deja de estar
+  condicionada** (registro, no reabre la decisión; `26-fase-9-completa/22`). Levanta la condición del
+  punto 1 del 📌 anterior. Lo medido (producción, sólo `GET`, sonda 49 `f0be57a1…`, ciclo de 2 días):
+  el registro de cobro rechazado del 24/09 pasó a `approved/accredited` con `retry=4` después de que
+  el owner cambiara el medio de pago — **el mismo registro, no uno nuevo**. O sea: un pago que entra
+  dentro de la ventana de reintentos cierra el ciclo fallido, y el reintento cobra con el medio nuevo.
+  **La pantalla y los correos del grace pueden decir que al cambiar la tarjeta se reintenta el cobro
+  en el momento**: el cobro entró a las 00:31:45 `-04`, ≈1-2 min después del cambio, fuera del lote
+  del minuto :02. Borde que queda: esa hora del cambio la informó el owner (no la API) y es **una sola
+  muestra**; y la extrapolación de `GR-3` a un plan mensual (punto 1) no la toca esta medición.
 
 ---
 
@@ -5890,7 +5900,7 @@ Cada entrada lleva, según §3.4:
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **9 de 9 cerradas** — `BD-MP-04` volvió al owner y la cerró `DEC-ADDON-002` |
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
-| Decisiones condicionadas a FASE 1C | **2** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?), y **`DEC-SUB-021`** (desde el 2026-09-25), a `GR-1`: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido |
+| Decisiones condicionadas a FASE 1C | ~~**2**~~ **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) · ~~y **`DEC-SUB-021`** (desde el 2026-09-25), a `GR-1`: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido~~ (tachado 2026-09-26: `GR-1` `VERIFIED`, ver el 📌 de `DEC-SUB-021`) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
 | Apartamientos declarados del PDR | **8** *(recontado el 2026-09-25: eran 7 porque faltaba `DEC-MAIL-001`. `DEC-MIG-005` **no suma un noveno**: el orquestador proponía declarar el §25 —«Conservar: … pagos»— y consultarlo con el abogado; el owner decidió que no hace falta, porque la cartera del corte se trata como clientes nuevos. Las dos posiciones están en esa entrada)* — **`DEC-MAIL-001`** (§43 y §64.25: antes de cancelar, el correo **sí** bloquea la acción; el invariante 25 del núcleo la registra como la única que contradice un invariante del §64 de frente), `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |

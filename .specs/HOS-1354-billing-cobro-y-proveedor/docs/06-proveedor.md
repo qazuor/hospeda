@@ -396,7 +396,9 @@ filtrar el nombre de ningún endpoint hacia el dominio.
 ## 11. Lo que sigue `UNKNOWN`, y qué bloquea · cierra `M-MP-03`
 
 ~~**Cuatro filas de 93**, recontadas con el script y no a mano (2026-09-24).~~ ~~**Cinco filas de
-96**~~ **Seis filas de 98**, recontadas con el script el 2026-09-25: entraron **`RC-8`**, el
+96**~~ ~~**Seis filas de 98**~~ **Cuatro filas de 98** (2026-09-26, con el script: salieron `RN-3` el
+25/09 noche, a `PARTIALLY_SUPPORTED`, y `GR-1` el 26/09, a `VERIFIED`); las seis se habían recontado
+con el script el 2026-09-25, cuando entraron **`RC-8`**, el
 contracargo (FASE 8 completa, `F-8CB3-009`), y **`PA-6`**, si el proveedor cancela ante cualquier
 primer rechazo. El §61 es terminante:
 *«No comenzar implementación de una **capability crítica** mientras siga `UNKNOWN`»* — y la palabra
@@ -406,7 +408,7 @@ nada (ver `RF-3`, abajo).
 | fila | qué falta saber | qué bloquea | cuándo se contesta |
 |---|---|---|---|
 | **`RN-3`** | si recupera solo después del fallo | ~~el diseño del grace~~ **nada** (FASE 9 completa, C11: `B/09` §8 ya dice que ninguna bloquea) | ~~**EN CURSO**: se reactivó un sujeto el 2026-09-23 y se lee tras su cobro del **2026-09-24**~~ **leído el 2026-09-24: reactivar no reintenta lo adeudado; sigue `UNKNOWN` si vuelve a pausar** |
-| **`GR-1`** | si se puede pagar durante el grace | ~~ídem~~ **la salida de `DEC-SUB-021` para el pagador con tarjeta —*«cambiá la tarjeta»*— queda condicionada a esta fila**, y la pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva (owner 2026-09-25; FASE 9 completa, 3a). No bloquea implementar: bloquea prometer. **Se mide con el próximo rechazo mensual real** | necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner** |
+| **`GR-1`** ✅ | si se puede pagar durante el grace | ~~ídem~~ ~~**la salida de `DEC-SUB-021` para el pagador con tarjeta —*«cambiá la tarjeta»*— queda condicionada a esta fila**, y la pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva (owner 2026-09-25; FASE 9 completa, 3a). No bloquea implementar: bloquea prometer. **Se mide con el próximo rechazo mensual real**~~ (tachado 2026-09-26) **nada: `VERIFIED` el 2026-09-26** — un pago dentro de la ventana cierra el ciclo fallido sobre el mismo registro, y cambiar el medio dispara un reintento en el momento que cobra con el nuevo (sonda 49). `DEC-SUB-021` deja de estar condicionada y la pantalla puede decirlo | ~~necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner**~~ **cerrada**: la midió la sonda 49 con el cambio de medio del owner |
 | **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila. **En un pagador con tarjeta, `DEC-SUB-019` la contesta por diseño y no por medición**: `S6` cancela el preapproval en el mismo acto de suspender, así que un pago tardío del proveedor ya no tiene cómo llegar después de eso. Sigue `UNKNOWN` lo que queda afuera de ese diseño: el pagador manual y los bordes —un cobro ya en vuelo al momento de `S6`, un preapproval reactivado a mano— | ídem |
 | **`RC-8`** ✚ | qué estado lee el pago en un contracargo, qué aviso llega y en qué lectura aparece | **no bloquea la decisión**: `DEC-SUB-020` fija qué hacemos al leer `charged_back`, no cómo se comporta el proveedor (`B/03` §3.2 y §6, `B/09` §3). Lo que queda sin medir es la detección | **no se puede fabricar**: exige una disputa real con el emisor. Se contesta cuando ocurra una |
 | **`PA-6`** ✚ | si el proveedor cancela el preapproval ante **cualquier** primer rechazo, o sólo ante el antifraude | **no bloquea**: `S16` cancela el preapproval de nuestro lado ante el primer rechazo leído por id, y el barrido reintenta esa cancelación (FASE 8 completa, owner 2026-09-25) | **no se puede fabricar**: exige una tarjeta real sin saldo |
@@ -418,7 +420,7 @@ nada (ver `RF-3`, abajo).
 > sin usar el interruptor: **la evidencia estaba sin leer en la corrida del 2026-09-15**, porque la
 > 5ª entrega llegó a las 7 horas y la lectura se había cerrado antes.
 
-~~**Tres de las cuatro, después cinco**~~ **Cuatro de las seis siguen siendo el mismo hecho: un cobro que falla** —`RN-3`, `GR-1`, `GR-2` y `PA-6`; `RC-8` es un contracargo y `RF-3` un reembolso (recontado sobre la tabla en la FASE 9 completa, C11). ❌ **Y la previsión de que
+~~**Tres de las cuatro, después cinco**~~ ~~**Cuatro de las seis siguen siendo el mismo hecho: un cobro que falla** —`RN-3`, `GR-1`, `GR-2` y `PA-6`; `RC-8` es un contracargo y `RF-3` un reembolso (recontado sobre la tabla en la FASE 9 completa, C11).~~ **Dos de las cuatro siguen siendo el mismo hecho: un cobro que falla** —`GR-2` y `PA-6`; `RC-8` es un contracargo y `RF-3` un reembolso (recontado el 2026-09-26: salieron `RN-3` y `GR-1`). ❌ **Y la previsión de que
 se contestaban el 2026-09-17 no se cumplió**: los dos sujetos que esta sección nombraba fallaron —
 `renov-falla3` **nunca estuvo armado** (la mutación al techo se había rechazado con `400` y nadie
 releyó), y `apagon` se cayó cuando el home banking del owner avisó que **los débitos automáticos se

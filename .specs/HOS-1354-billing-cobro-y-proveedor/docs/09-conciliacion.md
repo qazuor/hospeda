@@ -874,7 +874,9 @@ alerta a las 26 h sin ping. Lo que este § deja abierto del vigía vale igual pa
   deja la suscripción mientras lo hace.~~ **Actualizado el 2026-09-24**: ya se sabe cuántas veces
   reintenta y en qué estado deja la suscripción —cuatro intentos dentro de **un ciclo**, y al vencer
   **pausa** (`GR-3`, sonda 49)—, y con `DEC-SUB-019` el grace cancela el preapproval antes de que
-  eso pase. Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`; ninguna bloquea este capítulo. El número que
+  eso pase. ~~Siguen `UNKNOWN` `RN-3`, `GR-1` y `GR-2`~~ (tachado 2026-09-26): `RN-3` salió a
+  `PARTIALLY_SUPPORTED` el 25/09 noche y `GR-1` a `VERIFIED` el 26/09) **Sigue `UNKNOWN` `GR-2`**;
+  ninguna bloquea este capítulo. El número que
   quedaba —cuántas corridas espera el barrido un cobro *«todavía no se sabe»*— **lo fijó el owner el
   mismo día: una** (§6.2), **y a los 3 días abre la marca con motivo `COBRO_DEL_PERÍODO_SIN_RESOLVER`**
   (§6.2; owner 2026-09-25, FASE 9 completa, 3d).

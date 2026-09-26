@@ -72,7 +72,9 @@ del §1.1 era suspender a alguien a quien el proveedor todavía le está por cob
    grace, y si uno entra corre `S5`.~~ **Nuestro grace cae dentro de la ventana de reintentos del
    proveedor**, así que durante todo el grace el proveedor sigue intentando, y si uno entra corre
    `S5`; **cuántos de sus intentos caen dentro del grace de un plan mensual o anual no está
-   medido** (`GR-1`, `UNKNOWN`). **Lo que se resigna es el reintento que cae después**:
+   medido** (~~`GR-1`, `UNKNOWN`~~ (tachado 2026-09-26): no es `GR-1`, que cerró `VERIFIED` sobre un ciclo de 2
+   días, sino la extrapolación de `GR-3`; y para la salida por cambio de tarjeta dejó de pesar,
+   porque el cambio dispara su propio reintento: ver abajo). **Lo que se resigna es el reintento que cae después**:
    `DEC-SUB-019` lo resignó por escrito (FASE 9 completa, C3: la frase estaba al revés, y el miedo
    del §1.1 no lo cuida ninguna regla para ese reintento).
 2. **`S6` pregunta si cobró antes de suspender** (`B/03` §4, con la lectura del `B/09` §4). Si la
@@ -154,10 +156,16 @@ un año), y si la pausa cae también al vencer la ventana de un ciclo de 2 días
 cambia el diseño**, porque el grace se corta antes (`DEC-SUB-019`). Lo que cambian es lo que se le
 explica a soporte.~~ **La primera sí cambia el diseño desde `DEC-SUB-021`** (FASE 9 completa, C3):
 la única salida del grace para un pagador con tarjeta —cambiar la tarjeta y que un reintento cobre
-con ella— depende de cuántos reintentos caen dentro del grace, y eso es `GR-1`, `UNKNOWN`. **Por
+con ella— ~~depende de cuántos reintentos caen dentro del grace, y eso es `GR-1`, `UNKNOWN`. **Por
 eso la salida queda condicionada a `GR-1`** y la pantalla y los correos del grace no prometen que
 el reintento use la tarjeta nueva (owner 2026-09-25; FASE 9 completa, 3a; `B/19` §4 filas 9 y
-17-bis). Se mide con el próximo rechazo mensual real. La segunda sigue sin cambiar el diseño.
+17-bis). Se mide con el próximo rechazo mensual real.~~ (tachado 2026-09-26) **está medida: `GR-1`
+`VERIFIED` el 2026-09-26** (sonda 49, producción): cambiar el medio de pago durante la ventana
+hizo que el registro rechazado cobrara con el nuevo —el mismo registro, no uno nuevo— y **disparó
+el reintento en el momento**, ≈1-2 min después del cambio y fuera del lote del minuto :02. Por
+eso la pantalla y los correos del grace **pueden decir que al cambiar la tarjeta se reintenta el
+cobro** (`B/19` §4 filas 9 y 17-bis). Borde que queda: la hora del cambio la informó el owner, no
+la API, y es una sola muestra sobre un ciclo de 2 días. La segunda sigue sin cambiar el diseño.
 
 ---
 
@@ -1050,9 +1058,10 @@ una regla: hace falta que nadie agregue esa transición.
 
 - ~~**`GR-3`**, la política de reintentos del proveedor, sigue `UNKNOWN`.~~ **Cerrado**: `GR-3`
   está `VERIFIED` y la ventana es el ciclo (§1.5). Queda sin medir la ventana mensual y anual, que
-  ~~el diseño no necesita porque el grace se corta antes~~ **desde `DEC-SUB-021` sí condiciona la
+  ~~el diseño no necesita porque el grace se corta antes~~ ~~**desde `DEC-SUB-021` sí condiciona la
   salida del grace con tarjeta: queda condicionada a `GR-1` y la superficie no la promete** (§1.5;
-  owner 2026-09-25, FASE 9 completa, 3a).
+  owner 2026-09-25, FASE 9 completa, 3a).~~ (tachado 2026-09-26) **ya no condiciona esa salida: `GR-1`
+  quedó `VERIFIED` el 2026-09-26 y el cambio de tarjeta dispara su propio reintento** (§1.5).
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en MORA** —no pausada— lo dejó
   abierto `DEC-MP-002` (implicación 6) y **sigue abierto**: el §6 resuelve la pausa, no el grace.
 - ~~**El detalle del cobro contra el proveedor** —el checkout, el `init_point`, la verificación por

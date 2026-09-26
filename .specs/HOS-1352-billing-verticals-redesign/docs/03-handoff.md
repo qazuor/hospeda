@@ -61,12 +61,17 @@ status: CURRENT
    aplicado a capítulos, núcleo, contrato, corte, log, matriz y **las dos sub-specs recorridas
    enteras** (salidas 1, 2 y 3 de `DEC-METH-004`). Registros de aplicación: `11`–`21`.
 3. **➡️ LO PRÓXIMO**:
-   - **Medir `GR-1` con la sonda 49** (`f0be57a1…`, «HOS1352 s49c ventana de reintentos»): el
+   - ✅ **Hecho el 2026-09-26** (`26-fase-9-completa/22`): `GR-1` `VERIFIED`. El registro rechazado del
+     24/09 pasó a `approved/accredited` con `retry=4` tras el cambio de medio del owner —el mismo
+     registro—, ≈1-2 min después del cambio (hora del owner, una muestra). `DEC-SUB-021` deja de
+     estar condicionada; la pantalla puede decir que al cambiar la tarjeta se reintenta el cobro.
+     Lo que decía este punto, tachado 2026-09-26:
+     ~~**Medir `GR-1` con la sonda 49** (`f0be57a1…`, «HOS1352 s49c ventana de reintentos»): el
      owner cambia el medio de pago desde su cuenta de MP **antes del 26/09 17:00 `-03`** y avisa la
      hora; después de las 18:02 `-04` se lee con
      `MANIFIESTO=$HOME/.hos1352-sonda-49-c.json INTENTO=c MP_ACCESS_TOKEN=$(cat ~/.mp-token-hos1352) node mp-probes/probe-49-la-ventana-de-reintentos.mjs leer`.
      Si el reintento posterior usa la tarjeta nueva, `GR-1` cierra y B7 avanza sobre algo medido
-     (decisión 10e); si no se puede medir simple, B7 no depende de ella y se escribe qué no promete.
+     (decisión 10e); si no se puede medir simple, B7 no depende de ella y se escribe qué no promete.~~
    - **Salida 4 de `DEC-METH-004`**: los 25 issues de Linear y los ~27 artifacts describen el
      diseño viejo. Qué quedó desactualizado en cada issue: `18-subspecs-verticales.md` §6 y
      `19-subspecs-billing.md`. **Publica afuera: pedir OK al owner antes.**
@@ -89,8 +94,9 @@ las dos posiciones escritas: `2a`, `2d`, `2g`, `3c`, `6c`.
 ### Conteos (recontados con script)
 
 Log **124 decisiones** (15 metodología, 109 funcionales; 6 `SUPERSEDED`; 29 precisadas; 8
-apartamientos). Matriz **98 filas: 55 `VERIFIED` · 15 `PARTIALLY` · 23 `NOT_SUPPORTED` · 5
-`UNKNOWN`** (`PA-6`, `GR-1`, `GR-2`, `RC-8`, `RF-3`; **`RN-3` cerró** el 25/09 a la noche:
+apartamientos). Matriz **98 filas: ~~55~~ 56 `VERIFIED` · 15 `PARTIALLY` · 23 `NOT_SUPPORTED` · ~~5~~ 4
+`UNKNOWN`** (`PA-6`, ~~`GR-1`~~, `GR-2`, `RC-8`, `RF-3`; **`GR-1` cerró** el 26/09, `VERIFIED`, con la
+sonda 49; **`RN-3` cerró** el 25/09 a la noche:
 reactivar no recupera lo adeudado y vuelve a pausar). Motivos de marca **22**. Acciones
 administrativas **14**. Máquinas **10**. Hechos del reloj **6**. Suscripción `S1`–`S35`. Trial
 `T1`–`T8`. Publicación 6 estados / 12 transiciones. Firma del contrato **7 campos** (suma `piso`).

@@ -1255,6 +1255,9 @@ revertido** (B7, B8, B9, B10). Toda regla nueva quedó con unidad.
 no recupera lo adeudado y el proveedor vuelve a pausar. `GR-1` queda para el 26/09 con la sonda 49
 (el owner cambia el medio de pago).
 
+📌 **2026-09-26 04:33 UTC**: `GR-1` leída (sólo `GET`) → **`VERIFIED`**; matriz **56 · 15 · 23 · 4**
+(`26-fase-9-completa/22`).
+
 ### Lo que no se hizo
 
 Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-1`.

@@ -86,9 +86,11 @@ owner 2026-09-25).
 
 **Y desde `DEC-SUB-021` impide también declararla desde `GRACE_PERIOD`** (owner 2026-09-25): en
 el grace no se cambia de plan, primero se regulariza —el pagador con tarjeta cambia la tarjeta
-(`EX-36`) y los reintentos del proveedor cobran con ella, **condicionado a `GR-1`** (owner
+(`EX-36`) y los reintentos del proveedor cobran con ella, ~~**condicionado a `GR-1`** (owner
 2026-09-25, FASE 9 completa, 3a: no está medido que el reintento de un registro ya abierto use la
-tarjeta nueva, y la superficie no lo promete); el pagador manual paga su cuota—, y
+tarjeta nueva, y la superficie no lo promete)~~ (tachado 2026-09-26) **medido: `GR-1` `VERIFIED` el
+2026-09-26** —el cambio dispara un reintento en el momento sobre el mismo registro, y la superficie
+puede decirlo—; el pagador manual paga su cuota—, y
 recién en `ACTIVE` puede cambiar. La razón es la de la decisión: `S17` cancela la predecesora al
 **autorizar** la sucesora y `D8` difiere el primer cobro de ésta, así que si ese cobro falla —con
 la misma tarjeta que venía fallando— la persona se queda sin nada (FASE 8 completa, `F-8CD1-002`,
