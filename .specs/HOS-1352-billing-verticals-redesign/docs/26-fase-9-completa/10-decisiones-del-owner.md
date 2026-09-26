@@ -65,3 +65,13 @@ quedaron contra la recomendación del orquestador o con agregado del owner: `2a`
 | 9f | `K-9`: sólo `A6` ejecuta el borrado al llegar a `PURGED` | `15` §2 | como está |
 | 9g | texto de pantalla de 4b | `15` §2 | como está, **agregando que el mínimo lo pone Mercado Pago, no nosotros** |
 | 9h | `C-2`: el piso del grant no cruza la firma del contrato | [`09`](./09-resto-y-registro.md) `C-2` | **agregar** a la firma `piso: versiónDePlan, si tipo = GRANT` (siete campos) |
+
+## Asignaciones de unidad (salida 3)
+
+| # | punto | decisión |
+|---|---|---|
+| 10a | la escritura `C` del corte | **V6** |
+| 10b | la acción de moderar (ficha y presencia de Partner) | la construye la primera de V6/V7 que llegue |
+| 10c | `G-R2-C` | **B10** (el dato vive en `addon_product`) |
+| 10d | `S25`→B12, `S29`→B5, `S32`/`S33`→B10, `S34`/`S35`→B9, filas del barrido de 9a/3c/3d→B7, `RF1`/`RF4`+acción 14→B5, `RF2`/`RF3`/`RF5`→B6, dependencias con verticales 6→8 | **aceptadas** |
+| 10e | el §61 del PDR frente a `RN-3`, `GR-1`, `GR-2` y B7 | **intentar medirlas primero** para avanzar sobre algo más seguro; **si no se pueden medir de forma simple**, B7 no depende de ellas: se escribe qué no promete y se siguen midiendo |
