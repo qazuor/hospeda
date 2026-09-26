@@ -225,8 +225,8 @@ un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: 
 `GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
 **Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
-`DEC-METH-004`): **98 filas — 55 `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, 6
-`UNKNOWN`**. De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+`DEC-METH-004`): **98 filas — 55 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ 5
+`UNKNOWN`** (`RN-3` cerró la noche del 25/09). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
 fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
 nuevas. Las seis, y qué condiciona cada una:
 

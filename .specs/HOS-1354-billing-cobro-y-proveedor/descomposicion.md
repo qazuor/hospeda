@@ -355,8 +355,8 @@ el orden: es que dejan de ser invisibles.
 
 ~~Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `VERIFIED`, 19
 `NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las 98 filas de la matriz,
-recontadas el 2026-09-25 con `contar-filas-de-la-matriz.py`: 55 `VERIFIED`, 23 `NOT_SUPPORTED`, 14
-`PARTIALLY_SUPPORTED`, 6 `UNKNOWN`** (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
+recontadas el 2026-09-25 con `contar-filas-de-la-matriz.py`: 55 `VERIFIED`, 23 `NOT_SUPPORTED`,
+~~14~~ 15 `PARTIALLY_SUPPORTED`, ~~6~~ 5 `UNKNOWN`**, con `RN-3` cerrada la noche del 25/09 (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
 queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**.
 
 | filas | unidad | qué bloquea de verdad |
