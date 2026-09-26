@@ -209,7 +209,9 @@ pierde igual (declarado en el «NO cierra» del capítulo).
 > del botón, escrita sólo en `V/19` §4 fila 23; FASE 9 vuelta 1, `F-8V1D1-004`; residuo de G4
 > resuelto el 2026-09-26). Al contratar, las fichas que siguen
 > abajo vuelven solas por `PB3`, hasta llenar el cupo (FASE 9 vuelta 1, R1; owner 2026-09-26,
-> `G1-1`).
+> `G1-1`), **en el orden de `V/03` §9 *«cuáles vuelven»*: como no tienen evento de publicación en el
+> registro nuevo, cuentan como publicadas en el instante del corte y desempatan por `created_at`**
+> (FASE 9 vuelta 1, `N-G1-01`).
 
 **Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
 puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
@@ -419,7 +421,7 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
 - **Quien contrata sin publicar paga desde el primer cobro** (§2.4; declarado por `DEC-METH-015`,
   FASE 9 vuelta 1, R1). Si un dueño del corte llega al checkout por otro camino, `S1` lo cubre,
   `PB3` le sube la ficha y `T8` no escribe nada, porque no ejerció el evento en el sistema nuevo:
-  paga el primer ciclo y conserva el trial sin usar. **Causa**: el guion y el botón lo mandan a
+  paga el primer ciclo y conserva el trial sin usar ~~.~~ **hasta su próximo `PB1` cubierto: si después publica otra ficha cubierto por un título que convierte —su suscripción ya cobró—, `T6` consume la fila sin darle el trial (`V/03` §2), que es la misma regla que para cualquier cubierto que publica** (FASE 9 vuelta 1, §4 punto 4 de `21-verificado-G1`). **Causa**: el guion y el botón lo mandan a
   publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
 - **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
   R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`

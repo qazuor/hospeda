@@ -156,3 +156,58 @@ que cuenta fichas vivas de una sola vertical y sin dueño. Es la consulta que de
 la población a avisar es toda persona con una ficha que no sea `L1` o con una suscripción viva en
 el sistema viejo, medida el día del corte. Van separadas por vertical por la misma razón de arriba:
 un `UNION` se anula entero si una tabla o una columna no existe.
+
+**Y escrita, no sólo descrita** (FASE 9 vuelta 1, §4 punto 3 de `21-verificado-G1`: `B/21` §1.3 y
+`V/21` §4 citaban como reproducible un párrafo sin texto ejecutable). Columnas verificadas contra
+`origin/staging` el 2026-09-26. Turista es una de las cinco verticales y no tiene tabla de fichas;
+las otras cuatro, sí. La clase `L1`–`L8` completa sólo se escribe para `accommodations`, que es la
+única tabla sobre la que `V/21` §2.4 define la traducción; en las otras tres basta separar `L1` del
+resto, y **si alguna da filas fuera de `L1`, la tabla de `V/21` §2.4 hay que extenderla antes del
+corte** (hoy son cero).
+
+```sql
+-- 4a. alojamientos por dueño y clase (V/21 §2.4, en el orden de la tabla)
+SELECT owner_id,
+       CASE
+         WHEN deleted_at IS NOT NULL THEN 'L1'
+         WHEN lifecycle_state = 'DRAFT' THEN 'L2'
+         WHEN lifecycle_state = 'ARCHIVED' THEN 'L3'
+         WHEN lifecycle_state = 'INACTIVE' AND billing_unpublished_at IS NULL THEN 'L4'
+         WHEN lifecycle_state = 'INACTIVE' THEN 'L5'
+         WHEN lifecycle_state = 'ACTIVE' AND visibility <> 'PUBLIC' THEN 'L6'
+         WHEN owner_suspended OR plan_restricted THEN 'L7'
+         ELSE 'L8'
+       END AS clase,
+       count(*) AS n,
+       count(*) FILTER (WHERE moderation_state = 'REJECTED') AS rejected
+FROM accommodations GROUP BY 1,2 ORDER BY 1,2;
+
+-- 4b. gastronomía por dueño: L1 o no
+SELECT owner_id, (deleted_at IS NOT NULL) AS es_l1, count(*) AS n
+FROM gastronomies GROUP BY 1,2 ORDER BY 1,2;
+
+-- 4c. experiencia por dueño: L1 o no
+SELECT owner_id, (deleted_at IS NOT NULL) AS es_l1, count(*) AS n
+FROM experiences GROUP BY 1,2 ORDER BY 1,2;
+
+-- 4d. partner por dueño (owner_user_id es nulo mientras nadie lo reclamó): L1 o no
+SELECT owner_user_id, (deleted_at IS NOT NULL) AS es_l1, count(*) AS n
+FROM partners GROUP BY 1,2 ORDER BY 1,2;
+
+-- 4e. personas con una suscripción viva en el sistema viejo: toda la que no es terminal. El enum
+--     de Hospeda escribe 'cancelled' y el de qzpay 'canceled', así que van los dos, más
+--     'incomplete_expired'. Una baja programada sigue 'active' y entra. Antes, la consulta 1 dice
+--     qué valores hay de verdad en la columna: uno que no esté en ninguna lista se mira a mano.
+SELECT c.external_id AS user_id, s.status, coalesce(s.product_domain,'(null)') AS vertical
+FROM billing_subscriptions s JOIN billing_customers c ON c.id = s.customer_id
+WHERE s.deleted_at IS NULL
+  AND s.status NOT IN ('cancelled','canceled','expired','abandoned','incomplete_expired')
+ORDER BY 1;
+```
+
+**La población es la unión de los dueños de 4a–4d con alguna fila fuera de `L1` y los
+`user_id` de 4e**, contados como personas y no como filas —`V/21` §2.5 mide el umbral en personas
+a llamar—. Se une a mano o con una sexta consulta, **sólo después de que las cinco devolvieron
+algo o se verificó que están vacías de verdad**: la unión es el `UNION` que la regla de arriba
+prohíbe correr a ciegas. Un `partner` con `owner_user_id` nulo no tiene persona a quien llamar y se
+lista aparte.

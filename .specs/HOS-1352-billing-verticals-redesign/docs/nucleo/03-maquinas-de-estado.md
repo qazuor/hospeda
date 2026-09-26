@@ -66,7 +66,7 @@ máquina de estados y una convención.
    actuar**, releyendo por id, y esa relectura es parte de la condición de `S3` y `S6`~~
    **Salvo una condición que depende del estado del proveedor**: la de un job que actúa por
    nuestro reloj (`S3`, `S6`, `A3`) y la de un acto del cliente que no puede declararse sobre un
-   preapproval que no cobra (`S1`, sobre su predecesora). Ésas **le preguntan antes**, releyendo
+   preapproval que no cobra (`S1`, sobre su predecesora **y sobre la `CHARGE_DECLINED` de ese `user + vertical`, cuyo preapproval relee hasta verlo `cancelled`** —`B/03` §3.2, FASE 9 vuelta 1, `F-8V1B1-003`; el alcance, §4 punto 2 de `25-verificado-G5-y-registro`—). Ésas **le preguntan antes**, releyendo
    por id, y la relectura es parte de la condición (FASE 9 vuelta 1, `F-8V1D1-003`)
    (`D17`, cap. 04, pedido del owner del 2026-09-24; FASE 8 completa, `F-8CD1-005`).
 6. **Grace y Pause no son máquinas independientes**, y el §63 las nombra igual. Son sub-estados

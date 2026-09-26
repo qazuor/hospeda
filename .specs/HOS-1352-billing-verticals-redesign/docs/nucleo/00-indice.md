@@ -40,8 +40,10 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
 2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ ~~**117** al
-   2026-09-25~~ **124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
-   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1), recontadas con
+   2026-09-25~~ ~~**124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
+   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ **126** al 2026-09-26, con las
+   dos de la FASE 9 vuelta 1 —`DEC-AUTH-002` y `DEC-AUTH-003`— (recontado con script en
+   `28-fase-9-vuelta-1/25-verificado-G5-y-registro.md` §4: 127 encabezados menos la plantilla), recontadas con
    `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
    ~~`DEC-SUB-001` y `DEC-SUB-005` enteras~~ `DEC-SUB-001`, **`DEC-SUB-003`** y `DEC-SUB-005`
    enteras —`DEC-SUB-003` por `DEC-SUB-021`—, ~~`DEC-MIG-001` sólo en lo que `DEC-MIG-003`

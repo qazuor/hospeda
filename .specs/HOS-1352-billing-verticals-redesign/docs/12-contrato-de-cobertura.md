@@ -116,7 +116,7 @@ que alguien pueda olvidar.**
 
 | campo | qué es | quién lo necesita |
 |---|---|---|
-| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | **`PB1`**, que publica sólo con `cubierto` verdadero o si dispara `T1` (`V/03` §9; owner 2026-09-25; FASE 9 vuelta 1, `F-8V1C1-012`); `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
+| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | **`PB1`**, que publica sólo con `cubierto` verdadero o si dispara `T1` (`V/03` §9; owner 2026-09-25; FASE 9 vuelta 1, `F-8V1C1-012`); `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y ~~el hard delete del día 180~~ `PB9`, el hard delete del día 180, que desde la FASE 8 completa es una fila** (FASE 9 vuelta 1, §4 punto 2 de `22-verificado-G2`), que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras; **y `A1` de billing** (`B/03` §8), que lee si en la vertical del objetivo hay un título que no sea de `tipo: TRIAL` antes de vender un addon (FASE 9 vuelta 1, `F-8V1C1-008`) |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
@@ -930,12 +930,25 @@ el owner no acepta ni un cobro de más).
 evento: la ficha F llegó a PURGED
 ```
 
-**Es lo único que verticales le empuja a billing.** Lo emite verticales **en el mismo acto** de
-`PB9` y de `PB12` (`V/03` §9) —las dos únicas filas que llegan a `PURGED`— y lleva sólo el id de
-la ficha. Su único consumidor es `A6` (`B/03` §8), que desde `K-9` es la única fila que cancela un
-addon `LISTING` cuando se borra su ficha: al recibirlo, billing busca las instancias vivas de scope
+**Es lo único que verticales le empuja a billing.** Lo emite verticales ~~**en el mismo acto** de
+`PB9` y de `PB12`~~ **el mismo acto de `PB9` o de `PB12`, DESPUÉS de su commit y nunca dentro de
+su transacción** (FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`) (`V/03` §9) —las dos únicas filas que
+llegan a `PURGED`— y lleva sólo el id de la ficha. Su único consumidor es `A6` (`B/03` §8), que desde `K-9` es la única fila que cancela un
+addon `LISTING` cuando se borra su ficha: al recibirlo, billing busca las instancias ~~vivas~~ **en
+uno de sus dos estados vivos —`PENDING_AUTHORIZATION` o `ACTIVE`, la enumeración de la fila 18 de
+`NUCLEO/01` §2— (FASE 9 vuelta 1, `N-G2V-03`)** de scope
 `LISTING` con ese `objetivo` y corre `A6` sobre cada una **en ese momento, no en el barrido del día
-siguiente**. Existe para eso: con sólo la consulta, el cobro mensual de un destaque que cayera
+siguiente**.
+
+**Por qué después del commit, y no «en el mismo acto» a secas** (FASE 9 vuelta 1, `N-G2V-01` y
+`N-G4V-05`, dos verificadores que lo encontraron sin verse). Es la regla del aviso (§3, *«el aviso
+sale después del commit»*) aplicada a su gemelo: un evento cuyo consumidor relee antes de actuar.
+Emitido dentro de la transacción de `PB12`, el empuje llega a `A6` cuando el `PURGED` todavía no
+está commiteado; `A6` relee `fichaPurgada`, lee `no`, no cancela, y el empuje ya se consumió. Eso
+no pasaba de vez en cuando sino **en todo borrado**: el camino principal caía entero a la red del
+barrido, que es la opción 1 de `G2-1` que el owner rechazó. Con el orden fijado, un empuje que sale
+llega con el `PURGED` ya visible; y el que no sale —el proceso se cae entre el commit y la emisión—
+es el empuje perdido de abajo, con su red. Existe para eso: con sólo la consulta, el cobro mensual de un destaque que cayera
 entre el borrado y el barrido entraba.
 
 **No se le cree, igual que al aviso** (*«el evento no reemplaza la consulta»*, arriba): `A6` corre
@@ -944,8 +957,13 @@ cancelar. **Y no tiene transporte durable** —el outbox del núcleo es de corre
 aviso—, así que **perderlo es un caso declarado: la red es la misma consulta `fichaPurgada`, leída
 por el barrido diario de billing** por cada instancia viva de scope `LISTING` (`B/09` §3). Con el
 empuje perdido vuelve el día de atraso, y con él el cobro que el empuje venía a evitar; lo mismo
-para un borrado que no pasa por `PB9` ni por `PB12` —el hard delete del admin, `F-8V1A1-003`—, que
-no empuja nada. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8).
+para un borrado que no pasa por `PB9` ni por `PB12` ~~—el hard delete del admin, `F-8V1A1-003`—~~
+**—desde `G5-2` el admin no tiene ninguno (`NUCLEO/08` §3: *«ningún borrado de ficha sale de otra
+fila que `PB9` o `PB12`»*); el que queda es el borrado de la cuenta pedido por el propio usuario,
+pendiente en `NUCLEO/08` §1, que borra la fila de la ficha sin pasar por ninguna de las dos
+(FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—**, que
+no empuja nada, y la red lo alcanza porque `fichaPurgada` contesta `sí` también cuando la fila no
+existe. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8).
 
 **No es un quinto consumidor del aviso ni lo reemplaza**: son dos eventos distintos, en
 direcciones opuestas, y ninguno lleva el dato del otro. Lo emiten las dueñas de las dos filas —V6 el
@@ -1006,7 +1024,7 @@ políticaDePlan(versiónDePlan)  → { díasDeGrace, permitePausa, vigente, vend
 situaciónDeVertical(vertical)  → { admiteAltas, finDeServicio }
 direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA
 fichaPurgada(ficha)            → sí | no
-ficha(idDeFicha)               → { vertical, dueño }
+ficha(idDeFicha)               → { vertical, dueño, admiteDestaque }
 políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }
 extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA(motivo)
 ```
@@ -1041,7 +1059,7 @@ columna de `V/02` §2.1 sino el estado de la ficha.
 vuelta 1, `F-8V1A3-008`, `F-8V1C1-008`, `F-8V1C1-009`; owner 2026-09-26, `G4-2`). **`ficha` y
 `políticaDeAddon` son pertenencia y política**: de una ficha, billing sabe a qué vertical pertenece
 y de quién es —lo que `A1` necesita para validar el objetivo de un addon `LISTING`, y la precisión
-6 del cap. 17 manda leer del recurso—, nunca su estado (ése es sólo `fichaPurgada`); de un addon,
+6 del cap. 17 manda leer del recurso—, nunca su estado (ése es sólo `fichaPurgada`)~~; de un addon,~~ **—salvo un sí o no: `admiteDestaque`, si la ficha está en un estado que acepta un addon `LISTING`, que hoy es *«ni `PURGED` ni `MODERATED`»* y lo define verticales, no billing. `A1` lo exige y la firma decía *«nunca su estado»*: sin el campo, `A1` leía la tabla de verticales —la filtración que el §4.2 vigila— o no lo miraba y vendía un destaque que no se ve y que por `G2-3` se sigue cobrando. Devuelve la respuesta y no el estado, con la misma forma que `fichaPurgada` (FASE 9 vuelta 1, `N-G4V-06`; es lo que decide, así que entra acá por `G4-2`)—**; de un addon,
 cómo se comporta —cuándo termina la instancia, sobre qué se puede aplicar y de qué `addon` es
 versión—, nunca qué otorga. **`extenderTrial` es la única escritura de billing en verticales**: el
 canje de una extensión de trial le pide a verticales que corra `T4`, y verticales contesta con el
@@ -1095,12 +1113,12 @@ Eso conserva el corte de `DEC-ARCH-005` sin excepción: los entitlements y los l
 cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 
 ~~**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.**~~
-**Son siete entradas: seis preguntas y una operación** —doce campos en cuatro consultas
+**Son siete entradas: seis preguntas y una operación** —~~doce~~ **trece** campos en cuatro consultas
 (`políticaDePlan`, `situaciónDeVertical`, `ficha`, `políticaDeAddon`), un veredicto
 (`direcciónDeCambio`), un sí o no (`fichaPurgada`) y la escritura `extenderTrial`—, **y de los
 campos de `políticaDePlan`, los dos últimos son los que importa declarar** (FASE 9 vuelta 1,
 recontado con script sobre el bloque de firmas: `díasDeTrial` salió, `F-8V1C1-015`; `fichaPurgada`
-entró por `G2-1`; `ficha`, `políticaDeAddon` y `extenderTrial` por `G4-2`). `vigente`/`vendible` no estaba en la
+entró por `G2-1`; `ficha`, `políticaDeAddon` y `extenderTrial` por `G4-2`; **`admiteDestaque`, el tercer campo de `ficha`, por `N-G4V-06`**). `vigente`/`vendible` no estaba en la
 cuenta original: salió de recorrer el dominio, y **era la diferencia entre que el acoplamiento se
 cortara o siguiera llegando**. Sin declararlo se pierde de vista, y el día que billing lea una
 columna que verticales cambió nadie se entera hasta que rompe.

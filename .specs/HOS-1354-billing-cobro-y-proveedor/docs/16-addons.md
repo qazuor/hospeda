@@ -781,7 +781,9 @@ predecesora ya murió (§4.2).
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar
 es una capacidad regalada; un preapproval huérfano sin cancelar es un débito mensual a alguien
-que ya no es cliente — y como mutar o cancelar no emite webhook, nadie se entera desde adentro.
+que ya no es cliente — y como ~~mutar o cancelar no emite webhook~~ una cancelación que no se aplicó
+no emite nada (`EX-15`: cancelar avisa sólo si se aplicó; FASE 9 vuelta 1, `N-G3V-05`), nadie se
+entera desde adentro.
 Lo que lo hace detectable es el barrido del capítulo 09, que compara contra **nuestro** inventario
 (`DEC-CONC-002`): un addon en estado terminal con su preapproval vivo es una discrepancia que el
 barrido ve.
@@ -978,7 +980,10 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   que el barrido diario lee (`B/09` §3), y vuelve el día de atraso; si el cobro del complemento
   cae en ese día, entra, y `S21` lo pone delante de una persona con el motivo 14 (propuesta *no
   devolver*, que la persona puede cambiar). Lo mismo, y sin empuje, para una ficha que desaparece
-  sin pasar por `PB9` ni por `PB12` (el hard delete del admin, `F-8V1A1-003`). **Y son dos
+  sin pasar por `PB9` ni por `PB12` ~~(el hard delete del admin, `F-8V1A1-003`)~~: **desde `G5-2` el
+  admin no tiene ninguno** (`NUCLEO/08` §3: *«ningún borrado de ficha sale de otra fila que `PB9` o
+  `PB12`»*); el que queda es **el borrado de la cuenta pedido por el propio usuario**, pendiente en
+  `NUCLEO/08` §1 (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`, como el contrato §3.1). **Y son dos
   mecanismos para un mismo hecho**: `A6` tiene que ser idempotente frente a los dos —una
   instancia ya `CANCELLED` no se vuelve a cancelar—. **Causa**: el owner no acepta ni un cobro
   de más, y el único camino a cero atraso es un empuje, que en este programa no tiene transporte
@@ -986,7 +991,13 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
 - **El complemento que no se reanuda al volver de una suspensión no tiene detector** (FASE 9
   vuelta 1; owner 2026-09-26, `G2-2`). Su pausa por `S6` no tiene `fin_previsto`, así que la quinta
   comprobación de `B/09` §3 no lo ve. Falla hacia **no** cobrar. **Causa**: la suspensión no tiene
-  fecha de fin.
+  fecha de fin. **Y cuando `S7` saca a la principal de `SUSPENDED` hacia `CANCEL_SCHEDULED`** —el
+  cobro entró sobre un preapproval que `S6` ya había cancelado—, **`S33` no corre**: su evento pide
+  la principal `ACTIVE`. El complemento sigue pausado mientras la principal da servicio hasta su fin
+  de período, sin cobrar ni dar nada, y al llegar `S12` la orfandad lo apaga (`A5`, `S21`).
+  Declarado por `DEC-METH-015`: falla hacia no cobrar, no da acceso y no borra nada. **Causa**:
+  reanudarlo cobraría un complemento de una principal que ya se va (FASE 9 vuelta 1, §4 punto 3 de
+  `22-verificado-G2`).
 - **Un destaque recurrente sobre una ficha que no se ve con la principal viva se sigue cobrando**
   —`MODERATED`, bajada por excedente, `DRAFT` por `PB6`, `ARCHIVED` por `PB5`— (FASE 9 vuelta 1;
   owner 2026-09-26, `G2-3`). El acto que lo causa lo dice y ofrece la baja (`V/19` §4,

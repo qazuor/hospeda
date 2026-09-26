@@ -239,7 +239,9 @@ que **ante el choque se relee la fila existente**: si está `PENDING` y la lectu
 de verdad y no se hace nada. Las dos instancias paralelas siguen sin coordinarse: la escritura de
 `P1` sobre la fila usa la concurrencia optimista del cap. 03 §10.3, y la segunda que llegue
 encuentra el `SUCCEEDED`. **Y si el cobro aprobado lo ve primero el barrido y no un evento**, no lo
-escribe él: abre la marca `COBRO_SIN_REGISTRAR` (`B/02` §2.5, `B/09` §3) — **salvo cuando lo ve la
+escribe él: abre la marca `COBRO_SIN_REGISTRAR` (`B/02` §2.5, `B/09` §3) **sobre una fila que la
+lista del §3 da por receptora; sobre otra, el motivo que asigna la tabla de desempate del §3, y
+sobre la lápida del corte nada** (FASE 9 vuelta 1, §4 de `23-verificado-G3`) — **salvo cuando lo ve la
 relectura de `S6` y corre `S5`, que lo asienta en el mismo acto**: lo lee por id y corre `P1`,
 creando la fila si no existe, y **el aviso que llegue después es justamente el duplicado que este
 cruce descarta**, porque encuentra la fila ya `SUCCEEDED` (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25).
@@ -304,7 +306,7 @@ que el pago llegó tarde.**
 
 | qué pasó | motivo |
 |---|---|
-| ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1; `ABANDONED` por `S3`, `S28` o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7`, `S11` o `S26`— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
+| ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31`, **`S36`** o el espejo del `B/03` §10.1 (**`S36`**, FASE 9 vuelta 1, `N-G3V-04`: el criterio ya la cubría y la enumeración no); `ABANDONED` por `S3`, `S28` o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7`, `S11` o `S26`— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
 | **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4) | **`PAGO_TARDÍO_RECHAZADO`** |
 
@@ -314,6 +316,16 @@ que el pago llegó tarde.**
 > anterior a la pausa (`P1`; `DEC-SUB-010` ya se llevó los días al pausar); una `CANCEL_SCHEDULED`
 > con el cobro anterior a la cancelación (§2 `C2`, primera fila); y la predecesora de una sucesión
 > en curso (`S19`).
+>
+> **Cada una recibe el cobro por su propio camino, y ese camino es también el del asiento** (FASE
+> 9 vuelta 1, `N-G3V-02`): cuando el cobro lo vio el barrido y lo asienta una persona por el
+> motivo 19 (`B/02` §2.5), el asiento crea la fila de `payment` y corre **la regla que nombra esta
+> lista para el estado de la fila**, no `P1` a secas —`S2` tras releer el preapproval; `P1`; `P1`
+> más la extensión con `max` de `C2`, primera fila; la retención de `S19`— **o, sobre una
+> `GRACE_PERIOD` o `SUSPENDED` cuyas cuatro condiciones se cumplen, `S5` o `S7`**, el desenlace
+> que el evento habría corrido (abajo, *«la tabla la aplican los dos productores»*). Con `P1` a secas se perdía la extensión de la
+> `CANCEL_SCHEDULED` —Juan pagaba el período y no lo recibía— y la retención de la predecesora
+> —`S18` no encontraba el pago y nadie proponía devolverle el período doble—.
 >
 > **Y lo que no desempata por decisión: la lápida del corte** —`origen_de_lápida = CORTE`, `B/02`
 > §2.2; `B/21` §2.5—. Un cobro del
@@ -326,8 +338,15 @@ que el pago llegó tarde.**
 >
 > **La tabla la aplican los dos productores**: el evento del cobro y la comparación de cobros del
 > barrido (`B/09` §3). El barrido abre `COBRO_SIN_REGISTRAR` **sólo** sobre una fila que puede
-> recibir el cobro. Sobre cualquier otra abre el motivo que esta tabla asigna, con el cobro
-> colgado; sobre la lápida del corte no compara. Escrita por criterio y no por productor, una fila
+> recibir el cobro **o sobre una `GRACE_PERIOD` o `SUSPENDED` cuyas cuatro condiciones se
+> cumplen**, donde esta tabla no asigna nada porque no falla ninguna: el evento habría corrido `S5`
+> o `S7`, y el asiento del motivo 19 corre eso mismo (arriba, *«cada una recibe el cobro por su
+> propio camino»*). Sin esto el cobro en
+> vuelo en el instante de `S6` con su aviso perdido (`WH-5`) no abría nada y Juan quedaba
+> suspendido con el período pagado (FASE 9 vuelta 1, `N-G3V-01`; la `GRACE_PERIOD` que alcanza la
+> relectura de `S6` sigue asentándose por `S5` en el acto, `B/09` §3). Sobre cualquier otra abre
+> el motivo que esta tabla asigna, con el cobro colgado; sobre la lápida del corte no compara.
+> Escrita por criterio y no por productor, una fila
 > nueva —o una escrita a mano— cae en la fila del acto que la dejó sin poder cobrar y no en el
 > comodín.
 
@@ -357,10 +376,17 @@ como `COBRO_DUPLICADO`. Ése no es un caso ambiguo sino uno **diseñado**, el de
 §5.3, y su desenlace está declarado: el pago **se registra y queda pendiente de resolución**
 (cap. 03 §3.2, `S19`), **sin marca y sin evento crítico**. Poner la marca ahí sería tratar el camino
 normal ~~del cambio de plan desde grace~~ de una sucesión cuya predecesora entra en el grace durante
-la ventana —desde el grace ya no se declara, `DEC-SUB-021`— como un incidente — y además rompería cosas: una fila marcada
+la ventana —desde el grace ya no se declara, `DEC-SUB-021`— como un incidente ~~—y además rompería cosas: una fila marcada
 **no puede ser sucedida** (`B/03` §3.3) y acá ya hay un `sucede_a` apuntándola. Cualquier **otra**
 forma de fallar la 3 —otra fila viva que no es su sucesora, o la segunda mitad— sigue siendo
-divergencia y sigue poniendo la marca.
+divergencia y sigue poniendo la marca~~. **La marca no deshace una sucesión en curso**: bloquea
+*escribir* un `sucede_a` apuntando a la fila, no el que ya existe (`B/02` §2.2, `B/03` §3.3), así
+que la excepción no se apoya en eso sino en que el pago ya tiene dueño —`S19` y el cierre de
+`B/12` §5.3—. **Y vale falle la condición que falle, la 3 entera incluida**: no queda ninguna forma
+de fallar la 3 sobre la predecesora en curso que vaya a `PAGO_TARDÍO_RECHAZADO`. Si además hay otra
+divergencia —el `COBRO_DUPLICADO` que abre `P1`—, esa marca se abre sobre la predecesora sin
+deshacer la sucesión (FASE 9 vuelta 1, `F-8V1B2-005`: el par se contradecía dos líneas más abajo
+con la frase nueva)
 
 **Este § nombra ahora las dos transiciones y antes nombraba una.** Su condición 1 admite
 `GRACE_PERIOD` **o** `SUSPENDED` desde siempre, y su desenlace decía sólo `SUSPENDED → ACTIVE`:

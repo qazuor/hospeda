@@ -291,7 +291,8 @@ actual y cambio de plan).
 Dos cosas que salen de capítulos anteriores y que la pricing tiene que respetar:
 
 1. **Lee la versión vigente y vendible, nada más** (§2). Un plan retirado no aparece, aunque haya
-   gente pagándolo. **Y no ofrece ningún plan de una vertical que no admite altas**
+   gente pagándolo, **y `S1` lo exige también**, para quien llegue al checkout con un link viejo
+   (cap. 03 §3.2; FASE 9 vuelta 1, `N-G4V-07`). **Y no ofrece ningún plan de una vertical que no admite altas**
    —`situaciónDeVertical(vertical).admiteAltas` falso, desde el día 0 de su discontinuación—: muestra
    *«esta vertical ya no admite altas»* (§4 fila 20) (owner 2026-09-25; FASE 9 completa, 6a). La
    discontinuación no retira ningún plan, así que *«vendible»* solo no alcanzaba; `S1` lo exige igual

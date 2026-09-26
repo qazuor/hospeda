@@ -302,15 +302,25 @@ enuncia el propio §22.1 al cerrar: *«que `SUPER_ADMIN` esté al tanto y pueda 
 | **la agrupación** | por **tipo + sujeto**. Cientos de eventos de un mismo incidente colapsan en una línea con su conteo |
 | **lo que nunca se agrupa** | el **registro**. El evento crítico se escribe uno por uno, siempre. Lo que se agrupa es el aviso |
 
-**Y un tipo del resumen que no nace de una marca: la pausa corta que regaló un ciclo** ✚ (owner
-2026-09-26, `G5-3`; FASE 9 vuelta 1, `F-8V1B1-001`). La vuelta anticipada de una pausa sigue libre
-—*«volver cuando quiera»*, §26.2 del PDR a la letra—, y eso deja que una pausa de menos de un
-ciclo que cruza una fecha de cobro regale ese ciclo: el proveedor saltea el cobro mientras la fila
-está `paused` y, al volver, cobra normal en el ciclo siguiente (`PS-2`, `PS-5`, `PS-6`). Nuestro
+**Y un tipo del resumen que no nace de una marca: ~~la pausa corta que regaló un ciclo~~ la vuelta
+anticipada que regaló días** ✚ (owner
+2026-09-26, `G5-3`; FASE 9 vuelta 1, `F-8V1B1-001`; el predicado, FASE 9 vuelta 1, `N-2`). La vuelta anticipada de una pausa sigue libre
+—*«volver cuando quiera»*, §26.2 del PDR a la letra—, y eso deja que ~~una pausa de menos de un
+ciclo que cruza una fecha de cobro regale ese ciclo~~ **toda pausa que cruza una fecha de cobro y
+termina fuera del aniversario regale días, dure lo que dure**: el proveedor saltea el cobro mientras la fila
+está `paused` y, al volver, cobra normal en el ciclo siguiente (`PS-2`, `PS-5`, `PS-6`). **El regalo
+no depende de la duración sino de la aritmética**: lo pagado y no usado al pausar —del inicio de la
+pausa a la primera fecha salteada— no compensa lo usado sin pagar al volver —de la vuelta a la
+próxima fecha de cobro—. Juan cobra el día 1, pausa el 31/oct por tres meses y vuelve el 2/dic: pierde
+un día y usa treinta sin pagar, **29 días de regalo con una pausa de 32 días**, que el predicado
+viejo (*«a menos de un ciclo de su inicio»*) no listaba. Nuestro
 estado y el del proveedor coinciden en cada paso, así que **ninguna comparación del barrido lo ve**,
 y por eso tiene su propia línea. **El barrido diario (`B/09` §2.3) lista en el resumen las pausas
-terminadas por `S10` cuyo `fin_real` cayó a menos de un ciclo de su inicio y que cruzaron una fecha
-de cobro salteada**, con el sujeto, las dos fechas y el ciclo salteado; se lee de la
+terminadas por `S10` ~~cuyo `fin_real` cayó a menos de un ciclo de su inicio y que cruzaron una fecha
+de cobro salteada~~ que cruzaron al menos una fecha de cobro salteada y cuyo regalo neto es
+positivo** —(próxima fecha de cobro después de `fin_real` − `fin_real`) − (primera fecha salteada −
+inicio de la pausa), en días—, con el sujeto, las dos fechas, el ciclo salteado **y los días de
+regalo**; se lee de la
 `subscription_pause` (`B/02` §2.2) y de la fecha del próximo cobro, sin llamar al proveedor. **No
 abre marca ni corta nada**: es un detector, no un control —el costo aceptado se mide, no se
 impide— (`B/03` y `B/12`, *«lo que este capítulo NO cierra»*).

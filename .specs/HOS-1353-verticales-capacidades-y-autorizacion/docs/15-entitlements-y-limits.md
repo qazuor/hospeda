@@ -160,8 +160,9 @@ nada. **Falla hacia que el trial reciba de menos**, que es lo que el §10.5 pide
 comprado en los minutos que siguen a un alta cuyo primer cobro después se rechaza se quedaba
 cobrando sin aportar nada: sin título el pliegue lo descartaba, y su única condición de orfandad era
 *«la cuenta se borró»*. **Desde 4d queda huérfano si en ninguna vertical compatible de su producto
-hay una principal viva y cobrada ni un ancla viva** (`B/16` §4.2), así que `A5` lo corta.
-*«Cobrada»* se lee como en `S4`: con al menos un pago acreditado, **o** sucesora de una
+hay una principal viva y ~~cobrada~~ **pagando** ni un ancla viva** (`B/16` §4.2), así que `A5` lo corta.
+~~*«Cobrada»*~~ ***«Pagando»*** (`NUCLEO/01` §2; FASE 9 vuelta 1, `F-8V1D1-002`: no es el campo `cobrada` del
+contrato, que sobre una sucesora recién nacida dice `no`) se lee como en `S4`: con al menos un pago acreditado, **o** sucesora de una
 predecesora que venía pagando (`B/03` §8, `A1` y `A5`; owner 2026-09-25, FASE 9 completa, 9e). El
 descarte de este § y la orfandad de allá son las dos mitades: una deja de otorgar en el acto, la
 otra deja de cobrar.

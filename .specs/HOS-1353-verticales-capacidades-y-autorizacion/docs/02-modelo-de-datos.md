@@ -477,6 +477,23 @@ ninguna unidad se declara lista con un escritor declarado y sin implementar—, 
 por eso la razón de arriba no lo alcanza: `descomposicion.md` §4, con el desarrollo en
 `B/descomposicion` §4.)*
 
+### 2.7 Partner: la postulación y el vínculo ✚
+
+*(Es 2.7 y no 2.6 para no chocar con `NUCLEO/02` §2.6, el registro, que este capítulo citaba como «§2.6» a secas.)*
+
+FASE 9 vuelta 1, `F-8V1A2-005`: `03` §11 le delegaba a este capítulo *«dónde vive el vínculo»* y
+acá no había nada, así que el panel del §48 no tenía de dónde leer *«aprobada sin reclamar»*.
+
+| entidad | qué guarda | restricciones |
+|---|---|---|
+| **`postulacion`** | el correo que se escribió en el formulario, el estado de `03` §11 (`PENDIENTE` · `APROBADA` · `RECHAZADA`), el instante de resolución y **`partner_id`**, la fila de Partner que creó la aprobación | `partner_id` es nulo en `PENDIENTE` y en `RECHAZADA`, y **no nulo en `APROBADA`**: lo escribe `PP2` en el mismo acto en que crea la fila de Partner (`18` §2.5, *«lo único que existe es una fila»*). La unicidad de `PENDIENTE` por correo y la espera tras un rechazo son la guarda de `PP1`, no una restricción de la tabla |
+| **`partner`** | la cuenta de Partner (cap. 18), y **el vínculo: `owner_user_id`**, la columna que ya existe hoy (`partners.owner_user_id`, anulable) | `owner_user_id` es **nulo hasta el reclamo** y lo escribe **sólo** el acto de reclamar (`18` §2.4): en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla. **Ninguna otra escritura lo toca**, que es la regla de `18` §2.4 —*«nada se vincula hasta que la dirección se prueba»*— hecha restricción |
+
+**El panel lee *«aprobada sin reclamar»* así**: `postulacion.estado = APROBADA` y el `partner` de su
+`partner_id` con `owner_user_id` nulo. Es un dato y no un estado, como dice `03` §11, y por eso no
+hay transición que lo mueva: el reclamo escribe la columna y la postulación sigue `APROBADA`. **El
+camino B** del §17.3 —alta directa del admin, `18` §1.5— no crea postulación, así que no entra al panel.
+
 ---
 
 ## 3. Caché e invalidación · cierra `M-ARCH-02`
@@ -574,7 +591,7 @@ historial necesario. Nunca define qué es eliminable. **Lo define `DEC-DATA-005`
 **El riesgo concreto que esto cierra**: si la auditoría del §49 guardara eventos de dominio
 *completos* con su contenido, el hard delete no eliminaría nada y la promesa del §25 sería
 decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, no copias**
-(§2.6). Es una decisión de modelo tomada para que la retención sea posible.
+(~~§2.6~~ **`NUCLEO/02` §2.6**: el registro vive en esa mitad; FASE 9 vuelta 1). Es una decisión de modelo tomada para que la retención sea posible.
 
 ### 4.1 La lista
 

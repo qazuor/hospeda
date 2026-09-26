@@ -533,10 +533,10 @@ billing mueve varias publicaciones a la vez.
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
 | **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás, **con la misma disyunción y por la misma razón** (ver abajo). Ocupa cupo, así que **toma el lock y cuenta adentro**, como `PB1` |
 | **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla. **La autoriza la versión de piso**, que otorga *«recuperar lo suyo»* (cap. 02 §2.1): sin eso el paso 6 rechazaba a su única población, la que no paga |
-| **PB9** | `ARCHIVED` | día 180 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | **`PURGED`** | **es el hard delete** (cap. 02 §4.1): borra el contenido de esa ficha —textos, fotos, FAQ, horarios— y sus borradores, **y nada más**; nada de la persona (`DEC-DATA-005`). **Las reseñas de terceros se conservan sin mostrarse, y la conexión de calendario se desconecta: su token se revoca en el proveedor y se borra** (cap. 02 §4.1; FASE 9 vuelta 1, owner 2026-09-26, `G1-5`). **Exige `ARCHIVED`**: sale sólo de ahí, así que el aviso del archivado salió siempre antes (`F-8CA2-014`). **Relee la cobertura antes de borrar**, igual que `PB4` y `PB5`: si está cubierta, no borra y reinicia el reloj. **`PURGED` es final**: ninguna fila sale de ahí —`PB3` y `PB7` no la toman— y **no cuenta para el cupo**; el dueño ve que la ficha existió y que se borró por inactividad (cap. 19 §4 fila 20). ~~**Es también *«la ficha se borró»* de `B/16` §4.2**, igual que `PB12`: el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`)~~ **Es también *«se borra la ficha destino»* de `A6`** (`B/03` §8), igual que `PB12`: desde `K-9` `A6` es la única fila que cancela el addon `LISTING` que apuntaba a ella; la orfandad de `A5` ya no mira el borrado (FASE 9 vuelta 1, `F-8V1A2-002`). **Y en el mismo acto empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3; owner 2026-09-26, `G2-1`) (orquestador, FASE 8 completa, 2026-09-25). FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25 |
+| **PB9** | `ARCHIVED` | día 180 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | **`PURGED`** | **es el hard delete** (cap. 02 §4.1): borra el contenido de esa ficha —textos, fotos, FAQ, horarios— y sus borradores, **y nada más**; nada de la persona (`DEC-DATA-005`). **Las reseñas de terceros se conservan sin mostrarse, y la conexión de calendario se desconecta: su token se revoca en el proveedor y se borra** (cap. 02 §4.1; FASE 9 vuelta 1, owner 2026-09-26, `G1-5`). **Exige `ARCHIVED`**: sale sólo de ahí, así que el aviso del archivado salió siempre antes (`F-8CA2-014`). **Relee la cobertura antes de borrar**, igual que `PB4` y `PB5`: si está cubierta, no borra y reinicia el reloj. **`PURGED` es final**: ninguna fila sale de ahí —`PB3` y `PB7` no la toman— y **no cuenta para el cupo**; el dueño ve que la ficha existió y que se borró por inactividad (cap. 19 §4 fila 20). ~~**Es también *«la ficha se borró»* de `B/16` §4.2**, igual que `PB12`: el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`)~~ **Es también *«se borra la ficha destino»* de `A6`** (`B/03` §8), igual que `PB12`: desde `K-9` `A6` es la única fila que cancela el addon `LISTING` que apuntaba a ella; la orfandad de `A5` ya no mira el borrado (FASE 9 vuelta 1, `F-8V1A2-002`). **Y ~~en el mismo acto~~ el mismo acto, después de su commit y nunca dentro de su transacción, empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3.1; owner 2026-09-26, `G2-1`; el orden, FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: `A6` relee `fichaPurgada`, y un empuje anterior al commit la lee `no`) (orquestador, FASE 8 completa, 2026-09-25). FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25 |
 | **PB10** | `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` | **un admin la modera, con motivo** | **`MODERATED`** | es una acción administrativa del cap. 08 §3 (núcleo): permiso propio y auditada **con su motivo** (el campo *«por qué»* del cap. 08 §1.2). Sale del sitio público, **no cuenta para el cupo** y **no devuelve el trial** (§10.2; `V/11` §2). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 |
 | **PB11** | `MODERATED` | **un admin levanta la moderación** | `DRAFT` | **es la única salida de `MODERATED`**: el dueño no la republica —~~`PB1` sale sólo de `DRAFT`~~ `PB1` sale de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1)— y el sistema tampoco —`PB3` y `PB7` no la tienen en su `desde`—. Es la misma acción administrativa que `PB10`. FASE 8 completa, `F-8CA2-004`, owner 2026-09-25. **Escribe `listing.inactiva_desde` con el instante en que se levanta**: es el **hecho 6** del cap. 01 §1.2 (núcleo), *«se levanta la moderación»* —mientras la ficha estuvo moderada el dueño no podía actuar, y contar esa ausencia lo castigaría por una decisión nuestra, la razón del hecho 4— (owner 2026-09-25; FASE 9 completa, decisión 5b, `OW-1`) |
-| **PB12** | `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` | **el dueño la borra** | **`PURGED`** | **borra el contenido en el acto** —el mismo que `PB9`: textos, fotos, FAQ, horarios y sus borradores, nada de la persona (`DEC-DATA-005`), con las reseñas de terceros conservadas sin mostrarse y el calendario desconectado y su token revocado y borrado (FASE 9 vuelta 1, owner 2026-09-26, `G1-5`)—; **la fila queda y no vuelve**, porque `PURGED` es final. **No devuelve el trial** (§10.2; invariante 2 del cap. 04, núcleo). Es ~~*«la ficha se borró»* de `B/16` §4.2, así que el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`) —y es~~ *«se borra la ficha destino»* de `A6` (`B/03` §8), la única fila que cancela el addon `LISTING` que apuntaba a ella (`K-9`; FASE 9 vuelta 1, `F-8V1C1-013`), **y en el mismo acto empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3; owner 2026-09-26, `G2-1`). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 |
+| **PB12** | `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` | **el dueño la borra** | **`PURGED`** | **borra el contenido en el acto** —el mismo que `PB9`: textos, fotos, FAQ, horarios y sus borradores, nada de la persona (`DEC-DATA-005`), con las reseñas de terceros conservadas sin mostrarse y el calendario desconectado y su token revocado y borrado (FASE 9 vuelta 1, owner 2026-09-26, `G1-5`)—; **la fila queda y no vuelve**, porque `PURGED` es final. **No devuelve el trial** (§10.2; invariante 2 del cap. 04, núcleo). Es ~~*«la ficha se borró»* de `B/16` §4.2, así que el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`) —y es~~ *«se borra la ficha destino»* de `A6` (`B/03` §8), la única fila que cancela el addon `LISTING` que apuntaba a ella (`K-9`; FASE 9 vuelta 1, `F-8V1C1-013`), **y ~~en el mismo acto~~ el mismo acto, después de su commit y nunca dentro de su transacción, empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3.1; owner 2026-09-26, `G2-1`; el orden, FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: `A6` relee `fichaPurgada`, y un empuje anterior al commit la lee `no`). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 |
 
 ~~**La máquina tiene cinco estados y nueve transiciones**: `DRAFT`, `PUBLISHED`,
 `UNPUBLISHED_BY_BILLING`, `ARCHIVED` y **`PURGED`**, y de `PB1` a **`PB9`**.~~ **La máquina tiene
@@ -715,8 +715,9 @@ addon `LISTING`~~ Es el evento que `A6` (`B/03` §8) llama *«se borra la ficha 
 **No es el único**: `PB9` llega al mismo `PURGED`, así que también dispara `A6` (FASE 9 vuelta 1,
 `F-8V1A2-002`, `F-8V1C1-013`) (orquestador, FASE 8 completa, 2026-09-25). **Billing se entera por
 dos caminos** (owner 2026-09-26, `G2-1`, contra la recomendación: no se acepta ni un cobro de más):
-`PB9` y `PB12` le **empujan en el mismo acto** el hecho *«la ficha llegó a `PURGED`»*
-(`12-contrato…` §3), y como ese empuje no tiene transporte durable, **la red es la consulta
+`PB9` y `PB12` le **empujan ~~en el mismo acto~~ en el mismo acto, después de su commit** (FASE 9
+vuelta 1, `N-G2V-01`/`N-G4V-05`) el hecho *«la ficha llegó a `PURGED`»*
+(`12-contrato…` §3.1), y como ese empuje no tiene transporte durable, **la red es la consulta
 `fichaPurgada` del contrato §4.1, que billing lee en su barrido diario** (`B/09` §3). Las construye
 V6, dueña de `PB12`: la consulta y el empuje de `PB12`; el de `PB9` va con V9, que tiene esa fila
 (`descomposicion.md` §2).
@@ -743,7 +744,7 @@ así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`
 > 3. **Los avisos al dueño** al moderar, al levantar la moderación y al borrar no tienen fila en
 >    `V/19` §4, y la fila 20 de ahí dice *«se borró por inactividad»*, que no es la causa de una
 >    ficha que llegó a `PURGED` por `PB12`. **Cerrado en parte** (FASE 9 vuelta 1; owner
->    2026-09-26, `G2-3`): **el de moderar tiene fila** en `V/19` §4 y nombra los destaques
+>    2026-09-26, `G2-3`): **el de moderar tiene fila** en `V/19` §4 **y su correo en `NUCLEO/07` §6** (FASE 9 vuelta 1: el dueño no está presente cuando un admin modera, y la fila sola no le llegaba) y nombra los destaques
 >    recurrentes sobre esa ficha, que se siguen cobrando hasta que el dueño los dé de baja; los de
 >    levantar la moderación y de borrar siguen sin fila.
 > 4. **El contenido de una ficha moderada no tiene fin**: ningún reloj actúa en `MODERATED`, así
@@ -777,8 +778,13 @@ así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`
 >    cuando el barrido diario de billing lee `fichaPurgada: sí` (contrato §4.1), y si el cobro
 >    mensual de un destaque `LISTING` cae en ese día, entra. `S21` lo pone delante de una persona
 >    con la marca del motivo 14. **La red es la consulta, no el empuje**, y un borrado que no pasa
->    por `PB9` ni por `PB12` —el hard delete del admin, `F-8V1A1-003`— no empuja nada y depende
->    sólo de ella. **Causa**: el outbox del núcleo es de correos, y ningún hecho de verticales
+>    por `PB9` ni por `PB12` ~~—el hard delete del admin, `F-8V1A1-003`—~~ **—desde `G5-2` el admin
+>    no tiene ninguno (`NUCLEO/08` §3); el que queda es el borrado de la cuenta pedido por el propio
+>    usuario, pendiente en `NUCLEO/08` §1, y `fichaPurgada` contesta `sí` sobre la fila que ya no
+>    existe (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—** no empuja nada y depende
+>    sólo de ella. **Un empuje emitido antes del commit no sería un empuje perdido de vez en
+>    cuando: sería un empuje perdido siempre**, porque `A6` relee `fichaPurgada` y lee `no`; por eso
+>    sale después del commit (contrato §3.1; FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`). **Causa**: el outbox del núcleo es de correos, y ningún hecho de verticales
 >    tiene transporte durable (`12-contrato…` §3).
 
 ### Publicar ocupa cupo bajo un lock por `user + vertical`
@@ -894,6 +900,21 @@ otra cosa: para no publicar el borrador de `PB5`, que nunca fue candidato.
 que es el mismo que la bajada necesita para decidir *«la más reciente»*. Sale del registro
 append-only de eventos de dominio (cap. 08 §1.2 y §1.3, núcleo), igual que el origen que `PB7`
 consulta.
+
+**Y la ficha del corte, que no tiene ninguna publicación en ese registro, cuenta como publicada en
+el instante del corte** (FASE 9 vuelta 1, `N-G1-01`). R1 le dio estado y reloj a toda ficha
+preexistente, pero no el tercer dato que `UNPUBLISHED_BY_BILLING` consume: nació por la escritura
+`C` de la migración (`V/21` §2.4), no por `PB1`, así que el criterio no la ordenaba y la ficha que
+quedaba visible era la que la implementación recorriera primero. **La lectura es ésta, sin columna
+nueva y sin escribir en el registro un evento que no ocurrió**: el instante de publicación de una
+candidata es el de su último evento de publicación en el registro y, si no tiene ninguno, el de su
+escritura `C` —el mismo instante que el corte le pone en `inactiva_desde`—. Así una ficha del corte
+es siempre menos reciente que cualquiera publicada después del corte, que es lo que fue. **A igual
+instante —todas las del corte de un mismo dueño lo comparten— desempata la fila más vieja**, por
+`listing.created_at`, que el corte conserva del sistema viejo (`V/02` §2.5), **y después el id**: un
+orden total, que el aviso de la fila 19 puede escribir como *«vuelven primero las que cargaste hace
+más tiempo»*. **Una ficha del corte que el dueño publica por `PB1` pasa a tener su evento** y se
+ordena por él, como cualquier otra.
 
 **Y va escrito en el aviso, por la misma razón que el de bajada.** `DEC-SUB-008` lo dice y `V/19`
 fila 8 lo obliga para el excedente: *«si el cliente no puede leerlo, deja de ser predecible y se
@@ -1205,5 +1226,7 @@ nada.
 
 **Reclamar no es una transición de esta máquina**: es el acto que vincula el Partner a un usuario
 (cap. 18 §2.4), y la postulación sigue `APROBADA`. El panel lee *«aprobada sin reclamar»* como
-`APROBADA` sin ese vínculo: un dato, no un estado. Dónde vive el vínculo lo declara `V/02` junto
-con el resto de la cuenta de Partner (FASE 9 vuelta 1, `F-8V1A2-005`).
+`APROBADA` sin ese vínculo: un dato, no un estado. Dónde vive el vínculo lo declara `V/02` ~~junto
+con el resto de la cuenta de Partner~~ **§2.7: es `partner.owner_user_id`, nulo hasta el reclamo, y
+la postulación `APROBADA` apunta a su Partner por `partner_id`** (FASE 9 vuelta 1, `F-8V1A2-005`;
+la sección se escribió en la misma vuelta, porque la delegación no tenía texto del otro lado).
