@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-25
+updated: 2026-09-26
 status: CURRENT
 ---
 
@@ -47,7 +47,56 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-25, noche — la FASE 9 completa verificó los 133 caminos y aplicó las 33 decisiones
+## Última actualización: 2026-09-26, noche — la vuelta 1 del ciclo 8↔9 está CERRADA y propagada
+
+### El próximo paso exacto
+
+**La FASE 8 vuelta 2** —la segunda y **última** del tope de `DEC-METH-013`—: nueve agentes Opus
+ciegos entre sí y del historial (no leen `14-`…`28-` ni el worklog/handoff), mismos vectores que
+`DEC-METH-014`, sobre núcleo + dos épicas + contrato + `16-fase-7-del-paraguas.md`. Informes en
+`29-fase-8-vuelta-2/`, consolidado por causa, citas verificadas con
+`27-fase-8-vuelta-1/verificar-citas.py`, y **atribución contra los diffs** de la tanda del
+2026-09-26 (commits `204a766e93`…`b2ab682baf`, línea de base `285a02442f`). Formato a copiar:
+`27-fase-8-vuelta-1/`. Si la tanda generó críticos, se pasa a declarar con el owner
+(`DEC-METH-013` cláusulas 2–4); si no, se deja de girar. Después: FASE 5, 6 y lo pendiente de la
+FASE 7.
+
+**Antes de lanzarla, tres arreglos chicos de texto** (BAJA, sin decisión): `V/spec.md` §1 y §7
+todavía dicen que la pasarela no está decidida y que la pregunta del cargo puntual está sin
+responder (`DEC-MP-005`/`006`); el «NO cierra» 3 de `V/03` §9 (el aviso al moderar sin fila)
+quedó cubierto en parte por `V/19` §4 fila 24; y seis decisiones de hoy —`G2-2`, `G2-3`, `G3-1`,
+`G3-2`, `X-1`, `G5-3`— no figuran en ninguna fila de unidad de `B/descomposicion.md` §2 (van en
+B8, B10, B11 y B13 por sus capítulos).
+
+### Lo que pasó el 2026-09-26
+
+- **`DEC-MP-006` sin destino pendiente** (📌; pagos automáticos no contestó): propagado a
+  capítulos, HOS-1354/1369 y artifacts.
+- **FASE 8 vuelta 1** (`27-fase-8-vuelta-1/`): nueve ciegos → **100 hallazgos, 1 crítico** (R1: la
+  ficha vieja sin salida de `UNPUBLISHED_BY_BILLING`, así que el trial de `2g` no se alcanzaba),
+  12 racimos; 435 citas verificadas. Contra la del 24/09: 133/15.
+- **FASE 9 vuelta 1** (`28-fase-9-vuelta-1/`): atribución contra diffs (`00-`: R1 **generado** por la
+  tanda del 25/09; R2 y R4 preexistentes); resolución en cinco grupos (`01-`…`05-`); **decisiones
+  del owner en [`28-…/10-decisiones-del-owner.md`](./28-fase-9-vuelta-1/10-decisiones-del-owner.md)**
+  —19 preguntas (4 contra la recomendación: `G1-4`, `G2-1`, `G3-1`, `G5-3`), P1–P2, X-1, X-2,
+  Y-1, Y-2 y los lotes de OK del log—; aplicación (`11-`…`18-`, `26-`…`28-`); verificación
+  (`20-veredictos.md`, `21-`…`25-`): **86 dejan, 3 siguen, 11 declarados**, R1 cubierto; 23 casos
+  vecinos (5 ALTA, 0 críticos) cerrados después en `26-`/`27-`/`28-`.
+- **Registro**: log **126** decisiones (15 METH; nuevas `DEC-AUTH-002` y `003`; 📌 en
+  `DEC-ARCH-005`, `DEC-ARCH-006` impl. 4 y 5, `DEC-RF-001` partes 3 y 4, `DEC-RF-008`,
+  `DEC-TEST-001`, `DEC-SUB-010`, `DEC-MIG-002`, `DEC-AUTH-002`, `DEC-CONC-002`); «precisadas sin
+  SUPERSEDED» 34. Matriz **99 filas: 56 · 15 · 23 · 5 `UNKNOWN`** (`PA-6`, `GR-2`, `RC-8`, `RF-3`,
+  `EX-42` nueva: medir el `expire` de la `Preference` del upgrade viejo en el paso 0 del corte).
+- **Listas cerradas vigentes**: 22 motivos de marca, **15** acciones administrativas, 10 máquinas,
+  6 hechos del reloj, **`S1`–`S36`** (`S36` = revocación, desde `ACTIVE`/`GRACE_PERIOD`/
+  `CANCEL_SCHEDULED`/`PAUSED`; la predecesora tiene 10 salidas y `S18` corre en 8), `T1`–`T8`,
+  publicación 6 estados/12 transiciones, firma de la fuente 7 campos, **31 guards (18 verticales /
+  13 billing; `G13` en V4)**, 11 dependencias de billing sobre V2/V4/V6/V9, salvedad 4 del barrido
+  15 filas.
+- **Salida 4 hecha**: 24 artifacts republicados (V1, V7 y B1 sin cambios; tablero con `B4` tras
+  `B5`), 21 issues de Linear actualizados (4 sin cambios) y comentario de progreso en HOS-1352.
+
+## Histórico: 2026-09-25, noche — la FASE 9 completa verificó los 133 caminos y aplicó las 33 decisiones
 
 ### El próximo paso exacto
 
