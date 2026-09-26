@@ -1605,7 +1605,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-RF-001 — La revocación reembolsa y cancela en un solo acto; el botón de arrepentimiento queda fuera de alcance hasta la consulta legal
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **parte 3 precisada el 2026-09-26** (el reintento de un parcial nunca supera lo confirmado; ver su 📌) · **Decide**: owner
 - **Problema**: el §54 y `M-LEGAL-01` dan por supuesto poder reembolsar, pero no dicen **cuándo se
   reembolsa, qué pasa con la suscripción, ni qué hace el sistema cuando el proveedor rechaza sin
   motivo entendible**.
@@ -1640,6 +1640,10 @@ Cada entrada lleva, según §3.4:
      `DEC-CONC-002`: **lo que toca plata lo mira una persona**.
   3. **Ante el `2084`, el sistema NUNCA concluye que el pago no se puede reembolsar.** Reintenta
      con otro monto o cae al reembolso total. Está medido que ese mensaje miente.
+     **📌 Precisado el 2026-09-26, con OK del owner (FASE 9 vuelta 1, `F-8V1B1-005`).** *«Cae al
+     reembolso total»* vale cuando lo confirmado es el total —la revocación de esta entrada—.
+     Sobre un reembolso parcial, el reintento ante un `2084` parte el monto confirmado y **nunca
+     lo supera** (`D11`; `B/03` §6.1, `RF2`).
   4. **El botón de arrepentimiento queda FUERA DE ALCANCE por ahora**, por decisión explícita del
      owner (2026-09-16), hasta que lo consulte con un abogado.
 - **Motivo de la parte 1**: está medido que reembolsar **no** da de baja. Si alguien se arrepiente
@@ -2124,13 +2128,20 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-005 — El programa se parte en dos épicas autónomas: Verticales y Billing
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **el «Problema» precisado el 2026-09-26** (la pasarela ya está decidida; ver su 📌) · **Decide**: owner
 - **Problema**: el programa entero quedó detenido por **una sola cosa**: no está decidida la
   pasarela. Mercado Pago niega el cobro a demanda con un `403` comercial y el candidato que sí lo
   documenta tiene el alta en revisión manual de KYC. **Ese bloqueo alcanza al dinero y no alcanza
   a las capacidades**: qué puede hacer una cuenta, qué publica cada vertical, cómo se agregan los
   limits y quién está autorizado a qué no necesitan saber con qué se cobra. Se estaba esperando
   por una razón que no aplicaba a la mitad del programa.
+
+  **📌 Precisado el 2026-09-26, con OK del owner (FASE 9 vuelta 1, contradicción (b) de
+  `28-fase-9-vuelta-1/05-…`).** El *«Problema»* de esta entrada —la pasarela sin decidir— **dejó
+  de ser cierto el 2026-09-24** (`DEC-MP-005`: Mercado Pago). **La partición sigue en pie por la
+  otra razón que ya daba**: el bloqueo alcanzaba al dinero y no a las capacidades, y el corte
+  *«toca plata o no toca plata»* no dependía de la pasarela. *«Autónomas»* se lee hoy así: las
+  épicas se citan entre sí, y lo que cruza por contrato es la cobertura (`DEC-ARCH-006`).
 - **Las cifras que sostienen la decisión**:
 
   | | |
