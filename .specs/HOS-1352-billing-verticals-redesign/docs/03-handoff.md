@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-24
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -47,7 +47,57 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-25, tarde — la FASE 8 completa está CERRADA: los 14 racimos y los 2 críticos resueltos
+## Última actualización: 2026-09-25, noche — la FASE 9 completa verificó los 133 caminos y aplicó las 33 decisiones
+
+### El próximo paso exacto
+
+1. **La FASE 9 completa corrió con el criterio de `DEC-METH-004`** (carpeta
+   [`26-fase-9-completa/`](./26-fase-9-completa/00-veredictos.md)). Nueve agentes reejecutaron los
+   133 caminos y declararon el dominio de cada racimo: **86 dejaban de llegar, 36 seguían llegando
+   y 11 llegaban a otra cosa**. El «ninguno quedó abierto» del consolidado §5 **era falso**: 26 de
+   los 35 hallazgos del resto nunca se habían tratado, y varios arreglos abrían el caso vecino.
+2. **Los 33 puntos al owner tienen respuesta** ([`10-decisiones-del-owner.md`](./26-fase-9-completa/10-decisiones-del-owner.md)),
+   más 8 elecciones de los agentes ratificadas (9a–9h) y las asignaciones de unidad (10a–10e). Todo
+   aplicado a capítulos, núcleo, contrato, corte, log, matriz y **las dos sub-specs recorridas
+   enteras** (salidas 1, 2 y 3 de `DEC-METH-004`). Registros de aplicación: `11`–`21`.
+3. **➡️ LO PRÓXIMO**:
+   - **Medir `GR-1` con la sonda 49** (`f0be57a1…`, «HOS1352 s49c ventana de reintentos»): el
+     owner cambia el medio de pago desde su cuenta de MP **antes del 26/09 17:00 `-03`** y avisa la
+     hora; después de las 18:02 `-04` se lee con
+     `MANIFIESTO=$HOME/.hos1352-sonda-49-c.json INTENTO=c MP_ACCESS_TOKEN=$(cat ~/.mp-token-hos1352) node mp-probes/probe-49-la-ventana-de-reintentos.mjs leer`.
+     Si el reintento posterior usa la tarjeta nueva, `GR-1` cierra y B7 avanza sobre algo medido
+     (decisión 10e); si no se puede medir simple, B7 no depende de ella y se escribe qué no promete.
+   - **Salida 4 de `DEC-METH-004`**: los 25 issues de Linear y los ~27 artifacts describen el
+     diseño viejo. Qué quedó desactualizado en cada issue: `18-subspecs-verticales.md` §6 y
+     `19-subspecs-billing.md`. **Publica afuera: pedir OK al owner antes.**
+   - Después, decidir con el owner si corre una **8-bis** (el tope de dos vueltas de
+     `DEC-METH-013` cuenta desde acá), y recién ahí FASE 5, 6 y los cinco ítems de la FASE 7.
+
+### Lo decidido el 25/09 (noche) — NO relitigar
+
+Decisiones nuevas en el log: `DEC-SUB-022` (la sucesora de quien venía pagando entra en grace si
+falla su primer cobro; el barrido la corta si el proveedor canceló o pausó), `DEC-MIG-005` (el corte
+trata a la cartera como clientes nuevos: se conservan usuario, preferencias y fichas; **todo billing
+arranca de cero, trial incluido; sin apartamiento del PDR y sin abogado** — son conocidos del owner),
+`DEC-RF-008` (máquina de reembolso y acción administrativa 14), `DEC-ADDON-007` (los addons siguen a
+su título), `DEC-AUTH-001` (vertical inmutable, lo ajeno sólo en público, lo propio sin paso 6,
+caché por `user`), `DEC-ENT-006` (Partner: página y carrusel son claves; bit de moderación),
+`DEC-ARCH-011` (vertical que no admite altas: `S1` la exige; el fin de servicio invalida la
+vertical). Más 📌 en ~20 decisiones existentes. Cinco puntos quedaron contra la recomendación con
+las dos posiciones escritas: `2a`, `2d`, `2g`, `3c`, `6c`.
+
+### Conteos (recontados con script)
+
+Log **124 decisiones** (15 metodología, 109 funcionales; 6 `SUPERSEDED`; 29 precisadas; 8
+apartamientos). Matriz **98 filas: 55 `VERIFIED` · 15 `PARTIALLY` · 23 `NOT_SUPPORTED` · 5
+`UNKNOWN`** (`PA-6`, `GR-1`, `GR-2`, `RC-8`, `RF-3`; **`RN-3` cerró** el 25/09 a la noche:
+reactivar no recupera lo adeudado y vuelve a pausar). Motivos de marca **22**. Acciones
+administrativas **14**. Máquinas **10**. Hechos del reloj **6**. Suscripción `S1`–`S35`. Trial
+`T1`–`T8`. Publicación 6 estados / 12 transiciones. Firma del contrato **7 campos** (suma `piso`).
+
+---
+
+## Histórico: 2026-09-25, tarde — la FASE 8 completa está CERRADA: los 14 racimos y los 2 críticos resueltos
 
 ### El próximo paso exacto
 
