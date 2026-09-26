@@ -1064,7 +1064,8 @@ una regla: hace falta que nadie agregue esa transición.
   persona quiera —*«volver cuando quiera»*, §26.2 del PDR a la letra—, y con `PS-2`, `PS-5` y `PS-6`
   medidos el día de arranque y el de vuelta deciden cuánto se paga: quien cobra el 1, pausa el 30 y
   vuelve el 2 tiene el mes siguiente gratis, porque el proveedor salteó el cobro mientras estaba
-  `paused` y al volver cobra en el ciclo siguiente. Son **hasta tres ciclos gratis por año por
+  `paused` y al volver cobra en el ciclo siguiente. **Y no depende de cuánto dure la pausa**:
+  pausar tres meses y volver el segundo día de un ciclo regala 29 días (FASE 9 vuelta 1, `N-2`). Son **hasta tres ciclos gratis por año por
   cliente**, y **el sobrecobro inverso** —pausar el 5 y volver
   el 25— **sigue existiendo**: la persona paga el ciclo entero en el que casi no tuvo servicio.
   **Causa**: la premisa de `DEC-SUB-010` —*«vuelve el mismo día del mes en que pausó»*, así que la

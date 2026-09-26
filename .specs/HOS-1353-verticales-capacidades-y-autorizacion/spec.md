@@ -201,7 +201,9 @@ que **ninguno los haga por su cuenta**.
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y
 ése es exactamente el rastro que no se puede perder. **Y una acción administrativa nunca tiene
 `actor = sujeto`**: el paso 3 la rechaza y la hace otra cuenta con el permiso (cap. 17 §3.2 regla
-5; owner 2026-09-26, `G5-1`).
+5; owner 2026-09-26, `G5-1`). **Compara cuentas, no personas**: se declara, con detector en el
+resumen de `DEC-OBS-001`, y la confirmación por una segunda persona entra cuando haya otra persona
+con el permiso (owner 2026-09-26, `Y-2`).
 
 ### 3.8 El rol no se toca al perder el acceso
 

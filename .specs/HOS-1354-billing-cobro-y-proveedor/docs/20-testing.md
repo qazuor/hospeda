@@ -125,7 +125,8 @@ persona pide en medio del grace—~~ y, desde una `SUSPENDED` de
 tarjeta, **`S23`** —la baja pedida estando suspendida— y **`S27`** —la discontinuación de la
 vertical— la matan (las dos últimas, FASE 8 completa, `F-8CB1-002`), **y desde `ACTIVE` o
 `CANCEL_SCHEDULED` también `S36`** —la revocación del derecho de arrepentimiento que registra una
-persona (FASE 9 vuelta 1, M)—; el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
+persona (FASE 9 vuelta 1, M); **desde `PAUSED` también ocurre** (owner 2026-09-26, `X-2`), pero
+sale de un estado alcanzable, como `S22`, y no se cuenta—; el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
 numeradas**—. **`S6` y `S24` salieron de la cuenta sin dejar de ocurrir**: las dos salen de
 `GRACE_PERIOD`, que ahora es un estado **alcanzable** y no de declaración —como `S22` sale de
 `PAUSED`—; y `S6` desde `ACTIVE` sólo corre sobre un pagador con tarjeta, al que deja en una
@@ -538,7 +539,10 @@ manualmente todo billing»*. Los flujos críticos son los que mueven plata o cor
    `DEC-SUB-007`, `DEC-SUB-008`);
 4. **pausa** y reanudación, las dos formas: al vencer y anticipada;
 5. **cancelación** con servicio sostenido hasta el fin del período (`DEC-SUB-009`);
-6. **revocación**: reembolso total más cancelación en un solo acto (`DEC-RF-001`);
+6. **revocación**: reembolso total más cancelación en un solo acto (`DEC-RF-001`) — **y un caso
+   desde `PAUSED`** (owner 2026-09-26, `X-2`): el preapproval pausado se cancela (`EX-11`), la
+   `subscription_pause` queda con `fin_real`, el servicio se corta como en `S22` y `RF1` nace por el
+   total en el mismo acto; si la fila era predecesora, corre `S18`;
 7. **contratación y vencimiento de un addon**, con el excedente que dispara (~~8~~ renumerado: la
    lista saltaba del 6 al 8; FASE 9 completa, `DB-3`).
 

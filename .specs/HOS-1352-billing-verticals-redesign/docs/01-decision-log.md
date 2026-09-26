@@ -1605,7 +1605,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-RF-001 — La revocación reembolsa y cancela en un solo acto; el botón de arrepentimiento queda fuera de alcance hasta la consulta legal
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **parte 3 precisada el 2026-09-26** (el reintento de un parcial nunca supera lo confirmado; ver su 📌) y la parte 4 el mismo día (la revocación sin botón la ejecuta `S36`) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **parte 3 precisada el 2026-09-26** (el reintento de un parcial nunca supera lo confirmado; ver su 📌) y la parte 4 el mismo día (la revocación sin botón la ejecuta `S36`), **con `S36` extendida a `PAUSED` también ese día** (owner, `X-2`; tercera tanda, L4) · **Decide**: owner
 - **Problema**: el §54 y `M-LEGAL-01` dan por supuesto poder reembolsar, pero no dicen **cuándo se
   reembolsa, qué pasa con la suscripción, ni qué hace el sistema cuando el proveedor rechaza sin
   motivo entendible**.
@@ -1650,9 +1650,17 @@ Cada entrada lleva, según §3.4:
      `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** La parte 4 saca de alcance **el botón**,
      no el derecho. Hasta que el botón entre, la revocación que llega por correo o por soporte la
      registra una persona con *«cancelar una suscripción»* y motivo revocación, y la ejecuta
-     **`S36`** (`B/03` §3.2): desde `ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`, dentro de los
+     **`S36`** (`B/03` §3.2): desde `ACTIVE`, `GRACE_PERIOD` ~~o `CANCEL_SCHEDULED`~~, `CANCEL_SCHEDULED`
+     **o `PAUSED`**, dentro de los
      10 días, cancela el preapproval, corta el servicio en el acto y crea `RF1` por el total. Es la
      operación única de la parte 1, y es lo que el botón va a llamar.
+     **📌 Y sale también de `PAUSED`** (owner 2026-09-26, `X-2`; FASE 9 vuelta 1, `N-3` de
+     `25-verificado-G5`; `28-fase-9-vuelta-1/10-decisiones-del-owner.md`): la condición legal es el plazo, no el
+     estado, y quien pausó dentro de los 10 días del cobro volvía a la baja de `S22` más un
+     reembolso aparte —las *«dos cosas»* que la parte 1 prohíbe—. Desde `PAUSED` cancela el
+     preapproval pausado (`EX-11`: sobre una pausada se deja cancelar), corta el servicio como
+     `S22`, escribe `fin_real` en la pausa, crea `RF1` por el total y, si la fila es predecesora,
+     dispara `S18`.
 - **Motivo de la parte 1**: está medido que reembolsar **no** da de baja. Si alguien se arrepiente
   y sólo le devolvemos la plata, **le vuelven a cobrar el mes siguiente** — el peor final posible
   para un cliente que ya se estaba yendo.
@@ -1680,7 +1688,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-010 — La pausa es la del proveedor, empieza ya, dura meses enteros, y el que vuelve antes paga el ciclo siguiente completo
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-26, contra la recomendación** (la vuelta anticipada sigue libre; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-26, contra la recomendación** (la vuelta anticipada sigue libre; ver su 📌) — **y su 📌 precisado el mismo día, con OK del owner** (tercera tanda, L3: el regalo es toda pausa que termina fuera del aniversario, y el detector lista las de regalo neto positivo) · **Decide**: owner
 - **Problema**: el §26.4 pide que el usuario **no pierda período ya pagado por estar pausado**. El
   proveedor no lo hace solo, y —esto es lo nuevo— **tampoco nos deja arreglarlo**.
 - **Contexto medido** (sandbox 2026-09-16, con producción coincidiendo en el tercer punto):
@@ -1728,10 +1736,15 @@ Cada entrada lleva, según §3.4:
   **📌 Precisado el 2026-09-26, con OK del owner (FASE 9 vuelta 1, `G5-3`, contra la
   recomendación; `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** La vuelta anticipada **sigue
   libre** (§26.2 a la letra), así que la premisa *«vuelve el mismo día del mes en que pausó»* vale
-  sólo para quien vuelve en el fin previsto. Una pausa de menos de un ciclo que cruza una fecha de
-  cobro salteada regala ese ciclo, y el sobrecobro inverso existe. **Se acepta y se declara**
-  (`B/03` y `B/12`, *«lo que … NO cierra»*) y **se mide**: el barrido lista esas pausas en el
-  resumen de `DEC-OBS-001` (`NUCLEO/08` §4.1).
+  sólo para quien vuelve en el fin previsto. ~~Una pausa de menos de un ciclo que cruza una fecha de
+  cobro salteada regala ese ciclo~~ **Toda pausa que cruza una fecha de cobro salteada y termina
+  fuera del aniversario regala días, dure lo que dure** (hasta casi un ciclo), y el sobrecobro
+  inverso existe. **Se acepta y se declara**
+  (`B/03` y `B/12`, *«lo que … NO cierra»*) y **se mide**: el barrido lista ~~esas pausas~~ **las pausas con regalo neto positivo** —(próxima
+  fecha después de la vuelta − vuelta) − (primera fecha salteada − inicio)— en el
+  resumen de `DEC-OBS-001` (`NUCLEO/08` §4.1). *(FASE 9 vuelta 1, `N-2`, con OK del owner el
+  2026-09-26, L3: el predicado por duración era el ejemplo que motivó el detector, no la
+  aritmética del daño; pausar tres meses y volver el segundo día de un ciclo regala 29 días.)*
 
 - **Implicaciones**:
   1. **El early resume no perjudica nunca al cliente, porque el cobro es POR ADELANTADO.** Lo que
@@ -2220,7 +2233,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-006 — La frontera entre las dos épicas es un contrato único con dos implementaciones desde el día uno
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-25, con OK del owner** (FASE 9 completa, 9h: la firma gana el campo `piso` y pasa a siete campos; ver su 📌) — **precisada otra vez el 2026-09-26** (FASE 9 vuelta 1, G2-1: el primer evento de verticales a billing; y G4-2: tres entradas nuevas en la dirección inversa, `extenderTrial` la única escritura, y la capa de composición; ver sus implicaciones 4 y 5) · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-25, con OK del owner** (FASE 9 completa, 9h: la firma gana el campo `piso` y pasa a siete campos; ver su 📌) — **precisada otra vez el 2026-09-26** (FASE 9 vuelta 1, G2-1: el primer evento de verticales a billing; y G4-2: tres entradas nuevas en la dirección inversa, `extenderTrial` la única escritura, y la capa de composición; ver sus implicaciones 4 y 5) — **y precisadas las dos implicaciones el mismo 2026-09-26, con OK del owner** (tercera tanda, L1 y L2: el empuje sale después del commit; `ficha` gana `admiteDestaque`) · **Decide**: owner
 - **Problema**: `DEC-ARCH-005` parte el programa, y eso sólo sirve si la épica de verticales
   **puede correr sin que exista la de billing**. El punto de contacto no es teórico: el paso 5 de
   la resolución de autorización (cap. 17 §1.2) pregunta *«¿tiene trial, suscripción, cortesía o
@@ -2271,15 +2284,20 @@ Cada entrada lleva, según §3.4:
      mínimo con el que la condición B se puede cumplir.
   4. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G2-1`;
      `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** El contrato gana un segundo evento, el
-     primero de verticales a billing: *«la ficha F llegó a `PURGED`»*, emitido en el mismo acto de
-     `PB9` y de `PB12`, cuyo único consumidor es `A6`. No tiene transporte durable; su red es la
+     primero de verticales a billing: *«la ficha F llegó a `PURGED`»*, emitido ~~en el mismo acto de
+     `PB9` y de `PB12`~~ **por el mismo acto** de `PB9` y de `PB12`, **después de su commit** —como
+     el aviso de cobertura: su consumidor relee `fichaPurgada`, y un empuje anterior al commit se
+     descartaba siempre (FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`; owner 2026-09-26, L1)—, cuyo único
+     consumidor es `A6`. No tiene transporte durable; su red es la
      consulta `fichaPurgada(ficha) → sí | no` del §4.1, leída por el barrido diario de billing. Se
      eligió contra la recomendación (sólo la consulta, con hasta un día de atraso) porque el owner
      no acepta ni un cobro de más; el día de atraso vuelve sólo si el empuje se pierde, y queda
      declarado en `B/16` NO cierra.
   5. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G4-2`;
      `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** La dirección inversa del contrato gana
-     tres entradas: `ficha(idDeFicha) → { vertical, dueño }` y
+     tres entradas: ~~`ficha(idDeFicha) → { vertical, dueño }`~~ `ficha(idDeFicha) → { vertical, dueño,
+     admiteDestaque }` —el tercer campo es un sí o no, no el estado: lo exige `A1` (FASE 9 vuelta 1,
+     `N-G4V-06`; owner 2026-09-26, L2)— y
      `políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }`, que
      consume `A1`, y `extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA`, la
      **única escritura** de billing en verticales, que corre `T4` dentro del lock del trial. Sale
@@ -5964,7 +5982,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-AUTH-002 — Una acción administrativa nunca tiene actor = sujeto
 
-- **Fecha**: 2026-09-26 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-26 · **Estado**: ACCEPTED — **precisada el mismo día, con OK del owner** (compara cuentas, no personas; se declara con detector; ver su 📌) · **Decide**: owner
 - **Problema**: con roles aditivos, quien confirma una acción del catálogo de `NUCLEO/08` §3 podía
   ser el interesado, y `D11` se cumplía a la letra sin proteger nada.
 - **Decisión**: **una acción administrativa nunca tiene `actor = sujeto`.** El paso 3 la rechaza
@@ -5973,6 +5991,14 @@ Cada entrada lleva, según §3.4:
 - **Dónde**: `V/17` §3.2 regla 5, `NUCLEO/08` §3, criterio de `V5`.
 - **Origen**: `28-…/05-…` §5 `G5-1`, opción 1, la recomendada;
   `28-fase-9-vuelta-1/10-decisiones-del-owner.md`.
+- **📌 Precisado el 2026-09-26, con OK del owner (FASE 9 vuelta 1, `Y-2`, opción 1 con su
+  cláusula; `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** **La regla compara cuentas, no personas**: impide
+  operarse a sí mismo con la misma cuenta, y no impide a la misma persona con dos —una de staff y
+  otra de cliente—, que es justo lo que su costo le pide al que administra y es cliente. **Se
+  declara, con detector**: el resumen de `DEC-OBS-001` lista cada acción administrativa que mueve
+  plata, con actor y sujeto (`NUCLEO/08` §4.1), y la revisión es humana. **La confirmación por una
+  segunda persona entra cuando haya otra persona con el permiso**: hoy, con un owner que opera
+  solo, bloquearía la operación (`V/17` §3.2 regla 5 y su «NO cierra»; `27-cierre-Y-resto.md` §2).
 
 ---
 

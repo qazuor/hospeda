@@ -190,6 +190,8 @@ borrado de ficha sale de otra fila que `PB9` o `PB12`**, que es lo que hace corr
 
 **Y ninguna fila de esta tabla se ejecuta con `actor = sujeto`**: el paso 3 de la autorización la
 rechaza y la hace otra cuenta con el permiso (`V/17` §3.2 regla 5; owner 2026-09-26, `G5-1`).
+**Compara cuentas, no personas** (owner 2026-09-26, `Y-2`): la misma persona con dos cuentas la
+cumple, y lo que la ve es el detector del §4.1.
 
 **Y lo que le pone un caso ADELANTE a esa persona no es una fila de esta tabla: es un efecto de
 transición, así que ~~siguen siendo doce~~ no suma filas.** La distinción hay que decirla porque `DEC-RF-002`
@@ -324,6 +326,18 @@ regalo**; se lee de la
 `subscription_pause` (`B/02` §2.2) y de la fecha del próximo cobro, sin llamar al proveedor. **No
 abre marca ni corta nada**: es un detector, no un control —el costo aceptado se mide, no se
 impide— (`B/03` y `B/12`, *«lo que este capítulo NO cierra»*).
+
+**Y otro tipo del resumen que tampoco nace de una marca: las acciones administrativas que mueven
+plata** ✚ (owner 2026-09-26, `Y-2`; FASE 9 vuelta 1, `N-1` de `25-verificado-G5`). La regla 5 de
+`V/17` §3.2 —una acción administrativa nunca tiene `actor = sujeto`— compara **cuentas**, no
+personas: una persona con una cuenta de staff y otra de cliente se opera lo suyo desde la primera
+y la regla se cumple. **El resumen lista cada acción del catálogo del §3 cuya columna *«¿destructiva
+o mueve dinero?»* dice que mueve dinero** —registrar un pago manual, una cortesía, un grant, la
+revocación, un reembolso, asentar un cobro o una devolución de afuera, y las demás de esa
+columna—, **con su actor y su sujeto**, leídos del registro de auditoría del §1 sin llamar al
+proveedor, para que el owner la revise. **No abre marca ni bloquea nada**, y no distingue a la
+misma persona detrás de dos cuentas: la revisión es humana. **La confirmación por una segunda
+persona entra cuando haya otra persona con el permiso** (`V/17` §3.2, regla 5).
 
 ### 4.2 Y esto es un apartamiento del §22.1, registrado como `DEC-OBS-001`
 

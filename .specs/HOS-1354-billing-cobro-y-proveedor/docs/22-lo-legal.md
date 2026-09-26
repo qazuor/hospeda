@@ -108,7 +108,8 @@ una revocación puede llegar hoy por correo o por soporte. La registra una perso
 *«cancelar una suscripción»* y motivo revocación, y **`S36`** (cap. 03 §3.2) hace en un acto las
 dos mitades: cancela el preapproval —con la relectura de `S17` y el correo antes—, **corta el
 servicio en el acto** y crea `RF1` por el total del último pago, que espera la confirmación de
-`RF2`. Sale desde `ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`, dentro de los 10 días corridos del
+`RF2`. Sale desde `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` **o `PAUSED`** (este último, owner
+2026-09-26, `X-2`: la condición legal es el plazo, no el estado), dentro de los 10 días corridos del
 cobro. Sin esa fila, la revocación eran dos acciones —la baja de siempre y un reembolso— que alguien
 tenía que acordarse de hacer juntas, y desde `ACTIVE` la baja de siempre (`S11`) deja el período
 entero: Juan conservaba el mes **y** recibía el total. **Cuando entre el botón, va a llamar a esta

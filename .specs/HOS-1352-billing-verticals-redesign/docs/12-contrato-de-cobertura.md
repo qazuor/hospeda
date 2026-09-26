@@ -536,7 +536,9 @@ casos; las excepciones son dos**~~ **ocho de los diez casos; las excepciones son
 `S4`, que la deja en `GRACE_PERIOD`, que emite la misma `SUSCRIPCIÓN` que emitía en `ACTIVE`** —una
 sola: la sucesora, en `PENDING_AUTHORIZATION`, todavía no emite—. **`S6` —por su tercer evento, el único
 que la guarda de la sucesión en curso no frena (`B/03` §3.2)—, `S24` y `S36` siguen pudiendo ocurrir desde
-ese grace y no cambian la conclusión**: ~~las dos~~ **las tres** la dejan sin emitir (`SUSPENDED`, `CANCELLED`, `CANCELLED`; `S36`, FASE 9 vuelta 1, M). Y en
+ese grace y no cambian la conclusión**: ~~las dos~~ **las tres** la dejan sin emitir (`SUSPENDED`, `CANCELLED`, `CANCELLED`; `S36`, FASE 9 vuelta 1, M). **Y `S36` sale también de
+`PAUSED`** (owner 2026-09-26, `X-2`), alcanzable por `S8`/`S9`: la deja `CANCELLED`, sin emitir, y
+tampoco cambia la conclusión. Y en
 todas, si
 la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a
 `CANCELLED`.
@@ -1130,7 +1132,10 @@ emitir en una vertical discontinuada (§2.6; `F-8CC1-001`, owner 2026-09-25): es
 de un campo ya declarado, no un campo nuevo. **Y desde la FASE 9 completa `S1` lee `admiteAltas`**:
 la vertical que no admite altas no admite suscripciones nuevas ni sucesiones (`B/03` §3.2; owner
 2026-09-25, decisión 6a). Hasta entonces *«la lee billing»* lo afirmaban `V/02` §2.1 y este § y no
-lo cumplía ninguna fila; también es un consumidor más de un campo ya declarado.
+lo cumplía ninguna fila; también es un consumidor más de un campo ya declarado. **Y desde la FASE 9
+vuelta 1 `S1` lee también `vigente`/`vendible`**: una versión retirada no admite altas ni sucesiones
+aunque se llegue al checkout por un link viejo (`B/03` §3.2; `N-G4V-07`). Otro consumidor de un
+campo ya declarado.
 
 **Y quién construye las tres consultas se dice acá, porque no decirlo las dejó sin dueño durante
 cuatro días y cuatro vueltas del ciclo.** **Las construye `V2`**, la segunda unidad de la épica de

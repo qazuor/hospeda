@@ -66,7 +66,14 @@ suscripción de la que colgar el `payment` ni la marca, y `payment` exige una (�
 una: al recibirlo, el handler escribe una `subscription` **con la misma forma de fila que la
 lápida del corte** —la que fija R6 en esta tabla y en `B/21` §2.5; acá no se redefine— y su
 `provider_link`, y de ella cuelgan el `payment` y la marca (`B/09` §2.4). No suma entidad ni
-motivo. **Lo que la separa de la lápida del corte es quién la escribió** —el handler y no la
+motivo. **Y el mismo acto que la escribe manda cancelar su preapproval** (owner 2026-09-26,
+`X-1`; FASE 9 vuelta 1, `N-G3V-03`, `N-G1-02`): la fila nace `CANCELLED` —lo exige la forma de
+R6— sobre un preapproval que nadie había cancelado, y la llamada del handler, con la relectura y
+el correo antes que sin destinatario no bloquea (`B/03` §3.2), es la que lo vuelve verdad; si no se
+aplica, la reintenta el barrido por la salvedad 4 de `B/09` §3, que desde `X-1` cuenta las dos
+lápidas, y a los 3 días marca. El sistema nuevo nunca crea un preapproval que no nombre su fila
+(arriba), así que esa cancelación no alcanza a un cliente actual: alcanza a una autorización del
+viejo que el censo no vio, o a una sonda. **Lo que la separa de la lápida del corte es quién la escribió** —el handler y no la
 herramienta del corte: `origen_de_lápida = RECEPCIÓN`—, y esa diferencia decide el motivo de su
 cobro: sobre la de recepción, `PAGO_TARDÍO_RECHAZADO`; sobre la del corte, ninguno (`B/05` §3,
 owner 2026-09-26, `G3-1`). ⚠️ **Ese origen tiene que quedar escrito en la fila**, porque la marca

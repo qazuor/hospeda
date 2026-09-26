@@ -219,15 +219,15 @@ declara como riesgo nuestro.
 reintentar nunca, hay techo de intentos por ventana y hay multas por excederlo. Hoy eso lo absorbe
 Mercado Pago dentro del `preapproval`.
 
-### 5.2 Las ~~ocho~~ ~~seis~~ cuatro filas que siguen `UNKNOWN`
+### 5.2 Las ~~ocho~~ ~~seis~~ ~~cuatro~~ cinco filas que siguen `UNKNOWN`
 
 ~~De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
 un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: `RN-2`, `RN-3`,
 `GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
 **Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
-`DEC-METH-004`): **98 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ 4
-`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+`DEC-METH-004`): **~~98~~ 99 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ 5
+`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`; **`EX-42` entró el 26/09**, owner, `Y-1`). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
 fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
 nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condicionando el grace;
 `GR-1` salió el 2026-09-26), y qué condiciona cada una:
@@ -239,6 +239,7 @@ nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condic
 | `PA-6` ✚ | si el proveedor cancela el preapproval ante cualquier primer rechazo. **No decide** `DEC-SUB-022`: decide **cuánto dura** el grace de la sucesora de quien venía pagando, y el barrido lo acota a un día (owner 2026-09-25, 3c) |
 | `RC-8` ✚ | qué estado lee el pago en un contracargo. **Fuente documental**: `DEC-SUB-020` fija qué hacemos al leerlo, no cómo se comporta el proveedor |
 | `RF-3` | el plazo máximo para reembolsar. **Ya no bloquea** (`DEC-RF-007`): pasado el plazo la operación no se ofrece y la reparación es manual, asentada por `RF4` (`DEC-RF-008`) |
+| `EX-42` ✚ | si el `expire` de qzpay vence una `Preference` de Checkout Pro y la relectura lo confirma. **No es de esta épica**: condiciona el paso 1a del corte (`16-fase-7-del-paraguas.md` §4.2), que vence las del cambio de plan del viejo, y se mide en su paso 0 (owner 2026-09-26, `Y-1`) |
 
 ~~**Y hay una consecuencia de la pregunta de arriba que conviene tener presente**: esas cinco
 gobiernan el diseño del grace **sólo mientras el reloj sea del proveedor**. Con el reloj nuestro

@@ -330,9 +330,18 @@ no una excepción a la lista.
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
    que además es cliente registrándose su propia cuota— y `D11` (*«lo que toca plata lo confirma
    una persona»*) se cumplía a la letra sin proteger nada: la regla lo vuelve lo que quiso decir,
-   **otra** persona. Es una regla sin lista, vale para las quince acciones del capítulo 08 §3, y su
+   ~~**otra** persona~~ **otra cuenta** (no otra persona: ver abajo). Es una regla sin lista, vale para las quince acciones del capítulo 08 §3, y su
    costo es de una sola vez: quien administra y además es cliente necesita una segunda cuenta —la de
    admin separada de la de cliente— para que lo suyo lo opere otra. Lo prueba un caso de `V5`.
+   **La regla compara cuentas, no personas** (owner 2026-09-26, `Y-2`; FASE 9 vuelta 1, `N-1` de
+   `25-verificado-G5`): impide el error de operarse a sí mismo con la misma cuenta, y no impide a
+   una persona interesada con dos —desde `juan-admin`, registrar el pago manual de `juan-cliente`
+   cumple `actor ≠ sujeto` y el paso 3 no lo rechaza—; con un owner que opera solo, su cuenta de
+   admin puede ser la única con el permiso. **Se declara, con detector**: el resumen de
+   `DEC-OBS-001` lista cada acción administrativa que mueve plata con su actor y su sujeto
+   (`NUCLEO/08` §4.1), y la revisión es humana. **La confirmación por una segunda persona** —la
+   acción queda pendiente hasta que otra cuenta de staff la confirme— **entra cuando haya otra
+   persona con el permiso**: hoy bloquearía la operación, porque no hay segunda persona.
 
 ### 3.3 El actor no siempre es una persona
 
@@ -531,3 +540,11 @@ falla.
   del capítulo 15: el paso 7 pregunta si queda cupo, no cómo se calculó.
 - **Las superficies** —qué se oculta en la UI— son del capítulo 19, y con la regla del §45 por
   delante: *«autorización backend jamás depende de ocultar UI»*.
+- **La misma persona con dos cuentas** (owner 2026-09-26, `Y-2`; declarado por `DEC-METH-015`;
+  FASE 9 vuelta 1, `N-1`). La regla 5 del §3.2 compara cuentas: una persona con una cuenta de staff
+  y otra de cliente opera lo suyo desde la primera y la regla no lo ve. **Causa**: con un solo
+  operador, la confirmación por una segunda persona bloquea la operación, y vincular las cuentas de
+  una persona lo declara el propio interesado, así que lo elude quien quiera eludirlo. **Lo que queda
+  es el detector** —el resumen de `DEC-OBS-001` lista cada acción que mueve plata con actor y sujeto,
+  `NUCLEO/08` §4.1—, que no distingue a la persona: la revisión es humana. La confirmación por una
+  segunda persona entra cuando haya otra persona con el permiso.

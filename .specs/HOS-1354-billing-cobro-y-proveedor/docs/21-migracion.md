@@ -223,7 +223,12 @@ entre los estados vivos (cap. 02 §2.2).
 
 **El orden importa y es parte de la regla**: primero se cancela en el proveedor, después se
 escribe. Al revés quedaría una lápida sobre un preapproval que sigue vivo, que es peor que no
-tenerla — afirmaría que está cerrado algo que cobra.
+tenerla — afirmaría que está cerrado algo que cobra. **La lápida de recepción no puede seguir ese orden** —cuando llega su
+desconocido no hay nada cancelado, y el `payment` y la marca necesitan la fila en ese acto—, así
+que **el handler la escribe y manda cancelar su preapproval en el mismo acto**, y lo que la hace
+verdad es la salvedad 4 del cap. 09 §3: el barrido la relee, reintenta la cancelación y marca a los
+3 días (cap. 09 §2.4; owner 2026-09-26, `X-1`; FASE 9 vuelta 1, `N-G1-02`, que señalaba
+justamente eso: una lápida `CANCELLED` sobre un preapproval vivo que nadie cancelaba).
 
 **El cobro en vuelo del corte que sale bien no se devuelve** (owner 2026-09-26, `G3-1`, contra la
 recomendación; FASE 9 vuelta 1, `F-8V1B3-002`). Un cobro del preapproval viejo que el proveedor

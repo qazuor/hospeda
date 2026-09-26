@@ -469,7 +469,9 @@ algo que ya no está»*, y sin que ningún barrido lo viera, porque la instancia
   `A6`**, desde `ACTIVE` o `PENDING_AUTHORIZATION`, con el motivo **14** en `S21` (orquestador,
   FASE 8 completa, para *«cualquier llegada a `PURGED`»*; **`A6` sola**, FASE 9 completa, `K-9`
   de `05`). **Billing se entera por el empuje *«la ficha llegó a `PURGED`»*** que verticales emite
-  en el mismo acto de `PB9`/`PB12` (`12-contrato…` §3.1), y `A6` corre al recibirlo; **la red es
+  ~~en el mismo acto de `PB9`/`PB12`~~ **por el mismo acto de `PB9`/`PB12`, después de su commit**
+  (`12-contrato…` §3.1; FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: un empuje anterior al commit llegaba
+  con la ficha todavía sin `PURGED` y la relectura de `fichaPurgada` lo descartaba siempre), y `A6` corre al recibirlo; **la red es
   la consulta `fichaPurgada`** (contrato §4.1), leída por el barrido diario (`B/09` §3), con hasta
   un día de atraso sólo si el empuje se perdió (owner 2026-09-26, `G2-1`; NO cierra, abajo).
 
@@ -910,7 +912,7 @@ comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
-de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ **diecisiete** (la decimoséptima, `S36`, FASE 9 vuelta 1), desde que `S22`, `S23`,
+de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ **dieciocho** (la decimoséptima, `S36`, FASE 9 vuelta 1; la decimoctava, la lápida de recepción, owner 2026-09-26, `X-1`), desde que `S22`, `S23`,
 `S24`, `S25` y las **dos** terminales de la discontinuación, `S27` y `S28`, le agregaron las suyas
 (`B/03` §3.2), **y `S31` la suya** (FASE 8 completa, owner 2026-09-25)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
@@ -973,8 +975,10 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   `addon_product` (`B/02` §2.4), que es la misma que la orfandad del §4.2 lee desde 4d. Se nombra
   acá para que nadie lea el §2.2 —*«compatible»* al comprar— como la regla de emisión.
 - **El destaque de una ficha borrada todavía puede cobrar una vez más, si el empuje se pierde**
-  (FASE 9 vuelta 1; owner 2026-09-26, `G2-1`, elegida contra la recomendación). `A6` corre en el
-  acto del borrado por el empuje *«la ficha llegó a `PURGED`»* (`12-contrato…` §3.1), y eso cierra
+  (FASE 9 vuelta 1; owner 2026-09-26, `G2-1`, elegida contra la recomendación). `A6` corre ~~en el
+  acto del borrado por el empuje~~ **al recibir el empuje** *«la ficha llegó a `PURGED`»*
+  (`12-contrato…` §3.1), **que sale después del commit del borrado** (FASE 9 vuelta 1, `N-G2V-01`),
+  y eso cierra
   el caso en el camino principal. **Pero el empuje no tiene transporte durable** —el outbox del
   núcleo es de correos—: si se pierde, **la red es la consulta `fichaPurgada`** (contrato §4.1),
   que el barrido diario lee (`B/09` §3), y vuelve el día de atraso; si el cobro del complemento
@@ -999,7 +1003,10 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   reanudarlo cobraría un complemento de una principal que ya se va (FASE 9 vuelta 1, §4 punto 3 de
   `22-verificado-G2`).
 - **Un destaque recurrente sobre una ficha que no se ve con la principal viva se sigue cobrando**
-  —`MODERATED`, bajada por excedente, `DRAFT` por `PB6`, `ARCHIVED` por `PB5`— (FASE 9 vuelta 1;
+  —`MODERATED`, bajada por excedente, `DRAFT` por `PB6`, `ARCHIVED` por `PB5` **(su aviso de archivado
+  los nombra desde la FASE 9 vuelta 1, R3 caso `m`: `V/19` §4 fila 18)**, **o un borrador que nunca se
+  publicó, donde el acto es la compra y lo dice la pantalla de compra (`B/19` §4 fila 3-ter;
+  `N-G2V-02`)**— (FASE 9 vuelta 1;
   owner 2026-09-26, `G2-3`). El acto que lo causa lo dice y ofrece la baja (`V/19` §4,
   `NUCLEO/07` §6), que es la primera cláusula de `A5`; si la persona no actúa, el débito sigue sin
   tope. **Causa**: el objetivo existe (§41 del PDR) y la causa es un acto del dueño o una sanción.

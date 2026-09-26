@@ -53,3 +53,14 @@ donde están las opciones enteras, el costo y el ejemplo con Juan.
 | M | `S36` dispara `S18` cuando la fila es predecesora de una sucesión en curso, como `S23` y `S24` | **OK** |
 | P1 | el detector de la cortesía diferida con la sucesora ya en `GRACE_PERIOD` (`17-` §2) | **1** — el detector queda en `ACTIVE` y el hueco se declara en `B/09` §3 |
 | P2 | por dónde extiende un trial `SUPER_ADMIN` (`17-` §3) | **1** — acción de verticales fuera del contrato: `T4` con origen `SUPER_ADMIN` y motivo obligatorio, pasa el techo; la construye `V4` |
+
+## Tercera tanda: el cierre de los casos vecinos (`26-` y `27-`)
+
+| pregunta | qué | elige | ¿la recomendada? |
+|---|---|---|---|
+| `X-1` | quién cancela el preapproval de una lápida de recepción | **1** — la cancela el handler al escribirla, y entra en la salvedad 4 (el barrido reintenta) | sí |
+| `X-2` | si `S36` (la revocación) sale también de `PAUSED` | **1** — sí: cancela el preapproval pausado (`EX-11`), corta el servicio como `S22`, cierra la pausa y crea `RF1` por el total | sí |
+| `Y-1` | qué se hace con la `Preference` del upgrade del sistema viejo, que no vence | **1** — la herramienta del corte las vence por API (`expire` de qzpay) en el paso 1a y las relee; pide una medición en el paso 0 (fila nueva de la matriz, con OK aparte) | sí |
+| `Y-2` | si la regla 5 de `V/17` protege contra la misma persona con dos cuentas | **1** — se declara, con detector: el resumen de `DEC-OBS-001` lista cada acción administrativa que mueve plata, con actor y sujeto | sí |
+| L1–L6 | log: implicaciones 4 y 5 de `DEC-ARCH-006` (orden del empuje; `admiteDestaque`), 📌 de `DEC-SUB-010` (detector por regalo neto), 📌 de `DEC-RF-001` parte 4 (`S36` desde `PAUSED`), 📌 en `DEC-AUTH-002` (cuentas, no personas; detector); matriz: fila nueva `UNKNOWN` para medir el `expire` de la `Preference` (98 → 99, 5 `UNKNOWN`) | **OK** a las seis | — |
+| cláusula de `Y-2` | que el 📌 de `DEC-AUTH-002` diga que la confirmación por una segunda persona entra cuando haya otra persona con el permiso | **sí** | sí |
