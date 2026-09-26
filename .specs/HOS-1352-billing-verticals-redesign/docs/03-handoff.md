@@ -96,8 +96,21 @@ status: CURRENT
   partición con «la pasarela sin decidir»; el handoff decía «cinco ítems de la FASE 7» y `16-fase-7` dice
   4 pendientes de 6; el criterio de V4 en la descomposición («`cobrada: no` arranca el trial») se lee al
   revés del cap. 03 §2; «nueve pasos» de la autorización son siete más una precondición.
-- **➡️ LO PRÓXIMO**: decidir con el owner si corre una **8-bis** (el tope de dos vueltas de
-  `DEC-METH-013` cuenta desde acá), y recién ahí FASE 5, 6 y los ítems pendientes de la FASE 7.
+- **➡️ LO PRÓXIMO, decidido por el owner el 26/09 02:30 `-03`**, en este orden:
+  1. **Pagos automáticos: no se espera más.** *«Pagos automáticos no contestaron nada y ya no vamos a
+     esperar más.»* Registrar como 📌 precisión de `DEC-MP-006` (su cláusula 1 declaraba el cargo puntual
+     como destino con la habilitación «pedida en paralelo»): el mandato queda como modelo **sin destino
+     pendiente**. Propagar a capítulos (`B/06`, `B/12`), sub-specs de HOS-1354, la descripción de la
+     épica HOS-1354 en Linear («Lo que le queda al owner… pagos automáticos») y el artifact de la épica de
+     billing. La etiqueta `status-needs-owner-decision` de HOS-1354 ya se sacó (26/09 02:26).
+  2. **FASE 8 desde cero, otra vez** (vuelta 1 de 2 de `DEC-METH-013`; el owner eligió «desde cero» sobre
+     «acotada a los cambios»): nueve agentes Opus ciegos entre sí y del historial (no leen `14-`…`26-`),
+     mismos vectores que `DEC-METH-014` (A1 acceso cruzado · A2 máquinas/carreras/huérfanos · A3
+     datos/migración/acoplamiento · B1 doble cobro y pérdida de pago · B2 máquinas/idempotencia/carreras ·
+     B3 conciliación/datos/migración · C1 la costura · C2 liberación/coexistencia/migración · D1 coherencia
+     del conjunto), sobre núcleo + las dos épicas + contrato + corte. Informes en `27-fase-8-vuelta-1/` +
+     consolidado por convergencia; comparar contra la del 24/09 (133 hallazgos, 15 críticos). Formato:
+     `25-fase-8-completa/` (sólo para copiar el formato, no se les pasa).
 
 ### Lo decidido el 25/09 (noche) — NO relitigar
 
