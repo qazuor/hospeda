@@ -20,7 +20,8 @@ ROOTS = {
     "$V": SPECS / "HOS-1353-verticales-capacidades-y-autorizacion",
     "$B": SPECS / "HOS-1354-billing-cobro-y-proveedor",
 }
-REF = re.compile(r"`([^`\s]+\.(?:md|py|mjs)):(\d+)(?:[-–]\d+)?`")
+REF = re.compile(
+    r"`([^`\s]+\.(?:md|py|mjs)|[BVDN]/\d\d|nucleo/\d\d):(\d+)(?:[-–]\d+)?`")
 QUOTE = re.compile(r"«(.+?)»")
 WS = re.compile(r"\s+")
 
@@ -31,6 +32,12 @@ def norm(text: str) -> str:
 
 
 def resolve(raw: str) -> pathlib.Path | None:
+    short = re.fullmatch(r"([BVDN]|nucleo)/(\d\d)", raw)
+    if short:
+        base = {"B": ROOTS["$B"] / "docs", "V": ROOTS["$V"] / "docs", "D": ROOTS["$D"],
+                "N": ROOTS["$D"] / "nucleo", "nucleo": ROOTS["$D"] / "nucleo"}[short.group(1)]
+        hits = sorted(base.glob(short.group(2) + "-*.md"))
+        return hits[0] if len(hits) == 1 else None
     for key, root in ROOTS.items():
         for pre in (key + "/", key[1:] + "/"):
             if raw.startswith(pre):
@@ -57,6 +64,9 @@ def items(lines: list[str]) -> list[tuple[int, str]]:
     for i, line in enumerate(lines):
         s = line.strip()
         starts = s.startswith(("- ", "* ", "|")) or re.match(r"\d+\. ", s)
+        if not cur and s and not starts and not s.startswith("#"):
+            cur, first = [s], i + 1
+            continue
         if starts or not s or s.startswith("#"):
             if cur:
                 out.append((first, " ".join(cur)))
