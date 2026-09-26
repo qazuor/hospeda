@@ -1209,3 +1209,52 @@ residuos de borde quedaron declarados en los «NO cierra» de cada capítulo (`D
 
 - Rama pusheada el 25/09 sin forzar (PR #3360). El owner decidió **no reescribir** los commits con
   `Co-Authored-By` del 23-24/09; desde el 25/09 van sin atribución.
+
+---
+
+## 2026-09-25 (noche) — la FASE 9 completa: 133 caminos reejecutados, 33 decisiones, todo aplicado
+
+### Verificación (salida 1, criterio de `DEC-METH-004`)
+
+Nueve agentes Opus reejecutaron el camino de cada hallazgo sobre el texto corregido y declararon el
+dominio de cada racimo ([`26-fase-9-completa/00-veredictos.md`](./26-fase-9-completa/00-veredictos.md)).
+Resultado: **86 dejan de llegar, 36 siguen llegando, 11 llegan a otra cosa**. El cierre del 25/09
+a la tarde estaba sobredimensionado por dos causas: resoluciones que citaban sólo algunos miembros
+del racimo (26 de los 35 del resto nunca se trataron) y arreglos que abrían el caso gemelo (`T6`
+junto a `T2`, *«la principal más reciente»* frente a una sucesión abandonada, `PB11` sin reiniciar el
+reloj).
+
+### Decisiones
+
+Los **33 puntos al owner** se resolvieron en ocho lotes, más 8 elecciones de agentes ratificadas y
+las asignaciones de unidad ([`10-decisiones-del-owner.md`](./26-fase-9-completa/10-decisiones-del-owner.md)).
+Contra la recomendación: `2a` (no se conserva nada del billing viejo), `2d`, `2g` (la cartera
+arranca como clientes nuevos, trial incluido), `3c` (grace para la sucesora de quien venía pagando,
+con un control del barrido que propuso el owner) y `6c` (el botón de suscribirse manda a publicar a
+quien todavía no publicó, idea del owner). **Un error propio**: en `3c` presenté mal numeradas las
+opciones y el owner eligió sobre esa presentación; se re-preguntó. Otro: tomé un *«dale, sigamos»*
+como aprobación de un lote que no había contestado; se deshizo y se re-preguntó.
+
+### Aplicación
+
+Carriles sin archivos compartidos: verticales + contrato + núcleo, el corte, billing en dos tandas
+en serie (las dos tocan `B/03`), un barrido de pendientes cruzados y dos pasadas al log. Log 117 →
+**124**; matriz sin filas nuevas, `RN-3` cerrada (**55 · 15 · 23 · 5**). Listas cerradas movidas y
+recontadas: motivos 20 → 22, acciones 13 → 14, máquinas 9 → 10, hechos del reloj 5 → 6, `S31` →
+`S35`, `T7` → `T8`, firma del contrato 6 → 7 campos.
+
+### Sub-specs (salida 3)
+
+Recorridas enteras. La de billing estaba congelada en la mañana del 24/09 (pasarela *«sin decidir»*,
+B6 *«bloqueada»*) y **cuatro criterios de terminación pedían construir lo que el owner había
+revertido** (B7, B8, B9, B10). Toda regla nueva quedó con unidad.
+
+### Medición
+
+`RN-3` leída en producción (sólo `GET`): reactivar una pausada por mora retoma el ciclo siguiente,
+no recupera lo adeudado y el proveedor vuelve a pausar. `GR-1` queda para el 26/09 con la sonda 49
+(el owner cambia el medio de pago).
+
+### Lo que no se hizo
+
+Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-1`.
