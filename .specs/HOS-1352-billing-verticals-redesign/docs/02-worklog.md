@@ -1261,3 +1261,15 @@ no recupera lo adeudado y el proveedor vuelve a pausar. `GR-1` queda para el 26/
 ### Lo que no se hizo
 
 Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-1`.
+
+## 2026-09-26 (madrugada) — `GR-1` medida y la salida 4
+
+- **`GR-1` `VERIFIED`**: el owner cambió la tarjeta de la sonda 49 dentro de la ventana de reintentos y el
+  registro rechazado del 24/09 pasó a aprobado a las 00:31 `-04`, un minuto después del cambio, fuera del
+  lote del `:02`. Matriz 56 · 15 · 23 · 4. Se levantó la condición de `DEC-SUB-021` en log, capítulos y
+  sub-specs.
+- **Salida 4**: 27 artifacts reescritos por cuatro agentes (fichas de unidad e issue juntos) y
+  republicados en sus URLs; 25 descripciones de Linear reescritas y verificadas; etiquetas de bloqueo
+  vencidas sacadas y áreas agregadas, con OK del owner. Un detalle corregido a mano: siete descripciones
+  arrancaban con un comentario HTML copiado del ejemplo.
+- Pendiente: la 8-bis (sí/no) y `status-needs-owner-decision` en HOS-1354.
