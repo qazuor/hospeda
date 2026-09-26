@@ -204,9 +204,10 @@ lo que debía se repartió el 2026-09-24 entre `B/02` §2.3, `B/03` `S29` y §6.
 > ✅ **Contestada por `DEC-MP-006`: NO. El reloj de cobro es del proveedor, y el mandato
 > (`preapproval`) es el modelo canónico.** No por preferencia: **`EX-31` midió que el cargo puntual
 > contra credencial guardada devuelve `403` en las cuatro formas de pedirlo**, y el rechazo es del
-> **permiso**, no del pedido — la misma orden sin esos nodos entra con `201`. El cargo puntual queda
-> **declarado como destino**, con la habilitación pedida en paralelo y con la obligación de que la
-> interfaz del capítulo 13 no impida migrar. **Lo que el §5.2 anota abajo sigue valiendo entonces**:
+> **permiso**, no del pedido — la misma orden sin esos nodos entra con `201`. ~~El cargo puntual queda
+> **declarado como destino**, con la habilitación pedida en paralelo y~~ **El cargo puntual dejó de
+> ser destino el 2026-09-26** (📌 de `DEC-MP-006`: la habilitación no tuvo respuesta y no se espera
+> más), y queda la obligación de que la interfaz del capítulo 13 no impida migrar. **Lo que el §5.2 anota abajo sigue valiendo entonces**:
 > con el reloj del proveedor, las filas del cobro fallido **siguen siendo bloqueantes de diseño**.
 
 No se puede esquivar, porque decide **quién tiene el reloj**, y eso no se esconde detrás de una
@@ -283,8 +284,10 @@ rama del paraguas**, nunca al revés hasta el final.
 
 **Lo que sí queda en sus manos, y no traba ninguna unidad:**
 
-1. **Pedir la habilitación de *«pagos automáticos»*** por el canal comercial, en paralelo
-   (`DEC-MP-006`, cláusula 1): es lo que volvería disponible el cargo puntual declarado como destino.
+1. ~~**Pedir la habilitación de *«pagos automáticos»*** por el canal comercial, en paralelo
+   (`DEC-MP-006`, cláusula 1): es lo que volvería disponible el cargo puntual declarado como destino.~~
+   (tachado 2026-09-26) **Cerrado sin respuesta**: el owner decidió no esperar más y el mandato queda
+   sin destino pendiente (📌 de `DEC-MP-006`).
 2. ~~**Medir `GR-1` con el próximo rechazo mensual real** (owner 2026-09-25, 3a): hasta entonces la
    salida *«cambiá la tarjeta»* de `DEC-SUB-021` no se le promete al cliente.~~ (tachado 2026-09-26)
    **Hecho el 2026-09-26**: `GR-1` `VERIFIED` con la sonda 49; la salida se le puede decir al cliente.

@@ -108,8 +108,10 @@ y los dos por permiso, no por diseño**:
 
 Por eso **el reloj de cobro es del proveedor y el mandato es el modelo canónico** (`DEC-MP-006`). Es
 el límite duro de la directriz de `DEC-MP-005`: **un permiso comercial no se compensa con código**. El
-cargo puntual queda declarado como destino, con la habilitación de *«pagos automáticos»* pedida en
-paralelo, y la interfaz de este capítulo **no puede impedir esa migración**.
+~~cargo puntual queda declarado como destino, con la habilitación de *«pagos automáticos»* pedida en
+paralelo,~~ **el cargo puntual dejó de ser destino el 2026-09-26** (📌 de `DEC-MP-006`: la habilitación
+se pidió, no hubo respuesta y no se espera más; el mandato es EL modelo, sin destino pendiente), y la
+interfaz de este capítulo **igual no puede impedir una migración** — higiene de interfaz, no plan.
 
 ### 3.2 Lo que sí se usa sin preapproval: el cobro de ÚNICA VEZ por `/v1/orders`
 

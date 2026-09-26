@@ -76,8 +76,8 @@ con la pasarela, que son nueve. **Que el corte aguante no quiere decir que la co
 empezar**: son dos cosas distintas, y el §2.3 las separa.
 
 > ✅ **Y el 13 contestó lo mismo que hoy hace Mercado Pago** (`DEC-MP-006`, 2026-09-24): el reloj
-> de cobro es del proveedor y el mandato es el modelo canónico, con el cargo puntual **declarado
-> como destino**. **El reparto no se redibujó**, que es lo que este § prometía; lo que cambió es el
+> de cobro es del proveedor y el mandato es el modelo canónico, ~~con el cargo puntual **declarado
+> como destino**~~ **sin destino pendiente** (📌 del 2026-09-26: la habilitación no tuvo respuesta). **El reparto no se redibujó**, que es lo que este § prometía; lo que cambió es el
 > interior de B6 (§2). *(FASE 9 completa, salida 3 de `DEC-METH-004`.)*
 
 ### 1.2 La cadena que ordena
@@ -749,7 +749,8 @@ listas: una unidad lo está cuando todas sus dependencias están hechas.
 - ~~**El modelo canónico de cobro.** Es la pregunta de B6, y está planteada en la spec §5.1 con sus
   opciones y una recomendación. Esta descomposición la aísla; no la contesta.~~ **DECIDIDO el
   2026-09-24 por `DEC-MP-006`**: el reloj de cobro es del proveedor y el mandato es el modelo
-  canónico; el cargo puntual queda declarado como destino (spec §5.1).
+  canónico; ~~el cargo puntual queda declarado como destino~~ **sin destino pendiente desde el
+  2026-09-26** (📌 de `DEC-MP-006`; spec §5.1).
 - **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del
   código de ese momento a la vista.
 - **Qué se reescribe y qué se reutiliza.** Es FASE 5 y tiene su gate propio (`DEC-METH-003`) —

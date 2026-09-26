@@ -291,7 +291,8 @@ integración continua; **cómo se integra sin activar** es materia de la FASE 7 
 - ~~**Si el capítulo 13 adopta el cargo puntual como modelo canónico.**~~ **RESPONDIDA el 2026-09-24
   por `DEC-MP-006`: no.** El modelo canónico es el **mandato del proveedor**, porque `EX-31` midió que
   el cargo puntual contra credencial guardada **no está habilitado para nuestra aplicación** (`403` en
-  las cuatro formas de pedirlo). Queda declarado como destino, no descartado.
+  las cuatro formas de pedirlo). ~~Queda declarado como destino, no descartado.~~ **Sin destino
+  pendiente desde el 2026-09-26** (📌 de `DEC-MP-006`: la habilitación no tuvo respuesta).
 - **Qué se reescribe y qué se reutiliza del código actual.** Eso es FASE 5 y tiene su gate propio
   (`DEC-METH-003`), que la partición no toca.
 - **El orden de implementación dentro de la épica de verticales.** Es su spec, no ésta.
