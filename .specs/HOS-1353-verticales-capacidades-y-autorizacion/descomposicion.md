@@ -191,8 +191,10 @@ en vez de heredarlo escrito.
 FASE 9 completa, 5a), y esta épica tiene tres: trial (`03` §2, **V4**), publicación
 (`03` §9, V6) y postulación de Partner (`03` §11, V7). La más temprana del §3 es la de V4, y las
 ~~**seis de billing**~~ **siete de billing** no compiten por ser primeras: `DEC-ARCH-005` parte el programa en dos épicas
-donde verticales *«arranca»* y billing *«espera»*, y `B/descomposicion.md` §2.3 mide que hoy *«lo
-único que arranca es B2 y la interfaz de B1»*, ninguna de las dos con tabla de transiciones. Y el
+donde verticales *«arranca»* y billing *«espera»*, ~~y `B/descomposicion.md` §2.3 mide que hoy «lo
+único que arranca es B2 y la interfaz de B1»~~ **y en `B/descomposicion.md` §3 las primeras
+unidades de billing son B1 y B2** (esa medición del §2.3 quedó tachada el 2026-09-25: la pasarela
+está decidida y nada espera ya), ninguna de las dos con tabla de transiciones. Y el
 par que el guard cuenta nace ahí mismo: de los **cuatro** pares con dos destinos que el diseño
 declara hoy, `T1`/`T6` es de esta máquina y los otros tres —`S5`/`S19`, `S7`/`S19`, `S10`/`S25`—
 son de la tabla de suscripción, que construyen B7 y B8 (`B/20` §2). Naciendo en V4 el guard ve
@@ -402,10 +404,12 @@ leer billing —la filtración que la regla 2 manda mirar— o no tendría contr
 implementación de arranque no emite addons (contrato §5.1). Es el caso del §2.7 con otro guard:
 **nacería antes que el dato que compara**. **Va a `B10`**, que construye `addon_product` y la
 fuente `ADDON` (`B/descomposicion.md` §2, fila `B10`: `16` entero y `02` §2.4). `V/20` §2 conserva
-la fila, igual que conserva la de `G-R5`. **La asignación la escribe `B/descomposicion.md`, fuera
+la fila, igual que conserva la de `G-R5`. ~~**La asignación la escribe `B/descomposicion.md`, fuera
 de este documento; hasta entonces `G-R2-C` sigue sin unidad** y `B/20` §6 sigue diciendo 1.
 *(Propuesta de esta pasada, contra la sugerencia de los registros `15` y `17`; se señala al
-orquestador.)*
+orquestador.)*~~ **El owner decidió `B10` y no `V3`** (2026-09-25, FASE 9 completa, decisión 10c,
+contra la sugerencia de los registros `15` y `17`): `B/descomposicion.md` §2, fila `B10`, ya
+escribe la asignación, y `B/20` §6 pasa de decir 1 a decir 0.
 
 ---
 
@@ -441,12 +445,13 @@ la unidad se declara terminada.
 > **no había ningún lugar donde se comprobara que había ido**: la asignación vivía sólo en una
 > columna que nadie consulta al declarar una unidad lista, así que las nueve se podían declarar
 > terminadas, una por una, con **cero** guards escritos, y el tablero del §5 las marcaba verdes.
-> **Los ~~29~~ ~~30~~ 31 guards del programa están repartidos entre las 22 unidades —~~16~~ 17 en esta épica y 13 en la
+> **Los ~~29~~ ~~30~~ 31 guards del programa están repartidos entre las 22 unidades —~~16~~ 17 en esta épica y ~~13~~ **14** en la
 > otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22 criterios.** *(El
 > trigésimo es `G-R5-B`, de V6: FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **El trigésimo
-> primero, `G-R2-C`** —owner 2026-09-25, FASE 9 completa, 4e—, **todavía no está en ninguna de las
-> dos columnas**: esta pasada lo propone para `B10` (§2.10), y el 17 + 13 pasa a 17 + 14 cuando
-> `B/descomposicion.md` lo escriba.)*
+> primero, `G-R2-C`** —owner 2026-09-25, FASE 9 completa, 4e—, ~~todavía no está en ninguna de las
+> dos columnas: esta pasada lo propone para `B10` (§2.10), y el 17 + 13 pasa a 17 + 14 cuando
+> `B/descomposicion.md` lo escriba~~ **ya está en la columna de `B10`**, owner 2026-09-25,
+> decisión 10c (`B/descomposicion.md` §2, fila `B10`).)*
 >
 > **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
 > mismo conjunto, que es la clase de defecto que el contrato §2.1 acaba de cerrar. **La columna es

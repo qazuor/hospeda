@@ -190,9 +190,11 @@ era que alguien la hiciera en la lectura.
 
 ### 2.1 Sí es una entidad con estados propios, y es la novena máquina
 
-El §63 pide ocho máquinas y el capítulo 03 las tiene. Ésta es la novena, y se agrega al núcleo en
-vez de declararse acá — **`postulacion` está en el capítulo 01 §2.2 y sus transiciones en el
-capítulo 03 §11**.
+El §63 pide ocho máquinas y el capítulo 03 las tiene. Ésta es la novena **al agregarse** —hoy son
+**diez**, con el reembolso (`NUCLEO/01` §2; owner 2026-09-25, FASE 9 completa, decisión 5a): el
+ordinal *«novena»* es de cuándo se agregó, no una cuenta que este § recuente—, y se agrega al
+núcleo en vez de declararse acá — **`postulacion` está en el capítulo 01 §2.2 y sus transiciones en
+el capítulo 03 §11**.
 
 Se agrega porque tiene lo que define a una máquina: estados con reglas de movimiento que hay que
 impedir. La alternativa —leerla de dos fechas, como se hizo con la vertical en el capítulo 10
