@@ -102,6 +102,19 @@ con devolución de lo pagado»*.
 **no** da de baja y devolverle la plata sin cancelar le hace pagar el mes siguiente. El pedido se
 registra y se responde al instante; la plata sale con confirmación humana.
 
+**Y hasta que entre el botón, la revocación ya tiene fila** (owner 2026-09-26, `G5-4`; FASE 9
+vuelta 1, `F-8V1B1-004`). La parte 4 de `DEC-RF-001` sacó de alcance **el botón**, no el derecho:
+una revocación puede llegar hoy por correo o por soporte. La registra una persona con la acción
+*«cancelar una suscripción»* y motivo revocación, y **`S36`** (cap. 03 §3.2) hace en un acto las
+dos mitades: cancela el preapproval —con la relectura de `S17` y el correo antes—, **corta el
+servicio en el acto** y crea `RF1` por el total del último pago, que espera la confirmación de
+`RF2`. Sale desde `ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`, dentro de los 10 días corridos del
+cobro. Sin esa fila, la revocación eran dos acciones —la baja de siempre y un reembolso— que alguien
+tenía que acordarse de hacer juntas, y desde `ACTIVE` la baja de siempre (`S11`) deja el período
+entero: Juan conservaba el mes **y** recibía el total. **Cuando entre el botón, va a llamar a esta
+fila.** Si la consulta legal contesta que cada renovación abre ventana (punto 1 de abajo), lo que
+cambia es **cuál cobro** revoca la fila, no la fila.
+
 **Lo que queda abierto son tres cosas, y ninguna es el mecanismo:**
 
 1. **Si cada renovación abre una ventana nueva** o si corre una sola vez desde el alta. **Cambia

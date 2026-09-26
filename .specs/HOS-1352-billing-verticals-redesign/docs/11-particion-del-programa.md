@@ -10,8 +10,8 @@ status: CURRENT
 # 11 · La partición del programa en dos épicas
 
 > **Decisión del owner, 2026-09-18.** El programa se parte en dos épicas bajo la épica
-> principal: **Verticales**, que se puede implementar ya, y **Billing**, que espera a que se
-> pueda medir la pasarela. Lo que sigue no decide si partir: decide **por dónde pasa el corte**,
+> principal: **Verticales**, que se puede implementar ya, y **Billing**, que ~~espera a que se
+> pueda medir la pasarela~~ **esperaba a la pasarela (decidida el 2026-09-24, `DEC-MP-005`)**. Lo que sigue no decide si partir: decide **por dónde pasa el corte**,
 > y lo declara de una sola forma para que no aparezcan seis repartos como pasó con `qzpay`
 > (`F-1B-132`).
 
@@ -19,11 +19,16 @@ status: CURRENT
 
 ## 1. Por qué se parte, y qué lo destrabó
 
-La épica principal está bloqueada por una sola cosa: **no sabemos con qué pasarela vamos a
+~~La épica principal está bloqueada por una sola cosa: **no sabemos con qué pasarela vamos a
 cobrar.** `DEC-ARCH-004` puso el ciclo de vida de nuestro lado y dejó al proveedor detrás de un
 adaptador, pero el adaptador de referencia sigue sin decidirse: Mercado Pago niega el cobro a
 demanda con un `403` comercial, y el candidato que sí lo documenta —Mobbex— tiene el alta en
-revisión manual de KYC desde el 2026-09-18.
+revisión manual de KYC desde el 2026-09-18.~~
+
+(tachado 2026-09-26) **Así estaba el 2026-09-18**: la pasarela sin decidir. Se decidió el
+2026-09-24 (`DEC-MP-005`, §7), y **la partición sigue en pie por la razón del párrafo
+siguiente, que nunca dependió de la pasarela**: el dinero y las capacidades son dos materias
+(FASE 9 vuelta 1, contradicción (b)).
 
 **Ese bloqueo alcanza al dinero y no alcanza a las capacidades.** Qué puede hacer una cuenta, qué
 publica cada vertical, cómo se agregan los limits, quién está autorizado a qué: nada de eso

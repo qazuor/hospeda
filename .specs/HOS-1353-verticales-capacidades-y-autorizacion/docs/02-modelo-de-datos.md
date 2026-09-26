@@ -45,7 +45,7 @@ addon ──< addon_version ──┬──< addon_version_entitlement
 |---|---|---|
 | **`vertical`** | el espejo en base del enum de código, **su evento de activación**, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
 | **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` · **`UNIQUE(id, vertical)`**, para la FK compuesta del ancla de un grant de billing: *«el plan pertenece a esa vertical»* (`B/02` §2.4) sólo se puede expresar con ella (FASE 9 completa, `C-3`) |
-| **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
+| **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP. **Y `vertical`**, copiada de su plan al crearla e inmutable. **`vigente` es la única columna mutable de la versión**: no cambia lo que otorga una versión anclada, y `DEC-ARCH-001` versiona lo que tiene efecto (FASE 9 vuelta 1, `F-8V1A3-006`) | **FK compuesta `(plan_id, vertical)` → `plan(id, vertical)`**, sobre la `UNIQUE(id, vertical)` de `plan` · **`UNIQUE(id, plan_id)`**, que pide la FK de `B/02` §2.4 · con eso las dos parciales de abajo viven en una sola tabla (FASE 9 vuelta 1, `F-8V1A3-006`) · **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
 | **`plan_version_limit`** | qué clave limita y con qué valor | ídem |
 | **`addon`** ✚ | identidad y cosmética: slug, nombre, descripción. **Muta libremente** (`DEC-ARCH-001`) — es el `plan` del catálogo de addons (FASE 8 completa, `F-8CA3-011`) | `UNIQUE(slug)` |
@@ -154,6 +154,12 @@ real y se contradice con el primero: **no sirve mostrarle el valor de algo que n
 cobrar mientras se lo mostrás**. Es un valor declarado, no una derivación, así que cambiarlo el día
 que se quiera probar lo contrario es **una línea**.
 
+**Y lo mismo en las dos versiones no vendibles**: la de pre-trial y la de piso declaran
+`hereda Turista VIP = no`. La de piso la tiene toda persona en toda vertical
+(`12-contrato…` §2.5), así que un *«sí»* ahí le regala VIP a la plataforma entera y, por
+`DEC-ENT-003`, le bloquea a todos la compra (FASE 9 vuelta 1, `F-8V1A1-005`). Lo vigila la mitad
+*(d)* de `G-R3` (abajo, y cap. 20 §2).
+
 **El plan de pre-trial tampoco.** Es un `plan` con su versión, marcado **no vendible**, uno por
 vertical, y es lo que la fuente de trial apunta mientras el trial está en `PRE_TRIAL`. A diferencia
 del de trial, **sus entitlements y limits sí se guardan**: no hay de dónde derivarlos —no son los
@@ -220,7 +226,7 @@ y pueda volver a contratar. Son **tres** cosas y la lista es cerrada:
 | 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir. **Que esté la vigila `G-R3`** |
 | 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla, **reactivarla a borrador** (`PB8`, cap. 03 §9) **y borrarla** (`PB12`, cap. 03 §9) —el borrado se sumó a la fila: el dueño la borra ~~siempre,~~ con o sin plan, **desde cualquier estado salvo `MODERATED`** (`V/03` §9, ⚠️ de la moderación, punto 1; FASE 9 completa, `K-4`), igual que la ve o la exporta (FASE 8 completa, owner 2026-09-25)— | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3. **Que esté la vigila `G-R3`** |
 
-Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`.
+Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED` ~~, a~~ **y a** un `Turista Free` ~~y a un `Guest`~~; al `Guest` no hace falta: el paso 1 lo rechaza en toda operación que no sea una lectura pública, y una lectura no pasa por el 5 (cap. 17 §1.2; FASE 9 vuelta 1, `F-8V1A1-006`).
 
 **Leer lo propio no está en la lista, y no es un olvido** (owner 2026-09-25; FASE 9 completa,
 decisión 8d, `F-8CA1-013`). Un `SUSPENDED` que entra a su billing para regularizar resuelve contra
@@ -230,7 +236,7 @@ así que no necesitan clave y la lista sigue cerrada en tres.
 
 **La tercera se agrega porque `PB8` la necesita y nadie más se la puede dar, y hay que decir de
 dónde sale el agujero.** `PB8` es una operación de dominio: escribe estado del negocio y es
-auditable, así que pasa por **los nueve pasos** (cap. 17 §3.5). El capítulo 17 se ocupó de su
+auditable, así que pasa por **los ~~nueve~~ siete pasos** (cap. 17 §3.5). El capítulo 17 se ocupó de su
 **paso 4** —*«una ficha `ARCHIVED` acepta de su dueño verla, exportarla y reactivarla»*, §1.2
 precisión 1— y **no del 6**, sobre un diseño que declara dos veces que *«el paso 5 ya no rechaza a
 nadie y toda la defensa se apoya en el paso 6»* (cap. 17 §1.2 precisión 5, `12-contrato…` §2.5).
@@ -272,23 +278,26 @@ ahí la plataforma entera recibe de más, acá la población que menos puede def
 > alguien le siembra una clave comercial a la de piso o a la de pre-trial, **toda la plataforma la
 > recibe gratis, para siempre, sin consumir ningún trial**; y si alguien siembra la de piso **sin**
 > lo que tiene que otorgar, la recuperación y el alta quedan inejecutables sin que nada lo señale.
-> Las vigila el mismo guard, con **tres** mitades:
+> Las vigila el mismo guard, con ~~**tres**~~ **cuatro** mitades (la cuarta, FASE 9 vuelta 1, `F-8V1A1-005`):
 >
 > **`G-R3` — (a)** ninguna de las dos versiones no vendibles de una vertical otorga una clave de la
 > clase comercial ni ningún entitlement medido; **(b)** la versión de piso de cada vertical **otorga
 > las dos claves de las filas 2 y 3** de la lista cerrada de arriba; **(c)** la capacidad de
 > activación está en la de pre-trial **si y sólo si** la vertical declara evento y su plan de trial
-> tiene días > 0.
+> tiene días > 0; **(d)** ni la versión de trial ni las dos no vendibles declaran `hereda Turista
+> VIP`: es una columna y no una clave, así que (a) no la ve. Mensaje propio: *«herencia de VIP fuera
+> de una versión vendible»*.
 >
-> **El mensaje nombra la mitad que falló** —*«clave de más»*, *«clave de piso que falta»* o
-> *«activación fuera del si y sólo si»*—, nunca uno solo para las tres: son tres arreglos distintos
+> **El mensaje nombra la mitad que falló** —*«clave de más»*, *«clave de piso que falta»*,
+> *«activación fuera del si y sólo si»* o *«herencia de VIP fuera de una versión vendible»*—, nunca
+> uno solo para las ~~tres~~ cuatro: son ~~tres~~ cuatro arreglos distintos
 > y un texto único afirmaría más de lo que el predicado verificó en esa corrida. Es la misma
 > condición con la que `G-R6-B` vigila sus mitades (cap. 20 §2 y §2.1).
 >
 > Se comprueba sobre el catálogo, en CI. Cada mitad tiene su dominio y conviene no leerlos de más:
 > *(a)* alcanza **las dos** versiones no vendibles; *(b)* alcanza **sólo la de piso**, porque es la
 > única cuya lista de lo que otorga el corpus declara cerrada; *(c)* es un bicondicional sobre **una**
-> clave. Es una verificación automática y no una revisión, porque es el único lugar donde un error
+> clave; *(d)* alcanza **las tres** versiones no vendibles o de trial y **una** columna. Es una verificación automática y no una revisión, porque es el único lugar donde un error
 > de siembra no lo ve nadie.
 
 ### 2.2 Compromiso y ciclo de vida
@@ -338,7 +347,7 @@ cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la 
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**: es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
+| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**, **y nace en el estado que le da la tabla de traducción de `V/21` §2.4**, en la misma migración (FASE 9 vuelta 1, R1): es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
@@ -495,7 +504,7 @@ Invalidan ~~la entrada de un `user + vertical`~~ **las entradas del `user`, en t
 | toda transición de la máquina de trial | ídem |
 | se otorga o se revoca una cortesía o un grant, **o se le ancla una vertical nueva a un grant vivo** | son fuentes independientes (§2.4). **El anclaje es la tercera escritura que cambia la cobertura** (`12-contrato…` §2.8) e invalida ~~**la entrada de esa vertical**~~ **las del beneficiario** (regla 3) —**la de esa vertical** es justo la que hasta ese instante no tenía fuente `GRANT`— |
 | se activa o vence un addon | ídem |
-| se publica una versión nueva de un plan al que hay suscripciones ancladas | cambia lo que esa versión otorga |
+| ~~se publica una versión nueva de un plan al que hay suscripciones ancladas~~ | ~~cambia lo que esa versión otorga~~ **Tachada** (FASE 9 vuelta 1, `F-8V1A3-015`): la suscripción lee su versión anclada, que es inmutable; una versión nueva no la cambia. La que sí invalida es la de los grants, que leen la vigente (fila de abajo) |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
 | **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: ~~invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope~~ **lo que cambia es la entrada de esa vertical; desde la regla 3 se invalidan igual todas las del beneficiario**, porque ese plan puede otorgar claves globales o herencia que valen en las otras (FASE 9 completa, 8a) |
@@ -571,7 +580,7 @@ preguntar en el momento de archivar (cap. 03 §9).
 
 | | qué | por qué |
 |---|---|---|
-| **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** (`PB12`, cap. 03 §9), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
+| **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** (`PB12`, cap. 03 §9), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25). **«Fotos» incluye su copia en el almacenamiento externo.** **Y `PURGED` conserva la fila**: el borrado es del contenido, no un `DELETE` de `listing`, así que ningún `ON DELETE CASCADE` corre y lo que cuelga de la ficha se trata acá, uno por uno —nadie lea *«hard delete»* como borrar la fila— (FASE 9 vuelta 1, `F-8V1A3-010`). **Las reseñas de terceros se conservan, sin mostrarse**: son de quien las escribió (`DEC-DATA-005` protege a las personas). **La conexión de calendario se desconecta, y su token se revoca en el proveedor y se borra**: un token vivo sobre una ficha que no existe es riesgo sin servicio (owner 2026-09-26, `G1-5`) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
 | ~~**Se anonimiza** al día 180~~ | ~~los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección~~ **Este renglón sale de la retención**: el proceso de archivar y purgar **no anonimiza nada** (`DEC-DATA-005`) | ~~el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso~~ la retención es de fichas, y *«el usuario no es un dato operativo»* (`DEC-DATA-005`) |
 | **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un ~~hash irreversible~~ seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`) —, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad (`DEC-TRIAL-004`) y sus datos personales, **también dentro de eventos de dominio y del outbox** (`DEC-DATA-005`) | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca (`DEC-DATA-005`); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
 
@@ -732,7 +741,11 @@ son los que no dependen de que ningún camino de código se acuerde:
 > la FK impide que la fila caiga **por arrastre** del borrado de la cuenta, pero **ninguna
 > restricción declarada impide un `DELETE` directo sobre `trial`**. Hasta que exista una, esa mitad
 > del invariante depende de que ningún camino de código la borre, que es lo que este § dice que los
-> de arriba no hacen. Con qué se rechaza un `DELETE` directo no está decidido acá.
+> de arriba no hacen. ~~Con qué se rechaza un `DELETE` directo no está decidido acá.~~ **Se
+> rechaza con un trigger que rechaza todo `DELETE` sobre `trial`**, en el carril de extras
+> (`packages/db/src/migrations/extras/`): ningún camino legítimo borra esa fila, porque el borrado
+> de la cuenta la anonimiza (FASE 9 vuelta 1, `F-8V1A3-013`). Con eso el cap. 04 §2.1 (núcleo)
+> queda cierto sin cambiar el conteo de seis.
 
 **Los demás no los puede sostener la base** —dependen de la resolución en el servicio— y son el
 capítulo 04 (núcleo). Lo que importa es la distinción: los de arriba **no admiten un camino que los

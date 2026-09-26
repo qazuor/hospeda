@@ -52,12 +52,13 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G3 | una clave usada en código **no existe en la base**, o una de la base **no existe en el catálogo** — las dos direcciones | cap. 02 §1.2 |
 | G4 | una transición de suscripción o de trial **escribe roles** | cap. 17 §4.4 (épica de verticales) |
 | G5 | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes | cap. 15 §4.2 (épica de verticales) |
-| G6 | una autorización **decide sólo por rol** | invariantes §64.12 y §64.13 |
+| G6 | **dos mitades, con dos mensajes**. **(a)** una autorización **decide sólo por rol**; **(b)** *«un rol entró al conjunto efectivo»*: una construcción del conjunto efectivo lee un rol —el cargador que le da el conjunto entero a `SUPER_ADMIN`, `ADMIN`, `EDITOR` o `CLIENT_MANAGER`— (FASE 9 vuelta 1, `F-8V1A1-002`) | invariantes §64.12 y §64.13; cap. 17 §4.3 |
 | G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
+| **G13** ✚ | la implementación **de arranque** de `cobertura()` llega a producción | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. **Lo construye `V4`**, con la implementación de arranque: falla sobre un build destinado a producción, no sobre la rama, así que calla hasta que un build apunte a producción y la defensa existe desde el primer día. **Vino de `B/20` §2** (owner 2026-09-26, `G5-5`): allá lo construía `B4` con la razón *«el consumidor del contrato es billing»*, que era falsa —el consumidor de `cobertura()` es verticales— |
 | G-R2 | el pliegue del conjunto efectivo **recibe una fuente de clase `COMPLEMENTO`** cuando el conjunto no tiene ninguna de clase `TÍTULO` viva **que no sea de `tipo: TRIAL`** — en cualquiera de sus dos tramos. **El caso que lo distingue de la versión anterior**: un addon `USER` o `GLOBAL` comprado con la suscripción de otra vertical, contra una vertical cuyo único título es un trial, **no entra** (`V/11` §5.3; FASE 8 completa, `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`) | cap. 15 §2.6, `V/11` §5.2–§5.3 |
 | G-R2-B | una fuente `GRANT` transporta **un plan de otra vertical** que la de la fuente | cap. 15 §2.5, `12-contrato…` §2.8 |
 | **G-R2-C** | una fuente `ADDON` de alcance `USER` o `GLOBAL` **se emite en una vertical que no está entre las compatibles de su producto** (`addon_product`, `B/02` §2.4). **Gemelo de `G-R2-B`**: aquél vigila que un grant no transporte el ancla de otra vertical, éste que un addon global no aparezca donde su producto no llega | `12-contrato…` §2.7; owner 2026-09-25, FASE 9 completa, decisión 4e, `F-8CA1-008`. **Lo construye `B10`** de la otra épica (owner 2026-09-25, FASE 9 completa, decisión 10c; `B/descomposicion.md` §2, fila `B10`) |
-| G-R3 | **tres mitades, con tres mensajes**. **(a)** una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; **(b)** la versión de piso de una vertical **no otorga** alguna de las **dos claves** que las filas 2 y 3 de su lista cerrada declaran —*«contratar una suscripción»* y *«recuperar lo suyo»*—; **(c)** la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
+| G-R3 | ~~**tres mitades, con tres mensajes**~~ **cuatro mitades, con cuatro mensajes** (la cuarta, FASE 9 vuelta 1, `F-8V1A1-005`). **(a)** una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; **(b)** la versión de piso de una vertical **no otorga** alguna de las **dos claves** que las filas 2 y 3 de su lista cerrada declaran —*«contratar una suscripción»* y *«recuperar lo suyo»*—; **(c)** la capacidad de activación no cumple el «si y sólo si»; **(d)** ni la versión de trial ni las dos no vendibles declaran `hereda Turista VIP`: es una columna y no una clave, así que (a) no la ve. Mensaje propio: *«herencia de VIP fuera de una versión vendible»* | cap. 02 §2.1 |
 | G-R3-B | una transición **disparada por el reloj** otorga algo, en vez de quitar | cap. 17 §3.4 |
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las ~~nueve~~ **diez** máquinas (la décima, el reembolso: owner 2026-09-25, FASE 9 completa, decisión 5a), en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
@@ -306,7 +307,7 @@ sola** clave, la de activación. La lista de lo que el piso otorga es de **tres*
 catálogo al que le faltara la fila 2 o la 3 **pasaba en verde**, y el desenlace de cada ausencia lo
 escribe el propio capítulo: sin la 3, *«esa persona no puede ejecutar ninguno de los ~~cuatro~~ cinco
 reinicios y el día 180 le borra el contenido»* (cap. 02 §2.1); sin la 2, un `TRIAL_EXPIRED`, un
-`Turista Free` y un `Guest` **no pueden suscribirse** —*«queda afuera para siempre»*
+`Turista Free` ~~y un `Guest`~~ **no pueden suscribirse** (el guest se registra antes de suscribirse, y entonces es `Turista Free`: FASE 9 vuelta 1, `F-8V1A1-006`) —*«queda afuera para siempre»*
 (`12-contrato…` §2.5)—. **La mitad `(b)` es esa dirección.** Es la misma corrección que la cuarta
 enmienda de `DEC-TEST-001` le hizo a `G-R6-B` sobre otra lista cerrada, y por la misma razón: **una
 lista cerrada vigilada en una sola dirección declara una cobertura que no tiene.**
@@ -315,7 +316,7 @@ lista cerrada vigilada en una sola dirección declara una cobertura que no tiene
 claves nombradas** están entre las que la versión de piso de cada vertical otorga en el catálogo:
 no hay que entender qué significan, igual que `G-R6` no necesita entender qué significa una columna
 (`B/20` §2). Y **no** verifica que otorgar esas dos claves alcance para ejecutar `PB8` ni el alta —
-eso son los nueve pasos del cap. 17 §3.5 y este guard no los recorre—; verifica que **estén**.
+eso son los ~~nueve~~ siete pasos del cap. 17 §3.5 y este guard no los recorre—; verifica que **estén**.
 
 **Y la `(a)` recién ahora se puede formar, que es la otra mitad del arreglo.** *«Clave de la clase
 comercial»* era un término **sin definición en ningún capítulo y sin atributo en el catálogo**:

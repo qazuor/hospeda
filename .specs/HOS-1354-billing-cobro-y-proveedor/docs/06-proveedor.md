@@ -24,8 +24,8 @@ El §57 pide que el dominio **no quede acoplado a Mercado Pago**, que soporte co
 MercadoPago, Manual y un proveedor futuro, y cierra con *«Sin sobrearquitectura»*.
 
 Este capítulo dice **qué le pide el dominio a un proveedor**, **qué de eso tiene el que
-usamos**, y **las reglas de trato que salen de haberlo medido** — 98 filas, 92 medidas (recontadas
-el 2026-09-25, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`). **Y desde `DEC-MP-005` el proveedor que usamos es Mercado Pago, decidido**: lo que
+usamos**, y **las reglas de trato que salen de haberlo medido** — 98 filas, ~~92~~ **94** medidas (recontadas
+el ~~2026-09-25, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`~~ **2026-09-26, tras cerrar `RN-3` y `GR-1`; quedan cuatro `UNKNOWN`: `PA-6`, `GR-2`, `RC-8` y `RF-3`** — FASE 9 vuelta 1, `F-8V1D1-005`). **Y desde `DEC-MP-005` el proveedor que usamos es Mercado Pago, decidido**: lo que
 este capítulo mide como faltante es, con esa decisión, **la lista de lo que suple nuestro lado**.
 
 ---
@@ -409,7 +409,7 @@ nada (ver `RF-3`, abajo).
 
 | fila | qué falta saber | qué bloquea | cuándo se contesta |
 |---|---|---|---|
-| **`RN-3`** | si recupera solo después del fallo | ~~el diseño del grace~~ **nada** (FASE 9 completa, C11: `B/09` §8 ya dice que ninguna bloquea) | ~~**EN CURSO**: se reactivó un sujeto el 2026-09-23 y se lee tras su cobro del **2026-09-24**~~ **leído el 2026-09-24: reactivar no reintenta lo adeudado; sigue `UNKNOWN` si vuelve a pausar** |
+| **`RN-3`** | si recupera solo después del fallo | ~~el diseño del grace~~ **nada** (FASE 9 completa, C11: `B/09` ~~§8~~ **, *«Lo que este capítulo NO cierra»*,** ya dice que ninguna bloquea; referencia corregida en FASE 9 vuelta 1, `F-8V1D1-007`) | ~~**EN CURSO**: se reactivó un sujeto el 2026-09-23 y se lee tras su cobro del **2026-09-24**~~ **leído el 2026-09-24: reactivar no reintenta lo adeudado**; ~~sigue `UNKNOWN` si vuelve a pausar~~ (tachado 2026-09-26) **`PARTIALLY_SUPPORTED` desde el 2026-09-25 (noche)**: reactivar retoma el ciclo siguiente, no recupera lo adeudado, y vuelve a pausar si el medio sigue fallando (`D/06`, fila `RN-3`; FASE 9 vuelta 1, `F-8V1B1-008`) |
 | **`GR-1`** ✅ | si se puede pagar durante el grace | ~~ídem~~ ~~**la salida de `DEC-SUB-021` para el pagador con tarjeta —*«cambiá la tarjeta»*— queda condicionada a esta fila**, y la pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva (owner 2026-09-25; FASE 9 completa, 3a). No bloquea implementar: bloquea prometer. **Se mide con el próximo rechazo mensual real**~~ (tachado 2026-09-26) **nada: `VERIFIED` el 2026-09-26** — un pago dentro de la ventana cierra el ciclo fallido sobre el mismo registro, y cambiar el medio dispara un reintento en el momento que cobra con el nuevo (sonda 49). `DEC-SUB-021` deja de estar condicionada y la pantalla puede decirlo | ~~necesita actuar sobre los dos controles pausados — **es plata y va con el OK del owner**~~ **cerrada**: la midió la sonda 49 con el cambio de medio del owner |
 | **`GR-2`** | qué pasa con un pago tardío, después de suspender | el cap. 05 §3 lo diseñó **sin** esta fila. **En un pagador con tarjeta, `DEC-SUB-019` la contesta por diseño y no por medición**: `S6` cancela el preapproval en el mismo acto de suspender, así que un pago tardío del proveedor ya no tiene cómo llegar después de eso. Sigue `UNKNOWN` lo que queda afuera de ese diseño: el pagador manual y los bordes —un cobro ya en vuelo al momento de `S6`, un preapproval reactivado a mano— | ídem |
 | **`RC-8`** ✚ | qué estado lee el pago en un contracargo, qué aviso llega y en qué lectura aparece | **no bloquea la decisión**: `DEC-SUB-020` fija qué hacemos al leer `charged_back`, no cómo se comporta el proveedor (`B/03` §3.2 y §6, `B/09` §3). Lo que queda sin medir es la detección | **no se puede fabricar**: exige una disputa real con el emisor. Se contesta cuando ocurra una |

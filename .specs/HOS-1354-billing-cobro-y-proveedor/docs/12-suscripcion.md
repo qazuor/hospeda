@@ -390,6 +390,9 @@ Dos consecuencias que el diseño tiene que absorber:
    abierto**, con su enlace y su fecha de vencimiento (cap. 03 §3.3.1 y §3.4 punto 3, `B/19` §4
    fila 16). Abandonar lo deja en `ABANDONED`, que no es vivo, y recién ahí *«empezar de nuevo»*
    es la oferta correcta.
+
+   **Y tampoco mientras la fila `CHARGE_DECLINED` tenga el preapproval sin confirmar cancelado**:
+   ahí la oferta espera a la relectura de `S1` (cap. 03 §3.2; FASE 9 vuelta 1, `F-8V1B1-003`).
 2. **Las dos muertes ya no comparten estado — el residuo está cerrado.** `ABANDONED` dice *«nadie
    autorizó dentro de su ventana»*; **`CHARGE_DECLINED`** dice *«intentó y lo rechazaron»*. Le decimos cosas
    distintas al cliente en cada caso y ahora tienen nombres distintos (cap. 03 §3.1, transición
@@ -1056,6 +1059,20 @@ una regla: hace falta que nadie agregue esa transición.
 
 ## Lo que este capítulo NO cierra
 
+- **La vuelta anticipada de una pausa regala hasta un ciclo, y se acepta** (owner 2026-09-26,
+  `G5-3`, contra la recomendación; FASE 9 vuelta 1, `F-8V1B1-001`). `S10` deja volver el día que la
+  persona quiera —*«volver cuando quiera»*, §26.2 del PDR a la letra—, y con `PS-2`, `PS-5` y `PS-6`
+  medidos el día de arranque y el de vuelta deciden cuánto se paga: quien cobra el 1, pausa el 30 y
+  vuelve el 2 tiene el mes siguiente gratis, porque el proveedor salteó el cobro mientras estaba
+  `paused` y al volver cobra en el ciclo siguiente. Son **hasta tres ciclos gratis por año por
+  cliente**, y **el sobrecobro inverso** —pausar el 5 y volver
+  el 25— **sigue existiendo**: la persona paga el ciclo entero en el que casi no tuvo servicio.
+  **Causa**: la premisa de `DEC-SUB-010` —*«vuelve el mismo día del mes en que pausó»*, así que la
+  pausa dura ciclos enteros y la aritmética se compensa sola— no se sostiene con la vuelta
+  libre, y el owner prefirió la libertad del §26.2 a acotarla al aniversario mensual. **Nada lo
+  impide y nada lo compara** —nuestro estado y el del proveedor coinciden en cada paso—, así que
+  lo que queda es **medirlo**: el barrido lista esas pausas en el resumen de `DEC-OBS-001`
+  (`NUCLEO/08` §4.1; `B/09` §2.3). La misma entrada está en `B/03`, *«lo que esta mitad NO cierra»*.
 - ~~**`GR-3`**, la política de reintentos del proveedor, sigue `UNKNOWN`.~~ **Cerrado**: `GR-3`
   está `VERIFIED` y la ventana es el ciclo (§1.5). Queda sin medir la ventana mensual y anual, que
   ~~el diseño no necesita porque el grace se corta antes~~ ~~**desde `DEC-SUB-021` sí condiciona la

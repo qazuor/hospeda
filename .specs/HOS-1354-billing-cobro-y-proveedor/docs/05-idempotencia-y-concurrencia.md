@@ -68,7 +68,7 @@ exista**. Y la otra mitad de `F-8CB1-014` —en el modelo del checkout una creac
 busca no es una corrección de filtro (*«lo que este capítulo NO cierra»* de `B/09`).~~
 **Cerrado el 2026-09-25 (owner)**: la búsqueda va por `payer_email` **sin filtro de estado** y lo que vuelve
 se clasifica de nuestro lado; **si aparece uno `pending`, se reusa en vez de crear otro**, que es la
-regla de `B/03` §3.4 punto 4 —*«se reusa la vigente»*— (`B/09` §7; FASE 8 completa, pendiente 6, owner 2026-09-25).
+regla de `B/03` §3.4 punto 4 —*«se reusa la vigente»*— (`B/09` §7; FASE 8 completa, pendiente 6, owner 2026-09-25). **Sólo si su `external_reference` nombra esta fila**, y **tras una búsqueda vacía la corrida siguiente vuelve a crear con una clave nueva**, persistida antes de llamar (§1.1): las dos reglas y los duplicados viven en `B/09` §7 (FASE 9 vuelta 1, R12, `F-8V1B2-008`).
 
 **Todo lo de arriba vale para `/preapproval`, que ignora el header de idempotencia (`EX-17`). El
 cobro de única vez por `/v1/orders` sí lo cubre un candado**: se reenvía con la misma
@@ -110,7 +110,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 
 | | qué se hace |
 |---|---|
-| el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
+| el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo —con `max` sobre la fecha vigente: una extensión **nunca acorta** (`B/03` `S11`); sobre una fila de `S26` deja en pie el piso de la vertical (FASE 9 vuelta 1, R4, `F-8V1B2-002`)— — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
 | el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los ~~**seis**~~ **siete** motivos que significan *«hay plata del cliente que devolver»* —recontados sobre la última columna del `B/02` §2.5, donde son el 1, el 2, el 3, el 7, el 12, el 15 y el 20 (el 20 desde la pendiente 6, owner 2026-09-25)—, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
 > **Este motivo le gana al del §3 sobre el mismo hecho, y está escrito allá.** Un cobro que entra
@@ -265,7 +265,7 @@ implementación traza la línea en otro lado.
 
 | # | condición | qué pasa si no se cumple |
 |---|---|---|
-| 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva |
+| 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | ~~si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva~~ en **cualquier otro estado** el pago no la reactiva. Adónde va lo dice la tabla de desempate de abajo, que clasifica los nueve estados y la lápida de recepción. **Este § no corre sobre una fila que puede recibir el cobro ni sobre la lápida del corte** (lista de abajo) (FASE 9 vuelta 1, R4; owner 2026-09-26, `G3-1`) |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
 | 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una **sucesora viva** con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
@@ -304,9 +304,32 @@ que el pago llegó tarde.**
 
 | qué pasó | motivo |
 |---|---|
-| la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** — ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ **toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
+| ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1; `ABANDONED` por `S3`, `S28` o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7`, `S11` o `S26`— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
-| **cualquier otra forma de fallar**: la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras | **`PAGO_TARDÍO_RECHAZADO`** |
+| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4) | **`PAGO_TARDÍO_RECHAZADO`** |
+
+> **Lo que este § no desempata, porque la fila puede recibir el cobro** (FASE 9 vuelta 1, R4): una
+> `PENDING_AUTHORIZATION` —se relee el preapproval por id, corre `S2` y el cobro se asienta sobre
+> la fila ya `ACTIVE`—; una `ACTIVE` sobre el período en curso (`P1`); una `PAUSED` con el cobro
+> anterior a la pausa (`P1`; `DEC-SUB-010` ya se llevó los días al pausar); una `CANCEL_SCHEDULED`
+> con el cobro anterior a la cancelación (§2 `C2`, primera fila); y la predecesora de una sucesión
+> en curso (`S19`).
+>
+> **Y lo que no desempata por decisión: la lápida del corte** —`origen_de_lápida = CORTE`, `B/02`
+> §2.2; `B/21` §2.5—. Un cobro del
+> preapproval viejo que entra sobre ella —también el que estaba en vuelo cuando el paso 1b lo
+> canceló— **se asienta sobre la lápida sin marca**: no reactiva nada, no extiende nada y no se le
+> propone devolver a nadie. Lo que eso deja sin cerrar está declarado en el «NO cierra» de `B/21`
+> (owner 2026-09-26, `G3-1`, contra la recomendación, coherente con `2d` y con `G1-4`). Si la
+> cancelación del 1b no se aplicó, lo que avisa no es el cobro sino la salvedad 4 del `B/09` §3,
+> que la sigue releyendo y marca a los 3 días.
+>
+> **La tabla la aplican los dos productores**: el evento del cobro y la comparación de cobros del
+> barrido (`B/09` §3). El barrido abre `COBRO_SIN_REGISTRAR` **sólo** sobre una fila que puede
+> recibir el cobro. Sobre cualquier otra abre el motivo que esta tabla asigna, con el cobro
+> colgado; sobre la lápida del corte no compara. Escrita por criterio y no por productor, una fila
+> nueva —o una escrita a mano— cae en la fila del acto que la dejó sin poder cobrar y no en el
+> comodín.
 
 **El criterio no es de precedencia formal sino de qué necesita la persona que abre el caso**, y por
 eso ordena así: los dos primeros le dicen **qué acto nuestro dejó cobrando un preapproval que
@@ -326,8 +349,11 @@ los dos §§ leyera quien implementara.
 > esa ventana sin que ningún texto de allá lo diga**, y por eso queda anotado acá, que es donde
 > alguien la relajaría.
 
-**Con una excepción, y es la única: la condición 3 falla porque la otra fila viva es la sucesora de
-ésta, con la sucesión en curso.** Ése no es un caso ambiguo sino uno **diseñado**, el del `B/12`
+**Con una excepción, y es la única: ~~la condición 3 falla porque la otra fila viva es la sucesora de
+ésta, con la sucesión en curso.~~ la fila es la predecesora de una sucesión en curso, falle la
+condición que falle: el pago de su período impago lo retiene `S19` y lo reevalúa el cierre** (FASE
+9 vuelta 1, `F-8V1B2-005`). El doble cobro de un período ya pagado no es de este §: lo abre `P1`
+como `COBRO_DUPLICADO`. Ése no es un caso ambiguo sino uno **diseñado**, el del `B/12`
 §5.3, y su desenlace está declarado: el pago **se registra y queda pendiente de resolución**
 (cap. 03 §3.2, `S19`), **sin marca y sin evento crítico**. Poner la marca ahí sería tratar el camino
 normal ~~del cambio de plan desde grace~~ de una sucesión cuya predecesora entra en el grace durante

@@ -156,28 +156,40 @@ si es destructiva o mueve dinero.**
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
 | **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ ~~**veinte**~~ **veintidós** motivos (el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde la pendiente 6 —el 21 y el 22 desde la FASE 9 completa (`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y `PAUSA_NO_APLICADA`, `F-8CB2-003`)—) y ~~**seis**~~ **siete** tienen una confirmación de reembolso encima — **y los ~~seis~~ siete se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
-| **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
+| **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`). **Con motivo revocación del derecho de arrepentimiento es la misma acción y corre `S36`** (cap. 03 (billing) §3.2): cancela, corta el servicio en el acto y crea `RF1` por el total, así que su confirmación dice las tres cosas (owner 2026-09-26, `G5-4`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
 | **extender un trial** | §32 | no |
 | **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2 — **y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner 2026-09-25, FASE 9 completa, decisión 7c) | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva —**y desde la FASE 9 completa levantar la moderación reinicia el reloj de inactividad** (el hecho 6 del cap. 01 §1.2, decisión 5b), así que la frase es verdadera también después: antes, `PB11` → `PB5` → `PB9` borraba en días (`K-6`)—. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
 | **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero. **Confirmar es la transición `REQUESTED → CONFIRMED` del reembolso, `RF2`** (cap. 01 §2.2, cap. 03 (billing) §6.1; FASE 9 completa, 5a) |
 | **asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚ —el cobro del motivo 19 (`COBRO_SIN_REGISTRAR`): crear la fila de `payment` en `PENDING` con el id del registro y correr `P1` sobre ella; la devolución del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`), la de un `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por **`RF4`**, que nace en `EXECUTED` con el comprobante de la transferencia (cap. 03 (billing) §6.1) | motivos 18 y 19 del cap. 02 (billing) §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa, decisión 5a | **sí**: registra plata que ya se movió y lo que de eso se desprende —el comprobante, `covered_period`, el cierre del reembolso—. Sin esta fila las dos marcas mandaban a una persona a *«asentar»* con un acto que la tabla no nombraba, y *«lo que no se puede es ejecutar una escritura que no esté nombrada en ninguna fila»* (abajo) |
+| **editar el contenido de una ficha ajena** ✚ —crearla en borrador a nombre de su dueño, corregirla, restaurar contenido—, **sin publicar, sin destacar y sin borrar**, que siguen siendo del dueño o de sus filas (publicar es `PB1` del dueño, destacar es un addon y borrar es `PB9` o `PB12`) | owner 2026-09-26, `G5-2`; FASE 9 vuelta 1, `F-8V1A1-003` | **no mueve dinero ni borra**: escribe contenido de lo ajeno y su dueño recibe el aviso de la fila 1 del cap. 19 (épica de verticales). Es la herramienta de soporte que el código de hoy tiene sin fila —crear a nombre de un dueño, corregir, restaurar—, y sin ella la presión empujaba a pedirle la contraseña al cliente, que es la impersonación que `V/17` §3.2 regla 4 prohíbe. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
 
 ~~**La tabla tiene DOCE filas**~~ ~~**La tabla tiene TRECE filas** —la decimotercera, moderar una
-ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25)—~~ **La tabla tiene CATORCE filas**
-—la decimotercera, moderar una ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25), y
+ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25)—~~ ~~**La tabla tiene CATORCE filas**~~ **La
+tabla tiene QUINCE filas**
+—la decimotercera, moderar una ficha, desde la FASE 8 completa (`F-8CA2-004`, owner 2026-09-25), ~~y~~
 la decimocuarta, asentar un cobro o una devolución hecha por fuera, desde la FASE 9 completa
-(decisión 5a; recontadas sobre la tabla)— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
+(decisión 5a), **y la decimoquinta, editar el contenido de una ficha ajena, desde la FASE 9 vuelta 1
+(owner 2026-09-26, `G5-2`); recontadas sobre la tabla**— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
 *«Otorgar o revocar»*, *«pausar o reanudar»*, *«aprobar o rechazar»*, ~~y ahora~~ *«otorgar, anclar o
 revocar»*, *«moderar o levantar la moderación»* —**sobre una ficha o sobre la presencia de un Partner,
 que es la misma acción con el mismo permiso** (7c)— **y *«asentar un cobro o una devolución»*** son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las ~~cinco~~
 líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 **y su ⚠️, §3.5** y `B/19` §6— ~~siguen
-diciendo **doce** y siguen siendo exactas~~ ~~**dicen trece desde la misma pasada**~~ **dicen catorce desde la FASE 9 completa** (las de `V/17`; la de `B/19` §6 es de la otra épica). **Lo que no se puede es ejecutar una escritura que no
+diciendo **doce** y siguen siendo exactas~~ ~~**dicen trece desde la misma pasada**~~ ~~**dicen catorce desde la FASE 9 completa**~~ **dicen quince desde la FASE 9 vuelta 1** (las de `V/17`; la de `B/19` §6 es de la otra épica). **Lo que no se puede es ejecutar una escritura que no
 esté nombrada en ninguna fila**: una escritura sin fila no tiene permiso que pedir, no es capacidad
 del actor —así que sus pasos 5-7 caen sobre el sujeto y la vuelven inejecutable— y **no le está
 prohibida a un actor de sistema**, que son las tres cosas que esta tabla reparte. Por eso anclar
 una vertical a un grant entra **acá** y no sólo en la prosa del contrato que lo declaró.
+
+**Dos cosas que ninguna fila de esta tabla hace, ni las que se agreguen:** un acto de un actor
+distinto del dueño **nunca es *«el dueño publica»***, así que no ejerce el evento de activación
+ni dispara `T1` (el trial es de por vida y lo gasta sólo el dueño, `V/03` §2); y **ningún
+borrado de ficha sale de otra fila que `PB9` o `PB12`**, que es lo que hace correr `A6`
+(`B/03` §8) y cancela el addon `LISTING` de la ficha borrada (FASE 9 vuelta 1, `F-8V1A1-003`).
+
+**Y ninguna fila de esta tabla se ejecuta con `actor = sujeto`**: el paso 3 de la autorización la
+rechaza y la hace otra cuenta con el permiso (`V/17` §3.2 regla 5; owner 2026-09-26, `G5-1`).
 
 **Y lo que le pone un caso ADELANTE a esa persona no es una fila de esta tabla: es un efecto de
 transición, así que ~~siguen siendo doce~~ no suma filas.** La distinción hay que decirla porque `DEC-RF-002`
@@ -247,8 +259,8 @@ dos filas describen un trámite que nadie empieza.
    ser anclas vivas todas a la vez. Y la regla que
    esta tabla ya imponía sigue igual —*«lo que no se puede es ejecutar una escritura que no esté
    nombrada en ninguna fila»*—: la escritura es de la fila de arriba y no agrega una ~~décimotercera~~ fila más
-   (la decimotercera que la tabla tiene hoy es la de moderar, y la decimocuarta la de asentar, que
-   son otras acciones).
+   (la decimotercera que la tabla tiene hoy es la de moderar, ~~y~~ la decimocuarta la de asentar, **y la
+   decimoquinta la de editar el contenido de una ficha ajena** (`G5-2`), que son otras acciones).
 
    **El motivo es la mitad que la auditoría necesitaba y el registro de auditoría no da.** Ese
    registro dice **qué acto ocurrió, cuándo y quién lo hizo**; lo que no dice —ni puede— es
@@ -289,6 +301,19 @@ enuncia el propio §22.1 al cerrar: *«que `SUPER_ADMIN` esté al tanto y pueda 
 | **la excepción** | un evento **único y grave** —un doble cobro real detectado **(la marca con motivo `COBRO_DUPLICADO`, cap. 02 (billing) §2.5, motivo 20)**, un reembolso que falló sobre una revocación **(un `refund` de `DEC-RF-001` que llega a `FAILED` por `RF5`, cap. 03 (billing) §6.1)**— manda **su propio correo**, sin esperar la ventana (FASE 9 completa, `DB-4`; el `FAILED`, decisión 5a) |
 | **la agrupación** | por **tipo + sujeto**. Cientos de eventos de un mismo incidente colapsan en una línea con su conteo |
 | **lo que nunca se agrupa** | el **registro**. El evento crítico se escribe uno por uno, siempre. Lo que se agrupa es el aviso |
+
+**Y un tipo del resumen que no nace de una marca: la pausa corta que regaló un ciclo** ✚ (owner
+2026-09-26, `G5-3`; FASE 9 vuelta 1, `F-8V1B1-001`). La vuelta anticipada de una pausa sigue libre
+—*«volver cuando quiera»*, §26.2 del PDR a la letra—, y eso deja que una pausa de menos de un
+ciclo que cruza una fecha de cobro regale ese ciclo: el proveedor saltea el cobro mientras la fila
+está `paused` y, al volver, cobra normal en el ciclo siguiente (`PS-2`, `PS-5`, `PS-6`). Nuestro
+estado y el del proveedor coinciden en cada paso, así que **ninguna comparación del barrido lo ve**,
+y por eso tiene su propia línea. **El barrido diario (`B/09` §2.3) lista en el resumen las pausas
+terminadas por `S10` cuyo `fin_real` cayó a menos de un ciclo de su inicio y que cruzaron una fecha
+de cobro salteada**, con el sujeto, las dos fechas y el ciclo salteado; se lee de la
+`subscription_pause` (`B/02` §2.2) y de la fecha del próximo cobro, sin llamar al proveedor. **No
+abre marca ni corta nada**: es un detector, no un control —el costo aceptado se mide, no se
+impide— (`B/03` y `B/12`, *«lo que este capítulo NO cierra»*).
 
 ### 4.2 Y esto es un apartamiento del §22.1, registrado como `DEC-OBS-001`
 

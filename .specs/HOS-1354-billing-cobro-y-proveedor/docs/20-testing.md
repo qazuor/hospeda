@@ -52,7 +52,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
 | G12 | se importa el **SDK de la pasarela fuera del adaptador** | `DEC-ARCH-004`, condición A. Lo construye `B1` (`B/descomposicion.md` §2) |
-| G13 | la implementación **de arranque** de `cobertura()` llega a producción | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. Lo construye `B4` (`B/descomposicion.md` §2), que es donde aparece la segunda implementación — **no puede nacer en `V4`**, porque mientras la de arranque es la única, un guard que prohíba su llegada a producción falla desde el primer día |
+| ~~G13~~ | ~~la implementación **de arranque** de `cobertura()` llega a producción~~ | ~~[contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. Lo construye `B4` (`B/descomposicion.md` §2), que es donde aparece la segunda implementación — **no puede nacer en `V4`**, porque mientras la de arranque es la única, un guard que prohíba su llegada a producción falla desde el primer día~~ **La fila pasó a `V/20` §2 y lo construye `V4`, como dice el contrato §6.3** (owner 2026-09-26, `G5-5`): el guard falla sobre un build destinado a producción, no sobre la rama, así que no falla desde el primer día. Esta fila ya no cuenta en este catálogo |
 | G-R1-A | **el camino que declara una sucesión** escribe `sucede_a` apuntando a una predecesora que **en ese acto** está fuera de ~~`{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`~~ **`{ACTIVE, CANCEL_SCHEDULED}`** —`GRACE_PERIOD` salió del conjunto: desde el grace no se declara una sucesión (`DEC-SUB-021`, owner 2026-09-25)— **y no es una `SUSPENDED` de pagador con tarjeta cuyo preapproval se releyó por id como `cancelled`** —la única `SUSPENDED` admitida; la de pagador manual y toda `PAUSED` siguen afuera (FASE 8 completa, `F-8CB1-002`, owner 2026-09-25)—, **o a una `ACTIVE` de pagador con tarjeta cuyo preapproval no se releyó por id como `authorized` en ese acto** (FASE 8 completa, owner 2026-09-25: la `ACTIVE` que el proveedor ya pausó por mora sin que nos llegara el webhook), o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2, cap. 03 §3.2 (`S1`, **`S6`**, **`S7`**) y §3.3.1, `DEC-SUB-019`, **`DEC-SUB-021`** |
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** — **salvo** que su predecesora sea una `SUSPENDED` de pagador con tarjeta cuyo preapproval se releyó `cancelled`, la misma condición que lee `G-R1-A`: esa sucesora cobra al autorizar (`D8`, excepción del owner 2026-09-25) | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento ~~o la **redención de promo**~~ sin re-apuntar —la redención **no** se re-apunta desde la pendiente 7 de la FASE 8 completa (owner 2026-09-25): la promo se pierde con el cambio de plan, `B/14` §2.2—, **o una cortesía vigente sin cerrar y sin `saldo_meses`** —ésa **no** se re-apunta, `DEC-GRANT-007`—, o un **pago pendiente por `S19` sin una marca `requiere_conciliación` abierta con motivo `REEMBOLSO_POR_CONFIRMAR`** —la marca sin el motivo **pasaba el guard y no ordenaba nada**—; **o `S25` mata una `PAUSED · COURTESY` con cortesía sin entregar y no le escribe el `saldo_meses`** (`DEC-GRANT-010`) | `D15`, cap. 03 §3.2 (`S18` y `S25`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002` |
@@ -345,12 +345,15 @@ cierra.** Vivían sólo en `B/descomposicion.md` §2, donde se numeraron *«para
 unidad»* con la nota *«si el `20` se reescribe, los absorbe»*. Un § que se presenta como *«la lista,
 que es lo que permite preguntar «¿están todos?» una vez en vez de siete»* y deja dos afuera es un
 **inventario que afirma completitud sin tenerla**, que es el patrón que la FASE 8-bis-4 encontró
-cinco veces. Los dos entran **acá y no en `V/20` §2**, incluido `G13`: vigila el contrato, y el
-consumidor del contrato es billing.
+cinco veces. ~~Los dos entran **acá y no en `V/20` §2**, incluido `G13`: vigila el contrato, y el
+consumidor del contrato es billing.~~ (tachado 2026-09-26) **`G12` entra acá y `G13` vive en `V/20`
+§2**: la razón que lo traía era falsa —el consumidor de `cobertura()` es verticales, no billing— y
+el contrato §6.3 le da a `V4` como dueño (owner 2026-09-26, `G5-5`).
 
 ***El salto `G7` → `G9` no es un agujero, y conviene decirlo para que nadie lo busque.*** La
-numeración `G1`-`G13` es **una sola, repartida entre las dos épicas**: `G1`-`G6` y `G8` están en
-`V/20` §2, y `G7` más `G9`-`G13` están acá. Medido recorriendo las dos tablas, no deducido del
+numeración `G1`-`G13` es **una sola, repartida entre las dos épicas**: `G1`-`G6`, `G8` **y `G13`**
+están en `V/20` §2, y `G7` más ~~`G9`-`G13`~~ **`G9`-`G12`** están acá (`G13` pasó de acá a allá:
+owner 2026-09-26, `G5-5`). Medido recorriendo las dos tablas, no deducido del
 salto.
 
 **Y el costo va con su cifra, recontada acá y no copiada.** Los guards de este programa **no corren
@@ -361,10 +364,10 @@ de `DEC-TEST-001` —la que reparte los catorce sin unidad—, que es el último
 
 | | cuántos | quiénes |
 |---|---|---|
-| filas de `B/20` §2 | **16** | `G7` `G9` `G10` `G11` `G12` `G13` · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` `G-R6-B` |
-| filas de `V/20` §2 | ~~**17**~~ ~~**18**~~ **19** | `G1`-`G6` `G8` · `G-R2` `G-R2-B` **`G-R2-C`** · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` **`G-R5-B`** `G-R6` `G-R6-B` — `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25); **`G-R2-C`**, el gemelo de `G-R2-B` para la emisión de un addon `USER`/`GLOBAL` sólo en sus verticales compatibles, desde la FASE 9 completa (owner 2026-09-25, 4e, `F-8CA1-008`; recontado sobre `V/20` §2) |
-| **guards distintos** | ~~**29**~~ ~~**30**~~ **31** | 16 + ~~17~~ ~~18~~ 19 menos las **cuatro** referencias cruzadas: `G-R4`, `G-R5`, `G-R6` y `G-R6-B`. `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
-| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ **31** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (`B4`), `G-R5` (ver abajo) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) |
+| filas de `B/20` §2 | ~~**16**~~ **15** | `G7` `G9` `G10` `G11` `G12` ~~`G13`~~ · los **seis** de `R1` · `G-R4` `G-R5` `G-R6` `G-R6-B` — `G13` pasó a `V/20` §2 (owner 2026-09-26, `G5-5`) |
+| filas de `V/20` §2 | ~~**17**~~ ~~**18**~~ ~~**19**~~ **20** | `G1`-`G6` `G8` **`G13`** · `G-R2` `G-R2-B` **`G-R2-C`** · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` `G-R5` **`G-R5-B`** `G-R6` `G-R6-B` — `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25); **`G-R2-C`**, el gemelo de `G-R2-B` para la emisión de un addon `USER`/`GLOBAL` sólo en sus verticales compatibles, desde la FASE 9 completa (owner 2026-09-25, 4e, `F-8CA1-008`; recontado sobre `V/20` §2) |
+| **guards distintos** | ~~**29**~~ ~~**30**~~ **31** | ~~16~~ 15 + ~~17~~ ~~18~~ ~~19~~ 20 menos las **cuatro** referencias cruzadas (mover `G13` de un catálogo al otro no cambia el total): `G-R4`, `G-R5`, `G-R6` y `G-R6-B`. `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
+| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ **31** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (~~`B4`~~ **`V4`**: owner 2026-09-26, `G5-5`), `G-R5` (ver abajo) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) |
 | **sin unidad** | ~~**0**~~ ~~**1**~~ **0** | **ninguno**: `G-R2-C` (FASE 9 completa, 4e) ~~tenía por su capítulo la de `G-R2-B`, `V3`~~ ya tiene unidad, **`B10`** (owner 2026-09-25, decisión 10c; la asignación la escribe `B/descomposicion.md`, no `V/descomposicion.md`). Entre la FASE 9 completa y esta decisión fue **uno**, la primera vez en la serie; el reparto, unidad por unidad y con su razón medida, está en `V/descomposicion.md` §2.10 y en `B/descomposicion.md` §2 |
 
 **`G-R5` cambió de unidad y no de estado: era el único contado *«con unidad»* sin nombrarse.** La
@@ -377,9 +380,10 @@ es que el guard ahora puede fallar.
 
 **Dónde vive el reparto, y por qué no se copia a cada fila de esta tabla.** La asignación de unidad
 la hacen **las dos `descomposicion.md`**, que son los documentos que reparten trabajo; este § es el
-catálogo, y *«el catálogo cataloga, no reparte trabajo»* (`B/descomposicion.md` §2.1). Las cuatro
-filas que igual nombran su unidad —`G12`, `G13`, `G-R6-B` y `G-R5`— lo hacen como **referencia
-cruzada** y no como fuente: las tres primeras porque su unidad está del otro lado de donde uno la
+catálogo, y *«el catálogo cataloga, no reparte trabajo»* (`B/descomposicion.md` §2.1). Las ~~cuatro~~ **tres**
+filas que igual nombran su unidad —`G12`, ~~`G13`,~~ `G-R6-B` y `G-R5`— lo hacen como **referencia
+cruzada** y no como fuente (`G13` se fue a `V/20` §2, donde su unidad `V4` es de la misma épica:
+owner 2026-09-26, `G5-5`): las ~~tres~~ dos primeras porque su unidad está del otro lado de donde uno la
 buscaría, y `G-R5` porque **su asignación ya estuvo mal una vez** y el catálogo es donde se lee
 primero.
 

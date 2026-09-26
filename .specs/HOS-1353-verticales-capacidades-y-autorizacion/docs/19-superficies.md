@@ -41,7 +41,7 @@ separarían en la primera decisión que alguien cambie en un solo lado.
 
 | superficie | qué lee | qué NO lee |
 |---|---|---|
-| **Admin** (§48) | todo lo anterior, de cualquier persona, **como actor distinto del sujeto** (cap. 17 §3, épica de verticales) | — |
+| **Admin** (§48) | todo lo anterior, de cualquier persona, **como actor distinto del sujeto** (cap. 17 §3, épica de verticales), **para leer; para escribir, sólo lo que nombra una fila de `NUCLEO/08` §3** —entre ellas, editar el contenido de una ficha ajena, sin publicarla, destacarla ni borrarla (owner 2026-09-26, `G5-2`; FASE 9 vuelta 1, `F-8V1A1-003`)— | — |
 
 ---
 
@@ -59,14 +59,16 @@ ser.**
 | 1 | el botón **Empezar** de la pricing de Turista | que **consume el trial**, que es de por vida | `DEC-TRIAL-006`, impl. 2 |
 | 2 | al **despublicar** una ficha en trial | que **el reloj del trial no se detiene** | cap. 11 §1.2 (épica de verticales) |
 | 4 | Mi Suscripción y el panel | el **total acumulado de días de trial** y su origen | cap. 11 §3.5 (épica de verticales) |
-| 8 | el aviso de **excedente** | **el criterio**: cae lo más reciente primero | `DEC-SUB-008`, cap. 03 §9 |
+| 8 | el aviso de **excedente** | **el criterio**: cae lo más reciente primero; **y los destaques recurrentes sobre las fichas que baja, que se siguen cobrando hasta que los dé de baja** (FASE 9 vuelta 1; owner 2026-09-26, `G2-3`) | `DEC-SUB-008`, cap. 03 §9, `DEC-ADDON-001` |
 | 9 | cuando el excedente **no tiene ventana** | **qué se hizo**, no una ventana simulada | cap. 15 §4.4 (épica de verticales) |
 | 18 | el aviso de **ficha archivada** (`PB4`, día 90) | **que no se borró nada**; que la sigue viendo y puede exportarla; que **vuelve sola cuando recupere la cobertura —o cuando el cupo vuelva a alcanzar— si hay lugar para ella** (`PB7`), **con el criterio de cuáles vuelven primero**, y que puede traerla a borrador cuando quiera, sin pagar (`PB8`); y **la fecha** a partir de la cual el contenido sí se borra, que es **`listing.inactiva_desde` + 180** | cap. 03 §9, cap. 02 §2.5, cap. 02 §4.2 regla 3, cap. 15 §4.3, `DEC-DATA-001`, `DEC-DATA-003`, cap. 07 §6 (núcleo) |
 | 19 | el aviso de **restitución**, cuando el cupo vuelve a alcanzar y las fichas se republican solas (`PB3`, `PB7`) | **cuáles volvieron**, **cuáles no** y **el criterio**: vuelve primero la que cayó al final, hasta llenar el cupo. Y que las que no entraron **siguen ahí y no se borran** | `DEC-DATA-003`, cap. 03 §9, cap. 15 §4.3, cap. 07 §6 (núcleo) |
 | 20 | Mi Cuenta, sobre una ficha **`PURGED`** (`PB9`, día 180) | **que la ficha existió y que su contenido se borró por inactividad** | `DEC-DATA-005`, cap. 03 §9 (`PB9`), cap. 02 §4.1; FASE 8 completa, `F-8CA2-008`, owner 2026-09-25 |
-| 21 | al **publicar** una ficha **sin estar cubierto y sin poder arrancar un trial** —`PB1` no publica: el dueño no está cubierto y esa publicación no dispara `T1` (ya consumió su trial, la vertical no admite altas, o el hash de su correo ya tiene fila)— | ***«suscribite para publicar»***: que la ficha **sigue en borrador** y que publicar pide una suscripción en esa vertical | cap. 03 §9 (`PB1`) y §2 (`T1`); FASE 8 completa, owner 2026-09-25 |
+| 21 | al **publicar** una ficha **sin estar cubierto y sin poder arrancar un trial** —`PB1` no publica: el dueño no está cubierto y esa publicación no dispara `T1` (ya consumió su trial, la vertical no admite altas, o el hash de su correo ya tiene fila)— | ***«suscribite para publicar»***: que la ficha ~~**sigue en borrador**~~ **sigue sin publicar** (desde R1 puede estar en `UNPUBLISHED_BY_BILLING`; FASE 9 vuelta 1) y que publicar pide una suscripción en esa vertical | cap. 03 §9 (`PB1`) y §2 (`T1`); FASE 8 completa, owner 2026-09-25 |
 | 22 | Mi Cuenta de Partner, **cuando la página o el carrusel dejan de mostrarlo** | **que no se borró nada**, que la presencia **vuelve sola** si recupera el plan que la otorga, y que mientras tanto responde como inexistente — **y, si la bajó un admin, que está moderada y por qué** (el motivo de la acción) | cap. 18 §1.6 (épica de verticales); FASE 9 completa, `R13`, `B4` del informe `08`; decisiones 7b y 7c |
-| 23 | el **botón de suscribirse** de una vertical —la pricing, un llamado a la acción— **cuando la persona todavía no publicó en esa vertical** —en general, no ejerció su evento de activación (cap. 10 §1, ítem 1)— | **no la manda al checkout: la manda a publicar** —a ejercer ese evento—, que arranca su trial (`T1`), y le dice que el trial arranca al publicar. El checkout queda para quien ya publicó o ya consumió su trial —el que no puede arrancar uno, porque publicar no se lo daría (fila 21)—. Quien llega al checkout por otro camino tiene la red de `T8`: su trial se consume al primer pago, no al publicar | cap. 03 §2 (`T1`, `T6`, `T8`); owner 2026-09-25, FASE 9 completa, decisión 6c (el espejo de billing es `B/19` §4) |
+| 23 | el **botón de suscribirse** de una vertical —la pricing, un llamado a la acción— **cuando la persona todavía no publicó en esa vertical** —en general, no ejerció su evento de activación (cap. 10 §1, ítem 1)—. **Lo que se lee es el registro del sistema nuevo**, el mismo que leen `T7` y `T8` (cap. 03 §2): haber publicado en el sistema viejo no cuenta, así que todo dueño del corte llega acá como quien todavía no publicó y el botón lo manda a publicar su ficha (`V/21` §2.4; FASE 9 vuelta 1, R1) | **no la manda al checkout: la manda a publicar** —a ejercer ese evento—, que arranca su trial (`T1`), y le dice que el trial arranca al publicar. El checkout queda para quien ya publicó o ya consumió su trial —el que no puede arrancar uno, porque publicar no se lo daría (fila 21)—. Quien llega al checkout por otro camino tiene la red de `T8`: su trial se consume al primer pago, no al publicar | cap. 03 §2 (`T1`, `T6`, `T8`); owner 2026-09-25, FASE 9 completa, decisión 6c (el espejo de billing es `B/19` §4) |
+| 24 | al **moderar** una ficha (`PB10`) | el motivo; que la ficha no se ve hasta que un admin levante la moderación; y **los destaques recurrentes sobre esa ficha, que se siguen cobrando hasta que los dé de baja** —los lee de `fuentes`: `alcance: LISTING` y `objetivo`— | cap. 03 §9 (`PB10`), `DEC-ADDON-001`, `B/16` §4.2; FASE 9 vuelta 1, owner 2026-09-26, `G2-3` |
+| 25 | la **confirmación de despublicar** una ficha (`PB6`) | **los destaques recurrentes sobre esa ficha, que se siguen cobrando aunque no esté publicada, hasta que los dé de baja** —los lee de `fuentes`: `alcance: LISTING` y `objetivo`— | cap. 03 §9 (`PB6`), `DEC-ADDON-001`, `B/16` §4.2; FASE 9 vuelta 1, owner 2026-09-26, `G2-3` |
 
 ---
 
@@ -84,7 +86,7 @@ ser.**
 - ~~**El ciclo de publicación de la presencia de Partner** (cap. 18, épica de verticales): que
   existe y que la da el plan Gold está decidido; cómo se publica es diseño de producto, no de
   billing.~~ **La presencia de Partner no tiene ciclo de publicación, y la regla vive en el cap. 18
-  §1.6** (épica de verticales): la lectura pública pregunta por el entitlement de presencia y, si
+  §1.6** (épica de verticales): la lectura pública pregunta por el entitlement ~~de presencia~~ **«página propia»** (FASE 9 vuelta 1, `F-8V1A1-004`) y, si
   falta, responde que no existe. Este capítulo y aquél se remitían el uno al otro; ahora éste
   remite y aquél decide (FASE 8 completa, `R13`, owner 2026-09-25). **Lo mismo el carrusel de la
   home**, que lee la clave *«presencia en el carrusel»* (Gold y Silver), **y la presencia moderada**,

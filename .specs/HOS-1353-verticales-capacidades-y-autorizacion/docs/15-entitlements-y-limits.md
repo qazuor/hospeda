@@ -473,6 +473,12 @@ llevar la herencia en la próxima lectura. Hasta la FASE 9 completa sólo se inv
 vertical suspendida y la de Turista seguía con VIP hasta la red de tiempo (owner 2026-09-25,
 decisión 8a, `F-8CA1-002`).
 
+**Y quién lo pregunta** (FASE 9 vuelta 1, `F-8V1A1-005`): la resolución de Turista hereda VIP si en
+alguna otra vertical **una fuente de clase `TÍTULO`** trae una `referencia` cuya versión declara
+`hereda Turista VIP`. Con la mitad (d) de `G-R3` (cap. 02 §2.1, cap. 20 §2), `BASE`, `TRIAL` y el
+pre-trial nunca la traen, y un `COMPLEMENTO` no tiene versión de plan. Lo resuelve `V3`, con la
+invalidación por `user` que ya tiene (regla 3 del cap. 02 §3.2).
+
 Queda escrito acá porque la lectura contraria es fácil y cara: si alguien interpretara el bloqueo
 como atado a *«tiene un plan comercial»* en vez de a *«el plan se lo está dando»*, el suspendido
 quedaría sin el beneficio **y sin poder comprarlo**, que es el peor desenlace posible y no lo

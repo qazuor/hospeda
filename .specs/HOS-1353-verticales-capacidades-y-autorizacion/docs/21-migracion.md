@@ -123,7 +123,11 @@ tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende
    cuentas nunca pierden cobertura; si se escriben **después**, pasan por una ventana con
    `cubierto` falso en la que `PB2` les baja las fichas y `PB3` se las devuelve. Las dos ramas
    terminan igual y el residuo es una despublicación visible de minutos sobre dos cuentas del
-   owner: **es un orden que hay que escribir, no una decisión de diseño**.
+   owner: **es un orden que hay que escribir, no una decisión de diseño**. **Desde R1 las fichas
+   de esas dos cuentas nacen `UNPUBLISHED_BY_BILLING` como todas** (tabla de abajo), así que
+   ningún `PB2` les baja nada y el grant del 3b las sube por `PB3`: el residuo son los minutos
+   entre el nacimiento y el grant, el mismo que este punto ya acepta (FASE 9 vuelta 1,
+   `F-8V1C2-012`).
 
 ~~**Lo que este § NO decide es qué pasa con el trial de esas dos cuentas.** Cubiertas por un grant,
 el día que publiquen una ficha dispara **`T6`** y su fila de `trial` nace **consumida**; y si ese
@@ -141,20 +145,67 @@ escribe fila, así que el día que publiquen dispara `T6` —un `GRANT` es un t�
 su fila nace consumida. Si el grant se revocara quedarían sin grant y sin trial; las dos son del
 owner y *«regenerables de cero»* (`B/21` §2.4), y eso se declara, no se diseña.
 
-**Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
-un título (`12-contrato…` §2.4)— ~~y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
-que **las fichas publicadas de Alojamiento se despublican la mañana del corte**~~, y el corte no es
+~~**Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
+un título (`12-contrato…` §2.4)—~~ ~~y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
+que **las fichas publicadas de Alojamiento se despublican la mañana del corte**~~ ~~y el corte no es
 un cambio de `cubierto` (no hay valor anterior), así que `PB2` no dispara por evento: **las
 despublica la primera corrida del reconciliador diario de cobertura** (`V/03` §9, `DEC-ARCH-009`),
 **dentro del primer día** (FASE 9 completa, `C-7`). No es una ambigüedad entre dos ramas: es una
-consecuencia.
+consecuencia.~~
 
-> **Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
+**En qué estado nace cada ficha, y está determinado** (FASE 9 vuelta 1, R1; owner 2026-09-26,
+`G1-1` y `G1-2`). La migración estructural del corte le escribe a cada ficha preexistente el estado
+de la tabla de abajo, una sola vez, con la escritura `C`. La ficha que estaba a la vista **nace
+`UNPUBLISHED_BY_BILLING`**: es el estado al que `PB2` la llevaría en la primera corrida del
+reconciliador, porque `PRE_TRIAL` no cubre, y escribirlo en el corte le ahorra al dueño un día de
+ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto. El reloj no
+cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le escribiría.
+
+**La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
+las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se
+re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la primera que aplica:
+
+| clase | condición sobre las columnas viejas | nace en |
+|---|---|---|
+| `L1` | `deleted_at` no nulo | **`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) |
+| `L2` | `lifecycle_state = DRAFT` | `DRAFT` |
+| `L3` | `lifecycle_state = ARCHIVED` | `DRAFT` |
+| `L4` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` nulo | `DRAFT` |
+| `L5` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` no nulo | `UNPUBLISHED_BY_BILLING` |
+| `L6` | `lifecycle_state = ACTIVE` y `visibility` distinta de `PUBLIC` | `DRAFT` |
+| `L7` | `ACTIVE` + `PUBLIC` y (`owner_suspended` o `plan_restricted`) | `UNPUBLISHED_BY_BILLING` |
+| `L8` | `ACTIVE` + `PUBLIC`, sin ninguna de las dos marcas | `UNPUBLISHED_BY_BILLING` |
+
+Dos capas que no cambian el estado y se resuelven aparte:
+
+- **`moderation_state`**: `PENDING` y `APPROVED` no se traducen, porque la columna nunca gobernó la
+  visibilidad —el código de hoy lo dice (`packages/service-core/src/services/accommodation/`
+  `accommodation.service.ts`: ninguna lectura pública filtra por `moderationState`)— y `PENDING` es
+  el default de toda fila. **`REJECTED` tampoco se traduce**: se lista en la re-verificación de
+  `B/21` §1.3 y el admin la modera después con `PB10` si quiere (owner 2026-09-26, `G1-2`).
+  `REJECTED` nunca bajó nada, así que ignorarla no cambia lo que se ve hoy.
+- **`is_featured`**: no cruza. El diseño nuevo no tiene destaque curado fuera de la capacidad
+  comercial, y `B/21` §4 lo retira.
+
+**Por qué la borrada nace `PURGED` con el contenido borrado** (`G1-2`): honra el acto del dueño con
+el mismo efecto que `PB12`, y no le reaparece como borrador. El borrado corre en la migración,
+sobre lo que el dueño ya había borrado; si alguna la borró un admin y no su dueño, su contenido se
+pierde igual (declarado en el «NO cierra» del capítulo).
+
+> ~~**Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
 > se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
 > **Y desde `2g` tienen además el camino del cliente nuevo**: sin fila de `trial`, volver a
 > publicar —o el botón de suscribirse, que manda a publicar a quien todavía no publicó en esa
 > vertical (`V/19`; owner 2026-09-25, FASE 9 completa, `6c`)— les arranca el trial como a
-> cualquiera (`T1`, `V/03` §2).
+> cualquiera (`T1`, `V/03` §2).~~
+>
+> **Y eso es lo que se hace: no se siembra nada.** Se les avisa **antes** del corte y se los
+> llama. **El camino que se les nombra es el del cliente nuevo** (`2g`): entrar y **publicar su
+> ficha**, que `PB1` admite desde `UNPUBLISHED_BY_BILLING` o desde `DRAFT` cuando arranca un trial
+> (`V/03` §9), y eso les arranca el trial por `T1`. El botón de suscribirse los manda ahí, porque
+> no tienen ningún `PB1` en el sistema nuevo (`V/19` fila 23). Al contratar, las fichas que siguen
+> abajo vuelven solas por `PB3`, hasta llenar el cupo (FASE 9 vuelta 1, R1; owner 2026-09-26,
+> `G1-1`).
 
 **Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
 puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
@@ -181,7 +232,10 @@ escribe ~~el mismo día~~ **dentro del primer día, cuando la corrida del reconc
 columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a ~~las que no estaban
 publicadas~~ **toda ficha preexistente, incluida la del dueño que ese día no pierde la cobertura**:
 el hecho 5 ya alcanza a las no publicadas de un dueño que la pierde —FASE 8 completa, owner
-2026-09-25—, pero sobre un dueño que no la pierde no ocurre.)*
+2026-09-25—, pero sobre un dueño que no la pierde no ocurre.)* *(Desde R1 ninguna ficha
+preexistente nace `PUBLISHED`: las que estaban a la vista nacen `UNPUBLISHED_BY_BILLING` con la
+escritura `C`, así que `PB2` no corre sobre ellas en el corte y el instante que les queda es el
+del corte, el mismo que `PB2` les habría escrito. FASE 9 vuelta 1, R1.)*
 
 > ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
 > tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió
@@ -208,7 +262,7 @@ corte no siembra ningún trial, ni activo ni consumido: el trial de cada cliente
 cuando él publica, como el de cualquier cliente nuevo. Owner 2026-09-25, FASE 9 completa.)*
 
 **Qué se pierde, dicho sin adornos**: la ficha de cada uno está abajo **desde el corte hasta que esa
-persona contrata**. Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
+persona ~~contrata~~ publica o contrata** (FASE 9 vuelta 1, R1). Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
 aviso va **antes** del corte, no después.
 
 **Y qué se gana, que no es sólo ahorrarse la siembra**: el camino de vuelta —perder la cobertura,
@@ -310,8 +364,11 @@ fila 21).~~
 ### 2.5 La condición de caducidad, que es lo único que hay que vigilar
 
 > ⚠️ `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece.
-> Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está en unas veinte**, y
-> arriba de eso deja de ser viable.
+> ~~Con ocho filas *«no migrar»* son tres llamadas~~ Con la población de `B/21` §1.3 —hoy, los
+> dueños de doce alojamientos y tres suscriptores— (FASE 9 vuelta 1, R7); **el umbral medido está
+> en unas veinte**, y arriba de eso deja de ser viable. **El umbral se mide en personas a llamar,
+> no en suscripciones**: el corte le hace efecto a toda ficha preexistente (§2.4), no sólo a quien
+> tenía una suscripción viva.
 
 El aviso que el owner ya se comprometió a dar —*«si veo que empiezan a entrar registros nuevos, te
 aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir esta decisión.**
@@ -320,14 +377,15 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
 
 ## 4. Lo que NO se migra, y no es una omisión
 
-- **Gastronomía, experiencia y partner**: cero filas. El rediseño de esas tres verticales no
+- **Gastronomía, experiencia y partner**: cero filas al 2026-09-15; se re-cuentan el día del corte
+  con la consulta de `B/21` §1.3 (FASE 9 vuelta 1, R7). El rediseño de esas tres verticales no
   toca un solo dato existente.
 - **La respuesta de la página de un partner que ya no tiene la presencia sí cambia, aunque no se
   migre ningún dato** (FASE 8 completa, `F-8CA1-014`, owner 2026-09-25). El código de hoy
   responde **410** al partner revocado —a propósito, para que un buscador retire la URL para
   siempre— y 404 al resto (`apps/api/src/routes/partners/public/get-by-slug.ts`). El diseño exige
   que ajeno, archivado e inexistente sean indistinguibles desde afuera (cap. 17 §1.2, precisión 1)
-  y que la lectura sin la clave de presencia responda 404 (cap. 18 §1.6), así que **la migración
+  y que la lectura sin la clave ~~de presencia~~ **de la página** (FASE 9 vuelta 1, `F-8V1A1-004`) responda 404 (cap. 18 §1.6), así que **la migración
   lo cambia a 404**. Lo que se pierde con el cambio es esa señal de desindexación. **La revocación
   del admin sin tocar el cobro no se pierde**: pasa al bit de moderación de la presencia, que
   escribe la misma acción administrativa que `PB10` (cap. 18 §1.6; owner 2026-09-25, FASE 9
@@ -340,7 +398,7 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
 
 ## Lo que este capítulo NO cierra
 
-- **Cómo se le avisa a las tres personas y cuándo se cancelan sus suscripciones** es FASE 7: acá
+- **Cómo se le avisa ~~a las tres personas~~ a la población de `B/21` §1.3 (FASE 9 vuelta 1, R7) y cuándo se cancelan sus suscripciones** es FASE 7: acá
   está que no se migra, no el procedimiento de la conversación.
 - **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
   (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
@@ -354,3 +412,20 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   `DEC-METH-015`, FASE 9 completa, `2g`): quien tenía ficha o suscripción en el sistema viejo
   estrena el trial en el sistema nuevo, aunque ya lo hubiera usado. **Causa**: decisión del owner,
   que los trata como clientes nuevos y sólo les respeta la ficha.
+- **Quien contrata sin publicar paga desde el primer cobro** (§2.4; declarado por `DEC-METH-015`,
+  FASE 9 vuelta 1, R1). Si un dueño del corte llega al checkout por otro camino, `S1` lo cubre,
+  `PB3` le sube la ficha y `T8` no escribe nada, porque no ejerció el evento en el sistema nuevo:
+  paga el primer ciclo y conserva el trial sin usar. **Causa**: el guion y el botón lo mandan a
+  publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
+- **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
+  R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`
+  le da el trial de un cliente nuevo, no uno más grande. El aviso lo dice.
+- **En una vertical sin trial, el dueño del corte no tiene trial que estrenar** (§2.4; declarado
+  por `DEC-METH-015`, FASE 9 vuelta 1, R1). Hoy son cero fichas (§4, re-contadas por `B/21` §1.3).
+  **Causa**: la configuración de la vertical, no el corte.
+- **Una ficha vieja borrada por un admin, y no por su dueño, pierde su contenido en el corte**
+  (§2.4, `L1`; declarado por `DEC-METH-015`, owner 2026-09-26, `G1-2`). Toda `L1` nace `PURGED`
+  con el contenido borrado, la haya borrado quien la haya borrado: la regla no lee
+  `deleted_by_id`, que además queda nulo si esa cuenta ya no existe (`ON DELETE SET NULL`).
+  **Causa**: el owner eligió honrar el borrado con el efecto de `PB12` sobre toda la clase, sin
+  una rama por autor. No mueve plata ni da acceso: borra lo que ya no estaba a la vista.

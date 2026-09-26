@@ -44,8 +44,10 @@ quedaron huérfanos**:
 | **rollback** | ~~—~~ **el §4.3**: sólo hacia adelante pasado el paso 3; antes, la rama de aborto del §4.2 (owner 2026-09-25; FASE 9 completa, `2c`) |
 | **acceptance gates** | — |
 
-Cuatro de los seis tienen **cero apariciones en todo el diseño del programa**: `rollout`,
-`coexistence`, `feature flags` y `rollback`.
+~~Cuatro de los seis tienen **cero apariciones en todo el diseño del programa**: `rollout`,
+`coexistence`, `feature flags` y `rollback`.~~ Cuatro de los seis **tenían** cero apariciones en
+todo el diseño del programa (`rollout`, `coexistence`, `feature flags` y `rollback`); `rollback`
+quedó decidido en el §4.3 (FASE 9 vuelta 1, `F-8V1C2-015`).
 
 **Por qué no alcanza con que cada épica escriba la suya y después se junten**: es lo que ya pasó y
 es lo que produjo el hueco. **Dos mitades que no despliegan no suman una estrategia de
@@ -68,8 +70,9 @@ descripción de lo que ya se hizo.
 
 Están juntos a propósito: **el rollback es uno de los seis ítems huérfanos**. Decidir quién
 escribe la FASE 7 del paraguas **es** decidir quién escribe el rollback; separarlos lo deja como
-una tarea suelta que nadie toma — que es exactamente su estado hasta ahora, con **la palabra
-«rollback» sin aparecer en un solo documento de diseño del programa**.
+una tarea suelta que nadie toma — que es exactamente ~~su estado hasta ahora, con **la palabra
+«rollback» sin aparecer en un solo documento de diseño del programa**~~ el estado en que estuvo
+hasta que el §4.3 lo decidió (FASE 9 vuelta 1, `F-8V1C2-015`).
 
 > ⚠️ **Salvedad aceptada de antemano, y es el resultado más valioso posible.** Puede que la
 > conclusión honesta sea **que no hay vuelta atrás**. Reemplazar el sistema de cobro no es revertir
@@ -116,14 +119,15 @@ proveedor.
 
 | # | paso | quién lo hace | por qué en ese lugar |
 |---|---|---|---|
-| 0 | **el despliegue, ensayado en staging y verde** | — | lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó (FASE 8 completa, `F-8CC2-004`) |
+| 0 | **el despliegue, ensayado en staging y verde** —**con una mitad en producción**: sobre un plan propio sin suscriptores (como la sonda 50) se cancela, se reactiva y se abre el link en el navegador; que venda es condición para el 1a. El resto se ensaya en `staging`— (FASE 9 vuelta 1, `F-8V1C2-006`) | — | lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó (FASE 8 completa, `F-8CC2-004`). **La mitad en producción existe porque la rama de aborto reactiva planes de producción**, y eso un sandbox no lo prueba |
 | 1a | **cancelar los `preapproval_plan` viejos**, tomados, como los del 1b, **del proveedor** —todo `preapproval_plan` de la cuenta que no esté `cancelled`— y no de `billing_mp_plan` (FASE 9 completa, `DB-3`) | el sistema **viejo** o una llamada verificada | cierra los links públicos que siguen vendiendo; **es reversible** (sonda 50) y por eso va primero |
 | 1b | **cancelar TODOS los preapprovals vivos de la cuenta ~~que no sean sondas~~**, **incluidas las sondas salvo las enumeradas abajo** (FASE 9 completa, `DB-1`), tomados del **recorrido sin filtro del proveedor** y no de nuestra base. *«Vivo»* es **todo estado releído distinto de `cancelled`**: `pending`, `authorized` y `paused` (FASE 9 completa, `DB-2`) | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe. El censo sale del proveedor porque la base no ve las autorizaciones que nunca se vincularon (`F-8CC2-002`, `F-8CB3-001`) |
-| 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled`. **Y verificar que el recorrido fue completo**: el conteo del recorrido tiene que igualar el `total` del paginado, y **todo id conocido** —los de la base y los de los manifiestos de sonda— tiene que aparecer en él; si no, el corte no avanza (owner 2026-09-25; FASE 9 completa, `2f`) | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`). La completitud del recorrido sin filtro no es fila de la matriz: este control la vuelve condición del gate en vez de premisa |
+| 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled`. **Y verificar que el recorrido fue completo**: el conteo del recorrido tiene que igualar el `total` del paginado, y **todo id conocido** —los de la base y los de los manifiestos de sonda— tiene que aparecer en él; si no, el corte no avanza (owner 2026-09-25; FASE 9 completa, `2f`) | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`). La completitud del recorrido sin filtro no es fila de la matriz: ~~este control la vuelve condición del gate en vez de premisa~~ este control la vuelve condición del gate **para los ids conocidos**; una autorización desconocida que el recorrido omita no la ve ningún control del corte (§4.3; FASE 9 vuelta 1, `F-8V1B3-005`) |
 | 2b | **backup de la base** | — | es lo que restaura la rama de aborto si el paso 3 falla con algo ya escrito (owner 2026-09-25; FASE 9 completa, `2e`) |
-| 3 | **desplegar** | — | recién acá, y sólo si el paso 2 cerró |
-| 3b | **escribir los dos `permanent_grant`** de las cortesías del owner (`B/21` §2.4) | el sistema **nuevo** | antes del paso 4, para que esas dos cuentas no pasen por `cubierto` falso (`V/21` §2.4, punto 3; FASE 9 completa, `DB-7`) |
-| 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados | el sistema **nuevo** | la fila es del esquema nuevo: no puede existir antes del paso 3 |
+| 3 | **desplegar** —con la migración estructural, que escribe **el estado de nacimiento y `inactiva_desde` de toda ficha preexistente** (`V/21` §2.4)—, y **apuntar la URL de notificación de la aplicación del proveedor a la ruta del handler nuevo, verificada con una entrega real** (el alta de una sonda propia) antes del paso 4 (FASE 9 vuelta 1, R1, `F-8V1C2-008`) | — | recién acá, y sólo si el paso 2 cerró. **Sin la entrega verificada, un cobro que llegue después del corte no lo recibe nadie**: las preapprovals de producción no llevan `notification_url` propia |
+| 3a | **el catálogo de producción**: las data-migrations del catálogo nuevo (verticales con su evento, `admite_altas` y fin de servicio; por vertical, los planes vendibles, el de trial, el de pre-trial y el de piso con sus versiones) corren en el carril de datos del despliegue, después de la migración estructural y antes de que arranque el proceso nuevo. **Y antes del 3b se verifican contra la base de producción** las condiciones de `G-R3` y el espejo del enum de verticales: si no dan, el corte no sigue (FASE 9 vuelta 1, `F-8V1A3-004`) | el despliegue, en su carril de datos | el grant del 3b ancla un plan que tiene que existir, y un catálogo que no cumple `G-R3` le deja al proceso nuevo una resolución sin fuente |
+| 3b | **escribir los dos `permanent_grant`** de las cortesías del owner (`B/21` §2.4), **anclados al vendible de `rank` más alto de Alojamiento, en la vertical en que tenían `comp`** (owner 2026-09-26, `G1-3`) | el sistema **nuevo** —la herramienta de B9 (abajo, *«las herramientas del corte»*)— | antes del paso 4, ~~para que esas dos cuentas no pasen por `cubierto` falso~~ **para que esas dos cuentas estén abajo sólo minutos**: sus fichas nacen `UNPUBLISHED_BY_BILLING` como todas y el grant las sube por `PB3` (`V/21` §2.4, punto 3; FASE 9 completa, `DB-7`; FASE 9 vuelta 1, `F-8V1C2-012`) |
+| 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados **y verificados, conocidos por la base o no, sondas incluidas salvo las del manifiesto** (FASE 9 vuelta 1, R6) | ~~el sistema **nuevo**~~ **una persona, con la herramienta del corte (de B11), sobre la base nueva y el manifiesto del 1b** (FASE 9 vuelta 1, R6) | la fila es del esquema nuevo: no puede existir antes del paso 3 |
 
 **Las sondas también se cancelan en el paso 1b**, salvo las que tengan una medición abierta el día
 del corte, que se enumeran por id en un manifiesto versionado en `mp-probes/` (declarado por
@@ -146,8 +150,10 @@ no hay vuelta atrás.
 sistema viejo sigue corriendo con ~~tres suscripciones canceladas. Si entra un cobro en vuelo, **lo
 registra el viejo**~~ **las suscripciones del censo canceladas. Si entra un cobro en vuelo de una que
 la base conoce, lo registra el viejo; si es de una que sólo estaba en el proveedor, el viejo no la
-reconoce y la recoge, después del paso 4, la marca de la re-vinculación** (`B/21` §2.5; FASE 9
-completa, `CT-3`), que es exactamente lo que queremos — sigue existiendo el lugar donde anotarlo.
+reconoce y ~~la recoge, después del paso 4, la marca de la re-vinculación~~** **lo reconoce, después
+del paso 4, su lápida**, porque desde R6 todo id cancelado y verificado tiene una, conocido por la
+base o no (FASE 9 vuelta 1, R6); qué se hace con ese cobro es de `B/05` §3 y `B/21` §2.5 (owner
+2026-09-26, `G3-1`: se asienta sobre la lápida sin marca) (`B/21` §2.5; FASE 9 completa, `CT-3`), que es exactamente lo que queremos — sigue existiendo el lugar donde anotarlo.
 Al revés, con el despliegue primero, ese mismo cobro cae en el vacío. *(Lo que el viejo anote en
 esta ventana no se conserva después del corte: owner 2026-09-25, FASE 9 completa, `2a`; `B/21` §4.)*
 
@@ -157,21 +163,70 @@ API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — 
 § existe para evitar.
 
 ~~**El paso 4 es la única escritura del corte, y es a mano.**~~ **El paso 4 es la única escritura
-a mano del corte. Las otras dos —`inactiva_desde` en toda ficha preexistente (`V/21` §2.4) y los
-dos `permanent_grant` del paso 3b— las hace el sistema nuevo en el paso 3** (FASE 9 completa,
-`CT-1`). **El corte no escribe filas de `trial`**: los clientes actuales se tratan como nuevos
+a mano del corte. ~~Las otras dos —`inactiva_desde` en toda ficha preexistente (`V/21` §2.4) y los
+dos `permanent_grant` del paso 3b— las hace el sistema nuevo en el paso 3~~** (FASE 9 completa,
+`CT-1`). **Las otras tres las hace el sistema nuevo: el estado de nacimiento y `inactiva_desde` de
+toda ficha preexistente, en la migración del paso 3 (`V/21` §2.4); los dos `permanent_grant`, en el
+3b** (FASE 9 vuelta 1, R1, `F-8V1C2-012`). **El corte no escribe filas de `trial`**: los clientes actuales se tratan como nuevos
 (owner 2026-09-25; FASE 9 completa, `2g`; `V/21` §2.4). Las lápidas hacen **reconocible** un
 cobro viejo que llegue tarde, que es lo único que ninguna llamada puede evitar. Se escriben sobre
 una lista conocida, en la misma tanda en la que se habla con la gente.
 
-**Y hay un quinto acto que no es del sistema: las llamadas.** Las fichas publicadas de Alojamiento
-~~**se despublican la mañana del corte**~~ **las despublica la primera corrida del reconciliador
+~~**Y hay un quinto acto que no es del sistema: las llamadas.** Las fichas publicadas de Alojamiento~~
+~~**se despublican la mañana del corte**~~ ~~**las despublica la primera corrida del reconciliador
 diario de cobertura, dentro del primer día**: el corte no es un cambio de `cubierto` (no hay valor
 anterior), así que `PB2` no dispara por evento (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `C-7`)
-—es una consecuencia, no una falla (`V/21` §2.4)— y vuelven solas cuando cada dueño contrata. **El aviso va ANTES del paso 1**, no después: es lo único que
-acota cuánto tiempo queda abajo cada ficha. Las dos escriben filas del
+—es una consecuencia, no una falla (`V/21` §2.4)— y vuelven solas cuando cada dueño contrata.~~
+**Y hay un quinto acto que no es del sistema: las llamadas.** Las fichas que estaban a la vista
+**nacen `UNPUBLISHED_BY_BILLING`** por la escritura de nacimiento del paso 3 (`V/21` §2.4). Cada
+dueño las recupera **publicándolas, que le arranca el trial** (`2g`, `V/03` §9 `PB1`), o
+contratando, y entonces vuelven solas por `PB3` (FASE 9 vuelta 1, R1; owner 2026-09-26, `G1-1`).
+**El aviso va ANTES del paso 1**, no después: es lo único que
+acota cuánto tiempo queda abajo cada ficha. **Va a la población de `B/21` §1.3** —toda persona con
+una ficha que no sea `L1` o con una suscripción viva en el sistema viejo, medida el día del corte—,
+**y dice qué pasa con su ficha y cómo estrena el trial** (`V/21` §2.4; FASE 9 vuelta 1, R7). Las dos escriben filas del
 esquema nuevo, así que **las dos van después de desplegar** — y por eso el paso 3 no es el final
 del corte, aunque lo parezca.
+
+**El guion del aviso** (FASE 9 vuelta 1, R1, R7 y `F-8V1C2-002`; owner 2026-09-26, `G1-1` y
+`G1-4`). Lo que se le dice a cada persona, en la llamada y en el correo:
+
+1. **Qué pasa con su ficha**: el día X queda en pausa, sin perder nada de lo cargado.
+2. **Cómo vuelve**: entrar y **tocar «publicar» sobre su ficha**, que le arranca el trial de
+   cliente nuevo; o contratar, y entonces vuelve sola. **Durante el trial vuelve una sola
+   ficha**; las demás, al contratar (`V/21` «NO cierra»).
+3. **Lo que pagó en el sistema viejo no se devuelve**: el período que le quedaba y los addons
+   que tenga vigentes se pierden con el corte, y **el trial que estrena lo compensa de hecho**.
+   Se dice así, sin prometer una equivalencia (`B/21` «NO cierra»; owner 2026-09-26, `G1-4`).
+4. **Que no contrate ni compre nada en el sistema viejo después de este aviso**: lo que pague
+   ahí entra en el punto 3.
+5. **Lo que va a ver en la ventana**: el correo de baja que le manda el sistema viejo cuando se
+   cancela su suscripción, y su ficha abajo (párrafo siguiente).
+
+**Además de la llamada, un correo** a cada persona de la población de `B/21` §1.3, desde el
+sistema viejo o desde la casilla del owner, **con el envío registrado en el manifiesto del corte**
+(destinatario, fecha, identificador del mensaje): es la evidencia de `B/22` §1.2, antes de que
+exista el outbox nuevo (FASE 9 vuelta 1, `F-8V1C2-011`). **Y el punto 3 es la única constancia de
+que la pérdida se avisó**: sin ese envío registrado, el reclamo de un cliente no tiene del lado
+nuestro nada que mostrar.
+
+**Lo que la persona ve en la ventana** (declarado por `DEC-METH-015`, FASE 9 vuelta 1,
+`F-8V1C2-010`): al cancelar el 1b, el viejo recibe cada cancelación, manda su correo de baja y
+baja las fichas del dueño. No se suprime: el aviso previo lo anticipa. La ficha que el viejo bajó
+entra al corte con `billing_unpublished_at` y nace `UNPUBLISHED_BY_BILLING` (`V/21` §2.4, `L5`),
+igual que las otras. Si hay aborto, la re-suscripción por el link reactivado la republica con la
+lógica del viejo. **Causa**: tocar el código viejo para silenciarlo cuesta más que decirlo, y no
+mueve plata.
+
+**Las herramientas del corte, y de quién es cada una** (FASE 9 vuelta 1, `F-8V1C2-004`):
+
+1. **Censo, cancelación y verificación** (pasos 1a, 1b y 2): un script del repositorio actual,
+   con manifiesto de salida, **mergeado y promovido a `main` antes de que la rama del paraguas
+   entre a `staging`** —así no hace falta la excepción de hotfix—. Es de esta FASE 7 del paraguas
+   y va con la fecha del §2.
+2. **Lápidas** (paso 4): **B11** (`B/21` §2.5; R6).
+3. **Grants** (paso 3b): **B9** (`B/21` §2.4).
+4. **Estado de nacimiento y escritura `C`** (paso 3): **V6** (`V/21` §2.4; R1).
 
 **Por qué el censo sale del proveedor, y no es una hipótesis.** El 2026-09-24 el recorrido sin
 filtro de los 108 preapprovals de la cuenta encontró una autorización viva, del propio owner, que
@@ -194,8 +249,11 @@ completa, `DB-4`).
    `active` con un `PUT` y conserva su `init_point`. **Que el link vuelva a vender no se abrió en el
    navegador**: se verifica en el ensayo del paso 0.
 2. El sistema viejo **sigue corriendo**: ~~no se desplegó nada.~~ **si el paso 3 alcanzó a escribir
-   algo —la migración estructural, `inactiva_desde`, los dos grants—, se restaura el backup del paso
-   2b**, y el viejo vuelve a correr sobre su propio esquema (owner 2026-09-25; FASE 9 completa,
+   algo —la migración estructural, `inactiva_desde` y el estado de nacimiento, los dos grants—, se
+   restaura el backup del paso 2b**, y el viejo vuelve a correr sobre su propio esquema. **Si el paso
+   3 alcanzó a reemplazar la imagen**: se vuelve a desplegar la imagen vieja, se reencienden su
+   webhook y sus crons (lo inverso de `DB-5`) y se verifican los dos, igual que su apagado (FASE 9
+   vuelta 1, `F-8V1C2-007`) (owner 2026-09-25; FASE 9 completa,
    `2e`). Así el reintento del corte escribe `inactiva_desde` con **su** instante, y la regla de
    *«una sola vez»* de la escritura `C` (`NUCLEO/01` §1.2) vale por corte que **termina**. Lo que el
    viejo anotó entre el backup y la restauración se pierde, y no importa: tampoco se conserva
@@ -223,6 +281,14 @@ esto NO cierra**, declarado por `DEC-METH-015` (FASE 9 completa): un defecto gra
 se arregla bajo presión, con clientes cobrando en el sistema nuevo. **Causa**: la alternativa
 —rollback con cancelación masiva— cancela clientes nuevos cuyo trial el proveedor no repite
 (`HOS-1012`), y el owner la descartó.
+
+**Una autorización viva que el recorrido sin filtro no devuelve sobrevive al corte** (FASE 9
+vuelta 1, `F-8V1B3-005`; declarado por `DEC-METH-015`). **Causa**: el gate del paso 2 compara el
+recorrido contra sí mismo —su conteo contra el `total` del paginado— y contra ids conocidos, y la
+completitud del recorrido no está medida (`RC-1`); una fuente independiente sería mecanismo nuevo
+sobre una API que `R-MP-01` da por discontinuada. Se detecta en su primer cobro, que llega como
+desconocido: el handler le escribe una lápida de recepción y la marca `PAGO_TARDÍO_RECHAZADO` le
+propone a la persona devolverlo, con **SÍ** (`B/09` §2.4; owner 2026-09-26, `G3-2`).
 
 ---
 

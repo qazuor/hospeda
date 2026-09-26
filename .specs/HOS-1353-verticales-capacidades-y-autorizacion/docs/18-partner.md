@@ -87,8 +87,8 @@ enumeración con la enumeración corta es exactamente cómo una garantía se vue
 nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara—, `T7`
 espera **el encendido**, que todavía no ocurrió, **y `T8` —desde la FASE 9 completa, 6c— pide días
 de trial > 0 y el evento ya ejercido** (`V/03` §2). Ninguna de las ~~tres~~ cuatro puede ocurrir, y
-**la razón es la configuración de hoy, no una propiedad de Partner**: las tres dependen de dos
-números y una declaración que `DEC-TRIAL-003` planifica cambiar.
+**la razón es la configuración de hoy, no una propiedad de Partner**: ~~las tres~~ las cuatro dependen de dos
+números y una declaración (FASE 9 vuelta 1, `F-8V1A2-010`) que `DEC-TRIAL-003` planifica cambiar.
 
 **El día que Partner encienda su trial, el §10.5 pasa a alcanzarlo y el procedimiento ya está
 escrito**: capítulo 11 §8 — declarar el evento, publicar la versión con días `> 0` y ejecutar
@@ -117,7 +117,7 @@ excedentes trabaja con limits (cap. 15 §4.2), y la presencia no es ninguna de l
 entitlement booleano del §1.2—.
 
 > **La página propia de Partner Gold no tiene máquina de estados. La lectura pública pregunta si
-> el partner tiene HOY el entitlement de presencia pública (§1.2), desde el caché del conjunto
+> el partner tiene HOY el entitlement ~~de presencia pública~~ **«página propia»** (§1.2; FASE 9 vuelta 1, `F-8V1A1-004`), desde el caché del conjunto
 > efectivo que ya existe (cap. 02 §3), y si no lo tiene responde que no existe: 404.**
 
 **Y la misma regla gobierna el carrusel, con su propia clave** (owner 2026-09-25; FASE 9 completa,
@@ -256,7 +256,8 @@ presencia publicada porque no hay quién la cargue, y no hay suscripción porque
 débito. Lo único que existe es una fila.
 
 **No vence, y queda visible.** Igual que la pendiente del §2.3: aparece como no reclamada en el
-panel y el admin puede darla de baja. Un vencimiento automático no evitaría ningún daño —no hay
+panel ~~y el admin puede darla de baja~~ y no se da de baja: es inofensiva y ninguna fila la saca
+de ahí (FASE 9 vuelta 1, `F-8V1A2-005`). Un vencimiento automático no evitaría ningún daño —no hay
 ninguno— y agregaría un estado más.
 
 ---
@@ -291,3 +292,5 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
   abierto; **qué hay que hacer ese día** no: es el capítulo 11 §8, y los partners ~~ya aprobados~~
   que ya ejercieron el hecho declarado quedan resueltos por `T7` — **los del camino B, sólo si la
   declaración dice qué cuenta para ellos** (§1.5; `F-8CA2-012`).
+- **La lista de aprobadas sin reclamar sólo crece** (FASE 9 vuelta 1, `F-8V1A2-005`). **Causa**:
+  no hay daño que evitar (§2.5), y una baja sería un estado más.

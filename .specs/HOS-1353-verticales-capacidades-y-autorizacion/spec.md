@@ -46,7 +46,9 @@ exactas — *«acá se agregan **capacidades**, allá se compone **dinero**»*.
 ## 2. El diseño de esta épica
 
 Once capítulos, en [`docs/`](./docs/). **Son de esta épica**: ningún otro documento los contiene,
-y ninguno de ellos necesita leer uno de la épica de billing para estar completo.
+~~y ninguno de ellos necesita leer uno de la épica de billing para estar completo~~ **y citan a
+billing donde el comportamiento cruza** (`NUCLEO/00`: las dos épicas se citan entre sí); lo que
+cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1-008`).
 
 | # | capítulo | qué resuelve |
 |---|---|---|
@@ -55,10 +57,10 @@ y ninguno de ellos necesita leer uno de la épica de billing para estar completo
 | `10` | [verticales y planes](./docs/10-verticales-planes-billing-options.md) | el Eje 2 como lista cerrada, y qué se lee del catálogo desde dónde |
 | `11` | [trial](./docs/11-trial.md) | el reloj de calendario, el techo de días, la reparación, la campaña de recuperación |
 | `15` | [entitlements y limits](./docs/15-entitlements-y-limits.md) | las cuatro estrategias de agregación, el scope, el excedente, el visitante sin cuenta |
-| `17` | [autorización](./docs/17-autorizacion.md) | los nueve pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
+| `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ **diecinueve guards** (`G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ **veinte guards** (`G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`) |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`) |
 
@@ -145,11 +147,12 @@ no se puede invocar sin la vertical. No hay un control que alguien pueda olvidar
 
 ### 3.6 Cómo se autoriza una operación
 
-**Nueve pasos, en un orden que no es preferencia**: va de lo que no depende de nada hacia lo que
+**~~Nueve~~ Siete pasos, en un orden que no es preferencia** (son nueve verificaciones agrupadas en
+siete pasos y una precondición: FASE 9 vuelta 1, contradicción (e)): va de lo que no depende de nada hacia lo que
 depende de todo, y cada paso revela lo mínimo.
 
 1. quién es · 2. estado de la persona · 3. permiso · 4. el recurso: existencia, estado y dueño ·
-5. **título vivo** · 6. entitlement · 7. limits — con el **contexto de vertical** como precondición
+5. ~~**título vivo**~~ **fuente viva** (el paso 5 acepta el piso, que no es título: cap. 17 §1.2, precisión 5) · 6. entitlement · 7. limits — con el **contexto de vertical** como precondición
 estructural, no como paso.
 
 **Y la precondición se lee del recurso, nunca del pedido**: en una operación sobre algo que guarda
@@ -170,7 +173,9 @@ FASE 9 completa)—:
   sin eso la promesa era inejecutable justo para la población a la que se le borra el contenido.
 - **Lo ajeno existe sólo en estado público** (precisión 7; owner 2026-09-25, FASE 9 completa, 8c):
   para quien no es el dueño, el recurso existe sólo si es una ficha `PUBLISHED` o una presencia de
-  Partner con la clave vigente y sin moderar. Todo lo demás contesta como inexistente.
+  Partner ~~con la clave vigente y sin moderar~~ **con la clave de esa superficie** —«página propia»
+  para la página, «presencia en el carrusel» para el carrusel (cap. 18 §1.2)— **vigente y sin
+  moderar** (FASE 9 vuelta 1, `F-8V1A1-004`). Todo lo demás contesta como inexistente.
 - **El estado de la persona va antes del permiso**, porque al revés una cuenta ~~inhabilitada~~ **con
   el correo sin verificar** puede averiguar qué permisos tiene probando operaciones. *(«Inhabilitado
   por abuso» salió del paso 2: no tenía dato que lo escribiera, y el abuso se trata ficha por ficha
@@ -184,7 +189,7 @@ por el paso 5, y **una lectura de lo propio —Mi Cuenta, su billing, sus fichas
 así que un suspendido puede ver cómo regularizar (cap. 17 §3.5; owner 2026-09-25, FASE 9 completa,
 8d).
 
-**Y los nueve se resuelven en un solo lugar.** El invariante no es que cada servicio los haga: es
+**Y los ~~nueve~~ siete se resuelven en un solo lugar.** El invariante no es que cada servicio los haga: es
 que **ninguno los haga por su cuenta**.
 
 ### 3.7 Actor y sujeto
@@ -194,7 +199,9 @@ que **ninguno los haga por su cuenta**.
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto.
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y
-ése es exactamente el rastro que no se puede perder.
+ése es exactamente el rastro que no se puede perder. **Y una acción administrativa nunca tiene
+`actor = sujeto`**: el paso 3 la rechaza y la hace otra cuenta con el permiso (cap. 17 §3.2 regla
+5; owner 2026-09-26, `G5-1`).
 
 ### 3.8 El rol no se toca al perder el acceso
 
@@ -206,7 +213,9 @@ puede ejecutarlas.** Son dos ejes independientes, y los pasos 3 y 5 están separ
 puedan discrepar.
 
 Va con su mitad obligatoria: **ninguna autorización decide sólo por rol** (`G6`). Las dos juntas o
-ninguna funciona.
+ninguna funciona. **Y ningún rol es una fuente**: el conjunto efectivo sale sólo de las fuentes de
+`cobertura()`, y el cargador que le da el conjunto entero al staff se retira (cap. 17 §4.3; la
+segunda mitad de `G6`; FASE 9 vuelta 1, `F-8V1A1-002`).
 
 ### 3.9 El trial
 
@@ -217,7 +226,10 @@ ni dejar de entrar.
 **Se consume al ejercer el evento de activación o con el primer pago, nunca con una autorización.**
 Una suscripción convierte el trial recién con su primer pago acreditado (`T2`, `T5`;
 `DEC-TRIAL-010`), y **suscribirse antes de publicar no lo quema**: `T6` exige un título que
-convierte, y quien pagó sin haber publicado consume su fila por `T8`, al primer pago. La superficie
+convierte, ~~y quien pagó sin haber publicado consume su fila por `T8`, al primer pago~~ quien
+publicó con una suscripción que todavía no cobró consume su fila por `T8`, al primer pago, y quien
+pagó sin haber publicado sigue en `PRE_TRIAL` y la consume `T6` cuando publique (FASE 9 vuelta 1,
+`F-8V1A2-004`). La superficie
 lo evita antes: **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a
 publicar**, que arranca su trial (cap. 03 §2, cap. 19 §4 fila 23; owner 2026-09-25, FASE 9
 completa, 6c).
@@ -309,7 +321,7 @@ suscripción, y **recuperar lo suyo** —ver, exportar y traer a borrador una fi
 (`PB8`)—. La tercera es la que vuelve ejecutable la defensa del hard delete del día 180 para quien
 no vuelve a pagar, que es exactamente su sujeto.
 
-Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina de
+Con eso se construye y se prueba **entero**: la autorización recorre sus ~~nueve~~ siete pasos, la máquina de
 publicación tiene vivo su `PB2` alimentado por `T3`, el reconciliador de excedentes corre disparado
 por las transiciones de trial, **el reconciliador diario de cobertura compara el contrato con las
 fichas una vez por día (`V/03` §9, `DEC-ARCH-009`)**, y la agregación de limits y los scopes no tienen ninguna dependencia
@@ -351,10 +363,10 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ## 5. Cómo se comprueba que está bien
 
-**Siete guards con id propio de esta épica** —`G1`-`G6` y `G8`—, y cada uno **lleva un caso que lo
+**~~Siete~~ Ocho guards con id propio de esta épica** —`G1`-`G6`, `G8` **y `G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`)—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**Siete NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ **diecinueve** —el decimonoveno es
-`G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e)—, y los **doce** que no
+**~~Siete~~ Ocho NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ **veinte** —el decimonoveno es
+`G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los **doce** que no
 están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus **cuatro** referencias cruzadas
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
 es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están todos?»*:
@@ -366,13 +378,14 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G3` | una clave de código no está en la base, **o una de la base no está en el catálogo** |
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
-| `G6` | una autorización **decide sólo por rol** |
+| `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
 | `G8` | aparece `commerce` en fuentes activas |
+| `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ diecinueve: **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ veinte: **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---

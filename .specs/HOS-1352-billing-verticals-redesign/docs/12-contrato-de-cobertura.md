@@ -116,7 +116,7 @@ que alguien pueda olvidar.**
 
 | campo | qué es | quién lo necesita |
 |---|---|---|
-| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
+| **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | **`PB1`**, que publica sólo con `cubierto` verdadero o si dispara `T1` (`V/03` §9; owner 2026-09-25; FASE 9 vuelta 1, `F-8V1C1-012`); `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
@@ -824,7 +824,7 @@ que el trial venciera (FASE 8 completa, `F-8CC1-011`, owner 2026-09-25).
 **Y desde `DEC-TRIAL-010` hay un cambio de cobertura que no aparece ni apaga ninguna fuente, y
 también lleva aviso** (owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`): **el primer
 pago acreditado de una fila**, que pasa su `cobrada` de `no` a `sí` (§2.1). `cubierto` no se mueve,
-pero es el hecho que `T2` y `T5` esperan; sin aviso, `T2` quedaría esperando hasta que `T3` venciera
+pero es el hecho que ~~`T2` y `T5` esperan~~ `T2`, `T5` **y `T8`** esperan (FASE 9 vuelta 1, `F-8V1A2-010`); sin aviso, `T2` quedaría esperando hasta que `T3` venciera
 el trial. Los otros tres consumidores lo reciben como cualquier otro —recalculan y vuelven a
 preguntar— y no encuentran nada que hacer. **Y el reconciliador diario de cobertura no es su red**:
 no corre la máquina de trial (`V/03` §9, ⚠️ punto 3).
@@ -840,6 +840,18 @@ figura en esa fila. Cubre por igual el aviso perdido, la fecha que vence sin tra
 cualquier camino que nadie previó, **con hasta un día de atraso**. **Y a cada partner ~~con presencia cargada~~ con una clave de presencia** —la página o, desde la FASE 9 completa, el carrusel (decisión 7b); la población está en `V/03` §9— le resuelve en vivo ~~el entitlement de presencia~~ las dos claves y, si el caché dice otra cosa, lo invalida: la presencia no tiene máquina (`V/18` §1.6, `V/03` §9; FASE 8 completa, `R13`, owner 2026-09-25). Lo que no cubre —la máquina de
 trial, el dueño ~~que sólo tiene borradores~~ **sin ninguna ficha publicada** (FASE 9 completa, `B-1`), el caché sin diferencia de fichas— está declarado en el
 ⚠️ de ese §.
+
+**Quién emite** (FASE 9 vuelta 1, `F-8V1C1-006`, 2026-09-26). **Emite el aviso, en el mismo acto, toda escritura que cambia la respuesta del §2.1 para algún
+`(user, vertical)`**: que agrega o saca una fuente, o le cambia `referencia`, `hasta`, `alcance`,
+`objetivo`, `cobrada` o `piso`. Un addon `USER`/`GLOBAL` emite en cada vertical compatible de su
+producto (§2.7). **Una fecha que vence sin transición no emite** (§2.6): la cubre el
+reconciliador. **Éste es el censo de emisores, y va sin número, con la regla de la fila
+`cubierto`**: quien agregue un emisor agrega su sintagma acá en el mismo acto. Hoy: las filas de
+`B/03` §3.2 cuyo `desde` y `hacia` emiten distinto según *«qué emite cada estado»* (§2.6), el
+espejo del §10.1 incluido; `P1` sobre el primer pago acreditado de una fila; las filas que abren,
+extienden o cierran una cortesía; otorgar y revocar un grant (`NUCLEO/08` §3); `A2`, `A4`, `A5`
+y `A6`; y `T1`, `T2`, `T3`, `T4` y `T5`, que mueven la fuente de trial, en las dos
+implementaciones.
 
 **El evento no reemplaza la consulta.** El reconciliador *«no se dispara por evento: se dispara
 por condición»* (cap. 15 §4.2): el aviso dice que hay que recalcular, y el recálculo vuelve a
@@ -886,6 +898,36 @@ de la que sigue a un aviso repetido no está escrito. ~~Las dos quedan abiertas 
 §1.2.~~ **Ésa la aceptó el owner** (`NUCLEO/01` §1.2, ⚠️ punto 3), y es la que obliga al
 reconciliador a escribir el hecho 5 **sólo** junto con `PB2`: con un disparo diario, escribirlo cada
 vez que relee falso correría el reloj todos los días.
+
+### 3.1 El empuje inverso: la ficha llegó a `PURGED`
+
+FASE 9 vuelta 1, `F-8V1A3-003`, `F-8V1C1-001`; owner 2026-09-26, `G2-1` (contra la recomendación:
+el owner no acepta ni un cobro de más).
+
+```text
+evento: la ficha F llegó a PURGED
+```
+
+**Es lo único que verticales le empuja a billing.** Lo emite verticales **en el mismo acto** de
+`PB9` y de `PB12` (`V/03` §9) —las dos únicas filas que llegan a `PURGED`— y lleva sólo el id de
+la ficha. Su único consumidor es `A6` (`B/03` §8), que desde `K-9` es la única fila que cancela un
+addon `LISTING` cuando se borra su ficha: al recibirlo, billing busca las instancias vivas de scope
+`LISTING` con ese `objetivo` y corre `A6` sobre cada una **en ese momento, no en el barrido del día
+siguiente**. Existe para eso: con sólo la consulta, el cobro mensual de un destaque que cayera
+entre el borrado y el barrido entraba.
+
+**No se le cree, igual que al aviso** (*«el evento no reemplaza la consulta»*, arriba): `A6` corre
+porque la ficha está en `PURGED`, y lo relee con la consulta `fichaPurgada` del §4.1 antes de
+cancelar. **Y no tiene transporte durable** —el outbox del núcleo es de correos, igual que para el
+aviso—, así que **perderlo es un caso declarado: la red es la misma consulta `fichaPurgada`, leída
+por el barrido diario de billing** por cada instancia viva de scope `LISTING` (`B/09` §3). Con el
+empuje perdido vuelve el día de atraso, y con él el cobro que el empuje venía a evitar; lo mismo
+para un borrado que no pasa por `PB9` ni por `PB12` —el hard delete del admin, `F-8V1A1-003`—, que
+no empuja nada. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8).
+
+**No es un quinto consumidor del aviso ni lo reemplaza**: son dos eventos distintos, en
+direcciones opuestas, y ninguno lleva el dato del otro. Lo emiten las dueñas de las dos filas —V6 el
+de `PB12`, V9 el de `PB9`—, y la consulta la construye V6 (`V/descomposicion.md` §2).
 
 ---
 
@@ -941,10 +983,25 @@ regule, que es exactamente el acoplamiento que el corte en dos épicas venía a 
 políticaDePlan(versiónDePlan)  → { díasDeGrace, díasDeTrial, permitePausa, vigente, vendible }
 situaciónDeVertical(vertical)  → { admiteAltas, finDeServicio }
 direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA
+fichaPurgada(ficha)            → sí | no
 ```
 
-> **El contrato tiene dos direcciones. La inversa transporta política y estado de catálogo, nunca**
-> **capacidades: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
+> **El contrato tiene dos direcciones. La inversa transporta política ~~y estado de catálogo, nunca~~**
+> **~~capacidades~~, estado de catálogo y un único hecho de instancia —que una ficha ya no existe,**
+> **empujado (§3.1) y consultado (`fichaPurgada`)—, nunca capacidades** (FASE 9 vuelta 1; owner
+> 2026-09-26, `G2-1`)**: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
+
+**Y una pregunta que no es de catálogo: `fichaPurgada`** (FASE 9 vuelta 1; owner 2026-09-26,
+`G2-1`). Contesta `sí` si la ficha está en `PURGED` o su fila no existe, y `no` en cualquier otro
+estado. Es el único estado de instancia que billing lee, y lo lee porque `A6` —la única fila que
+cancela un addon `LISTING` al borrarse su ficha (`K-9`)— espera un hecho de verticales. **El hecho
+llega empujado** (§3.1), y esta consulta es **su red**: el barrido diario de billing la pregunta por
+cada instancia viva de scope `LISTING` y, si da `sí`, corre `A6` (`B/09` §3); y `A6` la relee antes
+de cancelar, así que el empuje no se cree solo. `PURGED` es final, así que la pregunta contesta lo
+mismo tarde que temprano: lo que cuesta un empuje perdido es el día de atraso, no una respuesta
+equivocada. La incluye la fila inexistente a propósito, para que un borrado que no pasa por `PB9`
+ni por `PB12` también apague el addon. **La construye V6, dueña de `PB12`**, no `V2`: no es una
+columna de `V/02` §2.1 sino el estado de la ficha.
 
 #### La tercera pregunta: subir o bajar lo contesta verticales
 
@@ -1052,7 +1109,10 @@ esta frontera: *«es lo que prueba que la abstracción no miente»*.
 
 **No devuelve datos fijos.** Resuelve honestamente las **dos** fuentes que ya viven del lado de
 verticales —el trial, con su máquina de estados del capítulo 03 §2, y el título `BASE` del §2.5— y
-responde que no a las cuatro de billing: suscripción, cortesía, grant y addon.
+responde que no a las cuatro de billing: suscripción, cortesía, grant y addon. **Y emite el aviso**
+en las transiciones de trial del censo del §3 (*«quién emite»*): es emisor desde el día uno, igual
+que la real (§5.2), así que `PB2` baja la ficha de un trial vencido en el acto de `T3` y no al día
+siguiente (FASE 9 vuelta 1, `F-8V1C1-006`).
 
 **Por qué esto y no un valor hardcodeado**, que es la parte que más cambia el resultado del
 ejercicio:

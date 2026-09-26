@@ -55,7 +55,9 @@ escribiera, y un control sin dato es peor que ninguno porque cada implementació
 **Y sobra una: el scope de vertical sale de la lista de verificaciones**, porque pasa a ser
 estructural (§2). Una verificación que no puede faltar no es una verificación.
 
-Quedan **nueve pasos y una precondición**.
+Quedan ~~**nueve pasos y una precondición**~~ **nueve verificaciones, en siete pasos y una
+precondición**: el paso 4 junta dueño y estado del recurso, y el 5 el estado de acceso y la fuente
+activa (FASE 9 vuelta 1, contradicción (e): el nueve contaba verificaciones y se leyó como pasos).
 
 ### 1.2 El orden, y por qué ése
 
@@ -66,7 +68,7 @@ falla.
 | # | paso | qué pregunta | si falla |
 |---|---|---|---|
 | — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre ~~una ficha~~ un recurso que guarda su vertical, la vertical se lee ~~de la ficha~~ del recurso y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la ~~de la ficha~~ del recurso, **no existe**, con la respuesta del paso 4 |
-| 1 | **quién es** | ¿hay un actor? | no autenticado |
+| 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | ~~inhabilitada, o~~ correo sin verificar (FASE 9 completa, 8b) |
 | 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? **Si el sujeto no es el dueño, el recurso existe sólo en estado público** (precisión 7) | **no existe** — las tres juntas |
@@ -93,7 +95,7 @@ decisión 8c):
    inalcanzable.
 
    **Y el paso 4 es sólo el primero de los dos que `PB8` tiene que pasar: el otro es el 6.**
-   `PB8` escribe estado y es auditable, así que pasa por los nueve (§3.5), y su población
+   `PB8` escribe estado y es auditable, así que pasa por los ~~nueve~~ **siete** (§3.5), y su población
    declarada —*«el que quiere su ficha de vuelta sin pagar todavía»* (cap. 03 §9)— **no tiene
    ninguna fuente de clase `TÍTULO`**: su conjunto efectivo es la **versión de piso**. Por la
    precisión 5 de más abajo, el 5 la deja pasar y **el 6 es el único que decide**, así que
@@ -106,12 +108,21 @@ decisión 8c):
    dueño borra su ficha con o sin plan (FASE 8 completa, owner 2026-09-25).
    Y es lo mismo para **exportar**, que `V/02`
    §4.2 regla 3 usa para justificar el borrado: es una lectura, no pasa por el 5 y **sí por los
-   otros ocho** (§3.5).
+   otros ~~ocho~~ seis, y por la precondición** (§3.5).
 2. **El estado de la persona va ANTES del permiso.** Al revés, una cuenta ~~inhabilitada~~ **con el
    correo sin verificar** puede
    averiguar qué permisos tiene probando operaciones: las que contestan *«sin cobertura»* las
    tiene, las que contestan *«sin permiso»* no. *(Decía «inhabilitada»; el estado de la persona
    quedó en el correo sin verificar — FASE 9 completa, 8b.)*
+
+   **Lo que el paso 2 deja pasar con el correo sin verificar es una lista cerrada**: verificar el
+   correo o cambiarlo; las lecturas de lo propio —Mi Cuenta, su billing y sus fichas (§3.5)—;
+   exportar, `PB8` y `PB12`; regularizar un cobro —cambiar la tarjeta, pagar la cuota—; y **darse
+   de baja**. Todo lo demás —publicar, contratar, comprar, editar lo público— lo rechaza. Sin esta
+   lista el paso 2 bloqueaba justo la recuperación que `DEC-DATA-001` promete y la baja, que deja a
+   la persona cobrando (FASE 9 vuelta 1, `F-8V1A1-007`). *«Contratar»* es `DE_ACCESO` (cap. 15) y
+   queda **afuera** a propósito: sin correo probado ni el aviso previo al cobro ni el comprobante
+   tienen destino.
 3. **Los limits van últimos porque son los únicos que necesitan contar.** Todos los pasos
    anteriores se responden con lo que ya está resuelto; éste lee datos. Ponerlo antes hace
    trabajo que la mayoría de los rechazos no necesita. **Y contar no alcanza si se cuenta afuera**:
@@ -174,13 +185,15 @@ decisión 8c):
    pública se hacía su exención —la *«exención por superficie»* que el §3.5 descarta—, con el riesgo
    de que por una se colara un borrador ajeno. **Cuando el sujeto no es el dueño, el recurso existe
    sólo si está en un estado público, y la lista es cerrada**: una ficha en **`PUBLISHED`**, y una
-   presencia de Partner **con la clave vigente y sin moderar** (cap. 18 §1.6). Todo lo demás —el
+   presencia de Partner ~~**con la clave vigente y sin moderar**~~ **con la clave de esa
+   superficie** —«página propia» para la página, «presencia en el carrusel» para el carrusel (cap.
+   18 §1.2)— **vigente y sin moderar** (cap. 18 §1.6; FASE 9 vuelta 1, `F-8V1A1-004`). Todo lo demás —el
    borrador, la archivada, la moderada, la presencia sin la clave o moderada— es, para quien no es
    el dueño, lo mismo que no existir: la respuesta de la precisión 1.
 
-### 1.3 Los nueve se resuelven en un solo lugar
+### 1.3 Los ~~nueve~~ siete pasos se resuelven en un solo lugar
 
-**No hay nueve verificaciones repartidas: hay una resolución de autorización que las ejecuta en
+**No hay nueve verificaciones repartidas** (son nueve verificaciones, en los siete pasos del §1.2)**: hay una resolución de autorización que las ejecuta en
 orden, y es la única que las ejecuta.** Es el invariante §64.14 —*«los servicios validan
 vertical, acceso, entitlement y limits»*— en su forma aplicable: no que cada servicio las haga,
 sino que **ninguno las haga por su cuenta**.
@@ -290,26 +303,36 @@ Eso no agrega un modo especial: **lo elimina.** El paso 4 del §1.2 sigue dicien
 recurso es del sujeto*— y no se salta nunca. Lo que autoriza que `actor ≠ sujeto` es un permiso,
 no una excepción a la lista.
 
-**Cuatro reglas, y ninguna es opcional:**
+~~**Cuatro reglas, y ninguna es opcional:**~~ **Cinco reglas, y ninguna es opcional** (la quinta, owner
+2026-09-26, `G5-1`):
 
 1. **`actor ≠ sujeto` exige un permiso de esa acción concreta**, no una condición general de
-   «es administrador». Las ~~doce~~ ~~**trece**~~ **catorce** acciones del capítulo 08 §3 llevan permiso propio, una por una
+   «es administrador». Las ~~doce~~ ~~**trece**~~ ~~**catorce**~~ **quince** acciones del capítulo 08 §3 llevan permiso propio, una por una
    (la decimotercera, moderar una ficha —**o la presencia de un Partner**, desde la FASE 9 completa,
    decisión 7c—: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; **la decimocuarta, asentar un cobro
    o una devolución que ya ocurrió por fuera de nuestro flujo**: owner 2026-09-25, FASE 9 completa,
-   decisión 5a).
+   decisión 5a; **la decimoquinta, editar el contenido de una ficha ajena** —sin publicar, destacar
+   ni borrar—: owner 2026-09-26, `G5-2`).
 2. **Toda operación con `actor ≠ sujeto` es auditable sin excepción**, con los campos del
    capítulo 08 §1.2. El `actor` es uno de ellos, y es lo que convierte *«alguien otorgó esta
    cortesía»* en *«esta persona la otorgó»*.
 3. **El admin no hereda los entitlements del sujeto.** Los pasos 5, 6 y 7 se evalúan **sobre el
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
-   hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ catorce acciones del capítulo 08 §3 son
+   hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ ~~catorce~~ quince acciones del capítulo 08 §3 son
    capacidades del actor**, no del sujeto — otorgar una cortesía no consulta si el cliente tiene
    derecho a una, porque su objeto es dárselo. **A qué clase pertenece una operación se declara,
    nunca se infiere.**
 4. **No existe la impersonación.** El administrador no «entra como» el cliente. La diferencia es
    todo el punto: impersonar hace que el registro diga que el cliente lo hizo, y ése es
    exactamente el rastro que el hueco pide que no se pierda.
+5. **Una acción administrativa nunca tiene `actor = sujeto`: el paso 3 la rechaza** (*«sin
+   permiso»*) y la hace otra cuenta con el permiso (owner 2026-09-26, `G5-1`; FASE 9 vuelta 1,
+   `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
+   que además es cliente registrándose su propia cuota— y `D11` (*«lo que toca plata lo confirma
+   una persona»*) se cumplía a la letra sin proteger nada: la regla lo vuelve lo que quiso decir,
+   **otra** persona. Es una regla sin lista, vale para las quince acciones del capítulo 08 §3, y su
+   costo es de una sola vez: quien administra y además es cliente necesita una segunda cuenta —la de
+   admin separada de la de cliente— para que lo suyo lo opere otra. Lo prueba un caso de `V5`.
 
 ### 3.3 El actor no siempre es una persona
 
@@ -317,10 +340,10 @@ Dos actores más, y nombrarlos evita que alguien los trate como ausencia de acto
 
 | actor | qué es |
 |---|---|
-| **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15 |
+| **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15. **No pasa del paso 1** salvo en la lectura pública, y el paso 2 no le aplica: no tiene cuenta (FASE 9 vuelta 1, `F-8V1A1-006`) |
 | **el sistema** | los jobs y los webhooks operan sin persona detrás. Llevan su propio identificador de actor y sus dos identificadores de correlación (cap. 08 §2.3) |
 
-**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ catorce acciones del capítulo 08 §3.** ~~Las
+**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ quince acciones del capítulo 08 §3.** ~~Las
 doce mueven dinero o conceden servicio~~ Doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toca plata lo
 confirma una persona. La decimotercera, moderar una ficha (`PB10`/`PB11`, cap. 03 §9) **o la
 presencia de un Partner** (cap. 18 §1.6; FASE 9 completa, 7c), no toca
@@ -328,7 +351,10 @@ plata: le quita a alguien su presencia pública por decisión nuestra, y la deci
 por cómo está escrita (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25). **La decimocuarta,
 asentar un cobro o una devolución que ya ocurrió por fuera de nuestro flujo, es plata** —registra
 la que entró o salió sin pasar por nosotros, y corre `P1` o cierra un `refund`— y cae en `D11` por
-la misma razón que las doce (owner 2026-09-25; FASE 9 completa, decisión 5a). Un job que pudiera otorgar una cortesía convierte ese invariante en una
+la misma razón que las doce (owner 2026-09-25; FASE 9 completa, decisión 5a). **La decimoquinta,
+editar el contenido de una ficha ajena, no toca plata ni publica**: es una escritura sobre lo
+ajeno, y su rastro vale sólo si el actor es la persona que la decidió, que es lo que el §3.2 regla 2
+exige (owner 2026-09-26, `G5-2`). Un job que pudiera otorgar una cortesía convierte ese invariante en una
 sugerencia.
 
 ### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
@@ -339,7 +365,7 @@ reloj**, y esos tres pasos preguntan por el título, las capacidades y el cupo *
 existe**.
 
 > **Las transiciones disparadas por el reloj son una segunda clase de operación, evaluada por
-> analogía con las ~~doce~~ ~~trece~~ catorce acciones administrativas: los pasos 5, 6 y 7 se resuelven sobre la
+> analogía con las ~~doce~~ ~~trece~~ ~~catorce~~ quince acciones administrativas: los pasos 5, 6 y 7 se resuelven sobre la
 > capacidad del ACTOR, no sobre la del sujeto.**
 
 **La clase se declara transición por transición**, nunca se infiere — es la regla que este mismo
@@ -365,7 +391,7 @@ reconciliador diario corre por calendario pero no cambia el evento de ninguna—
 
 > **En ellas los pasos 5, 6 y 7 se evalúan sobre el SUJETO, que es el dueño de la ficha, con el
 > sistema como actor.** Es la regla general del §3.2 —*«los pasos 5, 6 y 7 se evalúan sobre el
-> sujeto»*— sin caer en ninguna de las dos excepciones: las ~~doce~~ ~~trece~~ catorce acciones del cap. 08 §3 y la clase
+> sujeto»*— sin caer en ninguna de las dos excepciones: las ~~doce~~ ~~trece~~ ~~catorce~~ quince acciones del cap. 08 §3 y la clase
 > del reloj de este §.
 
 **No es una clase nueva: es declarar que no están en ninguna de las dos excepciones**, que es lo
@@ -379,12 +405,12 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 > `actor ≠ sujeto`, **un permiso de esa acción concreta**, y está escrita para una persona. Cómo lo
 > cumple un actor de sistema —en esta clase y en la del reloj, que tienen el mismo `actor ≠
 > sujeto`— no está escrito. No da acceso a ninguna persona: el §3.3 ya le prohíbe al sistema las
-> ~~doce~~ ~~trece~~ catorce acciones del cap. 08 §3.
+> ~~doce~~ ~~trece~~ ~~catorce~~ quince acciones del cap. 08 §3.
 
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
-El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ **14**
-**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a), que son **la excepción, no el conjunto**. Y hay una regla en uso que
+El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ **15**
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.
@@ -395,10 +421,10 @@ partes:
 1. **El criterio**, y son **dos preguntas distintas** que antes venían pegadas:
    - **¿corre la resolución?** **Toda operación la corre**, escriba o no. No hay operación exenta.
    - **¿pasa por el paso 5?** Sólo si **escribe estado del negocio y es auditable**. Una lectura
-     que no muta nada **no pasa por el 5** — y **sí por los otros ocho**.
+     que no muta nada **no pasa por el 5** — y **sí por los otros ~~ocho~~ seis, y por la precondición**.
 
-   > ⚠️ **Los nueve pasos no vienen en bloque, y decir que una lectura «no es de dominio» la
-   > sacaba de los nueve.** Con eso **ninguna lectura tenía autorización**: ni el paso 4
+   > ⚠️ **Los ~~nueve~~ siete pasos no vienen en bloque, y decir que una lectura «no es de dominio» la
+   > sacaba de los ~~nueve~~ siete.** Con eso **ninguna lectura tenía autorización**: ni el paso 4
    > —existencia, estado y **dueño**—, ni el 3, ni el 2. Leer el borrador de otra persona, su «Mi
    > Cuenta» o los datos que el §48 le muestra al admin **no atravesaba ningún control declarado**.
    > Es la exención por superficie que el §5 descarta por escrito, entrando **con forma de
@@ -416,12 +442,15 @@ partes:
    *«leer mi billing»* (`V/02` §2.1)— no podía ver cómo regularizar, que desde `DEC-SUB-021` es
    cambiar la tarjeta. **La excepción es cerrada**: **Mi Cuenta, su billing y sus fichas**. Una
    lectura comercial sobre lo propio —una estadística paga— **no** es *«lo propio»* en este sentido
-   y sigue pasando por el 6. Una lectura de lo propio pasa por **siete** pasos: todos menos el 5 y
-   el 6.
+   y sigue pasando por el 6. Una lectura de lo propio pasa por ~~**siete** pasos: todos menos el 5 y
+   el 6~~ **cinco** pasos —todos menos el 5 y el 6—, y por la precondición (FASE 9 vuelta 1,
+   contradicción (e)).
 
    **Y cuando el recurso es ajeno, el 4 contesta con la precisión 7 del §1.2** (owner 2026-09-25;
    FASE 9 completa, decisión 8c): existe sólo en estado público —una ficha `PUBLISHED`, una
-   presencia de Partner con la clave vigente y sin moderar—. Es la lista que el diseño ya usaba sin
+   presencia de Partner ~~con la clave vigente y sin moderar~~ **con la clave de esa superficie**
+   —«página propia» para la página, «presencia en el carrusel» para el carrusel (cap. 18 §1.2)—
+   **vigente y sin moderar** (FASE 9 vuelta 1, `F-8V1A1-004`)—. Es la lista que el diseño ya usaba sin
    haberla escrito, y escribirla acá es lo que impide que cada superficie pública se haga su
    exención (el ⚠️ de arriba).
 2. **La enumeración** se arma sola a medida que se construyen las superficies. Enumerar operaciones
@@ -470,6 +499,14 @@ suspendido**. Las dos mitades van juntas o ninguna funciona:
 |---|---|
 | el rol sobrevive a la pérdida de acceso | acá, y el guard de §4.4 |
 | **ninguna autorización decide sólo por rol** | invariantes §64.12 y §64.13, guard (cap. 04 §2.3) |
+
+**Y ningún rol es una fuente.** El conjunto efectivo sale **sólo** de las fuentes que devuelve
+`cobertura()` (`12-contrato…` §2): `TRIAL`, `SUSCRIPCIÓN`, `CORTESÍA`, `GRANT`, `BASE` y
+`ADDON`. El cargador del código de hoy, que le da a `SUPER_ADMIN`, `ADMIN`, `EDITOR` y
+`CLIENT_MANAGER` el conjunto entero con limits en `-1` antes de que corra el chequeo, **se
+retira**, se reutilice o no el resto del cargador. Lo que el staff necesita en su trabajo lo da
+el §3.2 regla 1, acción por acción, nunca un conjunto (FASE 9 vuelta 1, `F-8V1A1-002`). Lo vigila
+la segunda mitad de `G6` (cap. 20 §2).
 
 ### 4.4 Y queda como invariante, porque es de los que alguien va a «optimizar»
 

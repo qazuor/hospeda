@@ -58,7 +58,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | # | capítulo | qué resuelve |
 |---|---|---|
 | `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | `billing_option` —donde vive el precio—, suscripción, pausa, el vínculo con el proveedor, el dinero, addons y concesiones |
-| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (`S1`–`S35`), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
+| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (~~`S1`–`S35`~~ `S1`–`S36`: `S36`, la revocación, owner 2026-09-26, `G5-4`), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
 | `05` | [idempotencia y concurrencia](./docs/05-idempotencia-y-concurrencia.md) | los tres mecanismos, los seis cruces del §52, y qué hace seguro a un pago tardío |
 | `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las seis reglas duras de trato, el riesgo de plataforma |
 | `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los ~~tres~~ **cuatro** modos de «cero cobros» (§4, reescrito el 2026-09-24 por `RC-5`), y el bug vivo que pasa a ser caso de uso |
@@ -67,7 +67,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
 | `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** — y desde el 2026-09-25 **los addons siguen a su título**: *válida* es `ACTIVE` y cobrada, se pausan con la pausa del cliente (`S32`, `S33`), la orfandad se lee sobre el conjunto de principales y anclas vivas, y un `USER`/`GLOBAL` se emite sólo en sus verticales compatibles (owner, `DEC-ADDON-007`) |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **dieciséis guards** —`G7`, `G9`–`G13`, los seis de `R1` y las **cuatro** referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**dieciséis guards**~~ **quince guards** —`G7`, ~~`G9`–`G13`~~ `G9`–`G12` (`G13` pasó a `V/20` §2 y lo construye `V4`: owner 2026-09-26, `G5-5`), los seis de `R1` y las **cuatro** referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño — **y la cartera actual no se migra: de su billing no se conserva nada, y se conservan el usuario, sus preferencias y sus fichas** (owner 2026-09-25, `DEC-MIG-005`) |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 

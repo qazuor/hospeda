@@ -61,9 +61,13 @@ máquina de estados y una convención.
    proveedor.
 4. **Toda transición deja un evento de dominio** (§49), con quién la causó y qué la disparó.
 5. **Ninguna máquina consulta el estado del proveedor para decidir.** Consulta el suyo. Lo que
-   el proveedor dice entra siempre por §10, la regla de no-retroceso. **Salvo un job que actúa
+   el proveedor dice entra siempre por §10, la regla de no-retroceso. ~~**Salvo un job que actúa
    por nuestro reloj** sobre algo que depende del estado del proveedor: ése **le pregunta antes de
-   actuar**, releyendo por id, y esa relectura es parte de la condición de `S3` y `S6`
+   actuar**, releyendo por id, y esa relectura es parte de la condición de `S3` y `S6`~~
+   **Salvo una condición que depende del estado del proveedor**: la de un job que actúa por
+   nuestro reloj (`S3`, `S6`, `A3`) y la de un acto del cliente que no puede declararse sobre un
+   preapproval que no cobra (`S1`, sobre su predecesora). Ésas **le preguntan antes**, releyendo
+   por id, y la relectura es parte de la condición (FASE 9 vuelta 1, `F-8V1D1-003`)
    (`D17`, cap. 04, pedido del owner del 2026-09-24; FASE 8 completa, `F-8CD1-005`).
 6. **Grace y Pause no son máquinas independientes**, y el §63 las nombra igual. Son sub-estados
    de Suscripción **con reloj propio y datos propios**, y se modelan aparte por eso: un estado
