@@ -3,7 +3,7 @@ title: Descomposición de la épica de billing
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-21
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -16,24 +16,35 @@ status: CURRENT
 > **Y se hace entera, con la pasarela sin decidir.** Doce de los trece capítulos están escritos, así
 > que el reparto no espera a nada. **Lo que sí espera es la construcción**: ver §2.3.
 >
+> ✅ **Desde el 2026-09-24 la pasarela está decidida y el diseño está completo** (FASE 9 completa,
+> salida 3 de `DEC-METH-004`): `DEC-MP-005` fijó **Mercado Pago**, `DEC-MP-006` puso **el reloj de
+> cobro del lado del proveedor**, y el capítulo 13 **no se escribió: se repartió** entre `B/02`
+> §2.3, `B/03` `S29` y §6.1, `B/05` C5 y `B/06` §4.6 (`nucleo/00-indice.md`). **Con eso B6 dejó de
+> ser la unidad sin diseño** (§2) y **nada del reparto espera ya a un tercero**. El recuadro de
+> abajo y el §2.3 describen el estado de antes y quedan como rastro, tachados donde dejaron de ser
+> ciertos.
+>
 > ---
 >
-> ### ⛔ Antes de empezar a construir: falta decidir la pasarela
+> ### ~~⛔ Antes de empezar a construir: falta decidir la pasarela~~ ✅ La pasarela se decidió el 2026-09-24
 >
-> **De las trece unidades, nueve llaman a la pasarela**, y ninguna de esas nueve se puede terminar
-> sin saber cuál es. La única que se puede hacer **entera** hoy es **B2 (el precio)**; de **B1** se
-> puede escribir la interfaz y su guard, no el adaptador real.
+> **De las trece unidades, nueve llaman a la pasarela**, y ~~ninguna de esas nueve se puede terminar
+> sin saber cuál es~~ desde `DEC-MP-005` las nueve se construyen contra el adaptador de Mercado
+> Pago. ~~La única que se puede hacer **entera** hoy es **B2 (el precio)**; de **B1** se
+> puede escribir la interfaz y su guard, no el adaptador real.~~
 >
 > No es una demora administrativa: `DEC-ARCH-004` puso el ciclo de vida de nuestro lado, y **cuál
 > pasarela sea decide la forma de casi todo el sistema de billing** — si el reloj de cobro es
 > nuestro o suyo, si la pausa es nativa, si un addon es una autorización aparte o una línea, si la
 > conciliación puede listar o tiene que leer de a una.
 >
-> Lo que **sí** se puede hacer hoy, y conviene hacer: **atomizar y especificar** las doce unidades
-> cuyo diseño está escrito. Su política no cambia con la respuesta.
+> Lo que **sí** se puede hacer hoy, y conviene hacer: **atomizar y especificar** las ~~doce~~
+> **trece** unidades ~~cuyo diseño está escrito~~ — desde el 2026-09-24 todas tienen el diseño
+> escrito. Su política no cambia con la respuesta.
 >
-> **Qué la destraba**: los dos textos de la PRUEBA 0 y el mail de habilitación de Mobbex — los dos
-> están en manos del owner ([`spec.md`](./spec.md) §7).
+> ~~**Qué la destraba**: los dos textos de la PRUEBA 0 y el mail de habilitación de Mobbex — los dos
+> están en manos del owner ([`spec.md`](./spec.md) §7).~~ **Ya no hay nada que la destrabe**: la
+> PRUEBA 0 y la cuenta de Mobbex quedaron sin objeto con `DEC-MP-005` ([`spec.md`](./spec.md) §7).
 
 ## 1. El criterio de corte
 
@@ -64,6 +75,11 @@ que hoy hace Mercado Pago, **el reparto no se redibuja** — se revisa el interi
 con la pasarela, que son nueve. **Que el corte aguante no quiere decir que la construcción pueda
 empezar**: son dos cosas distintas, y el §2.3 las separa.
 
+> ✅ **Y el 13 contestó lo mismo que hoy hace Mercado Pago** (`DEC-MP-006`, 2026-09-24): el reloj
+> de cobro es del proveedor y el mandato es el modelo canónico, con el cargo puntual **declarado
+> como destino**. **El reparto no se redibujó**, que es lo que este § prometía; lo que cambió es el
+> interior de B6 (§2). *(FASE 9 completa, salida 3 de `DEC-METH-004`.)*
+
 ### 1.2 La cadena que ordena
 
 Cada eslabón deja **una pregunta contestada**:
@@ -74,7 +90,7 @@ Cada eslabón deja **una pregunta contestada**:
 ¿hay un compromiso de cobro vivo?                   → B3
 ¿esta persona está cubierta?                        → B4
 ¿qué dinero se movió?                               → B5
-¿cómo se mueve el dinero?                           → B6   ← la única bloqueada
+¿cómo se mueve el dinero?                           → B6   ← ya no está bloqueada (DEC-MP-006)
 ¿qué pasa cuando no entra?                          → B7
 ¿qué pasa cuando el cliente cambia de idea?         → B8
 ```
@@ -96,7 +112,7 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
 3. **Lo que toca plata no se ejecuta solo.** Toda divergencia de monto, estado o cobro **abre una
    marca `requiere_conciliación`, con su MOTIVO** (`02` §2.5), y la mira una persona. Es el criterio
    del owner —*«toca plata o no toca plata»*— aplicado adentro de la épica que toca plata entera.
-   **El motivo es parte de la regla**: el corpus escribe ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte marcas distintas (FASE 8 completa: `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25) sobre la misma
+   **El motivo es parte de la regla**: el corpus escribe ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ **veintidós** marcas distintas (FASE 8 completa: `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25; **y FASE 9 completa: el 21 con la decisión 3d y el 22 con `F-8CB2-003`**, `B/02` §2.5) sobre la misma
    casilla y ~~**seis**~~ **siete** dicen *«hay plata del cliente que devolver»*; sin el motivo todas llegaban
    iguales a la bandeja y las que se perdían eran ésas.
 
@@ -110,21 +126,33 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 |---|---|---|---|---|---|
 | **B1** | **El adaptador y el proveedor que miente** | ⛔ | las ocho capacidades como interfaz definida por lo que el dominio necesita, el adaptador falso que reproduce las mentiras medidas, y la regla de releer toda mutación | `06` entero · `20` §2–§3, §6 | `G9` `G10` `G11` `G12` |
 | **B2** | **El precio** | ✅ | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan | `02` §2.1 · `06` §5 | `G7` |
-| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5** · **`01` §2.4, §2.5 y §2.6 (núcleo)** | **`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`** |
-| **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
-| **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
-| **B6** | **Ejecutar el cobro y el reembolso** 🔒 | ⛔ | **BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir | `13` *(sin escribir)* | — |
-| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, el que nunca pagó no recibe diez días gratis, y **el pago que entra en plena sucesión no reactiva, no se pierde y tiene quién lo resuelva** | `03` §4, S4–S7, **S19** · `12` §1, §4, §5 · `05` §3 | **`G-R1-D`** |
-| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse — **incluido el CIERRE de la sucesión con sus cinco escrituras**, y **con la dirección del cambio saliendo de `direcciónDeCambio` (contrato §4.1) y nunca del `rank`** | `03` §5, S8–S12, **S17–S18**, **S22–S24**, **S31** · `12` §2, §3, §6, §7 · `02` §2.6 · `05` C2, C4 | **`G-R1-C`** **`G-R5`** |
-| **B9** | **Las concesiones** | ⛔ | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes. **`S20` no es de acá**: el grant cancela la principal (`S13`) y el complemento lo apaga **B10**, que llega después en el camino crítico y es donde vive el modelo del addon | `14` entero · `03` S9, S13, **S30** · `02` §2.4 · `05` C3 · **`09` §3** *(la comparación de monto)* (orquestador, FASE 8 completa, pendiente 8) | — |
-| **B10** | **Addons** | ⛔ | los dos ejes, qué es una suscripción válida, el addon a costo cero —**el que se elige gratis y el que ya se venía pagando y `S20` convierte**— y el huérfano que sigue cobrando —**con su cobro apagado por `S21`**— | `16` entero · `03` §8 **y `S20` y `S21` de §3.2** · `02` §2.4 · `09` §3 *(tercera y cuarta comprobación, y las salvedades 1 y 4)* · `19` §4 filas 13 y 13-bis | — |
-| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece | `09` entero | — |
-| **B12** | **El catálogo que se retira** | ⛔ | retirar un plan no mueve a nadie, y discontinuar una vertical deja de cobrar antes de dejar de prestar — **incluidas las TRES transiciones que ejecutan el acto**, `S26`, `S27` y `S28` | `10` entero · `03` §3.2, **S26–S28** | — |
-| **B13** | **Superficies y la baja** | — | la pricing, Mi Suscripción, la baja self-service, y la lista de lo que hay que decir | `19` entero · `22` §1 | — |
+| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica — **y no nace en una vertical que ya no admite altas, ni como alta nueva ni como sucesión** (`S1`, owner 2026-09-25, 6a, `DEC-ARCH-011`); cada preapproval nace **suelto, sin plan del proveedor** (`DEC-MP-007`) | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5** · **`01` §2.4, §2.5 y §2.6 (núcleo)** · **`10` §4.6** *(quién lee `admiteAltas`)* | **`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`** |
+| **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale — **con los siete campos de la fuente** (`cobrada` en una `SUSCRIPCIÓN`, `piso` en un `GRANT`: owner 2026-09-25, 9h), y **una vertical discontinuada no cubre a nadie desde su fin de servicio** (contrato §2.6, `R11`, `DEC-ARCH-011`) | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) **§2**, **§2.6**, §5.2, §6 | `G13` |
+| **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos — **con la máquina mínima del reembolso (`RF1`, `RF4`) y la acción administrativa 14, que asienta un cobro o una devolución ocurridos por fuera** (owner 2026-09-25, 5a, `DEC-RF-008`); **la primera cuota de un pagador manual lleva la fila a `ACTIVE`** (`S29`); y **la cuota impaga de quien se va queda `DECLARED_UNPAID` sin efecto** (`MP3`, tercera cláusula: owner 2026-09-25, 8f) | `02` §2.3 · `03` §6 **y §6.1** *(la máquina, `RF1` y `RF4`; lo que va al proveedor es B6)*, §7, §10.2, **`S29`** · `05` C5 | — |
+| **B6** | **Ejecutar el cobro y el reembolso** ~~🔒~~ | ⛔ | ~~**BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir~~ **el reembolso sale al proveedor y vuelve leído**: `RF2` lo manda con la clave de idempotencia persistida antes, `RF3` lo da por ejecutado **sólo releyendo por id**, `RF5` cierra el rechazo sin monto que reintentar, y un `2084` se reintenta con otro monto; **pasado el plazo del proveedor la operación no se ofrece, y se dice** (`DEC-RF-007`). **El cobro no lo ejecuta ningún reloj nuestro**: es el mandato del proveedor, creado en B3 (`DEC-MP-006`), con una interfaz que no impide migrar al cargo puntual. *(Diseño completo desde el 2026-09-24: el 13 se repartió. FASE 9 completa, salida 3.)* | ~~`13` *(sin escribir)*~~ `06` §4.6 · `03` §6.1 `RF2`, `RF3`, `RF5` | — |
+| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, el que nunca pagó no recibe diez días gratis, y **el pago que entra en plena sucesión no reactiva, no se pierde y tiene quién lo resuelva** — **y al vencer el grace `S6` cancela el preapproval** (`DEC-SUB-019`), también por un `paused` leído (`DEC-MP-008`) o un contracargo (`DEC-SUB-020`); **la sucesora de quien venía pagando entra en grace si falla su primer cobro, y el barrido la relee cada día y corta ese grace si el proveedor ya se rindió** (owner 2026-09-25, 3c, `DEC-SUB-022`); **un aviso de primer rechazo perdido lo recoge el barrido y corre `S4`** (9a); y **un *«todavía no se sabe»* que dura 3 días abre la marca 21** (3d) | `03` §4, S4–S7, **S19** · `12` §1, §4, §5 · `05` §3 · **`09` §3** *(la relectura de la sucesora de 3c, y la rama de 9a en la fila «cobros del período»)* **y §6.2** *(la marca 21)* — asignación de la FASE 9 completa, salida 3, con el precedente de B9 y B10, que ya toman las comprobaciones del `09` §3 que sirven a sus transiciones | **`G-R1-D`** |
+| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse — **incluido el CIERRE de la sucesión con sus cinco escrituras**, y **con la dirección del cambio saliendo de `direcciónDeCambio` (contrato §4.1) y nunca del `rank`** — y **desde `GRACE_PERIOD` no se declara una sucesión** (`DEC-SUB-021`) | `03` §5, S8–S12, **S17–S18**, **S22–S24**, **S31** · `12` §2, §3, §6, §7 · `02` §2.6 · `05` C2, C4 | **`G-R1-C`** **`G-R5`** |
+| **B9** | **Las concesiones** | ⛔ | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes. **`S20` no es de acá**: el grant cancela la principal (`S13`) y el complemento lo apaga **B10**, que llega después en el camino crítico y es donde vive el modelo del addon. **Y desde la FASE 9 completa**: un canje o un apilado que deja el monto **bajo el piso del proveedor se rechaza al canjear**, con el motivo en pantalla (owner 2026-09-25, 4b y 9g); **los dos cruces cortesía × pausa tienen fila**, `S34` (cortesía sobre cortesía) y `S35` (la persona pausa sobre una cortesía); y **cada fuente `GRANT` lleva su `piso` por la firma** (9h) | `14` entero · `03` S9, S13, **S30**, **S34**, **S35** · `02` §2.4 · `05` C3 · **`09` §3** *(la comparación de monto)* (orquestador, FASE 8 completa, pendiente 8) | — |
+| **B10** | **Addons** | ⛔ | los dos ejes, qué es una suscripción válida, el addon a costo cero —**el que se elige gratis y el que ya se venía pagando y `S20` convierte**— y el huérfano que sigue cobrando —**con su cobro apagado por `S21`**—. **Y desde la FASE 9 completa los addons siguen a su título** (owner 2026-09-25, `DEC-ADDON-007`): **sus complementos recurrentes se pausan y se reanudan con la principal** (`S32`, `S33`, 4a); *válida* es `ACTIVE` **y cobrada** (`A1`); la orfandad de `LISTING` se lee **sobre el conjunto** de principales y el ancla viva (4c), y la de `USER`/`GLOBAL` sobre principales **vivas y cobradas** de sus verticales compatibles (4d); **un `USER`/`GLOBAL` se emite como fuente sólo en esas verticales** (4e, contrato §2.7); y **el borrado de la ficha sale sólo por `A6`** (`K-9`) | `16` entero · `03` §8 **y `S20`, `S21`, `S32` y `S33` de §3.2** · `02` §2.4 · `09` §3 *(tercera y cuarta comprobación, y las salvedades 1 y 4)* · `19` §4 filas 13 y 13-bis | — |
+| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece — **y un preapproval desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca** (`09` §2.4, owner 2026-09-25, 2b) | `09` entero | — |
+| **B12** | **El catálogo que se retira** | ⛔ | retirar un plan no mueve a nadie, y discontinuar una vertical deja de cobrar antes de dejar de prestar — **incluidas las TRES transiciones que ejecutan el acto**, `S26`, `S27` y `S28`, **y `S25`, que cierra la pausa que el acto no interrumpe** (`DEC-SUB-015`; no tenía unidad: FASE 9 completa, salida 3); y **el barrido del día invalida el caché de la vertical entera** (`10` §4.3, owner 2026-09-25, 6b, `DEC-ARCH-011`) | `10` entero · `03` §3.2, ~~**S26–S28**~~ **S25–S28** | — |
+| **B13** | **Superficies y la baja** | — | la pricing, Mi Suscripción, la baja self-service, y la lista de lo que hay que decir — **con lo que la FASE 9 completa le agregó** (owner 2026-09-25): los avisos del grace **no prometen que el reintento use la tarjeta nueva** (3a); el aviso de suspensión dice que **al volver se pierde la promo** (3b); **el botón de suscribirse manda a publicar a quien todavía no publicó en esa vertical** (6c, `B/19` fila 21); **la pricing no ofrece planes de una vertical que no admite altas** (6a, fila 20); y Admin tiene **la acción administrativa 14** (5a, `B/19` §6) | `19` entero · `22` §1 | — |
 
 **⛔ nueve · — tres · ✅ una.** Las tres del guion —B4, B5 y B13— no llaman a la pasarela, pero
 **dependen de una que sí**, así que tampoco arrancan antes. La única sin ninguna atadura con la
 pasarela, ni propia ni heredada, es **B2**: su gate es `V2`, de la otra épica.
+
+**Las treinta y cinco transiciones de la Suscripción, cada una con su unidad** (recontado el
+2026-09-25 sobre `B/03` §3.2, FASE 9 completa, salida 3 de `DEC-METH-004`): `S1`–`S3` y
+`S14`–`S16` → **B3**, que toma el §3.1–§3.4 por sección · `S4`–`S7` y `S19` → **B7** · `S8`–`S12`,
+`S17`–`S18`, `S22`–`S24` y `S31` → **B8** · `S13`, `S30`, **`S34`** y **`S35`** → **B9** (y `S9`,
+que comparte con B8) · `S20`, `S21`, **`S32`** y **`S33`** → **B10** · **`S25`**–`S28` → **B12** ·
+**`S29`** → **B5**. **Hasta esta pasada `S25` y `S29` no figuraban en ninguna fila** —`S25` sólo se
+nombraba de paso en el §2.8, y `S29` llegó con el reparto del 13 el 2026-09-24—, y `S32`–`S35` no
+existían. Las cuatro nuevas van con la unidad donde vive lo que tocan: `S32`/`S33` pausan filas de
+complemento, cuyo modelo es de B10 (la misma razón que `S20`/`S21`); `S34`/`S35` parten de
+`PAUSED · COURTESY`, que no existe antes de que B9 emita cortesías. **Es asignación propuesta en
+esta pasada, no decisión del owner.**
 
 ### 2.1 Los dos guards que nacieron acá y ya están en el catálogo
 
@@ -152,20 +180,26 @@ se puede escribir sin filtrar conceptos de Mercado Pago, la interfaz está mal d
 más tarde se escribe contra código que ya asumió un proveedor que se porta bien, y ese código
 —medido— no es el que tenemos.
 
-### 2.3 Qué se puede hacer ya, y qué espera a la pasarela
+### 2.3 Qué se puede hacer ya, y qué ~~espera~~ esperaba a la pasarela
+
+> ✅ **Este § describe el estado anterior al 2026-09-24 y se deja como rastro** (FASE 9 completa,
+> salida 3 de `DEC-METH-004`). Con `DEC-MP-005` y `DEC-MP-006` **las trece tienen diseño y ninguna
+> espera a un tercero**: lo que ordena la construcción desde entonces son sólo las dependencias del
+> §3. Lo que sigue vigente de este § es la tabla *«Política y forma»*, con la columna de la forma ya
+> contestada por Mercado Pago.
 
 Se venían diciendo como una sola cosa **dos que no lo son**, y conviene separarlas porque llevan a
 decisiones opuestas:
 
 | | cuántas | qué significa |
 |---|---|---|
-| **sin diseño** | **1** — B6 | su capítulo no está escrito y **su política no está decidida**. No se puede ni especificar |
-| **con diseño, esperando la pasarela** | **11** | su política está escrita y no cambia. **Se pueden atomizar y especificar hoy**; no se pueden terminar |
-| **se puede hacer entera hoy** | **1** — B2 | no llama a la pasarela ni depende de ninguna que llame |
+| ~~**sin diseño**~~ | ~~**1** — B6~~ **0** | ~~su capítulo no está escrito y **su política no está decidida**. No se puede ni especificar~~ el 13 se repartió y `DEC-MP-006` decidió su política (2026-09-24) |
+| ~~**con diseño, esperando la pasarela**~~ | ~~**11**~~ **0** | ~~su política está escrita y no cambia. **Se pueden atomizar y especificar hoy**; no se pueden terminar~~ la pasarela es Mercado Pago (`DEC-MP-005`) |
+| **se puede ~~hacer entera hoy~~ construir** | ~~**1** — B2~~ **13** | ~~no llama a la pasarela ni depende de ninguna que llame~~ en el orden del §3 |
 
-**Doce de trece tienen el diseño escrito. Doce de trece no se pueden construir todavía.** Las dos
+~~**Doce de trece tienen el diseño escrito. Doce de trece no se pueden construir todavía.** Las dos
 frases son ciertas a la vez, y confundirlas es lo que hace que alguien lea *«una sola bloqueada»*
-como *«se puede arrancar»*.
+como *«se puede arrancar»*.~~
 
 #### Por qué el alcance es tan ancho
 
@@ -196,28 +230,37 @@ Lo que **no** cambia con la respuesta —y por eso la especificación se puede e
 | **B3** | hay una ventana entre *«empezamos»* y *«hay compromiso»*, tiene duración máxima, se limpia y el candado es nuestro y va antes | qué vive adentro: un checkout para autorizar un mandato, o la captura de una tarjeta |
 | **B7** | el reloj del grace arranca en el **primer rechazo** de una renovación, leído por id —~~cuando **se agotan** los reintentos~~, reemplazado en la FASE 8 completa (`R1`): ese instante no emite evento (`GR-3`)—, y eso se observa releyendo, nunca contando días | de quién son esos reintentos — y si son nuestros, **son terreno regulado** |
 | **B8** | cambiar de ciclo re-autoriza; la pausa es en meses enteros y el reloj que reanuda es nuestro | si hace falta cancelar y recrear — `DEC-ARCH-004` impl. 3: *«si se puede mutar el ciclo de una suscripción viva, `DEC-SUB-006` deja de necesitar el cancelar-y-recrear»* |
-| **B9** | el orden de aplicación, el piso, y que un 100 % es una cortesía | si la cortesía se implementa pausando o simplemente no cobrando el ciclo |
+| **B9** | el orden de aplicación, el piso, y ~~que un 100 % es una cortesía~~ **que un canje o un apilado bajo el piso se rechaza al canjear, con un motivo que dice que el mínimo lo pone Mercado Pago** (owner 2026-09-25, 4b y 9g) | ~~si la cortesía se implementa pausando o simplemente no cobrando el ciclo~~ **sin sujeto**: la cortesía se implementa pausando (`DEC-GRANT-003`), y una promo ya no se ejecuta como cortesía |
 | **B10** | los dos ejes, qué es una suscripción válida, el huérfano | si el huérfano recurrente **existe** — con un cargo puntual no hay autorización suelta que siga cobrando |
 | **B11** | el inventario es nuestro y lo que toca plata lo mira una persona | si hace falta leer de a una por id |
 | **B12** | se deja de cobrar antes de dejar de prestar | cómo se corta el cobro el día 0 |
 
-**B6 no entra en esa tabla porque no tiene la columna izquierda todavía**: dos relojes sobre la
+~~**B6 no entra en esa tabla porque no tiene la columna izquierda todavía**: dos relojes sobre la
 misma autorización **son** el doble cobro que `DEC-ARCH-004` declara como riesgo nuestro, y eso no
-se esconde detrás de una interfaz.
+se esconde detrás de una interfaz.~~ **B6 ya tiene su columna izquierda** (`DEC-MP-006`,
+2026-09-24): **un solo reloj, el del proveedor**, y el reembolso siempre confirmado por una persona
+y verificado releyendo (`DEC-RF-002`, `B/03` §6.1). Su forma es la de Mercado Pago: el mandato
+cobra solo y el reembolso va por `POST /v1/payments/{id}/refunds` con clave obligatoria (`B/06`
+§4.6).
 
 #### Lo que sí conviene hacer mientras tanto
 
-1. **Atomizar las once que tienen diseño** (todas menos B6 y B2). Su política no cambia, así que el
-   atomizado no se tira.
-2. **Construir B2 entera** — `billing_option`, el dinero en entero y `G7`. Su único gate es `V2`.
-3. **Escribir la interfaz del adaptador y `G12`.** `DEC-ARCH-004` define esa API **por lo que
+> ✅ **Sin objeto desde el 2026-09-24**: la lista era para mientras la pasarela no estuviera
+> decidida. Queda como rastro.
+
+~~1. **Atomizar las once que tienen diseño** (todas menos B6 y B2). Su política no cambia, así que el
+   atomizado no se tira.~~
+~~2. **Construir B2 entera** — `billing_option`, el dinero en entero y `G7`. Su único gate es `V2`.~~
+~~3. **Escribir la interfaz del adaptador y `G12`.** `DEC-ARCH-004` define esa API **por lo que
    Hospeda necesita, no por lo que una pasarela ofrece**, así que se puede escribir sin saber cuál
-   es. Lo que no se puede escribir es el adaptador real ni las mentiras del falso.
+   es. Lo que no se puede escribir es el adaptador real ni las mentiras del falso.~~
 
 **Y lo que no conviene**: escribir el adaptador contra Mercado Pago «para ir avanzando». Es
 exactamente el error que `DEC-ARCH-004` fue a corregir — la alternativa (3) que descartó, *«acoplarse
 a la pasarela elegida y aceptar que cambiarla sea una reescritura»*, es la que **nos trajo hasta
-acá**.
+acá**. *(Sigue valiendo con la pasarela decidida: desde `DEC-MP-005` el adaptador real **es** el de
+Mercado Pago, pero se escribe detrás de la interfaz, con `G12`, y `DEC-MP-005` declara que la
+elección se revisa si aparece otra habilitación.)*
 
 ### 2.4 Por qué registrar el dinero y ejecutarlo son dos unidades
 
@@ -228,12 +271,19 @@ fecha del hecho, la restricción que impide dos pagos acreditados en un período
 pago es un hecho con id y fecha **lo haya ejecutado el proveedor o lo hayamos ejecutado nosotros**,
 así que todo eso se escribe hoy.
 
-**Ejecutar** es cómo se mueve: el cargo, el reembolso y cómo se constata un pago manual. Eso es el
-13, y arrastra `RF-3` en `UNKNOWN` — el §61 prohíbe implementar sobre una fila abierta.
+**Ejecutar** es cómo se mueve: el cargo, el reembolso y cómo se constata un pago manual. ~~Eso es el
+13, y arrastra `RF-3` en `UNKNOWN` — el §61 prohíbe implementar sobre una fila abierta.~~ Desde el
+2026-09-24 **el 13 se repartió** y lo que queda de ejecutar es poco: **el cargo lo hace el mandato
+del proveedor** (`DEC-MP-006`), **cómo se constata un pago manual** es `MP1` y `S29` —registro, o
+sea B5—, y **el reembolso** es `RF2`, `RF3` y `RF5` sobre `B/06` §4.6. **`RF-3` sigue `UNKNOWN` y
+ya no bloquea** (`DEC-RF-007`): pasado el plazo, la operación no se ofrece y la reparación manual
+se asienta por `RF4`, que es de B5.
 
 Sin esta división, **B7 heredaría la falta de diseño** y serían cuatro los capítulos que hay que
 escribir en vez de uno. Ojo con lo que esto **no** compra: B5 y B7 siguen esperando a la pasarela
 como el resto (§2.3). Lo que la división separa es **poder especificar** de **poder construir**.
+*(La razón del bloqueo desapareció el 2026-09-24; la división sigue siendo buena por otra: el
+registro corre antes que la mora y la ejecución, que dependen de él.)*
 
 ### 2.5 Por qué el contrato de cobertura no va al final
 
@@ -250,7 +300,7 @@ enchufan en B9 **sin tocar** lo que B4 dejó, y ésa es su prueba.
 prohíba su llegada a producción falla desde el primer día. Es la misma razón por la que `G1` y `G3`
 van primeros en la otra épica, leída al revés.
 
-### 2.6 Las dependencias con la otra épica: son SEIS, sobre dos unidades, y todas tempranas
+### 2.6 Las dependencias con la otra épica: son ~~SEIS~~ OCHO, sobre dos unidades, y todas tempranas
 
 **B2 no puede existir sin `plan_version`**, que es `V2` de verticales: `billing_option` cuelga de
 ella con `UNIQUE(plan_version_id, ciclo)`. Es el corte de `DEC-ARCH-005` visto desde abajo — el
@@ -275,6 +325,14 @@ medida contra el lector que la pide:
 | 4 | **B8** — la pausa | `permitePausa`: es el tercer término de `puedePausar()` (`NUCLEO/01` §3), que `S8` exige | **V2** |
 | 5 | **B8** — el cambio de plan | `direcciónDeCambio`: es lo que decide si el monto se muta ya o si las capacidades caen al fin del ciclo. Sin él lo único a mano es el `rank`, que el diseño ya rechazó por escrito | **V2** |
 | 6 | **B12** — el retiro y la discontinuación | `admiteAltas` y `finDeServicio` (`B/10` §4.6, que ya las lee), y `vigente`/`vendible` | **V2** |
+| 7 ✚ | **B3** — el alta y la sucesión (`S1`) | `admiteAltas`: desde la FASE 9 completa `S1` rechaza el alta nueva y la sucesión en una vertical que no admite altas (owner 2026-09-25, 6a, `DEC-ARCH-011`; contrato §4.1) | **V2** |
+| 8 ✚ | **B4** — la implementación real del contrato | `finDeServicio`: desde la FASE 8 completa deja de emitir en una vertical discontinuada (contrato §2.6 y §4.1, `F-8CC1-001`, `R11`) | **V2** |
+
+> **Las dos últimas se agregaron en la FASE 9 completa (salida 3 de `DEC-METH-004`) y no son campos
+> nuevos**: el contrato §4.1 ya las declara como *«un consumidor más de un campo ya declarado»*, y
+> esta tabla no las recogía. Recontado cruzando cada lector que el §4.1 nombra con la columna de
+> capítulos del §2; los siete campos siguen siendo siete. **No mueven el grafo**, por la misma razón
+> que el párrafo de abajo da para las cuatro de antes: `V2` llega antes que B3 y que B4.
 
 **Y el conteo se recontó entero, no se le sumaron cuatro a dos.** Se recorrieron los **siete**
 campos del §4.1 uno por uno buscando su lector, y los que no aparecen en esta tabla es porque **hoy
@@ -293,20 +351,32 @@ unidad que arranca primero de esta épica— y es la **segunda** de nueve en la 
 llegan resueltas mucho antes que B7, B8 y B12, que están detrás de la pasarela. Lo que cambia no es
 el orden: es que dejan de ser invisibles.
 
-### 2.7 Dónde caen las ocho filas `UNKNOWN`
+### 2.7 Dónde caen las ~~ocho~~ seis filas `UNKNOWN`
 
-Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `VERIFIED`, 19
-`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**
+~~Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `VERIFIED`, 19
+`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las 98 filas de la matriz,
+recontadas el 2026-09-25 con `contar-filas-de-la-matriz.py`: 55 `VERIFIED`, 23 `NOT_SUPPORTED`, 14
+`PARTIALLY_SUPPORTED`, 6 `UNKNOWN`** (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
+queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**.
 
 | filas | unidad | qué bloquea de verdad |
 |---|---|---|
-| `RN-2` `RN-3` `GR-1` `GR-2` `GR-3` | **B7** | son **el mismo hecho, un cobro que falla**, e imposibles de fabricar con Mercado Pago. Y gobiernan el grace **sólo mientras el reloj sea del proveedor**: con el reloj nuestro pasan a ser una nota del adaptador |
-| `WH-5` | **B1** | nada crítico — se fuerza con el interruptor del receptor |
-| `RF-3` | **B6** | el caso viejo del reembolso. Ya está en la unidad bloqueada |
-| `EX-1` | **B3** | nada: la ventana de autorización es nuestra justamente porque esta fila está abierta —y por eso `DEC-SUB-016` la pudo partir en **dos** plazos sin esperar respuesta del proveedor—, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta** |
+| ~~`RN-2` `RN-3` `GR-1` `GR-2` `GR-3`~~ | ~~**B7**~~ | ~~son **el mismo hecho, un cobro que falla**, e imposibles de fabricar con Mercado Pago. Y gobiernan el grace **sólo mientras el reloj sea del proveedor**: con el reloj nuestro pasan a ser una nota del adaptador~~ |
+| `RN-3` `GR-1` `GR-2` | **B7** | **`RN-2` y `GR-3` cerraron el 2026-09-22** en producción: el cobro fallido **sí** se fabricó, y `GR-3` midió que la ventana de reintentos dura un ciclo. Las tres que quedan **siguen gobernando el grace, porque el reloj es del proveedor** (`DEC-MP-006`); **`GR-1` condiciona `DEC-SUB-021`**, y hasta medirla con el próximo rechazo mensual real la salida *«cambiá la tarjeta»* no se promete (owner 2026-09-25, 3a) |
+| ✚ `PA-6` | **B7** | si el proveedor cancela el preapproval ante cualquier primer rechazo. **No bloquea**: `DEC-SUB-022` no depende de su respuesta, que sólo decide **cuánto dura** el grace de la sucesora de quien venía pagando, y el barrido lo acota a un día (owner 2026-09-25, 3c) |
+| ✚ `RC-8` | **B5** y **B7** | qué lee el pago en un contracargo (`P6`, `P7`; `S6` por su tercer evento). **Fuente documental**: `DEC-SUB-020` fija qué hacemos al leerlo, y la detección se apoya en la fila con su salvedad declarada |
+| ~~`WH-5`~~ | ~~**B1**~~ | ~~nada crítico — se fuerza con el interruptor del receptor~~ **`VERIFIED` desde el 2026-09-23** |
+| `RF-3` | **B6** | el caso viejo del reembolso. ~~Ya está en la unidad bloqueada~~ **Ya no bloquea** (`DEC-RF-007`): pasado el plazo del proveedor la operación no se ofrece, y la reparación manual se asienta por `RF4` (`DEC-RF-008`) |
+| ~~`EX-1`~~ | ~~**B3**~~ | ~~nada: la ventana de autorización es nuestra justamente porque esta fila está abierta —y por eso `DEC-SUB-016` la pudo partir en **dos** plazos sin esperar respuesta del proveedor—, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta**~~ **`PARTIALLY_SUPPORTED` desde el 2026-09-23**; lo que la fila decía sobre la ventana sigue valiendo |
 
-**Ninguna de las ocho bloquea una unidad que no estuviera ya bloqueada.** El §61 prohíbe empezar
-una capability crítica con su fila abierta, y la única que lo está es B6.
+~~**Ninguna de las ocho bloquea una unidad que no estuviera ya bloqueada.** El §61 prohíbe empezar
+una capability crítica con su fila abierta, y la única que lo está es B6.~~ **B6 dejó de estar
+bloqueada por `RF-3`** (`DEC-RF-007`), y `PA-6` y `RC-8` están declaradas con su salvedad en las
+decisiones que las usan. **Las tres del grace son el punto abierto**: `DEC-MP-006` las declaró
+*«bloqueantes»* de diseño con el reloj del proveedor, y desde entonces el diseño del grace se
+escribió sobre ellas (`DEC-SUB-019`, `-021`, `-022`); hoy lo que condicionan a la vista es **qué se
+le promete al cliente** (`GR-1`, 3a). **Si el §61 exige tenerlas cerradas antes de declarar
+terminada B7 no está escrito en ninguna decisión**, y no se decide acá.
 
 ### 2.8 Los seis guards de esta épica que no tenían unidad, más el que llega de la otra
 
@@ -372,13 +442,15 @@ los dos actos que la abren y la levantan son `S14` y `S15`, que también son de 
 8-bis-4 lo midió y lo declaró suficiente** — *«la mitad *«`S14`–`S16` no caen en ningún rango
 numérico»* sigue, y **no la reporto**: `B3` las toma por sección (`03` §3.1–§3.4) y eso alcanza»*
 (`20-fase-8-bis-4/C2…`, veredicto de `F-8dC2-004`). Todo lo demás que el guard cuenta llega
-después: los ~~**siete**~~ ~~**diez**~~ **once** motivos que `S14` trae de los casos que lo disparan —los tres
+después: los ~~**siete**~~ ~~**diez**~~ ~~**once**~~ **doce** motivos que `S14` trae de los casos que lo disparan —los tres
 nuevos, el 17, el 18 y el 19, llegan con ~~`P1`,~~ `P6` (`03` §6, **B5**), `S6` (**B7**) y el `09` §3
 (**B11**); FASE 8 completa, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`; **y el 20, `COBRO_DUPLICADO`,
-con `P1` (**B5**)**, partido del 19 en la pendiente 6, owner 2026-09-25—, el **listado
+con `P1` (**B5**)**, partido del 19 en la pendiente 6, owner 2026-09-25; **y el 22,
+`PAUSA_NO_APLICADA`, con la rama de fallo de `S8` (**B8**) y de `S9` (**B8**/**B9**)**, FASE 9
+completa, `F-8CB2-003`—, el **listado
 accionable** del `19` §6 (**B13**, la anteúltima del camino crítico) y los inventarios de *«marca
 abierta»* y *«cortesía diferida»* (**B9**). **Y la tabla que el guard lee es capítulo de B3, desde
-esta pasada.** El `02` §2.5 —los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ veinte motivos— **no figuraba en la columna de capítulos de
+esta pasada.** El `02` §2.5 —los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ **veintidós** motivos— **no figuraba en la columna de capítulos de
 ninguna unidad** y era la primera de las dos preguntas del §2.9: `G-R1-F` compara contra esa
 enumeración para decidir si un motivo existe, así que quien construyera el guard se encontraba con
 una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la respuesta**: el propio
@@ -386,8 +458,8 @@ una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la resp
 de B3 igual—, pero la tabla sí necesita dueño»*, y el dueño es el mismo que el de la entidad. El
 §2.5 es **el catálogo de una columna que nace en el `02` §2.2**, y las dos únicas cosas que hay que
 saber para sembrarlo —qué motivos hay y quién abre cada uno— salen de `S14` y `S15`, que son de
-B3. **Con la parte que B3 no puede terminar sola, dicha**: ~~ocho de los quince~~ **nueve de los
-~~dieciséis~~ ~~diecinueve~~ veinte** motivos los abren actos de otras unidades —`S18` (B8), `S21` (B10), **que desde
+B3. **Con la parte que B3 no puede terminar sola, dicha**: ~~ocho de los quince~~ ~~**nueve de los dieciséis**~~ ~~**nueve de los diecinueve**~~ ~~**nueve
+de los veinte**~~ **diez de los veintidós** motivos los abren actos de otras unidades —**el 21, `COBRO_DEL_PERÍODO_SIN_RESOLVER`, lo abre la lectura del `09` §4 que sigue en *«todavía no se sabe»* a los 3 días (`09` §6.2), que va con B7** (FASE 9 completa, 3d; asignación de esta pasada, §2)—, `S18` (B8), `S21` (B10), **que desde
 `DEC-RF-006` abre dos**, ~~las seis comprobaciones del `09` §3 (B12)~~ **las comprobaciones de cero
 llamadas del `09` §3 —la tercera y la cuarta en B10, las otras en B11, que tiene el `09` entero—**
 y **el reintento del barrido sobre las salvedades 1 y 4 del `09` §3, que abre el 16** (FASE 8 completa, `F-8CB1-013`, owner
@@ -453,7 +525,7 @@ lo que las abrió para que nadie lo lea como una asignación inventada.
    **RESUELTA**: los tres son capítulos de **B3**, y la fila del §2 lo dice (`01` §2.4, §2.5 y
    §2.6, núcleo). Lo medido que la abrió sigue siendo cierto y **llevaba dos vueltas reportado**
    —`F-8dC2-002` dice que cuatro capítulos del núcleo no son de ninguna unidad, y el veredicto de
-   la FASE 8-bis-4 *«`nucleo/01` entró por `V9`»* es cierto **del §1.2**, los ~~cuatro~~ cinco hechos de
+   la FASE 8-bis-4 *«`nucleo/01` entró por `V9`»* es cierto **del §1.2**, los ~~cuatro~~ ~~cinco~~ **seis** hechos (el sexto, `PB11`: owner 2026-09-25, FASE 9 completa, 5b) de
    reinicio, y no de los inventarios del §2—. Lo que faltaba era **una fila en el reparto**, igual
    que en el punto 1, y el dueño se elige con el mismo criterio que allá: **la unidad que construye
    los guards que los leen y los términos que enumeran**.
@@ -469,8 +541,11 @@ lo que las abrió para que nadie lo lea como una asignación inventada.
 
    **Lo que B3 no puede terminar solo, dicho igual que en el punto 1**: los inventarios enumeran
    **consumidores**, y la mayoría llega después —`S19` con B7, `S17` con B8, `S20`, `S21` y `A5`
-   con B10, *«grant vivo»* y *«ancla viva»* con B9 y B10, y los **diez** de *«cortesía diferida»*
-   repartidos entre B8, B9, B11 y B13—. **B3 siembra los tres inventarios y cada unidad trae su
+   con B10, *«grant vivo»* y *«ancla viva»* con B9 y B10, y los ~~**diez**~~ **once** de *«cortesía diferida»*
+   repartidos entre ~~B8, B9, B11 y B13~~ **B3 (el cierre del saldo en `S3`), B8 (`S18`, el `02` §2.6,
+   `G-R1-C` y el cierre en `S31`, el undécimo), B9 (`S9`, `S13` y el `14` §4.4), B11 (la sexta
+   comprobación), B12 (`S25`) y B13 (Mi Suscripción)** —recontado sobre `NUCLEO/01` §2.6 el
+   2026-09-25, FASE 9 completa, salida 3—. **B3 siembra los tres inventarios y cada unidad trae su
    propia fila cuando llega**, que es literalmente la regla que los tres §§ ya declaran:
    *«quien escribe un consumidor nuevo agrega su fila acá en el mismo acto»*.
 
@@ -492,15 +567,15 @@ B1 ──┐   ✅ la pasarela se decidió (DEC-MP-005, 24/09): esto ya no esper
 B2 ──┘   ✅    │
                └──► B5 ──┬──► B7 ──► B8 ──► B9 ──► B10 ──► B13 ──► B12
                          ├──► B11
-                         └──► B6  ····  🔒 sin diseño: es el capítulo 13
+                         └──► B6  ····  ✅ con diseño desde el 24/09 (el 13 se repartió)
 ```
 
 | | |
 |---|---|
 | **camino crítico** | `B1 → B3 → B5 → B7 → B8 → B9 → B10 → B13 → B12` |
-| **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · **B4** una vez que estén B3 y `V4` · **B11** una vez que esté B5 |
-| **sin diseño** | **B6**, y **desde la FASE 9-bis-3 detiene la EJECUCIÓN de un desenlace de B7** — ver §3.1 |
-| **lo único que arranca hoy** | **B2**, y la interfaz de B1. **El resto del grafo espera a la pasarela** (§2.3) |
+| **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · **B4** una vez que estén B3 y `V4` · **B11** una vez que esté B5 · **B6** una vez que esté B5 (y B1, porque el reembolso sale por el adaptador) |
+| ~~**sin diseño**~~ **B6** | ~~**B6**, y~~ **desde la FASE 9-bis-3 detiene la EJECUCIÓN de un desenlace de B7** — ver §3.1. ~~Sin diseño~~ Con diseño desde el 2026-09-24 (FASE 9 completa, salida 3) |
+| ~~**lo único que arranca hoy**~~ | ~~**B2**, y la interfaz de B1. **El resto del grafo espera a la pasarela** (§2.3)~~ **Nada espera a la pasarela desde el 2026-09-24**: el grafo se recorre en el orden de las flechas |
 
 **B5 es la bisagra**: hasta ahí se construye el compromiso, y de ahí en adelante todo lee el
 registro del dinero — el grace mira pagos acreditados, la compensación de días mira pagos
@@ -524,13 +599,17 @@ dependencia de `B6` no cambia; lo que cambia es cuán seguido pasa, y eso no est
 
 **El bloqueo alcanza a la ejecución, no al disparador, y la línea es exacta:**
 
-| qué | de qué unidad es | ¿se puede construir hoy? |
+> ✅ **Desde el 2026-09-24 ya no hay bloqueo** (FASE 9 completa, salida 3): B6 tiene diseño y la
+> tabla de abajo se lee como **qué unidad construye cada paso**, no como qué espera. La
+> dependencia de la última frase del §3.1 sigue en pie: la sucesión no se libera sin B6.
+
+| qué | de qué unidad es | ¿se puede construir ~~hoy~~? |
 |---|---|---|
-| abrir la marca al cerrar la sucesión (`S18`, efecto 5) | **B7** | **sí** — es una escritura nuestra, no toca la pasarela |
+| abrir la marca al cerrar la sucesión (`S18`, efecto 5) | ~~**B7**~~ **B8** *(`S18` está en la columna de B8; corregido el 2026-09-25 contra la tabla del §2)* | **sí** — es una escritura nuestra, no toca la pasarela |
 | que la marca escale si nadie la mira (`B/09` §3, salvedades 2 y 3) | **B11** | **sí** |
 | que el caso aparezca en el listado accionable con qué devolver (`NUCLEO/08` §4.3) | B13 y el núcleo | sí |
-| **mover la plata de vuelta**, cuando el pago entró **por el proveedor** | **B6** 🔒 | **no**: el capítulo 13 no está escrito y arrastra `RF-3` en `UNKNOWN` |
-| **mover la plata de vuelta**, cuando el pago entró **a mano** (`MP1`, `B/03` §7) | **B7**, con el asiento de `B/02` §2.3 | **sí**: se devuelve por donde entró —una transferencia— y **no toca la pasarela**, así que `B6` no la bloquea. Lo único que faltaba era dónde asentarla, y es un `refund` sobre el `manual_payment` |
+| **mover la plata de vuelta**, cuando el pago entró **por el proveedor** | **B6** ~~🔒~~ | ~~**no**: el capítulo 13 no está escrito y arrastra `RF-3` en `UNKNOWN`~~ **sí**: `RF2`, `RF3` y `RF5` sobre `B/06` §4.6; `RF-3` ya no bloquea (`DEC-RF-007`) |
+| **mover la plata de vuelta**, cuando el pago entró **a mano** (`MP1`, `B/03` §7) | **B7**, con el asiento de `B/02` §2.3 — **el acto que lo asienta es `RF4`, la acción administrativa 14, y lo construye B5** (owner 2026-09-25, 5a) | **sí**: se devuelve por donde entró —una transferencia— y **no toca la pasarela**, así que `B6` no la bloquea. Lo único que faltaba era dónde asentarla, y es un `refund` sobre el `manual_payment`, **nacido `EXECUTED` por `RF4`** (`B/03` §6.1) |
 
 O sea: **B7 puede quedar entera y correcta con B6 sin empezar**, y lo que queda pendiente es que
 la persona que confirma el reembolso tenga con qué ejecutarlo. Lo que **no** se puede es liberar
@@ -563,8 +642,8 @@ unidad se declara terminada.
 > no puede fallar es un comentario con exit code 0»*). La regla 1 del §1.3 dice **cuándo** va cada
 > guard —*«con la pieza que protege, nunca al final»*— y hasta esta pasada **no había ningún lugar
 > donde se comprobara que había ido**: la asignación vivía sólo en una columna que nadie consulta
-> al declarar una unidad lista. **Los ~~29~~ 30 guards están repartidos entre las 22 unidades —13 en esta
-> épica y ~~16~~ 17 en la otra (el nuevo, `G-R5-B`, de `V6`; FASE 8 completa, owner 2026-09-25), contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22
+> al declarar una unidad lista. **Los ~~29~~ ~~30~~ 31 guards ~~están repartidos~~ —30 repartidos entre las 22 unidades, 13 en esta
+> épica y ~~16~~ 17 en la otra (el nuevo, `G-R5-B`, de `V6`; FASE 8 completa, owner 2026-09-25), contados sobre las dos columnas, y uno sin unidad, `G-R2-C` (owner 2026-09-25, 4e; su unidad natural es `V3`, con `G-R2-B`, y la asignación es de `V/descomposicion.md`; recuento de `B/20` §2)— y ninguno aparecía en ninguno de los 22
 > criterios**, así que la quinta enmienda de `DEC-TEST-001` compró que todos tuvieran dueño y no
 > compró que alguno se construya. El desarrollo, del lado de verticales, está en
 > [`V/descomposicion.md`](../HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md) §4.
@@ -608,17 +687,17 @@ unidad se declara terminada.
 |---|---|
 | **B1** | el adaptador falso implementa la interfaz entera **sin nombrar un concepto de Mercado Pago**; importar el SDK afuera **falla**; y el falso **miente** — hay un caso donde acepta una mutación, devuelve `2xx`, **no la aplica**, y el código de arriba lo detecta releyendo |
 | **B2** | un monto escrito en código **falla**; un precio con decimales **no se puede guardar**; y cambiar un precio deja demostrable contra un registro cuál era el anterior **sin que ninguna suscripción viva cambie de monto** |
-| **B3** | diez altas simultáneas del mismo `user + vertical` dejan **una** fila y **un** id en el proveedor; una ventana que vence **cancela en el proveedor** y no sólo marca la fila; y dos webhooks que llegan al revés dejan **el mismo estado** |
-| **B4** | el juego de casos corre contra las dos implementaciones y **hay al menos uno que la de arranque no pasa** — si pasan los dos con las dos, no está probando nada; y la de arranque **no puede llegar a producción** |
-| **B5** | un reembolso que emite **tres notificaciones en dos formatos** produce **una** fila; un período con un pago acreditado **rechaza el segundo desde la base**, no desde un chequeo; y un hecho más viejo que el último aplicado **se registra y no se aplica** |
-| **B6** | 🔒 **no se puede redactar todavía**: qué hay que demostrar depende de quién tenga el reloj. Lo que sí vale en las dos respuestas: **ningún cobro sale sin su clave de idempotencia persistida antes**, y **nunca hay dos relojes sobre la misma autorización** |
-| **B7** | un **primer** cobro rechazado **no da grace**; un cobro que el proveedor está reintentando deja el pago `PENDING` y la suscripción ~~`ACTIVE`~~ **en `GRACE_PERIOD` desde el primer rechazo** (`12` §1.2, FASE 8 completa `R1`); un pago tardío que llega habiendo **otra suscripción viva** para ese `user + vertical` **no reactiva nada** y el evento dice **cuál** de las cuatro condiciones falló — **salvo que esa otra fila sea su propia sucesora viva**, y ahí el pago **se registra y queda pendiente**, **sin marca y sin evento crítico** (`S19`, `05` §3), con su destino decidido por **cómo termina la sucesión** y no por su llegada; y **las SEIS ramas de `12` §5.3 tienen cada una un acto que apaga la bandera** —`S18` con la marca `REEMBOLSO_POR_CONFIRMAR`, en las ramas 1, 5 y 6; `S3` reevaluando; `S13` apagándola; y la 3 la resuelve la persona que ya está mirando la traba— de modo que **ninguna corrida deja un pago «pendiente» para siempre**; y **un pago registrado A MANO sobre una predecesora en sucesión entra por esa misma fila** —no cae en la marca, no reactiva y **no la suspende cuando vence el grace**—, con su devolución asentada igual que la de un cobro del proveedor (`03` §7, `02` §2.3) |
-| **B8** | **un cambio hacia una versión de `rank` MAYOR con un solo limit menor sigue el camino de DOWNGRADE** —si sigue el de upgrade, la dirección se está derivando del `rank` en vez de pedírsela a `direcciónDeCambio` (contrato §4.1), y el cliente pierde el aviso previo del excedente—; un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; cancelar estando pausado corta el servicio **ese día**; **una predecesora que se muere sola con la sucesora todavía esperando autorización cierra la sucesión en el acto, y un alta nueva sobre ese `user + vertical` la rechaza la base**; y **un upgrade no le saca nada al cliente**: los complementos y la redención de promo terminan colgando de la sucesora, con el descuento vuelto a aplicar sobre el monto nuevo y verificado releyendo, y **la cortesía vigente NO se re-apunta: se cierra con su saldo de días y `S9` la re-emite sobre la sucesora cuando ésta autoriza** (`02` §2.6, `14` §4.4, `DEC-GRANT-007`) |
-| **B9** | un 20 % y ARS 100 sobre ARS 1.000 dan **700 y nunca 720**; un descuento que deja el monto bajo ARS 15 **pausa en vez de mutar**; y agregar cortesía y grant como fuentes **no toca una línea** de lo que dejó B4 |
-| **B10** | cancelar el plan **deja vivo** el preapproval de cada addon recurrente, y el barrido **lo ve**; borrar una ficha **dice qué addons se pierden y por cuánto** antes de borrarla; `PERIÓDICO + DÍAS_FIJOS` **no se puede configurar**; y **un addon cuyo título muere mientras su checkout está abierto no llega a cobrar nunca** —se le cancela el preapproval esperando autorización, y si igual autoriza, el barrido lo encuentra vivo con el objetivo muerto (`03` §8, `16` §4.2 y §4.3, `09` §3 cuarta comprobación); y **a un beneficiario de *Free Forever* con `includesAddons: true` no se le cobra ni un peso más por un addon compatible** —su suscripción de complemento queda `CANCELLED` en el mismo acto del otorgamiento, **sin reembolso de lo ya cobrado**, la instancia sigue `ACTIVE` colgando del ancla, y **al revocar el grant se apaga y no vuelve sola**, ni siquiera con scope `USER` o `GLOBAL`, donde el objetivo nunca murió (`S20`, `03` §3.2 y §8, `16` §3.3 y §3.4); y **cuando un addon se apaga, su suscripción de complemento queda `CANCELLED` en el mismo acto** —sin período de gracia, sin fecha de fin de servicio y **sin reembolso automático** de lo ya cobrado—, así que no queda ninguna fila de complemento viva colgando de una instancia terminal (`S21`, `03` §3.2 y §8, `16` §4.4, `09` §3 salvedad 1) |
-| **B11** | un barrido que liste desde el buscador del proveedor **no existe**; una suscripción que cobró y cuyo endpoint de cobros devuelve cero **no se reporta como divergencia**; un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook; y **una suscripción TERMINAL con la marca puesta o con un pago pendiente sigue en el barrido**, porque es lo único que hace que el reloj de la marca escale sobre el reembolso que `DEC-RF-002` volvió manual |
-| **B12** | retirar un plan **no mueve a nadie** —ni un monto, ni una fecha, ni un entitlement—; y anunciar una discontinuación **corta el cobro el día 0** dejando el servicio prestándose hasta la fecha, nunca al revés |
-| **B13** | cancelar cuesta **los mismos pasos o menos** que suscribirse; **nuestro** correo sale antes que el del proveedor; y ninguna pantalla esconde algo que la autorización **no** rechazaría |
+| **B3** | diez altas simultáneas del mismo `user + vertical` dejan **una** fila y **un** id en el proveedor; una ventana que vence **cancela en el proveedor** y no sólo marca la fila; y dos webhooks que llegan al revés dejan **el mismo estado**; y **un alta o una sucesión en una vertical que ya no admite altas no nace**, con el mensaje *«esta vertical ya no admite altas»* (`S1`, owner 2026-09-25, 6a) |
+| **B4** | el juego de casos corre contra las dos implementaciones y **hay al menos uno que la de arranque no pasa** — si pasan los dos con las dos, no está probando nada; y la de arranque **no puede llegar a producción**; y **ninguna fuente sale de una vertical pasado su fin de servicio** (contrato §2.6) — **con un caso de `GRANT` que traiga su `piso`** en el juego único, cuando B9 enchufe los grants (owner 2026-09-25, 9h) |
+| **B5** | un reembolso que emite **tres notificaciones en dos formatos** produce **una** fila; un período con un pago acreditado **rechaza el segundo desde la base**, no desde un chequeo; y un hecho más viejo que el último aplicado **se registra y no se aplica**; y **sólo un `refund` en `EXECUTED` mueve el acumulado del pago** —un pedido sin confirmar o uno fallido no corre `P3`/`P4`—, **una devolución hecha por fuera se asienta por la acción administrativa 14 y nace `EXECUTED`** (`RF4`), y **el asiento de un cobro por fuera crea el `payment` en `PENDING` y corre `P1`**, que es lo que emite el comprobante y escribe `covered_period` (owner 2026-09-25, 5a, `DEC-RF-008`) |
+| **B6** | ~~🔒 **no se puede redactar todavía**: qué hay que demostrar depende de quién tenga el reloj. Lo que sí vale en las dos respuestas:~~ **ningún ~~cobro~~ reembolso sale sin su clave de idempotencia persistida antes**, y **nunca hay dos relojes sobre la misma autorización** —**el único es el del proveedor** (`DEC-MP-006`)—; **un reembolso confirmado queda `EXECUTED` sólo cuando la relectura por id lo muestra acreditado** (`RF3`), nunca por el `200` del pedido; **un `2084` no lo marca como no reembolsable**: se queda en `CONFIRMED` y se reintenta con otro monto (`RF-8`); y **pasado el plazo del proveedor el sistema no ofrece la operación y lo dice**, y si el proveedor la rechaza igual, **el error no se traga**: `RF5` la deja `FAILED` con el caso identificado para el camino manual (`DEC-RF-007`). *(Redactado el 2026-09-25, FASE 9 completa, salida 3: la pregunta del reloj se contestó el 24/09.)* |
+| **B7** | un **primer** cobro rechazado **no da grace** — **salvo el de una sucesora cuya predecesora venía pagando** (declarada desde `ACTIVE` o `CANCEL_SCHEDULED`, con al menos un pago acreditado), que **entra en grace por `S4`**, y el barrido relee su preapproval cada día y la lleva a `SUSPENDED` por `S6` si lo lee `cancelled` o `paused` (owner 2026-09-25, 3c, `DEC-SUB-022`); **al vencer el grace, `S6` cancela el preapproval** y, si la cancelación falla, **no ocurre** en esa corrida (`DEC-SUB-019`); **una versión de plan con grace no más corto que su ciclo no se puede configurar** (`12` §1.2); **una fila `ACTIVE` con al menos un pago acreditado cuyo aviso de primer rechazo se perdió entra en grace igual**, porque la lectura del barrido corre `S4` (9a); y **un *«todavía no se sabe»* que dura 3 días abre la marca 21** en vez de dejar a `S6` esperando (3d); un cobro que el proveedor está reintentando deja el pago `PENDING` y la suscripción ~~`ACTIVE`~~ **en `GRACE_PERIOD` desde el primer rechazo** (`12` §1.2, FASE 8 completa `R1`); un pago tardío que llega habiendo **otra suscripción viva** para ese `user + vertical` **no reactiva nada** y el evento dice **cuál** de las cuatro condiciones falló — **salvo que esa otra fila sea su propia sucesora viva**, y ahí el pago **se registra y queda pendiente**, **sin marca y sin evento crítico** (`S19`, `05` §3), con su destino decidido por **cómo termina la sucesión** y no por su llegada; y **las SEIS ramas de `12` §5.3 tienen cada una un acto que apaga la bandera** —`S18` con la marca `REEMBOLSO_POR_CONFIRMAR`, en las ramas 1, 5 y 6; `S3` reevaluando; `S13` apagándola; y la 3 la resuelve la persona que ya está mirando la traba— de modo que **ninguna corrida deja un pago «pendiente» para siempre**; y **un pago registrado A MANO sobre una predecesora en sucesión entra por esa misma fila** —no cae en la marca, no reactiva y **no la suspende cuando vence el grace**—, con su devolución asentada igual que la de un cobro del proveedor (`03` §7, `02` §2.3) |
+| **B8** | **un cambio hacia una versión de `rank` MAYOR con un solo limit menor sigue el camino de DOWNGRADE** —si sigue el de upgrade, la dirección se está derivando del `rank` en vez de pedírsela a `direcciónDeCambio` (contrato §4.1), y el cliente pierde el aviso previo del excedente—; un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; cancelar estando pausado corta el servicio **ese día**; **una predecesora que se muere sola con la sucesora todavía esperando autorización cierra la sucesión en el acto, y un alta nueva sobre ese `user + vertical` la rechaza la base**; y **un upgrade no le saca nada al cliente**: los complementos ~~y la redención de promo~~ terminan colgando de la sucesora~~, con el descuento vuelto a aplicar sobre el monto nuevo y verificado releyendo~~, y **la cortesía vigente NO se re-apunta: se cierra con su saldo de ~~días~~ meses y `S9` la re-emite sobre la sucesora cuando ésta autoriza** (`02` §2.6, `14` §4.4, `DEC-GRANT-007`) — **salvo la promo, que se pierde en todo cambio de plan** (`02` §2.6, `14` §2.2: FASE 8 completa, `R6`, pendiente 7; y la vuelta del suspendido por sucesión la pierde también, que se acepta y se dice: owner 2026-09-25, 3b). *(Corregido el 2026-09-25, FASE 9 completa, salida 3: el criterio seguía pidiendo el re-apunte de la redención que la FASE 8 completa eliminó.)*; y **en `GRACE_PERIOD` el cambio de plan no se ofrece ni se puede declarar** —la pantalla dice cómo regularizar— (`DEC-SUB-021`) |
+| **B9** | un 20 % y ARS 100 sobre ARS 1.000 dan **700 y nunca 720**; un descuento que deja el monto bajo ARS 15 ~~**pausa en vez de mutar**~~ **se rechaza al canjear, con el motivo en pantalla que dice que el mínimo lo pone Mercado Pago, y el código no se consume** (owner 2026-09-25, 4b y 9g; `14` §1.3); **una cortesía sobre una `PAUSED · COURTESY` suma meses sin cambiar de estado** (`S34`) y **pausar sobre una cortesía la cambia a `CUSTOMER_REQUEST` sólo después de avisar lo que se pierde** (`S35`); y agregar cortesía y grant como fuentes **no toca una línea** de lo que dejó B4 —**y cada `GRANT` sale con su `piso`** (9h)— |
+| **B10** | cancelar el plan **deja vivo** el preapproval de cada addon recurrente, y el barrido **lo ve**; borrar una ficha **dice qué addons se pierden y por cuánto** antes de borrarla; `PERIÓDICO + DÍAS_FIJOS` **no se puede configurar**; y **un addon cuyo título muere mientras su checkout está abierto no llega a cobrar nunca** —se le cancela el preapproval esperando autorización, y si igual autoriza, el barrido lo encuentra vivo con el objetivo muerto (`03` §8, `16` §4.2 y §4.3, `09` §3 cuarta comprobación); y **a un beneficiario de *Free Forever* con `includesAddons: true` no se le cobra ni un peso más por un addon compatible** —su suscripción de complemento queda `CANCELLED` en el mismo acto del otorgamiento, **sin reembolso de lo ya cobrado**, la instancia sigue `ACTIVE` colgando del ancla, y **al revocar el grant se apaga y no vuelve sola**, ni siquiera con scope `USER` o `GLOBAL`, ~~donde el objetivo nunca murió~~ **aunque la persona conserve otro título** (desde 4d ningún scope queda del todo en *«el objetivo nunca murió»*: `16` §3.3, owner 2026-09-25) (`S20`, `03` §3.2 y §8, `16` §3.3 y §3.4); y **cuando un addon se apaga, su suscripción de complemento queda `CANCELLED` en el mismo acto** —sin período de gracia, sin fecha de fin de servicio y **sin reembolso automático** de lo ya cobrado—, así que no queda ninguna fila de complemento viva colgando de una instancia terminal (`S21`, `03` §3.2 y §8, `16` §4.4, `09` §3 salvedad 1); y, **desde la FASE 9 completa** (owner 2026-09-25, `DEC-ADDON-007`): **una pausa pedida por el cliente no deja ningún addon recurrente de esa vertical cobrando** —se pausa con ella por `S32` y vuelve por `S33`, y un `USER`/`GLOBAL` sólo si no le queda título en otra vertical compatible— (4a); **un upgrade abandonado no deja huérfano el `LISTING` de quien sigue pagando** (4c); **un `USER`/`GLOBAL` sin principal viva y cobrada ni ancla viva en sus verticales compatibles queda huérfano** (4d); **un `USER`/`GLOBAL` no aparece como fuente en una vertical que su producto no declara compatible** (4e); y **borrar la ficha sólo lo ejecuta `A6`** (`K-9`) |
+| **B11** | un barrido que liste desde el buscador del proveedor **no existe**; una suscripción que cobró y cuyo endpoint de cobros devuelve cero **no se reporta como divergencia**; un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook; y **una suscripción TERMINAL con la marca puesta o con un pago pendiente sigue en el barrido**, porque es lo único que hace que el reloj de la marca escale sobre el reembolso que `DEC-RF-002` volvió manual; y **un preapproval desconocido cuyo `external_reference` no nombra una fila nuestra sin otro vínculo vivo no se re-vincula: abre marca** (owner 2026-09-25, 2b) |
+| **B12** | retirar un plan **no mueve a nadie** —ni un monto, ni una fecha, ni un entitlement—; y anunciar una discontinuación **corta el cobro el día 0** dejando el servicio prestándose hasta la fecha, nunca al revés; **una pausada no se interrumpe y, al terminar, `S25` la cancela en vez de reanudar** (`DEC-SUB-015`); y **el día del fin de servicio el barrido invalida el caché de la vertical entera**, así que un grant, una cortesía o un trial de esa vertical dejan de otorgar ese mismo día (owner 2026-09-25, 6b) |
+| **B13** | cancelar cuesta **los mismos pasos o menos** que suscribirse; **nuestro** correo sale antes que el del proveedor; y ninguna pantalla esconde algo que la autorización **no** rechazaría; y (owner 2026-09-25, FASE 9 completa) **ningún aviso del grace promete que el reintento use la tarjeta nueva** (3a), **el aviso de suspensión dice que al volver se pierde la promo** (3b), **el botón de suscribirse de quien no publicó en esa vertical lo manda a publicar y no al checkout** (6c), **la pricing no ofrece planes de una vertical que no admite altas** (6a), y **Admin ofrece la acción 14 con su permiso y su auditoría** (5a) |
 
 ---
 
@@ -636,7 +715,7 @@ listas: una unidad lo está cuando todas sus dependencias están hechas.
 | **B3** | [HOS-1366](https://linear.app/hospeda-beta/issue/HOS-1366) | [ficha](https://claude.ai/artifact/SZWTgCVsibxQQBoCv1BqS1) |
 | **B4** | [HOS-1367](https://linear.app/hospeda-beta/issue/HOS-1367) | [ficha](https://claude.ai/artifact/PhznPesGdJNckEgUJukffC) |
 | **B5** | [HOS-1368](https://linear.app/hospeda-beta/issue/HOS-1368) | [ficha](https://claude.ai/artifact/TCjMHoQtCmbE1GDvJndrKu) |
-| **B6** 🔒 | [HOS-1369](https://linear.app/hospeda-beta/issue/HOS-1369) | [ficha](https://claude.ai/artifact/7Rgsqbpv4xexx9dbzbaqwF) |
+| **B6** ~~🔒~~ | [HOS-1369](https://linear.app/hospeda-beta/issue/HOS-1369) | [ficha](https://claude.ai/artifact/7Rgsqbpv4xexx9dbzbaqwF) |
 | **B7** | [HOS-1370](https://linear.app/hospeda-beta/issue/HOS-1370) | [ficha](https://claude.ai/artifact/BxvBsVpS1pypNgdaFqb9ZY) |
 | **B8** | [HOS-1371](https://linear.app/hospeda-beta/issue/HOS-1371) | [ficha](https://claude.ai/artifact/UASiMLVL8iS9WVjPD2EU9d) |
 | **B9** | [HOS-1372](https://linear.app/hospeda-beta/issue/HOS-1372) | [ficha](https://claude.ai/artifact/Fe1bqQkj8QThu75uKsHjev) |
@@ -660,13 +739,16 @@ listas: una unidad lo está cuando todas sus dependencias están hechas.
   porque la PRUEBA 0 y el KYC de Mobbex **nunca recibieron respuesta**, y MP tampoco contestó la
   consulta de `R-MP-01`. Con la decisión entró la directriz de que **lo que el proveedor no hace lo
   suple el diseño**, y con ella se destraba el capítulo 13 y la construcción de acá para abajo.
-- **El modelo canónico de cobro.** Es la pregunta de B6, y está planteada en la spec §5.1 con sus
-  opciones y una recomendación. Esta descomposición la aísla; no la contesta.
+- ~~**El modelo canónico de cobro.** Es la pregunta de B6, y está planteada en la spec §5.1 con sus
+  opciones y una recomendación. Esta descomposición la aísla; no la contesta.~~ **DECIDIDO el
+  2026-09-24 por `DEC-MP-006`**: el reloj de cobro es del proveedor y el mandato es el modelo
+  canónico; el cargo puntual queda declarado como destino (spec §5.1).
 - **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del
   código de ese momento a la vista.
 - **Qué se reescribe y qué se reutiliza.** Es FASE 5 y tiene su gate propio (`DEC-METH-003`) —
   salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: **se absorbe**. Esta descomposición dice **qué hay
   que tener funcionando**, no de dónde sale.
 - **Fechas y esfuerzo.** No hay estimaciones acá a propósito: salen del atomizado.
-- **Las seis preguntas legales**, que no las contesta el diseño. Lo que sí está cerrado es qué
+- **Las ~~seis~~ cinco preguntas legales de esta épica** (`B/22` §4; la sexta del pliego es de
+  `V/22`: FASE 9 completa, C-11), que no las contesta el diseño. Lo que sí está cerrado es qué
   depende de cada una, y eso permite implementar el resto sin esperarlas.

@@ -3,7 +3,7 @@ title: Billing — cobro, suscripción y proveedor detrás de un adaptador
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-21
+updated: 2026-09-25
 type: feature
 areas:
   - billing
@@ -14,19 +14,31 @@ parent: HOS-1352
 
 # Billing — cobro, suscripción y proveedor detrás de un adaptador
 
-> **Esta épica se sostiene sola en su diseño, y desde el 2026-09-24 ya no está bloqueada.** Trece
+> **Esta épica se sostiene sola en su diseño, y desde el 2026-09-24 ya no está bloqueada.** ~~Trece
 > capítulos escritos, uno sin escribir —el `13` (Pagos)—, que se difirió porque era el que más
 > dependía de con qué pasarela íbamos a cobrar. **`DEC-MP-005` fijó Mercado Pago**, así que el `13`
 > se escribe entero. Lo que queda antes de escribirlo no viene de afuera: es **una decisión de
-> diseño**, quién tiene el reloj de cobro.
+> diseño**, quién tiene el reloj de cobro.~~ **Trece capítulos escritos y ninguno pendiente**: el
+> `13` (Pagos) **no se escribió, se repartió** entre los capítulos que lo reclamaban (2026-09-24,
+> §2 y [`nucleo/00-indice.md`](../HOS-1352-billing-verticals-redesign/docs/nucleo/00-indice.md)).
+> **`DEC-MP-005` fijó Mercado Pago** y **`DEC-MP-006` contestó quién tiene el reloj de cobro: el
+> proveedor** (§5.1). *(Corregido el 2026-09-25, FASE 9 completa, salida 3 de `DEC-METH-004`: el
+> párrafo describía el estado de la mañana del 24/09.)*
 >
 > **No sale a producción sola** (`DEC-ARCH-007`): las dos épicas llegan juntas y terminadas.
 
-## 1. Qué la bloquea, exactamente
+## 1. ~~Qué la bloquea, exactamente~~ Qué la bloqueaba, y ya no
 
-**No es el diseño: es que no está decidida la pasarela.** `DEC-ARCH-004` puso el ciclo de vida de
+> ✅ **Nada la bloquea desde el 2026-09-24** (FASE 9 completa, salida 3 de `DEC-METH-004`): la
+> pasarela es **Mercado Pago** (`DEC-MP-005`), el reloj de cobro es **del proveedor**
+> (`DEC-MP-006`) y la evaluación de proveedor se cerró en el paso 4 de 6 sin completarse. Lo que
+> sigue en este § es **el estado de antes de esa decisión** y se deja como rastro: la PRUEBA 0 no
+> se envió y ya no hace falta, y la sonda de Mobbex nunca tuvo cuenta contra la que correr.
+
+~~**No es el diseño: es que no está decidida la pasarela.**~~ `DEC-ARCH-004` puso el ciclo de vida de
 nuestro lado y dejó la pasarela detrás de un adaptador — al proveedor se le pide **cobrar,
-reembolsar, leer y avisar**, y nada más. Pero el adaptador de referencia sigue sin decidirse:
+reembolsar, leer y avisar**, y nada más. Pero el adaptador de referencia ~~sigue sin decidirse~~
+estuvo sin decidirse hasta el 2026-09-24:
 
 | | |
 |---|---|
@@ -46,17 +58,17 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | # | capítulo | qué resuelve |
 |---|---|---|
 | `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | `billing_option` —donde vive el precio—, suscripción, pausa, el vínculo con el proveedor, el dinero, addons y concesiones |
-| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | **siete**: Suscripción, Grace, Pausa, Pago, Pago manual, Addon, y la regla de no-retroceso |
+| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (`S1`–`S35`), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
 | `05` | [idempotencia y concurrencia](./docs/05-idempotencia-y-concurrencia.md) | los tres mecanismos, los seis cruces del §52, y qué hace seguro a un pago tardío |
 | `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las seis reglas duras de trato, el riesgo de plataforma |
-| `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los tres modos de «cero cobros», y el bug vivo que pasa a ser caso de uso |
+| `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los ~~tres~~ **cuatro** modos de «cero cobros» (§4, reescrito el 2026-09-24 por `RC-5`), y el bug vivo que pasa a ser caso de uso |
 | `10` | [retiro de plan y vertical discontinuada](./docs/10-verticales-planes-billing-options.md) | retirar no mueve a nadie; discontinuar **deja de cobrar antes de dejar de prestar** |
 | `12` | [suscripción](./docs/12-suscripcion.md) | el grace, la cola de cambios programados, el precio que cambia entre programar y ejecutar |
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
-| `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** |
+| `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** — y desde el 2026-09-25 **los addons siguen a su título**: *válida* es `ACTIVE` y cobrada, se pausan con la pausa del cliente (`S32`, `S33`), la orfandad se lee sobre el conjunto de principales y anclas vivas, y un `USER`/`GLOBAL` se emite sólo en sus verticales compatibles (owner, `DEC-ADDON-007`) |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
 | `20` | [testing](./docs/20-testing.md) | las cuatro capas y **dieciséis guards** —`G7`, `G9`–`G13`, los seis de `R1` y las **cuatro** referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
-| `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño |
+| `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño — **y la cartera actual no se migra: de su billing no se conserva nada, y se conservan el usuario, sus preferencias y sus fichas** (owner 2026-09-25, `DEC-MIG-005`) |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 
 ✅ **El `13` (Pagos) NO existe, y no es un pendiente: se repartió** (2026-09-24). Ver §5.1 y el
@@ -166,6 +178,10 @@ que tener una sola.
 
 **No cruzan la frontera** montos, precios, estados de pago, ids del proveedor ni fechas de cobro
 —sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4 (`DEC-TRIAL-010`)—.
+**Y una fuente `GRANT` lleva además su `piso`**, la versión de plan del trinquete (owner
+2026-09-25; FASE 9 completa, 9h): la firma pasó a **siete campos por fuente**, y el piso sigue
+siendo **un puntero, no un valor** — por eso cruza sin romper la regla de arriba, y verticales deja
+de leerlo de `permanent_grant_vertical`.
 Ni siquiera el estado exacto de la suscripción: verticales no distingue `ACTIVE` de
 `GRACE_PERIOD`, porque durante el grace **el servicio sigue**.
 
@@ -175,8 +191,10 @@ Ni siquiera el estado exacto de la suscripción: verticales no distingue `ACTIVE
 
 ### 5.1 El capítulo 13 (Pagos), y la pregunta que lo gobierna — ✅ CONTESTADA el 2026-09-24
 
-Es el único de los 22 sin escribir, y se difirió a propósito. **La primera pregunta cuando esta
-épica arranque:**
+~~Es el único de los 22 sin escribir, y se difirió a propósito.~~ **Ya no existe como capítulo**:
+lo que debía se repartió el 2026-09-24 entre `B/02` §2.3, `B/03` `S29` y §6.1, `B/05` C5 y `B/06`
+§4.6 (`nucleo/00-indice.md`, *«El capítulo `13` NO existe»*). **La pregunta que lo gobernaba era
+ésta:**
 
 > **¿El capítulo 13 adopta el cargo puntual contra tarjeta guardada como modelo canónico, tratando
 > el mandato del proveedor —lo que Mercado Pago hace hoy— como modo degradado?**
@@ -200,15 +218,31 @@ declara como riesgo nuestro.
 reintentar nunca, hay techo de intentos por ventana y hay multas por excederlo. Hoy eso lo absorbe
 Mercado Pago dentro del `preapproval`.
 
-### 5.2 Las ocho filas que siguen `UNKNOWN`
+### 5.2 Las ~~ocho~~ seis filas que siguen `UNKNOWN`
 
-De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
+~~De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
 un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: `RN-2`, `RN-3`,
-`GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.
+`GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
-**Y hay una consecuencia de la pregunta de arriba que conviene tener presente**: esas cinco
+**Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
+`DEC-METH-004`): **98 filas — 55 `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, 6
+`UNKNOWN`**. De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
+nuevas. Las seis, y qué condiciona cada una:
+
+| fila | qué condiciona |
+|---|---|
+| `RN-3` · `GR-2` | la recuperación tras un cobro fallido y el pago tardío después de suspender (§22). Las lee el grace de `B7`; la cita de `RN-3` que usa `DEC-SUB-019` se lee *«observado, no registrado»* (su 📌 del 2026-09-25) |
+| `GR-1` | **condiciona `DEC-SUB-021`**: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido. Se mide con el próximo rechazo mensual real, y mientras tanto la pantalla y los correos del grace no lo prometen (owner 2026-09-25, 3a) |
+| `PA-6` ✚ | si el proveedor cancela el preapproval ante cualquier primer rechazo. **No decide** `DEC-SUB-022`: decide **cuánto dura** el grace de la sucesora de quien venía pagando, y el barrido lo acota a un día (owner 2026-09-25, 3c) |
+| `RC-8` ✚ | qué estado lee el pago en un contracargo. **Fuente documental**: `DEC-SUB-020` fija qué hacemos al leerlo, no cómo se comporta el proveedor |
+| `RF-3` | el plazo máximo para reembolsar. **Ya no bloquea** (`DEC-RF-007`): pasado el plazo la operación no se ofrece y la reparación es manual, asentada por `RF4` (`DEC-RF-008`) |
+
+~~**Y hay una consecuencia de la pregunta de arriba que conviene tener presente**: esas cinco
 gobiernan el diseño del grace **sólo mientras el reloj sea del proveedor**. Con el reloj nuestro
-dejan de ser bloqueantes de diseño y pasan a ser una nota del adaptador de Mercado Pago.
+dejan de ser bloqueantes de diseño y pasan a ser una nota del adaptador de Mercado Pago.~~ **Y la
+pregunta de arriba se contestó con el reloj del proveedor** (`DEC-MP-006`), así que las filas del
+cobro fallido **siguen gobernando el diseño del grace**, como `DEC-MP-006` dejó escrito.
 
 ### 5.3 El riesgo de plataforma
 
@@ -232,15 +266,26 @@ rama del paraguas**, nunca al revés hasta el final.
 
 ---
 
-## 7. Lo que necesita del owner para destrabar
+## 7. Lo que necesita del owner ~~para destrabar~~
 
-1. **Enviar los dos textos de la PRUEBA 0** (§5.0 de
+> ✅ **Nada que destrabe** (FASE 9 completa, salida 3 de `DEC-METH-004`): los tres puntos de abajo
+> quedaron sin objeto el 2026-09-24 — `DEC-MP-005` cerró la evaluación de proveedor sin la PRUEBA 0
+> ni la cuenta de Mobbex, y `DEC-MP-006` contestó el §5.1.
+
+~~1. **Enviar los dos textos de la PRUEBA 0** (§5.0 de
    [`10-evaluacion-de-proveedor.md`](../HOS-1352-billing-verticals-redesign/docs/10-evaluacion-de-proveedor.md))
    — el formulario comercial pide una facturación esperada que decide él, y los dos necesitan el ID
-   de aplicación.
-2. **Avisar cuando llegue el mail de habilitación de Mobbex**, para vincular la entidad y sacar el
-   `x-access-token`. La batería de sondas está escrita, con su gatillo, su orden y sus trampas.
-3. **Responder la pregunta del §5.1** cuando haya con qué medirla.
+   de aplicación.~~
+~~2. **Avisar cuando llegue el mail de habilitación de Mobbex**, para vincular la entidad y sacar el
+   `x-access-token`. La batería de sondas está escrita, con su gatillo, su orden y sus trampas.~~
+~~3. **Responder la pregunta del §5.1** cuando haya con qué medirla.~~
+
+**Lo que sí queda en sus manos, y no traba ninguna unidad:**
+
+1. **Pedir la habilitación de *«pagos automáticos»*** por el canal comercial, en paralelo
+   (`DEC-MP-006`, cláusula 1): es lo que volvería disponible el cargo puntual declarado como destino.
+2. **Medir `GR-1` con el próximo rechazo mensual real** (owner 2026-09-25, 3a): hasta entonces la
+   salida *«cambiá la tarjeta»* de `DEC-SUB-021` no se le promete al cliente.
 
 ---
 
