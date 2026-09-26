@@ -210,9 +210,12 @@ entre los estados vivos (cap. 02 §2.2).
 > el caso que el párrafo de arriba describe —*«la cancelación se aceptó y no se aplicó»*—, y sin
 > la salvedad el único aviso llegaba **después del cobro**, por la vía del webhook del §2.2.
 >
-> **La lápida es la única fila `CANCELLED` de todo el sistema que ninguna transición produce**
-> —desde `G3-2` son dos formas de la misma fila, la del corte y la de recepción, las dos con
-> `clase = LÁPIDA` (owner 2026-09-26)—, y
+> ~~**La lápida es la única fila `CANCELLED` de todo el sistema que ninguna transición produce**~~
+> **Las lápidas son las únicas filas `CANCELLED` de todo el sistema que ninguna transición
+> produce, y son dos** —la del corte (`origen_de_lápida = CORTE`, de la herramienta del paso 4) y
+> la de recepción (`RECEPCIÓN`, que escribe el handler al recibir un desconocido que no nombra
+> ninguna fila); desde `G3-2` son dos formas de la misma fila, las dos con `clase = LÁPIDA` (owner
+> 2026-09-26; FASE 9 vuelta 1, corregido el *«única»*)—, y
 > eso no es exclusivo del corte: cualquier escritura manual futura hereda el mismo agujero. Por
 > eso la exención del cap. 09 §3 quedó escrita como **criterio** —quién dejó al preapproval sin
 > poder cobrar— y no como enumeración de transiciones: una fila que no nace de ninguna transición

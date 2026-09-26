@@ -59,7 +59,7 @@ cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1
 | `15` | [entitlements y limits](./docs/15-entitlements-y-limits.md) | las cuatro estrategias de agregación, el scope, el excedente, el visitante sin cuenta |
 | `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
-| `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) |
+| `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) **si publicar le arrancaría el trial, con la regla escrita sólo en `19` §4 fila 23** (FASE 9 vuelta 1, `F-8V1D1-004`) |
 | `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ **veinte guards** (`G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`) |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`) |
@@ -231,8 +231,9 @@ publicó con una suscripción que todavía no cobró consume su fila por `T8`, a
 pagó sin haber publicado sigue en `PRE_TRIAL` y la consume `T6` cuando publique (FASE 9 vuelta 1,
 `F-8V1A2-004`). La superficie
 lo evita antes: **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a
-publicar**, que arranca su trial (cap. 03 §2, cap. 19 §4 fila 23; owner 2026-09-25, FASE 9
-completa, 6c).
+publicar** **si publicar le arrancaría el trial**, que arranca su trial (cap. 03 §2, cap. 19 §4
+fila 23, donde está la regla entera; owner 2026-09-25, FASE 9 completa, 6c; FASE 9 vuelta 1,
+`F-8V1D1-004`).
 
 **El trial no vuelve; lo que hay es reparación hacia adelante.** Mientras sigue vivo se extiende;
 si ya venció, la reparación es un instrumento de la otra épica.

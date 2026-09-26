@@ -122,11 +122,13 @@ admite altas (cap. 10 §2). Hasta entonces la afirmación de este renglón no la
 de billing (informe `06`, contradicción 4). **Desde la FASE 8 completa también las leen el contrato y la máquina de trial**:
 el contrato deja de emitir toda fuente de título desde `fin_de_servicio` —billing lo lee por
 `situaciónDeVertical`, verticales directo para el trial— y `T1` exige `admite_altas`
-(`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). Son dos de los **siete** campos de la dirección inversa del contrato
+(`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). Son dos de los ~~**siete**~~ campos de la dirección inversa del contrato
 (`12-contrato-de-cobertura.md` §4.1), que transporta **política y estado de catálogo, nunca
 capacidades**. *(Decía «seis»: es la misma cifra caduca que la regla de vigilancia del §4.2 del
 contrato llevaba en su mitad inversa, y se recontó entera sobre el bloque del §4.1 —cinco de
-`políticaDePlan` más dos de `situaciónDeVertical`—, no sumándole uno.)*
+`políticaDePlan` más dos de `situaciónDeVertical`—, no sumándole uno.)* *(Y desde la FASE 9
+vuelta 1 no lleva cifra: el §4.1 perdió `díasDeTrial` y ganó entradas el mismo día —`F-8V1C1-015`,
+`G2-1`, `G4-2`— y la regla del §4.2 cita las preguntas, no un número de campos.)*
 
 **El plan de trial no es una entidad aparte.** Es un `plan` con su versión, marcado **no
 vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se derivan en cada
@@ -492,22 +494,26 @@ Nada más se cachea: ni el catálogo, ni los planes, ni el estado de una suscrip
 
 **La invalidación es explícita, y el vencimiento por tiempo es una red, nunca el mecanismo.** Un
 TTL como defensa principal deja una ventana en la que un permiso revocado sigue funcionando, y
-esa ventana es exactamente el error de seguridad que este punto viene a evitar.
+esa ventana es exactamente el error de seguridad que este punto viene a evitar. **La red vale 15
+minutos**: ninguna entrada vive más que eso desde que se calculó, así que un permiso revocado cuya
+invalidación se perdió dura como mucho eso (owner 2026-09-26, `G4-3`; FASE 9 vuelta 1,
+`F-8V1C1-003`). Su costo es una relectura por `user + vertical` activo cada 15 minutos, que es lo
+barato: acá un error es de seguridad y no de rendimiento.
 
 Invalidan ~~la entrada de un `user + vertical`~~ **las entradas del `user`, en todas sus verticales**
 (regla 3, abajo; owner 2026-09-25, FASE 9 completa, decisión 8a):
 
 | evento | por qué |
 |---|---|
-| cambio de plan o de ciclo | cambia la versión anclada |
-| toda transición de la máquina de suscripción | `ACTIVE`, `SUSPENDED` y `PAUSED` otorgan cosas distintas |
+| ~~cambio de plan o de ciclo~~ | ~~cambia la versión anclada~~ **Fundida en la fila siguiente** (FASE 9 vuelta 1, `F-8V1A3-009`) |
+| ~~toda transición de la máquina de suscripción~~ **llega el aviso de cobertura** (`12-contrato…` §3) | ~~`ACTIVE`, `SUSPENDED` y `PAUSED` otorgan cosas distintas~~ **es el único transporte de un cambio de billing: billing lo emite cuando la respuesta cambia —cambio de plan, transiciones que emiten o dejan de emitir—; un cambio de ciclo que no cambia la versión anclada no cambia nada de lo que se cachea** (FASE 9 vuelta 1, `F-8V1A3-009`: las dos filas pedían datos de billing que no cruzan la frontera) |
 | toda transición de la máquina de trial | ídem |
 | se otorga o se revoca una cortesía o un grant, **o se le ancla una vertical nueva a un grant vivo** | son fuentes independientes (§2.4). **El anclaje es la tercera escritura que cambia la cobertura** (`12-contrato…` §2.8) e invalida ~~**la entrada de esa vertical**~~ **las del beneficiario** (regla 3) —**la de esa vertical** es justo la que hasta ese instante no tenía fuente `GRANT`— |
 | se activa o vence un addon | ídem |
 | ~~se publica una versión nueva de un plan al que hay suscripciones ancladas~~ | ~~cambia lo que esa versión otorga~~ **Tachada** (FASE 9 vuelta 1, `F-8V1A3-015`): la suscripción lee su versión anclada, que es inmutable; una versión nueva no la cambia. La que sí invalida es la de los grants, que leen la vigente (fila de abajo) |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
-| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: ~~invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope~~ **lo que cambia es la entrada de esa vertical; desde la regla 3 se invalidan igual todas las del beneficiario**, porque ese plan puede otorgar claves globales o herencia que valen en las otras (FASE 9 completa, 8a) |
+| ~~**se publica una versión nueva de un plan al que hay GRANTS anclados**~~ **se publica una versión nueva de cualquier plan → se invalida el caché entero** (FASE 9 vuelta 1, `F-8V1C1-004`, `F-8V1A3-009`) | ~~un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**:~~ ~~invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope~~ ~~**lo que cambia es la entrada de esa vertical; desde la regla 3 se invalidan igual todas las del beneficiario**, porque ese plan puede otorgar claves globales o herencia que valen en las otras (FASE 9 completa, 8a)~~ **un grant lee la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción; pero **quién está anclado a un plan lo sabe billing y no cruza**. Publicar una versión es un acto raro de verticales, y borrar todo es la dirección segura de la regla 2. Es la misma forma de la fila del fin de servicio |
 | **se publica una versión nueva de ~~un `addon_version`~~ un `addon`** (su madre desde la FASE 8 completa, `F-8CA3-011`, §2.1) | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
 | **el reconciliador diario de cobertura encuentra una diferencia y corre una transición** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25) | es la red del aviso perdido y de la fuente con `hasta: fecha` que vence sin transición (`12-contrato…` §2.6): **ninguna de las filas de arriba ocurrió**, así que sin ésta la entrada seguía otorgando lo que el contrato ya no emite (FASE 8 completa, `F-8CA1-007`, `F-8CC1-009`). Invalida **sólo** cuando encuentra la diferencia; la fecha que vence sin producir ninguna queda declarada en el ⚠️ de ese §. **Para un partner ~~con presencia cargada~~ con una clave de presencia, que no tiene fichas, la diferencia es entre ~~el entitlement de presencia~~ las dos claves de presencia —la página y el carrusel (decisión 7b)— resueltas en vivo y las del caché** (cap. 18 §1.6; FASE 8 completa, `R13`, owner 2026-09-25) |
 | **llega `vertical.fin_de_servicio`** (§2.1; owner 2026-09-25, FASE 9 completa, decisión 6b) | desde ese instante el contrato no emite en esa vertical ninguna fuente de título (`12-contrato…` §2.6), y **ninguna fila de arriba ocurre**: el grant no tiene transición ese día, la cortesía sigue `PAUSED` hasta `S25` y el trial sigue `TRIAL_ACTIVE` hasta `T3`. Sin esta fila, la entrada de quien cubría un grant, una cortesía o un trial seguía otorgando capacidades de una vertical cerrada hasta la red de tiempo, **en el camino principal de toda discontinuación** (residuo `γ` del informe `06`). **Invalida todas las entradas de esa vertical**, y lo ejecuta **el barrido del día del fin de servicio** (`B/10` §4.3), que ya recorre las fichas de la vertical ese día |
@@ -530,7 +536,12 @@ completa, 6b y 8a).
 2026-09-25; FASE 9 completa, decisión 8a):
 
 1. **Invalidar es borrar, no recalcular.** Recalcular dentro de la transacción que causó el
-   cambio la vuelve más lenta y más frágil; la próxima lectura lo recalcula sola.
+   cambio la vuelve más lenta y más frágil; la próxima lectura lo recalcula sola. **Y se borra
+   DESPUÉS del commit** de la operación que cambió la cobertura, nunca dentro de su transacción:
+   una lectura concurrente anterior al commit recalcula con el estado viejo y lo vuelve a cachear,
+   y un borrado previo al commit no la alcanza. Si el proceso cae entre el commit y el borrado, la
+   entrada vieja vive hasta la red de tiempo —15 minutos, owner 2026-09-26, `G4-3`— o hasta que el
+   reconciliador diario encuentre la diferencia (FASE 9 vuelta 1, `F-8V1C1-003`).
 2. **Si la invalidación falla, la operación de dominio no falla** —igual que con el correo
    (§43)— **pero la entrada se marca sospechosa y la próxima lectura la ignora.** Es la
    dirección segura: se paga rendimiento, nunca acceso.
@@ -538,9 +549,12 @@ completa, 6b y 8a).
    vertical distinta de la suya —la herencia de Turista VIP, las claves globales (cap. 15 §3)—, así
    que toda fila de esta tabla borra las entradas de **todas** las verticales del user. Cuesta una
    relectura por vertical; ahorrarla es lo que dejaba a un suspendido con VIP y con la insignia
-   global de un plan que ya no pagaba (FASE 8 completa, `F-8CA1-002`, `F-8CA1-003`). **La única
-   fila que no es de un `user` es la del fin de servicio**, que invalida las de todos los users en
-   esa vertical: ahí el sujeto del cambio es la vertical.
+   global de un plan que ya no pagaba (FASE 8 completa, `F-8CA1-002`, `F-8CA1-003`). ~~**La única
+   fila que no es de un `user` es la del fin de servicio**~~ **Las filas que no son de un `user`
+   son dos: la del fin de servicio**, que invalida las de todos los users en
+   esa vertical: ahí el sujeto del cambio es la vertical; **y la de la versión nueva de un plan,
+   que borra el caché entero**, porque quién está anclado no cruza la frontera (FASE 9 vuelta 1,
+   `F-8V1C1-004`).
 
 ### 3.3 Lo que el caché nunca hace
 

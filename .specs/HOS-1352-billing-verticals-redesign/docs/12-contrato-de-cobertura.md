@@ -117,7 +117,7 @@ que alguien pueda olvidar.**
 | campo | qué es | quién lo necesita |
 |---|---|---|
 | **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | **`PB1`**, que publica sólo con `cubierto` verdadero o si dispara `T1` (`V/03` §9; owner 2026-09-25; FASE 9 vuelta 1, `F-8V1C1-012`); `PB2`, `PB3` y `PB7` —**en su primera rama; la segunda de cada una mira el cupo y no este campo**, `V/03` §9—; **`PB4`, `PB5` y el hard delete del día 180**, que lo releen **en el momento de ejecutar** y por eso son lectores propios y no una parte del reloj (§3); el §6 del capítulo 15; el reconciliador; y el reloj de inactividad, que se reinicia cuando **la respuesta** trae este campo en verdadero (`NUCLEO/01` §1.2, hecho 2); **`T1` y `T6`** de la máquina de trial, cuya guarda es este campo (`V/03` §2; FASE 8 completa, `F-8CC1-011`, owner 2026-09-25); **el reconciliador diario de cobertura**, que lo pregunta una vez por día por cada dueño con fichas fuera de `DRAFT`, ~~y~~ `PURGED` **y `MODERATED`** (`V/03` §9, `DEC-ARCH-009`; FASE 9 completa, `K-2`); y **los dos avisos previos de retención** —antes del día 90 y antes del día 180—, que lo releen antes de salir y no salen si viene verdadero (`NUCLEO/07` §6; FASE 8 completa, `F-8CA2-015`, owner 2026-09-25) |
-| **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
+| **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras; **y `A1` de billing** (`B/03` §8), que lee si en la vertical del objetivo hay un título que no sea de `tipo: TRIAL` antes de vender un addon (FASE 9 vuelta 1, `F-8V1C1-008`) |
 | **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
@@ -476,8 +476,11 @@ autorización, y hay una ventana **posterior**: cuando la sucesora ya autorizó 
 cancelación de la predecesora en el proveedor **falló**, `B/03` §3.2 deja las dos filas donde
 estaban, con la marca puesta, y `B/03` §3.1 es explícito en que una fila marcada *«conserva el
 estado que tenía, y sigue cubriendo a quien estaba cubierto»*. ~~Las dos emiten.~~ **Emite sólo la
-sucesora** (owner 2026-09-25; FASE 8 completa, `F-8CC1-007`, `F-8CA1-012`): **una fila con una sucesora en `ACTIVE` apuntándola (`sucede_a`) no emite
-fuente**, aunque su cancelación en el proveedor haya fallado y siga marcada. El cambio de plan
+sucesora** (owner 2026-09-25; FASE 8 completa, `F-8CC1-007`, `F-8CA1-012`): ~~**una fila con una sucesora en `ACTIVE` apuntándola (`sucede_a`) no emite
+fuente**~~ **una fila cuya sucesora ya autorizó —una fila que la apunta por `sucede_a` y salió de
+`PENDING_AUTHORIZATION` hacia `ACTIVE`— no emite fuente, en ningún estado posterior de esa
+sucesora**: ni en `GRACE_PERIOD` (3c) ni después (FASE 9 vuelta 1, `F-8V1C1-007`; una condición
+escrita sobre un estado se rompe cada vez que una decisión abre el estado vecino), aunque su cancelación en el proveedor haya fallado y siga marcada. El cambio de plan
 **ocurrió** en el momento en que la sucesora autorizó; lo que falta es sólo la llamada, y eso lo
 resuelven el reintento del barrido y la marca, no la cobertura.
 
@@ -581,7 +584,8 @@ cambia para él, porque esa fuente ya era de clase `BASE`.
 
 - **Las tres fuentes de billing** —`SUSCRIPCIÓN`, `CORTESÍA`, `GRANT`— las arma la implementación
   real (§5.2), que lee la fecha por **`situaciónDeVertical(vertical).finDeServicio`**, uno de los
-  siete campos que el §4.1 ya declara y que `B/10` §4.6 ya lee. La mitad inversa de la regla de
+  ~~siete campos~~ **campos** que el §4.1 ya declara y que `B/10` §4.6 ya lee (FASE 9 vuelta 1: el
+  §4.1 se cita sin cifra, `F-8V1A3-014`). La mitad inversa de la regla de
   vigilancia (§4.2) no se dispara: no hay campo nuevo.
 - **La fuente de trial** la resuelve verticales en las dos implementaciones (§5.1; §5.2 *«no toca
   nada de lo construido»*), y lee su propia columna. No cruza nada.
@@ -682,6 +686,12 @@ Así que **un grant de scope N verticales ancla N planes, uno de cada una**, y c
 transporta el suyo. **Y transporta también su piso**, en el campo `piso` de la firma (§2): la
 versión de ese plan que otorgaba el día de la concesión (owner 2026-09-25; FASE 9 completa, 9h).
 El trinquete lo aplica verticales; el dato lo guarda billing y cruza por la firma.
+
+**Y la vigente la resuelve verticales, no billing.** En una fuente `GRANT`, billing pone en
+`referencia` una versión del plan anclado —la del piso, que es la única que guarda y que la FK
+compuesta de `B/02` §2.4 ata a ese plan—, y el paso 6 resuelve de ella la versión vigente del
+mismo plan con sus propias tablas. Billing nunca lee `plan_version` (FASE 9 vuelta 1,
+`F-8V1C1-004`).
 
 #### N anclas no son N grants, y la diferencia se paga al revocar
 
@@ -859,6 +869,10 @@ preguntar. Un consumidor que decidiera con lo que trae el evento estaría creyé
 en vez de al estado, que es el error que el capítulo 03 §10 ya prohibió para los eventos del
 proveedor.
 
+**El aviso sale después del commit** de lo que cambió la respuesta, igual que la invalidación
+(`V/02` §3.2, regla 1): un aviso anterior al commit despierta a un consumidor que vuelve a
+preguntar, ve el estado viejo y no hace nada (FASE 9 vuelta 1, `F-8V1C1-003`).
+
 **El tercer consumidor es el que más caro paga esa regla, y por eso se dice acá y no sólo allá.**
 El reloj de inactividad decide **borrar** —el hard delete del día 180 (`V/02` §4.1)—, así que su
 hecho 2 se resuelve **preguntando `cubierto` en la respuesta del §2.1**, nunca leyéndolo del aviso,
@@ -980,16 +994,28 @@ las columnas que billing lee no existen**. Hoy billing lee tablas de verticales 
 regule, que es exactamente el acoplamiento que el corte en dos épicas venía a impedir.
 
 ```text
-políticaDePlan(versiónDePlan)  → { díasDeGrace, díasDeTrial, permitePausa, vigente, vendible }
+políticaDePlan(versiónDePlan)  → { díasDeGrace, permitePausa, vigente, vendible }
 situaciónDeVertical(vertical)  → { admiteAltas, finDeServicio }
 direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA
 fichaPurgada(ficha)            → sí | no
+ficha(idDeFicha)               → { vertical, dueño }
+políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }
+extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA(motivo)
 ```
+
+**~~`díasDeTrial`~~ salió de `políticaDePlan` el 2026-09-26** (FASE 9 vuelta 1, `F-8V1C1-015`; la
+firma decía `{ díasDeGrace, díasDeTrial, permitePausa, vigente, vendible }`): ningún capítulo de
+billing lo lee, y su único consumidor —la máquina de trial— lo lee de su propia tabla, del lado de
+verticales. Un campo declarado sin lector es un campo que alguien construye para nadie. **Y las
+tres últimas firmas entraron el mismo día** (owner 2026-09-26, `G4-2`, opción 2: lo que decide
+entra acá; lo que sólo muestra va a la capa de composición, abajo).
 
 > **El contrato tiene dos direcciones. La inversa transporta política ~~y estado de catálogo, nunca~~**
 > **~~capacidades~~, estado de catálogo y un único hecho de instancia —que una ficha ya no existe,**
-> **empujado (§3.1) y consultado (`fichaPurgada`)—, nunca capacidades** (FASE 9 vuelta 1; owner
-> 2026-09-26, `G2-1`)**: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
+> **empujado (§3.1) y consultado (`fichaPurgada`)—, ~~nunca capacidades~~** (FASE 9 vuelta 1; owner
+> 2026-09-26, `G2-1`)**, la pertenencia de una ficha (`ficha`) y una sola escritura —la extensión**
+> **de un trial, que verticales acepta o rechaza (`extenderTrial`)—; nunca capacidades** (owner
+> 2026-09-26, `G4-2`)**: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
 
 **Y una pregunta que no es de catálogo: `fichaPurgada`** (FASE 9 vuelta 1; owner 2026-09-26,
 `G2-1`). Contesta `sí` si la ficha está en `PURGED` o su fila no existe, y `no` en cualquier otro
@@ -1002,6 +1028,28 @@ mismo tarde que temprano: lo que cuesta un empuje perdido es el día de atraso, 
 equivocada. La incluye la fila inexistente a propósito, para que un borrado que no pasa por `PB9`
 ni por `PB12` también apague el addon. **La construye V6, dueña de `PB12`**, no `V2`: no es una
 columna de `V/02` §2.1 sino el estado de la ficha.
+
+**Y lo que decide un addon o un canje: `ficha`, `políticaDeAddon` y `extenderTrial`** (FASE 9
+vuelta 1, `F-8V1A3-008`, `F-8V1C1-008`, `F-8V1C1-009`; owner 2026-09-26, `G4-2`). **`ficha` y
+`políticaDeAddon` son pertenencia y política**: de una ficha, billing sabe a qué vertical pertenece
+y de quién es —lo que `A1` necesita para validar el objetivo de un addon `LISTING`, y la precisión
+6 del cap. 17 manda leer del recurso—, nunca su estado (ése es sólo `fichaPurgada`); de un addon,
+cómo se comporta —cuándo termina la instancia, sobre qué se puede aplicar y de qué `addon` es
+versión—, nunca qué otorga. **`extenderTrial` es la única escritura de billing en verticales**: el
+canje de una extensión de trial le pide a verticales que corra `T4`, y verticales contesta con el
+techo ya aplicado (`V/11` §3) y dentro del lock de la máquina de trial, así que `T3` y el canje no
+se pisan. Billing asienta el canje sólo con `ACEPTADA`; la clave de canje hace idempotente el
+reintento. Las construyen `V2` (`políticaDeAddon`: `addon_version` es de `V/02` §2.1), `V6`
+(`ficha`: es de la ficha, como `fichaPurgada`) y `V4` (la operación, dueña de la máquina de
+trial); las consumen `B10` (`A1`) y `B9` (el canje).
+
+> **Las superficies no pasan por acá** (owner 2026-09-26, `G4-2`). La pricing, Mi Suscripción y el
+> botón de suscribirse son una **capa de composición**: muestran lo que cada épica resolvió leyendo
+> sus consultas públicas —el catálogo vendible y su presentación, el conjunto efectivo del paso 6,
+> el predicado del botón (`V/19` §4 fila 23)—, y no deciden nada (`V/19` §1). Por eso pueden leer
+> capacidades sin que eso sea una filtración: la regla de vigilancia del §4.2 vigila a las
+> **máquinas, guards y barridos** de billing, que son los que deciden. **Si una superficie alguna
+> vez decide algo, deja de ser superficie y su lectura entra a este §.**
 
 #### La tercera pregunta: subir o bajar lo contesta verticales
 
@@ -1038,7 +1086,13 @@ ella.
 Eso conserva el corte de `DEC-ARCH-005` sin excepción: los entitlements y los limits siguen sin
 cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 
-**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.** `vigente`/`vendible` no estaba en la
+~~**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.**~~
+**Son siete entradas: seis preguntas y una operación** —doce campos en cuatro consultas
+(`políticaDePlan`, `situaciónDeVertical`, `ficha`, `políticaDeAddon`), un veredicto
+(`direcciónDeCambio`), un sí o no (`fichaPurgada`) y la escritura `extenderTrial`—, **y de los
+campos de `políticaDePlan`, los dos últimos son los que importa declarar** (FASE 9 vuelta 1,
+recontado con script sobre el bloque de firmas: `díasDeTrial` salió, `F-8V1C1-015`; `fichaPurgada`
+entró por `G2-1`; `ficha`, `políticaDeAddon` y `extenderTrial` por `G4-2`). `vigente`/`vendible` no estaba en la
 cuenta original: salió de recorrer el dominio, y **era la diferencia entre que el acoplamiento se
 cortara o siguiera llegando**. Sin declararlo se pierde de vista, y el día que billing lea una
 columna que verticales cambió nadie se entera hasta que rompe.
@@ -1054,8 +1108,11 @@ lo cumplía ninguna fila; también es un consumidor más de un campo ya declarad
 
 **Y quién construye las tres consultas se dice acá, porque no decirlo las dejó sin dueño durante
 cuatro días y cuatro vueltas del ciclo.** **Las construye `V2`**, la segunda unidad de la épica de
-verticales (`V/descomposicion.md` §2.9): los **siete** campos son columnas de `V/02` §2.1, que es
-capítulo suyo, así que es la unidad más temprana en la que las tres se pueden escribir. **La regla
+verticales (`V/descomposicion.md` §2.9): los ~~**siete**~~ **seis** campos de las dos primeras
+son columnas de `V/02` §2.1, que es capítulo suyo, así que es la unidad más temprana en la que las
+tres se pueden escribir. *(Estas tres son las originales; las otras cuatro entradas dicen su
+constructor arriba: `fichaPurgada` y `ficha` en V6, `políticaDeAddon` en V2, `extenderTrial` en
+V4 —FASE 9 vuelta 1, `G2-1` y `G4-2`—.)* **La regla
 de `direcciónDeCambio` está escrita en `B/10` §3.5 y eso no la muda de dueño**: el veredicto lo
 emite verticales —es la frase de arriba— y su consumidor es `B8`, cinco unidades antes que la
 unidad a la que ese capítulo pertenece. Un contrato que declara una dirección y no dice quién la
@@ -1072,9 +1129,13 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 > que cruza; la tercera, el del piso del grant, owner 2026-09-25, FASE 9 completa, 9h), es señal de
 > que el corte se está filtrando. Se mira, no se resuelve en el lugar.
 >
-> **Y en la otra dirección**: si billing necesita leer de verticales algo que no está entre **los
-> siete campos** del §4.1, vale lo mismo. Una lectura no declarada es un acoplamiento que nadie
-> está mirando.
+> **Y en la otra dirección**: si billing necesita leer de verticales algo que ~~no está entre **los
+> siete campos** del §4.1~~ **no contesta ninguna de las preguntas del §4.1** —las consultas y sus
+> campos, el veredicto de `direcciónDeCambio` y el sí o no de `fichaPurgada`—, **escribir en
+> verticales algo que no sea `extenderTrial`, o recibir de verticales un hecho que no sea el del
+> §3.1**, vale lo mismo (FASE 9 vuelta 1, `F-8V1A3-014`; owner 2026-09-26, `G2-1` y `G4-2`). Una
+> lectura no declarada es un acoplamiento que nadie está mirando. **Las superficies de la capa de
+> composición no entran en esta mitad** (§4.1): la regla vigila a las máquinas, guards y barridos.
 
 **Las dos mitades estaban ancladas en un número y las dos lo tenían mal**, que es lo peor que le
 puede pasar a la única regla que existe para enterarse de que `DEC-ARCH-005` dejó de valer. La
@@ -1086,10 +1147,16 @@ siguiera llegando»***.
 
 **El arreglo no es corregir los dos números: es sacarle el número a la mitad que puede vivir sin
 él.** La mitad de ida pregunta ahora por **pertenencia a un censo que se mantiene** (§2.1), que no
-caduca cuando aparece el consumidor siguiente. La mitad de vuelta **sí** lleva número, porque lo
+caduca cuando aparece el consumidor siguiente. ~~La mitad de vuelta **sí** lleva número, porque lo
 que enumera es un bloque cerrado de tres firmas que el §4.1 escribe entero en un solo lugar: ahí el
 riesgo no es que el conteo caduque sino que las dos cifras diverjan, y la defensa es que **el
-número vive en el §4.1 y acá se lo cita, nunca se lo repite de memoria**.
+número vive en el §4.1 y acá se lo cita, nunca se lo repite de memoria**.~~ **La mitad de vuelta
+tampoco lleva número: cita las preguntas del §4.1, que se escriben enteras en un solo lugar.**
+Contaba *«siete campos»* y el veredicto no era ninguno de ellos, así que leída literal señalaba
+como filtración la única lectura que el §4.1 construyó para evitar una (FASE 9 vuelta 1,
+`F-8V1A3-014`). Y *«siete campos»* ya nombraba otra cosa: los de la fuente (§2, 9h). En la misma
+vuelta el §4.1 ganó cuatro entradas (`G2-1`, `G4-2`) y perdió un campo (`F-8V1C1-015`): con un
+número, la regla habría caducado dos veces en un día.
 
 > ⚠️ **Y lo que esta regla NO tiene, dicho para que nadie la lea como una defensa ejecutable**:
 > **ningún guard del programa tiene por sujeto este contrato.** Recorridos los dos catálogos

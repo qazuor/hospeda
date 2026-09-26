@@ -37,7 +37,10 @@ Con un solo eje los dos caen en la misma caja y se implementan igual.
 
 ### 1.2 Los dos ejes
 
-**El producto declara los dos, por separado:**
+~~**El producto declara los dos, por separado:**~~ **Los dos ejes se declaran por separado, y en
+dos lugares: el cobro lo declara el producto (`addon_product`, billing); la vigencia, la versión
+(`addon_version`, verticales)** —igual que el tipo de scope—, y billing los lee por
+`políticaDeAddon` (`12-contrato…` §4.1; FASE 9 vuelta 1, `F-8V1A3-008`; owner 2026-09-26, `G4-2`):
 
 | eje | valores | qué determina |
 |---|---|---|

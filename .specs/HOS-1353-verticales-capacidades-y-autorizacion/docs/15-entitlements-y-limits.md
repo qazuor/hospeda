@@ -68,7 +68,8 @@ número que no significa nada.
 
 **Las tres de «no acumula» son la misma regla dicha tres veces: gana la fuente más favorable.**
 Lo que cambia es cómo se define *favorable* —más alto, más bajo, o un orden declarado— y eso es
-una propiedad del significado de la clave, no de cada plan.
+una propiedad del significado de la clave, no de cada plan. **La misma favorabilidad es la que
+usa `direcciónDeCambio` para decidir qué es bajar** (`B/10` §3.5; FASE 9 vuelta 1, `F-8V1C1-002`).
 
 ### 2.3 Por qué la estrategia vive con la clave y no con el plan
 

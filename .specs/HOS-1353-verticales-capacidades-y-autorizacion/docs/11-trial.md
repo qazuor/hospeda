@@ -485,6 +485,8 @@ de quien entra pagando— y publica en la ventana de su primer cobro disparaba `
 
 **Y la superficie empuja al camino que no la necesita**, que es la mitad que agregó el owner: **el
 botón de suscribirse de una vertical en la que la persona todavía no publicó la manda a publicar**
+**si publicar le arrancaría el trial** (la regla, escrita sólo en `V/19` §4 fila 23; FASE 9 vuelta 1,
+`F-8V1D1-004`)
 —y eso arranca el trial— en vez de al checkout (`V/19` §4, fila 23; su espejo, `B/19` §4). `T8`
 queda como red para quien llega al checkout por otro camino.
 

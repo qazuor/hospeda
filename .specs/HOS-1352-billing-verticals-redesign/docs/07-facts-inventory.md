@@ -148,3 +148,11 @@ SELECT 'pagos', count(*)::text FROM billing_payments
 UNION ALL SELECT 'usuarios', count(*)::text FROM users WHERE deleted_at IS NULL
 UNION ALL SELECT 'alojamientos', count(*)::text FROM accommodations WHERE deleted_at IS NULL;
 ```
+
+**La consulta 3 no cuenta la población del aviso del corte** (FASE 9 vuelta 1, R7; 2026-09-26).
+Para eso va **una consulta por tabla de ficha de cada vertical, agrupada por dueño y por clase
+`L1`–`L8`** (`V/21` §2.4), **en lugar del único `count(*)` de alojamientos** de la última línea,
+que cuenta fichas vivas de una sola vertical y sin dueño. Es la consulta que describe `B/21` §1.3:
+la población a avisar es toda persona con una ficha que no sea `L1` o con una suscripción viva en
+el sistema viejo, medida el día del corte. Van separadas por vertical por la misma razón de arriba:
+un `UNION` se anula entero si una tabla o una columna no existe.

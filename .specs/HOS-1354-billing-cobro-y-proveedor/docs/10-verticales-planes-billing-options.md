@@ -100,7 +100,11 @@ rige todo cambio de plan, no sólo éste**: el plan retirado es el caso donde el
 contesta, no el único donde el veredicto hace falta. Lo que sigue es **qué hace billing con cada
 veredicto**, y el criterio con el que verticales lo emite:
 
-- **si algo baja** (veredicto `BAJA`) —un limit, un entitlement, una cuota de un entitlement medido— el cambio sigue
+- **si algo baja** —*baja* es **empeora según la estrategia de la clave** (`V/15` §2.2), no *el
+  número es menor*: en `SUMA` y `MÁXIMO`, un número menor; en `MÍNIMO`, uno **mayor**; en
+  `MEJOR_DECLARADO`, un valor peor en el orden que la clave declara; y una clave presente en el
+  origen y ausente en el destino baja. Una clave que aparece sólo en el destino no baja (FASE 9
+  vuelta 1, `F-8V1C1-002`)— (veredicto `BAJA`) —un limit, un entitlement, una cuota de un entitlement medido— el cambio sigue
   el camino de downgrade (`DEC-SUB-008`): el monto se muta ya, las capacidades bajan al fin del
   ciclo y el excedente se avisa antes de tocarlo;
 - **si nada baja** (veredicto `SUBE`), sigue el camino de upgrade (`DEC-SUB-007`): inmediato.

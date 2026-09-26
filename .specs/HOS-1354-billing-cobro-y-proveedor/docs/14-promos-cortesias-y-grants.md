@@ -338,7 +338,12 @@ rechazar.»*— y no dice qué pasa el mismo día, mientras corre el proceso de 
 ### 3.2 Gana el estado escrito, nunca la hora
 
 **El canje vale si y sólo si la fila del trial sigue en `TRIAL_ACTIVE` en el instante de
-escribir**, verificado con la concurrencia optimista del capítulo 05.
+escribir**, verificado con la concurrencia optimista del capítulo 05. **Y quien escribe es
+verticales**: la fila de `trial` es suya, así que billing no la toca; el canje llama a
+`extenderTrial(user, vertical, días, claveDeCanje)` (`12-contrato…` §4.1), verticales corre `T4`
+dentro del lock de la máquina de trial con el techo ya aplicado (`V/11` §3) y contesta `ACEPTADA`
+o `RECHAZADA(motivo)`, y **billing gasta el código sólo con `ACEPTADA`**; la clave de canje hace
+idempotente el reintento (owner 2026-09-26, `G4-2`; FASE 9 vuelta 1, `F-8V1C1-009`).
 
 - Un canje a las 23:59:59 del día del vencimiento, con el job todavía sin correr, **es válido**.
 - Un canje después de que el job escribió `TRIAL_EXPIRED` **se rechaza**, aunque sea el mismo día.
