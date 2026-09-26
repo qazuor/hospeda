@@ -3,7 +3,7 @@ title: Descomposición de la épica de verticales
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -52,14 +52,14 @@ condicionan**: se apoyan en ella.
 | # | unidad | qué deja funcionando | capítulos | guards |
 |---|---|---|---|---|
 | **V1** | **El catálogo y su doble guard** | el enum de verticales, su espejo en base, y el catálogo de claves de entitlement y limit en código | `02` §1 (núcleo) · `10` §1 | `G1` `G3` `G8` |
-| **V2** | **El catálogo de planes, y la dirección inversa del contrato** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible — **y las tres consultas con que billing lee este catálogo**: `políticaDePlan`, `situaciónDeVertical` y `direcciónDeCambio`, que devuelve **un veredicto** y nunca los valores | `02` §2.1 · `10` §2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §4.1 | **`G-R3`** |
-| **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
-| **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
-| **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
-| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos — **y el reconciliador diario de cobertura**, que una vez por día corre `PB2`/`PB3`/`PB7` donde el aviso no llegó, escribe los hechos 2 y 5, invalida el caché y le hace ping al monitor de cron externo (`03` §9; `DEC-ARCH-009`, owner 2026-09-25) | `03` §9 · `02` §2.5 · `15` §4 | `G5` **`G-R6-B`** **`G-R5-B`** *(el `N` de `PB5`, que V6 construye; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25)* |
-| **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo | `18` entero · `03` §11 | — |
-| **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones | `19` | — |
-| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ cinco hechos de reinicio** (el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical —o, si el aviso se perdió, el reconciliador diario de cobertura, de V6 (`DEC-ARCH-009`)—; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), ~~la anonimización,~~ **el día 180 como la fila `PB9` hacia `PURGED`, que sólo borra el contenido de la ficha (`DEC-DATA-005`; FASE 8 completa, `F-8CA2-008`)**, el hash del correo y los **tres** avisos | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
+| **V2** | **El catálogo de planes, y la dirección inversa del contrato** | `plan`, `plan_version` y sus entitlements y limits, con `rank`, vigente y vendible — **y las tres consultas con que billing lee este catálogo**: `políticaDePlan`, `situaciónDeVertical` y `direcciónDeCambio`, que devuelve **un veredicto** y nunca los valores — `situaciónDeVertical.admiteAltas` la lee además `S1`, que rechaza el alta nueva y la sucesión en una vertical que ya no admite altas (owner 2026-09-25; FASE 9 completa, 6a) | `02` §2.1 · `10` §2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §4.1 | **`G-R3`** |
+| **V3** | **La resolución de capacidades** | *«¿qué puede hacer esta cuenta en esta vertical?»* tiene respuesta: agregación, scopes, caché e invalidación — **la invalidación por `user`, en todas sus verticales, y no por `user + vertical`** (`02` §3.2 regla 3; owner 2026-09-25, FASE 9 completa, 8a), **y la de una vertical entera, que el barrido del día del fin de servicio invoca** (`02` §3.2; 6b — el barrido es de `B12`); **el trinquete del `GRANT` leído del campo `piso` de la fuente** y nunca de una tabla de billing (`15` §2.5; 9h) | `15` §1–3 · `02` §3 | **`G-R2`** **`G-R2-B`** |
+| **V4** | **El contrato de cobertura y el trial** | hay títulos vivos de verdad, y `cobertura()` responde **con la firma entera del contrato §2** —hoy siete campos, con `piso` (9h)—; **la máquina de trial con sus ocho transiciones**: el trial se convierte con el primer pago acreditado (`DEC-TRIAL-010`), **`T6` exige un título que convierte y `T8` consume la fila al primer pago de quien ya ejerció el evento** (owner 2026-09-25; FASE 9 completa, 6c) | `11` entero · `03` §2 · `02` §2.2 · [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | **`G-R4`** **`G-R4-B`** **`G-R6`** |
+| **V5** | **La autorización** | ninguna operación se ejecuta sin pasar por los nueve pasos — **con la vertical leída del recurso e inmutable** (precisión 6; 7a), **lo ajeno existente sólo en estado público** (precisión 7; 8c), **el paso 2 sin «inhabilitado por abuso»** (8b) y **las lecturas de lo propio sin el paso 6** (§3.5; 8d); todas owner 2026-09-25, FASE 9 completa | `17` entero | `G2` `G4` `G6` **`G-R3-B`** **`G-R3-C`** |
+| **V6** | **Publicación y excedente** | una ficha se publica, cae al perder cobertura, vuelve al recuperarla **—también desde `ARCHIVED`: sola por `PB7`, o a pedido del dueño por `PB8`, que la versión de piso le autoriza—**, y el excedente se resuelve solo **en las dos direcciones**: cae lo más reciente primero y **vuelve primero lo que cayó al final**, con el criterio escrito en los dos avisos — **y el reconciliador diario de cobertura**, que una vez por día corre `PB2`/`PB3`/`PB7` donde el aviso no llegó, escribe los hechos 2 y 5, invalida el caché y le hace ping al monitor de cron externo (`03` §9; `DEC-ARCH-009`, owner 2026-09-25) —**y cuya población incluye a todo `user + Partner` con una clave de presencia, la página o el carrusel, sobre el que no corre transiciones: compara las claves y, si difieren, invalida** (`03` §9, `18` §1.6; FASE 8 completa, `R13`, y FASE 9 completa, 7b)—. **Y la máquina entera, de seis estados y doce transiciones** (salida 3 de la FASE 9 completa; decía sólo lo de arriba): **el lock por `user + vertical`** que toman `PB1`, `PB3`, `PB7` y `PB2` (`03` §9; FASE 8 completa, `R14`); **`MODERATED`, con `PB10` y `PB11`** —la acción administrativa de moderar, `NUCLEO/08` §3—, **y `PB11` como sexto hecho de reinicio** (owner 2026-09-25; FASE 9 completa, 5b); **`PB12`, el borrado del dueño a `PURGED`** (FASE 8 completa, `F-8CA2-004`); **la vertical de la ficha inmutable desde el alta** (`02` §2.5; 7a); **y la escritura `C` del corte**, que pone `inactiva_desde` en el instante del corte a toda ficha preexistente en la misma migración estructural que crea la columna (`21` §2.4; asignada en la salida 3 de la FASE 9 completa, §2.10) | `03` §9 · `02` §2.5 · `15` §4 · `21` §2.4 *(la escritura `C`)* | `G5` **`G-R6-B`** **`G-R5-B`** *(el `N` de `PB5`, que V6 construye; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25)* |
+| **V7** | **Partner** | la postulación con su máquina, la presencia como entitlement booleano, y el reclamo por correo — **la presencia sin máquina: la página y el carrusel se ven si el partner tiene hoy su clave —cada uno la suya— y la presencia no está moderada**; **el bit de moderación y su escritura** por la acción administrativa de moderar, la misma de `PB10`/`PB11` (§2.10); **y la respuesta 404, no 410, al partner sin presencia** (`21` §4); FASE 8 completa, `R13`; owner 2026-09-25, FASE 9 completa, 7b y 7c | `18` entero · `03` §11 · `21` §4 *(el 410 que pasa a 404)* | — |
+| **V8** | **Superficies** | Mi Cuenta, los mensajes que hay que decir, el panel de postulaciones — **incluido el botón de suscribirse que, a quien todavía no publicó en esa vertical, lo manda a publicar en vez de al checkout** (`19` §4 fila 23; owner 2026-09-25, FASE 9 completa, 6c; el espejo de billing es `B/19` §4, de `B13`), y las filas 20 a 22 (la ficha `PURGED`, *«suscribite para publicar»*, la presencia que dejó de verse o está moderada) | `19` | — |
+| **V9** | **Retención** | el reloj de 90 y 180 días **con sus ~~cuatro~~ ~~cinco~~ seis hechos de reinicio** (el sexto, *«se levanta la moderación»*, lo escribe `PB11`, de V6 —owner 2026-09-25; FASE 9 completa, 5b—; el quinto lo escribe ~~`PB2`, de V6~~ `PB2`, de V6, sobre la ficha publicada, y el recálculo que el aviso despierta sobre las demás fichas del dueño en la vertical —o, si el aviso se perdió, el reconciliador diario de cobertura, de V6 (`DEC-ARCH-009`)—; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), ~~la anonimización,~~ **el día 180 como la fila `PB9` hacia `PURGED`, que sólo borra el contenido de la ficha (`DEC-DATA-005`; FASE 8 completa, `F-8CA2-008`)**, el ~~hash~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`), los **tres** avisos, **y el registro de los actos del dueño sobre la ficha que no son transiciones —crearla, editarla, exportarla—, que es la fuente del hecho 1, guardando sólo el nombre de los campos de contenido, nunca su texto**, para que el día 180 no deje el contenido vivo en los eventos (`NUCLEO/08` §1.1–§1.2; owner 2026-09-25, FASE 9 completa, 8e) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) · `08` §1.1–§1.2 (núcleo) | — *(decía «el de `D16`», que era `G-R5`; se va a `B8` — §2.7)* |
 
 ### 2.1 Por qué V1 va primero aunque parezca infraestructura
 
@@ -104,7 +104,7 @@ escribirlo sin poder probarlo.
 
 `G-R6-B` (`20` §2) falla si **algo toca `listing.inactiva_desde` desde un lugar que las listas
 cerradas no nombran, o si un lugar que ellas nombran dejó de tocarla**: una **escritura** que no sea
-uno de los ~~cuatro~~ cinco hechos del `01` §1.2 (núcleo) ni la escritura `C` del corte, una
+uno de los ~~cuatro~~ ~~cinco~~ seis hechos del `01` §1.2 (núcleo) ni la escritura `C` del corte, una
 **lectura** que no figure entre los ~~cinco~~ seis consumidores del `02` §2.5 (cuarta enmienda de
 `DEC-TEST-001`; recontados en la FASE 8 completa, `F-8CD1-009`), o **uno de esos ~~cinco~~ seis que
 ya no lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la columna
@@ -112,8 +112,10 @@ ya no lee**. Las dos unidades que lo podían reclamar son **V6**, que crea la co
 `PB2` es ~~el quinto~~ uno de los ~~dos~~ tres ejecutores del quinto** —~~el otro es~~ los otros son el recálculo que el aviso
 despierta, sobre las fichas del dueño que no estaban publicadas, **y el reconciliador diario de
 cobertura, cuando el aviso se perdió** (`DEC-ARCH-009`)— (FASE 8 completa, `F-8CA2-001`,
-owner 2026-09-25), y la relectura de
-`PB4`/`PB5` es uno de los ~~tres~~ cuatro momentos del segundo (`02` §4.2 regla 4)—, y **V9**, que es la dueña
+owner 2026-09-25), la relectura de
+`PB4`/`PB5` es uno de los ~~tres~~ cuatro momentos del segundo (`02` §4.2 regla 4), **`PB11` es el
+ejecutor único del sexto** (owner 2026-09-25; FASE 9 completa, 5b) **y la escritura `C` del corte
+nace con la columna** (§2.10)—, y **V9**, que es la dueña
 del `01` §1.2 y del reloj que la **lee**.
 
 **Va con V6 por la regla 1 leída entera**: el guard protege **las piezas que tocan la columna**, no
@@ -132,7 +134,9 @@ llegar a los ~~tres~~ cuatro de afuera **uno por uno**, y cada uno tiene que tra
 pasar. Es el caso de libro del §2.1, con lectores en vez de escritores.
 
 **Lo que V9 conserva es su parte**: la lista del `01` §1.2 es su capítulo y el guard la cita; si
-alguien agrega un quinto hecho, **el cambio es de V9 y el rojo lo da el guard de V6**. Es la misma
+alguien agrega un ~~quinto~~ séptimo hecho, **el cambio es de V9 y el rojo lo da el guard de V6**. *(El
+sexto, «se levanta la moderación», ya lo probó: lo agregó la FASE 9 completa a la lista de V9 y
+lo ejecuta `PB11`, de V6 — 5b.)* Es la misma
 forma de `G13`, que vigila el contrato de V4 y nace en `B4` (§2.3): **dónde se construye un guard y
 qué documento define su lista son dos preguntas distintas.**
 
@@ -182,16 +186,19 @@ la fuente `GRANT` —*«toma la fuente `GRANT` de esa vertical … y ninguna otr
 `B/descomposicion.md` §3 está después de `B7 → B8`: naciendo en V3 el guard **ve llegar al grant**
 en vez de heredarlo escrito.
 
-**`G-R4` va con V4 porque V4 construye la primera de las nueve máquinas.** El guard vigila *«las
-nueve máquinas, en las dos épicas»*, y esta épica tiene tres: trial (`03` §2, **V4**), publicación
+**`G-R4` va con V4 porque V4 construye la primera de las ~~nueve~~ diez máquinas.** El guard vigila *«las
+~~nueve~~ diez máquinas, en las dos épicas»* (la décima, el reembolso de `B/03` §6.1: owner 2026-09-25,
+FASE 9 completa, 5a), y esta épica tiene tres: trial (`03` §2, **V4**), publicación
 (`03` §9, V6) y postulación de Partner (`03` §11, V7). La más temprana del §3 es la de V4, y las
-**seis de billing** no compiten por ser primeras: `DEC-ARCH-005` parte el programa en dos épicas
+~~**seis de billing**~~ **siete de billing** no compiten por ser primeras: `DEC-ARCH-005` parte el programa en dos épicas
 donde verticales *«arranca»* y billing *«espera»*, y `B/descomposicion.md` §2.3 mide que hoy *«lo
 único que arranca es B2 y la interfaz de B1»*, ninguna de las dos con tabla de transiciones. Y el
 par que el guard cuenta nace ahí mismo: de los **cuatro** pares con dos destinos que el diseño
 declara hoy, `T1`/`T6` es de esta máquina y los otros tres —`S5`/`S19`, `S7`/`S19`, `S10`/`S25`—
 son de la tabla de suscripción, que construyen B7 y B8 (`B/20` §2). Naciendo en V4 el guard ve
-llegar **ocho tablas una por una**; naciendo en cualquier otro lado nace contra tablas ya escritas.
+llegar ~~**ocho tablas una por una**~~ **las otras nueve máquinas una por una** —en siete tablas más, porque
+billing declara sus siete máquinas en cinco tablas (`B/20` §2); el «ocho» contaba máquinas y no
+tablas, salida 3 de la FASE 9 completa—; naciendo en cualquier otro lado nace contra tablas ya escritas.
 
 **`G-R4-B` va con V4 porque el defecto que lo motivó es de la propia máquina de V4.** El guard
 falla si una máquina **de esta épica** nombra un estado de la suscripción, y sale del §4 del
@@ -201,7 +208,7 @@ evaluar al lado que tiene que evaluarlo»* (`V/20` §2). Las otras dos máquinas
 y V7, las dos posteriores a V4 en el §3.
 
 **`G-R6` va con V4 por el mismo orden, y hay una razón propia por la que ahí es seguro.** Su
-dominio es el mismo de `G-R4` —*«las nueve máquinas, en las dos épicas»*— así que la primera tabla
+dominio es el mismo de `G-R4` —*«las ~~nueve~~ diez máquinas, en las dos épicas»*— así que la primera tabla
 del programa es el lugar que la regla 1 pide. Lo propio es esto: su predicado es **global**
 (*«exige que al menos una transición **del corpus** las escriba»*), y un predicado global evaluado
 sobre un corpus a medio construir puede dar **rojos falsos**. Con las máquinas de esta épica no
@@ -258,7 +265,7 @@ si alguien mueve ese número, **el cambio es de `V9` y el rojo lo da el guard de
 
 **`G-R6` tiene un predicado global y el corpus se construye por partes.** El guard exige que *«al
 menos una transición **del corpus** escriba»* cada columna que una condición lee, y el corpus son
-nueve máquinas repartidas en dos épicas que se construyen a lo largo de todo el programa. Del lado
+~~nueve~~ diez máquinas repartidas en dos épicas que se construyen a lo largo de todo el programa. Del lado
 de verticales eso es inofensivo (§2.6), pero del lado de billing **una condición puede leer una
 columna cuyo escritor llega en una unidad posterior** — el caso medido está en el propio catálogo:
 la fecha del próximo cobro tiene **tres** escrituras (`B/03` §7.2) y una de ellas es `S10`, que es
@@ -306,9 +313,14 @@ campo por campo:
 temprana en la que las tres consultas se pueden escribir — y la regla 1 del §1.1, leída sobre una
 pieza en vez de sobre un guard, pide exactamente eso: **nace con su sujeto y no contra él**.
 
-**Y la tercera no es una excepción aunque su REGLA esté escrita del otro lado.** *«La dirección se
+**Y la tercera no es una excepción aunque su REGLA esté escrita del otro lado.** ~~*«La dirección se
 deriva del delta entre las dos versiones, no del `rank` … cualquier baja manda»* vive hoy en
-`B/10` §3.5, que es capítulo de **B12, la última unidad del camino crítico de billing**, mientras
+`B/10` §3.5,~~ **El criterio vive hoy en `B/10` §3.5 —*«Verticales lo computa por el delta entre las
+dos versiones —no por el `rank`—»* y *«Cualquier baja manda»*—**, que desde la FASE 8 completa
+abre diciendo que **la dirección no la deriva billing: la decide el veredicto de verticales**
+(`F-8CD1-003`, `F-8CC1-013`). *(Esta cita reproducía como vigente la frase que `B/10` §3.5 ya
+tachaba, «La dirección se deriva del delta…»; la corrige la salida 3 de la FASE 9 completa, `C10`
+del informe `01`. El criterio y la conclusión no cambian.)* Ese §, que es capítulo de **B12, la última unidad del camino crítico de billing**, mientras
 **su consumidor es `B8`, cinco unidades antes**. Eso no la vuelve de B12: el contrato ya decidió de
 quién es el acto —*«La comparación la hace verticales, que es dueño de las tablas, y billing recibe
 un **VEREDICTO**»*—, y **quién ejecuta una comparación y dónde está escrito su criterio son dos
@@ -322,9 +334,78 @@ dirección de ahí — *«un plan más caro puede bajar un límite al rediseñar
 **se le recorta algo en silencio mientras se le cobra como mejora**»*. Con el camino de upgrade
 tomado por error, además, **el excedente cae sin el aviso previo** que el de downgrade obliga.
 
-**Y no mueve ninguna asignación de guard.** Ninguno de los 29 *(hoy 30, con `G-R5-B`; FASE 8 completa)* tiene por sujeto el contrato de
+**Y no mueve ninguna asignación de guard.** Ninguno de los 29 *(hoy ~~30, con `G-R5-B`; FASE 8 completa~~ 31: `G-R5-B`, FASE 8 completa, y `G-R2-C`, FASE 9 completa)* tiene por sujeto el contrato de
 frontera (§4.2 del contrato, dicho allá), así que esta fila agrega **capítulos a una unidad**, no un
 dueño de guard. Es un reparto de trabajo, que es lo que este documento hace.
+
+### 2.10 Lo que la FASE 9 completa agregó al diseño, y qué unidad lo construye
+
+Salida 3 de `DEC-METH-004` (2026-09-25). Las decisiones del owner del día
+(`HOS-1352/docs/26-fase-9-completa/10`) y las reglas del 25/09 que resolvió el consolidado de la
+FASE 8 completa (`25-fase-8-completa/00` §5) se recorrieron contra la tabla del §2, **una por una**,
+preguntando *«¿qué unidad la construye?»*. Todas las de esta épica tienen unidad, y la tabla del §2
+las nombra en su fila; lo que sigue es el censo, para que la próxima pasada lo pueda recontar sin
+releer las filas.
+
+| regla nueva | de dónde | unidad | por qué ahí |
+|---|---|---|---|
+| `T6` exige un título que convierte; `T8` consume la fila al primer pago | 6c | **V4** | es la tabla del `03` §2 |
+| el botón de suscribirse manda a publicar a quien no publicó | 6c | **V8** | fila 23 del `19` §4; su espejo es `B13` |
+| la invalidación del caché es por `user` | 8a | **V3** | `02` §3.2, regla 3 |
+| el fin de servicio invalida la vertical entera | 6b | **V3** *(la invalidación)* · `B12` *(el barrido que la invoca)* | la fila es de `02` §3.2; el barrido del día es `B/10` §4.3 |
+| la firma gana `piso` y el trinquete del grant lo lee de ahí | 9h | **V4** *(la firma)* · **V3** *(el trinquete)* | contrato §2; `15` §2.5 |
+| la vertical se lee del recurso y es inmutable; la mitad *(c)* de `G2` | 7a | **V5** *(el paso y el guard)* · **V6** *(la columna, `02` §2.5)* | `17` §1.2 precisión 6 |
+| el paso 2 sin «inhabilitado por abuso» | 8b | **V5** | `17` §1.1 |
+| lo ajeno existe sólo en estado público | 8c | **V5** | `17` §1.2 precisión 7 |
+| las lecturas de lo propio no consultan el paso 6 | 8d | **V5** | `17` §3.5 |
+| `MODERATED` y el borrado del dueño: `PB10`, `PB11`, `PB12` | `F-8CA2-004` | **V6** | `03` §9; `PB9` sigue en **V9** |
+| levantar la moderación reinicia el reloj: el sexto hecho | 5b | **V6** *(ejecuta `PB11`)* · **V9** *(la lista del `01` §1.2)* | la forma del quinto (§2.5) |
+| el lock por `user + vertical` en toda transición que ocupa cupo | `R14` | **V6** | `03` §9 |
+| el reconciliador diario de cobertura, con la población de Partner | `DEC-ARCH-009`, `R13`, 7b | **V6** | `03` §9; comparar claves no necesita a V7 |
+| la clave *«presencia en el carrusel»* | 7b | **V7** *(la lectura)* · V1 *(la clave, que es catálogo)* | `18` §1.6 |
+| el bit de moderación de la presencia | 7c | **V7** | `18` §1.6; la acción que lo escribe, abajo |
+| el registro de los actos del dueño sin el texto de los campos de contenido | 8e | **V9** | es la defensa del día 180 |
+| la escritura `C` del corte | `F-8CA3-002` | **V6** | abajo |
+| el partner sin presencia responde 404, no 410 | `F-8CA1-014` | **V7** | `21` §4 |
+| el corte no siembra trials consumidos | 2g | **ninguna** | no hay nada que construir: es una escritura que dejó de existir (`21` §2.4) |
+| `G-R2-C` | 4e | **ninguna de esta épica: `B10`** | abajo |
+
+**Lo que no está en la tabla, porque no es de esta épica**: `S32`–`S35`, `RF1`–`RF5` y la acción
+administrativa 14 (5a), la sucesora en grace (3c), los addons que siguen a su título (4a, 4c, 4d),
+el canje bajo el piso (4b) y la rama del barrido de 9a. Ninguna pregunta qué puede hacer una
+cuenta; todas mueven o miran plata, y su unidad la pone `B/descomposicion.md`. **Y 6a —`S1`
+leyendo `admiteAltas`— no agrega nada acá**: la columna y la consulta ya las construye V2.
+
+**La escritura `C` va con V6, y hasta esta pasada no tenía unidad.** `V/21` no figuraba en la
+columna de capítulos de ninguna fila. La escritura pone `listing.inactiva_desde` en el instante del
+corte a toda ficha que existe ese día, **en la migración estructural del corte y en ningún otro
+lugar** (`21` §2.4, `NUCLEO/01` §1.2), y esa migración es la que crea la columna, que **es de V6**
+(`02` §2.5). En otra unidad, la columna nacería no anulable sin el único valor que la regla le
+permite a una ficha preexistente. Y `G-R6-B`, también de V6, ya la nombra en su mitad *(a)*: nace
+con su sujeto.
+
+**La acción de moderar tiene dos sujetos y no agrega una arista al §3.** `PB10`/`PB11` (la ficha,
+**V6**) y el bit de la presencia (**V7**) los escribe **la misma** acción administrativa del
+`NUCLEO/08` §3, y V6 y V7 corren en paralelo después de V5. **La construye la primera de las dos
+que llegue, con su sujeto; la segunda le agrega el suyo.** Hacer esperar a V7 por V6 compraría una
+dependencia por una fila de catálogo, y el orden del §3 sale de preguntas que se contestan, no de
+quién escribe primero una acción. *(Reparto de esta pasada; se señala al orquestador.)*
+
+**`G-R2-C` no va a V3 aunque su gemelo esté ahí, y la razón es la regla 2 del §1.1.** `B/20` §6 y
+los registros de aplicación de la FASE 9 completa lo sugerían para V3 *«por capítulo, con
+`G-R2-B`»*. Medido contra lo que cada uno necesita leer, **no son gemelos en eso**: `G-R2-B` compara
+datos que **viajan en la fuente** —el plan de su `referencia` y su `piso`—, y por eso se evalúa
+dentro de la resolución de V3 sin preguntar nada del otro lado. **`G-R2-C` compara la vertical de
+la respuesta contra las verticales compatibles del producto, y ésas viven en `addon_product`**
+(`B/02` §2.4), **una tabla de billing que ninguna fuente transporta**: en V3 el guard tendría que
+leer billing —la filtración que la regla 2 manda mirar— o no tendría contra qué fallar, porque la
+implementación de arranque no emite addons (contrato §5.1). Es el caso del §2.7 con otro guard:
+**nacería antes que el dato que compara**. **Va a `B10`**, que construye `addon_product` y la
+fuente `ADDON` (`B/descomposicion.md` §2, fila `B10`: `16` entero y `02` §2.4). `V/20` §2 conserva
+la fila, igual que conserva la de `G-R5`. **La asignación la escribe `B/descomposicion.md`, fuera
+de este documento; hasta entonces `G-R2-C` sigue sin unidad** y `B/20` §6 sigue diciendo 1.
+*(Propuesta de esta pasada, contra la sugerencia de los registros `15` y `17`; se señala al
+orquestador.)*
 
 ---
 
@@ -360,9 +441,12 @@ la unidad se declara terminada.
 > **no había ningún lugar donde se comprobara que había ido**: la asignación vivía sólo en una
 > columna que nadie consulta al declarar una unidad lista, así que las nueve se podían declarar
 > terminadas, una por una, con **cero** guards escritos, y el tablero del §5 las marcaba verdes.
-> **Los ~~29~~ 30 guards del programa están repartidos entre las 22 unidades —~~16~~ 17 en esta épica y 13 en la
+> **Los ~~29~~ ~~30~~ 31 guards del programa están repartidos entre las 22 unidades —~~16~~ 17 en esta épica y 13 en la
 > otra, contados sobre las dos columnas— y ninguno aparecía en ninguno de los 22 criterios.** *(El
-> trigésimo es `G-R5-B`, de V6: FASE 8 completa, `F-8CA2-014`, owner 2026-09-25.)*
+> trigésimo es `G-R5-B`, de V6: FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **El trigésimo
+> primero, `G-R2-C`** —owner 2026-09-25, FASE 9 completa, 4e—, **todavía no está en ninguna de las
+> dos columnas**: esta pasada lo propone para `B10` (§2.10), y el 17 + 13 pasa a 17 + 14 cuando
+> `B/descomposicion.md` lo escriba.)*
 >
 > **No se enumeran acá uno por uno a propósito**: duplicar la columna sería un segundo censo del
 > mismo conjunto, que es la clase de defecto que el contrato §2.1 acaba de cerrar. **La columna es
@@ -374,7 +458,7 @@ la unidad se declara terminada.
 > cerradas de los capítulos, no el subconjunto ya construido (`B/20` §2)— se puede romper a
 > propósito el día que nace, incluso cuando la fila que se le saca es de una unidad de la otra
 > épica. Eso es lo que vuelve exigible esta condición en `V4`, que lleva tres guards cuyo dominio
-> son **las nueve** máquinas.
+> son **las ~~nueve~~ diez** máquinas (la décima, el reembolso: FASE 9 completa, 5a).
 >
 > **Y hay una segunda condición de la misma forma, sobre los ESCRITORES** (`DEC-TEST-002`):
 > **una unidad no está terminada mientras alguna escritura que sus capítulos le declaran a una de
@@ -391,13 +475,13 @@ la unidad se declara terminada.
 |---|---|
 | **V1** | agregar una clave al código sin agregarla a la base **falla**, y al revés también; y nombrar una vertical sin implementar su ítem del Eje 2 **falla** |
 | **V2** | dos versiones vendibles y vigentes con el mismo `rank` en la misma vertical **son imposibles**, no un empate a desempatar; y **`direcciónDeCambio` contesta `BAJA` sobre un par de versiones donde el destino tiene `rank` MAYOR y un solo limit menor** —si contesta `SUBE`, está leyendo el `rank` y no el delta (§2.9)—, con `políticaDePlan` y `situaciónDeVertical` contestando los otros cinco campos sin que ninguna devuelva un entitlement ni un limit |
-| **V3** | una clave que suma y una que no acumulan **distinto**, y la que no acumula **favorece al cliente**; y revocar una fuente invalida el caché de ese `user + vertical` |
-| **V4** | un trial vence de verdad, `cobertura()` pasa de sí a no por sí sola, y un segundo trial para el mismo `user + vertical` **es imposible** |
-| **V5** | un recurso ajeno, uno archivado y uno inexistente **contestan lo mismo al que no es su dueño** —y una ficha `ARCHIVED` le acepta a **su** dueño verla, exportarla y reactivarla **aunque no tenga ninguna fuente de clase `TÍTULO`**, porque la versión de piso lo otorga (`02` §2.1)—; y una cuenta inhabilitada no puede averiguar qué permisos tiene probando operaciones |
-| **V6** | un trial que vence baja la ficha a `UNPUBLISHED_BY_BILLING` y no a `DRAFT`, y al recuperar cobertura vuelve **sólo** la que bajó el sistema |
-| **V7** | aprobar una postulación con el correo de un tercero **no vincula nada** hasta que alguien con acceso a esa casilla lo reclame |
-| **V8** | ninguna superficie decide por sí misma: lo que se oculta ya está rechazado por V5 |
-| **V9** | la fila de `trial` sobrevive al borrado de la cuenta, y su hash **no** se anonimiza |
+| **V3** | una clave que suma y una que no acumulan **distinto**, y la que no acumula **favorece al cliente**; y revocar una fuente invalida el caché de ~~ese `user + vertical`~~ **ese `user` en todas sus verticales** —un suspendido pierde la herencia de Turista VIP y las claves globales del plan que ya no paga en la próxima lectura (owner 2026-09-25; FASE 9 completa, 8a)—, **e invalidar una vertical entera borra las entradas de todos los users en ella** (6b); y **un grant nunca otorga menos que su `piso`**, leído de la fuente (9h) |
+| **V4** | un trial vence de verdad, `cobertura()` pasa de sí a no por sí sola, y un segundo trial para el mismo `user + vertical` **es imposible**; y, sobre la tabla del `03` §2, **publicar con una `SUSCRIPCIÓN` presente y `cobrada: no` arranca el trial (`T1`) y no lo consume (`T6` no dispara), y el primer pago de quien ya ejerció el evento lo consume (`T8`)** — con billing todavía ausente se ejerce contra la respuesta del contrato que recibe la máquina, no contra la implementación de arranque, que no emite suscripciones (spec §4.2; owner 2026-09-25, FASE 9 completa, 6c) |
+| **V5** | un recurso ajeno, uno archivado y uno inexistente **contestan lo mismo al que no es su dueño** —y una ficha `ARCHIVED` le acepta a **su** dueño verla, exportarla y reactivarla **aunque no tenga ninguna fuente de clase `TÍTULO`**, porque la versión de piso lo otorga (`02` §2.1)—; y una cuenta ~~inhabilitada~~ **con el correo sin verificar** no puede averiguar qué permisos tiene probando operaciones (8b); **una operación que declara otra vertical que la del recurso contesta *«no existe»*, y una que escribe la vertical de una ficha existente no pasa el build** (la mitad *(c)* de `G2`; 7a); **una ficha ajena en `DRAFT`, `ARCHIVED` o `MODERATED` contesta lo mismo que una inexistente** (precisión 7; 8c); **y un `SUSPENDED` lee su Mi Cuenta, su billing y sus fichas** (8d) — owner 2026-09-25, FASE 9 completa |
+| **V6** | un trial que vence baja la ficha a `UNPUBLISHED_BY_BILLING` y no a `DRAFT`, y al recuperar cobertura vuelve **sólo** la que bajó el sistema; **dos `PB1` simultáneos del mismo dueño con un solo lugar de cupo dejan una sola ficha publicada** (el lock; `R14`); **un aviso de cobertura perdido lo corrige la corrida siguiente del reconciliador diario**, sin que nadie publique a mano (`DEC-ARCH-009`); y **una ficha `MODERATED` no la saca ninguna transición del sistema, y levantar la moderación la deja en `DRAFT` con el reloj reiniciado** (`PB11`, hecho 6; 5b) — *(criterios agregados en la salida 3 de la FASE 9 completa)* |
+| **V7** | aprobar una postulación con el correo de un tercero **no vincula nada** hasta que alguien con acceso a esa casilla lo reclame; y **un Silver que deja de pagar sale del carrusel, y una presencia moderada responde 404 con el cobro intacto** (owner 2026-09-25; FASE 9 completa, 7b y 7c) |
+| **V8** | ninguna superficie decide por sí misma: lo que se oculta ya está rechazado por V5; y **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a publicar, no al checkout** (owner 2026-09-25; FASE 9 completa, 6c) |
+| **V9** | la fila de `trial` sobrevive al borrado de la cuenta, y su ~~hash~~ **seudónimo** **no** se anonimiza (`C-1`); **el día 180 (`PB9`) borra el contenido de la ficha y nada de la persona** (`DEC-DATA-005`), **y después del borrado ningún evento de dominio conserva el texto borrado** (8e) |
 
 ---
 

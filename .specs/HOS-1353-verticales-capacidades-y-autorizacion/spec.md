@@ -3,7 +3,7 @@ title: Verticales — capacidades, entitlements, limits y autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-21
+updated: 2026-09-25
 type: feature
 areas:
   - api
@@ -56,11 +56,11 @@ y ninguno de ellos necesita leer uno de la épica de billing para estar completo
 | `11` | [trial](./docs/11-trial.md) | el reloj de calendario, el techo de días, la reparación, la campaña de recuperación |
 | `15` | [entitlements y limits](./docs/15-entitlements-y-limits.md) | las cuatro estrategias de agregación, el scope, el excedente, el visitante sin cuenta |
 | `17` | [autorización](./docs/17-autorizacion.md) | los nueve pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
-| `18` | [Partner](./docs/18-partner.md) | la presencia y la postulación |
-| `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ **dieciocho guards** (`G-R5-B`, FASE 8 completa) |
-| `21` | [migración](./docs/21-migracion.md) | el trial ya consumido, y por qué no hay deuda de datos |
-| `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el hash irreversible del correo |
+| `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
+| `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ **diecinueve guards** (`G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e) |
+| `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
+| `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`) |
 
 ### 2.1 Lo que cita y no contiene
 
@@ -68,7 +68,7 @@ Tres cosas, y ninguna la bloquea — las tres están escritas y cerradas:
 
 | qué | dónde | por qué no está acá |
 |---|---|---|
-| **el núcleo** — reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas | [`docs/nucleo/`](../HOS-1352-billing-verticals-redesign/docs/nucleo/) | es vocabulario y método común. Partirlo lo rompe: un glosario en dos mitades deja de ser un glosario, y los 51 invariantes numerados de corrido pierden lo único que los hace útiles — poder preguntar **una vez** si están todos |
+| **el núcleo** — reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas | [`docs/nucleo/`](../HOS-1352-billing-verticals-redesign/docs/nucleo/) | es vocabulario y método común. Partirlo lo rompe: un glosario en dos mitades deja de ser un glosario, y los ~~51~~ **54** invariantes numerados de corrido (37 + `D1`–`D17`, `NUCLEO/04` §3; recontado en la salida 3 de la FASE 9 completa) pierden lo único que los hace útiles — poder preguntar **una vez** si están todos |
 | **el contrato de cobertura** | [`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | es **la frontera**, y por eso tiene una sola fuente que ninguna de las dos épicas puede mutar sola |
 | **el PDR y el decision log** | [`docs/`](../HOS-1352-billing-verticals-redesign/docs/) | son las fuentes del programa entero |
 
@@ -113,6 +113,12 @@ De las seis entidades del catálogo comercial, **cinco no tienen un solo campo d
 permite pausa, hereda VIP—, `plan_version_entitlement` y `plan_version_limit`. **El precio vive en
 una sola tabla hoja, `billing_option`**, que es de la otra épica.
 
+*(Desde la FASE 8 el catálogo de addons se parte por el mismo corte, por campo: `addon` y
+`addon_version` —qué otorga, vigencia, scope— son de esta épica, y `addon_product` —precio,
+recurrencia y **verticales compatibles**— de la otra (cap. 02 §2.1). Y `vertical` guarda
+`admite_altas` y `fin_de_servicio`, que billing lee por la dirección inversa del contrato §4.1.
+Nota de la salida 3 de la FASE 9 completa, sin cambio de sentido.)*
+
 **Eso es lo que vuelve independiente al trial**: deriva su plan del vendible de `rank` más alto y
 del más bajo, y las dos columnas están en `plan_version`. **Un trial se resuelve entero sin que
 exista un precio en la base.**
@@ -146,17 +152,37 @@ depende de todo, y cada paso revela lo mínimo.
 5. **título vivo** · 6. entitlement · 7. limits — con el **contexto de vertical** como precondición
 estructural, no como paso.
 
-Tres precisiones que el orden hace cumplir:
+**Y la precondición se lee del recurso, nunca del pedido**: en una operación sobre algo que guarda
+su vertical —la ficha y su contenido, la presencia de Partner, la instancia de addon— la vertical
+es la del recurso, y si el pedido declara otra, **no existe**. **La vertical de una ficha es
+inmutable desde el alta** (cap. 17 §1.2, precisión 6; la mitad *(c)* de `G2`) — FASE 8 completa,
+`F-8CA1-001`; owner 2026-09-25, FASE 9 completa, 7a.
+
+~~Tres precisiones que el orden hace cumplir:~~ **Las precisiones que el orden hace cumplir** —el
+cap. 17 §1.2 tiene siete; éstas son las que esta spec necesita para leerse sola (salida 3 de la
+FASE 9 completa)—:
 
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
   inexistente son indistinguibles desde afuera; decir *«no es tuyo»* confirma que el id existe.
-  **Para su dueño no**: una ficha `ARCHIVED` le acepta verla, exportarla y reactivarla (`PB8`),
-  que es lo que `DEC-DATA-001` promete (cap. 17 §1.2, precisión 1). **Y le alcanza el paso 6
+  **Para su dueño no**: una ficha `ARCHIVED` le acepta verla, exportarla y reactivarla (`PB8`)
+  **—y borrarla, `PB12`—**, que es lo que `DEC-DATA-001` promete (cap. 17 §1.2, precisión 1). **Y le alcanza el paso 6
   aunque no pague nada**, porque la versión de piso otorga *«recuperar lo suyo»* (cap. 02 §2.1):
   sin eso la promesa era inejecutable justo para la población a la que se le borra el contenido.
-- **El estado de la persona va antes del permiso**, porque al revés una cuenta inhabilitada puede
-  averiguar qué permisos tiene probando operaciones.
-- **Los limits van últimos** porque son los únicos que necesitan contar.
+- **Lo ajeno existe sólo en estado público** (precisión 7; owner 2026-09-25, FASE 9 completa, 8c):
+  para quien no es el dueño, el recurso existe sólo si es una ficha `PUBLISHED` o una presencia de
+  Partner con la clave vigente y sin moderar. Todo lo demás contesta como inexistente.
+- **El estado de la persona va antes del permiso**, porque al revés una cuenta ~~inhabilitada~~ **con
+  el correo sin verificar** puede averiguar qué permisos tiene probando operaciones. *(«Inhabilitado
+  por abuso» salió del paso 2: no tenía dato que lo escribiera, y el abuso se trata ficha por ficha
+  con `MODERATED` — owner 2026-09-25, FASE 9 completa, 8b.)*
+- **Los limits van últimos** porque son los únicos que necesitan contar — **y, en una transición
+  que ocupa cupo, los pasos 5 a 7 se evalúan dentro de un lock por `user + vertical`** (cap. 03 §9;
+  FASE 8 completa, `R14`, owner 2026-09-25).
+
+**Qué pasos recorre una lectura**: toda operación corre la resolución, pero una lectura no pasa
+por el paso 5, y **una lectura de lo propio —Mi Cuenta, su billing, sus fichas— tampoco por el 6**,
+así que un suspendido puede ver cómo regularizar (cap. 17 §3.5; owner 2026-09-25, FASE 9 completa,
+8d).
 
 **Y los nueve se resuelven en un solo lugar.** El invariante no es que cada servicio los haga: es
 que **ninguno los haga por su cuenta**.
@@ -187,6 +213,14 @@ ninguna funciona.
 **Es único de por vida por `user + vertical`**, impuesto por una restricción de base sin condición
 de estado. **El reloj es de calendario y no lo detiene nada** — ni despublicar, ni borrar la ficha,
 ni dejar de entrar.
+
+**Se consume al ejercer el evento de activación o con el primer pago, nunca con una autorización.**
+Una suscripción convierte el trial recién con su primer pago acreditado (`T2`, `T5`;
+`DEC-TRIAL-010`), y **suscribirse antes de publicar no lo quema**: `T6` exige un título que
+convierte, y quien pagó sin haber publicado consume su fila por `T8`, al primer pago. La superficie
+lo evita antes: **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a
+publicar**, que arranca su trial (cap. 03 §2, cap. 19 §4 fila 23; owner 2026-09-25, FASE 9
+completa, 6c).
 
 **El trial no vuelve; lo que hay es reparación hacia adelante.** Mientras sigue vivo se extiende;
 si ya venció, la reparación es un instrumento de la otra épica.
@@ -243,12 +277,17 @@ El mismo hecho lo pedía el diseño en cuatro lugares con cuatro nombres, **ante
 existiera**: el paso 5 de la autorización, la transición `PB2` de publicación, la pérdida de
 beneficios de turista al suspender, y el disparador del recálculo del conjunto efectivo. **Eso es
 una tabla histórica y no el censo de quién lo consume**, que vive en la fila `cubierto` del
-contrato §2.1 y hoy es más larga —lleva además `PB3`, `PB7`, `PB4`, `PB5` y el hard delete del día
-180—. Contar acá para saber cuántos hay da una cifra congelada, que es lo que le pasó a la regla de
+contrato §2.1 y hoy es más larga ~~—lleva además `PB3`, `PB7`, `PB4`, `PB5` y el hard delete del día
+180—~~ **—no se enumera acá: esa enumeración ya había caducado (le faltaban `T1`, `T6` y el
+reconciliador diario de cobertura), que es el defecto que este párrafo describe; salida 3 de la FASE
+9 completa—**. Contar acá para saber cuántos hay da una cifra congelada, que es lo que le pasó a la regla de
 vigilancia del §4.2 del contrato.
 
 **Nada más cruza la frontera**: ni montos, ni estados de pago, ni ids del proveedor, ni fechas de
 cobro —sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4 (`DEC-TRIAL-010`)—.
+**Y desde la FASE 9 completa cruza también `piso`**, en la fuente `GRANT`: una versión de plan, no
+dinero, para que el trinquete del grant no tenga que leer una tabla de billing (contrato §2.1;
+owner 2026-09-25, 9h).
 Ni siquiera el estado exacto de la suscripción — esta épica no distingue `ACTIVE` de
 `GRACE_PERIOD`, porque durante el grace el servicio sigue.
 
@@ -272,7 +311,8 @@ no vuelve a pagar, que es exactamente su sujeto.
 
 Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina de
 publicación tiene vivo su `PB2` alimentado por `T3`, el reconciliador de excedentes corre disparado
-por las transiciones de trial, y la agregación de limits y los scopes no tienen ninguna dependencia
+por las transiciones de trial, **el reconciliador diario de cobertura compara el contrato con las
+fichas una vez por día (`V/03` §9, `DEC-ARCH-009`)**, y la agregación de limits y los scopes no tienen ninguna dependencia
 que defaultear porque nunca preguntaron por dinero.
 
 **No es un stub de datos fijos, y la diferencia decide el ejercicio**: un simulacro que contesta
@@ -283,7 +323,11 @@ uno que contesta siempre que no deja todo apagado.
 
 1. **El trial nunca convierte.** `T2` y `T5` disparan ~~al autorizarse una suscripción~~ cuando
    aparece un título que convierte —una suscripción, recién con su primer pago acreditado
-   (`DEC-TRIAL-010`, `V/03` §2)—, y sin billing no aparece ninguno.
+   (`DEC-TRIAL-010`, `V/03` §2)—, y sin billing no aparece ninguno. **Lo mismo `T8`, y la guarda
+   de `T6` que pide un título que convierte** (owner 2026-09-25; FASE 9 completa, 6c): sin billing
+   no hay primer pago, así que el trial se consume sólo por `T1` y la rama de `T6`/`T8` con
+   suscripción queda sin ejercer hasta `B4`. **Y el botón de suscribirse no tiene checkout al que
+   mandar**: su rama *«mandar a publicar»* sí se ejerce.
 2. **No hay reparación de un trial ya vencido**, porque se hace con una cortesía. Alguien
    perjudicado por un error de moderación **después** de que su trial venció no tiene reparación
    hasta que exista billing. Mientras el trial sigue vivo sí la tiene: la extensión `T4`.
@@ -309,7 +353,8 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 **Siete guards con id propio de esta épica** —`G1`-`G6` y `G8`—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**Siete NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ **dieciocho**, y los once que no
+**Siete NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ **diecinueve** —el decimonoveno es
+`G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e)—, y los **doce** que no
 están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus **cuatro** referencias cruzadas
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
 es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están todos?»*:
@@ -317,7 +362,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | # | falla si |
 |---|---|
 | `G1` | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 |
-| `G2` | una operación de dominio **no declara** su contexto de vertical |
+| `G2` | una operación de dominio **no declara** su contexto de vertical; **o toma la vertical del pedido y no del recurso; o escribe la vertical de un recurso que ya existe** (tres mitades con tres mensajes: FASE 8 completa, `F-8CA1-001`; owner 2026-09-25, FASE 9 completa, 7a) |
 | `G3` | una clave de código no está en la base, **o una de la base no está en el catálogo** |
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
@@ -327,7 +372,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los ~~diecisiete~~ dieciocho: **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ diecinueve: **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---
@@ -338,7 +383,14 @@ El capítulo 21 midió que **Gastronomía, Experiencia y Partner tienen cero fil
 un solo pago histórico**. Los tres compromisos de cobro vivos están del otro lado de la frontera.
 
 Esta épica es independiente **por diseño** —no pregunta por dinero— y también **por datos**: no
-tiene nada que migrar y nada que romper.
+~~tiene nada que migrar y nada que romper~~ **transcribe ninguna fila del sistema viejo** —ni
+siquiera de `trial`: el corte no siembra trials consumidos (owner 2026-09-25; FASE 9 completa,
+2g)—. **Lo único que toca de lo existente son las fichas**, y sin migrarlas: toda ficha que existe
+el día del corte nace con `listing.inactiva_desde` en el instante del corte —la escritura `C` de
+`NUCLEO/01` §1.2—, las publicadas de Alojamiento las baja la primera corrida del reconciliador
+diario de cobertura, y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
+§2.4 y §4). *(Decía «nada que migrar y nada que romper», y la escritura `C` es una escritura sobre
+filas existentes; salida 3 de la FASE 9 completa.)*
 
 ---
 
