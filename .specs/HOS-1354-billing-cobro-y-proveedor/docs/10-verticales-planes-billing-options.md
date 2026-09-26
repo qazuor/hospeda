@@ -273,7 +273,12 @@ con eso `cubierto` pasa a falso para todos:
 
 **Las fichas de las tres primeras filas las baja este mismo barrido**, cuyo `PB2` ahora tiene su
 evento, y **si no las baja, el reconciliador diario de cobertura al día siguiente** (`V/03` §9,
-`DEC-ARCH-009`). **Y ningún trial arranca desde el día 0**: `T1` exige que la vertical admita altas
+`DEC-ARCH-009`). **Y el barrido del día invalida las entradas de caché de la vertical entera**
+(owner 2026-09-25; FASE 9 completa, 6b; `V/02` §3.2, fila *«llega `vertical.fin_de_servicio`»*):
+las tres primeras filas de la tabla dejan de otorgar sin que cambie ninguna fila de su
+`user + vertical` —el grant no transiciona, la cortesía sigue `PAUSED` y el trial sigue
+`TRIAL_ACTIVE`—, así que sin esa invalidación sus capacidades seguían saliendo del caché hasta la
+red de tiempo. **Y ningún trial arranca desde el día 0**: `T1` exige que la vertical admita altas
 (`V/03` §2), que es lo que el anuncio ya decía —*«la vertical deja de admitir altas y trials»*— y
 ninguna fila hacía cumplir.
 
@@ -366,9 +371,11 @@ siempre: lo que toca plata no se ejecuta solo.
    que falla si una clave de la base no está en el catálogo de código **y al revés**. Es la
    excepción histórica del §55.1, marcada como tal.
 
-### 4.6 Por qué esto no es una novena máquina de estado
+### 4.6 Por qué esto no es una ~~novena~~ undécima máquina de estado
 
-El §63 pide ocho máquinas y el capítulo 03 las tiene. La vertical **no agrega una**: su situación
+El §63 pide ocho máquinas y el capítulo 03 las tiene —el núcleo cuenta **diez**: más la Postulación
+de Partner y, desde la FASE 9 completa, el Reembolso (`NUCLEO/01` §2; owner 2026-09-25, 5a)—. La
+vertical **no agrega una**: su situación
 se lee de **dos datos con fecha** sobre su propia fila —si admite altas, y su fecha de fin de
 servicio— y de ahí salen las tres situaciones posibles sin que haya transiciones que restringir
 más allá de que ninguno de los dos vuelva atrás solo.

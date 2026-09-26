@@ -102,7 +102,9 @@ los crearon:
 **un plan por cada vertical de su scope** y resuelve, en cada una, la **versión vigente** de su
 plan (`12-contrato-de-cobertura.md` §2.8, `B/02` §2.4), así que sigue las mejoras del plan —y
 quedaría expuesto a sus recortes—. Su piso es **lo que ese plan otorgaba el día que se firmó el
-grant**, guardado en el ancla:
+grant**, guardado en el ancla (`B/02` §2.4) **y leído del campo `piso` de la fuente `GRANT`**
+(`12-contrato-de-cobertura.md` §2; owner 2026-09-25, FASE 9 completa, 9h), nunca de la tabla de
+billing:
 
 > **Un grant nunca otorga menos de lo que otorgaba el día que se concedió.**
 
@@ -114,7 +116,9 @@ contra las vigentes al firmarlo.
 
 **Y se compara POR VERTICAL, que es la parte que la resolución no puede deducir sola.** La
 resolución de un `user + vertical` toma **la fuente `GRANT` de esa vertical** —con el plan de esa
-vertical y el piso de esa vertical— y **ninguna otra**. Un piso único para un grant de scope plural
+vertical y el piso de esa vertical, **los dos leídos de esa fuente**: el plan de su `referencia` y
+el piso de su campo `piso` (`12-contrato…` §2; owner 2026-09-25, FASE 9 completa, 9h)— y
+**ninguna otra**. Un piso único para un grant de scope plural
 compararía las claves de Gastronomía contra lo que otorgaba un plan de Alojamiento, que es el mismo
 cruce que el ancla por vertical vino a cerrar, entrando por el trinquete en vez de por la
 referencia. Lo vigila `G-R2-B` (`V/20` §2).
@@ -155,7 +159,9 @@ nada. **Falla hacia que el trial reciba de menos**, que es lo que el §10.5 pide
 comprado en los minutos que siguen a un alta cuyo primer cobro después se rechaza se quedaba
 cobrando sin aportar nada: sin título el pliegue lo descartaba, y su única condición de orfandad era
 *«la cuenta se borró»*. **Desde 4d queda huérfano si en ninguna vertical compatible de su producto
-hay una principal viva y cobrada ni un ancla viva** (`B/16` §4.2), así que `A5` lo corta. El
+hay una principal viva y cobrada ni un ancla viva** (`B/16` §4.2), así que `A5` lo corta.
+*«Cobrada»* se lee como en `S4`: con al menos un pago acreditado, **o** sucesora de una
+predecesora que venía pagando (`B/03` §8, `A1` y `A5`; owner 2026-09-25, FASE 9 completa, 9e). El
 descarte de este § y la orfandad de allá son las dos mitades: una deja de otorgar en el acto, la
 otra deja de cobrar.
 

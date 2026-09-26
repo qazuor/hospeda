@@ -93,7 +93,7 @@ va a usar sin repetirla:
 | **una fuente `SUSCRIPCIÓN`** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
 | **la derivación del plan de trial** (§10.3) | las versiones **vigentes y vendibles**, la de `rank` más alto y la más baja (`DEC-ARCH-002`) |
 | **la comparación de tiers** (§27, §28) | ~~los `rank` de las versiones **vigentes y vendibles**~~ **las dos versiones del cambio** —la anclada de origen y la de destino— **y no su `rank`**: la dirección de un cambio de plan es el veredicto `direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE \| BAJA`, que esta épica computa por el delta de sus entitlements y limits —**cualquier baja manda**— y billing recibe sin leer las tablas (`12-contrato-de-cobertura.md` §4.1, `DEC-ARCH-008`; FASE 8 completa, `F-8CD1-003`) |
-| **un grant permanente** (§35) | la **versión vigente** del plan que ancló **en esa vertical**, **sea vendible o no** (`12-contrato-de-cobertura.md` §2.8) |
+| **un grant permanente** (§35) | la **versión vigente** del plan que ancló **en esa vertical**, **sea vendible o no** (`12-contrato-de-cobertura.md` §2.8), **y la versión de su piso**, que le llega en el campo `piso` de la fuente (`12-contrato…` §2; owner 2026-09-25, FASE 9 completa, 9h) |
 | **una fuente `BASE`, y una fuente de trial en `PRE_TRIAL`** | la versión vigente de la de **piso** y la de **pre-trial** de la vertical, **no vendibles por construcción** (cap. 02 §2.1) |
 
 Las cuatro primeras filas dicen lo mismo de cuatro formas: **el catálogo es lo que se puede comprar

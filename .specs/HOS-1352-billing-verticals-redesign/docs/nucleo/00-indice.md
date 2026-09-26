@@ -39,11 +39,14 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
-2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ **117** al
-   2026-09-25, recontadas con
+2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ ~~**117** al
+   2026-09-25~~ **124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
+   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1), recontadas con
    `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
    ~~`DEC-SUB-001` y `DEC-SUB-005` enteras~~ `DEC-SUB-001`, **`DEC-SUB-003`** y `DEC-SUB-005`
-   enteras —`DEC-SUB-003` por `DEC-SUB-021`—, `DEC-MIG-001` sólo en lo que `DEC-MIG-003` reemplazó, y
+   enteras —`DEC-SUB-003` por `DEC-SUB-021`—, ~~`DEC-MIG-001` sólo en lo que `DEC-MIG-003`
+   reemplazó~~ `DEC-MIG-001` y **`DEC-MIG-002`** sólo en lo que `DEC-MIG-003` reemplazó (FASE 9
+   completa, `C-9`), y
    `DEC-MP-003` sólo en lo que `DEC-MP-008` reemplazó (FASE 9 completa, `C-13`: la lista dejaba a
    `DEC-SUB-003` como fuente, y es el lugar donde un implementador busca qué decisiones valen);
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.

@@ -91,12 +91,17 @@ cobertura(user, vertical) → {
         objetivo:   la ficha, si alcance = LISTING; nada en los otros tres
         hasta:      fecha | NO_VENCE | SIN_FECHA_CONOCIDA | SIN_EMPEZAR
         cobrada:    sí | no, si tipo = SUSCRIPCIÓN; nada en los otros cinco
+        piso:       versiónDePlan, si tipo = GRANT; nada en los otros cinco
     } ]
 }
 ```
 
 > **La fuente pasó de cinco campos a seis el 2026-09-25**, con `cobrada` (`DEC-TRIAL-010`; FASE 8
-> completa, `F-8CA2-006`, `F-8CC1-002`). La respuesta sigue teniendo **dos**: `cubierto` y
+> completa, `F-8CA2-006`, `F-8CC1-002`), **y de seis a siete el mismo día, con `piso`** (owner
+> 2026-09-25; FASE 9 completa, 9h, contradicción `C-2` del informe `09`): el trinquete del grant
+> (§2.8) se aplica en verticales (`V/15` §2) y su piso vive en una tabla de billing
+> (`permanent_grant_vertical`, `B/02` §2.4), así que **cruza por acá** —leerlo de esa tabla sería
+> el acoplamiento que el §4.2 manda detectar—. La respuesta sigue teniendo **dos**: `cubierto` y
 > `fuentes`.
 
 Una sola pregunta, con la vertical **obligatoria en la firma** — no opcional~~, no deducible del
@@ -119,6 +124,7 @@ que alguien pueda olvidar.**
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
 | **`hasta`** | uno de cuatro valores, y ninguno es «sin fecha» a secas (§2.6) | los avisos con ventana (cap. 15 §4.4) |
 | **`cobrada`** | en una fuente `SUSCRIPCIÓN`, si **esa fila** tiene **al menos un pago acreditado** —un cobro del proveedor aprobado, leído por id (`B/09` §4), o una cuota de pagador manual registrada (`MP1`, `B/03` §7)—; en los otros cinco `tipo`, nada. **No entra en la clase ni en `cubierto`** (abajo) | **`T2` y `T5`** de la máquina de trial, que convierten sólo con una suscripción que ya cobró (`V/03` §2; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`); **y `T6` y `T8`**, que desde la FASE 9 completa piden un título que convierte para consumir la fila de `trial` (`V/03` §2; owner 2026-09-25, decisión 6c). **Esta fila es el censo de sus consumidores**, con la misma regla que la de `cubierto` (abajo) |
+| **`piso`** | en una fuente `GRANT`, **la versión del plan de esa vertical que el grant otorgaba el día que se concedió** —el piso del trinquete (§2.8)—; en los otros cinco `tipo`, nada. Es una versión **del mismo plan** que `referencia`, y ese plan es **de esa vertical** (`B/02` §2.4, `permanent_grant_vertical`, que es de donde billing lo saca). No entra en la clase ni en `cubierto` (owner 2026-09-25; FASE 9 completa, 9h) | **la resolución del paso 6** (`V/15` §2), que aplica el trinquete: resuelve la versión vigente de `referencia` y nunca otorga menos que la de `piso`. Sin el campo, verticales tenía que leer el piso de una tabla de billing |
 
 > **La fila de `cubierto` es EL censo de sus consumidores, y va sin número a propósito.** La
 > versión anterior enumeraba seis y omitía a `PB4`, `PB5` y el hard delete —los tres relectores que
@@ -673,7 +679,9 @@ plan de la primera — una clave de una vertical alimentada desde otra, que es e
 §64.10 prohíbe y lo que el scope estructural del capítulo 17 existe para impedir.
 
 Así que **un grant de scope N verticales ancla N planes, uno de cada una**, y cada fuente
-transporta el suyo.
+transporta el suyo. **Y transporta también su piso**, en el campo `piso` de la firma (§2): la
+versión de ese plan que otorgaba el día de la concesión (owner 2026-09-25; FASE 9 completa, 9h).
+El trinquete lo aplica verticales; el dato lo guarda billing y cruza por la firma.
 
 #### N anclas no son N grants, y la diferencia se paga al revocar
 
@@ -1002,9 +1010,10 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 ### 4.2 La regla de vigilancia, en las dos direcciones
 
 > **Regla de vigilancia**: si aparece **un lugar que necesita algo de billing y no figura en la
-> fila `cubierto` del §2.1** ~~—y no es este hecho—~~ **ni en la fila `cobrada`** —y no es este
-> hecho— (`DEC-TRIAL-010`: la segunda fila es el censo del segundo dato que cruza), es señal de que
-> el corte se está filtrando. Se mira, no se resuelve en el lugar.
+> fila `cubierto` del §2.1** ~~—y no es este hecho—~~ **ni en la fila `cobrada`** **ni en la
+> fila `piso`** —y no es este hecho— (`DEC-TRIAL-010`: la segunda fila es el censo del segundo dato
+> que cruza; la tercera, el del piso del grant, owner 2026-09-25, FASE 9 completa, 9h), es señal de
+> que el corte se está filtrando. Se mira, no se resuelve en el lugar.
 >
 > **Y en la otra dirección**: si billing necesita leer de verticales algo que no está entre **los
 > siete campos** del §4.1, vale lo mismo. Una lectura no declarada es un acoplamiento que nadie

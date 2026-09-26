@@ -50,6 +50,12 @@ termina más tarde, y nunca después de la pausa del proveedor, que dispara `S6`
 evento. **Y lo mismo vale para el primer cobro rechazado de una sucesora cuya predecesora venía
 pagando**, que desde la decisión 3c también entra al grace (§4.3; owner 2026-09-25).
 
+**Y si el aviso del primer rechazo se pierde entero** (`WH-5`), **lo lee el barrido**: si su
+lectura del `B/09` §4 da *«intentó y se rechazó»* sobre el período en curso de una fila `ACTIVE`
+con al menos un pago acreditado, corre `S4` (`B/09` §3, fila *«cobros del período»*; `B/03` §3.2
+fila `S4`; owner 2026-09-25, FASE 9 completa, 9a). Es la misma lectura por id que esta regla pide,
+y el reloj cuenta desde ella, como con un aviso demorado.
+
 ~~**El reloj del grace arranca cuando el proveedor deja de reintentar, no cuando falla un
 intento.**~~ **Reemplazada el ~~2026-09-24~~ 2026-09-25** (FASE 8 completa, racimo `R1`, resuelto con el owner el 2026-09-25 —FASE 9 completa, C13—: `F-8CB2-002`,
 `F-8CB3-002`, `F-8CB1-006`). La regla vieja esperaba un instante que **no se puede observar**:
@@ -1054,13 +1060,22 @@ una regla: hace falta que nadie agregue esa transición.
   ventana en su §6, el saneo del `init_point` en su §4.2, la verificación por relectura en su §4.1 —
   y **la mecánica del reembolso en su §4.6**. Es **trato con el proveedor**, y por eso vive en el
   capítulo del proveedor.
-- **Un primer rechazo cuyo aviso se pierde entero** (`WH-5`) no arranca el grace (FASE 9 completa,
+- ~~**Un primer rechazo cuyo aviso se pierde entero** (`WH-5`) no arranca el grace (FASE 9 completa,
   borde R1-a de `01`; declarado por `DEC-METH-015`): la fila queda `ACTIVE` hasta que el proveedor
   pausa al vencer su ventana —un ciclo— y sale por `S6` en su segundo evento, sin los días ni los
   avisos del §20. **Causa**: el reloj arranca con una lectura por id (§1.2), y el barrido no mira
   los rechazos —su fila *«cobros del período»* sólo actúa sobre un `approved` que no tenemos
   (`B/09` §3)—. No es plata cobrada de más: es un ciclo de servicio sin cobrar, en una población de
-  borde (en el anual, la ventana de un año es extrapolación).
+  borde (en el anual, la ventana de un año es extrapolación).~~ **Deja de ser borde: corregido**
+  (owner 2026-09-25; FASE 9 completa, 9a). El barrido corre `S4` cuando su lectura da *«intentó y
+  se rechazó»* sobre el período en curso de una fila `ACTIVE` con al menos un pago acreditado
+  (§1.2; `B/09` §3; `B/03` §3.2 fila `S4`).
+- **Lo que 9a deja afuera: la sucesora de 3c cuyo primer rechazo se pierde entero** (FASE 9
+  completa, 9a; declarado por `DEC-METH-015`, FASE 9 completa). La rama del barrido exige al menos
+  un pago acreditado **en la fila**, y la sucesora que venía pagando todavía no tiene ninguno: si
+  el aviso de su primer rechazo no llega, queda `ACTIVE` hasta que el proveedor la pause o la
+  cancele y la comparación de estado del barrido lo lea (`B/03` §10.1; §4.3). **Causa**: el owner acotó la rama nueva a la fila con
+  pago propio. Es un ciclo de servicio sin cobrar como mucho, sobre una población de borde de otra.
 - **Una sucesora con tarjeta cuyo crédito cubre menos que su ventana** emite desde `S2` hasta su
   primer cobro sin haber pagado esa diferencia —hasta 72 h— (§4.3; FASE 9 completa, borde R8-a de
   `01`; declarado por `DEC-METH-015`). **Causa**: `D8` pone el primer cobro después de la ventana y

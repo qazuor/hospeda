@@ -75,7 +75,9 @@ De ahí salen tres reglas, en orden:
    un cobro confirmado (§2.4) y en pausa no hay cobro. Bajar al piso sigue descartado: le cobraría
    **ARS 15 por ciclo** a alguien a quien le dijimos que no iba a pagar. **Lo gratis ya tiene sus
    dos instrumentos**: el trial y la cortesía. Como todo canje rechazado, **no se consume** (§3.4):
-   la persona conserva el código.
+   la persona conserva el código. **Y el motivo en pantalla dice que el mínimo lo pone Mercado
+   Pago, no nosotros** (owner 2026-09-25; FASE 9 completa, 9g; el texto, en `B/19` §4 fila 7-bis):
+   el piso es del proveedor (`PC-2`), y sin decirlo el rechazo se lee como una regla nuestra.
 3. ~~**Por lo tanto un descuento del 100 % no es un descuento: es una cortesía** por el período que
    dure. No hace falta mecanismo nuevo — hace falta reconocer que ya existe.~~ **Por lo tanto un
    descuento del 100 % no se canjea**: el resultado es cero, que el proveedor rechaza igual que el

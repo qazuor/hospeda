@@ -3,7 +3,7 @@ title: Decisiones abiertas
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -395,8 +395,11 @@ arrepentimiento**, que no es una feature faltante sino **un incumplimiento si la
 ~~`M-LEGAL-02`~~ (y **destapó un defecto real**: el correo es a la vez el único bloqueo de
 `DEC-TRIAL-004` y ~~el primer dato que el cap. 02 §4 anonimiza~~ un dato que el borrado de la
 cuenta anonimiza —desde `DEC-DATA-005` la retención ya no lo hace—, así que la fila de `trial` sobrevivía
-**sin poder reconocer a nadie**. Se guarda un **hash irreversible**, no el correo; el cap. 02 queda
-corregido. La pregunta al abogado pasa a ser si ese hash se puede conservar tras un borrado) ·
+**sin poder reconocer a nadie**. Se guarda un ~~**hash irreversible**~~ **seudónimo determinístico**
+del correo normalizado, no el correo —no permite leerlo, pero reconoce a quien vuelve con el mismo
+(FASE 9 completa, `C-1`; `V/22` §3.2)—; el cap. 02 queda corregido. La pregunta al abogado pasa a
+ser si ese ~~hash~~ seudónimo se puede conservar tras un borrado, y si la respuesta es no **cambia
+un mecanismo**, no sólo lo que se promete (`D/13` pregunta 5)) ·
 ~~`M-LEGAL-03`~~ (**la prueba del aviso cierra sin abogado**: es el outbox del §44 con la clave del
 cap. 07 §2, y los tres avisos son transaccionales **no suprimibles**. Lo abierto es el **plazo**, y
 si el silencio vale como aceptación — **eso cambia el diseño de `DEC-MP-002`, no su redacción**)
@@ -405,7 +408,7 @@ si el silencio vale como aceptación — **eso cambia el diseño de `DEC-MP-002`
 
 **Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · ~~`M-CONC-02`~~ **cerrado por el cap. 03** (un webhook es un aviso, no un estado: se relee por id, que es el camino medido confiable) · ~~`E-CONC-01`~~ **cerrado por el cap. 05** (los seis, con respuesta nominal; el del pago manual se lleva a la base con un UNIQUE por período) · ~~`M-CONC-03`~~ **cerrado por el cap. 05** (las cuatro condiciones que hacen seguro reactivar; la tercera es la cara)
 
-**Admin y observabilidad** · ~~`M-ADMIN-01`~~ **cerrado por el cap. 08** (las doce acciones, cada una con permiso, auditoría y confirmación) · ~~`R-OBS-01`~~ y ~~`S-OBS-01`~~ **cerrados por el cap. 08** (listado accionable como canal primario + correo agregado con ventana; es un apartamiento del §22.1, registrado como **`DEC-OBS-001`** el 2026-09-17) · ~~`M-OBS-01`~~ **cerrado por el cap. 08** (se acuña en el borde por intención; el salto de tres días se recupera por `provider_link`, no viaja en el `external_reference`) · ~~`M-AUDIT-01`~~ **cerrado por el cap. 08** (las tres condiciones, los siete campos, append-only con la anonimización como única escritura posterior)
+**Admin y observabilidad** · ~~`M-ADMIN-01`~~ **cerrado por el cap. 08** (las ~~doce~~ acciones —**catorce** hoy: la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*, owner 2026-09-25, FASE 9 completa, 5a; `NUCLEO/08` §3—, cada una con permiso, auditoría y confirmación) · ~~`R-OBS-01`~~ y ~~`S-OBS-01`~~ **cerrados por el cap. 08** (listado accionable como canal primario + correo agregado con ventana; es un apartamiento del §22.1, registrado como **`DEC-OBS-001`** el 2026-09-17) · ~~`M-OBS-01`~~ **cerrado por el cap. 08** (se acuña en el borde por intención; el salto de tres días se recupera por `provider_link`, no viaja en el `external_reference`) · ~~`M-AUDIT-01`~~ **cerrado por el cap. 08** (las tres condiciones, los siete campos, append-only con la anonimización como única escritura posterior)
 
 **Partner** — **los dos los cerró el cap. 18**, sobre lo mismo: medio PDR está escrito sobre
 fichas y Partner no tiene. · ~~`A-PARTNER-01`~~ (*«cuántas presencias»* **no es un limit**: es un

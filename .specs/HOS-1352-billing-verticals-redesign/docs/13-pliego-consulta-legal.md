@@ -3,7 +3,7 @@ title: Pliego para la consulta legal
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-19
-updated: 2026-09-19
+updated: 2026-09-25
 status: CURRENT
 ---
 
@@ -132,7 +132,7 @@ incumplimiento**, y el riesgo corre mientras tanto.
 
 ---
 
-### Pregunta 5 — ¿Podemos conservar un **hash irreversible** del correo tras borrar la cuenta?
+### Pregunta 5 — ¿Podemos conservar un ~~**hash irreversible**~~ **seudónimo determinístico** del correo tras borrar la cuenta?
 
 **El caso concreto.** Ofrecemos una **prueba gratuita por única vez** por persona. Para no
 regalarla dos veces hay que poder contestar *«¿esta dirección de correo ya consumió su prueba?»*.
@@ -142,19 +142,27 @@ datos personales, **incluido el correo**. Si se anonimiza, la marca de «ya usó
 ahí pero **ya no reconoce a nadie**, y la persona se registra de nuevo con la misma dirección y
 obtiene otra prueba gratis. O sea: **el borrado se convierte en la forma de conseguir otra**.
 
-**Lo que proponemos.** Guardar un **hash irreversible** del correo normalizado, no el correo.
-Sirve para lo único que tiene que servir —comparar un candidato contra lo ya consumido— y **no se
-puede leer de vuelta**: no permite saber cuál era la dirección, ni contactar a nadie, ni
-reconstruir el dato.
+**Lo que proponemos.** Guardar un ~~**hash irreversible**~~ **seudónimo determinístico** del correo
+normalizado, no el correo. Sirve para lo único que tiene que servir —comparar un candidato contra
+lo ya consumido— y **no se puede leer de vuelta**: no permite saber cuál era la dirección, ni
+contactar a nadie, ni reconstruir el dato. **Pero reconoce a quien vuelve con el mismo correo**:
+cualquiera que tenga una dirección candidata puede calcular el seudónimo y confirmar si esa persona
+tuvo su prueba, porque para comparar tiene que dar siempre el mismo resultado. *(Decía «hash
+irreversible», y la palabra presentaba como anónimo un dato que sigue reconociendo a la persona;
+corregido antes de mandar el pliego — FASE 9 completa, `C-1`; `V/22` §3.2.)*
 
 **La pregunta, en la forma que tiene respuesta:**
 
-> **¿Podemos conservar ese hash después de borrada la cuenta y después de un pedido de supresión,
-> con la única finalidad de no otorgar una segunda prueba gratuita?**
+> **¿Podemos conservar ese ~~hash~~ seudónimo —que no permite leer el correo pero reconoce a quien
+> vuelve con el mismo— después de borrada la cuenta y después de un pedido de supresión, con la
+> única finalidad de no otorgar una segunda prueba gratuita?**
 
-**Qué cambia si la respuesta es NO.** **Ningún mecanismo.** Cambia lo que prometemos: la prueba
-«por única vez» pasa a ser una intención y no una garantía. Es una consecuencia aceptable, pero hay
-que aceptarla a sabiendas.
+**Qué cambia si la respuesta es NO.** ~~**Ningún mecanismo.** Cambia lo que prometemos: la prueba
+«por única vez» pasa a ser una intención y no una garantía.~~ **Cambia un mecanismo, y lo que
+prometemos.** Hay que poder borrar el seudónimo de una fila que hoy se declara íntegra, con un
+escritor nuevo y una columna anulable, y el control que hoy bloquea una segunda prueba deja de
+bloquear a esa persona (FASE 9 completa, `C-1`). Y la prueba «por única vez» pasa a ser una
+intención y no una garantía. Es una consecuencia aceptable, pero hay que aceptarla a sabiendas.
 
 **Sub-preguntas**: si se puede, ¿qué finalidad hay que declarar y con qué plazo de conservación? Y
 ¿cómo se responde a un pedido de acceso o supresión ~~que llegue **antes** de los plazos de
@@ -184,7 +192,7 @@ días** — en ese caso ya lo estamos cumpliendo de sobra. Si fuera **mayor**, h
 | **2** | ventana de revocación por renovación | **cambia el diseño** | **alta** — define si hay que seguir un estado más por suscripción |
 | **4** | botón de arrepentimiento | **es un incumplimiento, no una feature faltante** | **alta** — el riesgo corre hoy |
 | 3 | plazo de revocación | un número | media |
-| 5 | hash del correo | no cambia ningún mecanismo; cambia lo que se promete | media |
+| 5 | ~~hash~~ seudónimo del correo | ~~no cambia ningún mecanismo; cambia lo que se promete~~ **cambia un mecanismo** —un escritor que borra el seudónimo y una columna anulable— **y lo que se promete** (FASE 9 completa, `C-1`) | media |
 | 6 | plazo de preaviso | un número, y sólo si es mayor a 60 días | baja |
 
 ---
