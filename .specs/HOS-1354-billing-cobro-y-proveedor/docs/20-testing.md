@@ -113,16 +113,19 @@ cap. 03 §10.1 —sobre `paused`, `S6` por su segundo evento— (cap. 03 §3.2, 
 no es de matiz: la sucesión dura **hasta que vence la ventana de autorización** —**72 h o 7 días
 corridos**, según el método de pago (cap. 03 §3.4 punto 1)—, y en esa ventana ~~**ocho transiciones normales
 sacan a una predecesora perfectamente legal del conjunto de tres**~~ ~~**diez transiciones normales
-mueven a una predecesora perfectamente legal del conjunto de declaración**~~ **nueve transiciones
+mueven a una predecesora perfectamente legal del conjunto de declaración**~~ ~~**nueve transiciones
+normales mueven a una predecesora perfectamente legal del conjunto de declaración**~~ **diez transiciones
 normales mueven a una predecesora perfectamente legal del conjunto de declaración** (recontadas
-con `DEC-SUB-021`, owner 2026-09-25) —`S8` y `S9` la pausan, **`S4` la pasa a `GRACE_PERIOD`**,
+con `DEC-SUB-021`, owner 2026-09-25; **y con `S36`**, FASE 9 vuelta 1, M) —`S8` y `S9` la pausan, **`S4` la pasa a `GRACE_PERIOD`**,
 que desde `DEC-SUB-021` ya no es estado de declaración pero **sí es alcanzable** durante la
 ventana, ~~`S6` la suspende —y eso la saca del conjunto **sólo si es de pagador manual**: la
 `SUSPENDED` de tarjeta con el preapproval cancelado está adentro—,~~ y `S12`, `S13`, `S16`, el
 espejo de la baja decidida por el proveedor (cap. 03 §10.1) ~~, **`S24`** —la baja que la propia
 persona pide en medio del grace—~~ y, desde una `SUSPENDED` de
 tarjeta, **`S23`** —la baja pedida estando suspendida— y **`S27`** —la discontinuación de la
-vertical— la matan (las dos últimas, FASE 8 completa, `F-8CB1-002`); el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
+vertical— la matan (las dos últimas, FASE 8 completa, `F-8CB1-002`), **y desde `ACTIVE` o
+`CANCEL_SCHEDULED` también `S36`** —la revocación del derecho de arrepentimiento que registra una
+persona (FASE 9 vuelta 1, M)—; el dominio está recorrido en el cap. 03 §3.2, y **no coincide con sus filas
 numeradas**—. **`S6` y `S24` salieron de la cuenta sin dejar de ocurrir**: las dos salen de
 `GRACE_PERIOD`, que ahora es un estado **alcanzable** y no de declaración —como `S22` sale de
 `PAUSED`—; y `S6` desde `ACTIVE` sólo corre sobre un pagador con tarjeta, al que deja en una

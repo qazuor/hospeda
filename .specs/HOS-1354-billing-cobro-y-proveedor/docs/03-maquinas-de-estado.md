@@ -370,9 +370,9 @@ mueve sola.** Recorrí las salidas de los ~~tres~~ ~~**cuatro**~~ **tres** estad
 preapproval releído `cancelled`**, el conjunto que `G-R1-A` vigila (`B/20` §2; la `SUSPENDED`,
 FASE 8 completa, `F-8CB1-002`, owner 2026-09-25; **`GRACE_PERIOD` salió del conjunto por
 `DEC-SUB-021`**, owner 2026-09-25: desde el grace no se declara una sucesión, §3.3.1)— y son
-~~**ocho**~~ ~~**diez**~~ **nueve** las transiciones de esta tabla que la sacan de ahí sin que nadie declare una sucesión
+~~**ocho**~~ ~~**diez**~~ ~~**nueve**~~ **diez** las transiciones de esta tabla que la sacan de ahí sin que nadie declare una sucesión
 (recontadas con `DEC-SUB-021`: sale la 3 y la 8, entra la 11 — ver abajo, *«qué movió
-`DEC-SUB-021`»*):
+`DEC-SUB-021`»*; **y entra la 12, `S36`**, FASE 9 vuelta 1, M):
 
 | # | desde | transición | hacia | ¿sigue siendo fila viva? |
 |---|---|---|---|---|
@@ -387,6 +387,7 @@ FASE 8 completa, `F-8CB1-002`, owner 2026-09-25; **`GRACE_PERIOD` salió del con
 | 9 | `SUSPENDED` *(tarjeta)* | `S23` — **pide la baja estando suspendida**, o la ejecuta un admin (FASE 8 completa, `F-8CB1-002`) | `CANCELLED` | **no** |
 | 10 | `SUSPENDED` *(tarjeta)* | `S27` — `SUPER_ADMIN` **discontinúa la vertical** (`B/10` §4.3) (FASE 8 completa, `F-8CB1-002`) | `CANCELLED` | **no** |
 | **11** ✚ | `ACTIVE` | `S4` — **un cobro falla** (§4): la predecesora entra en el grace **durante** la ventana. Con `GRACE_PERIOD` fuera del conjunto (`DEC-SUB-021`), es una salida | `GRACE_PERIOD` | **sí** |
+| **12** ✚ | `ACTIVE` · `CANCEL_SCHEDULED` | `S36` — **una persona registra la revocación del derecho de arrepentimiento** que pidió el cliente (`DEC-RF-001`): cancela el preapproval, corta el servicio en el acto y crea `RF1`. **Desde `GRACE_PERIOD` también ocurre**, pero ahí sale de un estado alcanzable y no de declaración, como `S24` (`DEC-SUB-021`), y no se cuenta (FASE 9 vuelta 1, M) | `CANCELLED` | **no** |
 
 **La séptima no tiene fila numerada en esta tabla, y no por eso deja de ser una transición de
 ella**: el §10.1 declara que *«espejar un estado leído por id es una transición declarada de esta
@@ -407,19 +408,22 @@ lado**: es una baja del proveedor. ~~`GR-3` *«sigue `UNKNOWN`»*~~ —`GR-3` es
 preapproval tocado a mano, y **cuándo llega no se puede acotar**. ~~**La 8 es la única de las ocho que decide el propio cliente
 sobre su propia fila**~~ ~~**La 8 y la 9 son las únicas de las diez que puede decidir el propio cliente
 sobre su propia fila** —pide la baja en medio del grace (`DEC-SUB-014`), o estando suspendida (`S23`, que también
-puede ejecutar un admin)—~~ **Entre las terminales, la 9 es la única que puede decidir el propio
+puede ejecutar un admin)—~~ ~~**Entre las terminales, la 9 es la única que puede decidir el propio
+cliente sobre su propia fila**~~ **Entre las terminales, la 9 y la 12 son las únicas que puede decidir el propio
 cliente sobre su propia fila** —pide la baja estando suspendida (`S23`, que también puede ejecutar
-un admin); la 8 (`S24`, la baja en medio del grace) lo era también y salió de la cuenta con
-`DEC-SUB-021` sin dejar de ocurrir—, y por eso no cabe en
-*«se mueve sola»*: lo que comparte con las otras terminales no es la causa sino el efecto.
+un admin), **o revoca dentro de los 10 días y una persona lo registra (`S36`; FASE 9 vuelta 1, M)**; la 8 (`S24`, la baja en medio del grace) lo era también y salió de la cuenta con
+`DEC-SUB-021` sin dejar de ocurrir—, y por eso ~~no cabe~~ **no caben** en
+*«se mueve sola»*: lo que comparten con las otras terminales no es la causa sino el efecto.
 ~~**Las tres primeras siguen siendo filas vivas y son el dominio de
 `S17`** —por eso su `desde` son cinco estados y no cuatro—; **las siete últimas ya no lo son, y ahí
 `S17` simplemente no aplica: no hay nada que cancelar y no hay nada que matar.**~~
 **Las tres filas vivas —la 1, la 2 y la 11— son el dominio de `S17`** junto con el conjunto de
 declaración, y por eso su `desde` son **cinco** estados y no tres: los tres de declaración más
-`PAUSED` (filas 1 y 2) y `GRACE_PERIOD` (fila 11); **las seis terminales —4, 5, 6, 7, 9 y 10— ya no
+`PAUSED` (filas 1 y 2) y `GRACE_PERIOD` (fila 11); **las ~~seis~~ siete terminales —4, 5, 6, 7, 9, ~~y~~ 10 y 12— ya no
 lo son, y ahí `S17` simplemente no aplica: no hay nada que cancelar y no hay nada que matar.**
-(Recontado con `DEC-SUB-021`: eran tres vivas y siete terminales sobre diez.)
+(Recontado con `DEC-SUB-021`: eran tres vivas y siete terminales sobre diez. **Y con `S36`: tres
+vivas y siete terminales sobre diez otra vez**, pero ahora con la 11 y la 12 en lugar de la 3 y la 8; FASE 9
+vuelta 1, M.)
 
 **Las salidas de `SUSPENDED`, recorridas contra la tabla** (FASE 8 completa, `F-8CB1-002`, owner
 2026-09-25). Con la `SUSPENDED` de tarjeta como ~~cuarto~~ **tercer** estado de declaración
@@ -466,20 +470,24 @@ que `PAUSED` ya era —un estado al que la predecesora **llega** durante la vent
 su baja queda donde está `S22`. **La 3 sale por lo mismo** desde `GRACE_PERIOD`, y desde `ACTIVE`
 no sacaba a nadie del conjunto: sus eventos segundo y tercero son de pagador con tarjeta y la dejan
 en una `SUSPENDED` con el preapproval cancelado. **Y entra la 11**, `S4`, que antes movía a la
-predecesora **dentro** del conjunto. Diez menos dos más una: **nueve**. **Ninguna transición dejó de
+predecesora **dentro** del conjunto. Diez menos dos más una: **nueve** —**y diez con la 12, `S36`**, que
+entró después y por otra causa (FASE 9 vuelta 1, M)—. **Ninguna transición dejó de
 ocurrir**: cambió qué cuenta como salida del conjunto de declaración, no qué le puede pasar a la
 predecesora durante la ventana — `S17` sigue saliendo de los mismos cinco estados, y `S18` sigue
 nombrando a `S24` en su segundo evento.
 
 ~~**`S18` corre en SIETE de las ocho, y la que falta sigue siendo `S13`.**~~ ~~**`S18` corre en OCHO
 de las diez: se suma `S23`, que su segundo evento ya nombraba. Las que faltan son `S13` y
-`S27`** (FASE 8 completa, `F-8CB1-002`).~~ **`S18` corre en SIETE de las nueve** —las tres vivas y
-`S12`, `S16`, el espejo y `S23`—; **las que faltan siguen siendo `S13` y `S27`** (FASE 8 completa,
+`S27`** (FASE 8 completa, `F-8CB1-002`).~~ ~~**`S18` corre en SIETE de las nueve** —las tres vivas y
+`S12`, `S16`, el espejo y `S23`—~~ **`S18` corre en OCHO de las diez** —las tres vivas y
+`S12`, `S16`, el espejo, `S23` **y `S36`** (fila 12; FASE 9 vuelta 1, M)—; **las que faltan siguen siendo `S13` y `S27`** (FASE 8 completa,
 `F-8CB1-002`; recontado con `DEC-SUB-021`: sale `S24` de la cuenta, no del segundo evento de
-`S18`). **`S36` también lo dispara y todavía no está en esta cuenta** (owner 2026-09-26, FASE 9
+`S18`). ~~**`S36` también lo dispara y todavía no está en esta cuenta** (owner 2026-09-26, FASE 9
 vuelta 1, M): desde `ACTIVE` y `CANCEL_SCHEDULED` es una salida terminal del conjunto de
 declaración que la tabla de arriba no numera, y recontar las nueve —con sus espejos en `B/02`,
-`B/12`, `B/20` y el contrato— queda como residuo declarado. En las tres filas vivas corre después
+`B/12`, `B/20` y el contrato— queda como residuo declarado.~~ **`S36` ya está en la cuenta**: es la
+fila 12 de la tabla, y sus espejos en `B/02`, `B/12`, `B/20` y el contrato están recontados (FASE 9
+vuelta 1, M). En las tres filas vivas corre después
 de `S17`, que es el que hace verdadera su condición. En `S12`, en `S16`, en **el espejo**, en
 **`S24`** —fuera de la cuenta, no de este efecto—, en **`S23`** **y en `S36`** —la revocación del
 derecho de arrepentimiento (owner 2026-09-26, FASE 9 vuelta 1, M)— corre
@@ -494,7 +502,8 @@ fila viva PRINCIPAL»*).
 #### Por qué `S18` también sale de `PENDING_AUTHORIZATION`: el candado `A` no se puede quedar vacío
 
 **Cuando la predecesora se muere sola —por `S12`, por `S16`, por el espejo del §10.1, o porque ella
-misma pidió la baja estando pausada (`S22`), suspendida (`S23`) o en el grace (`S24`)—, el candado
+misma pidió la baja estando pausada (`S22`), suspendida (`S23`) o en el grace (`S24`), o revocó
+dentro de los 10 días (`S36`; FASE 9 vuelta 1, M)—, el candado
 `A` queda VACÍO y la sucesora no lo ocupa.** Es aritmética de los índices parciales de `B/02` §2.2: `A` es
 `UNIQUE (user_id, vertical) WHERE clase = principal AND sucede_a IS NULL AND estado ∈ {vivos}`, la
 predecesora ya no está entre los vivos, y la sucesora tiene `sucede_a` **no nulo**, así que cae en
@@ -506,7 +515,7 @@ tiene que limpiar `sucede_a`, y esa escritura **la rechaza la base** porque la s
 competir por `A` con el alta nueva. La sucesión no se cerraría nunca.
 
 **Por eso el cierre no espera a la autorización cuando no hay nada que esperar.** Muerta la
-predecesora por cualquiera de esos **cinco** caminos, la sucesora **ya es el único compromiso** de ese
+predecesora por cualquiera de esos ~~**cinco**~~ **siete** caminos (FASE 9 vuelta 1, M: eran seis ya antes de `S36`), la sucesora **ya es el único compromiso** de ese
 `user + vertical`: el cierre la vuelve origen en el acto, ocupa `A` con ella —`PENDING_AUTHORIZATION`
 está entre los vivos— y el segundo `INSERT` lo rechaza la base, que es la premisa que el §3.4
 punto 4 necesita para ser verdadera. Lo que el cliente ve entonces **no es *«empezar de nuevo»***:
@@ -606,9 +615,14 @@ las dos mitades es real, no retórica:
 
 - **`S17` sin `S18` es siempre un defecto**: deja el candado `A` **vacío** y un alta nueva entra
   sin que nada la rechace. Lo vigila `G-R1-C` (`B/20` §2).
-- **`S18` sin `S17` es lo CORRECTO en los CINCO caminos por los que la predecesora se muere sola
+- ~~**`S18` sin `S17` es lo CORRECTO en los CINCO caminos por los que la predecesora se muere sola
   —`S12`, `S16`, el espejo del §10.1, `S22` y `S23`—**, y en ninguno de
-  los tres deja viva una autorización: en `S12` el preapproval de la predecesora lo canceló `S11`
+  los tres deja viva una autorización:~~ **`S18` sin `S17` es lo CORRECTO en los SIETE caminos por
+  los que la predecesora se muere sola —`S12`, `S16`, el espejo del §10.1, `S22`, `S23`, `S24` y
+  `S36`—**, y en ninguno de los siete deja viva una autorización (FASE 9 vuelta 1, M: el párrafo
+  contaba cinco y omitía a `S24`, que su fila ya nombraba, y a `S36`, que entró hoy): en `S22`,
+  `S23`, `S24` y `S36` el preapproval **lo cancela el propio acto**, con la regla de relectura de
+  `S17` (sus filas; desde `CANCEL_SCHEDULED`, `S36` lo relee ya cancelado por `S11`); en `S12` el preapproval de la predecesora lo canceló `S11`
   *«de inmediato»* (`DEC-SUB-009`), en `S16` ~~**lo canceló el proveedor en el mismo milisegundo del
   rechazo** (`B/12` §4.4, medido el 2026-09-17)~~ **lo cancela el propio `S16`**, con relectura y
   con el reintento del barrido si la llamada falla —ante el antifraude ya lo había cancelado el
@@ -619,7 +633,7 @@ las dos mitades es real, no retórica:
   propio `S13` cancela el preapproval de **cada** fila que alcanza. Prohibir la combinación —*«o
   corren las dos o no corre ninguna»*, que es lo que este § decía— bloqueaba `S18` justo en los
   dos casos que dejan el candado `A` vacío, y su advertencia (*«`S18` sin `S17` deja viva una
-  autorización que el `D7` manda cancelar»*) es falsa en los tres.
+  autorización que el `D7` manda cancelar»*) es falsa en los ~~tres~~ siete (FASE 9 vuelta 1, M).
 
 **Y el disparador de las dos es un ESTADO, no una entrega.** *«Su sucesora quedó autorizada,
 confirmado por relectura»* se puede volver a evaluar mañana; *«llegó el webhook»* no, porque un

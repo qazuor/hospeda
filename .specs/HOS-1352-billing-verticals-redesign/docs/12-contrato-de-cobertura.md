@@ -443,9 +443,10 @@ vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede au
 
 **Con una salvedad que conviene decir en vez de suponerla, porque la predecesora se puede morir
 sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes ni contra
-el proveedor: de las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que la mueven durante la ventana
+el proveedor: de las ~~**ocho**~~ ~~**diez**~~ ~~**nueve**~~ **diez** transiciones que la mueven durante la ventana
 (recontadas con `DEC-SUB-021`, owner 2026-09-25: `GRACE_PERIOD` dejó de ser estado de declaración,
-así que `S6` y `S24` salen de la cuenta de `B/03` §3.2 y `S4` entra), ~~**cuatro la sacan de
+así que `S6` y `S24` salen de la cuenta de `B/03` §3.2 y `S4` entra; **y entra `S36`, la fila 12**,
+FASE 9 vuelta 1, M), ~~**cuatro la sacan de
 las filas vivas sin que nadie declare nada** —`S12`, `S13`, `S16` y **el espejo de la baja que
 decide el proveedor** (`B/03` §3.2 y §10.1)—~~ **tres la sacan de las filas vivas sin que nadie
 declare nada** —`S12`, `S16` y **el espejo de la baja que decide el proveedor** (`B/03` §3.2 y
@@ -455,7 +456,13 @@ no cae al piso (FASE 9 completa, `C-8`). ~~**La octava, `S24`, también la saca 
 esa cuenta**~~ **`S24` también la saca y tampoco entra en esa cuenta** —ya no es una de las nueve,
 pero sigue ocurriendo sobre una predecesora que llegó al grace durante la ventana—: ahí el cliente **pidió la baja él mismo** en medio del grace (`DEC-SUB-014`), así
 que caer al piso no es algo que le pase sin que nadie declare nada — es la consecuencia del acto
-que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. ~~**La novena y la décima**~~ **Las
+que acaba de confirmar, y `B/19` §4 fila 8 se lo dice antes. **`S36` también la saca y tampoco
+entra en esa cuenta, por la misma razón que `S24`** (FASE 9 vuelta 1, M): desde `ACTIVE` o
+`CANCEL_SCHEDULED` es una de las diez y la predecesora deja de emitir en el acto —`S36` corta el
+servicio sin pasar por `CANCEL_SCHEDULED`—, pero la revocación **la pidió el cliente** dentro de los
+10 días (`DEC-RF-001`), y una persona sólo la registra; caer al piso no le pasa sin que nadie
+declare nada — es la consecuencia del arrepentimiento que él mismo ejerció, con el reembolso del
+último pago en camino (`RF1`). ~~**La novena y la décima**~~ **Las
 otras dos terminales —`S23` y
 `S27`, desde una `SUSPENDED` de pagador con tarjeta, que es estado de declaración desde la FASE 8
 completa (`F-8CB1-002`)— tampoco entran**, y no por la causa sino porque no le cambian nada a la
@@ -517,18 +524,19 @@ resolver la cancelación —no elegir qué fuente vale—. Lo que no puede pasar
 sin nombrar, porque entonces el techo de lo que alguien puede tener depende de si una llamada al
 proveedor salió bien.
 
-**Y no es alcanzable por ningún otro camino.** Las ~~**ocho**~~ ~~**diez**~~ **nueve** transiciones que mueven a la
+**Y no es alcanzable por ningún otro camino.** Las ~~**ocho**~~ ~~**diez**~~ ~~**nueve**~~ **diez** transiciones que mueven a la
 predecesora durante la ventana de autorización —`S8`, `S9`, ~~`S6`,~~ **`S4`**, `S12`, `S13`, `S16`, ~~`S24`,~~ el espejo
 del
 `B/03` §10.1, que es la que la tabla numerada del §3.2 no lista, y `S23` y `S27` (FASE 8 completa,
-`F-8CB1-002`; recontadas con `DEC-SUB-021`)— la dejan en un estado que **no
-emite** en ~~siete de los ocho~~ ~~nueve de los diez casos; la excepción es~~ **siete de los nueve
-casos; las excepciones son dos**:
+`F-8CB1-002`; recontadas con `DEC-SUB-021`), **y `S36` desde `ACTIVE` o `CANCEL_SCHEDULED`** (FASE 9
+vuelta 1, M)— la dejan en un estado que **no
+emite** en ~~siete de los ocho~~ ~~nueve de los diez casos; la excepción es~~ ~~**siete de los nueve
+casos; las excepciones son dos**~~ **ocho de los diez casos; las excepciones son dos**:
 `S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`, **y
 `S4`, que la deja en `GRACE_PERIOD`, que emite la misma `SUSCRIPCIÓN` que emitía en `ACTIVE`** —una
 sola: la sucesora, en `PENDING_AUTHORIZATION`, todavía no emite—. **`S6` —por su tercer evento, el único
-que la guarda de la sucesión en curso no frena (`B/03` §3.2)— y `S24` siguen pudiendo ocurrir desde
-ese grace y no cambian la conclusión**: las dos la dejan sin emitir (`SUSPENDED`, `CANCELLED`). Y en
+que la guarda de la sucesión en curso no frena (`B/03` §3.2)—, `S24` y `S36` siguen pudiendo ocurrir desde
+ese grace y no cambian la conclusión**: ~~las dos~~ **las tres** la dejan sin emitir (`SUSPENDED`, `CANCELLED`, `CANCELLED`; `S36`, FASE 9 vuelta 1, M). Y en
 todas, si
 la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a
 `CANCELLED`.

@@ -609,7 +609,7 @@ enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la ap
 la ventana dura hasta vencer —**72 h o 7 días corridos**, `B/03` §3.4 punto 1— y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
 el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—.~~ **La predecesora ya
 no arranca la sucesión en `GRACE_PERIOD`** (`DEC-SUB-021`, owner 2026-09-25): llega ahí **durante**
-la ventana, por `S4` —fila 11 de las nueve que `B/03` §3.2 recorre—, y sobre ella corre `S5`. **Y
+la ventana, por `S4` —fila 11 de las ~~nueve~~ diez que `B/03` §3.2 recorre (diez con `S36`, FASE 9 vuelta 1, M)—, y sobre ella corre `S5`. **Y
 puede estar en `SUSPENDED`**: porque la sucesión se declaró desde una `SUSPENDED` de tarjeta
 (`G-R1-A`), o porque `S6` corrió por su tercer evento —el contracargo, que la guarda de la sucesión
 en curso no frena; desde el 📌 de `DEC-SUB-020` la sucesora **también se corta**, ~~con una
