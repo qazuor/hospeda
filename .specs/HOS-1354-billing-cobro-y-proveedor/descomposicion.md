@@ -3,7 +3,7 @@ title: Descomposición de la épica de billing
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-25
+updated: 2026-09-26
 status: CURRENT
 ---
 
@@ -142,7 +142,7 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 **dependen de una que sí**, así que tampoco arrancan antes. La única sin ninguna atadura con la
 pasarela, ni propia ni heredada, es **B2**: su gate es `V2`, de la otra épica.
 
-**Las treinta y cinco transiciones de la Suscripción, cada una con su unidad** (recontado el
+**Las ~~treinta y cinco~~ treinta y seis transiciones de la Suscripción, cada una con su unidad** (`S36` → **B5**, FASE 9 vuelta 1, `G5-4`; recontado el
 2026-09-25 sobre `B/03` §3.2, FASE 9 completa, salida 3 de `DEC-METH-004`): `S1`–`S3` y
 `S14`–`S16` → **B3**, que toma el §3.1–§3.4 por sección · `S4`–`S7` y `S19` → **B7** · `S8`–`S12`,
 `S17`–`S18`, `S22`–`S24` y `S31` → **B8** · `S13`, `S30`, **`S34`** y **`S35`** → **B9** (y `S9`,
@@ -308,7 +308,7 @@ van primeros en la otra épica, leída al revés.~~ (tachado 2026-09-26) **`G13`
 falla sobre un build destinado a producción, no sobre la rama, así que no falla desde el primer día
 (owner 2026-09-26, `G5-5`).
 
-### 2.6 Las dependencias con la otra épica: son ~~SEIS~~ OCHO, sobre dos unidades, y todas tempranas
+### 2.6 Las dependencias con la otra épica: son ~~SEIS~~ ~~OCHO~~ ONCE, sobre ~~dos~~ cuatro unidades, ~~y todas tempranas~~ y las de V6 y V9 no son tempranas
 
 **B2 no puede existir sin `plan_version`**, que es `V2` de verticales: `billing_option` cuelga de
 ella con `UNIQUE(plan_version_id, ciclo)`. Es el corte de `DEC-ARCH-005` visto desde abajo — el

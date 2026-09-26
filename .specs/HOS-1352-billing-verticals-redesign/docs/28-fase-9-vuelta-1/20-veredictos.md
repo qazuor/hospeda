@@ -73,7 +73,7 @@ ciega, y atribuyendo contra los diffs.
 
 ## 5. Recuento del registro (`25-` §3)
 
-Coinciden con script: 126 decisiones (15 METH), matriz 98 filas (56 · 15 · 23 · 4), 22 motivos, 15
+Coinciden con script: 126 decisiones (15 METH), matriz 98 filas (56 · 15 · 23 · 4) —99 y 5 `UNKNOWN` desde `EX-42`, agregada después por `Y-1`—, 22 motivos, 15
 acciones, 10 máquinas, 6 hechos del reloj, `S1`–`S36`, `T1`–`T8`, publicación 6 estados y 12
 transiciones, firma de 7 campos, 31 guards (18 · 13), 10 salidas de la predecesora con `S18` en 8.
 Los textos que afirman otra cifra están listados como BAJA en `25-` §4.

@@ -3,7 +3,7 @@ title: Billing — cobro, suscripción y proveedor detrás de un adaptador
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-25
+updated: 2026-09-26
 type: feature
 areas:
   - billing
