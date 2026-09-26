@@ -756,7 +756,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-PROMO-001 — Cupo total de canjes más ventana de validez
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED — **implicación 5 precisada el 2026-09-25** (FASE 9 completa: el piso del apilado; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED — **implicación 5 precisada el 2026-09-25** (FASE 9 completa: el piso del apilado; ver su 📌), **y su texto de pantalla el mismo día** (9g; ver su segundo 📌) · **Decide**: owner
 - **Problema**: §31 define *"Cada user: máximo un uso de cada código"* y nada más. Sin cupo
   total ni ventana de validez, un código filtrado es una pérdida abierta: el límite por persona
   no limita nada cuando hay usuarios ilimitados y crear una cuenta es gratis.
@@ -783,6 +783,11 @@ Cada entrada lleva, según §3.4:
      cae bajo el piso del proveedor (ARS 15, `PC-2`) se rechaza al canjear**, con el motivo en
      pantalla. Lo gratis ya tiene dos instrumentos —el trial y la cortesía—, y la regla que mandaba
      pausar no tenía transición y dejaba una pausa sin fin (`F-8CB1-001`, paso 7).
+     **📌 Precisado otra vez el 2026-09-25, con OK del owner (FASE 9 completa, fila 9g de
+     `26-fase-9-completa/10`; `15` §2, aplicado en `17`).** **El motivo en pantalla dice que el
+     mínimo lo pone Mercado Pago, no nosotros**: *«este código deja el importe por debajo del mínimo
+     que Mercado Pago permite cobrar»* (`B/19` fila 7-bis; `B/14` §1.3 regla 2). El texto lo propuso
+     el agente de aplicación; el owner lo aceptó agregando de quién es el mínimo.
 - **Origen**: `M-PROMO-01`.
 
 ### DEC-PROMO-002 — El scope "todas las verticales futuras" se permite sin restricción
@@ -1516,7 +1521,7 @@ Cada entrada lleva, según §3.4:
 - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — la premisa de su implicación 4 (*«no usamos los
   planes del proveedor»*) tiene decisión propia desde el 2026-09-24, **`DEC-MP-007`**; la atribución
   a `DEC-MP-002` de esa implicación es incorrecta · **el punto 1, precisado el 2026-09-25** (FASE 8
-  completa, racimo `R5`; ver su 📌), **y otra vez el mismo día** (FASE 9 completa: el correo que agotó sus reintentos tampoco bloquea; ver su segundo 📌) · **Decide**: owner
+  completa, racimo `R5`; ver su 📌), **y otra vez el mismo día** (FASE 9 completa: el correo que agotó sus reintentos tampoco bloquea; ver su segundo 📌), **y una tercera vez** (FASE 9 completa, 9c: `A3` también cancela, con el correo antes; ver su tercer 📌) · **Decide**: owner
 - **Problema**: el §42 se escribió como si fuéramos los únicos que le hablan al cliente, y la
   medición mostró que no. Además, **cinco decisiones anteriores** (`DEC-SUB-006`, `007`, `008`,
   `009` y `DEC-MP-002`) se apoyan en que «nuestro aviso sale antes», y ninguna definía qué pasa si
@@ -1558,6 +1563,16 @@ Cada entrada lleva, según §3.4:
      seguía en grace con servicio entero y sin plazo—. **Lo que se acepta**: en una caída larga del
      proveedor de correo, algunas cancelaciones salen sólo con el correo del proveedor, que insinúa
      mora (`EX-3`). **La rama transitoria —el correo todavía puede salir— sigue bloqueando.**
+     **📌 Precisado una tercera vez el 2026-09-25, con OK del owner (FASE 9 completa, fila 9c de
+     `26-fase-9-completa/10`; `04-…` contradicción `C-R5-2`, aplicada en `13`).** **`A3` —el addon
+     que vence su ventana en `PENDING_AUTHORIZATION`— también cancela**, y entra a la población de
+     este punto: si es recurrente relee su preapproval por id (si lo ve `authorized`, corre `A2` y no
+     `A3`) y **lo cancela en el proveedor con nuestro correo antes** y la regla de relectura de
+     `S17`; si la cancelación falla, la reintenta el barrido por la salvedad 1 de `B/09` §3, como a las
+     de `A5` y `A6`, hasta 3 días (la forma del primer 📌 de `DEC-CONC-002`). Antes `B/09` §3 lo contaba entre los que cancelan y ninguna fila de `B/03`
+     lo escribía: un preapproval `pending` no vence (`EX-1`) y el enlace viejo se podía autorizar
+     más tarde. El agente de aplicación eligió esta corrección, no la inversa (sacar `A3` de la
+     lista); el owner la ratificó como estaba.
   2. **Los correos falsos del proveedor se ANTICIPAN, no se desmienten.** Nuestro correo de alta
      avisa que va a llegar uno diciendo que ya pagó, y da la fecha del primer cobro real.
   3. **El `reason` es copy, no un identificador.** Nunca lleva un id interno ni un slug.
@@ -2178,7 +2193,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-006 — La frontera entre las dos épicas es un contrato único con dos implementaciones desde el día uno
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-25, con OK del owner** (FASE 9 completa, 9h: la firma gana el campo `piso` y pasa a siete campos; ver su 📌) · **Decide**: owner
 - **Problema**: `DEC-ARCH-005` parte el programa, y eso sólo sirve si la épica de verticales
   **puede correr sin que exista la de billing**. El punto de contacto no es teórico: el paso 5 de
   la resolución de autorización (cap. 17 §1.2) pregunta *«¿tiene trial, suscripción, cortesía o
@@ -2232,6 +2247,17 @@ Cada entrada lleva, según §3.4:
   package stub en código real»*—, con tres precisiones aceptadas en la misma conversación: que lo
   declarado sea el contrato y no el package ajeno, que la implementación de arranque resuelva el
   trial en vez de devolver datos fijos, y las tres defensas del punto 4.
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, fila 9h de
+  `26-fase-9-completa/10`; `09-…` `C-2`, aplicado en `17`).** **La firma de `cobertura()` gana
+  `piso: versiónDePlan, si tipo = GRANT`** —nada en los otros cinco tipos— **y pasa de seis a siete
+  campos** (`12-contrato…` §2, §2.1, §2.8). El piso del trinquete de `DEC-GRANT-005` lo aplica
+  verticales (`V/15` §2) y el dato vive en billing (`permanent_grant`, `B/02`): leerlo de la tabla de
+  billing era cruzar la frontera por fuera del contrato, que es lo que el punto 1 prohíbe.
+  `permanent_grant` sigue siendo **el origen del dato**; lo que cambia es que llega por la firma.
+  El agente de aplicación lo había dejado como está; **el owner eligió agregarlo**. Implica un caso
+  de `GRANT` con piso en el juego único de casos del punto 4.
+
+  La entrada no se edita en su contenido.
 
 ---
 
@@ -5219,7 +5245,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MP-008 — Una pausa del proveedor por mora es el fin del grace: se espeja con `S6`, sin motivo de pausa nuevo
 
-- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **precisada el 2026-09-25 por `DEC-SUB-022`**: sobre la sucesora que entra en grace por esa decisión, un `cancelled` leído en el proveedor también termina el grace con `S6`, no sólo un `paused` · **Decide**: owner
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **precisada el 2026-09-25 por `DEC-SUB-022`**: sobre la sucesora que entra en grace por esa decisión, un `cancelled` leído en el proveedor también termina el grace con `S6`, no sólo un `paused`; **y otra vez el mismo día, con OK del owner** (FASE 9 completa, 9a y 9b: el primer rechazo cuyo aviso se perdió lo lee el barrido y corre `S4`, y el reloj cuenta desde la lectura; ver su 📌) · **Decide**: owner
 - **Supera EN PARTE a `DEC-MP-003`**: se cae el motivo de pausa `PROVIDER_DUNNING`. **Sobrevive** lo
   que `DEC-MP-003` corrigió —que esa pausa **no** es una pausa del cliente y no puede entrar por
   `S8`—, y sobrevive su diagnóstico entero (las cuatro consecuencias de leerla como
@@ -5253,6 +5279,25 @@ Cada entrada lleva, según §3.4:
 - **Origen**: la familia 7 de la FASE 9-bis-5, y la elección del owner del 2026-09-24 entre tres
   opciones —llevar el motivo como estaba decidido, esta enmienda, o dejar la decisión sin escribir—:
   eligió la recomendada.
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9a y 9b de
+  `26-fase-9-completa/10`; `01-…` §1.5 bordes R1-a y R1-b; aplicado en `13` y `17`).**
+  1. **Corregido el primer borde** (9a): *«un webhook de cobro fallido que se perdió, y la fila sigue
+     `ACTIVE` cuando el proveedor pausa»* deja de ser un camino al `S6` de esta decisión. **Si la
+     lectura del barrido (`B/09` §4) da *«intentó y se rechazó»* sobre el período en curso de una
+     fila `ACTIVE` con al menos un pago acreditado, corre `S4`**: es el aviso del primer rechazo que
+     no llegó (`WH-5`), leído por id como pide `D17`. La persona recibe sus días y sus avisos de
+     grace en vez de pasar de `ACTIVE` a `SUSPENDED` al fin de la ventana del proveedor. El agente
+     de aplicación lo había declarado como borde; **el owner eligió corregirlo** (opción 1 del
+     informe `01`). **Queda como borde** la sucesora de `DEC-SUB-022` sin pago propio cuyo primer
+     rechazo se pierde entero: no entra por esta rama y sigue `ACTIVE` hasta que la comparación de
+     estado lea `paused` o `cancelled` (`B/12` «NO cierra», declarado por `DEC-METH-015`).
+  2. **El reloj del grace cuenta desde que leímos el rechazo**, no desde la fecha del rechazo (9b):
+     con un aviso demorado (`WH-2`, hasta 14,3 días), contar desde el rechazo podía dar un grace
+     vencido al leerlo y un `S6` sin ningún aviso previo. **Y nunca más allá de la pausa del
+     proveedor**: si el proveedor pausa antes de que venza el grace corrido, esta decisión termina
+     el grace con `S6`, como está. Ninguna de las dos lecturas mueve plata fuera de un ciclo.
+
+  La entrada no se edita en su contenido.
 
 ---
 
@@ -5535,7 +5580,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-022 — La sucesora de quien venía pagando entra en grace si falla su primer cobro, y el barrido corta ese grace si el proveedor ya se rindió
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día, con OK del owner** (FASE 9 completa, 9d: el alcance de *«venía pagando»*; ver su 📌) · **Decide**: owner
 - **Precisa `DEC-SUB-021`** —cubre la población que dejó con *«la persona se queda sin nada»*— **y
   `DEC-MP-008`** —sobre esta sucesora, un `cancelled` leído en el proveedor también termina el
   grace, no sólo un `paused`—. No supera a ninguna.
@@ -5576,6 +5621,14 @@ Cada entrada lleva, según §3.4:
 - **Origen**: `26-fase-9-completa/10-decisiones-del-owner.md` fila 3c, sobre `01-…` §3.5 pendiente
   3; elección del owner del 2026-09-25, **contra la recomendación** (la primera presentación numeró
   mal las opciones y se volvió a preguntar).
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, fila 9d de
+  `26-fase-9-completa/10`; elección del agente de aplicación en `13` §2, ratificada como estaba).**
+  **«Venía pagando» es: la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, y la
+  predecesora tiene al menos un pago acreditado.** No alcanza a la sucesora de una `SUSPENDED` ni
+  al pagador manual (`S29` ya exige la cuota pagada), como dice *Lo que no cambia*. La misma lectura
+  sirve para *«cobrada»* en `DEC-ADDON-007` punto 3 (su 📌, 9e).
+
+  La entrada no se edita en su contenido.
 
 ---
 
@@ -5686,7 +5739,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ADDON-007 — Los addons siguen a su título: se pausan con la pausa, mueren cuando ninguna principal los sostiene, y se emiten sólo donde son compatibles
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día, con OK del owner** (FASE 9 completa, 9e y 9f: qué es *«cobrada»*, y el borrado de la ficha lo ejecuta sólo `A6`; ver su 📌) · **Decide**: owner
 - **Precisa** la condición de huérfano de `A5` que `DEC-ADDON-003` punto 4 y `DEC-ADDON-004` dan
   por fija. **No toca `DEC-ADDON-005`**: un ancla viva sigue sosteniendo al addon `USER`/`GLOBAL`
   compatible.
@@ -5715,6 +5768,20 @@ Cada entrada lleva, según §3.4:
 - **Lo que cuesta**: N llamadas más por pausa, cada una con relectura, que pueden fallar.
 - **Origen**: `26-fase-9-completa/10-decisiones-del-owner.md` filas 4a, 4c, 4d y 4e; elecciones del
   owner del 2026-09-25, las recomendadas.
+- **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9e y 9f de
+  `26-fase-9-completa/10`; elecciones del agente de aplicación en `15` §2, ratificadas como
+  estaban).**
+  1. **«Cobrada», en el punto 3 y en la compra de un addon, se lee como en `S4`** (9e): la principal
+     tiene un **pago acreditado**, **o** es la sucesora de una predecesora que venía pagando (el 📌
+     de `DEC-SUB-022`, 9d). Sin la segunda mitad, todo upgrade dejaba huérfanos en el acto los
+     `USER`/`GLOBAL` de quien sigue pagando, porque la sucesora nace sin pago propio. La misma
+     lectura vale para *«válida»* al comprar (`ACTIVE` y cobrada, `R12-OWNER-2`).
+  2. **El borrado de la ficha sale de la orfandad: lo ejecuta sólo `A6`**, al llegar la ficha a
+     `PURGED` (`K-9` del informe `05`, 9f). `A5` ya no borra; `A6` gana también el `desde`
+     `PENDING_AUTHORIZATION` que `A5` cubría. Mismo destino y mismo motivo 14, así que no mueve
+     plata, y la regla 7 de `NUCLEO/03` no cambia.
+
+  La entrada no se edita en su contenido.
 
 ---
 
@@ -5817,7 +5884,7 @@ Cada entrada lleva, según §3.4:
 | Decisiones tomadas | **124** — con las **siete de la FASE 9 completa** (2026-09-25): **`DEC-SUB-022`** (la sucesora de quien venía pagando entra en grace), **`DEC-MIG-005`** (el corte trata a la cartera vieja como clientes nuevos: se conservan el usuario, sus preferencias y sus fichas; el billing arranca de cero), **`DEC-RF-008`** (máquina del reembolso y acción 14), **`DEC-ADDON-007`** (los addons siguen a su título), **`DEC-AUTH-001`** (el orden de autorización), **`DEC-ENT-006`** (la presencia de Partner) y **`DEC-ARCH-011`** (la vertical que no admite altas); y las del 2026-09-25 de la FASE 8 completa: **`DEC-TRIAL-010`** (2026-09-25: el trial se convierte con el primer pago), **`DEC-ARCH-009`** (2026-09-25: reconciliador diario de cobertura en verticales), **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 15 *(por prefijo; once —`DEC-METH-005` a `-015`— están bajo el encabezado funcional porque se escribieron en orden cronológico; `26-fase-9-completa/09` `C-15`)* |
 | Funcionales | **109** |
-| **Precisadas sin `SUPERSEDED`** | **26** *(recontado el 2026-09-25: decía ~~2~~ y eran 11, porque contaba sólo las precisadas por otra decisión y dejaba afuera las que tienen 📌 con OK del owner)* — **por otra decisión**: **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**, `DEC-MP-008` por `DEC-SUB-022`, `DEC-RF-007` por `DEC-RF-008`, y `DEC-ADDON-003` y `DEC-ADDON-004` por `DEC-ADDON-007`; **con 📌 o puntero del owner**: `DEC-DATA-001`, `DEC-SUB-006`, `DEC-CONC-002`, `DEC-MAIL-001`, `DEC-GRANT-003`, `DEC-GRANT-004`, `DEC-MIG-003`, `DEC-SUB-017`, `DEC-SUB-020`, `DEC-SUB-021`, `DEC-ARCH-008`, `DEC-ARCH-009`, `DEC-TRIAL-010`, `DEC-DATA-002`, `DEC-DATA-004`, `DEC-TEST-001`, `DEC-DATA-005`, `DEC-MIG-004`, `DEC-SUB-013`, `DEC-PROMO-001`. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
+| **Precisadas sin `SUPERSEDED`** | ~~**26**~~ **29** *(recontado el 2026-09-25: decía ~~2~~ y eran 11, porque contaba sólo las precisadas por otra decisión y dejaba afuera las que tienen 📌 con OK del owner; y recontado otra vez el mismo día con script, tras registrar las elecciones 9a–9h que el owner ratificó: suman `DEC-SUB-022`, `DEC-ADDON-007` y `DEC-ARCH-006`)* — **por otra decisión**: **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**, `DEC-MP-008` por `DEC-SUB-022`, `DEC-RF-007` por `DEC-RF-008`, y `DEC-ADDON-003` y `DEC-ADDON-004` por `DEC-ADDON-007`; **con 📌 o puntero del owner**: `DEC-DATA-001`, `DEC-SUB-006`, `DEC-CONC-002`, `DEC-MAIL-001`, `DEC-GRANT-003`, `DEC-GRANT-004`, `DEC-MIG-003`, `DEC-SUB-017`, `DEC-SUB-020`, `DEC-SUB-021`, `DEC-ARCH-008`, `DEC-ARCH-009`, `DEC-TRIAL-010`, `DEC-DATA-002`, `DEC-DATA-004`, `DEC-TEST-001`, `DEC-DATA-005`, `DEC-MIG-004`, `DEC-SUB-013`, `DEC-PROMO-001`, **`DEC-SUB-022`** (9d), **`DEC-ADDON-007`** (9e, 9f), **`DEC-ARCH-006`** (9h). La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **6** — **`DEC-MIG-002` EN PARTE** por `DEC-MIG-003` (sobrevive *«se siguen tomando altas»*, se cae *«se transcriben a mano»*; puntero registrado el 2026-09-25), **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -5828,4 +5895,4 @@ Cada entrada lleva, según §3.4:
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
 | Apartamientos declarados del PDR | **8** *(recontado el 2026-09-25: eran 7 porque faltaba `DEC-MAIL-001`. `DEC-MIG-005` **no suma un noveno**: el orquestador proponía declarar el §25 —«Conservar: … pagos»— y consultarlo con el abogado; el owner decidió que no hace falta, porque la cartera del corte se trata como clientes nuevos. Las dos posiciones están en esa entrada)* — **`DEC-MAIL-001`** (§43 y §64.25: antes de cancelar, el correo **sí** bloquea la acción; el invariante 25 del núcleo la registra como la única que contradice un invariante del §64 de frente), `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
 | Decisiones de la FASE 9 | **6**, las seis del 2026-09-19 — `DEC-GRANT-005` (el grant anclado al plan, con trinquete), `DEC-CONC-003` (la marca, que **revisa una razón escrita del owner**), `DEC-SUB-011` (compromisos, no filas), `DEC-MIG-003` (no se migra), `DEC-METH-006` (el ciclo 8 ↔ 9) y `DEC-METH-007` (el gate de FASE 5, con criterio de dos filtros). Salieron de las 37 preguntas que los cinco racimos resueltos dejaron para el owner |
-| Decisiones de la FASE 9 completa | **7 nuevas y 15 precisiones**, del 2026-09-25, sobre las 32 respuestas del owner a los 33 puntos (`26-fase-9-completa/10`). Nuevas: `DEC-SUB-022`, `DEC-MIG-005`, `DEC-RF-008`, `DEC-ADDON-007`, `DEC-AUTH-001`, `DEC-ENT-006`, `DEC-ARCH-011`. Precisiones: `DEC-SUB-021`, `DEC-MP-008`, `DEC-MIG-003`, `DEC-MIG-004`, `DEC-MAIL-001`, `DEC-RF-007`, `DEC-PROMO-001`, `DEC-ARCH-009`, `DEC-TRIAL-010`, `DEC-CONC-002`, `DEC-DATA-002`, `DEC-DATA-005`, `DEC-SUB-013`, `DEC-ADDON-003`, `DEC-ADDON-004`. Y ocho correcciones de registro sin decisión: `DEC-MIG-002` (el puntero de su supersesión), `DEC-DATA-004`, `DEC-TEST-001`, `DEC-SUB-019`, `DEC-ARCH-008`, `DEC-DATA-001`, `DEC-SUB-006`, `DEC-SUB-017` |
+| Decisiones de la FASE 9 completa | **7 nuevas y ~~15~~ 18 precisiones**, del 2026-09-25, sobre las 32 respuestas del owner a los 33 puntos (`26-fase-9-completa/10`). Nuevas: `DEC-SUB-022`, `DEC-MIG-005`, `DEC-RF-008`, `DEC-ADDON-007`, `DEC-AUTH-001`, `DEC-ENT-006`, `DEC-ARCH-011`. Precisiones: `DEC-SUB-021`, `DEC-MP-008`, `DEC-MIG-003`, `DEC-MIG-004`, `DEC-MAIL-001`, `DEC-RF-007`, `DEC-PROMO-001`, `DEC-ARCH-009`, `DEC-TRIAL-010`, `DEC-CONC-002`, `DEC-DATA-002`, `DEC-DATA-005`, `DEC-SUB-013`, `DEC-ADDON-003`, `DEC-ADDON-004`. Y ocho correcciones de registro sin decisión: `DEC-MIG-002` (el puntero de su supersesión), `DEC-DATA-004`, `DEC-TEST-001`, `DEC-SUB-019`, `DEC-ARCH-008`, `DEC-DATA-001`, `DEC-SUB-006`, `DEC-SUB-017`. **Y las ocho elecciones de los agentes de aplicación que el owner ratificó el mismo día** (`26-fase-9-completa/10`, filas 9a–9h; dos corregidas por él, 9a y 9h), registradas como 📌: `DEC-MP-008` (9a, 9b), `DEC-MAIL-001` (9c), **`DEC-SUB-022`** (9d), **`DEC-ADDON-007`** (9e, 9f), `DEC-PROMO-001` (9g) y **`DEC-ARCH-006`** (9h); las tres en negrita son las precisiones que suman |
