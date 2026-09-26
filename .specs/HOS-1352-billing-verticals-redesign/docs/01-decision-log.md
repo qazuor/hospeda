@@ -5039,9 +5039,9 @@ Cada entrada lleva, según §3.4:
 
 ---
 
-### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, y el cargo puntual queda declarado como destino
+### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, ~~y el cargo puntual queda declarado como destino~~ sin destino pendiente (2026-09-26)
 
-- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **cláusula 1 cerrada el 2026-09-26**: el cargo puntual deja de ser destino (ver su 📌) · **Decide**: owner
 - **Contesta la pregunta que gobierna el capítulo 13**, declarada en
   `HOS-1354-.../spec.md` §5.1 como *«la primera pregunta cuando esta épica arranque»* y dejada
   explícitamente abierta por el contrato de cobertura (§1.2 y §7). Literal: *«¿el capítulo 13 adopta el
@@ -5065,6 +5065,17 @@ Cada entrada lleva, según §3.4:
      bloquear nada**. Cuesta poco y cambia el techo del diseño.
   2. **La interfaz del capítulo 13 no puede impedir la migración.** Es lo que `DEC-ARCH-004` ya exige
      para el reembolso, aplicado acá: el modo canónico se elige hoy, **no se cementa**.
+
+  **📌 Precisado el 2026-09-26, con OK del owner.** **El cargo puntual deja de ser destino.** La
+  habilitación de *«pagos automáticos»* se pidió por el canal comercial y **no hubo respuesta** —el
+  mismo canal que no respondió `R-MP-01`—, y el owner decidió no esperar más: *«no contestaron nada y
+  ya no vamos a esperar más»*. **El mandato (`preapproval`) queda como EL modelo, sin destino
+  pendiente.** La cláusula 1 se cierra: no queda nada pedido ni nada que revisar cuando llegue una
+  respuesta. Si la habilitación apareciera algún día, es una **pregunta nueva** con su propia decisión,
+  no la reactivación de ésta. **La cláusula 2 se mantiene** (elección del owner entre mantenerla o
+  hacerla caer junto con la 1), y se lee como **higiene de interfaz, no como plan**: es lo mismo que
+  `DEC-ARCH-004` exige para el reembolso, no agrega mecanismo, y evita que B6 cemente el mandato en su
+  interfaz.
 - **🚧 El límite que esta decisión destapa, y va declarado porque es nuevo**: `DEC-MP-005` estableció
   que *«lo que MP no hace lo suple nuestro lado»*. **Esto no se puede suplir.** Un permiso comercial no
   se compensa con código, y las cuatro formas de pedirlo están medidas. **Es el primer caso donde esa
