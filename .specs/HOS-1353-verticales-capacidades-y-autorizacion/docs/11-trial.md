@@ -175,6 +175,14 @@ No es una grieta en la regla, es la regla `D11` otra vez: extender un trial entr
 cobrar, y lo que toca plata lo confirma una persona. La diferencia entre las dos filas no es
 «automático contra manual» sino **quién responde por el día regalado**.
 
+**Y la extensión firmada por `SUPER_ADMIN` es de esta épica, no de billing** (owner 2026-09-26,
+P2; FASE 9 vuelta 1). Es la cortesía durante el trial del §34.1 y la acción *«extender un trial»*
+de `NUCLEO/08` §3: corre `T4` (`03` §2) con **origen `SUPER_ADMIN` y motivo obligatorio**, pasa el
+techo y suma al total acumulado con su origen (§3.5), con permiso propio y auditoría; la construye
+**V4**. **No pasa por `extenderTrial`**, que sigue siendo sólo del canje (`12-contrato…` §4.1):
+así el techo se saltea donde vive, por quien firma, y no por un parámetro que llegue del otro
+lado del contrato.
+
 ### 3.5 La mitad del hueco que era la visibilidad
 
 El hueco dice *«nadie lo ve»*, y eso es la mitad del problema. **El total acumulado de días de

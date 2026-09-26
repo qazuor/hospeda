@@ -561,6 +561,13 @@ por la que `DEC-GRANT-007` descartó la alternativa de que la sucesora heredara 
 > del `B/09` §3 levanta la cortesía diferida cuya sucesora ya está `ACTIVE`. Sin ella el
 > mecanismo nuevo tendría el mismo modo de falla silencioso que el viejo — *«el barrido no compara
 > grants»*—, que es lo que este § pasó dos tandas describiendo.
+>
+> **Salvo si la sucesora ya cayó en `GRACE_PERIOD`**, que queda afuera a propósito (owner
+> 2026-09-26, P1; FASE 9 vuelta 1): la comprobación la busca en `ACTIVE`, y sólo la pierde si `S9`
+> no se ejecutó y además el primer cobro llegó antes del barrido, se rechazó y la predecesora venía
+> pagando. Si la persona paga, la fila vuelve a `ACTIVE` y la comprobación la levanta; si termina
+> suspendida, el saldo queda diferido y lo repara `SUPER_ADMIN` volviendo a otorgar la cortesía
+> (`B/09` §3 y su *«lo que este capítulo NO cierra»*).
 
 **Y no contradice `§4.3`**: allá la cortesía **termina** porque el grant cancela la suscripción y
 *«no queda nada que no cobrar»*. Acá sí queda: la sucesora cobra, y es exactamente lo que la
@@ -580,6 +587,18 @@ techo ata al canje pero no a `SUPER_ADMIN`.
 
 Se nombra acá porque el hueco lo listaba como tercera combinación, y para dejar escrito que **no
 tiene regla propia**: es el mismo techo.
+
+**Y la cortesía durante el trial no es un acto de billing ni cruza el contrato** (owner
+2026-09-26, P2; FASE 9 vuelta 1). Es la acción administrativa *«extender un trial»* de
+`NUCLEO/08` §3 —la misma que `V/11` §3.4 llama *«extensión firmada por `SUPER_ADMIN`»*—, y la
+ejecuta verticales sobre su propia máquina: `T4` con origen `SUPER_ADMIN` y motivo obligatorio,
+que pasa el techo y suma al total visible con su origen (`V/03` §2, `V/11` §3.4 y §3.5); la
+construye **V4**. No es un `courtesy_grant` —su suscripción no es anulable (`B/02` §2.4) y un
+trial no tiene suscripción— ni toca al proveedor (`DEC-GRANT-003` impl. 4). **`extenderTrial`
+sigue siendo sólo del canje** (`12-contrato…` §4.1): billing no la llama para esto y no le pasa
+ningún origen, así que el techo no se puede saltear por un parámetro que venga de este lado. La
+palabra *«cortesía»* queda repartida entre las dos épicas: **la temporal, en meses, es de
+billing** (§4.7); **la del trial, en días, es de verticales**.
 
 ### 4.6 Cortesía temporal + la vertical que se discontinúa
 

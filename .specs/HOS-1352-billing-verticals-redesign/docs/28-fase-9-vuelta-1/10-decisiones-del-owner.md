@@ -51,3 +51,5 @@ donde están las opciones enteras, el costo y el ejemplo con Juan.
 | K | la unidad de billing que consume el empuje de `G2-1`: `B10`, dueña de `A6` | **OK** |
 | L | la unidad que construye la acción 15 de `G5-2`: `V8` | **OK** |
 | M | `S36` dispara `S18` cuando la fila es predecesora de una sucesión en curso, como `S23` y `S24` | **OK** |
+| P1 | el detector de la cortesía diferida con la sucesora ya en `GRACE_PERIOD` (`17-` §2) | **1** — el detector queda en `ACTIVE` y el hueco se declara en `B/09` §3 |
+| P2 | por dónde extiende un trial `SUPER_ADMIN` (`17-` §3) | **1** — acción de verticales fuera del contrato: `T4` con origen `SUPER_ADMIN` y motivo obligatorio, pasa el techo; la construye `V4` |

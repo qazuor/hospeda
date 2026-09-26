@@ -908,7 +908,7 @@ comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
-de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ **dieciséis**, desde que `S22`, `S23`,
+de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ **diecisiete** (la decimoséptima, `S36`, FASE 9 vuelta 1), desde que `S22`, `S23`,
 `S24`, `S25` y las **dos** terminales de la discontinuación, `S27` y `S28`, le agregaron las suyas
 (`B/03` §3.2), **y `S31` la suya** (FASE 8 completa, owner 2026-09-25)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar

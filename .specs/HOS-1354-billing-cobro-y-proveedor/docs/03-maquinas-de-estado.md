@@ -283,8 +283,8 @@ Es el correo *«antes de cancelar»* del catálogo de `NUCLEO/07` §6, y tiene ~
 - **si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta**
   — **y quién reintenta depende de la fila** (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25):
   en las filas que llegan a su estado terminal *«pase lo que pase con la llamada»* —las ~~**once**~~
-  ~~**doce**~~ **trece** de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, **`S16`**, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`,
-  `S28`, **`S31`** y la lápida; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la
+  ~~**doce**~~ ~~**trece**~~ **catorce** de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, **`S16`**, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`,
+  `S28`, **`S31`**, **`S36`** y la lápida; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la
   FASE 8 completa, owner 2026-09-25, residuo A de `R12`) y, por la salvedad 1, la cancelación de ~~`A5`/`A6`~~ `A3`/`A5`/`A6` (**`A3`** desde la FASE 9 completa, C-R5-2) sobre la suscripción de
   complemento de `S21`— **reintenta el barrido** (`B/09` §3), con este mismo correo antes —**el
   que ya salió no se repite**: precisión 3, abajo— y la relectura después, **hasta 3 días después de la transición que decidió la cancelación**
@@ -318,7 +318,7 @@ owner 2026-09-25; **`S16`**, FASE 8 completa, owner 2026-09-25) —**quince**, r
 lista—, y ~~`A5` y `A6`~~ **`A3`, `A5` y `A6`** del §8 (**`A3`** desde la FASE 9 completa, C-R5-2: `B/09` §3 ya lo contaba entre los que cancelan y ninguna fila lo escribía). ~~**`S31` no está en ninguno de los dos grupos de la rama
 transitoria de arriba**: ni entre las once que reintenta el barrido ni entre las que reintentan su
 propia transición; queda en *«lo que esta mitad NO cierra»*.~~ **`S31` está en el primero de los
-dos grupos de la rama transitoria de arriba**: es una de las ~~doce~~ **trece** que reintenta el barrido (FASE 8
+dos grupos de la rama transitoria de arriba**: es una de las ~~doce~~ ~~**trece**~~ **catorce** que reintenta el barrido (FASE 8
 completa, owner 2026-09-25; **`S16`** es la decimotercera, owner 2026-09-25). **No la llevan las
 que sólo espejan una cancelación que hizo el proveedor** —~~`S16` y~~ el espejo del §10.1; **`S16`
 dejó de ser una de ellas**: cancela de nuestro lado (FASE 8 completa, owner 2026-09-25)—, **ni
@@ -480,7 +480,7 @@ nombrando a `S24` en su segundo evento.
 de las diez: se suma `S23`, que su segundo evento ya nombraba. Las que faltan son `S13` y
 `S27`** (FASE 8 completa, `F-8CB1-002`).~~ ~~**`S18` corre en SIETE de las nueve** —las tres vivas y
 `S12`, `S16`, el espejo y `S23`—~~ **`S18` corre en OCHO de las diez** —las tres vivas y
-`S12`, `S16`, el espejo, `S23` **y `S36`** (fila 12; FASE 9 vuelta 1, M)—; **las que faltan siguen siendo `S13` y `S27`** (FASE 8 completa,
+`S12`, `S16`, el espejo, `S23` **y `S36`** (fila 12; FASE 9 vuelta 1, M)—; **las que faltan siguen siendo `S13` y `S27`** —**`S27` en su camino normal**: en la rama en que la sucesora ya autorizó sí corre, ver abajo (FASE 9 vuelta 1, residuo 1 de `17-`)— (FASE 8 completa,
 `F-8CB1-002`; recontado con `DEC-SUB-021`: sale `S24` de la cuenta, no del segundo evento de
 `S18`). ~~**`S36` también lo dispara y todavía no está en esta cuenta** (owner 2026-09-26, FASE 9
 vuelta 1, M): desde `ACTIVE` y `CANCEL_SCHEDULED` es una salida terminal del conjunto de
@@ -492,9 +492,18 @@ de `S17`, que es el que hace verdadera su condición. En `S12`, en `S16`, en **e
 **`S24`** —fuera de la cuenta, no de este efecto—, en **`S23`** **y en `S36`** —la revocación del
 derecho de arrepentimiento (owner 2026-09-26, FASE 9 vuelta 1, M)— corre
 **sin `S17` y sin esperar a que la sucesora autorice**, que es el segundo evento de su fila y el §
-siguiente explica por qué tiene que ser así. **En `S27` el segundo evento de `S18` no la nombra**, y
+siguiente explica por qué tiene que ser así. ~~**En `S27` el segundo evento de `S18` no la nombra**, y
 el mismo acto alcanza a la sucesora por `S28` o por `S26` según su estado; este § no razona todavía
-ese caso. En `S13` **no corre**, y no es una excepción olvidada:
+ese caso.~~ **En `S27` el segundo evento de `S18` SÍ la nombra** (desde la FASE 8 completa,
+`F-8CB1-002`: la frase tachada contradecía a la fila), **y corre o no según el estado de la
+sucesora, que el mismo acto alcanza** (FASE 9 vuelta 1, residuo 1 de `17-`, leído de las filas de
+`S18` y `S28`): **en el camino normal no corre** —la sucesora espera autorización, `S28` la manda a
+`ABANDONED` y la sucesión se cae, como en `S3`; la fila de `S28` lo dice: *«`S18` no corre, porque
+su `desde` es una sucesora viva»*—, y por eso `S27` sigue fuera de la cuenta de arriba; **corre sólo
+si la sucesora ya autorizó y `S17` todavía no ocurrió** —su relectura no corrió o falló—: `S26` la
+lleva a `CANCEL_SCHEDULED`, `S27` mata a la predecesora sin `S17`, y `S18` cierra desde el tercer
+`desde` de su fila. Ahí no queda viva ninguna autorización de la predecesora: una `SUSPENDED` de
+tarjeta sólo es de declaración con el preapproval releído `cancelled`. En `S13` **no corre**, y no es una excepción olvidada:
 `S13` alcanza a **toda fila viva principal** del beneficiario, o sea también a la sucesora, así que
 no queda ninguna sucesora viva a la que pasarle el origen (ver más abajo, *«`S13` alcanza a toda
 fila viva PRINCIPAL»*).
@@ -629,6 +638,10 @@ las dos mitades es real, no retórica:
   proveedor en el mismo milisegundo del rechazo (`B/12` §4.4) y no se manda nada— (FASE 8 completa,
   owner 2026-09-25), y en el espejo **lo canceló el proveedor por su
   cuenta**, que es el hecho que el espejo copia.
+  **Y `S27` es un octavo sólo en su rama con la sucesora ya autorizada** (arriba; FASE 9 vuelta 1,
+  residuo 1 de `17-`): ahí `S18` corre sin `S17` y tampoco deja viva una autorización, porque la
+  predecesora era una `SUSPENDED` de tarjeta con el preapproval ya `cancelled`; en su camino
+  normal `S18` no corre.
   En `S13` no corre ninguna de las dos y tampoco queda autorización viva, porque el efecto del
   propio `S13` cancela el preapproval de **cada** fila que alcanza. Prohibir la combinación —*«o
   corren las dos o no corre ninguna»*, que es lo que este § decía— bloqueaba `S18` justo en los
@@ -2043,7 +2056,7 @@ evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y
 #### Lo que NO cambia, y hay que contarlo para que nadie lo recuente
 
 - **El barrido de `B/09` §3 no gana ninguna puerta por `MP4`, y sigue con cuatro salvedades.** Sus
-  puertas son ~~**quince**~~ **dieciséis**, recontadas sobre la tabla de `B/09` §3 —las agregaron `S22`, `S23`, `S24`, `S25`, `S27`, `S28` **y `S31`** (la última, FASE 8 completa, owner 2026-09-25), no `MP4`—, y todas son
+  puertas son ~~**quince**~~ ~~**dieciséis**~~ **diecisiete**, recontadas sobre la tabla de `B/09` §3 —las agregaron `S22`, `S23`, `S24`, `S25`, `S27`, `S28`, **`S31`** (FASE 8 completa, owner 2026-09-25) **y `S36`** (FASE 9 vuelta 1), no `MP4`—, y todas son
   puertas a
   un estado terminal **de una suscripción**, y ese § enumera los tres que tiene: `CANCELLED`,
   `ABANDONED` y `CHARGE_DECLINED`. **`DECLARED_UNPAID` es un estado del `manual_payment`**, nunca
@@ -2077,7 +2090,7 @@ lugar**, más cuatro apariciones que quedan como estaban con su razón:
 | *«por esta puerta `S7` es inalcanzable, y no es un hueco sino aritmética de los dos estados»* | el arreglo que le abrió a `S19` la segunda puerta (§3.2, familia del pago manual de la 9-bis-3) | **queda FALSA**: con `MP4` hay una transición que sale de `DECLARED_UNPAID`, así que el pago manual llega sobre una `SUSPENDED` y `S7` es su destino | corregida en §3.2, con la premisa vieja citada |
 | *«`S19` admite las dos puertas»* | el mismo arreglo | **sigue verdadera**, y por eso `MP4` no necesita ampliarla: el evento se enuncia sobre el hecho y no sobre el mecanismo, que es lo que esa corrección dejó escrito | §3.2, con `MP4` nombrado en la celda de `S19` |
 | *«la regla se ejecuta en tres lugares»* (`G-R1-D`) | el mismo arreglo, en `B/20` §2 | **queda incompleta**: son cuatro | corregida en `B/20` §2 |
-| *«los estados terminales de una suscripción no se barren»* y sus puertas —**nueve** cuando se escribió esta fila, ~~**quince**~~ **dieciséis** hoy, con `S31` (FASE 8 completa, owner 2026-09-25)— | `B/09` §3, y `B/16` §4.4 que las contó | **sigue verdadera**: `DECLARED_UNPAID` es del `manual_payment` y nunca estuvo en esa tabla, cuyos sujetos son `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` | sin tocar |
+| *«los estados terminales de una suscripción no se barren»* y sus puertas —**nueve** cuando se escribió esta fila, ~~**quince**~~ ~~**dieciséis**~~ **diecisiete** hoy, con `S31` (FASE 8 completa, owner 2026-09-25) y `S36` (FASE 9 vuelta 1)— | `B/09` §3, y `B/16` §4.4 que las contó | **sigue verdadera**: `DECLARED_UNPAID` es del `manual_payment` y nunca estuvo en esa tabla, cuyos sujetos son `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` | sin tocar |
 | *«la tabla tiene DOCE filas»* (`NUCLEO/08` §3) y las cinco líneas que la cuantifican | el arreglo del anclaje de verticales | **sigue verdadera para `MP4`** (desde la FASE 8 completa son ~~**trece**~~ por moderar una ficha, `F-8CA2-004`, owner 2026-09-25, ~~y~~ **catorce** desde la FASE 9 completa por asentar lo ocurrido por fuera, decisión 5a, **y quince desde la FASE 9 vuelta 1 por editar el contenido de una ficha ajena, `G5-2`**: otras acciones): `MP4` es la fila *«registrar un pago manual»* ejecutada desde otro origen, no una acción nueva | sin tocar |
 | *«el crédito de `DEC-SUB-006` se computa en cero en grace»* y las ramas de `B/12` §5.3 | el arreglo del pago tardío | **siguen verdaderas**: `MP4` hereda la condición de `S19`, así que no reactiva durante una sucesión y el pago se resuelve por las mismas ramas — que desde `S23` son **seis** y no cinco, y no las recontó este arreglo | `B/12` §5.3, con `MP4` nombrado en la puerta manual |
 
@@ -2451,7 +2464,7 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   que la hace no ser un beneficio de entrada.
 - **El barrido de `B/09` §3 no gana nada por `MP5`: sigue con cuatro salvedades y las
   comprobaciones de cero llamadas que tenga —**seis** desde `DEC-GRANT-007`—, y sus puertas son
-  ~~**quince**~~ **dieciséis**, recontadas sobre la tabla de `B/09` §3** (con `S31`, FASE 8 completa, owner 2026-09-25). `MP5` no lleva
+  ~~**quince**~~ ~~**dieciséis**~~ **diecisiete**, recontadas sobre la tabla de `B/09` §3** (con `S31`, FASE 8 completa, owner 2026-09-25, y `S36`, FASE 9 vuelta 1). `MP5` no lleva
   ninguna suscripción a un estado terminal y no toca ningún preapproval — no hay ninguno.
 - **El catálogo de acciones administrativas ~~sigue teniendo DOCE filas~~ no suma filas por `MP5`** (arriba; tiene
   ~~trece~~ ~~catorce~~ quince (la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)).
@@ -2722,7 +2735,7 @@ que tengamos nosotros, éstos son los pares y su veredicto:
 | `cancelled` | `CANCEL_SCHEDULED` | nada: es lo esperado, `S11` ya lo canceló. El servicio sigue hasta la fecha nuestra (`DEC-SUB-009`) |
 | `cancelled` | `SUSPENDED` | nada: es lo esperado, **`S6` ya lo canceló** al suspender (`DEC-SUB-019`). La fila sigue suspendida; volver es una sucesión |
 | `cancelled` | cualquier estado vivo que no sea `CANCEL_SCHEDULED` ni `SUSPENDED` | **`S12`** si hay una baja programada; si no, **espejar la baja decidida por el proveedor** (`B/12` §1.4) — **y si la fila estaba `PAUSED`, se escribe `fin_real` en su `subscription_pause` con el día de la relectura**, la misma escritura que hacen las otras salidas de `PAUSED` (FASE 9 completa, borde C·espejo de `03` §R4.5, corregido en vez de declarado: sin ella la pausa quedaba abierta y consumía cupo de `DEC-SUB-004`) — **salvo sobre una fila `ACTIVE` sin ningún pago acreditado cuyo primer cobro figura rechazado en la lectura de `B/09` §4: eso es `S16`**, llegue antes el aviso que llegue; con *«todavía no se sabe»* no se actúa en esa corrida (§3.2, *«el primer rechazo lo reclamaban tres filas»*; FASE 8 completa, `F-8CB2-006`) — **y salvo sobre una sucesora en `GRACE_PERIOD` que entró por la rama de la sucesora de `S4`: eso es `S6` por su quinto evento**, no el espejo —suspensión, cancelación de nuestro lado de lo que quede vivo y aviso con *«volvé a suscribirte»*— (owner 2026-09-25; FASE 9 completa, 3c; misma forma que `DEC-MP-008`) — **y salvo sobre una fila en `GRACE_PERIOD` cuyo reloj del §4 ya se agotó: eso es `S6` por su primer evento**, que ya mandó esa cancelación y todavía no escribió. Corre `S6`, llegue antes el aviso que llegue; su correo ya salió una vez (§3.2, precisión 3) y no se repite (FASE 9 vuelta 1, `F-8V1B2-004`) |
-| `authorized` · `paused` · `pending` | una fila **terminal** —`CANCELLED`, `ABANDONED` **o `CHARGE_DECLINED`**— a la que llevó **una transición nuestra que manda cancelar el preapproval**: las ~~**once**~~ ~~**doce**~~ **trece** de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, **`S16`**, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`, `S28`, **`S31`** y la lápida; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`**, que llega a `CHARGE_DECLINED`, también, owner 2026-09-25) y, por la salvedad 1, la suscripción de complemento que `S21` llevó a `CANCELLED` tras la cancelación de `A5`/`A6` | **reintentar la cancelación** —la del barrido, `B/09` §3, con el correo antes y la relectura después—; **la marca, con motivo `CANCELACIÓN_SIN_CONFIRMAR` (`B/02` §2.5), recién a los 3 días de la transición que decidió la cancelación**, y se avisa por `DEC-OBS-001`. **Abierta la marca, el barrido deja de reintentar**, y el correo de antes sale una sola vez por cancelación (§3.2, precisión 3; owner 2026-09-25). **No es divergencia**: la cancelación ya la decidió una transición declarada y sólo falta que la llamada llegue (`DEC-CONC-002` punto 4, su 📌; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25). **Una fila terminal que no está en esa lista no entra en este par** —~~`S16` y~~ el espejo de la fila anterior, que no mandó ninguna cancelación, y `S17`, que llega a terminal sólo con la suya ya confirmada por relectura—: un preapproval vivo sobre ella sigue siendo divergencia real, y marca |
+| `authorized` · `paused` · `pending` | una fila **terminal** —`CANCELLED`, `ABANDONED` **o `CHARGE_DECLINED`**— a la que llevó **una transición nuestra que manda cancelar el preapproval**: las ~~**once**~~ ~~**doce**~~ ~~**trece**~~ **catorce** de la salvedad 4 de `B/09` §3 (`S12`, `S3`, `S13`, **`S16`**, `S20`, `S22`, `S23`, `S24`, `S25`, `S27`, `S28`, **`S31`**, **`S36`** y la lápida; **`S36`** desde la FASE 9 vuelta 1; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`**, que llega a `CHARGE_DECLINED`, también, owner 2026-09-25) y, por la salvedad 1, la suscripción de complemento que `S21` llevó a `CANCELLED` tras la cancelación de `A5`/`A6` | **reintentar la cancelación** —la del barrido, `B/09` §3, con el correo antes y la relectura después—; **la marca, con motivo `CANCELACIÓN_SIN_CONFIRMAR` (`B/02` §2.5), recién a los 3 días de la transición que decidió la cancelación**, y se avisa por `DEC-OBS-001`. **Abierta la marca, el barrido deja de reintentar**, y el correo de antes sale una sola vez por cancelación (§3.2, precisión 3; owner 2026-09-25). **No es divergencia**: la cancelación ya la decidió una transición declarada y sólo falta que la llamada llegue (`DEC-CONC-002` punto 4, su 📌; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25). **Una fila terminal que no está en esa lista no entra en este par** —~~`S16` y~~ el espejo de la fila anterior, que no mandó ninguna cancelación, y `S17`, que llega a terminal sólo con la suya ya confirmada por relectura—: un preapproval vivo sobre ella sigue siendo divergencia real, y marca |
 | `authorized` · `paused` · `pending` ✚ | `CANCEL_SCHEDULED` a la que llevó **`S11` o `S26`** —las dos mandan la cancelación en el acto y dejan la fila **viva** hasta `S12`— | **el mismo veredicto que el par de arriba**: **reintentar la cancelación** desde el barrido, con el correo antes —el que ya salió no se repite, §3.2 precisión 3— y la relectura después; **la marca `CANCELACIÓN_SIN_CONFIRMAR`, recién a los 3 días de la transición que decidió la cancelación**, y abierta la marca **el barrido deja de reintentar** (owner 2026-09-25; FASE 8 completa, `F-8CB1-013`). **No rompe el par `cancelled` × `CANCEL_SCHEDULED`**, que sigue siendo *«nada: es lo esperado»*: éste es el de la llamada que no llegó. **Y no alcanza a la `CANCEL_SCHEDULED` de `S7`**, que llega ahí justamente porque la relectura ya vio el preapproval `cancelled` (§3.2) |
 
 > **Espejar un estado leído por id es una transición declarada de esta tabla, no un acto aparte.**
