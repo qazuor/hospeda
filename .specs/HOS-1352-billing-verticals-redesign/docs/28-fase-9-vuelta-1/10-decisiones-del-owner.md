@@ -39,3 +39,15 @@ donde están las opciones enteras, el costo y el ejemplo con Juan.
 | 📌 B | precisar la parte 3 de `DEC-RF-001` (el reintento de un parcial nunca supera lo confirmado) | **OK** al texto de `05-…` §6 | — |
 
 **Resumen**: 19 preguntas y 2 OK de registro. **4 elegidas contra la recomendación**: `G1-4`, `G2-1`, `G3-1` y `G5-3`. Las acciones administrativas pasan de **14 a 15** (`G5-2`).
+
+## Segunda tanda de OK (2026-09-26, tarde)
+
+| ítem | qué | respuesta |
+|---|---|---|
+| A–G | siete cambios al log propuestos por G2 y G5 (`12-` y `15-` §3): implicación en `DEC-ARCH-006`; 📌 en `DEC-RF-008`, `DEC-TEST-001`, `DEC-SUB-010` y `DEC-RF-001` parte 4; nuevas `DEC-AUTH-002` y `DEC-AUTH-003` | **OK** a las siete |
+| H | implicación en `DEC-ARCH-006` por `G4-2` (`14-` §3) | **OK** |
+| I | 📌 en `DEC-MIG-002` por `G4-1` (`14-` §3) | **OK** |
+| J | la revocación del token de calendario de `G1-5`: `V9` para `PB9`, `V6` para `PB12` | **OK** |
+| K | la unidad de billing que consume el empuje de `G2-1`: `B10`, dueña de `A6` | **OK** |
+| L | la unidad que construye la acción 15 de `G5-2`: `V8` | **OK** |
+| M | `S36` dispara `S18` cuando la fila es predecesora de una sucesión en curso, como `S23` y `S24` | **OK** |
