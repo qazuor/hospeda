@@ -52,3 +52,16 @@ cuando termine la ronda, porque varias contradicciones de texto dependen de ella
 **Ronda completa: los 33 puntos tienen respuesta** (32 filas: `4d` absorbe `R12-OWNER-2`). Cinco
 quedaron contra la recomendación del orquestador o con agregado del owner: `2a`, `2d`, `2g`, `3c` y
 `6c`.
+
+## Elecciones de los agentes de aplicación, llevadas al owner
+
+| # | elección | origen | decisión |
+|---|---|---|---|
+| 9a | un aviso de primer rechazo perdido deja la fila `ACTIVE` un ciclo sin grace (R1-a); el agente lo había declarado como borde | [`13`](./13-aplicado-billing-1.md) §2 | **corregir**: si la lectura del barrido (`B/09` §4) da *«intentó y se rechazó»* sobre el período en curso de una fila `ACTIVE` con al menos un pago acreditado, corre `S4` (opción 1 del informe `01`, R1-a) |
+| 9b | desde cuándo cuenta el grace con un aviso demorado (R1-b) | `13` §2 | **desde que lo leímos**, nunca después de la pausa del proveedor (como está) |
+| 9c | `A3` cancela (C-R5-2) | `13` §2 | como está |
+| 9d | alcance de *«venía pagando»* en 3c | `13` §2 | como está: sucesión desde `ACTIVE`/`CANCEL_SCHEDULED` con al menos un pago acreditado en la predecesora |
+| 9e | *«cobrada»* en 4d | [`15`](./15-aplicado-billing-2.md) §2 | como está: pago acreditado **o** sucesora de una predecesora que venía pagando |
+| 9f | `K-9`: sólo `A6` ejecuta el borrado al llegar a `PURGED` | `15` §2 | como está |
+| 9g | texto de pantalla de 4b | `15` §2 | como está, **agregando que el mínimo lo pone Mercado Pago, no nosotros** |
+| 9h | `C-2`: el piso del grant no cruza la firma del contrato | [`09`](./09-resto-y-registro.md) `C-2` | **agregar** a la firma `piso: versiónDePlan, si tipo = GRANT` (siete campos) |
