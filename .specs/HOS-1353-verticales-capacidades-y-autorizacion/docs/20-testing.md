@@ -93,7 +93,7 @@ quinto lo es a medias**: sobre la ficha publicada lo ejecuta la primera rama de 
 (`F-8CA2-001`), y sobre las demás fichas del dueño en la vertical el recálculo que el aviso
 despierta **o el reconciliador diario de cobertura** (`DEC-ARCH-009`), que no son transiciones (FASE 8 completa, owner 2026-09-25); **y el sexto** —se levanta la moderación— **es una transición entera, `PB11`** (FASE 9 completa, 5b). El primero se lee del registro de
 eventos de dominio, el segundo de la respuesta del contrato y el cuarto de
-`vertical.fin_de_servicio`; la escritura del corte es de la migración. Así que sobre
+~~`vertical.fin_de_servicio`~~ la pregunta `finDeServicio` del contrato §4.1 (FASE 9 vuelta 2, `R5`); la escritura del corte es de la migración. Así que sobre
 `inactiva_desde` el guard queda **verde por ~~el tercero solo~~ ~~cualquiera de los dos~~ cualquiera de los tres** —`PB1`/`PB3`/`PB7`,
 `PB2` **o `PB11`**—, sin mirar ~~al recálculo que ejecuta~~ **a los dos ejecutores —el recálculo y el reconciliador diario— de** la otra mitad del quinto, y lo que
 certifica es *«alguien la mueve»*, nunca *«los ~~cuatro~~ ~~cinco~~ seis hechos la escriben»*. Es el §2.1

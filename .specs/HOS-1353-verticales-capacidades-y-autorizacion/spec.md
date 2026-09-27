@@ -121,7 +121,9 @@ una sola tabla hoja, `billing_option`**, que es de la otra épica.
 *(Desde la FASE 8 el catálogo de addons se parte por el mismo corte, por campo: `addon` y
 `addon_version` —qué otorga, vigencia, scope— son de esta épica, y `addon_product` —precio,
 recurrencia y **verticales compatibles**— de la otra (cap. 02 §2.1). Y `vertical` guarda
-`admite_altas` y `fin_de_servicio`, que billing lee por la dirección inversa del contrato §4.1.
+`admite_altas` ~~y `fin_de_servicio`~~, que billing lee por la dirección inversa del contrato §4.1;
+la fecha de fin de servicio la calcula billing y verticales la pregunta por `finDeServicio` (owner
+2026-09-27, FASE 9 vuelta 2, `R5`).
 Nota de la salida 3 de la FASE 9 completa, sin cambio de sentido.)*
 
 **Eso es lo que vuelve independiente al trial**: deriva su plan del vendible de `rank` más alto y

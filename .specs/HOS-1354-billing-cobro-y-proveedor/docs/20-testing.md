@@ -305,7 +305,8 @@ publicada lo ejecuta la primera rama de `PB2` (`F-8CA2-001`) y sobre las demás 
 recálculo que el aviso despierta, que no es transición (owner 2026-09-25)—, así que el
 predicado *«al menos una transición la escribe»* queda verde por `PB1`/`PB3`/`PB7`, por `PB2` **o
 por `PB11`**, no mira al recálculo, y los otros
-tres —el registro de eventos, la respuesta del contrato y `vertical.fin_de_servicio`— **no los mira
+tres —el registro de eventos, la respuesta del contrato y ~~`vertical.fin_de_servicio`~~ la pregunta
+`finDeServicio` (`12-contrato…` §4.1; FASE 9 vuelta 2, `R5`)— **no los mira
 nadie**. Lo único que los
 sostenía era la enumeración de `V/02` §2.5, y una lista cerrada sin guard es una promesa que este
 programa ya rompió una vez. **Desde la cuarta enmienda vigila también la otra mitad de ese §, la de

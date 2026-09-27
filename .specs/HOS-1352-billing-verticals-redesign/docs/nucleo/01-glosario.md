@@ -54,7 +54,7 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | 1 | un **acto del dueño** sobre la ficha: crearla, editarla, publicarla, despublicarla, exportarla, reactivarla | el registro append-only de eventos de dominio (cap. 08 §1.3)~~, que ya los guarda todos por el criterio 2 del §1.1~~. **Crear, editar y exportar se registran como eventos aunque no sean transiciones**, y de los campos de contenido guardan sólo el nombre (cap. 08 §1.2). *(Decía que el registro «ya los guarda todos por el criterio 2 del §1.1», y no es cierto: editar y exportar no son transiciones — owner 2026-09-25, FASE 9 completa, decisión 8e, `F-8CA3-004`.)* | alguien la está usando, que es lo contrario de estar inactiva |
 | 2 | **la cobertura se comprueba verdadera** — un ESTADO leído, nunca un cambio detectado | **la respuesta del contrato** —el campo `cubierto` de [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.1—, **vuelta a pedir**. El aviso del §3 dice **cuándo** preguntar y no contesta la pregunta | estar cubierto **es** no estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
 | 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
-| 4 | el **fin de servicio** de una vertical discontinuada | la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale. **Lo ejecuta el barrido del día del fin de servicio** (`B/10` §4.3), que es un **camino de servicio** y no una transición | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
+| 4 | el **fin de servicio** de una vertical discontinuada | ~~la columna `vertical.fin_de_servicio` (`V/02` §2.1), que es de **esta** épica; `B/10` §4 es **quien la lee** (`B/10` §4.6), no de dónde sale. **Lo ejecuta el barrido del día del fin de servicio** (`B/10` §4.3), que es un **camino de servicio** y no una transición~~ **la pregunta `finDeServicio` del `12-contrato…` §4.1**: la fecha la calcula billing (`B/10` §4.3) y verticales la lee. **Lo ejecuta verticales: el reconciliador diario de cobertura, en su corrida del día del fin de servicio** (`V/03` §9, *«el día del fin de servicio»*), que no es una transición (owner 2026-09-27, FASE 9 vuelta 2, `R5`) | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
 | 5 | ~~la ficha **deja de estar publicada porque perdió la cobertura** — la **primera rama de `PB2`**, *«`cubierto` pasa a falso»* (cap. 03 §9, épica de verticales). **No la segunda**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25)~~ **el dueño pierde la cobertura en la vertical de la ficha** —el `cubierto` del contrato pasa a falso para ese `user + vertical`—, y se escribe en **toda** ficha del dueño en esa vertical, **publicada o no**: la publicada, el borrador y la excedente que ya estaba abajo arrancan juntas el mismo instante (FASE 8 completa, owner 2026-09-25). ~~**Dos ejecutores, un hecho**~~ **Tres ejecutores, un hecho**: sobre la ficha publicada lo escribe **la primera rama de `PB2`** (cap. 03 §9, épica de verticales), que es la que la baja; sobre las que no estaban publicadas lo escribe **el recálculo que el mismo aviso despierta** (`12-contrato…` §3), **sin transición de publicación**; **y si el aviso se perdió, el reconciliador diario de cobertura**, que corre `PB2` y escribe las demás en el mismo acto (`V/03` §9; `DEC-ARCH-009`, owner 2026-09-25). **No lo escribe la segunda rama de `PB2`**, la del excedente tras un downgrade, que baja la ficha **sin** que `cubierto` cambie (`F-8CA2-001`, `F-8CA3-001`) | la propia máquina, para la publicada; **el aviso de la caída más la relectura** del contrato, para las demás —**o, sin aviso, la pregunta diaria del reconciliador** (`DEC-ARCH-009`)— | es el instante en que la ficha **deja de estar a la vez publicada y cubierta**, que es donde la definición de arriba y el propio hecho 3 —*«su reloj arranca recién cuando deja de estarlo»*— dicen que el reloj arranca. Sin él la columna guardaba **el último reinicio**, que sobre una ficha publicada y cubierta lo escribe la relectura de `PB4` y puede tener **hasta 90 días** en el instante de la caída: una pausa de 120 días terminaba en el hard delete a mitad de la pausa (`120 + 90 > 180`). **Y en las que no estaban publicadas es el mismo instante por la misma razón**: el borrador guardaba hasta `N` meses (la relectura de `PB5`) y la excedente hasta 90 días (la de `PB4`), y la pausa las alcanzaba igual. **Es la regla que el hecho 4 ya aplicaba a la discontinuación, generalizada** a toda pérdida de cobertura **y con su mismo alcance: todas las fichas** |
 | **6** | **se levanta la moderación de la ficha** — **`PB11`** (cap. 03 §9, épica de verticales) | la propia máquina | mientras la ficha estuvo en `MODERATED` el dueño **no podía** actuar sobre ella, así que contar esa ausencia lo castigaría por una decisión nuestra: **es la razón del hecho 4**, sobre la otra decisión nuestra que le quita la ficha al dueño. Sin él, una moderación larga sobre un dueño sin cobertura terminaba en `PB11` → `PB5` → `PB9`: el borrado en días, después de que un admin decidiera que la ficha estaba bien (owner 2026-09-25; FASE 9 completa, decisión 5b, `OW-1`) |
 | C | **la escritura única del corte**: toda ficha que ya existía el día del corte **nace en el modelo nuevo con `inactiva_desde` = el instante del corte**, nunca con su `created_at` (FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25; `V/21` §2.4) | la migración estructural del corte, **una vez** —**por corte que termina**: un corte abortado se restaura del backup y su escritura no cuenta; el reintento escribe `C` con su propio instante (owner 2026-09-25; FASE 9 completa, `2e`; `D/16` §4.2)— y en ningún otro lugar | **no es un reinicio** —ese día a la ficha no le pasa nada—: es el valor de arranque de una columna no anulable sobre filas que ya existían. Con `created_at`, toda ficha de más de 180 días se archivaba y se borraba **en la primera corrida** después del corte, con los tres avisos de retención fechados en el pasado |
@@ -172,7 +172,7 @@ de los tres**: no escriben la columna ni avanzan el reloj, sólo no salen si el 
 
 **Y el hecho 4 ya tiene ejecutor declarado, que hasta esta pasada no lo tenía en ninguna de las dos
 épicas.** Tener **de dónde leerse** y tener **quién lo escriba** son dos cosas distintas, y el 4
-tenía la primera —`vertical.fin_de_servicio`— y no la segunda: `B/10` §4.3 describía el día
+tenía la primera —~~`vertical.fin_de_servicio`~~ hoy la pregunta `finDeServicio` (`R5`)— y no la segunda: `B/10` §4.3 describía el día
 (*«arranca el reloj de retención del §25»*, *«y arranca acá, no antes»*) como una afirmación sobre
 el reloj, sin ser el efecto de ninguna fila ni de ningún barrido nombrado. Lo único que corre ese
 día es `PB2`, y ~~**`PB2` escribiendo esta columna es exactamente el caso con que `V/20` §2 manda
@@ -180,8 +180,11 @@ probar `G-R6-B` en rojo**, así que no podía ser~~ **`PB2` sólo alcanza a las 
 estaban publicadas** —desde la FASE 8 completa les escribe el hecho 5 (`F-8CA2-001`, owner
 2026-09-25)—, y el reloj de la discontinuación es de **todas** las fichas de la vertical. Sin ejecutor, el hard delete caía sobre la fecha
 vieja —**hasta 90 días antes** de la que los tres avisos de la discontinuación le prometieron al
-cliente—. Lo escribe **el barrido del día del fin de servicio** (`B/10` §4.3), sobre las fichas de
-la vertical, en el mismo acto en que `PB2` las despublica y **como escritura suya, no de `PB2`**.
+cliente—. Lo escribe ~~**el barrido del día del fin de servicio** (`B/10` §4.3), sobre las fichas de
+la vertical, en el mismo acto en que `PB2` las despublica~~ **el reconciliador diario de cobertura,
+en su corrida del día del fin de servicio, sobre cada ficha de la vertical** (`V/03` §9, *«el día
+del fin de servicio»*; owner 2026-09-27, FASE 9 vuelta 2, `R5`: era el barrido de billing, y eso
+era escribir en verticales fuera del contrato), **como escritura suya, no de `PB2`**.
 **Sobre la ficha que estaba publicada, el 4 y el 5 escriben el mismo instante** y no se pisan; ~~el 4
 sigue haciendo falta por las que ya estaban abajo ese día, a las que `PB2` no toca.~~ **y desde que
 el 5 alcanza a todas las fichas del dueño en la vertical** (FASE 8 completa, owner 2026-09-25) **los
@@ -193,18 +196,20 @@ su `CANCELLED` (`B/10` §4.3), **y el de un grant, una cortesía o un trial, cuy
 deja de emitir en esa fecha** (`12-contrato…` §2.6; FASE 8 completa, `F-8CC1-001`, owner
 2026-09-25)—, así que sobre ése los dos escriben el mismo instante en todas sus fichas. **Y es el
 mismo instante por construcción, no por coincidencia**: el contrato corta la cobertura **en**
-`vertical.fin_de_servicio`, así que el instante de la caída del 5 es el del 4. **El 4 no se
+~~`vertical.fin_de_servicio`~~ la fecha de fin de servicio, así que el instante de la caída del 5 es el del 4. **El 4 no se
 retira por eso**, por dos razones: alcanza también al dueño que ese día **no** pierde nada porque ya
 estaba sin cobertura, sobre el que el 5 no ocurre; y no depende del aviso, y el 5 sí (el ⚠️ de
 abajo, punto 2) —sin aviso, el 5 lo escribe el reconciliador diario **al día siguiente**, y el 4
-escribe **el día** del fin de servicio (`DEC-ARCH-009`)—. **Cuando el 5 llega por el reconciliador,
+escribe ~~**el día** del fin de servicio~~ **el instante** del fin de servicio aunque la corrida
+caiga al día siguiente (`DEC-ARCH-009`; FASE 9 vuelta 2, `R5`)—. **Cuando el 5 llega por el reconciliador,
 gana él**: escribe el instante de su corrida, hasta un día después del 4, y la inactividad cuenta desde
 **el más reciente** de los hechos (la definición de arriba). Es el atraso de un día que
 `DEC-ARCH-009` acepta, y cae del lado que atrasa el borrado, nunca del que lo adelanta (`V/03` §9).
 
 **Los otros ~~tres~~ hechos ya tenían fuente durable y siguen igual**: el 1 sale del registro
 append-only de eventos de dominio (cap. 08 §1.3), el 3, **el 5 y el 6** de la propia máquina de
-publicación y el 4 de la columna `vertical.fin_de_servicio` (`V/02` §2.1). El 2 era **el único de
+publicación y el 4 de ~~la columna `vertical.fin_de_servicio` (`V/02` §2.1)~~ la pregunta
+`finDeServicio` del `12-contrato…` §4.1, que contesta billing (FASE 9 vuelta 2, `R5`). El 2 era **el único de
 los ~~cuatro~~ ~~cinco~~ seis sin estado detrás**, y es justamente el que impide que el día 180 alcance a alguien que volvió
 (`V/02` §4.1).
 

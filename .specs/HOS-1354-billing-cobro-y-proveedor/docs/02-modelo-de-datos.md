@@ -783,7 +783,11 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
   ancla y se compara contra el plan de su propia vertical**: uno solo para N verticales compararía las
   claves de una contra lo que otorgaba el plan de otra. **Y cruza la frontera en la firma**: billing
   lo transporta en el campo `piso` de la fuente `GRANT` y verticales aplica el trinquete con él
-  (`12-contrato…` §2 y §2.8, `V/15` §2; owner 2026-09-25, FASE 9 completa, 9h).
+  (`12-contrato…` §2 y §2.8, `V/15` §2; owner 2026-09-25, FASE 9 completa, 9h). **Qué versión es la
+  vigente la dice el acto, y billing la valida** (FASE 9 vuelta 2, `F-8V2C1-004`): otorgar, anclar
+  y la herramienta del corte traen la versión, y billing la escribe sólo si
+  `políticaDePlan(v).vigente` es verdadero; si no, rechaza el acto. Billing no tiene otra forma de
+  saber cuál es la vigente sin leer `plan_version` (`12-contrato…` §2.8).
 - **Una vertical sin ancla no recibe nada, y es la respuesta al scope *«todas actuales y futuras»* del
   §35.1.** Una fuente sin referencia resoluble **no se puede expresar** (`12-contrato…` §2.3), así que
   el grant no emite fuente donde no ancló; extenderlo a una vertical nueva es anclarle un plan, un acto

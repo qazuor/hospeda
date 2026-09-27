@@ -424,7 +424,12 @@ recibir el correo del proveedor por su cuenta (`EX-3`).
 `S13` cancela esa suscripción. Las cortesías del beneficiario en las demás verticales **no las
 toca nadie**: el acto alcanza una vertical, no la cartera. Se dice acá porque *«otorgar un grant»*
 se lee como el único momento en que un grant empieza a cubrir, y desde que el scope es el conjunto
-de anclas **son dos**.
+de anclas **son dos**. **Y los dos emiten el aviso de cobertura** (`12-contrato…` §3, *«quién emite»*; FASE 9
+vuelta 2, `F-8V2C1-003`): cuando el beneficiario no tenía suscripción en la vertical que se ancla,
+`S13` no mueve ninguna fila y el anclaje es la única escritura que puede avisar. Sin su aviso,
+`PB3` esperaba al reconciliador, y `T2` no disparaba nunca: un trial en curso en esa vertical
+seguía hasta `T3`, que le mandaba la campaña de recuperación a quien acababan de regalarle la
+vertical.
 
 #### Y sobre una cortesía DIFERIDA no hay suscripción que cancelar: lo que se cierra es el SALDO
 

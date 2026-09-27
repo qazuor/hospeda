@@ -43,7 +43,7 @@ addon ──< addon_version ──┬──< addon_version_entitlement
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`vertical`** | el espejo en base del enum de código, **su evento de activación**, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
+| **`vertical`** | el espejo en base del enum de código, **su evento de activación** ~~,~~ **y si admite altas** ~~y **su fecha de fin de servicio**~~ —la fecha la calcula billing y se pregunta por `finDeServicio` (`12-contrato-de-cobertura.md` §4.1; owner 2026-09-27, FASE 9 vuelta 2, `R5`)— | el guard de §1.2 verifica las dos direcciones |
 | **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` · **`UNIQUE(id, vertical)`**, para la FK compuesta del ancla de un grant de billing: *«el plan pertenece a esa vertical»* (`B/02` §2.4) sólo se puede expresar con ella (FASE 9 completa, `C-3`) |
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP. **Y `vertical`**, copiada de su plan al crearla e inmutable. **`vigente` es la única columna mutable de la versión**: no cambia lo que otorga una versión anclada, y `DEC-ARCH-001` versiona lo que tiene efecto (FASE 9 vuelta 1, `F-8V1A3-006`) | **FK compuesta `(plan_id, vertical)` → `plan(id, vertical)`**, sobre la `UNIQUE(id, vertical)` de `plan` · **`UNIQUE(id, plan_id)`**, que pide la FK de `B/02` §2.4 · **`UNIQUE(id, vertical)`**, que pide la FK compuesta `(versión, vertical)` de `subscription` en `B/02` §2.2 —Postgres no acepta una FK compuesta sin una restricción única sobre exactamente esas columnas, aunque `id` sea clave— (FASE 9 vuelta 1, `N-G1-03`) · con eso las dos parciales de abajo viven en una sola tabla (FASE 9 vuelta 1, `F-8V1A3-006`) · **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
@@ -113,16 +113,22 @@ catálogo se separan así: **la pricing lee la versión vigente y sólo si es ve
 lee su versión anclada, vigente o no, vendible o no.** El capítulo 10 §2 lo desarrolla y §3 lo usa
 para retirar un plan sin mecanismo nuevo.
 
-**Las dos columnas de `vertical` no son de adorno: son la mitad declarada de la frontera.**
-`admite_altas` y `fin_de_servicio` las **lee billing** (`B/10` §4.6) y hasta ahora no existían en
-ninguna entidad. **Desde la FASE 9 completa la lectura de `admite_altas` por billing tiene fila**:
+**~~Las dos columnas~~ La columna `admite_altas` de `vertical` no es de adorno: es la mitad
+declarada de la frontera.** `admite_altas` ~~y `fin_de_servicio` las~~ la **lee billing** (`B/10`
+§4.6) y hasta ahora no existía en ninguna entidad. **`fin_de_servicio` dejó de ser columna de
+esta épica** (owner 2026-09-27, FASE 9 vuelta 2, `R5`): la fecha la calcula billing, cuyos términos
+son el anuncio y el último día pagado, y verticales la pregunta por `finDeServicio`
+(`12-contrato-de-cobertura.md` §4.1). Como columna no tenía quién la escribiera: billing no puede
+escribir en verticales, y verticales no puede calcularla sin leer fechas de cobro. **Desde la FASE 9 completa la lectura de `admite_altas` por billing tiene fila**:
 **`S1`** exige `situaciónDeVertical(vertical).admiteAltas` para el alta nueva y para la sucesión
 (`B/03` §3.2; owner 2026-09-25, decisión 6a), y la pricing no ofrece planes de una vertical que no
 admite altas (cap. 10 §2). Hasta entonces la afirmación de este renglón no la cumplía ninguna fila
 de billing (informe `06`, contradicción 4). **Desde la FASE 8 completa también las leen el contrato y la máquina de trial**:
-el contrato deja de emitir toda fuente de título desde `fin_de_servicio` —billing lo lee por
-`situaciónDeVertical`, verticales directo para el trial— y `T1` exige `admite_altas`
-(`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). Son dos de los ~~**siete**~~ campos de la dirección inversa del contrato
+el contrato deja de emitir toda fuente de título desde `fin_de_servicio` —~~billing lo lee por
+`situaciónDeVertical`, verticales directo para el trial~~ billing lo tiene de su lado, y
+verticales lo pregunta por `finDeServicio` para el trial (FASE 9 vuelta 2, `R5`)— y `T1` exige `admite_altas`
+(`12-contrato-de-cobertura.md` §2.6, `V/03` §2; `F-8CC1-001`, owner 2026-09-25). ~~Son dos de los campos~~ **`admite_altas` es uno de los campos** (FASE 9
+vuelta 2, `R5`: `finDeServicio` pasó a ser una pregunta que contesta billing) de la dirección inversa del contrato
 (`12-contrato-de-cobertura.md` §4.1), que transporta **política y estado de catálogo, nunca
 capacidades**. *(Decía «seis»: es la misma cifra caduca que la regla de vigilancia del §4.2 del
 contrato llevaba en su mitad inversa, y se recontó entera sobre el bloque del §4.1 —cinco de
@@ -359,8 +365,9 @@ implementable.** La inactividad es un término del núcleo —cap. 01 §1.2— d
 reciente de los ~~cuatro~~ ~~cinco~~ **seis** hechos que la reinician»*, y **un «más reciente de ~~cuatro~~
 ~~cinco~~ seis» no se deriva de ninguna máquina**: ~~tres de los cuatro hechos no son transiciones de
 publicación y el cuarto es de la otra épica~~ tres de los ~~cinco~~ seis hechos no son transiciones de
-publicación —el 1, el 2 y el 4, y a éste lo ejecuta la otra épica— (FASE 8 completa, `F-8CA2-001`,
-owner 2026-09-25), **y el 5 lo es sólo a medias**: sobre la ficha publicada lo ejecuta `PB2`, y
+publicación —el 1, el 2 y el 4, y ~~a éste lo ejecuta la otra épica~~ a éste lo ejecuta el
+reconciliador diario de cobertura, de esta épica (cap. 03 §9; owner 2026-09-27, FASE 9 vuelta 2,
+`R5`)— (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), **y el 5 lo es sólo a medias**: sobre la ficha publicada lo ejecuta `PB2`, y
 sobre las que no lo estaban el recálculo que el aviso despierta —o, si el aviso se perdió, el
 reconciliador diario de cobertura (cap. 03 §9, `DEC-ARCH-009`)—, que no son transiciones (FASE 8
 completa, owner 2026-09-25). **El 6 —se levanta la moderación— sí es una transición entera, `PB11`**
@@ -533,7 +540,7 @@ Invalidan ~~la entrada de un `user + vertical`~~ **las entradas del `user`, en t
 | ~~**se publica una versión nueva de un plan al que hay GRANTS anclados**~~ **se publica una versión nueva de cualquier plan → se invalida el caché entero** (FASE 9 vuelta 1, `F-8V1C1-004`, `F-8V1A3-009`) | ~~un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**:~~ ~~invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope~~ ~~**lo que cambia es la entrada de esa vertical; desde la regla 3 se invalidan igual todas las del beneficiario**, porque ese plan puede otorgar claves globales o herencia que valen en las otras (FASE 9 completa, 8a)~~ **un grant lee la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción; pero **quién está anclado a un plan lo sabe billing y no cruza**. Publicar una versión es un acto raro de verticales, y borrar todo es la dirección segura de la regla 2. Es la misma forma de la fila del fin de servicio |
 | ~~**se publica una versión nueva de un `addon`** (su madre desde la FASE 8 completa, `F-8CA3-011`, §2.1)~~ | ~~es lo que otorga el addon, y desde el corte por campo ya no vive en billing~~ **Tachada** (FASE 9 vuelta 1, `N-G4V-09`), como la de las suscripciones: la instancia ancla una versión que no se mueve (`B/02` §2.4, *«lo ya comprado no cambia»*), así que una versión nueva no cambia lo que otorga ninguna instancia viva, y saber quién tiene instancias de ese addon es de billing y no cruza |
 | **el reconciliador diario de cobertura encuentra una diferencia y corre una transición** (cap. 03 §9; `DEC-ARCH-009`, owner 2026-09-25) | es la red del aviso perdido y de la fuente con `hasta: fecha` que vence sin transición (`12-contrato…` §2.6): **ninguna de las filas de arriba ocurrió**, así que sin ésta la entrada seguía otorgando lo que el contrato ya no emite (FASE 8 completa, `F-8CA1-007`, `F-8CC1-009`). Invalida **sólo** cuando encuentra la diferencia; la fecha que vence sin producir ninguna queda declarada en el ⚠️ de ese §. **Para un partner ~~con presencia cargada~~ con una clave de presencia, que no tiene fichas, la diferencia es entre ~~el entitlement de presencia~~ las dos claves de presencia —la página y el carrusel (decisión 7b)— resueltas en vivo y las del caché** (cap. 18 §1.6; FASE 8 completa, `R13`, owner 2026-09-25) |
-| **llega `vertical.fin_de_servicio`** (§2.1; owner 2026-09-25, FASE 9 completa, decisión 6b) | desde ese instante el contrato no emite en esa vertical ninguna fuente de título (`12-contrato…` §2.6), y **ninguna fila de arriba ocurre**: el grant no tiene transición ese día, la cortesía sigue `PAUSED` hasta `S25` y el trial sigue `TRIAL_ACTIVE` hasta `T3`. Sin esta fila, la entrada de quien cubría un grant, una cortesía o un trial seguía otorgando capacidades de una vertical cerrada hasta la red de tiempo, **en el camino principal de toda discontinuación** (residuo `γ` del informe `06`). **Invalida todas las entradas de esa vertical**, y lo ejecuta **el barrido del día del fin de servicio** (`B/10` §4.3), que ya recorre las fichas de la vertical ese día |
+| **llega ~~`vertical.fin_de_servicio`~~ el fin de servicio de la vertical** —la fecha que contesta `finDeServicio`, `12-contrato…` §4.1— (§2.1; owner 2026-09-25, FASE 9 completa, decisión 6b; FASE 9 vuelta 2, `R5`) | desde ese instante el contrato no emite en esa vertical ninguna fuente de título (`12-contrato…` §2.6), y **ninguna fila de arriba ocurre**: el grant no tiene transición ese día, la cortesía sigue `PAUSED` hasta `S25` y el trial sigue `TRIAL_ACTIVE` hasta `T3`. Sin esta fila, la entrada de quien cubría un grant, una cortesía o un trial seguía otorgando capacidades de una vertical cerrada hasta la red de tiempo, **en el camino principal de toda discontinuación** (residuo `γ` del informe `06`). **Invalida todas las entradas de esa vertical**, y lo ejecuta ~~**el barrido del día del fin de servicio** (`B/10` §4.3), que ya recorre las fichas de la vertical ese día~~ **el reconciliador diario de cobertura en su corrida de ese día** (cap. 03 §9, *«el día del fin de servicio»*), que ya recorre las fichas de la vertical para escribir el hecho 4: billing no escribe en verticales (owner 2026-09-27, FASE 9 vuelta 2, `R5`) |
 
 **Las cuatro ~~últimas~~ en negrita anteriores a la del reconciliador diario son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
 escribió cuando toda fuente colgaba de una suscripción o de un trial, y **las cuatro nuevas no

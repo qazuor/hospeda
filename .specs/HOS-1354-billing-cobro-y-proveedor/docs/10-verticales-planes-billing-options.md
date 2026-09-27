@@ -254,7 +254,8 @@ fin de servicio = max( día 60 desde el anuncio,
 servicio, qué pasa con la ficha y cómo exportarla.
 
 **El día del fin de servicio.** Las fichas pasan a `UNPUBLISHED_BY_BILLING` por PB2 del capítulo
-03 §9, las suscripciones consuman su `CANCELLED`, y arranca el reloj de retención del §25 con sus
+03 §9 **—las baja verticales, no billing: `V/03` §9, *«el día del fin de servicio»*; owner
+2026-09-27, FASE 9 vuelta 2, `R5`—**, las suscripciones consuman su `CANCELLED`, y arranca el reloj de retención del §25 con sus
 avisos (`DEC-DATA-001` y `NUCLEO/07` §6): día 90 fuera del sitio público conservando el acceso
 del dueño y con el aviso de archivado, día 180 hard delete de lo eliminable —el contenido de cada
 ficha ya archivada y sus borradores, nunca nada de la persona, y la ficha pasa a `PURGED`
@@ -275,14 +276,20 @@ con eso `cubierto` pasa a falso para todos:
 | **trial en curso** (`TRIAL_ACTIVE`) | **deja de cubrir**, por el contrato | la máquina **no se mueve**: sigue en `TRIAL_ACTIVE` hasta `T3` |
 | suscripción en `CANCEL_SCHEDULED` por `S26` | consuma su `CANCELLED`, como antes | — (su fecha de fin de servicio ya era ésta) |
 
-**Las fichas de las tres primeras filas las baja este mismo barrido**, cuyo `PB2` ahora tiene su
+~~**Las fichas de las tres primeras filas las baja este mismo barrido**, cuyo `PB2` ahora tiene su
 evento, y **si no las baja, el reconciliador diario de cobertura al día siguiente** (`V/03` §9,
 `DEC-ARCH-009`). **Y el barrido del día invalida las entradas de caché de la vertical entera**
 (owner 2026-09-25; FASE 9 completa, 6b; `V/02` §3.2, fila *«llega `vertical.fin_de_servicio`»*):
 las tres primeras filas de la tabla dejan de otorgar sin que cambie ninguna fila de su
 `user + vertical` —el grant no transiciona, la cortesía sigue `PAUSED` y el trial sigue
 `TRIAL_ACTIVE`—, así que sin esa invalidación sus capacidades seguían saliendo del caché hasta la
-red de tiempo. **Y ningún trial arranca desde el día 0**: `T1` exige que la vertical admita altas
+red de tiempo.~~ **Las fichas de las tres primeras filas las baja verticales, y el caché de la
+vertical entera lo invalida verticales**: los dos los ejecuta el reconciliador diario de cobertura
+en su corrida de ese día (`V/03` §9, *«el día del fin de servicio»*, adonde se mudó este texto;
+owner 2026-09-27, FASE 9 vuelta 2, `R5`). **Billing sólo avisa**: calcula la fecha, que verticales
+lee por `finDeServicio` (`12-contrato…` §4.1), y desde ella el contrato deja de emitir. Correr `PB2`
+e invalidar el caché eran dos escrituras de billing en verticales, y el contrato admite una sola.
+**Y ningún trial arranca desde el día 0**: `T1` exige que la vertical admita altas
 (`V/03` §2), que es lo que el anuncio ya decía —*«la vertical deja de admitir altas y trials»*— y
 ninguna fila hacía cumplir.
 
@@ -308,35 +315,30 @@ ninguna fila hacía cumplir.
 de una vertical discontinuada es el cuarto de los hechos que reinician la inactividad
 (`NUCLEO/01` §1.2). Contar su ausencia desde antes lo castigaría por una decisión nuestra.
 
-**Y lo ejecuta este barrido, que es la parte que faltaba decir.** *«Arranca el reloj»* era una
+~~**Y lo ejecuta este barrido, que es la parte que faltaba decir.** *«Arranca el reloj»* era una
 afirmación sobre el reloj y no el efecto de nada: el hecho 4 tenía **de dónde leerse**
 —`vertical.fin_de_servicio` (`V/02` §2.1)— y **no tenía quién lo escribiera** en ninguna de las dos
 épicas. Así que el barrido de este día, además de despublicar y de consumar las bajas, **le escribe
 `listing.inactiva_desde` a cada ficha de la vertical** con el instante del fin de servicio
-(`V/02` §2.5). Tres precisiones, porque cada una tapa una lectura que sale mal:
+(`V/02` §2.5). Tres precisiones, porque cada una tapa una lectura que sale mal:~~
 
-1. **La escritura es del barrido, no de `PB2`.** `PB2` es una transición de publicación, y
-   ~~**`PB2` escribiendo esta columna es el caso con el que `V/20` §2 manda probar `G-R6-B` en rojo**~~
-   **desde la FASE 8 completa `PB2` sí escribe la columna en su primera rama** —el hecho 5 del
-   `NUCLEO/01` §1.2, ~~*«la ficha deja de estar publicada porque perdió la cobertura»*~~
-   (`F-8CA2-001`, owner 2026-09-25)—, ~~**pero sólo sobre las fichas que ese día estaban
-   publicadas**. El barrido escribe **cada ficha de la vertical**, publicada o no, y es el único que
-   alcanza a las que ya estaban abajo.~~ **y desde la misma pasada el hecho 5 es *«el dueño pierde
-   la cobertura en la vertical»* y alcanza a todas sus fichas en ella, publicadas o no** —a las que
-   ya estaban abajo se lo escribe el recálculo que el aviso despierta, no `PB2`— (FASE 8 completa,
-   owner 2026-09-25). **Así que el 5 tiene ahora el mismo alcance que el barrido sobre cada dueño
-   que ese día pierde la cobertura**: los dos escriben el mismo instante en todas sus fichas. El
-   barrido sigue siendo el único que alcanza al dueño que ese día **ya** estaba sin cobertura —ahí
-   no ocurre ningún 5— y el único que no depende del aviso **para escribir ese día**: sin aviso, el 5
-   lo escribe el reconciliador diario de cobertura al día siguiente (`V/03` §9, `DEC-ARCH-009`). Los dos actos corren el mismo día y son
-   actos distintos.
-2. **Y no es un escritor de más.** Es el **hecho 4** de la lista cerrada del `NUCLEO/01` §1.2, así
-   que `G-R6-B` mitad *(a)* lo acepta por la lista: lo que esa lista cierra son los hechos, y cada
-   hecho puede tener su ejecutor.
-3. **Sin ella el borrado se adelanta hasta 90 días.** Entre dos evaluaciones de `PB4` hay 90 días,
-   así que la fecha que la columna trae al llegar este día puede tener esa antigüedad: el hard
-   delete caería en `fin_de_servicio + 90` en vez de en `+ 180`, sobre una población a la que **los
-   tres avisos de `DEC-MP-002` le dijeron cómo exportar** y hasta cuándo.
+~~1. **La escritura es del barrido, no de `PB2`.** Desde la FASE 8 completa `PB2` escribe la
+columna en su primera rama —el hecho 5—, y el 5 alcanza a todas las fichas del dueño que pierde la
+cobertura. El barrido sigue siendo el único que alcanza al dueño que ese día ya estaba sin
+cobertura, y el único que no depende del aviso para escribir ese día.~~
+~~2. **Y no es un escritor de más.** Es el hecho 4 de la lista cerrada del `NUCLEO/01` §1.2, así
+que `G-R6-B` mitad *(a)* lo acepta por la lista.~~
+~~3. **Sin ella el borrado se adelanta hasta 90 días**, sobre una población a la que los tres
+avisos de `DEC-MP-002` le dijeron cómo exportar y hasta cuándo.~~
+
+**Y lo ejecuta verticales, no este barrido** (owner 2026-09-27, FASE 9 vuelta 2, `R5`;
+`F-8V2A3-001`, `F-8V2C1-001`). El hecho 4 **lo escribe el reconciliador diario de cobertura** en
+su corrida del día del fin de servicio, con el instante de la fecha, sobre cada ficha de la
+vertical. El párrafo tachado y sus tres precisiones se mudaron a `V/03` §9, *«el día del fin de
+servicio»*, con el reconciliador como sujeto. Escribir `listing.inactiva_desde` desde billing era
+una escritura en verticales fuera del contrato, que admite una sola: `extenderTrial`
+(`12-contrato…` §4.1 y §4.2). Un constructor de `B12` que respetara el contrato no la escribía, y
+el borrado caía hasta 90 días antes de la fecha prometida.
 
 ### 4.4 Por qué esa fórmula y no un prorrateo
 
@@ -380,8 +382,9 @@ siempre: lo que toca plata no se ejecuta solo.
 El §63 pide ocho máquinas y el capítulo 03 las tiene —el núcleo cuenta **diez**: más la Postulación
 de Partner y, desde la FASE 9 completa, el Reembolso (`NUCLEO/01` §2; owner 2026-09-25, 5a)—. La
 vertical **no agrega una**: su situación
-se lee de **dos datos con fecha** sobre su propia fila —si admite altas, y su fecha de fin de
-servicio— y de ahí salen las tres situaciones posibles sin que haya transiciones que restringir
+se lee de **dos datos con fecha** ~~sobre su propia fila~~ —si admite altas, que está en su fila,
+y su fecha de fin de servicio, que desde la FASE 9 vuelta 2 calcula billing y se pregunta por
+`finDeServicio` (`R5`)— y de ahí salen las tres situaciones posibles sin que haya transiciones que restringir
 más allá de que ninguno de los dos vuelva atrás solo.
 
 | admite altas | fin de servicio | situación |
@@ -393,7 +396,19 @@ más allá de que ninguno de los dos vuelva atrás solo.
 **Quién lee `admite_altas` en billing: `S1`** (`B/03` §3.2): la vertical que no admite altas no
 admite suscripciones nuevas ni sucesiones (owner 2026-09-25; FASE 9 completa, 6a). Es lo que hace
 verdadera la afirmación de `V/02` §2.1 —*«`admite_altas` y `fin_de_servicio` las lee billing»*—, que
-hasta acá ninguna fila de billing cumplía. `fin_de_servicio` lo lee la fórmula del §4.3.
+hasta acá ninguna fila de billing cumplía. ~~`fin_de_servicio` lo lee la fórmula del §4.3.~~
+**`fin_de_servicio` ya no se lee de verticales: lo calcula billing con la fórmula del §4.3, y
+verticales lo pregunta por `finDeServicio`** (`12-contrato…` §4.1; owner 2026-09-27, FASE 9
+vuelta 2, `R5`). Sus términos —el anuncio y el último día ya pagado— son de billing, así que
+mientras fue una columna de verticales nadie podía escribirla sin cruzar la frontera. La
+construye **B12**, dueña de la fórmula.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`: dónde guarda billing la fecha
+> calculada.** La fórmula no se puede evaluar en cada pregunta, porque pasado el fin de servicio
+> los compromisos dejan de estar vivos y el máximo cambiaría. Hace falta una fila que la guarde
+> desde el anuncio, junto con el instante del anuncio, y que la reescriba si `SUPER_ADMIN` acorta
+> la cola (§4.4). `B/02` no tiene hoy ninguna entidad por vertical. Hasta que se escriba,
+> `finDeServicio` no tiene de dónde contestar.
 
 **La reversibilidad es de papel.** Revocar el anuncio antes de la fecha deja la fila como estaba,
 pero **no deshace las cancelaciones en el proveedor**: cada cliente tendría que volver a

@@ -77,7 +77,9 @@ verdad»*— quedaría sin objeto.
 aunque la máquina siga en ese estado hasta `T3`: el contrato no emite ahí ninguna fuente de título
 (`12-contrato…` §2.6, *«una vertical discontinuada no cubre a nadie»*; FASE 8 completa,
 `F-8CC1-001`, owner 2026-09-25). Por la letra de esa regla, `PRE_TRIAL` tampoco: quien estaba ahí
-resuelve contra la versión de piso.
+resuelve contra la versión de piso. **La fecha la lee por la pregunta `finDeServicio` del
+contrato §4.1**, que contesta billing: ~~era una columna de `vertical`~~ dejó de ser una columna
+de esta épica (owner 2026-09-27, FASE 9 vuelta 2, `R5`).
 
 **Y la fila de arriba no abre la puerta inversa, porque no hay puerta**: nadie entra a
 `PRE_TRIAL`, se empieza ahí, y ninguna transición vuelve. Una cobertura que sólo existe en el
@@ -1131,8 +1133,9 @@ nada más.**
   las que tienen **al tiempo como evento** —`T3`, `PB4`, `PB5` y `PB9`—, así que `G-R3-B`, que
   lee las tablas, no ve ninguna transición nueva que otorgue. Sobre quién se evalúan los pasos 5–7
   cuando las corre él lo declara el cap. 17 §3.4.
-- **De los hechos del reloj.** Escribe el **2** y el **5** del cap. 01 §1.2 (núcleo) y **ningún
-  hecho nuevo**: la lista sigue en ~~cinco~~ **seis** —el sexto, `PB11`, lo agregó la FASE 9
+- **De los hechos del reloj.** Escribe el **2** y el **5** del cap. 01 §1.2 (núcleo) —**y el 4 en
+  la corrida del fin de servicio de una vertical** (abajo; owner 2026-09-27, FASE 9 vuelta 2,
+  `R5`)— y **ningún hecho nuevo**: la lista sigue en ~~cinco~~ **seis** —el sexto, `PB11`, lo agregó la FASE 9
   completa (decisión 5b), no este reconciliador—, más la escritura `C` del corte, y `G-R6-B` mitad *(a)* lo
   admite por la lista. Lo que crece es la cuenta de ejecutores: el **2** pasa a tener **cuatro** y
   el **5**, **tres** (cap. 02 §2.5). **No lee `listing.inactiva_desde`** —compara estados de ficha,
@@ -1191,7 +1194,9 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    atascado (`S12`, `S10`/`S25`, `T3` o el de un addon `DÍAS_FIJOS`) o hasta que venza la red de
 >    tiempo. **Causa**: el reconciliador compara estados de ficha, no conjuntos efectivos. Pasa
 >    sólo cuando esa primera línea falla: **el fin de servicio de una vertical ya no es uno de estos
->    casos**, porque lo invalida el barrido del día (cap. 02 §3.2; owner 2026-09-25, decisión 6b).
+>    casos**, porque lo invalida ~~el barrido del día~~ este reconciliador en la corrida de ese día
+>    (abajo, *«el día del fin de servicio»*; cap. 02 §3.2; owner 2026-09-25, decisión 6b; el
+>    ejecutor, owner 2026-09-27, FASE 9 vuelta 2, `R5`).
 >    **La excepción es la presencia de Partner**, que no tiene fichas y sí está en la población desde
 >    `R13` (arriba): ahí el reconciliador compara el entitlement y no el estado de fichas.
 > 3. **La máquina de trial no la corre.** `DEC-ARCH-009` nombra `PB2`, `PB3` y `PB7`. Si se pierde
@@ -1210,6 +1215,68 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    encuentra candidatas y cupo y corre `PB3`/`PB7`. Es la letra de la segunda rama de las dos
 >    —*«el cupo vuelve a alcanzar sin que `cubierto` cambie»*— y el riesgo de republicar lo que el
 >    dueño no quería está aceptado por `DEC-DATA-003` (cap. 15 §4.4).
+
+### El día del fin de servicio: billing avisa, verticales ejecuta
+
+Owner 2026-09-27, FASE 9 vuelta 2, `R5` (`F-8V2A3-001`, `F-8V2C1-001`). **Este texto vivía en
+`B/10` §4.3**, que le mandaba al barrido de billing del día del fin de servicio correr `PB2`,
+escribir `listing.inactiva_desde` en cada ficha de la vertical e invalidar el caché. Eran tres
+escrituras de billing en verticales, y el contrato admite una sola, `extenderTrial`
+(`12-contrato…` §4.1 y §4.2). Un constructor que respetara el contrato no escribía el hecho 4, y
+otro que respetara el capítulo escribía en tablas de verticales sin contrato. **Ahora billing sólo
+avisa y verticales ejecuta.**
+
+**Billing calcula la fecha y corta la cobertura.** La fecha sale de la fórmula de `B/10` §4.3 y
+verticales la lee por la pregunta `finDeServicio(vertical)` del contrato §4.1. Desde esa fecha el
+contrato no emite en la vertical ninguna fuente de título (`12-contrato…` §2.6), y las
+suscripciones que `S26` llevó a `CANCEL_SCHEDULED` consuman su `CANCELLED` con el aviso que ya
+emiten. Nada más cruza.
+
+**Verticales lo ejecuta en el reconciliador diario de cobertura** (arriba), en su primera corrida
+con la fecha cumplida. No es un reloj nuevo: es la pieza que ya corre por calendario, ya corre
+`PB2`, ya escribe hechos del reloj y ya invalida el caché. Esa corrida hace tres cosas sobre la
+vertical:
+
+1. **Corre `PB2`, primera rama**, sobre cada ficha publicada, con el hecho 5 en las demás fichas del
+   dueño. No es una fila nueva de la tabla de comparación: el dueño aparece con `cubierto` falso y
+   fichas publicadas, que es su primera fila. Si el aviso de una `S12` llegó antes, ya no queda
+   diferencia y no corre nada.
+2. **Escribe el hecho 4 en cada ficha de la vertical**, publicada o no, con **el instante del fin de
+   servicio** y no el de la corrida. Escribe sólo sobre la ficha cuyo `inactiva_desde` es anterior a
+   ese instante, así que una segunda corrida no pisa un hecho posterior y repetirla da lo mismo.
+3. **Invalida las entradas del caché de la vertical entera** (cap. 02 §3.2, fila *«llega el fin de
+   servicio»*): el grant, la cortesía y el trial dejan de otorgar sin que ninguna fila suya
+   transicione, así que ninguna otra fila de invalidación ocurre.
+
+**Y el recorrido es sobre la vertical, no sobre la población.** La población del reconciliador deja
+afuera `DRAFT` y `MODERATED`, y el hecho 4 alcanza también a los borradores, porque sobre ellos
+corre `PB5`. Esa corrida recorre todas las fichas de la vertical una vez.
+
+**Por qué arranca el reloj ahí, no antes** (movido de `B/10` §4.3). El fin de servicio de una
+vertical discontinuada es el cuarto de los hechos que reinician la inactividad (cap. 01 §1.2,
+núcleo). Contar su ausencia desde antes lo castigaría por una decisión nuestra, aunque el dueño
+lleve meses sin tocar la ficha. Tres precisiones, cada una para una lectura que sale mal:
+
+1. **La escritura es del reconciliador, no de `PB2`.** `PB2` escribe el hecho 5 sobre la ficha que
+   baja, y el recálculo del aviso o el reconciliador lo escriben en las demás fichas del dueño que
+   ese día pierde la cobertura. Sobre ése, el 4 y el 5 escriben el mismo instante, porque el
+   contrato corta la cobertura en la fecha de fin de servicio. **El 4 sigue haciendo falta por el
+   dueño que ese día ya estaba sin cobertura**: sobre él no ocurre ningún 5.
+2. **No es un escritor de más.** Es el hecho 4 de la lista cerrada del cap. 01 §1.2 (núcleo), así
+   que `G-R6-B` mitad *(a)* lo acepta por la lista: la lista cierra hechos, y cada hecho puede tener
+   su ejecutor. **Cambió el ejecutor, no el hecho**: era el barrido de billing y ahora es el
+   reconciliador, y la lista sigue en seis.
+3. **Sin ella el borrado se adelanta hasta 90 días.** Entre dos evaluaciones de `PB4` hay 90 días,
+   así que la fecha que la columna trae ese día puede tener esa antigüedad. El hard delete caería en
+   `fin_de_servicio + 90` en vez de en `+ 180`, sobre una población a la que **los tres avisos de
+   `DEC-MP-002` le dijeron cómo exportar** y hasta cuándo.
+
+**El costo es el de siempre de este reconciliador: hasta un día.** Si la corrida de ese día cae
+antes del instante de la fecha, lo ejecuta la del día siguiente, y mientras tanto el caché puede
+seguir otorgando capacidades de la vertical cerrada. El barrido de billing que lo hacía antes
+también era diario, así que no se pierde nada. El hecho 4 no se atrasa, porque escribe el instante
+de la fecha y no el de la corrida. Si el reconciliador no corre, lo avisa el monitor de cron
+externo (arriba, *«el vigía»*).
 
 ---
 
