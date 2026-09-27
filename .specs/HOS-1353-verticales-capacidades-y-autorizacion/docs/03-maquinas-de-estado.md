@@ -744,9 +744,15 @@ así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`
 > 3. **Los avisos al dueño** al moderar, al levantar la moderación y al borrar no tienen fila en
 >    `V/19` §4, y la fila 20 de ahí dice *«se borró por inactividad»*, que no es la causa de una
 >    ficha que llegó a `PURGED` por `PB12`. **Cerrado en parte** (FASE 9 vuelta 1; owner
->    2026-09-26, `G2-3`): **el de moderar tiene fila** en `V/19` §4 **y su correo en `NUCLEO/07` §6** (FASE 9 vuelta 1: el dueño no está presente cuando un admin modera, y la fila sola no le llegaba) y nombra los destaques
->    recurrentes sobre esa ficha, que se siguen cobrando hasta que el dueño los dé de baja; los de
->    levantar la moderación y de borrar siguen sin fila.
+>    2026-09-26, `G2-3`; precisado 2026-09-26), y por partes:
+>    - **Al moderar (`PB10`): cerrado.** Tiene la fila 24 de `V/19` §4 y su correo en
+>      `NUCLEO/07` §6, porque el dueño no está presente cuando un admin modera y la fila sola no
+>      le llegaba. La fila nombra el motivo y los destaques recurrentes sobre esa ficha, que se
+>      siguen cobrando hasta que el dueño los dé de baja.
+>    - **Al levantar la moderación (`PB11`): abierto.** No tiene fila ni correo.
+>    - **Al borrar (`PB12`): abierto, y con dos huecos.** No tiene fila, y la fila 20 sigue
+>      nombrando sólo `PB9` y la causa *«por inactividad»*, así que una ficha borrada por su dueño
+>      no tiene texto propio en Mi Cuenta.
 > 4. **El contenido de una ficha moderada no tiene fin**: ningún reloj actúa en `MODERATED`, así
 >    que se conserva mientras dure la moderación.
 > 5. ~~**Qué capacidad autoriza `PB12` en el paso 6 no está escrita.** Borrar escribe estado, así

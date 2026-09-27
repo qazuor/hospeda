@@ -26,8 +26,11 @@ parent: HOS-1352
 ## 1. De dónde sale
 
 El programa [HOS-1352](../HOS-1352-billing-verticals-redesign/spec.md) quedó detenido por una sola
-cosa: **no está decidida la pasarela.** Mercado Pago niega el cobro a demanda con un `403`
-comercial y el candidato que sí lo documenta tiene el alta en revisión de KYC.
+cosa: ~~**no está decidida la pasarela.** Mercado Pago niega el cobro a demanda con un `403`
+comercial y el candidato que sí lo documenta tiene el alta en revisión de KYC.~~ **la pasarela
+no estaba decidida.** Tachado 2026-09-26: ya lo está. Mercado Pago es el proveedor y lo que no
+hace lo suple el diseño (`DEC-MP-005`); el mandato del proveedor es el modelo canónico, sin
+destino pendiente de cargo puntual (`DEC-MP-006`).
 
 **Ese bloqueo alcanza al dinero y no alcanza a las capacidades.** `DEC-ARCH-005` parte el programa
 en dos épicas autónomas y ésta es la que arranca. El corte, con su fundamento, está en
@@ -421,4 +424,7 @@ filas existentes; salida 3 de la FASE 9 completa.)*
 - **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5 y tiene su gate propio
   (`DEC-METH-003`).
 - **Nada de la épica de billing.** Su primera pregunta —si el cargo puntual es el modelo canónico—
-  está planteada en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y sin responder.
+  ~~está planteada en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y sin responder.~~
+  **se planteó en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y está respondida**
+  (tachado 2026-09-26): no lo es; el modelo canónico es el mandato del proveedor (`DEC-MP-006`),
+  sobre Mercado Pago (`DEC-MP-005`).
