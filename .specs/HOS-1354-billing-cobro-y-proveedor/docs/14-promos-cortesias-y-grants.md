@@ -479,7 +479,11 @@ hace es cerrarlo en silencio**, que es la única lectura de este caso que sería
 `courtesy_grant.saldo_meses` ~~los días~~ los meses que le quedaban (FASE 8 completa, `F-8CB1-001`;
 la fracción de mes queda abierta, `B/02` §2.4); **`S9` la re-emite sobre la sucesora cuando
 ésta autoriza** —o sea cuando llega a `ACTIVE`, que es exactamente el `desde` que `S9` ya tiene—,
-re-apuntando ahí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo
+re-apuntando ahí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo.
+**El `inicio` es el fin del crédito de `DEC-SUB-006` cuando la sucesora vive de él** (owner
+2026-09-27, FASE 9 vuelta 2, `R17`, `F-8V2B1-004`): la cortesía arranca cuando se agota lo que la
+persona ya pagó, y no corre encima de eso. La pausa se abre igual al autorizar, hasta ese `fin`, así
+que cruza exactamente los cobros que la cortesía promete saltear
 (`B/03` §3.2, `B/02` §2.4 y §2.6). El instrumento no desapareció — **la suscripción que pausaba se
 sucedió**, y la cortesía la espera.
 

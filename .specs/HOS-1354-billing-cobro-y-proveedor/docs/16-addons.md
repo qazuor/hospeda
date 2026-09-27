@@ -96,6 +96,15 @@ exactamente una de las dos es no nula.
 > ese caso: la de `B/05` §1.2 pregunta por suscripciones.~~
 >
 > **Medida el 2026-09-25 (`EX-41`, sonda 51, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`** —la misma clave con el mismo cuerpo devuelve la misma orden y un solo pago; con otro cuerpo, `409 idempotency_key_already_used`—, y el `external_reference` **no deduplica nada**. Así que la clave se acuña y se persiste antes de la llamada (`D4`), y **una orden sin respuesta se recupera reenviándola con la misma clave**: si ya existía, vuelve la misma; si no, se crea. Producción no está medida.
+>
+> **Y la clave sale del PEDIDO del cliente, no de la llamada** (FASE 9 vuelta 2, owner 2026-09-27,
+> `R4`, `F-8V2B2-003`). La pantalla de compra acuña un identificador de pedido al abrirse; `A1` lo
+> persiste en la instancia, único (`B/02` §2.4), y la clave de la orden sale de él. **El doble clic
+> reusa la orden**: el segundo pedido trae el mismo identificador, encuentra la instancia que ya
+> existe y no manda otra orden; una recompra es otro pedido, con otro identificador. **Y la
+> recuperación tiene quién la ejecute** (`F-8V2B1-003`, `F-8V2B2-004`): `A3` reenvía la orden con
+> la misma clave antes de abandonar (`B/03` §8), y la orden que se paga después de que `A3`
+> abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).
 
 ---
 
@@ -685,7 +694,11 @@ pausa por cortesía**: la cortesía emite título, y el complemento se cobra y s
 ### 4.3 El huérfano recurrente se cancela en el proveedor, y esto es lo urgente
 
 `DEC-ADDON-002` implicación 6: **cancelar el plan NO cancela los addons.** Cada addon recurrente
-es su propio preapproval y **sigue cobrando por su cuenta** hasta que alguien lo cancele.
+es su propio preapproval y **sigue cobrando por su cuenta** hasta que alguien lo cancele. **Y en la
+baja desde `ACTIVE` ese alguien es `S11`** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`,
+`F-8V2B1-001`): cancela en el acto el cobro de los complementos que dependen de la principal —la
+selección de `S32`— y los sostiene hasta el fin de servicio, porque `CANCEL_SCHEDULED` sigue siendo
+fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2).
 
 Entonces, cuando un título **deja de ser fila viva**, la misma causa tiene **tres efectos
 distintos** y los tres se disparan del mismo lugar:
@@ -699,16 +712,19 @@ distintos** y los tres se disparan del mismo lugar:
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
-—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ **las trece** que en
+—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ ~~**las trece**~~ **las catorce** que en
 `B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31` es la decimotercera**, la
 sucesora que un contracargo sobre su predecesora corta a `ABANDONED` o `CANCELLED` (FASE 9
-completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista)—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
+completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista), **y `S36` la decimocuarta**, la
+revocación del derecho de arrepentimiento, que saca a la principal de las filas vivas desde la FASE 9
+vuelta 1 y no se había recontado acá (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`, `F-8V2D1-001`)—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
 espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
 estando pausado, suspendido o en el grace— más **`S25`**, el fin de una pausa sobre un plan que ya
 no se presta (`DEC-SUB-015`); y desde la 9-bis-5, **`S27` y `S28`** —la suspendida y la que esperaba
-autorización cuando se discontinuó su vertical (`B/10` §4.3)—. **`S26` no entra**: manda la fila a
-`CANCEL_SCHEDULED`, que **sigue siendo fila viva**. Lo que se evalúa en cada una es **la condición del
+autorización cuando se discontinuó su vertical (`B/10` §4.3)—; y **`S36`**, la revocación. **`S26` no entra**: manda la fila a
+`CANCEL_SCHEDULED`, que **sigue siendo fila viva** —y **`S11` tampoco**, por la misma razón: sus
+complementos los cancela ella misma (`R1-a`)—. Lo que se evalúa en cada una es **la condición del
 §4.2**, no el
 nombre del estado al que llegó. La lista es para poder auditar que ninguna se olvidó; **y que
 hayan entrado cuatro seguidas sin que el predicado cambiara es la prueba de que
@@ -724,12 +740,12 @@ predecesora ya murió (§4.2).
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
-> | **una de las ~~doce~~ trece transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **una de las ~~doce~~ ~~trece~~ catorce transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
 > | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, **`S28`** la corta al discontinuarse la vertical **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
-> **La lista no agrega ninguna transición al disparador de arriba**: las ~~doce~~ trece son las que
+> **La lista no agrega ninguna transición al disparador de arriba**: las ~~doce~~ ~~trece~~ catorce son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
 > tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
 > momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.
@@ -879,7 +895,10 @@ se pierde **por un acto del propio cliente**;
 **no** vale cuando la instancia llega a `CANCELLED` por la **tercera** cláusula de `A5` —**se revoca
 el grant que era su título**—, ni cuando llega por la **segunda** —**queda huérfana**— **y a su
 título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación del
-2026-09-23). En las dos el cliente no hizo nada y pierde días que pagó. Los **cuatro** disparadores
+2026-09-23). En las dos el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su
+título lo mató `S36`**, la revocación del derecho de arrepentimiento, **y el último cobro del
+complemento cae dentro de sus propios 10 días corridos**: ahí no hay marca y `S21` crea `RF1` (owner
+2026-09-27, FASE 9 vuelta 2, `R1-b`); fuera de ese plazo, la regla. Los **cuatro** disparadores
 de `S21` están enumerados uno por uno, con el motivo de cada uno —y el segundo con su reparto interno—
 en `B/03` §3.2, *«cuál de los dos motivos abre `S21`»*. **Y el resto no es todo *«un acto
 del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla **dos**
@@ -900,7 +919,8 @@ corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo
 **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** —el **15**— cuando se revocó
 el grant o cuando la orfandad la causó la discontinuación, y
 **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`** —el **14**— en el resto, que es la regla del
-párrafo de arriba escrita. El listado accionable muestra **el default de ese motivo**
+párrafo de arriba escrita —salvo `S36` dentro de los 10 días del cobro del complemento, que no abre
+marca y crea `RF1` (`R1-b`)—. El listado accionable muestra **el default de ese motivo**
 —devolver y no devolver, respectivamente— más el
 pago y el monto (`B/19` §6). Hasta acá esa frase nombraba
 una vía que **ninguna transición ni comprobación del corpus abría**, y desde que la enumeración de
@@ -940,7 +960,10 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   conjunto de las principales de su vertical** desde la FASE 9 completa (4c)—, **y para
   `USER`/`GLOBAL` también**: las principales vivas y ~~cobradas~~ pagando de sus verticales compatibles (4d).
   **Y la pausa que pide el cliente pausa sus complementos** (4a, §4.2), **y la suspensión
-  también** (owner 2026-09-26, `G2-2`). **El caso en que la principal se va porque cae un grant lo
+  también** (owner 2026-09-26, `G2-2`), **y la baja desde `ACTIVE` les cancela el cobro en el acto
+  y los sostiene hasta el fin de servicio** (`S11`; owner 2026-09-27, FASE 9 vuelta 2, `R1-a`): la
+  orfandad no alcanzaba a la ventana `CANCEL_SCHEDULED`, que es fila viva, y el complemento cobraba
+  un ciclo más. **El caso en que la principal se va porque cae un grant lo
   resuelve el §3.4**, y ahí la respuesta es la otra: el objetivo sobrevive y lo que se apaga es
   el cobro.
 - ~~**El checkout de una contratación** —y el `init_point` roto de `EX-37`, que alcanza a cada
@@ -960,9 +983,17 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   resueltas (corrección de diseño, FASE 8 completa, `F-8CB1-008`): ~~**su idempotencia no está
   medida** y queda pendiente de sonda; **no hay recuperación declarada** para una orden sin
   respuesta (`B/05` §1.2 pregunta por suscripciones);~~ **las dos primeras quedaron cerradas por
-  `EX-41`** (idempotente por la clave; una orden sin respuesta se reenvía con la misma clave); y **su pago no lo ve la conciliación ni
-  admite una marca**, porque las dos cuelgan de suscripciones (`B/02` §2.3, `B/09`). **Y está
-  medido sólo en sandbox** (`EX-30`).
+  `EX-41`** (idempotente por la clave; una orden sin respuesta se reenvía con la misma clave); ~~y **su pago no lo ve la conciliación ni
+  admite una marca**, porque las dos cuelgan de suscripciones (`B/02` §2.3, `B/09`).~~ **y la tercera
+  quedó acotada el 2026-09-27** (owner, FASE 9 vuelta 2, `R4`): la clave sale del pedido y el doble
+  clic reusa la orden; el reenvío lo ejecuta `A3` antes de abandonar; **la orden pagada cuya
+  instancia terminó `ABANDONED` la ve el barrido y abre una marca colgada de la instancia**, con el
+  motivo `ORDEN_PAGADA_SIN_INSTANCIA` (`B/09` §3, `B/02` §2.5); y **la devolución va por la acción
+  administrativa 14**: la persona devuelve desde el panel del proveedor y la asienta, con el cobro
+  que faltaba (`NUCLEO/08` §3, `RF4`). **Lo que sigue sin ver la conciliación** es el pago de una
+  instancia que sí llegó a `ACTIVE`: un contracargo o un reembolso desde el panel sobre él no lo
+  relee ninguna comprobación, porque la de pagos acreditados selecciona pagos de suscripción. **Y
+  está medido sólo en sandbox** (`EX-30`).
 - **Qué hace un contracargo sobre el cobro de un addon periódico** (FASE 9 completa, borde 4 de
   §R7.5.2 de `04`; declarado por `DEC-METH-015`). `P6` abre la marca `CONTRACARGO` sobre la
   suscripción de complemento, que es la dueña del pago; si además corre `S6` sobre ella —y qué le
@@ -1015,4 +1046,7 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   llega a `ACTIVE` después (`A2`), nadie lo pausa. En la pausa lo acota su tope; en la
   suspensión no hay tope, pero necesita que `S6` caiga dentro de la ventana de autorización del
   addon recién comprado. **Causa**: el evento de `S32` es el paso a `PAUSED` o a
-  `SUSPENDED`, no el estado.
+  `SUSPENDED`, no el estado. **Y lo mismo en la baja** (FASE 9 vuelta 2, `R1-a`): un complemento
+  que autoriza después de `S11` —o que estaba en `GRACE_PERIOD` y no entró en su selección— cobra
+  hasta que `S12` saque a la principal de las filas vivas, y ese cobro `S21` lo pone en el motivo
+  14. **Causa**: el evento de `S11` es la baja, no el estado `CANCEL_SCHEDULED`.

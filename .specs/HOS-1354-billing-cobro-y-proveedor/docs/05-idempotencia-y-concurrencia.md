@@ -75,7 +75,12 @@ cobro de única vez por `/v1/orders` sí lo cubre un candado**: se reenvía con 
 `X-Idempotency-Key`, acuñada y persistida antes de la primera llamada, y si la orden ya existía
 vuelve la misma y hay **un solo pago** (`EX-41`, sonda 51, sandbox; `B/16` §1.4) (FASE 9
 completa, contradicción 3 de `03` §R6.5: el *«sólo se resuelve preguntándole al proveedor»* de
-este § era falso para las órdenes desde `EX-41`).
+este § era falso para las órdenes desde `EX-41`). **La clave sale del pedido del cliente y no de la
+llamada, y el reenvío tiene quién lo haga** (FASE 9 vuelta 2, owner 2026-09-27, `R4`): el
+identificador del pedido lo acuña la pantalla de compra y `A1` lo persiste en la instancia, único,
+así que el doble clic —que el §51 pide en la primera línea de este capítulo— encuentra la instancia
+que ya existe y reusa su orden en vez de mandar otra (`F-8V2B2-003`); y una orden sin respuesta la
+reenvía `A3` con la misma clave antes de abandonar (`B/03` §8; `F-8V2B1-003`, `F-8V2B2-004`).
 
 ---
 
@@ -111,7 +116,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo —con `max` sobre la fecha vigente: una extensión **nunca acorta** (`B/03` `S11`); sobre una fila de `S26` deja en pie el piso de la vertical (FASE 9 vuelta 1, R4, `F-8V1B2-002`)— — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los ~~**seis**~~ **siete** motivos que significan *«hay plata del cliente que devolver»* —recontados sobre la última columna del `B/02` §2.5, donde son el 1, el 2, el 3, el 7, el 12, el 15 y el 20 (el 20 desde la pendiente 6, owner 2026-09-25)—, así que el listado accionable lo muestra adelante (`B/19` §6) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los ~~**seis**~~ ~~**siete**~~ **ocho** motivos que significan *«hay plata del cliente que devolver»* —recontados sobre la última columna del `B/02` §2.5, donde son el 1, el 2, el 3, el 7, el 12, el 15, el 20 y el 23 (el 20 desde la pendiente 6, owner 2026-09-25; el 23 desde la FASE 9 vuelta 2, `R4`)—, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
 > **Este motivo le gana al del §3 sobre el mismo hecho, y está escrito allá.** Un cobro que entra
 > sobre una fila `CANCELLED` falla también la condición 1 del pago tardío, que mandaría a

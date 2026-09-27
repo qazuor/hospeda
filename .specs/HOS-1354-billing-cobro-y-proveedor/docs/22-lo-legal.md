@@ -116,6 +116,15 @@ entero: Juan conservaba el mes **y** recibía el total. **Cuando entre el botón
 fila.** Si la consulta legal contesta que cada renovación abre ventana (punto 1 de abajo), lo que
 cambia es **cuál cobro** revoca la fila, no la fila.
 
+**Y la fila alcanza a dos cosas que la redacción de arriba no nombraba** (owner 2026-09-27, FASE 9
+vuelta 2). **El último pago de una sucesora que vive del crédito de `DEC-SUB-006` es el de su
+predecesora**, que `S36` encuentra por `sucedida_por`, y los 10 días se cuentan desde ese cobro
+(`R17`, `F-8V2B1-005`): sin eso, quien revocaba después de un upgrade se quedaba sin servicio y sin
+nada que devolver. **Y los addons recurrentes son parte del mismo contrato**: `S36` saca a la
+principal de las filas vivas, la orfandad corre en el mismo acto, y el último cobro de cada
+complemento se devuelve por `RF1` **si cae dentro de sus propios 10 días corridos**; si no, va al
+motivo 14 y la propuesta es no devolver (`R1-b`, `F-8V2D1-001`; cap. 03 §3.2, cap. 16 §4.3).
+
 **Lo que queda abierto son tres cosas, y ninguna es el mecanismo:**
 
 1. **Si cada renovación abre una ventana nueva** o si corre una sola vez desde el alta. **Cambia

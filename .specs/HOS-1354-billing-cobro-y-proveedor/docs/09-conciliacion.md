@@ -119,16 +119,16 @@ cobra ni devuelve nada, sólo impide cobros futuros. **Un preapproval vivo sobre
 NUNCA mandamos cancelar sigue siendo divergencia de estado, y la mira una persona**, como dice el
 párrafo de arriba.
 
-> **Y la marca dice CUÁL de las ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ veintidós cosas pasó** (`B/02` §2.5; el 16 llegó con
+> **Y la marca dice CUÁL de las ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ ~~veintidós~~ veintitrés cosas pasó** (`B/02` §2.5; el 16 llegó con
 > `F-8CB1-013`, y el 17, el 18 y el 19 con `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8
 > completa, owner 2026-09-25; y el 20, `COBRO_DUPLICADO`, con la pendiente 6; y el 21 y el 22 con la
-> FASE 9 completa, 3d y `F-8CB2-003`). El criterio de arriba manda que
+> FASE 9 completa, 3d y `F-8CB2-003`; y el 23, `ORDEN_PAGADA_SIN_INSTANCIA`, con `R4`, FASE 9 vuelta 2). El criterio de arriba manda que
 > todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
-> indistinguibles**. ~~Seis~~ Siete de los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ veintidós motivos significan *«hay plata del cliente que devolver»*,
-> y ésos son los que la demora le cobra al cliente. **Los ~~seis~~ siete se leen en la última columna de esa
+> indistinguibles**. ~~Seis~~ ~~Siete~~ Ocho de los ~~quince~~ ~~dieciséis~~ ~~diecinueve~~ ~~veinte~~ ~~veintidós~~ veintitrés motivos significan *«hay plata del cliente que devolver»*,
+> y ésos son los que la demora le cobra al cliente. **Los ~~seis~~ ~~siete~~ ocho se leen en la última columna de esa
 > tabla y ninguno pide mirar otra cosa**: `DEC-RF-004` había dejado uno que sí —la marca que abre
 > `S21`, cuya propuesta dependía del disparador—, y `DEC-RF-006` lo partió en dos motivos, de los
-> cuales el **15** es el que entra a esta lista. El **20** entró con la pendiente 6 (owner 2026-09-25).
+> cuales el **15** es el que entra a esta lista. El **20** entró con la pendiente 6 (owner 2026-09-25), y el **23** con `R4` (owner 2026-09-27).
 
 ---
 
@@ -698,7 +698,43 @@ lectura por pago de la ventana—, y por eso la acota una ventana y no la carter
 >
 > **Un pago de addon de única vez tampoco entra en esta marca**: cuelga de la instancia y no de
 > una suscripción, y la marca cuelga de una suscripción (`B/02` §2.3). Es el mismo pendiente que
-> ya estaba declarado para esa orden (*«lo que este capítulo NO cierra»*).
+> ya estaba declarado para esa orden (*«lo que este capítulo NO cierra»*). **La orden que se pagó
+> sin que su instancia llegara a `ACTIVE` sí tiene comprobación desde la FASE 9 vuelta 2**, abajo;
+> lo que sigue sin comprobación es el pago de una instancia que sí llegó (`B/16`, NO cierra).
+
+**Y la tabla de arriba lee las devoluciones POR SU ID, no por el acumulado** (FASE 9 vuelta 2,
+`F-8V2B2-002`, `F-8V2B2-005`). Desde que cada fila de `refund` guarda el id de cada devolución
+que mandó al proveedor (`B/02` §2.3, `B/03` §6.1 `RF2`), el barrido separa las devoluciones que
+lee en el pago en dos grupos, y cada uno tiene su acto:
+
+| lo que lee en el pago | qué se hace |
+|---|---|
+| **una devolución cuyo id está en una fila de `refund` nuestra en `CONFIRMED`** | es **nuestro flujo con el aviso perdido** (`WH-5`), no una divergencia: si las devoluciones de esa fila ya suman lo confirmado, **corre `RF3`**; si todavía no, nada, y la fila sigue la regla de `RF2`. **Y por eso el barrido relee también todo pago que tenga un `refund` en `CONFIRMED`**, esté o no en la ventana de arriba, hasta que la fila salga de ese estado |
+| **una devolución cuyo id no está en ninguna fila de `refund`** | es la del panel, **fuera del flujo**: el motivo 18, como decía la fila de arriba. *«Con más reembolsado que nuestros `refund`»* se lee así desde ahora: sobra una devolución que ninguna fila nombra, no un monto |
+
+Sin esto, la devolución hecha por nuestro flujo cuyo aviso se perdía terminaba en el motivo 18,
+la persona asentaba un `RF4` por el mismo monto y la fila `CONFIRMED` seguía esperando un `RF3`
+que lo sumaba otra vez al acumulado. **Y *«menos devuelto que lo asentado»* no pide detector**:
+`RF3` ya no ocurre mientras las devoluciones de la fila no sumen lo confirmado, así que un
+`EXECUTED` no puede asentar más de lo que el proveedor muestra.
+
+**Y una comprobación más que le pregunta al proveedor, sobre una ORDEN: la de única vez que se
+pagó sin que su instancia llegara a `ACTIVE`** (FASE 9 vuelta 2, owner 2026-09-27, `R4`,
+`F-8V2B1-003`, `F-8V2B2-003`). **Por cada instancia de addon `UNA_VEZ` en `ABANDONED` con el id
+de su orden guardado** (`B/02` §2.4), dentro de la misma ventana configurable de arriba, el barrido
+**relee la orden por id**; si tiene un pago aprobado, **abre la marca con motivo
+`ORDEN_PAGADA_SIN_INSTANCIA`** (`B/02` §2.5, el 23), colgada de la instancia. La persona devuelve
+desde el panel del proveedor y lo asienta con la acción administrativa 14, que crea el `payment` y
+el `refund` en `EXECUTED` (`RF4`). **El sujeto es `ABANDONED` y no *«cualquier instancia muerta»***:
+una `EXPIRED` o una `CANCELLED` llegaron ahí desde `ACTIVE`, así que su orden pagada es el cobro
+normal de lo que recibieron; la única que termina **sin haber estado nunca activa** es la que `A3`
+abandonó. **Y el barrido no reenvía nada**: reenviar con la clave puede crear la orden si nunca
+existió, y cobrar por una instancia ya abandonada. El reenvío es de `A3`, antes de abandonar; si
+nunca tuvo respuesta, `A3` no abandona (`B/03` §8), así que toda `ABANDONED` tiene el id de su
+orden o no llegó a mandar ninguna.
+
+> **No es una de las seis comprobaciones de cero llamadas**, igual que la de pagos acreditados:
+> relee por id cada orden de la ventana. El conteo de seis no se mueve.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.
@@ -876,7 +912,8 @@ vez de abrirse otra (`S14`, `B/03` §3.2).
 
 **Todo lo que el barrido detecta depende de que el barrido corra** (FASE 8 completa,
 `F-8CB3-007`): las seis comprobaciones de cero llamadas, las cuatro salvedades, el escalamiento de
-las marcas, el reintento de las cancelaciones nuestras y la comprobación de pagos acreditados. Si
+las marcas, el reintento de las cancelaciones nuestras, la comprobación de pagos acreditados **y la
+de órdenes pagadas** (FASE 9 vuelta 2, `R4`). Si
 el job muere, o termina con la mitad de las lecturas por id fallidas, **todo eso se apaga a la vez
 y en silencio** — el mismo modo de falla que el §1 le reprocha al buscador del proveedor, *«termina
 en verde»*. Y el aviso no puede salir del propio barrido, porque es justamente lo que no corrió.
@@ -932,9 +969,12 @@ alerta a las 26 h sin ping. Lo que este § deja abierto del vigía vale igual pa
   diseño, FASE 8 completa, `F-8CB1-008`). Se cobra por `/v1/orders`, sin preapproval (`B/16` §1.4),
   y su `payment` cuelga de la instancia y no de una suscripción (`B/02` §2.3): el §2.1 arma el
   inventario de suscripciones, el §2.2 detecta huérfanas por *«un preapproval desconocido»* y el §4
-  lee `authorized_payments`, así que **ninguna de las tres partes lo alcanza**. Cómo se concilia una
+  lee `authorized_payments`, así que **ninguna de las tres partes lo alcanza**. ~~Cómo se concilia una
   orden —y dónde se anota una divergencia sobre ella, si la marca cuelga de una suscripción— **no
-  está escrito**. **Y el mismo vacío alcanza al pago diferido de una `Preference` del sistema viejo**
+  está escrito**.~~ **Desde la FASE 9 vuelta 2 (owner 2026-09-27, `R4`) hay una comprobación, y una
+  marca que cuelga de la instancia**: la orden pagada cuya instancia terminó `ABANDONED` (§3, el
+  motivo 23). **Lo que sigue sin escribir es el resto**: el pago de una instancia que llegó a
+  `ACTIVE` no se relee —un contracargo o un reembolso desde el panel sobre él no lo ve nadie—. **Y el mismo vacío alcanza al pago diferido de una `Preference` del sistema viejo**
   que acredita después del corte (efectivo, ticket; `16-fase-7-del-paraguas.md` §4.2, `F-8V1B3-006`):
   no trae preapproval, así que **no cae en la lápida de recepción** del §2.4 —que se escribe para
   un preapproval desconocido— **ni en ninguna marca**, y no lo ve nadie desde adentro. Declarado
