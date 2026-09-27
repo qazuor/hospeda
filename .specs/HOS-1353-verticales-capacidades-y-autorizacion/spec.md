@@ -167,7 +167,7 @@ inmutable desde el alta** (cap. 17 §1.2, precisión 6; la mitad *(c)* de `G2`) 
 `F-8CA1-001`; owner 2026-09-25, FASE 9 completa, 7a.
 
 ~~Tres precisiones que el orden hace cumplir:~~ **Las precisiones que el orden hace cumplir** —el
-cap. 17 §1.2 tiene siete; éstas son las que esta spec necesita para leerse sola (salida 3 de la
+cap. 17 §1.2 tiene ~~siete~~ ocho (la octava, FASE 9 vuelta 2, `F-8V2A1-002`); éstas son las que esta spec necesita para leerse sola (salida 3 de la
 FASE 9 completa)—:
 
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
@@ -180,7 +180,12 @@ FASE 9 completa)—:
   para quien no es el dueño, el recurso existe sólo si es una ficha `PUBLISHED` o una presencia de
   Partner ~~con la clave vigente y sin moderar~~ **con la clave de esa superficie** —«página propia»
   para la página, «presencia en el carrusel» para el carrusel (cap. 18 §1.2)— **vigente y sin
-  moderar** (FASE 9 vuelta 1, `F-8V1A1-004`). Todo lo demás contesta como inexistente.
+  moderar** (FASE 9 vuelta 1, `F-8V1A1-004`). Todo lo demás contesta como inexistente. **Y sólo
+  para leer: una escritura exige `sujeto = dueño`, y sobre lo ajeno contesta *«no existe»*** (FASE 9
+  vuelta 2, `F-8V2A1-001`).
+- **El sujeto no lo elige el pedido** (precisión 8; FASE 9 vuelta 2, `F-8V2A1-002`): fuera de las
+  operaciones de `actor ≠ sujeto` es el actor, y en ellas es el dueño del recurso, leído del
+  recurso.
 - **El estado de la persona va antes del permiso**, porque al revés una cuenta ~~inhabilitada~~ **con
   el correo sin verificar** puede averiguar qué permisos tiene probando operaciones. *(«Inhabilitado
   por abuso» salió del paso 2: no tenía dato que lo escribiera, y el abuso se trata ficha por ficha
@@ -202,7 +207,11 @@ que **ninguno los haga por su cuenta**.
 **Toda operación lleva dos identidades** y casi siempre coinciden. Lo que autoriza que difieran es
 **un permiso de esa acción concreta**, nunca una condición general de «es administrador».
 
-**El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto.
+**El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto,
+y la excepción son las catorce primeras acciones de `NUCLEO/08` §3: la decimoquinta, editar el
+contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
+`F-8V2A1-004`). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
+fila de aquel catálogo (cap. 17 §3.2 regla 1; `F-8V2A1-002`).
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y
 ése es exactamente el rastro que no se puede perder. **Y una acción administrativa nunca tiene
 `actor = sujeto`**: el paso 3 la rechaza y la hace otra cuenta con el permiso (cap. 17 §3.2 regla
@@ -236,7 +245,9 @@ Una suscripción convierte el trial recién con su primer pago acreditado (`T2`,
 convierte, ~~y quien pagó sin haber publicado consume su fila por `T8`, al primer pago~~ quien
 publicó con una suscripción que todavía no cobró consume su fila por `T8`, al primer pago, y quien
 pagó sin haber publicado sigue en `PRE_TRIAL` y la consume `T6` cuando publique (FASE 9 vuelta 1,
-`F-8V1A2-004`). La superficie
+`F-8V1A2-004`) —**salvo que le haya vuelto una ficha por `PB3` o `PB7` bajo esa suscripción: eso
+cuenta como ejercicio del evento para `T8`, que la consume al primer pago** (owner 2026-09-27, FASE
+9 vuelta 2, `R15`)—. La superficie
 lo evita antes: **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a
 publicar** **si publicar le arrancaría el trial**, que arranca su trial (cap. 03 §2, cap. 19 §4
 fila 23, donde está la regla entera; owner 2026-09-25, FASE 9 completa, 6c; FASE 9 vuelta 1,

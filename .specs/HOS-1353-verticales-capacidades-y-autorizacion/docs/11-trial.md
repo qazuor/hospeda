@@ -351,8 +351,10 @@ la persona recibió un aviso que dejó de ser cierto.
   corresponder.
 - **La campaña de RECUPERACIÓN** —+1 a +60— **no puede quedar desmentida, porque el cruce es
   imposible por construcción.** Arranca en T3, o sea con el trial ya en `TRIAL_EXPIRED`, y la
-  única transición que extiende es **T4**, que exige `TRIAL_ACTIVE`. Entre las dos no hay
-  camino.
+  única transición que extiende es **T4**, que exige `TRIAL_ACTIVE` **y la fecha de fin sin
+  pasar**. Entre las dos no hay camino. *(Sólo el estado no alcanzaba: con el job de `T3`
+  atrasado, la máquina seguía en `TRIAL_ACTIVE` con el trial vencido, y un canje lo revivía;
+  cap. 03 §2, `T4`; FASE 9 vuelta 2, `F-8V2A2-003`.)*
 
 **Y las dos vías de extensión lo confirman por separado:** el §32 es terminal sobre el promo
 —*«Sólo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe rechazar.»*— y una cortesía

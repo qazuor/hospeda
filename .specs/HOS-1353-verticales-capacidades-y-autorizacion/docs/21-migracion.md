@@ -163,7 +163,18 @@ cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le es
 
 **La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se
-re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la primera que aplica:
+re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la primera que aplica.
+
+**Y está escrita sólo para `accommodations`, así que el recuento de las otras tiene que dar cero, o
+el corte no sigue** (FASE 9 vuelta 2, `F-8V2A3-003`). `listing` son las filas que ya existen, una
+tabla por vertical (cap. 02 §2.5). `gastronomies` y `experiences` no tienen `billing_unpublished_at`,
+`owner_suspended` ni `plan_restricted`, que son las columnas de `L5` y `L7`, y `experiences` tiene
+en cambio `has_active_subscription` (código actual). Ahí no se sabe si una ficha `INACTIVE` la bajó
+billing o su dueño, que es justo lo que separa `L4` de `L5`, y adivinarlo hace nacer una ficha en
+un estado del que `PB3` no la devuelve. **Si el recuento de `B/21` §1.3 da una fila de Gastronomía o
+de Experiencia, el corte se detiene antes del paso 3** y la clase de esa fila se escribe con sus
+columnas a la vista. `DEC-MIG-002` sigue tomando altas, así que el cero es una medición que vence y
+no una premisa. Partner no tiene ficha: su presencia no se traduce (§4).
 
 | clase | condición sobre las columnas viejas | nace en |
 |---|---|---|
@@ -239,13 +250,15 @@ avisos de retención fechados en el pasado. **Toda ficha que existía el día de
 y `G-R6-B` la admite por ese lugar. **Se mantiene con `2g`**: lo que el owner respeta de los
 clientes actuales es la ficha, y ésta es la escritura que la protege. **Y la de un corte abortado
 no cuenta**: la rama de aborto restaura el backup, así que el reintento escribe con **su** instante
-(`16-fase-7…` §4.2; owner 2026-09-25, FASE 9 completa, `2e`). *(Sobre las fichas publicadas, `PB2`
-escribe ~~el mismo día~~ **dentro del primer día, cuando la corrida del reconciliador la despublica**
-(FASE 9 completa, `C-7`), el hecho 5 al despublicarlas, `NUCLEO/01` §1.2; la escritura `C` sigue haciendo falta porque la
-columna no admite nulo **antes** de que `PB2` corra, y porque alcanza también a ~~las que no estaban
+(`16-fase-7…` §4.2; owner 2026-09-25, FASE 9 completa, `2e`). *(~~Sobre las fichas publicadas, `PB2`
+escribe~~ ~~el mismo día~~ ~~**dentro del primer día, cuando la corrida del reconciliador la despublica**
+(FASE 9 completa, `C-7`), el hecho 5 al despublicarlas, `NUCLEO/01` §1.2;~~ la escritura `C` sigue haciendo falta porque la
+columna no admite nulo ~~**antes** de que `PB2` corra~~, y porque alcanza también a ~~las que no estaban
 publicadas~~ **toda ficha preexistente, incluida la del dueño que ese día no pierde la cobertura**:
 el hecho 5 ya alcanza a las no publicadas de un dueño que la pierde —FASE 8 completa, owner
-2026-09-25—, pero sobre un dueño que no la pierde no ocurre.)* *(Desde R1 ninguna ficha
+2026-09-25—, pero sobre un dueño que no la pierde no ocurre. **Lo tachado afirmaba que `PB2` corre
+sobre las fichas del corte, y el paréntesis siguiente lo niega desde R1** (FASE 9 vuelta 2,
+`F-8V2A3-006`).)* *(Desde R1 ninguna ficha
 preexistente nace `PUBLISHED`: las que estaban a la vista nacen `UNPUBLISHED_BY_BILLING` con la
 escritura `C`, así que `PB2` no corre sobre ellas en el corte y el instante que les queda es el
 del corte, el mismo que `PB2` les habría escrito. FASE 9 vuelta 1, R1.)*
@@ -427,8 +440,11 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   que los trata como clientes nuevos y sólo les respeta la ficha.
 - **Quien contrata sin publicar paga desde el primer cobro** (§2.4; declarado por `DEC-METH-015`,
   FASE 9 vuelta 1, R1). Si un dueño del corte llega al checkout por otro camino, `S1` lo cubre,
-  `PB3` le sube la ficha y `T8` no escribe nada, porque no ejerció el evento en el sistema nuevo:
-  paga el primer ciclo y conserva el trial sin usar ~~.~~ **hasta su próximo `PB1` cubierto: si después publica otra ficha cubierto por un título que convierte —su suscripción ya cobró—, `T6` consume la fila sin darle el trial (`V/03` §2), que es la misma regla que para cualquier cubierto que publica** (FASE 9 vuelta 1, §4 punto 4 de `21-verificado-G1`). **Causa**: el guion y el botón lo mandan a
+  `PB3` le sube la ficha y ~~`T8` no escribe nada, porque no ejerció el evento en el sistema nuevo:
+  paga el primer ciclo y conserva el trial sin usar~~ **`T8` le consume el trial al primer cobro:
+  la vuelta de su ficha por `PB3` bajo un título que paga cuenta como ejercicio del evento para
+  `T8`, y sólo para ella** (`V/03` §2; owner 2026-09-27, FASE 9 vuelta 2, `R15`). Ya no conserva
+  un trial para el día que cancele. ~~**hasta su próximo `PB1` cubierto: si después publica otra ficha cubierto por un título que convierte —su suscripción ya cobró—, `T6` consume la fila sin darle el trial (`V/03` §2), que es la misma regla que para cualquier cubierto que publica** (FASE 9 vuelta 1, §4 punto 4 de `21-verificado-G1`).~~ **Causa**: el guion y el botón lo mandan a
   publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
 - **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
   R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`

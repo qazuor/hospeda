@@ -214,6 +214,17 @@ siguiente y el panel del admin se convierte en un bucle.
 postulación, así que si el admin cambia de opinión, la da de alta y listo. La espera acota al que
 insiste, no al que decide.
 
+**Y el admin puede anular una espera** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A2-005`).
+El formulario es público y la guarda mira un correo que nadie probó: un tercero que carga la
+dirección de otro negocio le ocupa el lugar con una `PENDIENTE`, y cuando el admin rechaza esa
+basura le arranca la espera al dueño real. Anularla deja que el dueño real se postule por el
+camino A. Es la misma acción administrativa que aprueba y rechaza (`NUCLEO/08` §3), sobre la
+misma postulación y con el mismo permiso, así que no suma una fila al catálogo.
+
+**Y la guarda es una restricción de la base, no un chequeo** (owner 2026-09-27, FASE 9 vuelta 2,
+`R7`). Como chequeo, dos envíos simultáneos del mismo correo pasaban los dos y dejaban dos
+`PENDIENTE`, y aprobadas, dos filas de Partner. La forma está en el cap. 02 §2.7.
+
 ### 2.3 Una postulación pendiente no vence: se pone visible
 
 **Nada rechaza una postulación por el paso del tiempo.** Un vencimiento automático es un rechazo
@@ -234,13 +245,30 @@ así que **cualquiera puede escribir cualquier dirección**.
 | caso | qué pasa al aprobar |
 |---|---|
 | el correo **no** corresponde a ningún usuario | se crea el usuario y se le manda la validación — el §17.3 tal cual |
-| el correo **sí** corresponde a un usuario | se le manda **a esa dirección** un aviso para que reclame el Partner, y **nada se vincula hasta que alguien con acceso a ella lo haga** |
+| el correo **sí** corresponde a un usuario | se le manda **a esa dirección** un aviso para que reclame el Partner, y **nada se vincula hasta que alguien con acceso a ella lo haga** **—con sesión, y a la cuenta con que la inició (abajo; owner 2026-09-27, FASE 9 vuelta 2, `R7`)—** |
 
 **La única prueba de que el postulante es dueño de la dirección es que pueda leerla**, y es la
 misma prueba que el §17.3 ya exige en la otra rama. Acá se aplica a la que quedó sin escribir.
 
 Sin esto, cargar el correo de un tercero alcanza para colgarle un Partner que no pidió — o, peor,
 para que quien apruebe crea que lo pidió.
+
+**Leer la casilla prueba la casilla, no la cuenta** (owner 2026-09-27, FASE 9 vuelta 2, `R7`;
+`F-8V2A1-003`). La regla vinculaba al usuario *que ya tenía ese correo*, verificado o no, y ese
+usuario podía ser una cuenta que otro creó con esa dirección sin poder verificarla: la dueña de la
+casilla reclamaba, el Partner quedaba en la cuenta del ocupante, y el ocupante se cambiaba el
+correo y se lo llevaba. Tres reglas lo cierran:
+
+1. **El reclamo exige sesión y vincula a la cuenta que reclama.** El link llega a la casilla, y
+   quien lo abre inicia sesión en su cuenta, que es la que queda en `owner_user_id`. Nunca se
+   vincula a una cuenta por tener la dirección.
+2. **Si la cuenta que reclama es la de ese correo y no lo tiene verificado, el reclamo lo
+   verifica**: el link llega sólo a quien lee la casilla, y esa persona es la de la sesión. Si
+   reclama desde otra cuenta, la cuenta con esa dirección no se toca: nada prueba que la
+   controle quien leyó el link.
+3. **Un correo nunca verificado no se cambia llevándose vínculos.** Una cuenta con un vínculo de
+   Partner y el correo sin verificar no puede cambiar el correo: el paso 2 del cap. 17 §1.2 la
+   deja verificarlo, no cambiarlo.
 
 ### 2.5 El usuario fantasma es inofensivo, porque la suscripción va última
 

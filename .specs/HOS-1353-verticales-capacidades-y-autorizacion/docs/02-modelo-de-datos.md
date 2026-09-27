@@ -327,6 +327,27 @@ construyeron para tapar.** Alguien se registra de nuevo con el mismo correo, obt
 nuevo, entra en `PRE_TRIAL` y **publica**: trial gratis, las veces que quiera. La restricción de
 `(user_id, vertical)` no lo ve, porque el `user_id` es otro.
 
+**Cómo se calcula el seudónimo** (FASE 9 vuelta 2, `F-8V2A3-004`). Toda la defensa del trial de por
+vida descansa en él, y ningún capítulo decía la función:
+
+1. **La normalización es la de `DEC-TRIAL-004`, a la letra**: el correo en minúsculas, sin el
+   `+alias` y sin los puntos de la parte local. La decisión no nombra dominios, así que se aplica
+   en todos. En un dominio propio eso junta dos casillas distintas, y el ⚠️ de abajo lo declara.
+2. **La función es SHA-256 sin clave** sobre el correo normalizado. **Es lo que el pliego legal ya
+   supone** (cap. 22 §3.2): *«cualquiera con un correo candidato calcula el hash»* sólo es cierto
+   sin clave, y la pregunta 5 se formuló sobre eso. Con un HMAC, perder o rotar el secreto dejaba
+   todas las filas sin reconocer a nadie, sin detector, y le cambiaba al abogado la premisa.
+3. **La función y la normalización no cambian nunca.** El correo no se guarda (§4.1), así que no
+   hay de dónde recalcular las filas viejas: cambiar cualquiera de las dos le devuelve el trial a
+   todo el que ya lo consumió. Si algún día hay que cambiarlas, es una decisión del owner con esa
+   consecuencia dicha, no una migración.
+
+> ⚠️ **Lo que esto NO cierra**: sacar los puntos en todos los dominios le niega el trial a quien
+> comparte dominio propio con alguien que sólo difiere en un punto (`ana.maria@hotel.com` y
+> `anamaria@hotel.com`). Es el falso positivo que `DEC-TRIAL-004` quiso evitar. Acotarlo a los
+> dominios que ignoran los puntos es precisar esa decisión, y lo decide el owner (FASE 9 vuelta 2,
+> `F-8V2A3-004`).
+
 **Es una condición de aplicación, no una tarea suelta.** Hasta ahora el segundo trial por
 re-registro era teórico porque **nadie podía disparar `T1`**; en el momento en que `T1` dispara,
 deja de serlo. Aplicar el arreglo del trial primero y la restricción después abre una ventana —de
@@ -356,6 +377,18 @@ cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la 
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**, **y nace en el estado que le da la tabla de traducción de `V/21` §2.4**, en la misma migración (FASE 9 vuelta 1, R1): es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
+
+**`listing` son las filas que ya existen, no una tabla nueva** (FASE 9 vuelta 2, `F-8V2A3-003`).
+Nadie lo había escrito, y el corte ya lo suponía: lo que verticales escribe en el corte es *«un
+valor de columna sobre filas que ya existen»* (`V/21` §2.4). Hay una tabla por vertical con ficha
+—**`accommodations`** para Alojamiento, **`gastronomies`** para Gastronomía y **`experiences`**
+para Experiencia (código actual, `packages/db/src/schemas/`)—, y las columnas que esta fila le
+pide a `listing` se agregan a las tres. **La vertical es la tabla**, así que es inmutable por
+construcción; Partner y Turista no tienen ficha. Lo que cuelga de cada una —contenido, medios,
+FAQ, reseñas, conversaciones— sigue colgando de la misma fila, y su lista cerrada está en el
+§4.1. **La tabla de traducción del corte está escrita sólo para `accommodations`**: las otras dos
+no tienen `billing_unpublished_at`, `owner_suspended` ni `plan_restricted`, que son las columnas
+de `L5` y `L7` (código actual), y la regla para ellas está en `V/21` §2.4.
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
@@ -493,8 +526,8 @@ acá no había nada, así que el panel del §48 no tenía de dónde leer *«apro
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`postulacion`** | el correo que se escribió en el formulario, el estado de `03` §11 (`PENDIENTE` · `APROBADA` · `RECHAZADA`), el instante de resolución y **`partner_id`**, la fila de Partner que creó la aprobación | `partner_id` es nulo en `PENDIENTE` y en `RECHAZADA`, y **no nulo en `APROBADA`**: lo escribe `PP2` en el mismo acto en que crea la fila de Partner (`18` §2.5, *«lo único que existe es una fila»*). La unicidad de `PENDIENTE` por correo y la espera tras un rechazo son la guarda de `PP1`, no una restricción de la tabla |
-| **`partner`** | la cuenta de Partner (cap. 18), y **el vínculo: `owner_user_id`**, la columna que ya existe hoy (`partners.owner_user_id`, anulable) | `owner_user_id` es **nulo hasta el reclamo** y lo escribe **sólo** el acto de reclamar (`18` §2.4): en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla. **Ninguna otra escritura lo toca**, que es la regla de `18` §2.4 —*«nada se vincula hasta que la dirección se prueba»*— hecha restricción |
+| **`postulacion`** | el correo que se escribió en el formulario, el estado de `03` §11 (`PENDIENTE` · `APROBADA` · `RECHAZADA`), el instante de resolución y **`partner_id`**, la fila de Partner que creó la aprobación | `partner_id` es nulo en `PENDIENTE` y en `RECHAZADA`, y **no nulo en `APROBADA`**: lo escribe `PP2` en el mismo acto en que crea la fila de Partner (`18` §2.5, *«lo único que existe es una fila»*). ~~La unicidad de `PENDIENTE` por correo y la espera tras un rechazo son la guarda de `PP1`, no una restricción de la tabla~~ **La guarda de `PP1` es una restricción de la base** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A2-005`): **un índice único parcial sobre el correo en minúsculas donde el estado es `PENDIENTE`**, que hace imposible la segunda `PENDIENTE` aunque lleguen dos envíos a la vez, **y un trigger del carril de extras que rechaza la inserción** si hay una `RECHAZADA` del mismo correo con la espera sin vencer y sin anular. La espera se anula con **`espera_anulada_en`** y quién la anuló, que escribe sólo la acción administrativa de la postulación (`NUCLEO/08` §3; `18` §2.2) |
+| **`partner`** | la cuenta de Partner (cap. 18), y **el vínculo: `owner_user_id`**, la columna que ya existe hoy (`partners.owner_user_id`, anulable) | `owner_user_id` es **nulo hasta el reclamo** y lo escribe **sólo** el acto de reclamar (`18` §2.4): en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla, **con sesión: escribe la cuenta de la sesión y no la que tiene la dirección** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A1-003`). **Ninguna otra escritura lo toca**, que es la regla de `18` §2.4 —*«nada se vincula hasta que la dirección se prueba»*— hecha restricción |
 
 **El panel lee *«aprobada sin reclamar»* así**: `postulacion.estado = APROBADA` y el `partner` de su
 `partner_id` con `owner_user_id` nulo. Es un dato y no un estado, como dice `03` §11, y por eso no
@@ -618,9 +651,34 @@ preguntar en el momento de archivar (cap. 03 §9).
 
 | | qué | por qué |
 |---|---|---|
-| **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** (`PB12`, cap. 03 §9), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25). **«Fotos» incluye su copia en el almacenamiento externo.** **Y `PURGED` conserva la fila**: el borrado es del contenido, no un `DELETE` de `listing`, así que ningún `ON DELETE CASCADE` corre y lo que cuelga de la ficha se trata acá, uno por uno —nadie lea *«hard delete»* como borrar la fila— (FASE 9 vuelta 1, `F-8V1A3-010`). **Las reseñas de terceros se conservan, sin mostrarse**: son de quien las escribió (`DEC-DATA-005` protege a las personas). **La conexión de calendario se desconecta, y su token se revoca en el proveedor y se borra**: un token vivo sobre una ficha que no existe es riesgo sin servicio (owner 2026-09-26, `G1-5`) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
+| **Se borra** al día 180 | ~~el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`)~~ **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** (`DEC-DATA-005`). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** (`PB9`, cap. 03 §9; FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** (`PB12`, cap. 03 §9), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25). **«Fotos» incluye su copia en el almacenamiento externo.** **Y `PURGED` conserva la fila**: el borrado es del contenido, no un `DELETE` de `listing`, así que ningún `ON DELETE CASCADE` corre y lo que cuelga de la ficha se trata acá, uno por uno **—en la lista cerrada de abajo (FASE 9 vuelta 2, `R9`)—** —nadie lea *«hard delete»* como borrar la fila— (FASE 9 vuelta 1, `F-8V1A3-010`). **Las reseñas de terceros se conservan, sin mostrarse**: son de quien las escribió (`DEC-DATA-005` protege a las personas). **La conexión de calendario se desconecta, y su token se revoca en el proveedor y se borra**: un token vivo sobre una ficha que no existe es riesgo sin servicio (owner 2026-09-26, `G1-5`) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
 | ~~**Se anonimiza** al día 180~~ | ~~los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección~~ **Este renglón sale de la retención**: el proceso de archivar y purgar **no anonimiza nada** (`DEC-DATA-005`) | ~~el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso~~ la retención es de fichas, y *«el usuario no es un dato operativo»* (`DEC-DATA-005`) |
 | **Se conserva íntegro, siempre** | **la fila de `trial`** — que guarda **un ~~hash irreversible~~ seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`) —, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad (`DEC-TRIAL-004`) y sus datos personales, **también dentro de eventos de dominio y del outbox** (`DEC-DATA-005`) | el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca (`DEC-DATA-005`); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
+
+**Lo que cuelga de `listing`, y qué le pasa en `PURGED`: la lista cerrada** (owner 2026-09-27,
+FASE 9 vuelta 2, `R9`; `F-8V2A2-006`). La tabla de arriba prometía tratar *«uno por uno»* lo que
+cuelga de la ficha y nombraba dos cosas, las reseñas y el calendario. El esquema actual cuelga
+bastante más, y sin `DELETE` de la fila nada cae por arrastre. **La regla es la de `G1-5`
+generalizada por el dueño del dato**: lo de un tercero se conserva, y lo del dueño que sólo sirve
+a esa ficha se borra con el contenido. La alerta de precio es la excepción, y la decidió el owner.
+Vale igual para `PB9` y para `PB12`. La columna de tablas es del código actual
+(`packages/db/src/schemas/`), medida sobre las tres tablas de `listing` (§2.5), incluidas las
+referencias polimórficas por `entity_type` + `entity_id`, que no tienen FK:
+
+| qué cuelga | de quién es | en `PURGED` | tablas (código actual) |
+|---|---|---|---|
+| **el contenido de la ficha**: textos, fotos, FAQ, horarios, amenities y features, etiquetas, y en gastronomía la carta, los especiales y los eventos, y en experiencia los certificados | del dueño | **se borra**: es el renglón de arriba (`DEC-DATA-005`), y las fotos incluyen su copia en el almacenamiento externo | `accommodation_media`, `accommodation_faqs`, `r_accommodation_amenity`, `r_accommodation_feature`; `gastronomy_media`, `gastronomy_faqs`, `r_gastronomy_amenity`, `r_gastronomy_feature`, `gastronomy_menu_sections`, `gastronomy_menu_items`, `gastronomy_daily_specials`, `gastronomy_events`; `experience_media`, `experience_faqs`, `r_experience_amenity`, `r_experience_feature`, `experience_certificates`; `r_entity_tag` |
+| **las reseñas** | del tercero que las escribió | **se conservan, sin mostrarse** (arriba) | `accommodation_reviews`, `gastronomy_reviews`, `experience_reviews` |
+| **los comentarios** sobre la ficha | del tercero que los escribió | **se conservan, sin mostrarse**, como las reseñas | `entity_comments` |
+| **las conversaciones** entre un turista y el dueño | de los dos, y el turista es un tercero | **se conservan en sólo lectura**, con *«esta ficha ya no existe»* (cap. 19 §4 fila 28). **La referencia a la ficha admite una ficha ausente**: es anulable, y leer la conversación no la exige. Hoy es `onDelete: restrict` y no anulable | `conversations` |
+| **los favoritos** de un turista | del turista | **se conservan**: para él la ficha no existe (cap. 17 §1.2, precisión 7), y la superficie la trata así | `user_bookmarks` |
+| **las alertas de precio** de un turista | del turista | **se cierran, con un aviso al turista** (cap. 19 §4 fila 27; el correo, `NUCLEO/07` §6): sin ficha no hay precio que vigilar, y el job de alertas dejaría de evaluar una ficha vacía | `tourist_price_alerts` |
+| **la conexión de calendario** | del dueño | **se desconecta: su token se revoca en el proveedor y se borra** (arriba, `G1-5`) | `accommodation_calendar_sync` |
+| **las promociones del dueño sobre esa ficha, sus listados y su reputación externos, su ocupación, sus datos de IA, los QR que apuntan a ella y sus estadísticas agregadas** | del dueño, y sólo sirven a esa ficha | **se borran con el contenido** | `owner_promotions` (las de esa ficha), `accommodation_external_listings`, `accommodation_external_reputation`, `accommodation_occupancy`, `accommodation_ia_data`, `qr_codes` (los de esa ficha), `entity_view_monthly_rollups` |
+| **lo que no es de la ficha aunque la nombre** | de otro registro | **no lo toca `PURGED`**: la telemetría de vistas tiene su propia retención; la auditoría y el registro de revalidaciones se conservan (§25); el vínculo de un addon y el caché de suscripción son de billing, y los trata `A6` (`B/03` §8) | `entity_views`, `social_audit_log`, `revalidation_log`, `featured_listing_addon_grants`, `entity_subscriptions` |
+
+**La lista es cerrada**: una tabla nueva que cuelgue de `listing` entra acá en el mismo acto, con
+su fila. Lo construyen las dos transiciones que llegan a `PURGED`: `PB9` (V9) y `PB12` (V6).
 
 > 📌 **Cerradas el 2026-09-25** (FASE 8 completa, owner 2026-09-25). La 1 (`F-8CA3-009`) la
 > cierra **`DEC-DATA-005`**: la retención sólo toca fichas, y lo de la persona no se borra ni se
