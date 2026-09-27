@@ -51,7 +51,9 @@ status: CURRENT
 
 ### El próximo paso exacto
 
-**La FASE 8 vuelta 2** —la segunda y **última** del tope de `DEC-METH-013`—: nueve agentes Opus
+**La FASE 8 vuelta 2, ENTERA** —desde cero, como si fuera la primera ronda de 8, **no acotada a los
+cambios del 26/09** (owner, 2026-09-26 21:03, confirmando `DEC-METH-014`); la segunda y **última**
+del tope de `DEC-METH-013`—: nueve agentes Opus
 ciegos entre sí y del historial (no leen `14-`…`28-` ni el worklog/handoff), mismos vectores que
 `DEC-METH-014`, sobre núcleo + dos épicas + contrato + `16-fase-7-del-paraguas.md`. Informes en
 `29-fase-8-vuelta-2/`, consolidado por causa, citas verificadas con
