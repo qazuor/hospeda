@@ -73,7 +73,10 @@ perder a cada uno antes de que el corte lo descarte.
 **Y cuenta fichas por dueño en las cinco verticales**, con la clase `L1`–`L8` de `V/21` §2.4.
 **Las de Gastronomía y de Experiencia tienen que dar cero, o el corte no avanza**: la tabla de
 traducción está escrita sólo para `accommodations`, y el paso 2 del corte lo verifica como parte
-de su gate (`16-fase-7…` §4.2; `V/21` §2.4; FASE 9 vuelta 2, `F-8V2A3-003`).
+de su gate (`16-fase-7…` §4.2; `V/21` §2.4; FASE 9 vuelta 2, `F-8V2A3-003`). **Y se cuentan también
+antes del 1a: si ahí ya aparece una fila, el corte no arranca**, y el del paso 2 queda como segundo
+control (owner 2026-09-27, FASE 9 vuelta 2, `R9-b`): en el paso 2 el 1b ya canceló, así que
+detenerse ahí es la rama de aborto y los clientes se re-suscriben por el link reactivado.
 **La población a avisar** es toda persona con una ficha que no sea `L1` o con una suscripción
 viva en el sistema viejo, **medida el día del corte** (FASE 9 vuelta 1, R7). Quien tiene sólo
 fichas `L1` no pierde nada y no se avisa. **Y lista las fichas con `moderation_state = REJECTED`**,
@@ -83,9 +86,16 @@ que no se traducen: el admin las modera después con `PB10` si quiere (`V/21` §
 **Y el titular de toda autorización que el censo del 1b cancela y la base no conoce entra a la
 población a avisar y a la lista con la que el owner llama** (owner 2026-09-27, FASE 9 vuelta 2,
 `R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador —el `payer_email` del
-preapproval—, y esa persona entra aunque no tenga ficha ni fila en la base. Como el manifiesto
+preapproval—, y esa persona entra aunque no tenga ficha ni fila en la base. ~~Como el manifiesto
 nace en el 1b, **su aviso llega después de la cancelación y no antes**; lo que pierde está
-declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.
+declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~ **Y su aviso es previo,
+como el de los demás** (owner 2026-09-27, FASE 9 vuelta 2, `R21-b`): **antes del aviso previo hay
+una pasada de sólo lectura sobre el proveedor** —el mismo recorrido sin filtro del 1b, sin
+cancelar nada— que lista las autorizaciones vivas con su `payer_email` y **suma a la población a
+los titulares que la base no conoce**. El 1b cancela después, como está, y su manifiesto sigue
+haciendo falta: la lista puede envejecer entre la pasada y el 1b, y el titular que aparezca recién
+en el manifiesto del 1b entra igual a la población, con un aviso que ya no es previo. Lo que pierde
+cada uno está declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.
 
 **Y de acá, y no de un número fijo, sale la población del cobro sobre la lápida del corte** (§2.5):
 los clientes del viejo con un preapproval cancelado en el 1b —conocidos por la base o sólo por el
@@ -125,8 +135,9 @@ converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventa
 cortesías heredadas, son el caso normal**.
 
 **Qué plan anclan** (owner 2026-09-26, `G1-3`): **el vendible de `rank` más alto ~~de Alojamiento
-vigente el día del corte, en la vertical en que tenían `comp`~~ de la vertical en que tenían
-`comp`, vigente el día del corte** —el de Alojamiento, si la cortesía era de Alojamiento—, **con
+vigente el día del corte, en la vertical en que tenían `comp`~~ ~~de la vertical en que tenían
+`comp`, vigente el día del corte~~ de Alojamiento vigente el día del corte, en la vertical en que
+tenían `comp`** ~~—el de Alojamiento, si la cortesía era de Alojamiento—~~ —a la letra de `G1-3`: las dos `comp` que existen son del owner y de Alojamiento, y no va a otorgar otra hasta terminar el programa (owner 2026-09-27, FASE 9 vuelta 2, `R11-3b`: se revierte la corrección de la misma vuelta)—, **con
 la versión que elige quien opera el corte, aceptada sólo si `políticaDePlan(v).vigente`**
 (`12-contrato…` §2.8; FASE 9 vuelta 2, `F-8V2C1-004`, `F-8V2B3-009`). Son cuentas propias de
 demostración, y el grant lee la versión vigente (`12-contrato…` §2.8), así que un cambio de
@@ -432,14 +443,17 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   después del corte se atiende contra el comprobante del proveedor (punto anterior), no contra
   nada nuestro. No da acceso indebido ni borra datos de nadie más. **Y no es el cobro en vuelo del
   corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).
-  **Y alcanza igual, con un aviso que no es previo, al titular de una autorización que sólo conoce
-  el proveedor** (owner 2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por
-  el período en curso, como los demás, pero **se entera después de la cancelación**, porque su
-  pagador sale del manifiesto del 1b (§1.3), y **el correo de baja del sistema viejo no le llega**
-  —el handler viejo responde `local_row_not_found` y no manda nada—. **Población**: los ids del
-  manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del propio owner,
-  `16-fase-7…` §4.2). **Detector**: el manifiesto mismo, con su `payer_email`, que suma esas
-  personas a la lista con la que el owner llama. **Causa**: la misma de arriba, y que el censo que
+  **Y alcanza igual al titular de una autorización que sólo conoce el proveedor** (owner
+  2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por el período en curso,
+  como los demás, y **el correo de baja del sistema viejo no le llega** —el handler viejo responde
+  `local_row_not_found` y no manda nada—. ~~pero **se entera después de la cancelación**, porque su
+  pagador sale del manifiesto del 1b (§1.3)~~ **Desde `R21-b` se entera antes, por el aviso previo**:
+  la pasada de sólo lectura sobre el proveedor lo suma a la población (§1.3). **Con un aviso que no
+  es previo queda sólo el que aparece en el manifiesto del 1b y no apareció en esa pasada.**
+  **Población**: los ids del manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del
+  propio owner, `16-fase-7…` §4.2), y de ellos, sin aviso previo, los que la pasada no vio.
+  **Detector**: la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
+  con la que el owner llama. **Causa**: la misma de arriba, y que el censo que
   las encuentra es el del 1b.
 - **El cobro en vuelo del corte que sale bien se asienta sobre la lápida sin marca y no se
   devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G3-1`, elegida contra la

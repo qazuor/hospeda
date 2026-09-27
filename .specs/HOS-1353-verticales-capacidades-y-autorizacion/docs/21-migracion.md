@@ -176,7 +176,10 @@ en cambio `has_active_subscription` (código actual). Ahí no se sabe si una fic
 billing o su dueño, que es justo lo que separa `L4` de `L5`, y adivinarlo hace nacer una ficha en
 un estado del que `PB3` no la devuelve. **Si el recuento de `B/21` §1.3 da una fila de Gastronomía o
 de Experiencia, el corte se detiene antes del paso 3** y la clase de esa fila se escribe con sus
-columnas a la vista. `DEC-MIG-002` sigue tomando altas, así que el cero es una medición que vence y
+columnas a la vista. **Y el recuento se hace también antes del 1a, y si ahí ya aparece una fila el
+corte no arranca** (owner 2026-09-27, FASE 9 vuelta 2, `R9-b`): en el paso 2 el 1b ya canceló, y
+detenerse ahí es la rama de aborto. **El del paso 2 queda como segundo control**, para la ficha que
+nazca entre los dos recuentos. `DEC-MIG-002` sigue tomando altas, así que el cero es una medición que vence y
 no una premisa. Partner no tiene ficha: su presencia no se traduce (§4).
 
 | clase | condición sobre las columnas viejas | nace en |

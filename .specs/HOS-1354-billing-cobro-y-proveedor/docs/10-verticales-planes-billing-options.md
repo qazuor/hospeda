@@ -128,11 +128,18 @@ El PDR contempla verticales nuevas en §16, §31 y §35.1, y **nunca la operaci�
 vertical con suscripciones activas que deja de ser un producto.
 
 **Retirar todos los planes de una vertical NO es discontinuarla**, y confundirlos es la trampa de
-esta sección. Retirados todos los planes vendibles la vertical queda **cerrada a altas**: nadie
+esta sección. ~~Retirados todos los planes vendibles la vertical queda **cerrada a altas**: nadie
 nuevo entra, nadie nuevo arranca un trial —la derivación del §10.3 se queda sin fuente, y no
 poder probar algo que después no se puede comprar es la respuesta correcta—, y **todos los que
 están adentro siguen exactamente igual, indefinidamente** (§3.4). Eso es un estado estable y
-puede durar años.
+puede durar años.~~ **Y tampoco la cierra** (owner 2026-09-27, FASE 9 vuelta 2, `R24`,
+`F-8V2A3-005`): retirar un plan no escribe `vertical.admite_altas`, así que lo tachado afirmaba
+un cierre que ninguna fila ejecutaba. Retirados todos los vendibles, **nadie nuevo entra**, porque
+`S1` exige una versión vigente y vendible; **nadie nuevo arranca un trial**, porque `T1` exige lo
+mismo (`V/03` §2) —no poder probar algo que después no se puede comprar es la respuesta correcta—;
+la pantalla dice que **la vertical no tiene planes disponibles** (`V/19` §4 fila 29); y **todos
+los que están adentro siguen exactamente igual, indefinidamente** (§3.4). **Cerrar una vertical a
+altas es discontinuarla** (§4.3): no hay un acto aparte que escriba `admite_altas = no`.
 
 Discontinuar es otra cosa: **el servicio se deja de prestar.** Las fichas se bajan, la sección de
 Mi Cuenta se va, la pricing desaparece. Y eso **toca plata**, porque hay gente pagando por algo
@@ -150,7 +157,16 @@ sigue sale de acá.
 
 Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 
-**Día 0 — el anuncio.** La vertical deja de admitir altas y trials —los trials, porque `T1` exige
+**Y el acto tiene dos mitades, una por épica** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ALTAS`).
+**Verticales escribe `vertical.admite_altas = no`**, porque la columna es suya (`V/02` §2.1), y
+**billing escribe la fila de la discontinuación** —el anuncio y la fecha de fin de servicio,
+`B/02` §2.1— **y los avisos**, y corre `S26`–`S28`. **La acción administrativa del acto las
+orquesta en ese orden: primero verticales, después billing**, así que cuando billing empieza a
+cancelar ya no nace ninguna alta ni ningún trial. Billing no escribe `admite_altas`: sería una
+escritura en verticales fuera del contrato, que admite una sola, `extenderTrial` (`12-contrato…`
+§4.2).
+
+**Día 0 — el anuncio.** La vertical deja de admitir altas y trials —lo escribe la mitad de verticales, arriba—; los trials, porque `T1` exige
 `admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25); **y las
 suscripciones, porque `S1` también lo exige, para el alta nueva y para la sucesión** (`B/03` §3.2;
 owner 2026-09-25, FASE 9 completa, 6a), y la pricing deja de ofrecer los planes de la vertical
@@ -358,7 +374,10 @@ lo primero.
 vertical abierta doce meses más. Por eso hay una salida, y es explícita: **`SUPER_ADMIN` puede
 acortar la cola reembolsando** la parte no prestada de los compromisos que se extienden más allá
 de la fecha que se quiera fijar. Es un acto por caso, nunca automático — es el criterio de
-siempre: lo que toca plata no se ejecuta solo.
+siempre: lo que toca plata no se ejecuta solo. **Y ese acto reescribe la fecha en la fila de la
+discontinuación** (`B/02` §2.1), que es de donde contesta `finDeServicio`: verticales la lee por la
+pregunta y no guarda copia, así que el hecho 4 y el borrado caen en la fecha nueva (owner
+2026-09-27, FASE 9 vuelta 2, `Q-FECHA`).
 
 ### 4.5 Los cuatro bordes
 
@@ -384,13 +403,13 @@ de Partner y, desde la FASE 9 completa, el Reembolso (`NUCLEO/01` §2; owner 202
 vertical **no agrega una**: su situación
 se lee de **dos datos con fecha** ~~sobre su propia fila~~ —si admite altas, que está en su fila,
 y su fecha de fin de servicio, que desde la FASE 9 vuelta 2 calcula billing y se pregunta por
-`finDeServicio` (`R5`)— y de ahí salen las tres situaciones posibles sin que haya transiciones que restringir
+`finDeServicio` (`R5`)— y de ahí salen ~~las tres~~ las situaciones posibles —sin la de *«cerrada a altas»*, que desde la FASE 9 vuelta 2 no existe (`R24`)— sin que haya transiciones que restringir
 más allá de que ninguno de los dos vuelva atrás solo.
 
 | admite altas | fin de servicio | situación |
 |---|---|---|
-| sí | sin fecha | **en operación** |
-| no | sin fecha | **cerrada a altas** — todos los planes retirados (§4.1); estable, puede durar años |
+| sí | sin fecha | **en operación** — **también con todos los planes retirados**: no entra nadie nuevo, porque `S1` y `T1` exigen una versión vigente y vendible (§4.1; FASE 9 vuelta 2, `R24`) |
+| ~~no~~ | ~~sin fecha~~ | ~~**cerrada a altas** — todos los planes retirados (§4.1); estable, puede durar años~~ **ya no existe** (owner 2026-09-27, FASE 9 vuelta 2, `R24`): retirar los planes no escribe `admite_altas`, y el único acto que la escribe es la discontinuación, que escribe la fecha en el mismo acto |
 | no | con fecha | **discontinuándose**, y cumplida la fecha, **discontinuada** |
 
 **Quién lee `admite_altas` en billing: `S1`** (`B/03` §3.2): la vertical que no admite altas no
@@ -403,12 +422,18 @@ vuelta 2, `R5`). Sus términos —el anuncio y el último día ya pagado— son 
 mientras fue una columna de verticales nadie podía escribirla sin cruzar la frontera. La
 construye **B12**, dueña de la fórmula.
 
-> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`: dónde guarda billing la fecha
+> ~~⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`: dónde guarda billing la fecha
 > calculada.** La fórmula no se puede evaluar en cada pregunta, porque pasado el fin de servicio
 > los compromisos dejan de estar vivos y el máximo cambiaría. Hace falta una fila que la guarde
 > desde el anuncio, junto con el instante del anuncio, y que la reescriba si `SUPER_ADMIN` acorta
 > la cola (§4.4). `B/02` no tiene hoy ninguna entidad por vertical. Hasta que se escriba,
-> `finDeServicio` no tiene de dónde contestar.
+> `finDeServicio` no tiene de dónde contestar.~~
+> **Cerrado el 2026-09-27 (owner, FASE 9 vuelta 2, `Q-FECHA`, derivada de `R5`)**: la guarda
+> **`vertical_discontinuation`** (`B/02` §2.1), una fila por vertical discontinuada con el anuncio
+> y la fecha. La escribe el acto del día 0 (§4.3) y la reescribe sólo el acortamiento del §4.4, y de
+> ella contesta billing `finDeServicio`; sin fila, contesta `NINGUNA`. Es de **B12**, y **B4**, que
+> llega antes en el camino crítico, prueba su criterio del fin de servicio con la fila sembrada
+> hasta que llegue `B12`.
 
 **La reversibilidad es de papel.** Revocar el anuncio antes de la fecha deja la fila como estaba,
 pero **no deshace las cancelaciones en el proveedor**: cada cliente tendría que volver a

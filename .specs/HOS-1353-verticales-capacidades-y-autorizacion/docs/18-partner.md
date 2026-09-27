@@ -268,7 +268,9 @@ correo y se lo llevaba. Tres reglas lo cierran:
    controle quien leyó el link.
 3. **Un correo nunca verificado no se cambia llevándose vínculos.** Una cuenta con un vínculo de
    Partner y el correo sin verificar no puede cambiar el correo: el paso 2 del cap. 17 §1.2 la
-   deja verificarlo, no cambiarlo.
+   deja verificarlo, no cambiarlo. **El cambio se rechaza mientras haya vínculo, y la pantalla lo deriva a
+   soporte** (owner 2026-09-27, FASE 9 vuelta 2, `R7-b`): quien escribió mal su correo lo corrige
+   con una persona que puede verificar quién es, y el vínculo no se suelta en silencio.
 
 ### 2.5 El usuario fantasma es inofensivo, porque la suscripción va última
 

@@ -1115,8 +1115,11 @@ y por eso la mitad de ida de la regla de vigilancia la nombra (§4.2). Contesta 
 vertical no se esté discontinuando. **La leen dos lugares de verticales**: la fuente de trial
 (§2.6, `V/03` §2) y el reconciliador diario de cobertura, que ejecuta el día del fin de servicio
 (`V/03` §9). **La contesta billing en la implementación real** y la construye `B12`, el dueño de
-la fórmula; **la de arranque contesta `NINGUNA`** (§5.1). Dónde guarda billing la fecha calculada
-no está escrito, y queda declarado en `B/10` §4.6.
+la fórmula; **la de arranque contesta `NINGUNA`** (§5.1). ~~Dónde guarda billing la fecha calculada
+no está escrito, y queda declarado en `B/10` §4.6.~~ **La real contesta de `vertical_discontinuation`**,
+una fila de billing por vertical discontinuada con el anuncio y la fecha, que escribe el acto del
+día 0 y reescribe el acortamiento de la cola; sin fila, `NINGUNA` (`B/02` §2.1, `B/10` §4.6; owner
+2026-09-27, FASE 9 vuelta 2, `Q-FECHA`). Verticales no guarda copia.
 
 **~~`díasDeTrial`~~ salió de `políticaDePlan` el 2026-09-26** (FASE 9 vuelta 1, `F-8V1C1-015`; la
 firma decía `{ díasDeGrace, díasDeTrial, permitePausa, vigente, vendible }`): ningún capítulo de

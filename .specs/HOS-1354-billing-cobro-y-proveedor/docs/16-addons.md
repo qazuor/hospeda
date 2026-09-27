@@ -698,7 +698,11 @@ es su propio preapproval y **sigue cobrando por su cuenta** hasta que alguien lo
 baja desde `ACTIVE` ese alguien es `S11`** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`,
 `F-8V2B1-001`): cancela en el acto el cobro de los complementos que dependen de la principal —la
 selección de `S32`— y los sostiene hasta el fin de servicio, porque `CANCEL_SCHEDULED` sigue siendo
-fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2).
+fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2). **En la fecha de fin los toma `S21`, antes que su
+propio `S12`** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): el `S12` de la principal dispara la
+orfandad, `S21` lleva el complemento a `CANCELLED` y, si su último cobro pagó días posteriores al
+fin de servicio, abre el motivo 14, que propone no devolver y deja que una persona lo vea. El mismo
+orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` §3.2, fila de `S12`).
 
 Entonces, cuando un título **deja de ser fila viva**, la misma causa tiene **tres efectos
 distintos** y los tres se disparan del mismo lugar:

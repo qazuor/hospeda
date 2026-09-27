@@ -24,15 +24,23 @@ La mitad de billing del capítulo 02 del programa. La otra mitad vive en la épi
 
 ### 2.1 Catálogo comercial
 
-**Las otras cinco entidades del catálogo comercial — `vertical`, `plan`, `plan_version`, `plan_version_entitlement` y `plan_version_limit` — viven en la épica de verticales. Acá sólo `billing_option`.**
+**Las otras cinco entidades del catálogo comercial — `vertical`, `plan`, `plan_version`, `plan_version_entitlement` y `plan_version_limit` — viven en la épica de verticales. Acá ~~sólo `billing_option`~~ `billing_option` y, desde la FASE 9 vuelta 2, `vertical_discontinuation`.**
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`billing_option`** | el ciclo y su precio: mensual, trimestral, semestral o anual (§19), monto y moneda | `UNIQUE(plan_version_id, ciclo)` · **`UNIQUE(id, plan_version_id)`**, para la FK compuesta de `subscription` (§2.2; FASE 9 vuelta 1, `F-8V1A3-007`) |
+| **`vertical_discontinuation`** ✚ | **una fila por vertical discontinuada**: la vertical, **el instante del anuncio** y **la fecha de fin de servicio** que calcula la fórmula del `B/10` §4.3 | `UNIQUE(vertical)`. **La escribe el acto del día 0** (`B/10` §4.3) y **la reescribe sólo el acortamiento de la cola** del `B/10` §4.4; nada más la toca. **De acá contesta billing la pregunta `finDeServicio`** (`12-contrato…` §4.1): sin fila, `NINGUNA` (owner 2026-09-27, FASE 9 vuelta 2, `Q-FECHA`, derivada de `R5`) |
 
 **El precio cuelga de la versión, no del plan**, y eso es lo que hace cumplible al §29: cambiar
 un precio crea una versión nueva, así que «mostrar precio anterior/nuevo» pasa a ser
 demostrable contra un registro en vez de una afirmación (`DEC-ARCH-001`).
+
+**La fecha de fin de servicio de una vertical se guarda, y no se calcula en cada pregunta** (owner
+2026-09-27, FASE 9 vuelta 2, `Q-FECHA`). Pasado el fin de servicio los compromisos de la vertical
+dejan de estar vivos y el máximo de la fórmula cambiaría, así que la fecha se fija el día del
+anuncio. Es de billing porque sus términos —el anuncio y el último día pagado— son de billing, y
+verticales la lee por la pregunta, no por una copia: una copia en `vertical` envejecería cuando
+`SUPER_ADMIN` acorta la cola, y el hecho 4 o el borrado caerían en la fecha vieja.
 
 **La moneda existe en el modelo aunque hoy tenga un solo valor.** Está medido que el proveedor
 sólo acepta ARS —`USD` y `BRL` dan `400` (`EX-18`)—, pero el §57 pide que el dominio no quede
@@ -619,7 +627,10 @@ el precio, así que **toda promo acotada se volvía `forever`**.
   por id**. **No se decrementa por `charged_quantity`**, que cuenta intentos y no cobros (`RC-5`).
   Se escribe en el mismo acto que acredita el cobro (`P1`, cap. 03 §6), así que la deduplicación
   de `payment` —`UNIQUE(proveedor, id_del_hecho)`, §2.3— es lo que impide descontar dos veces el
-  mismo cobro.
+  mismo cobro. **Y sólo si el cobro salió con el descuento**: su importe no pasa del monto esperado
+  con esa promo aplicada (`B/14` §2.4). Un cobro que salió sin el descuento —el registro del ciclo
+  creado antes del canje, por ejemplo— no lo mueve, y lo que cobró de más lo ve el barrido con el
+  motivo 24 (§2.5; owner 2026-09-27, FASE 9 vuelta 2, `R20`, `F-8V2B3-001`).
 - **Al llegar a 0 se restituye el precio**: se muta el monto del preapproval (`B/14` §2.4) **al
   monto sin esa promo, recalculado con las que siguen vivas** (FASE 8 completa, pendiente 7, owner
   2026-09-25). **El monto esperado no es una columna**: se deriva del precio de la versión de plan
@@ -911,7 +922,7 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `NUCLEO/02` §1.2 impide.
 
-### 2.5 La marca de conciliación: ~~veinte~~ ~~veintidós~~ veintitrés motivos sobre la misma casilla, y ~~siete~~ ocho de ellos devuelven plata
+### 2.5 La marca de conciliación: ~~veinte~~ ~~veintidós~~ ~~veintitrés~~ veinticuatro motivos sobre la misma casilla, y ~~siete~~ ~~ocho~~ nueve de ellos devuelven plata
 
 > Eran **quince** hasta la FASE 8 completa: el 16, `CANCELACIÓN_SIN_CONFIRMAR`, llegó con
 > `F-8CB1-013` (owner 2026-09-25), y el catálogo se recontó entero sobre la tabla de abajo.
@@ -930,12 +941,15 @@ entitlements**, que `NUCLEO/02` §1.2 impide.
 > **Y eran veintidós hasta la FASE 9 vuelta 2**: el 23, `ORDEN_PAGADA_SIN_INSTANCIA`, llegó con la
 > decisión `R4` (owner 2026-09-27). Recontado entero sobre la tabla: **veintitrés**, y los **SÍ**
 > pasan a **ocho**.
+> **Y eran veintitrés hasta la misma FASE 9 vuelta 2**: el 24, `IMPORTE_COBRADO_DE_MÁS`, llegó con
+> la decisión `R20` (owner 2026-09-27). Recontado entero sobre la tabla: **veinticuatro**, y los
+> **SÍ** pasan a **nueve**.
 
 **`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
 marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
 §5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
 marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
-marcada, **indistinguible de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ veintidós marcas**, sin nada que dijera que hay plata del
+marcada, **indistinguible de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ ~~veintidós~~ veintitrés marcas**, sin nada que dijera que hay plata del
 cliente en nuestra cuenta. El pago se quedaba.
 
 **Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
@@ -948,10 +962,10 @@ misma forma y le faltaba la misma columna.**
 
 **`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
 ~~**siete** de los quince, siete de los dieciséis~~ ~~**diez** de los **diecinueve**~~ ~~**once** de los
-**veinte**~~ **doce** de los ~~**veintidós**~~ **veintitrés** casos de abajo —los tres nuevos, el 17, el 18 y el 19, los abre `S14` (FASE 8 completa,
+**veinte**~~ ~~**doce**~~ **trece** de los ~~**veintidós**~~ ~~**veintitrés**~~ **veinticuatro** casos de abajo —los tres nuevos, el 17, el 18 y el 19, los abre `S14` (FASE 8 completa,
 `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`), **y el 20 también, desde `P1`** (FASE 8 completa, pendiente 6, owner 2026-09-25), **y el 22, desde la rama de fallo de `S8`, de `S9` y de `S32`** (FASE 9 completa, `F-8CB2-003`;
-`S32` agregado owner 2026-09-25, 4a)—; el motivo lo trae **el caso que lo disparó**, igual que el
-de la pausa lo trae `S8` o `S9`. Los otros ~~**ocho**~~ ~~**nueve**~~ ~~**diez**~~ **once** —de los ~~diecinueve~~ ~~veinte~~ ~~veintidós~~ veintitrés— los abren actos que **no son `S14`** — `S18`,
+`S32` agregado owner 2026-09-25, 4a), **y el 24, desde la comparación de cobros del `B/09` §3** (FASE 9 vuelta 2, `R20`)—; el motivo lo trae **el caso que lo disparó**, igual que el
+de la pausa lo trae `S8` o `S9`. Los otros ~~**ocho**~~ ~~**nueve**~~ ~~**diez**~~ **once** —de los ~~diecinueve~~ ~~veinte~~ ~~veintidós~~ ~~veintitrés~~ veinticuatro— los abren actos que **no son `S14`** — `S18`,
 las **seis** comprobaciones de cero llamadas del `B/09` §3, **`S21`, que desde `DEC-RF-006` abre
 dos**, **el reintento del barrido sobre las salvedades 1 y 4 del `B/09` §3, que abre el 16**
 (FASE 8 completa, `F-8CB1-013`), **y la lectura del `B/09` §4 que sigue en *«todavía no se sabe»*
@@ -982,6 +996,7 @@ a los 3 días, que abre el 21** (`B/09` ~~§6.2~~ **§6, punto 2**; owner 2026-0
 | 21 ✚ | `COBRO_DEL_PERÍODO_SIN_RESOLVER` | el **barrido** (`B/09` ~~§6.2, punto 2~~ **§6, punto 2** — referencia corregida en FASE 9 vuelta 1, `F-8V1D1-007`), **cuando pasaron 3 días** desde el `date_created` del registro de cobro y la lectura del `B/09` §4 sigue contestando *«todavía no se sabe»* —el contador de intentos del proveedor va adelante de su listado— sobre una fila cuyo `S6` está esperando esa respuesta (`B/03` §3.2). El mismo plazo que el 16, y por la misma forma: reintentar y, a los 3 días, marcar (owner 2026-09-25; FASE 9 completa, 3d, `F-8CB3-004`) | leer el registro de cobro a mano en el proveedor y decidir si el período cobró —`S5`, asentando el cobro— o no —`S6`— por `S15` | no, **pero la fila da servicio sin haber cobrado** mientras dure |
 | 22 ✚ | `PAUSA_NO_APLICADA` | **`S14`**, desde la rama de fallo de ~~**`S8`** y de **`S9`**~~ **`S8`, `S9` y `S32`** (owner 2026-09-25, 4a): el `PUT paused` se aceptó y la relectura sigue viendo `authorized`, así que la transición no ocurre y la fila se queda en `ACTIVE` (`B/03` §3.2; y el par `authorized` × `PAUSED` del §10.1 sin pausa confirmada) (FASE 9 completa, `F-8CB2-003`) | pausar a mano o reclamarle al proveedor; **en `S9`, avisarle a `SUPER_ADMIN` que la cortesía no se aplicó** | no, **pero el proveedor sigue cobrando** a quien pidió pausar o recibió una cortesía |
 | 23 ✚ | `ORDEN_PAGADA_SIN_INSTANCIA` | **la comprobación de órdenes pagadas del `B/09` §3** (FASE 9 vuelta 2, owner 2026-09-27, `R4`): una instancia de addon `UNA_VEZ` en `ABANDONED` cuya orden, releída por id, tiene un pago aprobado —la orden se pagó y la instancia nunca llegó a `ACTIVE`—. **Es la única marca que cuelga de una instancia y no de una suscripción** (`reconciliation_mark`, §2.2): el addon de única vez no tiene suscripción (§2.3) | **asentar el cobro y devolverlo**: devolver desde el panel del proveedor y asentar las dos cosas con la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»* (`NUCLEO/08` §3, la decimocuarta), que crea el `payment` colgado de la instancia y la fila de `refund` en `EXECUTED` por `RF4` (`B/03` §6.1) | **SÍ**: la persona pagó y no recibió el addon, y la instancia `ABANDONED` no vuelve —ninguna transición sale de ahí—; el default es **devolver** (`B/19` §6) |
+| 24 ✚ | `IMPORTE_COBRADO_DE_MÁS` | **`S14`**, desde **la comparación de cobros del período del `B/09` §3** (FASE 9 vuelta 2, owner 2026-09-27, `R20`, `F-8V2B3-001`): un registro aprobado del proveedor que tenemos acreditado y **cuyo importe cobrado es mayor que el monto esperado del período que cubre** —el de `B/14` §2.4, derivado con el precio de la versión y los aumentos vigentes a la fecha del cobro y con las promos vivas según su contador **antes** de ese cobro, redondeado con la regla única del `B/14` §1.2—. El `transaction_amount` del preapproval ya corregido no lo ve: por eso se compara el cobro y no el preapproval. **No se abre sobre un pago colgado de otra marca abierta**, que ya propone qué hacer con él entero | confirmar la devolución **de la diferencia**: `RF1` sobre ese pago por el monto que pasa del esperado, que al ejecutarse corre `P3` como devolución parcial (`B/03` §6.1) | **SÍ**: la persona pagó más de lo que costaba su período, y el período sí lo recibió; lo que sobra es sólo la diferencia. El default es **devolver la diferencia** (`B/19` §6) |
 
 **La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
 su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
@@ -998,8 +1013,8 @@ ya tenía. **Lo que la partición compra es que el default vuelva a leerse POR M
 había dejado un motivo cuya propuesta no se podía resolver sin saber además de qué disparador vino
 la marca, y desde `DEC-RF-006` eso lo resuelve **quien escribe el motivo**, en el acto y con lo que
 ya sabe. La tabla de defaults del `B/19` §6 vuelve a ser una columna plana, y **las ~~seis~~ ~~siete~~ ocho
-filas con `SÍ` son exactamente las ~~seis~~ ~~siete~~ ocho que ese § propone devolver** (el 20 entra en las
-dos desde la pendiente 6, owner 2026-09-25, y el 23 desde la FASE 9 vuelta 2, `R4`).
+filas con `SÍ` son exactamente las ~~seis~~ ~~siete~~ ~~ocho~~ nueve que ese § propone devolver** (el 20 entra en las
+dos desde la pendiente 6, owner 2026-09-25, y el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`).
 
 **Y se movió una sola cifra con `F-8CB1-013`, recontadas otra vez las dos sobre la tabla** (FASE 8
 completa, owner 2026-09-25). La enumeración ~~tiene~~ tuvo **dieciséis** filas; los **SÍ** siguen siendo
@@ -1039,11 +1054,18 @@ el 16, el 17, el 18, el 19, el 21 y el 22—. **`S14` pasa de once a doce** —e
 que no coincide con lo que la fila dice.
 
 **Y se movieron tres de las cifras con el 23, recontadas enteras sobre la tabla** (FASE 9 vuelta 2,
-owner 2026-09-27, `R4`). La enumeración tiene **veintitrés** filas; los **SÍ** pasan a **ocho** —el
+owner 2026-09-27, `R4`). La enumeración ~~tiene~~ tuvo **veintitrés** filas; los **SÍ** pasan a **ocho** —el
 1, el 2, el 3, el 7, el 12, el 15, el 20 y el 23—, los **puede** siguen siendo **tres** y los **no**
 siguen siendo **doce**. **`S14` sigue abriendo doce** y **los otros actos pasan de diez a once** —el
 23 lo abre el barrido—. El 23 lleva **SÍ** porque la persona pagó y no tiene el addon, y la
 instancia `ABANDONED` no vuelve.
+
+**Y se movieron tres de las cifras con el 24, recontadas enteras sobre la tabla** (FASE 9 vuelta 2,
+owner 2026-09-27, `R20`). La enumeración tiene **veinticuatro** filas; los **SÍ** pasan a **nueve**
+—el 1, el 2, el 3, el 7, el 12, el 15, el 20, el 23 y el 24—, los **puede** siguen siendo **tres**
+y los **no** siguen siendo **doce**. **`S14` pasa de doce a trece** —el 24 lo abre la comparación de
+cobros, como el 19— y **los otros actos siguen siendo once**. El 24 lleva **SÍ** porque la persona
+pagó de más, y lo que propone devolver es **la diferencia**, no el cobro: el período lo recibió.
 
 **El 14 y el 15 llegaron por lo mismo y conviene decir de dónde.** `S21` declaraba una vía —*«sin reembolso
 del período ya cobrado; si corresponde devolver, entra por la vía del reembolso, que confirma una
@@ -1087,8 +1109,8 @@ porque **cuál de las cuatro falló va en el evento crítico** y no en el motivo
 
 1. **El listado accionable deja de ser homogéneo.** `B/19` §6 muestra el motivo, **el default de
    lo que el sistema propone** (`DEC-RF-003`) y ordena primero
-   los ~~**seis**~~ ~~**siete**~~ **ocho** motivos con `SÍ` en la última columna —1, 2, 3, **7**, 12, **15**,
-   **20** y **23** (el 23 desde la FASE 9 vuelta 2, `R4`)—, donde
+   los ~~**seis**~~ ~~**siete**~~ ~~**ocho**~~ **nueve** motivos con `SÍ` en la última columna —1, 2, 3, **7**, 12, **15**,
+   **20**, **23** y **24** (el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`)—, donde
    **esperar le cuesta plata al cliente**. **Y desde `DEC-RF-006` ese orden se lee entero sobre la
    tabla de arriba**: el caso que `DEC-RF-004` había dejado afuera de la columna —la propuesta de
    `S21`, que dependía del disparador— es hoy el motivo 15, con su `SÍ` propio.

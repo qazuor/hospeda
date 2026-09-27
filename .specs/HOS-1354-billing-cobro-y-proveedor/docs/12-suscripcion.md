@@ -133,6 +133,11 @@ proveedor, y si lo es, la baja llega antes que nuestra suspensión.~~
 > camino de mora**. **Y una pausa del proveedor por mora no pasa por acá**: dispara `S6`, como el
 > fin del grace (`DEC-MP-008`).
 
+**Y una cancelación que mandamos nosotros tampoco es una baja del proveedor**, aunque se lea
+`cancelled` sobre una fila `ACTIVE`: si `S6` o `S3` mandaron la llamada y perdieron la escritura
+contra el pago (`S5`) o la autorización (`S2`), el espejo lleva la fila a `CANCEL_SCHEDULED` con el
+período pagado adentro, y no la corta (`B/03` §10.1; owner 2026-09-27, FASE 9 vuelta 2, `R18`).
+
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
 que llega a esta baja llega **desde `GRACE_PERIOD`**, que es ~~de donde también llega la
 predecesora de un cambio de plan en mora~~ donde también puede estar la predecesora de una
@@ -697,14 +702,14 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ veintidós, que es lo que
-> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ ~~diecinueve motivos~~ ~~veinte motivos~~ ~~veintidós motivos~~ veintitrés motivos: el 23 desde la FASE 9 vuelta 2, `R4`; el 16 desde `F-8CB1-013` y el 17, el 18 y el
+> **Y la marca que las tres abren se distingue de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ ~~veintidós~~ veintitrés, que es lo que
+> faltaba** (~~dieciséis motivos desde `F-8CB1-013`~~ ~~diecinueve motivos~~ ~~veinte motivos~~ ~~veintidós motivos~~ ~~veintitrés motivos~~ veinticuatro motivos: el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`; el 16 desde `F-8CB1-013` y el 17, el 18 y el
 > 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde
 > la pendiente 6; el 21 y el 22 desde la FASE 9 completa, 3d y `F-8CB2-003`;
 > `B/02` §2.5). Un
 > booleano no transporta un motivo: la predecesora llegaba al listado accionable como una
 > `CANCELLED` marcada, igual que la de una divergencia de monto o la de una reanudación que no se
-> aplicó —una de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ veintidós (FASE 9 vuelta 2)—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
+> aplicó —una de las otras ~~catorce~~ ~~quince~~ ~~dieciocho~~ ~~diecinueve~~ ~~veintiún~~ ~~veintidós~~ veintitrés (FASE 9 vuelta 2)—, **sin nada que dijera que hay plata del cliente para devolver**. Desde la FASE 9-bis-4
 > la marca es una fila con motivo, reloj y **los pagos colgados de ella** (`B/02` §2.2 y §2.5). **Las
 > tres son «la misma marca» en sentido estricto** —mismo motivo, mismo desenlace— y difieren sólo
 > en qué mató a la predecesora, que es lo que el recuadro de abajo separa.

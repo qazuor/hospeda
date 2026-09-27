@@ -246,7 +246,12 @@ del código, y *«primer cobro»* es N = 1.
 `approved` **leído por id** (`B/09` §4), en el mismo acto que lo acredita. No lo mueven ~~ni un
 cambio de plan (§2.2) ni~~ una cortesía (§4.2), porque ~~en ninguno de los dos~~ ahí no hay cobro.
 Un cambio de plan tampoco lo mueve: **termina la promo** (§2.2; FASE 8 completa, pendiente 7,
-owner 2026-09-25).
+owner 2026-09-25). **Y un cobro que salió sin el descuento tampoco**: el contador baja sólo si el
+importe cobrado no pasa del monto esperado con esa promo aplicada (owner 2026-09-27, FASE 9 vuelta
+2, `R20`, `F-8V2B3-001`). Si Juan canjea un 50 % minutos antes del lote y el registro del ciclo,
+creado antes, cobra el precio entero, la promo sigue con su contador intacto para el ciclo que
+viene, y la diferencia la marca el barrido con el motivo 24, `IMPORTE_COBRADO_DE_MÁS` (`B/09` §3,
+`B/02` §2.5), que propone devolverla.
 
 **Al llegar a 0 se muta el monto del preapproval ~~al precio completo~~ al monto sin esa promo,
 recalculado con las que siguen vivas** (FASE 8 completa, pendiente 7, owner 2026-09-25), con la

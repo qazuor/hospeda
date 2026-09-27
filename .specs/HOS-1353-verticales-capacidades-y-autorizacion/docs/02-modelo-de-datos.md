@@ -115,7 +115,12 @@ para retirar un plan sin mecanismo nuevo.
 
 **~~Las dos columnas~~ La columna `admite_altas` de `vertical` no es de adorno: es la mitad
 declarada de la frontera.** `admite_altas` ~~y `fin_de_servicio` las~~ la **lee billing** (`B/10`
-§4.6) y hasta ahora no existía en ninguna entidad. **`fin_de_servicio` dejó de ser columna de
+§4.6) y hasta ahora no existía en ninguna entidad. **Y la escribe verticales, en una sola ocasión: la mitad de
+verticales del acto de discontinuar** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ALTAS`). El acto de
+`SUPER_ADMIN` tiene dos mitades y la acción administrativa las orquesta en orden: primero
+verticales escribe `admite_altas = no`, después billing escribe el anuncio, la fecha y los avisos
+(`B/10` §4.3). Retirar todos los planes no la escribe (`R24`): la vertical sigue admitiendo altas,
+y lo que nadie puede contratar lo frenan `T1` y `S1`, que exigen una versión vigente y vendible. **`fin_de_servicio` dejó de ser columna de
 esta épica** (owner 2026-09-27, FASE 9 vuelta 2, `R5`): la fecha la calcula billing, cuyos términos
 son el anuncio y el último día pagado, y verticales la pregunta por `finDeServicio`
 (`12-contrato-de-cobertura.md` §4.1). Como columna no tenía quién la escribiera: billing no puede
@@ -330,9 +335,14 @@ nuevo, entra en `PRE_TRIAL` y **publica**: trial gratis, las veces que quiera. L
 **Cómo se calcula el seudónimo** (FASE 9 vuelta 2, `F-8V2A3-004`). Toda la defensa del trial de por
 vida descansa en él, y ningún capítulo decía la función:
 
-1. **La normalización es la de `DEC-TRIAL-004`, a la letra**: el correo en minúsculas, sin el
-   `+alias` y sin los puntos de la parte local. La decisión no nombra dominios, así que se aplica
-   en todos. En un dominio propio eso junta dos casillas distintas, y el ⚠️ de abajo lo declara.
+1. **La normalización es la de `DEC-TRIAL-004`, ~~a la letra~~ precisada por el owner**: el correo en
+   minúsculas, ~~sin el `+alias` y sin los puntos de la parte local. La decisión no nombra dominios,
+   así que se aplica en todos. En un dominio propio eso junta dos casillas distintas, y el ⚠️ de
+   abajo lo declara.~~ **y sin el `+alias` ni los puntos de la parte local sólo en una lista
+   cerrada de proveedores que los ignoran**: Gmail y Outlook, y los que se midan (owner 2026-09-27,
+   FASE 9 vuelta 2, `R23`). **En los demás dominios el correo se compara tal cual**, en minúsculas:
+   dos casillas de un dominio propio que difieren en un punto son dos personas, y cada una tiene su
+   trial.
 2. **La función es SHA-256 sin clave** sobre el correo normalizado. **Es lo que el pliego legal ya
    supone** (cap. 22 §3.2): *«cualquiera con un correo candidato calcula el hash»* sólo es cierto
    sin clave, y la pregunta 5 se formuló sobre eso. Con un HMAC, perder o rotar el secreto dejaba
@@ -340,13 +350,21 @@ vida descansa en él, y ningún capítulo decía la función:
 3. **La función y la normalización no cambian nunca.** El correo no se guarda (§4.1), así que no
    hay de dónde recalcular las filas viejas: cambiar cualquiera de las dos le devuelve el trial a
    todo el que ya lo consumió. Si algún día hay que cambiarlas, es una decisión del owner con esa
-   consecuencia dicha, no una migración.
+   consecuencia dicha, no una migración. **La lista de proveedores del punto 1 sí puede cambiar, y
+   cambiarla no recalcula las filas viejas, y se declara** (owner 2026-09-27, FASE 9 vuelta 2,
+   `R23`): una fila escrita antes de que un proveedor entrara a la lista guarda el seudónimo del
+   correo con sus puntos, así que quien vuelve con la variante sin puntos no la reconoce y recibe
+   otro trial; una escrita antes de que un proveedor saliera, al revés, se la niega a quien sólo
+   difiere en un punto. La población son las filas de ese proveedor escritas antes del cambio.
 
-> ⚠️ **Lo que esto NO cierra**: sacar los puntos en todos los dominios le niega el trial a quien
+> ~~⚠️ **Lo que esto NO cierra**: sacar los puntos en todos los dominios le niega el trial a quien
 > comparte dominio propio con alguien que sólo difiere en un punto (`ana.maria@hotel.com` y
 > `anamaria@hotel.com`). Es el falso positivo que `DEC-TRIAL-004` quiso evitar. Acotarlo a los
 > dominios que ignoran los puntos es precisar esa decisión, y lo decide el owner (FASE 9 vuelta 2,
-> `F-8V2A3-004`).
+> `F-8V2A3-004`).~~ **Cerrado por el owner el 2026-09-27** (FASE 9 vuelta 2, `R23`): la lista
+> cerrada del punto 1. **Lo que queda, declarado**: en un proveedor que ignora puntos o alias y no
+> está en la lista, el trial se consigue otra vez con un punto; y cambiar la lista no recalcula
+> las filas viejas (punto 3).
 
 **Es una condición de aplicación, no una tarea suelta.** Hasta ahora el segundo trial por
 re-registro era teórico porque **nadie podía disparar `T1`**; en el momento en que `T1` dispara,

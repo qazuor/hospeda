@@ -94,7 +94,12 @@ reenvía `A3` con la misma clave antes de abandonar (`B/03` §8; `F-8V2B1-003`, 
 
 - Si el pago se acredita primero, la transición `GRACE_PERIOD → SUSPENDED` **ya no corresponde**
   y no se ejecuta: la tabla del capítulo 03 se reevalúa contra el estado actual, no contra el
-  que el proceso leyó al empezar.
+  que el proceso leyó al empezar. **Pero si `S6` ya había mandado la cancelación** —la llamada
+  sale antes de la escritura—, la fila queda `ACTIVE` con el preapproval `cancelled`, y el espejo
+  del `B/03` §10.1 **la lleva a `CANCEL_SCHEDULED`** y no la corta: recibe el período que pagó y
+  `S12` la termina, igual que en el otro orden. Vale lo mismo para `S3` contra `S2` (owner
+  2026-09-27, FASE 9 vuelta 2, `R18`, `F-8V2B2-001`). **Con eso, una vez que la llamada de `S6`
+  salió, los dos órdenes terminan en el mismo estado.**
 - Si la suspensión ocurre primero, ~~el pago entra por `SUSPENDED → ACTIVE`, que es una
   transición válida~~ `S6` ya canceló el preapproval (`DEC-SUB-019`), así que un cobro que igual
   entra —estaba en vuelo— lleva la fila a **`CANCEL_SCHEDULED`**, no a `ACTIVE`: la persona recibe
@@ -116,7 +121,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo —con `max` sobre la fecha vigente: una extensión **nunca acorta** (`B/03` `S11`); sobre una fila de `S26` deja en pie el piso de la vertical (FASE 9 vuelta 1, R4, `F-8V1B2-002`)— — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los ~~**seis**~~ ~~**siete**~~ **ocho** motivos que significan *«hay plata del cliente que devolver»* —recontados sobre la última columna del `B/02` §2.5, donde son el 1, el 2, el 3, el 7, el 12, el 15, el 20 y el 23 (el 20 desde la pendiente 6, owner 2026-09-25; el 23 desde la FASE 9 vuelta 2, `R4`)—, así que el listado accionable lo muestra adelante (`B/19` §6) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5) **y el cobro se cuelga de ella** (`reconciliation_mark_payment`, `B/02` §2.2); **si ya hay una abierta con ese motivo sobre la fila, el cobro se cuelga de ÉSA y no se abre una segunda** — el `UNIQUE` no rechaza el hecho, lo enruta. El reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los ~~**seis**~~ ~~**siete**~~ ~~**ocho**~~ **nueve** motivos que significan *«hay plata del cliente que devolver»* —recontados sobre la última columna del `B/02` §2.5, donde son el 1, el 2, el 3, el 7, el 12, el 15, el 20, el 23 y el 24 (el 20 desde la pendiente 6, owner 2026-09-25; el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`)—, así que el listado accionable lo muestra adelante (`B/19` §6) |
 
 > **Este motivo le gana al del §3 sobre el mismo hecho, y está escrito allá.** Un cobro que entra
 > sobre una fila `CANCELLED` falla también la condición 1 del pago tardío, que mandaría a
@@ -297,7 +302,7 @@ cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumpl
 de desempate está abajo**— y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero. **Cuál de las cuatro condiciones falló va en el evento y no en el motivo**: el motivo es lo
-que separa este caso de los otros ~~doce~~ ~~veintiún~~ veintidós motivos en el listado (recontado sobre `B/02` §2.5 en la FASE 9 completa, y otra vez en la FASE 9 vuelta 2, con el 23), y el diagnóstico fino ya tiene su lugar
+que separa este caso de los otros ~~doce~~ ~~veintiún~~ ~~veintidós~~ veintitrés motivos en el listado (recontado sobre `B/02` §2.5 en la FASE 9 completa, y otra vez en la FASE 9 vuelta 2, con el 23 y el 24), y el diagnóstico fino ya tiene su lugar
 declarado en `NUCLEO/08` §4.3.
 
 **Y un mismo pago tardío cae bajo ESTE § y bajo el §2, así que hace falta decir cuál motivo gana.**
