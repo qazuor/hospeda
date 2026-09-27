@@ -161,8 +161,10 @@ Es un acto de `SUPER_ADMIN`, con registro escrito, y se ejecuta en este orden:
 **Verticales escribe `vertical.admite_altas = no`**, porque la columna es suya (`V/02` §2.1), y
 **billing escribe la fila de la discontinuación** —el anuncio y la fecha de fin de servicio,
 `B/02` §2.1— **y los avisos**, y corre `S26`–`S28`. **La acción administrativa del acto las
-orquesta en ese orden: primero verticales, después billing**, así que cuando billing empieza a
-cancelar ya no nace ninguna alta ni ningún trial. Billing no escribe `admite_altas`: sería una
+orquesta en ese orden: primero verticales, después billing**. Es la acción 16 de `NUCLEO/08` §3,
+*«discontinuar una vertical»*: permiso de `SUPER_ADMIN`, auditada y con confirmación explícita
+(owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`). Con ese orden, cuando billing empieza a cancelar
+ya no nace ninguna alta ni ningún trial. Billing no escribe `admite_altas`: sería una
 escritura en verticales fuera del contrato, que admite una sola, `extenderTrial` (`12-contrato…`
 §4.2).
 
@@ -173,6 +175,13 @@ el acto quedó a medias. Nunca deshace la mitad de verticales** (owner 2026-09-2
 ningún aviso. No hay plata de más en ese estado, y es el único en que una vertical queda sin
 altas y sin fecha (§4.6). Deshacer la mitad de verticales reabriría las altas de una vertical que
 el owner ya decidió cerrar.
+
+**El anuncio es el instante en que entra la mitad de billing**, que es cuando salen los avisos
+(owner 2026-09-27, FASE 9 vuelta 2, `Q-ANUNCIO`). Es el instante que guarda
+`vertical_discontinuation` (`B/02` §2.1), y desde él corren la fórmula de abajo y el piso del
+§4.4. Si la mitad de billing entra tarde, las altas quedan cerradas desde antes del anuncio, y
+nadie recibe menos aviso que el que el §4.4 le promete. Contarlo desde la mitad de verticales
+habría descontado del piso los días en que nadie estaba avisado.
 
 **Día 0 — el anuncio.** La vertical deja de admitir altas y trials —lo escribe la mitad de verticales, arriba—; los trials, porque `T1` exige
 `admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25); **y las
@@ -366,7 +375,9 @@ el borrado caía hasta 90 días antes de la fecha prometida.
 
 ### 4.4 Por qué esa fórmula y no un prorrateo
 
-**El piso de 60 días** es el de `DEC-MP-002`. Perder el servicio entero es estrictamente peor
+**El piso de 60 días** es el de `DEC-MP-002`, y se cuenta desde el anuncio, que es el instante en
+que entra la mitad de billing del acto y salen los avisos (§4.3; owner 2026-09-27, FASE 9 vuelta 2,
+`Q-ANUNCIO`). Perder el servicio entero es estrictamente peor
 para el cliente que un aumento de precio, así que la antelación no puede ser menor. Y como el
 cobro ya se cortó el día 0, esos días se prestan **sin cobrar**: un mensual recibe hasta dos
 meses libres. Ése es el costo elegido de la regla del §4.2.

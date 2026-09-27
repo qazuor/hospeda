@@ -44,6 +44,10 @@ del consolidado y se contestan una por vez. Cada fila nombra la opción elegida.
 | `R9-b` | cuándo se cuenta que Gastronomía y Experiencia den cero | **1** — también antes del 1a, y el corte no arranca si ahí ya aparece una fila; el paso 2 queda como segundo control | sí |
 | `R18-b` | qué pasa con los complementos cuando el espejo de `R18` (y `S7`) lleva la principal a `CANCEL_SCHEDULED` | **1** — el espejo y `S7` cancelan los complementos como `S11` (`R1-a`) | sí |
 | `Q-ALTAS-b` | qué pasa si falla la mitad de billing del acto de discontinuar | **1** — la acción reintenta la mitad de billing hasta que entra y le muestra al admin que el acto quedó a medias; nunca deshace la mitad de verticales | sí |
+| `Q-ACC16` | si el acto de discontinuar una vertical entra al catálogo de acciones administrativas | **1** — sí, acción 16 «discontinuar una vertical», permiso de `SUPER_ADMIN`, auditada y con confirmación; se recuentan las quince y sus espejos | sí |
+| `Q-ANUNCIO` | qué instante cuenta como anuncio si la mitad de billing entra tarde | **1** — el de billing, que es cuando salen los avisos; las altas quedan cerradas de más y nadie recibe menos aviso del prometido | sí |
+| `Q-ESTADO` | si las nueve decisiones con 📌 del lote suman su marca al *Estado* | **1** — sí, por la convención del log; el contador «precisadas sin SUPERSEDED» pasa a 44 | sí |
+| `Q-UNKNOWN` | si se arman ya las filas de `EX-43`…`EX-47` en las tablas de `UNKNOWN` de billing | **1** — sí, escritura sin decisión | sí |
 
 **Resumen**: 10 preguntas, todas con la opción recomendada. El resto de los racimos (R3, R6, R8,
 R10–R14, R16, R18–R20, R22–R28) es escritura sin decisión de producto (consolidado §6).

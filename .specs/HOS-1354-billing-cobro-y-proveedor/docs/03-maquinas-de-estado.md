@@ -866,7 +866,7 @@ lo da el grant; acá no hay ninguna otra fuente que sostenga nada.
 
 #### La baja tiene CUATRO filas y no una: qué significa cancelar desde cada estado
 
-**El acto es UNO** —*«cancelar una suscripción»*, una de las ~~**doce**~~ ~~**trece**~~ ~~**catorce**~~ **quince** del `NUCLEO/08` §3 (la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a), con un
+**El acto es UNO** —*«cancelar una suscripción»*, una de las ~~**doce**~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ **dieciséis** del `NUCLEO/08` §3 (la decimosexta, *«discontinuar una vertical»*: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a), con un
 permiso y una confirmación—, y `B/19` §5 lo deja self-service. **Lo que cambia por estado de
 origen es qué queda por terminar**, y eso son cuatro desenlaces distintos que antes estaban
 escritos en un solo renglón:
@@ -1991,7 +1991,7 @@ reloj:**
 > `SUSPENDED`»*—, que `S7` ya exige y que rechaza `CANCELLED`, `ABANDONED` y `ACTIVE`.
 
 Eso cierra la ventana **con actos que ya existen**, no con un plazo: cuando una persona cancela la
-suscripción (**`S23`**, §3.2 — §3.1 enumera esa salida, y es una de las ~~doce~~ ~~trece~~ ~~catorce~~ quince (`G5-2`) acciones del
+suscripción (**`S23`**, §3.2 — §3.1 enumera esa salida, y es una de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis (`G5-2`, `Q-ACC16`) acciones del
 `NUCLEO/08` §3) o cuando le cae un grant (`S13`), la fila pasa a `CANCELLED`, de donde el §3.3 ya
 declara que **no se vuelve**. A partir de ahí el pago que llegue no reabre nada y lo que corresponde es un alta nueva.
 **Y las otras tres condiciones acotan el resto**: la **3** rechaza la reapertura si la persona ya
@@ -2100,12 +2100,12 @@ evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y
   `SUSPENDED` no es terminal — y es esa lectura diaria la que hace segura la reactivación directa
   (arriba).
 - **El catálogo de acciones administrativas ~~sigue teniendo DOCE filas~~ no suma filas por `MP4`** —tiene
-  ~~**trece**~~ ~~**catorce** desde la FASE 9 completa~~ **quince** desde la FASE 9 vuelta 1: la decimotercera es moderar una ficha (`F-8CA2-004`, owner
-  2026-09-25), ~~y~~ la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a, **y la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`**—. `MP4` es *«registrar un
+  ~~**trece**~~ ~~**catorce** desde la FASE 9 completa~~ ~~**quince** desde la FASE 9 vuelta 1~~ **dieciséis** desde la FASE 9 vuelta 2: la decimotercera es moderar una ficha (`F-8CA2-004`, owner
+  2026-09-25), ~~y~~ la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a, **y la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`**, **y la decimosexta, *«discontinuar una vertical»*: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`**—. `MP4` es *«registrar un
   pago manual»* (§30), la fila que ya está, ejecutada desde otro estado de origen: mismo permiso,
   misma auditoría, misma confirmación de que mueve dinero. Las cinco líneas que cuantifican sobre
   esa tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6— ~~siguen diciendo doce y siguen siendo
-  exactas~~ ~~dicen trece~~ ~~dicen catorce~~ dicen quince, y por `F-8CA2-004`, la decisión 5a y `G5-2`, no por `MP4`.
+  exactas~~ ~~dicen trece~~ ~~dicen catorce~~ ~~dicen quince~~ dicen dieciséis, y por `F-8CA2-004`, la decisión 5a, `G5-2` y `Q-ACC16`, no por `MP4`.
 - **La máquina sigue teniendo tres estados.** `AWAITING`, `REGISTERED` y `DECLARED_UNPAID`
   (`NUCLEO/01` §2.2): `MP4` agrega una arista, no un nodo, y por eso `B/02` §2.3 sigue sin
   necesitar *«un estado nuevo en la máquina del pago manual»*.
@@ -2126,7 +2126,7 @@ lugar**, más cuatro apariciones que quedan como estaban con su razón:
 | *«`S19` admite las dos puertas»* | el mismo arreglo | **sigue verdadera**, y por eso `MP4` no necesita ampliarla: el evento se enuncia sobre el hecho y no sobre el mecanismo, que es lo que esa corrección dejó escrito | §3.2, con `MP4` nombrado en la celda de `S19` |
 | *«la regla se ejecuta en tres lugares»* (`G-R1-D`) | el mismo arreglo, en `B/20` §2 | **queda incompleta**: son cuatro | corregida en `B/20` §2 |
 | *«los estados terminales de una suscripción no se barren»* y sus puertas —**nueve** cuando se escribió esta fila, ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ **dieciocho** hoy, con `S31` (FASE 8 completa, owner 2026-09-25), `S36` (FASE 9 vuelta 1) y la lápida de recepción (owner 2026-09-26, `X-1`)— | `B/09` §3, y `B/16` §4.4 que las contó | **sigue verdadera**: `DECLARED_UNPAID` es del `manual_payment` y nunca estuvo en esa tabla, cuyos sujetos son `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` | sin tocar |
-| *«la tabla tiene DOCE filas»* (`NUCLEO/08` §3) y las cinco líneas que la cuantifican | el arreglo del anclaje de verticales | **sigue verdadera para `MP4`** (desde la FASE 8 completa son ~~**trece**~~ por moderar una ficha, `F-8CA2-004`, owner 2026-09-25, ~~y~~ **catorce** desde la FASE 9 completa por asentar lo ocurrido por fuera, decisión 5a, **y quince desde la FASE 9 vuelta 1 por editar el contenido de una ficha ajena, `G5-2`**: otras acciones): `MP4` es la fila *«registrar un pago manual»* ejecutada desde otro origen, no una acción nueva | sin tocar |
+| *«la tabla tiene DOCE filas»* (`NUCLEO/08` §3) y las cinco líneas que la cuantifican | el arreglo del anclaje de verticales | **sigue verdadera para `MP4`** (desde la FASE 8 completa son ~~**trece**~~ por moderar una ficha, `F-8CA2-004`, owner 2026-09-25, ~~y~~ **catorce** desde la FASE 9 completa por asentar lo ocurrido por fuera, decisión 5a, **y quince desde la FASE 9 vuelta 1 por editar el contenido de una ficha ajena, `G5-2`**, **y dieciséis desde la FASE 9 vuelta 2 por discontinuar una vertical, `Q-ACC16`**: otras acciones): `MP4` es la fila *«registrar un pago manual»* ejecutada desde otro origen, no una acción nueva | sin tocar |
 | *«el crédito de `DEC-SUB-006` se computa en cero en grace»* y las ramas de `B/12` §5.3 | el arreglo del pago tardío | **siguen verdaderas**: `MP4` hereda la condición de `S19`, así que no reactiva durante una sucesión y el pago se resuelve por las mismas ramas — que desde `S23` son **seis** y no cinco, y no las recontó este arreglo | `B/12` §5.3, con `MP4` nombrado en la puerta manual |
 
 ---
@@ -2195,7 +2195,7 @@ no se abría ninguna otra, nadie le pedía nada al cliente y —porque `ACTIVE` 
 la puerta del mecanismo que iba a cerrarlo.
 
 **Y el reloj es un acto de sistema, así que no toca el catálogo de `NUCLEO/08` §3.** Ahí van las
-acciones **del admin**, y crear la cuota no es ninguna: la tabla ~~**sigue teniendo doce filas**~~ **no suma filas por el reloj** —tiene ~~trece~~ ~~catorce~~ quince (la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)— y
+acciones **del admin**, y crear la cuota no es ninguna: la tabla ~~**sigue teniendo doce filas**~~ **no suma filas por el reloj** —tiene ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis (la decimosexta, *«discontinuar una vertical»*: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)— y
 las cinco líneas que cuantifican sobre ella —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6—
 siguen siendo exactas. Es el mismo argumento con el que el barrido y `S18` no suman filas ahí.
 
@@ -2502,7 +2502,7 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ **dieciocho**, recontadas sobre la tabla de `B/09` §3** (con `S31`, FASE 8 completa, owner 2026-09-25; `S36`, FASE 9 vuelta 1; y la lápida de recepción, owner 2026-09-26, `X-1`). `MP5` no lleva
   ninguna suscripción a un estado terminal y no toca ningún preapproval — no hay ninguno.
 - **El catálogo de acciones administrativas ~~sigue teniendo DOCE filas~~ no suma filas por `MP5`** (arriba; tiene
-  ~~trece~~ ~~catorce~~ quince (la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)).
+  ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis (la decimosexta, *«discontinuar una vertical»*: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)).
 - **`C5` no se toca.** Su `UNIQUE(subscription_id, período) WHERE el pago está acreditado`
   (`B/05` §C5) impide **dos pagos acreditados** del mismo período, y una cuota en `AWAITING` no
   está acreditada: la idempotencia de `MP5` es **la condición de su propia fila** —que no exista

@@ -117,7 +117,9 @@ para retirar un plan sin mecanismo nuevo.
 declarada de la frontera.** `admite_altas` ~~y `fin_de_servicio` las~~ la **lee billing** (`B/10`
 §4.6) y hasta ahora no existía en ninguna entidad. **Y la escribe verticales, en una sola ocasión: la mitad de
 verticales del acto de discontinuar** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ALTAS`). El acto de
-`SUPER_ADMIN` tiene dos mitades y la acción administrativa las orquesta en orden: primero
+`SUPER_ADMIN` tiene dos mitades y la acción administrativa las orquesta en orden —la acción 16
+de `NUCLEO/08` §3, *«discontinuar una vertical»* (owner 2026-09-27, FASE 9 vuelta 2,
+`Q-ACC16`)—: primero
 verticales escribe `admite_altas = no`, después billing escribe el anuncio, la fecha y los avisos
 (`B/10` §4.3). **Si la mitad de billing falla, la acción la reintenta hasta que entra y le
 muestra al admin el acto a medias, y esta escritura no se deshace nunca** (owner 2026-09-27, FASE 9

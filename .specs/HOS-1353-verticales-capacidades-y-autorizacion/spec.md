@@ -208,8 +208,9 @@ que **ninguno los haga por su cuenta**.
 **un permiso de esa acción concreta**, nunca una condición general de «es administrador».
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto,
-y la excepción son las catorce primeras acciones de `NUCLEO/08` §3: la decimoquinta, editar el
-contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
+y la excepción son las catorce primeras acciones de `NUCLEO/08` §3 **y la decimosexta,
+discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`): la decimoquinta,
+editar el contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
 `F-8V2A1-004`). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
 fila de aquel catálogo (cap. 17 §3.2 regla 1; `F-8V2A1-002`).
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y

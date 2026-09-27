@@ -219,7 +219,7 @@ declara como riesgo nuestro.
 reintentar nunca, hay techo de intentos por ventana y hay multas por excederlo. Hoy eso lo absorbe
 Mercado Pago dentro del `preapproval`.
 
-### 5.2 Las ~~ocho~~ ~~seis~~ ~~cuatro~~ cinco filas que siguen `UNKNOWN`
+### 5.2 Las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ diez filas que siguen `UNKNOWN`
 
 ~~De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
 un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: `RN-2`, `RN-3`,
@@ -240,6 +240,11 @@ nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condic
 | `RC-8` ✚ | qué estado lee el pago en un contracargo. **Fuente documental**: `DEC-SUB-020` fija qué hacemos al leerlo, no cómo se comporta el proveedor |
 | `RF-3` | el plazo máximo para reembolsar. **Ya no bloquea** (`DEC-RF-007`): pasado el plazo la operación no se ofrece y la reparación es manual, asentada por `RF4` (`DEC-RF-008`) |
 | `EX-42` ✚ | si el `expire` de qzpay vence una `Preference` de Checkout Pro y la relectura lo confirma. **No es de esta épica**: condiciona el paso 1a del corte (`16-fase-7-del-paraguas.md` §4.2), que vence las del cambio de plan del viejo, y se mide en su paso 0 (owner 2026-09-26, `Y-1`) |
+| `EX-43` ✚ | si reenviar una orden con la misma clave y el mismo cuerpo horas después, con el token de la tarjeta ya vencido, devuelve la misma orden si existía, y qué devuelve si nunca se creó. Condiciona `A3` sobre el addon de única vez (`B/03` §8; `R4`), y la mide **B10**. **No bloquea**: si devuelve error con la orden existente, el caso cae en la comprobación de órdenes pagadas del barrido de **B11**, motivo 23 (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| `EX-44` ✚ | si cancelar un preapproval corta el reciclado de un registro de cobro abierto, o un cambio de medio posterior todavía lo cobra. Condiciona el cobro sobre la lápida del corte y la exención de las terminales (`B/21` §2.5, `B/09` §3; `R2`). **No bloquea**: da el tamaño de la población. Se mide en el paso 0 del corte (`16-fase-7…` §4.2), y la lee **B11** (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| `EX-45` ✚ | si una cancelación leída `cancelled` en el `PUT` y en un `GET` inmediato sigue `cancelled` releída horas después. Condiciona el gate del paso 2 del corte y el cobro sobre su lápida (`F-8V2C2-004`). **No es de esta épica**: se mide en el paso 0 del corte; el código actual registra seis que no (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| `EX-46` ✚ | a qué URL va el reintento de una notificación emitida antes de cambiar la URL de la aplicación. Condiciona el paso 4b del corte (`F-8V2C2-002`). **No bloquea una unidad**: si va a la vieja, el evento se pierde y su cobro cae en el punto (3) del «NO cierra» de `B/21` sobre `G3-1`, que ve el barrido de **B11** (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| `EX-47` ✚ | si un registro de cobro ya creado cobra el monto viejo o el nuevo cuando la mutación del preapproval cae en medio. Condiciona la comparación del importe cobrado contra el esperado (`B/09` §3, `B/14` §2.4; `F-8V2B3-001`, `R20`), que es de **B11**. **No bloquea**: si cobra el viejo, lo ve el motivo 24. Se mide en el paso 0 del corte (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
 
 ~~**Y hay una consecuencia de la pregunta de arriba que conviene tener presente**: esas cinco
 gobiernan el diseño del grace **sólo mientras el reloj sea del proveedor**. Con el reloj nuestro
