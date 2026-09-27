@@ -268,7 +268,9 @@ terminal con el preapproval vivo. **Cuando la relectura lo ve vivo —`authorize
    `S11` y de `S26`, que mandan la cancelación en el acto y no llegan a terminal hasta `S12`. El
    barrido la reintenta ya ahí, por el par `authorized`/`paused`/`pending` × `CANCEL_SCHEDULED` de
    `B/03` §10.1, sin esperar a que `S12` la sume a la salvedad 4 (owner 2026-09-25; FASE 8
-   completa, `F-8CB1-013`). No hace falta una salvedad nueva: `CANCEL_SCHEDULED` es un estado vivo
+   completa, `F-8CB1-013`). **Cuenta como de `S11` la fila de complemento que el espejo de `R18`
+   o `S7` llevan ahí por la regla de `S11`** (`B/03` §10.1; owner 2026-09-27, FASE 9 vuelta 2,
+   `R18-b`). No hace falta una salvedad nueva: `CANCEL_SCHEDULED` es un estado vivo
    y el barrido ya la recorre.
 4. **Un preapproval vivo sobre una fila que NUNCA mandamos cancelar sigue siendo divergencia**,
    y va a persona **como hoy**: por la comparación de estado, con la marca del par que le toque en

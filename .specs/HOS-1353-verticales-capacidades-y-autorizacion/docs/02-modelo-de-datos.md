@@ -119,7 +119,9 @@ declarada de la frontera.** `admite_altas` ~~y `fin_de_servicio` las~~ la **lee 
 verticales del acto de discontinuar** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ALTAS`). El acto de
 `SUPER_ADMIN` tiene dos mitades y la acción administrativa las orquesta en orden: primero
 verticales escribe `admite_altas = no`, después billing escribe el anuncio, la fecha y los avisos
-(`B/10` §4.3). Retirar todos los planes no la escribe (`R24`): la vertical sigue admitiendo altas,
+(`B/10` §4.3). **Si la mitad de billing falla, la acción la reintenta hasta que entra y le
+muestra al admin el acto a medias, y esta escritura no se deshace nunca** (owner 2026-09-27, FASE 9
+vuelta 2, `Q-ALTAS-b`). Retirar todos los planes no la escribe (`R24`): la vertical sigue admitiendo altas,
 y lo que nadie puede contratar lo frenan `T1` y `S1`, que exigen una versión vigente y vendible. **`fin_de_servicio` dejó de ser columna de
 esta épica** (owner 2026-09-27, FASE 9 vuelta 2, `R5`): la fecha la calcula billing, cuyos términos
 son el anuncio y el último día pagado, y verticales la pregunta por `finDeServicio`

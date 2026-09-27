@@ -42,6 +42,8 @@ del consolidado y se contestan una por vez. Cada fila nombra la opción elegida.
 | `R25` | si el asiento de un cobro sobre una lápida emite comprobante | **1** — sí, por `DEC-LEGAL-001`; queda en su fila sin enviarse (lo ya aplicado) | sí |
 | `R27` | dónde va el paso 4c (revalidar las páginas públicas) | **1** — después del 4b, fuera de la rama de aborto (lo ya aplicado) | sí |
 | `R9-b` | cuándo se cuenta que Gastronomía y Experiencia den cero | **1** — también antes del 1a, y el corte no arranca si ahí ya aparece una fila; el paso 2 queda como segundo control | sí |
+| `R18-b` | qué pasa con los complementos cuando el espejo de `R18` (y `S7`) lleva la principal a `CANCEL_SCHEDULED` | **1** — el espejo y `S7` cancelan los complementos como `S11` (`R1-a`) | sí |
+| `Q-ALTAS-b` | qué pasa si falla la mitad de billing del acto de discontinuar | **1** — la acción reintenta la mitad de billing hasta que entra y le muestra al admin que el acto quedó a medias; nunca deshace la mitad de verticales | sí |
 
 **Resumen**: 10 preguntas, todas con la opción recomendada. El resto de los racimos (R3, R6, R8,
 R10–R14, R16, R18–R20, R22–R28) es escritura sin decisión de producto (consolidado §6).

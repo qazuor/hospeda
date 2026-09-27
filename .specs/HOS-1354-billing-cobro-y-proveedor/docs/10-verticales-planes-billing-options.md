@@ -166,6 +166,14 @@ cancelar ya no nace ninguna alta ni ningún trial. Billing no escribe `admite_al
 escritura en verticales fuera del contrato, que admite una sola, `extenderTrial` (`12-contrato…`
 §4.2).
 
+**Si la mitad de billing falla, la acción la reintenta hasta que entra, y le muestra al admin que
+el acto quedó a medias. Nunca deshace la mitad de verticales** (owner 2026-09-27, FASE 9 vuelta 2,
+`Q-ALTAS-b`). Mientras no entra, la vertical no admite altas y todavía no tiene fecha:
+`finDeServicio` contesta `NINGUNA`, nadie nuevo entra, quien ya pagaba sigue igual y no sale
+ningún aviso. No hay plata de más en ese estado, y es el único en que una vertical queda sin
+altas y sin fecha (§4.6). Deshacer la mitad de verticales reabriría las altas de una vertical que
+el owner ya decidió cerrar.
+
 **Día 0 — el anuncio.** La vertical deja de admitir altas y trials —lo escribe la mitad de verticales, arriba—; los trials, porque `T1` exige
 `admite_altas` (`V/03` §2; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25); **y las
 suscripciones, porque `S1` también lo exige, para el alta nueva y para la sucesión** (`B/03` §3.2;
@@ -409,7 +417,7 @@ más allá de que ninguno de los dos vuelva atrás solo.
 | admite altas | fin de servicio | situación |
 |---|---|---|
 | sí | sin fecha | **en operación** — **también con todos los planes retirados**: no entra nadie nuevo, porque `S1` y `T1` exigen una versión vigente y vendible (§4.1; FASE 9 vuelta 2, `R24`) |
-| ~~no~~ | ~~sin fecha~~ | ~~**cerrada a altas** — todos los planes retirados (§4.1); estable, puede durar años~~ **ya no existe** (owner 2026-09-27, FASE 9 vuelta 2, `R24`): retirar los planes no escribe `admite_altas`, y el único acto que la escribe es la discontinuación, que escribe la fecha en el mismo acto |
+| ~~no~~ | ~~sin fecha~~ | ~~**cerrada a altas** — todos los planes retirados (§4.1); estable, puede durar años~~ **ya no existe** (owner 2026-09-27, FASE 9 vuelta 2, `R24`): retirar los planes no escribe `admite_altas`, y el único acto que la escribe es la discontinuación, que escribe la fecha en el mismo acto. **Salvo mientras la mitad de billing del acto no entró**: la acción la reintenta y el admin ve el acto a medias; no es una situación estable (owner 2026-09-27, FASE 9 vuelta 2, `Q-ALTAS-b`; §4.3) |
 | no | con fecha | **discontinuándose**, y cumplida la fecha, **discontinuada** |
 
 **Quién lee `admite_altas` en billing: `S1`** (`B/03` §3.2): la vertical que no admite altas no

@@ -703,6 +703,11 @@ propio `S12`** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): el `S12` de la princ
 orfandad, `S21` lleva el complemento a `CANCELLED` y, si su último cobro pagó días posteriores al
 fin de servicio, abre el motivo 14, que propone no devolver y deja que una persona lo vea. El mismo
 orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` §3.2, fila de `S12`).
+**Y el mismo alguien es la regla de `S11` cuando la principal llega a `CANCEL_SCHEDULED` sin pedir
+la baja**: por el espejo de `R18` —pagó mientras ya mandábamos cancelar— y por `S7` —volvió de
+`SUSPENDED` con un cobro sobre un preapproval cancelado— (owner 2026-09-27, FASE 9 vuelta 2,
+`R18-b`; `B/03` §3.2 y §10.1). Ninguna de las dos saca a la principal de las filas vivas, así que
+no entran en la lista de abajo, por la misma razón que `S11`.
 
 Entonces, cuando un título **deja de ser fila viva**, la misma causa tiene **tres efectos
 distintos** y los tres se disparan del mismo lugar:
@@ -1036,6 +1041,9 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   cobro entró sobre un preapproval que `S6` ya había cancelado—, **`S33` no corre**: su evento pide
   la principal `ACTIVE`. El complemento sigue pausado mientras la principal da servicio hasta su fin
   de período, sin cobrar ni dar nada, y al llegar `S12` la orfandad lo apaga (`A5`, `S21`).
+  **Desde `R18-b`, `S7` cancela como `S11` los complementos que siguen en `ACTIVE`** (owner
+  2026-09-27, FASE 9 vuelta 2), y éste no es uno: la regla de `S11` deja afuera lo que no está
+  `ACTIVE`, así que el pausado por `S32` sigue siendo este residuo.
   Declarado por `DEC-METH-015`: falla hacia no cobrar, no da acceso y no borra nada. **Causa**:
   reanudarlo cobraría un complemento de una principal que ya se va (FASE 9 vuelta 1, §4 punto 3 de
   `22-verificado-G2`).
