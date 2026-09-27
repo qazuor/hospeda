@@ -385,13 +385,13 @@ unidad que arranca primero de esta épica— y es la **segunda** de nueve en la 
 llegan resueltas mucho antes que B7, B8 y B12, que están detrás de la pasarela. Lo que cambia no es
 el orden: es que dejan de ser invisibles.
 
-### 2.7 Dónde caen las ~~ocho~~ ~~seis~~ ~~cuatro~~ cinco filas `UNKNOWN`
+### 2.7 Dónde caen las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ diez filas `UNKNOWN`
 
 ~~Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `VERIFIED`, 19
-`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las ~~98~~ 99 filas de la matriz,
+`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las ~~98~~ ~~99~~ 104 filas de la matriz,
 recontadas el 2026-09-25 con `contar-filas-de-la-matriz.py`: ~~55~~ 56 `VERIFIED`, 23 `NOT_SUPPORTED`,
-~~14~~ 15 `PARTIALLY_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ 5 `UNKNOWN`**, con `RN-3` cerrada la noche del 25/09,
-`GR-1` el 26/09 y **`EX-42` abierta el 26/09** (owner, `Y-1`; recontado ese día) (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
+~~14~~ 15 `PARTIALLY_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ 10 `UNKNOWN`**, con `RN-3` cerrada la noche del 25/09,
+`GR-1` el 26/09, **`EX-42` abierta el 26/09** (owner, `Y-1`) y **`EX-43` a `EX-47` abiertas el 27/09** (FASE 9 vuelta 2, con OK del owner; recontado ese día) (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
 queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**.
 
 | filas | unidad | qué bloquea de verdad |

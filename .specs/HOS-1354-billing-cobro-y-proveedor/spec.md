@@ -226,8 +226,8 @@ un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: 
 `GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
 **Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
-`DEC-METH-004`): **~~98~~ 99 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ 5
-`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`; **`EX-42` entró el 26/09**, owner, `Y-1`). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+`DEC-METH-004`): **~~98~~ ~~99~~ 104 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ 10
+`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`; **`EX-42` entró el 26/09**, owner, `Y-1`; **`EX-43` a `EX-47` entraron el 27/09**, FASE 9 vuelta 2, con OK del owner; recontado ese día). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
 fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
 nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condicionando el grace;
 `GR-1` salió el 2026-09-26), y qué condiciona cada una:
