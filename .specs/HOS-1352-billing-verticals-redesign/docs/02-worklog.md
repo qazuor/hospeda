@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-25
+updated: 2026-09-27
 status: CURRENT
 ---
 
@@ -1289,3 +1289,27 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   nuevo copia la forma de otro sin sus reglas (el empuje de `PURGED` sin «después del commit»), y
   una lista enumerada se vence con cada transición nueva (`S36`).
 - Pendiente: los tres arreglos chicos del handoff y la FASE 8 vuelta 2.
+
+## 2026-09-26 (noche) al 2026-09-27 — la vuelta 2 del ciclo 8↔9: FASE 8 y FASE 9
+
+- **Tres arreglos chicos** antes de revisar (`1cccd9119d`): `V/spec.md` §1 y §7 (pasarela
+  decidida, `DEC-MP-005`/`006`), el «NO cierra» 3 de `V/03` §9 desglosado, y seis decisiones del
+  26/09 asignadas a unidades en `B/descomposicion.md` §2.
+- **FASE 8 vuelta 2** entera (`29-fase-8-vuelta-2/`): nueve ciegos → **56 hallazgos, 1 crítico**
+  (`F-8V2B1-001`: el addon recurrente cobraba otro mes tras la baja), 28 racimos; 225 citas
+  verificadas. Tendencia 133/15 → 100/1 → 56/1. Atribución contra hunks (`01-`): la crítica es
+  **preexistente**; su gemelo `F-8V2D1-001` (`S36` fuera de la orfandad) lo generó la tanda del 26/09.
+- **Corte de `DEC-METH-013`**: tope de dos vueltas alcanzado; el owner leyó la crítica y eligió
+  arreglarla (`R1-a`). **Se deja de girar el ciclo 8↔9.**
+- **FASE 9 vuelta 2**: 30 decisiones del owner en `29-…/10-` (dos contra la recomendación:
+  `R1-c` y `R11-3b`, este último por un hecho del owner), aplicadas en ocho grupos (`11-`…`18-`);
+  **56 de 56 hallazgos aplicados**. Lote de log y matriz con OK del owner: 16 📌 + marcas de Estado
+  (precisadas 44), un 📌 en `DEC-RF-008`; matriz **104 · 56/15/23/10 `UNKNOWN`** (`EX-43`…`EX-47`).
+- **Listas cerradas nuevas**: 24 motivos (9 devuelven), 14 disparadores de orfandad, 16 acciones
+  administrativas (15 capacidades del actor), 8 preguntas del §4.1, 12 dependencias de billing,
+  8 precisiones de `V/17`, 14 filas en la tabla del corte (4b, 4c, 5b), entidad nueva
+  `vertical_discontinuation`.
+- **Aprendido**: una remisión («como `S11`») arrastra las exclusiones de la regla original y obliga a
+  declarar pertenencia; los conteos se buscan por palabra además de por número; un script de recuento
+  se valida corriéndolo sobre la copia anterior.
+- Pendiente: salida 4 (artifacts y Linear), FASE 5, FASE 6 y lo que queda de la FASE 7.

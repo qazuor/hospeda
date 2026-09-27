@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-26
+updated: 2026-09-27
 status: CURRENT
 ---
 
@@ -47,7 +47,44 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-26, noche — la vuelta 1 del ciclo 8↔9 está CERRADA y propagada
+## Última actualización: 2026-09-27 — el ciclo 8↔9 está CERRADO (vuelta 2 de 2)
+
+### El próximo paso exacto
+
+1. **Salida 4 de la vuelta 2**: los artifacts (tablero
+   `https://claude.ai/artifact/VvQ3hGSGZC5nr4ZHc5VqPB` y las fichas B1–B13 / V1–V9) y los issues de
+   Linear HOS-1352…1376 describen el diseño del 26/09. Hay que reescribirlos con lo aplicado en
+   [`29-fase-8-vuelta-2/`](./29-fase-8-vuelta-2/10-decisiones-del-owner.md) (`11-`…`18-`). **Publica
+   afuera: pedir OK al owner antes.** Antes de republicar un artifact, leé la versión viva sin
+   `path`; el tablero tiene capability `artifact` y un `<script id="state">` que se conserva idéntico.
+2. **FASE 5**: gap analysis contra el código (`DEC-METH-003`).
+3. **FASE 6** y lo pendiente de la **FASE 7** (en [`16-fase-7-del-paraguas.md`](./16-fase-7-del-paraguas.md)
+   quedan 4 de 6 ítems).
+
+**No hay FASE 8 vuelta 3**: `DEC-METH-013` topea en dos. La vuelta 2 dio 1 crítico, preexistente,
+que el owner leyó y mandó arreglar (`R1-a`). Lo que aparezca de ahora en más se declara caso por caso.
+
+### Lo que pasó el 2026-09-26 (noche) y el 2026-09-27
+
+- **FASE 8 vuelta 2** (`29-…`, informes `A1`…`D1`, consolidado `00-`, atribución `01-`): **56
+  hallazgos, 1 crítico** (`F-8V2B1-001`, el addon recurrente cobraba otro mes tras la baja;
+  preexistente), 28 racimos. 133/15 → 100/1 → 56/1.
+- **FASE 9 vuelta 2**: 30 decisiones del owner (`10-`; contra la recomendación: `R1-c`, y `R11-3b`
+  por un hecho del owner: las dos `comp` son suyas y de Alojamiento, y no da otra hasta terminar);
+  aplicación en ocho registros `11-`…`18-`; **56/56 aplicados**, 0 declarados.
+- **Registro**: log **126** decisiones, 16 📌 nuevos + uno en `DEC-RF-008`, «precisadas sin
+  SUPERSEDED» **44**. Matriz **104: 56 · 15 · 23 · 10 `UNKNOWN`** (`PA-6`, `GR-2`, `RC-8`, `RF-3`,
+  `EX-42`…`EX-47`, todos a medir en el paso 0 del corte).
+- **Listas cerradas vigentes**: **24 motivos** (9 devuelven; el 23 `ORDEN_PAGADA_SIN_INSTANCIA`, el
+  24 `IMPORTE_COBRADO_DE_MÁS`), **16 acciones administrativas** (la 16, discontinuar una vertical;
+  15 son capacidad del actor), 10 máquinas, 6 hechos del reloj, `S1`–`S36`, **14 disparadores de
+  orfandad** (con `S36`), `T1`–`T8`, publicación 6 estados / 12 transiciones, **8 precisiones** en
+  `V/17`, **8 entradas del §4.1** del contrato (`finDeServicio` nueva), **12 dependencias** de
+  billing sobre V2/V4/V6/V9, tabla del corte **14 filas** (4b, 4c, 5b nuevos), entidad nueva
+  `vertical_discontinuation`. Contá siempre con script.
+- **Commits** `1cccd9119d`…`ffef68fffd` (15) más el de este handoff. **Sin pushear** (PR #3360).
+
+## Histórico: 2026-09-26, noche — la vuelta 1 del ciclo 8↔9 está CERRADA y propagada
 
 ### El próximo paso exacto
 
