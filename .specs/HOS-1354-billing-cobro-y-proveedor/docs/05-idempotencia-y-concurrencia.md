@@ -297,7 +297,7 @@ cambian; cambia por dónde puede seguir llegando el pago que las tiene que cumpl
 de desempate está abajo**— y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
 entero. **Cuál de las cuatro condiciones falló va en el evento y no en el motivo**: el motivo es lo
-que separa este caso de los otros ~~doce~~ veintiún motivos en el listado (recontado sobre `B/02` §2.5 en la FASE 9 completa), y el diagnóstico fino ya tiene su lugar
+que separa este caso de los otros ~~doce~~ ~~veintiún~~ veintidós motivos en el listado (recontado sobre `B/02` §2.5 en la FASE 9 completa, y otra vez en la FASE 9 vuelta 2, con el 23), y el diagnóstico fino ya tiene su lugar
 declarado en `NUCLEO/08` §4.3.
 
 **Y un mismo pago tardío cae bajo ESTE § y bajo el §2, así que hace falta decir cuál motivo gana.**

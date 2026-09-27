@@ -71,6 +71,9 @@ owner 2026-09-25, FASE 9 completa, `2a`): es para saber **a quién hay que llama
 perder a cada uno antes de que el corte lo descarte.
 
 **Y cuenta fichas por dueño en las cinco verticales**, con la clase `L1`–`L8` de `V/21` §2.4.
+**Las de Gastronomía y de Experiencia tienen que dar cero, o el corte no avanza**: la tabla de
+traducción está escrita sólo para `accommodations`, y el paso 2 del corte lo verifica como parte
+de su gate (`16-fase-7…` §4.2; `V/21` §2.4; FASE 9 vuelta 2, `F-8V2A3-003`).
 **La población a avisar** es toda persona con una ficha que no sea `L1` o con una suscripción
 viva en el sistema viejo, **medida el día del corte** (FASE 9 vuelta 1, R7). Quien tiene sólo
 fichas `L1` no pierde nada y no se avisa. **Y lista las fichas con `moderation_state = REJECTED`**,
@@ -121,8 +124,11 @@ instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefin
 converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
 cortesías heredadas, son el caso normal**.
 
-**Qué plan anclan** (owner 2026-09-26, `G1-3`): **el vendible de `rank` más alto de Alojamiento
-vigente el día del corte, en la vertical en que tenían `comp`**. Son cuentas propias de
+**Qué plan anclan** (owner 2026-09-26, `G1-3`): **el vendible de `rank` más alto ~~de Alojamiento
+vigente el día del corte, en la vertical en que tenían `comp`~~ de la vertical en que tenían
+`comp`, vigente el día del corte** —el de Alojamiento, si la cortesía era de Alojamiento—, **con
+la versión que elige quien opera el corte, aceptada sólo si `políticaDePlan(v).vigente`**
+(`12-contrato…` §2.8; FASE 9 vuelta 2, `F-8V2C1-004`, `F-8V2B3-009`). Son cuentas propias de
 demostración, y el grant lee la versión vigente (`12-contrato…` §2.8), así que un cambio de
 catálogo posterior les llega solo. Si el owner algún día quiere esas cuentas para probar un plan
 intermedio, se revoca el grant y se escribe otro: no se diseña para eso. El plan tiene que existir
@@ -260,7 +266,9 @@ recomendación; FASE 9 vuelta 1, `F-8V1B3-002`). Un cobro del preapproval viejo 
 procesa **después** de que el paso 1b lo canceló —porque ya estaba en vuelo— llega por su evento,
 encuentra la lápida por su `provider_link` y **se asienta sobre ella sin marca**: se escribe su
 `payment` colgado de la lápida, la lápida sigue `CANCELLED`, no se extiende nada y a nadie se le
-propone devolverlo. ~~**La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
+propone devolverlo. **Asentar es `P1` con menos efectos** (cap. 03 §6; FASE 9 vuelta 2,
+`F-8V2B3-005`): el `payment` pasa a `SUCCEEDED` y lleva su comprobante, sin `covered_period`, sin
+tocar promos y sin aviso de cobertura, que no tendría usuario ni vertical. ~~**La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
 motivos** (cap. 05 §3) **ni a la comparación de cobros del barrido** (cap. 09 §3): los registros de
 su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 

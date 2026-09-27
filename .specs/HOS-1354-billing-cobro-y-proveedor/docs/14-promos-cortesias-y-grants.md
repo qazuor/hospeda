@@ -49,6 +49,16 @@ Y es determinista completa, porque **dentro de cada familia el orden no cambia n
 porcentajes se multiplican y los fijos se suman, y las dos operaciones conmutan. Con dos reglas
 —qué familia va primero, y nada más— el resultado queda fijo.
 
+**Y el redondeo es uno, al final** (FASE 9 vuelta 2, `F-8V2B3-008`). Los montos son enteros en la
+unidad mínima de la moneda (`B/02` §2.3), y dos porcentajes apilados dan fracciones de centavo.
+La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se
+redondea una sola vez, hacia abajo**, a la unidad mínima. Así las dos operaciones siguen
+conmutando, que con un redondeo por paso dejaba de ser cierto. **Con ese mismo cálculo derivan el
+monto quien muta** —el canje, `S30`, el aumento de `DEC-MP-002`— **y quien compara** —el barrido
+(`B/09` §3)—: si redondearan distinto, la divergencia de medio centavo sería permanente y abriría
+`DIVERGENCIA_DE_MONTO` en el acto. Hacia abajo por la misma razón que el porcentaje va primero: a
+favor del cliente.
+
 **Va primero el porcentaje porque da el total más bajo**, o sea a favor del cliente. Es la misma
 dirección que el capítulo 15 (épica de verticales) §2.4 eligió para los limits que no acumulan, y por la misma razón:
 una composición que a veces castiga al que acumuló beneficios no se puede explicar.
@@ -298,7 +308,9 @@ se termina en el pedido, §2.2).
 **Si la promo se agota con la fila `PAUSED`, ese mes sale con descuento, y se acepta** (FASE 8
 completa, pendiente 7, owner 2026-09-25). Sobre una pausada el proveedor rechaza toda modificación
 (`EX-11`), así que la mutación falla: **se declara y no se encola nada**. **Y el barrido no compara
-el monto de una fila `PAUSED`**, porque ese mes con descuento ya se aceptó; **al reanudar, `S10` es
+el monto de una fila `PAUSED`**, porque ese mes con descuento ya se aceptó, **ni el de una fila
+cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—,
+que ya no se puede mutar (`B/09` §3; FASE 9 vuelta 2, `F-8V2B3-007`); **al reanudar, `S10` es
 la transición desde la que corren los 3 días** del reintento (`B/03` §3.2; orquestador, FASE 8
 completa, pendiente 8).
 

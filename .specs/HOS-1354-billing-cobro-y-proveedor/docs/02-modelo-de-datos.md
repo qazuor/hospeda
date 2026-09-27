@@ -310,7 +310,8 @@ sucesora cobra en el acto con la predecesora viva — el cliente paga dos veces 
 **Y leerla no contradice `D6`, que fue la razón por la que se descartó.** `D6` dice que **el
 buscador** del proveedor no es fuente de verdad de nada, y está medido por qué: ignora nuestra
 referencia, devuelve todo, y con un estado inválido devuelve cero con `200` (`RC-1`). **Leer por
-id es otra cosa y es `VERIFIED`** (`RC-2`), y `D5` ya obliga a hacerlo: *«toda mutación en el
+id es otra cosa y es ~~`VERIFIED`~~ confiable** (~~`RC-2`~~ `RC-1`; FASE 9 vuelta 2,
+`F-8V2C2-007`), y `D5` ya obliga a hacerlo: *«toda mutación en el
 proveedor se verifica releyendo y comparando campo por campo»*. La fecha se escribe en esa misma
 relectura, que ya ocurre. El guard sigue corriendo sin red, porque lee la columna.
 

@@ -159,7 +159,10 @@ de la tabla de abajo, una sola vez, con la escritura `C`. La ficha que estaba a 
 `UNPUBLISHED_BY_BILLING`**: es el estado al que `PB2` la llevaría en la primera corrida del
 reconciliador, porque `PRE_TRIAL` no cubre, y escribirlo en el corte le ahorra al dueño un día de
 ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto. El reloj no
-cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le escribiría.
+cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le escribiría. **Y su
+página pública la revalida el paso 4c del corte, con la herramienta de V6**: la escritura de
+nacimiento no es una transición, así que no programa la revalidación que `PB2` habría programado
+(`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2C2-006`).
 
 **La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se

@@ -69,7 +69,7 @@ Subscription. Payment method distinto.»*
 | 4 | pausar y reanudar | ⚠️ **a medias** | pausar y reanudar funcionan (`PS-1`, `PS-3`, `PS-5`), pero **no hay auto-reanudación** (`PS-4`): el reloj es nuestro |
 | 5 | cancelar | ✅ | e **irreversible** (`PA-5`) |
 | 6 | reembolsar | ✅ | total y parcial, acumulativos contra el saldo, idempotente (`RF-1`, `RF-2`, `RF-6`) |
-| 7 | leer | ⚠️ **a medias** | **por id, confiable** (`RC-2`); **buscar, no** (`RC-1`) |
+| 7 | leer | ⚠️ **a medias** | **por id, confiable** (~~`RC-2`~~ `RC-1`, FASE 9 vuelta 2, `F-8V2C2-007`); **buscar, no** (`RC-1`) |
 | 8 | avisar | ⚠️ **a medias** | avisa el alta, la pausa, la reanudación y la cancelación; **no avisa el cambio de monto** (`EX-15`). **Y documenta un aviso propio de contracargo, `topic_chargebacks_wh`, que trae el `payment_id`** — **documental, no medido** (`RC-8`, `UNKNOWN`: no se puede fabricar un contracargo a voluntad). Entra como cualquier aviso: se relee el pago por id (`B/03` §10.2), y si no llega, lo ve el barrido (`B/09` §3) (FASE 8 completa, `F-8CB3-009`, `DEC-SUB-020`) |
 
 **Las tres «a medias» son las que gobiernan el diseño**, y cada una ya tiene su respuesta en un

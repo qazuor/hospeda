@@ -722,7 +722,9 @@ espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila 
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
 estando pausado, suspendido o en el grace— más **`S25`**, el fin de una pausa sobre un plan que ya
 no se presta (`DEC-SUB-015`); y desde la 9-bis-5, **`S27` y `S28`** —la suspendida y la que esperaba
-autorización cuando se discontinuó su vertical (`B/10` §4.3)—; y **`S36`**, la revocación. **`S26` no entra**: manda la fila a
+autorización cuando se discontinuó su vertical (`B/10` §4.3)—; **`S31`**, la sucesora del
+contracargo (nombrada arriba y no en esta enumeración hasta la FASE 9 vuelta 2, que la recontó:
+catorce con ella); y **`S36`**, la revocación. **`S26` no entra**: manda la fila a
 `CANCEL_SCHEDULED`, que **sigue siendo fila viva** —y **`S11` tampoco**, por la misma razón: sus
 complementos los cancela ella misma (`R1-a`)—. Lo que se evalúa en cada una es **la condición del
 §4.2**, no el
