@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-27
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -76,7 +76,8 @@ lápidas, y a los 3 días marca. El sistema nuevo nunca crea un preapproval que 
 viejo que el censo no vio, o a una sonda. **Lo que la separa de la lápida del corte es quién la escribió** —el handler y no la
 herramienta del corte: `origen_de_lápida = RECEPCIÓN`—, y esa diferencia decide el motivo de su
 cobro: sobre la de recepción, `PAGO_TARDÍO_RECHAZADO`; sobre la del corte, ninguno (`B/05` §3,
-owner 2026-09-26, `G3-1`). ⚠️ **Ese origen tiene que quedar escrito en la fila**, porque la marca
+owner 2026-09-26, `G3-1`) **si el cobro es del día del corte o anterior, y `PAGO_TARDÍO_RECHAZADO`
+si es posterior** (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`). ⚠️ **Ese origen tiene que quedar escrito en la fila**, porque la marca
 de la de recepción se puede levantar y el cobro siguiente del mismo preapproval no puede caer en
 la regla de la del corte. **Lo registra la columna `origen_de_lápida`** (`CORTE` o `RECEPCIÓN`),
 en las restricciones de `subscription` de la tabla de arriba (FASE 9 vuelta 1, R6, coordinado con
@@ -959,7 +960,7 @@ a los 3 días, que abre el 21** (`B/09` ~~§6.2~~ **§6, punto 2**; owner 2026-0
 | 4 | `PAGO_PENDIENTE_SIN_RAMA` | la **segunda** comprobación del `B/09` §3, cuando la rama no es determinable | decidir el destino de un pago retenido por `S19` que ninguna de las seis ramas alcanzó | **puede**, y es la persona quien lo decide |
 | 5 | `DIVERGENCIA_DE_MONTO` | `S14`, desde la comparación de monto del `B/09` §3 —el monto esperado, derivado, contra `transaction_amount`, **después de 3 días de reintentar la mutación** (FASE 8 completa, pendiente 7, owner 2026-09-25)— | decidir qué monto vale y mutarlo o aceptarlo | no, **y el cobro equivocado sigue saliendo todos los meses** |
 | 6 | `TRANSICIÓN_NO_DECLARADA` | `S14`, desde la comparación de estado del `B/09` §3 **y desde la regla 1 del `NUCLEO/03` §1** **y desde la re-vinculación rechazada del `B/09` §2.4, cuando lo que llega no es un cobro** —la mitad con cobro es el 7— (FASE 9 vuelta 1, `F-8V1B2-010`) | decidir qué estado vale y ejecutar la transición de la tabla que lo permita (`S15`) | no |
-| 7 | `PAGO_TARDÍO_RECHAZADO` | `S14`, desde el `B/05` §3 — ~~**menos la condición 1 sobre una fila `CANCELLED`**~~ **menos las filas de las dos primeras filas del desempate —terminales y `CANCEL_SCHEDULED` con el cobro posterior—** (FASE 9 vuelta 1, R4), que es del 2 o del 3 por la regla de desempate de ese mismo § — **y desde la comparación de cobros del `B/09` §3, sobre las filas de la tercera fila del desempate** —la lápida de recepción incluida (`B/09` §2.4, owner 2026-09-26, `G3-2`)— (FASE 9 vuelta 1, R4) | leer **cuál de las cuatro condiciones falló** y resolver | **SÍ** — ver abajo, *«por qué el 7 no puede llevar «no»»* |
+| 7 | `PAGO_TARDÍO_RECHAZADO` | `S14`, desde el `B/05` §3 — ~~**menos la condición 1 sobre una fila `CANCELLED`**~~ **menos las filas de las dos primeras filas del desempate —terminales y `CANCEL_SCHEDULED` con el cobro posterior—** (FASE 9 vuelta 1, R4), que es del 2 o del 3 por la regla de desempate de ese mismo § — **y desde la comparación de cobros del `B/09` §3, sobre las filas de la tercera fila del desempate** —la lápida de recepción incluida (`B/09` §2.4, owner 2026-09-26, `G3-2`)— (FASE 9 vuelta 1, R4) — **y sobre la lápida del corte, el cobro con `date_created` posterior al día del corte, desde su evento y desde la comparación de cobros** (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`) | leer **cuál de las cuatro condiciones falló** y resolver | **SÍ** — ver abajo, *«por qué el 7 no puede llevar «no»»* |
 | 8 | `REANUDACIÓN_NO_APLICADA` | `S14`, desde la rama de fallo de `S10` **o de `S33`** (FASE 9 vuelta 1, `F-8V1B2-010`); **y la quinta comprobación** del `B/09` §3 | reanudar a mano o reclamarle al proveedor — el cliente está **sin servicio y sin cobro** | no |
 | 9 | `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA` | la **primera** comprobación del `B/09` §3 | cerrar la sucesión que `S18` no cerró, antes de que el candado `A` vacío deje entrar un alta nueva | no |
 | 10 | `FAN_OUT_DE_GRANT_INCOMPLETO` | la **tercera** comprobación del `B/09` §3 | reanudar `S13` / `S20` — el beneficiario **paga todos los meses algo declarado gratis** | no, pero **hay un cobro que cortar** |

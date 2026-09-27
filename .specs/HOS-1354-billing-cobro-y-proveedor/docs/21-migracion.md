@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-27
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -77,6 +77,21 @@ fichas `L1` no pierde nada y no se avisa. **Y lista las fichas con `moderation_s
 que no se traducen: el admin las modera después con `PB10` si quiere (`V/21` §2.4; owner
 2026-09-26, `G1-2`).
 
+**Y el titular de toda autorización que el censo del 1b cancela y la base no conoce entra a la
+población a avisar y a la lista con la que el owner llama** (owner 2026-09-27, FASE 9 vuelta 2,
+`R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador —el `payer_email` del
+preapproval—, y esa persona entra aunque no tenga ficha ni fila en la base. Como el manifiesto
+nace en el 1b, **su aviso llega después de la cancelación y no antes**; lo que pierde está
+declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.
+
+**Y de acá, y no de un número fijo, sale la población del cobro sobre la lápida del corte** (§2.5):
+los clientes del viejo con un preapproval cancelado en el 1b —conocidos por la base o sólo por el
+manifiesto—, incluidas las altas que `DEC-MIG-002` siguió tomando hasta el 0b (owner 2026-09-27,
+FASE 9 vuelta 2, `R2`; `F-8V2B1-006`). **Y por eso la re-verificación lee, por cada id del
+manifiesto del 1b, sus registros de cobro abiertos** —`scheduled` o `recycling`, con su
+`expire_date` (`RC-6`, `RC-7`)—: el último `expire_date` es la fecha de la segunda corrida del
+detector del «NO cierra».
+
 > 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
 > pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
 > corriendo»* del §3.1 describen la medición del 2026-09-17, no el estado del sistema. Los pagos
@@ -148,10 +163,20 @@ completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»
 que el paso 1b canceló y el paso 2 verificó, **conocido por la base o no, sondas incluidas**; no se
 escribe sobre las sondas del manifiesto, que siguen vivas. Lleva `clase = LÁPIDA`, `origen_de_lápida = CORTE`,
 `estado = CANCELLED` y su `provider_link`, y nada más: ni usuario, ni vertical, ni versión, ni billing option
-(`B/02` §2.2). El barrido no necesita más para lo único que hace con ella —encontrar el id y
-tratarlo por la salvedad 4 del cap. 09 §3—, y el corte no tendría de dónde sacarlo sin leer las
+(`B/02` §2.2). El barrido no necesita más para lo ~~único~~ que hace con ella —encontrar el id y
+tratarlo por la salvedad 4 del cap. 09 §3, **y comparar los cobros posteriores al día del corte**
+(abajo; FASE 9 vuelta 2, `R2`)—, y el corte no tendría de dónde sacarlo sin leer las
 tablas que retira. **La dispara una persona**: el operador corre, en el paso 4, la herramienta del
-corte sobre el manifiesto que produjo el 1b. La escritura la construye y la prueba **B11**. **La
+corte sobre el manifiesto que produjo el 1b. La escritura la construye y la prueba **B11**.
+**Y corre antes de que la URL de notificación apunte al handler nuevo** (FASE 9 vuelta 2,
+`F-8V2B3-003`, `F-8V2C2-002`; `16-fase-7…` §4.2, paso 4b): así ningún evento de un id del
+manifiesto llega al handler nuevo sin su lápida del corte, y ninguno se vuelve lápida de
+recepción. **Ante `UNIQUE(proveedor, id)` la herramienta distingue dos choques**: con una lápida
+del corte del mismo id **saltea**, porque es la misma fila de una corrida anterior y correrla dos
+veces tiene que dar lo mismo; con **cualquier otra fila** —una lápida de recepción o una fila
+viva— **aborta antes de escribir nada**, porque ese choque sólo existe si el orden se rompió, y
+ahí la rama de aborto todavía cubre (el 4b no corrió). Saltearlo dejaría el cobro en vuelo de ese
+id con la marca de devolver, contra `G3-1`. **La
 misma forma de fila la usa la lápida de recepción** que el webhook escribe al recibir un
 preapproval desconocido que no nombra ninguna fila (cap. 09 §2.4; owner 2026-09-26, `G3-2`): la
 diferencia es quién la escribe —`origen_de_lápida = RECEPCIÓN`—, no qué lleva.
@@ -235,9 +260,26 @@ recomendación; FASE 9 vuelta 1, `F-8V1B3-002`). Un cobro del preapproval viejo 
 procesa **después** de que el paso 1b lo canceló —porque ya estaba en vuelo— llega por su evento,
 encuentra la lápida por su `provider_link` y **se asienta sobre ella sin marca**: se escribe su
 `payment` colgado de la lápida, la lápida sigue `CANCELLED`, no se extiende nada y a nadie se le
-propone devolverlo. **La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
+propone devolverlo. ~~**La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
 motivos** (cap. 05 §3) **ni a la comparación de cobros del barrido** (cap. 09 §3): los registros de
-su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo. Es la posición de `2d`
+su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
+
+> **«No devolver» vale sólo para la ventana del corte** (owner 2026-09-27, FASE 9 vuelta 2, `R2`;
+> `F-8V2B3-002`, `F-8V2C2-004`, `F-8V2B1-006`; precisa `G3-1`, no lo revierte). La ventana es el
+> día del corte —el del paso 1b, en hora de Argentina— y se lee en el cobro, no en su evento: el
+> `date_created` del registro de cobro, leído por id (`B/02` §2.3). **Un cobro sobre la lápida del
+> corte con `date_created` de ese día o anterior se asienta sin marca**, como dice el párrafo de
+> arriba. **Uno posterior abre la marca `PAGO_TARDÍO_RECHAZADO`** (el 7 de `B/02` §2.5, **SÍ**), la
+> misma que abre el cobro sobre una lápida de recepción, **con el `payment` colgado y la propuesta
+> de devolverlo**: ya no es un cobro que estaba en vuelo cuando se canceló, sino un registro que
+> siguió reintentando después (`GR-3`, `RC-6`, `GR-1`) o una cancelación que se deshizo horas
+> después (el código actual registra seis, `preapproval-recovery.service.ts:22`). La abren los
+> dos productores de la tabla de desempate: el evento del cobro y la comparación de cobros del
+> barrido (cap. 09 §3), que sobre la lápida del corte compara **sólo** los registros posteriores a
+> ese día. Los del día del corte o anteriores —los del sistema viejo, que no se conserva (§4), y el
+> que estaba en vuelo— siguen sin abrir nada.
+
+Es la posición de `2d`
 —la diferencia de un corte abortado no se devuelve— y de `G1-4` —lo pagado en el sistema viejo por
 un período que el corte corta se acepta y se declara— extendida al cobro que cae en la ventana del
 corte: el cliente arranca de cero con un trial nuevo (`2g`). **Lo que la lápida sigue haciendo es
@@ -382,6 +424,15 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   después del corte se atiende contra el comprobante del proveedor (punto anterior), no contra
   nada nuestro. No da acceso indebido ni borra datos de nadie más. **Y no es el cobro en vuelo del
   corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).
+  **Y alcanza igual, con un aviso que no es previo, al titular de una autorización que sólo conoce
+  el proveedor** (owner 2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por
+  el período en curso, como los demás, pero **se entera después de la cancelación**, porque su
+  pagador sale del manifiesto del 1b (§1.3), y **el correo de baja del sistema viejo no le llega**
+  —el handler viejo responde `local_row_not_found` y no manda nada—. **Población**: los ids del
+  manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del propio owner,
+  `16-fase-7…` §4.2). **Detector**: el manifiesto mismo, con su `payer_email`, que suma esas
+  personas a la lista con la que el owner llama. **Causa**: la misma de arriba, y que el censo que
+  las encuentra es el del 1b.
 - **El cobro en vuelo del corte que sale bien se asienta sobre la lápida sin marca y no se
   devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G3-1`, elegida contra la
   recomendación de proponer devolverlo con confirmación de una persona; `F-8V1B3-002`, `F-8V1B1-007`,
@@ -391,14 +442,28 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   desconocerlo ante el banco**, y el comprobante de ese cobro no existe del lado de Hospeda más
   allá del `payment` asentado sobre la lápida (el punto del contracargo, arriba); (2) **la herramienta
   no se lo pone delante a nadie**: la lápida del corte queda fuera del desempate (cap. 05 §3) y de
-  la comparación de cobros (cap. 09 §3), así que ningún listado lo muestra; (3) si el evento de ese
-  cobro se pierde, **tampoco queda el `payment`**, porque el barrido no compara cobros sobre la
-  lápida. **Causa**: el owner eligió la posición coherente con `2d` y con su `G1-4`, y prefiere
+  la comparación de cobros (cap. 09 §3) **para los cobros del día del corte** (FASE 9 vuelta 2,
+  `R2`), así que ningún listado lo muestra; (3) si el evento de ese
+  cobro se pierde, **tampoco queda el `payment`**, porque el barrido no compara ~~cobros~~ **los
+  cobros de ese día** sobre la lápida. **Causa**: el owner eligió la posición coherente con `2d` y
+  con su `G1-4`, y prefiere
   tratarlo en la llamada uno por uno a ese cliente antes que con una confirmación por cobro.
-  **Población**: los clientes con un cobro en vuelo en la ventana de minutos del paso 1b —a lo sumo
-  los tres de la cartera—. **Detector**: el `payment` asentado sobre la lápida, que una consulta
-  sobre las lápidas del corte con `payment` lista, y la re-verificación del §1.3, que es la lista
-  con la que el owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la
+  ~~**Población**: los clientes con un cobro en vuelo en la ventana de minutos del paso 1b —a lo
+  sumo los tres de la cartera—.~~ **Población, leída y no fijada** (owner 2026-09-27, FASE 9 vuelta
+  2, `R2`; `F-8V2B3-002`, `F-8V2B1-006`): los clientes del viejo cuyo preapproval cancelado en el
+  1b cobra **el día del corte**, sobre la cartera que la re-verificación del §1.3 lee ese día —con
+  las altas que siguieron entrando hasta el 0b, y con los ids que sólo conoce el proveedor—, no un
+  número escrito acá. **Un cobro posterior a ese día ya no está en esta población**: abre la marca
+  `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo (§2.5), sea de un registro que siguió
+  reintentando o de una cancelación que se deshizo. **Detector**: ~~el `payment` asentado sobre la
+  lápida, que una consulta sobre las lápidas del corte con `payment` lista, y la re-verificación del
+  §1.3, que es la lista con la que el owner llama~~ **la consulta que lista las lápidas del corte con
+  `payment`, y corre DESPUÉS del corte**: la corre quien opera el corte, el día siguiente al corte
+  y otra vez el día siguiente al último `expire_date` (`RC-7`) de los registros de cobro que la
+  re-verificación leyó abiertos sobre los ids del manifiesto del 1b; la primera da la lista de
+  llamadas por los cobros del día, y la segunda confirma que todo cobro posterior abrió su marca
+  (owner 2026-09-27, FASE 9 vuelta 2, `R2`). La re-verificación del §1.3 es la lista con la que el
+  owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la
   salvedad 4 del cap. 09 §3 y marca a los 3 días.
 - ~~**La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
   allá. **Causa**: el cap. 09 es de otra pasada de esta misma ronda; hasta que la tenga, la regla vive

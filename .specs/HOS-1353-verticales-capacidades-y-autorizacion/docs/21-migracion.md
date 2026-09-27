@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-27
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -167,7 +167,7 @@ re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la 
 
 | clase | condición sobre las columnas viejas | nace en |
 |---|---|---|
-| `L1` | `deleted_at` no nulo | **`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) |
+| `L1` | `deleted_at` no nulo | **`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) —**el borrado, en el paso 5b del corte y no en la migración** (FASE 9 vuelta 2, `F-8V2A3-002`)— |
 | `L2` | `lifecycle_state = DRAFT` | `DRAFT` |
 | `L3` | `lifecycle_state = ARCHIVED` | `DRAFT` |
 | `L4` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` nulo | `DRAFT` |
@@ -188,7 +188,14 @@ Dos capas que no cambian el estado y se resuelven aparte:
   comercial, y `B/21` §4 lo retira.
 
 **Por qué la borrada nace `PURGED` con el contenido borrado** (`G1-2`): honra el acto del dueño con
-el mismo efecto que `PB12`, y no le reaparece como borrador. El borrado corre en la migración,
+el mismo efecto que `PB12`, y no le reaparece como borrador. El borrado ~~corre en la migración~~
+**no corre en la migración: lo corre la herramienta del corte de V6 en el paso 5b**, cuando ya no
+hay rama de aborto (`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2A3-002`). El efecto de `PB12`
+incluye las fotos en el almacenamiento externo y la revocación del token de calendario en el
+proveedor (cap. 02 §4.1), que el backup del 2b no restaura: en la migración, un aborto dejaba
+fichas que el viejo puede restaurar sin fotos y con el calendario muerto. Y no se parte en dos
+—la base en la migración, lo externo después— porque las fotos quedarían sin fila que las nombre.
+Hasta el 5b la `L1` es `PURGED` con su contenido, sin mostrarse. El borrado es
 sobre lo que el dueño ya había borrado; si alguna la borró un admin y no su dueño, su contenido se
 pierde igual (declarado en el «NO cierra» del capítulo).
 

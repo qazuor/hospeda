@@ -3,7 +3,7 @@ title: "FASE 7 del paraguas — la estrategia de despliegue que ninguna épica t
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-19
-updated: 2026-09-25
+updated: 2026-09-27
 status: CURRENT
 fase: 7
 ---
@@ -119,17 +119,19 @@ proveedor.
 
 | # | paso | quién lo hace | por qué en ese lugar |
 |---|---|---|---|
-| 0 | **el despliegue, ensayado en staging y verde** —**con una mitad en producción**: sobre un plan propio sin suscriptores (como la sonda 50) se cancela, se reactiva y se abre el link en el navegador; que venda es condición para el 1a. El resto se ensaya en `staging`— (FASE 9 vuelta 1, `F-8V1C2-006`). **Y en producción se mide `EX-42`** (`06-mp-validation-matrix.md`): sobre una `Preference` propia sin pagar, que el `expire` del adaptador de qzpay la vence en el proveedor y que la relectura lo confirma; es la condición del vencimiento del 1a, y si no da, `Y-1` vuelve al owner (owner 2026-09-26, `Y-1`) | — | lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó (FASE 8 completa, `F-8CC2-004`). **La mitad en producción existe porque la rama de aborto reactiva planes de producción**, y eso un sandbox no lo prueba |
+| 0 | **el despliegue, ensayado en staging y verde** —**con una mitad en producción**: sobre un plan propio sin suscriptores (como la sonda 50) se cancela, se reactiva y se abre el link en el navegador; que venda es condición para el 1a. El resto se ensaya en `staging`— (FASE 9 vuelta 1, `F-8V1C2-006`). **Y en producción se mide `EX-42`** (`06-mp-validation-matrix.md`): sobre una `Preference` propia sin pagar, que el `expire` del adaptador de qzpay la vence en el proveedor y que la relectura lo confirma; es la condición del vencimiento del 1a, y si no da, `Y-1` vuelve al owner (owner 2026-09-26, `Y-1`). **Y se miden dos cosas que dan el tamaño de la población del cobro sobre la lápida del corte** (owner 2026-09-27, FASE 9 vuelta 2, `R2`): **si cancelar un preapproval corta el reciclado de un registro de cobro abierto** —sobre una sonda propia con un registro en `scheduled` o `recycling` (`RC-6`), se cancela el preapproval y se cambia el medio de pago como en `GR-1`—, y **si una cancelación que se leyó `cancelled` en el `PUT` y en un `GET` inmediato sigue `cancelled` releída horas después** —el código actual registra seis que no (`apps/api/src/services/billing/preapproval-recovery.service.ts:22`, `F-8V2C2-004`)—. **No son condición del corte**: desde `R2` un cobro posterior al día del corte abre marca con cualquier resultado (`B/21` §2.5), así que achican la población y no la cierran; si no se consigue el sujeto antes del corte, quedan sin medir y la regla de la marca cubre igual | — | lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó (FASE 8 completa, `F-8CC2-004`). **La mitad en producción existe porque la rama de aborto reactiva planes de producción**, y eso un sandbox no lo prueba |
 | 0b | **cerrar las altas del sistema viejo**: una regla en el borde (Cloudflare) rechaza toda ruta del viejo que cree o re-autorice un preapproval, o cree una `Preference` o un pago en el proveedor —checkout de suscripción y su reintento, cambio de plan, cambio de medio de pago, compra de addon—, verificada con una petición a cada una que vuelve rechazada. **El 1a no arranca antes de 30 minutos después de verificado el 0b** (owner 2026-09-26, `G4-1`) | quien opera el corte | el censo del 1b sólo cuenta lo que existe al tomarlo; lo que el viejo venda después no lo ve ningún paso (FASE 9 vuelta 1, `F-8V1C2-003`, `F-8V1B3-006`). El dominio es un criterio y no una lista de rutas: **todo canal que cree o re-autorice un preapproval, o cree una `Preference` o un pago**. Los 30 minutos son la vida de la `Preference` de addons del viejo: así todo pago de una preferencia **de addon** abierta entra con el webhook viejo todavía encendido. **La del cambio a un plan más caro no tiene vencimiento** —`initiatePaidPlanUpgrade` crea la preferencia sin `expiresInMinutes`, y el adaptador de qzpay sólo pone `expiration_date_to` si se lo pasan; verificado en el código el 2026-09-26—, **así que los 30 minutos no la acotan**: ~~pregunta `Y-1` al owner~~ **la vence por API la herramienta del corte en el paso 1a y la relee** (owner 2026-09-26, `Y-1`; FASE 9 vuelta 1, `N-G4V-01`; medido en el paso 0 por `EX-42`). **Por qué el borde y no una bandera**: el viejo no tiene interruptor de checkout y agregarle código a un sistema condenado es el argumento con que `12-contrato…` §5.3 descartó el adaptador; `admite_altas` del nuevo dice otra cosa (bloquea `T1` y anuncia una discontinuación) |
 | 1a | **cancelar los `preapproval_plan` viejos**, tomados, como los del 1b, **del proveedor** —todo `preapproval_plan` de la cuenta que no esté `cancelled`— y no de `billing_mp_plan` (FASE 9 completa, `DB-3`). **Y vencer por API las `Preference` del cambio de plan del viejo que siguen sin pago**: la herramienta toma los checkouts de cambio de plan (`mode: payment`) que la base vieja registró sin pago acreditado, les pone `expiration_date_to` = ahora con el método `expire` del adaptador de qzpay, y **relee cada una** hasta ver el vencimiento, como todo lo que el corte muta (`D5`; owner 2026-09-26, `Y-1`; FASE 9 vuelta 1, `N-G4V-01`; la medición es `EX-42` de `06-mp-validation-matrix.md`, en el paso 0) | el sistema **viejo** o una llamada verificada | cierra los links públicos que siguen vendiendo; **es reversible** (sonda 50) y por eso va primero. **Una `Preference` sin vencimiento es otro link que vende**: `initiatePaidPlanUpgrade` la crea sin `expiresInMinutes`, así que los 30 minutos del 0b no la acotan y un pago después del corte llegaría sin preapproval, sin lápida y sin marca (`B/09`, «NO cierra»). **No alcanza** a una preferencia creada por fuera de la base vieja, y hoy no hay ese camino |
 | 1b | **cancelar TODOS los preapprovals vivos de la cuenta ~~que no sean sondas~~**, **incluidas las sondas salvo las enumeradas abajo** (FASE 9 completa, `DB-1`), tomados del **recorrido sin filtro del proveedor** y no de nuestra base. *«Vivo»* es **todo estado releído distinto de `cancelled`**: `pending`, `authorized` y `paused` (FASE 9 completa, `DB-2`) | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe. El censo sale del proveedor porque la base no ve las autorizaciones que nunca se vincularon (`F-8CC2-002`, `F-8CB3-001`) |
 | 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled`. **Y verificar que el recorrido fue completo**: el conteo del recorrido tiene que igualar el `total` del paginado, y **todo id conocido** —los de la base y los de los manifiestos de sonda— tiene que aparecer en él; si no, el corte no avanza (owner 2026-09-25; FASE 9 completa, `2f`) | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`). La completitud del recorrido sin filtro no es fila de la matriz: ~~este control la vuelve condición del gate en vez de premisa~~ este control la vuelve condición del gate **para los ids conocidos**; una autorización desconocida que el recorrido omita no la ve ningún control del corte (§4.3; FASE 9 vuelta 1, `F-8V1B3-005`) |
 | 2b | **backup de la base** | — | es lo que restaura la rama de aborto si el paso 3 falla con algo ya escrito (owner 2026-09-25; FASE 9 completa, `2e`) |
-| 3 | **desplegar** —con la migración estructural, que escribe **el estado de nacimiento y `inactiva_desde` de toda ficha preexistente** (`V/21` §2.4)—, y **apuntar la URL de notificación de la aplicación del proveedor a la ruta del handler nuevo, verificada con una entrega real** (el alta de una sonda propia) antes del paso 4 (FASE 9 vuelta 1, R1, `F-8V1C2-008`). **La sonda se da de alta con una llamada directa a la API del proveedor desde la herramienta del corte, no por una ruta de la aplicación** —la regla del borde cierra las rutas de los dos sistemas, no la API del proveedor—, **y se cancela en el mismo paso, releída `cancelled`, apenas se vio su entrega**; su id va al manifiesto del corte (FASE 9 vuelta 1, `N-G4V-03`) | — | recién acá, y sólo si el paso 2 cerró. **Sin la entrega verificada, un cobro que llegue después del corte no lo recibe nadie**: las preapprovals de producción no llevan `notification_url` propia. **Despliega con sus rutas de alta cerradas en el borde** (checkout de suscripción, cambio de plan, compra de addon), la misma regla del 0b sobre las rutas nuevas. **El paso 3 termina cuando el despliegue está sano, la sonda de la entrega cancelada y el 3b verificado**: la rama de aborto cubre hasta ahí (FASE 9 vuelta 1, `F-8V1A3-005`; owner 2026-09-26, `G4-1`) |
+| 3 | **desplegar** —con la migración estructural, que escribe **el estado de nacimiento y `inactiva_desde` de toda ficha preexistente** (`V/21` §2.4)—~~, y **apuntar la URL de notificación de la aplicación del proveedor a la ruta del handler nuevo, verificada con una entrega real** (el alta de una sonda propia) antes del paso 4 (FASE 9 vuelta 1, R1, `F-8V1C2-008`). **La sonda se da de alta con una llamada directa a la API del proveedor desde la herramienta del corte, no por una ruta de la aplicación** —la regla del borde cierra las rutas de los dos sistemas, no la API del proveedor—, **y se cancela en el mismo paso, releída `cancelled`, apenas se vio su entrega**; su id va al manifiesto del corte (FASE 9 vuelta 1, `N-G4V-03`)~~. **El apuntado de la URL y su sonda pasaron al paso 4b, después de las lápidas** (FASE 9 vuelta 2, `F-8V2B3-003`, `F-8V2C2-002`). **La migración no borra el contenido de las `L1`**: nacen `PURGED` y su contenido —en la base, sus fotos en el almacenamiento externo y su token de calendario— lo borra el paso 5b, cuando ya no hay aborto (FASE 9 vuelta 2, `F-8V2A3-002`; `V/21` §2.4). **Y la ruta del handler nuevo es distinta de la del viejo**, que la imagen nueva no sirve: el apuntado del 4b es el único interruptor que decide desde cuándo le llegan eventos al handler nuevo; con la misma ruta ese interruptor sería el despliegue y los eventos llegarían antes de las lápidas (FASE 9 vuelta 2, `F-8V2C2-001`, `F-8V2C2-002`) | — | recién acá, y sólo si el paso 2 cerró. ~~**Sin la entrega verificada, un cobro que llegue después del corte no lo recibe nadie**: las preapprovals de producción no llevan `notification_url` propia.~~ **Despliega con sus rutas de alta cerradas en el borde** (checkout de suscripción, cambio de plan, compra de addon), la misma regla del 0b sobre las rutas nuevas. ~~**El paso 3 termina cuando el despliegue está sano, la sonda de la entrega cancelada y el 3b verificado**~~ **El paso 3 termina cuando el despliegue está sano, el 3b y el paso 4 verificados y la sonda de la entrega del 4b cancelada**: la rama de aborto cubre hasta ahí (FASE 9 vuelta 1, `F-8V1A3-005`; owner 2026-09-26, `G4-1`; con el paso 4 y el 4b adentro desde la FASE 9 vuelta 2, `F-8V2B3-003`: las lápidas son filas de la base y el backup las restaura) |
 | 3a | **el catálogo de producción**: las data-migrations del catálogo nuevo (verticales con su evento, `admite_altas` y fin de servicio; por vertical, los planes vendibles, el de trial, el de pre-trial y el de piso con sus versiones) corren en el carril de datos del despliegue, después de la migración estructural y antes de que arranque el proceso nuevo. **Y antes del 3b se verifican contra la base de producción** las condiciones de `G-R3` y el espejo del enum de verticales: si no dan, el corte no sigue (FASE 9 vuelta 1, `F-8V1A3-004`) | el despliegue, en su carril de datos | el grant del 3b ancla un plan que tiene que existir, y un catálogo que no cumple `G-R3` le deja al proceso nuevo una resolución sin fuente |
 | 3b | **escribir los dos `permanent_grant`** de las cortesías del owner (`B/21` §2.4), **anclados al vendible de `rank` más alto de Alojamiento, en la vertical en que tenían `comp`** (owner 2026-09-26, `G1-3`) | el sistema **nuevo** —la herramienta de B9 (abajo, *«las herramientas del corte»*)— | antes del paso 4, ~~para que esas dos cuentas no pasen por `cubierto` falso~~ **para que esas dos cuentas estén abajo sólo minutos**: sus fichas nacen `UNPUBLISHED_BY_BILLING` como todas y el grant las sube por `PB3` (`V/21` §2.4, punto 3; FASE 9 completa, `DB-7`; FASE 9 vuelta 1, `F-8V1C2-012`) |
-| 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados **y verificados, conocidos por la base o no, sondas incluidas salvo las del manifiesto** (FASE 9 vuelta 1, R6) | ~~el sistema **nuevo**~~ **una persona, con la herramienta del corte (de B11), sobre la base nueva y el manifiesto del 1b** (FASE 9 vuelta 1, R6) | la fila es del esquema nuevo: no puede existir antes del paso 3 |
-| 5 | **abrir las altas del sistema nuevo**: se levanta la regla del borde que las tuvo cerradas desde el despliegue, después de verificado el paso 4 (owner 2026-09-26, `G4-1`) | quien opera el corte | es el fin del corte. Hasta acá el sistema nuevo no crea nada en el proveedor, así que la rama de aborto nunca restaura un backup encima de un preapproval vivo (FASE 9 vuelta 1, `F-8V1A3-005`) |
+| 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados **y verificados, conocidos por la base o no, sondas incluidas salvo las del manifiesto** (FASE 9 vuelta 1, R6) | ~~el sistema **nuevo**~~ **una persona, con la herramienta del corte (de B11), sobre la base nueva y el manifiesto del 1b** (FASE 9 vuelta 1, R6) | la fila es del esquema nuevo: no puede existir antes del paso 3. **Y va antes del 4b**: con la URL todavía en el viejo, ningún evento de un id del manifiesto llega al handler nuevo sin su lápida del corte, así que ninguno se vuelve lápida de recepción con la propuesta de devolver que `G3-1` descartó (FASE 9 vuelta 2, `F-8V2B3-003`, `F-8V2C2-002`). **La herramienta saltea el choque con una lápida del corte del mismo id —correrla dos veces da lo mismo— y aborta sin escribir ante cualquier otra fila con ese id**, porque ese choque sólo existe si el orden se rompió y la rama de aborto todavía cubre (`B/21` §2.5) |
+| 4b | **apuntar la URL de notificación de la aplicación del proveedor a la ruta del handler nuevo, verificada con una entrega real** (el alta de una sonda propia) (FASE 9 vuelta 1, R1, `F-8V1C2-008`; movido del paso 3 en la FASE 9 vuelta 2, `F-8V2B3-003`). **La sonda se da de alta con una llamada directa a la API del proveedor desde la herramienta del corte, no por una ruta de la aplicación** —la regla del borde cierra las rutas de los dos sistemas, no la API del proveedor—, **y se cancela en el mismo paso, releída `cancelled`, apenas se vio su entrega**; su id va al manifiesto del corte (FASE 9 vuelta 1, `N-G4V-03`). **Su evento escribe una lápida de recepción con la marca `TRANSICIÓN_NO_DECLARADA`**, que es la evidencia de la entrega; la levanta por `S15` quien opera el corte, en este paso (`B/09` §2.4; FASE 9 vuelta 2, `F-8V2B3-004`) | quien opera el corte, con la herramienta del corte | **Sin la entrega verificada, un cobro que llegue después del corte no lo recibe nadie**: las preapprovals de producción no llevan `notification_url` propia. **Va después del paso 4** para que los reintentos de lo que el viejo no tragó —un cobro que no resuelve lo responde con 500 a propósito (HOS-276), y lo que llegó durante el rollout falló— lleguen con la lápida ya escrita (FASE 9 vuelta 2, `F-8V2C2-002`). ⚠️ **A qué URL va el reintento de un evento emitido antes del apuntado no está medido** (`WH-4` midió los reintentos, no su destino): si va a la vieja, ese evento se pierde, y su cobro queda en el punto (3) del «NO cierra» de `B/21` sobre `G3-1` |
+| 5 | **abrir las altas del sistema nuevo**: se levanta la regla del borde que las tuvo cerradas desde el despliegue, después de verificado el paso 4 (owner 2026-09-26, `G4-1`) **y el 4b** (FASE 9 vuelta 2) | quien opera el corte | es el fin del corte~~.~~, **salvo el borrado del 5b**. Hasta acá el sistema nuevo no crea nada en el proveedor, así que la rama de aborto nunca restaura un backup encima de un preapproval vivo (FASE 9 vuelta 1, `F-8V1A3-005`) |
+| 5b | **borrar el contenido de las `L1`**, como en `PB12`: en la base, sus fotos en el almacenamiento externo y su token de calendario revocado en el proveedor (`V/21` §2.4) | **una persona, con la herramienta del corte de V6**, sobre las `L1` que todavía tienen contenido; correrla dos veces no hace nada más | es lo único del corte que **destruye** algo afuera de la base —el apuntado del 4b y su sonda se deshacen, esto no—, y por eso va cuando ya no hay aborto (FASE 9 vuelta 2, `F-8V2A3-002`). En la migración del paso 3 dejaba, después de un aborto, fichas restaurables sin fotos y con el calendario desconectado; borrar sólo la base ahí dejaba las fotos sin fila que las nombre. **Hasta el 5b las `L1` son `PURGED` con su contenido**, sin mostrarse en ningún lado |
 
 **Las sondas también se cancelan en el paso 1b**, salvo las que tengan una medición abierta el día
 del corte, que se enumeran por id en un manifiesto versionado en `mp-probes/` (declarado por
@@ -146,7 +148,10 @@ siguientes se cuelgan de esa misma marca, un solo caso por sonda (`B/09` §2.4, 
 **Durante el rollout del paso 3 el contenedor viejo no atiende el webhook ni corre crons**: se
 apagan antes de desplegar y se verifica como parte del paso (declarado por `DEC-METH-015`, FASE 9
 completa, `DB-5`). **Causa**: el handler viejo confirma como procesado el evento de un preapproval
-que no conoce (`local_row_not_found`), y MercadoPago no reintenta. Si no se apaga, el cliente que
+que no conoce (`local_row_not_found`), y MercadoPago no reintenta. **Eso vale para los eventos de
+estado; ante un cobro que no resuelve, el viejo responde 500 a propósito (HOS-276) y MercadoPago
+sí reintenta**, igual que todo evento que llegó durante el rollout: esos reintentos le llegan al
+handler nuevo recién después del 4b, con las lápidas ya escritas (FASE 9 vuelta 2, `F-8V2C2-002`). Si no se apaga, el cliente que
 contrata en esa ventana espera hasta el barrido diario.
 
 **El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si algún plan o preapproval
@@ -159,9 +164,10 @@ sistema viejo sigue corriendo con ~~tres suscripciones canceladas. Si entra un c
 registra el viejo**~~ **las suscripciones del censo canceladas. Si entra un cobro en vuelo de una que
 la base conoce, lo registra el viejo; si es de una que sólo estaba en el proveedor, el viejo no la
 reconoce y ~~la recoge, después del paso 4, la marca de la re-vinculación~~** **lo reconoce, después
-del paso 4, su lápida**, porque desde R6 todo id cancelado y verificado tiene una, conocido por la
+del paso 4, su lápida** —el reintento le llega después del 4b (FASE 9 vuelta 2)—, porque desde R6 todo id cancelado y verificado tiene una, conocido por la
 base o no (FASE 9 vuelta 1, R6); qué se hace con ese cobro es de `B/05` §3 y `B/21` §2.5 (owner
-2026-09-26, `G3-1`: se asienta sobre la lápida sin marca) (`B/21` §2.5; FASE 9 completa, `CT-3`), que es exactamente lo que queremos — sigue existiendo el lugar donde anotarlo.
+2026-09-26, `G3-1`: se asienta sobre la lápida sin marca; **si es del día del corte**, owner
+2026-09-27, FASE 9 vuelta 2, `R2`) (`B/21` §2.5; FASE 9 completa, `CT-3`), que es exactamente lo que queremos — sigue existiendo el lugar donde anotarlo.
 Al revés, con el despliegue primero, ese mismo cobro cae en el vacío. *(Lo que el viejo anote en
 esta ventana no se conserva después del corte: owner 2026-09-25, FASE 9 completa, `2a`; `B/21` §4.)*
 **Y en esa ventana no hay altas**: el 0b las cerró antes del censo, y el sistema nuevo las abre
@@ -174,9 +180,10 @@ esos preapprovals **se va con el despliegue**. Cancelarlos después exige hacerl
 API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — y es el caso que este
 § existe para evitar.
 
-~~**El paso 4 es la única escritura del corte, y es a mano.**~~ **El paso 4 es la única escritura
-a mano del corte. ~~Las otras dos —`inactiva_desde` en toda ficha preexistente (`V/21` §2.4) y los
-dos `permanent_grant` del paso 3b— las hace el sistema nuevo en el paso 3~~** (FASE 9 completa,
+~~**El paso 4 es la única escritura del corte, y es a mano.**~~ ~~**El paso 4 es la única escritura
+a mano del corte.**~~ **El paso 4 y el 5b son las dos escrituras a mano del corte** (el 5b, FASE 9
+vuelta 2, `F-8V2A3-002`). ~~Las otras dos —`inactiva_desde` en toda ficha preexistente (`V/21` §2.4) y los
+dos `permanent_grant` del paso 3b— las hace el sistema nuevo en el paso 3~~ (FASE 9 completa,
 `CT-1`). **Las otras tres las hace el sistema nuevo: el estado de nacimiento y `inactiva_desde` de
 toda ficha preexistente, en la migración del paso 3 (`V/21` §2.4); los dos `permanent_grant`, en el
 3b** (FASE 9 vuelta 1, R1, `F-8V1C2-012`). **El corte no escribe filas de `trial`**: los clientes actuales se tratan como nuevos
@@ -196,7 +203,10 @@ contratando, y entonces vuelven solas por `PB3` (FASE 9 vuelta 1, R1; owner 2026
 **El aviso va ANTES del paso 1**, no después: es lo único que
 acota cuánto tiempo queda abajo cada ficha. **Va a la población de `B/21` §1.3** —toda persona con
 una ficha que no sea `L1` o con una suscripción viva en el sistema viejo, medida el día del corte—,
-**y dice qué pasa con su ficha y cómo estrena el trial** (`V/21` §2.4; FASE 9 vuelta 1, R7). ~~Las dos escriben filas del
+**y dice qué pasa con su ficha y cómo estrena el trial** (`V/21` §2.4; FASE 9 vuelta 1, R7).
+**Al titular de una autorización que sólo conoce el proveedor el aviso le llega después del 1b**,
+en la llamada y el correo al pagador que trae el manifiesto: no hay de dónde conocerlo antes (`B/21`
+§1.3 y «NO cierra»; owner 2026-09-27, FASE 9 vuelta 2, `R21`). ~~Las dos escriben filas del
 esquema nuevo, así que **las dos van después de desplegar**~~ **Los grants del 3b y las lápidas del paso 4 escriben filas del esquema nuevo, así que van después de desplegar** (el antecedente de *«las dos»* se perdió al reescribir este párrafo; FASE 9 vuelta 1, §4 punto 2 de `21-verificado-G1`) — y por eso el paso 3 no es el final
 del corte, aunque lo parezca.
 
@@ -237,12 +247,18 @@ mueve plata.
 1. **Censo, cancelación y verificación** (pasos 1a, 1b y 2) —**incluido el vencimiento de las
    `Preference` del cambio de plan del viejo en el 1a, con su relectura** (owner 2026-09-26,
    `Y-1`)—: un script del repositorio actual,
-   con manifiesto de salida, **mergeado y promovido a `main` antes de que la rama del paraguas
+   con manifiesto de salida —**que trae, por cada id, su pagador (`payer_email`)** (owner
+   2026-09-27, FASE 9 vuelta 2, `R21`)—, **mergeado y promovido a `main` antes de que la rama del paraguas
    entre a `staging`** —así no hace falta la excepción de hotfix—. Es de esta FASE 7 del paraguas
    y va con la fecha del §2.
-2. **Lápidas** (paso 4): **B11** (`B/21` §2.5; R6).
+2. **Lápidas** (paso 4): **B11** (`B/21` §2.5; R6). **Y el detector posterior al corte**, la consulta
+   que lista las lápidas del corte con `payment`: la construye **B11** y la corre quien opera el
+   corte, el día siguiente al corte y el día siguiente al último `expire_date` de los registros de
+   cobro que la re-verificación leyó abiertos (`B/21` «NO cierra»; owner 2026-09-27, FASE 9 vuelta
+   2, `R2`).
 3. **Grants** (paso 3b): **B9** (`B/21` §2.4).
-4. **Estado de nacimiento y escritura `C`** (paso 3): **V6** (`V/21` §2.4; R1).
+4. **Estado de nacimiento y escritura `C`** (paso 3): **V6** (`V/21` §2.4; R1). **Y el borrado del
+   contenido de las `L1`** (paso 5b): **V6** (FASE 9 vuelta 2, `F-8V2A3-002`).
 5. **La regla de las altas en el borde** (pasos 0b, 3 y 5, **y su levantamiento en la rama de aborto**, FASE 9 vuelta 1, `N-G4V-04`): configuración de Cloudflare, no
    código de ninguna épica; la aplica y la verifica quien opera el corte, con la lista de rutas
    de cada sistema que cumplen el criterio del 0b (FASE 9 vuelta 1, `G4-1`).
@@ -261,7 +277,8 @@ El remedio es el **paso 0** y una rama de aborto declarada.
 
 ~~**La rama de aborto: si el paso 3 falla después del paso 1.**~~ **La rama de aborto: si algo
 falla después del paso 1b** —un preapproval que el paso 2 no ve `cancelled` después de reintentar
-la cancelación, un recorrido que el control del paso 2 no da por completo, o el paso 3— (FASE 9
+la cancelación, un recorrido que el control del paso 2 no da por completo, o el paso 3 —que desde la FASE 9 vuelta 2
+incluye el paso 4 y el 4b— (FASE 9
 completa, `DB-4`).
 
 1. Se **reactivan los planes** del paso 1a. La sonda 50 midió que un plan cancelado vuelve a
@@ -272,10 +289,23 @@ completa, `DB-4`).
    `DEC-MIG-002` dice que las altas siguen en el sistema actual mientras el rediseño no termine (FASE
    9 vuelta 1, `N-G4V-04`).
 2. El sistema viejo **sigue corriendo**: ~~no se desplegó nada.~~ **~~si el paso 3 alcanzó a escribir
-   algo~~ si el paso 3 —que termina con el despliegue sano y el 3b verificado— alcanzó a escribir
-   algo —la migración estructural, `inactiva_desde` y el estado de nacimiento, los dos grants—, se
-   restaura el backup del paso 2b**. **Lo que el backup no puede pisar es un objeto del proveedor,
-   y no hay ninguno** ~~:~~ **salvo la sonda de la entrega del paso 3, que no está en el manifiesto del 1b ni en la base restaurada: antes de restaurar se relee por su id y, si no está `cancelled`, se cancela y se verifica** (FASE 9 vuelta 1, `N-G4V-03`). Fuera de ella no hay ninguno: las altas del sistema nuevo siguen cerradas hasta el paso 5 (FASE 9 vuelta
+   algo~~ si el paso 3 —que termina con el despliegue sano ~~y el 3b verificado~~, el 3b y el paso 4
+   verificados y la sonda del 4b cancelada (FASE 9 vuelta 2)— alcanzó a escribir
+   algo —la migración estructural, `inactiva_desde` y el estado de nacimiento, los dos grants, **las
+   lápidas**—, se
+   restaura el backup del paso 2b**. ~~**Lo que el backup no puede pisar es un objeto del proveedor,
+   y no hay ninguno**~~ ~~:~~ ~~**salvo la sonda de la entrega del paso 3, que no está en el manifiesto del 1b ni en la base restaurada: antes de restaurar se relee por su id y, si no está `cancelled`, se cancela y se verifica** (FASE 9 vuelta 1, `N-G4V-03`). Fuera de ella no hay ninguno~~ **Lo que el backup no puede pisar es lo que el corte cambió afuera de la base, y hasta el
+   4b son dos cosas, cada una con su inverso** (FASE 9 vuelta 2, `F-8V2A3-002`, `F-8V2C2-001`; la
+   frase anterior decía *«no hay ninguno»* salvo la sonda, y era falsa): **(a) la URL de
+   notificación** —si el 4b alcanzó a apuntarla, se devuelve a la ruta del viejo y se verifica con
+   una entrega real, con una sonda dada de alta y cancelada como la del 4b, antes de reencender el
+   webhook viejo; sin eso el viejo corre sin recibir un evento, y quien se re-suscribe por el link
+   reactivado (punto 3) paga sin que nadie lo vincule—; y **(b) la sonda de la entrega**, que no
+   está en el manifiesto del 1b ni en la base restaurada: antes de restaurar se relee por su id y,
+   si no está `cancelled`, se cancela y se verifica (FASE 9 vuelta 1, `N-G4V-03`). **Las fotos y los
+   tokens de calendario de las `L1` no están en la lista porque nada los toca antes del 5b**, que
+   corre pasado el punto donde la rama deja de cubrir (arriba, paso 5b). Fuera de esas dos no hay
+   ninguno: las altas del sistema nuevo siguen cerradas hasta el paso 5 (FASE 9 vuelta
    1, `F-8V1A3-005`; owner 2026-09-26, `G4-1`). Y el viejo vuelve a correr sobre su propio esquema. **Si el paso
    3 alcanzó a reemplazar la imagen**: se vuelve a desplegar la imagen vieja, se reencienden su
    webhook y sus crons (lo inverso de `DB-5`) y se verifican los dos, igual que su apagado (FASE 9
