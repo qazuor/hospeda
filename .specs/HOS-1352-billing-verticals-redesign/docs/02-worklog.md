@@ -1313,3 +1313,19 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   declarar pertenencia; los conteos se buscan por palabra además de por número; un script de recuento
   se valida corriéndolo sobre la copia anterior.
 - Pendiente: salida 4 (artifacts y Linear), FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-27 (noche) — la salida 4 de la vuelta 2
+
+- **Mapa primero**: un agente cruzó `29-…/10-`…`18-` con las dos `descomposicion.md` y las fichas
+  vivas. El rango de la vuelta 2 es `218c045fa3..2fb827212e`; `1cccd9119d` (26/09 noche) no había
+  llegado a las fichas y se llevó con la vuelta (B8, B13, V6).
+- **Artifacts**: 25 republicados en sus URLs (tablero, paraguas, contrato, las dos épicas, V2–V9,
+  B2–B13); V1 y B1 sin cambios, confirmado contra la ficha viva. El tablero cambia cuatro textos y
+  ningún dato del grafo; su `<script id="state">` quedó idéntico.
+- **Linear**: 23 descripciones actualizadas por parches anclados (HOS-1355 y HOS-1364 sin
+  cambios), sin tocar estado, prioridad ni etiquetas; comentario de progreso en HOS-1352.
+- **Aprendido**: las cifras viejas vivían también donde la fila del mapa no cambiaba («once» en B2 y
+  el tablero, «quince» en V8, B5 y B13) y en los issues aparte de las fichas; se buscan por palabra
+  en los dos lugares. Y el `index.html` que baja `read` con `path` trae el envoltorio del servicio:
+  republicarlo tal cual lo envuelve dos veces (pasó con cinco fichas; se republicaron limpias).
+- Pendiente: FASE 5, FASE 6 y lo que queda de la FASE 7.

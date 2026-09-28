@@ -51,12 +51,9 @@ status: CURRENT
 
 ### El próximo paso exacto
 
-1. **Salida 4 de la vuelta 2**: los artifacts (tablero
-   `https://claude.ai/artifact/VvQ3hGSGZC5nr4ZHc5VqPB` y las fichas B1–B13 / V1–V9) y los issues de
-   Linear HOS-1352…1376 describen el diseño del 26/09. Hay que reescribirlos con lo aplicado en
-   [`29-fase-8-vuelta-2/`](./29-fase-8-vuelta-2/10-decisiones-del-owner.md) (`11-`…`18-`). **Publica
-   afuera: pedir OK al owner antes.** Antes de republicar un artifact, leé la versión viva sin
-   `path`; el tablero tiene capability `artifact` y un `<script id="state">` que se conserva idéntico.
+1. ~~**Salida 4 de la vuelta 2**~~ **Hecha el 27/09 a la noche** (con OK del owner): 25 artifacts
+   republicados (V1 y B1 sin cambios), 23 descripciones de Linear (HOS-1355 y HOS-1364 sin cambios)
+   y comentario de progreso en HOS-1352. Detalle en el worklog.
 2. **FASE 5**: gap analysis contra el código (`DEC-METH-003`).
 3. **FASE 6** y lo pendiente de la **FASE 7** (en [`16-fase-7-del-paraguas.md`](./16-fase-7-del-paraguas.md)
    quedan 4 de 6 ítems).
