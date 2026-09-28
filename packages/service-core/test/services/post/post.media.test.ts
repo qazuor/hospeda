@@ -603,7 +603,12 @@ describe('addPostMedia — gallery cap', () => {
 
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.count).toHaveBeenCalledWith(
-            expect.objectContaining({ state: 'visible', isFeatured: false, deletedAt: null }),
+            expect.objectContaining({
+                postId: POST_ID,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            }),
             expect.anything()
         );
     });

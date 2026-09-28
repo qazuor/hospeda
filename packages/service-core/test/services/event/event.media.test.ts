@@ -619,7 +619,12 @@ describe('addEventMedia — gallery cap', () => {
 
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.count).toHaveBeenCalledWith(
-            expect.objectContaining({ state: 'visible', isFeatured: false, deletedAt: null }),
+            expect.objectContaining({
+                eventId: EVENT_ID,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            }),
             expect.anything()
         );
     });
