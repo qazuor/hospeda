@@ -26,8 +26,21 @@ import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
  * here first.
  */
 export const PARTNER_SAFE_WRITE_URL_FIELDS = {
-    websiteUrl: safeExternalUrl('zodError.partner.websiteUrl.invalid').nullable().optional()
+    websiteUrl: safeExternalUrl('zodError.partner.websiteUrl.invalid').nullable().optional(),
+    contactInfo: ContactInfoSchema.nullish()
 } as const;
+
+/**
+ * `contactInfo` as the partner ENTITY (and therefore its response) sees it.
+ *
+ * `ContactInfoSchema.website` is scheme-restricted since HOS-703, but this
+ * schema also validates rows read back from the database, so `website` keeps
+ * the tolerant `.url()` here and only the write schemas
+ * ({@link PARTNER_SAFE_WRITE_URL_FIELDS}) use the strict one.
+ */
+const PartnerStoredContactInfoSchema = ContactInfoSchema.extend({
+    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).nullish()
+});
 
 /**
  * Partner analytics JSONB structure
@@ -68,7 +81,7 @@ export const partnerSchema = z.object({
      * nothing here, but the same rule that protects users applies: a read must
      * never 500 on data already in the column.
      */
-    contactInfo: ContactInfoSchema.nullish(),
+    contactInfo: PartnerStoredContactInfoSchema.nullish(),
     /** Operational counterpart of {@link partnerSchema.shape.contactInfo}. */
     socialNetworks: SocialNetworkSchema.nullish(),
     subscriptionStatus: PartnerSubscriptionStatusEnumSchema,

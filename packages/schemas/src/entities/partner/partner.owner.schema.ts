@@ -32,6 +32,7 @@ export const PartnerOwnerOperationalSchema = partnerSchema
         contactInfo: true,
         socialNetworks: true
     })
+    .extend({ contactInfo: PARTNER_SAFE_WRITE_URL_FIELDS.contactInfo })
     .partial();
 
 /**
@@ -48,7 +49,7 @@ export const PartnerOwnerContentSchema = partnerSchema
         description: true,
         websiteUrl: true
     })
-    .extend(PARTNER_SAFE_WRITE_URL_FIELDS)
+    .extend({ websiteUrl: PARTNER_SAFE_WRITE_URL_FIELDS.websiteUrl })
     .partial();
 
 /**

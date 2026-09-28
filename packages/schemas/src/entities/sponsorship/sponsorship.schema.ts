@@ -7,6 +7,7 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { SponsorshipStatusEnum } from '../../enums/sponsorship-status.enum.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
@@ -111,6 +112,9 @@ export const SponsorshipCreateInputSchema = SponsorshipSchema.omit({
     updatedById: true,
     deletedById: true
 }).extend({
+    // Write contract only (HOS-703): the entity keeps the tolerant `.url()` because
+    // it is also the response shape.
+    linkUrl: safeExternalUrl('zodError.sponsorship.linkUrl.url').nullable().optional(),
     slug: z
         .string({
             message: 'zodError.sponsorship.slug.required'
