@@ -13,6 +13,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
+import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyExperienceDirectionsGate } from './directions-projection';
@@ -59,7 +60,7 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
         });
 
         return applyExperienceDirectionsGate({
-            experience: withPublicIsFeatured(experience),
+            experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
             ownerGrantsDirections
         });
     },
