@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { safeExternalUrl } from '../safe-external-url.schema.js';
 
 describe('safeExternalUrl', () => {
-    const schema = safeExternalUrl('zodError.test.invalid');
+    const schema = safeExternalUrl('zodError.common.contact.website.invalid');
 
     it.each([
         'https://example.com',
@@ -31,7 +31,9 @@ describe('safeExternalUrl', () => {
 
     it('reports the given i18n key', () => {
         const result = schema.safeParse('javascript:alert(1)');
-        expect(result.success ? '' : result.error.issues[0]?.message).toBe('zodError.test.invalid');
+        expect(result.success ? '' : result.error.issues[0]?.message).toBe(
+            'zodError.common.contact.website.invalid'
+        );
     });
 
     it('stays a plain string schema so pick/omit/partial keep working', () => {
