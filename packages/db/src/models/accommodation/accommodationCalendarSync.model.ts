@@ -343,6 +343,10 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
      * leaves the row (including its tokens) in place for audit. The cron's
      * {@link findAllActiveByProvider} will no longer pick this row up.
      *
+     * Does NOT revoke the grant at the provider. The host-initiated disconnect
+     * goes through `disconnectCalendarConnection` in `@repo/service-core`,
+     * which calls this and then revokes (HOS-1377).
+     *
      * Use this over {@link deleteConnection} when the disconnect should be
      * auditable/reversible (e.g. host-initiated disconnect from the UI).
      *
@@ -401,6 +405,15 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
      * leaves the host's calendar permanently reachable by a credential nobody
      * can point at any more, which is strictly worse than the soft path.
      *
+     * This method cannot revoke on its own and deliberately does not try:
+     * revocation needs the OAuth vault and the provider HTTP clients, which
+     * live in `apps/api` and are reached through the revocation port in
+     * `@repo/service-core` (`askPortToRevoke`, used by the delete cascade and
+     * by `disconnectCalendarConnection`). As of HOS-1377 it has NO production
+     * caller — the host disconnect is soft and revokes through that port.
+     * Any caller added later must run the port first and only delete once the
+     * revocation outcome has been recorded somewhere that outlives this row.
+     *
      * @param params.accommodationId - The accommodation to disconnect.
      * @param params.provider - The calendar provider.
      * @param tx - Optional transaction client.
@@ -454,8 +467,9 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
      *
      * That set is NOT the set to revoke. An inactive row is not a revoked row:
      * the only path that deactivates without deleting the accommodation is the
-     * host-initiated disconnect route, and it revokes nothing — it just flips
-     * `is_active` and leaves the tokens where they are. A host who disconnects
+     * host-initiated disconnect, which revoked nothing before HOS-1377 and can
+     * still fail to revoke after it — either way the tokens stay where they
+     * are. A host who disconnects
      * and later deletes would otherwise walk away with a live grant and no
      * trace of it anywhere. Revocation therefore iterates
      * {@link findAllByAccommodation}, which does not filter on `isActive`.
@@ -513,9 +527,10 @@ export class AccommodationCalendarSyncModel extends BaseModelImpl<AccommodationC
      * The absence of an `isActive` filter is the whole point. Revocation has to
      * iterate this, not {@link deactivateAllByAccommodation}'s return value:
      * `is_active = false` means "we stopped using it", never "the provider
-     * closed it". The host-initiated disconnect route flips the flag and
-     * revokes nothing, so the inactive rows are precisely the ones whose grants
-     * have been quietly outliving their listing.
+     * closed it". Rows disconnected before HOS-1377 were never revoked, and a
+     * disconnect whose revocation failed is inactive with a live grant, so the
+     * inactive rows are precisely the ones whose grants may be outliving their
+     * listing.
      *
      * @param params.accommodationId - The accommodation whose connections to read.
      * @param tx - Optional transaction client.
