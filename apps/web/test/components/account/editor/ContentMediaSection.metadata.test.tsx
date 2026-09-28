@@ -34,7 +34,7 @@
  * @module test/components/account/editor/ContentMediaSection.metadata
  */
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ContentMediaSectionProps } from '../../../../src/components/account/editor/ContentMediaSection.client';
 import { ContentMediaSection } from '../../../../src/components/account/editor/ContentMediaSection.client';
@@ -403,16 +403,15 @@ describe('ContentMediaSection — photo text metadata (HOS-1036)', () => {
     });
 
     it('keeps one panel per photo — opening one does not open the other', async () => {
-        const { container } = await renderHydrated();
+        await renderHydrated();
 
         fireEvent.click(screen.getByRole('button', { name: GALLERY_TOGGLE_1 }));
 
-        // Exactly one form is open, and it is the gallery photo's: its alt
-        // field id carries that row's UUID.
-        const forms = container.querySelectorAll('form');
-        expect(forms).toHaveLength(1);
-        expect(within(forms[0] as HTMLElement).getByLabelText(ALT_LABEL).id).toBe(
-            `photo-alt-${GALLERY_ROW.id}`
-        );
+        // Exactly one panel is open, and it is the gallery photo's: its alt
+        // field id carries that row's UUID. (The panel is a <div>, not a
+        // <form> — HOS-1297 — so count the alt fields rather than forms.)
+        const altFields = screen.getAllByLabelText(ALT_LABEL);
+        expect(altFields).toHaveLength(1);
+        expect(altFields[0]?.id).toBe(`photo-alt-${GALLERY_ROW.id}`);
     });
 });
