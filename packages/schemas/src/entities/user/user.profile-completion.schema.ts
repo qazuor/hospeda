@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { InternationalPhoneRegex } from '../../utils/utils.js';
 import { ThemeEnumSchema } from './user.settings.schema.js';
 
@@ -159,7 +160,7 @@ export const CompleteProfileBodySchema = z
          * Personal or professional website URL.
          * Persisted to users.profile JSONB.
          */
-        website: z.string().url({ message: 'zodError.user.website.url' }).optional(),
+        website: safeExternalUrl('zodError.user.website.url').optional(),
 
         /**
          * User's occupation / job title (2–100 chars, optional).
@@ -178,12 +179,12 @@ export const CompleteProfileBodySchema = z
          */
         socialNetworks: z
             .object({
-                facebook: z.string().url().optional(),
-                instagram: z.string().url().optional(),
-                twitter: z.string().url().optional(),
-                linkedIn: z.string().url().optional(),
-                tiktok: z.string().url().optional(),
-                youtube: z.string().url().optional()
+                facebook: safeExternalUrl('zodError.common.social.facebook.invalid').optional(),
+                instagram: safeExternalUrl('zodError.common.social.instagram.invalid').optional(),
+                twitter: safeExternalUrl('zodError.common.social.twitter.invalid').optional(),
+                linkedIn: safeExternalUrl('zodError.common.social.linkedIn.invalid').optional(),
+                tiktok: safeExternalUrl('zodError.common.social.tiktok.invalid').optional(),
+                youtube: safeExternalUrl('zodError.common.social.youtube.invalid').optional()
             })
             .optional(),
 
