@@ -555,6 +555,40 @@ describe('UserMenu — sign out', () => {
             expect(signOut).toHaveBeenCalled();
         });
     });
+
+    it('drops the /auth/me snapshot before signing out (HOS-1206)', async () => {
+        // Arrange: the island has resolved and cached the authenticated user.
+        renderMenu();
+        await waitFor(() => expect(sessionStorage.getItem(AUTH_ME_CACHE_KEY)).not.toBeNull());
+        let snapshotAtSignOut: string | null = 'not-called';
+        vi.mocked(signOut).mockImplementationOnce(async () => {
+            snapshotAtSignOut = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
+            return undefined as never;
+        });
+
+        // Act
+        open();
+        fireEvent.click(screen.getByRole('menuitem', { name: /cerrar sesión/i }));
+
+        // Assert
+        await waitFor(() => expect(signOut).toHaveBeenCalled());
+        expect(snapshotAtSignOut).toBeNull();
+    });
+
+    it('still signs out when sessionStorage throws (HOS-1206)', async () => {
+        // The former bare `removeItem` sat inside the try with no catch: a
+        // throwing storage skipped `signOut()` and redirected home signed IN.
+        renderMenu();
+        vi.mocked(signOut).mockClear();
+        vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+            throw new Error('SecurityError');
+        });
+
+        open();
+        fireEvent.click(screen.getByRole('menuitem', { name: /cerrar sesión/i }));
+
+        await waitFor(() => expect(signOut).toHaveBeenCalled());
+    });
 });
 
 describe('UserMenu — PostHog identify/reset', () => {

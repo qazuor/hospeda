@@ -360,3 +360,41 @@ describe('AuthTabs — tab-switch URL rewrite (history.replaceState)', () => {
         window.history.replaceState = original;
     });
 });
+
+describe('AuthTabs — OAuth invalidates the cached /auth/me snapshot (HOS-1206)', () => {
+    beforeEach(() => {
+        signInSocialMock.mockReset();
+        signInSocialMock.mockResolvedValue({ error: null });
+        sessionStorage.clear();
+    });
+
+    it('drops the guest snapshot before handing the tab to the OAuth provider', async () => {
+        // Arrange: a fresh GUEST snapshot from the page the visitor came from.
+        // The provider sends them back to that page (session-blind HTML), and
+        // sessionStorage survives the round trip in the same tab, so the
+        // snapshot must be gone before the tab leaves.
+        sessionStorage.setItem(
+            'authMeSnapshot',
+            JSON.stringify({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                roles: [],
+                cachedAt: Date.now()
+            })
+        );
+        let snapshotAtRedirect: string | null = 'not-called';
+        signInSocialMock.mockImplementation(async () => {
+            snapshotAtRedirect = sessionStorage.getItem('authMeSnapshot');
+            return { error: null };
+        });
+        renderAuthTabs({ initialTab: 'signin' });
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: /Continuar con Google/ }));
+
+        // Assert
+        await waitFor(() => expect(signInSocialMock).toHaveBeenCalledTimes(1));
+        expect(snapshotAtRedirect).toBeNull();
+    });
+});

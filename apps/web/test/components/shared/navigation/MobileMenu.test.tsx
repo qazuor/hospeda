@@ -253,6 +253,26 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
 
         expect(document.body.textContent).not.toContain('...');
     });
+
+    it('drops the /auth/me snapshot before signing out (HOS-1206)', async () => {
+        // Arrange: beforeEach seeded a fresh AUTHENTICATED snapshot. Simple-mode
+        // islands trust it as-is, so if it survives the sign-out they keep
+        // showing this account for up to the 60s TTL.
+        let snapshotAtSignOut: string | null = 'not-called';
+        mockSignOut.mockImplementationOnce(() => {
+            snapshotAtSignOut = sessionStorage.getItem('authMeSnapshot');
+            return new Promise(() => {});
+        });
+        renderMenu();
+        openAccountMenu();
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+
+        // Assert
+        await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
+        expect(snapshotAtSignOut).toBeNull();
+    });
 });
 
 // ─── Global-search CTA removal guard ─────────────────────────────────────────
