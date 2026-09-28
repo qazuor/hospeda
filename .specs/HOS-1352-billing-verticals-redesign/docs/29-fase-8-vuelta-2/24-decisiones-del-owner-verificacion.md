@@ -46,4 +46,32 @@ un lote de cuatro:
 | `V2-j3` | el `+alias` en dominios propios (Workspace, Microsoft 365, Fastmail) | **1**: se quita el `+alias` en todos los dominios | sí |
 | `V2-j4` | cómo se mide lo que la web no confirma | **1**: en el paso 0 del corte, la distribución de dominios de la tabla de usuarios y la prueba de unos 30 correos del §4 de `25-`, con cuentas de prueba que crea el owner; fila nueva de matriz con OK del owner | sí |
 
+## Los casos vecinos del tramo billing (2026-09-28)
+
+Salieron al aplicar (`26-aplicacion-verificacion-billing.md` §5) y pedían elegir. El owner contestó
+un lote:
+
+| pregunta | qué pregunta | elige | ¿la recomendada? |
+|---|---|---|---|
+| `V2-m` | si el corte espera la medición de `V2-a` | **1**: el paso 1b no arranca sin ese dato, como `EX-42` con el 1a; si no aparece, vuelve al owner antes del corte | sí |
+| `V2-n` | cómo sabe `S21`, hasta 60 días después, que al `USER`/`GLOBAL` lo canceló `S26` | **1**: lo deduce de que la vertical de la principal tiene una fila en `vertical_discontinuation`; el `S12`-vía-`S26` de `LISTING` y `VERTICAL_SUBSCRIPTION` pasa también del motivo 14 al 15 | sí |
+| `V2-o` | `S36` sobre un pago retenido por `S19` | **1**: `S36` lo devuelve por `RF1` y la rama 6 no abre marca sobre ese pago | sí |
+| `V2-p` | la marca 7 sobre la sonda del manifiesto nace proponiendo devolver | **1**: se declara; el owner la levanta sin devolver, sin motivo nuevo | sí |
+| `V2-q` | la marca 22 abierta sobre un complemento que `S7` ya canceló | **1**: la levanta una persona después de ver que el complemento ya no cobra | sí |
+| `V2-r` | el detector sobre un plan anual del sistema viejo | **1**: el paso 0 cuenta las suscripciones anuales vivas del viejo; fila nueva de matriz con OK del owner | sí |
+
 Los arreglos de texto sin decisión que lista `20-` § 4 se aplican en la misma tanda.
+
+## Los casos vecinos del tramo de verticales (2026-09-28)
+
+Salieron al aplicar (`27-aplicacion-verificacion-verticales.md` §5 y lo que ese tramo decidió por
+su cuenta). El owner contestó un lote:
+
+| pregunta | qué pregunta | elige | ¿la recomendada? |
+|---|---|---|---|
+| `V2-s` | el sujeto de la acción 16 | **1**: el sujeto es la vertical; el resumen de `DEC-OBS-001` muestra la vertical y cuántos dueños alcanza; el `SUPER_ADMIN` que además es dueño en esa vertical queda declarado y visible en ese resumen, sin regla nueva | sí |
+| `V2-t` | las páginas de destino en el paso 4c del corte | **1**: el 4c suma una purga por destino (22) | sí |
+| `V2-u` | `PB4`, `PB6` y `PB12` con la carrera de `PB10` | **1**: las tres toman el lock, como `PB10`; se vacía la excepción de las que sólo liberan cupo | sí |
+| `V2-v` | Fastmail y Yandex quedaban «tal cual» con `+` documentado | **1**: se suman a la regla del `+`, coherente con `V2-j3` | sí |
+| `V2-w` | la medición de `V2-j4` lee correos de producción | **1**: restricción escrita: la herramienta sólo cuenta dominios y no exporta ni guarda casillas | sí |
+| `V2-x` | las cinco elecciones que el tramo de verticales hizo por su cuenta (dominio no nombrado = dominio propio; lo «a medir» no se aplica sin medir; `G-R9` en V6; `revalidation_config` en lo que `PURGED` no toca; `PB9` espera el hecho 4) | **1**: confirmadas | sí |

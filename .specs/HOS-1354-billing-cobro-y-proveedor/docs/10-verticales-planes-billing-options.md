@@ -238,6 +238,9 @@ no dos ramas de uno es `DEC-RF-006`). **No es mecanismo nuevo,
 y por eso se pudo hacer acá y no en los otros caminos**: este acto **recorre las filas una por
 una** —la frase de arriba ya dice *«lo mismo con cada suscripción de complemento viva en ella»*—,
 así que la causa se escribe en el momento en que la fila se toca y **nadie la traza hacia atrás**.
+**Y lo mismo para lo que `S26` deja en `CANCEL_SCHEDULED`**, aunque su marca se abra en la fecha de
+fin y no en este acto: ahí `S12` saca al título de las filas vivas y `S21` abre el 15 porque la
+vertical tiene la fila de `vertical_discontinuation` que este acto escribió (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`).
 **Y la `PAUSED`, que no entra acá, llega al mismo lado por su cuenta**: `S25` lleva la
 discontinuación **en su propia guarda** —*«el plan ya no se presta»*—, así que sabe por qué mata al
 título sin necesitar este acto. La razón de plata está en `B/03` §3.2: `S27` y `S28` son los **dos**

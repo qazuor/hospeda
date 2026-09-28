@@ -714,7 +714,9 @@ fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2). **En la fecha de fi
 propio `S12`** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): el `S12` de la principal dispara la
 orfandad, `S21` lleva el complemento a `CANCELLED` y, si su último cobro pagó días posteriores al
 fin de servicio, abre el motivo 14, que propone no devolver y deja que una persona lo vea. El mismo
-orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` §3.2, fila de `S12`).
+orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` §3.2, fila de `S12`),
+**con el motivo 15 y no el 14**: `S21` lo deduce de que la vertical de la principal tiene una fila
+en `vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`).
 **Y el mismo alguien es la regla de `S11` cuando la principal llega a `CANCEL_SCHEDULED` sin pedir
 la baja**: por el espejo de `R18` —pagó mientras ya mandábamos cancelar— y por `S7` —volvió de
 `SUSPENDED` con un cobro sobre un preapproval cancelado— (owner 2026-09-27, FASE 9 vuelta 2,
@@ -928,16 +930,20 @@ se pierde **por un acto del propio cliente**;
 **no** vale cuando la instancia llega a `CANCELLED` por la **tercera** cláusula de `A5` —**se revoca
 el grant que era su título**—, ni cuando llega por la **segunda** —**queda huérfana**— **y a su
 título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación del
-2026-09-23). En las dos el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su
+2026-09-23), o `S12` en la fecha de fin sobre una vertical con fila en `vertical_discontinuation` (FASE 9 vuelta 2,
+verificación, owner 2026-09-28, `V2-n`). En las dos el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su
 título lo mató `S36`**, la revocación del derecho de arrepentimiento, **y el último cobro del
 complemento cae dentro de sus propios 10 días corridos**: ahí no hay marca y `S21` crea `RF1` (owner
 2026-09-27, FASE 9 vuelta 2, `R1-b`); fuera de ese plazo, la regla. Los **cuatro** disparadores
 de `S21` están enumerados uno por uno, con el motivo de cada uno —y el segundo con su reparto interno—
 en `B/03` §3.2, *«cuál de los dos motivos abre `S21`»*. **Y el resto no es todo *«un acto
-del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla **dos**
-caminos nuestros —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`— **por mecanismo y no
-por criterio**, porque ahí la transición que mata al título no nombra su causa; el § de `B/03` los
-enumera y la fila de `B/19` §6 los dice en voz alta para que quien resuelve pueda apartarse. Lo que
+del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla ~~**dos**
+caminos nuestros —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`—~~ **un** camino nuestro,
+`S17`, **por mecanismo y no
+por criterio**, porque ahí la transición que mata al título no nombra su causa; el § de `B/03` lo
+enumera y la fila de `B/19` §6 lo dice en voz alta para que quien resuelve pueda apartarse.
+`S12` cuando su `CANCEL_SCHEDULED` lo puso `S26` pasó al 15: la causa se lee en la fila de
+`vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`). Lo que
 sigue es la regla para ese resto.
 
 Igual que `DEC-GRANT-001` lo dice para `S13` y el §3.4

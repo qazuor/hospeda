@@ -363,7 +363,8 @@ vida descansa en él, y ningún capítulo decía la función:
    | Proton | `proton.me`, `protonmail.com`, `protonmail.ch` y `pm.me`, unificados | **se quitan, con el guion y el guion bajo, sólo si la medición lo confirma** | **se quita** | `+` y dominios, oficial; los puntos, una prueba de un tercero |
    | iCloud | `icloud.com`, `me.com` y `mac.com`, unificados **si la medición lo confirma** | quedan | **se quita** | dominios, oficial; `+`, secundaria |
    | Yahoo | `yahoo.com` y `yahoo.com.ar`, **sin unificar** | quedan | queda: se quita sólo si la medición lo confirma | sin documentación del `+`; sus descartables son otra casilla |
-   | AOL, Zoho, GMX, Fastmail, Yandex y los ISP argentinos (Fibertel, Arnet, Speedy, Ciudad, Ferozo) | tal cual | quedan | queda | fuera de la normalización |
+   | Fastmail y Yandex ✚ (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-v`) | tal cual, sin unificar | quedan | **se quita** | documentan el `+`; coherente con `V2-j3` |
+   | AOL, Zoho, GMX, ~~Fastmail, Yandex~~ y los ISP argentinos (Fibertel, Arnet, Speedy, Ciudad, Ferozo) | tal cual | quedan | queda | fuera de la normalización |
    | **todo dominio que la lista no nombra**: los dominios propios (Google Workspace, Microsoft 365, Fastmail con dominio propio) | tal cual | quedan | **se quita** (`V2-j3`) | `+` en Microsoft 365 por defecto desde 2022, oficial |
 
    **Tres reglas sobre la lista.** **(a) Minúsculas en todo dominio.** **(b) Ante la duda, no
@@ -398,8 +399,9 @@ vida descansa en él, y ningún capítulo decía la función:
 > cerrada del punto 1. **Lo que queda, declarado**: en un proveedor que ignora puntos o alias y no
 > está en la lista, el trial se consigue otra vez con un punto; y cambiar la lista no recalcula
 > las filas viejas (punto 3). **Y desde la lista por proveedor** (owner 2026-09-28, `V2-j2` y
-> `V2-j3`): en los nombrados *«tal cual»* que documentan el `+` (Fastmail, Yandex) o lo tienen sin
-> medir (Yahoo), el trial se consigue otra vez con un `+alias`, que es el costo de no normalizar
+> `V2-j3`): en los nombrados *«tal cual»* ~~que documentan el `+` (Fastmail, Yandex) o~~ que lo tienen sin
+> medir (Yahoo), el trial se consigue otra vez con un `+alias` (Fastmail y Yandex salieron de este
+> costo: pierden el `+` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-v`)), que es el costo de no normalizar
 > ante la duda; y en un servidor propio donde el `+` sea un carácter literal de la casilla, dos
 > casillas se juntan, que es el costo de quitarlo en todo dominio propio.
 

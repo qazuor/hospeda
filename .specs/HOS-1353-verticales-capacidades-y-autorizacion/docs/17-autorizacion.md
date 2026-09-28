@@ -396,6 +396,11 @@ no una excepción a la lista.
    (`NUCLEO/08` §4.1), y la revisión es humana. **La confirmación por una segunda persona** —la
    acción queda pendiente hasta que otra cuenta de staff la confirme— **entra cuando haya otra
    persona con el permiso**: hoy bloquearía la operación, porque no hay segunda persona.
+   **En la decimosexta, discontinuar una vertical, el sujeto es la vertical** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`):
+   el acto recae sobre la vertical y todos sus dueños a la vez, así que `actor = sujeto` no se da y
+   la regla se cumple sola. El resumen de `DEC-OBS-001` la muestra con la vertical y cuántos dueños
+   alcanza, y el `SUPER_ADMIN` que además es dueño en esa vertical queda visible ahí. **Sin regla
+   nueva**: queda declarado en *«lo que este capítulo NO cierra»*.
 
 ### 3.3 El actor no siempre es una persona
 
@@ -621,3 +626,11 @@ falla.
   es el detector** —el resumen de `DEC-OBS-001` lista cada acción que mueve plata con actor y sujeto,
   `NUCLEO/08` §4.1—, que no distingue a la persona: la revisión es humana. La confirmación por una
   segunda persona entra cuando haya otra persona con el permiso.
+- **El `SUPER_ADMIN` que es dueño en la vertical que discontinúa** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`); declarado
+  por `DEC-METH-015`). El sujeto de la acción 16 es la vertical (§3.2, regla 5), así que la regla 5
+  no ve que el actor se discontinúa a sí mismo. **Lo que deja**: su ficha pasa por el mismo acto
+  que las de los demás dueños, con la cola y el reembolso de todos, y ninguna regla lo frena.
+  **El detector** es el resumen de `DEC-OBS-001`, que muestra la vertical y cuántos dueños alcanza,
+  con el `SUPER_ADMIN` dueño visible. **Causa**: rechazar la acción cuando el actor es dueño
+  obligaba al owner que opera solo y tiene una ficha en esa vertical a una segunda cuenta para
+  discontinuarla.

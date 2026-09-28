@@ -106,7 +106,9 @@ todos los meses da **un solo caso**.
 > despliegue lleva consigo—. **Sobre uno de esos ids el handler escribe la lápida de recepción,
 > el `payment` y la marca, y no manda cancelar**, y el barrido tampoco: sin llamada nuestra no
 > entra a la salvedad 4 del §3, y la sigue la salvedad 2 mientras la marca esté abierta. La marca
-> la levanta una persona sin devolver —es la tarjeta del owner, y el id está en el manifiesto—, y
+> la levanta una persona sin devolver —es la tarjeta del owner, y el id está en el manifiesto—
+> aunque nazca con la propuesta de devolver, que es lo que el motivo 7 propone siempre (declarado
+> en *«lo que este capítulo NO cierra»*; FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-p`), y
 > la sonda la cancela quien cierra la medición, releída, sacándola del manifiesto. Sin esto la
 > excepción del 1b duraba hasta el primer evento de la sonda. **La sonda de la entrega del paso
 > 4b no está en ese manifiesto**: su evento escribe la lápida de recepción y la marca
@@ -1097,3 +1099,13 @@ alerta a las 26 h sin ping. Lo que este § deja abierto del vigía vale igual pa
   reparación**: `SUPER_ADMIN` vuelve a otorgar la cortesía cuando la fila vuelva a `ACTIVE`, el
   primer disparador de `S9`, con el mismo argumento que `DEC-GRANT-011`. Si paga en el grace, `S5`
   la devuelve a `ACTIVE` y la comprobación la levanta con su devolución.
+- **La marca de la sonda del manifiesto nace proponiendo devolverle al owner su propio cobro**
+  (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-p`; caso 3 de `29-fase-8-vuelta-2/12-` §5;
+  declarado por `DEC-METH-015`). El cobro de una sonda enumerada en el manifiesto del corte abre
+  `PAGO_TARDÍO_RECHAZADO` (§2.4), y el listado de `B/19` §6 propone devolver en toda marca de ese
+  motivo, porque la propuesta no depende de nada más que el motivo (`DEC-RF-006`). **Lo que
+  deja**: una propuesta que no se sigue, sobre la tarjeta del owner. **El owner la levanta sin
+  devolver, y no hay motivo nuevo**: uno propio para la sonda rompía la regla de que la propuesta
+  sale del motivo, por una población que es sólo del owner y se cierra con la medición. **Causa**:
+  la sonda cobra por diseño mientras su medición está abierta, y el id que lo explica está en el
+  manifiesto, no en la marca.

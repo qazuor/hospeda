@@ -103,7 +103,9 @@ manifiesto—, incluidas las altas que `DEC-MIG-002` siguió tomando hasta el 0b
 FASE 9 vuelta 2, `R2`; `F-8V2B1-006`). **Y por eso la re-verificación lee, por cada id del
 manifiesto del 1b, sus registros de cobro abiertos** —`scheduled` o `recycling`, con su
 `expire_date` (`RC-6`, `RC-7`)—: el último `expire_date` es la fecha de la segunda corrida del
-detector del «NO cierra».
+detector del «NO cierra». **Sobre una suscripción anual del viejo esa fecha puede caer hasta un año
+después del corte**, porque `RC-7` la midió sobre ciclos de 1 y 2 días; por eso el paso 0 cuenta
+las anuales vivas (`16-fase-7…` §4.2; FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-r`).
 
 > 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
 > pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
@@ -294,7 +296,8 @@ su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 > que esta regla nombra). **Qué campo del pago trae esa fecha se mide en el paso 0 del corte**
 > (`16-fase-7…` §4.2; la fila de la matriz está propuesta al owner en el registro de la
 > verificación de la FASE 9 vuelta 2); **si ningún campo es confiable, la ventana vuelve al
-> owner**. **Un cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es de
+> owner**, **y el 1b no arranca sin ese dato**: vuelve al owner antes del corte (FASE 9 vuelta 2,
+> verificación, owner 2026-09-28, `V2-m`). **Un cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es de
 > ese día o anterior se asienta sin marca**, como dice el párrafo de
 > arriba. **Uno posterior abre la marca `PAGO_TARDÍO_RECHAZADO`** (el 7 de `B/02` §2.5, **SÍ**), la
 > misma que abre el cobro sobre una lápida de recepción, **con el `payment` colgado y la propuesta
@@ -492,7 +495,9 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   y otra vez el día siguiente al último `expire_date` (`RC-7`) de los registros de cobro que la
   re-verificación leyó abiertos sobre los ids del manifiesto del 1b; la primera da la lista de
   llamadas por los cobros del día, y la segunda confirma que todo cobro posterior abrió su marca
-  (owner 2026-09-27, FASE 9 vuelta 2, `R2`). La re-verificación del §1.3 es la lista con la que el
+  (owner 2026-09-27, FASE 9 vuelta 2, `R2`). **Sobre un anual del viejo la segunda corrida puede
+  caer hasta un año después del corte**, y cuántos hay lo cuenta el paso 0 (FASE 9 vuelta 2,
+  verificación, owner 2026-09-28, `V2-r`). La re-verificación del §1.3 es la lista con la que el
   owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la
   salvedad 4 del cap. 09 §3 y marca a los 3 días.
 - ~~**La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
