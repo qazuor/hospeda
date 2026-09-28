@@ -110,11 +110,15 @@ describe('HOS-1383 — soft-deleting an accommodation closes its conversations',
         expect(closeAllForAccommodation).toHaveBeenCalledWith('acc-2', callerTx);
     });
 
-    it('does not run when the accommodation was already deleted (count 0)', async () => {
-        // Arrange
+    it('does not run when the soft-delete updated no row (count 0)', async () => {
+        // Arrange: the row looked live on read but a concurrent delete won the
+        // race, so the model updated nothing. This is the only way to reach
+        // the hook with count 0: an entity already deleted at read time
+        // returns before any hook runs.
         asMock(model.findById).mockResolvedValue(
-            createMockAccommodation({ id: 'acc-3', deletedAt: new Date() })
+            createMockAccommodation({ id: 'acc-3', deletedAt: undefined })
         );
+        asMock(model.softDelete).mockResolvedValue(0);
 
         // Act
         const result = await service.softDelete(createAdminActor(), 'acc-3');
