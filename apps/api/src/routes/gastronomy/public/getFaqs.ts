@@ -17,6 +17,7 @@ import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/servi
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { filterPublicFaqs } from '../../../utils/commerce-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -60,10 +61,10 @@ export const publicGetGastronomyFaqsRoute = createPublicRoute({
         }
 
         const faqs = result.data?.faqs ?? [];
-        // HOS-400 G-4/AC-8: `isVisibleOnListing = false` FAQs never leave this
-        // route. A FAQ missing the field (pre-migration data) reads as visible,
+        // HOS-400 G-4/AC-8: FAQs that are not ACTIVE, are soft-deleted or have
+        // `isVisibleOnListing = false` never leave this route (HOS-1263). A FAQ missing the field (pre-migration data) reads as visible,
         // matching the column's `DEFAULT true`.
-        return { faqs: faqs.filter((faq) => faq.isVisibleOnListing !== false) };
+        return { faqs: filterPublicFaqs(faqs) };
     },
     options: {
         cacheTTL: 300,
