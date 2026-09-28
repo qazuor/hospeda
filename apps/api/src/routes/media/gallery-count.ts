@@ -25,12 +25,16 @@
  * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
- * | event         | JSONB `media.gallery`                                              |
- * | post          | JSONB `media.gallery`                                              |
+ * | event         | composed `media.gallery` (from `event_media`, see below)           |
+ * | post          | composed `media.gallery` (from `post_media`, see below)            |
  *
- * The JSONB branch is NOT legacy dead code: destinations, events and posts still
- * keep their whole media object in a JSONB column and were never part of the
- * relational migration. It is the correct source for them.
+ * Events and posts DID move to relational tables (HOS-390), but they take the
+ * `entity.media.gallery` branch on purpose: the entity handed in comes from
+ * `service.getById`, whose `_afterGetByField` hook rebuilds `media` from the
+ * relational rows via `composeContentMedia` (gallery = visible, non-featured).
+ * So the branch reads live data, not the stale JSONB blob. That only holds
+ * while callers pass a service-loaded entity; a raw DB row would count the
+ * legacy blob. Destination is the one type still genuinely JSONB-backed.
  *
  * @module routes/media/gallery-count
  */

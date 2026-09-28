@@ -133,7 +133,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     });
 
     for (const entityType of ['destination', 'event', 'post']) {
-        it(`still reads the JSONB blob for ${entityType}, which never migrated`, async () => {
+        it(`reads media.gallery off the entity for ${entityType} (composed for event/post, JSONB for destination)`, async () => {
             const count = await resolveVisibleGalleryCount({
                 entityType,
                 entityId: ENTITY_ID,
