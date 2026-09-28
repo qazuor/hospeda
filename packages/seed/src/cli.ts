@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatUnknownFlagsError, SEED_CLI_USAGE, validateSeedCliFlags } from './cli-flags.js';
 import type { SeedMigrationGroup } from './data-migrations/types.js';
+import { evaluateProdCredentialGroupsGate } from './utils/prodCredentialGroupsGate.js';
 
 /**
  * Result of evaluating the production safety gate for destructive cleanup
@@ -660,6 +661,19 @@ if (IS_CLI_ENTRY) {
             // Reset mode: clean Cloudinary seed assets FIRST, then run the
             // seed pipeline. This preserves the GAP-078-006/078 semantics
             // (reset implies a clean image bucket).
+            //
+            // HOS-564: refuse credential-bearing groups in production BEFORE
+            // `handleCleanImages()`, so a refused run cannot delete Cloudinary
+            // assets first. `runSeed` re-checks at its own entrypoint.
+            const credentialGate = evaluateProdCredentialGroupsGate({
+                env: process.env,
+                example: options.example,
+                testUsers: options.testUsers
+            });
+            if (!credentialGate.allowed) {
+                logger.error(`${STATUS_ICONS.Error} ${credentialGate.reason}`);
+                process.exit(1);
+            }
             handleCleanImages()
                 .then(() => runSeed(options))
                 .catch((err) => {
@@ -667,7 +681,12 @@ if (IS_CLI_ENTRY) {
                     process.exit(1);
                 });
         } else {
-            runSeed(options);
+            try {
+                await runSeed(options);
+            } catch (err) {
+                logger.error(`${STATUS_ICONS.Error} Error during seed: ${String(err)}`);
+                process.exit(1);
+            }
         }
     } catch (err) {
         // 🔍 DISTINCTIVE LOG: main CLI

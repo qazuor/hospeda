@@ -26,6 +26,7 @@ import { errorHistory } from './utils/errorHistory.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { formatImageTally } from './utils/image-tally.js';
 import { logger } from './utils/logger.js';
+import { assertCredentialGroupsAllowed } from './utils/prodCredentialGroupsGate.js';
 import { createImageProcessingCounters, createSeedContext } from './utils/seedContext.js';
 import { summaryTracker } from './utils/summaryTracker.js';
 import { loadSuperAdminAndGetActor } from './utils/superAdminLoader.js';
@@ -115,6 +116,9 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         continueOnError = false,
         allowRequiredFallback = false
     } = options;
+
+    // HOS-564: refuse credential-bearing groups in production BEFORE any side effect.
+    assertCredentialGroupsAllowed({ env: process.env, example, testUsers });
 
     // Start execution timer and error tracking
     summaryTracker.startTimer();
