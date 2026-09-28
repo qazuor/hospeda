@@ -423,6 +423,15 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         log.hint('Skipping build (default). Seed resolves deps from src/ via tsconfig paths.');
     }
 
+    // HOS-564: --example creates accounts with the repo-committed password.
+    // Refuse outright on prod (no --yes bypass); the seed package enforces the
+    // same rule at its own entrypoint via NODE_ENV=production.
+    if (target === 'prod' && parsed.example) {
+        die(
+            '--example is refused on --target=prod: it creates accounts with a well-known password. Pass --no-example.'
+        );
+    }
+
     // ── Destructive confirmation (prod only by default) ──────────────
     // --reset is the destructive flag — drops every row before the run.
     // Confirm in prod unless --yes was passed. Staging is designed to be
