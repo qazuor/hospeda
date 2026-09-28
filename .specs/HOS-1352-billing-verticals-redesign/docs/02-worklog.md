@@ -1347,3 +1347,15 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   aparece buscando la cifra anterior: hay que buscar también las de antes (`$D/spec.md` seguía en
   98 filas y 48 decisiones).
 - Pendiente: salida 4 de esta tanda, FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-28 (mañana) — la salida 4 de la verificación de la vuelta 2
+
+- Con OK del owner, mismo método que el 27/09 (mapa primero, cuatro tramos, tablero y paraguas a
+  mano): **19 artifacts** republicados y **18 descripciones** de Linear, más el comentario de
+  progreso en HOS-1352. El tablero suma `G-R9` al `g` de V6 (32 guards); sus dependencias y su
+  `state` no cambian.
+- **Aprendido**: el pie de las fichas se fija antes de repartir los tramos (se eligieron dos
+  fórmulas y hubo que republicar siete); los issues copian cifras de la épica que el mapa no ve
+  (HOS-1363 decía «ninguna» fila `UNKNOWN` con `EX-49` suya); y una unidad «sin cambios» puede
+  tener el nombre viejo de una acción (B3).
+- Pendiente: hablar con el owner con qué se sigue (FASE 5, 6 y lo pendiente de la 7).

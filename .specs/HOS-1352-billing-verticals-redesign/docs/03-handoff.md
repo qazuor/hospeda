@@ -54,11 +54,10 @@ status: CURRENT
 **Hablar con el owner con qué se sigue** (lo pidió así: cerrar la vuelta 2, parar y hablar). Lo
 pendiente, en el orden del handoff anterior:
 
-1. **Salida 4 de esta tanda**: los artifacts y los issues de Linear describen el diseño del 27/09 a
-   la noche; la verificación y sus 24 decisiones (`V2-a`…`V2-z5`) cambiaron capítulos de las dos
-   épicas, el contrato y el corte. **Publica afuera: pedir OK al owner.** Mismo método que la salida
-   4 del 27/09 (mapa primero; el `index.html` de `read` con `path` trae el envoltorio del servicio y
-   no se republica tal cual).
+1. ~~**Salida 4 de esta tanda**~~ **Hecha el 28/09** (con OK del owner): 19 artifacts republicados
+   (sin cambios V1, V3, V7, V8, B1, B2, B4, B6), 18 descripciones de Linear y comentario en HOS-1352.
+   Las decisiones de la verificación son **33** (`V2-a`…`V2-z5`; `V2-j` fue un pedido de
+   investigación, no una elección).
 2. **FASE 5**: gap analysis contra el código (`DEC-METH-003`).
 3. **FASE 6** y lo pendiente de la **FASE 7** (`16-`: 4 de 6 ítems).
 
