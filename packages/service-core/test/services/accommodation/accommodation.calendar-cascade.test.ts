@@ -9,8 +9,8 @@
  *     helper, it was that nothing on the delete path called one.
  *  2. **Revocation covers every connection, not only the ones this call just
  *     deactivated.** `is_active = false` means "we stopped using it", never
- *     "the provider closed it": the host-initiated disconnect route flips the
- *     flag and revokes nothing. A host who disconnects first and deletes a week
+ *     "the provider closed it": a disconnect before HOS-1377 revoked nothing,
+ *     and one after it can fail to revoke. A host who disconnects first and deletes a week
  *     later must still have their grant closed — that sequence is the most
  *     natural one for somebody leaving, and it leaves no active row behind to
  *     make the leak visible.

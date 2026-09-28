@@ -12,6 +12,13 @@ export {
     REVOCATION_FAILURE_PREFIX,
     setCalendarConnectionRevocationPort
 } from './accommodation/accommodation.calendar-cascade';
+// HOS-1377: host-initiated disconnect closes the provider-side grant too.
+export {
+    type CalendarDisconnectRevocationOutcome,
+    type DisconnectCalendarConnectionInput,
+    type DisconnectCalendarConnectionResult,
+    disconnectCalendarConnection
+} from './accommodation/accommodation.calendar-disconnect';
 // HOS-963: pure media-composition helper reused by raw-query public routes
 // (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
 // never hit `_afterSearch`, the chokepoint that normally composes `media` from

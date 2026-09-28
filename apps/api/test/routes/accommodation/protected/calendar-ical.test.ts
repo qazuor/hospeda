@@ -20,7 +20,7 @@
 
 import { EntitlementKey, type LimitKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { ServiceError, setCalendarConnectionRevocationPort } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +39,8 @@ const {
     mockAssertOccupancyReadAccess,
     mockFindByAccommodationAndProvider,
     mockDeactivate,
+    mockMarkRevocationFailed,
+    mockRevoke,
     mockFetchAndParseIcsFeed,
     mockSaveIcalConnection,
     mockSyncAccommodationIcalCalendar,
@@ -48,6 +50,8 @@ const {
     mockAssertOccupancyReadAccess: vi.fn(),
     mockFindByAccommodationAndProvider: vi.fn(),
     mockDeactivate: vi.fn(),
+    mockMarkRevocationFailed: vi.fn(),
+    mockRevoke: vi.fn(),
     mockFetchAndParseIcsFeed: vi.fn(),
     mockSaveIcalConnection: vi.fn(),
     mockSyncAccommodationIcalCalendar: vi.fn(),
@@ -69,7 +73,8 @@ vi.mock('@repo/db', async (importActual) => {
         ...actual,
         accommodationCalendarSyncModel: {
             findByAccommodationAndProvider: mockFindByAccommodationAndProvider,
-            deactivate: mockDeactivate
+            deactivate: mockDeactivate,
+            markRevocationFailed: mockMarkRevocationFailed
         }
     };
 });
@@ -199,6 +204,9 @@ beforeEach(() => {
     mockSaveIcalConnection.mockResolvedValue(undefined);
     mockFindByAccommodationAndProvider.mockResolvedValue(makeConnectionRow());
     mockDeactivate.mockResolvedValue(makeConnectionRow({ isActive: false }));
+    mockMarkRevocationFailed.mockResolvedValue(makeConnectionRow({ isActive: false }));
+    mockRevoke.mockResolvedValue({ revoked: true });
+    setCalendarConnectionRevocationPort({ revoke: mockRevoke });
     mockSyncAccommodationIcalCalendar.mockResolvedValue({ status: 'ok', removed: 0, inserted: 2 });
     mockSyncAccommodationCalendar.mockResolvedValue({
         status: 'ok',
@@ -211,6 +219,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.clearAllMocks();
+    setCalendarConnectionRevocationPort(undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -564,5 +573,88 @@ describe('DELETE /:id/calendar-sync/:provider (protected, widened)', () => {
         });
         expect([401, 403]).toContain(res.status);
         expect(mockDeactivate).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1377 — disconnect also revokes the credential at the provider
+// ---------------------------------------------------------------------------
+
+describe('DELETE /:id/calendar-sync/:provider revokes the grant (HOS-1377)', () => {
+    it('asks the revocation port to revoke a Google connection', async () => {
+        // Arrange
+        const app = buildApp(ownerActor, [protectedCalendarDisconnectRoute]);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/google`, {
+            method: 'DELETE'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(mockRevoke).toHaveBeenCalledWith({
+            accommodationId: ACCOMMODATION_ID,
+            provider: 'GOOGLE_CALENDAR'
+        });
+        expect(mockMarkRevocationFailed).not.toHaveBeenCalled();
+    });
+
+    it('still answers disconnected:true when Google revocation fails, and stamps the row', async () => {
+        // Arrange
+        mockRevoke.mockResolvedValue({ revoked: false, reason: 'google responded 503' });
+        const app = buildApp(ownerActor, [protectedCalendarDisconnectRoute]);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/google`, {
+            method: 'DELETE'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toEqual({ disconnected: true });
+        expect(mockMarkRevocationFailed).toHaveBeenCalledWith({
+            accommodationId: ACCOMMODATION_ID,
+            provider: 'GOOGLE_CALENDAR',
+            errorMessage: 'HOS-663 REVOCATION_FAILED: google responded 503'
+        });
+    });
+
+    it('does not stamp an iCal disconnect, whose feed URL cannot be revoked', async () => {
+        // Arrange
+        mockRevoke.mockResolvedValue({ revoked: false, reason: 'AIRBNB is an iCal feed' });
+        const app = buildApp(ownerActor, [protectedCalendarDisconnectRoute]);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/airbnb`, {
+            method: 'DELETE'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toEqual({ disconnected: true });
+        expect(mockRevoke).toHaveBeenCalledWith({
+            accommodationId: ACCOMMODATION_ID,
+            provider: 'AIRBNB'
+        });
+        expect(mockMarkRevocationFailed).not.toHaveBeenCalled();
+    });
+
+    it('does not call the provider when there was no connection to disconnect', async () => {
+        // Arrange
+        mockDeactivate.mockResolvedValue(null);
+        const app = buildApp(ownerActor, [protectedCalendarDisconnectRoute]);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/google`, {
+            method: 'DELETE'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toEqual({ disconnected: false });
+        expect(mockRevoke).not.toHaveBeenCalled();
     });
 });
