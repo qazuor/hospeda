@@ -29,6 +29,7 @@
 import { type DrizzleClient, PostMediaModel, type PostModel, withTransaction } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
+    getGalleryCap,
     ModerationStatusEnum,
     type PostMediaAddInput,
     PostMediaAddInputSchema,
@@ -161,6 +162,32 @@ export async function addPostMedia(
         );
         const topOrder = existing.items[0]?.sortOrder ?? -1;
         const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+        // HOS-1164: the per-entity cap was enforced only at the UPLOAD routes, so
+        // registering an already-uploaded URL here walked past it. Same
+        // `getGalleryCap` constant those routes read, and the same filter
+        // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
+        // `isFeatured: false` (the featured image is not a gallery item). A
+        // second query rather than `existing.total`, which stays unfiltered
+        // because it also computes the next `sortOrder`.
+        const galleryCount = await mediaModel.count(
+            {
+                postId: validated.postId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            },
+            { tx: ctx?.tx }
+        );
+        const galleryCap = getGalleryCap('post');
+        if (galleryCount >= galleryCap) {
+            return {
+                error: {
+                    code: ServiceErrorCode.QUOTA_EXCEEDED,
+                    message: `Gallery limit of ${galleryCap} photos reached for this post`
+                }
+            };
+        }
 
         const createdMedia = await mediaModel.create(
             {

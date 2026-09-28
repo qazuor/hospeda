@@ -21,6 +21,7 @@
 
 const mockMediaModel = {
     findAll: vi.fn(),
+    count: vi.fn(),
     findById: vi.fn(),
     findByPost: vi.fn(),
     findFeatured: vi.fn(),
@@ -50,7 +51,13 @@ import type {
     PostMediaReorderInput,
     PostMediaSetFeaturedInput
 } from '@repo/schemas';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    getGalleryCap,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addPostMedia,
@@ -136,6 +143,7 @@ beforeEach(() => {
     );
 
     mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+    mockMediaModel.count.mockResolvedValue(0);
     mockMediaModel.findById.mockResolvedValue(null);
     mockMediaModel.findByPost.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.findFeatured.mockResolvedValue(null);
@@ -546,5 +554,57 @@ describe('getPostMedia', () => {
             expect.objectContaining({ state: 'archived' })
         );
         expect(result.data?.media).toEqual(rows);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Gallery cap (HOS-1164)
+//
+// Registering an already-uploaded URL was never capped for posts: only the
+// upload routes checked the limit, so a direct call walked past it. Same
+// `getGalleryCap` constant and same filter as the experience/gastronomy twins.
+// ---------------------------------------------------------------------------
+
+describe('addPostMedia — gallery cap', () => {
+    const CAP = getGalleryCap('post');
+
+    const input: PostMediaAddInput = {
+        postId: POST_ID,
+        media: { url: 'https://cdn.example.com/new.jpg' }
+    };
+
+    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockResolvedValue(CAP);
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
+        expect(mockMediaModel.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts the last photo that still fits', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockResolvedValue(CAP - 1);
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('measures the cap on the GALLERY ONLY, not counting the featured image', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
+            where.isFeatured === false ? CAP - 1 : CAP
+        );
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.count).toHaveBeenCalledWith(
+            expect.objectContaining({ state: 'visible', isFeatured: false, deletedAt: null }),
+            expect.anything()
+        );
     });
 });
