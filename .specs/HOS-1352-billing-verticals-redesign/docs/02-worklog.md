@@ -1329,3 +1329,21 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   en los dos lugares. Y el `index.html` que baja `read` con `path` trae el envoltorio del servicio:
   republicarlo tal cual lo envuelve dos veces (pasó con cinco fichas; se republicaron limpias).
 - Pendiente: FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-27 (noche) al 2026-09-28 — la verificación de la vuelta 2, y su cierre
+
+- **Por qué**: la vuelta 1 cerró con una verificación (`28-…/20-veredictos.md`) y la vuelta 2 no
+  la tenía. El owner eligió cerrarla antes de pasar a la FASE 5, en vez de una vuelta 3 (que
+  `DEC-METH-013` no permite) o de declarar todo.
+- **Verificación** (`29-…/20-`…`23-`): tres agentes Opus reejecutaron los 56 caminos. **55 DEJA · 1
+  SIGUE**; 13 casos vecinos nuevos, ninguno CRITICA (contra 23 en la vuelta 1).
+- **Decisiones**: el owner contestó seis lotes con letras (`24-`), todas la recomendada; en `j`
+  pidió investigar antes de elegir, y la investigación (`25-`) mostró que Outlook no ignora los
+  puntos: el seudónimo de `R23` juntaba a dos personas en el proveedor más usado del país.
+- **Aplicación** en cuatro tandas en serie (`26-`…`29-`), la última con OK del owner para log y
+  matriz: 15 📌, `EX-48`…`EX-50`, guards 32.
+- **Aprendido**: un «arreglo de texto» puede ser una decisión, y al revés; al aplicar aparecen casos
+  vecinos que piden elegir (hubo dos lotes más por eso). Un espejo que quedó afuera de dos lotes no
+  aparece buscando la cifra anterior: hay que buscar también las de antes (`$D/spec.md` seguía en
+  98 filas y 48 decisiones).
+- Pendiente: salida 4 de esta tanda, FASE 5, FASE 6 y lo que queda de la FASE 7.

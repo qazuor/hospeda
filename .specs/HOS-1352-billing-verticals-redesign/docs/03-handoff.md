@@ -47,7 +47,37 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-27 — el ciclo 8↔9 está CERRADO (vuelta 2 de 2)
+## Última actualización: 2026-09-28 — la vuelta 2 está VERIFICADA y CERRADA
+
+### El próximo paso exacto
+
+**Hablar con el owner con qué se sigue** (lo pidió así: cerrar la vuelta 2, parar y hablar). Lo
+pendiente, en el orden del handoff anterior:
+
+1. **Salida 4 de esta tanda**: los artifacts y los issues de Linear describen el diseño del 27/09 a
+   la noche; la verificación y sus 24 decisiones (`V2-a`…`V2-z5`) cambiaron capítulos de las dos
+   épicas, el contrato y el corte. **Publica afuera: pedir OK al owner.** Mismo método que la salida
+   4 del 27/09 (mapa primero; el `index.html` de `read` con `path` trae el envoltorio del servicio y
+   no se republica tal cual).
+2. **FASE 5**: gap analysis contra el código (`DEC-METH-003`).
+3. **FASE 6** y lo pendiente de la **FASE 7** (`16-`: 4 de 6 ítems).
+
+### Lo que pasó el 2026-09-27 (noche) y el 2026-09-28
+
+- **Verificación de la vuelta 2** (`29-…/20-veredictos.md`, `21-`…`23-`): los 56 caminos
+  reejecutados, **55 DEJA · 1 SIGUE** (`F-8V2B3-002`, la fecha de un cobro sobre la lápida), el
+  crítico R1 con su dominio entero cubierto, **13 casos vecinos nuevos y ningún CRITICA**.
+- **Decisiones del owner** (`24-decisiones-del-owner-verificacion.md`): `V2-a`…`V2-l`, `V2-j1`…`j4`
+  (con la investigación de `25-`: **Outlook no ignora los puntos**, y el seudónimo los quitaba),
+  `V2-m`…`V2-x`, `V2-y` (log y matriz) y `V2-z1`…`z5`. **Todas la recomendada.**
+- **Aplicación** en cuatro tandas en serie (`26-` billing, `27-` verticales y acción 16, `28-`
+  cierre, `29-` log y matriz). Guards **32** (19 verticales / 13 billing, `G-R9` nuevo en V6).
+- **Registro**: log **126**, 15 📌 nuevos, precisadas sin SUPERSEDED **47**. Matriz **107 = 56 · 15
+  · 23 · 13 `UNKNOWN`** (`EX-48` fecha del pago aprobado, condición del 1b; `EX-49` dominios y
+  prueba de correos; `EX-50` anuales vivas del viejo).
+- **Commits** `bcb8edec1d`…(el de este handoff). **Sin pushear** (PR #3360).
+
+## Histórico: 2026-09-27 — el ciclo 8↔9 está CERRADO (vuelta 2 de 2)
 
 ### El próximo paso exacto
 
