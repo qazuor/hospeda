@@ -2486,13 +2486,20 @@ export class AccommodationService extends BaseCrudService<
         // (`result.count > 0`), not on how the caller invoked it.
         // `closeAllForAccommodation` does an UPDATE plus one schedule
         // cancellation per conversation, so it runs in its own transaction
-        // when the caller did not pass one, and joins the caller's otherwise.
+        // when the caller did not pass one. When the caller DID pass one, it
+        // runs inside a savepoint (`tx.transaction` on a transaction): after a
+        // failed statement Postgres aborts the whole transaction, so without
+        // the savepoint the catch below would swallow the error and leave the
+        // caller holding a dead transaction — "non-blocking" in name only.
         if (deletedId && result.count > 0) {
+            const closeConversations = (tx: DrizzleClient) =>
+                this.conversationService.closeAllForAccommodation(deletedId, tx);
             try {
-                await withTransaction(
-                    (tx) => this.conversationService.closeAllForAccommodation(deletedId, tx),
-                    ctx?.tx
-                );
+                if (ctx?.tx) {
+                    await ctx.tx.transaction(closeConversations);
+                } else {
+                    await withTransaction(closeConversations);
+                }
             } catch (error) {
                 this.logger.warn(
                     { error, accommodationId: deletedId },

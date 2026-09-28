@@ -811,6 +811,38 @@ describe('ConversationService', () => {
             expect(count).toBe(0);
             expect(notificationScheduleMock.cancelAllForConversation).not.toHaveBeenCalled();
         });
+
+        it('should log, not swallow, a schedule cancellation that returns an error (HOS-1383)', async () => {
+            // Arrange
+            const id1 = crypto.randomUUID();
+            const fakeTx = {
+                update: vi.fn().mockReturnValue({
+                    set: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            returning: vi.fn().mockResolvedValue([{ id: id1 }])
+                        })
+                    })
+                })
+            } as unknown as DrizzleClient;
+            const cancelError = { code: 'INTERNAL_ERROR', message: 'boom' };
+            asMock(notificationScheduleMock.cancelAllForConversation).mockResolvedValueOnce({
+                error: cancelError
+            });
+            const warnSpy = vi.spyOn(
+                (service as unknown as { logger: { warn: (...args: unknown[]) => void } }).logger,
+                'warn'
+            );
+
+            // Act
+            const count = await service.closeAllForAccommodation(ACCOMMODATION_ID, fakeTx);
+
+            // Assert
+            expect(count).toBe(1);
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ error: cancelError, conversationId: id1 }),
+                'closeAllForAccommodation: schedule cancellation failed'
+            );
+        });
     });
 
     // =========================================================================

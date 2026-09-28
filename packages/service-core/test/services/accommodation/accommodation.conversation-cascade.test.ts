@@ -91,13 +91,16 @@ describe('HOS-1383 — soft-deleting an accommodation closes its conversations',
         expect(result.data?.count).toBe(1);
         expect(closeAllForAccommodation).toHaveBeenCalledTimes(1);
         // A transaction of its own was opened, since the caller had none.
-        expect(withTransaction).toHaveBeenCalledWith(expect.any(Function), undefined);
+        expect(withTransaction).toHaveBeenCalledWith(expect.any(Function));
         expect(closeAllForAccommodation).toHaveBeenCalledWith('acc-1', OPENED_TX);
     });
 
-    it("joins the caller's transaction when one is passed", async () => {
-        // Arrange
-        const callerTx = { __kind: 'caller-tx' } as unknown as DrizzleClient;
+    it("runs inside a savepoint of the caller's transaction when one is passed", async () => {
+        // Arrange: `transaction()` on a transaction opens a savepoint.
+        const savepointTx = { __kind: 'savepoint-tx' } as unknown as DrizzleClient;
+        const callerTx = {
+            transaction: vi.fn(async <T>(cb: (tx: DrizzleClient) => Promise<T>) => cb(savepointTx))
+        } as unknown as DrizzleClient;
         asMock(model.findById).mockResolvedValue(
             createMockAccommodation({ id: 'acc-2', deletedAt: undefined })
         );
@@ -107,7 +110,9 @@ describe('HOS-1383 — soft-deleting an accommodation closes its conversations',
         await service.softDelete(createAdminActor(), 'acc-2', { tx: callerTx });
 
         // Assert
-        expect(closeAllForAccommodation).toHaveBeenCalledWith('acc-2', callerTx);
+        expect(callerTx.transaction).toHaveBeenCalledTimes(1);
+        expect(closeAllForAccommodation).toHaveBeenCalledWith('acc-2', savepointTx);
+        expect(withTransaction).not.toHaveBeenCalled();
     });
 
     it('does not run when the soft-delete updated no row (count 0)', async () => {
