@@ -3727,6 +3727,9 @@
                 "tooLong": "El motivo del rechazo no puede superar los {{max}} caracteres",
                 "tooShort": "El motivo del rechazo no puede estar vacío"
             }
+        },
+        "websiteUrl": {
+            "invalid": "The website must be a valid http:// or https:// URL"
         }
     },
     "poiCategory": {
