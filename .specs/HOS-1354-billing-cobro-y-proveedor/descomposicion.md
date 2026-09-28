@@ -385,13 +385,13 @@ unidad que arranca primero de esta épica— y es la **segunda** de nueve en la 
 llegan resueltas mucho antes que B7, B8 y B12, que están detrás de la pasarela. Lo que cambia no es
 el orden: es que dejan de ser invisibles.
 
-### 2.7 Dónde caen las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ diez filas `UNKNOWN`
+### 2.7 Dónde caen las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ ~~diez~~ doce filas `UNKNOWN`
 
 ~~Las 89 filas de la matriz, recontadas con `contar-filas-de-la-matriz.py`: **49 `VERIFIED`, 19
-`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las ~~98~~ ~~99~~ 104 filas de la matriz,
+`NOT_SUPPORTED`, 13 `PARTIALLY_SUPPORTED`, 8 `UNKNOWN`.**~~ **Las ~~98~~ ~~99~~ ~~104~~ 107 filas de la matriz,
 recontadas el 2026-09-25 con `contar-filas-de-la-matriz.py`: ~~55~~ 56 `VERIFIED`, 23 `NOT_SUPPORTED`,
-~~14~~ 15 `PARTIALLY_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ 10 `UNKNOWN`**, con `RN-3` cerrada la noche del 25/09,
-`GR-1` el 26/09, **`EX-42` abierta el 26/09** (owner, `Y-1`) y **`EX-43` a `EX-47` abiertas el 27/09** (FASE 9 vuelta 2, con OK del owner; recontado ese día) (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
+~~14~~ 15 `PARTIALLY_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ ~~10~~ 13 `UNKNOWN`**, con `RN-3` cerrada la noche del 25/09,
+`GR-1` el 26/09, **`EX-42` abierta el 26/09** (owner, `Y-1`) y **`EX-43` a `EX-47` abiertas el 27/09** (FASE 9 vuelta 2, con OK del owner; recontado ese día) y **`EX-48` a `EX-50` abiertas el 28/09** (FASE 9 vuelta 2, verificación, con OK del owner, `V2-y`; recontado ese día; **`EX-49`**, el seudónimo del correo, **es de verticales** y no va en esta tabla, así que acá caen doce) (FASE 9 completa, salida 3 de `DEC-METH-004`). La tabla vieja
 queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**.
 
 | filas | unidad | qué bloquea de verdad |
@@ -407,6 +407,8 @@ queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**
 | ✚ `EX-45` | **ninguna** — la herramienta del corte (paso 0) | si una cancelación sigue `cancelled` releída horas después. **No bloquea ninguna unidad de esta épica**: condiciona el gate del paso 2 del corte y el cobro sobre su lápida (`F-8V2C2-004`; FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
 | ✚ `EX-46` | **B11** · la herramienta del corte (paso 4b) | a qué URL va el reintento de una notificación emitida antes de cambiar la URL. **No bloquea**: si va a la vieja, el cobro cae en el punto (3) del «NO cierra» de `B/21` sobre `G3-1`, que ve el barrido (`F-8V2C2-002`; FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
 | ✚ `EX-47` | **B11** *(el motivo 24)* · la herramienta del corte (paso 0, la sonda) | si un registro de cobro ya creado cobra el monto viejo o el nuevo tras una mutación. **No bloquea**: si cobra el viejo, lo ve el motivo 24 cuando la mutación bajó el monto, y la línea del resumen del cobro de menos cuando lo subió (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-f`) (`F-8V2B3-001`, `R20`; FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| ✚ `EX-48` | **B11** · la herramienta del corte (paso 0) | qué campo del pago que aprobó un registro de cobro en un reintento trae el instante de esa aprobación. **No bloquea una unidad**: es el dato con el que la regla de la marca decide si un cobro sobre la lápida es posterior al corte, y el paso 1b no arranca sin él; si ningún campo es confiable, la ventana vuelve al owner (`B/21` §2.5; `F-8V2B3-002`; FASE 9 vuelta 2, verificación, con OK del owner, `V2-a`, `V2-m` y `V2-y`) |
+| ✚ `EX-50` | **B11** · la herramienta del corte (paso 0) | cuántas suscripciones anuales del sistema viejo siguen vivas el día del corte; si hay alguna, el `expire_date` de su registro de cobro abierto se mide ahí. **No bloquea**: dice cuándo cae la segunda corrida del detector del cobro sobre la lápida (`B/21` §1.3), no es condición del corte (FASE 9 vuelta 2, verificación, con OK del owner, `V2-r`, `V2-z4` y `V2-y`) |
 | `RF-3` | **B6** | el caso viejo del reembolso. ~~Ya está en la unidad bloqueada~~ **Ya no bloquea** (`DEC-RF-007`): pasado el plazo del proveedor la operación no se ofrece, y la reparación manual se asienta por `RF4` (`DEC-RF-008`) |
 | ~~`EX-1`~~ | ~~**B3**~~ | ~~nada: la ventana de autorización es nuestra justamente porque esta fila está abierta —y por eso `DEC-SUB-016` la pudo partir en **dos** plazos sin esperar respuesta del proveedor—, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta**~~ **`PARTIALLY_SUPPORTED` desde el 2026-09-23**; lo que la fila decía sobre la ventana sigue valiendo |
 

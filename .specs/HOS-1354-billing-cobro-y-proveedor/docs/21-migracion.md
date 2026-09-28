@@ -294,8 +294,9 @@ su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 > owner 2026-09-27, `V2-a`, `F-8V2B3-002`: con la fecha del registro, el reintento que cobra
 > después del corte sobre un registro nacido antes se asentaba sin marca, y ése es justo el caso
 > que esta regla nombra). **Qué campo del pago trae esa fecha se mide en el paso 0 del corte**
-> (`16-fase-7…` §4.2; la fila de la matriz está propuesta al owner en el registro de la
-> verificación de la FASE 9 vuelta 2); **si ningún campo es confiable, la ventana vuelve al
+> (`16-fase-7…` §4.2; ~~la fila de la matriz está propuesta al owner en el registro de la
+> verificación de la FASE 9 vuelta 2~~ es la fila `EX-48` de la matriz, FASE 9 vuelta 2,
+> verificación, owner 2026-09-28, `V2-y`); **si ningún campo es confiable, la ventana vuelve al
 > owner**, **y el 1b no arranca sin ese dato**: vuelve al owner antes del corte (FASE 9 vuelta 2,
 > verificación, owner 2026-09-28, `V2-m`). **Un cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es de
 > ese día o anterior se asienta sin marca**, como dice el párrafo de

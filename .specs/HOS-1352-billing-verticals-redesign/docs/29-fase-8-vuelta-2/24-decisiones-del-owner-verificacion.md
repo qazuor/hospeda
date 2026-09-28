@@ -75,3 +75,18 @@ su cuenta). El owner contestó un lote:
 | `V2-v` | Fastmail y Yandex quedaban «tal cual» con `+` documentado | **1**: se suman a la regla del `+`, coherente con `V2-j3` | sí |
 | `V2-w` | la medición de `V2-j4` lee correos de producción | **1**: restricción escrita: la herramienta sólo cuenta dominios y no exporta ni guarda casillas | sí |
 | `V2-x` | las cinco elecciones que el tramo de verticales hizo por su cuenta (dominio no nombrado = dominio propio; lo «a medir» no se aplica sin medir; `G-R9` en V6; `revalidation_config` en lo que `PURGED` no toca; `PB9` espera el hecho 4) | **1**: confirmadas | sí |
+
+## El lote del log y la matriz, y los últimos casos vecinos (2026-09-28)
+
+El owner aprobó en un lote lo propuesto en `28-aplicacion-verificacion-cierre.md` §6 y contestó los
+casos vecinos que dejó esa tanda (§ casos vecinos de `28-`). Contestó «a» en los cinco casos
+vecinos, que se leyó como la opción 1, la recomendada.
+
+| pregunta | qué pregunta | elige | ¿la recomendada? |
+|---|---|---|---|
+| `V2-y` | las tres filas de matriz (`EX-48`, `EX-49`, `EX-50`) y los quince 📌 del log | **1**: aprobado todo | sí |
+| `V2-z1` | la regla de `V2-n` manda al motivo 15 también una baja por `S11` pedida antes del anuncio | **1**: se acepta, escrito como costo en `B/03` | sí |
+| `V2-z2` | `PB5` tiene la carrera de `PB4`, `PB6`, `PB10` y `PB12` | **1**: toma el lock, como `V2-u` | sí |
+| `V2-z3` | el tope de purgas del borde no está escrito | **1**: se verifica en el paso 0 junto a `EX-49`, sin fila nueva | sí |
+| `V2-z4` | `EX-50` pide también el `expire_date` del anual | **1**: se acorta al conteo; si hay anuales vivos, el vencimiento se mide ahí | sí |
+| `V2-z5` | «la baja tiene CUATRO filas» en `B/03` | **1**: se deja, cuenta filas | sí |

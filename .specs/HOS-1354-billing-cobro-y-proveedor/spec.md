@@ -219,15 +219,15 @@ declara como riesgo nuestro.
 reintentar nunca, hay techo de intentos por ventana y hay multas por excederlo. Hoy eso lo absorbe
 Mercado Pago dentro del `preapproval`.
 
-### 5.2 Las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ diez filas que siguen `UNKNOWN`
+### 5.2 Las ~~ocho~~ ~~seis~~ ~~cuatro~~ ~~cinco~~ ~~diez~~ doce filas que siguen `UNKNOWN`
 
 ~~De las 89 de la matriz, contadas con `contar-filas-de-la-matriz.py`. **Cinco son el mismo hecho —
 un cobro que falla** — y con Mercado Pago resultó **imposible de fabricar**: `RN-2`, `RN-3`,
 `GR-1`, `GR-2`, `GR-3`. Más `WH-5`, `RF-3` y `EX-1`.~~
 
 **Recontadas el 2026-09-25** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de
-`DEC-METH-004`): **~~98~~ ~~99~~ 104 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ 10
-`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`; **`EX-42` entró el 26/09**, owner, `Y-1`; **`EX-43` a `EX-47` entraron el 27/09**, FASE 9 vuelta 2, con OK del owner; recontado ese día). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
+`DEC-METH-004`): **~~98~~ ~~99~~ ~~104~~ 107 filas — ~~55~~ 56 `VERIFIED`, ~~14~~ 15 `PARTIALLY_SUPPORTED`, 23 `NOT_SUPPORTED`, ~~6~~ ~~5~~ ~~4~~ ~~5~~ ~~10~~ 13
+`UNKNOWN`** (`RN-3` cerró la noche del 25/09; `GR-1` el 26/09, `VERIFIED`; **`EX-42` entró el 26/09**, owner, `Y-1`; **`EX-43` a `EX-47` entraron el 27/09**, FASE 9 vuelta 2, con OK del owner; recontado ese día; **`EX-48` a `EX-50` entraron el 28/09**, FASE 9 vuelta 2, verificación, con OK del owner, `V2-y`; recontado ese día). De las trece, **`EX-49`**, la lista del seudónimo del correo, **es de verticales** (`V/02` §2.2) y no va en esta tabla: acá se listan doce. De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro fallido **sí** se
 fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`), y entraron dos
 nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condicionando el grace;
 `GR-1` salió el 2026-09-26), y qué condiciona cada una:
@@ -245,6 +245,8 @@ nuevas. ~~Las seis~~ Las que quedan (`RN-3` ya no es `UNKNOWN` pero sigue condic
 | `EX-45` ✚ | si una cancelación leída `cancelled` en el `PUT` y en un `GET` inmediato sigue `cancelled` releída horas después. Condiciona el gate del paso 2 del corte y el cobro sobre su lápida (`F-8V2C2-004`). **No es de esta épica**: se mide en el paso 0 del corte; el código actual registra seis que no (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
 | `EX-46` ✚ | a qué URL va el reintento de una notificación emitida antes de cambiar la URL de la aplicación. Condiciona el paso 4b del corte (`F-8V2C2-002`). **No bloquea una unidad**: si va a la vieja, el evento se pierde y su cobro cae en el punto (3) del «NO cierra» de `B/21` sobre `G3-1`, que ve el barrido de **B11** (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
 | `EX-47` ✚ | si un registro de cobro ya creado cobra el monto viejo o el nuevo cuando la mutación del preapproval cae en medio. Condiciona la comparación del importe cobrado contra el esperado (`B/09` §3, `B/14` §2.4; `F-8V2B3-001`, `R20`), que es de **B11**. **No bloquea**: si cobra el viejo, lo ve el motivo 24 cuando la mutación bajó el monto, y la línea del resumen del cobro de menos cuando lo subió (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-f`). Se mide en el paso 0 del corte (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) |
+| `EX-48` ✚ | qué campo del pago que aprobó un registro de cobro en un reintento, leído por id, trae el instante de esa aprobación, distinto del `date_created` del registro. Condiciona la ventana del corte: si un cobro sobre la lápida es posterior al corte (`B/21` §2.5, `B/09` §3, `B/05` §3; `F-8V2B3-002`), y la lee **B11**. **No bloquea una unidad**: se mide en el paso 0 del corte, y el paso 1b no arranca sin este dato; si ningún campo es confiable, la ventana vuelve al owner (FASE 9 vuelta 2, verificación, con OK del owner, `V2-a`, `V2-m` y `V2-y`) |
+| `EX-50` ✚ | cuántas suscripciones anuales del sistema viejo siguen vivas el día del corte; si hay alguna, el `expire_date` de su registro de cobro abierto se mide ahí. Condiciona cuándo cae la segunda corrida del detector del cobro sobre la lápida (`B/21` §1.3 y «NO cierra»), que lee **B11**. **No bloquea**: no es condición del corte, y se cuenta en el paso 0 sobre el recorrido del proveedor del 1b (FASE 9 vuelta 2, verificación, con OK del owner, `V2-r`, `V2-z4` y `V2-y`) |
 
 ~~**Y hay una consecuencia de la pregunta de arriba que conviene tener presente**: esas cinco
 gobiernan el diseño del grace **sólo mientras el reloj sea del proveedor**. Con el reloj nuestro
