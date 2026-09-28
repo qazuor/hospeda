@@ -49,6 +49,31 @@ const PAGE_CHROME_RE =
     /<(nav|header|footer|aside|form|noscript|svg|iframe|select|button)\b[^>]{0,2000}>[\s\S]*?<\/\1\s*>/gi;
 
 /**
+ * Matches a "skip to content" link: an `<a>` whose `class` or `id` carries the
+ * word `skip` (`skip-to-content`, `skip-link`, `skiplink`, ...) — HOS-1219.
+ *
+ * Accessibility templates render it as a loose anchor BEFORE the `<header>`,
+ * so none of the {@link PAGE_CHROME_RE} tags covers it, and its text ("Saltar
+ * al contenido principal") used to open the imported description. Scoping to
+ * `<main>` ({@link MAIN_CONTENT_RE}) already leaves it out on well-formed
+ * pages; this is the belt for pages with no `<main>` to scope to.
+ */
+const SKIP_LINK_RE =
+    /<a\b[^>]{0,2000}?\b(?:class|id)\s*=\s*["'][^"']{0,200}skip[^"']{0,200}["'][^>]{0,2000}>[\s\S]*?<\/a\s*>/gi;
+
+/**
+ * Captures the contents of the first `<main>` element (HOS-1219).
+ *
+ * The page chrome (skip link, site header, language/theme switchers) sits
+ * OUTSIDE `<main>` by definition, so scoping to it removes the whole class at
+ * once instead of chasing each new chrome element with another pattern in
+ * {@link PAGE_CHROME_RE} — a list that is known to be incomplete and whose
+ * lazy match fails on nesting. Applied only when the page HAS a `<main>`;
+ * otherwise the `<body>` scope stays.
+ */
+const MAIN_CONTENT_RE = /<main\b[^>]{0,2000}>([\s\S]*?)<\/main\s*>/i;
+
+/**
  * Matches an HTML comment, including its content.
  *
  * This MUST be stripped before anything else in the pipeline — before even
@@ -210,9 +235,11 @@ export function stripHtmlToText(input: {
  * 0. Remove HTML comments (HOS-1029) — BEFORE anything else, including the
  *    body-scope. See {@link HTML_COMMENT_RE} for why the ordering is load-bearing.
  * 1. Scope to `<body>` (falls back to stripping `<head>` when there is none).
- * 2. Remove `<script>` / `<style>` blocks and their content.
- * 3. Remove page chrome (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<form>`,
- *    …) so menus and cookie banners never reach the host's description.
+ * 2. Remove `<script>` / `<style>` blocks and their content, then narrow to
+ *    the `<main>` element when the page has one (HOS-1219).
+ * 3. Remove skip-to-content links and page chrome (`<nav>`, `<header>`,
+ *    `<footer>`, `<aside>`, `<form>`, …) so menus and cookie banners never
+ *    reach the host's description.
  * 4. Turn `<br>` and every block-level CLOSING tag into a line break — this
  *    step is what separates this function from {@link stripHtmlToText}, and it
  *    must run BEFORE the generic tag strip or the boundaries are gone.
@@ -259,7 +286,13 @@ export function stripHtmlToParagraphText(input: {
     SCRIPT_STYLE_RE.lastIndex = 0;
     let text = scoped.replace(SCRIPT_STYLE_RE, ' ');
 
-    // Step 3 — drop page chrome.
+    // Step 2b — prefer <main> when the page has one (HOS-1219). Runs after the
+    // script strip so a "<main" inside inline JS cannot anchor the scope.
+    text = MAIN_CONTENT_RE.exec(text)?.[1] ?? text;
+
+    // Step 3 — drop skip-to-content links, then page chrome.
+    SKIP_LINK_RE.lastIndex = 0;
+    text = text.replace(SKIP_LINK_RE, ' ');
     PAGE_CHROME_RE.lastIndex = 0;
     text = text.replace(PAGE_CHROME_RE, ' ');
 
