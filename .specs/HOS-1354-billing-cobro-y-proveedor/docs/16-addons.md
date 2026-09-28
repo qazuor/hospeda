@@ -691,13 +691,25 @@ cancela**: el §41 manda cancelar sólo al huérfano, y el objetivo existe. El p
 pausar. **Ni la
 pausa por cortesía**: la cortesía emite título, y el complemento se cobra y se recibe.
 
+**Y el `USER`/`GLOBAL` cuyo último título sin pausar muere por otra vía también se pausa**
+(FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-e`, `N-A-03`). Juan tiene un `USER`
+compatible con Gastronomía y Experiencia, pausa Experiencia (`S32` no lo toca, porque Gastronomía
+sigue `ACTIVE`) y después se va de Gastronomía por `S24`. La principal sale de las filas vivas,
+pero la orfandad no se cumple, porque la de Experiencia pausada es fila viva; y `S32` ya pasó,
+porque su evento es el paso a `PAUSED` y no el estado. El `USER` cobraba cada mes sin título, y sin
+tope si la otra estaba `SUSPENDED`. **Por eso, cuando una de las catorce transiciones del §4.3 saca
+a una principal de las filas vivas y la orfandad de un `USER`/`GLOBAL` no se cumple sólo porque las
+otras principales compatibles están `PAUSED` o `SUSPENDED`, corre `S32` sobre ese complemento en
+el mismo acto** (`B/03` §3.2), y `S33` lo reanuda cuando una de ellas vuelve a `ACTIVE`.
+
 ### 4.3 El huérfano recurrente se cancela en el proveedor, y esto es lo urgente
 
 `DEC-ADDON-002` implicación 6: **cancelar el plan NO cancela los addons.** Cada addon recurrente
 es su propio preapproval y **sigue cobrando por su cuenta** hasta que alguien lo cancele. **Y en la
 baja desde `ACTIVE` ese alguien es `S11`** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`,
 `F-8V2B1-001`): cancela en el acto el cobro de los complementos que dependen de la principal —la
-selección de `S32`— y los sostiene hasta el fin de servicio, porque `CANCEL_SCHEDULED` sigue siendo
+selección de `S32`, **con `CANCEL_SCHEDULED` en la exclusión** (lectura del grupo A, confirmada
+por el owner: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`)— y los sostiene hasta el fin de servicio, porque `CANCEL_SCHEDULED` sigue siendo
 fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2). **En la fecha de fin los toma `S21`, antes que su
 propio `S12`** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): el `S12` de la principal dispara la
 orfandad, `S21` lleva el complemento a `CANCELLED` y, si su último cobro pagó días posteriores al
@@ -707,7 +719,15 @@ orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` �
 la baja**: por el espejo de `R18` —pagó mientras ya mandábamos cancelar— y por `S7` —volvió de
 `SUSPENDED` con un cobro sobre un preapproval cancelado— (owner 2026-09-27, FASE 9 vuelta 2,
 `R18-b`; `B/03` §3.2 y §10.1). Ninguna de las dos saca a la principal de las filas vivas, así que
-no entran en la lista de abajo, por la misma razón que `S11`.
+no entran en la lista de abajo, por la misma razón que `S11`. **Y `S26` aplica la misma selección
+a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa** (FASE 9 vuelta 2,
+verificación, owner 2026-09-27, `V2-d`, `N-A-01`): *«toda fila viva de la vertical»* no nombraba
+a un scope sin vertical propia, así que su preapproval seguía vivo durante la cola y, en la fecha
+de fin, el cobro que cruzaba esa fecha iba al motivo 14 aunque la causa fuera nuestra. Con la
+selección, el `USER` que sólo esa vertical sostenía se cancela en el acto, y el que otra vertical
+sostiene con una principal viva sigue su curso. **Y la marca de esos complementos en la fecha de
+fin es el motivo 15, no el 14**, como la de `S27` y `S28` en la misma discontinuación (`B/03`
+§3.2, *«cuál de los dos motivos abre `S21`»*).
 
 Entonces, cuando un título **deja de ser fila viva**, la misma causa tiene **tres efectos
 distintos** y los tres se disparan del mismo lugar:
@@ -729,7 +749,9 @@ revocación del derecho de arrepentimiento, que saca a la principal de las filas
 vuelta 1 y no se había recontado acá (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`, `F-8V2D1-001`)—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
 espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
-estando pausado, suspendido o en el grace— más **`S25`**, el fin de una pausa sobre un plan que ya
+estando pausado, suspendido o en el grace; `S22` cuando va a `CANCELLED`, porque sobre una fila
+que vive del crédito va a `CANCEL_SCHEDULED` y cancela sus complementos como `S11` (FASE 9 vuelta
+2, verificación, owner 2026-09-27, `V2-b`)— más **`S25`**, el fin de una pausa sobre un plan que ya
 no se presta (`DEC-SUB-015`); y desde la 9-bis-5, **`S27` y `S28`** —la suspendida y la que esperaba
 autorización cuando se discontinuó su vertical (`B/10` §4.3)—; **`S31`**, la sucesora del
 contracargo (nombrada arriba y no en esta enumeración hasta la FASE 9 vuelta 2, que la recontó:
@@ -752,7 +774,7 @@ predecesora ya murió (§4.2).
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
 > | **una de las ~~doce~~ ~~trece~~ catorce transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
-> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, **`S28`** la corta al discontinuarse la vertical **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
+> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, **`S28`** la corta al discontinuarse la vertical **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa), **o cualquier otra de las catorce que saque de las filas vivas a esa sucesora, entre ellas `S16`, `S24` y `S36`**, que esta enumeración no nombraba y la cuarta comprobación del barrido veía recién al día siguiente (FASE 9 vuelta 2, verificación, caso de `15-` §5, arreglo de texto) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >

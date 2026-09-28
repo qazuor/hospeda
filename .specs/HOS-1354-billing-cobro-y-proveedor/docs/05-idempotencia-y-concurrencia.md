@@ -128,8 +128,19 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 > `PAGO_TARDÍO_RECHAZADO`; la regla de desempate —y por qué gana éste— vive en el §3, que es el §
 > que cuantifica sobre *«si falla cualquiera»*.
 
+**Las dos filas valen igual sobre una fila DE COMPLEMENTO en `CANCEL_SCHEDULED`**, la que `S11`
+deja con el mismo `fin_de_servicio` de su principal (`B/03` §3.2, `R1-a`): un cobro del
+complemento anterior a la baja que se acredita tarde extiende su fecha con `max`, como en la
+principal. **Esa extensión no le da servicio más allá del fin de la principal**, porque sin título
+el complemento no emite nada (`B/16` §4.2); lo que su cobro pagó después de esa fecha es el residuo
+que `S21` toma en el motivo 14 (`B/03` §3.2, `R1-c`) (FASE 9 vuelta 2, verificación, caso 5 de
+`11-` §5, arreglo de texto).
+
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
-eso vale para `S11` y no para las otras tres.** Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`)
+eso vale para `S11` y no para las otras tres**, **ni para `S22` sobre una fila que vive del
+crédito sin consumir, que va a `CANCEL_SCHEDULED` hasta el fin del crédito y cae en las dos filas
+como una de `S11`** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`). Desde `PAUSED`
+(`S22`), desde `SUSPENDED` (`S23`)
 y desde `GRACE_PERIOD` (`S24`)
 la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de la cancelación
 (cap. 03 §3.2), así que **no hay nada que extender** y la primera fila no tiene dónde aplicarse:
@@ -320,7 +331,7 @@ que el pago llegó tarde.**
 |---|---|
 | ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31`, **`S36`** o el espejo del `B/03` §10.1 (**`S36`**, FASE 9 vuelta 1, `N-G3V-04`: el criterio ya la cubría y la enumeración no); `ABANDONED` por `S3`, `S28` o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7`, `S11` o `S26`— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
-| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4); **y el cobro sobre la lápida del corte con `date_created` posterior al día del corte** (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`) | **`PAGO_TARDÍO_RECHAZADO`** |
+| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4); **y el cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es posterior al día del corte** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-a`) (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`) | **`PAGO_TARDÍO_RECHAZADO`** |
 
 > **Lo que este § no desempata, porque la fila puede recibir el cobro** (FASE 9 vuelta 1, R4): una
 > `PENDING_AUTHORIZATION` —se relee el preapproval por id, corre `S2` y el cobro se asienta sobre
@@ -343,7 +354,7 @@ que el pago llegó tarde.**
 > §2.2; `B/21` §2.5— **con un cobro del día del corte o anterior** (owner 2026-09-27, FASE 9 vuelta
 > 2, `R2`). Un cobro del
 > preapproval viejo que entra sobre ella ~~—también el que estaba en vuelo cuando el paso 1b lo
-> canceló—~~ **con `date_created` de ese día o anterior —también el que estaba en vuelo cuando el
+> canceló—~~ **con ~~`date_created`~~ el pago aprobado (`V2-a`) de ese día o anterior —también el que estaba en vuelo cuando el
 > paso 1b lo canceló—** **se asienta sobre la lápida sin marca**: no reactiva nada, no extiende nada y no se le
 > propone devolver a nadie. Lo que eso deja sin cerrar está declarado en el «NO cierra» de `B/21`
 > (owner 2026-09-26, `G3-1`, contra la recomendación, coherente con `2d` y con `G1-4`). **Uno
@@ -363,7 +374,8 @@ que el pago llegó tarde.**
 > suspendido con el período pagado (FASE 9 vuelta 1, `N-G3V-01`; la `GRACE_PERIOD` que alcanza la
 > relectura de `S6` sigue asentándose por `S5` en el acto, `B/09` §3). Sobre cualquier otra abre
 > el motivo que esta tabla asigna, con el cobro colgado; sobre la lápida del corte ~~no compara~~
-> **compara sólo los registros posteriores al día del corte** (`B/09` §3; `R2`).
+> **compara sólo los registros ~~posteriores al día del corte~~ cuyo pago aprobado es posterior al
+> día del corte** (`B/09` §3; `R2`; la fecha del pago y no la del registro, `V2-a`).
 > Escrita por criterio y no por productor, una fila
 > nueva —o una escrita a mano— cae en la fila del acto que la dejó sin poder cobrar y no en el
 > comodín.

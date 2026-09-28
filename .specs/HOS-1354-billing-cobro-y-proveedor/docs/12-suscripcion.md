@@ -1045,7 +1045,11 @@ para el cruce vecino.
 **Quién lo ejecuta: `S22`** (`B/03` §3.2), que manda la fila directo a `CANCELLED` sin pasar por
 `CANCEL_SCHEDULED`. Hasta esa fila **esta decisión no tenía ninguna transición que la cumpliera**,
 y por la regla 1 del núcleo el intento se iba a la marca mientras el reloj de la pausa vencía,
-`S10` devolvía la fila a `ACTIVE` y se le cobraba el ciclo siguiente.
+`S10` devolvía la fila a `ACTIVE` y se le cobraba el ciclo siguiente. **Salvo sobre una sucesora
+que vive del crédito de `DEC-SUB-006` sin consumir** (la que `S9` pausó al autorizar para
+re-emitirle una cortesía diferida): el crédito es período pagado (`R17`), así que `S22` la lleva a
+`CANCEL_SCHEDULED` con fin de servicio en el fin del crédito, como `S11`, y no corta en el acto lo
+que la persona ya pagó (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`).
 
 ### 7.3 El orden inverso no existe
 

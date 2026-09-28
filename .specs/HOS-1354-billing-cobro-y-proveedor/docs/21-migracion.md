@@ -285,17 +285,25 @@ su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 
 > **«No devolver» vale sólo para la ventana del corte** (owner 2026-09-27, FASE 9 vuelta 2, `R2`;
 > `F-8V2B3-002`, `F-8V2C2-004`, `F-8V2B1-006`; precisa `G3-1`, no lo revierte). La ventana es el
-> día del corte —el del paso 1b, en hora de Argentina— y se lee en el cobro, no en su evento: el
-> `date_created` del registro de cobro, leído por id (`B/02` §2.3). **Un cobro sobre la lápida del
-> corte con `date_created` de ese día o anterior se asienta sin marca**, como dice el párrafo de
+> día del corte —el del paso 1b, en hora de Argentina— y se lee en el cobro, no en su evento: ~~el
+> `date_created` del registro de cobro, leído por id (`B/02` §2.3)~~ **la fecha del pago que aprobó
+> el registro de cobro, leído por id, y no el `date_created` del registro**, que es uno por ciclo
+> con los reintentos adentro y no se mueve con ellos (`B/02` §2.3) (FASE 9 vuelta 2, verificación,
+> owner 2026-09-27, `V2-a`, `F-8V2B3-002`: con la fecha del registro, el reintento que cobra
+> después del corte sobre un registro nacido antes se asentaba sin marca, y ése es justo el caso
+> que esta regla nombra). **Qué campo del pago trae esa fecha se mide en el paso 0 del corte**
+> (`16-fase-7…` §4.2; la fila de la matriz está propuesta al owner en el registro de la
+> verificación de la FASE 9 vuelta 2); **si ningún campo es confiable, la ventana vuelve al
+> owner**. **Un cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es de
+> ese día o anterior se asienta sin marca**, como dice el párrafo de
 > arriba. **Uno posterior abre la marca `PAGO_TARDÍO_RECHAZADO`** (el 7 de `B/02` §2.5, **SÍ**), la
 > misma que abre el cobro sobre una lápida de recepción, **con el `payment` colgado y la propuesta
 > de devolverlo**: ya no es un cobro que estaba en vuelo cuando se canceló, sino un registro que
 > siguió reintentando después (`GR-3`, `RC-6`, `GR-1`) o una cancelación que se deshizo horas
 > después (el código actual registra seis, `preapproval-recovery.service.ts:22`). La abren los
 > dos productores de la tabla de desempate: el evento del cobro y la comparación de cobros del
-> barrido (cap. 09 §3), que sobre la lápida del corte compara **sólo** los registros posteriores a
-> ese día. Los del día del corte o anteriores —los del sistema viejo, que no se conserva (§4), y el
+> barrido (cap. 09 §3), que sobre la lápida del corte compara **sólo** los registros ~~posteriores a
+> ese día~~ cuyo pago aprobado es posterior a ese día (`V2-a`). Los del día del corte o anteriores —los del sistema viejo, que no se conserva (§4), y el
 > que estaba en vuelo— siguen sin abrir nada.
 
 Es la posición de `2d`

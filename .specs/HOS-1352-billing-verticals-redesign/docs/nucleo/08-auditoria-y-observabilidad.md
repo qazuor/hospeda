@@ -344,6 +344,19 @@ proveedor, para que el owner la revise. **No abre marca ni bloquea nada**, y no 
 misma persona detrás de dos cuentas: la revisión es humana. **La confirmación por una segunda
 persona entra cuando haya otra persona con el permiso** (`V/17` §3.2, regla 5).
 
+**Y un tercer tipo del resumen que no nace de una marca: el cobro por debajo del esperado** ✚
+(FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-f`; caso de `16-` §5). La comparación de
+cobros del barrido (`B/09` §3) ya deriva, para cada registro aprobado que tenemos acreditado, el
+monto esperado del período que cubre, y el motivo 24 mira sólo el cobro de más. **El de menos
+aparece cuando una mutación que sube el monto cae entre la creación del registro del ciclo y su
+cobro**, y el registro cobra el viejo (un aumento de `DEC-MP-002`, o `S30` restaurando el precio
+al agotarse una promo; si pasa o no es `EX-47`), y en un aumento alcanza a toda la cartera de la
+vertical en la misma fecha. **El barrido diario lista en el resumen cada cobro por debajo del
+monto esperado de su período, con el sujeto y la diferencia**; se lee de lo que la comparación ya
+calcula, sin llamar al proveedor. **No abre marca, no cobra la diferencia y no mueve el conteo de
+motivos** de `B/02` §2.5: es plata de Hospeda, nadie pagó de más, y el costo aceptado se mide como
+el de la pausa regalada.
+
 ### 4.2 Y esto es un apartamiento del §22.1, registrado como `DEC-OBS-001`
 
 El §22.1 dice *«enviar email a `SUPER_ADMIN`»* sin condición, y esto manda un correo agregado en

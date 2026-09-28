@@ -191,7 +191,11 @@ owner 2026-09-25, FASE 9 completa, 6a), y la pricing deja de ofrecer los planes 
 preapproval vivo que cobraba pasado el fin de servicio, que es exactamente lo que el §4.2 prohíbe. Y en el mismo acto, **cada
 suscripción viva se cancela en el proveedor de inmediato**, con la fecha de fin de servicio
 sostenida de nuestro lado. Desde ese instante **el proveedor no emite un cobro más** en la
-vertical. Lo mismo con cada suscripción de complemento viva en ella (`DEC-ADDON-002`: cada addon
+vertical. Lo mismo con cada suscripción de complemento viva en ella, **y con el complemento
+`USER`/`GLOBAL` compatible con la vertical que toma la selección de `S11`, que no vive en ninguna
+vertical y por eso no entraba en *«viva en ella»*: `S26` lo cancela si ninguna otra vertical
+compatible lo sostiene con una principal viva sin pausar, suspender ni programar su baja, ni con un
+ancla viva (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-d`)** (`DEC-ADDON-002`: cada addon
 recurrente es su propia autorización, así que cada una se cancela por su cuenta).
 
 **A qué estado va cada una lo ejecutan TRES transiciones, y no todas al piso** (`B/03` §3.2, que es
