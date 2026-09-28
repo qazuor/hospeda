@@ -337,8 +337,9 @@ no una excepción a la lista.
    decisión 7c—: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; **la decimocuarta, asentar un cobro
    o una devolución que ya ocurrió por fuera de nuestro flujo**: owner 2026-09-25, FASE 9 completa,
    decisión 5a; **la decimoquinta, editar el contenido de una ficha ajena** —sin publicar, destacar
-   ni borrar—: owner 2026-09-26, `G5-2`; **la decimosexta, discontinuar una vertical**, de
-   `SUPER_ADMIN`: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`).
+   ni borrar—: owner 2026-09-26, `G5-2`; **la decimosexta, discontinuar una vertical** **o acortar
+   su cola**, de `SUPER_ADMIN`: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; acortar la cola, la
+   misma acción con el mismo permiso, FASE 9 vuelta 2, verificación, `V2-g`).
 
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).
    Las ~~quince~~ dieciséis son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
@@ -418,8 +419,19 @@ editar el contenido de una ficha ajena, no toca plata ni publica**: es una escri
 ajeno, y su rastro vale sólo si el actor es la persona que la decidió, que es lo que el §3.2 regla 2
 exige (owner 2026-09-26, `G5-2`). **La decimosexta, discontinuar una vertical, es plata**: cancela
 en el proveedor cada suscripción viva de la vertical (`B/10` §4.1, *«toca plata»*), y cae en `D11`
-por la misma razón que las doce (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`). Un job que
+por la misma razón que las doce (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`); **acortar su cola
+también**, que es la misma acción y reembolsa (FASE 9 vuelta 2, verificación, `V2-g`). Un job que
 pudiera otorgar una cortesía convierte ese invariante en una sugerencia.
+
+**La excepción que no es una acción nueva: el reintento de la mitad de billing de la
+decimosexta** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-i`, `N-C-05`). Si esa mitad
+falla, la acción la reintenta sola hasta que entra (`Q-ALTAS-b`, `B/10` §4.3), y el reintento lo
+corre un proceso. **Lleva la firma y la correlación del `SUPER_ADMIN` que confirmó el acto**, como
+la re-emisión de una cortesía diferida que hace `S9` con la firma original (`NUCLEO/08` §3, la
+tabla del enrutado): el acto ya lo decidió y lo confirmó una persona, y el reintento termina lo
+que ella firmó sin decidir nada. Por eso no es una ejecución de sistema de una de las dieciséis. **La
+excepción es ésta sola**: vale para la mitad de billing del acto que esa persona confirmó, sobre
+esa vertical, y no para ninguna otra fila de la tabla.
 
 ### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
 

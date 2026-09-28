@@ -86,7 +86,7 @@ hash, y su `UNIQUE` lo exige determinístico—. Tiene que corregirse **antes de
 |---|---|
 | **sirve para lo único que tiene que servir** | comparar un candidato contra lo consumido. `DEC-TRIAL-004` sólo necesita *«¿este correo ya consumió?»*, nunca *«¿cuál era?»* |
 | **sobrevive a la anonimización** | ~~no hay nada que anonimizar: no se puede leer de vuelta~~ **no se puede leer de vuelta, pero sigue reconociendo a quien trae el mismo correo**: eso es lo que la anonimización del borrado de la cuenta no le saca, y lo que la consulta legal tiene que evaluar. La anonimización es la del borrado de la cuenta; la retención ya no anonimiza (`DEC-DATA-005`) |
-| **no cambia la decisión** | el bloqueo sigue siendo el correo normalizado, con sus mismos puntos y `+alias` |
+| **no cambia la decisión** | el bloqueo sigue siendo el correo normalizado, ~~con sus mismos puntos y `+alias`~~ con la normalización del cap. 02 §2.2, que quita los puntos y el `+alias` según la lista cerrada de proveedores (owner 2026-09-27, FASE 9 vuelta 2, `R23`; la lista por proveedor, owner 2026-09-28, verificación, `V2-j1` a `V2-j3`) |
 
 **El capítulo 02 §4 queda corregido en el mismo commit**: lo que la fila de `trial` conserva es el
 `user + vertical`, las fechas y **el hash**, no el correo.

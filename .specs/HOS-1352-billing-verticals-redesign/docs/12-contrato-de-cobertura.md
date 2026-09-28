@@ -1112,9 +1112,10 @@ cualquier compromiso vivo en la vertical. Mientras fue una columna de verticales
 escribiera, porque billing no puede escribir en verticales, y verticales no puede calcularla sin
 leer fechas de cobro. **Es la única entrada de este § que pregunta verticales y contesta billing**,
 y por eso la mitad de ida de la regla de vigilancia la nombra (§4.2). Contesta `NINGUNA` mientras la
-vertical no se esté discontinuando. **La leen dos lugares de verticales**: la fuente de trial
+vertical no se esté discontinuando. **La leen ~~dos~~ tres lugares de verticales**: la fuente de trial
 (§2.6, `V/03` §2) y el reconciliador diario de cobertura, que ejecuta el día del fin de servicio
-(`V/03` §9). **La contesta billing en la implementación real** y la construye `B12`, el dueño de
+(`V/03` §9), **y `PB9`, que no borra una ficha de la vertical cuyo hecho 4 está pendiente** (`V/03`
+§9; FASE 9 vuelta 2, verificación, `N-B-03`). **La contesta billing en la implementación real** y la construye `B12`, el dueño de
 la fórmula; **la de arranque contesta `NINGUNA`** (§5.1). ~~Dónde guarda billing la fecha calculada
 no está escrito, y queda declarado en `B/10` §4.6.~~ **La real contesta de `vertical_discontinuation`**,
 una fila de billing por vertical discontinuada con el anuncio y la fecha, que escribe el acto del
@@ -1269,6 +1270,13 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 > §3.1**, vale lo mismo (FASE 9 vuelta 1, `F-8V1A3-014`; owner 2026-09-26, `G2-1` y `G4-2`). Una
 > lectura no declarada es un acoplamiento que nadie está mirando. **Las superficies de la capa de
 > composición no entran en esta mitad** (§4.1): la regla vigila a las máquinas, guards y barridos.
+> **Y tampoco la acción 16 de `NUCLEO/08` §3, *«discontinuar una vertical o acortar su cola»*, que
+> es capa de composición** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-h`, `N-C-04`):
+> orquesta la mitad de verticales (`admite_altas = no`, que escribe verticales en su épica) y la de
+> billing (`vertical_discontinuation`, los avisos y `S26`–`S28`, que escribe billing en la suya),
+> y queda fuera de las máquinas de las dos épicas. Ninguna mitad escribe en la otra épica, así que
+> el acto no suma una escritura al §4.1. **La exención nombra esta acción y sólo ésta**: cualquier
+> otra que escriba en las dos épicas entra en esta mitad como cualquier escritura.
 
 **Las dos mitades estaban ancladas en un número y las dos lo tenían mal**, que es lo peor que le
 puede pasar a la única regla que existe para enterarse de que `DEC-ARCH-005` dejó de valer. La

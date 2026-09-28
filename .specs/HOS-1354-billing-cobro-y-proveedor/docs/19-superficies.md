@@ -202,7 +202,7 @@ mora (`DEC-MAIL-001`, `EX-3`).
 ## 6. Admin
 
 El §48 enumera veintiuna cosas que el admin debe poder **inspeccionar**. Las **acciones** —que el
-§48 no enumera aunque el resto del PDR se las asigne— son las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis del capítulo 08 §3 (núcleo) (la decimosexta, *«discontinuar una vertical»*: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a),
+§48 no enumera aunque el resto del PDR se las asigne— son las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis del capítulo 08 §3 (núcleo) (la decimosexta, *«discontinuar una vertical»* **o acortar su cola**: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; acortar la cola, la misma acción, verificación, `V2-g`; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a),
 cada una con permiso propio, auditoría y confirmación explícita si es destructiva o mueve dinero.
 
 ~~Tres cosas~~ Tres cosas, en este capítulo, que el panel necesita mostrar y que no son inspección de una entidad, sino la salida

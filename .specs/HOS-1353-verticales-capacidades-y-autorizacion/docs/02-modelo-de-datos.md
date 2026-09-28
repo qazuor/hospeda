@@ -123,7 +123,10 @@ de `NUCLEO/08` §3, *«discontinuar una vertical»* (owner 2026-09-27, FASE 9 vu
 verticales escribe `admite_altas = no`, después billing escribe el anuncio, la fecha y los avisos
 (`B/10` §4.3). **Si la mitad de billing falla, la acción la reintenta hasta que entra y le
 muestra al admin el acto a medias, y esta escritura no se deshace nunca** (owner 2026-09-27, FASE 9
-vuelta 2, `Q-ALTAS-b`). Retirar todos los planes no la escribe (`R24`): la vertical sigue admitiendo altas,
+vuelta 2, `Q-ALTAS-b`); el reintento es automático, con la firma del `SUPER_ADMIN` que confirmó
+(`V/17` §3.3; `V2-i`), y la acción es capa de composición, fuera de las máquinas de las dos
+épicas, así que invocar esta mitad no es una escritura de billing en verticales (`12-contrato…`
+§4.2; FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-h`). Retirar todos los planes no la escribe (`R24`): la vertical sigue admitiendo altas,
 y lo que nadie puede contratar lo frenan `T1` y `S1`, que exigen una versión vigente y vendible. **`fin_de_servicio` dejó de ser columna de
 esta épica** (owner 2026-09-27, FASE 9 vuelta 2, `R5`): la fecha la calcula billing, cuyos términos
 son el anuncio y el último día pagado, y verticales la pregunta por `finDeServicio`
@@ -342,11 +345,37 @@ vida descansa en él, y ningún capítulo decía la función:
 1. **La normalización es la de `DEC-TRIAL-004`, ~~a la letra~~ precisada por el owner**: el correo en
    minúsculas, ~~sin el `+alias` y sin los puntos de la parte local. La decisión no nombra dominios,
    así que se aplica en todos. En un dominio propio eso junta dos casillas distintas, y el ⚠️ de
-   abajo lo declara.~~ **y sin el `+alias` ni los puntos de la parte local sólo en una lista
+   abajo lo declara.~~ ~~**y sin el `+alias` ni los puntos de la parte local sólo en una lista
    cerrada de proveedores que los ignoran**: Gmail y Outlook, y los que se midan (owner 2026-09-27,
    FASE 9 vuelta 2, `R23`). **En los demás dominios el correo se compara tal cual**, en minúsculas:
    dos casillas de un dominio propio que difieren en un punto son dos personas, y cada una tiene su
-   trial.
+   trial.~~ **y con lo que diga la lista cerrada de abajo, proveedor por proveedor** (FASE 9 vuelta
+   2, verificación, owner 2026-09-28, `V2-j1`, `V2-j2` y `V2-j3`, sobre la investigación de
+   `D/29-fase-8-vuelta-2/25-lista-de-proveedores-del-seudonimo.md`). La lista anterior le quitaba
+   los puntos a Outlook, y Outlook no los ignora: `ana.maria@hotmail.com` y `anamaria@hotmail.com`
+   son dos personas, y la segunda se quedaba sin trial, que es el falso positivo que
+   `DEC-TRIAL-004` quiso evitar.
+
+   | proveedor | dominios | puntos de la parte local | `+alias` | fuente |
+   |---|---|---|---|---|
+   | Gmail | `gmail.com` y `googlemail.com`, unificados en `gmail.com` **si la medición lo confirma** | **se quitan** | **se quita** | puntos y `+`, oficial; la unificación, secundaria |
+   | Microsoft consumidor | `outlook.com`, `hotmail.com`, `live.com`, `msn.com` y sus variantes por país (`outlook.com.ar`, `hotmail.com.ar`…), **sin unificar**: cada dominio es otra casilla | **quedan** | **se quita** | `+`, oficial; que los puntos cuentan, secundaria y una prueba de un tercero |
+   | Proton | `proton.me`, `protonmail.com`, `protonmail.ch` y `pm.me`, unificados | **se quitan, con el guion y el guion bajo, sólo si la medición lo confirma** | **se quita** | `+` y dominios, oficial; los puntos, una prueba de un tercero |
+   | iCloud | `icloud.com`, `me.com` y `mac.com`, unificados **si la medición lo confirma** | quedan | **se quita** | dominios, oficial; `+`, secundaria |
+   | Yahoo | `yahoo.com` y `yahoo.com.ar`, **sin unificar** | quedan | queda: se quita sólo si la medición lo confirma | sin documentación del `+`; sus descartables son otra casilla |
+   | AOL, Zoho, GMX, Fastmail, Yandex y los ISP argentinos (Fibertel, Arnet, Speedy, Ciudad, Ferozo) | tal cual | quedan | queda | fuera de la normalización |
+   | **todo dominio que la lista no nombra**: los dominios propios (Google Workspace, Microsoft 365, Fastmail con dominio propio) | tal cual | quedan | **se quita** (`V2-j3`) | `+` en Microsoft 365 por defecto desde 2022, oficial |
+
+   **Tres reglas sobre la lista.** **(a) Minúsculas en todo dominio.** **(b) Ante la duda, no
+   normalizar**: lo que la tabla da como *«si la medición lo confirma»* se aplica sólo con la
+   medición del paso 0 del corte (`16-fase-7…` §4.2; owner 2026-09-28, `V2-j4`), y sin ella no se
+   aplica; **lo que la medición muestre fuera de la tabla vuelve al owner antes de aplicarse**, en
+   particular si Microsoft ignorara los puntos (`V2-j1`). Un falso positivo le niega el trial a una
+   persona real y no tiene arreglo; un falso negativo regala uno. **(c) Un dominio que la lista no
+   nombra cuenta como dominio propio** y sólo pierde el `+alias`: desde el correo no se distingue un
+   dominio propio de un proveedor que la lista no nombra, así que la fila de los dominios propios
+   es la del resto. **La lista queda fija con el paso 0, antes de la primera fila de `trial`**,
+   porque el seudónimo no se recalcula (punto 3).
 2. **La función es SHA-256 sin clave** sobre el correo normalizado. **Es lo que el pliego legal ya
    supone** (cap. 22 §3.2): *«cualquiera con un correo candidato calcula el hash»* sólo es cierto
    sin clave, y la pregunta 5 se formuló sobre eso. Con un HMAC, perder o rotar el secreto dejaba
@@ -368,7 +397,11 @@ vida descansa en él, y ningún capítulo decía la función:
 > `F-8V2A3-004`).~~ **Cerrado por el owner el 2026-09-27** (FASE 9 vuelta 2, `R23`): la lista
 > cerrada del punto 1. **Lo que queda, declarado**: en un proveedor que ignora puntos o alias y no
 > está en la lista, el trial se consigue otra vez con un punto; y cambiar la lista no recalcula
-> las filas viejas (punto 3).
+> las filas viejas (punto 3). **Y desde la lista por proveedor** (owner 2026-09-28, `V2-j2` y
+> `V2-j3`): en los nombrados *«tal cual»* que documentan el `+` (Fastmail, Yandex) o lo tienen sin
+> medir (Yahoo), el trial se consigue otra vez con un `+alias`, que es el costo de no normalizar
+> ante la duda; y en un servidor propio donde el `+` sea un carácter literal de la casilla, dos
+> casillas se juntan, que es el costo de quitarlo en todo dominio propio.
 
 **Es una condición de aplicación, no una tarea suelta.** Hasta ahora el segundo trial por
 re-registro era teórico porque **nadie podía disparar `T1`**; en el momento en que `T1` dispara,
@@ -685,7 +718,11 @@ generalizada por el dueño del dato**: lo de un tercero se conserva, y lo del du
 a esa ficha se borra con el contenido. La alerta de precio es la excepción, y la decidió el owner.
 Vale igual para `PB9` y para `PB12`. La columna de tablas es del código actual
 (`packages/db/src/schemas/`), medida sobre las tres tablas de `listing` (§2.5), incluidas las
-referencias polimórficas por `entity_type` + `entity_id`, que no tienen FK:
+referencias polimórficas por `entity_type` + `entity_id`, que no tienen FK. **Son 29 tablas con FK a
+`accommodations`, `gastronomies` o `experiences` y 11 con `entity_type`**, recontadas con un script
+que cruza los saltos de línea (FASE 9 vuelta 2, verificación, `N-B-02`): la primera medición contó
+28, porque el `references(` de `posts` está partido en dos líneas. **La vigila `G-R9`** (cap. 20
+§2; owner 2026-09-27, FASE 9 vuelta 2, verificación, `V2-k`):
 
 | qué cuelga | de quién es | en `PURGED` | tablas (código actual) |
 |---|---|---|---|
@@ -697,10 +734,11 @@ referencias polimórficas por `entity_type` + `entity_id`, que no tienen FK:
 | **las alertas de precio** de un turista | del turista | **se cierran, con un aviso al turista** (cap. 19 §4 fila 27; el correo, `NUCLEO/07` §6): sin ficha no hay precio que vigilar, y el job de alertas dejaría de evaluar una ficha vacía | `tourist_price_alerts` |
 | **la conexión de calendario** | del dueño | **se desconecta: su token se revoca en el proveedor y se borra** (arriba, `G1-5`) | `accommodation_calendar_sync` |
 | **las promociones del dueño sobre esa ficha, sus listados y su reputación externos, su ocupación, sus datos de IA, los QR que apuntan a ella y sus estadísticas agregadas** | del dueño, y sólo sirven a esa ficha | **se borran con el contenido** | `owner_promotions` (las de esa ficha), `accommodation_external_listings`, `accommodation_external_reputation`, `accommodation_occupancy`, `accommodation_ia_data`, `qr_codes` (los de esa ficha), `entity_view_monthly_rollups` |
-| **lo que no es de la ficha aunque la nombre** | de otro registro | **no lo toca `PURGED`**: la telemetría de vistas tiene su propia retención; la auditoría y el registro de revalidaciones se conservan (§25); el vínculo de un addon y el caché de suscripción son de billing, y los trata `A6` (`B/03` §8) | `entity_views`, `social_audit_log`, `revalidation_log`, `featured_listing_addon_grants`, `entity_subscriptions` |
+| **lo que no es de la ficha aunque la nombre** | de otro registro | **no lo toca `PURGED`**: la telemetría de vistas tiene su propia retención; la auditoría y el registro de revalidaciones se conservan (§25); el vínculo de un addon y el caché de suscripción son de billing, y los trata `A6` (`B/03` §8). **La nota del blog que nombra la ficha como alojamiento relacionado es contenido editorial de Hospeda**: la referencia queda, y la superficie trata la ficha como inexistente (cap. 17 §1.2, precisión 7), como en un favorito (FASE 9 vuelta 2, verificación, `N-B-02`). **La configuración de revalidación es por tipo** y no nombra ninguna ficha: tiene `entity_type` sin `entity_id` | `entity_views`, `social_audit_log`, `revalidation_log`, `featured_listing_addon_grants`, `entity_subscriptions`, **`posts`**, **`revalidation_config`** |
 
 **La lista es cerrada**: una tabla nueva que cuelgue de `listing` entra acá en el mismo acto, con
-su fila. Lo construyen las dos transiciones que llegan a `PURGED`: `PB9` (V9) y `PB12` (V6).
+su fila, **y si no entra, `G-R9` falla**: la columna de tablas nombra hoy las 40, una por una (FASE 9
+vuelta 2, verificación, owner 2026-09-27, `V2-k`). Lo construyen las dos transiciones que llegan a `PURGED`: `PB9` (V9) y `PB12` (V6).
 
 > 📌 **Cerradas el 2026-09-25** (FASE 8 completa, owner 2026-09-25). La 1 (`F-8CA3-009`) la
 > cierra **`DEC-DATA-005`**: la retención sólo toca fichas, y lo de la persona no se borra ni se

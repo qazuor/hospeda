@@ -162,7 +162,8 @@ ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto
 cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le escribiría. **Y su
 página pública la revalida el paso 4c del corte, con la herramienta de V6**: la escritura de
 nacimiento no es una transición, así que no programa la revalidación que `PB2` habría programado
-(`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2C2-006`).
+(`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2C2-006`), **y con ella los listados que muestran su
+tarjeta, por la etiqueta de colección de cada tipo** (FASE 9 vuelta 2, verificación, `N-C-07`).
 
 **La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se

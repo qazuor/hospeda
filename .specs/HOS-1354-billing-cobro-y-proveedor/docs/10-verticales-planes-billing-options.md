@@ -166,7 +166,11 @@ orquesta en ese orden: primero verticales, después billing**. Es la acción 16 
 (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`). Con ese orden, cuando billing empieza a cancelar
 ya no nace ninguna alta ni ningún trial. Billing no escribe `admite_altas`: sería una
 escritura en verticales fuera del contrato, que admite una sola, `extenderTrial` (`12-contrato…`
-§4.2).
+§4.2). **Y la acción que las orquesta es capa de composición, fuera de las máquinas de las dos
+épicas** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-h`, `N-C-04`): cada mitad escribe
+en su épica, y la regla de vigilancia exime a esta acción por nombre y a ninguna otra
+(`12-contrato…` §4.2). La construye `B12`, y llamar a la mitad de verticales no es una escritura
+de billing en verticales.
 
 **Si la mitad de billing falla, la acción la reintenta hasta que entra, y le muestra al admin que
 el acto quedó a medias. Nunca deshace la mitad de verticales** (owner 2026-09-27, FASE 9 vuelta 2,
@@ -174,7 +178,20 @@ el acto quedó a medias. Nunca deshace la mitad de verticales** (owner 2026-09-2
 `finDeServicio` contesta `NINGUNA`, nadie nuevo entra, quien ya pagaba sigue igual y no sale
 ningún aviso. No hay plata de más en ese estado, y es el único en que una vertical queda sin
 altas y sin fecha (§4.6). Deshacer la mitad de verticales reabriría las altas de una vertical que
-el owner ya decidió cerrar.
+el owner ya decidió cerrar. **El reintento es automático, con la firma y la correlación del
+`SUPER_ADMIN` que confirmó el acto**, como la re-emisión de una cortesía diferida por `S9`: no es
+una acción nueva ni la ejecuta un actor de sistema por su cuenta (`V/17` §3.3; FASE 9 vuelta 2,
+verificación, owner 2026-09-27, `V2-i`, `N-C-05`).
+
+**Y un reintento no repite los avisos ni mueve el anuncio** (FASE 9 vuelta 2, verificación,
+arreglo de texto). La fila de `vertical_discontinuation` se escribe una vez (`UNIQUE(vertical)`,
+`B/02` §2.1): un reintento que la encuentra escrita conserva su instante del anuncio y su fecha, y
+sigue desde ahí. Cada aviso se encola en la misma transacción que escribe lo que lo causa
+(`NUCLEO/07` §1.1), y el outbox lo manda una sola vez por su clave de deduplicación, cuya
+ocurrencia es el evento que lo causó (`NUCLEO/07` §2). La persona cuya fila ya pasó por
+`S26`–`S28` antes de que la mitad se cortara ya tiene su aviso, y el reintento no la vuelve a
+tocar, porque esas transiciones ya no la encuentran en su `desde`; y el aviso a quien está pausado
+cuelga del anuncio, que es uno solo.
 
 **El anuncio es el instante en que entra la mitad de billing**, que es cuando salen los avisos
 (owner 2026-09-27, FASE 9 vuelta 2, `Q-ANUNCIO`). Es el instante que guarda
@@ -400,7 +417,12 @@ de la fecha que se quiera fijar. Es un acto por caso, nunca automático — es e
 siempre: lo que toca plata no se ejecuta solo. **Y ese acto reescribe la fecha en la fila de la
 discontinuación** (`B/02` §2.1), que es de donde contesta `finDeServicio`: verticales la lee por la
 pregunta y no guarda copia, así que el hecho 4 y el borrado caen en la fecha nueva (owner
-2026-09-27, FASE 9 vuelta 2, `Q-FECHA`).
+2026-09-27, FASE 9 vuelta 2, `Q-FECHA`). **Es la acción 16 de `NUCLEO/08` §3, *«discontinuar una
+vertical o acortar su cola»***: el mismo instrumento, `vertical_discontinuation`, y el mismo
+permiso de `SUPER_ADMIN`, con auditoría y confirmación explícita, y **la confirmación dice la fecha
+nueva y cuántos compromisos se reembolsan**. Cada reembolso sigue siendo de la fila de reembolsar,
+con su `RF2`; la reescritura de la fecha, que ninguna fila nombraba, es de ésta (FASE 9 vuelta 2,
+verificación, owner 2026-09-27, `V2-g`). No mueve ningún conteo.
 
 ### 4.5 Los cuatro bordes
 
@@ -437,7 +459,7 @@ más allá de que ninguno de los dos vuelva atrás solo.
 
 **Quién lee `admite_altas` en billing: `S1`** (`B/03` §3.2): la vertical que no admite altas no
 admite suscripciones nuevas ni sucesiones (owner 2026-09-25; FASE 9 completa, 6a). Es lo que hace
-verdadera la afirmación de `V/02` §2.1 —*«`admite_altas` y `fin_de_servicio` las lee billing»*—, que
+verdadera la afirmación de `V/02` §2.1 —~~*«`admite_altas` y `fin_de_servicio` las lee billing»*~~ *«`admite_altas` la lee billing»* (desde que `fin_de_servicio` dejó de ser columna de verticales: FASE 9 vuelta 2, `R5`; la cita, corregida en la verificación, `22-` §5)—, que
 hasta acá ninguna fila de billing cumplía. ~~`fin_de_servicio` lo lee la fórmula del §4.3.~~
 **`fin_de_servicio` ya no se lee de verticales: lo calcula billing con la fórmula del §4.3, y
 verticales lo pregunta por `finDeServicio`** (`12-contrato…` §4.1; owner 2026-09-27, FASE 9
