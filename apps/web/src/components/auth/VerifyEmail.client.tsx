@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
+import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { verifyEmail } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -82,6 +83,11 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
                     );
                     setStatus('error');
                 } else {
+                    // HOS-1206: the API signs the visitor in on verification
+                    // (`autoSignInAfterVerification`), so any guest `/auth/me`
+                    // snapshot in this tab is now a lie — drop it before the
+                    // redirect, or a session-blind target paints them anonymous.
+                    clearCachedAuthMe();
                     setStatus('success');
                     redirectTimer = setTimeout(() => {
                         window.location.replace(redirectTo);

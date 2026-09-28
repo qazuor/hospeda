@@ -321,3 +321,55 @@ describe('SignIn required marker', () => {
         expect(html.replace(/<[^>]*>/g, '')).toContain('Correo electrónico *');
     });
 });
+
+// ─── HOS-1206: the guest /auth/me snapshot must not outlive the sign-in ──────
+
+describe('SignIn invalidates the cached /auth/me snapshot (HOS-1206)', () => {
+    const GUEST_SNAPSHOT = JSON.stringify({
+        isAuthenticated: false,
+        user: null,
+        permissions: [],
+        roles: [],
+        cachedAt: Date.now()
+    });
+
+    beforeEach(() => {
+        signInEmailMock.mockReset();
+        sessionStorage.clear();
+        // Arrange: the listing the visitor came from already cached a fresh
+        // GUEST snapshot. The page they return to is session-blind (edge-cached
+        // HTML, `initialUser === null`), so if this survives the sign-in the
+        // header and hearts trust it for up to 60s and paint anonymous.
+        sessionStorage.setItem('authMeSnapshot', GUEST_SNAPSHOT);
+    });
+
+    async function submitValidCredentials(): Promise<void> {
+        renderIsland();
+        await readyForm();
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
+            target: { value: 'user@example.com' }
+        });
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
+            target: { value: 'Secreta1!' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+        await waitFor(() => expect(signInEmailMock).toHaveBeenCalledTimes(1));
+    }
+
+    it('drops the guest snapshot once the sign-in succeeds', async () => {
+        signInEmailMock.mockResolvedValue({ error: null });
+
+        await submitValidCredentials();
+
+        await waitFor(() => expect(sessionStorage.getItem('authMeSnapshot')).toBeNull());
+    });
+
+    it('keeps the snapshot when the sign-in fails (the visitor is still a guest)', async () => {
+        signInEmailMock.mockResolvedValue({ error: { message: 'Invalid credentials' } });
+
+        await submitValidCredentials();
+
+        await screen.findByRole('alert');
+        expect(sessionStorage.getItem('authMeSnapshot')).toBe(GUEST_SNAPSHOT);
+    });
+});

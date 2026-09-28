@@ -96,6 +96,27 @@ export function writeCachedAuthMe(snapshot: AuthMeSnapshot): void {
     }
 }
 
+/**
+ * Drops the cached `/auth/me` snapshot so the next reader refetches it.
+ * Silently no-ops when `sessionStorage` is unavailable.
+ *
+ * **Call it on every auth-state transition, BEFORE navigating away** (HOS-1206).
+ * The snapshot is not keyed to the session cookie, so a guest snapshot written
+ * on the page the visitor signed in from stays "fresh" for
+ * `AUTH_ME_CACHE_TTL_MS` after they sign in. The page they return to is
+ * session-blind (edge-cached HTML, `initialUser === null`), so `UserMenu` and
+ * the favorites store both find a fresh guest snapshot that agrees with the
+ * SSR hint, trust it, never fetch, and paint the signed-in visitor as
+ * anonymous — with nothing that re-checks later.
+ */
+export function clearCachedAuthMe(): void {
+    try {
+        sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+    } catch {
+        // sessionStorage may throw in private mode or be unavailable — ignore.
+    }
+}
+
 /** Raw response shape of `GET /api/v1/public/auth/me`. */
 interface AuthMeResponseBody {
     readonly data?: {
