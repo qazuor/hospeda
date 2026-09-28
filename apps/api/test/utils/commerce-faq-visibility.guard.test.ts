@@ -21,24 +21,55 @@ import { describe, expect, it } from 'vitest';
 const ROUTES = join(import.meta.dirname, '..', '..', 'src', 'routes');
 const VERTICALS = ['gastronomy', 'experience'] as const;
 
-/** A call that returns a listing with its embedded `faqs` relation. */
-const WHOLE_ENTITY_READ = /Service\.(getById|getBySlug)\(/;
+/**
+ * A call that returns a listing with its embedded `faqs` relation, on ANY
+ * receiver (a service, a model, a local alias), or the dedicated FAQ list.
+ */
+const READ = /\.(getById|getBySlug|getByName|getByField)\(|\blist\w*Faqs\(/;
 
-const publicRouteFiles = (vertical: string): readonly string[] =>
-    readdirSync(join(ROUTES, vertical, 'public'))
-        .filter((f) => f.endsWith('.ts'))
-        .map((f) => join(ROUTES, vertical, 'public', f));
+/** The filter helpers, with the first identifier of their argument captured. */
+const HELPER_CALL = /\b(?:withPublicVisibleFaqs|filterPublicFaqs)\(\s*([A-Za-z_$][\w$]*)/g;
 
-describe('commerce public routes filter hidden FAQs (HOS-1263)', () => {
-    const readers = VERTICALS.flatMap((v) => publicRouteFiles(v)).filter((file) =>
-        WHOLE_ENTITY_READ.test(readFileSync(file, 'utf8'))
-    );
-
-    it('finds the whole-entity readers (guard is not vacuous)', () => {
-        expect(readers.length).toBeGreaterThanOrEqual(4);
+const filesUnder = (dir: string): readonly string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) return filesUnder(full);
+        return entry.name.endsWith('.ts') ? [full] : [];
     });
 
-    it.each(readers)('%s applies withPublicVisibleFaqs', (file) => {
-        expect(readFileSync(file, 'utf8')).toContain('withPublicVisibleFaqs(');
+/** Names holding the read's result: `result` and anything assigned from `result.data`. */
+const resultNames = (source: string): ReadonlySet<string> => {
+    const names = new Set<string>(['result']);
+    for (const m of source.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*result\.data/g)) {
+        if (m[1]) names.add(m[1]);
+    }
+    return names;
+};
+
+/** Whether a helper call comes after the read AND wraps a value derived from it. */
+const wrapsTheRead = (source: string): boolean => {
+    const readAt = source.search(READ);
+    const names = resultNames(source);
+    return [...source.matchAll(HELPER_CALL)].some(
+        (m) => (m.index ?? -1) > readAt && names.has(m[1] ?? '')
+    );
+};
+
+describe('commerce public routes filter non-public FAQs (HOS-1263)', () => {
+    const readers = VERTICALS.flatMap((v) => filesUnder(join(ROUTES, v, 'public'))).filter((file) =>
+        READ.test(readFileSync(file, 'utf8'))
+    );
+
+    it('finds the whole-entity and FAQ readers (guard is not vacuous)', () => {
+        expect(readers.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it.each(readers)('%s wraps the returned value in the FAQ filter', (file) => {
+        expect(wrapsTheRead(readFileSync(file, 'utf8'))).toBe(true);
+    });
+
+    it('rejects a helper that merely appears in the file (self-check)', () => {
+        const decoy = `const r = await svc.getBySlug(a, b);\nconst x = withPublicVisibleFaqs(other);`;
+        expect(wrapsTheRead(decoy)).toBe(false);
     });
 });
