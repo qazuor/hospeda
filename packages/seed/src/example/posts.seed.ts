@@ -232,15 +232,27 @@ async function seedPostMediaRows({
 /**
  * Seed-factory `postProcess` hook: mirrors the fixture's photos into
  * `post_media` right after the post row exists.
+ *
+ * `createSeedFactory` hands over the service-result envelope `{ data: { id } }`
+ * on both of its create paths, not the bare row. Reading `result.id` (HOS-1034)
+ * made this hook return early on every post, so fresh seeds wrote the photos to
+ * the JSONB only. A missing id now throws instead of returning: a silent skip is
+ * how that went unnoticed.
+ *
+ * @param result - The factory's create result (`{ data: { id } }`).
+ * @param item - The raw post fixture.
+ * @throws {Error} When the result carries no created id.
  */
-const postProcessPost = async (result: unknown, item: unknown): Promise<void> => {
-    const created = result as { id?: string } | null;
+export const postProcessPost = async (result: unknown, item: unknown): Promise<void> => {
+    const postId = (result as { data?: { id?: string } } | null)?.data?.id;
     const fixture = item as { media?: FixtureMediaBlock; title?: string };
-    if (!created?.id) return;
+    if (!postId) {
+        throw new Error(`postProcessPost: no created id for "${fixture.title ?? 'unknown post'}"`);
+    }
     await seedPostMediaRows({
-        postId: created.id,
+        postId,
         media: fixture.media,
-        label: fixture.title ?? created.id
+        label: fixture.title ?? postId
     });
 };
 
