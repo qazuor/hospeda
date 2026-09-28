@@ -57,7 +57,7 @@ import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
-import type { AuthMeUser } from '@/lib/auth-cache';
+import { type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
@@ -421,6 +421,12 @@ export function MobileMenu({
     const handleSignOut = useCallback(async () => {
         setIsSigningOut(true);
         try {
+            // HOS-1206: drop the `/auth/me` snapshot BEFORE signing out.
+            // Simple-mode islands (favorites, compare, contact host, reviews,
+            // newsletter prefill) trust any fresh AUTHENTICATED snapshot, so
+            // leaving it would keep showing the signed-out account for up to
+            // the 60s TTL — on a shared device, someone else's identity.
+            clearCachedAuthMe();
             await signOut();
         } finally {
             window.location.reload();
