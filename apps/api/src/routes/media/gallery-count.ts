@@ -25,21 +25,25 @@
  * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
- * | event         | composed `media.gallery` (from `event_media`, see below)           |
- * | post          | composed `media.gallery` (from `post_media`, see below)            |
+ * | event         | `event_media` rows (`state='visible'`, `is_featured=false`)         |
+ * | post          | `post_media` rows (`state='visible'`, `is_featured=false`)          |
  *
- * Events and posts DID move to relational tables (HOS-390), but they take the
- * `entity.media.gallery` branch on purpose: the entity handed in comes from
- * `service.getById`, whose `_afterGetByField` hook rebuilds `media` from the
- * relational rows via `composeContentMedia` (gallery = visible, non-featured).
- * So the branch reads live data, not the stale JSONB blob. That only holds
- * while callers pass a service-loaded entity; a raw DB row would count the
- * legacy blob. Destination is the one type still genuinely JSONB-backed.
+ * Post and event count ROWS in every moderation state, not the composed
+ * `entity.media.gallery`: that one is filtered to APPROVED rows, whereas the
+ * register path (`addPostMedia`/`addEventMedia`) counts all of them, so the two
+ * enforcement points must not disagree (HOS-1164). Destination is the only type
+ * still genuinely JSONB-backed, which is why the fallback branch survives.
  *
  * @module routes/media/gallery-count
  */
 
-import { accommodationMediaModel, experienceMediaModel, gastronomyMediaModel } from '@repo/db';
+import {
+    accommodationMediaModel,
+    eventMediaModel,
+    experienceMediaModel,
+    gastronomyMediaModel,
+    postMediaModel
+} from '@repo/db';
 
 /**
  * Inputs for {@link resolveVisibleGalleryCount}.
@@ -110,6 +114,25 @@ export async function resolveVisibleGalleryCount(
             });
             return total;
         }
+        // Post and event count their ROWS, exactly as `addPostMedia` /
+        // `addEventMedia` do (HOS-1164). The composed `entity.media.gallery` is
+        // NOT a substitute: it only holds APPROVED rows, so a PENDING photo
+        // registered through the API would be invisible here and uploads would
+        // keep reaching Cloudinary past the cap.
+        case 'post':
+            return postMediaModel.count({
+                postId: entityId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            });
+        case 'event':
+            return eventMediaModel.count({
+                eventId: entityId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            });
         default:
             return countFromJsonb(entity);
     }
