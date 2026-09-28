@@ -220,7 +220,7 @@ export async function removePostMedia(
 
         const mediaModel = new PostMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.postId !== validated.postId) {
+        if (!mediaRow || mediaRow.postId !== validated.postId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
         }
 
@@ -534,7 +534,7 @@ export async function updatePostMedia(
 
         const mediaModel = new PostMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.postId !== validated.postId) {
+        if (!mediaRow || mediaRow.postId !== validated.postId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
         }
 

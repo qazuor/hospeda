@@ -220,7 +220,7 @@ export async function removeEventMedia(
 
         const mediaModel = new EventMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.eventId !== validated.eventId) {
+        if (!mediaRow || mediaRow.eventId !== validated.eventId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this event');
         }
 
@@ -529,7 +529,7 @@ export async function updateEventMedia(
 
         const mediaModel = new EventMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.eventId !== validated.eventId) {
+        if (!mediaRow || mediaRow.eventId !== validated.eventId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this event');
         }
 

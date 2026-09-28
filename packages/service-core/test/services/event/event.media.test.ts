@@ -299,6 +299,22 @@ describe('removeEventMedia', () => {
         expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
     });
 
+    it('returns NOT_FOUND for an already soft-deleted row instead of deleting it again (HOS-1175)', async () => {
+        const model = makeEventModel(makeEvent());
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ deletedAt: new Date('2024-02-01') })
+        );
+
+        const result = await removeEventMedia(
+            model as unknown as EventModelArg,
+            authorActor,
+            removeInput
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+    });
+
     it('soft-deletes and resequences remaining visible rows to a dense 0-based sortOrder', async () => {
         const model = makeEventModel(makeEvent());
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ sortOrder: 1 }));
