@@ -83,7 +83,7 @@ describe('PhotoMetadataEditor', () => {
         expect(screen.getByLabelText('Cerrar edición de textos de la foto 1').className).toContain(
             'metadataToggleCompact'
         );
-        const panel = screen.getByLabelText('¿Qué muestra la foto?').closest('form');
+        const panel = screen.getByLabelText('¿Qué muestra la foto?').closest('.metadataPanel');
         expect(panel?.className).toContain('metadataPanelFloating');
     });
 
