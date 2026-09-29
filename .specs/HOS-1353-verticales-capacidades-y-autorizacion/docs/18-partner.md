@@ -124,7 +124,9 @@ cero— y un Silver que dejaba de pagar seguía en la home.
 decisión 7c). La presencia lleva **un bit de moderación**, escrito **sólo** por la misma acción
 administrativa que `PB10` y `PB11` —moderar o levantar la moderación, con motivo (`NUCLEO/08` §3)—,
 y la lectura pasa a ser *«tiene la clave **y** no está moderada»*. **Sigue sin haber máquina**: es
-una condición más en la lectura, y el bit se lee en vivo, no desde el caché. Sin él, la única forma
+una condición más en la lectura, y el bit se lee en vivo, no desde el caché. **Y no tiene los dos
+niveles de la moderación de fichas** (`V/03` §9, *«la moderación en dos niveles»*): la presencia
+se modera o no, sin pedido de arreglo (revisión del owner, casos vecinos, 2026-09-29, caso 14). Sin él, la única forma
 de bajar una página por contenido inadecuado era **cancelarle la suscripción** —mover plata para
 moderar—, que es lo que el código de hoy evita a propósito al revocar sin tocar el cobro.
 

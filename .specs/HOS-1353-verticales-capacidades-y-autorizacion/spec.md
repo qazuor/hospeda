@@ -400,7 +400,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
 | `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
-| `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`) |
+| `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`), **y hasta el corte con una lista de pendientes cerrada, las dos historias, que el paso 6 del corte vacía; un build destinado a producción después del corte falla si no está vacía** (revisión del owner, casos vecinos, 2026-09-29, caso 8) |
 | `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 | `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
 
@@ -449,7 +449,9 @@ filas existentes; salida 3 de la FASE 9 completa.)*
   `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3.
 - **La baja de cuenta pedida por el usuario** (revisión del owner, 2026-09-28, N7, `g1`): fuera de
   esta épica; la hace soporte a mano con una lista de pasos, y se corrige la FAQ
-  ([HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393); `NUCLEO/08` §1).
+  ([HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393); `NUCLEO/08` §1). **La lista se
+  escribe antes del corte, en este orden: la baja del cobro, `PB12` por cada ficha y la cuenta**
+  (revisión del owner, casos vecinos, 2026-09-29, caso 7; `NUCLEO/08` §1.3).
 - **Nada de la épica de billing.** Su primera pregunta —si el cargo puntual es el modelo canónico—
   ~~está planteada en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y sin responder.~~
   **se planteó en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y está respondida**

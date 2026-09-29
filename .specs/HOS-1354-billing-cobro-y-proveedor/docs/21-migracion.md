@@ -442,7 +442,11 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   `validation/config-validator.ts` y los seeders de planes (los de billing, los de prueba, los de
   las verticales viejas y los de Partner). **Las 11 migraciones de datos del seed que importan
   `@repo/billing`** dejan de compilar cuando el archivo se borra, y quedan sin sujeto: salen con el
-  reemplazo del ledger del seed en el paso 6 del corte. El catálogo de producción no sale de este
+  reemplazo del ledger del seed en el paso 6 del corte. **Hasta entonces se congelan con sus valores
+  adentro** (revisión del owner, casos vecinos, 2026-09-29, caso 9): cuando el archivo se borra en
+  la rama, antes del paso 6, cada una deja de importar `@repo/billing` y lleva escritos los valores
+  que leía, así que compila sin el archivo y no cambia lo que ya aplicó; nadie las edita después, y
+  el paso 6 las saca con el resto de `packages/seed/src/data-migrations/**`. El catálogo de producción no sale de este
   archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`). Es filtro 1
   de FASE 5: el sujeto muere.
 
@@ -471,7 +475,11 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   reembolsos a mano. **Mueve plata, y por eso se declara con su detector**: la re-verificación del
   §1.3 lista quién pagó y qué, y es la lista con la que el owner llama; un reclamo que llegue
   después del corte se atiende contra el comprobante del proveedor (punto anterior), no contra
-  nada nuestro. No da acceso indebido ni borra datos de nadie más. **Y no es el cobro en vuelo del
+  nada nuestro. **Y no queda constancia de que el aviso se dio**: el owner avisa en persona y no
+  se registra a quién ni cuándo, ni por el sistema ni a mano (revisión del owner, casos vecinos,
+  2026-09-29, caso 2, contra la recomendación de anotarlo en la lista del script). Si un cliente
+  reclama después que no le avisaron, no hay registro que lo muestre: consecuencia aceptada por el
+  owner (`16-fase-7…` §4.2, guion del aviso). No da acceso indebido ni borra datos de nadie más. **Y no es el cobro en vuelo del
   corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).
   **Y alcanza igual al titular de una autorización que sólo conoce el proveedor** (owner
   2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por el período en curso,

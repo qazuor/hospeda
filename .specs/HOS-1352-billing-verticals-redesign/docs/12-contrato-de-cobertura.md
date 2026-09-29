@@ -109,7 +109,9 @@ cobertura(user, vertical) → {
 > `L2-f3`): **el instante en que esa fuente empezó a cubrir**, que es el ancla de la cuota
 > mensual (`V/15` §7). Una `SUSCRIPCIÓN`, el de su fila (la sucesora de un cambio de plan trae el
 > suyo, y eso es lo que corre la fecha del ciclo); un `TRIAL`, el de `T1`; una `CORTESÍA` y un
-> `GRANT`, el de su arranque; un `ADDON`, el de su instancia; el `BASE`, el alta de la cuenta.
+> `GRANT`, el de su arranque; un `ADDON`, el de su instancia; el `BASE`, el alta de la cuenta
+> (**queda escrito así, y se confirma el día que la versión de piso otorgue un entitlement medido**:
+> hasta entonces no ancla nada; revisión del owner, casos vecinos, 2026-09-29, caso 11).
 > Una fuente con `hasta = SIN_EMPEZAR` trae `desde = SIN_EMPEZAR`: su reloj no arrancó (§2.4).
 > **No es una fecha de cobro** (§4): es la del alta de la fuente, no la de ningún pago.
 
@@ -1088,7 +1090,12 @@ ni en `cubierto`**: la máquina de trial, la publicación y el paso 5 no la ven,
 `DEC-TRIAL-008` queda intacta en lo que protegía (§4). **No cambia el reloj ni lo congela**: la
 pausa no escribe nada en verticales, y al reanudar la fila vuelve a emitir, `cubierto` pasa a
 verdadero y el hecho 2 reinicia el reloj (`NUCLEO/01` §1.2), que es el *«al volver se reinicia»*
-del owner. Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye `B4`**
+del owner. **Y todo fin de la pausa, por cualquier camino, reinicia el reloj** (revisión del owner,
+casos vecinos, 2026-09-29, caso 12): también la baja desde la pausa (`S22`) o cualquier otra
+salida que no vuelva a cubrir. Sin eso `retenciónDetenida` pasaba a `no` y `PB4` y `PB9` corrían al
+día siguiente sobre fichas con el reloj arrancado en el hecho 5 del primer día de la pausa, con
+más de 180 días. ⚠️ **Cómo se escribe ese reinicio cuando la cobertura no vuelve no está decidido**
+(`30-revision-del-owner/17-` §3). Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye `B4`**
 en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que contesta `no`
 (§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.

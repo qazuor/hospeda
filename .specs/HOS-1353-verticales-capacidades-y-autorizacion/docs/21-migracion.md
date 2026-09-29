@@ -189,11 +189,14 @@ revalidación que `PB2` habría programado (`16-fase-7…` §4.2; FASE 9 vuelta 
 alojamientos: una purga por destino, 22** (FASE 9 vuelta 2, verificación, owner 2026-09-28,
 `V2-t`).~~ **La que estaba a la vista no cambia de visibilidad**, así que el paso 4c ya no la
 revalida; le quedan las fichas que nacen fuera del sitio y el sistema viejo servía, si alguna
-(`16-fase-7…` §4.2).
+(`16-fase-7…` §4.2). **Si hay alguna se mide en el paso 0, y si da cero el 4c se saltea** (revisión
+del owner, casos vecinos, 2026-09-29, caso 5).
 
 **Un dueño con más de una ficha a la vista en la misma vertical no se diseña** (revisión del owner, 2026-09-28, C12,
 `L1-a`, hecho del owner): **hoy no hay ninguno**. La prueba permite una ficha; si aparece alguno, se
-decide en ese momento.
+decide en ese momento. **Cómo aparece: un recuento en el paso 0 del corte, que no es gate**; si da
+más de cero, vuelve al owner antes del corte con el número a la vista (revisión del owner, casos
+vecinos, 2026-09-29, caso 6; `16-fase-7…` §4.2).
 
 **La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se
@@ -520,7 +523,12 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   el rol de dueño de comercio, sus siete permisos, la tabla de contactos de alta de Gastronomía y
   Experiencia y el tipo de partner que lo nombra entran en la limpieza **con su migración de
   datos**, porque tienen filas vivas (renombrar un permiso es mover filas de `role_permission`);
-  **el tipo de partner se renombra a lo que es**, con un nombre a definir con el owner; y los
+  **el tipo de partner se renombra a lo que es**, ~~con un nombre a definir con el owner~~ **a
+  `business`** (revisión del owner, casos vecinos, 2026-09-29, caso 19): el valor del enum de hoy
+  (`packages/schemas/src/enums/partner-type.enum.ts` en hospeda2, medido el 2026-09-29, junto a
+  `ngo` e `institution`) pasa a `business`, **y la migración de datos de `V1` reescribe a
+  `business` todo partner que tenga el valor viejo**; **la etiqueta en español sigue siendo
+  «Comercio», sin cambios**, y sólo cambia su clave de i18n; y los
   datos que lo nombren se reescriben o se borran. La historia de migraciones y el ledger del seed
   se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6). **La única
   exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11).
@@ -557,14 +565,17 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
 - **Varias fichas a la vista de un mismo dueño y vertical el día del corte: no se diseña**
   (revisión del owner, 2026-09-28, C12, `L1-a`, hecho del owner: hoy no hay ninguno; si aparece, se decide en ese
-  momento). Lo que decía este ítem: **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
+  momento). **Detector**: el recuento del paso 0 del corte, que no es gate y vuelve al owner si da
+  más de cero (revisión del owner, casos vecinos, 2026-09-29, caso 6). Lo que decía este ítem: **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
   R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`
   le da el trial de un cliente nuevo, no uno más grande. El aviso lo dice.
 - **En una vertical sin trial, el dueño del corte no tiene trial que estrenar** (§2.4; declarado
   por `DEC-METH-015`, FASE 9 vuelta 1, R1). Hoy son cero fichas (§4, re-contadas por `B/21` §1.3).
   *(Desde C12 la prueba del corte se escribe sólo donde la vertical tiene días > 0; hoy es
   Alojamiento, y el panel no deja pasarla a cero: revisión del owner, 2026-09-28, N7.)*
-  **Causa**: la configuración de la vertical, no el corte.
+  **Causa**: la configuración de la vertical, no el corte. **Sin prueba automática**: hoy no tiene
+  población; el owner lo prueba a mano en `staging`, con fichas de prueba en una vertical con días
+  en cero (revisión del owner, casos vecinos, 2026-09-29, caso 17).
 - **Una ficha vieja borrada por un admin, y no por su dueño, pierde su contenido en el corte**
   (§2.4, `L1`; declarado por `DEC-METH-015`, owner 2026-09-26, `G1-2`). Toda `L1` nace `PURGED`
   con el contenido borrado, la haya borrado quien la haya borrado: la regla no lee

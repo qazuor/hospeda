@@ -207,7 +207,9 @@ siga siendo cierta **es un invariante, no una coincidencia aritmética**: es `D1
 > reloj preguntan**. `PB4`, `PB5` y `PB9`, y los avisos de retención, releen al ejecutar la
 > pregunta `retenciónDetenida` del contrato (`12-contrato…` §4.1) además de `cubierto`, y con `sí`
 > no hacen nada. Al reanudar, la fila vuelve a emitir, `cubierto` pasa a verdadero y el hecho 2
-> reinicia el reloj. **Con eso sale `D16`** (cap. 04 §3) y con él la cota del tope de pausa contra
+> reinicia el reloj. **Y todo fin de la pausa, por cualquier camino, reinicia el reloj**, también
+> una baja desde la pausa que no vuelve a cubrir (revisión del owner, casos vecinos, 2026-09-29,
+> caso 12; `12-contrato…` §4.1): ⚠️ cómo se escribe ese reinicio sin cobertura no está decidido. **Con eso sale `D16`** (cap. 04 §3) y con él la cota del tope de pausa contra
 > el borrado: el tope de pausa deja de estar atado al día 180. Lo que sigue de este bloque, sobre
 > la cuenta `tope + 90 < 180`, queda como historia de por qué existió esa cota.
 

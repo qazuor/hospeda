@@ -862,7 +862,9 @@ sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009
    (cap. 04 §3, núcleo) y la vigila un guard.~~ **Y durante una pausa pedida por el dueño el reloj
    queda detenido** (revisión del owner, 2026-09-28, C14, `L1-c`): `PB4`, `PB5` y `PB9`, y los
    avisos de retención, releen la pregunta `retenciónDetenida` del contrato (§4.1) y con `sí` no
-   hacen nada; al volver, el hecho 2 reinicia el reloj. `D16` y su guard salieron.
+   hacen nada; al volver, el hecho 2 reinicia el reloj, **y todo fin de la pausa, por cualquier
+   camino, lo reinicia también** (revisión del owner, casos vecinos, 2026-09-29, caso 12;
+   `12-contrato…` §4.1). `D16` y su guard salieron.
 
 ---
 

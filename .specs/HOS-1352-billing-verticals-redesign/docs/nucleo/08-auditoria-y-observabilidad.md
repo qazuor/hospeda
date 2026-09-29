@@ -93,6 +93,19 @@ baja mínima ahora): mientras tanto la hace **soporte a mano, con una lista de p
 días. Se implementa después de terminar HOS-1352:
 [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393).
 
+**La lista de pasos se escribe antes del corte, y el orden es parte de ella** (revisión del owner,
+casos vecinos, 2026-09-29, caso 7): desde el corte, un pedido de baja se atiende sobre el sistema
+nuevo. Tres pasos, en este orden:
+
+1. **La baja del cobro**: toda suscripción viva de la cuenta, principal o de complemento, termina
+   por los caminos que ya existen, con su cancelación releída en el proveedor. Va primero porque
+   una cuenta que se borra con una autorización viva sigue cobrando, y después no queda nadie a
+   quien asentarle el cobro.
+2. **`PB12` por cada ficha** de la cuenta (`V/03` §9). Va antes de la cuenta porque una ficha que
+   se borra sin `PB12` no apaga su destaque hasta el barrido (`A6`, `B/03` §8), y porque `PB12` es
+   el que borra el contenido, las fotos y el token del calendario.
+3. **La cuenta**, al final, cuando ya no le cuelga ni un cobro ni una ficha con contenido.
+
 ---
 
 ## 2. El identificador de correlación · cierra `M-OBS-01`

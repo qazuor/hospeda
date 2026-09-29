@@ -516,7 +516,12 @@ anual, que renueva la cuota cada mes aunque pague una vez por año.
 1. **El ancla es el `desde` del título que da la cuota** (`12-contrato…` §2): una suscripción, el
    alta de su fila; una prueba gratis, el día en que arrancó (`T1`); una cortesía o un grant, el
    de su arranque. El día del mes de ese instante, en el huso del mercado (`NUCLEO/07` §3), es la
-   fecha del ciclo.
+   fecha del ciclo. **Con más de un título vivo, ancla el que da la cuota; si dos la dan, el que
+   arrancó primero** (una prueba y una suscripción en los minutos antes de `T2`, o una cortesía
+   sobre una suscripción) (revisión del owner, casos vecinos, 2026-09-29, caso 10). **El `BASE`
+   ancla en el alta de la cuenta** (`12-contrato…` §2): hoy la versión de piso no otorga ningún
+   entitlement medido, así que no ancla nada, y queda escrito así; se confirma el día que la
+   versión de piso otorgue uno (revisión del owner, casos vecinos, 2026-09-29, caso 11).
 2. **La prueba gratis también renueva cada mes, desde el día en que arrancó** (`L2-f1`, contra la
    recomendación). Su cuota es la cuota de trial (`11` §4), y se renueva con esta misma regla.
 3. **Del 29 al 31, el último día de los meses cortos** (`L2-f2`): el alta del 31 renueva el 30 de
