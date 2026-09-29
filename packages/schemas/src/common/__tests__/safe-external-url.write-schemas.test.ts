@@ -6,6 +6,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { ZodType } from 'zod';
+import {
+    AccommodationCreateDraftHttpSchema,
+    AccommodationCreateHttpSchema
+} from '../../entities/accommodation/accommodation.http.schema.js';
 import { EventOrganizerCreateHttpSchema } from '../../entities/eventOrganizer/eventOrganizer.http.schema.js';
 import { ExperienceCreateHttpSchema } from '../../entities/experience/experience.http.schema.js';
 import { GastronomyCreateHttpSchema } from '../../entities/gastronomy/gastronomy.http.schema.js';
@@ -45,6 +49,14 @@ const INPUT_FIELDS: ReadonlyArray<readonly [string, ZodType]> = [
     ['PostSponsorCreateHttp.facebook', PostSponsorCreateHttpSchema.shape.facebook],
     ['PostSponsorCreateHttp.instagram', PostSponsorCreateHttpSchema.shape.instagram],
     ['PostSponsorCreateHttp.linkedin', PostSponsorCreateHttpSchema.shape.linkedin],
+    ['AccommodationCreateHttp.website', AccommodationCreateHttpSchema.shape.website],
+    ['AccommodationCreateHttp.twitter', AccommodationCreateHttpSchema.shape.twitter],
+    ['AccommodationCreateHttp.facebook', AccommodationCreateHttpSchema.shape.facebook],
+    ['AccommodationCreateHttp.instagram', AccommodationCreateHttpSchema.shape.instagram],
+    ['AccommodationCreateHttp.linkedin', AccommodationCreateHttpSchema.shape.linkedin],
+    ['AccommodationCreateHttp.tiktok', AccommodationCreateHttpSchema.shape.tiktok],
+    ['AccommodationCreateHttp.youtube', AccommodationCreateHttpSchema.shape.youtube],
+    ['AccommodationCreateDraftHttp.website', AccommodationCreateDraftHttpSchema.shape.website],
     ['ExperienceCreateHttp.website', ExperienceCreateHttpSchema.shape.website],
     ['ExperienceCreateHttp.twitter', ExperienceCreateHttpSchema.shape.twitter],
     ['ExperienceCreateHttp.facebook', ExperienceCreateHttpSchema.shape.facebook],
