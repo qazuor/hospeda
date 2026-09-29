@@ -25,17 +25,25 @@
  * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
- * | event         | JSONB `media.gallery`                                              |
- * | post          | JSONB `media.gallery`                                              |
+ * | event         | `event_media` rows (`state='visible'`, `is_featured=false`)         |
+ * | post          | `post_media` rows (`state='visible'`, `is_featured=false`)          |
  *
- * The JSONB branch is NOT legacy dead code: destinations, events and posts still
- * keep their whole media object in a JSONB column and were never part of the
- * relational migration. It is the correct source for them.
+ * Post and event count ROWS in every moderation state, not the composed
+ * `entity.media.gallery`: that one is filtered to APPROVED rows, whereas the
+ * register path (`addPostMedia`/`addEventMedia`) counts all of them, so the two
+ * enforcement points must not disagree (HOS-1164). Destination is the only type
+ * still genuinely JSONB-backed, which is why the fallback branch survives.
  *
  * @module routes/media/gallery-count
  */
 
-import { accommodationMediaModel, experienceMediaModel, gastronomyMediaModel } from '@repo/db';
+import {
+    accommodationMediaModel,
+    eventMediaModel,
+    experienceMediaModel,
+    gastronomyMediaModel,
+    postMediaModel
+} from '@repo/db';
 
 /**
  * Inputs for {@link resolveVisibleGalleryCount}.
@@ -106,6 +114,25 @@ export async function resolveVisibleGalleryCount(
             });
             return total;
         }
+        // Post and event count their ROWS, exactly as `addPostMedia` /
+        // `addEventMedia` do (HOS-1164). The composed `entity.media.gallery` is
+        // NOT a substitute: it only holds APPROVED rows, so a PENDING photo
+        // registered through the API would be invisible here and uploads would
+        // keep reaching Cloudinary past the cap.
+        case 'post':
+            return postMediaModel.count({
+                postId: entityId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            });
+        case 'event':
+            return eventMediaModel.count({
+                eventId: entityId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            });
         default:
             return countFromJsonb(entity);
     }
