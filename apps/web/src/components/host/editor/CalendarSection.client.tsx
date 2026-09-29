@@ -58,7 +58,7 @@ import {
     resolvePrimaryOccupancyRow
 } from '@/lib/calendar/occupancy-row-grouping';
 import { cn } from '@/lib/cn';
-import { formatDate } from '@/lib/format-utils';
+import { formatDate, formatMonthYearLabel } from '@/lib/format-utils';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -404,11 +404,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         [locale]
     );
 
-    const monthLabel = formatDate({
-        date: viewedMonth,
-        locale,
-        options: { month: 'long', year: 'numeric' }
-    });
+    const monthLabel = formatMonthYearLabel({ date: viewedMonth, locale });
     const weekdayLabels = useMemo(() => {
         // A Monday-first reference week (2024-01-01 is a Monday) used purely
         // to derive locale-correct short weekday labels via Intl.

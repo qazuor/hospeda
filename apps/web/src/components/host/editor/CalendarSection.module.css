@@ -64,7 +64,6 @@
     font-weight: 600;
     font-size: 1rem;
     color: var(--core-foreground);
-    text-transform: capitalize;
     min-width: 10rem;
     justify-content: center;
 }
