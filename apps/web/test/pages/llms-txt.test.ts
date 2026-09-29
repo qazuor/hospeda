@@ -2,7 +2,7 @@
  * @fileoverview
  * Unit tests for the llms.txt endpoint (src/pages/llms.txt.ts).
  *
- * Strategy: mock `@/lib/env` and `@/lib/middleware-helpers`, then call the GET
+ * Strategy: mock `@/lib/env` and `@/lib/noindex-hosts`, then call the GET
  * handler directly with a synthetic Request object.
  *
  * The llms.txt standard (https://llmstxt.org) exposes a concise, link-rich
@@ -28,7 +28,7 @@ vi.mock('@/lib/env', () => ({
     getNoindexHosts: vi.fn(() => undefined)
 }));
 
-vi.mock('@/lib/middleware-helpers', () => ({
+vi.mock('@/lib/noindex-hosts', () => ({
     parseNoindexHosts: vi.fn((raw: string | undefined) =>
         raw ? raw.split(',').map((h) => h.trim().toLowerCase()) : ['staging.hospeda.com.ar']
     )
