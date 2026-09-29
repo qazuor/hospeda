@@ -64,6 +64,26 @@ export interface ApiErrorShape {
      * statuses to a dedicated localized message (BETA-146).
      */
     readonly status?: number | null;
+    /**
+     * Optional structured details supplied by the endpoint. When it is a plain
+     * object it is forwarded to `t()` as interpolation params for the
+     * `reason` / `code` lookup, so a message can name a value the API knows
+     * (e.g. `GALLERY_LIMIT_EXCEEDED` -> `{{limit}}`). Ignored otherwise
+     * (validation errors carry an array here).
+     */
+    readonly details?: unknown;
+}
+
+/**
+ * Narrows `details` to interpolation params: only a plain object qualifies.
+ *
+ * @param details - The error's `details` payload.
+ * @returns The params record, or `undefined` for arrays, primitives and null.
+ */
+function toInterpolationParams(details: unknown): Record<string, unknown> | undefined {
+    return typeof details === 'object' && details !== null && !Array.isArray(details)
+        ? (details as Record<string, unknown>)
+        : undefined;
 }
 
 /**
@@ -110,6 +130,21 @@ function lookupTrans(locale: Locale, key: string): string | undefined {
     const localeMap = trans[locale] ?? trans[defaultLocale];
     const value = localeMap?.[key];
     return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Replaces `{{name}}` placeholders with the matching value. Placeholders with
+ * no value are left untouched.
+ *
+ * @param text - The translated text.
+ * @param values - Interpolation values, if any.
+ * @returns The text with known placeholders filled in.
+ */
+function interpolate(text: string, values: Record<string, unknown> | undefined): string {
+    if (values === undefined) return text;
+    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, name: string) =>
+        name in values ? String(values[name]) : match
+    );
 }
 
 /**
@@ -163,6 +198,7 @@ export function translateApiErrorWithT(params: {
     const { error, t, fallback } = params;
 
     const apiMessage = error?.message ?? '';
+    const interpolation = toInterpolationParams(error?.details);
     const genericFallback =
         fallback ?? t('common.apiError.GENERIC', 'Algo salió mal. Intentá de nuevo en un momento.');
 
@@ -174,14 +210,18 @@ export function translateApiErrorWithT(params: {
     // `[MISSING:` marker, a production build echoes the raw key back.
     if (error?.reason) {
         const reasonKey = `common.apiError.${error.reason}`;
-        const reasonText = t(reasonKey);
+        const reasonText =
+            interpolation === undefined ? t(reasonKey) : t(reasonKey, undefined, interpolation);
         if (!isMissingTranslation({ key: reasonKey, value: reasonText })) return reasonText;
     }
 
     if (error?.code) {
         // `t()` returns the translation if present, otherwise the fallback
         // (the API's English message), otherwise the generic localized text.
-        return t(`common.apiError.${error.code}`, apiMessage || genericFallback);
+        const codeKey = `common.apiError.${error.code}`;
+        return interpolation === undefined
+            ? t(codeKey, apiMessage || genericFallback)
+            : t(codeKey, apiMessage || genericFallback, interpolation);
     }
 
     // No `code` (or `reason`) resolved — some failure modes only carry an HTTP
@@ -215,10 +255,13 @@ export function translateApiError(params: {
     const t: TranslationFn | undefined =
         params.t ??
         (params.locale
-            ? (key: string, fb?: string) =>
-                  lookupTrans(params.locale as Locale, key) ??
-                  fb ??
-                  `${MISSING_TRANSLATION_MARKER} ${key}]`
+            ? (key: string, fb?: string, values?: Record<string, unknown>) =>
+                  interpolate(
+                      lookupTrans(params.locale as Locale, key) ??
+                          fb ??
+                          `${MISSING_TRANSLATION_MARKER} ${key}]`,
+                      values
+                  )
             : undefined);
 
     if (!t) {
