@@ -29,13 +29,16 @@ import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/
 // Provider mock (hoisted so vi.mock() can reference it)
 // ---------------------------------------------------------------------------
 
-const { mockUpload, mockDelete, providerState, mockFindByAccommodation } = vi.hoisted(() => ({
-    mockUpload: vi.fn(),
-    mockDelete: vi.fn(),
-    providerState: { configured: true as boolean },
-    // SPEC-204: accommodation gallery count now comes from the relational table.
-    mockFindByAccommodation: vi.fn()
-}));
+const { mockUpload, mockDelete, providerState, mockFindByAccommodation, mockContentMediaCount } =
+    vi.hoisted(() => ({
+        mockUpload: vi.fn(),
+        mockDelete: vi.fn(),
+        providerState: { configured: true as boolean },
+        // SPEC-204: accommodation gallery count now comes from the relational table.
+        mockFindByAccommodation: vi.fn(),
+        // HOS-1164: post/event gallery count comes from their relational rows.
+        mockContentMediaCount: vi.fn()
+    }));
 
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () =>
@@ -50,7 +53,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         accommodationMediaModel: {
             findByAccommodation: mockFindByAccommodation
-        }
+        },
+        postMediaModel: { count: mockContentMediaCount },
+        eventMediaModel: { count: mockContentMediaCount }
     };
 });
 
@@ -190,6 +195,8 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
         // stubs fire so both gallery-cap checks get consistent counts.
         mockFindByAccommodation.mockReset();
         mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
+        mockContentMediaCount.mockReset();
+        mockContentMediaCount.mockResolvedValue(0);
         resetMetrics();
     });
 
@@ -289,9 +296,11 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
     describe('event (cap = 10)', () => {
         it('rejects upload #11: gallery full at 10 items → 422 GALLERY_LIMIT_EXCEEDED with limit=10', async () => {
             // Arrange: gallery is AT the cap (10 items).
+            // The composed entity is deliberately EMPTY: the row count decides.
             vi.spyOn(EventService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.event)
+                buildEntityStubFn(0)
             );
+            mockContentMediaCount.mockResolvedValue(ENTITY_GALLERY_CAPS.event);
 
             // Act
             const res = await upload(app, 'event', PermissionEnum.EVENT_UPDATE);
@@ -310,9 +319,11 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
 
         it('allows upload #10: one slot remaining (9 items) → 200', async () => {
             // Arrange: one slot below cap.
+            // The composed entity is deliberately EMPTY: the row count decides.
             vi.spyOn(EventService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.event - 1)
+                buildEntityStubFn(0)
             );
+            mockContentMediaCount.mockResolvedValue(ENTITY_GALLERY_CAPS.event - 1);
 
             // Act
             const res = await upload(app, 'event', PermissionEnum.EVENT_UPDATE);
@@ -328,9 +339,9 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
     describe('post (cap = 15)', () => {
         it('rejects upload #16: gallery full at 15 items → 422 GALLERY_LIMIT_EXCEEDED with limit=15', async () => {
             // Arrange: gallery is AT the cap (15 items).
-            vi.spyOn(PostService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.post)
-            );
+            // The composed entity is deliberately EMPTY: the row count decides.
+            vi.spyOn(PostService.prototype, 'getById').mockImplementationOnce(buildEntityStubFn(0));
+            mockContentMediaCount.mockResolvedValue(ENTITY_GALLERY_CAPS.post);
 
             // Act
             const res = await upload(app, 'post', PermissionEnum.POST_UPDATE);
@@ -349,9 +360,9 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
 
         it('allows upload #15: one slot remaining (14 items) → 200', async () => {
             // Arrange: one slot below cap.
-            vi.spyOn(PostService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.post - 1)
-            );
+            // The composed entity is deliberately EMPTY: the row count decides.
+            vi.spyOn(PostService.prototype, 'getById').mockImplementationOnce(buildEntityStubFn(0));
+            mockContentMediaCount.mockResolvedValue(ENTITY_GALLERY_CAPS.post - 1);
 
             // Act
             const res = await upload(app, 'post', PermissionEnum.POST_UPDATE);
