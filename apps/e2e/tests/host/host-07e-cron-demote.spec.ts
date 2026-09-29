@@ -14,11 +14,9 @@
  * has existed since SPEC-161 (`apps/api/src/routes/cron-admin/index.ts`,
  * `SYSTEM_MAINTENANCE_MODE`). It is now what the trigger calls.
  *
- * Note on `dryRun`: the query param is parsed with `z.coerce.boolean()`, for
- * which EVERY non-empty string — `'false'` included — coerces to `true`. The
- * trigger below therefore sends no `dryRun` at all rather than `dryRun=false`;
- * sending the latter would run the job in simulation and leave `demoted: 0`
- * with nothing archived, which reads exactly like a broken job.
+ * Note on `dryRun`: the trigger sends `dryRun=false` explicitly. Until HOS-410 the
+ * route parsed it with `z.coerce.boolean()` (`'false'` became `true`), so this
+ * spec had to omit the param; sending it now doubles as a regression check.
  *
  * What this validates (two scenarios in one test):
  *
@@ -52,8 +50,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 /**
  * Triggers the `archive-abandoned-drafts` job through the admin cron endpoint.
  *
- * Deliberately passes NO `dryRun` query param — see the file header: the route
- * parses it with `z.coerce.boolean()`, so `dryRun=false` would be `true`.
+ * Passes `dryRun=false` explicitly (see the file header, HOS-410).
  *
  * @param sessionCookie - An admin session holding `SYSTEM_MAINTENANCE_MODE`.
  * @returns The HTTP status and parsed body of the trigger call.
@@ -61,7 +58,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 async function runArchiveAbandonedDraftsCron(
     sessionCookie: string
 ): Promise<{ readonly status: number; readonly body: unknown }> {
-    const url = `${API_URL}/api/v1/admin/cron/archive-abandoned-drafts`;
+    const url = `${API_URL}/api/v1/admin/cron/archive-abandoned-drafts?dryRun=false`;
     const response = await fetch(url, {
         method: 'POST',
         headers: {

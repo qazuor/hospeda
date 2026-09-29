@@ -263,7 +263,7 @@ export async function removeExperienceMedia(
 
         const mediaModel = new ExperienceMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.experienceId !== validated.experienceId) {
+        if (!mediaRow || mediaRow.experienceId !== validated.experienceId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this experience listing'
@@ -681,7 +681,7 @@ export async function updateExperienceMedia(
 
         const mediaModel = new ExperienceMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.experienceId !== validated.experienceId) {
+        if (!mediaRow || mediaRow.experienceId !== validated.experienceId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this experience listing'
