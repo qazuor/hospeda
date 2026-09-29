@@ -79,7 +79,7 @@ no hay registro que lo muestre.
 | F | 46 | configurar el 90 y el 180 frente al §25 del PDR | **1**: se declara como el décimo apartamiento del PDR | sí |
 | G | 47 | una pantalla o dos para los plazos | **1**: una sola, compuesta en la app del panel | sí |
 | H | 48 | `plazos_version` sin guard de escritores | **1**: se extiende la mitad *(a)* de `G-R6-B` a esa columna | sí |
-| I | 49 | el catálogo de claves sigue en código | **1**, con agregado del owner: *«los entitlements siguen declarándose en el código, pero los límites podrían ir por db»* (alcance a aclarar) | sí, con agregado |
+| I | 49 | el catálogo de claves sigue en código | **1**, con agregado del owner: *«los entitlements siguen declarándose en el código, pero los límites podrían ir por db»* Aclarado: los **valores** de los límites viven en la base (ya era así) y las **claves**, de límites y de entitlements, siguen en el código | sí, con agregado aclarado |
 | J | 50 | la cota de `G-R5-B` | **1**: atada al plazo de borrado, no a 6 meses literales | sí |
 
 ## Resumen
