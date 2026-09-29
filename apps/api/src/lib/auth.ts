@@ -215,6 +215,17 @@ function buildAuth() {
 
     const baseURL = env.HOSPEDA_API_URL;
 
+    // HOS-955: the session cookie NAME is per deployment, keyed on
+    // HOSPEDA_DEPLOY_ENV. Unset on a deployed instance means the default name,
+    // which on staging silently brings back the cross-environment clobbering.
+    if (env.NODE_ENV === 'production' && !env.HOSPEDA_DEPLOY_ENV) {
+        logger.warn(
+            'HOSPEDA_DEPLOY_ENV is not set: using the default auth cookie name. ' +
+                'On staging this shares the session cookie with production — set it to "preview" ' +
+                '(and the same value on the web app).'
+        );
+    }
+
     return betterAuth({
         secret,
         baseURL,
