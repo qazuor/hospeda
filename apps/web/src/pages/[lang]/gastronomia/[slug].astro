@@ -454,8 +454,9 @@ const breadcrumbItems = [
          does: the widget renders nothing until it resolves a session, and both
          the FAB and the panel are position:fixed, so appearing after hydration
          shifts nothing. Whether the OWNER's plan grants the chat is decided
-         server-side; an owner without it answers 403 with the vertical's own
-         copy rather than a message about an accommodation. -->
+         server-side; an owner without it answers 403 and the widget shows the
+         vertical's own `unavailable` copy (HOS-1264: resolved through
+         `resolveChatError` with the entity type, not the accommodation key). -->
     <AiChatWidget
         client:idle
         entityType="gastronomy"
