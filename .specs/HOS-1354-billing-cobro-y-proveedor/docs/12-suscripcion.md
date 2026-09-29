@@ -189,6 +189,13 @@ descenso de capacidades**, más la elección del cliente sobre qué conserva.
 **Es una cola nuestra, de entitlements. No es una cola de cambios en el proveedor** — el
 proveedor no tiene ninguna.
 
+**Y desde la revisión del owner (2026-09-28, C15) encola también el cambio de versión de una
+migración de un plan retirado**: `S37` muta el monto siete días antes de la renovación y deja acá el
+cambio de versión para ese día (`B/03` §3.2, `B/10` §3.7). Sigue siendo **a lo sumo uno** (`S37`
+no corre sobre una fila con un cambio programado) y las colisiones del §2.2 valen igual, con una
+diferencia: **un cambio que pide el cliente saca a la fila de la migración** (`B/10` §3.7 punto 8)
+en vez de reemplazar el cambio encolado en silencio.
+
 **Qué es un downgrade y qué un upgrade no lo decide este capítulo**: es el veredicto
 `direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA` que emite verticales
 (`12-contrato…` §4.1, `DEC-ARCH-008`), y lo que billing hace con cada uno está en `B/10` §3.5. Ni
@@ -1123,3 +1130,19 @@ una regla: hace falta que nadie agregue esa transición.
   en el corte, y el primer lote puede caer dos minutos después. Tiene que coincidir una autorización
   en los últimos minutos, un webhook demorado y, o bien un cobro fechado a las 00:00-00:02, o una
   cancelación de `S17` fallida: es doble cobro, sobre la intersección de tres bordes.
+- **Cancelar o pausar desde la cuenta de Mercado Pago, y no desde Hospeda: pendiente de medición**
+  (revisión del owner, 2026-09-28, N8). **Se detecta**: el aviso dispara una relectura por id
+  (`B/03` §10.1) y el barrido relee cada día toda fila no terminal (`B/09` §3), así que a más tardar
+  al día siguiente. **Lo que no está resuelto son dos huecos, y ninguno se decide antes de medir**:
+  (1) **cancelar desde la app del proveedor corta el servicio en el acto y pierde lo pagado, sin
+  aviso nuestro**: el espejo de `cancelled` sobre una fila viva sin baja programada la lleva a
+  `CANCELLED` (§1.4, `B/03` §10.1), así que quien paga el 1 y se da de baja desde Mercado Pago el 10
+  pierde veinte días que desde Hospeda conservaría (`DEC-SUB-009`), y ninguna fila de `B/19` §4 le
+  dice qué pasa con sus fichas; (2) **una pausa del pagador se leería como mora**: el par `paused`
+  sobre `ACTIVE` o `GRACE_PERIOD` corre `S6` por su segundo evento (`DEC-MP-008`), que suspende,
+  cancela la autorización y le dice *«volvé a suscribirte»* a alguien que no debe nada. **Causa**:
+  §1.4 y `DEC-MP-008` se escribieron para las bajas y pausas **del proveedor**, y ninguna fila de la
+  matriz mide un acto **del pagador** desde su cuenta. **Qué se mide** está propuesto como filas
+  nuevas de la matriz: si una cancelación desde la app se distingue de una nuestra o de una por
+  antifraude, si pausar desde la app existe y cómo se ve, y por qué canal de avisos llega cada una
+  (`B/06`, *«lo que este capítulo NO cierra»*).

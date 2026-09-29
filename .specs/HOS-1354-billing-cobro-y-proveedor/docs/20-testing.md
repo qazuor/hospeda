@@ -63,6 +63,20 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | **G-R6-B** | **las dos mitades de la lista cerrada de `listing.inactiva_desde`, con tres predicados**: una **escritura** que no sea uno de los **~~cuatro~~ ~~cinco~~ ~~seis~~ cinco hechos** del `NUCLEO/01` §1.2 (el 4 salió con la revisión del owner, 2026-09-28, C8; el sexto, `PB11`, owner 2026-09-25; FASE 9 completa, 5b) **ni la escritura `C` del corte**; una **lectura** que no figure entre los **~~cinco~~ seis consumidores** del `V/02` §2.5; o **uno de esos ~~cinco~~ seis que ya no lee** la columna (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, `F-8CD1-009`, owner 2026-09-25). **El mensaje nombra el predicado que falló** | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; `V/02` §2.5. **Referencia cruzada**: lo define `V/20` §2, donde vive la columna. Figura acá porque **lo que puede romper la lista se escribe en esta épica**: el §4.3 del cap. 10 es donde está escrito que el reloj *«arranca acá, no antes»* —el cuarto hecho— **y, desde esta pasada, quién lo escribe: el barrido del día del fin de servicio, que es la única escritura de `listing.inactiva_desde` que sale de esta épica**; y el §7.1 del cap. 03 apoya el tope de la reapertura en que la lista **sea** cerrada |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **cuatro** tablas de transiciones de esta épica —`S`, `P`, `MP` y `A` del cap. 03; grace y pausa son sub-estados de suscripción sin tabla propia— (decía «seis»; recontado el 2026-09-25, FASE 8 completa, `F-8CD1-016`). El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | ~~G-R5~~ | ~~el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención~~ | **retirado** (revisión del owner, 2026-09-28, C14, `L1-c`): la pausa pedida por el dueño detiene el reloj de retención, así que el tope de pausa ya no tiene que quedar por debajo del día del borrado y el guard se queda sin sujeto; sale con `D16`. El número no se reusa |
+| **G15** ✚ | **las dos listas del proveedor falso, con dos predicados**: (a) el falso **miente en un lugar que no está en la lista cerrada de mentiras del §3.2**, o una fila de esa lista **no tiene los tres datos**: su nombre, la fila de la matriz de la que sale (con fecha y cuenta) y la prueba que demuestra que el código la resiste; (b) una prueba **apaga una mentira sin nombrarla o sin decir por qué**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, C13 y `L3-c` (§3.2). Lo construye `B1` |
+| **G16** ✚ | **el cobro vuelve a depender de lo que dejó**, con dos predicados: (a) aparece **`@qazuor/qzpay`**, cualquiera de sus paquetes, en un `package.json` o en un import del repo; (b) el package del cobro **importa de `apps/`**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, N2 (`B/spec.md` §3.1). Lo construye `B1`. **Que el package del cobro no importe de la mitad de verticales ya lo vigila `G14`** (`V/20` §2), y no se duplica acá |
+| **G17** ✚ | **una decisión sale de lo que dice un aviso del proveedor sin releerlo por id**, con dos predicados: (a) el código que recibe un aviso, por cualquiera de los dos canales, **lee del cuerpo otra cosa que el tipo de recurso, su id y su `version`** (la `version` es la que descarta un aviso viejo, `B/03` §10.1, y no es estado); (b) una transición de las tablas de `B/03` o una acción administrativa de `NUCLEO/08` §3 cuya condición depende del estado del proveedor **recibe ese estado por otro camino que una lectura por id del adaptador**, el tipo que sólo el adaptador construye. **El mensaje nombra el predicado que falló** | `D17` y su quinta entrada (`NUCLEO/04` §3; revisión del owner, 2026-09-28, N4 y `L3-f`). Lo construye `B1` |
+
+**`G15`, `G16` y `G17` llegaron con la revisión del owner (2026-09-28), y los tres son de `B1`**,
+porque vigilan lo que `B1` construye primero: el falso y sus dos listas (§3.2), el package del
+cobro que se puede publicar solo (`B/spec.md` §3.1), y la frontera por la que entra todo lo que el
+proveedor dice (el adaptador). **Lo que cada uno NO verifica, dicho para que nadie lo lea de más**
+(§2.1): `G15` comprueba que cada mentira **tenga** su medición y su prueba, no que la medición siga
+siendo cierta (eso lo vigila la batería del §4.1); `G16` no mira las dependencias del package del
+cobro hacia otros packages compartidos del monorepo; y `G17` comprueba **de dónde sale** el estado
+con que se decide, no **cuándo** se leyó: una lectura por id vieja pasa en verde, y que se relea en
+el mismo acto sigue siendo la regla de `D17`, sin guard. **Tampoco mira las pantallas**: mostrar el
+estado local no es decidir, y ninguna pantalla decide.
 
 **Los SEIS de `R1` son la contracara de las dos claves y de la marca, y conviene decir qué impide
 cada uno.** *(Eran cinco hasta la FASE 9-bis-4. `G-R1-F` llegó con el motivo de la marca y es el
@@ -355,7 +369,8 @@ el contrato §6.3 le da a `V4` como dueño (owner 2026-09-26, `G5-5`).
 numeración `G1`-`G13` es **una sola, repartida entre las dos épicas**: `G1`-`G6`, `G8` **y `G13`**
 están en `V/20` §2, y `G7` más ~~`G9`-`G13`~~ **`G9`-`G12`** están acá (`G13` pasó de acá a allá:
 owner 2026-09-26, `G5-5`). Medido recorriendo las dos tablas, no deducido del
-salto.
+salto. **Desde la revisión del owner (2026-09-28) la numeración llega a `G17`**: `G14` está en
+`V/20` §2 y `G15`, `G16` y `G17` están acá.
 
 **Y el costo va con su cifra, recontada acá y no copiada.** Los guards de este programa **no corren
 todavía** —son declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10—, así que lo que decide si
@@ -365,10 +380,10 @@ de `DEC-TEST-001` —la que reparte los catorce sin unidad—, que es el último
 
 | | cuántos | quiénes |
 |---|---|---|
-| filas de `B/20` §2 | ~~**16**~~ ~~**15**~~ **14** | `G7` `G9` `G10` `G11` `G12` ~~`G13`~~ · los **seis** de `R1` · `G-R4` ~~`G-R5`~~ `G-R6` `G-R6-B` — `G13` pasó a `V/20` §2 (owner 2026-09-26, `G5-5`); `G-R5` salió (revisión del owner, 2026-09-28, C14; su fila queda tachada y no se cuenta) |
+| filas de `B/20` §2 | ~~**16**~~ ~~**15**~~ ~~**14**~~ **17** | `G7` `G9` `G10` `G11` `G12` ~~`G13`~~ **`G15` `G16` `G17`** · los **seis** de `R1` · `G-R4` ~~`G-R5`~~ `G-R6` `G-R6-B` — `G13` pasó a `V/20` §2 (owner 2026-09-26, `G5-5`); `G-R5` salió (revisión del owner, 2026-09-28, C14; su fila queda tachada y no se cuenta); **`G15`, `G16` y `G17` entraron con la revisión del owner, 2026-09-28** (C13 y `L3-c`, N2, N4 y `L3-f`), recontadas sobre la tabla |
 | filas de `V/20` §2 | ~~**17**~~ ~~**18**~~ ~~**19**~~ ~~**20**~~ **21** | `G1`-`G6` `G8` **`G13`** **`G14`** · `G-R2` `G-R2-B` **`G-R2-C`** · `G-R3` `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` ~~`G-R5`~~ **`G-R5-B`** `G-R6` `G-R6-B` · **`G-R9`** — **la cifra no se mueve y la composición sí**: sale `G-R5` y entra `G14`, el de la frontera del package del contrato (revisión del owner, 2026-09-28, C14 y N6); **`G-R9`**, **`G-R9`**, el de la lista cerrada de `PURGED`, desde la FASE 9 vuelta 2, verificación (owner 2026-09-27, `V2-k`);  `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25); **`G-R2-C`**, el gemelo de `G-R2-B` para la emisión de un addon `USER`/`GLOBAL` sólo en sus verticales compatibles, desde la FASE 9 completa (owner 2026-09-25, 4e, `F-8CA1-008`; recontado sobre `V/20` §2) |
-| **guards distintos** | ~~**29**~~ ~~**30**~~ ~~**31**~~ **32** | ~~16~~ ~~15~~ 14 + ~~17~~ ~~18~~ ~~19~~ ~~20~~ 21 menos las ~~**cuatro**~~ **tres** referencias cruzadas (mover `G13` de un catálogo al otro no cambia el total): `G-R4`, ~~`G-R5`,~~ `G-R6` y `G-R6-B` (revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6, así que el total queda en 32). `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
-| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ ~~**31**~~ **32** | los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (~~`B4`~~ **`V4`**: owner 2026-09-26, `G5-5`), ~~`G-R5` (ver abajo)~~ **`G14` (`V1`**, revisión del owner, 2026-09-28, N6; `G-R5` salió por C14) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) **y `G-R9` (`V6`)**, que nace con unidad (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| **guards distintos** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ **35** | ~~16~~ ~~15~~ ~~14~~ 17 + ~~17~~ ~~18~~ ~~19~~ ~~20~~ 21 menos las ~~**cuatro**~~ **tres** referencias cruzadas (mover `G13` de un catálogo al otro no cambia el total): `G-R4`, ~~`G-R5`,~~ `G-R6` y `G-R6-B` (revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6, así que el total queda en 32; **y entran `G15`, `G16` y `G17`**, los tres de este catálogo y ninguno referencia cruzada, así que queda en **35**). `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
+| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ **35** | **`G15` `G16` `G17` (`B1`)**, que nacen con unidad (revisión del owner, 2026-09-28), más los **15** que ya la tenían — `G1` `G3` `G8` (`V1`), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (~~`B4`~~ **`V4`**: owner 2026-09-26, `G5-5`), ~~`G-R5` (ver abajo)~~ **`G14` (`V1`**, revisión del owner, 2026-09-28, N6; `G-R5` salió por C14) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) **y `G-R9` (`V6`)**, que nace con unidad (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
 | **sin unidad** | ~~**0**~~ ~~**1**~~ **0** | **ninguno**: `G-R2-C` (FASE 9 completa, 4e) ~~tenía por su capítulo la de `G-R2-B`, `V3`~~ ya tiene unidad, **`B10`** (owner 2026-09-25, decisión 10c; la asignación la escribe `B/descomposicion.md`, no `V/descomposicion.md`). Entre la FASE 9 completa y esta decisión fue **uno**, la primera vez en la serie; el reparto, unidad por unidad y con su razón medida, está en `V/descomposicion.md` §2.10 y en `B/descomposicion.md` §2 |
 
 *(`G-R5` salió con la revisión del owner, 2026-09-28, C14: el párrafo queda como historia de su reparto.)*
@@ -453,31 +468,114 @@ sus propios datos desmienten.**
 
 ### 3.2 Las mentiras que el stub tiene que poder hacer
 
-| lo que hace el proveedor real | fila |
-|---|---|
-| mutar el monto **no emite ningún webhook** — nos enteramos releyendo o no nos enteramos | `EX-15` |
-| un `PUT` mixto **se aplica a medias**, con `200` | `EX-20` |
-| la **fecha** de una suscripción viva es inmutable: cuatro formas de pedirlo, cuatro `200`, cero cambios | `EX-34` |
-| **estando pausada rechaza toda modificación** con `400`, pero sí deja cancelar | `EX-11` |
-| el campo `items` devuelve `201` y **se descarta en silencio** | `EX-5` |
-| el `search` **ignora** nuestra referencia y devuelve todo; con un `status` inválido devuelve `200` y cero; y con `status=cancelled` devuelve **un subconjunto plausible** — 15 de 69 | `RC-1`, `RC-4` |
-| el `init_point` **viene roto** | `EX-37` |
-| el token de tarjeta es de **un solo uso** | `EX-12` |
-| el cobro llega **tarde y con retraso variable**: ~26 min en producción, 33 medidos en sandbox | `PA-3` |
-| le **escribe al cliente por su cuenta y primero**, en el alta, el cambio de monto, la pausa y la cancelación — y tres de esos correos afirman cosas falsas | `EX-3` |
-| el reembolso idempotente devuelve **`200` y no `201`**, con **cuerpo vacío** | `RF-6` |
-| `X-Idempotency-Key` es obligatoria y falla **antes** de toda validación de negocio | `RF-4` |
-| hay un **rechazo sin explicar**: sobre el mismo pago, ARS 5 se rechaza con `2084` y ARS 14 entra | `RF-8` |
-| piso **ARS 15**, techo **ARS 2.000.000**, con los mensajes exactos | `PC-2` |
-| otra moneda da `400` | `EX-18` |
+**Desde la revisión del owner (2026-09-28, C13 y `L3-c`) son dos listas cerradas, y no una
+tabla**: la de las **mentiras medidas** de Mercado Pago, y la de sus **reglas propias**, que el
+falso cumple igual pero que no son mentiras. La tabla de quince filas que vivía acá mezclaba las
+dos; queda tachada abajo, con dónde fue a parar cada fila.
 
-⚠️ **Las mentiras de la conciliación no están en esta tabla** (FASE 8 completa, `F-8CB3-015`;
+**Tres reglas gobiernan la primera lista, y `G15` (§2) las vuelve verificables:**
+
+1. **Una mentira que no está en la lista no puede estar en el falso.** Cada una vive en **un solo
+   lugar del código**, con su nombre, la fila de la matriz de la que sale (fecha y cuenta donde se
+   midió) y la prueba que demuestra que el código la resiste.
+2. **Por defecto el falso miente siempre**, como el real.
+3. **Una prueba puede apagar una mentira puntual**, sólo para probar el camino honesto, **y tiene
+   que decir cuál apaga y por qué**.
+
+#### Las mentiras medidas: la lista cerrada
+
+| # | qué hace el falso a propósito | de dónde sale (fila, fecha, cuenta) | qué defensa obliga a probar |
+|---|---|---|---|
+| **M1** | dice «ok» a un cambio y **no lo aplica**: el ciclo, el plan, la fecha de cobro, la prueba gratis y la baja programada de una suscripción viva; y al crear, el campo `items` devuelve `201` y se descarta | `EX-4` (2026-09-15, sandbox, re-verificada en producción) · `EX-21` (2026-09-15, sandbox) · `EX-34` (2026-09-16, sandbox) · `EX-35` (2026-09-16, sandbox) · `CN-1` (2026-09-15, sandbox y producción) · `EX-5` (2026-09-15, sandbox) | que toda mutación se verifica releyendo (`D5`, §6) |
+| **M2** | con **dos cambios en un pedido**, aplica uno y descarta el otro con un solo `200` | `EX-20` (2026-09-15, producción) | que la relectura compara **campo por campo** cada campo que se mandó |
+| **M3** | crea **un duplicado por cada pedido igual** | `EX-17` (2026-09-15, sandbox y producción, sonda 14: diez pedidos, diez ids) | el candado propio contra duplicados, persistido antes de llamar (`D4`, `DEC-CONC-001`) |
+| **M4** | el buscador **devuelve una parte sin error** (15 de 69 con `status=cancelled`) e **ignora nuestra referencia**; y trae menos campos que la lectura por id | `RC-1` (2026-09-15, sandbox y producción) · `RC-4` (2026-09-15, producción) | que el buscador nunca se usa como lista (`D6`) |
+| **M5** | un **cambio de monto no emite ningún aviso** | `EX-15` (2026-09-15, sandbox, **por el canal Webhooks**; su mitad IPN está pendiente de medición: ver el «NO cierra» de `B/06`) | que la conciliación compara el monto releído (`B/09` §3) |
+| **M6** | **avisa tarde, repetido o nunca**; una devolución genera **tres entregas en dos formatos** | `WH-1`, `WH-2`, `WH-4` (2026-09-15, sandbox) · `WH-5` (2026-09-23, sandbox y producción) · `RF-7` (2026-09-15, producción) | que un aviso nunca cambia un estado por sí solo (`D17`, `G17`) |
+| **M7** | **cuenta un cobro rechazado como cobro**, y el estado del intento no dice si cobró | `RC-5` y `RC-6` (2026-09-22, producción) | que «¿cobró?» se contesta mirando cada intento (`B/09` §4) |
+| **M8** | **cobra tarde y en tandas**: en el primer lote posterior a la hora de la fecha, al minuto `:02` | `PA-3` (2026-09-15; ~26 min en producción, 33 en sandbox) · la medición de lotes del 2026-09-24 en producción, **sin fila propia en la matriz** (`B/09` §6 punto 2; se propone una) | que nada supone que el cobro entra a la hora exacta (abajo) |
+| **M9** | **agrega sola una prueba gratis** cuando el primer cobro es a futuro | `EX-8` (2026-09-15, sandbox) · `EX-26` (2026-09-15, sandbox) · `EX-33` (2026-09-16, producción) | que no se confía en su estado de prueba (`D12`, `G11`) |
+| **M10** | devuelve el **enlace de pago roto** | `EX-37` (2026-09-16, producción; error abierto de su lado) | que el enlace se sanea siempre antes de mostrarlo (`D10`, `G10`) |
+| **M11** | un **enlace de pago abierto no vence** | `EX-1` (2026-09-23, staging) | que los enlaces los vencemos nosotros (`S3`) |
+| **M12** | una **pausa no se reanuda sola** | `PS-4` (2026-09-16, sandbox) | el reloj propio de fin de pausa (`S10`, `DEC-SUB-010`) |
+| **M13** | contesta **«no se puede devolver»** (`2084`) cuando sí se puede | `RF-8` (2026-09-15, producción: ARS 5 rechazado, ARS 14 aceptado sobre el mismo pago) | el reintento partiendo el monto, que nunca pasa del confirmado (`B/06` §4.6 punto 5) |
+
+**Son trece, recontadas sobre la tabla.** **M8 no pasa `G15` hasta que su medición tenga fila en la
+matriz**: la de los lotes está escrita en `B/09` y en el handoff, no en la matriz, y la regla 1
+pide la fila.
+
+#### Las reglas propias de Mercado Pago: otra lista
+
+No son mentiras: el proveedor **exige** algo y lo dice. El falso las cumple igual, y la batería del
+§4 las vigila igual, porque si una deja de ser cierta el código queda defendiéndose de una regla
+que ya no existe.
+
+| # | qué exige el proveedor | fila |
+|---|---|---|
+| **RP1** | el token de tarjeta es de **un solo uso** | `EX-12` |
+| **RP2** | `X-Idempotency-Key` es **obligatoria** en el reembolso y falla **antes** de toda validación de negocio | `RF-4` |
+| **RP3** | piso **ARS 15**, techo **ARS 2.000.000**, con los mensajes exactos | `PC-2` |
+| **RP4** | **otra moneda** da `400` | `EX-18` |
+| **RP5** | el reembolso idempotente devuelve **`200` y no `201`**, con **cuerpo vacío** | `RF-6` |
+| **RP6** | **estando pausada rechaza toda modificación** con `400`, pero sí deja cancelar | `EX-11` |
+
+**Son seis, recontadas sobre la tabla**, y son las seis filas de la tabla vieja que no eran
+mentiras.
+
+#### Lo que el falso simula sin haberlo medido, aparte
+
+**No es una mentira medida y se marca como simulación en el código**: existe para probar un caso
+de red, no porque el real lo haga a propósito. Hoy son tres: **el proveedor crea y cobra pero la
+respuesta se pierde en el camino**; **la red cortada**; y **los avisos fuera de orden**, que
+`WH-3` **no observó** (`PARTIALLY_SUPPORTED`: las entregas llegaron en orden causal en tres
+corridas), así que no pueden ser una mentira de la lista aunque el código tenga que resistirlos.
+`G15` no cuenta las simulaciones como mentiras, y una simulación tampoco puede estar prendida por
+defecto sin decirlo.
+
+#### Lo que no se simula
+
+**Los correos que Mercado Pago le manda al cliente** (`EX-3`): no pasan por nuestro código, así que
+no hay nada del lado nuestro que un falso pueda ejercitar. Se cubren con nuestros propios correos,
+que salen antes (`DEC-MAIL-001`, `B/19` §4).
+
+#### Dónde quedó cada fila de la tabla vieja
+
+| ~~lo que hace el proveedor real~~ | ~~fila~~ | dónde quedó (revisión del owner, 2026-09-28, C13) |
+|---|---|---|
+| ~~mutar el monto **no emite ningún webhook**~~ | ~~`EX-15`~~ | M5 |
+| ~~un `PUT` mixto **se aplica a medias**, con `200`~~ | ~~`EX-20`~~ | M2 |
+| ~~la **fecha** de una suscripción viva es inmutable~~ | ~~`EX-34`~~ | M1 |
+| ~~**estando pausada rechaza toda modificación** con `400`, pero sí deja cancelar~~ | ~~`EX-11`~~ | RP6 |
+| ~~el campo `items` devuelve `201` y **se descarta en silencio**~~ | ~~`EX-5`~~ | M1 |
+| ~~el `search` **ignora** nuestra referencia y devuelve un subconjunto plausible~~ | ~~`RC-1`, `RC-4`~~ | M4 |
+| ~~el `init_point` **viene roto**~~ | ~~`EX-37`~~ | M10 |
+| ~~el token de tarjeta es de **un solo uso**~~ | ~~`EX-12`~~ | RP1 |
+| ~~el cobro llega **tarde y con retraso variable**~~ | ~~`PA-3`~~ | M8 |
+| ~~le **escribe al cliente por su cuenta y primero**~~ | ~~`EX-3`~~ | no se simula (arriba) |
+| ~~el reembolso idempotente devuelve **`200` y no `201`**, con **cuerpo vacío**~~ | ~~`RF-6`~~ | RP5 |
+| ~~`X-Idempotency-Key` es obligatoria~~ | ~~`RF-4`~~ | RP2 |
+| ~~hay un **rechazo sin explicar**~~ | ~~`RF-8`~~ | M13 |
+| ~~piso **ARS 15**, techo **ARS 2.000.000**~~ | ~~`PC-2`~~ | RP3 |
+| ~~otra moneda da `400`~~ | ~~`EX-18`~~ | RP4 |
+
+**Y entraron a la lista de mentiras seis que la tabla no tenía**: el duplicado por pedido igual
+(M3), los avisos perdidos y repetidos (M6), el rechazo contado como cobro (M7), la prueba gratis que
+se agrega sola (M9), el enlace que no vence (M11) y la pausa que no se reanuda (M12).
+
+~~⚠️ **Las mentiras de la conciliación no están en esta tabla** (FASE 8 completa, `F-8CB3-015`;
 declarado por `DEC-METH-015`, FASE 9 completa, `DB-3`): el *«todavía no se sabe»* y el inventario de
 intentos (`RC-5`, `RC-6`, `RC-7`), la ventana de reintentos (`GR-3`), las entregas perdidas y
 reemplazadas (`WH-1`, `WH-2`, `WH-5`), la pausa y la fecha que avanza sin cobrar (`PS-2`, `PS-6`), y
 los campos `charged_quantity` y `last_charged`. El stub no las reproduce, así que el barrido de
 `B/09` se verifica contra un proveedor que no existe. **Causa**: la tabla se escribió antes de que la
-conciliación tuviera sus filas medidas.
+conciliación tuviera sus filas medidas.~~ **Cerrado en su mayor parte** (revisión del owner,
+2026-09-28, C13): `RC-5`, `RC-6` (M7) y `WH-1`, `WH-2`, `WH-5` (M6) están en la lista.
+⚠️ **Lo que queda afuera de las dos listas**, declarado: `RC-7` (la ventana de vida de un cobro),
+`GR-3` (cuatro intentos dentro de un ciclo y la pausa al vencerlo), `PS-2` (pausada no cobra),
+`PS-6` (la fecha avanza sin cobrar) y el campo `last_charged`. Son **comportamiento medido que no
+es mentira ni regla que el proveedor exija**, y el barrido de `B/09` y `S6` por su segundo evento
+necesitan que el falso lo reproduzca. **Causa**: la decisión nombró dos listas y estas filas no
+son de ninguna; en cuál van (o si hace falta una tercera) es del owner.
 
 **El retraso variable del cobro merece su propia línea** porque es el que más código rompe: un
 test cuyo cobro llega en el mismo instante en que vence el período **nunca ejecuta** el camino que
@@ -517,6 +615,42 @@ convierte a `S-METH-01` de una advertencia en un control.
 entorno y guard de presupuesto — una sonda que pueda correr contra producción por error, o gastar
 más de lo autorizado, no se ejecuta.
 
+### 4.1 La batería que vigila a Mercado Pago
+
+(Revisión del owner, 2026-09-28, C13 y `L3-d`.) La suite de arriba **no tenía cadencia, ni
+producción, ni comparación de forma, ni quién avisara si no corría**. Desde esta revisión es una
+batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
+
+1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y las seis
+   reglas propias: hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
+   que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
+   contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
+   cambiar ninguna mentira.
+2. **Cuándo, en la cuenta de pruebas**: **sola, una vez por semana**.
+3. **Cuándo, en producción**: **sola, una vez por mes**, sólo lo que se mide ahí (el buscador,
+   `RC-1`; los lotes de cobro, M8; y las devoluciones, que en sandbox dan `401`), **con
+   autorizaciones propias del owner, al monto mínimo (`PC-2`), y cancelando y devolviendo en la
+   misma corrida**. Los dos guards del cap. 06 §9, entorno y presupuesto, rigen igual.
+4. **Y a mano cuando se quiera**: la misma batería, en cualquiera de los dos entornos, la corre
+   quien opera, sin esperar su fecha. En producción, con la misma autorización del owner.
+5. **Qué hace si algo cambió: avisa y no toca nada.** Manda **un correo al administrador** con qué
+   medición cambió, qué esperaba y qué obtuvo. **Nada se ajusta solo**: una persona decide si hay
+   que actualizar la lista, el falso y el diseño, y la fila de la matriz se re-mide por el cap. 06
+   §8 regla 2 (*«un comportamiento que contradice una fila no se explica: se re-mide»*).
+6. **Si no corre, avisa el vigía externo** que vigila el barrido diario (`B/09` §7.1), con la misma
+   regla: ping al terminar una corrida completa y alerta si pasa su cadencia sin ping.
+7. **Qué avisos registra**: cada aviso que la corrida provoca, **con el canal por el que llegó**.
+   Es registro, no decisión: cómo se tratan los dos canales de avisos está pendiente de medición
+   (`B/06`, *«lo que este capítulo NO cierra»*).
+
+**Ninguna credencial de producción la tiene un agente**: la corrida mensual y la manual en
+producción las dispara una persona o el programador de la batería, nunca quien implementa.
+
+**Lo que la batería no vigila, declarado**: el anuncio de discontinuación de la API de
+devoluciones (`R-MP-01`, cap. 06 §10), que no es una medición sino un texto del proveedor, **se
+sigue a mano**; y los correos que el proveedor le manda al cliente (`EX-3`), que no pasan por
+nuestro código.
+
 ---
 
 ## 5. E2E: lo que hoy se hace a mano
@@ -542,10 +676,48 @@ manualmente todo billing»*. Los flujos críticos son los que mueven plata o cor
    `subscription_pause` queda con `fin_real`, el servicio se corta como en `S22` y `RF1` nace por el
    total en el mismo acto; si la fila era predecesora, corre `S18`;
 7. **contratación y vencimiento de un addon**, con el excedente que dispara (~~8~~ renumerado: la
-   lista saltaba del 6 al 8; FASE 9 completa, `DB-3`).
+   lista saltaba del 6 al 8; FASE 9 completa, `DB-3`);
+8. ✚ **la migración de un plan retirado** (revisión del owner, 2026-09-28, C15; `B/10` §3.7): el
+   anuncio con sus tres correos, `S37` mutando el monto sobre la misma autorización siete días antes
+   de la renovación, el cambio de versión en la renovación, y los que salen (el que cambió de plan,
+   el que se dio de baja) y los que esperan (el pausado, el que está en grace).
 
 **Lo que E2E no reemplaza** es el smoke contra el proveedor real: el §62.3 existe porque el stub y
 el real pueden divergir, y un E2E que corre contra el stub hereda esa divergencia entera.
+
+### 5.1 Lo que hace falta para que el E2E reemplace el smoke manual
+
+(Revisión del owner, 2026-09-28, N3 y `L3-e`.) Cuatro piezas, cada una con su unidad:
+
+1. **El Mercado Pago falso corre también como servidor HTTP**, no sólo en memoria: así la API, la
+   web y el admin construidos le hablan igual que al real, y el E2E ejercita las mentiras del §3.2
+   (el enlace roto, el aviso tarde o repetido, el «ok» que no aplica) con las mismas tres reglas
+   (miente por defecto, se apaga nombrándola). **Lo construye `B1`**, porque es el mismo falso.
+2. **Un reloj que se puede adelantar en las pruebas**, para el sistema entero: la ventana de
+   autorización, el grace, la pausa en meses, la prueba gratis, los avisos a 30 y a 7 días, la
+   retención de 90 y 180 días. Sin él, lo que el smoke hoy «espera» no se puede automatizar. **Lo
+   construye `B1`**, y como lo usan las dos mitades **no puede vivir en ninguna de las dos**: `G14`
+   prohíbe que una importe a la otra (`V/20` §2). Dónde vive es de la FASE 5.
+3. **Cada flujo del §5, y el trial completo de `V/20` §5, como prueba de punta a punta** contra los
+   builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones
+   sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
+   **Cada unidad escribe la de su flujo**: el alta `B3`, la mora `B7`, los cambios, la pausa y la
+   cancelación `B8`, la revocación `B5`, el addon `B10` y la migración `B12`.
+4. **El recorte del checklist de smoke manual, sección por sección**: cada sección del checklist
+   de staging que tenga su prueba de punta a punta **sale del manual**, con el nombre de la prueba
+   que la reemplaza al lado. El ahorro llega de a poco y cada recorte tiene evidencia. **Lo lleva
+   `B13`**.
+
+**Lo que queda manual, porque no se puede simular**:
+
+- **el checkout real de Mercado Pago**: la página, la carga de tarjeta, la validación y el enlace
+  que devuelve;
+- **los correos que Mercado Pago le manda al cliente** (`EX-3`);
+- **Cloudflare**: la caché del borde y la revalidación;
+- **los horarios reales**: la hora de los crons y la de los lotes de cobro (M8).
+
+Y la parte del smoke que en realidad verificaba *«Mercado Pago sigue portándose así»* la
+reemplaza la batería del §4.1, no el E2E.
 
 ---
 

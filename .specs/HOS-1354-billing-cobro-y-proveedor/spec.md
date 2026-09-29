@@ -58,7 +58,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | # | capítulo | qué resuelve |
 |---|---|---|
 | `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | `billing_option` —donde vive el precio—, suscripción, pausa, el vínculo con el proveedor, el dinero, addons y concesiones |
-| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (~~`S1`–`S35`~~ `S1`–`S36`: `S36`, la revocación, owner 2026-09-26, `G5-4`), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
+| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (~~`S1`–`S35`~~ ~~`S1`–`S36`~~ `S1`–`S37`: `S36`, la revocación, owner 2026-09-26, `G5-4`; **`S37`, la aplicación de una migración**, revisión del owner, 2026-09-28, C15; `S25`–`S28` retiradas con su número, C8), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
 | `05` | [idempotencia y concurrencia](./docs/05-idempotencia-y-concurrencia.md) | los tres mecanismos, los seis cruces del §52, y qué hace seguro a un pago tardío |
 | `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las seis reglas duras de trato, el riesgo de plataforma |
 | `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los ~~tres~~ **cuatro** modos de «cero cobros» (§4, reescrito el 2026-09-24 por `RC-5`), y el bug vivo que pasa a ser caso de uso |
@@ -67,7 +67,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
 | `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** — y desde el 2026-09-25 **los addons siguen a su título**: *válida* es `ACTIVE` y ~~cobrada~~ pagando (`NUCLEO/01` §2, no el campo `cobrada` del contrato; FASE 9 vuelta 1, `F-8V1D1-002`), se pausan con la pausa del cliente (`S32`, `S33`), la orfandad se lee sobre el conjunto de principales y anclas vivas, y un `USER`/`GLOBAL` se emite sólo en sus verticales compatibles (owner, `DEC-ADDON-007`) |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**dieciséis guards**~~ ~~**quince guards**~~ **catorce guards** —`G7`, ~~`G9`–`G13`~~ `G9`–`G12` (`G13` pasó a `V/20` §2 y lo construye `V4`: owner 2026-09-26, `G5-5`), los seis de `R1` y las ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`: revisión del owner, 2026-09-28, C14)—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**dieciséis guards**~~ ~~**quince guards**~~ ~~**catorce guards**~~ **diecisiete guards** —`G7`, ~~`G9`–`G13`~~ `G9`–`G12` (`G13` pasó a `V/20` §2 y lo construye `V4`: owner 2026-09-26, `G5-5`), **`G15`–`G17`** (revisión del owner, 2026-09-28: las dos listas del falso, `qzpay` que vuelve y la decisión sin releer), los seis de `R1` y las ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`: revisión del owner, 2026-09-28, C14)—, el proveedor falso que **tiene que mentir** ~~, y la suite de sandbox~~ **con sus dos listas cerradas, la batería que vigila a Mercado Pago, y el E2E que reemplaza el smoke manual sección por sección** (revisión del owner, 2026-09-28, C13, N3) |
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño — **y la cartera actual no se migra: de su billing no se conserva nada, y se conservan el usuario, sus preferencias y sus fichas** (owner 2026-09-25, `DEC-MIG-005`) |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 
@@ -95,6 +95,18 @@ reloj de la pausa, el dunning, los reintentos, las cortesías y el candado contr
 Dos condiciones que lo hacen exigible: un **guard estático** que prohíba importar el SDK fuera del
 adaptador, y un **adaptador falso en memoria desde el día uno** — que es lo que prueba que la
 abstracción no miente.
+
+**`qzpay` se saca, y el cobro nuevo se escribe en un package compartido del monorepo que se puede
+publicar solo** (revisión del owner, 2026-09-28, N2). Todo el cobro nuevo vive **bien encapsulado
+en un package compartido**, escrito de modo que mañana se pueda publicar como package npm propio
+**sin reescribirlo**: **no depende de ninguna app ni de la mitad de verticales, salvo del package
+del contrato** (`12-contrato…` §7.1). `G16` falla si vuelve `@qazuor/qzpay` o si el package importa
+de `apps/` (`B/20` §2), y `G14` ya vigila que no importe de verticales. **`qzpay` queda sólo como
+referencia de lectura**: su adaptador de Mercado Pago sirve para ver cómo se arma un pedido o se
+verifica una firma; **su motor y su esquema no**, porque el modelo nuevo es otro (`DEC-METH-007`,
+`DEC-MIG-003`). Lo que se toma de él pasa el filtro 2 de `DEC-METH-007`: un test que falla si se
+rompe, contra una fila de la matriz. Y **se congela y se archiva después del corte**
+(`16-fase-7-del-paraguas.md` §4.5).
 
 **Y las pasarelas NO son intercambiables.** La API no expone el mínimo común denominador: **para
 cada capacidad se declara qué pasa cuando el proveedor no la tiene** — se emula, se degrada, o se
@@ -146,6 +158,10 @@ medición: ante un reclamo, mirar el PAGO, nunca el correo.**
 
 No alcanza con que responda bien: **tiene que reproducir los modos de falla medidos** —aceptar y no
 aplicar, responder `2xx` sobre lo que descartó— porque un doble tiene que fallar como el original.
+**Y miente sólo donde dice una lista cerrada de trece mentiras medidas**, con las reglas propias
+del proveedor en otra lista, y una batería que corre contra el real cada semana en la cuenta de
+pruebas, cada mes en producción y a mano cuando se quiera, que avisa y no ajusta nada (`B/20` §3.2
+y §4.1; revisión del owner, 2026-09-28, C13, `L3-c` y `L3-d`).
 El e2e que corre hoy contra un stub honesto **no puede, por construcción, detectar divergencias**
 con el proveedor real.
 
@@ -313,6 +329,7 @@ rama del paraguas**, nunca al revés hasta el final.
   del proveedor**, y el reloj de cobro es suyo. Ver §5.1.
 - **El orden de implementación.** Sale de las dependencias entre capítulos.
 - **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5, con su gate propio
-  (`DEC-METH-003`) — salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: **se absorbe**.
+  (`DEC-METH-003`) — salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: ~~**se absorbe**~~ **se saca, y queda
+  sólo como referencia de lectura** (revisión del owner, 2026-09-28, N2; §3.1).
 - **Nada de la épica de verticales.** Su diseño se sostiene solo en
   [HOS-1353](../HOS-1353-verticales-capacidades-y-autorizacion/spec.md).

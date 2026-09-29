@@ -348,6 +348,11 @@ sin avisarnos, y este programa ya midió dos cosas que lo prueban: un bug abiert
    medición. No antes de escribir la spec — escribir sobre una fila vieja es barato de corregir;
    implementar sobre una fila falsa, no.
 
+**Y desde la revisión del owner (2026-09-28, C13 y `L3-d`) la regla 2 tiene quien la dispare sin
+esperar a que alguien note la contradicción**: la batería que vigila a Mercado Pago (`B/20` §4.1)
+repite cada medición de las dos listas del falso, semanal en la cuenta de pruebas, mensual en
+producción y a mano cuando se quiera, y avisa por correo sin ajustar nada.
+
 ---
 
 ## 9. Las sondas son parte del entregable · cierra `S-MP-03`
@@ -364,7 +369,9 @@ sólo se sostiene si las pruebas se pueden volver a correr.
 | **el guard de presupuesto** | toda sonda que mueva plata aborta si el máximo a cobrar no da **exactamente** el número autorizado — un orden de magnitud no alcanza |
 
 **Esto no sobrevive a FASE 10 como código**: son descartables por definición. Lo que sobrevive es
-la matriz, y la capacidad de volver a medir una fila cuando caduque.
+la matriz, y la capacidad de volver a medir una fila cuando caduque. **Esa capacidad, desde la
+revisión del owner (2026-09-28), sí es código**: la batería de `B/20` §4.1, que construye `B1` y
+hereda los dos guards de esta tabla.
 
 ---
 
@@ -469,3 +476,22 @@ tres, suspendemos a alguien que iba a pagar bien.
 - ~~**La idempotencia de `/v1/orders`**, el camino del addon de única vez (§3.2), **no está medida**
   y queda pendiente de sonda (corrección de diseño, FASE 8 completa, `F-8CB1-008`).~~ **Cerrado el
   2026-09-25 por `EX-41`** (sonda 51, sandbox): es idempotente por la clave. Queda sólo producción.
+- **Los dos canales de avisos del proveedor: pendiente de medición** (revisión del owner,
+  2026-09-28, N9 y `L3-g`). El proveedor avisa por **dos canales**, Webhooks e IPN, y un mismo hecho
+  puede llegar por los dos (`RF-7`: tres entregas por una devolución, una de Webhooks y dos de IPN).
+  **El código de hoy descarta en silencio todo lo que llega por IPN**: el receptor de hospeda2
+  contesta `200` a toda entrega sin el marcador `source_news=webhooks` que el propio sistema le
+  agrega a la URL, con un log de nivel `debug` (HOS-159). No es de `qzpay`. **Y eso contamina dos
+  mediciones**: la mitad de producción de `WH-5` (las dos cancelaciones por antifraude que no
+  produjeron aviso se leyeron **después** de ese descarte) y `EX-15`, que midió que mutar el monto
+  no avisa **por el canal Webhooks**, con el receptor de pruebas escuchando sólo ese canal. **Qué
+  hace el receptor nuevo con un aviso IPN no está decidido: se mide antes** (el owner, `L3-g`). El
+  receptor nuevo no hereda el descarte por inercia: si lo tiene o no es parte de lo que se decide
+  después de medir, y la M5 del falso (`B/20` §3.2) se lee
+  como *«por el canal Webhooks»* hasta la remedición. **Y un requisito que vale si se aceptan los
+  dos canales**: **un aviso duplicado del mismo hecho, por el mismo canal o por los dos, no puede
+  producir efecto doble**: ninguna escritura, ningún correo ni ningún aviso de cobertura dos veces.
+  Con `D17` la relectura por id ya lo sostiene en el estado, pero no alcanza con decirlo: **lleva
+  su prueba explícita**, un mismo hecho entregado por Webhooks y por IPN, en los dos órdenes y en
+  el mismo segundo, que deja exactamente una escritura y un correo. **Causa**: el filtro se
+  agregó porque a veces llegaban dos avisos del mismo hecho, uno por cada canal (hecho del owner).

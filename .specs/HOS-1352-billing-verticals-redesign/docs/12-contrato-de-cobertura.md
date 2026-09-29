@@ -867,6 +867,11 @@ implementaciones.~~
   que cambia la cobertura (`V/02` §3.2): cuando el beneficiario no tenía suscripción en esa
   vertical, `S13` no mueve ninguna fila, así que sin esta línea no salía ningún aviso;
 - **`A2`, `A4`, `A5` y `A6`**;
+- ✚ **el cambio de versión de una migración de un plan retirado**, en su fecha de aplicación, por la
+  cola de `B/12` §2 (revisión del owner, 2026-09-28, C15; `B/10` §3.7): le cambia la `referencia` a
+  la fuente `SUSCRIPCIÓN` sin cambiar el estado de la fila, así que la regla de *«`desde` y `hacia`
+  emiten distinto»* no la alcanza. **`S37`, que muta el monto siete días antes, no emite**: el
+  monto no es un campo de la fuente;
 - **`T1`, `T2`, `T3`, `T4` y `T5`**, que mueven la fuente de trial, **y `T6`, ~~`T7`~~ y `T8`**, que
   llevan de `PRE_TRIAL` a `TRIAL_CONVERTED` y con eso sacan la fuente de pre-trial
   (`F-8V2C1-007`, `F-8V2A2-008`). La que sacan es de clase `BASE`, así que hoy `cubierto` no se

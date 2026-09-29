@@ -439,6 +439,18 @@ nuevo en `staging` sin llevarlo a `main` (C2), y el owner eligió esta forma (L3
 punto 1 importa**: cuanto más tarde entra la
 épica a `staging`, más corto es el congelamiento.
 
+### 4.5 `qzpay`: congelado hasta el corte, archivado después
+
+(Revisión del owner, 2026-09-28, N2.) **El cobro nuevo no usa `qzpay`**: se escribe en un package
+compartido del monorepo que se puede publicar solo, y `qzpay` queda como referencia de lectura
+(`B/spec.md` §3.1; `G16` falla si vuelve). Pero **el sistema viejo corre con él hasta el corte**,
+así que:
+
+1. **Desde ahora, `qzpay` se congela**: sólo entra lo que haga falta para que el sistema viejo
+   siga cobrando en producción.
+2. **Después del corte, se archiva.** El script del corte no lo usa (§4.2, *«las herramientas del
+   corte»*), así que no hay nada del corte que lo necesite.
+
 ---
 
 ## 5. Lo que este documento todavía no contesta

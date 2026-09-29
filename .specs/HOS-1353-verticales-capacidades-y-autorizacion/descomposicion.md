@@ -513,8 +513,8 @@ la unidad se declara terminada.
 > **no había ningún lugar donde se comprobara que había ido**: la asignación vivía sólo en una
 > columna que nadie consulta al declarar una unidad lista, así que las nueve se podían declarar
 > terminadas, una por una, con **cero** guards escritos, y el tablero del §5 las marcaba verdes.
-> **Los ~~29~~ ~~30~~ ~~31~~ 32 guards del programa están repartidos entre las 22 unidades —~~16~~ ~~17~~ ~~**18**~~ ~~**19**~~ **20** en esta épica y ~~13~~ ~~**14**~~ ~~**13**~~ **12** en la
-> otra (revisión del owner, 2026-09-28: entra `G14`, de `V1`, por N6; sale `G-R5`, de `B8`, por C14; el total no se mueve), contados sobre las dos columnas; `G13` pasó de `B4` a `V4`, owner 2026-09-26, `G5-5`— y ninguno aparecía en ninguno de los 22 criterios.** *(El
+> **Los ~~29~~ ~~30~~ ~~31~~ ~~32~~ 35 guards del programa están repartidos entre las 22 unidades —~~16~~ ~~17~~ ~~**18**~~ ~~**19**~~ **20** en esta épica y ~~13~~ ~~**14**~~ ~~**13**~~ ~~**12**~~ **15** en la
+> otra (revisión del owner, 2026-09-28: entra `G14`, de `V1`, por N6; sale `G-R5`, de `B8`, por C14; el total no se mueve; **y entran `G15`, `G16` y `G17` en la otra, los tres de `B1`**, por C13, N2 y N4: 35), contados sobre las dos columnas; `G13` pasó de `B4` a `V4`, owner 2026-09-26, `G5-5`— y ninguno aparecía en ninguno de los 22 criterios.** *(El
 > trigésimo es `G-R5-B`, de V6: FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **El trigésimo
 > primero, `G-R2-C`** —owner 2026-09-25, FASE 9 completa, 4e—, ~~todavía no está en ninguna de las
 > dos columnas: esta pasada lo propone para `B10` (§2.10), y el 17 + 13 pasa a 17 + 14 cuando

@@ -294,7 +294,7 @@ nuestra (`B/09` §3)— y después abre la marca con motivo **`DIVERGENCIA_DE_MO
 quién abrió la divergencia** (orquestador, FASE 8 completa, pendiente 8, derivado de `DEC-CONC-002`
 punto 4):
 
-- **si la abrió una mutación NUESTRA** —`S30`, o un aumento de precio de `DEC-MP-002`—, **reintenta
+- **si la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)—, **reintenta
   la mutación durante 3 días, contados desde esa transición** —**en un aumento, desde su fecha
   efectiva** (FASE 8 completa, owner 2026-09-25); por tiempo, no por corridas, como el
   reintento de una cancelación nuestra (`B/09` §3)— y después abre la marca con motivo
