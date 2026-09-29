@@ -42,6 +42,10 @@
         "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile)",
         "build": "pnpm exec turbo run build --filter='./packages/*'"
     },
+    "verification": {
+        "generatedPaths": ["apps/admin/src/routeTree.gen.ts"],
+        "build": "pnpm build"
+    },
     "database": {
         "strategy": "postgres-template",
         "container": "hospeda-postgres",

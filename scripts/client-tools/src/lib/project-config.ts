@@ -33,6 +33,11 @@ export interface ProjectServerAdapter {
     readonly healthPath?: string;
 }
 
+export interface ProjectVerificationAdapter {
+    readonly generatedPaths?: readonly string[];
+    readonly build?: string;
+}
+
 export interface ProjectAdapter {
     readonly projectId?: string;
     readonly adapter?: string;
@@ -51,6 +56,7 @@ export interface ProjectAdapter {
     readonly database?: ProjectDatabaseAdapter;
     readonly worktree?: ProjectWorktreeAdapter;
     readonly servers?: readonly ProjectServerAdapter[];
+    readonly verification?: ProjectVerificationAdapter;
     readonly commands?: {
         readonly genericPrefix?: string;
         readonly projectPrefix?: string;

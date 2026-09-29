@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
@@ -65,7 +65,7 @@ ${pc.bold('Uso')}
   ${pc.bold('--full')}        TODOS los tests, un paquete por vez. ${pc.dim('Son miles: dejalo')}
                 ${pc.dim('laburando y andá a hacer otra cosa.')}
   ${pc.bold('--only <job>')}  Sólo un job: ${JOBS.join(', ')}, tests.
-  ${pc.bold('--list')}        Muestra el plan y no corre nada.
+    ${pc.bold('--list')}        Muestra el plan y no corre nada.
   ${pc.bold('--json')}        Devuelve un contrato estable para agentes; no mezcla logs de los checks.
   ${pc.bold('--help')}        Esta página.
 
@@ -189,6 +189,31 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const adapter = await loadProjectAdapter(context.repoRoot);
     const baseBranch = adapter?.branches?.base ?? 'staging';
     const baseRef = await resolveBaseRef({ cwd, branch: baseBranch });
+
+    const generatedPaths = adapter?.verification?.generatedPaths ?? [];
+    const missingGenerated = generatedPaths.filter((path) => !existsSync(join(cwd, path)));
+    if (missingGenerated.length > 0) {
+        const build = adapter?.verification?.build ?? adapter?.worktree?.build ?? 'pnpm build';
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({
+                    readOnly: true,
+                    status: 'blocked',
+                    reason: 'generated_prerequisites_missing',
+                    missingGenerated,
+                    build,
+                    mutations: 'none'
+                })}\n`
+            );
+        } else {
+            process.stderr.write(
+                `${pc.yellow('verify bloqueado: faltan outputs generados')}\n` +
+                    `${missingGenerated.map((path) => `  - ${path}`).join('\n')}\n` +
+                    `${pc.dim(`Ejecutá ${build} y repetí qz verify. Este comando no ejecuta builds automáticamente.`)}\n`
+            );
+        }
+        return 2;
+    }
 
     const yaml = readWorkflow({ repoRoot: cwd });
     if (yaml === null) {
