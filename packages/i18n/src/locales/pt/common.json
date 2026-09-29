@@ -114,7 +114,8 @@
         "INVALID_MULTIPART_DATA": "Não conseguimos ler o arquivo enviado. Tente novamente.",
         "INVALID_FORM_FIELDS": "Os dados do envio não são válidos. Recarregue a página e tente novamente.",
         "UNSUPPORTED_ENTITY_TYPE": "Não é possível enviar fotos para este tipo de conteúdo.",
-        "GALLERY_LIMIT_EXCEEDED": "Você atingiu o limite de {{limit}} fotos da galeria.",
+        "GALLERY_LIMIT_EXCEEDED_one": "Você atingiu o limite de {{count}} foto da galeria.",
+        "GALLERY_LIMIT_EXCEEDED_other": "Você atingiu o limite de {{count}} fotos da galeria.",
         "MISSING_FILE": "Nenhuma imagem foi recebida. Escolha um arquivo e tente novamente.",
         "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem."
     },

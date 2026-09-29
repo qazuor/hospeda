@@ -114,7 +114,8 @@
         "INVALID_MULTIPART_DATA": "No pudimos leer el archivo que enviaste. Probá de nuevo.",
         "INVALID_FORM_FIELDS": "Los datos de la subida no son válidos. Recargá la página y probá de nuevo.",
         "UNSUPPORTED_ENTITY_TYPE": "No se pueden subir fotos para este tipo de contenido.",
-        "GALLERY_LIMIT_EXCEEDED": "Llegaste al límite de {{limit}} fotos de la galería.",
+        "GALLERY_LIMIT_EXCEEDED_one": "Llegaste al límite de {{count}} foto de la galería.",
+        "GALLERY_LIMIT_EXCEEDED_other": "Llegaste al límite de {{count}} fotos de la galería.",
         "MISSING_FILE": "No se recibió ninguna imagen. Elegí un archivo y probá de nuevo.",
         "EMPTY_FILE": "El archivo está vacío. Elegí otra imagen."
     },

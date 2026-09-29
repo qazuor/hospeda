@@ -417,6 +417,37 @@ describe('translateApiError', () => {
             );
         });
 
+        it('selects the singular form from details.limit when it is 1', () => {
+            // Arrange
+            const error = {
+                code: 'GALLERY_LIMIT_EXCEEDED',
+                message: 'Gallery limit of 1 items reached for this entity',
+                details: { limit: 1 }
+            };
+
+            // Act + Assert
+            expect(translateApiError({ error, locale: 'es' })).toBe(
+                'Llegaste al límite de 1 foto de la galería.'
+            );
+            expect(translateApiError({ error, locale: 'en' })).toBe(
+                'You have reached the gallery limit of 1 photo.'
+            );
+            expect(translateApiError({ error, locale: 'pt' })).toBe(
+                'Você atingiu o limite de 1 foto da galeria.'
+            );
+        });
+
+        it('leaves a code without a plural pair on its plain key even when details.limit is set', () => {
+            // Arrange
+            const error = { code: 'FORBIDDEN', message: 'No', details: { limit: 3 } };
+
+            // Act
+            const message = translateApiError({ error, locale: 'es' });
+
+            // Assert
+            expect(message).toBe('No tenés permiso para realizar esta acción.');
+        });
+
         it('ignores array `details` (validation issues) instead of using them as params', () => {
             // Arrange
             const error = {

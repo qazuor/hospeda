@@ -114,7 +114,8 @@
         "INVALID_MULTIPART_DATA": "We could not read the file you sent. Please try again.",
         "INVALID_FORM_FIELDS": "The upload data is not valid. Reload the page and try again.",
         "UNSUPPORTED_ENTITY_TYPE": "Photos cannot be uploaded for this type of content.",
-        "GALLERY_LIMIT_EXCEEDED": "You have reached the gallery limit of {{limit}} photos.",
+        "GALLERY_LIMIT_EXCEEDED_one": "You have reached the gallery limit of {{count}} photo.",
+        "GALLERY_LIMIT_EXCEEDED_other": "You have reached the gallery limit of {{count}} photos.",
         "MISSING_FILE": "No image was received. Choose a file and try again.",
         "EMPTY_FILE": "The file is empty. Choose another image."
     },

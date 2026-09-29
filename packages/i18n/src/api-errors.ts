@@ -31,6 +31,7 @@
 import type { Locale } from './config.shared';
 import { defaultLocale, webTrans as trans } from './config.shared';
 import { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
+import { pluralize } from './pluralization';
 
 /**
  * Type alias for supported locale values. Exported so web can re-export it
@@ -133,6 +134,20 @@ function lookupTrans(locale: Locale, key: string): string | undefined {
 }
 
 /**
+ * The count that selects a plural form, taken from `details.limit`.
+ *
+ * `limit` is the one quantity the API attaches to a refusal that names a number
+ * of things (`GALLERY_LIMIT_EXCEEDED`). Any other shape selects no plural form.
+ *
+ * @param details - The error's `details` payload.
+ * @returns A finite number, or `undefined`.
+ */
+function toPluralCount(details: unknown): number | undefined {
+    const limit = (details as { limit?: unknown } | null | undefined)?.limit;
+    return typeof limit === 'number' && Number.isFinite(limit) ? limit : undefined;
+}
+
+/**
  * Replaces `{{name}}` placeholders with the matching value. Placeholders with
  * no value are left untouched.
  *
@@ -208,17 +223,36 @@ export function translateApiErrorWithT(params: {
     // Detect absence via the canonical predicate so the fall-through to `code`
     // works in production too: a DEV build reports an absent key with the
     // `[MISSING:` marker, a production build echoes the raw key back.
+    // When `details.limit` names a quantity, a `<KEY>_one` / `<KEY>_other` pair
+    // wins over a plain `<KEY>` (same convention as `tPlural`); an absent pair
+    // falls through to the plain key below.
+    const pluralCount = toPluralCount(error?.details);
+    const lookupPlural = (key: string): string | undefined => {
+        if (pluralCount === undefined) return undefined;
+        const text = pluralize({
+            t: (k, p) => t(k, undefined, p),
+            key,
+            count: pluralCount,
+            params: interpolation
+        });
+        return isMissingTranslation({ key, value: text }) ? undefined : text;
+    };
+
     if (error?.reason) {
         const reasonKey = `common.apiError.${error.reason}`;
+        const pluralReason = lookupPlural(reasonKey);
+        if (pluralReason !== undefined) return pluralReason;
         const reasonText =
             interpolation === undefined ? t(reasonKey) : t(reasonKey, undefined, interpolation);
         if (!isMissingTranslation({ key: reasonKey, value: reasonText })) return reasonText;
     }
 
     if (error?.code) {
+        const codeKey = `common.apiError.${error.code}`;
+        const pluralCode = lookupPlural(codeKey);
+        if (pluralCode !== undefined) return pluralCode;
         // `t()` returns the translation if present, otherwise the fallback
         // (the API's English message), otherwise the generic localized text.
-        const codeKey = `common.apiError.${error.code}`;
         return interpolation === undefined
             ? t(codeKey, apiMessage || genericFallback)
             : t(codeKey, apiMessage || genericFallback, interpolation);
