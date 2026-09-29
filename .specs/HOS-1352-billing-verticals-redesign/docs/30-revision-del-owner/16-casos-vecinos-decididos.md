@@ -150,3 +150,13 @@ Casos vecinos nuevos de [`21-aplicacion-casos-lote-i.md`](./21-aplicacion-casos-
 | A | 1 | dónde vive la implementación real del reloj | **1**: la inyecta la raíz de composición de `apps/api`; en las pruebas, el reloj adelantable | sí |
 | B | 2 | las specs de fuera que la regla del owner no cubre | **1**: las canceladas, las sin issue y las de `.qtm/` se borran; la `In Review` se trata como implementada y se borra | sí |
 | C | 3 | el nombre y el correo del cliente de billing de una cuenta dada de baja | **1**: se conservan tal cual y se declara por qué (datos de facturación que la ley obliga a guardar) | sí |
+
+## Lote K · lo que salió al aplicar el lote J (2026-09-29)
+
+Casos vecinos de [`22-aplicacion-casos-lote-j.md`](./22-aplicacion-casos-lote-j.md) §3: uno que bloquea y dos menores.
+
+| Letra | Caso de `22-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | bloquea | dónde quedan el nombre y el correo de quien pagó, si el modelo nuevo no tiene cliente | **1**: el comprobante (`receipt`) guarda una copia del nombre y el correo al emitirse; la acción 24 sigue reemplazándolos en la cuenta | sí |
+| B | menor 1 | estados de Linear que la regla de limpieza no nombra | **1**: se sigue el tipo que Linear le da a cada estado: `Duplicate` se borra, los demás se reescriben | sí |
+| C | menor 2 | qué unidad escribe la línea que inyecta el reloj real | **1**: `B1` | sí |
