@@ -25,9 +25,9 @@ const postService = new PostService({ logger: apiLogger });
  * POST /api/v1/protected/posts/:id/publish-state
  *
  * @throws 400 if `visibility` is not a valid visibility value.
- * @throws 403 if the actor is not the author, or is the author but lacks
- *         `POST_PUBLISH_OWN`.
- * @throws 404 if the post does not exist.
+ * @throws 403 if the actor is the author but lacks `POST_PUBLISH_OWN`.
+ * @throws 404 if the post does not exist OR is authored by someone else (never
+ *         403 on a foreign row: that would confirm the id exists, HOS-1106).
  */
 export const protectedSetPostPublishStateRoute = createProtectedRoute({
     method: 'post',

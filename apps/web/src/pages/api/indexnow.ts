@@ -31,7 +31,7 @@
 
 import type { APIRoute } from 'astro';
 import { getIndexNowKey, getNoindexHosts, getRevalidationSecret, getSiteUrl } from '@/lib/env';
-import { parseNoindexHosts } from '@/lib/middleware-helpers';
+import { parseNoindexHosts } from '@/lib/noindex-hosts';
 import {
     buildEntityLocaleUrls,
     isNotifiableEntityType,
