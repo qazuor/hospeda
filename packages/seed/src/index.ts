@@ -18,6 +18,8 @@ import { CloudinaryProvider, resolveEnvironment } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
 import { runPointOfInterestCatalogSeeds } from './pointOfInterestCatalog/index.js';
 import { runRequiredSeeds } from './required/index.js';
+import type { FailedRequiredSeedStep } from './required/runSteps.js';
+import { RequiredSeedStepsFailedError } from './required/runSteps.js';
 import { runTestUserSeeds } from './test-users/index.js';
 import { DEFAULT_CACHE_PATH, flushCache, readCache } from './utils/cloudinary-cache.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
@@ -165,6 +167,8 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
     logger.info('🚀 Starting seed process...');
 
+    let requiredFailedSteps: readonly FailedRequiredSeedStep[] = [];
+
     try {
         if (reset) {
             logger.info(
@@ -262,7 +266,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
         if (required) {
             seedContext.seedSource = 'required';
-            await runRequiredSeeds(seedContext);
+            ({ failedSteps: requiredFailedSteps } = await runRequiredSeeds(seedContext));
         }
 
         if (example) {
@@ -285,6 +289,12 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             // seeded the plan slugs the test users subscribe to).
             seedContext.seedSource = 'example';
             await runTestUserSeeds(seedContext);
+        }
+
+        // HOS-735: `--continueOnError` ran every required step; a failure among them
+        // must still fail the process, after the other groups had their chance to run.
+        if (requiredFailedSteps.length > 0) {
+            throw new RequiredSeedStepsFailedError({ failedSteps: requiredFailedSteps });
         }
 
         logger.success({ msg: `${STATUS_ICONS.Complete} Seed process complete.` });

@@ -1024,6 +1024,7 @@ export class EntityViewService extends BaseService {
                 }
 
                 const modelRows = await this.model.getDailySeriesForEntityIds({
+                    entityType: EntityTypeEnum.ACCOMMODATION,
                     windowDays,
                     entityIds: ownedIds
                 });
@@ -1117,6 +1118,7 @@ export class EntityViewService extends BaseService {
                 }
 
                 const modelRows = await this.model.getDailySeriesForEntityIds({
+                    entityType: validated.entityType,
                     windowDays,
                     entityIds: ownedIds
                 });

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { requiresMentionUrl } from '../../enums/partner-mention-channel.schema.js';
-import { partnerMentionSchema } from './partner-mention.schema.js';
+import { partnerMentionSchema, partnerMentionWriteUrlSchema } from './partner-mention.schema.js';
 
 /**
  * Correct ONE already-logged mention (HOS-377, closes OQ-6).
@@ -41,6 +41,7 @@ export const updatePartnerMentionSchema = partnerMentionSchema
         url: true,
         internalNote: true
     })
+    .extend({ url: partnerMentionWriteUrlSchema })
     .partial()
     .superRefine((patch, ctx) => {
         if (patch.channel === undefined) return;

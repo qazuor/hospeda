@@ -6,6 +6,7 @@
  * a consistent source of truth and avoid drift between the two apps.
  */
 import { z } from 'zod';
+import { safeExternalUrl } from '../common/safe-external-url.schema.js';
 import {
     FacebookUrlRegex,
     InstagramUrlRegex,
@@ -155,7 +156,9 @@ export const ProfileEditSchema = z.strictObject({
     /**
      * Personal website URL. Empty string clears it.
      */
-    website: z.union([z.literal(''), z.string().url()]).optional(),
+    website: z
+        .union([z.literal(''), safeExternalUrl('zodError.user.profile.website.url')])
+        .optional(),
 
     /**
      * Free-text occupation / job title. 2-100 chars when set; `''` clears.

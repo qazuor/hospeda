@@ -103,6 +103,37 @@ applied, permanently. Split the release (backfill in N, `DROP COLUMN` in N+1, th
 expand/contract rule the structural carril already follows) and declare
 `meta.requiresColumns` so the runner refuses instead of succeeding emptily.
 
+## Re-running `--required` (HOS-735)
+
+`--required` is additive: it is how an already-populated database gets a catalog that grew.
+It must be safe to run twice, and `test/integration/required-rerun.integration.test.ts`
+proves it (two CLI runs on one database, second must exit 0 and change no row count).
+
+- **Factory seeders opt in with `existing`** (`createSeedFactory({ existing: { modelClass, getWhere } })`).
+  A found row is neither created, image-processed nor touched, but its real id is still mapped
+  (downstream seeds resolve relations through the `IdMapper`), and `postProcess` /
+  `relationBuilder` are skipped (they describe creation and collide on their own
+  deterministic keys). Only the explicit idempotent `onExisting` hook runs; `users` uses it to
+  re-grant the fixture's roles. Lookups use `whereFixtureSlug()` / `whereFixtureFields()`
+  from `src/utils/existingLookup.ts`.
+- **A slug lookup is only right when the fixture slug IS the stored slug.** Attractions strip
+  the fixture slug so the service regenerates it (`aqua_parque_termal` becomes
+  `aqua-parque-termal`), so they are keyed by `name`. A wrong key does not fail: it silently
+  re-inserts the whole catalog as `name-2`.
+- **`ON CONFLICT DO NOTHING` needs a unique constraint.** `ai_prompt_versions` and
+  `exchange_rates` have none, so a re-run inserted duplicate rows with no error. Check
+  existence explicitly, and compare row counts, not just the exit code.
+- **The users fixtures never write a Better Auth `account`.** Only the super admin gets a
+  credential (`superAdminLoader`); `admin-user` is skipped on re-run, so no account is
+  duplicated and no password is reset.
+- **`--continueOnError` isolates each required step** (`src/required/runSteps.ts`). A failing
+  step is recorded and the next still runs; the failed steps are listed at the end and the
+  process exits non-zero after the other groups ran. Without the flag the first failure
+  aborts, as before.
+- Steps that write on every re-run BY DESIGN (not duplicates): `billing_plans` and
+  `exchange_rate_config` are synced to the code, and the super admin's credential is re-hashed
+  when `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` is set.
+
 ## Test Users for Billing (SPEC-143 Block 1)
 
 A separate `--test-users` seed group creates 42 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration. 17 pre-date HOS-1268; the other 25 close the gap that issue exists for — see [Billing-state matrix](#billing-state-matrix-hos-1268) below.
