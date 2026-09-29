@@ -87,3 +87,19 @@ no hay registro que lo muestre.
 50 casos decididos. Contra la recomendación: **A-B** (caso 2, sin constancia del aviso) y **D-A**
 (caso 30, el package del cobro puede depender de packages internos cuando evitarlo no sea simple).
 Con agregado del owner: **B-H** (17), **D-J** (39), **E-I** (49).
+En el Lote F (casos nuevos de `17-`), contra la recomendación: **F-C** (soporte puede borrar todo).
+
+## Lote F · lo que salió al aplicar los casos 1 a 19 (2026-09-29)
+
+Casos vecinos nuevos de [`17-aplicacion-casos-corte-y-verticales.md`](./17-aplicacion-casos-corte-y-verticales.md) §3.
+
+| Letra | Caso de `17-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | 1 | cómo se reinicia el reloj cuando la pausa termina sin volver | **1**: no se escribe nada; `retenciónDetenida` devuelve también cuándo terminó la última pausa y los lectores cuentan desde el más tardío de los dos instantes; `G-R6-B` no cambia. Y el barrido diario marca para resolver a mano una pausa vencida cuya reanudación no se aplicó | sí |
+| B | 2 | `G8` y el build del paso 3 | **1**: la regla «falla con la lista llena» se enciende con el commit del paso 6 | sí |
+| C | 3 | quién ejecuta la baja de cuenta manual | **2**, ampliada por el owner: *«que soporte pueda borrar todo»*. Soporte (una persona del equipo con el permiso en el panel) hace los tres pasos: cancela el cobro (la acción que ya existe), borra cada ficha con `PB12` y borra la cuenta, a pedido del dueño y con motivo. Suma lo que falte al catálogo de acciones y precisa el *«sin borrar»* de `G5-2` (que sigue valiendo para la edición de contenido ajeno) | **no** (la recomendada era que el dueño borre sus fichas y soporte haga los pasos 1 y 3) |
+| D | 4 | el script del corte bajo `G8` | **1**: arma el valor viejo sin escribir la palabra de corrido, como el propio guard | sí |
+
+Nota del registro: `17-` §3 caso 3 decía que soporte no tenía una acción para dar de baja la
+suscripción de otro; es inexacto, la acción *«cancelar una suscripción»* existe (`nucleo/08` §3).
+Lo que no existía era borrar una ficha ajena ni la cuenta.
