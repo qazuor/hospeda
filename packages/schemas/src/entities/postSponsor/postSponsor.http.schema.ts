@@ -68,10 +68,10 @@ export const PostSponsorCreateHttpSchema = z.object({
     website: z.string().url().optional(),
 
     // Social media links
-    twitter: z.string().url().optional(),
-    facebook: z.string().url().optional(),
-    instagram: z.string().url().optional(),
-    linkedin: z.string().url().optional()
+    twitter: z.string().url().nullish(),
+    facebook: z.string().url().nullish(),
+    instagram: z.string().url().nullish(),
+    linkedin: z.string().url().nullish()
 });
 
 export type PostSponsorCreateHttp = z.infer<typeof PostSponsorCreateHttpSchema>;

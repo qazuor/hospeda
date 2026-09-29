@@ -96,12 +96,12 @@ export const ExperienceCreateHttpSchema = z.object({
         .optional(),
     website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
     // Social media links (flat fields mapped to SocialNetworkSchema in converter)
-    twitter: z.string().url({ message: 'zodError.common.social.twitter.invalid' }).optional(),
-    facebook: z.string().url({ message: 'zodError.common.social.facebook.invalid' }).optional(),
-    instagram: z.string().url({ message: 'zodError.common.social.instagram.invalid' }).optional(),
-    linkedin: z.string().url({ message: 'zodError.common.social.linkedIn.invalid' }).optional(),
-    tiktok: z.string().url({ message: 'zodError.common.social.tiktok.invalid' }).optional(),
-    youtube: z.string().url({ message: 'zodError.common.social.youtube.invalid' }).optional()
+    twitter: z.string().url({ message: 'zodError.common.social.twitter.invalid' }).nullish(),
+    facebook: z.string().url({ message: 'zodError.common.social.facebook.invalid' }).nullish(),
+    instagram: z.string().url({ message: 'zodError.common.social.instagram.invalid' }).nullish(),
+    linkedin: z.string().url({ message: 'zodError.common.social.linkedIn.invalid' }).nullish(),
+    tiktok: z.string().url({ message: 'zodError.common.social.tiktok.invalid' }).nullish(),
+    youtube: z.string().url({ message: 'zodError.common.social.youtube.invalid' }).nullish()
 });
 
 export type ExperienceCreateHttp = z.infer<typeof ExperienceCreateHttpSchema>;

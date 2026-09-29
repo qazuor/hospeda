@@ -19,42 +19,42 @@ export const SocialNetworkSchema = z.object({
         .regex(FacebookUrlRegex, {
             message: 'zodError.common.social.facebook.pattern'
         })
-        .optional(),
+        .nullish(),
     instagram: z
         .string()
         .url({ message: 'zodError.common.social.instagram.invalid' })
         .regex(InstagramUrlRegex, {
             message: 'zodError.common.social.instagram.pattern'
         })
-        .optional(),
+        .nullish(),
     twitter: z
         .string()
         .url({ message: 'zodError.common.social.twitter.invalid' })
         .regex(TwitterUrlRegex, {
             message: 'zodError.common.social.twitter.pattern'
         })
-        .optional(),
+        .nullish(),
     linkedIn: z
         .string()
         .url({ message: 'zodError.common.social.linkedIn.invalid' })
         .regex(LinkedInUrlRegex, {
             message: 'zodError.common.social.linkedIn.pattern'
         })
-        .optional(),
+        .nullish(),
     tiktok: z
         .string()
         .url({ message: 'zodError.common.social.tiktok.invalid' })
         .regex(TikTokUrlRegex, {
             message: 'zodError.common.social.tiktok.pattern'
         })
-        .optional(),
+        .nullish(),
     youtube: z
         .string()
         .url({ message: 'zodError.common.social.youtube.invalid' })
         .regex(YouTubeUrlRegex, {
             message: 'zodError.common.social.youtube.pattern'
         })
-        .optional()
+        .nullish()
 });
 export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;
 
@@ -74,12 +74,12 @@ export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;
  * query family ended up with a second, stricter idea of "lenient user".
  */
 export const SocialNetworkReadSchema = z.object({
-    facebook: z.string().optional(),
-    instagram: z.string().optional(),
-    twitter: z.string().optional(),
-    linkedIn: z.string().optional(),
-    tiktok: z.string().optional(),
-    youtube: z.string().optional()
+    facebook: z.string().nullish(),
+    instagram: z.string().nullish(),
+    twitter: z.string().nullish(),
+    linkedIn: z.string().nullish(),
+    tiktok: z.string().nullish(),
+    youtube: z.string().nullish()
 });
 export type SocialNetworkRead = z.infer<typeof SocialNetworkReadSchema>;
 
