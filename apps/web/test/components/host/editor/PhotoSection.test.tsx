@@ -445,7 +445,11 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             fireEvent.change(galleryInput, { target: { files: [file] } });
 
             await waitFor(() => {
-                expect(screen.getByText('quota exceeded')).toBeInTheDocument();
+                // HOS-1218: the API's `message` is log text; the UI shows localized copy.
+                expect(
+                    screen.getByText('No se pudo guardar la imagen en la base de datos')
+                ).toBeInTheDocument();
+                expect(screen.queryByText('quota exceeded')).not.toBeInTheDocument();
             });
 
             // No gallery images should appear
@@ -456,7 +460,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             // error at the top of the editor.
             expect(mockAddToast).toHaveBeenCalledWith({
                 type: 'error',
-                message: 'quota exceeded'
+                message: 'No se pudo guardar la imagen en la base de datos'
             });
         });
     });
@@ -623,7 +627,10 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             fireEvent.change(featuredInput, { target: { files: [file] } });
 
             await waitFor(() => {
-                expect(screen.getByText('featured op failed')).toBeInTheDocument();
+                expect(
+                    screen.getByText('No se pudo guardar la imagen en la base de datos')
+                ).toBeInTheDocument();
+                expect(screen.queryByText('featured op failed')).not.toBeInTheDocument();
             });
 
             // No featured image in slot
@@ -632,7 +639,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             // BETA-144: toast mirrors the inline error
             expect(mockAddToast).toHaveBeenCalledWith({
                 type: 'error',
-                message: 'featured op failed'
+                message: 'No se pudo guardar la imagen en la base de datos'
             });
         });
     });

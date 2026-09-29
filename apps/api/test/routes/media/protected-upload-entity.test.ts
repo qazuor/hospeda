@@ -171,6 +171,67 @@ describe('Protected media upload-entity endpoint', () => {
         });
     });
 
+    // -------------------------------------------------------------------------
+    // HOS-1218: the web UI resolves copy from `code` (+ `reason`), so each
+    // refusal must carry a stable, translatable pair. The English `message`
+    // is only a log fallback.
+    // -------------------------------------------------------------------------
+    describe('translatable error identity (HOS-1218)', () => {
+        type ErrorBody = {
+            error?: { code: string; reason?: string; message: string; details?: unknown };
+        };
+
+        const post = async (fd: FormData): Promise<{ status: number; body: ErrorBody }> => {
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+            const res = await app.request(
+                new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                })
+            );
+            return { status: res.status, body: (await res.json()) as ErrorBody };
+        };
+
+        it('tags a bad form field payload with reason INVALID_FORM_FIELDS', async () => {
+            const { status, body } = await post(buildMultipartBody({ role: 'avatar' }));
+
+            expect(status).toBe(400);
+            expect(body.error?.code).toBe('VALIDATION_ERROR');
+            expect(body.error?.reason).toBe('INVALID_FORM_FIELDS');
+        });
+
+        it('tags a missing file with reason MISSING_FILE', async () => {
+            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                buildOwnedEntityStub()
+            );
+            const fd = new FormData();
+            fd.append('role', 'featured');
+            fd.append('entityType', 'accommodation');
+            fd.append('entityId', ENTITY_ID);
+
+            const { status, body } = await post(fd);
+
+            expect(status).toBe(400);
+            expect(body.error?.code).toBe('VALIDATION_ERROR');
+            expect(body.error?.reason).toBe('MISSING_FILE');
+        });
+
+        it('answers an empty file with code EMPTY_FILE', async () => {
+            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                buildOwnedEntityStub()
+            );
+
+            const { status, body } = await post(
+                buildMultipartBody({ file: new File([], 'empty.jpg', { type: 'image/jpeg' }) })
+            );
+
+            expect(status).toBe(422);
+            expect(body.error?.code).toBe('EMPTY_FILE');
+        });
+    });
+
     describe('Cache-Control header', () => {
         it('should set Cache-Control: no-store on error responses', async () => {
             const { initApp } = await import('../../../src/app');
