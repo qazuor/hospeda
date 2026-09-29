@@ -28,6 +28,11 @@ describe('findCoerceBoolean', () => {
         ['with chain', 'const a = z.coerce.boolean().optional().default(false);'],
         ['reflowed by a formatter', 'const a = z\n    .coerce\n    .boolean();'],
         ['spaced tokens', 'const a = z . coerce . boolean();'],
+        ['an aliased zod import', 'const a = zodCore.coerce.boolean();'],
+        ['a destructured coerce', 'const { coerce } = z;\nconst a = coerce.boolean();'],
+        ['a named coerce import', "import { coerce } from 'zod';\nconst a = coerce.boolean();"],
+        ['bracket access', "const a = z.coerce['boolean']();"],
+        ['optional chaining', 'const a = z?.coerce?.boolean();'],
         [
             'after a URL string on the same line',
             "const u = 'http://x'; const a = z.coerce.boolean();"
@@ -42,6 +47,7 @@ describe('findCoerceBoolean', () => {
         ['JSDoc', '/**\n * Not z.coerce.boolean()\n */'],
         ['the strict helper', "createBooleanQueryParam('x')"],
         ['number coercion', 'z.coerce.number()'],
+        ['the string transform env parsers use', "z.string().transform((v) => v === 'true')"],
         ['a longer identifier', 'const a = xz.coerce.boolean2;']
     ])('ignores %s', (_name, source) => {
         expect(hits(source)).toBe(0);
@@ -79,11 +85,15 @@ describe('scanRepo', () => {
 
     it('honours the allowlist by exact path', () => {
         const root = makeRoot({
-            'apps/api/src/utils/env-schema.ts': 'z.coerce.boolean()',
+            'apps/api/src/allowed.ts': 'z.coerce.boolean()',
             'apps/api/src/other.ts': 'z.coerce.boolean()'
         });
 
-        const result = scanRepo({ root, roots: ['apps/api/src'] });
+        const result = scanRepo({
+            root,
+            roots: ['apps/api/src'],
+            allowlist: ['apps/api/src/allowed.ts']
+        });
 
         expect(result.violations.map((v) => v.file)).toEqual(['apps/api/src/other.ts']);
     });

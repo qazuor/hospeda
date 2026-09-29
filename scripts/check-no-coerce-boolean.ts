@@ -17,17 +17,25 @@
  *
  * ## How it is anchored
  *
- * On the token sequence `z . coerce . boolean`, tolerant of whitespace and line
- * breaks between the tokens (a formatter reflowing `z\n  .coerce\n  .boolean()`
+ * On `coerce . boolean` (any receiver), tolerant of whitespace, line breaks,
+ * optional chaining and bracket access between the tokens (a formatter reflowing `z\n  .coerce\n  .boolean()`
  * must not slip through), after COMMENTS are blanked out so prose that explains
  * the ban does not trip it. String and template literals are respected while
  * blanking, so a `//` inside a URL does not hide code after it.
  *
  * ## Allowlist
  *
- * Environment schemas are out of scope: an env var `"false"` is parsed by
- * dedicated code, not a query string. They are named explicitly below, never by
- * pattern, so adding one is a reviewed line in this file.
+ * None today: `apps/api/src/utils/env-schema.ts` parses env booleans with an
+ * explicit string transform and only mentions the ban in comments. If a file
+ * ever genuinely needs the coercion, name it in `ALLOWLIST` (never by pattern),
+ * so the exception is a reviewed line in this file.
+ *
+ * ## Known limit
+ *
+ * Comment blanking is a scanner, not a parser: a regex literal containing an
+ * unbalanced quote (`/["']/`) can desynchronise it for the rest of that file.
+ * No such literal exists in the scanned roots; the repo-wide test would show a
+ * false clean only if one appeared AND hid a real hit.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -36,8 +44,8 @@ import { join, relative } from 'node:path';
 /** Directories scanned, relative to the repo root. */
 export const SCAN_ROOTS = ['apps/api/src', 'packages/schemas/src'] as const;
 
-/** Files that may use `z.coerce.boolean()` (environment schemas only). */
-export const ALLOWLIST: readonly string[] = ['apps/api/src/utils/env-schema.ts'];
+/** Files that may use `coerce.boolean` (none today, see the header). */
+export const ALLOWLIST: readonly string[] = [];
 
 /** Fewer files than this means the scan roots moved: not a clean tree. */
 export const MIN_SCANNED_FILES = 500;
@@ -45,7 +53,15 @@ export const MIN_SCANNED_FILES = 500;
 const EXTENSIONS = ['.ts', '.tsx'];
 const SKIPPED_DIRS = new Set(['dist', ['node', 'modules'].join('_')]);
 
-const PATTERN = /\bz\s*\.\s*coerce\s*\.\s*boolean\b/g;
+/**
+ * Anchored on `coerce` rather than on the `z` receiver, so an alias
+ * (`import { z as zodCore }`), a destructured `coerce`, a named import, optional
+ * chaining and bracket access are all caught:
+ *
+ *   z.coerce.boolean()   zodCore.coerce.boolean()   coerce.boolean()
+ *   z?.coerce?.boolean() z.coerce['boolean']()
+ */
+const PATTERN = /\bcoerce\s*(?:\??\.\s*boolean\b|\??\.?\s*\[\s*['"]boolean['"]\s*\])/g;
 
 /** One offending occurrence. */
 export interface Violation {
@@ -105,7 +121,7 @@ export function blankComments(source: string): string {
 }
 
 /**
- * Finds `z.coerce.boolean` occurrences in one file's source.
+ * Finds `coerce.boolean` occurrences in one file's source.
  *
  * @param input.file - Path used in the report
  * @param input.source - File contents
