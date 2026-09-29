@@ -86,6 +86,25 @@ describe('createSeedFactory existing option (HOS-735)', () => {
         expect(ctx.idMapper.getRealId('things', 'seed-1')).toBe('existing-id');
     });
 
+    it('looks the row up by the fixture predicate, never with an empty or generic where', async () => {
+        // Arrange
+        const { folder, file } = folderWith({ id: 'seed-1', slug: 'wifi', name: 'Wifi' });
+        const Model = lookupModel({});
+        const seed = createSeedFactory({
+            entityName: 'Things',
+            serviceClass: StubService,
+            folder,
+            files: [file],
+            existing: { modelClass: Model, getWhere: whereFixtureSlug() }
+        });
+
+        // Act
+        await seed(context());
+
+        // Assert
+        expect(Model.wheres).toEqual([{ slug: 'wifi' }]);
+    });
+
     it('creates and runs postProcess when the row does not exist', async () => {
         // Arrange
         StubService.createCalls = [];

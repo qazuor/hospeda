@@ -176,6 +176,24 @@ describe('seed --required twice on the same database (HOS-735)', () => {
             ).toBe(0);
             const afterFirst = await countRows(rerunDbUrl);
 
+            // A lookup that matches EVERY row would skip every item and keep the counts
+            // equal (the DB layer drops unknown where-keys). So delete one slug-keyed row
+            // and one composite-keyed row and require the second run to re-create both.
+            const pool = new Pool({ connectionString: rerunDbUrl });
+            try {
+                await pool.query(
+                    `DELETE FROM amenities WHERE slug = (SELECT slug FROM amenities ORDER BY slug LIMIT 1)`
+                );
+                await pool.query(
+                    `DELETE FROM exchange_rates WHERE id = (SELECT id FROM exchange_rates ORDER BY id LIMIT 1)`
+                );
+            } finally {
+                await pool.end();
+            }
+            const afterDelete = await countRows(rerunDbUrl);
+            expect(afterDelete.amenities).toBe(afterFirst.amenities - 1);
+            expect(afterDelete.exchange_rates).toBe(afterFirst.exchange_rates - 1);
+
             // Act: the second run over the populated database.
             const second = await runRequiredCli(rerunDbUrl);
 
