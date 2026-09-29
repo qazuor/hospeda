@@ -10,11 +10,13 @@ import { useMemo } from 'react';
 import { defaultLocale, trans } from '../config';
 import { pluralize } from '../pluralization';
 import type { TranslationKey } from '../types';
+import { useProvidedLocale } from './locale-context';
 
 /**
  * Hook that provides translation functionality for React components
  *
- * @param locale - The locale to use for translations (defaults to 'es')
+ * @param explicitLocale - The locale to use for translations. When omitted, the
+ * locale from the nearest `LocaleProvider` is used, else the default locale ('es').
  * @returns Object with translation function and current locale
  *
  * @example
@@ -26,7 +28,9 @@ import type { TranslationKey } from '../types';
  * );
  * ```
  */
-export const useTranslations = (locale: string = defaultLocale) => {
+export const useTranslations = (explicitLocale?: string) => {
+    const providedLocale = useProvidedLocale();
+    const locale = explicitLocale ?? providedLocale ?? defaultLocale;
     const translator = useMemo(() => {
         /**
          * Translation function that retrieves translated text by key
