@@ -17,6 +17,12 @@ export {
     SortingParamsSchema,
     UuidSchema
 } from './base.schema.js';
+// Query helpers
+export {
+    createBooleanQueryParam,
+    createBooleanQueryParamWithDefault,
+    httpBodyBoolean
+} from './boolean-params.js';
 // Public amenity/feature projections shared by both commerce verticals (HOS-1072)
 export * from './commerce-catalog.schema.js';
 // Commerce listing publish-readiness ("complete") contract — single
@@ -61,8 +67,7 @@ export {
 export * from './params.schema.js';
 export * from './password.schema.js';
 export * from './price.schema.js';
-// Query helpers
-export { queryBooleanParam, queryDateParam, queryNumberParam } from './query-helpers.js';
+export { queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';
 export * from './review.schema.js';
 export * from './seo.schema.js';

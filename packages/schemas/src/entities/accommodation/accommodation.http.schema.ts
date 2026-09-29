@@ -326,8 +326,8 @@ export const AccommodationCreateHttpSchema = z.object({
     // automatically (public read ORs `isFeatured` with `featuredByEntitlement`,
     // see `apps/api/src/utils/accommodation-featured.ts`) — there is no owner
     // write path for this field anywhere, this schema included.
-    isAvailable: z.coerce.boolean().default(true),
-    allowsPets: z.coerce.boolean().default(false),
+    isAvailable: httpBodyBoolean().default(true),
+    allowsPets: httpBodyBoolean().default(false),
 
     // Relations
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -692,6 +692,7 @@ export const httpToDomainAccommodationSearch = (
     // exist in domain schema but not in HTTP schema, so they're not mapped
 });
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { mediaAssetUrl } from '../../common/media.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';

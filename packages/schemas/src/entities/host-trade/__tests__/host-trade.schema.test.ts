@@ -494,7 +494,7 @@ describe('HostTradeAdminSearchSchema', () => {
             const result = HostTradeAdminSearchSchema.safeParse({ isActive: 'false' });
             expect(result.success).toBe(true);
             if (result.success) {
-                // queryBooleanParam handles this correctly unlike z.coerce.boolean()
+                // createBooleanQueryParam handles this correctly unlike z.coerce.boolean()
                 expect(result.data.isActive).toBe(false);
             }
         });

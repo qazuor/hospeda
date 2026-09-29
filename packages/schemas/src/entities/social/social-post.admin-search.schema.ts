@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { SocialApprovalStatusEnumSchema } from '../../enums/social-approval-status.schema.js';
 import { SocialPlatformEnumSchema } from '../../enums/social-platform.schema.js';
 import { SocialPostStatusEnumSchema } from '../../enums/social-post-status.schema.js';
@@ -56,7 +56,7 @@ export const SocialPostAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by audience'),
 
     /** Filter paused posts */
-    paused: queryBooleanParam().describe('Filter paused posts'),
+    paused: createBooleanQueryParam('Filter paused posts'),
 
     /** Filter posts scheduled after this date */
     scheduledAfter: z.coerce.date().optional().describe('Filter posts scheduled after this date'),

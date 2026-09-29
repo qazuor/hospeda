@@ -26,19 +26,12 @@ export const HttpPaginationSchema = z.object({
 
 export type HttpPagination = z.infer<typeof HttpPaginationSchema>;
 
-/**
- * Utility for creating boolean query parameters
- * Converts 'true'/'false' strings to boolean values.
- *
- * Declared here (ahead of `HttpSortingSchema`) so that shared sort-related
- * fields like `featuredFirst` can reuse it without a temporal-dead-zone issue.
- */
-export const createBooleanQueryParam = (description: string) =>
-    z
-        .enum(['true', 'false'])
-        .transform((v) => v === 'true')
-        .optional()
-        .describe(description);
+import {
+    createBooleanQueryParam,
+    createBooleanQueryParamWithDefault
+} from '../../common/boolean-params.js';
+
+export { createBooleanQueryParam, createBooleanQueryParamWithDefault };
 
 /**
  * Duck-typed OpenAPI example attacher.
@@ -182,38 +175,33 @@ export const createNumberQueryParam = (description: string, min?: number, max?: 
  */
 export const HttpQueryFields = {
     // Boolean fields (most common)
-    isFeatured: () => z.coerce.boolean().optional().describe('Filter by featured status'),
-    isActive: () => z.coerce.boolean().optional().describe('Filter by active status'),
-    isEmailVerified: () =>
-        z.coerce.boolean().optional().describe('Filter by email verification status'),
-    isPublished: () => z.coerce.boolean().optional().describe('Filter by published status'),
-    isVerified: () => z.coerce.boolean().optional().describe('Filter by verified status'),
-    isAvailable: () => z.coerce.boolean().optional().describe('Filter by availability status'),
-    isFree: () => z.coerce.boolean().optional().describe('Filter by free/paid status'),
-    isVirtual: () => z.coerce.boolean().optional().describe('Filter by virtual/physical status'),
-    isPremium: () => z.coerce.boolean().optional().describe('Filter by premium/standard status'),
-    isPublic: () => z.coerce.boolean().optional().describe('Filter by public/private status'),
-    isBuiltin: () => z.coerce.boolean().optional().describe('Filter by builtin/custom status'),
-    hasIcon: () => z.coerce.boolean().optional().describe('Filter by presence of icon'),
-    hasDescription: () =>
-        z.coerce.boolean().optional().describe('Filter by presence of description'),
-    hasMedia: () => z.coerce.boolean().optional().describe('Filter by presence of media'),
-    hasExcerpt: () => z.coerce.boolean().optional().describe('Filter by presence of excerpt'),
-    hasLocation: () => z.coerce.boolean().optional().describe('Filter by presence of location'),
-    hasClimateInfo: () =>
-        z.coerce.boolean().optional().describe('Filter by presence of climate information'),
-    hasCoordinates: () =>
-        z.coerce.boolean().optional().describe('Filter by presence of coordinates'),
-    isPopular: () => z.coerce.boolean().optional().describe('Filter by popular tags'),
-    isUnused: () => z.coerce.boolean().optional().describe('Filter by unused status'),
+    isFeatured: () => createBooleanQueryParam('Filter by featured status'),
+    isActive: () => createBooleanQueryParam('Filter by active status'),
+    isEmailVerified: () => createBooleanQueryParam('Filter by email verification status'),
+    isPublished: () => createBooleanQueryParam('Filter by published status'),
+    isVerified: () => createBooleanQueryParam('Filter by verified status'),
+    isAvailable: () => createBooleanQueryParam('Filter by availability status'),
+    isFree: () => createBooleanQueryParam('Filter by free/paid status'),
+    isVirtual: () => createBooleanQueryParam('Filter by virtual/physical status'),
+    isPremium: () => createBooleanQueryParam('Filter by premium/standard status'),
+    isPublic: () => createBooleanQueryParam('Filter by public/private status'),
+    isBuiltin: () => createBooleanQueryParam('Filter by builtin/custom status'),
+    hasIcon: () => createBooleanQueryParam('Filter by presence of icon'),
+    hasDescription: () => createBooleanQueryParam('Filter by presence of description'),
+    hasMedia: () => createBooleanQueryParam('Filter by presence of media'),
+    hasExcerpt: () => createBooleanQueryParam('Filter by presence of excerpt'),
+    hasLocation: () => createBooleanQueryParam('Filter by presence of location'),
+    hasClimateInfo: () => createBooleanQueryParam('Filter by presence of climate information'),
+    hasCoordinates: () => createBooleanQueryParam('Filter by presence of coordinates'),
+    isPopular: () => createBooleanQueryParam('Filter by popular tags'),
+    isUnused: () => createBooleanQueryParam('Filter by unused status'),
     searchInDescription: () =>
-        z.coerce.boolean().default(true).optional().describe('Include description in search'),
-    fuzzySearch: () => z.coerce.boolean().default(true).optional().describe('Enable fuzzy search'),
-    groupByCategory: () =>
-        z.coerce.boolean().default(false).optional().describe('Group results by category'),
+        createBooleanQueryParamWithDefault('Include description in search', true),
+    fuzzySearch: () => createBooleanQueryParamWithDefault('Enable fuzzy search', true),
+    groupByCategory: () => createBooleanQueryParamWithDefault('Group results by category', false),
     popularityThreshold: () =>
         z.coerce.number().int().min(1).optional().describe('Popularity threshold filter'),
-    hasImages: () => z.coerce.boolean().optional().describe('Filter by presence of images'),
+    hasImages: () => createBooleanQueryParam('Filter by presence of images'),
 
     // Date fields (very common)
     createdAfter: () => z.coerce.date().optional().describe('Filter items created after this date'),
@@ -256,9 +244,8 @@ export const HttpQueryFields = {
     maxCapacity: () =>
         z.coerce.number().int().min(1).optional().describe('Maximum capacity filter'),
     capacity: () => z.coerce.number().int().min(1).optional().describe('Exact capacity filter'),
-    hasTickets: () => z.coerce.boolean().optional().describe('Filter by ticket availability'),
-    allowsRegistration: () =>
-        z.coerce.boolean().optional().describe('Filter by registration availability'),
+    hasTickets: () => createBooleanQueryParam('Filter by ticket availability'),
+    allowsRegistration: () => createBooleanQueryParam('Filter by registration availability'),
     minDuration: () =>
         z.coerce.number().int().min(1).optional().describe('Minimum duration filter (minutes)'),
     maxDuration: () =>
@@ -307,13 +294,10 @@ export const HttpQueryFields = {
         z.coerce.number().int().min(13).max(120).optional().describe('Minimum age filter'),
     maxAge: () =>
         z.coerce.number().int().min(13).max(120).optional().describe('Maximum age filter'),
-    hasActiveSubscription: () =>
-        z.coerce.boolean().optional().describe('Filter by active subscription status'),
-    hasAccommodations: () =>
-        z.coerce.boolean().optional().describe('Filter by accommodation ownership'),
-    isOpen: () => z.coerce.boolean().optional().describe('Filter by open/closed status'),
-    acceptsReservations: () =>
-        z.coerce.boolean().optional().describe('Filter by reservation acceptance'),
+    hasActiveSubscription: () => createBooleanQueryParam('Filter by active subscription status'),
+    hasAccommodations: () => createBooleanQueryParam('Filter by accommodation ownership'),
+    isOpen: () => createBooleanQueryParam('Filter by open/closed status'),
+    acceptsReservations: () => createBooleanQueryParam('Filter by reservation acceptance'),
 
     // Payment-specific fields
     minAmount: () => z.coerce.number().min(0).optional().describe('Minimum amount filter'),

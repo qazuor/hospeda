@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { ExperienceTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -42,12 +42,10 @@ export const ExperienceAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by owner'),
 
     /** Filter featured experience listings. */
-    isFeatured: queryBooleanParam().describe('Filter by featured status'),
+    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Filter by active subscription flag (controls public visibility). */
-    hasActiveSubscription: queryBooleanParam().describe(
-        'Filter experiences with active subscription'
-    )
+    hasActiveSubscription: createBooleanQueryParam('Filter experiences with active subscription')
 });
 
 /**

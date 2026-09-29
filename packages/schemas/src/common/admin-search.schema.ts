@@ -9,7 +9,7 @@
  */
 import { z } from 'zod';
 import { LifecycleStatusEnum } from '../enums/lifecycle-state.enum.js';
-import { queryBooleanParam } from './query-helpers.js';
+import { createBooleanQueryParamWithDefault } from './boolean-params.js';
 
 /**
  * Admin status filter values.
@@ -74,13 +74,13 @@ export const AdminSearchBaseSchema = z.object({
     /**
      * Include soft-deleted items in results.
      *
-     * Uses queryBooleanParam() to correctly handle string query parameters.
-     * Only the string "true", boolean true, or "1" evaluates to true.
-     * The string "false" correctly evaluates to false (unlike z.coerce.boolean()).
+     * Strict query boolean: only the strings "true" and "false" are accepted
+     * (anything else is a 400); absent defaults to false.
      */
-    includeDeleted: queryBooleanParam()
-        .default(false)
-        .describe('Include soft-deleted items in results'),
+    includeDeleted: createBooleanQueryParamWithDefault(
+        'Include soft-deleted items in results',
+        false
+    ),
 
     /**
      * Filter items created after this ISO datetime.

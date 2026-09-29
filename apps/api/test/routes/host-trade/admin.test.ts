@@ -289,7 +289,7 @@ describe('GET /admin/host-trades', () => {
             unknown,
             Record<string, unknown>
         ];
-        // queryBooleanParam() coerces "true" → boolean true before reaching the service
+        // createBooleanQueryParam() coerces "true" → boolean true before reaching the service
         expect(queryArg).toMatchObject({ isActive: true });
     });
 });

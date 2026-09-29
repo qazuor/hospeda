@@ -78,9 +78,9 @@ export const AmenityCreateHttpSchema = z.object({
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
-    isActive: z.coerce.boolean().default(true),
-    isPopular: z.coerce.boolean().default(false),
-    isFeatured: z.coerce.boolean().default(false),
+    isActive: httpBodyBoolean().default(true),
+    isPopular: httpBodyBoolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
     displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
@@ -124,6 +124,7 @@ export type AmenityAccommodationsHttp = z.infer<typeof AmenityAccommodationsHttp
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import type { AmenityCreateInput, AmenityUpdateInput } from './amenity.crud.schema.js';
 import type { AmenitySearchInput } from './amenity.query.schema.js';

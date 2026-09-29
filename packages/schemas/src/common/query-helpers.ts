@@ -1,20 +1,6 @@
 import { z } from 'zod';
 
 /**
- * Safe boolean parser for query string parameters.
- * Unlike z.coerce.boolean(), this correctly handles the string "false"
- * (which z.coerce.boolean() converts to true via Boolean("false")).
- *
- * @returns Zod schema that correctly parses "true"/"false"/"1"/"0" strings
- */
-export function queryBooleanParam() {
-    return z.preprocess((val) => {
-        if (val === undefined || val === null || val === '') return undefined;
-        return val === 'true' || val === true || val === '1';
-    }, z.boolean().optional());
-}
-
-/**
  * Safe date parser for query string parameters.
  * Parses ISO 8601 datetime strings (with timezone offset) into Date objects.
  * Rejects non-ISO strings, empty strings, null, and undefined gracefully.

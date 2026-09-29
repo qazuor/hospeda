@@ -204,8 +204,8 @@ export const PostCreateHttpSchema = z.object({
     summary: z.string().min(10).max(500),
     content: z.string().min(100).max(10000),
     category: PostCategoryEnumSchema,
-    isFeatured: z.coerce.boolean().default(false),
-    isPublished: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
+    isPublished: httpBodyBoolean().default(false),
     // `authorId` is deliberately absent (HOS-374 D-2). Authorship on this HTTP
     // surface is the authenticated actor's, resolved server-side by
     // `httpToDomainPostCreate`. Accepting it from the body let any caller
@@ -280,6 +280,7 @@ export type PostSlug = z.infer<typeof PostSlugSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';

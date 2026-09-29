@@ -51,8 +51,8 @@ export const AttractionCreateHttpSchema = z.object({
     description: z.string().min(10).max(500),
     icon: z.string().min(1).max(100),
     destinationId: z.string().uuid().optional(),
-    isFeatured: z.coerce.boolean().default(false),
-    isBuiltin: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
+    isBuiltin: httpBodyBoolean().default(false),
     displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
@@ -84,8 +84,8 @@ export type AttractionGetHttp = z.infer<typeof AttractionGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-
 import type { AttractionCreateInput, AttractionUpdateInput } from './attraction.crud.schema.js';
 import type { AttractionSearchInput } from './attraction.query.schema.js';
 

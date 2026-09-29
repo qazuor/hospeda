@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { ModerationCategorySchema } from '../../enums/moderation-category.schema.js';
 
 /**
@@ -9,7 +10,7 @@ import { ModerationCategorySchema } from '../../enums/moderation-category.schema
 export const contentModerationTermAdminSearchSchema = AdminSearchBaseSchema.extend({
     kind: z.enum(['word', 'domain']).optional(),
     category: ModerationCategorySchema.optional(),
-    enabled: z.coerce.boolean().optional()
+    enabled: createBooleanQueryParam('Filter by enabled status')
 });
 
 export type ContentModerationTermAdminSearch = z.infer<

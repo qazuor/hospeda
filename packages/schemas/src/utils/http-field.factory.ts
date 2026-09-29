@@ -5,6 +5,7 @@
  * validation, coercion, and OpenAPI metadata.
  */
 import { z } from 'zod';
+import { createBooleanQueryParam } from '../common/boolean-params.js';
 
 /**
  * Common numeric range validators
@@ -92,7 +93,7 @@ export const HttpFieldFactories = {
      * Creates a standardized boolean field with coercion
      */
     booleanField: (fieldName: string) =>
-        z.coerce.boolean({ message: `zodError.common.${fieldName}.invalidBoolean` }).optional(),
+        createBooleanQueryParam(`zodError.common.${fieldName}.invalidBoolean`),
 
     /**
      * Creates a standardized age field

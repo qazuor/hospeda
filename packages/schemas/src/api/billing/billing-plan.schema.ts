@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 /**
@@ -335,7 +335,7 @@ export const BillingPlanSearchSchema = z.object({
     /** Filter by category */
     category: BillingPlanCategoryEnumSchema.optional(),
     /** Filter by active flag */
-    active: queryBooleanParam(),
+    active: createBooleanQueryParam('active filter'),
     /** Free-text search over slug/name */
     search: z.string().optional(),
     /**
@@ -343,7 +343,7 @@ export const BillingPlanSearchSchema = z.object({
      * the result. Defaults to excluding them. Admin-only — the public endpoint
      * never sets this.
      */
-    includeDeleted: queryBooleanParam(),
+    includeDeleted: createBooleanQueryParam('includeDeleted filter'),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20)
 });
