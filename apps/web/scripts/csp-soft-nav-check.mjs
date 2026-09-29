@@ -9,8 +9,7 @@
  * scripts run, so every executable inline script of every page must be
  * authorised by the CSP header of every OTHER page. Checking that pairwise over
  * real responses verifies the build-time union and the boot-time hashes
- * together, including the claims the build cannot verify (a script said to be
- * rendered identically by every ClientRouter layout).
+ * together, and that the boot-time hashes match the bytes actually rendered.
  */
 
 import { createHash } from 'node:crypto';
@@ -25,6 +24,13 @@ const EXECUTABLE_SCRIPT_TYPES = new Set([
     'application/ecmascript',
     'text/ecmascript'
 ]);
+
+/**
+ * Ceiling for one served CSP header. Proxies cap the total header block (8 KB
+ * is the conservative end of the nginx / Cloudflare range), and the union
+ * grows with every inline script the app adds. Measured 2026-09-28: 3238 bytes.
+ */
+export const MAX_CSP_HEADER_BYTES = 8192;
 
 /** The meta tag `<ClientRouter />` renders; a page without it is never soft-navigated to. */
 const CLIENT_ROUTER_META = 'astro-view-transitions-enabled';

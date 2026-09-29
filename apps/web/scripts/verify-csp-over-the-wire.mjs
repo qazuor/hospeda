@@ -35,6 +35,7 @@ import {
     extractExecutableInlineScripts,
     findSoftNavViolations,
     hasClientRouter,
+    MAX_CSP_HEADER_BYTES,
     parseScriptSrcHashes,
     resolveCheckablePaths
 } from './csp-soft-nav-check.mjs';
@@ -241,7 +242,13 @@ const checkSoftNavigation = async () => {
         }
         const scripts = extractExecutableInlineScripts({ html });
         console.log(`  OK   ${path}  [200]  ${scripts.length} inline scripts`);
-        if (csp.length > largestHeader.bytes) largestHeader = { path, bytes: csp.length };
+        const headerBytes = Buffer.byteLength(csp, 'utf8');
+        if (headerBytes > largestHeader.bytes) largestHeader = { path, bytes: headerBytes };
+        if (headerBytes > MAX_CSP_HEADER_BYTES) {
+            failures.push(
+                `${path} → CSP header is ${headerBytes} bytes, over the ${MAX_CSP_HEADER_BYTES}-byte ceiling (proxies may drop or reject it).`
+            );
+        }
         pages.push({ path, scripts, headerHashes });
     }
 
@@ -258,7 +265,7 @@ const checkSoftNavigation = async () => {
     }
 
     console.log(
-        `[csp-verify] Soft-nav check: ${pages.length} pages, each checked against the CSP of the other ${Math.max(pages.length - 1, 0)}; build-time union of ${report.scriptHashes.length} hashes; largest CSP header ${largestHeader.bytes} bytes (${largestHeader.path}).`
+        `[csp-verify] Soft-nav check: ${pages.length} pages, each checked against the CSP of the other ${Math.max(pages.length - 1, 0)}; build-time union of ${report.scriptHashes.length} hashes; largest CSP header ${largestHeader.bytes} bytes (${largestHeader.path}), ceiling ${MAX_CSP_HEADER_BYTES}.`
     );
     return failures;
 };
