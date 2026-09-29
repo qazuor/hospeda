@@ -1359,3 +1359,16 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   (HOS-1363 decía «ninguna» fila `UNKNOWN` con `EX-49` suya); y una unidad «sin cambios» puede
   tener el nombre viejo de una acción (B3).
 - Pendiente: hablar con el owner con qué se sigue (FASE 5, 6 y lo pendiente de la 7).
+
+## 2026-09-28 (tarde y noche) — la presentación y la revisión del owner
+
+- **Presentación** «Verticales y cobro, rediseñados» (artifact), en lenguaje llano y con 59 casos
+  borde marcados. El owner la leyó entera, dejó 15 comentarios y 9 notas.
+- **Revisión** (`30-revision-del-owner/`): dos informes de impacto, unas 45 decisiones en lotes con
+  letras (`10-`), aplicación en cuatro tandas en serie y el lote del log y la matriz con OK.
+- **Hallazgos**: el filtro de avisos era de hospeda2 y contaminó mediciones; Outlook no ignora los
+  puntos; la FAQ promete una baja de cuenta que no existe; «commerce» está en 1.204 archivos del
+  código; no había ninguna acción administrativa para editar el catálogo.
+- **Aprendido**: una tanda puede invalidar en silencio lo que otra acababa de escribir (la frase de
+  que verticales no le pregunta nada a billing); se relee lo recién aplicado antes de proponer.
+- Pendiente: casos vecinos, mediciones, verificación corta, publicar, FASE 5.

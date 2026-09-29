@@ -47,7 +47,45 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-28 — la vuelta 2 está VERIFICADA y CERRADA
+## Última actualización: 2026-09-28 (noche) — la revisión del owner está aplicada
+
+### El próximo paso exacto
+
+1. **Los 50 casos vecinos** que dejaron las cuatro tandas de la revisión, con el owner, en lotes
+   con letras: [`30-revision-del-owner/14-aplicacion-transversal-y-lote.md`](./30-revision-del-owner/14-aplicacion-transversal-y-lote.md)
+   §3 (cada uno con su recomendación).
+2. **Las mediciones antes de terminar el diseño** (el owner pidió hacerlas antes, no en el paso 0):
+   `EX-52` (cancelar desde la app de Mercado Pago), `EX-53` (pausar desde la app), `WH-6` (los dos
+   canales de avisos apuntados al receptor y sus duplicados), y la reapertura de `WH-5`
+   (antifraude en producción) y `EX-15`. Causa: el filtro `source_news=webhooks` de hospeda2
+   (`apps/api/src/routes/webhooks/mercadopago/router.ts`, HOS-159), no de qzpay, descartaba en
+   silencio los avisos del canal viejo. Si alguna necesita que el owner haga algo en la app de
+   Mercado Pago, avisarle qué y cuándo.
+3. **Verificación corta** de lo aplicado en `30-…/11-`…`15-` (mete mecanismo nuevo).
+4. **Publicar**: la presentación (<https://claude.ai/artifact/QnbPFvMXQKPh1J86eM3JXf>; resolver sus
+   15 hilos; corregir «commerce» y la cuota de la prueba que renueva), las fichas de unidad, el
+   tablero y Linear.
+5. **FASE 5**.
+
+**Recordatorio**: el sistema no avisa nada del corte; **el owner avisa en persona**. Recordárselo
+cuando se acerque el corte.
+
+### Lo que pasó el 2026-09-28
+
+- Salida 4 de la verificación de la vuelta 2 publicada (19 artifacts, 18 issues).
+- **La presentación** «Verticales y cobro, rediseñados» para la reunión de equipo; el owner la leyó,
+  dejó 15 comentarios (aplicados al artifact) y 9 notas.
+- **La revisión del owner** (`30-revision-del-owner/`): puntos (`00-`), impacto (`01-`, `02-`),
+  **decisiones del owner (`10-`)**, aplicación en cuatro tandas (`11-` simplificación: sin
+  discontinuar verticales ni convivencia; `12-` verticales y contrato; `13-` cobro; `14-`
+  transversal y lote) y el lote del log y la matriz con OK (`15-`). Dos contra la recomendación:
+  la baja de cuenta fuera de la épica (HOS-1393) y la cuota de la prueba que se renueva cada mes.
+- **Registro**: log **134** decisiones, precisadas sin SUPERSEDED **58**; matriz **111 = 55 · 17 ·
+  23 · 16 `UNKNOWN`**; guards **33** (18 verticales / 15 billing); acciones administrativas vivas
+  **21**; transiciones vivas de la suscripción **33**. Issues nuevos HOS-1393 y HOS-1394.
+- **Commits** `eb7427ba92`…`a816654987`. Sin pushear (PR #3360).
+
+## Histórico: 2026-09-28 — la vuelta 2 está VERIFICADA y CERRADA
 
 ### El próximo paso exacto
 
