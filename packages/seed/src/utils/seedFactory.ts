@@ -105,6 +105,11 @@ export interface SeedFactoryConfig<T = unknown, R = unknown> {
      *   keys), but DOES run `onExisting`, the explicit hook for the parts of
      *   `postProcess` that are safe and useful to repeat (idempotent healing).
      *
+     * **What a re-run does NOT do**: new ROWS in the fixtures land on a re-run, but
+     * new relations, FAQs or any `postProcess` / `relationBuilder` output added to an
+     * EXISTING row are skipped. Delivering those to an already-seeded environment
+     * needs a seed data-migration (the dual-write rule, `packages/seed/CLAUDE.md`).
+     *
      * `getWhere` receives the RAW item and the normalized payload; return the
      * UNIQUE-key predicate (`{ slug }`, `{ email }`, ...). Omitting this option
      * keeps the previous behavior byte-for-byte.

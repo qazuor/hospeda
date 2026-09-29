@@ -8,6 +8,11 @@
  * run. These helpers keep the per-seeder wiring to one line and give the
  * lookup key a single, greppable home.
  *
+ * Additive means new ROWS: a fixture row that does not exist yet is created on a
+ * re-run. It does NOT mean new relations, FAQs or `postProcess` output on rows
+ * that already exist; those are skipped and reach an already-seeded environment
+ * only through a seed data-migration (the dual-write rule).
+ *
  * @module existingLookup
  */
 
