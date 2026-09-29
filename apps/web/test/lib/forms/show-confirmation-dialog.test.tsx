@@ -36,7 +36,16 @@ const COPY = {
 } as const;
 
 /**
- * Opens the dialog and waits for the throwaway root to paint it.
+ * Opens the dialog and waits until it is both painted AND interactive.
+ *
+ * Painted is not enough. `Dialog` attaches its `keydown` listener (Escape +
+ * focus trap) in a passive `useEffect`, which React may flush on a later task
+ * than the DOM commit `findByRole` observes. On a loaded CI runner an Escape
+ * fired in that gap reached no listener, the answer never settled, the test
+ * timed out at 15s and the `afterEach` below reported the dialog still mounted.
+ * The scroll lock is set by an effect of the same component, flushed in the
+ * same passive-effects pass, so `overflow: hidden` is the observable proof that
+ * the keyboard listener is attached too.
  *
  * The pending answer is returned WRAPPED. An async function that returns a
  * promise flattens it, so handing `Promise<boolean>` back directly would make
@@ -47,6 +56,9 @@ const COPY = {
 async function openDialog(): Promise<{ readonly answer: Promise<boolean> }> {
     const answer = showConfirmationDialog(COPY);
     await screen.findByRole('dialog');
+    await waitFor(() => {
+        expect(document.documentElement.style.overflow).toBe('hidden');
+    });
     return { answer };
 }
 
