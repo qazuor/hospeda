@@ -490,7 +490,11 @@ tres, suspendemos a alguien que iba a pagar bien.
   después de medir. **`WH-6` se mide antes de cerrar el diseño** (el paso 2 del handoff); **si no
   se llega a medir, el receptor nuevo registra los avisos IPN sin actuar**: los guarda con su
   canal, no escribe ni decide nada con ellos, y la regla se revisa cuando `WH-6` esté medida
-  (revisión del owner, casos vecinos, 2026-09-29, caso 39). Mientras tanto la M5 del falso (`B/20` §3.2) se lee
+  (revisión del owner, casos vecinos, 2026-09-29, caso 39). **Dónde los registra se decide después
+  de medir `WH-6`**; **si no se llega a medir, en una tabla propia, sólo de altas, con el canal, el
+  cuerpo y el instante, que ninguna transición lee**: así registrar no puede volverse actuar. El
+  modelo de `B/02` no la tiene, porque es condicional; entra el día que se sepa que `WH-6` no se
+  mide (revisión del owner, casos vecinos, 2026-09-29, caso G-D). Mientras tanto la M5 del falso (`B/20` §3.2) se lee
   como *«por el canal Webhooks»* hasta la remedición. **Y un requisito que vale si se aceptan los
   dos canales**: **un aviso duplicado del mismo hecho, por el mismo canal o por los dos, no puede
   producir efecto doble**: ninguna escritura, ningún correo ni ningún aviso de cobertura dos veces.

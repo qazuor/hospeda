@@ -382,7 +382,8 @@ no una excepción a la lista.
    soporte le restaura a la dueña de un plan de diez fotos hasta diez.
 
    **La vigesimotercera, borrar una ficha ajena a pedido de su dueño, tampoco está en la
-   excepción, por el mismo criterio** (revisión del owner, casos vecinos, 2026-09-29, caso F-C): hace por el dueño lo que
+   excepción, por el mismo criterio** (revisión del owner, casos vecinos, 2026-09-29, caso F-C;
+   confirmado por el owner, caso H-D, con la vigesimocuarta como capacidad del actor): hace por el dueño lo que
    él mismo podría, `PB12`, y borrar lo propio es parte del piso (cap. 03 §9, ⚠️ punto 5), así que
    sobre el sujeto el paso 6 la autoriza siempre.
 

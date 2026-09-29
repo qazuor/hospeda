@@ -1103,7 +1103,8 @@ más de 180 días. ~~⚠️ **Cómo se escribe ese reinicio cuando la cobertura 
 **`retenciónDetenida` devuelve también `pausaTerminadaEn`, cuándo terminó la última pausa por
 `CUSTOMER_REQUEST` de la persona en esa vertical** (el `fin_real` de su `subscription_pause`,
 `B/02` §2.2, o `NINGUNO` si nunca tuvo una), **y sus lectores cuentan desde el más tardío de dos
-instantes, `listing.inactiva_desde` y ése**. La pausa sigue sin escribir nada en verticales, la
+instantes, `listing.inactiva_desde` y ése**, **con la versión de plazos que guarda la ficha**
+(`listing.plazos_version`, la de su último hecho), porque el reinicio no escribe otra (revisión del owner, casos vecinos, 2026-09-29, caso H-E). La pausa sigue sin escribir nada en verticales, la
 lista de hechos del reloj no cambia y `G-R6-B` tampoco. **Y una pausa vencida cuya reanudación no
 se aplicó no deja el reloj detenido sin que nadie lo vea**: la fila sigue `PAUSED`, así que la
 respuesta sigue siendo `detenida: sí`, pero el barrido diario de billing la marca para resolver a
@@ -1485,7 +1486,8 @@ el proveedor le sigue cobrando.
 (Revisión del owner, 2026-09-28, N6, `L1-d`.) **Toda comunicación entre verticales y billing pasa
 por un package compartido del monorepo**, y por ningún otro lado. No depende de ninguna de las
 dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales de `@repo/schemas`.
-Tiene cuatro cosas:
+~~Tiene cuatro cosas:~~ Tiene cinco cosas (la quinta, revisión del owner, casos vecinos,
+2026-09-29, caso G-B):
 
 1. **Las dos interfaces.** **Lo que verticales le pregunta a billing**: `cobertura` (§2),
    `retenciónDetenida` (§4.1) y el aviso de que la cobertura cambió (§3). **Lo que billing le lee a
@@ -1501,6 +1503,11 @@ Tiene cuatro cosas:
 4. **Los juegos de casos compartidos**: el del §6.2 (la dirección de ida, contra las dos
    implementaciones de `cobertura`) y **uno nuevo de la dirección inversa**, que corre contra el
    simulador y contra la implementación de verticales, con su caso que una constante no pasa.
+5. **La interfaz del reloj** ✚ con que el código de producción de las dos mitades lee la hora,
+   inyectada. El reloj adelantable que la implementa vive en el package de pruebas compartido
+   (`B/20` §5.1, caso 31); la interfaz, que sí importa producción, vive acá porque éste ya es el
+   único package que importan las dos mitades. **`G14` no cambia**: importar el contrato nunca fue
+   cruzar (revisión del owner, casos vecinos, 2026-09-29, caso G-B).
 
 **Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
 billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque

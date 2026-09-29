@@ -404,7 +404,11 @@ la cuenta se lleva la fila y con ella el hash —el segundo trial vuelve por esa
 `SET NULL` la fila deja de *«conservar el `user + vertical`»* que el §4.2 regla 2 le exige. Con
 `RESTRICT` la base no deja borrar un `user` que tenga una fila de `trial`, así que **el borrado de la
 cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la regla 2 ya dice
-(*«lo personal se anonimiza con el resto»*); ese proceso sigue sin diseñar (§4.1, ⚠️).
+(*«lo personal se anonimiza con el resto»*); ~~ese proceso sigue sin diseñar (§4.1, ⚠️)~~ la baja manual la escribe
+la vigesimocuarta acción administrativa (`NUCLEO/08` §3), que **borra** la fila de la cuenta y sus
+sesiones y seudonimiza lo personal (revisión del owner, casos vecinos, 2026-09-29, caso H-C). ⚠️ **Eso choca con esta FK**: con `RESTRICT` la base
+no deja borrar la fila de una cuenta que tuvo un trial, y cuál de las dos cede pide decisión del
+owner (`30-revision-del-owner/20-` §3).
 
 ### 2.5 Publicación
 
@@ -784,7 +788,9 @@ determinístico— (FASE 9 completa, `C-1`). Cualquiera con un correo candidato 
 confirma si esa persona tuvo trial, y así lo tiene que leer la consulta legal (cap. 22 §3). El
 capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo que queda pendiente**: ese
 camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
-que **no decide** (*«es otro proceso»*), y ningún capítulo lo diseña; la razón del hash descansa
+que **no decide** (*«es otro proceso»*), y ~~ningún capítulo lo diseña~~ **para la baja manual lo
+diseña la vigesimocuarta acción administrativa** (`NUCLEO/08` §3; revisión del owner, casos
+vecinos, 2026-09-29, caso H-C), con el choque de §2.4 abierto; la razón del hash descansa
 sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009`, owner
 2026-09-25). **Queda fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.**
 
@@ -864,7 +870,7 @@ sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009
    avisos de retención, releen la pregunta `retenciónDetenida` del contrato (§4.1) y con `sí` no
    hacen nada; al volver, el hecho 2 reinicia el reloj, **y todo fin de la pausa, por cualquier
    camino, lo reinicia también** (revisión del owner, casos vecinos, 2026-09-29, caso 12;
-   `12-contrato…` §4.1), **sin escribir nada: `retenciónDetenida` devuelve también cuándo terminó la última pausa, y los lectores cuentan desde el más tardío entre `listing.inactiva_desde` y ese instante** (revisión del owner, casos vecinos, 2026-09-29, caso F-A; `12-contrato…` §4.1). `D16` y su guard salieron.
+   `12-contrato…` §4.1), **sin escribir nada: `retenciónDetenida` devuelve también cuándo terminó la última pausa, y los lectores cuentan desde el más tardío entre `listing.inactiva_desde` y ese instante** (revisión del owner, casos vecinos, 2026-09-29, caso F-A; `12-contrato…` §4.1), **con la versión de plazos que guarda la ficha, `listing.plazos_version`** (revisión del owner, casos vecinos, 2026-09-29, caso H-E). `D16` y su guard salieron.
 
 ---
 

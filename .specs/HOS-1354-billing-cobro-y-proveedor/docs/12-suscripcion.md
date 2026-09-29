@@ -222,6 +222,15 @@ el `rank` ni un delta que billing compute sobre las tablas de verticales (FASE 8
 2. **Si no va a tener servicio nunca más, se descarta** — es la colisión 3, y ahí no hay
    reanudación que esperar.
 
+**Y el estado en que la fecha encuentra a la fila, que no es una colisión** (revisión del owner,
+casos vecinos, 2026-09-29, caso G-A). Las cuatro de arriba son lo que llega encima del cambio;
+esto es con qué estado llega su fecha. **En `GRACE_PERIOD` se aplica igual**: el servicio sigue,
+`S38` no toca al proveedor y el monto ya se mutó, así que esperar dejaba al cliente con
+capacidades que ya no paga. **En `SUSPENDED` espera y se aplica al volver por `S7`**: no hay
+servicio que bajar. Ninguna de las cuatro colisiones cambia, y la regla general tampoco: la baja
+desde la grace o desde la suspensión (`S24`, `S23`) lo sigue absorbiendo, y una fila que no vuelve
+no lo aplica nunca (`B/03` §3.2, `S38`).
+
 > **La versión anterior tenía UNA cláusula y era falsa de la mitad de su sujeto.** Decía que el
 > descenso se aplica *«al fin del primer ciclo en que el cliente efectivamente tiene servicio»*, y
 > en una **cortesía** el cliente **sí tiene servicio** —lo sostenemos nosotros—, así que esa regla

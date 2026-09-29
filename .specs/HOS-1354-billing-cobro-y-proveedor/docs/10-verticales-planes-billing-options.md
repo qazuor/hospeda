@@ -192,7 +192,10 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    de aplicación: se le avisa antes y elige qué conserva (`V/15` §4.2).
 7. **Pausados y en gracia esperan**: la migración se les aplica en la primera renovación después
    de volver o de ponerse al día, recalculando su fecha. `S37` sale sólo de `ACTIVE`, y sobre una
-   pausada el proveedor rechaza toda modificación (`EX-11`).
+   pausada el proveedor rechaza toda modificación (`EX-11`). **Eso es el día de `S37`**: si `S37`
+   ya mutó el monto y la fecha de aplicación encuentra a la fila en `GRACE_PERIOD`, `S38` le cambia
+   la versión igual; si la encuentra en `SUSPENDED`, espera y se la cambia al volver por `S7`
+   (revisión del owner, casos vecinos, 2026-09-29, caso G-A).
 8. **Si el cliente cambia de plan o se da de baja por su cuenta durante el aviso, sale de la
    migración**: su fila pasa a `FUERA`, con el motivo. Su propio acto sigue su camino (§3.5,
    `DEC-SUB-009`), y la colisión con la cola es la del `B/12` §2.2.
@@ -239,6 +242,9 @@ vertical).
 - **La migración de un plan retirado** (§3.7) deja ~~dos cosas~~ una cosa sin cerrar, declarada:
   **qué pasa si la fecha de aplicación cae sobre una suscripción en mora**, que es el mismo hueco
   que `DEC-MP-002` dejó para el aumento (arriba): el §3.7 la hace esperar a que se ponga al día.
+  **Eso vale para el día de `S37`**: con el monto ya mutado, la fecha la aplica `S38` igual en
+  `GRACE_PERIOD`, y al volver por `S7` en `SUSPENDED` (revisión del owner, casos vecinos,
+  2026-09-29, caso G-A).
   ~~y **un cliente con una cortesía temporal vigente** el día de su migración, que está `PAUSED ·
   COURTESY` y por eso espera a volver, lo que puede correr su fecha tantos meses como le queden de
   cortesía.~~ **Un cliente con una cortesía temporal vigente el día de su migración espera, como

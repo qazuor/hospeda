@@ -537,7 +537,10 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   el `CLAUDE.md` raíz lo nombra 23 veces, y `packages/i18n` en 30 archivos, 24 de ellos en
   `src/locales` (21 en `src/locales` en la medición de la revisión del owner, sobre un checkout
   anterior). **Los informes históricos del programa no**: salen del repositorio al cerrar HOS-1352
-  (`HOS-1352/spec.md`, *«Al cerrar HOS-1352»*).
+  (`HOS-1352/spec.md`, *«Al cerrar HOS-1352»*). **El decision log y la matriz tampoco entran acá**:
+  se quedan y se reescriben sin la palabra en ese mismo cierre, y hasta entonces las carpetas del
+  programa son la tercera entrada de la lista de pendientes de `G8` (`V/20` §2; revisión del owner,
+  casos vecinos, 2026-09-29, casos H-A y H-B).
 
 ---
 

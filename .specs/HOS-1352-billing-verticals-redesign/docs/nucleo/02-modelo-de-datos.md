@@ -178,6 +178,10 @@ el nuevo: **ese registro es el de cada cambio**, además de la auditoría de la 
 guarda la versión de plazos con la que arrancó** (la última columna de la tabla) y cuenta con esa,
 así que un cambio vale para los relojes que arrancan después y **nunca adelanta una fecha ya
 anunciada**. Un reloj que se reinicia arranca otra vez, y guarda la versión vigente en ese momento.
+**Salvo el reinicio por el fin de una pausa, que no se escribe** (`12-contrato…` §4.1,
+`retenciónDetenida`): contado desde el fin de la pausa, el reloj de retención cuenta con **la versión
+que guarda la ficha**, la de su último hecho, porque no hay escritura que guarde otra; así un plazo
+que se acortó durante la pausa no le adelanta la fecha a nadie (revisión del owner, casos vecinos, 2026-09-29, caso H-E).
 **Y alargar un plazo tampoco alcanza a los relojes ya arrancados** (revisión del owner, casos vecinos, 2026-09-29, caso 45):
 cada reloj cuenta con su versión aunque la nueva sea más larga, porque alargar, por ejemplo, una
 migración ya anunciada movería una fecha que el cliente ya recibió.
@@ -202,7 +206,7 @@ borra antes de esa fecha (`V/02` §2.5, `V/03` §9).
 **Quién lo construye**: la tabla de plazos de cada mitad y la operación de cambiarlos, `V9` en
 verticales y `B2` en billing; cada reloj guarda su versión en la unidad que lo construye; ~~la
 pantalla, `V8` y `B13`~~ **una sola pantalla de plazos, compuesta en la app del panel**
-(revisión del owner, casos vecinos, 2026-09-29, caso 47): `V8` y `B13` construyen cada uno la parte de su mitad, y cada
+(revisión del owner, casos vecinos, 2026-09-29, caso 47), que lee las dos mitades por la API sin importar ninguna (revisión del owner, casos vecinos, 2026-09-29, caso H-F): `V8` y `B13` construyen cada uno la parte de su mitad, y cada
 cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
 ---

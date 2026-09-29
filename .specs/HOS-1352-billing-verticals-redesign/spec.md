@@ -179,11 +179,22 @@ abortan si el máximo a cobrar no coincide con la cifra autorizada.
 
 1. **Los informes históricos del programa salen del repositorio**: las fases, las vueltas, los
    registros de la revisión del owner y el resto de lo que no es diseño vigente. Quedan en el
-   historial de git, y **lo que importe se resume en Linear**.
+   historial de git, y **lo que importe se resume en Linear**. **Salvo el decision log y la matriz
+   de validación, que no salen** (punto 3).
 2. **El diseño vigente se reescribe una vez, sin tachados y sin el nombre del agrupamiento viejo
    de Gastronomía y Experiencia**: el núcleo, el contrato, los capítulos y las specs de las dos
    sub-specs, y esta spec. Desde ahí `G8` no tiene nada del programa que perdonar salvo el PDR, su
    única exención por nombre (`V/20` §2).
+3. **El decision log (`docs/01-decision-log.md`) y la matriz de validación
+   (`docs/06-mp-validation-matrix.md`) se quedan en el repositorio y se reescriben una vez, sin el
+   nombre del agrupamiento viejo**, con el OK del owner a esa reescritura: esta spec los manda leer
+   y son el registro de decisiones y de mediciones del programa (revisión del owner, casos vecinos,
+   2026-09-29, caso H-B).
+4. **El mismo commit saca de la lista de pendientes de `G8` su tercera entrada, las carpetas del
+   programa en `.specs/`, y extiende a la lista entera la regla que el paso 6 del corte encendió
+   para las dos historias**: desde ahí, un build destinado a producción con la lista no vacía falla
+   (`V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso H-A). Hasta este commit esas
+   carpetas no fallan por `G8`, porque los puntos 1 a 3 todavía no se hicieron.
 
 El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
 limpieza de `V1` (`V/21` §4).

@@ -646,7 +646,11 @@ batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos 
    reglas propias~~ las once reglas propias y comportamientos medidos (caso 28): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
-   cambiar ninguna mentira.
+   cambiar ninguna mentira. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen
+   en una pasada**: se midieron en producción sobre ciclos reales de cobro rechazado, a lo largo de
+   días. **La batería las relee sobre sujetos que ya existen, sin mutar**, y compara lo que lee con
+   la fila; **las que no se puedan releer así se declaran *«vigiladas a mano»***, como `R-MP-01`,
+   abajo (revisión del owner, casos vecinos, 2026-09-29, caso G-C).
 2. **Cuándo, en la cuenta de pruebas**: **sola, una vez por semana**.
 3. **Cuándo, en producción**: **sola, una vez por mes**, sólo lo que se mide ahí (el buscador,
    `RC-1`; los lotes de cobro, M8; y las devoluciones, que en sandbox dan `401`), **con
@@ -672,7 +676,9 @@ producción las dispara una persona o el programador de la batería, nunca quien
 **Lo que la batería no vigila, declarado**: el anuncio de discontinuación de la API de
 devoluciones (`R-MP-01`, cap. 06 §10), que no es una medición sino un texto del proveedor, **se
 sigue a mano**; y los correos que el proveedor le manda al cliente (`EX-3`), que no pasan por
-nuestro código.
+nuestro código. **Y de `RP7` a `RP11`, las que no se puedan releer sobre un sujeto existente**:
+se declaran *«vigiladas a mano»* al construir la batería, cada una por nombre (punto 1; revisión
+del owner, casos vecinos, 2026-09-29, caso G-C).
 
 ---
 
@@ -723,7 +729,10 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
    prohíbe que una importe a la otra (`V/20` §2). ~~Dónde vive es de la FASE 5.~~ **Vive en un
    package de pruebas compartido que importan las dos mitades** (revisión del owner, casos
    vecinos, 2026-09-29, caso 31): no es de ninguna, así que importarlo no cruza la frontera de
-   `G14`, y ningún build de producción lo importa (la técnica de `G13`).
+   `G14`, y ningún build de producción lo importa (la técnica de `G13`). **La interfaz del reloj que
+   lee el código de producción vive en el package del contrato** (`12-contrato…` §7.1, la quinta
+   cosa): el adelantable la implementa, y `G14` no cambia (revisión del owner, casos vecinos,
+   2026-09-29, caso G-B).
 3. **Cada flujo del §5, y el trial completo de `V/20` §5, como prueba de punta a punta** contra los
    builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones
    sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
