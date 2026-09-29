@@ -299,6 +299,22 @@ describe('removeEventMedia', () => {
         expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
     });
 
+    it('returns NOT_FOUND for an already soft-deleted row instead of deleting it again (HOS-1175)', async () => {
+        const model = makeEventModel(makeEvent());
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ deletedAt: new Date('2024-02-01') })
+        );
+
+        const result = await removeEventMedia(
+            model as unknown as EventModelArg,
+            authorActor,
+            removeInput
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+    });
+
     it('soft-deletes and resequences remaining visible rows to a dense 0-based sortOrder', async () => {
         const model = makeEventModel(makeEvent());
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ sortOrder: 1 }));
@@ -452,6 +468,25 @@ describe('setFeaturedEventMedia', () => {
         );
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+    });
+
+    it('returns NOT_FOUND for a soft-deleted media row and touches nothing (HOS-1175)', async () => {
+        // findById does NOT filter soft-deletes and softDelete leaves is_featured
+        // set, so a dead row is otherwise a promotable target.
+        const model = makeEventModel(makeEvent());
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ isFeatured: true, deletedAt: new Date('2024-02-01') })
+        );
+
+        const result = await setFeaturedEventMedia(
+            model as unknown as EventModelArg,
+            authorActor,
+            featuredInput
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.findFeatured).not.toHaveBeenCalled();
+        expect(mockMediaModel.update).not.toHaveBeenCalled();
     });
 
     it('rejects featuring an archived photo before the DB CHECK constraint can fire', async () => {

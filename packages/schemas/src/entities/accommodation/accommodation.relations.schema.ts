@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { DestinationSummarySchema } from '../destination/destination.query.schema.js';
-import { AccommodationSchema } from './accommodation.schema.js';
+import { AccommodationReadSchema } from './accommodation.schema.js';
 
 /**
  * Accommodation Relations Schemas
@@ -95,7 +95,7 @@ const AmenitySummarySchema = z.object({
  * Accommodation with destination information
  * Includes the related destination data
  */
-export const AccommodationWithDestinationSchema = AccommodationSchema.extend({
+export const AccommodationWithDestinationSchema = AccommodationReadSchema.extend({
     destination: DestinationSummarySchema.optional()
 });
 export type AccommodationWithDestination = z.infer<typeof AccommodationWithDestinationSchema>;
@@ -104,7 +104,7 @@ export type AccommodationWithDestination = z.infer<typeof AccommodationWithDesti
  * Accommodation with owner information
  * Includes the related user (owner) data
  */
-export const AccommodationWithOwnerSchema = AccommodationSchema.extend({
+export const AccommodationWithOwnerSchema = AccommodationReadSchema.extend({
     owner: UserSummarySchema.optional()
 });
 export type AccommodationWithOwner = z.infer<typeof AccommodationWithOwnerSchema>;
@@ -113,7 +113,7 @@ export type AccommodationWithOwner = z.infer<typeof AccommodationWithOwnerSchema
  * Accommodation with reviews
  * Includes an array of related reviews
  */
-export const AccommodationWithReviewsSchema = AccommodationSchema.extend({
+export const AccommodationWithReviewsSchema = AccommodationReadSchema.extend({
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: createAverageRatingField({ optional: true })
@@ -130,7 +130,7 @@ export type AccommodationWithReviews = z.infer<typeof AccommodationWithReviewsSc
  * phantom junction fields here — hostReWriteName/comments are intentionally
  * not exposed in the read schema yet (pending SPEC-172 Phase 3).
  */
-export const AccommodationWithFeaturesSchema = AccommodationSchema.extend({
+export const AccommodationWithFeaturesSchema = AccommodationReadSchema.extend({
     features: z.array(FeatureSummarySchema).optional()
 });
 export type AccommodationWithFeatures = z.infer<typeof AccommodationWithFeaturesSchema>;
@@ -139,7 +139,7 @@ export type AccommodationWithFeatures = z.infer<typeof AccommodationWithFeatures
  * Accommodation with amenities
  * Includes an array of related amenities with additional info
  */
-export const AccommodationWithAmenitiesSchema = AccommodationSchema.extend({
+export const AccommodationWithAmenitiesSchema = AccommodationReadSchema.extend({
     amenities: z
         .array(
             AmenitySummarySchema.extend({
@@ -162,7 +162,7 @@ export type AccommodationWithAmenities = z.infer<typeof AccommodationWithAmeniti
  * Accommodation with basic relations
  * Includes destination and owner
  */
-export const AccommodationWithBasicRelationsSchema = AccommodationSchema.extend({
+export const AccommodationWithBasicRelationsSchema = AccommodationReadSchema.extend({
     destination: DestinationSummarySchema.optional(),
     owner: UserSummarySchema.optional()
 });
@@ -176,7 +176,7 @@ export type AccommodationWithBasicRelations = z.infer<typeof AccommodationWithBa
  * isOptional / additionalCost / additionalCostPercent). Those three fields
  * only exist on r_accommodation_amenity and are kept there intentionally.
  */
-export const AccommodationWithContentRelationsSchema = AccommodationSchema.extend({
+export const AccommodationWithContentRelationsSchema = AccommodationReadSchema.extend({
     // r_accommodation_feature: no pricing phantom fields — see NOTE above
     features: z.array(FeatureSummarySchema).optional(),
     amenities: z
@@ -209,7 +209,7 @@ export type AccommodationWithContentRelations = z.infer<
  * isOptional / additionalCost / additionalCostPercent). Those three fields
  * only exist on r_accommodation_amenity and are kept there intentionally.
  */
-export const AccommodationWithFullRelationsSchema = AccommodationSchema.extend({
+export const AccommodationWithFullRelationsSchema = AccommodationReadSchema.extend({
     // Basic relations
     destination: DestinationSummarySchema.optional(),
     owner: UserSummarySchema.optional(),
@@ -246,7 +246,7 @@ export type AccommodationWithFullRelations = z.infer<typeof AccommodationWithFul
  * Normalized accommodation schema for API responses
  * Similar to Accommodation but with simplified relationships
  */
-export const NormalizedAccommodationSchema = AccommodationSchema.extend({
+export const NormalizedAccommodationSchema = AccommodationReadSchema.extend({
     amenities: z.array(z.string()).optional(),
     features: z.array(z.string()).optional(),
     destination: SimplifiedDestinationSchema.optional()
@@ -257,7 +257,7 @@ export type NormalizedAccommodationType = z.infer<typeof NormalizedAccommodation
  * Accommodation with relations type for database operations
  * Used by normalizers that may receive objects with relations
  */
-export const AccommodationWithRelationsSchema = AccommodationSchema.extend({
+export const AccommodationWithRelationsSchema = AccommodationReadSchema.extend({
     amenities: z
         .union([
             z.array(z.object({ amenity: z.object({ slug: z.string().optional() }).optional() })),
