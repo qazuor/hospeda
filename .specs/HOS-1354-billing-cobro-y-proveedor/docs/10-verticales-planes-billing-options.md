@@ -181,8 +181,9 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    (`NUCLEO/02` §1.5): dejan entrar los 3 días del reintento de la mutación antes del cobro, y
    van con el tercer correo (revisión del owner, casos vecinos, 2026-09-29, caso 20). **Qué correo
    le manda Mercado Pago al cliente cuando la migración le sube el monto no está medido**: `EX-3`
-   lo midió al bajar (*«El vendedor Hospeda cambió el monto»*), y la subida pide una fila propia de
-   la matriz (caso 34), para que el tercer correo lo anticipe con el texto exacto.
+   lo midió al bajar (*«El vendedor Hospeda cambió el monto»*), y la subida ~~pide una fila propia de
+   la matriz (caso 34)~~ **es la fila `EX-54` de la matriz, `UNKNOWN`** (revisión del owner, casos
+   vecinos, 2026-09-29, caso 34), para que el tercer correo lo anticipe con el texto exacto.
 5. **Si el destino no ofrece su ciclo, no se lo mueve solo**: su fila queda `PARA_RESOLVER` y
    aparece en el listado del panel, para que una persona lo resuelva con él, porque cambiar de
    ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su
