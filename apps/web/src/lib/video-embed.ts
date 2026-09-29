@@ -28,8 +28,17 @@ export interface ResolvedVideoEmbed {
     /**
      * The embed `src` to use in an `<iframe>`, built from a fixed
      * per-provider template plus the validated id — never the input URL.
+     * `null` when the provider cannot be embedded in the current configuration
+     * (Dailymotion without a Player ID, HOS-1217): render {@link externalUrl}
+     * as a link instead of an iframe.
      */
-    readonly embedUrl: string;
+    readonly embedUrl: string | null;
+    /**
+     * The provider's public page for the video, rebuilt from the validated id
+     * (never the input URL). Safe as an `<a href>` — the graceful-degradation
+     * target when {@link embedUrl} is `null`.
+     */
+    readonly externalUrl: string;
     /** The extracted, validated provider-native video id. */
     readonly videoId: string;
 }
@@ -52,6 +61,11 @@ const DAILYMOTION_SHORT_HOSTS = new Set(['dai.ly', 'www.dai.ly']);
 const YOUTUBE_ID_REGEX = /^[A-Za-z0-9_-]{11}$/;
 /** Vimeo video ids are numeric, historically up to ~10 digits. */
 const VIMEO_ID_REGEX = /^\d{1,12}$/;
+/**
+ * Dailymotion Player ids are alphanumeric. Validated again here (not only in the
+ * env schema) because the value is interpolated into an iframe URL.
+ */
+const DAILYMOTION_PLAYER_ID_REGEX = /^[A-Za-z0-9]{1,20}$/;
 /** Dailymotion ids are alphanumeric (typically 7-8 chars, e.g. `x7tgad0`). */
 const DAILYMOTION_ID_REGEX = /^[A-Za-z0-9]{4,20}$/;
 
@@ -141,7 +155,18 @@ function extractDailymotionId(url: URL): string | null {
  * // => null (host is not an exact match)
  * ```
  */
-export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVideoEmbed | null {
+export function resolveVideoEmbed({
+    url,
+    dailymotionPlayerId
+}: {
+    readonly url: string;
+    /**
+     * Dailymotion Player ID (`PUBLIC_DAILYMOTION_PLAYER_ID`). `geo.dailymotion.com`
+     * answers 403 to a third-party iframe unless the URL names a Player, so
+     * without one a Dailymotion video resolves with `embedUrl: null` (HOS-1217).
+     */
+    readonly dailymotionPlayerId?: string;
+}): ResolvedVideoEmbed | null {
     const parsed = parseHttpUrl(url);
     if (!parsed) return null;
 
@@ -153,7 +178,8 @@ export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVi
             return {
                 provider: 'youtube',
                 videoId: id,
-                embedUrl: `https://www.youtube-nocookie.com/embed/${id}`
+                embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
+                externalUrl: `https://www.youtube.com/watch?v=${id}`
             };
         }
         return null;
@@ -165,7 +191,8 @@ export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVi
             return {
                 provider: 'vimeo',
                 videoId: id,
-                embedUrl: `https://player.vimeo.com/video/${id}`
+                embedUrl: `https://player.vimeo.com/video/${id}`,
+                externalUrl: `https://vimeo.com/${id}`
             };
         }
         return null;
@@ -177,7 +204,11 @@ export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVi
             return {
                 provider: 'dailymotion',
                 videoId: id,
-                embedUrl: `https://geo.dailymotion.com/player.html?video=${id}`
+                embedUrl:
+                    dailymotionPlayerId && DAILYMOTION_PLAYER_ID_REGEX.test(dailymotionPlayerId)
+                        ? `https://geo.dailymotion.com/player/${dailymotionPlayerId}.html?video=${id}`
+                        : null,
+                externalUrl: `https://www.dailymotion.com/video/${id}`
             };
         }
         return null;

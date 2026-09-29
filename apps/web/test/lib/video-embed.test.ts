@@ -9,7 +9,8 @@ describe('resolveVideoEmbed', () => {
             ).toEqual({
                 provider: 'youtube',
                 videoId: 'dQw4w9WgXcQ',
-                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             });
         });
 
@@ -17,7 +18,8 @@ describe('resolveVideoEmbed', () => {
             expect(resolveVideoEmbed({ url: 'https://youtube.com/watch?v=dQw4w9WgXcQ' })).toEqual({
                 provider: 'youtube',
                 videoId: 'dQw4w9WgXcQ',
-                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             });
         });
 
@@ -25,7 +27,8 @@ describe('resolveVideoEmbed', () => {
             expect(resolveVideoEmbed({ url: 'https://youtu.be/dQw4w9WgXcQ' })).toEqual({
                 provider: 'youtube',
                 videoId: 'dQw4w9WgXcQ',
-                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             });
         });
 
@@ -34,7 +37,8 @@ describe('resolveVideoEmbed', () => {
                 {
                     provider: 'youtube',
                     videoId: 'dQw4w9WgXcQ',
-                    embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                    embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                    externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
                 }
             );
         });
@@ -45,7 +49,8 @@ describe('resolveVideoEmbed', () => {
             ).toEqual({
                 provider: 'youtube',
                 videoId: 'dQw4w9WgXcQ',
-                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             });
         });
 
@@ -55,7 +60,8 @@ describe('resolveVideoEmbed', () => {
             ).toEqual({
                 provider: 'youtube',
                 videoId: 'dQw4w9WgXcQ',
-                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+                embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ',
+                externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
             });
         });
 
@@ -100,7 +106,8 @@ describe('resolveVideoEmbed', () => {
             expect(resolveVideoEmbed({ url: 'https://vimeo.com/76979871' })).toEqual({
                 provider: 'vimeo',
                 videoId: '76979871',
-                embedUrl: 'https://player.vimeo.com/video/76979871'
+                embedUrl: 'https://player.vimeo.com/video/76979871',
+                externalUrl: 'https://vimeo.com/76979871'
             });
         });
 
@@ -108,7 +115,8 @@ describe('resolveVideoEmbed', () => {
             expect(resolveVideoEmbed({ url: 'https://player.vimeo.com/video/76979871' })).toEqual({
                 provider: 'vimeo',
                 videoId: '76979871',
-                embedUrl: 'https://player.vimeo.com/video/76979871'
+                embedUrl: 'https://player.vimeo.com/video/76979871',
+                externalUrl: 'https://vimeo.com/76979871'
             });
         });
 
@@ -135,38 +143,75 @@ describe('resolveVideoEmbed', () => {
             expect(result).toEqual({
                 provider: 'vimeo',
                 videoId: '76979871',
-                embedUrl: 'https://player.vimeo.com/video/76979871'
+                embedUrl: 'https://player.vimeo.com/video/76979871',
+                externalUrl: 'https://vimeo.com/76979871'
             });
         });
     });
 
     describe('Dailymotion', () => {
         it('resolves a dailymotion.com/video/<id> URL', () => {
-            expect(resolveVideoEmbed({ url: 'https://www.dailymotion.com/video/x7tgad0' })).toEqual(
-                {
-                    provider: 'dailymotion',
-                    videoId: 'x7tgad0',
-                    embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
-                }
-            );
+            expect(
+                resolveVideoEmbed({
+                    url: 'https://www.dailymotion.com/video/x7tgad0',
+                    dailymotionPlayerId: 'xabc1'
+                })
+            ).toEqual({
+                provider: 'dailymotion',
+                videoId: 'x7tgad0',
+                embedUrl: 'https://geo.dailymotion.com/player/xabc1.html?video=x7tgad0',
+                externalUrl: 'https://www.dailymotion.com/video/x7tgad0'
+            });
         });
 
         it('resolves a dai.ly/<id> short link', () => {
-            expect(resolveVideoEmbed({ url: 'https://dai.ly/x7tgad0' })).toEqual({
+            expect(
+                resolveVideoEmbed({ url: 'https://dai.ly/x7tgad0', dailymotionPlayerId: 'xabc1' })
+            ).toEqual({
                 provider: 'dailymotion',
                 videoId: 'x7tgad0',
-                embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
+                embedUrl: 'https://geo.dailymotion.com/player/xabc1.html?video=x7tgad0',
+                externalUrl: 'https://www.dailymotion.com/video/x7tgad0'
             });
         });
 
         it('resolves an already-embed dailymotion URL', () => {
             expect(
-                resolveVideoEmbed({ url: 'https://www.dailymotion.com/embed/video/x7tgad0' })
+                resolveVideoEmbed({
+                    url: 'https://www.dailymotion.com/embed/video/x7tgad0',
+                    dailymotionPlayerId: 'xabc1'
+                })
             ).toEqual({
                 provider: 'dailymotion',
                 videoId: 'x7tgad0',
-                embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
+                embedUrl: 'https://geo.dailymotion.com/player/xabc1.html?video=x7tgad0',
+                externalUrl: 'https://www.dailymotion.com/video/x7tgad0'
             });
+        });
+
+        it('degrades to a null embedUrl plus an external link when no Player ID is configured (HOS-1217)', () => {
+            expect(
+                resolveVideoEmbed({ url: 'https://www.dailymotion.com/video/x7tgad0' })
+            ).toStrictEqual({
+                provider: 'dailymotion',
+                videoId: 'x7tgad0',
+                embedUrl: null,
+                externalUrl: 'https://www.dailymotion.com/video/x7tgad0'
+            });
+        });
+
+        it.each([
+            '',
+            'a/b',
+            'x.html?evil=1',
+            '../x',
+            'a b'
+        ])('never interpolates a malformed Player ID (%j) into the embed URL', (dailymotionPlayerId) => {
+            const result = resolveVideoEmbed({
+                url: 'https://www.dailymotion.com/video/x7tgad0',
+                dailymotionPlayerId
+            });
+            expect(result?.embedUrl).toBeNull();
         });
 
         it('rejects a dailymotion.com subdomain decoy', () => {

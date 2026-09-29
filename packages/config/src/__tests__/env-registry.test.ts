@@ -290,8 +290,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * NOT counted here: HOSPEDA_INTERNAL_REQUEST_SECRET gained 'admin' in its
  * `apps` list in the same change. That is an edit to an existing entry, not a
  * new var, so the total is unaffected.
+ *
+ * +1 = PUBLIC_DAILYMOTION_PLAYER_ID (HOS-1217, integrations category, optional,
+ * web only) — Dailymotion's geo host 403s a third-party embed without a Player
+ * ID in the URL. 285 + 1 = 286.
  */
-const EXPECTED_VAR_COUNT = 285;
+const EXPECTED_VAR_COUNT = 286;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

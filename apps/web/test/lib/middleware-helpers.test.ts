@@ -664,7 +664,7 @@ describe('buildCspHeader', () => {
         ['vimeo', 'https://vimeo.com/76979871'],
         ['dailymotion', 'https://www.dailymotion.com/video/x7tgad0']
     ])('frame-src authorises the embed origin built for %s (HOS-1217)', (provider, url) => {
-        const embed = resolveVideoEmbed({ url });
+        const embed = resolveVideoEmbed({ url, dailymotionPlayerId: 'xabc1' });
         const header = buildCspHeader({ ...NO_HASHES });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src ')) ?? '';
         const allowed = frameSrc.split(' ').slice(1);

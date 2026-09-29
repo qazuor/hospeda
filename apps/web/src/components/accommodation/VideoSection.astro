@@ -29,6 +29,7 @@
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getDailymotionPlayerId } from '@/lib/env';
 import { resolveVideoEmbed, type VideoProvider } from '@/lib/video-embed';
 
 interface Props {
@@ -42,6 +43,7 @@ interface Props {
 
 const { videos, locale } = Astro.props;
 const { t } = createTranslations(locale);
+const dailymotionPlayerId = getDailymotionPlayerId();
 
 /** Short, human-facing label per provider — shown on the facade badge. */
 const PROVIDER_LABELS: Record<VideoProvider, string> = {
@@ -52,7 +54,7 @@ const PROVIDER_LABELS: Record<VideoProvider, string> = {
 
 const resolvedVideos = (videos ?? [])
 	.map((video) => {
-		const embed = resolveVideoEmbed({ url: video.url });
+		const embed = resolveVideoEmbed({ url: video.url, dailymotionPlayerId });
 		if (!embed) return null;
 		return {
 			...embed,
@@ -77,6 +79,26 @@ if (resolvedVideos.length === 0) return;
 						caption: video.caption
 					})
 				: t('accommodations.detail.videos.play', 'Reproducir video');
+			if (!video.embedUrl) {
+				// No embeddable player in this configuration (Dailymotion without a
+				// Player ID, HOS-1217): link out to the provider's page instead of a
+				// broken iframe. The href is rebuilt from the validated id.
+				return (
+					<div class="video-section__item">
+						<a
+							class="video-section__play video-section__play--link"
+							href={video.externalUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={playLabel}
+						>
+							<span class="video-section__play-icon" aria-hidden="true">&#9654;</span>
+							<span class="video-section__provider-badge">{PROVIDER_LABELS[video.provider]}</span>
+						</a>
+						{video.caption && <p class="video-section__caption">{video.caption}</p>}
+					</div>
+				);
+			}
 			return (
 				<div
 					class="video-section__item"
@@ -176,6 +198,10 @@ if (resolvedVideos.length === 0) return;
 		color: white;
 		cursor: pointer;
 		padding: 0;
+	}
+
+	.video-section__play--link {
+		text-decoration: none;
 	}
 
 	.video-section__play:hover .video-section__play-icon,

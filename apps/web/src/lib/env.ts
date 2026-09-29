@@ -245,3 +245,16 @@ export function getIndexNowKey(): string | undefined {
 export function getTurnstileSiteKey(): string | undefined {
     return getEnv().PUBLIC_TURNSTILE_SITE_KEY;
 }
+
+/**
+ * Get the Dailymotion Player ID used to build embed URLs (HOS-1217).
+ *
+ * Public by design. Empty and unset are both "not configured": Dailymotion
+ * videos then render as an external link instead of an iframe.
+ *
+ * @returns The Player ID, or undefined when not configured
+ */
+export function getDailymotionPlayerId(): string | undefined {
+    const value = getEnv().PUBLIC_DAILYMOTION_PLAYER_ID;
+    return value ? value : undefined;
+}

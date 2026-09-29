@@ -1137,6 +1137,24 @@ export const HOSPEDA_ENV_VARS = [
             'Cloudflare Dashboard → Turnstile → Add site → elegí el tipo Invisible → copiá el Site Key. Para local/staging usá la clave de prueba always-passes: 1x00000000000000000000AA. La clave de producción real va en Coolify para hospeda-web-prod. La site key es intencionalmente pública (viaja en el bundle del browser — eso es por diseño).'
     },
     {
+        name: 'PUBLIC_DAILYMOTION_PLAYER_ID',
+        description:
+            "Dailymotion Player ID (PUBLIC — ships in the page HTML). Dailymotion's embed host (geo.dailymotion.com) answers 403 to a third-party iframe unless the URL names a Player: https://geo.dailymotion.com/player/<PLAYER_ID>.html?video=<id>. When unset, Dailymotion videos on accommodation pages degrade to an external link to the video page instead of an embedded player (HOS-1217). Alphanumeric only.",
+        descriptionEs:
+            'Player ID de Dailymotion (PUBLIC — viaja en el HTML de la página). El host de embed de Dailymotion (geo.dailymotion.com) responde 403 a un iframe de terceros salvo que la URL nombre un Player: https://geo.dailymotion.com/player/<PLAYER_ID>.html?video=<id>. Cuando no está seteada, los videos de Dailymotion en las fichas de alojamiento pasan a un enlace externo a la página del video en vez de un reproductor embebido (HOS-1217). Solo alfanumérico.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'xabc1',
+        apps: ['web'],
+        category: 'integrations',
+        helpUrl: 'https://developers.dailymotion.com/guides/player-embed/',
+        howToObtain:
+            'Dailymotion Studio → Players → create a Player for the Hospeda channel → copy its Player ID (the segment in geo.dailymotion.com/player/<PLAYER_ID>.html). Set it in Coolify for hospeda-web-staging / hospeda-web-prod. It is a build-time PUBLIC_ var: redeploy the web app after setting it.',
+        howToObtainEs:
+            'Dailymotion Studio → Players → creá un Player para el canal de Hospeda → copiá su Player ID (el segmento de geo.dailymotion.com/player/<PLAYER_ID>.html). Va en Coolify para hospeda-web-staging / hospeda-web-prod. Es una variable PUBLIC_ de build: redeployá el web después de setearla.'
+    },
+    {
         name: 'VITE_TURNSTILE_SITE_KEY',
         description:
             'Cloudflare Turnstile site key for the admin app (PUBLIC — ships in the browser bundle). Powers the invisible bot-detection widget on the admin feedback form (SPEC-301 T-010). When unset, the widget is not rendered and the server applies its own fail-closed policy. Use the always-passes test key (1x00000000000000000000AA) locally.',
