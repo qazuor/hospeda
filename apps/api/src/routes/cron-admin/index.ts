@@ -153,7 +153,8 @@ export const triggerCronJobHandler = async (
     query?: Record<string, unknown>
 ): Promise<z.infer<typeof cronJobExecutionDataSchema>> => {
     const jobName = params.jobName as string;
-    const dryRun = query?.dryRun === 'true' || query?.dryRun === true;
+    // `query` is the route-validated value: `dryRun` is already a boolean here.
+    const dryRun = query?.dryRun === true;
 
     const job = getCronJob(jobName);
 
@@ -248,6 +249,22 @@ export const triggerCronJobHandler = async (
 // ─── Route Definitions ───────────────────────────────────────────────────────
 
 /**
+ * Strict `dryRun` query parser for the manual trigger (HOS-410).
+ *
+ * Only the literal strings `'true'` and `'false'` are accepted; anything else
+ * (empty, `1`, `yes`, ...) is a 400 rather than a guess, because a wrong guess
+ * either runs a job the operator meant to simulate or silently simulates one
+ * they meant to run. Absent keeps the historical default: a real run.
+ *
+ * Never use `z.coerce.boolean()` here: `Boolean('false') === true`.
+ */
+export const cronDryRunQuerySchema = z
+    .enum(['true', 'false'])
+    .optional()
+    .default('false')
+    .transform((value) => value === 'true');
+
+/**
  * GET /api/v1/admin/cron
  * List all registered cron jobs with their status and schedule information.
  * Requires SYSTEM_MAINTENANCE_MODE permission.
@@ -279,7 +296,7 @@ const triggerCronJobRoute = createAdminRoute({
     tags: ['Cron'],
     requiredPermissions: [PermissionEnum.SYSTEM_MAINTENANCE_MODE],
     requestParams: { jobName: z.string().min(1) },
-    requestQuery: { dryRun: z.coerce.boolean().optional().default(false) },
+    requestQuery: { dryRun: cronDryRunQuerySchema },
     responseSchema: cronJobExecutionDataSchema,
     handler: async (c, params, body, query) =>
         triggerCronJobHandler(
