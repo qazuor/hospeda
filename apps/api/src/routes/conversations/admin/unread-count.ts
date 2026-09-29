@@ -4,6 +4,9 @@
  * Returns the number of conversations with unread OWNER-side activity for the
  * authenticated admin actor. Used for the admin inbox badge.
  * Requires CONVERSATION_VIEW_OWN.
+ *
+ * Error order (apps/api/docs/error-contract.md R2): anonymous 401, then
+ * missing permission 403.
  */
 
 import {
@@ -13,7 +16,7 @@ import {
     UnreadCountResponseSchema
 } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -46,6 +49,20 @@ const router = createRouter();
 router.get('/unread-count', async (c) => {
     try {
         const actor = getActorFromContext(c);
+
+        // 401 before 403 (HOS-972). The guest actor carries a real UUID, so
+        // only `isGuestActor` can tell an anonymous caller from an authenticated
+        // one; without this an expired admin session read as "no permission".
+        if (isGuestActor(actor)) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.UNAUTHORIZED,
+                    message: 'Authentication required'
+                },
+                c,
+                401
+            );
+        }
 
         const hasViewOwn = actor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN);
 
