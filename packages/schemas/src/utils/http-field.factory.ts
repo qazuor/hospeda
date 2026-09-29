@@ -90,10 +90,10 @@ export const HttpFieldFactories = {
         z.coerce.date({ message: `zodError.common.${fieldName}.invalidDate` }).optional(),
 
     /**
-     * Creates a standardized boolean field with coercion
+     * Creates a standardized boolean query field. Strict: only 'true' and
+     * 'false' are accepted (HOS-410), never `Boolean(value)` coercion.
      */
-    booleanField: (fieldName: string) =>
-        createBooleanQueryParam(`zodError.common.${fieldName}.invalidBoolean`),
+    booleanField: (fieldName: string) => createBooleanQueryParam(`Filter by ${fieldName}`),
 
     /**
      * Creates a standardized age field

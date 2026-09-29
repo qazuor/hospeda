@@ -2,7 +2,7 @@
  * Canonical boolean parsers for HTTP inputs (HOS-410).
  *
  * `z.coerce.boolean()` is banned in `packages/schemas/src` and `apps/api/src`
- * (see `scripts/check-no-coerce-boolean.sh`): it applies `Boolean(value)`, so the
+ * (see `scripts/check-no-coerce-boolean.ts`): it applies `Boolean(value)`, so the
  * string `'false'` becomes `true`. On a filter that inverts the result set; on a
  * flag like `dryRun` it runs the wrong mode.
  *
