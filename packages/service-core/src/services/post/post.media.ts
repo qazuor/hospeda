@@ -247,7 +247,7 @@ export async function removePostMedia(
 
         const mediaModel = new PostMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.postId !== validated.postId) {
+        if (!mediaRow || mediaRow.postId !== validated.postId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
         }
 
@@ -465,7 +465,10 @@ export async function setFeaturedPostMedia(
 
         const mediaModel = new PostMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.postId !== validated.postId) {
+        // `deletedAt` must be checked here: `findById` does NOT filter soft-deletes
+        // and `softDelete` leaves `is_featured` set, so a dead row would otherwise be
+        // a promotable target (HOS-1175, same class as HOS-803 C-1).
+        if (!mediaRow || mediaRow.postId !== validated.postId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
         }
 
@@ -558,7 +561,7 @@ export async function updatePostMedia(
 
         const mediaModel = new PostMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.postId !== validated.postId) {
+        if (!mediaRow || mediaRow.postId !== validated.postId || mediaRow.deletedAt) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
         }
 

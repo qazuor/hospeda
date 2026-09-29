@@ -262,7 +262,7 @@ export async function removeGastronomyMedia(
 
         const mediaModel = new GastronomyMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'
@@ -684,7 +684,7 @@ export async function updateGastronomyMedia(
 
         const mediaModel = new GastronomyMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'
