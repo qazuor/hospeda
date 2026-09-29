@@ -111,13 +111,19 @@ export interface GetDailySeriesInput {
  */
 export interface GetDailySeriesForEntityIdsInput {
     /**
+     * Shared entity type for all IDs in the batch (accommodation, gastronomy or
+     * experience). Required: the query filters on it, and a wrong or missing
+     * value matches zero rows (HOS-1265).
+     */
+    readonly entityType: TrackableEntityType;
+    /**
      * Rolling window in days (7 or 30). The model returns only days that have
      * at least one view; gap-filling is a service concern.
      */
     readonly windowDays: number;
     /**
-     * Array of accommodation UUIDs to filter by. Must not be empty; callers
-     * should skip this method when the owner has no accommodations and return
+     * Array of listing UUIDs to filter by. Must not be empty; callers
+     * should skip this method when the owner has no listings and return
      * an all-zero gap-filled series instead.
      */
     readonly entityIds: readonly string[];
@@ -639,7 +645,7 @@ export class EntityViewModel {
 
     /**
      * Returns date-bucketed view totals restricted to a given set of entity IDs
-     * (accommodations), summed across ALL matching IDs per day.
+     * of a single entity type, summed across ALL matching IDs per day.
      *
      * Unlike {@link getDailySeries} (platform-wide, grouped by entity type),
      * this query filters by an explicit `entity_id IN (...)` clause and produces
@@ -656,7 +662,7 @@ export class EntityViewModel {
      * (`MARKET_TIMEZONE`) of the oldest calendar date in the range, matching
      * the convention in {@link getDailySeries} (HOS-1169).
      *
-     * @param input - windowDays and entityIds (must be non-empty).
+     * @param input - entityType, windowDays and entityIds (must be non-empty).
      * @param tx - Optional transaction client.
      * @returns Array of {@link HostDailySeriesRow} ordered by date ASC.
      * @throws {DbError} If the database operation fails.
@@ -665,14 +671,14 @@ export class EntityViewModel {
         input: GetDailySeriesForEntityIdsInput,
         tx?: DrizzleClient
     ): Promise<HostDailySeriesRow[]> {
-        const { windowDays, entityIds } = input;
+        const { entityType, windowDays, entityIds } = input;
 
         if (entityIds.length === 0) {
             return [];
         }
 
         const db = this.getClient(tx);
-        const logContext = { windowDays, entityIdCount: entityIds.length };
+        const logContext = { entityType, windowDays, entityIdCount: entityIds.length };
 
         try {
             const { windowStart } = getLocalDayWindow({ windowDays });
@@ -691,8 +697,8 @@ export class EntityViewModel {
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                        AS "total"
              * FROM entity_views
-             * WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
-             *   AND entity_id IN ($1, $2, …)
+             * WHERE entity_type = $1::entity_type_enum   -- bound from input.entityType
+             *   AND entity_id IN ($2, $3, …)
              *   AND viewed_at >= $windowStart
              * GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')
              * ORDER BY "date" ASC
@@ -705,7 +711,7 @@ export class EntityViewModel {
                         FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
                     ))::int                                              AS "total"
                 FROM entity_views
-                WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
+                WHERE entity_type = ${entityType}::entity_type_enum
                   AND entity_id IN (${entityIdList})
                   AND viewed_at >= ${windowStart}
                 GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${marketTimezoneSql()})

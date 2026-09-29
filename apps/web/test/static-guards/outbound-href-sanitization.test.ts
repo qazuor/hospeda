@@ -274,6 +274,25 @@ describe('outbound hrefs — one scheme allow-list, not four', () => {
     });
 });
 
+describe('outbound hrefs — the allow-list has one source, in @repo/schemas', () => {
+    // HOS-703: the write-side validator (`safeExternalUrl`) and this helper must
+    // read the SAME list. A literal `'http:'` here would be a copy that drifts.
+    const helper = readFileSync(join(SRC_ROOT, 'lib/safe-external-url.ts'), 'utf8');
+
+    it('derives its schemes from SAFE_EXTERNAL_URL_SCHEMES', () => {
+        expect(helper).toMatch(/import \{ SAFE_EXTERNAL_URL_SCHEMES \} from '@repo\/schemas'/);
+        expect(helper).toMatch(/SAFE_EXTERNAL_URL_SCHEMES\.map\(/);
+    });
+
+    it('does not spell out a scheme literal of its own', () => {
+        const code = helper
+            .split('\n')
+            .filter((line) => !/^\s*(\*|\/\*|\/\/)/.test(line))
+            .join('\n');
+        expect(code).not.toMatch(/['"`]https?:['"`]/);
+    });
+});
+
 describe('outbound hrefs — the scanner itself', () => {
     // A guard nobody has watched fail is a guard nobody knows works. These
     // exercise the classifier on the exact shapes the first sketch of it missed.

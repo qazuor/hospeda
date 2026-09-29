@@ -5,7 +5,18 @@ import {
     PartnerMentionBatchIdSchema,
     PartnerMentionIdSchema
 } from '../../common/id.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PartnerMentionChannelEnumSchema } from '../../enums/partner-mention-channel.schema.js';
+
+/**
+ * The WRITE contract of a mention's `url` (HOS-703): http/https only, same
+ * 2048-character bound as the entity. The entity schema keeps the tolerant
+ * `.url()` because it is also the response shape, and tightening a read
+ * contract turns every legacy row that fails it into a permanent 500.
+ */
+export const partnerMentionWriteUrlSchema = safeExternalUrl('zodError.partnerMention.url.invalid')
+    .max(2048, { message: 'zodError.partnerMention.url.tooLong' })
+    .nullish();
 
 /**
  * One logged manual promotion action for a partner (HOS-377).

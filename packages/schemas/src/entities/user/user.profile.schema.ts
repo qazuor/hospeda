@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 
 /**
  * User Profile schema definition using Zod for validation.
@@ -35,7 +36,7 @@ export const UserProfileSchema = z.object({
         .min(10, { message: 'zodError.user.profile.bio.min' })
         .max(300, { message: 'zodError.user.profile.bio.max' })
         .nullish(),
-    website: z.string().url({ message: 'zodError.user.profile.website.url' }).nullish(),
+    website: safeExternalUrl('zodError.user.profile.website.url').nullish(),
     occupation: z
         .string()
         .min(2, { message: 'zodError.user.profile.occupation.min' })

@@ -502,13 +502,13 @@
 | `POST /api/v1/admin/features/{id}/restore` | `feature/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/features/batch` | `feature/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
 | **FEATURE FLAGS — ADMIN** | | | | | |
-| `GET /api/v1/admin/flags` | `feature-flags/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `POST /api/v1/admin/flags` | `feature-flags/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `GET /api/v1/admin/flags/{id}` | `feature-flags/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `PATCH /api/v1/admin/flags/{id}` | `feature-flags/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `POST /api/v1/admin/flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `DELETE /api/v1/admin/flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
-| `GET /api/v1/admin/flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/feature-flags` | `feature-flags/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/feature-flags` | `feature-flags/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/feature-flags/{id}` | `feature-flags/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `PATCH /api/v1/admin/feature-flags/{id}` | `feature-flags/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/feature-flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `DELETE /api/v1/admin/feature-flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/feature-flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | **QR CODES — ADMIN** | | | | | |
 | `GET /api/v1/admin/qr-codes` | `qr-code/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.QR_CODE_VIEW-gated, no billing entitlement gate. A QR code is operator infrastructure, not a plan feature |
 | `POST /api/v1/admin/qr-codes` | `qr-code/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.QR_CODE_CREATE-gated, no billing entitlement gate |

@@ -30,7 +30,6 @@
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.41",
-        "@better-auth/expo": "1.6.23",
         "@hono/node-server": "^2.1.0",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.5.2",
@@ -69,7 +68,7 @@
         "file-type": "^22.0.1",
         "hono": "^4.13.5",
         "hono-rate-limiter": "^0.5.3",
-        "image-size": "^2.0.0",
+        "image-size": "^2.0.4",
         "ioredis": "^6.0.0",
         "jose": "^6.2.8",
         "lru-cache": "^11.5.2",
@@ -86,6 +85,7 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
+        "@better-auth/expo": "1.6.23",
         "@repo/typescript-config": "workspace:*",
         "@sentry/esbuild-plugin": "^5.4.0",
         "@types/bcryptjs": "^3.0.0",

@@ -14,8 +14,11 @@
  * `post_generate`, leaving their editors empty even though the engine still
  * resolved the in-code default at runtime.
  *
- * Uses `ON CONFLICT ... DO NOTHING` so the seed is idempotent —
- * re-running does NOT overwrite admin-edited prompts.
+ * Idempotent (HOS-735): an explicit existence check on `(feature, version)`
+ * runs before the insert, so re-running neither overwrites admin-edited prompts
+ * nor adds rows. `ON CONFLICT DO NOTHING` alone was NOT enough: the table has no
+ * unique constraint on `(feature, version)`, so there was nothing to conflict
+ * with and every re-run inserted seven more active v1 rows.
  */
 
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '@repo/ai-core';
@@ -59,6 +62,17 @@ export async function seedAiPrompts(): Promise<void> {
     for (const feature of PROMPT_SEED_FEATURES) {
         const content = DEFAULT_PROMPTS[feature];
         const rules = DEFAULT_RULES[feature];
+
+        const [alreadySeeded] = await db
+            .select({ id: aiPromptVersions.id })
+            .from(aiPromptVersions)
+            .where(and(eq(aiPromptVersions.feature, feature), eq(aiPromptVersions.version, 1)))
+            .limit(1);
+
+        if (alreadySeeded) {
+            logger.debug(`    · Prompt for '${feature}' already exists — skipped`);
+            continue;
+        }
 
         const result = await db
             .insert(aiPromptVersions)

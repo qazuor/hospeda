@@ -13,6 +13,8 @@
  * db via `vi.spyOn(model, 'getClient')`. No live PostgreSQL connection required.
  */
 
+import { EntityTypeEnum } from '@repo/schemas';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewModel,
@@ -65,6 +67,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
     });
 
     const baseInput: GetDailySeriesForEntityIdsInput = {
+        entityType: EntityTypeEnum.ACCOMMODATION,
         windowDays: 30,
         entityIds: [UUID_A, UUID_B]
     };
@@ -81,6 +84,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
 
             // Act
             const result = await model.getDailySeriesForEntityIds({
+                entityType: EntityTypeEnum.ACCOMMODATION,
                 windowDays: 30,
                 entityIds: []
             });
@@ -144,6 +148,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
 
             // Act
             const result = await model.getDailySeriesForEntityIds({
+                entityType: EntityTypeEnum.ACCOMMODATION,
                 windowDays: 7,
                 entityIds: [UUID_A]
             });
@@ -235,6 +240,66 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
 
             // Act / Assert
             await expect(model.getDailySeriesForEntityIds(baseInput)).rejects.toBeDefined();
+        });
+    });
+    // =========================================================================
+    // HOS-1265 — entity type is bound into the query, not hardcoded
+    // =========================================================================
+
+    describe('entity type filter (HOS-1265)', () => {
+        const dialect = new PgDialect();
+
+        /**
+         * Stands in for Postgres: it holds views that belong to ONE entity type
+         * and answers a query only with rows whose type matches the type BOUND
+         * into that query. A hardcoded `'ACCOMMODATION'` literal binds nothing,
+         * so a gastronomy request finds no match, exactly as in production.
+         */
+        function buildTypeAwareDb(storedType: string, storedRows: unknown[]): MockDb {
+            return {
+                execute: vi.fn().mockImplementation(async (query: never) => {
+                    const { sql: text, params } = dialect.sqlToQuery(query);
+                    const matches =
+                        params.includes(storedType) || text.includes(`'${storedType}'::`);
+                    return matches ? storedRows : [];
+                })
+            };
+        }
+
+        it('should return a NON-ZERO total for gastronomy ids', async () => {
+            // Arrange
+            const mockDb = buildTypeAwareDb(EntityTypeEnum.GASTRONOMY, [
+                { date: '2026-09-08', total: '4' }
+            ]);
+            injectDb(model, mockDb);
+
+            // Act
+            const result = await model.getDailySeriesForEntityIds({
+                ...baseInput,
+                entityType: EntityTypeEnum.GASTRONOMY
+            });
+
+            // Assert
+            expect(result).toStrictEqual([{ date: '2026-09-08', total: 4 }]);
+            expect(result.reduce((sum, row) => sum + row.total, 0)).toBeGreaterThan(0);
+        });
+
+        it('should bind the requested entity type as a query parameter', async () => {
+            // Arrange
+            const mockDb = buildMockDb([]);
+            injectDb(model, mockDb);
+
+            // Act
+            await model.getDailySeriesForEntityIds({
+                ...baseInput,
+                entityType: EntityTypeEnum.EXPERIENCE
+            });
+
+            // Assert
+            const { sql: text, params } = dialect.sqlToQuery(mockDb.execute.mock.calls[0]?.[0]);
+            expect(params).toContain(EntityTypeEnum.EXPERIENCE);
+            expect(params).not.toContain(EntityTypeEnum.ACCOMMODATION);
+            expect(text).not.toContain("'ACCOMMODATION'");
         });
     });
 });
