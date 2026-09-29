@@ -2,7 +2,7 @@ import { SponsorshipPackageModel } from '@repo/db';
 import { SponsorshipPackageService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
 import { STATUS_ICONS } from '../utils/icons.js';
-import { createSeedFactory } from '../utils/index.js';
+import { createSeedFactory, whereFixtureSlug } from '../utils/index.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -17,6 +17,9 @@ export const seedSponsorshipPackages = createSeedFactory({
     serviceClass: SponsorshipPackageService,
     folder: 'src/data/sponsorshipPackage',
     files: requiredManifest.sponsorshipPackages,
+
+    // HOS-735: re-runnable. An existing package keeps its event-level link from the first run.
+    existing: { modelClass: SponsorshipPackageModel, getWhere: whereFixtureSlug() },
 
     // Exclude metadata fields and eventLevelId (will be set in postProcess)
     normalizer: (data) => {
