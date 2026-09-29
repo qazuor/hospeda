@@ -1,6 +1,7 @@
+import { SponsorshipLevelModel } from '@repo/db';
 import { SponsorshipLevelService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { createSeedFactory } from '../utils/index.js';
+import { createSeedFactory, whereFixtureSlug } from '../utils/index.js';
 
 /**
  * Seed factory for sponsorship levels
@@ -13,6 +14,9 @@ export const seedSponsorshipLevels = createSeedFactory({
     serviceClass: SponsorshipLevelService,
     folder: 'src/data/sponsorshipLevel',
     files: requiredManifest.sponsorshipLevels,
+
+    // HOS-735: re-runnable. A row already carrying this slug is skipped, not re-inserted.
+    existing: { modelClass: SponsorshipLevelModel, getWhere: whereFixtureSlug() },
 
     // Exclude metadata fields only
     normalizer: (data) => {
