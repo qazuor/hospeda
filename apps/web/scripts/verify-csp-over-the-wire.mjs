@@ -219,6 +219,7 @@ const checkSoftNavigation = async () => {
     );
 
     const pages = [];
+    let largestHeader = { path: '', bytes: 0 };
     for (const path of paths) {
         const res = await fetch(`${BASE}${path}`, { redirect: 'manual' });
         const csp = res.headers.get(CSP_HEADER);
@@ -240,6 +241,7 @@ const checkSoftNavigation = async () => {
         }
         const scripts = extractExecutableInlineScripts({ html });
         console.log(`  OK   ${path}  [200]  ${scripts.length} inline scripts`);
+        if (csp.length > largestHeader.bytes) largestHeader = { path, bytes: csp.length };
         pages.push({ path, scripts, headerHashes });
     }
 
@@ -256,7 +258,7 @@ const checkSoftNavigation = async () => {
     }
 
     console.log(
-        `[csp-verify] Soft-nav check: ${pages.length} pages, each checked against the CSP of the other ${Math.max(pages.length - 1, 0)}; build-time union of ${report.scriptHashes.length} hashes.`
+        `[csp-verify] Soft-nav check: ${pages.length} pages, each checked against the CSP of the other ${Math.max(pages.length - 1, 0)}; build-time union of ${report.scriptHashes.length} hashes; largest CSP header ${largestHeader.bytes} bytes (${largestHeader.path}).`
     );
     return failures;
 };
