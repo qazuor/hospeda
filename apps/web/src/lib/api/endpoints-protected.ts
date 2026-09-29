@@ -3128,14 +3128,17 @@ export interface MyPartnerContactInfo {
     readonly website?: string | null;
 }
 
-/** Social links the partner maintains. Mirrors the shared `socialNetworks` JSONB. */
+/**
+ * Social links the partner maintains. Mirrors the shared `socialNetworks` JSONB.
+ * A key is `null` on a write that clears it (and on a read of a cleared one).
+ */
 export interface MyPartnerSocialNetworks {
-    readonly facebook?: string;
-    readonly instagram?: string;
-    readonly twitter?: string;
-    readonly linkedIn?: string;
-    readonly tiktok?: string;
-    readonly youtube?: string;
+    readonly facebook?: string | null;
+    readonly instagram?: string | null;
+    readonly twitter?: string | null;
+    readonly linkedIn?: string | null;
+    readonly tiktok?: string | null;
+    readonly youtube?: string | null;
 }
 
 /**
