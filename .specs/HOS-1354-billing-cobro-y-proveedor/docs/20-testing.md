@@ -735,7 +735,9 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
    2026-09-29, caso G-B). **La construye `B1`, con el adelantable** (revisión del owner, casos
    vecinos, 2026-09-29, caso I-E). **La implementación real, la hora del sistema, la inyecta la raíz
    de composición de `apps/api`, el único lugar que junta las dos mitades; en las pruebas se inyecta
-   el adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A).
+   el adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). **La línea de esa
+   raíz que inyecta el reloj real la escribe `B1`** (revisión del owner, casos vecinos, 2026-09-29,
+   caso K-C).
 3. **Cada flujo del §5, y el trial completo de `V/20` §5, como prueba de punta a punta** contra los
    builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones
    sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.

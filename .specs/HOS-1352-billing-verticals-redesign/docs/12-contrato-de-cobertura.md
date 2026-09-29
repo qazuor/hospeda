@@ -1516,7 +1516,9 @@ billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales 
 con su módulo que contesta por billing, que sigue bajo `G13`). **El único lugar que junta las dos
 mitades es la raíz de composición de `apps/api`.** **La implementación real del reloj (la hora del
 sistema), que leen las dos mitades, la inyecta esa raíz; en las pruebas se inyecta el reloj
-adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). Y **`G14`** (`V/20` §2) falla si una mitad
+adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). **La línea de esa raíz que
+lo inyecta la escribe `B1`**, la unidad que construye la interfaz y el adelantable (revisión del
+owner, casos vecinos, 2026-09-29, caso K-C). Y **`G14`** (`V/20` §2) falla si una mitad
 importa a la otra: es lo que vuelve ejecutable la parte de la regla de vigilancia que se ve en un
 import (§4.2). **Quién lo construye**: `V1` crea el package y `G14`; cada entrada entra con la
 unidad que construye su implementación (§4.1, *«quién construye»*), y la épica de billing lo

@@ -369,7 +369,7 @@ avanzaba un período.
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, ~~estado~~ **estado de la máquina mínima de `B/03` §6.1 —`REQUESTED`, `CONFIRMED`, `EXECUTED` o `FAILED`— (owner 2026-09-25; FASE 9 completa, 5a, `F-8CB1-015`)**, quién lo confirmó, **por cada llamada al proveedor —el total, o cada parcial de `RF2`— su clave, el id de la devolución que devolvió el proveedor y su monto** (FASE 9 vuelta 2, `F-8V2B2-002`: la fila no sabía qué devolución era la suya), **y —sólo en `EXECUTED`— por dónde se ejecutó (el proveedor, o por fuera con el comprobante de la transferencia) y quién lo asentó** | el acumulado nunca supera el monto del pago; **sólo un `refund` en `EXECUTED` suma al acumulado del pago**, **y suma la suma de sus devoluciones, que es el monto confirmado** (`RF3`); **el id de una devolución del proveedor está en una sola fila** —es lo que deja al barrido separar una devolución de nuestro flujo de una hecha desde el panel (`B/09` §3)— |
 | **`manual_payment`** | suscripción, **el período que cubre —identificado por su fecha de inicio**, que es el valor que *«la fecha del próximo cobro»* de §2.2 tenía cuando la cuota se abrió, **salvo que `MP4` la haya reimputado** (abajo)—, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe, y es además lo que hace que reimputar no cambie el monto esperado |
 | **`covered_period`** ✚ | suscripción, **el período cubierto —identificado por su fecha de inicio**, igual que en `manual_payment`—, **cuál de los dos cobros lo cubrió** (un `payment` **o** un `manual_payment`), cuándo se acreditó y **`liberado_en`** (anulable) | **`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL`** — es el candado de `C5` (`B/05`), y **es la única razón por la que esta entidad existe**. El parcial espeja el de `reconciliation_mark`, por la misma razón: **liberar no borra la fila, la marca**, así que el rastro de que ese período se cobró y se devolvió **sobrevive** para la conciliación. Más un CHECK de que **exactamente una** de las dos referencias al cobro es no nula |
-| **`receipt`** | ~~pago~~ **el cobro que certifica —un `payment` o un `manual_payment`—**, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`). **Lo emiten `P1`, `MP1` y `MP4`** (cap. 03 §6 y §7), en la misma transacción que acredita (FASE 8 completa, `F-8CB3-006`) | `UNIQUE(numero)`, sin huecos. **Más un CHECK de que exactamente una de las dos referencias es no nula**, la forma de `refund` y `covered_period`. **Y el `UNIQUE` no impide huecos: los impide el contador** (abajo) |
+| **`receipt`** | ~~pago~~ **el cobro que certifica —un `payment` o un `manual_payment`—**, número, PDF, **y una copia del nombre y el correo de quien paga, `nombre_pagador` y `correo_pagador`, escrita al emitirse** (revisión del owner, casos vecinos, 2026-09-29, caso K-A; abajo). **Comprobante no fiscal** (§54, `DEC-LEGAL-001`). **Lo emiten `P1`, `MP1` y `MP4`** (cap. 03 §6 y §7), en la misma transacción que acredita (FASE 8 completa, `F-8CB3-006`) | `UNIQUE(numero)`, sin huecos. **Más un CHECK de que exactamente una de las dos referencias es no nula**, la forma de `refund` y `covered_period`. **Y el `UNIQUE` no impide huecos: los impide el contador** (abajo). **Las dos columnas del pagador van juntas, las dos nulas o las dos escritas, y son nulas sólo en el comprobante de un cobro sobre una lápida**, que no tiene usuario (cap. 03 §6, `P1`); **ninguna transición ni acción las reescribe después de emitir** (caso K-A) |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
 **El monto es entero**, en la unidad mínima de la moneda. No hay decimales de punto flotante en
@@ -383,6 +383,21 @@ obligación que `DEC-LEGAL-001` pone *«por cada cobro»*. Y ninguna transición
 nombran entre sus efectos **`P1`** para el cobro del proveedor —incluido el del addon de única
 vez— y **`MP1` y `MP4`** para el manual. **No confundir con el *«comprobante»* de
 `manual_payment`**: ése es la prueba que sube el admin al registrar, no el documento que emitimos.
+
+**El comprobante guarda una copia del nombre y el correo de quien paga, y la copia es el punto**
+(revisión del owner, casos vecinos, 2026-09-29, caso K-A). **De dónde se copian al emitir**: de la
+fila de `user` dueña del cobro que se certifica, leída en la misma transacción que escribe el
+`receipt`. En un cobro de suscripción, y en la cuota de un pagador manual, es el `user` de la
+suscripción; en el pago del addon de única vez, que no tiene suscripción, es el dueño de la
+`addon_instance` (§2.4). Sobre una lápida no hay `user` del que copiar, así que las dos columnas
+quedan nulas, igual que ese comprobante queda sin destinatario (cap. 03 §6, `P1`). **Por qué no es
+la copia a mano que el §10.3 prohíbe**: ésa es la de un valor vivo que alguien vuelve a leer para
+decidir y se desincroniza del original; ésta es lo que el documento certificó el día que se emitió,
+nadie la lee para decidir nada y no se actualiza nunca, ni cuando la persona cambia su nombre o su
+correo ni cuando la acción 24, *«dar de baja una cuenta a pedido de su dueño»*, reemplaza los de la
+fila de `user` (`NUCLEO/08` §3, `V/02` §2.4). **Es lo que conserva los datos de facturación de una
+cuenta dada de baja**: la baja seudonimiza la cuenta y el comprobante sigue diciendo a nombre de
+quién se emitió, que es lo que el §4.1 conserva íntegro.
 
 **Sin huecos: el mecanismo mínimo es un contador en una fila, no una secuencia.** Una secuencia de
 base avanza aunque la transacción se revierta, y con dos contenedores sirviendo tráfico
@@ -1211,6 +1226,10 @@ comprobación de cero llamadas del `B/09` §3.
 2026-09-25 (FASE 9 completa, `2a`; `B/21` §4) —*«recién arrancamos; a los clientes que hay los
 contactamos en persona, de a uno, y se vuelven a suscribir»*—. Se aclara porque la fila se podía
 leer como una obligación sobre `billing_payments`.
+
+**Los comprobantes se conservan con el nombre y el correo de quien pagó**, copiados al emitirse
+(§2.3): la baja de una cuenta, que seudonimiza la fila de `user`, no los alcanza. Son los datos de
+facturación que la baja conserva (revisión del owner, casos vecinos, 2026-09-29, casos J-C y K-A).
 
 ---
 

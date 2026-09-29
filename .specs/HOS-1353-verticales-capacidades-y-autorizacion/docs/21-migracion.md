@@ -562,6 +562,14 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   y quedan en el historial de git; **y las carpetas de `.qtm/` se borran todas**, sin juzgarlas por
   su issue ni por sus commits, porque son del sistema retirado. **Se reescriben sólo las de un issue
   en `In Progress` o en `Backlog`** (revisión del owner, casos vecinos, 2026-09-29, caso J-B).
+  **Y un estado que esa lista no nombra sigue el tipo que Linear le da** (revisión del owner, casos
+  vecinos, 2026-09-29, caso K-B). El equipo tiene diez estados (leídos el 2026-09-29), y la regla
+  ya nombraba cinco. **Se borra** la carpeta de un issue en un estado de tipo terminado
+  (`completed`), cancelado (`canceled`) o duplicado (`duplicate`): hoy `Duplicate`, junto con
+  `Done` y `Canceled`. **Se reescribe** la de un issue en un estado de tipo en curso (`started`),
+  sin empezar (`unstarted`) o backlog (`backlog`): hoy `Todo`, `Working on`, `User Action Pending`
+  y `On Hold`, junto con `In Progress` y `Backlog`. **La única excepción es `In Review`**, que es de
+  tipo en curso y se borra por la decisión de arriba.
 
 ---
 
