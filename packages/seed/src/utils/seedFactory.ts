@@ -27,6 +27,17 @@ type SeedModelConstructor = new () => {
 };
 
 /**
+ * Minimal model constructor shape required for the skip-if-exists lookup
+ * (HOS-735). Compatible with any `@repo/db` model class extending
+ * `BaseModelImpl`, whose `findOne(where)` does NOT filter soft-deleted rows.
+ * That is deliberate: a soft-deleted row still occupies its UNIQUE key, so for
+ * "would the insert collide?" it counts as existing.
+ */
+type SeedLookupModelConstructor = new () => {
+    findOne: (where: Record<string, unknown>) => Promise<{ id?: string } | null>;
+};
+
+/**
  * Service result type with optional data and error information
  */
 interface ServiceResult {
@@ -75,6 +86,37 @@ export interface SeedFactoryConfig<T = unknown, R = unknown> {
     validateBeforeCreate?: (data: Record<string, unknown> | R) => boolean | Promise<boolean>;
     /** Function to transform the result after creation */
     transformResult?: (result: unknown) => unknown;
+
+    /**
+     * Opt-in skip-if-exists (HOS-735). Makes a re-run of the seed additive
+     * instead of failing on the first duplicate UNIQUE key.
+     *
+     * For each item the factory calls `getWhere(item, normalizedData)` and looks
+     * the row up through `modelClass.findOne`. When a row is found the factory:
+     *
+     * - does NOT create anything, and does NOT touch the existing row (an
+     *   operator's edits to a catalog row survive a re-run);
+     * - does NOT process images (no upload for a row that will not be written);
+     * - DOES record the seed-id -> real-id mapping, so downstream seeds that
+     *   resolve relations through the `IdMapper` (destinations -> attractions,
+     *   sponsorship packages -> levels) keep working on a re-run;
+     * - does NOT run `postProcess` / `relationBuilder` (they describe the
+     *   creation of the row, and would collide on their own deterministic
+     *   keys), but DOES run `onExisting`, the explicit hook for the parts of
+     *   `postProcess` that are safe and useful to repeat (idempotent healing).
+     *
+     * `getWhere` receives the RAW item and the normalized payload; return the
+     * UNIQUE-key predicate (`{ slug }`, `{ email }`, ...). Omitting this option
+     * keeps the previous behavior byte-for-byte.
+     */
+    existing?: {
+        /** Model class used for the lookup (no-arg constructor exposing `findOne`). */
+        modelClass: SeedLookupModelConstructor;
+        /** Builds the UNIQUE-key predicate that identifies this item's row. */
+        getWhere: (item: unknown, normalizedData: unknown) => Record<string, unknown>;
+        /** Optional idempotent hook run instead of `postProcess` when the row already exists. */
+        onExisting?: (result: unknown, item: T, context: SeedContext) => Promise<void>;
+    };
 
     /**
      * Optional opt-in mechanism (HOS-25 T-015) for persisting an explicit,
@@ -235,117 +277,132 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     ? config.normalizer(item as Record<string, unknown>)
                     : defaultNormalizer(item as Record<string, unknown>);
 
-                // Process images: replace original URLs with Cloudinary URLs for the
-                // `required` seed source; skip entirely for `example` (preserve raw URL +
-                // attribution metadata from T-010).
-                const seedSource = context.seedSource ?? 'required';
-                const shouldProcess =
-                    seedSource === 'example' ||
-                    (context.imageProvider && context.imageCache && context.imageCachePath);
-                if (shouldProcess) {
-                    const itemData = item as Record<string, unknown>;
-                    const entityId = (itemData.id as string | undefined) ?? `item-${index}`;
-                    normalizedData = (await processEntityImages({
-                        data: normalizedData as Record<string, unknown>,
-                        entityType: config.entityName.toLowerCase(),
-                        entityId,
-                        provider: context.imageProvider ?? null,
-                        // These are safe no-ops when example/provider-null paths are taken.
-                        cache: context.imageCache ?? {},
-                        cachePath: context.imageCachePath ?? '',
-                        env: context.imageEnv ?? resolveEnvironment(),
-                        seedSource,
-                        allowRequiredFallback: context.allowRequiredFallback ?? false,
-                        counters: context.imageCounters
-                    })) as typeof normalizedData;
-                }
+                // HOS-735 skip-if-exists: an already-present row is neither created,
+                // nor image-processed, nor validated. Only its id is needed (mapping).
+                const existingRow = config.existing
+                    ? await new config.existing.modelClass().findOne(
+                          config.existing.getWhere(item, normalizedData)
+                      )
+                    : null;
 
-                // SPEC-078-GAPS GAP-078-084 — fail loudly on malformed media
-                // shape. Runs unconditionally (after potential cloudinary
-                // rewrite) so seeds reject invalid fixtures even when no
-                // image provider is configured. Skip when the entity has no
-                // `media` block (sponsors, organizers, attractions, etc.).
-                const processedMedia = (normalizedData as Record<string, unknown>).media;
-                if (processedMedia !== undefined && processedMedia !== null) {
-                    try {
-                        MediaSchema.parse(processedMedia);
-                    } catch (error) {
-                        errorHistory.recordError(
-                            config.entityName,
-                            config.files[index] || `item-${index}`,
-                            'Media validation failed (MediaSchema.parse)',
-                            error
-                        );
-                        throw error;
+                let result: ServiceResult;
+                if (existingRow) {
+                    logger.info(
+                        `${STATUS_ICONS.Info} ${config.entityName}: already exists, skipping create (id: ${existingRow.id})`
+                    );
+                    result = { data: { id: existingRow.id } };
+                } else {
+                    // Process images: replace original URLs with Cloudinary URLs for the
+                    // `required` seed source; skip entirely for `example` (preserve raw URL +
+                    // attribution metadata from T-010).
+                    const seedSource = context.seedSource ?? 'required';
+                    const shouldProcess =
+                        seedSource === 'example' ||
+                        (context.imageProvider && context.imageCache && context.imageCachePath);
+                    if (shouldProcess) {
+                        const itemData = item as Record<string, unknown>;
+                        const entityId = (itemData.id as string | undefined) ?? `item-${index}`;
+                        normalizedData = (await processEntityImages({
+                            data: normalizedData as Record<string, unknown>,
+                            entityType: config.entityName.toLowerCase(),
+                            entityId,
+                            provider: context.imageProvider ?? null,
+                            // These are safe no-ops when example/provider-null paths are taken.
+                            cache: context.imageCache ?? {},
+                            cachePath: context.imageCachePath ?? '',
+                            env: context.imageEnv ?? resolveEnvironment(),
+                            seedSource,
+                            allowRequiredFallback: context.allowRequiredFallback ?? false,
+                            counters: context.imageCounters
+                        })) as typeof normalizedData;
                     }
-                }
 
-                // Custom validation
-                if (config.validateBeforeCreate) {
-                    try {
-                        const isValid = await config.validateBeforeCreate(normalizedData);
-                        if (!isValid) {
-                            const error = new Error('Custom validation failed');
+                    // SPEC-078-GAPS GAP-078-084 — fail loudly on malformed media
+                    // shape. Runs unconditionally (after potential cloudinary
+                    // rewrite) so seeds reject invalid fixtures even when no
+                    // image provider is configured. Skip when the entity has no
+                    // `media` block (sponsors, organizers, attractions, etc.).
+                    const processedMedia = (normalizedData as Record<string, unknown>).media;
+                    if (processedMedia !== undefined && processedMedia !== null) {
+                        try {
+                            MediaSchema.parse(processedMedia);
+                        } catch (error) {
                             errorHistory.recordError(
                                 config.entityName,
                                 config.files[index] || `item-${index}`,
-                                'Validation failed',
+                                'Media validation failed (MediaSchema.parse)',
                                 error
                             );
                             throw error;
                         }
-                    } catch (error) {
+                    }
+
+                    // Custom validation
+                    if (config.validateBeforeCreate) {
+                        try {
+                            const isValid = await config.validateBeforeCreate(normalizedData);
+                            if (!isValid) {
+                                const error = new Error('Custom validation failed');
+                                errorHistory.recordError(
+                                    config.entityName,
+                                    config.files[index] || `item-${index}`,
+                                    'Validation failed',
+                                    error
+                                );
+                                throw error;
+                            }
+                        } catch (error) {
+                            errorHistory.recordError(
+                                config.entityName,
+                                config.files[index] || `item-${index}`,
+                                'Validation error',
+                                error
+                            );
+                            throw error;
+                        }
+                    }
+
+                    const actor = validateActor(context);
+
+                    // Resolve an explicit deterministic id (HOS-25 T-015), if this
+                    // seed opted in. `item` is the raw fixture item (pre-normalization),
+                    // matching the convention used by `getEntityInfo`/`preProcess`.
+                    const deterministicIdConfig = config.deterministicId;
+                    const explicitId = deterministicIdConfig?.getId(item);
+
+                    if (deterministicIdConfig && explicitId !== undefined) {
+                        // Deterministic-id path: bypass service.create() entirely and
+                        // insert directly via the model — see the `deterministicId`
+                        // JSDoc on `SeedFactoryConfig` for why this is necessary and
+                        // what lifecycle steps are skipped as a result.
+                        const model = new deterministicIdConfig.modelClass();
+                        const entity = await model.create({
+                            ...(normalizedData as Record<string, unknown>),
+                            id: explicitId,
+                            createdById: actor.id,
+                            updatedById: actor.id
+                        });
+                        result = { data: entity as { id?: string } };
+                    } else {
+                        // Default path (unchanged): create entity via the service,
+                        // which assigns a database-generated random id.
+                        const serviceContext = { logger };
+                        const service = new config.serviceClass(serviceContext) as {
+                            create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
+                        };
+                        result = await service.create(actor, normalizedData);
+                    }
+
+                    if (result.error) {
+                        const error = new Error(result.error.message || 'Service creation failed');
                         errorHistory.recordError(
                             config.entityName,
                             config.files[index] || `item-${index}`,
-                            'Validation error',
+                            `Service error: ${result.error.message}`,
                             error
                         );
                         throw error;
                     }
-                }
-
-                const actor = validateActor(context);
-
-                // Resolve an explicit deterministic id (HOS-25 T-015), if this
-                // seed opted in. `item` is the raw fixture item (pre-normalization),
-                // matching the convention used by `getEntityInfo`/`preProcess`.
-                const deterministicIdConfig = config.deterministicId;
-                const explicitId = deterministicIdConfig?.getId(item);
-
-                let result: ServiceResult;
-                if (deterministicIdConfig && explicitId !== undefined) {
-                    // Deterministic-id path: bypass service.create() entirely and
-                    // insert directly via the model — see the `deterministicId`
-                    // JSDoc on `SeedFactoryConfig` for why this is necessary and
-                    // what lifecycle steps are skipped as a result.
-                    const model = new deterministicIdConfig.modelClass();
-                    const entity = await model.create({
-                        ...(normalizedData as Record<string, unknown>),
-                        id: explicitId,
-                        createdById: actor.id,
-                        updatedById: actor.id
-                    });
-                    result = { data: entity as { id?: string } };
-                } else {
-                    // Default path (unchanged): create entity via the service,
-                    // which assigns a database-generated random id.
-                    const serviceContext = { logger };
-                    const service = new config.serviceClass(serviceContext) as {
-                        create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
-                    };
-                    result = await service.create(actor, normalizedData);
-                }
-
-                if (result.error) {
-                    const error = new Error(result.error.message || 'Service creation failed');
-                    errorHistory.recordError(
-                        config.entityName,
-                        config.files[index] || `item-${index}`,
-                        `Service error: ${result.error.message}`,
-                        error
-                    );
-                    throw error;
                 }
 
                 // Transform result if needed
@@ -384,8 +441,22 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     );
                 }
 
-                // Post-process callback
-                if (config.postProcess) {
+                // Post-process callback. For a row that already existed the creation
+                // hooks do not apply; only the explicit idempotent `onExisting` runs.
+                if (existingRow && config.existing?.onExisting) {
+                    try {
+                        await config.existing.onExisting(finalResult, item as T, context);
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'On-existing hook failed',
+                            error
+                        );
+                        throw error;
+                    }
+                }
+                if (!existingRow && config.postProcess) {
                     try {
                         await config.postProcess(finalResult, item as T, context);
                     } catch (error) {
@@ -400,7 +471,7 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 }
 
                 // Relation builder callback
-                if (config.relationBuilder) {
+                if (!existingRow && config.relationBuilder) {
                     try {
                         await config.relationBuilder(finalResult, item as T, context);
                     } catch (error) {
