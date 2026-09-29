@@ -114,3 +114,17 @@ Casos vecinos nuevos de [`18-aplicacion-casos-cobro.md`](./18-aplicacion-casos-c
 | B | 2 | dónde vive la interfaz del reloj que lee producción | **1**: en el package del contrato; `G14` no cambia | sí |
 | C | 3 | cómo repite la batería `RP7`…`RP11` | **1**: las relee sobre sujetos existentes, sin mutar; las que no se puedan releer se declaran *«vigiladas a mano»* | sí |
 | D | 4 | dónde registra el receptor los IPN sin actuar | **1**: se decide después de medir `WH-6`; si no se llega a medir, una tabla propia sólo de altas (canal, cuerpo, instante) que ninguna transición lee | sí |
+
+## Lote H · lo que salió al aplicar los casos 41 a 50 y el lote F (2026-09-29)
+
+Casos vecinos nuevos de [`19-aplicacion-casos-transversal-y-lote.md`](./19-aplicacion-casos-transversal-y-lote.md) §3.
+
+| Letra | Caso de `19-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | 1 | `G8` nace rojo sobre `.specs/` hasta el cierre | **1**: una tercera entrada en la lista de pendientes, la carpeta de specs, que se vacía con el commit del cierre de HOS-1352; reabre el «ninguna más» del caso 8 | sí |
+| B | 2 | si el log y la matriz salen del repo con los informes | **1**: se quedan y se reescriben sin la palabra al cierre | sí |
+| C | 3 | qué escribe la acción 24 (borrar una cuenta) | **1**: borra la fila y las sesiones, seudonimiza lo personal y no toca el registro de auditoría | sí |
+| D | 4 | la clase y la unidad de las acciones 23 y 24 | **1**: la 23 se evalúa sobre el sujeto y la 24 sobre el actor; las dos en `V8` | sí |
+| E | 5 | con qué versión de plazos cuenta el reloj después de una pausa | **1**: la que guarda la ficha | sí |
+| F | 6 | la pantalla única de plazos y `G14` | **1**: el panel lee las dos mitades por la API, sin importarlas | sí |
+| G | 7 | el correo de `PB12` cuando borra soporte | **1**: el mismo correo, con una línea que dice que fue a su pedido | sí |
