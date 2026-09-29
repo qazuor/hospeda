@@ -146,7 +146,7 @@ describe('resolveVideoEmbed', () => {
                 {
                     provider: 'dailymotion',
                     videoId: 'x7tgad0',
-                    embedUrl: 'https://www.dailymotion.com/embed/video/x7tgad0'
+                    embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
                 }
             );
         });
@@ -155,7 +155,7 @@ describe('resolveVideoEmbed', () => {
             expect(resolveVideoEmbed({ url: 'https://dai.ly/x7tgad0' })).toEqual({
                 provider: 'dailymotion',
                 videoId: 'x7tgad0',
-                embedUrl: 'https://www.dailymotion.com/embed/video/x7tgad0'
+                embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
             });
         });
 
@@ -165,7 +165,7 @@ describe('resolveVideoEmbed', () => {
             ).toEqual({
                 provider: 'dailymotion',
                 videoId: 'x7tgad0',
-                embedUrl: 'https://www.dailymotion.com/embed/video/x7tgad0'
+                embedUrl: 'https://geo.dailymotion.com/player.html?video=x7tgad0'
             });
         });
 

@@ -224,7 +224,7 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         const header = buildCspHeader(NO_HASHES);
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe(
-            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com'
         );
     });
 });
@@ -292,7 +292,7 @@ describe("buildCspHeader — dev-only frame-src 'self'", () => {
         const header = buildCspHeader({ ...NO_HASHES, isDev: false });
 
         expect(findFrameSrcDirective(header)).toBe(
-            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com'
         );
     });
 
@@ -300,7 +300,7 @@ describe("buildCspHeader — dev-only frame-src 'self'", () => {
         const header = buildCspHeader(NO_HASHES);
 
         expect(findFrameSrcDirective(header)).toBe(
-            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com'
         );
     });
 
@@ -308,7 +308,7 @@ describe("buildCspHeader — dev-only frame-src 'self'", () => {
         const header = buildCspHeader({ ...NO_HASHES, isDev: true });
 
         expect(findFrameSrcDirective(header)).toBe(
-            "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com"
+            "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com"
         );
     });
 

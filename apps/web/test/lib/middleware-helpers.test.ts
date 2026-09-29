@@ -31,6 +31,7 @@ import {
     requestHasSessionCookie,
     resolveSentryReportUri
 } from '../../src/lib/middleware-helpers';
+import { resolveVideoEmbed } from '../../src/lib/video-embed';
 
 describe('extractLocaleFromPath', () => {
     it('should extract valid locale', () => {
@@ -652,8 +653,23 @@ describe('buildCspHeader', () => {
         const header = buildCspHeader({ ...NO_HASHES });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe(
-            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com'
         );
+    });
+
+    // HOS-1217: every embed URL `resolveVideoEmbed()` builds must be authorised by
+    // the declared frame-src. Derived from the resolver so the two cannot drift.
+    it.each([
+        ['youtube', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'],
+        ['vimeo', 'https://vimeo.com/76979871'],
+        ['dailymotion', 'https://www.dailymotion.com/video/x7tgad0']
+    ])('frame-src authorises the embed origin built for %s (HOS-1217)', (provider, url) => {
+        const embed = resolveVideoEmbed({ url });
+        const header = buildCspHeader({ ...NO_HASHES });
+        const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src ')) ?? '';
+        const allowed = frameSrc.split(' ').slice(1);
+        expect(embed?.provider).toBe(provider);
+        expect(allowed).toContain(new URL(embed?.embedUrl ?? '').origin);
     });
 
     // SPEC-301 regression: the feedback form's Turnstile widget injects its

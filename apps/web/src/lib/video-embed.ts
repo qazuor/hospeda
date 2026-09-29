@@ -177,7 +177,7 @@ export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVi
             return {
                 provider: 'dailymotion',
                 videoId: id,
-                embedUrl: `https://www.dailymotion.com/embed/video/${id}`
+                embedUrl: `https://geo.dailymotion.com/player.html?video=${id}`
             };
         }
         return null;

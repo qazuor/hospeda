@@ -955,7 +955,7 @@ export function buildCspHeader({
         // so widening this directive to exactly these three origins is safe:
         //   - https://www.youtube-nocookie.com — YouTube, cookie-less embed.
         //   - https://player.vimeo.com         — Vimeo's dedicated player host.
-        //   - https://www.dailymotion.com       — Dailymotion's embed path.
+        //   - https://geo.dailymotion.com       — Dailymotion's player host (www.dailymotion.com/embed 301s here, and a frame redirect is re-checked against this directive).
         // Every other embed origin stays blocked; frame-ancestors 'none' still
         // stops others from embedding us. Do NOT add a provider's bare/`watch`
         // host here (e.g. `youtube.com`) — only the embed-specific host the
@@ -977,8 +977,8 @@ export function buildCspHeader({
         // dev-only `style-src` relaxation above, same root cause: dev-only
         // ClientRouter behaviour meeting an enforcing CSP.
         isDev
-            ? "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com"
-            : 'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com',
+            ? "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com"
+            : 'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com',
         // The same dev-only iframe needs BOTH sides of the embed relationship:
         // `frame-src` authorises the PARENT to embed, `frame-ancestors` (sent on
         // the iframe's own response, since it loads one of our pages) authorises
