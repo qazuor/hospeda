@@ -100,6 +100,11 @@ export function AdminLocaleProvider({
     // hyphenation, browser translate prompts).
     useEffect(() => {
         document.documentElement.lang = locale;
+        // Restore the default when the panel unmounts (e.g. client-side navigation
+        // to /auth/*, which renders default-locale copy) so lang never lingers.
+        return () => {
+            document.documentElement.lang = env.VITE_DEFAULT_LOCALE;
+        };
     }, [locale]);
 
     return <LocaleProvider locale={locale}>{children}</LocaleProvider>;

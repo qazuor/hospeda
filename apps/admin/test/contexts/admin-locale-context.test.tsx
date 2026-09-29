@@ -90,6 +90,16 @@ describe('AdminLocaleProvider', () => {
         expect(document.documentElement.lang).toBe('pt');
     });
 
+    it('restores <html lang> to the default locale on unmount', () => {
+        profileState.data = { settings: { languageAdmin: 'pt' } };
+        const { unmount } = renderProvider({ initialLanguage: null });
+        expect(document.documentElement.lang).toBe('pt');
+
+        unmount();
+
+        expect(document.documentElement.lang).toBe('es');
+    });
+
     it('stays on the default locale when nothing is stored', () => {
         renderProvider({ initialLanguage: null });
 
