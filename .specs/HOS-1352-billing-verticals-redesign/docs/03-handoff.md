@@ -47,7 +47,43 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-29 (madrugada) — los casos vecinos están decididos y aplicados
+## Última actualización: 2026-09-29 (noche) — mediciones cerradas, llevadas al diseño y verificadas
+
+### El próximo paso exacto
+
+1. **Los 8 hallazgos que BLOQUEAN** de la verificación corta, con el owner, en lotes con letras:
+   [`30-…/30-verificacion-cobro.md`](./30-revision-del-owner/30-verificacion-cobro.md)
+   (`VC-cobro-01` fila de migración que queda `PENDIENTE` para siempre, `-02` el pagador manual
+   nunca se migra, `-03` el barrido ve divergencia falsa entre `S37` y `S38`, `-04` `G16` nace rojo
+   por `qzpay` vivo hasta el corte) y
+   [`31-verificacion-verticales-y-transversal.md`](./30-revision-del-owner/31-verificacion-verticales-y-transversal.md)
+   (`VC-VT-01` `G8`: 1229 archivos de código vivo nombran la palabra fuera de las tres entradas,
+   medido sobre `origin/staging`; `-02` la acción 24 no se puede evaluar desde verticales; `-03` la
+   baja de cuenta trabada hasta el fin del período pagado; `-04` los avisos de retención cuentan
+   desde otra fecha que el archivado). Más 14 menores. Después, aplicarlos.
+2. **Publicar** (con OK del owner). 3. **FASE 5**.
+
+### Lo que pasó el 2026-09-29 (tarde y noche)
+
+- **Mediciones** (`mp-probes/RESULTS-2026-09-29.md` con anexos, `RESULTS-2026-09-29-bateria-ipn.md`):
+  el owner apuntó IPN y Webhooks de la app de pruebas `Hospeda Test` al receptor
+  (`…workers.dev/ipn` y `/webhooks`; siguen así). IPN entrega sólo `payment`, y cada uno llega
+  también por Webhooks (12/12 sandbox, 8/8 producción, mismo id). EX-52 medida por el owner; EX-53:
+  el comprador no puede pausar (web y app). Nuevas `EX-55` (un error al crear deja algo creado) y
+  `EX-56` (alta por API con token: pagador invitado). Logs de producción: arrancan el 25/09.
+- **Decisiones** `30-…/27-` (M-1…M-5 y lote L): no se miden `WH-2/3/4`, `EX-13`, `EX-46`, `EX-54`;
+  **IPN y Webhooks se guardan sin actuar** en `provider_notification` (180 días, `G17` c), revisión
+  en [HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399). Contra la recomendación: M-2 (idea
+  del owner) y L-A (la baja desde la app de Mercado Pago corta en el acto).
+- **Aplicado** `26-`, `28-`, `29-`. Log **135**, precisadas sin SUPERSEDED **68**, SUPERSEDED 11,
+  apartamientos 10. Matriz **114 = 61 · 15 · 24 · 14** (12 esperan medición; 6 «no se miden, por
+  decisión»). Compra de complemento: transición nueva `A7`.
+- **Verificación corta** `30-` y `31-`: 26 mecanismos, 12 limpios, **22 hallazgos, 8 bloquean**.
+- Sandbox: vivas a propósito `b12af185…`, `e6766650…` (sin uso: pagador invitado) y `a459aa50…`.
+- Error vivo en producción del 28/09 (`80a633be…`, pago no registrado): el owner decidió no abrir
+  issue (lote L-D).
+
+## Histórico: 2026-09-29 (madrugada) — los casos vecinos están decididos y aplicados
 
 ### El próximo paso exacto
 
