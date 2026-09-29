@@ -178,7 +178,19 @@ export function SearchChatPanel({
     // section — and its empty-state message — visible after a 0-result turn,
     // so the user sees "no matches" instead of an empty drawer that looks
     // like the search never ran.
-    const showResults = chat.results.length > 0 || chat.resultsLoading || chat.hasSearched;
+    // (showResults is derived below, after the uninterpreted-turn check.)
+
+    // Uninterpreted turn (HOS-983): the model extracted no usable slot, so the
+    // accommodations GET ran with NO filters and returned the plain catalog.
+    // Rendering that under "Resultados encontrados" beside the "could not
+    // interpret" notice contradicts it, so the results panel is withheld.
+    // Deliberately keyed on `lastTurnHadEntities` alone (not on low confidence):
+    // a low-confidence turn that still extracted filters yields genuinely
+    // filtered results, which stay visible.
+    const isUninterpretedTurn = chat.confidence !== null && !chat.lastTurnHadEntities;
+    const showResults =
+        !isUninterpretedTurn &&
+        (chat.results.length > 0 || chat.resultsLoading || chat.hasSearched);
 
     // State-aware composer placeholder (HOS-111 T-007 / OQ-5): the copy
     // changes across three states so the hint always matches what the user
@@ -188,6 +200,12 @@ export function SearchChatPanel({
     //   suggest loosening criteria or searching nearby.
     // - initial: no search has completed yet — the original onboarding copy.
     const composerPlaceholder = (() => {
+        if (isUninterpretedTurn) {
+            return t(
+                'aiSearch.chat.placeholder',
+                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+            );
+        }
         if (chat.results.length > 0) {
             return t('aiSearch.chat.placeholderHasResults');
         }
