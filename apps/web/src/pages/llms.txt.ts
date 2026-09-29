@@ -20,7 +20,7 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import type { APIRoute } from 'astro';
 import { buildStaticCacheHeaders } from '@/lib/cache/response-cache';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
-import { parseNoindexHosts } from '@/lib/middleware-helpers';
+import { parseNoindexHosts } from '@/lib/noindex-hosts';
 
 export const prerender = false;
 
