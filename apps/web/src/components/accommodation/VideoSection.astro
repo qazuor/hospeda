@@ -90,7 +90,11 @@ if (resolvedVideos.length === 0) return;
 							href={video.externalUrl}
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label={playLabel}
+							aria-label={t(
+								'accommodations.detail.videos.openExternal',
+								'Ver en {{provider}} (se abre en una pestaña nueva)',
+								{ provider: PROVIDER_LABELS[video.provider] }
+							)}
 						>
 							<span class="video-section__play-icon" aria-hidden="true">&#9654;</span>
 							<span class="video-section__provider-badge">{PROVIDER_LABELS[video.provider]}</span>

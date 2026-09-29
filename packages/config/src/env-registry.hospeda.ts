@@ -1148,7 +1148,7 @@ export const HOSPEDA_ENV_VARS = [
         exampleValue: 'xabc1',
         apps: ['web'],
         category: 'integrations',
-        helpUrl: 'https://developers.dailymotion.com/guides/player-embed/',
+        helpUrl: 'https://developers.dailymotion.com/docs/iframe-web',
         howToObtain:
             'Dailymotion Studio → Players → create a Player for the Hospeda channel → copy its Player ID (the segment in geo.dailymotion.com/player/<PLAYER_ID>.html). Set it in Coolify for hospeda-web-staging / hospeda-web-prod. It is a build-time PUBLIC_ var: redeploy the web app after setting it.',
         howToObtainEs:
