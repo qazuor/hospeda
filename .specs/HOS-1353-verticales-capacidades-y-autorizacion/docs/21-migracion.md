@@ -527,11 +527,11 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   `business`** (revisión del owner, casos vecinos, 2026-09-29, caso 19): el valor del enum de hoy
   (`packages/schemas/src/enums/partner-type.enum.ts` en hospeda2, medido el 2026-09-29, junto a
   `ngo` e `institution`) pasa a `business`, **y la migración de datos de `V1` reescribe a
-  `business` todo partner que tenga el valor viejo**; **la etiqueta en español sigue siendo
+  `business` todo partner que tenga el valor viejo** **y todo valor viejo en cualquier otra columna que guarde un valor de `PartnerTypeEnum`, como `alliance_leads.partner_type`, un `varchar(30)` que el código valida contra el mismo enum (medido en hospeda2 el 2026-09-29, `packages/db/src/schemas/alliance/alliance_lead.dbschema.ts:105`)** (verificación corta, 2026-09-29, VC-VT-10); **la etiqueta en español sigue siendo
   «Comercio», sin cambios**, y sólo cambia su clave de i18n; y los
   datos que lo nombren se reescriben o se borran. La historia de migraciones y el ledger del seed
   se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6). **La única
-  exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11).
+  exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11). **El código del sistema viejo que lo nombra no entra en esta limpieza**: `G8` lo lleva en su trinquete (`V/20` §2) y lo vacían las unidades que lo reescriben o lo borran y, al final, el retiro del sistema viejo (verificación corta, 2026-09-29, lote M-E).
   **Y entran en esta limpieza el `CLAUDE.md` raíz y los archivos de i18n que lo nombran**
   (revisión del owner, casos vecinos, 2026-09-29, caso 41): medido en el worktree del programa el 2026-09-29 (`e1004e7922`),
   el `CLAUDE.md` raíz lo nombra 23 veces, y `packages/i18n` en 30 archivos, 24 de ellos en

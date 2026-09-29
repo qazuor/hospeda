@@ -147,7 +147,7 @@ misma baja tiene dos resultados según dónde la dio; desde Hospeda conserva el 
 del período pagado (`DEC-SUB-009`), y desde Mercado Pago no.
 
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
-que llega a esta baja llega **desde `GRACE_PERIOD`**, que es ~~de donde también llega la
+que llega a esta baja ~~llega **desde `GRACE_PERIOD`**~~ **por mora llega desde `GRACE_PERIOD`** (la que el pagador da desde Mercado Pago llega desde cualquier estado vivo, sobre todo `ACTIVE`, y también desde la predecesora `ACTIVE` de una sucesión en curso: verificación corta, 2026-09-29, VC-cobro-10), que es ~~de donde también llega la
 predecesora de un cambio de plan en mora~~ donde también puede estar la predecesora de una
 sucesión —ya no porque la declaró desde ahí, que `DEC-SUB-021` (owner 2026-09-25) cerró, sino
 porque entró en el grace **durante** la ventana, por `S4`— — o sea la población de `S19`. Espejar esa baja es una
@@ -268,7 +268,7 @@ promos**. En el downgrade
 la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
 esperado de `B/14` §2.4 la seguiría restando. ~~⚠️ Qué monto espera el barrido **entre el pedido y
 este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).~~ **Entre el pedido y
-el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo).
+el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C).
 
 ---
 

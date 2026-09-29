@@ -430,8 +430,8 @@ no una excepción a la lista.
    regla como razón, y otra cuenta con el permiso la puede migrar en otro acto (`B/10` §3.7
    punto 1; revisión del owner, casos vecinos, 2026-09-29, caso 24).
    **En la vigesimotercera y la vigesimocuarta el sujeto es el dueño que pidió la baja**, y la
-   regla se cumple igual: la hace una cuenta de soporte con el permiso, y si quien pide borrar su
-   cuenta es a la vez del equipo, la hace otra cuenta (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
+   regla se cumple igual: la hace una cuenta de soporte con el permiso, y si quien pide ~~borrar su
+   cuenta~~ **dar de baja su cuenta** (verificación corta, 2026-09-29, VC-VT-11) es a la vez del equipo, la hace otra cuenta (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
 
 ### 3.3 El actor no siempre es una persona
 

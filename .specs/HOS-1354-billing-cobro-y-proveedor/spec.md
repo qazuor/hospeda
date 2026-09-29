@@ -105,7 +105,7 @@ mitad de verticales, salvo del package del contrato** (`12-contrato…` §7.1). 
 de otros packages internos de Hospeda** (`@repo/*`), con la regla del owner, textual: *«siempre
 que sea simple evitar la dependencia de otro package de Hospeda, evitalo; si es complejo, la
 dejamos y en el futuro se reverá»*, porque *«no quiero demorar la salida de esta épica por
-eso»*. `G16` falla si vuelve `@qazuor/qzpay` o si el package importa de `apps/` (`B/20` §2), **y
+eso»*. `G16` falla si vuelve `@qazuor/qzpay` **al package del cobro** (verificación corta, 2026-09-29, lote M-D) o si el package importa de `apps/` (`B/20` §2), **y
 no mira sus dependencias hacia packages internos**; y `G14` ya vigila que no importe de
 verticales. **`qzpay` queda sólo como
 referencia de lectura**: su adaptador de Mercado Pago sirve para ver cómo se arma un pedido o se

@@ -153,7 +153,7 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    versión retirada y la destino. **Antes de confirmar, el panel muestra a cada cliente
    alcanzado**: si para él es subida o bajada (el veredicto de `direcciónDeCambio`, capacidad por
    capacidad, §3.5), su precio actual y el nuevo, y **la fecha que le toca**. Escribe la fila de
-   `plan_migration` y una de `plan_migration_subscription` por cliente (`B/02` §2.2). **Si la
+   `plan_migration` y una de `plan_migration_subscription` por cliente (`B/02` §2.2). **La cohorte son las filas principales de la versión retirada en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`**: las filas vivas (`NUCLEO/01` §2.4) que tienen una renovación por delante. **`CANCEL_SCHEDULED` no entra**: no tiene próxima renovación, ninguna transición la devuelve a `ACTIVE` y termina en la versión retirada por `S12`. Las que no están `ACTIVE` esperan como una pausada (punto 7) (verificación corta, 2026-09-29, lote M-A). **Si la
    cohorte incluye la cuenta del propio `SUPER_ADMIN` que la lanza, esa suscripción se excluye y
    el acto sigue para las demás**: una acción administrativa nunca tiene `actor = sujeto` (`V/17`
    §3.2 regla 5), así que no se le escribe fila, la previsualización la muestra excluida con esa
@@ -173,7 +173,7 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    cliente, como en `DEC-MP-002`. **También en el anual**: un anual que renueva dentro de diez
    meses espera diez meses, y la versión retirada vive hasta entonces (`L1-g`).
 4. **Si el destino ofrece su ciclo, se cambia el monto sobre la misma autorización**, como un
-   aumento (`DEC-MP-001`): **no tiene que volver a autorizar nada**. Lo hace `S37` (`B/03` §3.2)
+   aumento (`DEC-MP-001`): **no tiene que volver a autorizar nada**. **Sobre un pagador manual no hay monto que mutar**, porque su cuota sale de la versión anclada: `S37` sólo encola el cambio de versión y `S38` lo aplica antes de que se abra la cuota de ese período (verificación corta, 2026-09-29, lote M-B). Lo hace `S37` (`B/03` §3.2)
    **siete días antes de la fecha de aplicación**, releyendo, y encola el cambio de versión para
    esa fecha en la cola de `B/12` §2; **las capacidades pasan a la versión destino en la
    renovación**, no antes, **por `S38`**, la transición que aplica la cola (revisión del owner,
@@ -194,7 +194,7 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
 6. **Si pierde algo** (le sobran fichas, por ejemplo), **es un excedente con fecha conocida**, la
    de aplicación: se le avisa antes y elige qué conserva (`V/15` §4.2).
 7. **Pausados y en gracia esperan**: la migración se les aplica en la primera renovación después
-   de volver o de ponerse al día, recalculando su fecha. `S37` sale sólo de `ACTIVE`, y sobre una
+   de volver o de ponerse al día, recalculando su fecha. **Lo mismo una `SUSPENDED` o una `PENDING_AUTHORIZATION` de la cohorte** (verificación corta, 2026-09-29, lote M-A): esperan con su fila `PENDIENTE`, y la fecha se recalcula a la primera renovación después de volver a `ACTIVE`; la suspendida con tarjeta vuelve como sucesora y la pendiente que no autoriza termina `ABANDONED`, y las dos salen a `FUERA` por *«terminó»* (punto 8). `S37` sale sólo de `ACTIVE`, y sobre una
    pausada el proveedor rechaza toda modificación (`EX-11`). **Eso es el día de `S37`**: si `S37`
    ya mutó el monto y la fecha de aplicación encuentra a la fila en `GRACE_PERIOD`, `S38` le cambia
    la versión igual; si la encuentra en `SUSPENDED`, espera y se la cambia al volver por `S7`
@@ -206,7 +206,7 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    sucesora eligió su plan en el checkout, entre los vendibles (revisión del owner, casos vecinos,
    2026-09-29, caso I-B).
 8. **Si el cliente cambia de plan o se da de baja por su cuenta durante el aviso, sale de la
-   migración**: su fila pasa a `FUERA`, con el motivo. Su propio acto sigue su camino (§3.5,
+   migración**: su fila pasa a `FUERA`, con el motivo. **Y sale igual si su suscripción termina por cualquier otro camino** (la baja del proveedor o la que da desde Mercado Pago, `S13`, `S12`, la muerte de la predecesora en una sucesión, un alta que no autorizó): su fila pasa a `FUERA` con el motivo *«terminó»*, en la misma transacción que la lleva al estado terminal (`B/03` §3.2; verificación corta, 2026-09-29, lote M-A). Su propio acto sigue su camino (§3.5,
    `DEC-SUB-009`), y la colisión con la cola es la del `B/12` §2.2.
 9. **El `SUPER_ADMIN` puede cancelar una migración anunciada** (`L1-h`), con la misma acción 17:
    alcanza a las filas en `PENDIENTE`, que pasan a `CANCELADA`, y a cada una le sale **el correo

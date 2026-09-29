@@ -136,7 +136,7 @@ colgando de la instancia (`B/02` §2.3).
 **Y dos cosas medidas en sandbox el 2026-09-29 que el camino tiene que respetar** (mediciones del
 2026-09-29, puntos 5 y 10): **una orden con la tarjeta rechazada devuelve `402` y queda creada
 igual**, `failed`, con su id en el cuerpo del error (`EX-30`), así que un `402` no es *«no hay
-orden»*: el id se guarda como el de cualquier orden, y la compra se cierra en el acto (`A7`,
+orden»*: el id se guarda como el de cualquier orden, y la compra se cierra en el acto, releyendo la orden por su id (`A7`; verificación corta, 2026-09-29, VC-cobro-05;
 `B/03` §8; mediciones del 2026-09-29, lote L-C); y **ni la orden ni su reembolso avisan por
 ningún canal** (`EX-15`, `RF-7`), así que nada de este camino espera un aviso: la orden se confirma
 con la respuesta y releyéndola, y el reembolso, releyendo el pago (`B/16` §1.4).

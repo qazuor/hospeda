@@ -1047,7 +1047,7 @@ Cuatro ausencias que parecen faltas y son decisiones:
   eso cruza como **una pregunta aparte, `retenciónDetenida`** (§4.1), que no va en `fuentes` ni
   en `cubierto`. La máquina de trial no la lee, así que lo que esta decisión protegía (que nadie
   escriba una regla de producto sobre la cobranza) queda intacto: sus únicos lectores son
-  archivar, borrar y los avisos de retención.
+  archivar, borrar y los avisos de retención. **Y se abre por otro más** (verificación corta, 2026-09-29, lote M-F): dar de baja una cuenta necesita saber si le queda algo que la pueda cobrar, y eso cruza como otra pregunta aparte, **`puedeCobrarle`** (§4.1), un sí o no sobre la cuenta entera, sin estado, con un solo lector, la acción 24.
 - **Tampoco cruza el estado de la instancia de addon**, y por el mismo motivo: `EXPIRED` y
   `CANCELLED` son de billing, y lo único que verticales necesita saber es si la fuente está en la
   lista.
@@ -1071,6 +1071,7 @@ ficha(idDeFicha)               → { vertical, dueño, admiteDestaque }
 políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }
 extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA(motivo)
 retenciónDetenida(user, vertical) → { detenida: sí | no, pausaTerminadaEn: instante | NINGUNO }   ← de ida: pregunta verticales, contesta billing
+puedeCobrarle(user)            → sí | no   ← de ida: pregunta verticales, contesta billing
 ```
 
 **`situaciónDeVertical` y `finDeServicio` salieron de la firma** (revisión del owner, 2026-09-28,
@@ -1079,12 +1080,12 @@ C8: las verticales no se discontinúan; la firma tenía además
 `finDeServicio(vertical) → fecha | NINGUNA`). `admiteAltas` sólo lo escribía el acto de
 discontinuar, y `finDeServicio` era la única pregunta de la dirección de ida: **sin ella, el
 contrato vuelve a ser que billing empuja avisos y lee política, y verticales ~~no le pregunta nada a
-billing~~** **le pregunta una sola cosa, `retenciónDetenida`** (revisión del owner, 2026-09-28, C14,
+billing~~** ~~**le pregunta una sola cosa, `retenciónDetenida`**~~ **le pregunta dos cosas, `retenciónDetenida` y, desde la verificación corta, 2026-09-29, lote M-F, `puedeCobrarle`** (revisión del owner, 2026-09-28, C14,
 abajo). Lo que decía de ella queda tachado abajo. **Y `retenciónDetenida` ya no contesta un sí o
 no**: la firma decía `retenciónDetenida(user, vertical) → sí | no`, y desde los casos vecinos
 devuelve también cuándo terminó la última pausa (revisión del owner, casos vecinos, 2026-09-29, caso F-A, abajo).
 
-**`retenciónDetenida` es la pregunta de la dirección de ida, y entra por la pausa** (revisión del
+**`retenciónDetenida` es ~~la~~ una pregunta de la dirección de ida, y entra por la pausa** (revisión del
 owner, 2026-09-28, C14, `L1-c`). Contesta `sí` **sólo** mientras la persona tiene en esa vertical
 una suscripción `PAUSED` con motivo `CUSTOMER_REQUEST`, y `no` en cualquier otro caso (una pausa
 por `COURTESY` no la detiene: esa fila cubre). **Sus únicos lectores son archivar (`PB4` y `PB5`),
@@ -1114,6 +1115,8 @@ en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que 
 (§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.
 
+**`puedeCobrarle` es la otra pregunta de la dirección de ida, y entra por la baja de una cuenta** (verificación corta, 2026-09-29, lotes M-F y M-G). Contesta `sí` si a la cuenta, en cualquier vertical, le queda **una autorización que todavía puede cobrar**: una suscripción, principal o de complemento, en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, que son las filas vivas (`NUCLEO/01` §2.4) **sin `CANCEL_SCHEDULED`**, porque ésa ya está dada de baja en el proveedor y termina sola por `S12` en su fecha de fin; y `no` en cualquier otro caso. **Contesta sobre la cuenta entera y sin estado**: un sí o no, con la forma de `fichaPurgada`, así que el estado exacto de la suscripción sigue sin cruzar (§4). **Su único lector es la acción 24, *«dar de baja una cuenta a pedido de su dueño»*** (`NUCLEO/08` §3), que es de verticales (`V8`) y se rechaza con `sí`: sin esta pregunta, la precondición de la 24 se condicionaba sobre una fila viva, que ninguna regla de verticales puede evaluar (`NUCLEO/01` §2.4, regla 1). **La construye `B4`** en la real, y **`V4`** en la de arranque, que contesta `no`, porque sin billing no hay suscripción (§5.1); la consume `V8`. **Entra al inventario de consumidores de *«fila viva»*** (`NUCLEO/01` §2.4, fila 27), del lado de billing, que es donde se evalúa, y lo vigila `G-R1-E` (`B/20` §2).
+
 ~~**`finDeServicio` salió de `situaciónDeVertical` y es ahora una entrada propia, en la otra
 dirección**: la fecha la calculaba billing con la fórmula de `B/10` §4.3, la leían la fuente de
 trial, el reconciliador diario de cobertura y `PB9`, y la real la contestaba de
@@ -1133,7 +1136,7 @@ entra acá; lo que sólo muestra va a la capa de composición, abajo).
 > 2026-09-26, `G2-1`)**, la pertenencia de una ficha (`ficha`) y una sola escritura —la extensión**
 > **de un trial, que verticales acepta o rechaza (`extenderTrial`)—; nunca capacidades** (owner
 > 2026-09-26, `G4-2`)**: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
-> **Y la de ida es una sola pregunta, `retenciónDetenida`, que billing contesta** (revisión del
+> ~~**Y la de ida es una sola pregunta, `retenciónDetenida`, que billing contesta**~~ **Y la de ida son dos preguntas que billing contesta, `retenciónDetenida` y `puedeCobrarle`** (verificación corta, 2026-09-29, lote M-F) (revisión del
 > owner, 2026-09-28, C14).
 > ~~**Y el § declara además una pregunta de la dirección de ida, `finDeServicio`, que billing
 > contesta** (owner 2026-09-27, FASE 9 vuelta 2, `R5`).~~ (Salió con la revisión del owner,
@@ -1210,11 +1213,11 @@ cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 
 ~~**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.**~~
 ~~**Son siete entradas: seis preguntas y una operación**~~ ~~**Son ocho entradas: siete preguntas y
-una operación**~~ ~~**Son seis entradas: cinco preguntas y una operación**~~ **Son siete entradas:
-seis preguntas y una operación** (revisión del owner, 2026-09-28, C14: entra `retenciónDetenida`) —~~doce~~ ~~**trece**~~ ~~**doce**~~ ~~**once**~~ **trece** campos en ~~cuatro~~ ~~**tres**~~ **cuatro** consultas
+una operación**~~ ~~**Son seis entradas: cinco preguntas y una operación**~~ ~~**Son siete entradas:
+seis preguntas y una operación**~~ (revisión del owner, 2026-09-28, C14: entra `retenciónDetenida`) **Son ocho entradas: siete preguntas y una operación** (verificación corta, 2026-09-29, lote M-F: entra `puedeCobrarle`) —~~doce~~ ~~**trece**~~ ~~**doce**~~ ~~**once**~~ **trece** campos en ~~cuatro~~ ~~**tres**~~ **cuatro** consultas
 (`políticaDePlan`, ~~`situaciónDeVertical`,~~ `ficha`, `políticaDeAddon`, **y `retenciónDetenida`, la de ida, que contesta billing**), un veredicto
 (`direcciónDeCambio`), ~~un sí o no (`fichaPurgada`), **una fecha que contesta billing
-(`finDeServicio`)**~~ **un sí o no (`fichaPurgada`)**, ~~**un sí o no de ida que contesta billing
+(`finDeServicio`)**~~ ~~**un sí o no (`fichaPurgada`)**~~ **dos sí o no, `fichaPurgada` y `puedeCobrarle`, la de ida, que contesta billing** (verificación corta, 2026-09-29, lote M-F), ~~**un sí o no de ida que contesta billing
 (`retenciónDetenida`)**~~ y la escritura `extenderTrial`— (revisión del owner, casos vecinos, 2026-09-29, caso F-A: `retenciónDetenida` pasa de un sí o no a dos campos, recontado con script sobre el bloque) (FASE 9 vuelta 2, `R5`, recontado con script
 sobre el bloque: `finDeServicio` sale de `situaciónDeVertical` y entra como entrada propia; revisión
 del owner, 2026-09-28, C8, recontado con script sobre el bloque: salen `situaciónDeVertical` y
@@ -1242,10 +1245,10 @@ verticales (`V/descomposicion.md` §2.9): los ~~**siete**~~ ~~**seis**~~ ~~**cin
 dos primeras~~ **la primera** (FASE 9 vuelta 2, `R5`: `finDeServicio` salió; revisión del owner, 2026-09-28, C8: salió
 `situaciónDeVertical`, y de las tres originales quedan dos) son columnas de `V/02` §2.1, que es
 capítulo suyo, así que es la unidad más temprana en la que ~~las tres~~ **las dos** se pueden escribir. *(Estas
-~~tres son las originales~~ **dos quedan de las tres originales**; las otras ~~cuatro~~ ~~cinco~~ ~~**cuatro**~~ **cinco** entradas dicen su constructor arriba:
+~~tres son las originales~~ **dos quedan de las tres originales**; las otras ~~cuatro~~ ~~cinco~~ ~~**cuatro**~~ ~~**cinco**~~ **seis** entradas dicen su constructor arriba:
 `fichaPurgada` y `ficha` en V6, `políticaDeAddon` en V2, `extenderTrial` en V4 —FASE 9 vuelta 1,
 `G2-1` y `G4-2`—, y `retenciónDetenida` en `B4`, con la respuesta de arranque en V4 (revisión del
-owner, 2026-09-28, C14)~~, y `finDeServicio` en `B12`, con la respuesta de arranque en V4 —FASE 9 vuelta 2,
+owner, 2026-09-28, C14), y `puedeCobrarle` en `B4`, con la respuesta de arranque en V4 (verificación corta, 2026-09-29, lote M-F)~~, y `finDeServicio` en `B12`, con la respuesta de arranque en V4 —FASE 9 vuelta 2,
 `R5`—~~.)* **La regla
 de `direcciónDeCambio` está escrita en `B/10` §3.5 y eso no la muda de dueño**: el veredicto lo
 emite verticales —es la frase de arriba— y su consumidor es `B8`, cinco unidades antes que la
@@ -1262,7 +1265,7 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 > fila `piso`** **ni en la fila `desde`** (revisión del owner, 2026-09-28, C4) ~~**ni es la pregunta `finDeServicio` del §4.1** (FASE 9 vuelta 2, `R5`)~~ (revisión
 > del owner, 2026-09-28, C8: la dirección de ida ya no tiene pregunta) **ni es la pregunta
 > `retenciónDetenida` del §4.1** (revisión del owner, 2026-09-28, C14: la dirección de ida vuelve
-> a tener una, con lectores cerrados) —y no es
+> a tener una, con lectores cerrados) **ni es la pregunta `puedeCobrarle` del §4.1** (verificación corta, 2026-09-29, lote M-F: la segunda de ida, con un solo lector) —y no es
 > este hecho— (`DEC-TRIAL-010`: la segunda fila es el censo del segundo dato
 > que cruza; la tercera, el del piso del grant, owner 2026-09-25, FASE 9 completa, 9h), es señal de
 > que el corte se está filtrando. Se mira, no se resuelve en el lugar.
@@ -1334,7 +1337,7 @@ esta frontera: *«es lo que prueba que la abstracción no miente»*.
 verticales —el trial, con su máquina de estados del capítulo 03 §2, y el título `BASE` del §2.5— y
 responde que no a las cuatro de billing: suscripción, cortesía, grant y addon, **y a
 `retenciónDetenida` (§4.1) contesta ~~`no`~~ `detenida: no` y `pausaTerminadaEn: NINGUNO`**, porque sin billing no hay pausa (revisión del owner,
-2026-09-28, C14; los dos campos, revisión del owner, casos vecinos, 2026-09-29, caso F-A)~~, **y a
+2026-09-28, C14; los dos campos, revisión del owner, casos vecinos, 2026-09-29, caso F-A), **y a `puedeCobrarle` contesta `no`**, porque sin billing no hay suscripción que cobre (verificación corta, 2026-09-29, lote M-F)~~, **y a
 `finDeServicio` (§4.1) contesta `NINGUNA`**, porque sin billing no hay vertical que se discontinúe
 (FASE 9 vuelta 2, `R5`)~~ (la pregunta salió con la revisión del owner, 2026-09-28, C8). **Y emite el aviso**
 en las transiciones de trial del censo del §3 (*«quién emite»*): es emisor desde el día uno, igual

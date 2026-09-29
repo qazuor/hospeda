@@ -117,7 +117,7 @@ exactamente una de las dos es no nula.
   el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
   instancia como el de cualquier orden, ~~y la instancia sigue en `PENDING_AUTHORIZATION`, como con
   cualquier pago no aprobado~~ **y la compra se cierra en el acto: `A7` lleva la instancia a
-  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). ~~**Qué pasa cuando la persona
+  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). **La cierra releyendo la orden por su id, no con la respuesta del `402`** (verificación corta, 2026-09-29, VC-cobro-05). ~~**Qué pasa cuando la persona
   reintenta con otra tarjeta** lo decide el owner (`30-revision-del-owner/28-…`, decisión 3): con
   el mismo pedido la instancia ya existe y reusa su orden, que está `failed`; y una orden con la
   misma clave y otra tarjeta es otro cuerpo, que el proveedor contesta con `409` (`EX-41`).~~

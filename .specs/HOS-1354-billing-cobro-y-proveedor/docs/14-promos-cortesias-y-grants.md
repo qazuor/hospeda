@@ -308,6 +308,8 @@ punto 4):
 de `03` §R6.5: en esa ventana el plan vigente es el viejo, y el pedido ya mutó al nuevo; la promo
 se termina en el pedido, §2.2).
 
+**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos** (verificación corta, 2026-09-29, lote M-C). Es la ventana gemela de la del downgrade: `S37` ya mutó el monto (`B/03` §3.2) y la fila sigue en la versión retirada hasta `S38`, así que derivarlo de la versión de la fila le abría `DIVERGENCIA_DE_MONTO` a cada cliente migrado, o hacía que el reintento deshiciera la mutación. **Y el motivo 24 deriva el precio de la versión que rige el período que cubre el cobro**: la destino, si una migración encoló su cambio para ese período (`B/02` §2.5).
+
 **Sin columna nueva.**
 
 **Si la promo se agota con la fila `PAUSED`, ese mes sale con descuento, y se acepta** (FASE 8

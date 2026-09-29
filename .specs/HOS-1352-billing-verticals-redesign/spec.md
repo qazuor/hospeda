@@ -194,7 +194,7 @@ abortan si el máximo a cobrar no coincide con la cifra autorizada.
 4. **El mismo commit saca de la lista de pendientes de `G8` su tercera entrada, las carpetas del
    programa en `.specs/`, y extiende a la lista entera la regla que el paso 6 del corte encendió
    para las dos historias**: desde ahí, un build destinado a producción con la lista no vacía falla
-   (`V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso H-A). Hasta este commit esas
+   (`V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso H-A). **Eso incluye el trinquete de archivos de `G8`**, que el cierre exige vacío (verificación corta, 2026-09-29, lote M-E). Hasta este commit esas
    carpetas no fallan por `G8`, porque los puntos 1 a 3 todavía no se hicieron.
 
 El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
