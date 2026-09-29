@@ -1507,7 +1507,8 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
    inyectada. El reloj adelantable que la implementa vive en el package de pruebas compartido
    (`B/20` §5.1, caso 31); la interfaz, que sí importa producción, vive acá porque éste ya es el
    único package que importan las dos mitades. **`G14` no cambia**: importar el contrato nunca fue
-   cruzar (revisión del owner, casos vecinos, 2026-09-29, caso G-B).
+   cruzar (revisión del owner, casos vecinos, 2026-09-29, caso G-B). **La construye `B1`**, con el
+   reloj adelantable (revisión del owner, casos vecinos, 2026-09-29, caso I-E).
 
 **Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
 billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque

@@ -349,7 +349,7 @@ no una excepción a la lista.
    vigesimosegunda, las cinco del catálogo (publicar una versión de plan, fijar el precio de un
    ciclo, publicar una versión de complemento, crear o cerrar un código promocional y cambiar un
    plazo), de `SUPER_ADMIN`**: la misma revisión, N1, C9 y `L1-f`; **la vigesimotercera y la
-   vigesimocuarta, borrar una ficha ajena y borrar una cuenta, las dos a pedido de su dueño y con
+   vigesimocuarta, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), las dos a pedido de su dueño y con
    motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C).
 
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).
@@ -369,7 +369,7 @@ no una excepción a la lista.
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
    hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
    ~~catorce primeras~~ ~~quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta—~~ ~~catorce primeras acciones del capítulo 08 §3~~ ~~**quince acciones del capítulo 08 §3, las catorce primeras y la decimoséptima,**~~ ~~**veinte acciones del capítulo 08 §3, las catorce primeras y de la decimoséptima a la vigesimosegunda,**~~ **veintiuna acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda y la vigesimocuarta,** son
-   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, borrar una cuenta, con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer), no del sujeto —
+   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer), no del sujeto —
    otorgar una cortesía no consulta si el cliente tiene derecho a una, porque su objeto es
    dárselo. **A qué clase pertenece una operación se declara, nunca se infiere.**
 
@@ -469,7 +469,7 @@ a la vigesimosegunda, también las decide y las confirma una persona** (revisió
 2026-09-28, N1 y C9): fijar un precio mueve plata y cae en `D11` igual; lo que un plazo o una
 versión nueva cambia después lo aplican las transiciones de siempre, con la versión que cada reloj
 guarda (`NUCLEO/02` §1.5). **La vigesimotercera y la vigesimocuarta, borrar una ficha ajena y
-borrar una cuenta a pedido de su dueño, no tocan plata: borran, y lo que no vuelve lo decide una
+~~borrar una cuenta~~ **dar de baja una cuenta** a pedido de su dueño, no tocan plata: ~~borran~~ **borran o dan de baja** (caso I-C), y lo que no vuelve lo decide una
 persona a pedido del dueño y con motivo** (revisión del owner, casos vecinos, 2026-09-29, caso F-C). Un job que
 pudiera otorgar una cortesía convierte ese invariante en una sugerencia.
 
@@ -540,7 +540,7 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
 El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ ~~**16**~~ ~~**15**~~ ~~**16**~~ ~~**21**~~ **23**
-**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y borrar una cuenta a pedido de su dueño: casos vecinos, 2026-09-29, F-C), que son **la excepción, no el conjunto**. Y hay una regla en uso que
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.

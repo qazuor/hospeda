@@ -801,7 +801,7 @@ así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`
 >    con la marca del motivo 14. **La red es la consulta, no el empuje**, y un borrado que no pasa
 >    por `PB9` ni por `PB12` ~~—el hard delete del admin, `F-8V1A1-003`—~~ **—desde `G5-2` el admin
 >    no tiene ninguno (`NUCLEO/08` §3); el que queda es el borrado de la cuenta pedido por el propio
->    usuario, pendiente en `NUCLEO/08` §1 (fuera de esta épica, ~~a mano por soporte con una lista de pasos~~ **por soporte desde el panel con una lista de pasos que corre `PB12` en cada ficha antes de borrar la cuenta, así que ya no borra ninguna ficha sin `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso F-C), [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`), y `fichaPurgada` contesta `sí` sobre la fila que ya no
+>    usuario, pendiente en `NUCLEO/08` §1 (fuera de esta épica, ~~a mano por soporte con una lista de pasos~~ **por soporte desde el panel con una lista de pasos que corre `PB12` en cada ficha antes de ~~borrar~~ dar de baja la cuenta (caso I-C), así que ya no borra ninguna ficha sin `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso F-C), [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`), y `fichaPurgada` contesta `sí` sobre la fila que ya no
 >    existe (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—** no empuja nada y depende
 >    sólo de ella. **Un empuje emitido antes del commit no sería un empuje perdido de vez en
 >    cuando: sería un empuje perdido siempre**, porque `A6` relee `fichaPurgada` y lee `no`; por eso

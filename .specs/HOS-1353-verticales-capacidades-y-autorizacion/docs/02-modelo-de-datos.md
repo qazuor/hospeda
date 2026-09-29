@@ -405,10 +405,13 @@ la cuenta se lleva la fila y con ella el hash —el segundo trial vuelve por esa
 `RESTRICT` la base no deja borrar un `user` que tenga una fila de `trial`, así que **el borrado de la
 cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la regla 2 ya dice
 (*«lo personal se anonimiza con el resto»*); ~~ese proceso sigue sin diseñar (§4.1, ⚠️)~~ la baja manual la escribe
-la vigesimocuarta acción administrativa (`NUCLEO/08` §3), que **borra** la fila de la cuenta y sus
+la vigesimocuarta acción administrativa (`NUCLEO/08` §3), que ~~**borra** la fila de la cuenta y sus
 sesiones y seudonimiza lo personal (revisión del owner, casos vecinos, 2026-09-29, caso H-C). ⚠️ **Eso choca con esta FK**: con `RESTRICT` la base
 no deja borrar la fila de una cuenta que tuvo un trial, y cuál de las dos cede pide decisión del
-owner (`30-revision-del-owner/20-` §3).
+owner (`30-revision-del-owner/20-` §3).~~ **no borra la fila de `user`: la seudonimiza**, con el
+nombre, el correo y el teléfono reemplazados, las sesiones cerradas y sin acceso, y la fila de
+`trial` sigue apuntándola, así que esta FK no cambia y la traba contra repetir la prueba sigue
+(revisión del owner, casos vecinos, 2026-09-29, caso I-C, que corrige la elección del caso H-C).
 
 ### 2.5 Publicación
 
@@ -790,7 +793,7 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo qu
 camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
 que **no decide** (*«es otro proceso»*), y ~~ningún capítulo lo diseña~~ **para la baja manual lo
 diseña la vigesimocuarta acción administrativa** (`NUCLEO/08` §3; revisión del owner, casos
-vecinos, 2026-09-29, caso H-C), con el choque de §2.4 abierto; la razón del hash descansa
+vecinos, 2026-09-29, caso H-C), ~~con el choque de §2.4 abierto~~ seudonimizando la fila de `user` sin borrarla (caso I-C); la razón del hash descansa
 sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009`, owner
 2026-09-25). **Queda fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.**
 

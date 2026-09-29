@@ -227,7 +227,12 @@ casos vecinos, 2026-09-29, caso G-A). Las cuatro de arriba son lo que llega enci
 esto es con qué estado llega su fecha. **En `GRACE_PERIOD` se aplica igual**: el servicio sigue,
 `S38` no toca al proveedor y el monto ya se mutó, así que esperar dejaba al cliente con
 capacidades que ya no paga. **En `SUSPENDED` espera y se aplica al volver por `S7`**: no hay
-servicio que bajar. Ninguna de las cuatro colisiones cambia, y la regla general tampoco: la baja
+servicio que bajar. **Y si `S7` la devuelve a `CANCEL_SCHEDULED`**, porque el cobro entró sobre
+un preapproval que `S6` ya había cancelado, **se aplica igual**: el período que se sostiene hasta
+`S12` se pagó con el monto ya mutado (revisión del owner, casos vecinos, 2026-09-29, caso I-A).
+**Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora** (`DEC-SUB-019`), **y el
+cambio muere con la fila vieja, como en la colisión 2**: la sucesora eligió su plan en el checkout
+y nace sin cola (revisión del owner, casos vecinos, 2026-09-29, caso I-B). Ninguna de las cuatro colisiones cambia, y la regla general tampoco: la baja
 desde la grace o desde la suspensión (`S24`, `S23`) lo sigue absorbiendo, y una fila que no vuelve
 no lo aplica nunca (`B/03` §3.2, `S38`).
 

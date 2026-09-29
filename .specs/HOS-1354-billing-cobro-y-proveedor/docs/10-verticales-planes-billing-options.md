@@ -195,7 +195,13 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    pausada el proveedor rechaza toda modificación (`EX-11`). **Eso es el día de `S37`**: si `S37`
    ya mutó el monto y la fecha de aplicación encuentra a la fila en `GRACE_PERIOD`, `S38` le cambia
    la versión igual; si la encuentra en `SUSPENDED`, espera y se la cambia al volver por `S7`
-   (revisión del owner, casos vecinos, 2026-09-29, caso G-A).
+   (revisión del owner, casos vecinos, 2026-09-29, caso G-A), **también si `S7` la devuelve a
+   `CANCEL_SCHEDULED`** (revisión del owner, casos vecinos, 2026-09-29, caso I-A). **Un pagador con
+   tarjeta suspendido no vuelve por `S7` sino como sucesora, y el cambio de versión muere con la
+   fila vieja** (la colisión 2 del `B/12` §2.2): **su fila de alcance queda `APLICADA`, porque `S37`
+   ya mutó el monto, sin que la predecesora haya cambiado de versión**, y no es un error: la
+   sucesora eligió su plan en el checkout, entre los vendibles (revisión del owner, casos vecinos,
+   2026-09-29, caso I-B).
 8. **Si el cliente cambia de plan o se da de baja por su cuenta durante el aviso, sale de la
    migración**: su fila pasa a `FUERA`, con el motivo. Su propio acto sigue su camino (§3.5,
    `DEC-SUB-009`), y la colisión con la cola es la del `B/12` §2.2.
@@ -244,7 +250,8 @@ vertical).
   que `DEC-MP-002` dejó para el aumento (arriba): el §3.7 la hace esperar a que se ponga al día.
   **Eso vale para el día de `S37`**: con el monto ya mutado, la fecha la aplica `S38` igual en
   `GRACE_PERIOD`, y al volver por `S7` en `SUSPENDED` (revisión del owner, casos vecinos,
-  2026-09-29, caso G-A).
+  2026-09-29, caso G-A), vuelva a `ACTIVE` o a `CANCEL_SCHEDULED` (caso I-A); y con un pagador con
+  tarjeta que vuelve como sucesora, muere con la fila vieja (caso I-B).
   ~~y **un cliente con una cortesía temporal vigente** el día de su migración, que está `PAUSED ·
   COURTESY` y por eso espera a volver, lo que puede correr su fecha tantos meses como le queden de
   cortesía.~~ **Un cliente con una cortesía temporal vigente el día de su migración espera, como
