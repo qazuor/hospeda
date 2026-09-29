@@ -23,6 +23,7 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
+import { describeUploadEntityError } from '@/lib/media/upload-entity-error';
 import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
@@ -368,9 +369,14 @@ export function usePhotoSection({
                 setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
-                    err instanceof Error
-                        ? err.message
-                        : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
+                    describeUploadEntityError({
+                        err,
+                        t,
+                        fallback: t(
+                            'host.properties.editor.photo.uploadFailed',
+                            'Error al subir la imagen'
+                        )
+                    })
                 );
             } finally {
                 setIsUploading(false);
@@ -507,12 +513,14 @@ export function usePhotoSection({
                     setGalleryItems((prev) => [...prev, mediaRowToItem(addResult.data.media)]);
                 } catch (err) {
                     reportUploadError(
-                        err instanceof Error
-                            ? err.message
-                            : t(
-                                  'host.properties.editor.photo.uploadFailed',
-                                  'Error al subir la imagen'
-                              )
+                        describeUploadEntityError({
+                            err,
+                            t,
+                            fallback: t(
+                                'host.properties.editor.photo.uploadFailed',
+                                'Error al subir la imagen'
+                            )
+                        })
                     );
                 }
             }
