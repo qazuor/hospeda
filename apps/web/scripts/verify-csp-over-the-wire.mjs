@@ -79,6 +79,19 @@ const MUST_HAVE_CSP = [
 ];
 
 /**
+ * Error pages that MUST carry the CSP header too (HOS-263). They are rendered
+ * through `context.rewrite('/404')`, whose re-entered middleware pass exits at
+ * the static-asset shortcut, so the header has to be applied on the outer pass
+ * (Step 8/8b of src/middleware.ts). Each entry is `[path, expectedStatus]`.
+ *
+ * Only the 404 is reachable here: this job boots the server WITHOUT an API or
+ * database, so no entity exists to soft-delete and no route can answer 410. The
+ * 410 branch shares the same fall-through and is pinned by the unit test in
+ * `test/middleware.test.ts` (HOS-263 describe block).
+ */
+const ERROR_PAGES_MUST_HAVE_CSP = [['/es/no-existe-hos-263/', 404]];
+
+/**
  * Intentional exception (HOS-74 OQ-3): private, noindex beta docs stay
  * prerendered and are accepted to ship WITHOUT CSP. Asserting its ABSENCE keeps
  * the exception honest — if beta ever starts emitting the header the assumption
@@ -159,6 +172,25 @@ const main = async () => {
             if (!ok) {
                 failures.push(
                     `${path} → expected CSP header, got: ${csp ?? '(none)'} (status ${res.status})`
+                );
+            }
+        }
+
+        for (const [path, expectedStatus] of ERROR_PAGES_MUST_HAVE_CSP) {
+            const res = await fetch(`${BASE}${path}`, { redirect: 'manual' });
+            const csp = res.headers.get(CSP_HEADER);
+            const isHtml = (res.headers.get('content-type') ?? '').includes('text/html');
+            const ok =
+                res.status === expectedStatus &&
+                isHtml &&
+                typeof csp === 'string' &&
+                csp.length > 0;
+            console.log(
+                `  ${ok ? 'OK ' : 'FAIL'}  ${path}  [${res.status}]  csp=${csp ? 'present' : 'MISSING'}  (error page, expected ${expectedStatus})`
+            );
+            if (!ok) {
+                failures.push(
+                    `${path} → expected an HTML ${expectedStatus} with a CSP header, got status ${res.status}, html=${isHtml}, csp=${csp ?? '(none)'}`
                 );
             }
         }
