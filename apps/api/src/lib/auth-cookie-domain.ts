@@ -6,7 +6,12 @@
  * ignores the dev override: letting an env var rewrite the production cookie
  * domain would be a session-breaking footgun if it ever leaked into a prod
  * deployment. Staging (`staging.hospeda.com.ar`) is a subdomain of the apex,
- * so the same pinned value covers it.
+ * so the same pinned value covers it — and it must: staging's web, admin and
+ * api hosts (`staging.`, `staging-admin.`, `staging-api.`) are siblings with no
+ * narrower shared parent. What keeps staging and production apart is the
+ * cookie NAME, not the domain: see `resolveAuthCookiePrefix` in @repo/config
+ * (HOS-955). Sharing the domain AND the name let one environment's sign-in
+ * overwrite the other's session.
  *
  * In non-production, `HOSPEDA_DEV_COOKIE_DOMAIN` (e.g. `.hospeda.local`)
  * enables the dev-local cross-subdomain recipe documented in

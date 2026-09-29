@@ -13,6 +13,7 @@
 
 import { expo } from '@better-auth/expo';
 import { AnalyticsEvents } from '@repo/analytics';
+import { resolveAuthCookiePrefix } from '@repo/config';
 import {
     accounts,
     and,
@@ -620,6 +621,15 @@ function buildAuth() {
             /** Explicitly enable origin validation for redirects */
             disableOriginCheck: false,
             useSecureCookies: env.NODE_ENV === 'production',
+            /**
+             * Per-deployment cookie NAME (HOS-955). Staging and production both
+             * scope the cookie to the apex below, so without distinct names a
+             * sign-in on one environment overwrote the other's session. Staging
+             * (`HOSPEDA_DEPLOY_ENV=preview`) gets its own prefix; production and
+             * dev keep Better Auth's default. The web app reads the same name via
+             * `getAuthSessionCookieNames` — both sides resolve it from @repo/config.
+             */
+            cookiePrefix: resolveAuthCookiePrefix({ deployEnv: env.HOSPEDA_DEPLOY_ENV }),
             /**
              * SSO across subdomains (web, admin, api). In production the cookie is
              * scoped to the apex `hospeda.com.ar` so a session minted on
