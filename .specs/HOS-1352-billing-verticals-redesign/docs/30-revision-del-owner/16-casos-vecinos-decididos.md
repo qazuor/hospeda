@@ -128,3 +128,15 @@ Casos vecinos nuevos de [`19-aplicacion-casos-transversal-y-lote.md`](./19-aplic
 | E | 5 | con qué versión de plazos cuenta el reloj después de una pausa | **1**: la que guarda la ficha | sí |
 | F | 6 | la pantalla única de plazos y `G14` | **1**: el panel lee las dos mitades por la API, sin importarlas | sí |
 | G | 7 | el correo de `PB12` cuando borra soporte | **1**: el mismo correo, con una línea que dice que fue a su pedido | sí |
+
+## Lote I · lo que salió al aplicar los lotes G y H (2026-09-29)
+
+Casos vecinos nuevos de [`20-aplicacion-casos-lotes-g-y-h.md`](./20-aplicacion-casos-lotes-g-y-h.md) §3.
+
+| Letra | Caso de `20-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | 1 | `S7` deja la fila en `CANCEL_SCHEDULED` con un cambio vencido | **1**: se aplica | sí |
+| B | 2 | el pagador con tarjeta suspendido vuelve como sucesora | **1**: como la colisión 2, el cambio muere con la fila vieja | sí |
+| C | 3 | la acción 24 choca con `trial.user_id` `ON DELETE RESTRICT` | **1**: la cuenta no se borra, se seudonimiza (lo personal reemplazado, sesiones cerradas, sin acceso); la traba contra repetir la prueba sigue. **Corrige la elección de H-C** («borra la fila») | sí |
+| D | 4 | qué cubre la tercera entrada de `G8` | **1**, con agregado del owner: la tercera entrada es sólo para las carpetas del programa (`HOS-1352/1353/1354`); los 50 archivos de fuera (46 de otras 37 specs y 4 de `.qtm/`) entran en la limpieza de `V1`, y el owner agrega: *«specs viejas e implementadas, las borramos directamente»* | sí, con agregado |
+| E | 5 | qué unidad construye la interfaz del reloj | **1**: `B1` | sí |
