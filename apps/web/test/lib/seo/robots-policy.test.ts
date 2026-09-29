@@ -21,7 +21,7 @@ vi.mock('@/lib/env', () => ({
     getNoindexHosts: vi.fn(() => undefined)
 }));
 
-vi.mock('@/lib/middleware-helpers', () => ({
+vi.mock('@/lib/noindex-hosts', () => ({
     parseNoindexHosts: vi.fn(() => ['staging.hospeda.com.ar'])
 }));
 

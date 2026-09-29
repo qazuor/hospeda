@@ -2,7 +2,7 @@
  * @fileoverview
  * Unit tests for the robots.txt endpoint (src/pages/robots.txt.ts).
  *
- * Strategy: mock `@/lib/env` and `@/lib/middleware-helpers`, then call the
+ * Strategy: mock `@/lib/env` and `@/lib/noindex-hosts`, then call the
  * GET handler directly with a synthetic Request object.
  *
  * Assertions cover:
@@ -29,7 +29,7 @@ vi.mock('@/lib/env', () => ({
     getNoindexHosts: vi.fn(() => undefined)
 }));
 
-vi.mock('@/lib/middleware-helpers', () => ({
+vi.mock('@/lib/noindex-hosts', () => ({
     parseNoindexHosts: vi.fn((raw: string | undefined) =>
         raw ? raw.split(',').map((h) => h.trim().toLowerCase()) : ['staging.hospeda.com.ar']
     )
