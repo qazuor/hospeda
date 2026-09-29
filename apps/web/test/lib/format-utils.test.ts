@@ -8,6 +8,7 @@ import {
     formatDate,
     formatEventDetailDateRange,
     formatEventDetailDateRangeCompact,
+    formatMonthYearLabel,
     formatPrice
 } from '../../src/lib/format-utils';
 
@@ -353,5 +354,21 @@ describe('formatEventDetailDateRangeCompact', () => {
                 expect(label).toContain('2026');
             }
         });
+    });
+});
+
+describe('formatMonthYearLabel (HOS-869)', () => {
+    const date = new Date(2026, 7, 15, 12);
+
+    it('capitalizes only the first letter in es ("Agosto de 2026", not "Agosto De 2026")', () => {
+        expect(formatMonthYearLabel({ date, locale: 'es' })).toBe('Agosto de 2026');
+    });
+
+    it('formats en as "August 2026"', () => {
+        expect(formatMonthYearLabel({ date, locale: 'en' })).toBe('August 2026');
+    });
+
+    it('capitalizes only the first letter in pt ("Agosto de 2026")', () => {
+        expect(formatMonthYearLabel({ date, locale: 'pt' })).toBe('Agosto de 2026');
     });
 });

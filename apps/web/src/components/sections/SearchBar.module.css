@@ -280,7 +280,6 @@
     font-weight: 600;
     font-size: var(--text-body-sm, 0.875rem);
     color: var(--core-foreground);
-    text-transform: capitalize;
 }
 
 .calendarWeekday {
