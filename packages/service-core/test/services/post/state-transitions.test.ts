@@ -262,7 +262,7 @@ describe('PostService state transitions', () => {
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
-        it('refuses POST_PUBLISH_OWN on a post the actor did not author', async () => {
+        it('masks as NOT_FOUND (HOS-1106): POST_PUBLISH_OWN on a post the actor did not author, never FORBIDDEN', async () => {
             const stranger = createActor({
                 id: strangerId,
                 roles: [RoleEnum.EDITOR],
@@ -275,7 +275,8 @@ describe('PostService state transitions', () => {
                 visibility: VisibilityEnum.PUBLIC
             });
 
-            expectForbiddenError(result);
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
         it('accepts RESTRICTED — visibility is an enum, not a published boolean', async () => {
@@ -331,6 +332,23 @@ describe('PostService state transitions', () => {
             });
 
             expectForbiddenError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+
+        it('masks a foreign post as NOT_FOUND for an actor without POST_LIFECYCLE_CHANGE (HOS-1106)', async () => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_UPDATE]
+            });
+
+            const result = await service.setLifecycleState({
+                actor: stranger,
+                id: post.id,
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+
+            expectNotFoundError(result);
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
     });

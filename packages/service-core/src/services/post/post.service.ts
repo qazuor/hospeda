@@ -1557,9 +1557,9 @@ export class PostService extends BaseCrudService<
      * on each transition impossible to sidestep by bundling a second state
      * change into the same payload.
      *
-     * `maskForeignRow` defaults to `false`, preserving the pre-HOS-1037 shape
-     * for `setPublishState`/`setLifecycleState`: only `moderate()` opts in, so
-     * a trusted editor probing a post they do not own gets 404 (HOS-706's
+     * `maskForeignRow` defaults to `false`, but every public transition
+     * (`moderate`, `setPublishState`, `setLifecycleState`; HOS-1106) opts in, so
+     * a caller probing a post they do not own gets 404 (HOS-706's
      * `maskForeignRowRefusal`) instead of a 403 that would confirm the id is
      * real. A refusal aimed at the actor's OWN post (they hold no
      * `POST_PUBLISH_OWN`, or requested a non-`APPROVED` verdict) stays 403 —
@@ -1694,7 +1694,8 @@ export class PostService extends BaseCrudService<
                 actor: input.actor,
                 id: input.id,
                 patch: { visibility: input.visibility },
-                authorize: (actor, post) => checkCanSetPostPublishState(actor, post)
+                authorize: (actor, post) => checkCanSetPostPublishState(actor, post),
+                maskForeignRow: true
             },
             'setPublishState',
             ctx
@@ -1719,7 +1720,8 @@ export class PostService extends BaseCrudService<
                 actor: input.actor,
                 id: input.id,
                 patch: { lifecycleState: input.lifecycleState },
-                authorize: (actor) => checkCanSetPostLifecycleState(actor)
+                authorize: (actor) => checkCanSetPostLifecycleState(actor),
+                maskForeignRow: true
             },
             'setLifecycleState',
             ctx
