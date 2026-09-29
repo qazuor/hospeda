@@ -58,6 +58,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
@@ -1589,10 +1590,7 @@ export class PostService extends BaseCrudService<
             execute: async (validated, validatedActor, execCtx) => {
                 const existing = await this.model.findById(validated.id, execCtx?.tx);
                 if (!existing) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Post not found: ${validated.id}`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
 
                 if (maskForeignRow) {

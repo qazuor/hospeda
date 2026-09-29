@@ -59,7 +59,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
-import { checkCanFindOptions } from '../../utils';
+import { checkCanFindOptions, entityNotFoundError } from '../../utils';
 import { projectEventLocationCityDestination } from '../eventLocation/eventLocation.projections';
 import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import {
@@ -1521,10 +1521,7 @@ export class EventService extends BaseCrudService<
             execute: async (validated, validatedActor, resolvedCtx) => {
                 const existing = await this.model.findById(validated.id, resolvedCtx.tx);
                 if (!existing) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Event not found: ${validated.id}`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
 
                 if (maskForeignRow) {

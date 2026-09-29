@@ -352,4 +352,33 @@ describe('PostService state transitions', () => {
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
     });
+
+    describe('foreign row vs missing id are indistinguishable (HOS-1106)', () => {
+        it.each([
+            ['setPublishState', { visibility: VisibilityEnum.PUBLIC }],
+            ['setLifecycleState', { lifecycleState: LifecycleStatusEnum.ARCHIVED }]
+        ] as const)('%s answers the identical error body for both', async (method, payload) => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            });
+
+            const foreign = await service[method]({
+                actor: stranger,
+                id: post.id,
+                ...payload
+            } as never);
+            (modelMock.findById as Mock).mockResolvedValue(null);
+            const missing = await service[method]({
+                actor: stranger,
+                id: post.id,
+                ...payload
+            } as never);
+
+            expect(foreign.error).toBeDefined();
+            expect(foreign.error).toStrictEqual(missing.error);
+            expect(missing.error?.message).not.toContain(post.id);
+        });
+    });
 });
