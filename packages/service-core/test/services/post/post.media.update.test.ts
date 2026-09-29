@@ -231,6 +231,21 @@ describe('updatePostMedia (HOS-1036)', () => {
             expect(mockMediaModel.update).not.toHaveBeenCalled();
         });
 
+        it('returns NOT_FOUND when the media row is soft-deleted (HOS-1175)', async () => {
+            mockMediaModel.findById.mockResolvedValue(
+                makeMediaRow({ deletedAt: new Date('2024-02-01') } as never)
+            );
+
+            const result = await run(makePost(), ownerActor, {
+                postId: POST_ID,
+                mediaId: MEDIA_ID,
+                alt: 'No debería escribirse'
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(mockMediaModel.update).not.toHaveBeenCalled();
+        });
+
         it('returns NOT_FOUND when the parent post does not exist', async () => {
             const result = await run(null, ownerActor, {
                 postId: POST_ID,

@@ -4291,7 +4291,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'
@@ -4739,7 +4743,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'
@@ -4827,7 +4835,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'
