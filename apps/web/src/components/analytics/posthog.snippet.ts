@@ -8,7 +8,7 @@
  * (`DEPLOYMENT_CONSTANT_INLINE_SCRIPTS` in `src/lib/csp-soft-nav-script-hashes.ts`).
  * It is injected with `set:html`, so the build-time scan only sees an
  * expression; and only `BaseLayout` renders it, so without the boot hash a
- * `<ClientRouter />` soft navigation from an Auth/Error/Standalone page into a
+ * `<ClientRouter />` soft navigation from an AuthLayout or ErrorLayout page into a
  * BaseLayout page blocked it and analytics never initialised until a reload.
  *
  * Everything below is the frontmatter it came from, unchanged — see

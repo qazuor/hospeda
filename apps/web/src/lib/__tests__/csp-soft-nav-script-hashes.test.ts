@@ -14,6 +14,7 @@ import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from '../../components/billing/s
 import { SOFT_NAV_SCRIPT_HASHES_PLACEHOLDER } from '../csp-soft-nav-placeholder';
 import { parseSoftNavScriptHashes, SOFT_NAV_SCRIPT_HASHES } from '../csp-soft-nav-script-hashes';
 import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from '../feedback/feedback-nav-bootstrap.snippet';
+import { iconSpriteClientScript } from '../icon-sprite';
 import { buildCspHeader } from '../middleware-helpers';
 
 const referenceHash = (source: string): string =>
@@ -52,6 +53,7 @@ describe('SOFT_NAV_SCRIPT_HASHES', () => {
         expect(SOFT_NAV_SCRIPT_HASHES).toContain(
             referenceHash(STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET)
         );
+        expect(SOFT_NAV_SCRIPT_HASHES).toContain(referenceHash(iconSpriteClientScript()));
     });
 });
 

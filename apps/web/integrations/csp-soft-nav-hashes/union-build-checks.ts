@@ -9,33 +9,25 @@ import type { DynamicInlineScript } from './extract-inline-scripts';
 /** File written next to the server entry for the over-the-wire verifier. */
 export const SOFT_NAV_REPORT_FILE_NAME = 'csp-soft-nav-script-hashes.json';
 
-/**
- * How a render-time inline script stays authorised on soft navigation even
- * though the build cannot pre-hash it.
- * - `hashed-at-boot`: its content is a deployment constant listed in
- *   `DEPLOYMENT_CONSTANT_INLINE_SCRIPTS` (`src/lib/csp-soft-nav-script-hashes.ts`),
- *   hashed at server start and published on every response.
- * - `on-every-client-router-page`: every layout that mounts `<ClientRouter />`
- *   renders it with identical content, so the origin page's own hashes always
- *   carry it. `scripts/verify-csp-over-the-wire.mjs` checks the property.
- */
-export type RenderTimeInlineScriptCoverage = 'hashed-at-boot' | 'on-every-client-router-page';
-
 /** A component allowed to emit an executable inline script with render-time content. */
 export interface RenderTimeInlineScriptException {
     /** Component path relative to `apps/web`, as the build reports it. */
     readonly component: string;
-    readonly coverage: RenderTimeInlineScriptCoverage;
-    /** Why soft navigation cannot break it. */
+    /** Which deployment constant it renders, and why that is safe. */
     readonly reason: string;
 }
 
 /**
- * Components whose executable inline script depends on render-time data and
- * therefore cannot be in the build-time union. Every entry says how soft
- * navigation stays safe; "it works on a reload" is not a reason.
+ * Components whose executable inline script is injected with `set:html` from a
+ * deployment constant, so the compiled template shows only an expression and
+ * the build scan cannot read it. Each one is hashed AT BOOT instead, from the
+ * same export the component renders: every entry here must have a matching
+ * entry in `DEPLOYMENT_CONSTANT_INLINE_SCRIPTS`
+ * (`src/lib/csp-soft-nav-script-hashes.ts`), and a unit test holds the two
+ * lists equal.
  *
- * Adding an entry is a decision, not a fix: prefer moving the data to a
+ * A script whose content genuinely varies per request cannot be listed here —
+ * it cannot be authorised on soft navigation at all. Move its data to a
  * `data-*` attribute read by a static script (what
  * `guest/messages/request-access.astro` did under HOS-807), which makes the
  * script static and lets the union cover it.
@@ -43,25 +35,68 @@ export interface RenderTimeInlineScriptException {
 export const RENDER_TIME_INLINE_SCRIPT_ALLOWLIST: readonly RenderTimeInlineScriptException[] = [
     {
         component: 'src/layouts/BaseLayout.astro',
-        coverage: 'hashed-at-boot',
-        reason: 'FEEDBACK_NAV_BOOTSTRAP_SNIPPET is a constant; hashed from the same export at boot.'
+        reason: 'FEEDBACK_NAV_BOOTSTRAP_SNIPPET is a constant.'
     },
     {
         component: 'src/components/billing/StripCheckoutReturnParams.astro',
-        coverage: 'hashed-at-boot',
-        reason: 'STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET is a constant; hashed from the same export at boot.'
+        reason: 'STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET is a constant.'
     },
     {
         component: 'src/components/shared/IconSpriteClientData.astro',
-        coverage: 'on-every-client-router-page',
-        reason: 'Rendered with identical content (the sprite URL of this build) by BaseLayout, AuthLayout, ErrorLayout and StandaloneLayout — every layout that mounts <ClientRouter />.'
+        reason: 'iconSpriteClientScript() is deterministic for a build: the content-addressed sprite URL plus the committed symbol manifest.'
     },
     {
         component: 'src/components/analytics/PostHogScript.astro',
-        coverage: 'hashed-at-boot',
-        reason: 'POSTHOG_INLINE_SNIPPET is built from build-time env constants; hashed from the same export at boot. Needed because only BaseLayout renders it, so Auth/Error/Standalone pages do not carry it themselves.'
+        reason: 'POSTHOG_INLINE_SNIPPET is built from build-time env constants. Only BaseLayout renders it, so pages on AuthLayout and ErrorLayout do not carry it themselves.'
     }
 ];
+
+/**
+ * Lower bounds for the two sources of the build-time union. They exist to
+ * catch a BROKEN derivation — a compiler or manifest change that makes the
+ * scan silently see fewer scripts — which would otherwise ship a union that
+ * quietly stops covering pages. Measured on 2026-09-28: 7 `is:inline` bodies
+ * from 386 compiled components and 20 manifest-inlined scripts.
+ *
+ * Deleting real inline scripts can legitimately take a count under its floor;
+ * then lower the floor in the same change, with the new measured count.
+ */
+export const UNION_SOURCE_FLOORS = {
+    /** Distinct static `is:inline` bodies found across compiled components. */
+    isInlineScripts: 6,
+    /** Distinct non-empty scripts in the manifest's `inlinedScripts`. */
+    manifestInlinedScripts: 16,
+    /** `.astro` modules the transform hook saw. */
+    scannedComponents: 300
+} as const;
+
+interface CheckUnionSourceCountsArgs {
+    readonly isInlineScripts: number;
+    readonly manifestInlinedScripts: number;
+    readonly scannedComponents: number;
+    readonly floors?: typeof UNION_SOURCE_FLOORS;
+}
+
+/**
+ * Compares each source count with its floor.
+ *
+ * @param args - The measured counts and, optionally, the floors.
+ * @returns One message per count under its floor (empty when all pass).
+ */
+export function checkUnionSourceCounts({
+    isInlineScripts,
+    manifestInlinedScripts,
+    scannedComponents,
+    floors = UNION_SOURCE_FLOORS
+}: CheckUnionSourceCountsArgs): readonly string[] {
+    const measured = { isInlineScripts, manifestInlinedScripts, scannedComponents };
+    return (Object.keys(floors) as (keyof typeof UNION_SOURCE_FLOORS)[])
+        .filter((key) => measured[key] < floors[key])
+        .map(
+            (key) =>
+                `implausible CSP soft-nav union: ${key} = ${measured[key]}, floor ${floors[key]}. The derivation is more likely broken than the app; if scripts were really removed, lower UNION_SOURCE_FLOORS.${key} in the same change.`
+        );
+}
 
 interface CheckRenderTimeScriptsArgs {
     /** Render-time executable inline scripts found, per component. */

@@ -13,8 +13,10 @@ import { SOFT_NAV_SCRIPT_HASHES_PLACEHOLDER } from '../../../src/lib/csp-soft-na
 import { DEPLOYMENT_CONSTANT_INLINE_SCRIPTS } from '../../../src/lib/csp-soft-nav-script-hashes';
 import {
     checkRenderTimeScripts,
+    checkUnionSourceCounts,
     RENDER_TIME_INLINE_SCRIPT_ALLOWLIST,
-    replacePlaceholderOnce
+    replacePlaceholderOnce,
+    UNION_SOURCE_FLOORS
 } from '../union-build-checks';
 
 const DYNAMIC = [{ openingTagAttributes: '', bodyPreview: '«expr»' }] as const;
@@ -37,7 +39,7 @@ describe('checkRenderTimeScripts', () => {
         // Act
         const result = checkRenderTimeScripts({
             dynamicByComponent: new Map(),
-            allowlist: [{ component: 'src/Old.astro', coverage: 'hashed-at-boot', reason: 'r' }]
+            allowlist: [{ component: 'src/Old.astro', reason: 'r' }]
         });
 
         // Assert
@@ -46,11 +48,7 @@ describe('checkRenderTimeScripts', () => {
 
     it('passes an allowlisted component and reports it', () => {
         // Arrange
-        const entry = {
-            component: 'src/A.astro',
-            coverage: 'hashed-at-boot',
-            reason: 'r'
-        } as const;
+        const entry = { component: 'src/A.astro', reason: 'r' } as const;
 
         // Act
         const result = checkRenderTimeScripts({
@@ -67,13 +65,48 @@ describe('checkRenderTimeScripts', () => {
 describe('RENDER_TIME_INLINE_SCRIPT_ALLOWLIST', () => {
     it('lists exactly the components whose constants are hashed at boot, and vice versa', () => {
         // Arrange
-        const allowlistedAtBoot = RENDER_TIME_INLINE_SCRIPT_ALLOWLIST.filter(
-            (entry) => entry.coverage === 'hashed-at-boot'
-        ).map((entry) => entry.component);
+        const allowlistedAtBoot = RENDER_TIME_INLINE_SCRIPT_ALLOWLIST.map(
+            (entry) => entry.component
+        );
         const hashedAtBoot = DEPLOYMENT_CONSTANT_INLINE_SCRIPTS.map((entry) => entry.component);
 
         // Assert
         expect([...allowlistedAtBoot].sort()).toEqual([...hashedAtBoot].sort());
+    });
+});
+
+describe('checkUnionSourceCounts', () => {
+    const atFloor = {
+        isInlineScripts: UNION_SOURCE_FLOORS.isInlineScripts,
+        manifestInlinedScripts: UNION_SOURCE_FLOORS.manifestInlinedScripts,
+        scannedComponents: UNION_SOURCE_FLOORS.scannedComponents
+    };
+
+    it('passes counts at their floors', () => {
+        expect(checkUnionSourceCounts(atFloor)).toEqual([]);
+    });
+
+    it('fails a scan that lost most is:inline scripts but not all of them', () => {
+        // Arrange: the measured build has 7; losing 6 must not pass.
+        const counts = { ...atFloor, isInlineScripts: 1 };
+
+        // Act
+        const errors = checkUnionSourceCounts(counts);
+
+        // Assert
+        expect(errors).toEqual([expect.stringContaining('isInlineScripts = 1')]);
+    });
+
+    it('fails each source independently', () => {
+        // Act
+        const errors = checkUnionSourceCounts({
+            isInlineScripts: 0,
+            manifestInlinedScripts: UNION_SOURCE_FLOORS.manifestInlinedScripts - 1,
+            scannedComponents: 0
+        });
+
+        // Assert
+        expect(errors).toHaveLength(3);
     });
 });
 

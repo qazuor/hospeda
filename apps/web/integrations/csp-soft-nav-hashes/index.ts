@@ -36,6 +36,7 @@ import { collectTemplateQuasis } from './collect-template-quasis';
 import { type DynamicInlineScript, extractInlineScripts } from './extract-inline-scripts';
 import {
     checkRenderTimeScripts,
+    checkUnionSourceCounts,
     RENDER_TIME_INLINE_SCRIPT_ALLOWLIST,
     replacePlaceholderOnce,
     SOFT_NAV_REPORT_FILE_NAME
@@ -143,10 +144,13 @@ export function cspSoftNavHashes(): AstroIntegration {
                     ...new Set([...staticBodies, ...inlinedScriptBodies].map(toCspHash))
                 ].sort();
 
-                if (staticBodies.length === 0 || inlinedScriptBodies.length === 0) {
-                    throw new Error(
-                        `[HOS-807] implausible CSP soft-nav union: ${staticBodies.length} is:inline scripts from ${staticBodiesByComponent.size} components and ${inlinedScriptBodies.length} manifest-inlined scripts. One source came back empty, so the derivation is broken, not the app.`
-                    );
+                const floorErrors = checkUnionSourceCounts({
+                    isInlineScripts: new Set(staticBodies).size,
+                    manifestInlinedScripts: new Set(inlinedScriptBodies).size,
+                    scannedComponents: staticBodiesByComponent.size
+                });
+                if (floorErrors.length > 0) {
+                    throw new Error(`[HOS-807] ${floorErrors.join('\n')}`);
                 }
 
                 const serialized = JSON.stringify(hashes);
