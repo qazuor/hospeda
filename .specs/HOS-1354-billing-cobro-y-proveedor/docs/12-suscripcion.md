@@ -187,7 +187,10 @@ cuando el cliente lo pide**, no se difiere. Lo único que queda para el fin del 
 descenso de capacidades**, más la elección del cliente sobre qué conserva.
 
 **Es una cola nuestra, de entitlements. No es una cola de cambios en el proveedor** — el
-proveedor no tiene ninguna.
+proveedor no tiene ninguna. **La transición que la aplica es `S38`** (`B/03` §3.2): llegada la
+fecha, la fila pasa a la versión destino, se aplica la elección de qué conservar y se emite el
+aviso de cobertura. Hasta los casos vecinos la cola no tenía transición que la nombrara
+(revisión del owner, casos vecinos, 2026-09-29, caso 37).
 
 **Y desde la revisión del owner (2026-09-28, C15) encola también el cambio de versión de una
 migración de un plan retirado**: `S37` muta el monto siete días antes de la renovación y deja acá el

@@ -9,7 +9,7 @@ fase: 2
 capitulo: 10
 cierra:
   - OD-ARCH-01
-  - M-SUB-03
+  - M-SUB-03 # cerrado: no se discontinúan verticales (revisión del owner, casos vecinos, 2026-09-29, caso 40)
 ---
 
 # 10 · Verticales, planes y billing options
@@ -153,12 +153,19 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    versión retirada y la destino. **Antes de confirmar, el panel muestra a cada cliente
    alcanzado**: si para él es subida o bajada (el veredicto de `direcciónDeCambio`, capacidad por
    capacidad, §3.5), su precio actual y el nuevo, y **la fecha que le toca**. Escribe la fila de
-   `plan_migration` y una de `plan_migration_subscription` por cliente (`B/02` §2.2).
+   `plan_migration` y una de `plan_migration_subscription` por cliente (`B/02` §2.2). **Si la
+   cohorte incluye la cuenta del propio `SUPER_ADMIN` que la lanza, esa suscripción se excluye y
+   el acto sigue para las demás**: una acción administrativa nunca tiene `actor = sujeto` (`V/17`
+   §3.2 regla 5), así que no se le escribe fila, la previsualización la muestra excluida con esa
+   razón, y queda en la versión retirada hasta que otra cuenta con el permiso la migre en otro
+   acto (revisión del owner, casos vecinos, 2026-09-29, caso 24).
 2. **Siempre con aviso previo, suba o baje**: **60 días por defecto, configurable, y nunca menos
    que el mínimo del aviso de aumento** de `DEC-MP-002` (es el plazo 12 de `NUCLEO/02` §1.5, que
    cambia el `SUPER_ADMIN` con *«cambiar un plazo»*: revisión del owner, 2026-09-28, C9). La
    migración guarda ~~el plazo~~ la versión de plazos con que se anunció, así que cambiar el plazo después no adelanta una fecha ya avisada. **Tres correos**:
-   al anunciar, a 30 días y a 7 días **de la fecha de ese cliente**; cada uno dice qué cambia en
+   al anunciar, ~~a 30 días y a 7 días **de la fecha de ese cliente**~~ **30 días y 7 días antes de
+   la fecha de renovación de ese cliente, que es su fecha de aplicación** (revisión del owner,
+   casos vecinos, 2026-09-29, caso 21); cada uno dice qué cambia en
    su plan, el precio nuevo, la fecha, **si pierde su promoción** y que puede darse de baja o
    elegir otro plan antes (`NUCLEO/07` §6, `B/19` §4).
 3. **Se aplica a cada cliente en su renovación**: la **fecha de aplicación** es su primera fecha
@@ -169,10 +176,18 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    aumento (`DEC-MP-001`): **no tiene que volver a autorizar nada**. Lo hace `S37` (`B/03` §3.2)
    **siete días antes de la fecha de aplicación**, releyendo, y encola el cambio de versión para
    esa fecha en la cola de `B/12` §2; **las capacidades pasan a la versión destino en la
-   renovación**, no antes.
+   renovación**, no antes, **por `S38`**, la transición que aplica la cola (revisión del owner,
+   casos vecinos, 2026-09-29, caso 37). **Los siete días son un plazo técnico, no configurable**
+   (`NUCLEO/02` §1.5): dejan entrar los 3 días del reintento de la mutación antes del cobro, y
+   van con el tercer correo (revisión del owner, casos vecinos, 2026-09-29, caso 20). **Qué correo
+   le manda Mercado Pago al cliente cuando la migración le sube el monto no está medido**: `EX-3`
+   lo midió al bajar (*«El vendedor Hospeda cambió el monto»*), y la subida pide una fila propia de
+   la matriz (caso 34), para que el tercer correo lo anticipe con el texto exacto.
 5. **Si el destino no ofrece su ciclo, no se lo mueve solo**: su fila queda `PARA_RESOLVER` y
    aparece en el listado del panel, para que una persona lo resuelva con él, porque cambiar de
-   ciclo exige que autorice de nuevo (`DEC-SUB-006`).
+   ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su
+   antigüedad**, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto
+   lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26).
 6. **Si pierde algo** (le sobran fichas, por ejemplo), **es un excedente con fecha conocida**, la
    de aplicación: se le avisa antes y elige qué conserva (`V/15` §4.2).
 7. **Pausados y en gracia esperan**: la migración se les aplica en la primera renovación después
@@ -184,7 +199,10 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
 9. **El `SUPER_ADMIN` puede cancelar una migración anunciada** (`L1-h`), con la misma acción 17:
    alcanza a las filas en `PENDIENTE`, que pasan a `CANCELADA`, y a cada una le sale **el correo
    *«ya no cambia nada»***. **Las ya aplicadas no vuelven**: `S37` ya mutó su monto, y deshacerlo
-   sería otra migración.
+   sería otra migración. **Tampoco las que están dentro de sus siete días**, con el monto ya
+   mutado y la versión todavía sin cambiar: la mutación no se deshace, y a cada una le sale **un
+   correo que lo explica**, que la cancelación no la alcanza porque su cambio ya empezó, con su
+   precio nuevo y su fecha (revisión del owner, casos vecinos, 2026-09-29, caso 25).
 
 **Toca plata y no se ejecuta sola en la decisión**: la decide y la confirma una persona (`D11`);
 lo automático es aplicar lo ya anunciado, fila por fila, releyendo (`D17`).
@@ -218,11 +236,14 @@ vertical).
   verticales (`12-contrato…` §4.1, `DEC-ARCH-008`)—, escrita junto al caso del plan retirado.
 - **Qué pasa si la fecha de un aumento cae sobre una suscripción en mora** sigue abierto: lo dejó
   anotado `DEC-MP-002` y no lo cierra este capítulo.
-- **La migración de un plan retirado** (§3.7) deja dos cosas sin cerrar, declaradas: **qué pasa si la
-  fecha de aplicación cae sobre una suscripción en mora**, que es el mismo hueco que `DEC-MP-002`
-  dejó para el aumento (arriba): el §3.7 la hace esperar a que se ponga al día; y **un cliente
-  con una cortesía temporal vigente** el día de su migración, que está `PAUSED · COURTESY` y por
-  eso espera a volver, lo que puede correr su fecha tantos meses como le queden de cortesía.
+- **La migración de un plan retirado** (§3.7) deja ~~dos cosas~~ una cosa sin cerrar, declarada:
+  **qué pasa si la fecha de aplicación cae sobre una suscripción en mora**, que es el mismo hueco
+  que `DEC-MP-002` dejó para el aumento (arriba): el §3.7 la hace esperar a que se ponga al día.
+  ~~y **un cliente con una cortesía temporal vigente** el día de su migración, que está `PAUSED ·
+  COURTESY` y por eso espera a volver, lo que puede correr su fecha tantos meses como le queden de
+  cortesía.~~ **Un cliente con una cortesía temporal vigente el día de su migración espera, como
+  está**: está `PAUSED · COURTESY`, espera a volver, y su fecha se corre tantos meses como le queden
+  de cortesía (revisión del owner, casos vecinos, 2026-09-29, caso 27).
 - **Discontinuar una vertical** (revisión del owner, 2026-09-28, C8): **fuera de esta versión; si
   algún día hace falta, se diseña entonces** (§4). Lo que sí existe es retirar todos sus planes
   (§3.6), que la deja en operación sin vender.

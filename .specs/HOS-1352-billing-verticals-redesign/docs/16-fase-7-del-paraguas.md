@@ -463,7 +463,8 @@ punto 1 importa**: cuanto más tarde entra la
 ### 4.5 `qzpay`: congelado hasta el corte, archivado después
 
 (Revisión del owner, 2026-09-28, N2.) **El cobro nuevo no usa `qzpay`**: se escribe en un package
-compartido del monorepo que se puede publicar solo, y `qzpay` queda como referencia de lectura
+compartido del monorepo ~~que se puede publicar solo~~ (publicarlo en npm pediría reescribir sus
+dependencias internas: revisión del owner, casos vecinos, 2026-09-29, caso 30), y `qzpay` queda como referencia de lectura
 (`B/spec.md` §3.1; `G16` falla si vuelve). Pero **el sistema viejo corre con él hasta el corte**,
 así que:
 

@@ -58,7 +58,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | # | capítulo | qué resuelve |
 |---|---|---|
 | `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | `billing_option` —donde vive el precio—, suscripción, pausa, el vínculo con el proveedor, el dinero, addons y concesiones |
-| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (~~`S1`–`S35`~~ ~~`S1`–`S36`~~ `S1`–`S37`: `S36`, la revocación, owner 2026-09-26, `G5-4`; **`S37`, la aplicación de una migración**, revisión del owner, 2026-09-28, C15; `S25`–`S28` retiradas con su número, C8), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
+| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | ~~**siete**~~ **ocho**: Suscripción (~~`S1`–`S35`~~ ~~`S1`–`S36`~~ ~~`S1`–`S37`~~ `S1`–`S38`: `S36`, la revocación, owner 2026-09-26, `G5-4`; **`S37`, la aplicación de una migración**, revisión del owner, 2026-09-28, C15; **`S38`, la que aplica la cola de cambios programados**, revisión del owner, casos vecinos, 2026-09-29, caso 37; `S25`–`S28` retiradas con su número, C8), Grace, Pausa, Pago, **Reembolso** (§6.1, `RF1`–`RF5`: owner 2026-09-25, `DEC-RF-008`), Pago manual, Addon, y la regla de no-retroceso |
 | `05` | [idempotencia y concurrencia](./docs/05-idempotencia-y-concurrencia.md) | los tres mecanismos, los seis cruces del §52, y qué hace seguro a un pago tardío |
 | `06` | [proveedor](./docs/06-proveedor.md) | las ocho capacidades, las seis reglas duras de trato, el riesgo de plataforma |
 | `09` | [conciliación](./docs/09-conciliacion.md) | las cuatro partes, los ~~tres~~ **cuatro** modos de «cero cobros» (§4, reescrito el 2026-09-24 por `RC-5`), y el bug vivo que pasa a ser caso de uso |
@@ -96,12 +96,18 @@ Dos condiciones que lo hacen exigible: un **guard estático** que prohíba impor
 adaptador, y un **adaptador falso en memoria desde el día uno** — que es lo que prueba que la
 abstracción no miente.
 
-**`qzpay` se saca, y el cobro nuevo se escribe en un package compartido del monorepo que se puede
-publicar solo** (revisión del owner, 2026-09-28, N2). Todo el cobro nuevo vive **bien encapsulado
-en un package compartido**, escrito de modo que mañana se pueda publicar como package npm propio
-**sin reescribirlo**: **no depende de ninguna app ni de la mitad de verticales, salvo del package
-del contrato** (`12-contrato…` §7.1). `G16` falla si vuelve `@qazuor/qzpay` o si el package importa
-de `apps/` (`B/20` §2), y `G14` ya vigila que no importe de verticales. **`qzpay` queda sólo como
+**`qzpay` se saca, y el cobro nuevo se escribe en un package compartido del monorepo ~~que se puede
+publicar solo~~** (revisión del owner, 2026-09-28, N2). Todo el cobro nuevo vive **bien encapsulado
+en un package compartido**, ~~escrito de modo que mañana se pueda publicar como package npm propio
+**sin reescribirlo**~~ **del repo; publicarlo en npm pediría reescribir sus dependencias internas**
+(revisión del owner, casos vecinos, 2026-09-29, caso 30): **no depende de ninguna app ni de la
+mitad de verticales, salvo del package del contrato** (`12-contrato…` §7.1). **Sí puede depender
+de otros packages internos de Hospeda** (`@repo/*`), con la regla del owner, textual: *«siempre
+que sea simple evitar la dependencia de otro package de Hospeda, evitalo; si es complejo, la
+dejamos y en el futuro se reverá»*, porque *«no quiero demorar la salida de esta épica por
+eso»*. `G16` falla si vuelve `@qazuor/qzpay` o si el package importa de `apps/` (`B/20` §2), **y
+no mira sus dependencias hacia packages internos**; y `G14` ya vigila que no importe de
+verticales. **`qzpay` queda sólo como
 referencia de lectura**: su adaptador de Mercado Pago sirve para ver cómo se arma un pedido o se
 verifica una firma; **su motor y su esquema no**, porque el modelo nuevo es otro (`DEC-METH-007`,
 `DEC-MIG-003`). Lo que se toma de él pasa el filtro 2 de `DEC-METH-007`: un test que falla si se
@@ -126,7 +132,10 @@ puede testear lo que no controla**.
 
 **Toda mutación se verifica releyendo y comparando campo por campo.** No es criterio: es medición
 —de ocho operaciones que el PDR pediría, **cinco devuelven `2xx` y no aplican nada**—. No es un
-proveedor que rechaza lo que no soporta: es uno que **acepta y descarta**.
+proveedor que rechaza lo que no soporta: es uno que **acepta y descarta**. (Las cinco tienen fila
+en la matriz: `EX-4`, `EX-21`, `EX-34`, `EX-35` y `CN-1`, la M1 de `B/20` §3.2, que suma `EX-5`; el
+*«de ocho»* es de este párrafo y no de una fila. La presentación lo cita como *«5 de 8»* y se
+corrige al publicarla: revisión del owner, casos vecinos, 2026-09-29, caso 29.)
 
 Y no alcanza con releer «la» mutación: un `PUT` con varios campos **se aplica a medias con un solo
 `200`**. El que falla no arrastra al que funciona.

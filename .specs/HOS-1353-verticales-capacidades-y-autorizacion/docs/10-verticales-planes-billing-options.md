@@ -9,7 +9,7 @@ fase: 2
 capitulo: 10
 cierra:
   - OD-ARCH-01
-  - M-SUB-03
+  - M-SUB-03 # cerrado: no se discontinúan verticales (revisión del owner, casos vecinos, 2026-09-29, caso 40)
 ---
 
 # 10 · Verticales, planes y billing options
@@ -22,7 +22,9 @@ del capítulo 01 (núcleo), las entidades y restricciones del 02, los estados de
 
 Lo que sí define es lo que ningún capítulo anterior podía definir: **qué diferencia
 legítimamente a una vertical de otra, plan por plan**, y **qué pasa cuando algo del catálogo
-deja de venderse** — un plan (`OD-ARCH-01`) o una vertical entera (`M-SUB-03`).
+deja de venderse** — un plan (`OD-ARCH-01`) ~~o una vertical entera (`M-SUB-03`)~~ (`M-SUB-03`
+queda cerrado: no se discontinúan verticales; revisión del owner, 2026-09-28, C8, y casos vecinos,
+2026-09-29, caso 40).
 
 ---
 

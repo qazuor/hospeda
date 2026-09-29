@@ -416,6 +416,11 @@ no una excepción a la lista.
    alcanza, y el `SUPER_ADMIN` que además es dueño en esa vertical queda visible ahí. **Sin regla
    nueva**: queda declarado en *«lo que este capítulo NO cierra»*.~~ (Sale con la acción: revisión
    del owner, 2026-09-28, C8.)
+   **En la decimoséptima, migrar a los clientes de un plan retirado, la cohorte puede incluir la
+   cuenta del propio `SUPER_ADMIN` que la lanza**: esa fila se excluye y el acto sigue para las
+   demás. No se le escribe fila de alcance, la previsualización la muestra excluida con esta
+   regla como razón, y otra cuenta con el permiso la puede migrar en otro acto (`B/10` §3.7
+   punto 1; revisión del owner, casos vecinos, 2026-09-29, caso 24).
 
 ### 3.3 El actor no siempre es una persona
 
@@ -446,7 +451,9 @@ clientes de un plan retirado, es plata**: le cambia el precio a cada cliente alc
 renovación, y cae en `D11` por la misma razón que las doce (revisión del owner, 2026-09-28, C15);
 **lo que aplica después, fila por fila, es `S37`, una transición y no una ejecución de sistema de
 la acción**: lo que la persona firmó al anunciar es la migración entera, como la re-emisión de una
-cortesía diferida que hace `S9` con la firma original. **Las cinco del catálogo, de la decimoctava
+cortesía diferida que hace `S9` con la firma original (confirmado por el owner: revisión del owner,
+casos vecinos, 2026-09-29, caso 23; y lo mismo vale para `S38`, que en la renovación aplica el
+cambio de versión que `S37` encoló, caso 37). **Las cinco del catálogo, de la decimoctava
 a la vigesimosegunda, también las decide y las confirma una persona** (revisión del owner,
 2026-09-28, N1 y C9): fijar un precio mueve plata y cae en `D11` igual; lo que un plazo o una
 versión nueva cambia después lo aplican las transiciones de siempre, con la versión que cada reloj

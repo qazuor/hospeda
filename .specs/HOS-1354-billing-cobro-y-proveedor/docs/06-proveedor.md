@@ -487,7 +487,10 @@ tres, suspendemos a alguien que iba a pagar bien.
   no avisa **por el canal Webhooks**, con el receptor de pruebas escuchando sólo ese canal. **Qué
   hace el receptor nuevo con un aviso IPN no está decidido: se mide antes** (el owner, `L3-g`). El
   receptor nuevo no hereda el descarte por inercia: si lo tiene o no es parte de lo que se decide
-  después de medir, y la M5 del falso (`B/20` §3.2) se lee
+  después de medir. **`WH-6` se mide antes de cerrar el diseño** (el paso 2 del handoff); **si no
+  se llega a medir, el receptor nuevo registra los avisos IPN sin actuar**: los guarda con su
+  canal, no escribe ni decide nada con ellos, y la regla se revisa cuando `WH-6` esté medida
+  (revisión del owner, casos vecinos, 2026-09-29, caso 39). Mientras tanto la M5 del falso (`B/20` §3.2) se lee
   como *«por el canal Webhooks»* hasta la remedición. **Y un requisito que vale si se aceptan los
   dos canales**: **un aviso duplicado del mismo hecho, por el mismo canal o por los dos, no puede
   producir efecto doble**: ninguna escritura, ningún correo ni ningún aviso de cobertura dos veces.

@@ -141,7 +141,7 @@ donde un capítulo dice 90 o 180 días, 60 días de aviso o los días de una cam
 | 9 | la espera entre un rechazo y una postulación nueva de Partner | verticales | sin valor escrito | `V/18` §2.2 | el rechazo |
 | 10 | la ventana de autorización de un alta o una sucesión | billing | 72 h con tarjeta, 7 días con pago manual | cuándo vence (`B/03` §3.4, `DEC-SUB-016`) | la suscripción, al abrir la ventana |
 | 11 | el aviso previo de un aumento de precio, con sus dos contactos | billing | 60 días, a 30 y a 7 días | `DEC-MP-002`, `NUCLEO/07` §6 | el aumento anunciado |
-| 12 | el aviso previo de una migración de un plan retirado, con sus dos contactos | billing | 60 días, a 30 y a 7 días | `B/10` §3.7 | la migración anunciada |
+| 12 | el aviso previo de una migración de un plan retirado, con sus dos contactos | billing | 60 días, ~~a 30 y a 7 días~~ y los contactos 30 y 7 días antes de la renovación de cada cliente (revisión del owner, casos vecinos, 2026-09-29, caso 21) | `B/10` §3.7 | la migración anunciada |
 | 13 | la renovación por venir | billing | 5 y 1 días antes | `NUCLEO/07` §6 | la suscripción, en cada ciclo |
 | 14 | el aviso de que una promo termina | billing | 7 días antes | `NUCLEO/07` §6 | el canje |
 | 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h | `B/12` §5.4 | la suscripción, en cada ciclo |

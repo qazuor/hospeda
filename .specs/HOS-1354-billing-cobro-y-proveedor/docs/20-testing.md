@@ -64,18 +64,24 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **cuatro** tablas de transiciones de esta épica —`S`, `P`, `MP` y `A` del cap. 03; grace y pausa son sub-estados de suscripción sin tabla propia— (decía «seis»; recontado el 2026-09-25, FASE 8 completa, `F-8CD1-016`). El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 | ~~G-R5~~ | ~~el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención~~ | **retirado** (revisión del owner, 2026-09-28, C14, `L1-c`): la pausa pedida por el dueño detiene el reloj de retención, así que el tope de pausa ya no tiene que quedar por debajo del día del borrado y el guard se queda sin sujeto; sale con `D16`. El número no se reusa |
 | **G15** ✚ | **las dos listas del proveedor falso, con dos predicados**: (a) el falso **miente en un lugar que no está en la lista cerrada de mentiras del §3.2**, o una fila de esa lista **no tiene los tres datos**: su nombre, la fila de la matriz de la que sale (con fecha y cuenta) y la prueba que demuestra que el código la resiste; (b) una prueba **apaga una mentira sin nombrarla o sin decir por qué**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, C13 y `L3-c` (§3.2). Lo construye `B1` |
-| **G16** ✚ | **el cobro vuelve a depender de lo que dejó**, con dos predicados: (a) aparece **`@qazuor/qzpay`**, cualquiera de sus paquetes, en un `package.json` o en un import del repo; (b) el package del cobro **importa de `apps/`**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, N2 (`B/spec.md` §3.1). Lo construye `B1`. **Que el package del cobro no importe de la mitad de verticales ya lo vigila `G14`** (`V/20` §2), y no se duplica acá |
-| **G17** ✚ | **una decisión sale de lo que dice un aviso del proveedor sin releerlo por id**, con dos predicados: (a) el código que recibe un aviso, por cualquiera de los dos canales, **lee del cuerpo otra cosa que el tipo de recurso, su id y su `version`** (la `version` es la que descarta un aviso viejo, `B/03` §10.1, y no es estado); (b) una transición de las tablas de `B/03` o una acción administrativa de `NUCLEO/08` §3 cuya condición depende del estado del proveedor **recibe ese estado por otro camino que una lectura por id del adaptador**, el tipo que sólo el adaptador construye. **El mensaje nombra el predicado que falló** | `D17` y su quinta entrada (`NUCLEO/04` §3; revisión del owner, 2026-09-28, N4 y `L3-f`). Lo construye `B1` |
+| **G16** ✚ | **el cobro vuelve a depender de lo que dejó**, con dos predicados: (a) aparece **`@qazuor/qzpay`**, cualquiera de sus paquetes, en un `package.json` o en un import del repo; (b) el package del cobro **importa de `apps/`**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, N2 (`B/spec.md` §3.1). Lo construye `B1`. **Que el package del cobro no importe de la mitad de verticales ya lo vigila `G14`** (`V/20` §2), y no se duplica acá. **No mira sus dependencias hacia packages internos de Hospeda** (`@repo/*`): el package del cobro puede tenerlas, con la regla del owner de evitarlas cuando sea simple; la prohibición de `qzpay` sigue (revisión del owner, casos vecinos, 2026-09-29, caso 30) |
+| **G17** ✚ | **una decisión sale de lo que dice un aviso del proveedor sin releerlo por id**, con dos predicados: (a) el código que recibe un aviso, por cualquiera de los dos canales, **lee del cuerpo otra cosa que el tipo de recurso, su id y su `version`** (la `version` es la que descarta un aviso viejo, `B/03` §10.1, y no es estado); (b) una transición de las tablas de `B/03` o una acción administrativa de `NUCLEO/08` §3 cuya condición depende del estado del proveedor **recibe ese estado por otro camino que una lectura por id del adaptador**, el tipo que sólo el adaptador construye. **El mensaje nombra el predicado que falló**. **El *cuándo* no es un tercer predicado: va dentro del tipo** (revisión del owner, casos vecinos, 2026-09-29, caso 35). Cada lectura por id lleva el instante en que se leyó, y el tipo sólo entrega el estado contra el comienzo del acto que decide: una lectura anterior a ese comienzo se rechaza y hay que releer. Con eso (b) alcanza, porque el único camino al estado ya exige el instante; el rechazo lo prueba un caso de `B1`, no el guard | `D17` y su quinta entrada (`NUCLEO/04` §3; revisión del owner, 2026-09-28, N4 y `L3-f`). Lo construye `B1` |
 
 **`G15`, `G16` y `G17` llegaron con la revisión del owner (2026-09-28), y los tres son de `B1`**,
 porque vigilan lo que `B1` construye primero: el falso y sus dos listas (§3.2), el package del
-cobro que se puede publicar solo (`B/spec.md` §3.1), y la frontera por la que entra todo lo que el
+cobro ~~que se puede publicar solo~~ sin `qzpay` (`B/spec.md` §3.1; caso 30), y la frontera por la que entra todo lo que el
 proveedor dice (el adaptador). **Lo que cada uno NO verifica, dicho para que nadie lo lea de más**
 (§2.1): `G15` comprueba que cada mentira **tenga** su medición y su prueba, no que la medición siga
 siendo cierta (eso lo vigila la batería del §4.1); `G16` no mira las dependencias del package del
-cobro hacia otros packages compartidos del monorepo; y `G17` comprueba **de dónde sale** el estado
-con que se decide, no **cuándo** se leyó: una lectura por id vieja pasa en verde, y que se relea en
-el mismo acto sigue siendo la regla de `D17`, sin guard. **Tampoco mira las pantallas**: mostrar el
+cobro hacia otros packages compartidos del monorepo, **y es a propósito: puede tenerlas** (caso
+30); y `G17` comprueba **de dónde sale** el estado con que se decide, no **cuándo** se leyó: ~~una
+lectura por id vieja pasa en verde, y que se relea en el mismo acto sigue siendo la regla de
+`D17`, sin guard~~ **el cuándo lo impone el tipo, que rechaza una lectura anterior al comienzo del
+acto** (caso 35; `D17`). **El comienzo del acto es el de la decisión sobre ese sujeto, no el de la
+corrida**: un proceso nocturno que leyó 500 suscripciones a las 3:00 y llega a la de Juan a las
+3:40 la tiene que releer. **Y queda un límite, declarado**: entre releer y actuar hay una ventana
+de milisegundos que el tipo no cierra, porque Mercado Pago no ofrece compare-and-swap; la cubre
+el barrido diario (`B/09`). **Tampoco mira las pantallas**: mostrar el
 estado local no es decidir, y ninguna pantalla decide.
 
 **Los SEIS de `R1` son la contracara de las dos claves y de la marca, y conviene decir qué impide
@@ -470,7 +476,8 @@ sus propios datos desmienten.**
 
 **Desde la revisión del owner (2026-09-28, C13 y `L3-c`) son dos listas cerradas, y no una
 tabla**: la de las **mentiras medidas** de Mercado Pago, y la de sus **reglas propias**, que el
-falso cumple igual pero que no son mentiras. La tabla de quince filas que vivía acá mezclaba las
+falso cumple igual pero que no son mentiras, **con su comportamiento medido** (casos vecinos,
+2026-09-29, caso 28). La tabla de quince filas que vivía acá mezclaba las
 dos; queda tachada abajo, con dónde fue a parar cada fila.
 
 **Tres reglas gobiernan la primera lista, y `G15` (§2) las vuelve verificables:**
@@ -508,9 +515,12 @@ pide la fila.
 
 No son mentiras: el proveedor **exige** algo y lo dice. El falso las cumple igual, y la batería del
 §4 las vigila igual, porque si una deja de ser cierta el código queda defendiéndose de una regla
-que ya no existe.
+que ya no existe. **Y desde los casos vecinos (2026-09-29, caso 28) la lista lleva también el
+comportamiento medido** que no es mentira ni regla que el proveedor exija, pero que el barrido de
+`B/09` y `S6` por su segundo evento necesitan que el falso reproduzca: `RP7` a `RP11`, marcadas
+como comportamiento medido en la columna.
 
-| # | qué exige el proveedor | fila |
+| # | qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido) | fila |
 |---|---|---|
 | **RP1** | el token de tarjeta es de **un solo uso** | `EX-12` |
 | **RP2** | `X-Idempotency-Key` es **obligatoria** en el reembolso y falla **antes** de toda validación de negocio | `RF-4` |
@@ -518,9 +528,16 @@ que ya no existe.
 | **RP4** | **otra moneda** da `400` | `EX-18` |
 | **RP5** | el reembolso idempotente devuelve **`200` y no `201`**, con **cuerpo vacío** | `RF-6` |
 | **RP6** | **estando pausada rechaza toda modificación** con `400`, pero sí deja cancelar | `EX-11` |
+| **RP7** ✚ | *comportamiento medido*: cada cobro tiene **una ventana de vida**, `expire_date`, y la trae cada renovación | `RC-7` (2026-09-22, producción) |
+| **RP8** ✚ | *comportamiento medido*: un ciclo fallido lleva **cuatro intentos dentro del mismo registro de cobro**, y al vencer la ventana **el proveedor pausa** | `GR-3` (2026-09-22, producción) |
+| **RP9** ✚ | *comportamiento medido*: **una pausada no cobra** | `PS-2` (2026-09-15, producción) |
+| **RP10** ✚ | *comportamiento medido*: al reanudar, **la fecha de cobro avanzó sin cobrar** | `PS-6` (2026-09-16, sandbox y producción) |
+| **RP11** ✚ | *comportamiento medido*: **`last_charged_date` es la del último intento, no la del último cobro**, y `last_charged_amount` no coincide con `charged_amount` | `RC-5` (2026-09-22, producción; precisada el 2026-09-24) |
 
-**Son seis, recontadas sobre la tabla**, y son las seis filas de la tabla vieja que no eran
-mentiras.
+~~**Son seis, recontadas sobre la tabla**, y son las seis filas de la tabla vieja que no eran
+mentiras.~~ **Son once, recontadas sobre la tabla**: las seis filas de la tabla vieja que no eran
+mentiras, y las cinco de comportamiento medido que quedaban afuera de las dos listas (revisión del
+owner, casos vecinos, 2026-09-29, caso 28).
 
 #### Lo que el falso simula sin haberlo medido, aparte
 
@@ -528,7 +545,9 @@ mentiras.
 de red, no porque el real lo haga a propósito. Hoy son tres: **el proveedor crea y cobra pero la
 respuesta se pierde en el camino**; **la red cortada**; y **los avisos fuera de orden**, que
 `WH-3` **no observó** (`PARTIALLY_SUPPORTED`: las entregas llegaron en orden causal en tres
-corridas), así que no pueden ser una mentira de la lista aunque el código tenga que resistirlos.
+corridas), así que no pueden ser una mentira de la lista aunque el código tenga que resistirlos
+(la presentación los ponía entre las mentiras, y se corrige al publicarla: revisión del owner,
+casos vecinos, 2026-09-29, caso 29).
 `G15` no cuenta las simulaciones como mentiras, y una simulación tampoco puede estar prendida por
 defecto sin decirlo.
 
@@ -570,12 +589,14 @@ los campos `charged_quantity` y `last_charged`. El stub no las reproduce, así q
 `B/09` se verifica contra un proveedor que no existe. **Causa**: la tabla se escribió antes de que la
 conciliación tuviera sus filas medidas.~~ **Cerrado en su mayor parte** (revisión del owner,
 2026-09-28, C13): `RC-5`, `RC-6` (M7) y `WH-1`, `WH-2`, `WH-5` (M6) están en la lista.
-⚠️ **Lo que queda afuera de las dos listas**, declarado: `RC-7` (la ventana de vida de un cobro),
+~~⚠️ **Lo que queda afuera de las dos listas**, declarado: `RC-7` (la ventana de vida de un cobro),
 `GR-3` (cuatro intentos dentro de un ciclo y la pausa al vencerlo), `PS-2` (pausada no cobra),
 `PS-6` (la fecha avanza sin cobrar) y el campo `last_charged`. Son **comportamiento medido que no
 es mentira ni regla que el proveedor exija**, y el barrido de `B/09` y `S6` por su segundo evento
 necesitan que el falso lo reproduzca. **Causa**: la decisión nombró dos listas y estas filas no
-son de ninguna; en cuál van (o si hace falta una tercera) es del owner.
+son de ninguna; en cuál van (o si hace falta una tercera) es del owner.~~ **Cerrado entero**
+(revisión del owner, casos vecinos, 2026-09-29, caso 28): esas cinco van a la segunda lista como
+comportamiento medido, `RP7` a `RP11`.
 
 **El retraso variable del cobro merece su propia línea** porque es el que más código rompe: un
 test cuyo cobro llega en el mismo instante en que vence el período **nunca ejecuta** el camino que
@@ -621,8 +642,8 @@ más de lo autorizado, no se ejecuta.
 producción, ni comparación de forma, ni quién avisara si no corría**. Desde esta revisión es una
 batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
 
-1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y las seis
-   reglas propias: hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
+1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y ~~las seis
+   reglas propias~~ las once reglas propias y comportamientos medidos (caso 28): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
    cambiar ninguna mentira.
@@ -630,7 +651,9 @@ batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos 
 3. **Cuándo, en producción**: **sola, una vez por mes**, sólo lo que se mide ahí (el buscador,
    `RC-1`; los lotes de cobro, M8; y las devoluciones, que en sandbox dan `401`), **con
    autorizaciones propias del owner, al monto mínimo (`PC-2`), y cancelando y devolviendo en la
-   misma corrida**. Los dos guards del cap. 06 §9, entorno y presupuesto, rigen igual.
+   misma corrida**. **La autorización la custodia el owner y la renueva cada mes**: sin la del mes
+   en curso, la corrida de producción no arranca (revisión del owner, casos vecinos, 2026-09-29,
+   caso 33). Los dos guards del cap. 06 §9, entorno y presupuesto, rigen igual.
 4. **Y a mano cuando se quiera**: la misma batería, en cualquiera de los dos entornos, la corre
    quien opera, sin esperar su fecha. En producción, con la misma autorización del owner.
 5. **Qué hace si algo cambió: avisa y no toca nada.** Manda **un correo al administrador** con qué
@@ -697,7 +720,10 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
    autorización, el grace, la pausa en meses, la prueba gratis, los avisos a 30 y a 7 días, la
    retención de 90 y 180 días. Sin él, lo que el smoke hoy «espera» no se puede automatizar. **Lo
    construye `B1`**, y como lo usan las dos mitades **no puede vivir en ninguna de las dos**: `G14`
-   prohíbe que una importe a la otra (`V/20` §2). Dónde vive es de la FASE 5.
+   prohíbe que una importe a la otra (`V/20` §2). ~~Dónde vive es de la FASE 5.~~ **Vive en un
+   package de pruebas compartido que importan las dos mitades** (revisión del owner, casos
+   vecinos, 2026-09-29, caso 31): no es de ninguna, así que importarlo no cruza la frontera de
+   `G14`, y ningún build de producción lo importa (la técnica de `G13`).
 3. **Cada flujo del §5, y el trial completo de `V/20` §5, como prueba de punta a punta** contra los
    builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones
    sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
@@ -706,7 +732,10 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
 4. **El recorte del checklist de smoke manual, sección por sección**: cada sección del checklist
    de staging que tenga su prueba de punta a punta **sale del manual**, con el nombre de la prueba
    que la reemplaza al lado. El ahorro llega de a poco y cada recorte tiene evidencia. **Lo lleva
-   `B13`**.
+   `B13`**, **y en el mismo cambio en que una sección sale del manual actualiza la regla de smoke
+   del `CLAUDE.md` raíz** (hoy exige el smoke manual de staging a todo PR de billing), a medida que
+   exista el E2E de cada sección y no antes (revisión del owner, casos vecinos, 2026-09-29, caso
+   32).
 
 **Lo que queda manual, porque no se puede simular**:
 

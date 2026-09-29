@@ -870,7 +870,9 @@ implementaciones.~~
   vertical, `S13` no mueve ninguna fila, así que sin esta línea no salía ningún aviso;
 - **`A2`, `A4`, `A5` y `A6`**;
 - ✚ **el cambio de versión de una migración de un plan retirado**, en su fecha de aplicación, por la
-  cola de `B/12` §2 (revisión del owner, 2026-09-28, C15; `B/10` §3.7): le cambia la `referencia` a
+  cola de `B/12` §2 (revisión del owner, 2026-09-28, C15; `B/10` §3.7), **y el descenso de un
+  downgrade, que viaja por la misma cola: los dos los aplica `S38`** (`B/03` §3.2; revisión del
+  owner, casos vecinos, 2026-09-29, caso 37; el descenso faltaba en esta lista): le cambia la `referencia` a
   la fuente `SUSCRIPCIÓN` sin cambiar el estado de la fila, así que la regla de *«`desde` y `hacia`
   emiten distinto»* no la alcanza. **`S37`, que muta el monto siete días antes, no emite**: el
   monto no es un campo de la fuente;
