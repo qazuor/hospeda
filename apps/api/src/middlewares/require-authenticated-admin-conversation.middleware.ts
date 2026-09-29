@@ -7,13 +7,13 @@
  * anonymous request would otherwise fall into each handler's 403 branch
  * (HOS-972, error-contract R2: 401 before 403).
  *
- * @module routes/conversations/admin/require-authenticated
+ * @module middlewares/require-authenticated-admin-conversation.middleware
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
-import { getActorFromContext, isGuestActor } from '../../../utils/actor';
-import { createErrorResponse } from '../../../utils/response-helpers';
+import { getActorFromContext, isGuestActor } from '../utils/actor';
+import { createErrorResponse } from '../utils/response-helpers';
 
 /**
  * Answers 401 `UNAUTHORIZED` to the guest actor and lets every other actor

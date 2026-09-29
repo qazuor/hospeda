@@ -16,12 +16,12 @@
  * IMPORTANT: /unread-count MUST be registered before /:id to avoid path conflicts.
  */
 
+import { requireAuthenticatedAdminConversation } from '../../../middlewares/require-authenticated-admin-conversation.middleware';
 import { createRouter } from '../../../utils/create-app';
 import { archiveAdminConversationRoute } from './archive';
 import { deleteAdminConversationRoute } from './delete';
 import { listAdminConversationsRoute } from './list';
 import { replyAdminConversationRoute } from './reply';
-import { requireAuthenticatedAdminConversation } from './require-authenticated';
 import { statusAdminConversationRoute } from './status';
 import { threadAdminConversationRoute } from './thread';
 import { unreadCountAdminConversationRoute } from './unread-count';
