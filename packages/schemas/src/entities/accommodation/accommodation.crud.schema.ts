@@ -3,7 +3,12 @@ import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
-import { AccommodationExtraInfoSchema, AccommodationSchema } from './accommodation.schema.js';
+import {
+    ACCOMMODATION_SLUG_MAX_LENGTH,
+    AccommodationExtraInfoSchema,
+    AccommodationReadSchema,
+    AccommodationSchema
+} from './accommodation.schema.js';
 
 /**
  * Accommodation CRUD Schemas
@@ -72,7 +77,7 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     slug: z
         .string()
         .min(3, { message: 'zodError.accommodation.slug.min' })
-        .max(100, { message: 'zodError.accommodation.slug.max' })
+        .max(ACCOMMODATION_SLUG_MAX_LENGTH, { message: 'zodError.accommodation.slug.max' })
         .optional(),
     /**
      * Optional list of amenity UUIDs to associate on create (SPEC-172 write-only).
@@ -99,7 +104,7 @@ export type AccommodationCreateInput = z.infer<typeof AccommodationCreateInputSc
  * Schema for accommodation creation response
  * Returns the complete accommodation object
  */
-export const AccommodationCreateOutputSchema = AccommodationSchema;
+export const AccommodationCreateOutputSchema = AccommodationReadSchema;
 
 // Type: Create Output
 export type AccommodationCreateOutput = z.infer<typeof AccommodationCreateOutputSchema>;
@@ -251,7 +256,7 @@ export type AccommodationPatchInput = z.infer<typeof AccommodationPatchInputSche
  * Schema for accommodation update response
  * Returns the complete updated accommodation object
  */
-export const AccommodationUpdateOutputSchema = AccommodationSchema;
+export const AccommodationUpdateOutputSchema = AccommodationReadSchema;
 
 // Type: Update Output
 export type AccommodationUpdateOutput = z.infer<typeof AccommodationUpdateOutputSchema>;
@@ -316,7 +321,7 @@ export type AccommodationRestoreInput = z.infer<typeof AccommodationRestoreInput
  * Schema for accommodation restoration response
  * Returns the complete restored accommodation object
  */
-export const AccommodationRestoreOutputSchema = AccommodationSchema;
+export const AccommodationRestoreOutputSchema = AccommodationReadSchema;
 
 // Type: Restore Output
 export type AccommodationRestoreOutput = z.infer<typeof AccommodationRestoreOutputSchema>;
