@@ -51,6 +51,14 @@ status: CURRENT
 
 ### El próximo paso exacto
 
+0. **Arrancar por** [`mp-probes/RESULTS-2026-09-29.md`](./mp-probes/RESULTS-2026-09-29.md) **§ «Para
+   el owner mañana»** (seis pasos en orden, con el owner). Lo medido sin él el 29/09 a la madrugada
+   (sonda 52): el canal Webhooks entero (sin duplicados; subir el monto tampoco avisa; la orden no
+   notifica; la cancelación del proveedor tras un rechazo en el alta no se notifica, `WH-5`); el
+   canal IPN **no se puede abrir sin el panel** de la app de pruebas. Sujetos listos en sandbox para
+   `EX-52`/`EX-53` (sonda 53); la sonda 54 (`EX-54`, producción) está escrita y **sin correr**.
+   Propuesta nueva: `EX-55` (un alta que devuelve `400` deja igual un preapproval creado). El Worker
+   de la sonda 08 queda arriba a propósito. Nada de esto está en la matriz todavía: va con OK.
 1. **Las mediciones antes de terminar el diseño**, con la cuenta de pruebas de Mercado Pago: `EX-52`
    (cancelar desde la app), `EX-53` (pausar desde la app), `EX-54` (el correo al SUBIR el monto,
    nueva), `WH-6` (los dos canales de avisos y sus duplicados; de ella depende dónde se guardan los
