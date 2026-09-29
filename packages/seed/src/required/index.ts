@@ -26,6 +26,8 @@ import { seedPointsOfInterest } from './pointsOfInterest.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
+import type { FailedRequiredSeedStep, RequiredSeedStep } from './runSteps.js';
+import { runRequiredSteps } from './runSteps.js';
 import { seedSocialAutomation } from './socialAutomation.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
@@ -59,7 +61,8 @@ import { seedUsers } from './users.seed.js';
  * - The super admin actor is available for all operations
  *
  * @param context - Seed context with configuration and utilities
- * @returns Promise that resolves when all required seeds are complete
+ * @returns The steps that failed (only non-empty under `continueOnError`, where every step runs
+ *   regardless of earlier failures; the caller must turn a non-empty list into a non-zero exit)
  *
  * @example
  * ```typescript
@@ -93,102 +96,107 @@ import { seedUsers } from './users.seed.js';
  * // 23. Social automation catalog (SPEC-254 T-015)
  * ```
  *
- * @throws {Error} When seeding fails and continueOnError is false
+ * @throws {Error} The first failing step's error, when continueOnError is false
  */
-export async function runRequiredSeeds(context: SeedContext): Promise<void> {
+export async function runRequiredSeeds(context: SeedContext): Promise<{
+    /** Steps that failed under `continueOnError`; always empty otherwise (a failure throws). */
+    readonly failedSteps: readonly FailedRequiredSeedStep[];
+}> {
     const separator = '#'.repeat(90);
 
     logger.info(`${separator}`);
     logger.info(`${STATUS_ICONS.Seed}  INITIALIZING REQUIRED DATA LOAD`);
 
-    try {
+    // Each entry is isolated by `runRequiredSteps`: with `continueOnError` a failing step
+    // no longer cancels the ones after it (HOS-735). Order below IS the dependency order.
+    const steps: readonly RequiredSeedStep[] = [
         // 1. Seed the reserved system user — must be first because downstream seeds
         //    (INTERNAL tags, SYSTEM tags, PostTags) reference SYSTEM_USER_ID as assignedById.
-        await seedSystemUser();
+        { name: 'SystemUser', run: () => seedSystemUser() },
 
         // 2. Seed INTERNAL tags (SPEC-086 R-2) — admin-only operational labels.
         //    Must run after system user (createdById = SYSTEM_USER_ID).
-        await seedInternalTags();
+        { name: 'InternalTags', run: () => seedInternalTags() },
 
         // 3. Seed SYSTEM tags (SPEC-086 R-3) — platform-wide organizational tags.
         //    Must run after system user (createdById = SYSTEM_USER_ID).
-        await seedSystemTags();
+        { name: 'SystemTags', run: () => seedSystemTags() },
 
         // 4. Seed PostTags (SPEC-086 R-4) — public SEO-driven blog post taxonomy.
         //    Must run after system user (createdById = SYSTEM_USER_ID).
-        await seedPostTags();
+        { name: 'PostTags', run: () => seedPostTags() },
 
         // Super admin already loaded in main context
         // 5. Load remaining users (excluding super admin)
-        await seedUsers(context);
+        { name: 'Users', run: () => seedUsers(context) },
 
         // 3. Load role permissions (after users to have the actor)
-        await seedRolePermissions();
+        { name: 'RolePermissions', run: () => seedRolePermissions() },
 
         // 3.1 Seed moderation bootstrap data (SPEC-195)
-        await seedContentModerationData();
+        { name: 'ContentModerationData', run: () => seedContentModerationData() },
 
         // 4. Load amenities (before attractions to have ID mapping)
-        await seedAmenities(context);
+        { name: 'Amenities', run: () => seedAmenities(context) },
 
         // 5. Load features (before attractions to have ID mapping)
-        await seedFeatures(context);
+        { name: 'Features', run: () => seedFeatures(context) },
 
         // 6. Load attractions (before destinations to have ID mapping)
-        await seedAttractions(context);
+        { name: 'Attractions', run: () => seedAttractions(context) },
 
         // 6.05 Load the POI category catalog (HOS-139) — a standalone catalog,
         //      independent of points of interest or destinations. Must run
         //      before the backfill step below (6.2), and before points of
         //      interest for a stable, predictable ordering, though the two
         //      seeds have no direct dependency on each other.
-        await seedPoiCategories(context);
+        { name: 'PoiCategories', run: () => seedPoiCategories(context) },
 
         // 6.1 Load points of interest (HOS-113) — before destinations, same
         //     reason as attractions: the destination↔POI relationship seed
         //     step (run as part of seedDestinations below) needs the POI
         //     seed-id → real-id mapping already populated.
-        await seedPointsOfInterest(context);
+        { name: 'PointsOfInterest', run: () => seedPointsOfInterest(context) },
 
         // 6.2 Backfill primary categories for the 12 existing POIs (HOS-139
         //     spec §6.3/§7.4). Must run AFTER both 6.05 (categories exist)
         //     and 6.1 (POIs exist) — resolves both by `slug`.
-        await seedPoiCategoryBackfill(context);
+        { name: 'PoiCategoryBackfill', run: () => seedPoiCategoryBackfill(context) },
 
         // 7. Load destinations (uses ID mapping for attraction + POI relationships)
-        await seedDestinations(context);
+        { name: 'Destinations', run: () => seedDestinations(context) },
 
         // 8. Load sponsorship levels (before packages to have ID mapping)
-        await seedSponsorshipLevels(context);
+        { name: 'SponsorshipLevels', run: () => seedSponsorshipLevels(context) },
 
         // 9. Load sponsorship packages (uses ID mapping for eventLevelId)
-        await seedSponsorshipPackages(context);
+        { name: 'SponsorshipPackages', run: () => seedSponsorshipPackages(context) },
 
         // 10. Load billing entitlements (before plans to have entitlements available)
-        await seedBillingEntitlements(context);
+        { name: 'BillingEntitlements', run: () => seedBillingEntitlements(context) },
 
         // 11. Load billing limits (before plans to have limit definitions available)
-        await seedBillingLimits(context);
+        { name: 'BillingLimits', run: () => seedBillingLimits(context) },
 
         // 12. Load billing plans (uses entitlements and limits)
-        await seedBillingPlans(context);
+        { name: 'BillingPlans', run: () => seedBillingPlans(context) },
 
         // 12.1 Load the commerce-listing plan (SPEC-239 T-049). Separate from
         //      ALL_PLANS so it stays excluded from accommodation plan lists;
         //      stamps billing_plans.product_domain='commerce'.
-        await seedCommercePlan(context);
+        { name: 'CommercePlan', run: () => seedCommercePlan(context) },
 
         // 12.2 Load the partner-directory plan (SPEC-271). Separate from
         //      ALL_PLANS so it stays excluded from accommodation plan lists;
         //      stamps billing_plans.product_domain='partner'.
-        await seedPartnerPlan(context);
+        { name: 'PartnerPlan', run: () => seedPartnerPlan(context) },
 
         // 12.3 Load the hidden daily test plan (billing-interval-override
         //      tooling). Separate from ALL_PLANS; product_domain stays
         //      'accommodation' so loadEntitlements resolves its grants.
         //      Always seeded — HOSPEDA_SHOW_TEST_BILLING_PLAN gates
         //      subscribability at checkout time, not seed presence.
-        await seedTestDailyPlan(context);
+        { name: 'TestDailyPlan', run: () => seedTestDailyPlan(context) },
 
         // 12.4 Load the three composed trial plans (HOS-1012 D-5). Separate
         //      from ALL_PLANS for the same reason as 12.1-12.3; each is
@@ -196,52 +204,69 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         //      metadata.trialComposition the entitlement seam resolves live.
         //      Seeded AFTER the plans above because its composition names
         //      their slugs.
-        await seedTrialPlans(context);
+        { name: 'TrialPlans', run: () => seedTrialPlans(context) },
 
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
-        await seedBillingAddons(context);
+        { name: 'BillingAddons', run: () => seedBillingAddons(context) },
 
         // 14. Load billing promo codes (default discount codes)
-        await seedBillingPromoCodes(context);
+        { name: 'BillingPromoCodes', run: () => seedBillingPromoCodes(context) },
 
         // 15. Load exchange rate config (before rates to have config available)
-        await seedExchangeRateConfig(context);
+        { name: 'ExchangeRateConfig', run: () => seedExchangeRateConfig(context) },
 
         // 16. Load exchange rates (initial reference rates)
-        await seedExchangeRates(context);
+        { name: 'ExchangeRates', run: () => seedExchangeRates(context) },
 
         // 17. Load revalidation config (per-entity-type ISR configuration)
-        await seedRevalidationConfig(context);
+        { name: 'RevalidationConfig', run: () => seedRevalidationConfig(context) },
 
         // 18. Load AI prompt defaults (system prompts for all AI features)
-        await seedAiPrompts();
+        { name: 'AiPrompts', run: () => seedAiPrompts() },
 
         // 19. Seed AI settings costCeilings defaults (SPEC-211 T-002)
         //     Idempotent: skips if costCeilings is already set by an operator.
-        await seedAiSettings();
+        { name: 'AiSettings', run: () => seedAiSettings() },
 
         // 20. Seed social automation catalog (SPEC-254 T-015)
         //     Platforms, platform-formats, settings, campaign, batch, audiences,
         //     footer, hashtag-sets, hashtags. All idempotent, model-direct.
-        await seedSocialAutomation();
+        { name: 'SocialAutomation', run: () => seedSocialAutomation() }
+    ];
+
+    let failedSteps: readonly FailedRequiredSeedStep[] = [];
+
+    try {
+        ({ failedSteps } = await runRequiredSteps({
+            steps,
+            continueOnError: context.continueOnError
+        }));
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsole: seed script uses console.log for visual spacing in terminal output
         console.log('\n\n');
-        logger.success({ msg: `${STATUS_ICONS.Success}  REQUIRED DATA LOAD COMPLETED` });
+        if (failedSteps.length === 0) {
+            logger.success({ msg: `${STATUS_ICONS.Success}  REQUIRED DATA LOAD COMPLETED` });
+        } else {
+            logger.error(
+                `${STATUS_ICONS.Error}  REQUIRED DATA LOAD COMPLETED WITH ${failedSteps.length} FAILED STEP(S)`
+            );
+            for (const failed of failedSteps) {
+                logger.error(`   - ${failed.name}: ${describeError(failed.error).message}`);
+            }
+        }
     } catch (error) {
+        // Only reachable with `continueOnError: false`: the first failing step aborts.
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsole: seed script uses console.log for visual spacing in terminal output
         console.log('\n\n');
         logger.error(`${STATUS_ICONS.Error}  REQUIRED DATA LOAD INTERRUPTED`);
         logger.error(`   Error: ${describeError(error).message}`);
-
-        // If we shouldn't continue on error, re-throw the exception
-        if (!context.continueOnError) {
-            throw error;
-        }
+        throw error;
     } finally {
         // Always show summary, regardless of errors
         summaryTracker.print();
     }
+
+    return { failedSteps };
 }
