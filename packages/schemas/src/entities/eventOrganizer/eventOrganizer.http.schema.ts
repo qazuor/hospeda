@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 
 /**
  * HTTP-compatible event organizer search schema with automatic coercion
@@ -56,13 +57,13 @@ export const EventOrganizerCreateHttpSchema = z.object({
     // Contact information
     email: z.string().email().optional(),
     phone: z.string().optional(),
-    website: z.string().url().optional(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
     // Social media links
-    twitter: z.string().url().nullish(),
-    facebook: z.string().url().nullish(),
-    instagram: z.string().url().nullish(),
-    linkedin: z.string().url().nullish()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish()
 });
 
 export type EventOrganizerCreateHttp = z.infer<typeof EventOrganizerCreateHttpSchema>;

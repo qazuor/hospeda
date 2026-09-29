@@ -9,6 +9,7 @@
 import { buildSentryReportUri } from '@repo/utils';
 import * as Sentry from '@sentry/astro';
 import { ASTRO_RUNTIME_SCRIPT_HASHES } from './csp-astro-runtime-hashes';
+import { SOFT_NAV_SCRIPT_HASHES } from './csp-soft-nav-script-hashes';
 import { DEFAULT_LOCALE, isValidLocale, type SupportedLocale } from './i18n';
 import { webLogger } from './logger';
 import { ALLOWED_REMOTE_HOSTS } from './media';
@@ -766,13 +767,22 @@ export function requestHasSessionCookie(cookieHeader: string | null): boolean {
  * `style-src` to a plain `'unsafe-inline'` policy in dev ONLY; build/prod
  * keeps the strict hash policy unchanged.
  *
+ * HOS-807: `script-src` also carries the build-time union of EVERY page's
+ * inline-script hashes (`softNavScriptHashes`, from
+ * `csp-soft-nav-script-hashes.ts`), so a `<ClientRouter />` soft navigation —
+ * which keeps the origin page's policy in force — never blocks an inline
+ * script the destination page brings. The response's own hashes stay too: a
+ * render-time script that cannot be in the union still runs on a direct load.
+ *
  * @param params - Object with the response's inline script/style hash sources,
- *   optional API URL, optional Sentry report URI, and dev-mode flag
+ *   the soft-nav union (defaults to the build's), optional API URL, optional
+ *   Sentry report URI, and dev-mode flag
  * @returns Formatted CSP directive string
  */
 export function buildCspHeader({
     scriptHashes,
     styleHashes,
+    softNavScriptHashes = SOFT_NAV_SCRIPT_HASHES,
     apiUrl,
     sentryReportUri,
     sentryTunnelEnabled = false,
@@ -780,6 +790,11 @@ export function buildCspHeader({
 }: {
     /** `sha256-…` tokens (unquoted) for every inline `<script>` in the response. */
     readonly scriptHashes: readonly string[];
+    /**
+     * `sha256-…` tokens (unquoted) for every inline `<script>` ANY page of the
+     * build can emit (HOS-807). Defaults to the build-time union.
+     */
+    readonly softNavScriptHashes?: readonly string[];
     /** `sha256-…` tokens (unquoted) for every inline `<style>` in the response. */
     readonly styleHashes: readonly string[];
     readonly apiUrl?: string;
@@ -803,8 +818,12 @@ export function buildCspHeader({
     // Deduplicated because `collectCspHashes` legitimately finds these in the
     // bodies that do use them. See `csp-astro-runtime-hashes.ts` for why this is
     // safe, and why it does NOT cover `server:defer`.
+    // HOS-807: the same reasoning for the app's OWN inline scripts — the
+    // build-time union of every page's, so the chips, sticky header, partial
+    // swap, /destinos/ filter, map controls and detail widgets survive a soft
+    // navigation. See `csp-soft-nav-script-hashes.ts`.
     const scriptHashSources = toSourceList([
-        ...new Set([...scriptHashes, ...ASTRO_RUNTIME_SCRIPT_HASHES])
+        ...new Set([...scriptHashes, ...ASTRO_RUNTIME_SCRIPT_HASHES, ...softNavScriptHashes])
     ]);
     const styleHashSources = toSourceList(styleHashes);
 

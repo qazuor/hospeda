@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -357,15 +358,15 @@ export const AccommodationCreateHttpSchema = z.object({
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
         .optional(),
-    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
     // Social media links (flat fields mapped to SocialNetworkSchema in converter)
-    twitter: z.string().url({ message: 'zodError.common.social.twitter.invalid' }).nullish(),
-    facebook: z.string().url({ message: 'zodError.common.social.facebook.invalid' }).nullish(),
-    instagram: z.string().url({ message: 'zodError.common.social.instagram.invalid' }).nullish(),
-    linkedin: z.string().url({ message: 'zodError.common.social.linkedIn.invalid' }).nullish(),
-    tiktok: z.string().url({ message: 'zodError.common.social.tiktok.invalid' }).nullish(),
-    youtube: z.string().url({ message: 'zodError.common.social.youtube.invalid' }).nullish()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish(),
+    tiktok: safeExternalUrl('zodError.common.social.tiktok.invalid').nullish(),
+    youtube: safeExternalUrl('zodError.common.social.youtube.invalid').nullish()
 });
 
 export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSchema>;
@@ -472,7 +473,7 @@ export const AccommodationCreateDraftHttpSchema = z.object({
     /** Mobile phone. Maps to `contactInfo.mobilePhone`. */
     phone: z.string().optional(),
     /** Website URL. Maps to `contactInfo.website`. */
-    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
     // --- Optional amenity junction (SPEC-172) ---
     /**

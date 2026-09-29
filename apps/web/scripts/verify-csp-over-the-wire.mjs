@@ -12,6 +12,12 @@
  * fixed it; this script fails CI if any of them regresses (or if the middleware
  * stops emitting the header).
  *
+ * HOS-807 adds a second check: every page route of the router manifest whose
+ * only parameter is `[lang]` is fetched, and every executable inline script of
+ * every page must be authorised by the CSP header of every OTHER page — the
+ * condition for it to run when reached by `<ClientRouter />` soft navigation.
+ * It also asserts the build-time union actually reached the served header.
+ *
  * Usage: build `apps/web` first (`pnpm --filter=hospeda-web build`), then run
  * `node apps/web/scripts/verify-csp-over-the-wire.mjs`. Exits 0 on success,
  * non-zero (with a report) on any failure.
@@ -22,13 +28,23 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    extractExecutableInlineScripts,
+    findSoftNavViolations,
+    hasClientRouter,
+    MAX_CSP_HEADER_BYTES,
+    parseScriptSrcHashes,
+    resolveCheckablePaths
+} from './csp-soft-nav-check.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = resolve(__dirname, '..');
 const SERVER_ENTRY = resolve(WEB_ROOT, 'dist/server/entry.mjs');
+/** Written by the `csp-soft-nav-hashes` integration during `astro build` (HOS-807). */
+const SOFT_NAV_REPORT = resolve(WEB_ROOT, 'dist/server/csp-soft-nav-script-hashes.json');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.CSP_VERIFY_PORT ?? '4399');
@@ -161,19 +177,97 @@ const main = async () => {
             }
         }
 
+        failures.push(...(await checkSoftNavigation()));
+
         console.log('');
         if (failures.length > 0) {
             console.error(`[csp-verify] FAILED (${failures.length}):`);
             for (const f of failures) console.error(`  - ${f}`);
             exitCode = 1;
         } else {
-            console.log('[csp-verify] All routes carry the CSP header; beta exception intact. ✓');
+            console.log(
+                '[csp-verify] All routes carry the CSP header; beta exception intact; every inline script survives soft navigation. ✓'
+            );
         }
     } finally {
         server.kill('SIGTERM');
     }
 
     process.exit(exitCode);
+};
+
+/**
+ * HOS-807: fetches every `[lang]`-only page route and checks, pairwise, that
+ * each page's inline scripts are authorised by every other page's CSP.
+ *
+ * @returns {Promise<string[]>} Failure messages (empty when all good).
+ */
+const checkSoftNavigation = async () => {
+    const failures = [];
+    if (!existsSync(SOFT_NAV_REPORT)) {
+        return [
+            `${SOFT_NAV_REPORT} is missing — the csp-soft-nav-hashes integration did not run during the build.`
+        ];
+    }
+    const report = JSON.parse(readFileSync(SOFT_NAV_REPORT, 'utf8'));
+    const { paths, skipped } = resolveCheckablePaths({
+        pageRoutes: report.pageRoutes,
+        locale: 'es'
+    });
+
+    console.log(
+        `\n[csp-verify] Soft-nav check (HOS-807): ${paths.length} routes from the router manifest, ${skipped.length} skipped (need params other than [lang]).`
+    );
+
+    const pages = [];
+    let largestHeader = { path: '', bytes: 0 };
+    for (const path of paths) {
+        const res = await fetch(`${BASE}${path}`, { redirect: 'manual' });
+        const csp = res.headers.get(CSP_HEADER);
+        const isHtml = (res.headers.get('content-type') ?? '').includes('text/html');
+        const html = isHtml ? await res.text() : '';
+        const clientRouter = hasClientRouter({ html });
+        if (res.status !== 200 || !csp || !clientRouter) {
+            console.log(
+                `  SKIP ${path}  [${res.status}]${csp ? '' : ' no-csp'}${clientRouter ? '' : ' no-client-router'}`
+            );
+            continue;
+        }
+        const headerHashes = parseScriptSrcHashes({ csp });
+        const missingUnion = report.scriptHashes.filter((hash) => !headerHashes.has(hash));
+        if (missingUnion.length > 0) {
+            failures.push(
+                `${path} → CSP header lacks ${missingUnion.length} of the ${report.scriptHashes.length} build-time union hashes (the substitution did not reach the served header).`
+            );
+        }
+        const scripts = extractExecutableInlineScripts({ html });
+        console.log(`  OK   ${path}  [200]  ${scripts.length} inline scripts`);
+        const headerBytes = Buffer.byteLength(csp, 'utf8');
+        if (headerBytes > largestHeader.bytes) largestHeader = { path, bytes: headerBytes };
+        if (headerBytes > MAX_CSP_HEADER_BYTES) {
+            failures.push(
+                `${path} → CSP header is ${headerBytes} bytes, over the ${MAX_CSP_HEADER_BYTES}-byte ceiling (proxies may drop or reject it).`
+            );
+        }
+        pages.push({ path, scripts, headerHashes });
+    }
+
+    if (pages.length < 2) {
+        failures.push(
+            `soft-nav check rendered only ${pages.length} page(s) with <ClientRouter /> — too few to check any navigation.`
+        );
+    }
+
+    for (const violation of findSoftNavViolations({ pages })) {
+        failures.push(
+            `inline script ${violation.hash} ("${violation.preview}") on ${violation.destinations.join(', ')} is NOT authorised by the CSP of ${violation.origins.length} other page(s) (e.g. ${violation.origins.slice(0, 3).join(', ')}) — blocked on soft navigation.`
+        );
+    }
+
+    console.log(
+        `[csp-verify] Soft-nav check: ${pages.length} pages, each checked against the CSP of the other ${Math.max(pages.length - 1, 0)}; build-time union of ${report.scriptHashes.length} hashes; largest CSP header ${largestHeader.bytes} bytes (${largestHeader.path}), ceiling ${MAX_CSP_HEADER_BYTES}.`
+    );
+    return failures;
 };
 
 main().catch((err) => {
