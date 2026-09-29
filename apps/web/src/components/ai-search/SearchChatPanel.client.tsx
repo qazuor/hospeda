@@ -177,12 +177,14 @@ export function SearchChatPanel({
     // `lastTurnHadEntities` is a snapshot of THAT turn (not recomputed from the
     // mutable chip set), so removing chips by hand doesn't trip the notice.
     // No numeric badge — just the reformulation suggestion from i18n.
-    const isLowConfidence =
-        !chat.isStreaming &&
+    const lowConfidenceSignal =
         chat.confidence !== null &&
         (chat.confidence < LOW_CONFIDENCE_THRESHOLD || !chat.lastTurnHadEntities);
+    const isLowConfidence = !chat.isStreaming && lowConfidenceSignal;
 
-    // Uninterpreted turn (HOS-983): the notice above is showing AND no filter
+    // Uninterpreted turn (HOS-983): the turn looked uninterpreted (the notice's
+    // signal, deliberately WITHOUT its `!isStreaming` gate: the filters event
+    // lands before `done`, and the catalog must not flash meanwhile) AND no filter
     // actually reached the search, so the accommodations GET returned the plain
     // catalog. Rendering that under "Resultados encontrados" next to a "could
     // not interpret" notice contradicts it, so the results panel is withheld.
@@ -192,7 +194,7 @@ export function SearchChatPanel({
     // `locationType`) must not count as filtering. A low-confidence turn whose
     // filters DID reach the search keeps its genuinely filtered results.
     const isUninterpretedTurn =
-        isLowConfidence &&
+        lowConfidenceSignal &&
         resolveActiveChips({
             filters: chat.currentFilters,
             locale,

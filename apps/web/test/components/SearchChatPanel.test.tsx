@@ -966,6 +966,19 @@ describe('SearchChatPanel', () => {
             expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
         });
 
+        it('uninterpreted turn while still streaming: keeps the catalog hidden (no flash before done)', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: false,
+                hasSearched: true,
+                isStreaming: true,
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+
         it('resets the composer placeholder on an uninterpreted turn instead of the has-results hint', () => {
             mockHook({
                 confidence: 0.9,
