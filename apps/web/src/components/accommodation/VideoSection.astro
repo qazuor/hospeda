@@ -30,6 +30,7 @@
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getDailymotionPlayerId } from '@/lib/env';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { resolveVideoEmbed, type VideoProvider } from '@/lib/video-embed';
 
 interface Props {
@@ -87,7 +88,7 @@ if (resolvedVideos.length === 0) return;
 					<div class="video-section__item">
 						<a
 							class="video-section__play video-section__play--link"
-							href={video.externalUrl}
+							href={resolveSafeExternalUrl(video.externalUrl)}
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={t(
