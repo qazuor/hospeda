@@ -171,6 +171,51 @@ describe('middleware onRequest — 410 Gone rewrite keeps the 410 status (soft-d
     });
 });
 
+describe('middleware onRequest — HOS-263 error pages carry the CSP header', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    const ERROR_PAGE_HTML =
+        '<html><head><style>.a{color:red}</style></head><body><script>window.x=1</script></body></html>';
+
+    it('stamps a CSP header on a 404 rewrite, hashing the rewritten body', async () => {
+        const context = createContext({ pathname: '/es/no-existe/' });
+        context.rewrite.mockResolvedValue(
+            new Response(ERROR_PAGE_HTML, {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.status).toBe(404);
+        expect(await result.text()).toBe(ERROR_PAGE_HTML);
+        const csp = result.headers.get('content-security-policy');
+        expect(csp).not.toBeNull();
+        expect(csp).toMatch(/script-src[^;]*'sha256-/);
+    });
+
+    it('stamps a CSP header on a 410 rewrite and keeps the 410 status', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/x/' });
+        context.rewrite.mockResolvedValue(
+            new Response(ERROR_PAGE_HTML, {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 410 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.status).toBe(410);
+        expect(await result.text()).toBe(ERROR_PAGE_HTML);
+        expect(result.headers.get('content-security-policy')).toMatch(/script-src[^;]*'sha256-/);
+    });
+});
+
 describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /publicaciones/', () => {
     beforeEach(() => {
         parseSessionUserMock.mockClear();
