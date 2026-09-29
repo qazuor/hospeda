@@ -758,8 +758,8 @@ predecesora de una sucesión en curso y la otra si no lo es. Es la regla 7 del n
 `G-R4`. **Abrir la segunda puerta no agrega un par, y su segunda fila tampoco**: ni `MP1` ni
 `MP4` son eventos de esta tabla, sino efectos que entran por el evento *«entra el pago»* que
 `S5`/`S19` y `S7`/`S19` ya compartían, así que los pares con dos filas **no crecen por acá** — hoy
-son ~~**cuatro** y el cuarto lo agregó `S25`, no esta puerta~~ **tres**: el cuarto, `S10`/`S25`,
-salió con la revisión del owner, 2026-09-28, C8 (`NUCLEO/03` §1 regla 7).
+son ~~**cuatro** y el cuarto lo agregó `S25`, no esta puerta~~ ~~**tres**~~ **cuatro**: el cuarto de antes, `S10`/`S25`,
+salió con la revisión del owner, 2026-09-28, C8, y entró otro en la otra épica, `PB11`/`PB13` (revisión del owner, 2026-09-28, C10; `NUCLEO/03` §1 regla 7).
 
 **Y `S6` lleva su condición por el mismo motivo**: con el pago acreditado y pendiente, el reloj del
 grace mandaría a `SUSPENDED` —que no emite fuente (`12-contrato…` §2.6)— a alguien que pagó el
@@ -807,11 +807,14 @@ nada que lo nombre.
    comparaciones de `B/09` §3 lo ve. Es la forma que ese § ya describe dos veces con otras
    palabras: *«la fila está `ACTIVE`, el proveedor dice `authorized`, y para el barrido eso
    coincide»*.
-2. **`D16` y `G-R5` siguen en verde**, porque comparan **el tope que declara el catálogo** contra
-   el día del hard delete (cap. 04 §3, núcleo). **El tiempo que una fila concreta lleva en
-   `PAUSED` no es ninguna de las dos cifras**, y nada lo comparaba contra nada.
-3. **Verticales no se entera ni puede**: no sabe que detrás de la pérdida de cobertura hay una
-   pausa (`12-contrato…` §4, `DEC-TRIAL-008`).
+2. ~~**`D16` y `G-R5` siguen en verde**, porque comparan **el tope que declara el catálogo** contra
+   el día del hard delete (cap. 04 §3, núcleo).~~ (`D16` y `G-R5` salieron (revisión del owner, 2026-09-28, C14.)
+   **El tiempo que una fila concreta lleva en `PAUSED` no lo compara nada.**
+3. ~~**Verticales no se entera ni puede**: no sabe que detrás de la pérdida de cobertura hay una
+   pausa (`12-contrato…` §4, `DEC-TRIAL-008`).~~ **Verticales se entera sólo para no avanzar el
+   reloj** (revisión del owner, 2026-09-28, C14): pregunta `retenciónDetenida` (`12-contrato…` §4.1), que con esta fila
+   `PAUSED` contesta `sí`, así que el reloj queda **detenido mientras la reanudación no ocurra**:
+   el cliente no pierde el contenido, y tampoco vuelve el servicio.
 
 **Por eso son dos escrituras y no una, y cada una tapa un agujero distinto:**
 
@@ -1420,7 +1423,7 @@ gratis y llegó a `A5` por cualquiera de las otras puertas.
 > cerrar.
 
 **`S21` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — ~~y son cuatro
-desde `S25`, no tres~~ y son tres: `S10`/`S25` salió con la revisión del owner, 2026-09-28, C8** (`NUCLEO/03` §1 regla 7). Comparte el
+desde `S25`, no tres~~ y son ~~tres~~ cuatro: `S10`/`S25` salió con la revisión del owner, 2026-09-28, C8, y `PB11`/`PB13` entró por C10** (`NUCLEO/03` §1 regla 7). Comparte el
 `desde` con `S20` —las dos salen de *«toda fila viva de complemento»*— y **compartir el `desde` no
 es compartir el par** (`NUCLEO/03` §1 regla 7): el evento de `S20` es otorgar o anclar un grant y
 el de `S21` es que su instancia llegó a `CANCELLED`, y ninguna otra fila de esta tabla declara
@@ -1672,22 +1675,29 @@ lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…
 `cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9) **y en ese acto arranca el
 reloj de inactividad** —el hecho 5 del `NUCLEO/01` §1.2, FASE 8 completa, `F-8CA2-001`, owner
 2026-09-25—, **en ella y en todas las demás fichas del dueño en la vertical**, que el recálculo del
-aviso escribe sin pasar por `PB2` (owner 2026-09-25). **Y el reloj de inactividad de verticales no se detiene**: si la pausa cruza el día 90,
-`PB4` la archiva.
-Verticales no sabe que detrás de esa pérdida de cobertura hay una pausa, y `DEC-TRIAL-008`
-decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino **tres** cosas:
+aviso escribe sin pasar por `PB2` (owner 2026-09-25). ~~**Y el reloj de inactividad de verticales no se detiene**: si la pausa cruza el día 90,
+`PB4` la archiva.~~ **Y el reloj de inactividad de verticales se detiene mientras dure la pausa** (revisión del owner, 2026-09-28, C14): el hecho 5 lo escribe igual, pero `PB4`, `PB5` y `PB9` no actúan mientras `retenciónDetenida` conteste `sí`.
+~~Verticales no sabe que detrás de esa pérdida de cobertura hay una pausa, y `DEC-TRIAL-008`
+decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino **tres** cosas:~~
+**Desde la revisión del owner la pausa pedida por el cliente detiene el reloj de retención**
+(revisión del owner, 2026-09-28, C14, `L1-c`): verticales pregunta `retenciónDetenida` (`12-contrato…` §4.1) antes de
+archivar, borrar o avisar, y con esta fila en `PAUSED` la respuesta es `sí`. **La ficha ya no se
+archiva durante la pausa**, y lo que sigue sobre el tope y el día 180 queda como historia. Lo que
+antes protegía al cliente eran **tres** cosas:
 **`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar; **el tope de una
 pausa es menor que el día del hard delete** —4 pausas-mes, unos 120 días, contra 180 (`V/02`
 §4.1)—; y **que la reanudación efectivamente ocurra**, que es la premisa de las otras dos.
 
-Esa desigualdad es el invariante `D16` y la vigila **`G-R5`, sobre el número que declara la fila
+~~Esa desigualdad es el invariante `D16` y la vigila **`G-R5`, sobre el número que declara la fila
 de arriba**: subir el tope de pausa acá sin mirar el otro lado es lo que le borraría el contenido
-a un cliente que está al día. El aviso que se lo dice antes de confirmar es `B/19` §4, fila 5-bis.
+a un cliente que está al día.~~ (Salen `D16` y `G-R5`, revisión del owner, 2026-09-28, C14: el
+tope de pausa ya no está atado al día 180.) El aviso que se lo dice antes de confirmar es `B/19` §4, fila 5-bis.
 
 **La tercera es la única que depende de que un job corra, y por eso es la que lleva las dos
-escrituras nuevas.** `D16` y `G-R5` comparan **dos cifras de configuración** y no miran el tiempo
+escrituras nuevas.** Sigue en pie con C14: una reanudación que no ocurre deja el reloj detenido y
+al cliente sin servicio. ~~`D16` y `G-R5` comparan **dos cifras de configuración** y no miran el tiempo
 que una fila concreta lleva en `PAUSED`: con la reanudación sin ejecutar, las dos siguen en verde
-y el reloj de verticales igual llega al día 180. Lo que la vigila es la **rama de fallo de `S10`**
+y el reloj de verticales igual llega al día 180.~~ Lo que la vigila es la **rama de fallo de `S10`**
 —la relectura que, si el proveedor sigue diciendo `paused`, deja la fila donde está y pone la
 marca— y la **quinta comprobación de cero llamadas** de `B/09` §3, que encuentra la pausa cuyo
 `fin_previsto` pasó y sigue sin `fin_real`. Sin las dos, la premisa con la que `DEC-DATA-002`
@@ -1925,6 +1935,8 @@ tres razones y ninguna es de matiz:
    propio vencimiento hacia adelante, indefinidamente. Lo que se retiró en esa decisión fue,
    textual, *«que el reloj fuera monótono»*.
 3. **Crearía una segunda dependencia sobre una cifra que el guard no vigila con ese sentido.**
+   *(`D16` y `G-R5` salieron (revisión del owner, 2026-09-28, C14); el argumento queda como historia y la
+   conclusión, no atar la reapertura a esa cifra, sigue.)*
    `D16` dice *«el tope de una pausa, en días, es menor que el día del hard delete»* y `G-R5`
    compara **esas dos** cifras y nada más (`B/20` §2). Atarle la reapertura al mismo número le
    agrega un consumidor que el guard no mira: bajar el día del hard delete acortaría la ventana de
@@ -2028,7 +2040,7 @@ quedado escrita como *«`S5`, o `S7` si venía de `DECLARED_UNPAID`»*, que es l
 del núcleo no puede verificar.
 
 **Y `MP4` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — ~~y son
-cuatro desde `S25`, no tres~~ y son tres** (`NUCLEO/03` §1 regla 7; esta frase decía *«sigue contando tres»* y
+cuatro desde `S25`, no tres~~ y son ~~tres~~ cuatro, con `PB11`/`PB13` (revisión del owner, 2026-09-28, C10)** (`NUCLEO/03` §1 regla 7; esta frase decía *«sigue contando tres»* y
 caducó con `DEC-SUB-015`, que creó el cuarto par sin tocar este §; vuelve a ser verdadera desde la
 revisión del owner, 2026-09-28, C8, que sacó `S25`). Comparte el
 evento con `MP1` —*«el admin registra el pago»*— y **compartir el evento no es compartir el par**
@@ -2438,7 +2450,7 @@ que es lo que la jerarquía de supresión de ese capítulo (§4.2) existe para e
   estado que **vive afuera de la columna**: la máquina de suscripción cuenta **nueve** con el
   mismo criterio, dejando su *(sin fila)* fuera de la cuenta. `MP5` agrega una arista, no un nodo.
 - **`G-R4` no gana ningún par por `MP5`** —los pares con dos filas son ~~**cuatro** desde `S25`~~
-  **tres** (revisión del owner, 2026-09-28, C8: `S10`/`S25` salió), y `MP5` no es ninguno de ellos—. El par de `MP5` es
+  ~~**tres**~~ **cuatro** (revisión del owner, 2026-09-28, C8: `S10`/`S25` salió; C10: entró `PB11`/`PB13`), y `MP5` no es ninguno de ellos—. El par de `MP5` es
   `(sin fila, se abre la cuota de un período)` y **ninguna otra fila de esta tabla sale de
   *(sin fila)***, así que tiene una sola. **Sus dos cláusulas no son dos pares**: son dos
   disparadores del mismo evento sobre el mismo `desde`, exactamente como los ~~**tres**~~ **dos** de `S9` y las

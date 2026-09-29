@@ -63,9 +63,9 @@ cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1
 | `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) **si publicar le arrancaría el trial, con la regla escrita sólo en `19` §4 fila 23** (FASE 9 vuelta 1, `F-8V1D1-004`) |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ **veintiún guards** (`G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
-| `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
-| `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ **veintiún guards** (la cifra se mantiene con la revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, **con su ficha a la vista publicada y una prueba gratis activa desde el día del corte** (revisión del owner, 2026-09-28, C12), la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
+| `22` | [lo legal](./docs/22-lo-legal.md) | ~~las señales de identidad y~~ el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`); las señales que sólo observaban (teléfono, identificador fiscal, dispositivo) no se guardan (revisión del owner, 2026-09-28, N7, `g2`) |
 
 ### 2.1 Lo que cita y no contiene
 
@@ -247,9 +247,9 @@ Una suscripción convierte el trial recién con su primer pago acreditado (`T2`,
 convierte, ~~y quien pagó sin haber publicado consume su fila por `T8`, al primer pago~~ quien
 publicó con una suscripción que todavía no cobró consume su fila por `T8`, al primer pago, y quien
 pagó sin haber publicado sigue en `PRE_TRIAL` y la consume `T6` cuando publique (FASE 9 vuelta 1,
-`F-8V1A2-004`) —**salvo que le haya vuelto una ficha por `PB3` o `PB7` bajo esa suscripción: eso
+`F-8V1A2-004`) ~~—**salvo que le haya vuelto una ficha por `PB3` o `PB7` bajo esa suscripción: eso
 cuenta como ejercicio del evento para `T8`, que la consume al primer pago** (owner 2026-09-27, FASE
-9 vuelta 2, `R15`)—. La superficie
+9 vuelta 2, `R15`)—~~ (la salvedad `R15` salió: revisión del owner, 2026-09-28, C12, `L1-b`). La superficie
 lo evita antes: **el botón de suscribirse de quien todavía no publicó en esa vertical lo manda a
 publicar** **si publicar le arrancaría el trial**, que arranca su trial (cap. 03 §2, cap. 19 §4
 fila 23, donde está la regla entera; owner 2026-09-25, FASE 9 completa, 6c; FASE 9 vuelta 1,
@@ -384,11 +384,11 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ## 5. Cómo se comprueba que está bien
 
-**~~Siete~~ Ocho guards con id propio de esta épica** —`G1`-`G6`, `G8` **y `G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`)—, y cada uno **lleva un caso que lo
+**~~Siete~~ ~~Ocho~~ Nueve guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`) **y `G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6)—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**~~Siete~~ Ocho NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ **veinte** —el decimonoveno es
+**~~Siete~~ ~~Ocho~~ Nueve NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ **veintiuno** (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6) —el decimonoveno es
 `G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los **doce** que no
-están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus **cuatro** referencias cruzadas
+están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`, C14)
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
 es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están todos?»*:
 
@@ -402,11 +402,12 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
 | `G8` | aparece `commerce` en fuentes activas |
 | `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
+| `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ veinte: **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ ~~veinte~~ veintiuno: **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---
@@ -421,8 +422,12 @@ Esta épica es independiente **por diseño** —no pregunta por dinero— y tamb
 siquiera de `trial`: el corte no siembra trials consumidos (owner 2026-09-25; FASE 9 completa,
 2g)—. **Lo único que toca de lo existente son las fichas**, y sin migrarlas: toda ficha que existe
 el día del corte nace con `listing.inactiva_desde` en el instante del corte —la escritura `C` de
-`NUCLEO/01` §1.2—, las publicadas de Alojamiento las baja la primera corrida del reconciliador
-diario de cobertura, y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
+`NUCLEO/01` §1.2—, ~~las publicadas de Alojamiento las baja la primera corrida del reconciliador
+diario de cobertura~~ **las que estaban a la vista nacen `PUBLISHED`, como recién creadas, y el
+corte le escribe a su dueño una prueba gratis activa que arranca ese día; las que el sistema viejo
+tenía bajadas por falta de pago nacen en `DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`:
+es la única fila nueva de verticales que escribe el corte, una prueba activa, no transcrita de
+ninguna), y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
 §2.4 y §4). *(Decía «nada que migrar y nada que romper», y la escritura `C` es una escritura sobre
 filas existentes; salida 3 de la FASE 9 completa.)*
 
@@ -434,10 +439,17 @@ filas existentes; salida 3 de la FASE 9 completa.)*
 - **Cuáles son las claves de entitlement y de limit de cada vertical.** Es configuración: acá está
   que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia y
   `enforcementStrategy` — no cuál es.
-- **Si el mes de una cuota corre por calendario o por aniversario.** Sigue abierto desde
-  `DEC-ENT-002`.
+- ~~**Si el mes de una cuota corre por calendario o por aniversario.** Sigue abierto desde
+  `DEC-ENT-002`.~~ **Cerrado** (revisión del owner, 2026-09-28, C4): por la fecha del ciclo de
+  cada persona, también en anual y en la prueba gratis (`15` §7).
 - **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5 y tiene su gate propio
   (`DEC-METH-003`).
+- **«Entrar como» el cliente** (revisión del owner, 2026-09-28, C7): no está en esta versión y se
+  va a agregar; su condición (se registra como hecho por el admin en nombre del cliente) está en
+  `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3.
+- **La baja de cuenta pedida por el usuario** (revisión del owner, 2026-09-28, N7, `g1`): fuera de
+  esta épica; la hace soporte a mano con una lista de pasos, y se corrige la FAQ
+  ([HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393); `NUCLEO/08` §1).
 - **Nada de la épica de billing.** Su primera pregunta —si el cargo puntual es el modelo canónico—
   ~~está planteada en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y sin responder.~~
   **se planteó en [HOS-1354](https://linear.app/hospeda-beta/issue/HOS-1354) y está respondida**

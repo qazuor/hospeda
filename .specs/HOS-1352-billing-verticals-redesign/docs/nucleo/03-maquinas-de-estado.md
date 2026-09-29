@@ -86,7 +86,7 @@ máquina de estados y una convención.
 
    **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
    las tablas de transiciones de las ~~nueve~~ **diez** máquinas, en las dos épicas. Los pares con dos filas y
-   dos destinos distintos que el diseño declara hoy son ~~**cuatro**~~ **tres** (revisión del owner, 2026-09-28, C8: sale `S10`/`S25`), en dos tablas:
+   dos destinos distintos que el diseño declara hoy son ~~**cuatro**~~ ~~**tres**~~ **cuatro** (revisión del owner, 2026-09-28, C8: sale `S10`/`S25`; C10: entra `PB11`/`PB13`), en ~~dos~~ tres tablas:
 
    | par | las dos filas | qué las separa |
    |---|---|---|
@@ -94,21 +94,24 @@ máquina de estados y una convención.
    | `(GRACE_PERIOD, entra el pago)` | `S5` / `S19` (`B/03` §3.2) | si la fila **es la predecesora de una sucesión en curso**: `S5` exige que no, `S19` que sí |
    | `(SUSPENDED, entra el pago)` | `S7` / `S19` | el mismo booleano |
    | ~~`(PAUSED, llega el fin de la pausa o la persona vuelve antes)`~~ | ~~`S10` / `S25` (`B/03` §3.2)~~ | **sale** (revisión del owner, 2026-09-28, C8): `S25` era la pausa que termina sobre una vertical discontinuada; `S10` queda sola en su par |
+   | `(MODERATED, un admin levanta la baja)` ✚ | `PB11` / `PB13` (`V/03` §9) | **el estado de origen que guardó el evento de `PB10`**: `PB11` exige que la ficha viniera de `DRAFT` y `PB13` que viniera de `PUBLISHED` o `UNPUBLISHED_BY_BILLING` (un `ARCHIVED` cuenta por el origen de su archivado). Un valor, no un booleano, pero sus dos lados no se solapan (revisión del owner, 2026-09-28, C10, `L2-i`) |
 
-   **Los ~~cuatro~~ tres son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
-   regla se cumple sin una precedencia: difieren en el valor de **un booleano**, no en una
-   combinación que alguien tenga que evaluar en orden. **Que sean ~~cuatro y no cinco~~ tres y no cuatro no es una
+   **Los ~~cuatro~~ ~~tres~~ cuatro son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
+   regla se cumple sin una precedencia: difieren en el valor de **un booleano** (el cuarto, en el de
+   un estado de origen guardado: revisión del owner, 2026-09-28, C10), no en una
+   combinación que alguien tenga que evaluar en orden. **Que sean ~~cuatro y no cinco~~ ~~tres y no cuatro~~ cuatro y no cinco no es una
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
    depende de que alguien vuelva a recorrer las ~~nueve~~ diez tablas a mano. ~~**Y el cuarto es la prueba de
    que el guard hace falta**: entró en la FASE 9-bis-4 por una decisión del owner sobre planes
    retirados, no por nadie que estuviera mirando esta tabla.~~ (El cuarto, `S10`/`S25`, salió con la
    revisión del owner, 2026-09-28, C8.)
 
-   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ ~~nueve~~ diez casos vivos que lo piden dicho**
+   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ ~~nueve~~ ~~diez~~ nueve casos vivos que lo piden dicho**
    (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; el décimo, FASE 9 completa, 6c).
-   `T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
+   ~~`T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
    trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
-   par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila. `S18` (`B/03` §3.2) sale desde la
+   par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila.~~ (`T7` salió: revisión del owner,
+   2026-09-28, N7, y con él el primero de los casos: quedan nueve, y los demás conservan su ordinal.) `S18` (`B/03` §3.2) sale desde la
    FASE 9-bis-3 también de `PENDING_AUTHORIZATION`, que comparte `desde` con `S2` y con `S3`: su
    evento es **que la predecesora dejó de ser fila viva sin `S17`**, y ninguna otra fila lo
    declara, así que sus dos pares tienen **una sola** fila cada uno. **Y `A5` (`B/03` §8) sale
@@ -150,12 +153,14 @@ máquina de estados y una convención.
    noveno son `PB10`, `PB11` y `PB12` (`V/03` §9)**: `PB10` —un admin modera la ficha— y `PB12`
    —el dueño la borra— salen de `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` y `ARCHIVED`, que
    comparten `desde` con casi toda esa tabla, pero sus eventos no los declara ninguna otra fila;
-   y `PB11` —un admin levanta la moderación— es la única que sale de `MODERATED`. Así que cada
-   uno de sus pares tiene **una sola** fila. **Y el décimo es `T8` (`V/03` §2)**: sale de `PRE_TRIAL`,
-   que comparte `desde` con `T1`, `T6` y `T7`, pero su evento —*«aparece un título que convierte»*—
+   y ~~`PB11` —un admin levanta la moderación— es la única que sale de `MODERATED`. Así que cada
+   uno de sus pares tiene **una sola** fila.~~ **`PB11` ya no es la única que sale de `MODERATED`**
+   (revisión del owner, 2026-09-28, C10): la acompaña `PB13` en el mismo par, que es el cuarto de la tabla de arriba, y `PB12`
+   con otro evento. Así que cada uno de los pares de `PB10` y `PB12` tiene **una sola** fila. **Y el décimo es `T8` (`V/03` §2)**: sale de `PRE_TRIAL`,
+   que comparte `desde` con `T1` ~~, `T6` y `T7`~~ y `T6` (`T7` salió: revisión del owner, 2026-09-28, N7), pero su evento —*«aparece un título que convierte»*—
    no lo declara ninguna otra fila de ese `desde`; `T2` declara el mismo evento, pero desde
    `TRIAL_ACTIVE`, que es otro par (owner 2026-09-25; FASE 9 completa, decisión 6c). En los
-   ~~ocho~~ ~~nueve~~ diez casos no hay guardas que
+   ~~ocho~~ ~~nueve~~ ~~diez~~ nueve casos (revisión del owner, 2026-09-28, N7: sale `T7`) no hay guardas que
    dirimir. ~~**La tabla de arriba sí ganó una entrada, y no por ninguno de estos diez**: la ganó
    `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`.~~ Lo que este guard cuenta
    son **pares**, no estados de origen, ~~y esa es exactamente la diferencia entre los diez casos de

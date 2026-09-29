@@ -177,11 +177,13 @@ disjuntas— y no puede vivir en el catálogo: se resuelve por persona y en el m
 Partner, que hoy tiene el trial en cero (`DEC-TRIAL-003`) y **ningún evento declarado**
 (`DEC-TRIAL-006`), no la lleva — y por lo tanto **ninguna de las ~~tres~~ cuatro transiciones que salen de
 `PRE_TRIAL` dispara ahí hoy**, que es lo que impide quemarle el trial a alguien antes de que la
-vertical lo ofrezca. **Son ~~tres y no dos~~ cuatro**: `T1` y `T6` esperan el evento de activación, que
-Partner no declara, `T7` espera **el encendido**, que todavía no ocurrió, **y `T8` —desde la FASE
-9 completa, 6c— pide días de trial > 0 y el evento ya ejercido**, que tampoco se dan. El día que ocurra,
+vertical lo ofrezca. **Son ~~tres y no dos~~ ~~cuatro~~ tres** (revisión del owner, 2026-09-28, N7: `T7` salió): `T1` y `T6` esperan el evento de activación, que
+Partner no declara, ~~`T7` espera **el encendido**, que todavía no ocurrió,~~ **y `T8` —desde la FASE
+9 completa, 6c— pide días de trial > 0 y el evento ya ejercido**, que tampoco se dan. ~~El día que ocurra,
 `T7` es justamente la que resuelve a quien ya ejerció el evento (`V/03` §2, cap. 11 §8) — así que
-esta frase es verdadera **por la configuración de hoy**, no por una propiedad de Partner.
+esta frase es verdadera **por la configuración de hoy**, no por una propiedad de Partner.~~ **Y la
+configuración de hoy no cambia en esta versión**: el panel no deja pasar los días de prueba de una
+vertical de 0 a más de 0 (cap. 11 §8).
 
 **Y esa condición necesita una columna que no existía**: `vertical.evento_de_activacion`. Sin
 ella el lado izquierdo del «si y sólo si» no se puede leer, y el guard **no verifica nada** — se
@@ -299,6 +301,7 @@ ahí la plataforma entera recibe de más, acá la población que menos puede def
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el ~~hash irreversible~~ seudónimo determinístico del correo normalizado** —no permite leer el correo, pero reconoce a quien vuelve con el mismo (FASE 9 completa, `C-1`)— (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` ~~y `T7` (cap. 03 §2) y, una sola vez, el corte~~, `T7` y `T8` (cap. 03 §2; `T8` desde la FASE 9 completa, 6c)**~~: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25)~~. **El corte no escribe ninguna** (owner 2026-09-25; FASE 9 completa, decisión 2g): los dueños del sistema viejo arrancan como clientes nuevos, en `PRE_TRIAL` sin fila |
+| **`cuota_ventana`** ✚ | `user`, vertical, clave medida, **el instante en que abrió, el instante en que cierra y lo consumido**. **No guarda el cupo**: se resuelve en cada consumo contra el conjunto efectivo (cap. 15 §7; revisión del owner, 2026-09-28, C4, `L2-e`) | `UNIQUE(user_id, vertical, clave, abre)`; a lo sumo una abierta por `(user, vertical, clave)`. **La siguiente se abre en el primer consumo después de que venció**, con el cierre calculado desde el ancla (`desde` del título, contrato §2) y nunca desde el cierre anterior (cap. 15 §7, regla 3) |
 
 **El piso del trinquete se guarda como referencia a versiones, nunca como copia de valores.** El
 §10.3 prohíbe copiar a mano y una copia además queda desactualizada (`DEC-TRIAL-002`).
@@ -388,7 +391,7 @@ descubre sola.
 **Y la restricción ya no es la única que niega: la niegan antes las guardas** (FASE 8 completa,
 `F-8CA3-003`). Escrita sola, alcanzaba también a la escritura que **registra** un trial consumido:
 quien volvía con el mismo correo y contrataba antes de publicar chocaba con ella en `T6`, y ninguna
-máquina decía qué pasaba después. **`T1`, `T6` ~~y `T7`~~, `T7` y `T8` exigen que el hash no tenga fila en esa
+máquina decía qué pasaba después. **`T1`, `T6` ~~y `T7`~~, ~~`T7`~~ y `T8` (`T7` salió: revisión del owner, 2026-09-28, N7) exigen que el hash no tenga fila en esa
 vertical** (cap. 03 §2; `T8` desde la FASE 9 completa, 6c): si la tiene, ninguna dispara y la publicación sigue **sólo si la persona
 está cubierta** —`PB1` exige cobertura o un `T1` que dispare (cap. 03 §9; FASE 8 completa, owner
 2026-09-25)—. El `UNIQUE` queda como
@@ -408,6 +411,7 @@ cuenta tiene que anonimizar la fila de `user` y no borrarla**, que es lo que la 
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**, **y nace en el estado que le da la tabla de traducción de `V/21` §2.4**, en la misma migración (FASE 9 vuelta 1, R1): es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25) |
+| **`pedido_de_arreglo`** ✚ | la ficha, **el motivo**, una fecha sugerida (anulable), **si el dueño avisó que corrigió** y cuándo, quién lo abrió y cuándo, y cuándo y quién lo cerró (revisión del owner, 2026-09-28, C10) | **es una marca, no un estado**: no mueve el estado de la ficha ni el reloj, y no cambia `admiteDestaque` (cap. 03 §9, *«la moderación en dos niveles»*). **A lo sumo uno abierto por ficha** (índice parcial sobre los abiertos). Lo abre y lo cierra sólo la acción administrativa de moderar (`NUCLEO/08` §3); el aviso del dueño lo escribe su operación propia, que no lo cierra. **Y `listing` guarda de dónde venía una ficha moderada** en el evento de `PB10`, no en una columna: es lo que leen `PB11` y `PB13` |
 
 **`listing` son las filas que ya existen, no una tabla nueva** (FASE 9 vuelta 2, `F-8V2A3-003`).
 Nadie lo había escrito, y el corte ya lo suponía: lo que verticales escribe en el corte es *«un
@@ -558,7 +562,7 @@ acá no había nada, así que el panel del §48 no tenía de dónde leer *«apro
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`postulacion`** | el correo que se escribió en el formulario, el estado de `03` §11 (`PENDIENTE` · `APROBADA` · `RECHAZADA`), el instante de resolución y **`partner_id`**, la fila de Partner que creó la aprobación | `partner_id` es nulo en `PENDIENTE` y en `RECHAZADA`, y **no nulo en `APROBADA`**: lo escribe `PP2` en el mismo acto en que crea la fila de Partner (`18` §2.5, *«lo único que existe es una fila»*). ~~La unicidad de `PENDIENTE` por correo y la espera tras un rechazo son la guarda de `PP1`, no una restricción de la tabla~~ **La guarda de `PP1` es una restricción de la base** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A2-005`): **un índice único parcial sobre el correo en minúsculas donde el estado es `PENDIENTE`**, que hace imposible la segunda `PENDIENTE` aunque lleguen dos envíos a la vez, **y un trigger del carril de extras que rechaza la inserción** si hay una `RECHAZADA` del mismo correo con la espera sin vencer y sin anular. La espera se anula con **`espera_anulada_en`** y quién la anuló, que escribe sólo la acción administrativa de la postulación (`NUCLEO/08` §3; `18` §2.2) |
-| **`partner`** | la cuenta de Partner (cap. 18), y **el vínculo: `owner_user_id`**, la columna que ya existe hoy (`partners.owner_user_id`, anulable) | `owner_user_id` es **nulo hasta el reclamo** y lo escribe **sólo** el acto de reclamar (`18` §2.4): en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla, **con sesión: escribe la cuenta de la sesión y no la que tiene la dirección** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A1-003`). **Ninguna otra escritura lo toca**, que es la regla de `18` §2.4 —*«nada se vincula hasta que la dirección se prueba»*— hecha restricción |
+| **`partner`** | la cuenta de Partner (cap. 18), y **el vínculo: `owner_user_id`**, la columna que ya existe hoy (`partners.owner_user_id`, anulable). **Y el contenido de su presencia (la página y el carrusel) vive en la misma tabla de partners de hoy** (`partners`), no en una tabla nueva (revisión del owner, 2026-09-28, N7) | `owner_user_id` es **nulo hasta el reclamo** y lo escribe **sólo** el acto de reclamar (`18` §2.4): en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla, **con sesión: escribe la cuenta de la sesión y no la que tiene la dirección** (owner 2026-09-27, FASE 9 vuelta 2, `R7`; `F-8V2A1-003`). **Ninguna otra escritura lo toca**, que es la regla de `18` §2.4 —*«nada se vincula hasta que la dirección se prueba»*— hecha restricción |
 
 **El panel lee *«aprobada sin reclamar»* así**: `postulacion.estado = APROBADA` y el `partner` de su
 `partner_id` con `owner_user_id` nulo. Es un dato y no un estado, como dice `03` §11, y por eso no
@@ -782,7 +786,7 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo qu
 camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
 que **no decide** (*«es otro proceso»*), y ningún capítulo lo diseña; la razón del hash descansa
 sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009`, owner
-2026-09-25).
+2026-09-25). **Queda fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.**
 
 ### 4.2 Cuatro reglas que la lista necesita
 
@@ -790,7 +794,7 @@ sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009
    causa; lo que se reemplaza es el dato personal. **Desde `DEC-DATA-005` la retención no
    anonimiza nada**, así que esta regla ya no tiene sujeto en el día 180; se conserva como estaba
    para el borrado de la cuenta (regla 2), cuyo proceso esa decisión no cubre y queda pendiente
-   (FASE 8 completa, `F-8CA3-009`, owner 2026-09-25).
+   (FASE 8 completa, `F-8CA3-009`, owner 2026-09-25; fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`).
 2. **La fila de `trial` sobrevive al borrado de la cuenta.** Es la única entidad de este modelo
    que lo hace, y la razón está en el §10.2. Conserva el `user + vertical`, las fechas y **el hash
    del correo normalizado**; lo personal se anonimiza con el resto. El hash **no** se anonimiza —
@@ -848,14 +852,17 @@ sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009
    juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha
    el primer día **y en ese mismo acto escribe `inactiva_desde`** (cap. 01 §1.2, hecho 5; FASE 8
    completa, `F-8CA2-001`, owner 2026-09-25) —**y el recálculo escribe ese mismo instante en sus
-   fichas que no estaban publicadas**, borrador y excedente incluidos (owner 2026-09-25)— y `PB4`
-   se la archiva el 90. *(Sin esa escritura la
+   fichas que no estaban publicadas**, borrador y excedente incluidos (owner 2026-09-25)— ~~y `PB4`
+   se la archiva el 90~~ (y ya no se la archiva: la pausa detiene el reloj, abajo). *(Sin esa escritura la
    columna guardaba el último reinicio, de hasta 90 días de antigüedad, y el 90 y el 180 caían
-   hasta 90 días antes de lo que esta cuenta dice.)* El reloj **no se detiene** durante la pausa
+   hasta 90 días antes de lo que esta cuenta dice.)* ~~El reloj **no se detiene** durante la pausa
    —verticales no sabe que hay una pausa detrás, y `DEC-TRIAL-008` con el §4 del contrato deciden
    que no lo sepa—, así que lo único que separa a ese cliente del borrado es que **120 < 180** y
    que reanudar reinicie. Las dos cifras son configuración: la desigualdad es el invariante `D16`
-   (cap. 04 §3, núcleo) y la vigila un guard.
+   (cap. 04 §3, núcleo) y la vigila un guard.~~ **Y durante una pausa pedida por el dueño el reloj
+   queda detenido** (revisión del owner, 2026-09-28, C14, `L1-c`): `PB4`, `PB5` y `PB9`, y los
+   avisos de retención, releen la pregunta `retenciónDetenida` del contrato (§4.1) y con `sí` no
+   hacen nada; al volver, el hecho 2 reinicia el reloj. `D16` y su guard salieron.
 
 ---
 

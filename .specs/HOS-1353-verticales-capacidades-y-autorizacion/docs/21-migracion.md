@@ -83,7 +83,16 @@ sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin e
 dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
 disponible ahora**, mientras son ocho.
 
-### 2.4 Cómo amanece la población existente: se despublica, y se la llama
+### 2.4 Cómo amanece la población existente: ~~se despublica, y se la llama~~ con su ficha a la vista publicada y una prueba gratis que arranca ese día
+
+> **Revisión del owner, 2026-09-28, C12, `L1-a`, `L1-b`.** **El día del corte, las fichas que
+> estaban a la vista nacen como recién creadas y PUBLICADAS, y el corte le escribe a su dueño una
+> prueba gratis activa en esa vertical, que arranca ese día.** Las que el sistema viejo tenía
+> bajadas por falta de pago nacen en **`DRAFT`**. Revierte `G1-1` (R1), que las hacía nacer
+> `UNPUBLISHED_BY_BILLING` sin sembrar nada, y precisa `DEC-MIG-005` punto 3: el corte sigue sin
+> sembrar trials **consumidos**, y siembra uno **activo**. El detalle está abajo, *«la prueba gratis
+> que escribe el corte»*; lo que este § decía en el otro sentido queda tachado o marcado donde
+> está. El sistema no avisa nada del corte: el owner les avisa en persona (`16-fase-7…` §4.2).
 
 **El programa nunca preguntó esto.** Sin fila de `trial`, el estado es `PRE_TRIAL` por
 construcción —*«`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene»* (`V/03` §2)—, así que ~~**el
@@ -96,15 +105,18 @@ de los usuarios de producción amanece ahí, otra vez**: el corte no escribe fil
 clientes actuales se tratan como nuevos (owner 2026-09-25; FASE 9 completa, `2g`; abajo, *«el
 rastro de que ya fue cliente»*, revertido). Y el evento que los sacaría **ya ocurrió**: `T1`
 dispara con *«la ficha queda publicada»*, que es la **transición** de publicar, y sus fichas ya
-están publicadas.
+están publicadas. **Salvo el dueño con una ficha a la vista, que amanece en `TRIAL_ACTIVE` en esa
+vertical** por la fila que el corte le escribe (revisión del owner, 2026-09-28, C12; abajo).
 
 **Y la guarda nueva del par `T1`/`T6` no cambia esta conclusión, que es lo que hay que
 verificar.** Desde que `T1` exige `cubierto` **falso** y `T6` lo exige **verdadero** (`V/03` §2),
 el mismo evento podría mandar a alguien a `TRIAL_CONVERTED` en vez de a `TRIAL_ACTIVE`. **La
 conclusión se sostiene, pero por el argumento del párrafo de arriba y no por `cubierto`: el evento
 ya ocurrió, así que la mañana del corte no dispara NINGUNA de las dos.** Nadie publica una ficha
-que ya está publicada, y sin evento no hay transición — para las ocho filas por igual. `T7`
-tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende nada.
+que ya está publicada, y sin evento no hay transición — para las ocho filas por igual. ~~`T7`
+tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende nada.~~ (`T7` salió:
+revisión del owner, 2026-09-28, N7.) **La prueba del corte no la dispara `T1`: la escribe el corte**
+(revisión del owner, 2026-09-28, C12).
 
 **Dos correcciones sobre esta misma verificación, porque razonaba sobre el conjunto equivocado:**
 
@@ -123,11 +135,12 @@ tampoco: Alojamiento ya tiene sus días de trial en `> 0` y el corte no enciende
    cuentas nunca pierden cobertura; si se escriben **después**, pasan por una ventana con
    `cubierto` falso en la que `PB2` les baja las fichas y `PB3` se las devuelve. Las dos ramas
    terminan igual y el residuo es una despublicación visible de minutos sobre dos cuentas del
-   owner: **es un orden que hay que escribir, no una decisión de diseño**. **Desde R1 las fichas
+   owner: **es un orden que hay que escribir, no una decisión de diseño**. ~~**Desde R1 las fichas
    de esas dos cuentas nacen `UNPUBLISHED_BY_BILLING` como todas** (tabla de abajo), así que
    ningún `PB2` les baja nada y el grant del 3b las sube por `PB3`: el residuo son los minutos
    entre el nacimiento y el grant, el mismo que este punto ya acepta (FASE 9 vuelta 1,
-   `F-8V1C2-012`).
+   `F-8V1C2-012`).~~ **Desde C12 sus fichas a la vista nacen `PUBLISHED` y con prueba activa**, así
+   que están cubiertas desde el paso 3 y el residuo de minutos desaparece (revisión del owner, 2026-09-28, C12).
 
 ~~**Lo que este § NO decide es qué pasa con el trial de esas dos cuentas.** Cubiertas por un grant,
 el día que publiquen una ficha dispara **`T6`** y su fila de `trial` nace **consumida**; y si ese
@@ -145,6 +158,12 @@ escribe fila, así que el día que publiquen dispara `T6` —un `GRANT` es un t�
 su fila nace consumida. Si el grant se revocara quedarían sin grant y sin trial; las dos son del
 owner y *«regenerables de cero»* (`B/21` §2.4), y eso se declara, no se diseña.
 
+**Y desde C12 se declara así** (revisión del owner, 2026-09-28, C12; como lo dice
+`30-revision-del-owner/01-impacto-producto.md` § C12): **la migración del paso 3 les escribe la
+prueba activa**, porque tienen fichas a la vista, **y el 3b les escribe el grant**; el grant es un título
+que convierte, así que `T2` convierte en el acto y **la prueba queda consumida**. Es inofensivo: las
+dos cuentas son del owner y *«regenerables de cero»*. No se las excluye de la migración.
+
 ~~**Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
 un título (`12-contrato…` §2.4)—~~ ~~y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
 que **las fichas publicadas de Alojamiento se despublican la mañana del corte**~~ ~~y el corte no es
@@ -154,17 +173,27 @@ despublica la primera corrida del reconciliador diario de cobertura** (`V/03` §
 consecuencia.~~
 
 **En qué estado nace cada ficha, y está determinado** (FASE 9 vuelta 1, R1; owner 2026-09-26,
-`G1-1` y `G1-2`). La migración estructural del corte le escribe a cada ficha preexistente el estado
-de la tabla de abajo, una sola vez, con la escritura `C`. La ficha que estaba a la vista **nace
+`G1-1` y `G1-2`; **las filas `L5`, `L7` y `L8` cambian con la revisión del owner, 2026-09-28, C12,
+`L1-a` y `L1-b`**: tabla de abajo). La migración estructural del corte le escribe a cada ficha preexistente el estado
+de la tabla de abajo, una sola vez, con la escritura `C`. ~~La ficha que estaba a la vista **nace
 `UNPUBLISHED_BY_BILLING`**: es el estado al que `PB2` la llevaría en la primera corrida del
 reconciliador, porque `PRE_TRIAL` no cubre, y escribirlo en el corte le ahorra al dueño un día de
-ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto. El reloj no
-cambia: la escritura `C` le pone el instante del corte, el mismo que `PB2` le escribiría. **Y su
-página pública la revalida el paso 4c del corte, con la herramienta de V6**: la escritura de
-nacimiento no es una transición, así que no programa la revalidación que `PB2` habría programado
-(`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2C2-006`), **y con ella los listados que muestran su
-tarjeta, por la etiqueta de colección de cada tipo** (FASE 9 vuelta 2, verificación, `N-C-07`), **y
-la página de cada destino, que lista sus alojamientos: una purga por destino, 22** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-t`).
+ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto.~~ **La ficha que
+estaba a la vista nace `PUBLISHED`, como recién creada, y su dueño amanece cubierto por la prueba
+que el corte le escribe** (revisión del owner, 2026-09-28, C12; abajo). El reloj no cambia: la escritura `C` le pone
+el instante del corte. ~~**Y su página pública la revalida el paso 4c del corte, con la
+herramienta de V6**: la escritura de nacimiento no es una transición, así que no programa la
+revalidación que `PB2` habría programado (`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2C2-006`),
+**y con ella los listados que muestran su tarjeta, por la etiqueta de colección de cada tipo**
+(FASE 9 vuelta 2, verificación, `N-C-07`), **y la página de cada destino, que lista sus
+alojamientos: una purga por destino, 22** (FASE 9 vuelta 2, verificación, owner 2026-09-28,
+`V2-t`).~~ **La que estaba a la vista no cambia de visibilidad**, así que el paso 4c ya no la
+revalida; le quedan las fichas que nacen fuera del sitio y el sistema viejo servía, si alguna
+(`16-fase-7…` §4.2).
+
+**Un dueño con más de una ficha a la vista en la misma vertical no se diseña** (revisión del owner, 2026-09-28, C12,
+`L1-a`, hecho del owner): **hoy no hay ninguno**. La prueba permite una ficha; si aparece alguno, se
+decide en ese momento.
 
 **La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se
@@ -190,10 +219,16 @@ no una premisa. Partner no tiene ficha: su presencia no se traduce (§4).
 | `L2` | `lifecycle_state = DRAFT` | `DRAFT` |
 | `L3` | `lifecycle_state = ARCHIVED` | `DRAFT` |
 | `L4` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` nulo | `DRAFT` |
-| `L5` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` no nulo | `UNPUBLISHED_BY_BILLING` |
+| `L5` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` no nulo | ~~`UNPUBLISHED_BY_BILLING`~~ **`DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`) |
 | `L6` | `lifecycle_state = ACTIVE` y `visibility` distinta de `PUBLIC` | `DRAFT` |
-| `L7` | `ACTIVE` + `PUBLIC` y (`owner_suspended` o `plan_restricted`) | `UNPUBLISHED_BY_BILLING` |
-| `L8` | `ACTIVE` + `PUBLIC`, sin ninguna de las dos marcas | `UNPUBLISHED_BY_BILLING` |
+| `L7` | `ACTIVE` + `PUBLIC` y (`owner_suspended` o `plan_restricted`) | ~~`UNPUBLISHED_BY_BILLING`~~ **`DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`) |
+| `L8` | `ACTIVE` + `PUBLIC`, sin ninguna de las dos marcas | ~~`UNPUBLISHED_BY_BILLING`~~ **`PUBLISHED`**, **y su dueño recibe la prueba activa del corte en esa vertical** (revisión del owner, 2026-09-28, C12) |
+
+**`L5` y `L7` nacen en borrador y no bajadas por billing** (revisión del owner, 2026-09-28, C12, `L1-b`): el sistema
+viejo las tenía bajadas por falta de pago, no a la vista, así que no hay nada que mantener arriba.
+Si el dueño quiere publicarla, la publica y le arranca la prueba por `T1`, como a cualquier cliente
+nuevo. **Con esto ninguna ficha del corte nace `UNPUBLISHED_BY_BILLING`**, y cae entera la regla
+`R15` (*«la cartera que contrata sin publicar»*, `V/03` §2), cuyo único sujeto era esa ficha.
 
 Dos capas que no cambian el estado y se resuelven aparte:
 
@@ -225,8 +260,9 @@ pierde igual (declarado en el «NO cierra» del capítulo).
 > vertical (`V/19`; owner 2026-09-25, FASE 9 completa, `6c`)— les arranca el trial como a
 > cualquiera (`T1`, `V/03` §2).~~
 >
-> **Y eso es lo que se hace: no se siembra nada.** Se les avisa **antes** del corte y se los
-> llama. **El camino que se les nombra es el del cliente nuevo** (`2g`): entrar y **publicar su
+> ~~**Y eso es lo que se hace: no se siembra nada.** Se les avisa **antes** del corte y se los
+> llama.~~ **Superado por C12** (revisión del owner, 2026-09-28, C12): se siembra una prueba activa, y el owner les
+> avisa en persona. Lo que sigue queda como historia de R1: **El camino que se les nombra es el del cliente nuevo** (`2g`): entrar y **publicar su
 > ficha**, que `PB1` admite desde `UNPUBLISHED_BY_BILLING` o desde `DRAFT` cuando arranca un trial
 > (`V/03` §9), y eso les arranca el trial por `T1`. El botón de suscribirse los manda ahí, porque
 > no tienen ningún `PB1` en el sistema nuevo (`V/19` fila 23), **siempre que publicar les arranque
@@ -238,6 +274,10 @@ pierde igual (declarado en el «NO cierra» del capítulo).
 > `G1-1`), **en el orden de `V/03` §9 *«cuáles vuelven»*: como no tienen evento de publicación en el
 > registro nuevo, cuentan como publicadas en el instante del corte y desempatan por `created_at`**
 > (FASE 9 vuelta 1, `N-G1-01`).
+
+*(Con C12 la ficha no baja en el corte: baja recién cuando vence la prueba del corte sin que el
+dueño contrate, por `T3` y `PB2`, como la de cualquier cliente nuevo. Lo que sigue sobre la
+llamada que tarda queda como historia de R1.)*
 
 **Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
 puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
@@ -272,7 +312,9 @@ escritura `C`, así que `PB2` no corre sobre ellas en el corte y el instante que
 del corte, el mismo que `PB2` les habría escrito. FASE 9 vuelta 1, R1.)*
 
 > ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
-> tiene un límite de hecho en el día 180**. Pasado ese día, sin contratar, el hard delete ya corrió
+> tiene un límite de hecho en el día 180**. *(Desde C12, para el dueño con una ficha a la vista el
+> reloj se reinicia mientras dura la prueba (el hecho 2, porque está cubierto), así que el límite
+> corre desde que la prueba vence y no desde el corte; revisión del owner, 2026-09-28, C12.)* Pasado ese día, sin contratar, el hard delete ya corrió
 > y ~~lo que `PB7` devuelve es una ficha vacía~~ la ficha quedó en `PURGED`, que es final: no la
 > devuelve nada (`V/03` §9, `PB9`; `F-8CA2-008`, cerrado por el owner el 2026-09-25). ~~El límite de
 > la agenda sigue abierto igual. El hallazgo propone
@@ -283,6 +325,11 @@ del corte, el mismo que `PB2` les habría escrito. FASE 9 vuelta 1, R1.)*
 > se vuelva a reportar. Y `DEC-MIG-004` retiró su defecto #7 con la causa *«no se transcribe ninguna»*: la ficha
 > sí sobrevive al corte y su reloj sí se siembra, así que esa causa no alcanza a esta columna — la
 > corrección del texto del log queda para el log.
+
+*(**Superado por C12** (revisión del owner, 2026-09-28, C12): el owner eligió exactamente la alternativa de este
+párrafo, que ya tenía su precio escrito en `G1-1`: una escritura del corte con seudónimo, reloj y
+campaña, y una sola ficha en el cupo de la prueba. Este párrafo y los dos siguientes quedan como
+historia de R1.)*
 
 **Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
 contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
@@ -316,10 +363,51 @@ existente** (abajo, *«el rastro de que ya fue cliente»*; FASE 8 completa, owne
 reconocible un cobro viejo, que ninguna llamada puede evitar.~~ ~~**Las filas nuevas que el corte
 escribe son dos clases, y ninguna es una transcripción**: la lápida del `B/21` §2.5, que hace
 reconocible un cobro viejo, y la fila de `trial` consumida, que hace reconocible a un cliente viejo.~~
-**Del lado de verticales el corte no escribe ninguna fila nueva** (owner 2026-09-25; FASE 9
-completa, `2g`). Las filas nuevas del corte son de billing y ninguna es una transcripción: la
+~~**Del lado de verticales el corte no escribe ninguna fila nueva** (owner 2026-09-25; FASE 9
+completa, `2g`).~~ **Del lado de verticales el corte escribe una clase de fila nueva: la prueba
+activa de cada dueño con una ficha a la vista** (revisión del owner, 2026-09-28, C12; abajo). No es una transcripción:
+no copia ningún trial del sistema viejo, escribe uno que arranca ese día. Las filas nuevas del corte son de billing y ninguna es una transcripción: la
 lápida del `B/21` §2.5, que hace reconocible un cobro viejo, y los dos `permanent_grant` del
 `B/21` §2.4, que son las cortesías del owner escritas como el caso normal del diseño nuevo.
+
+#### La prueba gratis que escribe el corte
+
+(revisión del owner, 2026-09-28, C12, `L1-a`, `L1-b`; revierte `G1-1` en lo que decía de la cartera.)
+
+> **La migración estructural del corte le escribe a cada `(dueño, vertical)` con al menos una
+> ficha `L8` una fila de `trial` en `TRIAL_ACTIVE`, que arranca en el instante del corte.**
+
+- **Qué se escribe**: la fila que escribe `T1` (`V/03` §2): el `user_id`, la vertical, el plan de
+  trial derivado de la versión vigente y vendible, las versiones vigentes al arrancar (el piso del
+  trinquete), inicio en el instante del corte y fin a los días de prueba de la vertical, y el
+  **seudónimo del correo calculado con la misma función que `T1`** (`V/02` §2.2), y **la campaña
+  previa agendada** (§10.7). Es la misma fila con otro escritor. **La cuota mensual de la prueba
+  ancla ese día** (`V/15` §7).
+- **Dónde y cuántas veces**: en la migración estructural del paso 3, **una sola vez**, como la
+  escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2). La de un corte abortado no cuenta: la rama
+  de aborto restaura el backup y el reintento escribe con su instante. Repetir la migración no
+  escribe dos: el `UNIQUE(user_id, vertical)` lo impide.
+- **Es una fila de `trial` que ninguna transición produce**, igual que la lápida de billing es la
+  única `CANCELLED` que ninguna transición produce (`B/21` §2.5). Los guards que enumeran los
+  escritores de `trial` la admiten **por su lugar**, como admiten la escritura `C`.
+- **Qué pasa después**: lo de cualquier prueba. Si el dueño contrata, `T2` convierte; si vence sin
+  título, `T3` la vence y `PB2` baja la ficha, con el hecho 5 en el reloj.
+- **Una sola ficha a la vista por dueño y vertical** (`L1-a`, hecho del owner): hoy no hay ningún
+  dueño con más de una; **no se diseña** qué pasa si aparece, se decide en ese momento.
+
+**Dos condiciones nuevas del corte, que la prueba trae** (revisión del owner, 2026-09-28, C12; `16-fase-7…` §4.2,
+pasos 0 y 2):
+
+1. **La lista de proveedores del seudónimo tiene que estar cerrada y medida antes del corte**
+   (`V/02` §2.2, punto 1): el primer seudónimo que el sistema nuevo calcula ya no es el del primer
+   cliente nuevo, es el de la cartera entera el día del corte, y el seudónimo no se recalcula.
+2. **El recuento de cuentas de la cartera que comparten seudónimo en la misma vertical**: el
+   `UNIQUE(seudónimo, vertical)` rechaza la segunda fila y la migración del paso 3 se cae. Tiene que
+   dar cero; si no, se decide a mano antes del corte.
+
+**Y el riesgo que la escritura trae, declarado**: el reloj de la prueba corre desde el corte aunque
+el owner tarde en avisarle a la persona. Lo acota que el owner avise en persona, y el aviso de la
+campaña previa (§10.7).
 
 #### El rastro de que ya fue cliente: la fila de `trial` consumida que escribe el corte
 
@@ -444,9 +532,13 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   hagan, es un montón de tiempo»*. Se declara para que no se vuelva a reportar.
 - **El trial de los clientes actuales no se preserva** (§2.3 y §2.4; declarado por
   `DEC-METH-015`, FASE 9 completa, `2g`): quien tenía ficha o suscripción en el sistema viejo
-  estrena el trial en el sistema nuevo, aunque ya lo hubiera usado. **Causa**: decisión del owner,
+  estrena el trial en el sistema nuevo, aunque ya lo hubiera usado. **Y desde C12 quien tenía una
+  ficha a la vista lo estrena el día del corte**, sin tener que publicar (revisión del owner, 2026-09-28, C12). **Causa**: decisión del owner,
   que los trata como clientes nuevos y sólo les respeta la ficha.
-- **Quien contrata sin publicar paga desde el primer cobro** (§2.4; declarado por `DEC-METH-015`,
+- **Sale** (revisión del owner, 2026-09-28, C12, `L1-b`): el dueño del corte con una ficha a la vista amanece en
+  prueba y convierte por `T2` al contratar, y las fichas bajadas por el viejo nacen en borrador,
+  así que la regla `R15` que este ítem describía cae entera. Lo que decía:
+  **Quien contrata sin publicar paga desde el primer cobro** (§2.4; declarado por `DEC-METH-015`,
   FASE 9 vuelta 1, R1). Si un dueño del corte llega al checkout por otro camino, `S1` lo cubre,
   `PB3` le sube la ficha y ~~`T8` no escribe nada, porque no ejerció el evento en el sistema nuevo:
   paga el primer ciclo y conserva el trial sin usar~~ **`T8` le consume el trial al primer cobro:
@@ -454,11 +546,15 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   `T8`, y sólo para ella** (`V/03` §2; owner 2026-09-27, FASE 9 vuelta 2, `R15`). Ya no conserva
   un trial para el día que cancele. ~~**hasta su próximo `PB1` cubierto: si después publica otra ficha cubierto por un título que convierte —su suscripción ya cobró—, `T6` consume la fila sin darle el trial (`V/03` §2), que es la misma regla que para cualquier cubierto que publica** (FASE 9 vuelta 1, §4 punto 4 de `21-verificado-G1`).~~ **Causa**: el guion y el botón lo mandan a
   publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
-- **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
+- **Varias fichas a la vista de un mismo dueño y vertical el día del corte: no se diseña**
+  (revisión del owner, 2026-09-28, C12, `L1-a`, hecho del owner: hoy no hay ninguno; si aparece, se decide en ese
+  momento). Lo que decía este ítem: **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
   R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`
   le da el trial de un cliente nuevo, no uno más grande. El aviso lo dice.
 - **En una vertical sin trial, el dueño del corte no tiene trial que estrenar** (§2.4; declarado
   por `DEC-METH-015`, FASE 9 vuelta 1, R1). Hoy son cero fichas (§4, re-contadas por `B/21` §1.3).
+  *(Desde C12 la prueba del corte se escribe sólo donde la vertical tiene días > 0; hoy es
+  Alojamiento, y el panel no deja pasarla a cero: revisión del owner, 2026-09-28, N7.)*
   **Causa**: la configuración de la vertical, no el corte.
 - **Una ficha vieja borrada por un admin, y no por su dueño, pierde su contenido en el corte**
   (§2.4, `L1`; declarado por `DEC-METH-015`, owner 2026-09-26, `G1-2`). Toda `L1` nace `PURGED`

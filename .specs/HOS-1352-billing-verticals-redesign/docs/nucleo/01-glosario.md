@@ -69,7 +69,9 @@ la misma forma con que billing trata **la lápida** del corte —la única fila 
 hereda~~ de billing que el sistema nuevo escribe en el corte ~~(verticales escribe la fila de `trial`
 consumida de cada dueño existente, `V/21` §2.4; FASE 8 completa, owner 2026-09-25)~~ *(verticales ya
 no escribe ninguna fila de `trial` en el corte: los dueños del sistema viejo arrancan como clientes
-nuevos — owner 2026-09-25, FASE 9 completa, decisión 2g)*, nombrada aparte de las transiciones en toda lista que la cuenta (`B/21` §2.5, `B/09` §3)—.
+nuevos — owner 2026-09-25, FASE 9 completa, decisión 2g; **y desde la revisión del owner,
+2026-09-28, C12, escribe una: la prueba activa de cada dueño con una ficha a la vista, `V/21` §2.4,
+que tampoco es una transición y se admite por su lugar, como `C`**)*, nombrada aparte de las transiciones en toda lista que la cuenta (`B/21` §2.5, `B/09` §3)—.
 Pero **no queda fuera de la lista**, porque lo que la lista cierra son las **escrituras** de la
 columna y ésta es una: `G-R6-B` mitad *(a)* la admite **por su lugar** —la migración estructural
 del corte— y **la misma escritura en cualquier otro lugar es un escritor fuera de la lista**.
@@ -190,12 +192,24 @@ primer día de la pausa, cruza el día 90 —el tope de una pausa es de **4 paus
 días (cap. 03 §5, épica de billing)—, y sigue corriendo hasta el hard delete del día 180. Se le
 borra el contenido a un cliente que no canceló nada y que usó una función que le vendimos.
 
-**Y la pausa no aparece en la lista de arriba, que es lo que vuelve implementable el arreglo.**
+~~**Y la pausa no aparece en la lista de arriba, que es lo que vuelve implementable el arreglo.**
 Verticales no sabe —ni puede saber: el §4 del contrato y `DEC-TRIAL-008`— que detrás de la
 pérdida de cobertura hay una pausa y no una baja. No le hace falta: el reloj **no se detiene**
 durante la pausa, **se reinicia al salir de ella** por el hecho 2, y entre el primer día de la
 pausa y ese reinicio hay 120 días como máximo contra los 180 del borrado. Que esa desigualdad
-siga siendo cierta **es un invariante, no una coincidencia aritmética**: es `D16` (cap. 04 §3).
+siga siendo cierta **es un invariante, no una coincidencia aritmética**: es `D16` (cap. 04 §3).~~
+
+> **La pausa pedida por el dueño detiene el reloj** (revisión del owner, 2026-09-28, C14,
+> `L1-c`). Mientras la persona tiene en esa vertical una suscripción `PAUSED` por
+> `CUSTOMER_REQUEST`, sus fichas de esa vertical no se archivan, no se borran y no reciben avisos
+> de retención; al volver de la pausa, el reloj se reinicia. **La pausa sigue sin ser un hecho de
+> la lista de arriba** y no escribe la columna: lo que cambió es que **los que avanzan sobre el
+> reloj preguntan**. `PB4`, `PB5` y `PB9`, y los avisos de retención, releen al ejecutar la
+> pregunta `retenciónDetenida` del contrato (`12-contrato…` §4.1) además de `cubierto`, y con `sí`
+> no hacen nada. Al reanudar, la fila vuelve a emitir, `cubierto` pasa a verdadero y el hecho 2
+> reinicia el reloj. **Con eso sale `D16`** (cap. 04 §3) y con él la cota del tope de pausa contra
+> el borrado: el tope de pausa deja de estar atado al día 180. Lo que sigue de este bloque, sobre
+> la cuenta `tope + 90 < 180`, queda como historia de por qué existió esa cota.
 
 **Y hasta la FASE 8 completa esa cuenta era falsa, porque el reloj no arrancaba el primer día de la
 pausa** (`F-8CA2-001`, `F-8CA3-001`). Arrancaba en **el último reinicio**, que sobre una ficha
@@ -446,7 +460,7 @@ consumir trial (`DEC-TRIAL-007`).
 **Real no quiere decir con fila.** Una fila en `PRE_TRIAL` no llevaría **ni un dato** que su
 ausencia no lleve: el hash del correo normalizado, el piso del trinquete, la referencia al plan y
 las dos fechas se escriben **todos** en `T1` (cap. 02 §2.2, épica de verticales). Lo que hace real
-a `PRE_TRIAL` son sus reglas y **sus transiciones de salida —~~tres: `T1`, `T6` y `T7`~~ cuatro: `T1`, `T6`, `T7` y `T8` (la cuarta, FASE 9 completa, 6c)** (`V/03`
+a `PRE_TRIAL` son sus reglas y **sus transiciones de salida —~~tres: `T1`, `T6` y `T7`~~ ~~cuatro: `T1`, `T6`, `T7` y `T8` (la cuarta, FASE 9 completa, 6c)~~ tres: `T1`, `T6` y `T8` (`T7` salió: revisión del owner, 2026-09-28, N7)** (`V/03`
 §2)—, y todas existen sin fila.
 
 **`CANCEL_SCHEDULED` existe aunque el proveedor ya esté cancelado.** `DEC-SUB-009` decidió
@@ -815,7 +829,9 @@ puedePausar(suscripción) =
    (`DEC-SUB-004`), y se expresa en **meses**: los 120 días del §26.3 son 4 pausas-mes y los
    240 son 8 (`DEC-SUB-010`).
 
-   **Y el tope de UNA pausa no es un número libre.** Tiene que quedar por debajo del día del
+   ~~**Y el tope de UNA pausa no es un número libre.**~~ **El tope de una pausa ya no está atado al
+   borrado** (revisión del owner, 2026-09-28, C14): la pausa pedida por el dueño detiene el reloj
+   de retención (§1.2), así que lo que sigue queda como historia y `D16` salió. ~~Tiene que quedar por debajo del día del
    hard delete de la retención —180, cap. 02 §4.1 (épica de verticales)— porque **el reloj de
    inactividad no se detiene durante la pausa**: la ficha baja por `PB2` el primer día —**y ese
    mismo día arranca el reloj**, porque `PB2` escribe el hecho 5 del §1.2 (FASE 8 completa,
@@ -824,7 +840,7 @@ puedePausar(suscripción) =
    2026-09-25)— y `PB4` la archiva el 90. Lo que la salva es que la cobertura vuelva antes del 180, y eso es
    verdadero sólo mientras 120 < 180. Es el invariante `D16` (cap. 04 §3) y lo vigila `G-R5`.
    Los 8 acumulados **no** entran en la cuenta: son hasta tres pausas con una reanudación en el
-   medio, y cada reanudación reinicia el reloj (§1.2, hecho 2).
+   medio, y cada reanudación reinicia el reloj (§1.2, hecho 2).~~
 3. **El último término no bloquea, avisa.** `DEC-GRANT-004` permite pausar estando en cortesía
    **avisando que la pierde**, y deja que el cliente elija. O sea: ~~la función responde que sí,~~
    **no la decide `puedePausar()`** —que exige `estado == ACTIVE`, y la fila en cortesía está

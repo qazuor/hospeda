@@ -82,28 +82,21 @@ cuatro scopes, así que agregar uno sería legítimo; no se agrega porque no hac
 trial.** Sus planes lo tienen en cero (`DEC-TRIAL-003`) y no declara evento de activación
 (`DEC-TRIAL-006`).
 
-**La garantía se escribe sobre las ~~TRES~~ CUATRO salidas de `PRE_TRIAL`, no sobre `T1` sola.** Razonar por
+**La garantía se escribe sobre las ~~TRES~~ ~~CUATRO~~ TRES salidas de `PRE_TRIAL`** (revisión del owner, 2026-09-28, N7: `T7` salió)**, no sobre `T1` sola.** Razonar por
 enumeración con la enumeración corta es exactamente cómo una garantía se vuelve falsa sin que
-nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara—, `T7`
-espera **el encendido**, que todavía no ocurrió, **y `T8` —desde la FASE 9 completa, 6c— pide días
-de trial > 0 y el evento ya ejercido** (`V/03` §2). Ninguna de las ~~tres~~ cuatro puede ocurrir, y
-**la razón es la configuración de hoy, no una propiedad de Partner**: ~~las tres~~ las cuatro dependen de dos
-números y una declaración (FASE 9 vuelta 1, `F-8V1A2-010`) que `DEC-TRIAL-003` planifica cambiar.
+nadie la toque: `T1` y `T6` comparten el evento de activación —que Partner no declara—, ~~`T7`
+espera **el encendido**, que todavía no ocurrió,~~ **y `T8` —desde la FASE 9 completa, 6c— pide días
+de trial > 0 y el evento ya ejercido** (`V/03` §2). Ninguna de las ~~tres~~ ~~cuatro~~ tres puede ocurrir, y
+**la razón es la configuración de hoy, no una propiedad de Partner**: ~~las tres~~ ~~las cuatro~~ las tres dependen de dos
+números y una declaración (FASE 9 vuelta 1, `F-8V1A2-010`) que ~~`DEC-TRIAL-003` planifica cambiar~~
+**esta versión no deja cambiar**: el panel no pasa los días de prueba de una vertical de 0 a más de
+0 (revisión del owner, 2026-09-28, N7; cap. 11 §8).
 
-**El día que Partner encienda su trial, el §10.5 pasa a alcanzarlo y el procedimiento ya está
-escrito**: capítulo 11 §8 — declarar el evento, publicar la versión con días `> 0` y ejecutar
-`T7`, los tres como **un solo acto**. Para Partner el candidato a evento de activación es la
-aprobación del admin (`DEC-TRIAL-003`, implicación 1), así que `T7` alcanzaría a ~~**los partners ya
-aprobados**~~ **los partners que ya ejercieron el hecho que se declare**, que es lo correcto: ya fueron clientes y no les corresponde estrenar el trial el día
-que se enciende.
-
-**Y eso no son todos los partners ya aprobados** (FASE 8 completa, `F-8CA2-012`, owner
-2026-09-25). `T7` busca en el registro el hecho declarado (`V/03` §2), y **el camino B del §17.3
-—alta directa del admin— no pasa por la postulación** (§2.2): si el hecho que se declare es la
-aprobación de la postulación (`PP2`, cap. 03 §11), un partner del camino B no lo tiene, y `T7` no
-lo alcanza. **Hoy no cambia nada**, porque los días están en cero y ninguna de las ~~tres~~ cuatro salidas de
-`PRE_TRIAL` puede ocurrir; **es una condición del encendido**: el paso 1 del cap. 11 §8.3 —declarar
-el evento— tiene que decir también qué cuenta como *«ya ejerció»* para un partner del camino B.
+~~Dos párrafos decían qué pasaba el día que Partner encendiera su trial: el procedimiento del
+cap. 11 §8 (declarar el evento, publicar la versión con días > 0 y ejecutar `T7` en un solo acto),
+a quiénes alcanzaba `T7`, y que un partner dado de alta por el camino B no tenía el hecho de la
+postulación, así que la declaración del evento tenía que decir qué contaba para él.~~ **Salen con
+`T7`** (revisión del owner, 2026-09-28, N7): Partner no enciende su trial en esta versión.
 
 ### 1.6 La presencia no tiene máquina de estados: la lectura pregunta por el entitlement
 
@@ -164,7 +157,11 @@ era que alguien la hiciera en la lectura.
 > 1. **La presencia no tiene reloj de retención.** No tiene `inactiva_desde` ni ninguna fila de
 >    `PB4`/`PB5`/`PB9` que la alcance, así que el contenido de un partner que dejó de ser Gold se
 >    conserva sin fin (`F-8CA3-006`). La decisión dice que se conserva; hasta cuándo no.
-> 2. **La entidad del contenido de la presencia no está declarada en el cap. 02 §2.5**, que declara
+> 2. **Cerrado** (revisión del owner, 2026-09-28, N7): **el contenido de la presencia vive en la
+>    tabla de partners de hoy** (`partners`; cap. 02 §2.7, fila `partner`), y **el bit de moderación
+>    es una columna de esa tabla**. La retención de la presencia (punto 1) sigue declarada. Lo que
+>    decía:
+>    **La entidad del contenido de la presencia no está declarada en el cap. 02 §2.5**, que declara
 >    sólo `listing` (`F-8CA3-006`). ~~La regla de arriba no la necesita —lee el entitlement, no el
 >    contenido—, pero el modelo no está escrito.~~ **La regla de la lectura no la necesita —lee el
 >    entitlement—, pero la población del reconciliador y el bit de moderación sí** (FASE 9 completa,
@@ -317,10 +314,10 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
   tampoco**: el carrusel lee su propia clave y la presencia moderada no se ve (§1.6; FASE 9 completa,
   7b y 7c).
 - **Cómo se registra un pago manual** es del capítulo 13 (épica de billing).
-- **Si algún día Partner enciende su trial**, tiene que declarar su evento de activación
+- **Si algún día Partner enciende su trial** (fuera de esta versión: el panel no deja pasar sus
+  días de 0 a más de 0, revisión del owner, 2026-09-28, N7), tiene que declarar su evento de activación
   (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo. **Cuál** es ese evento sigue
-  abierto; **qué hay que hacer ese día** no: es el capítulo 11 §8, y los partners ~~ya aprobados~~
-  que ya ejercieron el hecho declarado quedan resueltos por `T7` — **los del camino B, sólo si la
-  declaración dice qué cuenta para ellos** (§1.5; `F-8CA2-012`).
+  abierto, y **qué hay que hacer ese día también**: el procedimiento del capítulo 11 §8 y `T7`
+  salieron con el encendido (revisión del owner, 2026-09-28, N7); se diseña si algún día hace falta.
 - **La lista de aprobadas sin reclamar sólo crece** (FASE 9 vuelta 1, `F-8V1A2-005`). **Causa**:
   no hay daño que evitar (§2.5), y una baja sería un estado más.

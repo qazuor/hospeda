@@ -34,6 +34,12 @@ Los tres huecos se cierran acá **separando dos cosas que venían juntas**:
 
 ### 2.3 Las señales de identidad: finalidad, plazo, y un conflicto concreto
 
+> **Teléfono, identificador fiscal y dispositivo NO se guardan** (revisión del owner, 2026-09-28, N7, `g2`): sólo observaban
+> y nunca bloqueaban, y guardarlos pedía finalidad y plazo legal para un abuso que hoy no está
+> medido. **La consulta legal queda sólo por el seudónimo del correo** (§3.3, pregunta 5). Lo que
+> sigue sobre la parte de observación queda como historia. Si algún día hace falta observarlas,
+> el seguimiento es [HOS-1394](https://linear.app/hospeda-beta/issue/HOS-1394).
+
 `DEC-TRIAL-004` decidió que **sólo el correo normalizado** bloquea un trial nuevo, y que
 teléfono, identificador fiscal y dispositivo **se registran y alertan pero nunca bloquean**. Su
 implicación 2 dejó `M-LEGAL-02` abierto y lo declaró **prerequisito para implementar la parte de
@@ -67,7 +73,7 @@ borrarse la cuenta, o si llega un pedido de supresión,** la fila de `trial` sig
 puede reconocer a nadie**. La persona se registra de nuevo con la misma dirección y obtiene un
 trial nuevo. **El defecto sigue en pie sin la pieza 2**: la 3 alcanza sola (FASE 8 completa,
 `F-8CA3-009`). ⚠️ Esa baja pedida por el usuario es el proceso que `DEC-DATA-005` declara que no
-decide, y ningún capítulo la diseña: queda pendiente.
+decide, y ningún capítulo la diseña: queda pendiente, fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.
 
 **Y el capítulo 02 lo dice de frente**: la fila se conserva *«porque el trial no se devuelve, así
 que la evidencia de que se consumió tiene que sobrevivir al borrado o el borrado se convierte en

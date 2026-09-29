@@ -99,7 +99,7 @@ Dos reglas de método que salen de los propios huecos y rigen este documento:
 ### El núcleo — acá · `docs/nucleo/`
 
 Lo que las dos épicas comparten. **No se parte**: un glosario en dos mitades deja de ser un
-glosario, y ~~54~~ 53 invariantes (revisión del owner, 2026-09-28, C8: sale `D14`) numerados de corrido pierden lo único que los hace útiles, que es poder
+glosario, y ~~54~~ ~~53~~ 52 invariantes (revisión del owner, 2026-09-28, C8: sale `D14`; C14: sale `D16`) numerados de corrido pierden lo único que los hace útiles, que es poder
 preguntar **una vez** si están todos.
 
 | # | capítulo | qué define |

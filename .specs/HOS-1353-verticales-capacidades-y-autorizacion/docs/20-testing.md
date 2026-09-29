@@ -55,6 +55,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G6 | **dos mitades, con dos mensajes**. **(a)** una autorización **decide sólo por rol**; **(b)** *«un rol entró al conjunto efectivo»*: una construcción del conjunto efectivo lee un rol —el cargador que le da el conjunto entero a `SUPER_ADMIN`, `ADMIN`, `EDITOR` o `CLIENT_MANAGER`— (FASE 9 vuelta 1, `F-8V1A1-002`) | invariantes §64.12 y §64.13; cap. 17 §4.3 |
 | G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
 | **G13** ✚ | ~~la implementación **de arranque** de `cobertura()` llega a producción~~ **un build destinado a producción importa el módulo de la implementación de arranque que contesta por billing** (el `no` a las cuatro fuentes de billing ~~y el `NINGUNA` de `finDeServicio`~~; la pregunta salió con la revisión del owner, 2026-09-28, C8), **no** la resolución del trial ni la del título `BASE`, que son de verticales en las dos implementaciones (contrato §6.3; FASE 9 vuelta 2, `F-8V2C1-005`; la fila, corregida en la verificación, `22-` §5) | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. **Lo construye `V4`**, con la implementación de arranque: falla sobre un build destinado a producción, no sobre la rama, así que calla hasta que un build apunte a producción y la defensa existe desde el primer día. **Vino de `B/20` §2** (owner 2026-09-26, `G5-5`): allá lo construía `B4` con la razón *«el consumidor del contrato es billing»*, que era falsa —el consumidor de `cobertura()` es verticales— |
+| **G14** ✚ | **una mitad importa a la otra**: el código de la épica de verticales importa algo de la de billing, o al revés, fuera del package del contrato (`12-contrato…` §7.1). Las dos importan sólo ese package, y el único lugar que junta las dos es la raíz de composición de `apps/api`, que el guard nombra como única excepción. **Se rompe a propósito** agregando en verticales un import de billing, y el rojo tiene que nombrar el archivo y la mitad importada | revisión del owner, 2026-09-28, N6, `L1-d`; `12-contrato…` §4.2 y §7.1. **Lo construye `V1`**, que crea el package. **No ve** una lectura de tablas de la otra mitad por `@repo/db` (`12-contrato…` §4.2) |
 | G-R2 | el pliegue del conjunto efectivo **recibe una fuente de clase `COMPLEMENTO`** cuando el conjunto no tiene ninguna de clase `TÍTULO` viva **que no sea de `tipo: TRIAL`** — en cualquiera de sus dos tramos. **El caso que lo distingue de la versión anterior**: un addon `USER` o `GLOBAL` comprado con la suscripción de otra vertical, contra una vertical cuyo único título es un trial, **no entra** (`V/11` §5.3; FASE 8 completa, `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`) | cap. 15 §2.6, `V/11` §5.2–§5.3 |
 | G-R2-B | una fuente `GRANT` transporta **un plan de otra vertical** que la de la fuente | cap. 15 §2.5, `12-contrato…` §2.8 |
 | **G-R2-C** | una fuente `ADDON` de alcance `USER` o `GLOBAL` **se emite en una vertical que no está entre las compatibles de su producto** (`addon_product`, `B/02` §2.4). **Gemelo de `G-R2-B`**: aquél vigila que un grant no transporte el ancla de otra vertical, éste que un addon global no aparezca donde su producto no llega | `12-contrato…` §2.7; owner 2026-09-25, FASE 9 completa, decisión 4e, `F-8CA1-008`. **Lo construye `B10`** de la otra épica (owner 2026-09-25, FASE 9 completa, decisión 10c; `B/descomposicion.md` §2, fila `B10`) |
@@ -63,7 +64,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las ~~nueve~~ **diez** máquinas (la décima, el reembolso: owner 2026-09-25, FASE 9 completa, decisión 5a), en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
-| G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1. **Lo construye `B8`** de la otra épica, que es la unidad del tope de pausa (`B/descomposicion.md` §2.8) — **la celda de `V9` que lo nombraba *«el de `D16`»* se retira**, porque `V9` corre antes de que ese número exista (`F-8eC2-004`, `descomposicion.md` §2.7) |
+| ~~G-R5~~ | ~~el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención~~ | **retirado** (revisión del owner, 2026-09-28, C14, `L1-c`): la pausa pedida por el dueño detiene el reloj de retención (`12-contrato…` §4.1, `retenciónDetenida`), así que el tope de pausa ya no tiene que quedar por debajo del día del borrado y el guard se queda sin sujeto; sale con `D16`. El número no se reusa |
 | **G-R5-B** | el **`N` de `PB5`** que declara la configuración, pasado a días, **no es menor que 6 meses** | cap. 03 §9 (`PB5`), cap. 02 §4.1; FASE 8 completa, `F-8CA2-014`, owner 2026-09-25. **Misma forma que `G-R5`**: compara una cifra de configuración contra una cota, y ninguna búsqueda de texto lo vería cambiar. **Lo construye `V6`**, la unidad que construye `PB5` y su `N` (`descomposicion.md` §2) |
 | G-R6 | una **condición de transición lee una columna que NINGUNA transición escribe** — sobre las ~~**nueve**~~ **diez** máquinas (la décima, el reembolso, FASE 9 completa, 5a), en las dos épicas, y contra **las tablas que los capítulos declaran** y no contra el subconjunto ya construido (`B/20` §2) | `DEC-TEST-001` y su ampliación del mismo día, `B/03` §7.2 (`MP5`), `F-8eB1-002`. **Referencia cruzada**: lo define `B/20` §2, donde nació. Figura acá porque **la columna que más caro sale muerta es de esta épica**: `listing.inactiva_desde` (cap. 02 §2.5) |
 | **G-R6-B** | **las DOS mitades de la lista cerrada de `listing.inactiva_desde`** (cap. 02 §2.5). **(a) Escritores**: una escritura de la columna —el efecto de una transición, un camino de servicio o un barrido— que **no sea uno de los ~~cuatro~~ ~~cinco~~ ~~seis~~ cinco hechos** del cap. 01 §1.2 (núcleo; el 4 salió con la revisión del owner, 2026-09-28, C8) **ni la escritura `C` del corte en la migración estructural del corte** —**el sexto, *«se levanta la moderación»*, entra con un solo ejecutor, `PB11`** (owner 2026-09-25; FASE 9 completa, decisión 5b)—; el quinto, ~~**la primera rama de `PB2`**~~ **la pérdida de cobertura del dueño en la vertical**, entra a la lista **con sus ~~dos~~ tres ejecutores** —la primera rama de `PB2` sobre la ficha publicada y el recálculo que el aviso despierta sobre las demás del dueño, **y el reconciliador diario de cobertura sobre las demás cuando el aviso se perdió** (cap. 03 §9, `DEC-ARCH-009`)— y la segunda rama de `PB2` sigue afuera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-002`, owner 2026-09-25)—. **El reconciliador no agrega ningún hecho**: escribe el 2 y el 5, y la mitad *(a)* lo admite por la lista. **(b) Consumidores**: una lectura de la columna que **no figure entre los ~~cinco~~ seis consumidores** que el cap. 02 §2.5 enumera y cierra (recontados, `F-8CD1-009`). **(c) Consumidores que dejaron de serlo**: uno de esos **~~cinco~~ seis** que **ya no lee** la columna. **El mensaje nombra la mitad que falló** — *«escritor fuera de la lista»*, *«lector fuera del inventario»* o *«lector declarado que ya no lee»*, nunca uno solo para las tres | `DEC-TEST-001`, **tercera y cuarta enmiendas** del mismo día; cap. 02 §2.5 —*«se escribe en los ~~cuatro~~ ~~cinco~~ seis hechos —y en la escritura única del corte— y en ninguna otra parte»*, *«y la leen ~~cinco~~ seis consumidores»*—; `DEC-DATA-002`. Lo construye **V6** (`descomposicion.md` §2). `B/20` §2 lo repite como referencia cruzada |
@@ -216,38 +217,13 @@ esta épica~~ sus ~~dos~~ tres ejecutores —`PB2`, el recálculo que el aviso d
 `F-8CA2-001`, owner 2026-09-25. **Y el sexto tampoco**: lo ejecuta `PB11`, de esta épica — FASE 9
 completa, decisión 5b.)*
 
-**`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
-arreglo de `F-8cC1-001` deja al cliente que pausa a salvo del borrado **porque 120 es menor que
-180**, no porque el reloj se detenga: no se detiene, se reinicia al reanudar (cap. 01 §1.2,
-núcleo). Es una premisa verdadera el día que se escribe y que **nadie vuelve a mirar** el día que
-alguien suba el tope de pausa —el quinto modo que `DEC-METH-010` declara no cubierto por ninguna
-búsqueda de texto—. Un guard es lo único que la vuelve a mirar sola.
-
-**Y hasta la FASE 8 completa la desigualdad que compara no era la que protegía** (`F-8CA2-001`,
-`F-8CA3-001`). *«120 < 180»* protege sólo si el reloj arranca el primer día de la pausa, y **nada lo
-escribía ese día**: guardaba el último reinicio, que sobre una ficha publicada y cubierta tiene
-hasta 90 días, así que lo que había que comparar era `tope + 90 < 180` y `G-R5` daba verde sobre una
-cuenta falsa. **Desde el hecho 5 del cap. 01 §1.2 (núcleo; owner 2026-09-25) `PB2` escribe
-`listing.inactiva_desde` en el instante en que baja la ficha por perder la cobertura**, que en una
-pausa es su primer día, y la desigualdad de `G-R5` pasa a ser la que de verdad separa a ese cliente
-del borrado. El guard no cambia de predicado: cambia que **ahora su premisa es verdadera**. Su
-alcance es el de `D16` ~~—la ficha que estaba publicada al empezar la pausa—; la que ya estaba abajo
-queda abierta en el cap. 01 §1.2 (núcleo)~~ —**toda ficha del dueño en esa vertical**, publicada o
-no, porque el hecho 5 es *«el dueño pierde la cobertura en la vertical»* y el recálculo que el aviso
-despierta le escribe el mismo instante a la que `PB2` no baja (FASE 8 completa, owner
-2026-09-25)—. **Por eso ahora alcanza**: el primer día de la pausa es el valor de la columna en
-todas las fichas que el borrado puede tocar, no sólo en la publicada. Lo que sigue abierto en el
-cap. 01 §1.2 (núcleo) es el disparo —el aviso perdido o repetido—, y `G-R5`, que compara dos
-cifras, no lo vería de ninguna forma. **Es cruzado**: el tope vive
-en el catálogo de billing y el día 180 en el capítulo 02 de esta épica, así que `B/20` §2 lo
-repite como referencia cruzada, igual que `G-R4`.
-
-**Y vigila esa mitad y no la otra, que hay que decirlo para que nadie lea de más.** *«Se reinicia
-al reanudar»* presupone que **la reanudación ocurre**, y eso no es una cifra del catálogo: es una
-llamada al proveedor que puede no aplicarse. `G-R5` sigue en verde sobre una pausa que venció hace
-veinte días y no reanudó —las dos cifras que compara no cambiaron—, así que **esa mitad la cubren
-otras dos piezas y ninguna es un guard**: la rama de fallo de `S10` (`B/03` §3.2) y la **quinta**
-comprobación de cero llamadas del barrido (`B/09` §3).
+~~Tres párrafos explicaban `G-R5`: por qué vigilaba la desigualdad entre el tope de pausa y el día
+del borrado, por qué hasta la FASE 8 completa comparaba una cuenta falsa y qué mitad no vigilaba
+(la reanudación que no ocurre).~~ **Salen con `G-R5`** (revisión del owner, 2026-09-28, C14): la
+pausa pedida por el dueño detiene el reloj y no hay desigualdad que vigilar. **La mitad que `G-R5`
+no vigilaba sigue igual y sigue sin guard**: una pausa que vence y no reanuda deja ahora el reloj
+detenido, y la cubren la rama de fallo de `S10` (`B/03` §3.2) y la quinta comprobación de cero
+llamadas del barrido (`B/09` §3).
 
 **`G-R5-B` es la misma clase sobre el otro reloj de la ficha** (FASE 8 completa, `F-8CA2-014`,
 owner 2026-09-25). `PB5` archiva un borrador a los `N` meses y el hard delete borra a los 180
@@ -277,8 +253,8 @@ mismas transiciones que ya la escribían.
 
 **`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
 mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace
-en el orden de recorrido, y los pares con dos destinos que el diseño declara hoy son ~~**cuatro**~~ **tres**:
-`T1`/`T6` acá, y `S5`/`S19` y `S7`/`S19` ~~y `S10`/`S25`~~ en la tabla de suscripción (`B/03` §3.2).
+en el orden de recorrido, y los pares con dos destinos que el diseño declara hoy son ~~**cuatro**~~ ~~**tres**~~ **cuatro**:
+`T1`/`T6` y **`PB11`/`PB13`** (revisión del owner, 2026-09-28, C10) acá, y `S5`/`S19` y `S7`/`S19` ~~y `S10`/`S25`~~ en la tabla de suscripción (`B/03` §3.2).
 **Cuántos son es lo que este guard cuenta**, no una lectura a mano — ~~y el cuarto entró en la FASE
 9-bis-4 por una decisión sobre planes retirados (`DEC-SUB-015`), no porque nadie estuviera
 mirando esta lista~~ y el cuarto, `S10`/`S25`, que había entrado en la FASE 9-bis-4 por

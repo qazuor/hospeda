@@ -86,7 +86,12 @@ personales **no se tocan, tampoco dentro de eventos o del outbox** — así que 
 que el §29 tiene que demostrar conserva su destinatario (FASE 8 completa, `F-8CA3-009`). ⚠️ Lo que
 queda pendiente: el borrado de la cuenta pedido por el propio usuario, que `V/02` §4.2 regla 2
 describe con *«lo personal se anonimiza con el resto»*, es un proceso que esa decisión **no
-cubre**; si alcanza a este registro, y con qué escritura, no lo dice ningún capítulo.
+cubre**; si alcanza a este registro, y con qué escritura, no lo dice ningún capítulo. **Queda fuera
+de esta épica** (revisión del owner, 2026-09-28, N7, `g1`, contra la recomendación, que era una
+baja mínima ahora): mientras tanto la hace **soporte a mano, con una lista de pasos escrita**, y
+**se corrige la FAQ** de la web, que hoy promete *«Eliminar cuenta»* desde Mi Cuenta y el borrado en 30
+días. Se implementa después de terminar HOS-1352:
+[HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393).
 
 ---
 
@@ -160,7 +165,7 @@ si es destructiva o mueve dinero.**
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
 | **extender un trial** —**la cortesía durante el trial**, la misma que `V/11` §3.4 llama *«extensión firmada por `SUPER_ADMIN`»*—: es **de verticales**, sobre su propia máquina y **fuera del contrato**: corre `T4` con origen `SUPER_ADMIN` y **motivo obligatorio**, **pasa el techo** y suma al total acumulado visible con su origen (`V/11` §3.5); la construye **V4**, y `extenderTrial` sigue siendo sólo del canje (owner 2026-09-26, P2; FASE 9 vuelta 1). No es la fila de la cortesía temporal: ésa va en meses enteros sobre un plan mensual, y ésta en días | ~~§32~~ **§34.1**, `V/11` §3.4 (el §32 es el canje self-service; FASE 9 vuelta 1, P2) | no |
-| **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2 — **y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner 2026-09-25, FASE 9 completa, decisión 7c) | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva —**y desde la FASE 9 completa levantar la moderación reinicia el reloj de inactividad** (el hecho 6 del cap. 01 §1.2, decisión 5b), así que la frase es verdadera también después: antes, `PB11` → `PB5` → `PB9` borraba en días (`K-6`)—. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
+| **moderar una ficha** o **levantar la moderación** —`PB10` y `PB11`, `V/03` §9—, **con motivo** en el campo *«por qué»* del §1.2. **Desde la revisión del owner, en dos niveles y cambiable en las dos direcciones** (2026-09-28, C10, `L2-i`): **pedir un arreglo sin bajar la ficha** (abre la marca *«pedido de arreglo»*, que no es un estado, `V/02` §2.5), **bajarla** (`PB10`), **cambiar de nivel** (de pedido a baja por `PB10`, o de baja a sólo pedido por `PB11`/`PB13`) **o levantar** (`PB11`/`PB13`, y cerrar el pedido); **sigue siendo una acción con un permiso**. **Y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner 2026-09-25, FASE 9 completa, decisión 7c) | FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 | **no mueve dinero ni borra**: la ficha pasa a `MODERATED` y su contenido se conserva —**y desde la FASE 9 completa levantar la moderación reinicia el reloj de inactividad** (el hecho 6 del cap. 01 §1.2, decisión 5b), así que la frase es verdadera también después: antes, `PB11` → `PB5` → `PB9` borraba en días (`K-6`)—. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
 | **reembolsar** | `DEC-RF-001` · `DEC-RF-002` | **sí**, **sin excepción**: `DEC-RF-002` resolvió el único caso que el diseño tenía candidato a excepción —el reembolso del pago pendiente al cerrar una sucesión— **a favor de la confirmación**. No hay ninguna operación automática sobre dinero. **Confirmar es la transición `REQUESTED → CONFIRMED` del reembolso, `RF2`** (cap. 01 §2.2, cap. 03 (billing) §6.1; FASE 9 completa, 5a) |
 | **asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚ —el cobro del motivo 19 (`COBRO_SIN_REGISTRAR`): crear la fila de `payment` en `PENDING` con el id del registro y correr `P1` sobre ella; la devolución del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`), la de un `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por **`RF4`**, que nace en `EXECUTED` con el comprobante de la transferencia (cap. 03 (billing) §6.1) | motivos 18 y 19 del cap. 02 (billing) §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa, decisión 5a | **sí**: registra plata que ya se movió y lo que de eso se desprende —el comprobante, `covered_period`, el cierre del reembolso—. Sin esta fila las dos marcas mandaban a una persona a *«asentar»* con un acto que la tabla no nombraba, y *«lo que no se puede es ejecutar una escritura que no esté nombrada en ninguna fila»* (abajo) |
 | **editar el contenido de una ficha ajena** ✚ —crearla en borrador a nombre de su dueño, corregirla, restaurar contenido—, **sin publicar, sin destacar y sin borrar**, que siguen siendo del dueño o de sus filas (publicar es `PB1` del dueño, destacar es un addon y borrar es `PB9` o `PB12`) | owner 2026-09-26, `G5-2`; FASE 9 vuelta 1, `F-8V1A1-003` | **no mueve dinero ni borra**: escribe contenido de lo ajeno y su dueño recibe ~~el aviso de la fila 1 del cap. 19 (épica de verticales)~~ **el aviso de la fila 26 del cap. 19 §4 (épica de verticales) y el correo *«contenido de tu ficha editado por soporte»* de `NUCLEO/07` §6** (la fila 1 es el botón Empezar de Turista; FASE 9 vuelta 2, `F-8V2D1-002`). **Y es la única fila que no es capacidad del actor: sus pasos 5 a 7 se evalúan sobre el sujeto, el dueño de la ficha**, así que soporte no le deja la ficha por encima de su cupo (`V/17` §3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`). Es la herramienta de soporte que el código de hoy tiene sin fila —crear a nombre de un dueño, corregir, restaurar—, y sin ella la presión empujaba a pedirle la contraseña al cliente, que es la impersonación que `V/17` §3.2 regla 4 prohíbe. **Si lleva confirmación explícita no lo dice la decisión**, y queda declarado con su causa (`DEC-METH-015`) |
@@ -174,7 +179,7 @@ la decimocuarta, asentar un cobro o una devolución hecha por fuera, desde la FA
 (decisión 5a), **y la decimoquinta, editar el contenido de una ficha ajena, desde la FASE 9 vuelta 1
 (owner 2026-09-26, `G5-2`)**, ~~**y la decimosexta, discontinuar una vertical, desde la FASE 9
 vuelta 2 (owner 2026-09-27, `Q-ACC16`)**~~**; recontadas sobre la tabla**— **y cada fila es UNA acción, aunque varias nombren más de una escritura.**
-*«Otorgar o revocar»*, *«pausar o reanudar»*, ~~*«aprobar o rechazar»*~~ *«aprobar, rechazar o anular la espera»* (una postulación de Partner; FASE 9 vuelta 2, `R7`), ~~y ahora~~ *«otorgar, anclar o
+*«Otorgar o revocar»*, *«pausar o reanudar»*, *«pedir un arreglo, bajar, cambiar de nivel o levantar»* (revisión del owner, 2026-09-28, C10: la de moderar, en dos niveles), ~~*«aprobar o rechazar»*~~ *«aprobar, rechazar o anular la espera»* (una postulación de Partner; FASE 9 vuelta 2, `R7`), ~~y ahora~~ *«otorgar, anclar o
 revocar»*, *«moderar o levantar la moderación»* —**sobre una ficha o sobre la presencia de un Partner,
 que es la misma acción con el mismo permiso** (7c)— ~~**y *«asentar un cobro o una devolución»***~~, **y *«asentar un cobro o una devolución»*** ~~**y *«discontinuar una vertical o acortar su cola»*** (FASE 9 vuelta 2, verificación, `V2-g`)~~ son la misma acción sobre el mismo instrumento, con **un** permiso, y por eso las ~~cinco~~
 líneas que cuantifican sobre esta tabla —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 **y su ⚠️, §3.5** y `B/19` §6— ~~siguen
@@ -191,6 +196,16 @@ distinto del dueño **nunca es *«el dueño publica»***, así que no ejerce el 
 ni dispara `T1` (el trial es de por vida y lo gasta sólo el dueño, `V/03` §2); y **ningún
 borrado de ficha sale de otra fila que `PB9` o `PB12`**, que es lo que hace correr `A6`
 (`B/03` §8) y cancela el addon `LISTING` de la ficha borrada (FASE 9 vuelta 1, `F-8V1A1-003`).
+
+> **«Entrar como» el cliente queda para una versión posterior, y su condición se escribe hoy**
+> (revisión del owner, 2026-09-28, C7). Un admin que le maneja la ficha a quien no sabe hacerlo
+> **no está en esta versión y se va a agregar**. La condición, que vale desde ya para quien lo
+> diseñe: **todo lo que haga queda registrado como hecho por el admin en nombre del cliente**
+> (actor el admin, sujeto el cliente, y nunca `actor = sujeto` en el registro, §1.2); no es la
+> impersonación que `V/17` §3.2 regla 4 prohíbe, que borra quién actuó. **Cuando se diseñe, la
+> frase de arriba *«ni las que se agreguen»* se reabre**: si el admin publica en nombre del
+> cliente, o esa publicación le arranca la prueba al cliente (y la frase cae) o no se la arranca
+> (y el admin no puede publicar la ficha de quien no tiene plan). No se decide ahora.
 
 **Y ninguna fila de esta tabla se ejecuta con `actor = sujeto`**: el paso 3 de la autorización la
 rechaza y la hace otra cuenta con el permiso (`V/17` §3.2 regla 5; owner 2026-09-26, `G5-1`).

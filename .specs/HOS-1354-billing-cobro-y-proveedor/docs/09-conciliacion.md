@@ -609,6 +609,11 @@ rama de fallo de `S10` no escribe ninguna de las dos. Si `S25` corriera sin escr
 > `sucede_a`, el pago pendiente de `S19`, las filas vivas bajo un ancla y una instancia de addon;
 > **ninguna mira el reloj de una fila**.
 >
+> *(`D16` y `G-R5` salieron con la revisión del owner, 2026-09-28, C14: la pausa pedida por el
+> cliente detiene el reloj de retención. La comprobación sigue siendo la única que mira el tiempo
+> real de una fila, y con C14 lo que está en juego abajo cambia: el reloj ya no corre hacia el día
+> 180 durante una pausa, queda detenido mientras la reanudación no ocurra.)*
+>
 > **Es la comprobación que mira el TIEMPO REAL de una fila, y por eso no la cubre `D16`.** `D16`
 > compara *«el tope de una pausa que declara el catálogo»* contra el día del hard delete
 > (cap. 04 §3, núcleo) — **dos cifras de configuración**, las dos verdaderas mientras nadie las

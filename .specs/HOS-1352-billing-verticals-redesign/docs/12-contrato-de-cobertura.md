@@ -89,6 +89,7 @@ cobertura(user, vertical) → {
         referencia: versiónDePlan | versiónDeAddon        ← NO anulable
         alcance:    VERTICAL | LISTING | USER | GLOBAL
         objetivo:   la ficha, si alcance = LISTING; nada en los otros tres
+        desde:      instante | SIN_EMPEZAR                  ← C4, revisión del owner
         hasta:      fecha | NO_VENCE | SIN_FECHA_CONOCIDA | SIN_EMPEZAR
         cobrada:    sí | no, si tipo = SUSCRIPCIÓN; nada en los otros cinco
         piso:       versiónDePlan, si tipo = GRANT; nada en los otros cinco
@@ -103,6 +104,14 @@ cobertura(user, vertical) → {
 > (`permanent_grant_vertical`, `B/02` §2.4), así que **cruza por acá** —leerlo de esa tabla sería
 > el acoplamiento que el §4.2 manda detectar—. La respuesta sigue teniendo **dos**: `cubierto` y
 > `fuentes`.
+>
+> **Y de siete a ocho con `desde`** (revisión del owner, 2026-09-28, C4, `L2-e`, `L2-f1`,
+> `L2-f3`): **el instante en que esa fuente empezó a cubrir**, que es el ancla de la cuota
+> mensual (`V/15` §7). Una `SUSCRIPCIÓN`, el de su fila (la sucesora de un cambio de plan trae el
+> suyo, y eso es lo que corre la fecha del ciclo); un `TRIAL`, el de `T1`; una `CORTESÍA` y un
+> `GRANT`, el de su arranque; un `ADDON`, el de su instancia; el `BASE`, el alta de la cuenta.
+> Una fuente con `hasta = SIN_EMPEZAR` trae `desde = SIN_EMPEZAR`: su reloj no arrancó (§2.4).
+> **No es una fecha de cobro** (§4): es la del alta de la fuente, no la de ningún pago.
 
 Una sola pregunta, con la vertical **obligatoria en la firma** — no opcional~~, no deducible del
 recurso~~. Es la misma forma estructural que el capítulo 17 §2.2 le dio a toda operación de dominio;
@@ -122,6 +131,7 @@ que alguien pueda olvidar.**
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
+| **`desde`** ✚ | el instante en que la fuente empezó a cubrir, o `SIN_EMPEZAR` si su reloj no arrancó (§2, revisión del owner, 2026-09-28, C4) | **la ventana de la cuota mensual** (`V/15` §7), que lo lee **sólo al abrir una ventana nueva**, para fijar el día del ciclo de la siguiente. **Esta fila es el censo de sus consumidores**, con la regla de la de `cubierto` |
 | **`hasta`** | uno de cuatro valores, y ninguno es «sin fecha» a secas (§2.6) | los avisos con ventana (cap. 15 §4.4) |
 | **`cobrada`** | en una fuente `SUSCRIPCIÓN`, si **esa fila** tiene **al menos un pago acreditado** —un cobro del proveedor aprobado, leído por id (`B/09` §4), o una cuota de pagador manual registrada (`MP1`, `B/03` §7)—; en los otros cinco `tipo`, nada. **No entra en la clase ni en `cubierto`** (abajo) | **`T2` y `T5`** de la máquina de trial, que convierten sólo con una suscripción que ya cobró (`V/03` §2; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`); **y `T6` y `T8`**, que desde la FASE 9 completa piden un título que convierte para consumir la fila de `trial` (`V/03` §2; owner 2026-09-25, decisión 6c). **Esta fila es el censo de sus consumidores**, con la misma regla que la de `cubierto` (abajo) |
 | **`piso`** | en una fuente `GRANT`, **la versión del plan de esa vertical que el grant otorgaba el día que se concedió** —el piso del trinquete (§2.8)—; en los otros cinco `tipo`, nada. Es una versión **del mismo plan** que `referencia`, y ese plan es **de esa vertical** (`B/02` §2.4, `permanent_grant_vertical`, que es de donde billing lo saca). No entra en la clase ni en `cubierto` (owner 2026-09-25; FASE 9 completa, 9h) | **la resolución del paso 6** (`V/15` §2), que aplica el trinquete: resuelve la versión vigente de `referencia` y nunca otorga menos que la de `piso`. Sin el campo, verticales tenía que leer el piso de una tabla de billing |
@@ -829,7 +839,7 @@ trial, el dueño ~~que sólo tiene borradores~~ **sin ninguna ficha publicada** 
 acto~~ después del commit de su escritura y nunca dentro de su transacción** (abajo, *«el aviso
 sale después del commit»*; FASE 9 vuelta 2, `F-8V2C1-002`), **toda escritura que cambia la
 respuesta del §2.1 para algún `(user, vertical)`**: que agrega o saca una fuente, o le cambia
-`referencia`, `hasta`, `alcance`, `objetivo`, `cobrada` o `piso`. Un addon `USER`/`GLOBAL` emite en
+`referencia`, `desde` (revisión del owner, 2026-09-28, C4), `hasta`, `alcance`, `objetivo`, `cobrada` o `piso`. Un addon `USER`/`GLOBAL` emite en
 cada vertical compatible de su producto (§2.7). **Una fecha que vence sin transición no emite**
 (§2.6): la cubre el reconciliador. ~~**Éste es el censo de emisores, y va sin número, con la regla
 de la fila `cubierto`**: quien agregue un emisor agrega su sintagma acá en el mismo acto. Hoy: las
@@ -857,11 +867,12 @@ implementaciones.~~
   que cambia la cobertura (`V/02` §3.2): cuando el beneficiario no tenía suscripción en esa
   vertical, `S13` no mueve ninguna fila, así que sin esta línea no salía ningún aviso;
 - **`A2`, `A4`, `A5` y `A6`**;
-- **`T1`, `T2`, `T3`, `T4` y `T5`**, que mueven la fuente de trial, **y `T6`, `T7` y `T8`**, que
+- **`T1`, `T2`, `T3`, `T4` y `T5`**, que mueven la fuente de trial, **y `T6`, ~~`T7`~~ y `T8`**, que
   llevan de `PRE_TRIAL` a `TRIAL_CONVERTED` y con eso sacan la fuente de pre-trial
   (`F-8V2C1-007`, `F-8V2A2-008`). La que sacan es de clase `BASE`, así que hoy `cubierto` no se
   mueve y ningún consumidor pierde nada; emiten igual, porque la regla mira `fuentes` y no
-  `cubierto`. Las ocho, en las dos implementaciones.
+  `cubierto`. ~~Las ocho~~ **Las siete**, en las dos implementaciones (revisión del owner,
+  2026-09-28, N7: `T7`, encender la prueba de una vertical, salió; el número no se reusa).
 
 **Lo que el recorrido descartó**: del catálogo de `NUCLEO/08` §3, el pago manual, confirmar que no
 se pagó, cancelar, pausar, reanudar y cambiar de plan emiten **por su fila de `B/03`**, y asentar
@@ -964,7 +975,8 @@ empuje perdido vuelve el día de atraso, y con él el cobro que el empuje venía
 para un borrado que no pasa por `PB9` ni por `PB12` ~~—el hard delete del admin, `F-8V1A1-003`—~~
 **—desde `G5-2` el admin no tiene ninguno (`NUCLEO/08` §3: *«ningún borrado de ficha sale de otra
 fila que `PB9` o `PB12`»*); el que queda es el borrado de la cuenta pedido por el propio usuario,
-pendiente en `NUCLEO/08` §1, que borra la fila de la ficha sin pasar por ninguna de las dos
+~~pendiente en `NUCLEO/08` §1~~ **fuera de esta épica y hecho a mano por soporte con una lista
+de pasos** (revisión del owner, 2026-09-28, N7, `g1`; `NUCLEO/08` §1, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393)), que borra la fila de la ficha sin pasar por ninguna de las dos
 (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—**, que
 no empuja nada, y la red lo alcanza porque `fichaPurgada` contesta `sí` también cuando la fila no
 existe. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8).
@@ -995,6 +1007,13 @@ fecha que los tres avisos de `DEC-MP-002` le dicen a todo el mundo. La pregunta 
 (§4.1).~~ **Ya no cruza ninguna fecha de una vertical** (revisión del owner, 2026-09-28, C8): las
 verticales no se discontinúan y la pregunta `finDeServicio` salió del §4.1.
 
+**Y cruza un instante que no es de cobro: `desde`**, el de la fuente que empezó a cubrir
+(revisión del owner, 2026-09-28, C4; §2). Es el alta de la fuente, no la de ningún pago: no dice
+cuándo se cobró ni si se cobró, y una suscripción que todavía no cobró lo trae igual. Lo lee sólo
+la ventana de la cuota mensual (`V/15` §7), que lo necesita porque la cuota se renueva en la
+fecha del ciclo de cada persona y verticales no tenía otra forma de saber cuándo arrancó una
+suscripción.
+
 Cuatro ausencias que parecen faltas y son decisiones:
 
 - **El estado exacto de la suscripción no cruza.** Verticales no distingue `ACTIVE` de
@@ -1014,7 +1033,12 @@ Cuatro ausencias que parecen faltas y son decisiones:
   el bit que separaría los tres estados es un estado de cobranza con otro nombre, y su costo real
   —que alguien `SUSPENDED` por impago reciba su único trial de por vida en una vertical donde
   nunca publicó— está acotado por `T2`, `T3` y `PB2`. El desarrollo está en `V/03` §2. **Esta
-  frontera no se vuelve a abrir por este caso.**
+  frontera no se vuelve a abrir por este caso.** **Se abre, lo mínimo, por otro** (revisión del
+  owner, 2026-09-28, C14, `L1-c`): la pausa pedida por el dueño detiene el reloj de retención, y
+  eso cruza como **una pregunta aparte, `retenciónDetenida`** (§4.1), que no va en `fuentes` ni
+  en `cubierto`. La máquina de trial no la lee, así que lo que esta decisión protegía (que nadie
+  escriba una regla de producto sobre la cobranza) queda intacto: sus únicos lectores son
+  archivar, borrar y los avisos de retención.
 - **Tampoco cruza el estado de la instancia de addon**, y por el mismo motivo: `EXPIRED` y
   `CANCELLED` son de billing, y lo único que verticales necesita saber es si la fuente está en la
   lista.
@@ -1037,6 +1061,7 @@ fichaPurgada(ficha)            → sí | no
 ficha(idDeFicha)               → { vertical, dueño, admiteDestaque }
 políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }
 extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA(motivo)
+retenciónDetenida(user, vertical) → sí | no          ← de ida: pregunta verticales, contesta billing
 ```
 
 **`situaciónDeVertical` y `finDeServicio` salieron de la firma** (revisión del owner, 2026-09-28,
@@ -1044,8 +1069,24 @@ C8: las verticales no se discontinúan; la firma tenía además
 `situaciónDeVertical(vertical) → { admiteAltas }` y
 `finDeServicio(vertical) → fecha | NINGUNA`). `admiteAltas` sólo lo escribía el acto de
 discontinuar, y `finDeServicio` era la única pregunta de la dirección de ida: **sin ella, el
-contrato vuelve a ser que billing empuja avisos y lee política, y verticales no le pregunta nada a
-billing**. Lo que decía de ella queda tachado abajo.
+contrato vuelve a ser que billing empuja avisos y lee política, y verticales ~~no le pregunta nada a
+billing~~** **le pregunta una sola cosa, `retenciónDetenida`** (revisión del owner, 2026-09-28, C14,
+abajo). Lo que decía de ella queda tachado abajo.
+
+**`retenciónDetenida` es la pregunta de la dirección de ida, y entra por la pausa** (revisión del
+owner, 2026-09-28, C14, `L1-c`). Contesta `sí` **sólo** mientras la persona tiene en esa vertical
+una suscripción `PAUSED` con motivo `CUSTOMER_REQUEST`, y `no` en cualquier otro caso (una pausa
+por `COURTESY` no la detiene: esa fila cubre). **Sus únicos lectores son archivar (`PB4` y `PB5`),
+borrar (`PB9`) y los avisos de retención** (`NUCLEO/07` §6), que la releen en el momento de
+ejecutar, igual que `cubierto`: con `sí` no archivan, no borran y no avisan. **No va en `fuentes`
+ni en `cubierto`**: la máquina de trial, la publicación y el paso 5 no la ven, así que
+`DEC-TRIAL-008` queda intacta en lo que protegía (§4). **No cambia el reloj ni lo congela**: la
+pausa no escribe nada en verticales, y al reanudar la fila vuelve a emitir, `cubierto` pasa a
+verdadero y el hecho 2 reinicia el reloj (`NUCLEO/01` §1.2), que es el *«al volver se reinicia»*
+del owner. Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye `B4`**
+en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que contesta `no`
+(§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
+que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.
 
 ~~**`finDeServicio` salió de `situaciónDeVertical` y es ahora una entrada propia, en la otra
 dirección**: la fecha la calculaba billing con la fórmula de `B/10` §4.3, la leían la fuente de
@@ -1066,6 +1107,8 @@ entra acá; lo que sólo muestra va a la capa de composición, abajo).
 > 2026-09-26, `G2-1`)**, la pertenencia de una ficha (`ficha`) y una sola escritura —la extensión**
 > **de un trial, que verticales acepta o rechaza (`extenderTrial`)—; nunca capacidades** (owner
 > 2026-09-26, `G4-2`)**: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
+> **Y la de ida es una sola pregunta, `retenciónDetenida`, que billing contesta** (revisión del
+> owner, 2026-09-28, C14).
 > ~~**Y el § declara además una pregunta de la dirección de ida, `finDeServicio`, que billing
 > contesta** (owner 2026-09-27, FASE 9 vuelta 2, `R5`).~~ (Salió con la revisión del owner,
 > 2026-09-28, C8.)
@@ -1141,10 +1184,12 @@ cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 
 ~~**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.**~~
 ~~**Son siete entradas: seis preguntas y una operación**~~ ~~**Son ocho entradas: siete preguntas y
-una operación**~~ **Son seis entradas: cinco preguntas y una operación** —~~doce~~ ~~**trece**~~ ~~**doce**~~ **once** campos en ~~cuatro~~ **tres** consultas
+una operación**~~ ~~**Son seis entradas: cinco preguntas y una operación**~~ **Son siete entradas:
+seis preguntas y una operación** (revisión del owner, 2026-09-28, C14: entra `retenciónDetenida`) —~~doce~~ ~~**trece**~~ ~~**doce**~~ **once** campos en ~~cuatro~~ **tres** consultas
 (`políticaDePlan`, ~~`situaciónDeVertical`,~~ `ficha`, `políticaDeAddon`), un veredicto
 (`direcciónDeCambio`), ~~un sí o no (`fichaPurgada`), **una fecha que contesta billing
-(`finDeServicio`)**~~ **un sí o no (`fichaPurgada`)** y la escritura `extenderTrial`— (FASE 9 vuelta 2, `R5`, recontado con script
+(`finDeServicio`)**~~ **un sí o no (`fichaPurgada`)**, **un sí o no de ida que contesta billing
+(`retenciónDetenida`)** y la escritura `extenderTrial`— (FASE 9 vuelta 2, `R5`, recontado con script
 sobre el bloque: `finDeServicio` sale de `situaciónDeVertical` y entra como entrada propia; revisión
 del owner, 2026-09-28, C8, recontado con script sobre el bloque: salen `situaciónDeVertical` y
 `finDeServicio`), **y de los
@@ -1171,9 +1216,10 @@ verticales (`V/descomposicion.md` §2.9): los ~~**siete**~~ ~~**seis**~~ ~~**cin
 dos primeras~~ **la primera** (FASE 9 vuelta 2, `R5`: `finDeServicio` salió; revisión del owner, 2026-09-28, C8: salió
 `situaciónDeVertical`, y de las tres originales quedan dos) son columnas de `V/02` §2.1, que es
 capítulo suyo, así que es la unidad más temprana en la que ~~las tres~~ **las dos** se pueden escribir. *(Estas
-~~tres son las originales~~ **dos quedan de las tres originales**; las otras ~~cuatro~~ ~~cinco~~ **cuatro** entradas dicen su constructor arriba:
+~~tres son las originales~~ **dos quedan de las tres originales**; las otras ~~cuatro~~ ~~cinco~~ ~~**cuatro**~~ **cinco** entradas dicen su constructor arriba:
 `fichaPurgada` y `ficha` en V6, `políticaDeAddon` en V2, `extenderTrial` en V4 —FASE 9 vuelta 1,
-`G2-1` y `G4-2`—~~, y `finDeServicio` en `B12`, con la respuesta de arranque en V4 —FASE 9 vuelta 2,
+`G2-1` y `G4-2`—, y `retenciónDetenida` en `B4`, con la respuesta de arranque en V4 (revisión del
+owner, 2026-09-28, C14)~~, y `finDeServicio` en `B12`, con la respuesta de arranque en V4 —FASE 9 vuelta 2,
 `R5`—~~.)* **La regla
 de `direcciónDeCambio` está escrita en `B/10` §3.5 y eso no la muda de dueño**: el veredicto lo
 emite verticales —es la frase de arriba— y su consumidor es `B8`, cinco unidades antes que la
@@ -1187,8 +1233,10 @@ frontera es *un contrato con dos implementaciones*; nunca dijo que fuera de una 
 
 > **Regla de vigilancia**: si aparece **un lugar que necesita algo de billing y no figura en la
 > fila `cubierto` del §2.1** ~~—y no es este hecho—~~ **ni en la fila `cobrada`** **ni en la
-> fila `piso`** ~~**ni es la pregunta `finDeServicio` del §4.1** (FASE 9 vuelta 2, `R5`)~~ (revisión
-> del owner, 2026-09-28, C8: la dirección de ida ya no tiene pregunta) —y no es
+> fila `piso`** **ni en la fila `desde`** (revisión del owner, 2026-09-28, C4) ~~**ni es la pregunta `finDeServicio` del §4.1** (FASE 9 vuelta 2, `R5`)~~ (revisión
+> del owner, 2026-09-28, C8: la dirección de ida ya no tiene pregunta) **ni es la pregunta
+> `retenciónDetenida` del §4.1** (revisión del owner, 2026-09-28, C14: la dirección de ida vuelve
+> a tener una, con lectores cerrados) —y no es
 > este hecho— (`DEC-TRIAL-010`: la segunda fila es el censo del segundo dato
 > que cruza; la tercera, el del piso del grant, owner 2026-09-25, FASE 9 completa, 9h), es señal de
 > que el corte se está filtrando. Se mira, no se resuelve en el lugar.
@@ -1238,6 +1286,14 @@ número, la regla habría caducado dos veces en un día.
 > ninguno compara *«lo que un § afirma»* contra *«lo que otro § enumera»*. La regla de vigilancia
 > es **prosa que alguien tiene que leer**, y por eso su enunciado se escribe sin cifras
 > congeladas: es lo único que se puede hacer por ella sin un guard.
+>
+> **Desde la revisión del owner hay uno, y cubre una parte** (2026-09-28, N6, `L1-d`): **`G14`**
+> (`V/20` §2) falla si el código de una mitad importa el de la otra; las dos importan sólo el
+> package del contrato (§7), y lo que ese package exporta es exactamente lo que este documento
+> declara. Con eso, una lectura no declarada que pase por un import deja de ser prosa. **Lo que
+> sigue siendo prosa**: que una mitad lea las TABLAS de la otra por `@repo/db`, que un import no
+> delata; y que un censo de consumidores (la fila de `cubierto`, `cobrada`, `piso` o `desde`) esté
+> completo.
 
 ---
 
@@ -1250,12 +1306,17 @@ esta frontera: *«es lo que prueba que la abstracción no miente»*.
 
 **No devuelve datos fijos.** Resuelve honestamente las **dos** fuentes que ya viven del lado de
 verticales —el trial, con su máquina de estados del capítulo 03 §2, y el título `BASE` del §2.5— y
-responde que no a las cuatro de billing: suscripción, cortesía, grant y addon~~, **y a
+responde que no a las cuatro de billing: suscripción, cortesía, grant y addon, **y a
+`retenciónDetenida` (§4.1) contesta `no`**, porque sin billing no hay pausa (revisión del owner,
+2026-09-28, C14)~~, **y a
 `finDeServicio` (§4.1) contesta `NINGUNA`**, porque sin billing no hay vertical que se discontinúe
 (FASE 9 vuelta 2, `R5`)~~ (la pregunta salió con la revisión del owner, 2026-09-28, C8). **Y emite el aviso**
 en las transiciones de trial del censo del §3 (*«quién emite»*): es emisor desde el día uno, igual
 que la real (§5.2), así que `PB2` baja la ficha de un trial vencido en el acto de `T3` y no al día
-siguiente (FASE 9 vuelta 1, `F-8V1C1-006`).
+siguiente (FASE 9 vuelta 1, `F-8V1C1-006`). **Y devuelve `desde` en las dos fuentes que
+resuelve** (revisión del owner, 2026-09-28, C4): el instante de `T1` en la de trial y el alta de
+la cuenta en `BASE`, así que la ventana de la cuota mensual (`V/15` §7) se construye y se prueba
+sin billing.
 
 **Por qué esto y no un valor hardcodeado**, que es la parte que más cambia el resultado del
 ejercicio:
@@ -1337,6 +1398,12 @@ pasan, y una constante no: si pasa también con una constante, no está probando
 FASE 9 vuelta 2, `F-8V2C1-006`). *«Las dos»* de este § son siempre las dos implementaciones, y el
 juego único pasa entero contra las dos.
 
+**Y hay un segundo juego, el de la dirección inversa** (revisión del owner, 2026-09-28, N6,
+`L1-d`): corre contra el simulador de lo que billing le lee a verticales y contra la
+implementación de verticales, y vive con el primero en el package del contrato (§7.1). Es lo que
+deja construir y probar la épica de billing antes de que existan las unidades de verticales que
+contestan esas preguntas.
+
 **Los casos de las fuentes de billing no son del juego único** (FASE 9 vuelta 2, `F-8V2C1-006`).
 Un caso como *«una suscripción `ACTIVE` cubre»* no lo pasa la de arranque, que contesta que no a
 toda fuente de billing, así que en el juego único lo pone en rojo durante toda la épica de
@@ -1365,7 +1432,8 @@ la implementación de arranque, ése es el día en que entra sin que nadie lo ve
 módulo entero: la resolución del trial y la del título `BASE` son de verticales **en las dos
 implementaciones** (§2.6, §5.2 *«no toca nada de lo construido»*), así que en producción corren
 siempre. **Es el cableado que contesta por billing**: el `no` a las cuatro fuentes de billing ~~y el
-`NINGUNA` de `finDeServicio`~~ (§5.1; revisión del owner, 2026-09-28, C8). La implementación de arranque lo tiene en un módulo propio,
+`NINGUNA` de `finDeServicio`~~ (§5.1; revisión del owner, 2026-09-28, C8) **y el `no` de
+`retenciónDetenida`** (revisión del owner, 2026-09-28, C14). La implementación de arranque lo tiene en un módulo propio,
 separado de la resolución del trial y de `BASE`, y **`G13` falla si un build destinado a
 producción importa ese módulo**. Con el predicado sobre el módulo entero, `G13` se ponía rojo en
 el primer build de producción, y la excepción que alguien le agregara para destrabar dejaba pasar
@@ -1382,5 +1450,39 @@ el proveedor le sigue cobrando.
   de billing. Acá está qué aportan, no cómo funcionan.
 - ~~**Quién tiene el reloj de cobro.**~~ **DECIDIDO el 2026-09-24 por `DEC-MP-006`: es del
   proveedor.** Este contrato **no cambió una línea** por eso — que era lo que el §1.2 afirmaba.
-- **En qué package vive cada cosa.** Es FASE 5 y tiene su gate propio (`DEC-METH-003`). Lo que
-  este documento fija es el contrato, no su domicilio.
+- ~~**En qué package vive cada cosa.** Es FASE 5 y tiene su gate propio (`DEC-METH-003`). Lo que
+  este documento fija es el contrato, no su domicilio.~~ **El domicilio ya está decidido; el
+  nombre, no** (revisión del owner, 2026-09-28, N6, `L1-d`). Abajo, *«dónde vive»*. **El nombre
+  del package** y en qué package vive cada implementación sigue siendo FASE 5 (`DEC-METH-003`).
+
+### 7.1 Dónde vive: un package compartido, único punto de comunicación
+
+(Revisión del owner, 2026-09-28, N6, `L1-d`.) **Toda comunicación entre verticales y billing pasa
+por un package compartido del monorepo**, y por ningún otro lado. No depende de ninguna de las
+dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales de `@repo/schemas`.
+Tiene cuatro cosas:
+
+1. **Las dos interfaces.** **Lo que verticales le pregunta a billing**: `cobertura` (§2),
+   `retenciónDetenida` (§4.1) y el aviso de que la cobertura cambió (§3). **Lo que billing le lee a
+   verticales**: `políticaDePlan`, `direcciónDeCambio`, `fichaPurgada`, `ficha`,
+   `políticaDeAddon`, la escritura `extenderTrial` (§4.1) y el empuje de la ficha que llegó a
+   `PURGED` (§3.1). Los dos eventos llevan la regla *«se emite después del commit»* (§3).
+2. **Sus validaciones**: el esquema de cada respuesta, de cada argumento y de cada evento. Una
+   respuesta que no valida no se entrega: es el §6.1 del lado de la forma.
+3. **Los simuladores de cada lado**, falsos programables en memoria de las dos interfaces, bajo
+   una ruta de pruebas que ningún build de producción importa (la técnica de `G13`, §6.3). **Con
+   ellos verticales se prueba entera sin billing, y billing entera sin verticales**: la mitad que
+   faltaba era la segunda, porque para la dirección inversa no había falso ni juego de casos.
+4. **Los juegos de casos compartidos**: el del §6.2 (la dirección de ida, contra las dos
+   implementaciones de `cobertura`) y **uno nuevo de la dirección inversa**, que corre contra el
+   simulador y contra la implementación de verticales, con su caso que una constante no pasa.
+
+**Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
+billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque
+con su módulo que contesta por billing, que sigue bajo `G13`). **El único lugar que junta las dos
+mitades es la raíz de composición de `apps/api`.** Y **`G14`** (`V/20` §2) falla si una mitad
+importa a la otra: es lo que vuelve ejecutable la parte de la regla de vigilancia que se ve en un
+import (§4.2). **Quién lo construye**: `V1` crea el package y `G14`; cada entrada entra con la
+unidad que construye su implementación (§4.1, *«quién construye»*), y la épica de billing lo
+consume desde `B1` con el simulador de la dirección inversa (`V/descomposicion.md`,
+`B/descomposicion.md` §2).

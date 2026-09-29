@@ -67,7 +67,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
 | `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** — y desde el 2026-09-25 **los addons siguen a su título**: *válida* es `ACTIVE` y ~~cobrada~~ pagando (`NUCLEO/01` §2, no el campo `cobrada` del contrato; FASE 9 vuelta 1, `F-8V1D1-002`), se pausan con la pausa del cliente (`S32`, `S33`), la orfandad se lee sobre el conjunto de principales y anclas vivas, y un `USER`/`GLOBAL` se emite sólo en sus verticales compatibles (owner, `DEC-ADDON-007`) |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**dieciséis guards**~~ **quince guards** —`G7`, ~~`G9`–`G13`~~ `G9`–`G12` (`G13` pasó a `V/20` §2 y lo construye `V4`: owner 2026-09-26, `G5-5`), los seis de `R1` y las **cuatro** referencias cruzadas—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**dieciséis guards**~~ ~~**quince guards**~~ **catorce guards** —`G7`, ~~`G9`–`G13`~~ `G9`–`G12` (`G13` pasó a `V/20` §2 y lo construye `V4`: owner 2026-09-26, `G5-5`), los seis de `R1` y las ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`: revisión del owner, 2026-09-28, C14)—, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño — **y la cartera actual no se migra: de su billing no se conserva nada, y se conservan el usuario, sus preferencias y sus fichas** (owner 2026-09-25, `DEC-MIG-005`) |
 | `22` | [lo legal](./docs/22-lo-legal.md) | el aumento, la revocación y el botón de arrepentimiento |
 
@@ -179,7 +179,9 @@ que tener una sola.
 **No cruzan la frontera** montos, precios, estados de pago, ids del proveedor ni fechas de cobro
 —sobre cobros cruza un solo bit, `cobrada`, declarado en el contrato §4 (`DEC-TRIAL-010`)—.
 **Y una fuente `GRANT` lleva además su `piso`**, la versión de plan del trinquete (owner
-2026-09-25; FASE 9 completa, 9h): la firma pasó a **siete campos por fuente**, y el piso sigue
+2026-09-25; FASE 9 completa, 9h): la firma pasó a ~~**siete campos por fuente**~~ **siete campos
+por fuente, y a ocho con `desde`** (revisión del owner, 2026-09-28, C4: el instante en que la
+fuente empezó a cubrir, que ancla la cuota mensual y no es fecha de cobro), y el piso sigue
 siendo **un puntero, no un valor** — por eso cruza sin romper la regla de arriba, y verticales deja
 de leerlo de `permanent_grant_vertical`.
 Ni siquiera el estado exacto de la suscripción: verticales no distingue `ACTIVE` de

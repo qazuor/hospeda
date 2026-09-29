@@ -502,6 +502,49 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
 
 ---
 
+## 7. La ventana de la cuota mensual · cierra la implicación 2 de `DEC-ENT-002`
+
+(Revisión del owner, 2026-09-28, C4, `L2-e`, `L2-f1`, `L2-f2`, `L2-f3`.)
+
+`DEC-ENT-002` fijó que la cuota de un entitlement medido se renueva todos los meses, sea cual sea
+el ciclo de pago, y dejó abierto si el mes corre por calendario o por aniversario. **Corre por la
+fecha del ciclo de cada persona**: quien arrancó el 15 renueva siempre el 15, también en un plan
+anual, que renueva la cuota cada mes aunque pague una vez por año.
+
+**Cinco reglas:**
+
+1. **El ancla es el `desde` del título que da la cuota** (`12-contrato…` §2): una suscripción, el
+   alta de su fila; una prueba gratis, el día en que arrancó (`T1`); una cortesía o un grant, el
+   de su arranque. El día del mes de ese instante, en el huso del mercado (`NUCLEO/07` §3), es la
+   fecha del ciclo.
+2. **La prueba gratis también renueva cada mes, desde el día en que arrancó** (`L2-f1`, contra la
+   recomendación). Su cuota es la cuota de trial (`11` §4), y se renueva con esta misma regla.
+3. **Del 29 al 31, el último día de los meses cortos** (`L2-f2`): el alta del 31 renueva el 30 de
+   abril, el 28 o 29 de febrero y el 31 de marzo. La fecha de cada ventana se calcula **siempre
+   desde el ancla**, nunca desde el fin de la ventana anterior: si se calculara desde la anterior,
+   después de febrero el 31 quedaría en 28 para siempre.
+4. **Un complemento que suma cuota suma a la del título que lo cubre y renueva el mismo día**
+   (`L2-f3`): no tiene ventana propia, y su `desde` no ancla nada. Es la regla de que el
+   complemento no habilita solo (§2.6).
+5. **Al cambiar de plan, la ventana en curso sigue hasta su fin** (`L2-e`): lo que queda de ella
+   se mide contra **el cupo del plan nuevo menos lo ya gastado**, y **la fecha nueva rige desde la
+   ventana siguiente**. Juan arrancó el 15 y gastó 80 de 100 consultas; el 20 sube a un plan de
+   300: hasta el 15 que viene le quedan 220, y desde ahí renueva siempre el 20. Si baja a uno de 50,
+   hasta el 15 no le queda ninguna (nunca un saldo negativo), y desde ahí renueva el 20 con 50.
+
+**Dónde vive**: una fila por persona, vertical y clave medida, con el instante en que abrió, el
+instante en que cierra y lo consumido (`02` §2.2, `cuota_ventana`). **No guarda el cupo**: el
+cupo se resuelve en cada consumo contra el conjunto efectivo (§2), y por eso la regla 5 sale sola,
+sin escribir nada al cambiar de plan. **La ventana nueva se abre en el primer consumo después de
+que venció la anterior**, leyendo el ancla en ese momento: un cambio de plan que recrea la
+suscripción trae un `desde` nuevo, y ese `desde` rige recién ahí. **La construye `V3`**, la unidad
+de la resolución.
+
+**Lo que no cambia**: lo no usado se pierde (`DEC-ENT-002`), y la cuota de trial sigue sin
+participar del trinquete (`11` §4.3).
+
+---
+
 ## Lo que este capítulo NO cierra
 
 - **Cuáles son las claves de cada vertical** —el ítem 4 del Eje 2 (cap. 10 §1)— es configuración,
@@ -509,8 +552,9 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
   atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—.
   *(Eran tres hasta esta pasada; la clase entró porque sin ella el predicado de `G-R3` no se podía
   formar.)*
-- **Si el mes de una cuota corre por calendario o por aniversario** sigue abierto desde
-  `DEC-ENT-002` (implicación 2).
+- ~~**Si el mes de una cuota corre por calendario o por aniversario** sigue abierto desde
+  `DEC-ENT-002` (implicación 2).~~ **Cerrado** (revisión del owner, 2026-09-28, C4): corre por la
+  fecha del ciclo de cada persona, §7.
 - **Qué es una suscripción «válida» para comprar un addon** (`A-ADDON-02`) es del capítulo 16 (épica de billing).
 - **El orden de aplicación entre promo, cortesía y grant** (`A-PROMO-01`, `A-PROMO-02`) es del
   capítulo 14 (épica de billing): acá se agregan **capacidades**, allá se compone **dinero**.

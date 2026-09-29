@@ -1054,7 +1054,7 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   sin pasar por `PB9` ni por `PB12` ~~(el hard delete del admin, `F-8V1A1-003`)~~: **desde `G5-2` el
   admin no tiene ninguno** (`NUCLEO/08` §3: *«ningún borrado de ficha sale de otra fila que `PB9` o
   `PB12`»*); el que queda es **el borrado de la cuenta pedido por el propio usuario**, pendiente en
-  `NUCLEO/08` §1 (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`, como el contrato §3.1). **Y son dos
+  `NUCLEO/08` §1 (fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`; FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`, como el contrato §3.1). **Y son dos
   mecanismos para un mismo hecho**: `A6` tiene que ser idempotente frente a los dos —una
   instancia ya `CANCELLED` no se vuelve a cancelar—. **Causa**: el owner no acepta ni un cobro
   de más, y el único camino a cero atraso es un empuje, que en este programa no tiene transporte

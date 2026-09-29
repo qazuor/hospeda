@@ -89,7 +89,10 @@ hace cumplir**~~ **Ocho precisiones que el orden hace cumplir** (la sexta, FASE 
    **«Desde afuera» es la mitad que hay que decir, porque `ARCHIVED` dejó de ser un estado
    sin salida.** El paso 4 pregunta tres cosas y una es *«¿está en un estado que acepta
    esto?»*: una ficha `ARCHIVED` **acepta de su dueño verla, exportarla y reactivarla**
-   —`PB8`, cap. 03 §9— **y borrarla** —`PB12`, desde la FASE 8 completa (`F-8CA2-004`)— y rechaza todo lo demás. Es lo que `DEC-DATA-001` promete con *«el
+   —`PB8`, cap. 03 §9— **y borrarla** —`PB12`, desde la FASE 8 completa (`F-8CA2-004`)— y rechaza todo lo demás.
+   **Y una ficha `MODERATED` acepta de su dueño verla, exportarla, editarla y borrarla, y no
+   publicarla** (revisión del owner, 2026-09-28, `g3`): la levanta el admin (`PB11`/`PB13`), y
+   borrarla es `PB12`, con correo de confirmación (cap. 03 §9). Es lo que `DEC-DATA-001` promete con *«el
    dueño la sigue viendo»* y lo que el §4.1 de este capítulo ya sostiene al no revocarle el
    rol. Sin esta línea, *«archivado responde no existe»* se lee como que lo responde
    **también al dueño**, y entonces la promesa no la puede cumplir nadie y `PB8` es
@@ -380,7 +383,11 @@ no una excepción a la lista.
    2026-09-28, C8.)
 4. **No existe la impersonación.** El administrador no «entra como» el cliente. La diferencia es
    todo el punto: impersonar hace que el registro diga que el cliente lo hizo, y ése es
-   exactamente el rastro que el hueco pide que no se pierda.
+   exactamente el rastro que el hueco pide que no se pierda. **«Entrar como» se va a agregar en una
+   versión posterior, y no es esto** (revisión del owner, 2026-09-28, C7): un admin que le maneja la
+   ficha a quien no sabe hacerlo, **con todo registrado como hecho por el admin en nombre del
+   cliente** (actor el admin, sujeto el cliente), que es exactamente lo que esta regla protege
+   (*«lo que este capítulo NO cierra»*).
 5. **Una acción administrativa nunca tiene `actor = sujeto`: el paso 3 la rechaza** (*«sin
    permiso»*) y la hace otra cuenta con el permiso (owner 2026-09-26, `G5-1`; FASE 9 vuelta 1,
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
@@ -634,6 +641,12 @@ falla.
   segunda persona entra cuando haya otra persona con el permiso.
 - ~~**El `SUPER_ADMIN` que es dueño en la vertical que discontinúa** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`; declarado
   por `DEC-METH-015`).~~ **Sale** (revisión del owner, 2026-09-28, C8): la acción 16 ya no existe.
+- **«Entrar como» el cliente** (revisión del owner, 2026-09-28, C7): **no está en esta versión y
+  se va a agregar**. Su condición queda escrita hoy: **se registra como hecho por el admin en
+  nombre del cliente** (actor el admin, sujeto el cliente, nunca `actor = sujeto` en el registro,
+  §3.2 regla 5), así que no es la impersonación de la regla 4. **Cuando se diseñe se reabre la
+  frase *«ni las que se agreguen»* de `NUCLEO/08` §3**: si publicar en nombre del cliente le
+  arranca la prueba al cliente o no. No agrega unidades ni guards en esta versión.
 - **Discontinuar una vertical** (revisión del owner, 2026-09-28, C8): **fuera de esta versión; si
   algún día hace falta, se diseña entonces**. No hay acción administrativa que la haga, ni permiso
   que la pida. Retirar planes, también todos los de una vertical, sigue siendo posible y no es una
