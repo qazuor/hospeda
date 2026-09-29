@@ -607,7 +607,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ENT-002 — Las cuotas de consumo son mensuales, independientes del ciclo de pago
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C4, sobre la implicación 2; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C4, sobre la implicación 2; ver su 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 10 y 11; ver su último 📌) · **Decide**: owner
 - **Problema**: `DEC-ENT-001` estableció que existen entitlements medidos, pero el PDR no
   menciona cuotas en ningún lado y por lo tanto no dice cuándo se resetean. Si el reset
   acompañara al período de facturación, **un plan anual entregaría doce meses de cuota el
@@ -636,6 +636,10 @@ Cada entrada lleva, según §3.4:
   calculado desde el ancla; al cambiar de plan la ventana en curso sigue con el cupo del plan nuevo
   menos lo gastado y la fecha nueva rige desde la siguiente; un complemento suma a la ventana del
   título. `V/15` §7.
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 10 y
+  11)**: Con más de un título vivo ancla el que da la cuota; con dos, el que arrancó primero. El
+  `BASE` ancla en el alta de la cuenta, y se confirma el día que la versión de piso otorgue un
+  entitlement medido.
 
 ### DEC-ENT-003 — La herencia de Turista VIP cubre entitlements y limits, y bloquea la compra
 
@@ -1231,7 +1235,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-008 — El downgrade muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de tocarlo
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C15; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C15; ver su 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 37, G-A, I-A e I-B; ver su último 📌) · **Decide**: owner
 - **Problema**: el §28 pide que el downgrade se aplique al fin del ciclo conservando el plan
   anterior hasta entonces, y **no dice qué pasa con lo que ya no entra** en el plan nuevo — un
   anfitrión con 5 fichas publicadas que baja a un plan de 3. Ese hueco es `M-ENT-02`.
@@ -1285,6 +1289,16 @@ Cada entrada lleva, según §3.4:
 - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C15)**: La migración de un plan
   retirado (`DEC-SUB-023`) es un tercer camino: muta el monto como un aumento y baja o sube
   capacidades en la renovación.
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 37, G-A,
+  I-A e I-B)**: El descenso programado lo aplica `S38`, la transición de la cola de `B/12` §2 que
+  también aplica el cambio de versión de una migración: pasa la fila a la versión destino, aplica la
+  elección de qué conservar y emite el aviso de cobertura. Si la fecha llega con la fila en
+  `GRACE_PERIOD`, se aplica igual, porque el servicio sigue y el monto ya se mutó; en `SUSPENDED`
+  espera y se aplica al volver por `S7`, también cuando `S7` la devuelve a `CANCEL_SCHEDULED` porque
+  el cobro entró sobre un preapproval ya cancelado; en `PAUSED` espera a la reanudación, como ya
+  estaba. Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora, y el cambio muere
+  con la fila vieja, como cuando llega un upgrade: la sucesora eligió su plan en el checkout y nace
+  sin cola.
 
 ### DEC-SUB-009 — La baja a fin de período cancela YA y sostiene el servicio de nuestro lado
 
@@ -2169,7 +2183,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-004 — El billing se implementa de nuestro lado, en un package propio de Hospeda, con la pasarela detrás de un adaptador
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, N2, sobre la definición 2 y la implicación 5; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, N2, sobre la definición 2 y la implicación 5; ver su 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, caso 30, contra la recomendación; ver su último 📌) · **Decide**: owner
 - **Problema**: tres días de medición contra Mercado Pago dejaron dos cosas a la vista. La
   primera, que **de las ocho capacidades del capítulo 06 ya traíamos cinco de nuestro lado** —el
   reloj de la pausa, el candado contra el doble cobro, el inventario a conciliar, la
@@ -2268,6 +2282,12 @@ Cada entrada lleva, según §3.4:
   el modelo nuevo no se absorbe ninguna tabla. `qzpay` se congela hasta el corte y se archiva
   después (`D/16` §4.5), y `G16` falla si vuelve `@qazuor/qzpay` (revisión del owner, 2026-09-28,
   N2).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, caso 30, contra
+  la recomendación)**: El package del cobro es un package compartido del repo; publicarlo en npm
+  pediría reescribir sus dependencias internas. Puede depender de packages internos de Hospeda con
+  la regla del owner: "siempre que sea simple evitar la dependencia de otro package de Hospeda,
+  evitalo; si es complejo, la dejamos y en el futuro se reverá", porque "no quiero demorar la salida
+  de esta épica por eso". `G16` no mira esas dependencias; la prohibición de `@qazuor/qzpay` sigue.
 
 ---
 
@@ -2349,7 +2369,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-006 — La frontera entre las dos épicas es un contrato único con dos implementaciones desde el día uno
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-25, con OK del owner** (FASE 9 completa, 9h: la firma gana el campo `piso` y pasa a siete campos; ver su 📌) — **precisada otra vez el 2026-09-26** (FASE 9 vuelta 1, G2-1: el primer evento de verticales a billing; y G4-2: tres entradas nuevas en la dirección inversa, `extenderTrial` la única escritura, y la capa de composición; ver sus implicaciones 4 y 5) — **y precisadas las dos implicaciones el mismo 2026-09-26, con OK del owner** (tercera tanda, L1 y L2: el empuje sale después del commit; `ficha` gana `admiteDestaque`) — **y precisada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `R5` y `Q-FECHA`: `finDeServicio` en la dirección de ida y `vertical_discontinuation`; ver su último 📌) — **y precisada otra vez el 2026-09-28, con OK del owner** (FASE 9 vuelta 2, verificación, `N-B-03` confirmado por `V2-x`: `PB9` no borra con el hecho 4 pendiente; ver su último 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N6, `L1-d`, C4, C14; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-25, con OK del owner** (FASE 9 completa, 9h: la firma gana el campo `piso` y pasa a siete campos; ver su 📌) — **precisada otra vez el 2026-09-26** (FASE 9 vuelta 1, G2-1: el primer evento de verticales a billing; y G4-2: tres entradas nuevas en la dirección inversa, `extenderTrial` la única escritura, y la capa de composición; ver sus implicaciones 4 y 5) — **y precisadas las dos implicaciones el mismo 2026-09-26, con OK del owner** (tercera tanda, L1 y L2: el empuje sale después del commit; `ficha` gana `admiteDestaque`) — **y precisada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `R5` y `Q-FECHA`: `finDeServicio` en la dirección de ida y `vertical_discontinuation`; ver su último 📌) — **y precisada otra vez el 2026-09-28, con OK del owner** (FASE 9 vuelta 2, verificación, `N-B-03` confirmado por `V2-x`: `PB9` no borra con el hecho 4 pendiente; ver su último 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N6, `L1-d`, C4, C14; ver su último 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos G-B, I-E, J-A y K-C; ver su último 📌) · **Decide**: owner
 - **Problema**: `DEC-ARCH-005` parte el programa, y eso sólo sirve si la épica de verticales
   **puede correr sin que exista la de billing**. El punto de contacto no es teórico: el paso 5 de
   la resolución de autorización (cap. 17 §1.2) pregunta *«¿tiene trial, suscripción, cortesía o
@@ -2455,12 +2475,19 @@ Cada entrada lleva, según §3.4:
   con las dos interfaces, sus validaciones, los simuladores de cada lado y los dos juegos de casos;
   `G14` prohíbe que una mitad importe a la otra; el nombre es FASE 5. La fuente gana `desde` (C4) y
   la dirección de ida tiene una pregunta, `retenciónDetenida` (C14).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos G-B, I-E,
+  J-A y K-C)**: El package del contrato tiene una quinta cosa: la interfaz del reloj con que el
+  código de producción de las dos mitades lee la hora, inyectada. La construye `B1`, junto con el
+  reloj adelantable que la implementa, que vive en el package de pruebas compartido. La
+  implementación real, la hora del sistema, no vive en el package: la inyecta la raíz de composición
+  de `apps/api`, el único lugar que junta las dos mitades, en una línea que también escribe `B1`, y
+  en las pruebas se inyecta el adelantable. `G14` no cambia: importar el contrato nunca fue cruzar.
 
 ---
 
 ### DEC-ARCH-007 — Las dos épicas se desarrollan en paralelo y se liberan juntas; ninguna llega a producción sola
 
-- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C2, `L3-b`; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C2, `L3-b`; ver su 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 3 y 4; ver su último 📌) · **Decide**: owner
 - **Problema**: `DEC-ARCH-005` partió el programa en dos épicas autónomas, y «autónomas» se puede
   leer de dos formas muy distintas. Una es *«cada una se desarrolla sin esperar a la otra»*; la
   otra es *«cada una puede salir a producción por su cuenta»*. **La decisión era la primera y no la
@@ -2515,6 +2542,10 @@ Cada entrada lleva, según §3.4:
 - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C2, `L3-b`)**: Cómo se integra
   sin activar: no se activa nada; la épica vive en la rama del paraguas y entra a `staging` al
   final, con `staging` congelado para `main` hasta el corte (`D/16` §4.4).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 3 y 4)**:
+  `rollout` queda cerrado: las ramas son el §4.4 de la FASE 7 del paraguas y el orden de despliegue
+  el §4.2. El script del corte vive versionado en `scripts/cutover/` y se borra en un commit
+  posterior al corte.
 
 ---
 
@@ -4212,7 +4243,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-TEST-001 — Va UN guard nuevo, el de la columna que nadie escribe; el del orden de escrituras NO
 
-- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED — **las cifras de su tercera y cuarta enmienda, precisadas el 2026-09-25**: `inactiva_desde` la escriben hoy **seis hechos más la fila `C`** del corte, y la leen **seis** consumidores (`NUCLEO/01` §1.2, `V/02` §2.5). El guard vigila la lista, no la cifra — **G13 pasó a `V/20` el 2026-09-26** (ver su 📌) — **y enmendada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, verificación, `V2-k`, con su unidad confirmada el 2026-09-28 por `V2-x`: `G-R9`; ver su último 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N1, C9; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED — **las cifras de su tercera y cuarta enmienda, precisadas el 2026-09-25**: `inactiva_desde` la escriben hoy **seis hechos más la fila `C`** del corte, y la leen **seis** consumidores (`NUCLEO/01` §1.2, `V/02` §2.5). El guard vigila la lista, no la cifra — **G13 pasó a `V/20` el 2026-09-26** (ver su 📌) — **y enmendada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, verificación, `V2-k`, con su unidad confirmada el 2026-09-28 por `V2-x`: `G-R9`; ver su último 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N1, C9; ver su último 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 16 y 48; ver su último 📌) · **Decide**: owner
 - **El contexto**: la FASE 9-bis-4 produjo dos clases de defecto que ningún guard vigila, y cada
   una salió de un crítico real. Se evaluó agregar uno por cada una.
 - **Decisión: va el primero y no va el segundo.**
@@ -4367,6 +4398,11 @@ Cada entrada lleva, según §3.4:
   dejan de ser guards y pasan a ser validaciones del panel con su nombre, y `G3` conserva sólo la
   dirección código → catálogo (la otra es una FK de la base); el catálogo queda en 33 guards
   distintos, 18 de verticales y 15 de billing (`DEC-ARCH-013`, `DEC-DATA-008`).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 16 y
+  48)**: `G-R6-B` suma una tercera mitad: un lector de `listing.inactiva_desde` que decide archivar,
+  borrar o avisar y no consulta `retenciónDetenida`. Y su mitad de escritores vigila también
+  `listing.plazos_version`, que se escribe sólo junto con `inactiva_desde`. El catálogo sigue en 33
+  guards.
 
 ---
 
@@ -5735,7 +5771,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-DATA-005 — La retención sólo toca fichas: el usuario y sus datos no se borran nunca
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: el registro de eventos no guarda el contenido de una ficha; ver su 📌) — **y precisada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `R9`: lo que cuelga de la ficha en `PURGED`, por dueño del dato; ver su segundo 📌) — **y precisada otra vez con OK del owner** (FASE 9 vuelta 2, verificación: `V2-l` el 2026-09-27, `V2-x` el 2026-09-28: la clase del correo de la alerta cerrada y `revalidation_config`; ver su tercer 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N7, `g1`; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: el registro de eventos no guarda el contenido de una ficha; ver su 📌) — **y precisada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `R9`: lo que cuelga de la ficha en `PURGED`, por dueño del dato; ver su segundo 📌) — **y precisada otra vez con OK del owner** (FASE 9 vuelta 2, verificación: `V2-l` el 2026-09-27, `V2-x` el 2026-09-28: la clase del correo de la alerta cerrada y `revalidation_config`; ver su tercer 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, N7, `g1`; ver su último 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 7, F-C, H-C, I-C, J-C y K-A; F-C contra la recomendación; I-C corrige la elección de H-C; ver su último 📌) · **Decide**: owner
 - **Cierra `M-DATA-01`**, que `DEC-DATA-001` implicación 4 dejó abierta: *«qué es exactamente "dato
   operativo eliminable" a los 180»*.
 - **Problema**: el día 180 se cuenta **por ficha**, pero la lista de lo que borra (`V/02` §4.1)
@@ -5780,6 +5816,23 @@ Cada entrada lleva, según §3.4:
 - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N7, `g1`)**: La baja de cuenta
   pedida por el usuario queda fuera de esta épica: soporte a mano con una lista de pasos, y se
   corrige la FAQ (HOS-1393).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 7, F-C,
+  H-C, I-C, J-C y K-A; F-C contra la recomendación; I-C corrige la elección de H-C)**: La lista de
+  pasos de la baja de cuenta manual se escribe antes del corte, en este orden: la baja del cobro,
+  `PB12` por cada ficha y la cuenta (`NUCLEO/08` §1.3). Los tres los hace soporte desde el panel, a
+  pedido del dueño y con motivo: el primero con "cancelar una suscripción", que ya existía, el
+  segundo con la acción 23, "borrar una ficha ajena a pedido de su dueño", que corre `PB12`, y el
+  tercero con la 24, "dar de baja una cuenta a pedido de su dueño", que se rechaza mientras le
+  cuelgue una suscripción viva o una ficha fuera de `PURGED`. La 24 no borra la fila de la cuenta:
+  la seudonimiza. Reemplaza su nombre, su correo y su teléfono, cierra sus sesiones y la deja sin
+  acceso; no toca el registro de auditoría, que conserva el actor y el sujeto por id, ni los cobros;
+  y la fila de `trial` que la apunta sigue, con su FK `ON DELETE RESTRICT` y el hash del correo, así
+  que la traba contra repetir la prueba no se pierde. Los datos de facturación de la cuenta, el
+  nombre y el correo de quien pagó, se conservan tal cual, porque son datos de comprobantes que la
+  ley obliga a guardar: viven en el comprobante, que guarda una copia de los dos al emitirse,
+  copiados de la fila de `user` dueña del cobro, y que nadie reescribe después; la 24 reemplaza los
+  de `user` y la copia queda como estaba. La baja desde Mi Cuenta sigue fuera de la épica
+  (HOS-1393).
 
 ---
 
@@ -6070,7 +6123,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-RF-008 — El reembolso tiene máquina mínima, y lo que ocurrió por fuera del flujo se asienta con una acción administrativa nueva
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **recontada el 2026-09-26** (quince acciones; ver su 📌) — **y recontada otra vez el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `Q-ACC16`: dieciséis acciones; ver su segundo 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, C8, C15, N1, C9; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **recontada el 2026-09-26** (quince acciones; ver su 📌) — **y recontada otra vez el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `Q-ACC16`: dieciséis acciones; ver su segundo 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, C8, C15, N1, C9; ver su último 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos F-C, H-D e I-C; ver su último 📌) · **Decide**: owner
 - **Precisa `DEC-RF-007`**: *«la reparación es manual»* gana el acto con que se asienta. No supera a
   ninguna.
 - **Problema** (`F-8CB1-015`, que no llegó a ningún capítulo; `26-fase-9-completa/04-…` §R7.5.1 y
@@ -6113,6 +6166,13 @@ Cada entrada lleva, según §3.4:
   acciones administrativas pasan de dieciséis a veintiuna vivas: sale la 16, discontinuar una
   vertical, con su número sin reusar (C8); entra la 17, migrar a los clientes de un plan retirado
   (C15); y entran de la 18 a la 22, las cinco del catálogo (N1, C9, `L1-f`).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos F-C, H-D e
+  I-C)**: Las acciones administrativas pasan de veintiuna a veintitrés vivas: entran la 23, borrar
+  una ficha ajena a pedido de su dueño, que corre `PB12` y se evalúa sobre el sujeto como la 15, y
+  la 24, dar de baja una cuenta a pedido de su dueño, que la seudonimiza y no la borra, y es
+  capacidad del actor; las dos con permiso propio, auditoría, motivo y confirmación por
+  destructivas, y las dos las construye `V8`, como la 15. La clase y la unidad las confirmó el
+  owner.
 
 ---
 
@@ -6302,7 +6362,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-AUTH-003 — El admin edita el contenido de una ficha ajena con una acción propia, y nada más
 
-- **Fecha**: 2026-09-26 · **Estado**: ACCEPTED — **precisada el 2026-09-27** (FASE 9 vuelta 2, `F-8V2A1-004`: la acción 15 no es capacidad del actor; ver su 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, C7; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-26 · **Estado**: ACCEPTED — **precisada el 2026-09-27** (FASE 9 vuelta 2, `F-8V2A1-004`: la acción 15 no es capacidad del actor; ver su 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, C7; ver su último 📌) — **y precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, caso F-C; ver su último 📌) · **Decide**: owner
 - **Problema** (`G5-2`, `F-8V1A1-003`): ¿el admin tiene escrituras sobre fichas ajenas fuera de las
   catorce? Sin ninguna, soporte pierde la herramienta de hoy (crear a nombre de un dueño, corregir,
   restaurar), y la presión empuja a pedirle la contraseña al cliente —la impersonación que `V/17`
@@ -6321,12 +6381,15 @@ Cada entrada lleva, según §3.4:
   se agrega en una versión posterior, con la condición de que se registre como hecho por el admin en
   nombre del cliente; cuando se diseñe, se reabre el "ni las que se agreguen" de `NUCLEO/08` §3
   (revisión del owner, C7).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, caso F-C)**: El
+  "sin borrar" de la acción 15 vale para la edición de contenido: borrar una ficha ajena a pedido de
+  su dueño es la acción 23, otra fila con su permiso.
 
 ---
 
 ### DEC-MIG-006 — El corte publica las fichas que estaban a la vista y le arranca a su dueño una prueba activa
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 5 y 6; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C12, `L1-a`, `L1-b`): C12 decide que el día del corte las fichas
   que estaban a la vista nacen como recién creadas y publicadas, y que la prueba del dueño arranca
   ese día. Quedaban dos formas abiertas: el dueño con varias fichas a la vista (`L1-a`) y las fichas
@@ -6348,12 +6411,17 @@ Cada entrada lleva, según §3.4:
   `30-revision-del-owner/12-…` §3 punto 1 y consolidada en `30-revision-del-owner/14-…` §4.1 punto
   1; OK del owner al lote del log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la
   matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 5 y 6)**:
+  En el paso 0 se toman dos recuentos sobre la cartera vieja: si el sistema viejo servía alguna
+  ficha que el corte hace nacer `PURGED` o en `DRAFT`, y si da cero el paso 4c se saltea; y cuántos
+  dueños tienen más de una ficha a la vista en la misma vertical, que no es gate y vuelve al owner
+  si da más de cero.
 
 ---
 
 ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 12, F-A y H-E; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C14, `L1-c`): C14 decide que la pausa pedida por el dueño
   detiene el reloj de retención de sus fichas y que al volver se reinicia. Faltaba cómo se entera
   verticales, que no lee el estado de billing (`L1-c`).
@@ -6370,12 +6438,20 @@ Cada entrada lleva, según §3.4:
   `30-revision-del-owner/12-…` §3 punto 3 y consolidada en `30-revision-del-owner/14-…` §4.1 punto
   2; OK del owner al lote del log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la
   matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 12, F-A y
+  H-E)**: Todo fin de la pausa, por cualquier camino, reinicia el reloj, también una baja desde la
+  pausa. Ese reinicio no se escribe: `retenciónDetenida` devuelve también cuándo terminó la última
+  pausa por `CUSTOMER_REQUEST` de la persona en esa vertical, y sus lectores cuentan desde el más
+  tardío de dos instantes, `listing.inactiva_desde` y ése, con la versión de plazos que guarda la
+  ficha (`listing.plazos_version`), porque el reinicio no escribe otra. La lista de hechos del reloj
+  y `G-R6-B` no cambian. Una pausa vencida cuya reanudación no se aplicó la pone delante de una
+  persona el barrido diario, con el motivo `REANUDACIÓN_NO_APLICADA`, que ya existía.
 
 ---
 
 ### DEC-DATA-007 — La moderación tiene dos niveles: pedir un arreglo o bajar la ficha
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 13, 14, 15 y H-G; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C10, `L2-i`, `g3`): C10 decide la moderación en dos niveles, a
   elección del admin y cambiable. Faltaba a dónde vuelve la ficha al levantar la baja (`L2-i`) y qué
   puede hacer el dueño con una ficha moderada (`g3`).
@@ -6394,12 +6470,18 @@ Cada entrada lleva, según §3.4:
   `30-revision-del-owner/12-…` §3 punto 5 y consolidada en `30-revision-del-owner/14-…` §4.1 punto
   3; OK del owner al lote del log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la
   matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 13, 14, 15
+  y H-G)**: Una ficha moderada desde `ARCHIVED` vuelve por el origen de su archivado. Los dos
+  niveles valen sólo para fichas: la presencia de Partner conserva su bit sin niveles. Y el correo
+  de confirmación del borrado sale en todo `PB12`, no sólo sobre una moderada; cuando la borra
+  soporte a pedido del dueño es el mismo correo, con una línea que dice que fue a su pedido, sin
+  fila nueva en el catálogo.
 
 ---
 
 ### DEC-SUB-023 — Migrar a los clientes de un plan retirado es un tercer camino, aparte del upgrade y del downgrade
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 20 a 27, G-A, I-A e I-B; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C15, `L1-g`, `L1-h`, C9): C15 decide migrar a los clientes de un
   plan retirado a un plan vivo de la misma vertical, con aviso de 60 días configurable, en la
   renovación; `B/10` §3.4 decía lo contrario. Faltaban el anual (`L1-g`) y cancelar una migración ya
@@ -6423,12 +6505,26 @@ Cada entrada lleva, según §3.4:
   propuesta en `30-revision-del-owner/13-…` §3 punto 2, con el agregado de la tanda 4, y consolidada
   en `30-revision-del-owner/14-…` §4.1 punto 4; OK del owner al lote del log, 2026-09-28
   (`30-revision-del-owner/10-…`, *«El lote del log y la matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 20 a 27,
+  G-A, I-A e I-B)**: `S37` muta el monto siete días antes de la fecha de aplicación, un plazo
+  técnico y no configurable. Los correos van al anunciar y 30 y 7 días antes de la fecha de
+  renovación de cada cliente. La migración sigue siendo la acción 17, aparte de publicar una versión
+  de plan, y lo que aplica fila por fila (`S37` y `S38`) es una transición que aplica lo que la
+  persona firmó al anunciar. Si la cohorte incluye la cuenta del propio `SUPER_ADMIN`, esa fila se
+  excluye y el acto sigue. Cancelar no deshace una mutación ya hecha: a quien está dentro de sus
+  siete días le sale un correo que lo explica. `PARA_RESOLVER` no tiene plazo, y el panel muestra su
+  antigüedad. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y
+  en grace esperen es del día de `S37`: si `S37` ya mutó el monto, la fecha de aplicación la aplica
+  `S38` igual en `GRACE_PERIOD`, y al volver por `S7` en `SUSPENDED`, vuelva a `ACTIVE` o a
+  `CANCEL_SCHEDULED`. Un pagador con tarjeta suspendido vuelve como sucesora: el cambio de versión
+  muere con la fila vieja, y su fila de alcance queda `APLICADA` sin que la predecesora haya
+  cambiado de versión.
 
 ---
 
 ### DEC-TEST-003 — El Mercado Pago falso miente sólo lo medido, y una batería vigila al proveedor real
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 28, 31, 32, 33, 35 y G-C; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C13, `L3-c`, `L3-d`, N3, `L3-e`, N4, `L3-f`): C13 pide una lista
   cerrada de dónde miente el Mercado Pago falso y por qué, y una batería que vigile al proveedor
   real sin ajustar nada sola; N3 pide pruebas de punta a punta para reducir el smoke manual, y N4
@@ -6450,12 +6546,24 @@ Cada entrada lleva, según §3.4:
   N4, `L3-f`); texto exacto de `30-revision-del-owner/13-…` §3 punto 5, consolidado en
   `30-revision-del-owner/14-…` §4.1 punto 5; OK del owner al lote del log, 2026-09-28
   (`30-revision-del-owner/10-…`, *«El lote del log y la matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 28, 31,
+  32, 33, 35 y G-C)**: La segunda lista del falso lleva también el comportamiento medido que no es
+  mentira ni regla exigida (`RC-7`, `GR-3`, `PS-2`, `PS-6` y el campo `last_charged` de `RC-5`): son
+  once, no seis. La batería las relee sobre sujetos que ya existen, sin mutar, y las que no se
+  puedan releer así se declaran "vigiladas a mano". El reloj adelantable vive en un package de
+  pruebas compartido que importan las dos mitades. La regla de smoke del `CLAUDE.md` raíz se
+  actualiza, en el mismo cambio, a medida que cada sección del checklist sale del manual. La
+  autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y
+  cada lectura por id lleva su instante: la decisión rechaza una lectura anterior al comienzo del
+  acto, que es el de la decisión sobre ese sujeto; va dentro del tipo, así que `G17` conserva sus
+  dos predicados. Queda una ventana de milisegundos entre releer y actuar, porque Mercado Pago no
+  ofrece compare-and-swap, y la cubre el barrido.
 
 ---
 
 ### DEC-ARCH-012 — El agrupamiento viejo de Gastronomía y Experiencia desaparece del repositorio, ni como histórico
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 8, 9, 19, 41, F-B, F-D, H-A, H-B, I-D, J-B y K-B; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C3, `L2-a` a `L2-d`): C3 decide que el agrupamiento viejo de
   Gastronomía y Experiencia desaparece por completo, ni como histórico, y que el guard falla en todo
   el repositorio. El §55.1 del PDR admite referencias para auditoría, historia de migraciones y
@@ -6481,12 +6589,36 @@ Cada entrada lleva, según §3.4:
 - **Origen**: `30-revision-del-owner/10-decisiones-del-owner.md` (C3, `L2-a` a `L2-d`); propuesta y
   consolidada en `30-revision-del-owner/14-…` §4.1 punto 6; OK del owner al lote del log, 2026-09-28
   (`30-revision-del-owner/10-…`, *«El lote del log y la matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 8, 9, 19,
+  41, F-B, F-D, H-A, H-B, I-D, J-B y K-B)**: El tipo de partner se renombra a `business`, con la
+  etiqueta "Comercio" en español sin cambios, y la migración de datos de V1 reescribe los que tienen
+  el valor viejo. Hasta el cierre de HOS-1352 `G8` lleva una lista de pendientes cerrada con tres
+  entradas: la historia de migraciones, las migraciones de datos del seed y las carpetas del
+  programa en `.specs/` (HOS-1352, HOS-1353 y HOS-1354, y ninguna otra). El paso 6 del corte saca
+  las dos historias y en el mismo commit enciende la regla que hace fallar un build destinado a
+  producción con una de ellas en la lista, así que el despliegue del paso 3 no falla por ella; el
+  commit del cierre de HOS-1352 saca la tercera y extiende la regla a la lista entera. Las 11
+  migraciones de datos del seed que importaban el archivo de configuración de planes se congelan con
+  sus valores adentro hasta que el paso 6 las saca. El script del corte arma el valor viejo sin
+  escribir la palabra de corrido, como el propio `G8`, y no entra a la lista. El `CLAUDE.md` raíz y
+  los archivos de i18n que la nombran entran en la limpieza de V1, y también las specs de otros
+  issues y `.qtm/`, según el estado de su issue en Linear el día de la limpieza, con la regla del
+  owner, "specs viejas e implementadas, las borramos directamente": se borra entera la carpeta de un
+  issue `Done`, `In Review` (su código ya está mergeado; el smoke que falta vive en el issue) o
+  `Canceled`, la de un issue que ya no existe y todas las de `.qtm/`; se reescribe sin la palabra
+  sólo la de un issue en `In Progress` o `Backlog`; y un estado que no se nombra sigue el tipo que
+  Linear le da: uno terminado, cancelado o duplicado (`Duplicate`) se borra, y uno en curso, sin
+  empezar o backlog (`Todo`, `Working on`, `User Action Pending`, `On Hold`) se reescribe, con `In
+  Review` como única excepción. Y al cerrar HOS-1352 los informes históricos del programa salen del
+  repositorio (quedan en el historial de git; lo que importe se resume en Linear), el diseño vigente
+  se reescribe una vez, sin tachados ni la palabra, y este log y la matriz de validación se quedan y
+  se reescriben sin la palabra, con el OK del owner a esa reescritura.
 
 ---
 
 ### DEC-ARCH-013 — La configuración de planes vive 100 % en la base, y cambia sólo por acciones administrativas
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 9, 42, 43 y 49; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, N1, `L1-e`, `L1-f`): N1 decide que el archivo de configuración
   de planes de hoy desaparece y que toda la configuración de planes vive en la base. Faltaban cómo
   nace el catálogo de producción (`L1-e`) y cómo cambia después (`L1-f`).
@@ -6513,12 +6645,21 @@ Cada entrada lleva, según §3.4:
   (`30-revision-del-owner/10-…`, *«El lote del log y la matriz»*). Que el catálogo de claves siga en
   código lo aplicó la tanda como el diseño ya decía (`NUCLEO/02` §1.2), y el owner no lo decidió
   explícitamente (`30-revision-del-owner/14-…` §3, punto 49).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 9, 42, 43
+  y 49)**: Las 11 migraciones de datos del seed que importaban el archivo borrado se congelan con
+  sus valores adentro, en el mismo cambio que lo borra, y salen en el paso 6 del corte. Los datos de
+  planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write: en el
+  mismo cambio salen la rama del archivo en `scripts/check-seed-dual-write.sh` y la mención a los
+  planes de billing en la regla del `CLAUDE.md` raíz. La migración única del catálogo falla si
+  alguno de los cinco plazos sin valor escrito está vacío, y el owner los fija antes del ensayo del
+  corte en staging. Y las claves, de los entitlements y de los límites, siguen en el código; los
+  valores viven en la base.
 
 ---
 
 ### DEC-DATA-008 — Todo plazo que decide cuándo pasa algo es configurable, y cada reloj cuenta con la versión con que arrancó
 
-- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 43, 44, 45, 46, 47, 50 y H-F; ver su 📌) · **Decide**: owner
 - **Problema** (revisión del owner, C9, C11, `L2-g`, `L2-h`, N7): C9 y C11 deciden que todo plazo en
   días o meses es configurable desde el panel por el `SUPER_ADMIN`, que el panel rechaza valores
   contradictorios y que un cambio no adelanta fechas ya anunciadas. Faltaban si algún plazo técnico
@@ -6547,6 +6688,16 @@ Cada entrada lleva, según §3.4:
 - **Origen**: `30-revision-del-owner/10-decisiones-del-owner.md` (C9, C11, `L2-g`, `L2-h`, N7);
   propuesta y consolidada en `30-revision-del-owner/14-…` §4.1 punto 8; OK del owner al lote del
   log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la matriz»*).
+- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 43, 44,
+  45, 46, 47, 50 y H-F)**: Configurar el 90 y el 180, que el §25 del PDR fija, es un apartamiento
+  declarado del PDR, el décimo; el PDR no se edita. Los cinco plazos sin valor escrito (el `N` de
+  `PB5`, los avisos previos de retención, el techo de días de prueba, la postulación de Partner
+  atrasada y la espera tras un rechazo) los fija el owner antes del ensayo del corte en staging, y
+  la migración única del catálogo falla si alguno está vacío. El mínimo de `DEC-MP-002` queda en 60
+  días: se puede alargar, no acortar. Alargar un plazo tampoco alcanza a los relojes ya arrancados:
+  cada uno cuenta con su versión. Los plazos de las dos mitades van en una sola pantalla, compuesta
+  en la app del panel, que lee las dos mitades por la API sin importar ninguna, así que `G14` no la
+  marca. Y la cota de `G-R5-B` queda atada al plazo de borrado, no a 6 meses literales.
 
 ---
 
@@ -6557,7 +6708,7 @@ Cada entrada lleva, según §3.4:
 | Decisiones tomadas | ~~**126**~~ **134** — con las **ocho de la revisión del owner** (2026-09-28, con OK del owner al lote): **`DEC-MIG-006`** (el corte publica las fichas que estaban a la vista y arranca una prueba activa), **`DEC-DATA-006`** (la pausa del dueño detiene la retención), **`DEC-DATA-007`** (la moderación en dos niveles), **`DEC-SUB-023`** (migrar a los clientes de un plan retirado), **`DEC-TEST-003`** (el Mercado Pago falso y la batería), **`DEC-ARCH-012`** (el agrupamiento viejo de Gastronomía y Experiencia desaparece), **`DEC-ARCH-013`** (la configuración de planes vive en la base) y **`DEC-DATA-008`** (los plazos configurables); con las **dos de la FASE 9 vuelta 1** (2026-09-26): **`DEC-AUTH-002`** (una acción administrativa nunca tiene actor = sujeto) y **`DEC-AUTH-003`** (el admin edita el contenido de una ficha ajena con una acción propia); con las **siete de la FASE 9 completa** (2026-09-25): **`DEC-SUB-022`** (la sucesora de quien venía pagando entra en grace), **`DEC-MIG-005`** (el corte trata a la cartera vieja como clientes nuevos: se conservan el usuario, sus preferencias y sus fichas; el billing arranca de cero), **`DEC-RF-008`** (máquina del reembolso y acción 14), **`DEC-ADDON-007`** (los addons siguen a su título), **`DEC-AUTH-001`** (el orden de autorización), **`DEC-ENT-006`** (la presencia de Partner) y **`DEC-ARCH-011`** (la vertical que no admite altas); y las del 2026-09-25 de la FASE 8 completa: **`DEC-TRIAL-010`** (2026-09-25: el trial se convierte con el primer pago), **`DEC-ARCH-009`** (2026-09-25: reconciliador diario de cobertura en verticales), **`DEC-METH-015`** (2026-09-25: los residuos de borde se declaran, no se persiguen), **`DEC-DATA-005`** (2026-09-25: la retención sólo toca fichas), **`DEC-SUB-021`** (2026-09-25: en grace no se cambia de plan; supera a `DEC-SUB-003`), **`DEC-SUB-020`** (2026-09-25: un contracargo suspende en el acto, sin grace) y las ocho del 2026-09-24, con **`DEC-METH-014`** (la FASE 8 completa desde cero), con **`DEC-SUB-019`** (al vencer el grace se cancela el preapproval) y **`DEC-MP-008`** (una pausa del proveedor por mora es el fin del grace): **`DEC-MP-005`** (seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño), **`DEC-MP-006`** (el reloj de cobro es del proveedor: el mandato es el modelo canónico), **`DEC-RF-007`** (el reembolso de un cobro viejo no se implementa: la reparación es manual), **`DEC-METH-013`** (cuándo se deja de girar el ciclo 8↔9) y **`DEC-MP-007`** (no usamos los planes del proveedor) |
 | De metodología | 15 *(por prefijo; once —`DEC-METH-005` a `-015`— están bajo el encabezado funcional porque se escribieron en orden cronológico; `26-fase-9-completa/09` `C-15`)* |
 | Funcionales | ~~**109**~~ ~~**111**~~ **119** *(2026-09-26: `DEC-AUTH-002` y `DEC-AUTH-003`; 2026-09-28: las ocho de la revisión del owner)* |
-| **Precisadas sin `SUPERSEDED`** | ~~**26**~~ ~~**29**~~ ~~**34**~~ ~~**35**~~ ~~**44**~~ ~~**47**~~ **58** *(recontado el 2026-09-25: decía ~~2~~ y eran 11, porque contaba sólo las precisadas por otra decisión y dejaba afuera las que tienen 📌 con OK del owner; y recontado otra vez el mismo día con script, tras registrar las elecciones 9a–9h que el owner ratificó: suman `DEC-SUB-022`, `DEC-ADDON-007` y `DEC-ARCH-006`; y recontado con script el 2026-09-26, tras los 📌 de la FASE 9 vuelta 1: suman `DEC-ARCH-005`, `DEC-RF-001`, `DEC-SUB-010`, `DEC-RF-008` y `DEC-MP-006`. Criterio: el campo *Estado* entero —puede ocupar varias líneas— dice precisada, recontada, enmendada o cerrada, y no dice `SUPERSEDED`. `DEC-MIG-002` recibió su 📌 el mismo día (`G4-1`) y **no suma**: está `SUPERSEDED EN PARTE`, y se cuenta en esa fila; y recontado con script el 2026-09-27, tras los 📌 de la FASE 9 vuelta 2: suma `DEC-AUTH-002`, que dice precisada en su *Estado* desde el 2026-09-26 y faltaba en la cifra. ~~Los dieciséis 📌 de la vuelta 2 no mueven la cifra: las siete decisiones que los reciben con marca en su *Estado* (`DEC-ADDON-004`, `DEC-RF-001`, `DEC-SUB-019`, `DEC-MIG-004`, `DEC-MIG-003`, `DEC-ARCH-006` y `DEC-DATA-005`) ya estaban contadas, y las otras nueve no llevan marca en su *Estado*~~; y recontado con script el mismo 2026-09-27, después de que las otras nueve sumaran su marca al *Estado* con OK del owner (FASE 9 vuelta 2, `Q-ESTADO`): suman `DEC-ADDON-002`, `DEC-GRANT-007`, `DEC-SUB-009`, `DEC-RF-006`, `DEC-MIG-005`, `DEC-ARCH-011`, `DEC-TRIAL-004`, `DEC-AUTH-003` y `DEC-LEGAL-001`, y la cifra pasa de 35 a 44; el 📌 de `Q-ACC16` en `DEC-RF-008` no la mueve, porque ya estaba contada; y recontado con script el 2026-09-28, tras los quince 📌 de la verificación de la FASE 9 vuelta 2 (`V2-y`, con OK del owner): suman `DEC-OBS-001`, `DEC-RF-003` y `DEC-RF-004`, que tenían el *Estado* en `ACCEPTED` a secas, y la cifra pasa de 44 a 47; las otras doce que reciben 📌 ya estaban contadas; y recontado con script el 2026-09-28, tras los treinta 📌 de la revisión del owner (con OK del owner al lote): suman trece que tenían el *Estado* en `ACCEPTED` a secas (`DEC-TRIAL-003`, `DEC-TRIAL-006`, `DEC-TRIAL-007`, `DEC-TRIAL-008`, `DEC-ENT-001`, `DEC-ENT-002`, `DEC-SUB-002`, `DEC-SUB-007`, `DEC-SUB-008`, `DEC-SUB-016`, `DEC-MP-002`, `DEC-ARCH-004` y `DEC-ARCH-007`), y salen dos que pasan a llevar `SUPERSEDED` (`DEC-DATA-002`, en parte, y `DEC-ARCH-011`, entera), y la cifra pasa de 47 a 58; las otras dieciséis que reciben 📌 ya estaban contadas)* — **por otra decisión**: **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**, `DEC-MP-008` por `DEC-SUB-022`, `DEC-RF-007` por `DEC-RF-008`, y `DEC-ADDON-003` y `DEC-ADDON-004` por `DEC-ADDON-007`; **con 📌 o puntero del owner**: `DEC-DATA-001`, `DEC-SUB-006`, `DEC-CONC-002`, `DEC-MAIL-001`, `DEC-GRANT-003`, `DEC-GRANT-004`, `DEC-MIG-003`, `DEC-SUB-017`, `DEC-SUB-020`, `DEC-SUB-021`, `DEC-ARCH-008`, `DEC-ARCH-009`, `DEC-TRIAL-010`, ~~`DEC-DATA-002`~~, `DEC-DATA-004`, `DEC-TEST-001`, `DEC-DATA-005`, `DEC-MIG-004`, `DEC-SUB-013`, `DEC-PROMO-001`, **`DEC-SUB-022`** (9d), **`DEC-ADDON-007`** (9e, 9f), **`DEC-ARCH-006`** (9h); **y desde el 2026-09-26** (FASE 9 vuelta 1): **`DEC-ARCH-005`** (contradicción (b)), **`DEC-RF-001`** (`F-8V1B1-005`, `G5-4`), **`DEC-SUB-010`** (`G5-3`), **`DEC-RF-008`** (`G5-2`), **`DEC-MP-006`** (cláusula 1) y **`DEC-AUTH-002`** (actor = sujeto compara cuentas); **y desde el 2026-09-27** (FASE 9 vuelta 2, `Q-ESTADO`): **`DEC-ADDON-002`**, **`DEC-GRANT-007`**, **`DEC-SUB-009`**, **`DEC-RF-006`**, **`DEC-MIG-005`**, ~~**`DEC-ARCH-011`**~~, **`DEC-TRIAL-004`**, **`DEC-AUTH-003`** y **`DEC-LEGAL-001`**; **y desde el 2026-09-28** (FASE 9 vuelta 2, verificación, `V2-y`): **`DEC-OBS-001`**, **`DEC-RF-003`** y **`DEC-RF-004`**; **y desde el 2026-09-28** (revisión del owner): **`DEC-TRIAL-003`**, **`DEC-TRIAL-006`**, **`DEC-TRIAL-007`**, **`DEC-TRIAL-008`**, **`DEC-ENT-001`**, **`DEC-ENT-002`**, **`DEC-SUB-002`**, **`DEC-SUB-007`**, **`DEC-SUB-008`**, **`DEC-SUB-016`**, **`DEC-MP-002`**, **`DEC-ARCH-004`** y **`DEC-ARCH-007`**; tachadas, las dos que salieron el mismo día al recibir su `SUPERSEDED`. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
+| **Precisadas sin `SUPERSEDED`** | ~~**26**~~ ~~**29**~~ ~~**34**~~ ~~**35**~~ ~~**44**~~ ~~**47**~~ ~~**58**~~ **66** *(recontado el 2026-09-25: decía ~~2~~ y eran 11, porque contaba sólo las precisadas por otra decisión y dejaba afuera las que tienen 📌 con OK del owner; y recontado otra vez el mismo día con script, tras registrar las elecciones 9a–9h que el owner ratificó: suman `DEC-SUB-022`, `DEC-ADDON-007` y `DEC-ARCH-006`; y recontado con script el 2026-09-26, tras los 📌 de la FASE 9 vuelta 1: suman `DEC-ARCH-005`, `DEC-RF-001`, `DEC-SUB-010`, `DEC-RF-008` y `DEC-MP-006`. Criterio: el campo *Estado* entero —puede ocupar varias líneas— dice precisada, recontada, enmendada o cerrada, y no dice `SUPERSEDED`. `DEC-MIG-002` recibió su 📌 el mismo día (`G4-1`) y **no suma**: está `SUPERSEDED EN PARTE`, y se cuenta en esa fila; y recontado con script el 2026-09-27, tras los 📌 de la FASE 9 vuelta 2: suma `DEC-AUTH-002`, que dice precisada en su *Estado* desde el 2026-09-26 y faltaba en la cifra. ~~Los dieciséis 📌 de la vuelta 2 no mueven la cifra: las siete decisiones que los reciben con marca en su *Estado* (`DEC-ADDON-004`, `DEC-RF-001`, `DEC-SUB-019`, `DEC-MIG-004`, `DEC-MIG-003`, `DEC-ARCH-006` y `DEC-DATA-005`) ya estaban contadas, y las otras nueve no llevan marca en su *Estado*~~; y recontado con script el mismo 2026-09-27, después de que las otras nueve sumaran su marca al *Estado* con OK del owner (FASE 9 vuelta 2, `Q-ESTADO`): suman `DEC-ADDON-002`, `DEC-GRANT-007`, `DEC-SUB-009`, `DEC-RF-006`, `DEC-MIG-005`, `DEC-ARCH-011`, `DEC-TRIAL-004`, `DEC-AUTH-003` y `DEC-LEGAL-001`, y la cifra pasa de 35 a 44; el 📌 de `Q-ACC16` en `DEC-RF-008` no la mueve, porque ya estaba contada; y recontado con script el 2026-09-28, tras los quince 📌 de la verificación de la FASE 9 vuelta 2 (`V2-y`, con OK del owner): suman `DEC-OBS-001`, `DEC-RF-003` y `DEC-RF-004`, que tenían el *Estado* en `ACCEPTED` a secas, y la cifra pasa de 44 a 47; las otras doce que reciben 📌 ya estaban contadas; y recontado con script el 2026-09-28, tras los treinta 📌 de la revisión del owner (con OK del owner al lote): suman trece que tenían el *Estado* en `ACCEPTED` a secas (`DEC-TRIAL-003`, `DEC-TRIAL-006`, `DEC-TRIAL-007`, `DEC-TRIAL-008`, `DEC-ENT-001`, `DEC-ENT-002`, `DEC-SUB-002`, `DEC-SUB-007`, `DEC-SUB-008`, `DEC-SUB-016`, `DEC-MP-002`, `DEC-ARCH-004` y `DEC-ARCH-007`), y salen dos que pasan a llevar `SUPERSEDED` (`DEC-DATA-002`, en parte, y `DEC-ARCH-011`, entera), y la cifra pasa de 47 a 58; las otras dieciséis que reciben 📌 ya estaban contadas; y recontado con script el 2026-09-29, tras los diecisiete 📌 de los casos vecinos de la revisión del owner (con OK del owner al lote): suman ocho que tenían el *Estado* en `ACCEPTED` a secas (`DEC-MIG-006`, `DEC-DATA-006`, `DEC-DATA-007`, `DEC-ARCH-012`, `DEC-ARCH-013`, `DEC-SUB-023`, `DEC-TEST-003` y `DEC-DATA-008`), y la cifra pasa de 58 a 66; las otras nueve que reciben 📌 ya estaban contadas)* — **por otra decisión**: **`DEC-SUB-019`** por `DEC-MP-008` (el motivo `PROVIDER_DUNNING` que decía conservar), **`DEC-METH-006`** por `DEC-METH-008` (que le enmendó el punto 2 el mismo día) y por **`DEC-METH-013`**, `DEC-MP-008` por `DEC-SUB-022`, `DEC-RF-007` por `DEC-RF-008`, y `DEC-ADDON-003` y `DEC-ADDON-004` por `DEC-ADDON-007`; **con 📌 o puntero del owner**: `DEC-DATA-001`, `DEC-SUB-006`, `DEC-CONC-002`, `DEC-MAIL-001`, `DEC-GRANT-003`, `DEC-GRANT-004`, `DEC-MIG-003`, `DEC-SUB-017`, `DEC-SUB-020`, `DEC-SUB-021`, `DEC-ARCH-008`, `DEC-ARCH-009`, `DEC-TRIAL-010`, ~~`DEC-DATA-002`~~, `DEC-DATA-004`, `DEC-TEST-001`, `DEC-DATA-005`, `DEC-MIG-004`, `DEC-SUB-013`, `DEC-PROMO-001`, **`DEC-SUB-022`** (9d), **`DEC-ADDON-007`** (9e, 9f), **`DEC-ARCH-006`** (9h); **y desde el 2026-09-26** (FASE 9 vuelta 1): **`DEC-ARCH-005`** (contradicción (b)), **`DEC-RF-001`** (`F-8V1B1-005`, `G5-4`), **`DEC-SUB-010`** (`G5-3`), **`DEC-RF-008`** (`G5-2`), **`DEC-MP-006`** (cláusula 1) y **`DEC-AUTH-002`** (actor = sujeto compara cuentas); **y desde el 2026-09-27** (FASE 9 vuelta 2, `Q-ESTADO`): **`DEC-ADDON-002`**, **`DEC-GRANT-007`**, **`DEC-SUB-009`**, **`DEC-RF-006`**, **`DEC-MIG-005`**, ~~**`DEC-ARCH-011`**~~, **`DEC-TRIAL-004`**, **`DEC-AUTH-003`** y **`DEC-LEGAL-001`**; **y desde el 2026-09-28** (FASE 9 vuelta 2, verificación, `V2-y`): **`DEC-OBS-001`**, **`DEC-RF-003`** y **`DEC-RF-004`**; **y desde el 2026-09-28** (revisión del owner): **`DEC-TRIAL-003`**, **`DEC-TRIAL-006`**, **`DEC-TRIAL-007`**, **`DEC-TRIAL-008`**, **`DEC-ENT-001`**, **`DEC-ENT-002`**, **`DEC-SUB-002`**, **`DEC-SUB-007`**, **`DEC-SUB-008`**, **`DEC-SUB-016`**, **`DEC-MP-002`**, **`DEC-ARCH-004`** y **`DEC-ARCH-007`**; tachadas, las dos que salieron el mismo día al recibir su `SUPERSEDED`; **y desde el 2026-09-29** (revisión del owner, casos vecinos): **`DEC-MIG-006`**, **`DEC-DATA-006`**, **`DEC-DATA-007`**, **`DEC-ARCH-012`**, **`DEC-ARCH-013`**, **`DEC-SUB-023`**, **`DEC-TEST-003`** y **`DEC-DATA-008`**. La entrada vieja **no se editó en su contenido**: lleva el puntero en su campo *Estado*, como `DEC-MIG-001`. ⚠️ **Leer `DEC-METH-006` sola da el criterio de corte equivocado** |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | ~~**6**~~ **11** — **las cinco de la revisión del owner** (2026-09-28): **`DEC-SUB-015`**, **`DEC-SUB-018`**, **`DEC-GRANT-010`** y **`DEC-ARCH-011`**, enteras, por C8 (las verticales no se discontinúan; sin decisión que las reemplace), y **`DEC-DATA-002` EN PARTE** por `DEC-DATA-006` (se cae que el reloj corre durante la pausa y la desigualdad que la protegía; sobrevive el resto) · **`DEC-MIG-002` EN PARTE** por `DEC-MIG-003` (sobrevive *«se siguen tomando altas»*, se cae *«se transcriben a mano»*; puntero registrado el 2026-09-25), **`DEC-SUB-003`** por `DEC-SUB-021` (2026-09-25, entera), `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) y **`DEC-MP-003` EN PARTE** por `DEC-MP-008` (sobrevive el diagnóstico, se cae el motivo `PROVIDER_DUNNING`) |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -6566,7 +6717,8 @@ Cada entrada lleva, según §3.4:
 | Decisiones condicionadas a FASE 1C | ~~**2**~~ **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) · ~~y **`DEC-SUB-021`** (desde el 2026-09-25), a `GR-1`: si un pago con la tarjeta cambiada durante el grace cierra el ciclo fallido~~ (tachado 2026-09-26: `GR-1` `VERIFIED`, ver el 📌 de `DEC-SUB-021`) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
-| Apartamientos declarados del PDR | ~~**8**~~ **9** *(2026-09-28: suma **`DEC-ARCH-012`**, del §55.1, el agrupamiento viejo de Gastronomía y Experiencia que desaparece ni como histórico; serían 10 si el owner declara el del §25 por los plazos configurables, `DEC-DATA-008`)* *(recontado el 2026-09-25: eran 7 porque faltaba `DEC-MAIL-001`. `DEC-MIG-005` **no suma un noveno**: el orquestador proponía declarar el §25 —«Conservar: … pagos»— y consultarlo con el abogado; el owner decidió que no hace falta, porque la cartera del corte se trata como clientes nuevos. Las dos posiciones están en esa entrada)* — **`DEC-MAIL-001`** (§43 y §64.25: antes de cancelar, el correo **sí** bloquea la acción; el invariante 25 del núcleo la registra como la única que contradice un invariante del §64 de frente), `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
+| Apartamientos declarados del PDR | ~~**8**~~ ~~**9**~~ **10** *(2026-09-28: suma **`DEC-ARCH-012`**, del §55.1, el agrupamiento viejo de Gastronomía y Experiencia que desaparece ni como histórico~~; serían 10 si el owner declara el del §25 por los plazos configurables, `DEC-DATA-008`~~)* *(2026-09-29: suma **`DEC-DATA-008`**, del §25, los 90 y 180 días de la retención que pasan a ser configurables (casos vecinos, caso 46))* *(recontado el 2026-09-25: eran 7 porque faltaba `DEC-MAIL-001`. `DEC-MIG-005` **no suma un noveno**: el orquestador proponía declarar el §25 —«Conservar: … pagos»— y consultarlo con el abogado; el owner decidió que no hace falta, porque la cartera del corte se trata como clientes nuevos. Las dos posiciones están en esa entrada)* — **`DEC-MAIL-001`** (§43 y §64.25: antes de cancelar, el correo **sí** bloquea la acción; el invariante 25 del núcleo la registra como la única que contradice un invariante del §64 de frente), `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
 | Decisiones de la FASE 9 | **6**, las seis del 2026-09-19 — `DEC-GRANT-005` (el grant anclado al plan, con trinquete), `DEC-CONC-003` (la marca, que **revisa una razón escrita del owner**), `DEC-SUB-011` (compromisos, no filas), `DEC-MIG-003` (no se migra), `DEC-METH-006` (el ciclo 8 ↔ 9) y `DEC-METH-007` (el gate de FASE 5, con criterio de dos filtros). Salieron de las 37 preguntas que los cinco racimos resueltos dejaron para el owner |
 | Decisiones de la FASE 9 completa | **7 nuevas y ~~15~~ 18 precisiones**, del 2026-09-25, sobre las 32 respuestas del owner a los 33 puntos (`26-fase-9-completa/10`). Nuevas: `DEC-SUB-022`, `DEC-MIG-005`, `DEC-RF-008`, `DEC-ADDON-007`, `DEC-AUTH-001`, `DEC-ENT-006`, `DEC-ARCH-011`. Precisiones: `DEC-SUB-021`, `DEC-MP-008`, `DEC-MIG-003`, `DEC-MIG-004`, `DEC-MAIL-001`, `DEC-RF-007`, `DEC-PROMO-001`, `DEC-ARCH-009`, `DEC-TRIAL-010`, `DEC-CONC-002`, `DEC-DATA-002`, `DEC-DATA-005`, `DEC-SUB-013`, `DEC-ADDON-003`, `DEC-ADDON-004`. Y ocho correcciones de registro sin decisión: `DEC-MIG-002` (el puntero de su supersesión), `DEC-DATA-004`, `DEC-TEST-001`, `DEC-SUB-019`, `DEC-ARCH-008`, `DEC-DATA-001`, `DEC-SUB-006`, `DEC-SUB-017`. **Y las ocho elecciones de los agentes de aplicación que el owner ratificó el mismo día** (`26-fase-9-completa/10`, filas 9a–9h; dos corregidas por él, 9a y 9h), registradas como 📌: `DEC-MP-008` (9a, 9b), `DEC-MAIL-001` (9c), **`DEC-SUB-022`** (9d), **`DEC-ADDON-007`** (9e, 9f), `DEC-PROMO-001` (9g) y **`DEC-ARCH-006`** (9h); las tres en negrita son las precisiones que suman |
 | Decisiones de la revisión del owner | **8 nuevas, 30 📌 y 5 `SUPERSEDED`**, del 2026-09-28, sobre los 15 comentarios y las 9 notas del owner a la presentación (`30-revision-del-owner/10-decisiones-del-owner.md`), en el lote de `30-revision-del-owner/14-aplicacion-transversal-y-lote.md` §4 que el owner aprobó entero. Nuevas: `DEC-MIG-006`, `DEC-DATA-006`, `DEC-DATA-007`, `DEC-SUB-023`, `DEC-TEST-003`, `DEC-ARCH-012`, `DEC-ARCH-013`, `DEC-DATA-008`. `SUPERSEDED`: `DEC-SUB-015`, `DEC-SUB-018`, `DEC-GRANT-010` y `DEC-ARCH-011` enteras, `DEC-DATA-002` en parte. Registro: `30-revision-del-owner/15-aplicacion-log-y-matriz.md` |
+| Casos vecinos de la revisión del owner | **0 nuevas, 17 📌, 0 `SUPERSEDED`**, del 2026-09-29, sobre los 76 casos vecinos decididos (`30-revision-del-owner/16-`: los 50 de los lotes A a E, y los lotes F, G, H, I, J y K, de cuatro, cuatro, siete, cinco, tres y tres); registros `17-` a `23-`. Lote en `30-revision-del-owner/23-aplicacion-casos-lote-k.md` §4, que el owner aprobó entero el 2026-09-29. Registro: `30-revision-del-owner/24-aplicacion-casos-log-y-matriz.md` |
