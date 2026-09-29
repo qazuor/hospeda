@@ -83,6 +83,13 @@ describe('AdminLocaleProvider', () => {
         expect(screen.getByTestId('probe').textContent).toBe('Mi Configuración');
     });
 
+    it('keeps <html lang> in sync with the active locale', () => {
+        profileState.data = { settings: { languageAdmin: 'pt' } };
+        renderProvider({ initialLanguage: null });
+
+        expect(document.documentElement.lang).toBe('pt');
+    });
+
     it('stays on the default locale when nothing is stored', () => {
         renderProvider({ initialLanguage: null });
 

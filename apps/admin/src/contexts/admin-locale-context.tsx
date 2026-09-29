@@ -21,7 +21,7 @@
 
 import { LocaleProvider, resolveDisplayLocale } from '@repo/i18n';
 import type { UserSettings } from '@repo/schemas';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { env } from '@/env';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { getSupportedLocales } from '@/lib/locale';
@@ -94,6 +94,13 @@ export function AdminLocaleProvider({
         supportedLocales: getSupportedLocales(),
         defaultLocale: env.VITE_DEFAULT_LOCALE
     });
+
+    // The root route renders <html lang> from the default locale, so once the
+    // panel speaks another language the document must say so too (screen readers,
+    // hyphenation, browser translate prompts).
+    useEffect(() => {
+        document.documentElement.lang = locale;
+    }, [locale]);
 
     return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
 }
