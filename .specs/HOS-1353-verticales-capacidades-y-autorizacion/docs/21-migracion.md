@@ -532,6 +532,12 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   datos que lo nombren se reescriben o se borran. La historia de migraciones y el ledger del seed
   se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6). **La única
   exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11).
+  **Y entran en esta limpieza el `CLAUDE.md` raíz y los archivos de i18n que lo nombran**
+  (revisión del owner, casos vecinos, 2026-09-29, caso 41): medido en el worktree del programa el 2026-09-29 (`e1004e7922`),
+  el `CLAUDE.md` raíz lo nombra 23 veces, y `packages/i18n` en 30 archivos, 24 de ellos en
+  `src/locales` (21 en `src/locales` en la medición de la revisión del owner, sobre un checkout
+  anterior). **Los informes históricos del programa no**: salen del repositorio al cerrar HOS-1352
+  (`HOS-1352/spec.md`, *«Al cerrar HOS-1352»*).
 
 ---
 

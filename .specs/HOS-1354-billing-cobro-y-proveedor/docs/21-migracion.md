@@ -446,7 +446,11 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   adentro** (revisión del owner, casos vecinos, 2026-09-29, caso 9): cuando el archivo se borra en
   la rama, antes del paso 6, cada una deja de importar `@repo/billing` y lleva escritos los valores
   que leía, así que compila sin el archivo y no cambia lo que ya aplicó; nadie las edita después, y
-  el paso 6 las saca con el resto de `packages/seed/src/data-migrations/**`. El catálogo de producción no sale de este
+  el paso 6 las saca con el resto de `packages/seed/src/data-migrations/**`. **Y en el mismo cambio que
+  borra el archivo salen la rama que lo vigila en `scripts/check-seed-dual-write.sh` y la mención a
+  los planes, límites y entitlements de billing en la regla de dual-write del `CLAUDE.md` raíz**: los
+  datos de planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write
+  (revisión del owner, casos vecinos, 2026-09-29, caso 42; `NUCLEO/02` §1.4). El catálogo de producción no sale de este
   archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`). Es filtro 1
   de FASE 5: el sujeto muere.
 

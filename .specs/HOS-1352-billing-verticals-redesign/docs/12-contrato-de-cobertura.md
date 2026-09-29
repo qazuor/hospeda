@@ -1070,7 +1070,7 @@ fichaPurgada(ficha)            → sí | no
 ficha(idDeFicha)               → { vertical, dueño, admiteDestaque }
 políticaDeAddon(versiónDeAddon) → { addon, vigencia, díasDeVigencia, tipoDeScope }
 extenderTrial(user, vertical, días, claveDeCanje) → ACEPTADA | RECHAZADA(motivo)
-retenciónDetenida(user, vertical) → sí | no          ← de ida: pregunta verticales, contesta billing
+retenciónDetenida(user, vertical) → { detenida: sí | no, pausaTerminadaEn: instante | NINGUNO }   ← de ida: pregunta verticales, contesta billing
 ```
 
 **`situaciónDeVertical` y `finDeServicio` salieron de la firma** (revisión del owner, 2026-09-28,
@@ -1080,7 +1080,9 @@ C8: las verticales no se discontinúan; la firma tenía además
 discontinuar, y `finDeServicio` era la única pregunta de la dirección de ida: **sin ella, el
 contrato vuelve a ser que billing empuja avisos y lee política, y verticales ~~no le pregunta nada a
 billing~~** **le pregunta una sola cosa, `retenciónDetenida`** (revisión del owner, 2026-09-28, C14,
-abajo). Lo que decía de ella queda tachado abajo.
+abajo). Lo que decía de ella queda tachado abajo. **Y `retenciónDetenida` ya no contesta un sí o
+no**: la firma decía `retenciónDetenida(user, vertical) → sí | no`, y desde los casos vecinos
+devuelve también cuándo terminó la última pausa (revisión del owner, casos vecinos, 2026-09-29, caso F-A, abajo).
 
 **`retenciónDetenida` es la pregunta de la dirección de ida, y entra por la pausa** (revisión del
 owner, 2026-09-28, C14, `L1-c`). Contesta `sí` **sólo** mientras la persona tiene en esa vertical
@@ -1096,8 +1098,17 @@ del owner. **Y todo fin de la pausa, por cualquier camino, reinicia el reloj** (
 casos vecinos, 2026-09-29, caso 12): también la baja desde la pausa (`S22`) o cualquier otra
 salida que no vuelva a cubrir. Sin eso `retenciónDetenida` pasaba a `no` y `PB4` y `PB9` corrían al
 día siguiente sobre fichas con el reloj arrancado en el hecho 5 del primer día de la pausa, con
-más de 180 días. ⚠️ **Cómo se escribe ese reinicio cuando la cobertura no vuelve no está decidido**
-(`30-revision-del-owner/17-` §3). Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye `B4`**
+más de 180 días. ~~⚠️ **Cómo se escribe ese reinicio cuando la cobertura no vuelve no está decidido**
+(`30-revision-del-owner/17-` §3).~~ **Ese reinicio no se escribe** (revisión del owner, casos vecinos, 2026-09-29, caso F-A):
+**`retenciónDetenida` devuelve también `pausaTerminadaEn`, cuándo terminó la última pausa por
+`CUSTOMER_REQUEST` de la persona en esa vertical** (el `fin_real` de su `subscription_pause`,
+`B/02` §2.2, o `NINGUNO` si nunca tuvo una), **y sus lectores cuentan desde el más tardío de dos
+instantes, `listing.inactiva_desde` y ése**. La pausa sigue sin escribir nada en verticales, la
+lista de hechos del reloj no cambia y `G-R6-B` tampoco. **Y una pausa vencida cuya reanudación no
+se aplicó no deja el reloj detenido sin que nadie lo vea**: la fila sigue `PAUSED`, así que la
+respuesta sigue siendo `detenida: sí`, pero el barrido diario de billing la marca para resolver a
+mano con `REANUDACIÓN_NO_APLICADA` (`B/09` §3, la quinta comprobación; `B/02` §2.5, motivo 8), que
+ya existía y no es un motivo nuevo. Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye `B4`**
 en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que contesta `no`
 (§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.
@@ -1199,11 +1210,11 @@ cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 ~~**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.**~~
 ~~**Son siete entradas: seis preguntas y una operación**~~ ~~**Son ocho entradas: siete preguntas y
 una operación**~~ ~~**Son seis entradas: cinco preguntas y una operación**~~ **Son siete entradas:
-seis preguntas y una operación** (revisión del owner, 2026-09-28, C14: entra `retenciónDetenida`) —~~doce~~ ~~**trece**~~ ~~**doce**~~ **once** campos en ~~cuatro~~ **tres** consultas
-(`políticaDePlan`, ~~`situaciónDeVertical`,~~ `ficha`, `políticaDeAddon`), un veredicto
+seis preguntas y una operación** (revisión del owner, 2026-09-28, C14: entra `retenciónDetenida`) —~~doce~~ ~~**trece**~~ ~~**doce**~~ ~~**once**~~ **trece** campos en ~~cuatro~~ ~~**tres**~~ **cuatro** consultas
+(`políticaDePlan`, ~~`situaciónDeVertical`,~~ `ficha`, `políticaDeAddon`, **y `retenciónDetenida`, la de ida, que contesta billing**), un veredicto
 (`direcciónDeCambio`), ~~un sí o no (`fichaPurgada`), **una fecha que contesta billing
-(`finDeServicio`)**~~ **un sí o no (`fichaPurgada`)**, **un sí o no de ida que contesta billing
-(`retenciónDetenida`)** y la escritura `extenderTrial`— (FASE 9 vuelta 2, `R5`, recontado con script
+(`finDeServicio`)**~~ **un sí o no (`fichaPurgada`)**, ~~**un sí o no de ida que contesta billing
+(`retenciónDetenida`)**~~ y la escritura `extenderTrial`— (revisión del owner, casos vecinos, 2026-09-29, caso F-A: `retenciónDetenida` pasa de un sí o no a dos campos, recontado con script sobre el bloque) (FASE 9 vuelta 2, `R5`, recontado con script
 sobre el bloque: `finDeServicio` sale de `situaciónDeVertical` y entra como entrada propia; revisión
 del owner, 2026-09-28, C8, recontado con script sobre el bloque: salen `situaciónDeVertical` y
 `finDeServicio`), **y de los
@@ -1321,8 +1332,8 @@ esta frontera: *«es lo que prueba que la abstracción no miente»*.
 **No devuelve datos fijos.** Resuelve honestamente las **dos** fuentes que ya viven del lado de
 verticales —el trial, con su máquina de estados del capítulo 03 §2, y el título `BASE` del §2.5— y
 responde que no a las cuatro de billing: suscripción, cortesía, grant y addon, **y a
-`retenciónDetenida` (§4.1) contesta `no`**, porque sin billing no hay pausa (revisión del owner,
-2026-09-28, C14)~~, **y a
+`retenciónDetenida` (§4.1) contesta ~~`no`~~ `detenida: no` y `pausaTerminadaEn: NINGUNO`**, porque sin billing no hay pausa (revisión del owner,
+2026-09-28, C14; los dos campos, revisión del owner, casos vecinos, 2026-09-29, caso F-A)~~, **y a
 `finDeServicio` (§4.1) contesta `NINGUNA`**, porque sin billing no hay vertical que se discontinúe
 (FASE 9 vuelta 2, `R5`)~~ (la pregunta salió con la revisión del owner, 2026-09-28, C8). **Y emite el aviso**
 en las transiciones de trial del censo del §3 (*«quién emite»*): es emisor desde el día uno, igual

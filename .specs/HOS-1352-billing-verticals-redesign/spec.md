@@ -172,6 +172,22 @@ de lectura, y crear scripts experimentales descartables.
 con la tarjeta del owner y **presupuesto aprobado de antemano en un número exacto** — las sondas
 abortan si el máximo a cobrar no coincide con la cifra autorizada.
 
+## Al cerrar HOS-1352
+
+**Es una tarea del cierre del programa, no de ahora** (revisión del owner, casos vecinos,
+2026-09-29, caso 41). Al cerrar HOS-1352:
+
+1. **Los informes históricos del programa salen del repositorio**: las fases, las vueltas, los
+   registros de la revisión del owner y el resto de lo que no es diseño vigente. Quedan en el
+   historial de git, y **lo que importe se resume en Linear**.
+2. **El diseño vigente se reescribe una vez, sin tachados y sin el nombre del agrupamiento viejo
+   de Gastronomía y Experiencia**: el núcleo, el contrato, los capítulos y las specs de las dos
+   sub-specs, y esta spec. Desde ahí `G8` no tiene nada del programa que perdonar salvo el PDR, su
+   única exención por nombre (`V/20` §2).
+
+El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
+limpieza de `V1` (`V/21` §4).
+
 ## Lo que necesita al owner
 
 1. **Enviar los dos textos de la PRUEBA 0** (§5.0 del documento 10) — desbloquea HOS-1354.

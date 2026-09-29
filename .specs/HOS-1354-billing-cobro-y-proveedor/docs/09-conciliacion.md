@@ -612,7 +612,9 @@ rama de fallo de `S10` no escribe ninguna de las dos. Si `S25` corriera sin escr
 > *(`D16` y `G-R5` salieron con la revisión del owner, 2026-09-28, C14: la pausa pedida por el
 > cliente detiene el reloj de retención. La comprobación sigue siendo la única que mira el tiempo
 > real de una fila, y con C14 lo que está en juego abajo cambia: el reloj ya no corre hacia el día
-> 180 durante una pausa, queda detenido mientras la reanudación no ocurra.)*
+> 180 durante una pausa, queda detenido mientras la reanudación no ocurra. **Y esta comprobación es
+> la que impide que quede detenido sin fin sin que nadie lo vea**: la marca que abre pone la pausa
+> vencida delante de una persona; revisión del owner, casos vecinos, 2026-09-29, caso F-A, `12-contrato…` §4.1.)*
 >
 > **Es la comprobación que mira el TIEMPO REAL de una fila, y por eso no la cubre `D16`.** `D16`
 > compara *«el tope de una pausa que declara el catálogo»* contra el día del hard delete

@@ -210,9 +210,9 @@ que **ninguno los haga por su cuenta**.
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto,
 y la excepción son las catorce primeras acciones de `NUCLEO/08` §3 ~~**y la decimosexta,
-discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`)~~ (la decimosexta salió con la revisión del owner, 2026-09-28, C8) **y la decimoséptima, migrar a los clientes de un plan retirado** (la misma revisión, C15), **y de la decimoctava a la vigesimosegunda, las cinco del catálogo** (la misma revisión, N1 y C9): la decimoquinta,
+discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`)~~ (la decimosexta salió con la revisión del owner, 2026-09-28, C8) **y la decimoséptima, migrar a los clientes de un plan retirado** (la misma revisión, C15), **y de la decimoctava a la vigesimosegunda, las cinco del catálogo** (la misma revisión, N1 y C9), **y la vigesimocuarta, borrar una cuenta a pedido de su dueño** (revisión del owner, casos vecinos, 2026-09-29, caso F-C): la decimoquinta,
 editar el contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
-`F-8V2A1-004`). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
+`F-8V2A1-004`), **y la vigesimotercera, borrar una ficha ajena a pedido de su dueño, también** (caso F-C). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
 fila de aquel catálogo (cap. 17 §3.2 regla 1; `F-8V2A1-002`).
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y
 ése es exactamente el rastro que no se puede perder. **Y una acción administrativa nunca tiene
@@ -400,7 +400,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
 | `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
-| `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`), **y hasta el corte con una lista de pendientes cerrada, las dos historias, que el paso 6 del corte vacía; un build destinado a producción después del corte falla si no está vacía** (revisión del owner, casos vecinos, 2026-09-29, caso 8) |
+| `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`), **y hasta el corte con una lista de pendientes cerrada, las dos historias, que el paso 6 del corte vacía; un build destinado a producción después del corte falla si no está vacía** (revisión del owner, casos vecinos, 2026-09-29, caso 8), **regla que enciende el mismo commit del paso 6** (caso F-B) |
 | `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 | `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
 

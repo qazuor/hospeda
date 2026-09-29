@@ -96,7 +96,9 @@ la base.** El §1.2 ya lo decía; lo que faltaba era cómo llegan los valores y 
    publicar una versión de complemento, crear o cerrar un código promocional y cambiar un plazo**.
    Sólo `SUPER_ADMIN`, auditadas y con una confirmación que dice qué cambia. Sin ellas nadie tenía
    el permiso de publicar una versión de plan, aunque `B/10` §3 dice que retirar es publicar una.
-4. **El catálogo de claves sigue en código** (§1.2): una clave sin código que la respete no hace
+4. ~~**El catálogo de claves sigue en código** (§1.2)~~ **Las claves siguen en el código, las de
+   los entitlements y las de los límites; los valores viven en la base** (§1.2; revisión del owner, casos vecinos, 2026-09-29, caso 49, con el agregado del owner: *«los límites podrían ir por db»*, aclarado como
+   que sus valores ya viven en la base y sus claves no): una clave sin código que la respete no hace
    nada aunque se cargue en el panel.
 
 **Lo que antes miraba un guard de CI y ahora lo rechaza el panel o la base.** Un guard de CI lee el
@@ -114,9 +116,14 @@ regalar una capacidad paga a toda la plataforma sin que ningún guard lo viera.
 | un plazo que contradice a otro | `G-R5-B` | **validación de *«cambiar un plazo»*** (§1.5) |
 
 **Las mismas validaciones corren en el paso 3a del corte sobre la base de producción**, después de
-la migración única del catálogo, y si no dan, el corte no sigue (`16-fase-7…` §4.2). **Qué pasa con
+la migración única del catálogo, y si no dan, el corte no sigue (`16-fase-7…` §4.2). ~~**Qué pasa con
 los datos de planes que usan desarrollo y las pruebas no está decidido**
-(`30-revision-del-owner/14-` §5).
+(`30-revision-del-owner/14-` §5).~~ **Los datos de planes que usan desarrollo y las pruebas son
+datos de demostración, fuera del dual-write del seed** (revisión del owner, casos vecinos, 2026-09-29, caso 42): no
+representan ningún entorno vivo. **Sale de `scripts/check-seed-dual-write.sh` la rama que vigila el
+archivo de configuración de planes, y de la regla de dual-write del `CLAUDE.md` raíz la mención a
+los planes, límites y entitlements de billing**, en el mismo cambio que borra el archivo (`B/21` §4),
+que es cuando esa rama se queda sin sujeto.
 
 ### 1.5 Los plazos que deciden cuándo pasa algo · revisión del owner, C9 y C11
 
@@ -125,6 +132,12 @@ cuándo pasa algo lo configura el `SUPER_ADMIN` desde el panel**, con la acción
 (`NUCLEO/08` §3, la vigesimosegunda). **Los números del diseño pasan a ser valores iniciales**:
 donde un capítulo dice 90 o 180 días, 60 días de aviso o los días de una campaña de correos, se lee
 *«el plazo, con ese valor al inicio»*.
+
+**Configurar el 90 y el 180 es un apartamiento declarado del PDR, el décimo** (revisión del owner, casos vecinos, 2026-09-29,
+caso 46): el §25 los fija (su *«Día 90»*, el soft delete, y su *«Día 180»*, el hard delete de
+datos operativos eliminables), y acá pasan a ser los valores iniciales de los plazos 1 y 2. El PDR no se edita: el
+apartamiento se registra en el decision log, en `DEC-DATA-008`, donde viven los otros nueve (propuesto
+al log en `30-revision-del-owner/19-` §4).
 
 **La lista, cerrada.** Cada mitad es dueña de sus claves, como del resto de su catálogo.
 
@@ -146,6 +159,10 @@ donde un capítulo dice 90 o 180 días, 60 días de aviso o los días de una cam
 | 14 | el aviso de que una promo termina | billing | 7 días antes | `NUCLEO/07` §6 | el canje |
 | 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h | `B/12` §5.4 | la suscripción, en cada ciclo |
 
+**Los cinco sin valor escrito, el 3, el 4, el 7, el 8 y el 9, los fija el owner antes del ensayo del
+corte en `staging`, y la migración única del catálogo falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43): la primera versión de los plazos de cada mitad nace en el paso 3a
+(`16-fase-7…` §4.2), y un plazo vacío dejaría un reloj sin fecha.
+
 **Lo que no está en la lista, y por qué.** **(a) Los plazos que son del catálogo**: los días de
 prueba, la gracia y los topes de pausa de un plan cuelgan de su versión y cambian publicando una
 versión nueva (§1.4), no por esta acción. **(b) Ningún plazo técnico** (`L2-g`): los 15 minutos del
@@ -161,15 +178,20 @@ el nuevo: **ese registro es el de cada cambio**, además de la auditoría de la 
 guarda la versión de plazos con la que arrancó** (la última columna de la tabla) y cuenta con esa,
 así que un cambio vale para los relojes que arrancan después y **nunca adelanta una fecha ya
 anunciada**. Un reloj que se reinicia arranca otra vez, y guarda la versión vigente en ese momento.
+**Y alargar un plazo tampoco alcanza a los relojes ya arrancados** (revisión del owner, casos vecinos, 2026-09-29, caso 45):
+cada reloj cuenta con su versión aunque la nueva sea más larga, porque alargar, por ejemplo, una
+migración ya anunciada movería una fecha que el cliente ya recibió.
 
 **Lo que el panel rechaza**, porque se contradice:
 
 1. **archivar antes que borrar**: el plazo 1 menor que el 2;
 2. **el `N` de `PB5`, en su peor caso en días (meses de 31), menor que el plazo 2**: es lo que era
-   `G-R5-B` (`V/20` §2), con la cota atada al plazo de borrado y no a 6 meses literales;
+   `G-R5-B` (`V/20` §2), con la cota atada al plazo de borrado y no a 6 meses literales (confirmado
+   por el owner: revisión del owner, casos vecinos, 2026-09-29, caso 50);
 3. **cada aviso antes del hecho que anuncia**: los avisos previos del 4 menores que el 1 y que la
    distancia entre el 1 y el 2; los contactos del 11 y del 12 menores que su aviso;
-4. **el aviso de una migración o de un aumento nunca menor que el mínimo de `DEC-MP-002`**;
+4. **el aviso de una migración o de un aumento nunca menor que el mínimo de `DEC-MP-002`**, que
+   queda en 60 días: se puede alargar, no acortar (revisión del owner, casos vecinos, 2026-09-29, caso 44);
 5. **la gracia menor que el ciclo más corto**, que es del catálogo y rechaza *«publicar una versión
    de plan»* (§1.4).
 
@@ -178,8 +200,10 @@ abierto en `V/03` §9, ⚠️ punto 7): el archivado escribe la fecha de borrado
 borra antes de esa fecha (`V/02` §2.5, `V/03` §9).
 
 **Quién lo construye**: la tabla de plazos de cada mitad y la operación de cambiarlos, `V9` en
-verticales y `B2` en billing; cada reloj guarda su versión en la unidad que lo construye; la
-pantalla, `V8` y `B13` (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
+verticales y `B2` en billing; cada reloj guarda su versión en la unidad que lo construye; ~~la
+pantalla, `V8` y `B13`~~ **una sola pantalla de plazos, compuesta en la app del panel**
+(revisión del owner, casos vecinos, 2026-09-29, caso 47): `V8` y `B13` construyen cada uno la parte de su mitad, y cada
+cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
 ---
 
