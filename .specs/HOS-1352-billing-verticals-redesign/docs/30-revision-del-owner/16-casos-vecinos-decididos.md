@@ -103,3 +103,14 @@ Casos vecinos nuevos de [`17-aplicacion-casos-corte-y-verticales.md`](./17-aplic
 Nota del registro: `17-` §3 caso 3 decía que soporte no tenía una acción para dar de baja la
 suscripción de otro; es inexacto, la acción *«cancelar una suscripción»* existe (`nucleo/08` §3).
 Lo que no existía era borrar una ficha ajena ni la cuenta.
+
+## Lote G · lo que salió al aplicar los casos 20 a 40 (2026-09-29)
+
+Casos vecinos nuevos de [`18-aplicacion-casos-cobro.md`](./18-aplicacion-casos-cobro.md) §3.
+
+| Letra | Caso de `18-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | 1 | `S38` con la fila en `GRACE_PERIOD` o `SUSPENDED` | **1**: en `GRACE_PERIOD` se aplica igual; en `SUSPENDED` espera y se aplica al volver por `S7` | sí |
+| B | 2 | dónde vive la interfaz del reloj que lee producción | **1**: en el package del contrato; `G14` no cambia | sí |
+| C | 3 | cómo repite la batería `RP7`…`RP11` | **1**: las relee sobre sujetos existentes, sin mutar; las que no se puedan releer se declaran *«vigiladas a mano»* | sí |
+| D | 4 | dónde registra el receptor los IPN sin actuar | **1**: se decide después de medir `WH-6`; si no se llega a medir, una tabla propia sólo de altas (canal, cuerpo, instante) que ninguna transición lee | sí |
