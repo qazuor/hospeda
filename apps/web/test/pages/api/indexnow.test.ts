@@ -2,7 +2,7 @@
  * @file indexnow.test.ts
  * @description Tests for the search-engine notification endpoint (HOS-585 G-1).
  *
- * Strategy: mock `@/lib/env`, `@/lib/middleware-helpers` and the transport
+ * Strategy: mock `@/lib/env`, `@/lib/noindex-hosts` and the transport
  * (`submitToIndexNow`), then call the POST handler directly. Mocking the
  * transport rather than `fetch` is deliberate — the protocol itself is covered
  * in `test/lib/seo/indexnow.test.ts`, so what is under test here is the gating
@@ -28,7 +28,7 @@ const envMock = {
 
 vi.mock('@/lib/env', () => envMock);
 
-vi.mock('@/lib/middleware-helpers', () => ({
+vi.mock('@/lib/noindex-hosts', () => ({
     parseNoindexHosts: vi.fn((raw: string | undefined) =>
         raw ? raw.split(',').map((h) => h.trim().toLowerCase()) : ['staging.hospeda.test']
     )
