@@ -195,6 +195,34 @@ describe('requestHasSessionCookie', () => {
             false
         );
     });
+
+    describe('per-deployment cookie name (HOS-955)', () => {
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('on staging, recognizes only the staging session cookie', () => {
+            // Arrange
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
+
+            // Act / Assert
+            expect(requestHasSessionCookie('__Secure-hospeda-staging.session_token=abc123')).toBe(
+                true
+            );
+            expect(requestHasSessionCookie('__Secure-better-auth.session_token=prod')).toBe(false);
+        });
+
+        it('on production, ignores a staging session cookie sent to the apex', () => {
+            // Arrange
+            vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'prod');
+
+            // Act / Assert
+            expect(requestHasSessionCookie('__Secure-better-auth.session_token=prod')).toBe(true);
+            expect(requestHasSessionCookie('__Secure-hospeda-staging.session_token=abc123')).toBe(
+                false
+            );
+        });
+    });
 });
 
 describe('isServerIslandRoute', () => {
