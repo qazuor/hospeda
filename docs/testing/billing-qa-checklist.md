@@ -39,8 +39,8 @@ Before starting manual QA, ensure:
 4. Wait for the webhook retry cron to run (every hour), or trigger manually:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/cron/webhook-retry \
-     -H "Authorization: Bearer <cron-secret>"
+   curl -X POST https://<staging-api>/api/v1/admin/cron/webhook-retry \
+     -H "Cookie: $ADMIN_SESSION_COOKIE"
    ```
 
 5. **Verify**: Check API logs for webhook retry processing messages
@@ -177,8 +177,8 @@ Before starting manual QA, ensure:
 2. Trigger dunning cron manually:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/cron/dunning \
-     -H "Authorization: Bearer <cron-secret>"
+   curl -X POST https://<staging-api>/api/v1/admin/cron/dunning \
+     -H "Cookie: $ADMIN_SESSION_COOKIE"
    ```
 
 3. **Verify** API logs show dunning processing:
@@ -263,8 +263,8 @@ Before starting manual QA, ensure:
 4. Trigger notification cron:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/cron/notification-schedule \
-     -H "Authorization: Bearer <cron-secret>"
+   curl -X POST https://<staging-api>/api/v1/admin/cron/notification-schedule \
+     -H "Cookie: $ADMIN_SESSION_COOKIE"
    ```
 
 5. **Verify**: Notification sent (check logs)
@@ -285,8 +285,8 @@ Before starting manual QA, ensure:
 2. Trigger notification schedule cron:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/cron/notification-schedule \
-     -H "Authorization: Bearer <cron-secret>"
+   curl -X POST https://<staging-api>/api/v1/admin/cron/notification-schedule \
+     -H "Cookie: $ADMIN_SESSION_COOKIE"
    ```
 
 3. **Verify** in API logs: notification payload contains correct `amount` (e.g., plan price from billing_plan_prices, not 0)

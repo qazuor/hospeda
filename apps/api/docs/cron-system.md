@@ -188,12 +188,12 @@ HOSPEDA_DISABLE_AUTH=true
 pnpm dev
 
 # Manually trigger jobs
-curl -X POST http://localhost:3001/api/v1/cron/trial-expiry \
-  -H "X-Cron-Secret: dev-secret-123"
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # Test in dry-run mode
-curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
-  -H "X-Cron-Secret: dev-secret-123"
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 **Expected logs:**
@@ -668,12 +668,12 @@ Update `vercel.json`:
 
 ```bash
 # Test in dry-run mode
-curl -X POST "http://localhost:3001/api/v1/cron/cleanup-sessions?dryRun=true" \
-  -H "X-Cron-Secret: dev-secret-123"
+curl -X POST "http://localhost:3001/api/v1/admin/cron/cleanup-sessions?dryRun=true" \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # Test actual execution
-curl -X POST http://localhost:3001/api/v1/cron/cleanup-sessions \
-  -H "X-Cron-Secret: dev-secret-123"
+curl -X POST http://localhost:3001/api/v1/admin/cron/cleanup-sessions \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 ### Job Definition Interface
@@ -741,7 +741,7 @@ Cron expressions use 5 fields:
 Test job logic without making actual changes:
 
 ```bash
-curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
   -H "X-Cron-Secret: your-secret" \
   -H "Content-Type: application/json"
 ```
@@ -767,7 +767,7 @@ curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
 Execute job with actual changes:
 
 ```bash
-curl -X POST http://localhost:3001/api/v1/cron/trial-expiry \
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
   -H "X-Cron-Secret: your-secret" \
   -H "Content-Type: application/json"
 ```
@@ -814,8 +814,8 @@ Check job status via API:
 
 ```bash
 # Get all registered jobs
-curl http://localhost:3001/api/v1/cron \
-  -H "X-Cron-Secret: your-secret"
+curl http://localhost:3001/api/v1/admin/cron \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 **Response:**
@@ -1229,14 +1229,14 @@ HOSPEDA_CRON_SECRET=your-secure-random-secret
    echo $HOSPEDA_CRON_SECRET
 
    # Request
-   curl -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET" ...
+   curl -H "Cookie: $ADMIN_SESSION_COOKIE" ...
    ```
 
 2. ✅ Header name is correct?
 
    ```bash
    # Correct
-   -H "X-Cron-Secret: your-secret"
+   -H "Cookie: $ADMIN_SESSION_COOKIE"
 
    # Wrong
    -H "Cron-Secret: your-secret"
@@ -1392,8 +1392,8 @@ handler: async (ctx) => {
 
 ```bash
 # Test individual job without affecting others
-curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
-  -H "X-Cron-Secret: dev-secret"
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 #### Monitor Job Performance
@@ -1410,8 +1410,8 @@ grep "Job completed: trial-expiry" logs/api.log | tail -10
 
 ```bash
 # List all registered jobs
-curl http://localhost:3001/api/v1/cron \
-  -H "X-Cron-Secret: dev-secret"
+curl http://localhost:3001/api/v1/admin/cron \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 ---
@@ -1441,9 +1441,12 @@ curl http://localhost:3001/api/v1/cron \
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/cron` | GET | List all registered jobs |
-| `/api/v1/cron/:jobName` | POST | Trigger specific job |
-| `/api/v1/cron/:jobName?dryRun=true` | POST | Trigger in dry-run mode |
+| `/api/v1/admin/cron` | GET | List all registered jobs |
+| `/api/v1/admin/cron/:jobName` | POST | Trigger specific job |
+| `/api/v1/admin/cron/:jobName?dryRun=true` | POST | Trigger in dry-run mode |
+| `/api/v1/admin/cron/:jobName?dryRun=false` | POST | Trigger a real run (`dryRun` accepts only `true` or `false`; omitting it is also a real run) |
+
+The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (send the session cookie). The old `X-Cron-Secret` endpoint at `/api/v1/cron/*` no longer exists.
 
 ### Common Commands
 
@@ -1452,16 +1455,16 @@ curl http://localhost:3001/api/v1/cron \
 openssl rand -hex 32
 
 # Test job (dry-run)
-curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
-  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # Test job (production)
-curl -X POST http://localhost:3001/api/v1/cron/trial-expiry \
-  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # List all jobs
-curl http://localhost:3001/api/v1/cron \
-  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
+curl http://localhost:3001/api/v1/admin/cron \
+  -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
 ---

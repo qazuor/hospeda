@@ -617,8 +617,8 @@ curl -i -X POST https://api.hospeda.com.ar/api/v1/public/feedback \
 3. Redeploy staging. Manually invoke a cron endpoint with the new secret to confirm:
 
    ```bash
-   curl -i -X POST https://api.staging.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
-     -H "Authorization: Bearer <new_secret>"
+   curl -i -X POST https://api.staging.hospeda.com.ar/api/v1/admin/cron/exchange-rate-fetch \
+     -H "Cookie: $ADMIN_SESSION_COOKIE"
    # Expect: HTTP 200
    ```
 
@@ -644,7 +644,7 @@ If cron starts failing after rotation, restore the previous secret in Vercel and
 
 ```bash
 # Manual cron invocation against prod (use with care).
-curl -i -X POST https://api.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/admin/cron/exchange-rate-fetch \
   -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 # Expect: HTTP 200. Check Vercel logs for the corresponding cron run.
 ```
@@ -872,7 +872,7 @@ Restore the previous key in Vercel and redeploy (works only if not yet revoked o
 
 ```bash
 # Manually trigger the exchange rate cron.
-curl -i -X POST https://api.hospeda.com.ar/api/v1/cron/exchange-rate-fetch \
+curl -i -X POST https://api.hospeda.com.ar/api/v1/admin/cron/exchange-rate-fetch \
   -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 # Expect: HTTP 200, log line "exchange_rate_fetch_ok=true".
 ```
