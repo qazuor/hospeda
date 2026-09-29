@@ -1,6 +1,7 @@
 import { resolveDisplayLocale } from '@repo/i18n';
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { AdminLocaleProvider } from '@/contexts/admin-locale-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
@@ -128,9 +129,14 @@ function AuthedLayout() {
 
     return (
         <AuthProvider initialAuthState={authState}>
-            <AppLayout>
-                <Outlet />
-            </AppLayout>
+            <AdminLocaleProvider
+                userId={authState.userId ?? undefined}
+                initialLanguage={authState.languageAdmin}
+            >
+                <AppLayout>
+                    <Outlet />
+                </AppLayout>
+            </AdminLocaleProvider>
         </AuthProvider>
     );
 }

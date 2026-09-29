@@ -182,6 +182,22 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
         expect(result.languageWeb).toBe('en');
     });
 
+    // ─── HOS-992: languageAdmin extraction (with legacy `language` fallback) ───
+    it.each([
+        ['languageAdmin', { languageAdmin: 'pt', language: 'en' }, 'pt'],
+        ['the legacy language', { language: 'en' }, 'en'],
+        ['nothing', { themeAdmin: 'dark' }, null]
+    ])('extracts the admin language from %s', async (_label, settings, expected) => {
+        server.use(
+            http.get(SESSION_URL, () => HttpResponse.json({ user: { id: 'u9', settings } })),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageAdmin).toBe(expected);
+    });
+
     it('returns languageWeb=null when settings has no languageWeb', async () => {
         server.use(
             http.get(SESSION_URL, () =>
