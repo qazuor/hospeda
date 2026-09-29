@@ -1397,6 +1397,7 @@
         "zodError.params.value.required",
         "zodError.params.version.format",
         "zodError.params.version.required",
+        "zodError.partner.websiteUrl.invalid",
         "zodError.partnerLogoClick.partnerId.invalidUuid",
         "zodError.partnerLogoClick.partnerId.required",
         "zodError.partnerMention.entries.empty",
@@ -1928,7 +1929,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1927,
+    "total": 1928,
     "byNamespace": {
         "accommodation": 71,
         "accommodationAmenity": 4,
@@ -1980,6 +1981,7 @@
         "ownerPromotion": 19,
         "pagination": 7,
         "params": 36,
+        "partner": 1,
         "partnerLogoClick": 2,
         "partnerMention": 6,
         "partnerStats": 1,

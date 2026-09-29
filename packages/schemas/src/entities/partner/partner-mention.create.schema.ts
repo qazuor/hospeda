@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { requiresMentionUrl } from '../../enums/partner-mention-channel.schema.js';
-import { partnerMentionSchema } from './partner-mention.schema.js';
+import { partnerMentionSchema, partnerMentionWriteUrlSchema } from './partner-mention.schema.js';
 
 /**
  * One channel within a mention submission (HOS-377 §6).
@@ -21,6 +21,7 @@ import { partnerMentionSchema } from './partner-mention.schema.js';
  */
 export const partnerMentionEntrySchema = partnerMentionSchema
     .pick({ channel: true, url: true })
+    .extend({ url: partnerMentionWriteUrlSchema })
     .superRefine((entry, ctx) => {
         if (!requiresMentionUrl({ channel: entry.channel })) return;
         if (entry.url) return;

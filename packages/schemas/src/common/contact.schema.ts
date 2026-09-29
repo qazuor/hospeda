@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PreferredContactEnumSchema } from '../enums/index.js';
 import { InternationalPhoneRegex } from '../utils/utils.js';
+import { safeExternalUrl } from './safe-external-url.schema.js';
 
 /**
  * Strict WRITE shape for the shared `contactInfo` JSONB column.
@@ -60,7 +61,7 @@ export const ContactInfoSchema = z.object({
             message: 'zodError.common.contact.whatsapp.international'
         })
         .nullish(),
-    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).nullish(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').nullish(),
     preferredEmail: PreferredContactEnumSchema.nullish(),
     preferredPhone: PreferredContactEnumSchema.nullish()
 });

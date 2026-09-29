@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
+import { SAFE_EXTERNAL_URL_PROTOCOL } from './safe-external-url.schema.js';
 
 /**
  * The protocols an entity media asset URL may use.
@@ -7,7 +8,7 @@ import { ModerationStatusEnumSchema } from '../enums/index.js';
  * A stored media URL is a location the SERVER and every visitor's browser must
  * be able to fetch. That rules out every scheme except `http` and `https`.
  */
-const MEDIA_ASSET_PROTOCOL = /^https?$/;
+const MEDIA_ASSET_PROTOCOL = SAFE_EXTERNAL_URL_PROTOCOL;
 
 /**
  * Validator for a persisted media asset URL (H-22).
