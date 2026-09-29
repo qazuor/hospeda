@@ -9,6 +9,7 @@
  */
 
 import { BookmarkIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { SupportedLocale } from '@/lib/i18n';
 import { EditableNote } from './EditableNote';
@@ -230,7 +231,8 @@ export function BookmarkGrid({
                             <div className={styles.cardImage}>
                                 {bookmark.entityImage ? (
                                     <img
-                                        src={bookmark.entityImage}
+                                        // HOS-1094: entityImage is the raw original; transform at render.
+                                        src={getMediaUrl(bookmark.entityImage, { preset: 'card' })}
                                         alt={displayTitle}
                                         className={styles.cardImg}
                                         loading="lazy"
