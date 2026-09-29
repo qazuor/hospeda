@@ -19,16 +19,26 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { accommodationMediaModel, gastronomyMediaModel, experienceMediaModel } = vi.hoisted(() => ({
+const {
+    accommodationMediaModel,
+    gastronomyMediaModel,
+    experienceMediaModel,
+    postMediaModel,
+    eventMediaModel
+} = vi.hoisted(() => ({
     accommodationMediaModel: { findByAccommodation: vi.fn() },
     gastronomyMediaModel: { findByGastronomy: vi.fn() },
-    experienceMediaModel: { findByExperience: vi.fn() }
+    experienceMediaModel: { findByExperience: vi.fn() },
+    postMediaModel: { count: vi.fn() },
+    eventMediaModel: { count: vi.fn() }
 }));
 
 vi.mock('@repo/db', () => ({
     accommodationMediaModel,
     gastronomyMediaModel,
-    experienceMediaModel
+    experienceMediaModel,
+    postMediaModel,
+    eventMediaModel
 }));
 
 import { resolveVisibleGalleryCount } from '../../../src/routes/media/gallery-count';
@@ -50,6 +60,8 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         accommodationMediaModel.findByAccommodation.mockResolvedValue({ items: [], total: 7 });
         gastronomyMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 5 });
         experienceMediaModel.findByExperience.mockResolvedValue({ items: [], total: 4 });
+        postMediaModel.count.mockResolvedValue(6);
+        eventMediaModel.count.mockResolvedValue(2);
     });
 
     it('counts gastronomy photos from gastronomy_media, not from the JSONB blob', async () => {
@@ -132,7 +144,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         expect(call?.state).toBe('visible');
     });
 
-    for (const entityType of ['destination', 'event', 'post']) {
+    for (const entityType of ['destination']) {
         it(`still reads the JSONB blob for ${entityType}, which never migrated`, async () => {
             const count = await resolveVisibleGalleryCount({
                 entityType,
@@ -146,10 +158,47 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         });
     }
 
+    // HOS-1164: the composed `media.gallery` on a service-loaded entity only holds
+    // APPROVED rows (composeCommerceMedia moderation gate), while the register
+    // path (`addPostMedia`/`addEventMedia`) counts rows in EVERY moderation
+    // state. Counting the composed blob here let a caller who had registered 15
+    // PENDING rows keep uploading to Cloudinary. Both paths must count the rows.
+    it('counts post photos from post_media rows, ignoring the composed entity', async () => {
+        const count = await resolveVisibleGalleryCount({
+            entityType: 'post',
+            entityId: ENTITY_ID,
+            entity: entityWithJsonbGallery
+        });
+
+        expect(count).toBe(6);
+        expect(postMediaModel.count).toHaveBeenCalledWith({
+            postId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false,
+            deletedAt: null
+        });
+    });
+
+    it('counts event photos from event_media rows, ignoring the composed entity', async () => {
+        const count = await resolveVisibleGalleryCount({
+            entityType: 'event',
+            entityId: ENTITY_ID,
+            entity: entityWithJsonbGallery
+        });
+
+        expect(count).toBe(2);
+        expect(eventMediaModel.count).toHaveBeenCalledWith({
+            eventId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false,
+            deletedAt: null
+        });
+    });
+
     it('treats a missing media object as zero rather than throwing', async () => {
         expect(
             await resolveVisibleGalleryCount({
-                entityType: 'post',
+                entityType: 'destination',
                 entityId: ENTITY_ID,
                 entity: {}
             })
@@ -157,7 +206,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
 
         expect(
             await resolveVisibleGalleryCount({
-                entityType: 'post',
+                entityType: 'destination',
                 entityId: ENTITY_ID,
                 entity: null
             })
