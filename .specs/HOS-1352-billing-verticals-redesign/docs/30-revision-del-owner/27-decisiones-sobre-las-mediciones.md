@@ -27,3 +27,18 @@ ni a la matriz: van en la tanda que lleva lo medido al diseño, con el OK del ow
 **Consecuencia**: no queda ninguna medición pendiente. Lo que sigue es la tanda que lleva lo medido
 al diseño: los diez puntos de impacto de `25-` §4, más M-1 a M-5 (y sus filas de la matriz y del
 log).
+
+## Lote L · lo que pidió elegir la tanda que llevó las mediciones al diseño (2026-09-29)
+
+Decisiones de [`28-aplicacion-mediciones-al-diseno.md`](./28-aplicacion-mediciones-al-diseno.md) §3.
+
+| Letra | Decisión de `28-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | 1 | la baja que el cliente da desde la app de Mercado Pago (N8, `EX-52`) | **2**: se deja como está; corta el servicio en el acto, como una baja del proveedor | **no** (la recomendada era tratarla como una baja pedida desde Hospeda, con el servicio hasta el fin del período pagado) |
+| B | 2 | qué se guarda de Webhooks para comparar con IPN (M-2, HOS-1399) | **1**: cada entrega de Webhooks también se guarda en la misma tabla, con su canal y los mismos 180 días, sin que nadie la lea; la tabla cambia a un nombre que diga los dos canales | sí |
+| C | 3 | reintentar con otra tarjeta un complemento de pago único (`EX-30`, `EX-41`) | **1**: un rechazo cierra la compra en el acto (abandonada) y el segundo intento arranca un pedido nuevo | sí |
+| D | 4 | el receptor de hoy fuerza reintentos sin fin sobre suscripciones que el proveedor canceló | **1**: no se abre issue; el receptor viejo desaparece en el corte | sí |
+| E | — | el lote de `28-` §4 para el log, la matriz y `contar-filas-de-la-matriz.py` | **1**: OK, con lo que suman A, B y C | sí |
+
+Contra la recomendación: **A**. Consecuencia aceptada: quien cancela desde la app de Mercado Pago
+pierde los días que ya pagó, y la misma baja tiene dos resultados según dónde se dio.
