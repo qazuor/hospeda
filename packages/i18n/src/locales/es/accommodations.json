@@ -720,7 +720,8 @@
         "videos": {
             "title": "Videos",
             "play": "Reproducir video",
-            "playNamed": "Reproducir video: {{caption}}"
+            "playNamed": "Reproducir video: {{caption}}",
+            "openExternal": "Ver en {{provider}} (se abre en una pestaña nueva)"
         },
         "pricing": {
             "from": "Desde",
