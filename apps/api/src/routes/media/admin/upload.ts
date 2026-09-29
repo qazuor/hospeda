@@ -264,7 +264,11 @@ export const adminUploadMediaRoute = createAdminRoute({
             formData = await ctx.req.formData();
         } catch {
             return createErrorResponse(
-                { code: 'VALIDATION_ERROR', message: 'Invalid multipart form data' },
+                {
+                    code: 'VALIDATION_ERROR',
+                    reason: 'INVALID_MULTIPART_DATA',
+                    message: 'Invalid multipart form data'
+                },
                 ctx,
                 400
             );
@@ -309,6 +313,7 @@ export const adminUploadMediaRoute = createAdminRoute({
             return createErrorResponse(
                 {
                     code: 'VALIDATION_ERROR',
+                    reason: 'INVALID_FORM_FIELDS',
                     message: 'Invalid form fields',
                     details: parseResult.error.issues.map((issue) => ({
                         field: issue.path.join('.'),
@@ -354,6 +359,7 @@ export const adminUploadMediaRoute = createAdminRoute({
             return createErrorResponse(
                 {
                     code: 'VALIDATION_ERROR',
+                    reason: 'UNSUPPORTED_ENTITY_TYPE',
                     message: `Unsupported entity type: ${entityType}`
                 },
                 ctx,
@@ -525,7 +531,11 @@ export const adminUploadMediaRoute = createAdminRoute({
         const fileEntry = formData.get('file');
         if (!(fileEntry instanceof File)) {
             return createErrorResponse(
-                { code: 'VALIDATION_ERROR', message: 'Missing required "file" field' },
+                {
+                    code: 'VALIDATION_ERROR',
+                    reason: 'MISSING_FILE',
+                    message: 'Missing required "file" field'
+                },
                 ctx,
                 400
             );
