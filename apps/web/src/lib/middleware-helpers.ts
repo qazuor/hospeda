@@ -6,6 +6,7 @@
  * rather than being hardcoded here so they have a single source of truth.
  */
 
+import { getAuthSessionCookieNames } from '@repo/config';
 import { buildSentryReportUri } from '@repo/utils';
 import * as Sentry from '@sentry/astro';
 import { ASTRO_RUNTIME_SCRIPT_HASHES } from './csp-astro-runtime-hashes';
@@ -679,20 +680,25 @@ export async function parseSessionUser({
 }
 
 /**
- * Better Auth session cookie names this app must recognize.
+ * Better Auth session cookie names this deployment writes.
  *
- * Better Auth's default cookie is `<cookiePrefix>.session_token`, with
- * `cookiePrefix` defaulting to `"better-auth"` (see `apps/api/src/lib/auth.ts`
- * — neither `advanced.cookiePrefix` nor `advanced.cookies.session_token.name`
- * is overridden there, so the default applies). When `useSecureCookies` is on
- * (production — `NODE_ENV === 'production'` in `auth.ts`), Better Auth sets
- * the cookie with the `__Secure-` prefix instead of the plain name. Both
- * forms must be checked since dev/staging and production can differ.
+ * The name is `<cookiePrefix>.session_token`, and the prefix is per deployment
+ * (HOS-955): staging (`HOSPEDA_DEPLOY_ENV=preview`) uses its own so it cannot
+ * clobber production's cookie on the shared `hospeda.com.ar` domain. The API
+ * sets `advanced.cookiePrefix` from the same `@repo/config` resolver, so both
+ * sides always agree. With `useSecureCookies` on (`NODE_ENV=production`) Better
+ * Auth adds the `__Secure-` prefix, so both forms are returned.
+ *
+ * Only this deployment's names count: a production cookie reaching a staging
+ * host (or the reverse) is deliberately NOT recognized.
+ *
+ * @returns The plain and `__Secure-` session-token cookie names.
  */
-const SESSION_COOKIE_NAMES = [
-    'better-auth.session_token',
-    '__Secure-better-auth.session_token'
-] as const;
+function getSessionCookieNames(): readonly string[] {
+    const deployEnv =
+        typeof process !== 'undefined' && process.env ? process.env.HOSPEDA_DEPLOY_ENV : undefined;
+    return getAuthSessionCookieNames({ deployEnv });
+}
 
 /**
  * Checks whether a raw `Cookie` request header carries a Better Auth session
@@ -724,10 +730,11 @@ export function requestHasSessionCookie(cookieHeader: string | null): boolean {
         return false;
     }
 
+    const sessionCookieNames = getSessionCookieNames();
     return cookieHeader.split(';').some((pair) => {
         const separatorIndex = pair.indexOf('=');
         const name = (separatorIndex === -1 ? pair : pair.slice(0, separatorIndex)).trim();
-        return (SESSION_COOKIE_NAMES as readonly string[]).includes(name);
+        return sessionCookieNames.includes(name);
     });
 }
 
