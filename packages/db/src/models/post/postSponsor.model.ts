@@ -21,12 +21,19 @@ export class PostSponsorModel extends BaseModelImpl<PostSponsor> {
      * property of the table: re-measure before reusing it to justify skipping
      * a migration.
      *
-     * `socialNetworks`, `logo` and `adminInfo` (also JSONB on this table) are
-     * deliberately NOT added here — that is a separate decision left to the
-     * table owner, same as `partners.socialNetworks` was excluded for a
-     * documented reason (see `PartnerModel`).
+     * `socialNetworks` is merged for the same reason (HOS-1262): it is one JSONB
+     * value of up to six independent network URLs, and a PATCH that sent one
+     * network used to replace the column and silently delete the rest. The price
+     * is the same as for `contactInfo`: clearing a network is an explicit `null`
+     * (`{ socialNetworks: { instagram: null } }`), never an omission. The shared
+     * `SocialNetworkSchema` (WRITE) and `SocialNetworkReadSchema` (READ) both
+     * accept `null` per key for exactly that reason. `socialNetworks: null` (the
+     * whole value) still clears the entire column.
+     *
+     * `logo` and `adminInfo` (also JSONB on this table) are deliberately NOT
+     * added here — that is a separate decision left to the table owner.
      */
-    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 
     protected getTableName(): string {
         return 'postSponsors';

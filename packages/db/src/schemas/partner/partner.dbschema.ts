@@ -47,9 +47,9 @@ export const partners = pgTable(
          */
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         /**
-         * Operational counterpart of {@link contactInfo}, but REPLACED
-         * wholesale rather than merged — see `PartnerModel` for why merging
-         * would make a cleared social link impossible to express.
+         * Operational counterpart of {@link contactInfo}, shallow-MERGED on
+         * update the same way (HOS-1262). A cleared link travels as an explicit
+         * per-key `null` — see `PartnerModel.mergeableJsonbColumns`.
          */
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         subscriptionStatus: PartnerSubscriptionStatusPgEnum('subscription_status')
