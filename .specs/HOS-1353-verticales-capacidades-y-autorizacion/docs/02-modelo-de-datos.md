@@ -412,6 +412,13 @@ owner (`30-revision-del-owner/20-` §3).~~ **no borra la fila de `user`: la seud
 nombre, el correo y el teléfono reemplazados, las sesiones cerradas y sin acceso, y la fila de
 `trial` sigue apuntándola, así que esta FK no cambia y la traba contra repetir la prueba sigue
 (revisión del owner, casos vecinos, 2026-09-29, caso I-C, que corrige la elección del caso H-C).
+**La seudonimización no alcanza a los datos de facturación de la cuenta**, el nombre y el correo
+de su cliente de billing: se conservan tal cual, porque son datos de comprobantes que la ley obliga
+a guardar (revisión del owner, casos vecinos, 2026-09-29, caso J-C). ⚠️ **En este modelo no tienen
+fila propia**: billing no tiene una entidad de cliente (`B/02`), el `billing_customers` del sistema
+viejo no sobrevive al corte (`B/21` §4), y el nombre y el correo de quien paga sólo viven en esta
+fila de `user`, que la acción reemplaza; dónde se conservan pide decisión del owner
+(`30-revision-del-owner/22-` §3).
 
 ### 2.5 Publicación
 
@@ -793,7 +800,7 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada. ⚠️ **Lo qu
 camino —la baja de la cuenta pedida por el propio usuario— es justo lo que `DEC-DATA-005` declara
 que **no decide** (*«es otro proceso»*), y ~~ningún capítulo lo diseña~~ **para la baja manual lo
 diseña la vigesimocuarta acción administrativa** (`NUCLEO/08` §3; revisión del owner, casos
-vecinos, 2026-09-29, caso H-C), ~~con el choque de §2.4 abierto~~ seudonimizando la fila de `user` sin borrarla (caso I-C); la razón del hash descansa
+vecinos, 2026-09-29, caso H-C), ~~con el choque de §2.4 abierto~~ seudonimizando la fila de `user` sin borrarla (caso I-C) y conservando tal cual los datos de facturación, que la ley obliga a guardar (caso J-C; §2.4); la razón del hash descansa
 sobre un proceso que el corpus nombra y no escribe (FASE 8 completa, `F-8CA3-009`, owner
 2026-09-25). **Queda fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.**
 

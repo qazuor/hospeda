@@ -1508,12 +1508,15 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
    (`B/20` §5.1, caso 31); la interfaz, que sí importa producción, vive acá porque éste ya es el
    único package que importan las dos mitades. **`G14` no cambia**: importar el contrato nunca fue
    cruzar (revisión del owner, casos vecinos, 2026-09-29, caso G-B). **La construye `B1`**, con el
-   reloj adelantable (revisión del owner, casos vecinos, 2026-09-29, caso I-E).
+   reloj adelantable (revisión del owner, casos vecinos, 2026-09-29, caso I-E). La implementación
+   real no vive acá: la inyecta la raíz de composición de `apps/api` (abajo; caso J-A).
 
 **Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
 billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque
 con su módulo que contesta por billing, que sigue bajo `G13`). **El único lugar que junta las dos
-mitades es la raíz de composición de `apps/api`.** Y **`G14`** (`V/20` §2) falla si una mitad
+mitades es la raíz de composición de `apps/api`.** **La implementación real del reloj (la hora del
+sistema), que leen las dos mitades, la inyecta esa raíz; en las pruebas se inyecta el reloj
+adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). Y **`G14`** (`V/20` §2) falla si una mitad
 importa a la otra: es lo que vuelve ejecutable la parte de la regla de vigilancia que se ve en un
 import (§4.2). **Quién lo construye**: `V1` crea el package y `G14`; cada entrada entra con la
 unidad que construye su implementación (§4.1, *«quién construye»*), y la épica de billing lo

@@ -551,11 +551,17 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   borra: se reescribe sin la palabra**. **Cómo se distingue**: por el estado del issue que la
   carpeta nombra en su `linear:`, leído en Linear el día que `V1` hace la limpieza, no antes,
   porque cambia. `Done` es implementada y se borra; `In Progress` y `Backlog` siguen en curso y se
-  reescriben. Una carpeta de `.qtm/` es del sistema retirado y se juzga igual, por el
+  reescriben. ~~Una carpeta de `.qtm/` es del sistema retirado y se juzga igual, por el
   issue `HOS-` al que migró o, si no migró, por los commits de su spec (el `.qtm/` no es fuente de
-  estado). La lista medida, por estado, está en `30-revision-del-owner/21-` §1; lo que la regla no
+  estado).~~ La lista medida, por estado, está en `30-revision-del-owner/21-` §1; ~~lo que la regla no
   cubre (una spec en `In Review`, implementada y con el smoke pendiente; una cancelada; y un issue
-  que ya no existe en Linear) vuelve al owner.
+  que ya no existe en Linear) vuelve al owner.~~ **Lo que la regla no cubría lo decidió el owner:
+  una spec en `In Review` se trata como implementada y se borra**, porque su código ya está
+  mergeado y el smoke que le falta vive en el issue, no en la carpeta; **una spec con el issue
+  `Canceled` y una cuyo issue ya no existe en Linear se borran**, porque nadie las va a implementar
+  y quedan en el historial de git; **y las carpetas de `.qtm/` se borran todas**, sin juzgarlas por
+  su issue ni por sus commits, porque son del sistema retirado. **Se reescriben sólo las de un issue
+  en `In Progress` o en `Backlog`** (revisión del owner, casos vecinos, 2026-09-29, caso J-B).
 
 ---
 
