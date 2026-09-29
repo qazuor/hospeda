@@ -11,7 +11,7 @@ import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enum
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
-import { AccommodationSchema } from './accommodation.schema.js';
+import { AccommodationReadSchema } from './accommodation.schema.js';
 
 /**
  * Accommodation Query Schemas - Standardized Implementation
@@ -174,7 +174,7 @@ export type AccommodationSearchInput = z.infer<typeof AccommodationSearchSchema>
 /**
  * Standard accommodation search result schema
  */
-export const AccommodationSearchResultSchema = PaginationResultSchema(AccommodationSchema);
+export const AccommodationSearchResultSchema = PaginationResultSchema(AccommodationReadSchema);
 
 // Type: Search Result
 export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResultSchema>;
@@ -310,7 +310,7 @@ export const AccommodationSearchSchemaWithMetadata = applyOpenApiMetadata(
 /**
  * Schema for accommodation list items (public-safe fields)
  */
-export const AccommodationListItemSchema = AccommodationSchema.pick({
+export const AccommodationListItemSchema = AccommodationReadSchema.pick({
     id: true,
     name: true,
     slug: true,
@@ -336,7 +336,7 @@ export type AccommodationListItem = z.infer<typeof AccommodationListItemSchema>;
 /**
  * Schema for accommodation summary (essential fields only)
  */
-export const AccommodationSummarySchema = AccommodationSchema.pick({
+export const AccommodationSummarySchema = AccommodationReadSchema.pick({
     id: true,
     name: true,
     slug: true,
@@ -427,7 +427,7 @@ export const UserMiniSchema = z.object({
  * Provides consistent format for array responses
  */
 export const AccommodationListWrapperSchema = z.object({
-    accommodations: z.array(AccommodationSchema)
+    accommodations: z.array(AccommodationReadSchema)
 });
 export type AccommodationListWrapper = z.infer<typeof AccommodationListWrapperSchema>;
 
