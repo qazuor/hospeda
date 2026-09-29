@@ -697,7 +697,7 @@ compatible con Gastronomía y Experiencia, pausa Experiencia (`S32` no lo toca, 
 sigue `ACTIVE`) y después se va de Gastronomía por `S24`. La principal sale de las filas vivas,
 pero la orfandad no se cumple, porque la de Experiencia pausada es fila viva; y `S32` ya pasó,
 porque su evento es el paso a `PAUSED` y no el estado. El `USER` cobraba cada mes sin título, y sin
-tope si la otra estaba `SUSPENDED`. **Por eso, cuando una de las catorce transiciones del §4.3 saca
+tope si la otra estaba `SUSPENDED`. **Por eso, cuando una de las ~~catorce~~ once transiciones del §4.3 saca
 a una principal de las filas vivas y la orfandad de un `USER`/`GLOBAL` no se cumple sólo porque las
 otras principales compatibles están `PAUSED` o `SUSPENDED`, corre `S32` sobre ese complemento en
 el mismo acto** (`B/03` §3.2), y `S33` lo reanuda cuando una de ellas vuelve a `ACTIVE`.
@@ -713,23 +713,19 @@ por el owner: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`)— y los
 fila viva y la orfandad no llega hasta `S12` (`B/03` §3.2). **En la fecha de fin los toma `S21`, antes que su
 propio `S12`** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): el `S12` de la principal dispara la
 orfandad, `S21` lleva el complemento a `CANCELLED` y, si su último cobro pagó días posteriores al
-fin de servicio, abre el motivo 14, que propone no devolver y deja que una persona lo vea. El mismo
+fin de servicio, abre el motivo 14, que propone no devolver y deja que una persona lo vea. ~~El mismo
 orden vale para los complementos que `S26` dejó en `CANCEL_SCHEDULED` (`B/03` §3.2, fila de `S12`),
 **con el motivo 15 y no el 14**: `S21` lo deduce de que la vertical de la principal tiene una fila
-en `vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`).
+en `vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`).~~ (`S26`
+salió con la revisión del owner, 2026-09-28, C8.)
 **Y el mismo alguien es la regla de `S11` cuando la principal llega a `CANCEL_SCHEDULED` sin pedir
 la baja**: por el espejo de `R18` —pagó mientras ya mandábamos cancelar— y por `S7` —volvió de
 `SUSPENDED` con un cobro sobre un preapproval cancelado— (owner 2026-09-27, FASE 9 vuelta 2,
 `R18-b`; `B/03` §3.2 y §10.1). Ninguna de las dos saca a la principal de las filas vivas, así que
-no entran en la lista de abajo, por la misma razón que `S11`. **Y `S26` aplica la misma selección
+no entran en la lista de abajo, por la misma razón que `S11`. ~~**Y `S26` aplica la misma selección
 a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa** (FASE 9 vuelta 2,
-verificación, owner 2026-09-27, `V2-d`, `N-A-01`): *«toda fila viva de la vertical»* no nombraba
-a un scope sin vertical propia, así que su preapproval seguía vivo durante la cola y, en la fecha
-de fin, el cobro que cruzaba esa fecha iba al motivo 14 aunque la causa fuera nuestra. Con la
-selección, el `USER` que sólo esa vertical sostenía se cancela en el acto, y el que otra vertical
-sostiene con una principal viva sigue su curso. **Y la marca de esos complementos en la fecha de
-fin es el motivo 15, no el 14**, como la de `S27` y `S28` en la misma discontinuación (`B/03`
-§3.2, *«cuál de los dos motivos abre `S21`»*).
+verificación, owner 2026-09-27, `V2-d`, `N-A-01`), con el motivo 15 en la fecha de fin.~~ (Sale
+con `S26`: revisión del owner, 2026-09-28, C8.)
 
 Entonces, cuando un título **deja de ser fila viva**, la misma causa tiene **tres efectos
 distintos** y los tres se disparan del mismo lugar:
@@ -743,7 +739,7 @@ distintos** y los tres se disparan del mismo lugar:
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
-—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ ~~**las trece**~~ **las catorce** que en
+—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ ~~**las trece**~~ ~~**las catorce**~~ **las once** (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`) que en
 `B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31` es la decimotercera**, la
 sucesora que un contracargo sobre su predecesora corta a `ABANDONED` o `CANCELLED` (FASE 9
 completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista), **y `S36` la decimocuarta**, la
@@ -753,13 +749,13 @@ espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila 
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
 estando pausado, suspendido o en el grace; `S22` cuando va a `CANCELLED`, porque sobre una fila
 que vive del crédito va a `CANCEL_SCHEDULED` y cancela sus complementos como `S11` (FASE 9 vuelta
-2, verificación, owner 2026-09-27, `V2-b`)— más **`S25`**, el fin de una pausa sobre un plan que ya
+2, verificación, owner 2026-09-27, `V2-b`)— ~~más **`S25`**, el fin de una pausa sobre un plan que ya
 no se presta (`DEC-SUB-015`); y desde la 9-bis-5, **`S27` y `S28`** —la suspendida y la que esperaba
-autorización cuando se discontinuó su vertical (`B/10` §4.3)—; **`S31`**, la sucesora del
+autorización cuando se discontinuó su vertical (`B/10` §4.3)—~~; **`S31`**, la sucesora del
 contracargo (nombrada arriba y no en esta enumeración hasta la FASE 9 vuelta 2, que la recontó:
-catorce con ella); y **`S36`**, la revocación. **`S26` no entra**: manda la fila a
-`CANCEL_SCHEDULED`, que **sigue siendo fila viva** —y **`S11` tampoco**, por la misma razón: sus
-complementos los cancela ella misma (`R1-a`)—. Lo que se evalúa en cada una es **la condición del
+catorce con ella, once desde la revisión del owner, 2026-09-28, C8); y **`S36`**, la revocación. ~~**`S26` no entra**: manda la fila a
+`CANCEL_SCHEDULED`, que **sigue siendo fila viva**~~ **`S11` no entra**: manda la fila a `CANCEL_SCHEDULED`, que **sigue siendo fila viva** ~~—y **`S11` tampoco**, por la misma razón~~, y sus
+complementos los cancela ella misma (`R1-a`). Lo que se evalúa en cada una es **la condición del
 §4.2**, no el
 nombre del estado al que llegó. La lista es para poder auditar que ninguna se olvidó; **y que
 hayan entrado cuatro seguidas sin que el predicado cambiara es la prueba de que
@@ -775,12 +771,12 @@ predecesora ya murió (§4.2).
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
-> | **una de las ~~doce~~ ~~trece~~ catorce transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
-> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, **`S28`** la corta al discontinuarse la vertical **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa), **o cualquier otra de las catorce que saque de las filas vivas a esa sucesora, entre ellas `S16`, `S24` y `S36`**, que esta enumeración no nombraba y la cuarta comprobación del barrido veía recién al día siguiente (FASE 9 vuelta 2, verificación, caso de `15-` §5, arreglo de texto) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
+> | **una de las ~~doce~~ ~~trece~~ ~~catorce~~ once transiciones saca al título de las filas vivas** (revisión del owner, 2026-09-28, C8) | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **muere la sucesora que relevaba** — `S3` la abandona, `S13` la mata, ~~**`S28`** la corta al discontinuarse la vertical~~ **o `S31` la corta por un contracargo sobre la predecesora** (FASE 9 completa), **o cualquier otra de las ~~catorce~~ once (revisión del owner, 2026-09-28, C8) que saque de las filas vivas a esa sucesora, entre ellas `S16`, `S24` y `S36`**, que esta enumeración no nombraba y la cuarta comprobación del barrido veía recién al día siguiente (FASE 9 vuelta 2, verificación, caso de `15-` §5, arreglo de texto) | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
-> **La lista no agrega ninguna transición al disparador de arriba**: las ~~doce~~ ~~trece~~ catorce son las que
+> **La lista no agrega ninguna transición al disparador de arriba**: las ~~doce~~ ~~trece~~ ~~catorce~~ once son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
 > tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
 > momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.
@@ -924,26 +920,27 @@ ya declaran —con la regla de relectura de `S17`— **es la de esta fila**. `S2
 proveedor**: escribe el estado local que faltaba. Duplicarla serían dos llamadas por el mismo
 recurso; omitir la fila dejaba el estado sin declarar, que es lo que este § cierra.
 
-**El período ya cobrado no se reembolsa — con DOS excepciones declaradas, y desde `DEC-RF-006` las
-dos viven en un MOTIVO propio de la marca, el 15** (`B/02` §2.5). La regla vale donde el complemento
+**El período ya cobrado no se reembolsa — con ~~DOS excepciones declaradas, y desde `DEC-RF-006` las
+dos viven~~ UNA excepción declarada, que desde `DEC-RF-006` vive en un MOTIVO propio de la marca, el 15** (`B/02` §2.5; revisión del owner, 2026-09-28, C8: la segunda era la discontinuación). La regla vale donde el complemento
 se pierde **por un acto del propio cliente**;
 **no** vale cuando la instancia llega a `CANCELLED` por la **tercera** cláusula de `A5` —**se revoca
-el grant que era su título**—, ni cuando llega por la **segunda** —**queda huérfana**— **y a su
+el grant que era su título**— ~~, ni cuando llega por la **segunda** —**queda huérfana**— **y a su
 título lo mató la discontinuación de la vertical**: `S25`, `S27` o `S28` (la ampliación del
 2026-09-23), o `S12` en la fecha de fin sobre una vertical con fila en `vertical_discontinuation` (FASE 9 vuelta 2,
-verificación, owner 2026-09-28, `V2-n`). En las dos el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su
+verificación, owner 2026-09-28, `V2-n`)~~. ~~En las dos~~ Ahí el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su
 título lo mató `S36`**, la revocación del derecho de arrepentimiento, **y el último cobro del
 complemento cae dentro de sus propios 10 días corridos**: ahí no hay marca y `S21` crea `RF1` (owner
 2026-09-27, FASE 9 vuelta 2, `R1-b`); fuera de ese plazo, la regla. Los **cuatro** disparadores
-de `S21` están enumerados uno por uno, con el motivo de cada uno —y el segundo con su reparto interno—
+de `S21` están enumerados uno por uno, con el motivo de cada uno ~~—y el segundo con su reparto interno—~~
 en `B/03` §3.2, *«cuál de los dos motivos abre `S21`»*. **Y el resto no es todo *«un acto
 del cliente»*, que es la parte que no hay que leer de más**: quedan del lado de la regla ~~**dos**
 caminos nuestros —`S17`, y `S12` cuando su `CANCEL_SCHEDULED` lo puso `S26`—~~ **un** camino nuestro,
 `S17`, **por mecanismo y no
 por criterio**, porque ahí la transición que mata al título no nombra su causa; el § de `B/03` lo
 enumera y la fila de `B/19` §6 lo dice en voz alta para que quien resuelve pueda apartarse.
-`S12` cuando su `CANCEL_SCHEDULED` lo puso `S26` pasó al 15: la causa se lee en la fila de
-`vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`). Lo que
+~~`S12` cuando su `CANCEL_SCHEDULED` lo puso `S26` pasó al 15: la causa se lee en la fila de
+`vertical_discontinuation` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-n`).~~ (`S26`
+salió con la revisión del owner, 2026-09-28, C8.) Lo que
 sigue es la regla para ese resto.
 
 Igual que `DEC-GRANT-001` lo dice para `S13` y el §3.4
@@ -955,8 +952,8 @@ corresponde devolver, entra por esa vía **y la confirma una persona**; nunca lo
 **Y esa vía tiene desde ahora quién la dispare, que es lo que le faltaba para existir.** Cuando el
 último cobro del complemento paga **un período que todavía no terminó**, `S21` abre la marca
 `requiere_conciliación` con ese pago colgado y con **uno de sus DOS motivos** (`B/02` §2.5):
-**`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`** —el **15**— cuando se revocó
-el grant o cuando la orfandad la causó la discontinuación, y
+~~**`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN_O_DISCONTINUACIÓN`**~~ **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`** —el **15**— cuando se revocó
+el grant ~~o cuando la orfandad la causó la discontinuación~~ (revisión del owner, 2026-09-28, C8), y
 **`COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`** —el **14**— en el resto, que es la regla del
 párrafo de arriba escrita —salvo `S36` dentro de los 10 días del cobro del complemento, que no abre
 marca y crea `RF1` (`R1-b`)—. El listado accionable muestra **el default de ese motivo**
@@ -971,8 +968,8 @@ comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
-de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ **dieciocho** (la decimoséptima, `S36`, FASE 9 vuelta 1; la decimoctava, la lápida de recepción, owner 2026-09-26, `X-1`), desde que `S22`, `S23`,
-`S24`, `S25` y las **dos** terminales de la discontinuación, `S27` y `S28`, le agregaron las suyas
+de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ ~~**dieciocho**~~ **quince** (la decimoséptima, `S36`, FASE 9 vuelta 1; la decimoctava, la lápida de recepción, owner 2026-09-26, `X-1`; `S25`, `S27` y `S28` salieron con la revisión del owner, 2026-09-28, C8), desde que `S22`, `S23` y
+`S24` ~~, `S25` y las **dos** terminales de la discontinuación, `S27` y `S28`,~~ le agregaron las suyas
 (`B/03` §3.2), **y `S31` la suya** (FASE 8 completa, owner 2026-09-25)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
 sin emitir nada (`EX-15`). Vuelve al barrido por la **salvedad 1**, no por la 4, porque su fila es

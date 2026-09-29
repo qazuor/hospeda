@@ -86,22 +86,23 @@ máquina de estados y una convención.
 
    **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
    las tablas de transiciones de las ~~nueve~~ **diez** máquinas, en las dos épicas. Los pares con dos filas y
-   dos destinos distintos que el diseño declara hoy son **cuatro**, en dos tablas:
+   dos destinos distintos que el diseño declara hoy son ~~**cuatro**~~ **tres** (revisión del owner, 2026-09-28, C8: sale `S10`/`S25`), en dos tablas:
 
    | par | las dos filas | qué las separa |
    |---|---|---|
    | `(PRE_TRIAL, evento de activación de la vertical)` | `T1` / `T6` (`V/03` §2) | el booleano `cubierto`: una exige que **no** haya fuente viva de clase `TÍTULO` y la otra que **sí** |
    | `(GRACE_PERIOD, entra el pago)` | `S5` / `S19` (`B/03` §3.2) | si la fila **es la predecesora de una sucesión en curso**: `S5` exige que no, `S19` que sí |
    | `(SUSPENDED, entra el pago)` | `S7` / `S19` | el mismo booleano |
-   | `(PAUSED, llega el fin de la pausa o la persona vuelve antes)` | `S10` / `S25` (`B/03` §3.2) | si **el plan al que la fila está anclada se sigue prestando**: `S10` exige que sí y reanuda, `S25` que no y cancela (`DEC-SUB-015`) |
+   | ~~`(PAUSED, llega el fin de la pausa o la persona vuelve antes)`~~ | ~~`S10` / `S25` (`B/03` §3.2)~~ | **sale** (revisión del owner, 2026-09-28, C8): `S25` era la pausa que termina sobre una vertical discontinuada; `S10` queda sola en su par |
 
-   **Los cuatro son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
+   **Los ~~cuatro~~ tres son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
    regla se cumple sin una precedencia: difieren en el valor de **un booleano**, no en una
-   combinación que alguien tenga que evaluar en orden. **Que sean cuatro y no cinco no es una
+   combinación que alguien tenga que evaluar en orden. **Que sean ~~cuatro y no cinco~~ tres y no cuatro no es una
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
-   depende de que alguien vuelva a recorrer las ~~nueve~~ diez tablas a mano. **Y el cuarto es la prueba de
+   depende de que alguien vuelva a recorrer las ~~nueve~~ diez tablas a mano. ~~**Y el cuarto es la prueba de
    que el guard hace falta**: entró en la FASE 9-bis-4 por una decisión del owner sobre planes
-   retirados, no por nadie que estuviera mirando esta tabla.
+   retirados, no por nadie que estuviera mirando esta tabla.~~ (El cuarto, `S10`/`S25`, salió con la
+   revisión del owner, 2026-09-28, C8.)
 
    **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ ~~nueve~~ diez casos vivos que lo piden dicho**
    (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; el décimo, FASE 9 completa, 6c).
@@ -155,10 +156,11 @@ máquina de estados y una convención.
    no lo declara ninguna otra fila de ese `desde`; `T2` declara el mismo evento, pero desde
    `TRIAL_ACTIVE`, que es otro par (owner 2026-09-25; FASE 9 completa, decisión 6c). En los
    ~~ocho~~ ~~nueve~~ diez casos no hay guardas que
-   dirimir. **La tabla de arriba sí ganó una entrada, y no por ninguno de estos ~~ocho~~ ~~nueve~~ diez**: la ganó
-   `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`. Lo que este guard cuenta
-   son **pares**, no estados de origen, y esa es exactamente la diferencia entre los ~~ocho~~ ~~nueve~~ diez casos de
-   este párrafo y la cuarta fila de la tabla.
+   dirimir. ~~**La tabla de arriba sí ganó una entrada, y no por ninguno de estos diez**: la ganó
+   `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`.~~ Lo que este guard cuenta
+   son **pares**, no estados de origen, ~~y esa es exactamente la diferencia entre los diez casos de
+   este párrafo y la cuarta fila de la tabla~~ (la cuarta fila, `S10`/`S25`, salió con la revisión
+   del owner, 2026-09-28, C8).
 
 ---
 

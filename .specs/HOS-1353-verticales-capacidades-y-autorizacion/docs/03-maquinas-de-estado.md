@@ -48,9 +48,9 @@ de que `T6` exigiera uno que convierte; corregido con la tabla, y `T8` agregada 
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** **y la vertical admite altas** (`vertical.admite_altas`, cap. 02 §2.1; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) **y la vertical tiene al menos una versión de plan vigente y vendible** —de ahí se deriva el plan de trial (cap. 10 §2)—: retirados todos los vendibles, no arranca ningún trial (owner 2026-09-27, FASE 9 vuelta 2, `R24`, `F-8V2A3-005`) **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (cap. 02 §2.2; FASE 8 completa, `F-8CA3-003`) | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
+| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **falso** ~~**y la vertical admite altas** (`vertical.admite_altas`, cap. 02 §2.1; FASE 8 completa, `F-8CC1-001`, owner 2026-09-25)~~ (revisión del owner, 2026-09-28, C8: `admite_altas` salió) **y la vertical tiene al menos una versión de plan vigente y vendible** —de ahí se deriva el plan de trial (cap. 10 §2)—: retirados todos los vendibles, no arranca ningún trial (owner 2026-09-27, FASE 9 vuelta 2, `R24`, `F-8V2A3-005`) **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (cap. 02 §2.2; FASE 8 completa, `F-8CA3-003`) | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
 | T2 | `TRIAL_ACTIVE` | ~~**aparece una fuente viva de clase `TÍTULO` que no es la del trial**~~ **aparece un título que convierte**: una fuente viva de clase `TÍTULO` que no es la del trial **y que, si es de `tipo: SUSCRIPCIÓN`, trae `cobrada: sí`** —sea porque aparece así o porque una ya presente pasa a `sí` con su primer pago acreditado— (`12-contrato…` §2.1; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`) | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de esa fuente |
-| T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | **—** | ~~arranca la campaña de recuperación~~ arranca la campaña de recuperación **si la vertical admite altas** (`NUCLEO/07` §6; FASE 9 vuelta 1, `F-8V1A2-006`) ~~y el reloj de retención~~; **la publicación la mueve `PB2`**, por el cambio de `cubierto` (§9), **y el reloj de retención tampoco es suyo: lo arranca el hecho 5 por el mismo cambio de `cubierto`**, que escriben `PB2` y el recálculo (cap. 02 §2.5). `T3` no escribe `listing.inactiva_desde` (FASE 9 vuelta 2, `F-8V2A2-007`) |
+| T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | **—** | ~~arranca la campaña de recuperación~~ arranca la campaña de recuperación ~~**si la vertical admite altas** (`NUCLEO/07` §6; FASE 9 vuelta 1, `F-8V1A2-006`)~~ (la condición salió con la revisión del owner, 2026-09-28, C8) ~~y el reloj de retención~~; **la publicación la mueve `PB2`**, por el cambio de `cubierto` (§9), **y el reloj de retención tampoco es suyo: lo arranca el hecho 5 por el mismo cambio de `cubierto`**, que escriben `PB2` y el recálculo (cap. 02 §2.5). `T3` no escribe `listing.inactiva_desde` (FASE 9 vuelta 2, `F-8V2A2-007`) |
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) **y con la fecha de fin sin pasar**: si ya pasó y `T3` todavía no corrió, el canje contesta `RECHAZADA` y la cortesía no corre. El §32 dice *«nunca después»*, y el estado solo no lo sabe: con el job de `T3` atrasado, un canje revivía un trial cuya fuente el contrato ya había dejado de emitir (FASE 9 vuelta 2, `F-8V2A2-003`) | corre la fecha de fin; **re-agenda** la campaña previa. **La promo llega por `extenderTrial`** (`12-contrato…` §4.1), la única escritura de billing en verticales: corre dentro del lock de esta máquina, con el techo de `11` §3, y contesta `ACEPTADA` o `RECHAZADA` (owner 2026-09-26, `G4-2`). **La cortesía NO llega por `extenderTrial`**: es la acción administrativa *«extender un trial»* de `NUCLEO/08` §3, de esta épica y fuera del contrato —**origen `SUPER_ADMIN` y motivo obligatorio**, **pasa el techo** de `11` §3.4 y suma al total acumulado con su origen (`11` §3.5), en el mismo lock—; billing no interviene (owner 2026-09-26, P2; FASE 9 vuelta 1) |
 | T5 | `TRIAL_EXPIRED` | ~~**aparece una fuente viva de clase `TÍTULO`**~~ **aparece un título que convierte**, en el mismo sentido que `T2` (`DEC-TRIAL-010`; abajo, *«`T5` espera el cobro igual que `T2`»*) | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; **la publicación la restituye `PB3`**, por el cambio de `cubierto` (§9) |
 | T6 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_CONVERTED` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 **y** `cubierto` es **verdadero** **por un título que convierte** —en el mismo sentido que `T2`: si el único título es una `SUSCRIPCIÓN` con `cobrada: no`, `T6` no dispara (owner 2026-09-25; FASE 9 completa, decisión 6c, `R12-OWNER-1`)— **y no hay fila de `trial` con el mismo hash del correo normalizado en esa vertical** (cap. 02 §2.2; FASE 8 completa, `F-8CA3-003`) | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
@@ -73,13 +73,11 @@ no dispararía nunca y el criterio que `12-contrato-de-cobertura.md` §5.1 le po
 implementación de arranque —*«los dos caminos se ejercen completos, porque un trial vence de
 verdad»*— quedaría sin objeto.
 
-**Y desde la fecha de fin de servicio de su vertical, `TRIAL_ACTIVE` tampoco es fuente viva**,
-aunque la máquina siga en ese estado hasta `T3`: el contrato no emite ahí ninguna fuente de título
-(`12-contrato…` §2.6, *«una vertical discontinuada no cubre a nadie»*; FASE 8 completa,
-`F-8CC1-001`, owner 2026-09-25). Por la letra de esa regla, `PRE_TRIAL` tampoco: quien estaba ahí
-resuelve contra la versión de piso. **La fecha la lee por la pregunta `finDeServicio` del
-contrato §4.1**, que contesta billing: ~~era una columna de `vertical`~~ dejó de ser una columna
-de esta épica (owner 2026-09-27, FASE 9 vuelta 2, `R5`).
+~~**Y desde la fecha de fin de servicio de su vertical, `TRIAL_ACTIVE` tampoco es fuente viva**,
+aunque la máquina siga en ese estado hasta `T3`, y la fecha se leía por `finDeServicio`
+(`12-contrato…` §2.6; FASE 8 completa, `F-8CC1-001`; FASE 9 vuelta 2, `R5`).~~ (Sale con la
+revisión del owner, 2026-09-28, C8: las verticales no se discontinúan, y `TRIAL_ACTIVE` es fuente
+viva hasta `T3`.)
 
 **Y la fila de arriba no abre la puerta inversa, porque no hay puerta**: nadie entra a
 `PRE_TRIAL`, se empieza ahí, y ninguna transición vuelve. Una cobertura que sólo existe en el
@@ -294,8 +292,8 @@ del hash (abajo).
 
 `T1` y `T6` comparten `desde` y `evento`, y es **el único par `(desde, evento)` con dos destinos
 distintos de esta épica**, y uno de los ~~**tres** que el diseño declara hoy — los otros dos son
-`S5`/`S19` y `S7`/`S19`~~ **cuatro** que el diseño declara hoy — los otros tres son `S5`/`S19`,
-`S7`/`S19` y `S10`/`S25` (FASE 9 completa, `C-12`), en la tabla de suscripción de la épica de billing, separados también por
+`S5`/`S19` y `S7`/`S19`~~ ~~**cuatro**~~ **tres** que el diseño declara hoy — los otros ~~tres~~ dos son `S5`/`S19` y
+`S7`/`S19` ~~y `S10`/`S25`~~ (FASE 9 completa, `C-12`; `S10`/`S25` salió con la revisión del owner, 2026-09-28, C8), en la tabla de suscripción de la épica de billing, separados también por
 un booleano (`B/03` §3.2; la lista está en el cap. 03 (núcleo) §1 regla 7). Lo cuenta `G-R4` sobre
 las ~~nueve~~ **diez** tablas (la décima, la del reembolso: FASE 9 completa, 5a), no una lectura a mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
 disjuntas, y acá lo son **por construcción y no por acuerdo**: ~~las dos piden la misma mitad de
@@ -314,8 +312,8 @@ porque no hace falta ninguna.
 | declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
 | declara evento y días > 0 | **verdadero, pero sólo por una `SUSCRIPCIÓN` con `cobrada: no`** | **ninguna de las dos**: `T6` exige un título que convierte. `PB1` publica igual —el dueño está cubierto— y la fila la escribe **`T8`** al primer pago acreditado; si ese cobro se rechaza, la persona sigue en `PRE_TRIAL` (FASE 9 completa, decisión 6c) |
 | no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **hasta el encendido, que es lo que resuelve `T7`** |
-| declara evento y días > 0, **pero la vertical no admite altas** | **falso** | **ninguna de las dos**: `T1` exige `admite_altas` y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` (FASE 8 completa, `F-8CC1-001`, owner 2026-09-25) **y no publica**: `PB1` exige cobertura o un `T1` que dispare (§9; owner 2026-09-25) |
-| declara evento y días > 0, **pero la vertical no tiene ninguna versión de plan vigente y vendible** ✚ | **falso** | **ninguna de las dos**: `T1` exige una versión vigente y vendible y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` **y no publica**, y la pantalla le dice que **la vertical no tiene planes disponibles**, sin ofrecerle suscribirse (cap. 19 §4 fila 29). La vertical **no** queda cerrada a altas: retirar todos los vendibles no escribe `admite_altas`, y cerrarla es discontinuarla (`B/10` §4.1; owner 2026-09-27, FASE 9 vuelta 2, `R24`) |
+| ~~declara evento y días > 0, **pero la vertical no admite altas**~~ | — | **sale** (revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. El caso que queda es el de la fila de abajo |
+| declara evento y días > 0, **pero la vertical no tiene ninguna versión de plan vigente y vendible** ✚ | **falso** | **ninguna de las dos**: `T1` exige una versión vigente y vendible y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` **y no publica**, y la pantalla le dice que **la vertical no tiene planes disponibles**, sin ofrecerle suscribirse (cap. 19 §4 fila 29). La vertical **no** queda cerrada a altas: sigue en operación (`B/10` §3.6; owner 2026-09-27, FASE 9 vuelta 2, `R24`) ~~: retirar todos los vendibles no escribe `admite_altas`, y cerrarla es discontinuarla (`B/10` §4.1)~~ |
 | declara evento y días > 0, **pero ya hay una fila de `trial` con el hash de su correo en esa vertical** | cualquiera | **ninguna de las dos**, y tampoco `T7` ni `T8`: ~~las tres~~ las cuatro exigen que el hash no tenga fila. La persona se queda en `PRE_TRIAL` y **la publicación sigue** ~~(FASE 8 completa, `F-8CA3-003`; abajo)~~ **sólo si está cubierta**: sin cobertura `PB1` no publica, porque no arranca ningún trial (FASE 8 completa, `F-8CA3-003`; condición de `PB1`, owner 2026-09-25; abajo) |
 
 ~~**La tercera fila es nueva y es deliberada.**~~ **La fila de *«no declara evento, o días = 0»* es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
@@ -324,35 +322,16 @@ un trial **que la vertical todavía no ofrece** — y el día que lo encendiera,
 tenía. `DEC-TRIAL-003` contempla exactamente ese día para Partner. Consumir un beneficio que no
 existe no es consumirlo: es destruirlo antes de que nazca.
 
-**`T1` exige que la vertical admita altas, y `T6` y `T7` no** —ni `T8`, por la misma razón (FASE
-9 completa, 6c)— (FASE 8 completa, `F-8CC1-001`,
-owner 2026-09-25). El owner lo decidió para `T1` —si la vertical no admite altas, no arranca
-ningún trial— y dejó `T6`/`T7` para «si corresponde», y **no corresponde**, por lo que esas dos filas
-hacen: **ninguna arranca un trial**, las dos escriben la fila **consumida**, sin reloj y sin
-campaña. Exigirles `admite_altas` dejaría sin consumir el trial de quien ya ejerció el evento de
-activación, y es la puerta del §10.2 —*«un trial gratis para quien ya fue cliente»*— que `T6` y
-`T7` existen para cerrar.
-
-**El par sigue disjunto por construcción**, y por el mismo booleano: `T1` pide `cubierto` falso y
-`T6` verdadero. Lo que deja de ser verdad es que las dos cubran todos los casos de la mitad de
-catálogo: con la vertical cerrada a altas y `cubierto` falso **no dispara ninguna**, que es la
-~~cuarta fila de la tabla de arriba~~ fila de *«la vertical no admite altas»* de la tabla de arriba y el efecto buscado. Hasta esta pasada `T1` no miraba la
-situación de la vertical, y el día 0 de una discontinuación —*«la vertical deja de admitir altas y
-trials»* (`B/10` §4.3)— seguía arrancando trials (`F-8CC1-001`).
-
-> ~~⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **quien publica en una vertical
-> cerrada a altas sin estar cubierto queda publicado hasta un día.** La versión de pre-trial
-> sigue llevando la capacidad de activación —cap. 02 §2.1 la ata a *«declara evento y días > 0»*,
-> no a `admite_altas`—, así que `PB1` publica, `T1` no dispara y `cubierto` sigue falso: una ficha
-> publicada sin cobertura. **La baja el reconciliador diario de cobertura** al día siguiente, por
-> la primera rama de `PB2` (§9, `DEC-ARCH-009`). Pasa entre el día 0 y la fecha de fin de servicio
-> —después, la fuente de `PRE_TRIAL` ya no se emite (arriba, *«qué contesta el contrato en cada
-> estado»*)— y en una vertical cerrada a altas sin discontinuar. No mueve plata; es un día de ficha
-> visible sin título, en una vertical sin altas.~~ **CERRADO por el owner el 2026-09-25** (FASE 8
-> completa): **`PB1` publica sólo si el dueño está cubierto o si esa publicación dispara `T1`** (§9).
-> En una vertical cerrada a altas `T1` no dispara, así que quien no está cubierto **no publica** y
-> la pantalla le dice *«suscribite para publicar»* (cap. 19 §4 fila 21). La capacidad de activación
-> de la versión de pre-trial no cambia: ya no alcanza sola para publicar.
+~~**`T1` exige que la vertical admita altas, y `T6` y `T7` no** —ni `T8`— (FASE 8 completa,
+`F-8CC1-001`, owner 2026-09-25; FASE 9 completa, 6c), y con la vertical cerrada a altas y
+`cubierto` falso no disparaba ninguna; el ⚠️ que declaraba al dueño publicado un día sin cobertura
+en una vertical cerrada a altas lo cerró la condición de `PB1` (owner 2026-09-25).~~ **Sale**
+(revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. **El par sigue disjunto por
+construcción**, por el mismo booleano: `T1` pide `cubierto` falso y `T6` verdadero. Con todos los
+planes de la vertical retirados y `cubierto` falso tampoco dispara ninguna, y lo dice la fila de
+*«la vertical no tiene ninguna versión de plan vigente y vendible»* de la tabla de arriba. **Y
+`PB1` publica sólo si el dueño está cubierto o si esa publicación dispara `T1`** (§9; owner
+2026-09-25), así que ahí quien no está cubierto no publica.
 
 #### El hash que ya consumió: la rama que la base rechazaba sin que ninguna fila la declarara
 
@@ -454,8 +433,8 @@ evento auditable por el criterio 2 del cap. 08 §1.1 (núcleo), y ese registro e
 (§1.3) — ni borrar la ficha ni darse de baja lo borran, que es la misma promesa que el §10.2 ya
 hace sobre el trial.
 
-**`T7` no agrega ningún par a `G-R4` y no toca los cuatro declarados** —eran tres cuando esto se
-escribió; el cuarto lo agregó `S25` (`DEC-SUB-015`), en la otra épica y sin abrir este §—. Comparte el `desde` con
+**`T7` no agrega ningún par a `G-R4` y no toca los ~~cuatro~~ tres declarados** —eran tres cuando esto se
+escribió; el cuarto lo agregó `S25` (`DEC-SUB-015`), en la otra épica y sin abrir este §, y salió con la revisión del owner, 2026-09-28, C8—. Comparte el `desde` con
 `T1`/`T6`, pero **no el evento**: el suyo es el encendido, un cambio de catálogo, y los de aquéllas
 son el evento de activación de la persona. El par `(PRE_TRIAL, evento de activación)` sigue
 teniendo **dos** filas y dos destinos, que es lo que el cap. 03 §1 regla 7 (núcleo) enumera y lo
@@ -585,9 +564,9 @@ billing mueve varias publicaciones a la vez.
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2). **Toma el lock del `user + vertical` y relee adentro su `desde`**, como `PB10`, porque lo comparte con `PB2` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-u`) |
 | **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás, **con la misma disyunción y por la misma razón** (ver abajo). Ocupa cupo, así que **toma el lock y cuenta adentro**, como `PB1`, **y evalúa `T8` adentro como `PB3`** (FASE 9 vuelta 2, verificación, `N-B-01`) |
 | **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla. **La autoriza la versión de piso**, que otorga *«recuperar lo suyo»* (cap. 02 §2.1): sin eso el paso 6 rechazaba a su única población, la que no paga. **Toma el lock del `user + vertical` y relee adentro que la ficha siga en `ARCHIVED`**, porque comparte `desde` con `PB7` y `PB9` (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 9 vuelta 2, `F-8V2A2-004`) |
-| **PB9** | `ARCHIVED` | día 180 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | **`PURGED`** | **es el hard delete** (cap. 02 §4.1): borra el contenido de esa ficha —textos, fotos, FAQ, horarios— y sus borradores, **y nada más**; nada de la persona (`DEC-DATA-005`). **Las reseñas de terceros se conservan sin mostrarse, y la conexión de calendario se desconecta: su token se revoca en el proveedor y se borra** (cap. 02 §4.1; FASE 9 vuelta 1, owner 2026-09-26, `G1-5`). **Exige `ARCHIVED`**: sale sólo de ahí, así que el aviso del archivado salió siempre antes (`F-8CA2-014`). **Relee la cobertura antes de borrar**, igual que `PB4` y `PB5`: si está cubierta, no borra y reinicia el reloj. **Y lo relee todo dentro del lock del `user + vertical`**: el estado, el reloj y la cobertura, porque comparte `desde` con `PB7` y `PB8` y es irreversible (abajo; FASE 9 vuelta 2, `F-8V2A2-004`). **Y no borra una ficha de una vertical cuya `finDeServicio` ya pasó si su `inactiva_desde` es anterior a esa fecha**: el hecho 4 está pendiente de la corrida del reconciliador (abajo, *«el día del fin de servicio»*), y el reloj que leería no es el que los tres avisos le prometieron al dueño; la corrida siguiente lo escribe y `PB9` cuenta desde ahí (FASE 9 vuelta 2, verificación, `N-B-03`) **Y lo que cuelga de la ficha lo trata la lista cerrada del cap. 02 §4.1**: las alertas de precio se cierran con un aviso al turista, las conversaciones quedan en sólo lectura y lo del dueño que sólo sirve a la ficha se borra (owner 2026-09-27, FASE 9 vuelta 2, `R9`). **`PURGED` es final**: ninguna fila sale de ahí —`PB3` y `PB7` no la toman— y **no cuenta para el cupo**; el dueño ve que la ficha existió y que se borró por inactividad (cap. 19 §4 fila 20). ~~**Es también *«la ficha se borró»* de `B/16` §4.2**, igual que `PB12`: el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`)~~ **Es también *«se borra la ficha destino»* de `A6`** (`B/03` §8), igual que `PB12`: desde `K-9` `A6` es la única fila que cancela el addon `LISTING` que apuntaba a ella; la orfandad de `A5` ya no mira el borrado (FASE 9 vuelta 1, `F-8V1A2-002`). **Y ~~en el mismo acto~~ el mismo acto, después de su commit y nunca dentro de su transacción, empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3.1; owner 2026-09-26, `G2-1`; el orden, FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: `A6` relee `fichaPurgada`, y un empuje anterior al commit la lee `no`) (orquestador, FASE 8 completa, 2026-09-25). FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25 |
+| **PB9** | `ARCHIVED` | día 180 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | **`PURGED`** | **es el hard delete** (cap. 02 §4.1): borra el contenido de esa ficha —textos, fotos, FAQ, horarios— y sus borradores, **y nada más**; nada de la persona (`DEC-DATA-005`). **Las reseñas de terceros se conservan sin mostrarse, y la conexión de calendario se desconecta: su token se revoca en el proveedor y se borra** (cap. 02 §4.1; FASE 9 vuelta 1, owner 2026-09-26, `G1-5`). **Exige `ARCHIVED`**: sale sólo de ahí, así que el aviso del archivado salió siempre antes (`F-8CA2-014`). **Relee la cobertura antes de borrar**, igual que `PB4` y `PB5`: si está cubierta, no borra y reinicia el reloj. **Y lo relee todo dentro del lock del `user + vertical`**: el estado, el reloj y la cobertura, porque comparte `desde` con `PB7` y `PB8` y es irreversible (abajo; FASE 9 vuelta 2, `F-8V2A2-004`). ~~**Y no borra una ficha de una vertical cuya `finDeServicio` ya pasó si su `inactiva_desde` es anterior a esa fecha**: el hecho 4 está pendiente de la corrida del reconciliador (FASE 9 vuelta 2, verificación, `N-B-03`)~~ (sale con el hecho 4: revisión del owner, 2026-09-28, C8) **Y lo que cuelga de la ficha lo trata la lista cerrada del cap. 02 §4.1**: las alertas de precio se cierran con un aviso al turista, las conversaciones quedan en sólo lectura y lo del dueño que sólo sirve a la ficha se borra (owner 2026-09-27, FASE 9 vuelta 2, `R9`). **`PURGED` es final**: ninguna fila sale de ahí —`PB3` y `PB7` no la toman— y **no cuenta para el cupo**; el dueño ve que la ficha existió y que se borró por inactividad (cap. 19 §4 fila 20). ~~**Es también *«la ficha se borró»* de `B/16` §4.2**, igual que `PB12`: el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`)~~ **Es también *«se borra la ficha destino»* de `A6`** (`B/03` §8), igual que `PB12`: desde `K-9` `A6` es la única fila que cancela el addon `LISTING` que apuntaba a ella; la orfandad de `A5` ya no mira el borrado (FASE 9 vuelta 1, `F-8V1A2-002`). **Y ~~en el mismo acto~~ el mismo acto, después de su commit y nunca dentro de su transacción, empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3.1; owner 2026-09-26, `G2-1`; el orden, FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: `A6` relee `fichaPurgada`, y un empuje anterior al commit la lee `no`) (orquestador, FASE 8 completa, 2026-09-25). FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25 |
 | **PB10** | `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` | **un admin la modera, con motivo** | **`MODERATED`** | es una acción administrativa del cap. 08 §3 (núcleo): permiso propio y auditada **con su motivo** (el campo *«por qué»* del cap. 08 §1.2). **Toma el lock del `user + vertical` y relee adentro su `desde`**, porque lo comparte con `PB3` y `PB9` (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 9 vuelta 2, verificación). Sale del sitio público, **no cuenta para el cupo** y **no devuelve el trial** (§10.2; `V/11` §2). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 |
-| **PB11** | `MODERATED` | **un admin levanta la moderación** | `DRAFT` | **es la única salida de `MODERATED`**: el dueño no la republica —~~`PB1` sale sólo de `DRAFT`~~ `PB1` sale de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1)— y el sistema tampoco —`PB3` y `PB7` no la tienen en su `desde`—. Es la misma acción administrativa que `PB10`. FASE 8 completa, `F-8CA2-004`, owner 2026-09-25. **Escribe `listing.inactiva_desde` con el instante en que se levanta**: es el **hecho 6** del cap. 01 §1.2 (núcleo), *«se levanta la moderación»* —mientras la ficha estuvo moderada el dueño no podía actuar, y contar esa ausencia lo castigaría por una decisión nuestra, la razón del hecho 4— (owner 2026-09-25; FASE 9 completa, decisión 5b, `OW-1`) |
+| **PB11** | `MODERATED` | **un admin levanta la moderación** | `DRAFT` | **es la única salida de `MODERATED`**: el dueño no la republica —~~`PB1` sale sólo de `DRAFT`~~ `PB1` sale de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1)— y el sistema tampoco —`PB3` y `PB7` no la tienen en su `desde`—. Es la misma acción administrativa que `PB10`. FASE 8 completa, `F-8CA2-004`, owner 2026-09-25. **Escribe `listing.inactiva_desde` con el instante en que se levanta**: es el **hecho 6** del cap. 01 §1.2 (núcleo), *«se levanta la moderación»* —mientras la ficha estuvo moderada el dueño no podía actuar, y contar esa ausencia lo castigaría por una decisión nuestra ~~, la razón del hecho 4~~ (el hecho 4 salió con la revisión del owner, 2026-09-28, C8)— (owner 2026-09-25; FASE 9 completa, decisión 5b, `OW-1`) |
 | **PB12** | `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` | **el dueño la borra** | **`PURGED`** | **Toma el lock del `user + vertical` y relee adentro su `desde`**, como `PB10`, porque lo comparte con `PB1`, `PB3`, `PB7`, `PB8` y `PB9`: sin lock, el dueño la borra mientras `PB3` la restituye, y `PB3` escribe `PUBLISHED` sobre una ficha que acaba de pasar a `PURGED` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-u`). **Borra el contenido en el acto** —el mismo que `PB9`: textos, fotos, FAQ, horarios y sus borradores, nada de la persona (`DEC-DATA-005`), con las reseñas de terceros conservadas sin mostrarse y el calendario desconectado y su token revocado y borrado (FASE 9 vuelta 1, owner 2026-09-26, `G1-5`), **y el resto de lo que cuelga de la ficha según la lista cerrada del cap. 02 §4.1** (owner 2026-09-27, FASE 9 vuelta 2, `R9`)—; **la fila queda y no vuelve**, porque `PURGED` es final. **No devuelve el trial** (§10.2; invariante 2 del cap. 04, núcleo). Es ~~*«la ficha se borró»* de `B/16` §4.2, así que el addon `LISTING` que apuntaba a ella **queda huérfano** (`A5`) —y es~~ *«se borra la ficha destino»* de `A6` (`B/03` §8), la única fila que cancela el addon `LISTING` que apuntaba a ella (`K-9`; FASE 9 vuelta 1, `F-8V1C1-013`), **y ~~en el mismo acto~~ el mismo acto, después de su commit y nunca dentro de su transacción, empuja a billing el hecho *«la ficha llegó a `PURGED`»*** (`12-contrato…` §3.1; owner 2026-09-26, `G2-1`; el orden, FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`: `A6` relee `fichaPurgada`, y un empuje anterior al commit la lee `no`). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 |
 
 ~~**La máquina tiene cinco estados y nueve transiciones**: `DRAFT`, `PUBLISHED`,
@@ -783,7 +762,7 @@ regla 7, núcleo). **Ninguna es de la clase del reloj** (cap. 17 §3.4), así qu
 nada nuevo; **ninguna condición lee una columna** ~~y **ninguna escribe `listing.inactiva_desde`**,
 así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`PB11` escribe
 `listing.inactiva_desde` desde la FASE 9 completa** —el hecho 6, decisión 5b—, y `G-R6-B` mitad
-*(a)* la admite **por la lista**, como a los otros cinco hechos (cap. 20 §2).
+*(a)* la admite **por la lista**, como a los otros ~~cinco~~ cuatro hechos (cap. 20 §2; el 4 salió con la revisión del owner, 2026-09-28, C8).
 
 > ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
 > el camino principal, da acceso indebido ni borra datos):
@@ -820,7 +799,7 @@ así que `G-R6` y `G-R6-B` tampoco (cap. 20 §2)~~, así que `G-R6` tampoco; **`
 >    filas y `G-R3` no cambia: es la misma clave, *«recuperar lo suyo»*, de clase `DE_ACCESO`.
 > 6. **Los avisos previos de retención no dicen en qué estados se programan** (FASE 9 completa,
 >    `B-4`; declarado por `DEC-METH-015`, FASE 9 completa). El reloj se escribe en `MODERATED` —el
->    hecho 5 alcanza a toda ficha del dueño— y, por la letra de los hechos 2, 4 y 5 (*«toda
+>    hecho 5 alcanza a toda ficha del dueño— y, por la letra de los hechos 2 ~~, 4~~ y 5 (el 4 salió con la revisión del owner, 2026-09-28, C8) (*«toda
 >    ficha»*), también en `PURGED`. Sobre una ficha moderada, el aviso anuncia un archivado o un
 >    borrado que `PB4`, `PB5` y `PB9` no van a ejecutar; sobre una purgada, algo que ya pasó.
 >    **Causa**: los avisos leen la columna (`V/02` §2.5, lectores 4 y 5) y no el estado.
@@ -1106,7 +1085,8 @@ esta misma tanda:**
 2. **Ninguna de las dos comparte par con otra fila.** Salen las dos de `ARCHIVED`, pero sus
    eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
    **una sola** fila y **`PB7`/`PB8` no agregan ninguno** a los pares con dos destinos, que desde la
-   FASE 9-bis-4 son **cuatro** —el cuarto es `S10`/`S25` (`NUCLEO/03` §1 regla 7)—. Es el mismo caso que
+   FASE 9-bis-4 ~~son **cuatro** —el cuarto es `S10`/`S25` (`NUCLEO/03` §1 regla 7)—~~ fueron cuatro y
+   desde la revisión del owner, 2026-09-28, C8, son **tres** (`NUCLEO/03` §1 regla 7: sale `S10`/`S25`). Es el mismo caso que
    `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo). **`PB9` tampoco agrega ninguno**:
    sale también de `ARCHIVED`, pero su evento —el día 180 de inactividad— no lo declara ninguna
    otra fila (FASE 8 completa, `F-8CA2-008`).
@@ -1206,10 +1186,10 @@ nada más.**
   las que tienen **al tiempo como evento** —`T3`, `PB4`, `PB5` y `PB9`—, así que `G-R3-B`, que
   lee las tablas, no ve ninguna transición nueva que otorgue. Sobre quién se evalúan los pasos 5–7
   cuando las corre él lo declara el cap. 17 §3.4.
-- **De los hechos del reloj.** Escribe el **2** y el **5** del cap. 01 §1.2 (núcleo) —**y el 4 en
+- **De los hechos del reloj.** Escribe el **2** y el **5** del cap. 01 §1.2 (núcleo) ~~—**y el 4 en
   la corrida del fin de servicio de una vertical** (abajo; owner 2026-09-27, FASE 9 vuelta 2,
-  `R5`)— y **ningún hecho nuevo**: la lista sigue en ~~cinco~~ **seis** —el sexto, `PB11`, lo agregó la FASE 9
-  completa (decisión 5b), no este reconciliador—, más la escritura `C` del corte, y `G-R6-B` mitad *(a)* lo
+  `R5`)—~~ y **ningún hecho nuevo**: la lista sigue en ~~cinco~~ ~~**seis**~~ **cinco** —el sexto, `PB11`, lo agregó la FASE 9
+  completa (decisión 5b), no este reconciliador; el 4 salió con la revisión del owner, 2026-09-28, C8—, más la escritura `C` del corte, y `G-R6-B` mitad *(a)* lo
   admite por la lista. Lo que crece es la cuenta de ejecutores: el **2** pasa a tener **cuatro** y
   el **5**, **tres** (cap. 02 §2.5). **No lee `listing.inactiva_desde`** —compara estados de ficha,
   no el reloj—, así que los **seis** lectores del cap. 02 §2.5 no se mueven, y la mitad *(b)* no
@@ -1264,12 +1244,12 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    la población, o la persona no tiene fichas, **o el cambio sólo toca capacidades que no son
 >    cupo**, el reconciliador no encuentra nada y **no invalida**: la entrada del caché sigue
 >    otorgando hasta el próximo evento de la lista del cap. 02 §3.2, hasta que corra el job
->    atascado (`S12`, `S10`/`S25`, `T3` o el de un addon `DÍAS_FIJOS`) o hasta que venza la red de
+>    atascado (`S12`, `S10` ~~/`S25`~~, `T3` o el de un addon `DÍAS_FIJOS`) o hasta que venza la red de
 >    tiempo. **Causa**: el reconciliador compara estados de ficha, no conjuntos efectivos. Pasa
->    sólo cuando esa primera línea falla: **el fin de servicio de una vertical ya no es uno de estos
->    casos**, porque lo invalida ~~el barrido del día~~ este reconciliador en la corrida de ese día
->    (abajo, *«el día del fin de servicio»*; cap. 02 §3.2; owner 2026-09-25, decisión 6b; el
->    ejecutor, owner 2026-09-27, FASE 9 vuelta 2, `R5`).
+>    sólo cuando esa primera línea falla ~~: **el fin de servicio de una vertical ya no es uno de estos
+>    casos**, porque lo invalida este reconciliador en la corrida de ese día (cap. 02 §3.2; owner
+>    2026-09-25, decisión 6b; FASE 9 vuelta 2, `R5`)~~ (el fin de servicio de una vertical salió con
+>    la revisión del owner, 2026-09-28, C8).
 >    **La excepción es la presencia de Partner**, que no tiene fichas y sí está en la población desde
 >    `R13` (arriba): ahí el reconciliador compara el entitlement y no el estado de fichas.
 > 3. **La máquina de trial no la corre.** `DEC-ARCH-009` nombra `PB2`, `PB3` y `PB7`. Si se pierde
@@ -1293,72 +1273,16 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    —*«el cupo vuelve a alcanzar sin que `cubierto` cambie»*— y el riesgo de republicar lo que el
 >    dueño no quería está aceptado por `DEC-DATA-003` (cap. 15 §4.4).
 
-### El día del fin de servicio: billing avisa, verticales ejecuta
+### ~~El día del fin de servicio: billing avisa, verticales ejecuta~~
 
-Owner 2026-09-27, FASE 9 vuelta 2, `R5` (`F-8V2A3-001`, `F-8V2C1-001`). **Este texto vivía en
-`B/10` §4.3**, que le mandaba al barrido de billing del día del fin de servicio correr `PB2`,
-escribir `listing.inactiva_desde` en cada ficha de la vertical e invalidar el caché. Eran tres
-escrituras de billing en verticales, y el contrato admite una sola, `extenderTrial`
-(`12-contrato…` §4.1 y §4.2). Un constructor que respetara el contrato no escribía el hecho 4, y
-otro que respetara el capítulo escribía en tablas de verticales sin contrato. **Ahora billing sólo
-avisa y verticales ejecuta.**
-
-**Billing calcula la fecha y corta la cobertura.** La fecha sale de la fórmula de `B/10` §4.3 y
-verticales la lee por la pregunta `finDeServicio(vertical)` del contrato §4.1. Desde esa fecha el
-contrato no emite en la vertical ninguna fuente de título (`12-contrato…` §2.6), y las
-suscripciones que `S26` llevó a `CANCEL_SCHEDULED` consuman su `CANCELLED` con el aviso que ya
-emiten. Nada más cruza.
-
-**Verticales lo ejecuta en el reconciliador diario de cobertura** (arriba), en ~~su primera corrida
-con la fecha cumplida~~ **cada corrida con la fecha cumplida**: no necesita recordar si ya corrió,
-porque repetirla da lo mismo: el punto 1 ya no encuentra diferencia, el 2 no escribe sobre un valor
-posterior y el 3 es una invalidación de más, que es barata (FASE 9 vuelta 2, verificación, caso
-vecino de `13-`, arreglo de texto). **Y hasta que esa corrida escriba el hecho 4, `PB9` no borra
-en la vertical una ficha con `inactiva_desde` anterior a la fecha** (§9, `PB9`; `N-B-03`), así
-que el orden de los dos jobs el mismo día no importa. No es un reloj nuevo: es la pieza que ya corre por calendario, ya corre
-`PB2`, ya escribe hechos del reloj y ya invalida el caché. Esa corrida hace tres cosas sobre la
-vertical:
-
-1. **Corre `PB2`, primera rama**, sobre cada ficha publicada, con el hecho 5 en las demás fichas del
-   dueño. No es una fila nueva de la tabla de comparación: el dueño aparece con `cubierto` falso y
-   fichas publicadas, que es su primera fila. Si el aviso de una `S12` llegó antes, ya no queda
-   diferencia y no corre nada.
-2. **Escribe el hecho 4 en cada ficha de la vertical**, publicada o no, con **el instante del fin de
-   servicio** y no el de la corrida. Escribe sólo sobre la ficha cuyo `inactiva_desde` es anterior a
-   ese instante, así que una segunda corrida no pisa un hecho posterior y repetirla da lo mismo.
-3. **Invalida las entradas del caché de la vertical entera** (cap. 02 §3.2, fila *«llega el fin de
-   servicio»*): el grant, la cortesía y el trial dejan de otorgar sin que ninguna fila suya
-   transicione, así que ninguna otra fila de invalidación ocurre.
-
-**Y el recorrido es sobre la vertical, no sobre la población.** La población del reconciliador deja
-afuera `DRAFT` y `MODERATED`, y el hecho 4 alcanza también a los borradores, porque sobre ellos
-corre `PB5`. Esa corrida recorre todas las fichas de la vertical una vez.
-
-**Por qué arranca el reloj ahí, no antes** (movido de `B/10` §4.3). El fin de servicio de una
-vertical discontinuada es el cuarto de los hechos que reinician la inactividad (cap. 01 §1.2,
-núcleo). Contar su ausencia desde antes lo castigaría por una decisión nuestra, aunque el dueño
-lleve meses sin tocar la ficha. Tres precisiones, cada una para una lectura que sale mal:
-
-1. **La escritura es del reconciliador, no de `PB2`.** `PB2` escribe el hecho 5 sobre la ficha que
-   baja, y el recálculo del aviso o el reconciliador lo escriben en las demás fichas del dueño que
-   ese día pierde la cobertura. Sobre ése, el 4 y el 5 escriben el mismo instante, porque el
-   contrato corta la cobertura en la fecha de fin de servicio. **El 4 sigue haciendo falta por el
-   dueño que ese día ya estaba sin cobertura**: sobre él no ocurre ningún 5.
-2. **No es un escritor de más.** Es el hecho 4 de la lista cerrada del cap. 01 §1.2 (núcleo), así
-   que `G-R6-B` mitad *(a)* lo acepta por la lista: la lista cierra hechos, y cada hecho puede tener
-   su ejecutor. **Cambió el ejecutor, no el hecho**: era el barrido de billing y ahora es el
-   reconciliador, y la lista sigue en seis.
-3. **Sin ella el borrado se adelanta hasta 90 días.** Entre dos evaluaciones de `PB4` hay 90 días,
-   así que la fecha que la columna trae ese día puede tener esa antigüedad. El hard delete caería en
-   `fin_de_servicio + 90` en vez de en `+ 180`, sobre una población a la que **los tres avisos de
-   `DEC-MP-002` le dijeron cómo exportar** y hasta cuándo.
-
-**El costo es el de siempre de este reconciliador: hasta un día.** Si la corrida de ese día cae
-antes del instante de la fecha, lo ejecuta la del día siguiente, y mientras tanto el caché puede
-seguir otorgando capacidades de la vertical cerrada. El barrido de billing que lo hacía antes
-también era diario, así que no se pierde nada. El hecho 4 no se atrasa, porque escribe el instante
-de la fecha y no el de la corrida. Si el reconciliador no corre, lo avisa el monitor de cron
-externo (arriba, *«el vigía»*).
+~~El día del fin de servicio de una vertical discontinuada el reconciliador diario de cobertura
+corría `PB2`, escribía el hecho 4 en cada ficha de la vertical con el instante del fin de servicio
+e invalidaba el caché de la vertical entera, y `PB9` esperaba ese hecho (owner 2026-09-27, FASE 9
+vuelta 2, `R5`; verificación, `N-B-03`, `V2-x`).~~ **Sale entero** (revisión del owner,
+2026-09-28, C8): las verticales no se discontinúan, así que no hay día del fin de servicio de una
+vertical, ni hecho 4, ni invalidación de la vertical entera. El reconciliador sigue haciendo lo que
+hacía por cada dueño. Discontinuar una vertical queda fuera de esta versión; si algún día hace
+falta, se diseña entonces.
 
 ---
 

@@ -99,7 +99,7 @@ Dos reglas de método que salen de los propios huecos y rigen este documento:
 ### El núcleo — acá · `docs/nucleo/`
 
 Lo que las dos épicas comparten. **No se parte**: un glosario en dos mitades deja de ser un
-glosario, y 54 invariantes numerados de corrido pierden lo único que los hace útiles, que es poder
+glosario, y ~~54~~ 53 invariantes (revisión del owner, 2026-09-28, C8: sale `D14`) numerados de corrido pierden lo único que los hace útiles, que es poder
 preguntar **una vez** si están todos.
 
 | # | capítulo | qué define |
@@ -122,7 +122,7 @@ Partner · `10` el Eje 2 · `11` trial · `15` entitlements y limits · `17` aut
 
 Trece capítulos: `02` las entidades de dinero · `03` Suscripción, Grace, Pausa, Pago, Pago manual,
 Addon y el no-retroceso · `05` idempotencia · `06` proveedor · `09` conciliación · `10` retiro de
-plan y vertical discontinuada · `12` suscripción · `14` promos, cortesías y grants · `16` addons ·
+plan ~~y vertical discontinuada~~ (revisión del owner, 2026-09-28, C8) · `12` suscripción · `14` promos, cortesías y grants · `16` addons ·
 `19` · `20` · `21` · `22`.
 
 ## ✅ El capítulo `13` (Pagos) NO existe, y no es un pendiente: se repartió

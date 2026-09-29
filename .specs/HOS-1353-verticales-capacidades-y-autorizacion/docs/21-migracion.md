@@ -231,7 +231,7 @@ pierde igual (declarado en el «NO cierra» del capítulo).
 > (`V/03` §9), y eso les arranca el trial por `T1`. El botón de suscribirse los manda ahí, porque
 > no tienen ningún `PB1` en el sistema nuevo (`V/19` fila 23), **siempre que publicar les arranque
 > el trial**: si la vertical no declara evento, sus días están en cero o el hash del correo ya tiene
-> fila, los manda al checkout, y si la vertical no admite altas no les ofrece nada (la regla única
+> fila, los manda al checkout ~~, y si la vertical no admite altas no les ofrece nada~~ (revisión del owner, 2026-09-28, C8) (la regla única
 > del botón, escrita sólo en `V/19` §4 fila 23; FASE 9 vuelta 1, `F-8V1D1-004`; residuo de G4
 > resuelto el 2026-09-26). Al contratar, las fichas que siguen
 > abajo vuelven solas por `PB3`, hasta llenar el cupo (FASE 9 vuelta 1, R1; owner 2026-09-26,

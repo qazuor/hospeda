@@ -332,17 +332,18 @@ no una excepción a la lista.
 2026-09-26, `G5-1`):
 
 1. **`actor ≠ sujeto` exige un permiso de esa acción concreta**, no una condición general de
-   «es administrador». Las ~~doce~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ **dieciséis** acciones del capítulo 08 §3 llevan permiso propio, una por una
+   «es administrador». Las ~~doce~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ ~~**dieciséis**~~ **quince** acciones del capítulo 08 §3 llevan permiso propio, una por una
    (la decimotercera, moderar una ficha —**o la presencia de un Partner**, desde la FASE 9 completa,
    decisión 7c—: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; **la decimocuarta, asentar un cobro
    o una devolución que ya ocurrió por fuera de nuestro flujo**: owner 2026-09-25, FASE 9 completa,
    decisión 5a; **la decimoquinta, editar el contenido de una ficha ajena** —sin publicar, destacar
-   ni borrar—: owner 2026-09-26, `G5-2`; **la decimosexta, discontinuar una vertical** **o acortar
+   ni borrar—: owner 2026-09-26, `G5-2`; ~~**la decimosexta, discontinuar una vertical** **o acortar
    su cola**, de `SUPER_ADMIN`: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`; acortar la cola, la
-   misma acción con el mismo permiso, FASE 9 vuelta 2, verificación, `V2-g`).
+   misma acción con el mismo permiso, FASE 9 vuelta 2, verificación, `V2-g`~~; la decimosexta salió
+   con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan).
 
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).
-   Las ~~quince~~ dieciséis son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
+   Las ~~quince~~ ~~dieciséis~~ quince son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
    era el permiso de familia de leer lo propio, que cualquier cliente tiene. **Cada entidad que el
    §48 manda inspeccionar —usuarios, suscripciones, pagos, cortesías, grants y las demás de su
    lista— tiene su permiso de inspección**, y ninguno es *«es administrador»*. **No son filas de
@@ -357,8 +358,8 @@ no una excepción a la lista.
 3. **El admin no hereda los entitlements del sujeto.** Los pasos 5, 6 y 7 se evalúan **sobre el
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
    hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
-   ~~catorce primeras~~ quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta— son
-   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` y `Q-ACC16`), no del sujeto —
+   ~~catorce primeras~~ ~~quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta—~~ catorce primeras acciones del capítulo 08 §3 son
+   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8), no del sujeto —
    otorgar una cortesía no consulta si el cliente tiene derecho a una, porque su objeto es
    dárselo. **A qué clase pertenece una operación se declara, nunca se infiere.**
 
@@ -370,12 +371,13 @@ no una excepción a la lista.
    dejaba una ficha por encima del cupo de su dueño sin cortesía ni plata. Sobre el sujeto,
    soporte le restaura a la dueña de un plan de diez fotos hasta diez.
 
-   **La decimosexta, discontinuar una vertical, sí está en la excepción** (owner 2026-09-27, FASE 9
+   ~~**La decimosexta, discontinuar una vertical, sí está en la excepción** (owner 2026-09-27, FASE 9
    vuelta 2, `Q-ACC16`). El criterio es el de la decimoquinta leído al revés: su objeto no es
    hacer por un cliente lo que él mismo podría, porque ningún cliente puede discontinuar una
    vertical, y no recae sobre un dueño con cupo, sino sobre la vertical entera y todos sus dueños
    a la vez. Sobre el sujeto, los pasos 5 a 7 no tendrían a quién preguntarle; sobre el actor,
-   el permiso de `SUPER_ADMIN` es la capacidad.
+   el permiso de `SUPER_ADMIN` es la capacidad.~~ (Sale con la acción: revisión del owner,
+   2026-09-28, C8.)
 4. **No existe la impersonación.** El administrador no «entra como» el cliente. La diferencia es
    todo el punto: impersonar hace que el registro diga que el cliente lo hizo, y ése es
    exactamente el rastro que el hueco pide que no se pierda.
@@ -384,7 +386,7 @@ no una excepción a la lista.
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
    que además es cliente registrándose su propia cuota— y `D11` (*«lo que toca plata lo confirma
    una persona»*) se cumplía a la letra sin proteger nada: la regla lo vuelve lo que quiso decir,
-   ~~**otra** persona~~ **otra cuenta** (no otra persona: ver abajo). Es una regla sin lista, vale para las ~~quince~~ dieciséis acciones del capítulo 08 §3, y su
+   ~~**otra** persona~~ **otra cuenta** (no otra persona: ver abajo). Es una regla sin lista, vale para las ~~quince~~ ~~dieciséis~~ quince acciones del capítulo 08 §3, y su
    costo es de una sola vez: quien administra y además es cliente necesita una segunda cuenta —la de
    admin separada de la de cliente— para que lo suyo lo opere otra. Lo prueba un caso de `V5`.
    **La regla compara cuentas, no personas** (owner 2026-09-26, `Y-2`; FASE 9 vuelta 1, `N-1` de
@@ -396,11 +398,12 @@ no una excepción a la lista.
    (`NUCLEO/08` §4.1), y la revisión es humana. **La confirmación por una segunda persona** —la
    acción queda pendiente hasta que otra cuenta de staff la confirme— **entra cuando haya otra
    persona con el permiso**: hoy bloquearía la operación, porque no hay segunda persona.
-   **En la decimosexta, discontinuar una vertical, el sujeto es la vertical** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`):
+   ~~**En la decimosexta, discontinuar una vertical, el sujeto es la vertical** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`):
    el acto recae sobre la vertical y todos sus dueños a la vez, así que `actor = sujeto` no se da y
    la regla se cumple sola. El resumen de `DEC-OBS-001` la muestra con la vertical y cuántos dueños
    alcanza, y el `SUPER_ADMIN` que además es dueño en esa vertical queda visible ahí. **Sin regla
-   nueva**: queda declarado en *«lo que este capítulo NO cierra»*.
+   nueva**: queda declarado en *«lo que este capítulo NO cierra»*.~~ (Sale con la acción: revisión
+   del owner, 2026-09-28, C8.)
 
 ### 3.3 El actor no siempre es una persona
 
@@ -411,7 +414,7 @@ Dos actores más, y nombrarlos evita que alguien los trate como ausencia de acto
 | **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15. **No pasa del paso 1** salvo en la lectura pública, y el paso 2 no le aplica: no tiene cuenta (FASE 9 vuelta 1, `F-8V1A1-006`) |
 | **el sistema** | los jobs y los webhooks operan sin persona detrás. Llevan su propio identificador de actor y sus dos identificadores de correlación (cap. 08 §2.3) |
 
-**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis acciones del capítulo 08 §3.** ~~Las
+**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ quince acciones del capítulo 08 §3.** ~~Las
 doce mueven dinero o conceden servicio~~ Doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toca plata lo
 confirma una persona. La decimotercera, moderar una ficha (`PB10`/`PB11`, cap. 03 §9) **o la
 presencia de un Partner** (cap. 18 §1.6; FASE 9 completa, 7c), no toca
@@ -422,13 +425,14 @@ la que entró o salió sin pasar por nosotros, y corre `P1` o cierra un `refund`
 la misma razón que las doce (owner 2026-09-25; FASE 9 completa, decisión 5a). **La decimoquinta,
 editar el contenido de una ficha ajena, no toca plata ni publica**: es una escritura sobre lo
 ajeno, y su rastro vale sólo si el actor es la persona que la decidió, que es lo que el §3.2 regla 2
-exige (owner 2026-09-26, `G5-2`). **La decimosexta, discontinuar una vertical, es plata**: cancela
+exige (owner 2026-09-26, `G5-2`). ~~**La decimosexta, discontinuar una vertical, es plata**: cancela
 en el proveedor cada suscripción viva de la vertical (`B/10` §4.1, *«toca plata»*), y cae en `D11`
 por la misma razón que las doce (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`); **acortar su cola
-también**, que es la misma acción y reembolsa (FASE 9 vuelta 2, verificación, `V2-g`). Un job que
+también**, que es la misma acción y reembolsa (FASE 9 vuelta 2, verificación, `V2-g`).~~ (La
+decimosexta salió con la revisión del owner, 2026-09-28, C8.) Un job que
 pudiera otorgar una cortesía convierte ese invariante en una sugerencia.
 
-**La excepción que no es una acción nueva: el reintento de la mitad de billing de la
+~~**La excepción que no es una acción nueva: el reintento de la mitad de billing de la
 decimosexta** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-i`, `N-C-05`). Si esa mitad
 falla, la acción la reintenta sola hasta que entra (`Q-ALTAS-b`, `B/10` §4.3), y el reintento lo
 corre un proceso. **Lleva la firma y la correlación del `SUPER_ADMIN` que confirmó el acto**, como
@@ -436,7 +440,9 @@ la re-emisión de una cortesía diferida que hace `S9` con la firma original (`N
 tabla del enrutado): el acto ya lo decidió y lo confirmó una persona, y el reintento termina lo
 que ella firmó sin decidir nada. Por eso no es una ejecución de sistema de una de las dieciséis. **La
 excepción es ésta sola**: vale para la mitad de billing del acto que esa persona confirmó, sobre
-esa vertical, y no para ninguna otra fila de la tabla.
+esa vertical, y no para ninguna otra fila de la tabla.~~ **Sin excepción** (revisión del owner,
+2026-09-28, C8): el reintento era de la mitad de billing de discontinuar una vertical, y la acción
+salió. Ningún actor de sistema ejecuta una fila de la tabla.
 
 ### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
 
@@ -446,8 +452,8 @@ reloj**, y esos tres pasos preguntan por el título, las capacidades y el cupo *
 existe**.
 
 > **Las transiciones disparadas por el reloj son una segunda clase de operación, evaluada por
-> analogía con las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~catorce~~ quince acciones administrativas
-> que son capacidad del actor (§3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004` y `Q-ACC16`): los pasos 5, 6 y 7 se
+> analogía con las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ catorce acciones administrativas
+> que son capacidad del actor (§3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; ~~`Q-ACC16`~~ la decimosexta salió con la revisión del owner, 2026-09-28, C8): los pasos 5, 6 y 7 se
 > resuelven sobre la capacidad del ACTOR, no sobre la del sujeto.**
 
 **La clase se declara transición por transición**, nunca se infiere — es la regla que este mismo
@@ -474,8 +480,8 @@ reconciliador diario corre por calendario pero no cambia el evento de ninguna—
 > **En ellas los pasos 5, 6 y 7 se evalúan sobre el SUJETO, que es el dueño de la ficha, con el
 > sistema como actor.** Es la regla general del §3.2 —*«los pasos 5, 6 y 7 se evalúan sobre el
 > sujeto»*— sin caer en ninguna de las dos excepciones: las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
-> ~~catorce~~ quince acciones del cap. 08 §3 que son capacidad del actor —las catorce primeras y la
-> decimosexta, `Q-ACC16`— (la decimoquinta no lo es: §3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`) y la clase del reloj de este §.
+> ~~catorce~~ ~~quince~~ catorce acciones del cap. 08 §3 que son capacidad del actor —las catorce primeras ~~y la
+> decimosexta, `Q-ACC16`~~— (la decimoquinta no lo es: §3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; la decimosexta salió con la revisión del owner, 2026-09-28, C8) y la clase del reloj de este §.
 
 **No es una clase nueva: es declarar que no están en ninguna de las dos excepciones**, que es lo
 que la regla 3 del §3.2 exige hacer por escrito. Y es la lectura que las filas ya pedían: `PB3` y
@@ -488,12 +494,12 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 > `actor ≠ sujeto`, **un permiso de esa acción concreta**, y está escrita para una persona. Cómo lo
 > cumple un actor de sistema —en esta clase y en la del reloj, que tienen el mismo `actor ≠
 > sujeto`— no está escrito. No da acceso a ninguna persona: el §3.3 ya le prohíbe al sistema las
-> ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ dieciséis acciones del cap. 08 §3 (`Q-ACC16`).
+> ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ quince acciones del cap. 08 §3 (~~`Q-ACC16`~~ revisión del owner, 2026-09-28, C8).
 
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
-El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ **16**
-**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`), que son **la excepción, no el conjunto**. Y hay una regla en uso que
+El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ ~~**16**~~ **15**
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.
@@ -559,7 +565,7 @@ partes:
 ### 4.1 La decisión
 
 **Perder el acceso NUNCA revoca un rol.** Ni la suspensión por impago, ni el vencimiento del
-trial, ni la cancelación, ni la pausa, ni la discontinuación de una vertical (cap. 10 §4).
+trial, ni la cancelación, ni la pausa ~~, ni la discontinuación de una vertical (cap. 10 §4)~~ (las verticales no se discontinúan: revisión del owner, 2026-09-28, C8).
 
 ### 4.2 Por qué, en tres razones que apuntan al mismo lado
 
@@ -626,11 +632,9 @@ falla.
   es el detector** —el resumen de `DEC-OBS-001` lista cada acción que mueve plata con actor y sujeto,
   `NUCLEO/08` §4.1—, que no distingue a la persona: la revisión es humana. La confirmación por una
   segunda persona entra cuando haya otra persona con el permiso.
-- **El `SUPER_ADMIN` que es dueño en la vertical que discontinúa** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`); declarado
-  por `DEC-METH-015`). El sujeto de la acción 16 es la vertical (§3.2, regla 5), así que la regla 5
-  no ve que el actor se discontinúa a sí mismo. **Lo que deja**: su ficha pasa por el mismo acto
-  que las de los demás dueños, con la cola y el reembolso de todos, y ninguna regla lo frena.
-  **El detector** es el resumen de `DEC-OBS-001`, que muestra la vertical y cuántos dueños alcanza,
-  con el `SUPER_ADMIN` dueño visible. **Causa**: rechazar la acción cuando el actor es dueño
-  obligaba al owner que opera solo y tiene una ficha en esa vertical a una segunda cuenta para
-  discontinuarla.
+- ~~**El `SUPER_ADMIN` que es dueño en la vertical que discontinúa** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-s`; declarado
+  por `DEC-METH-015`).~~ **Sale** (revisión del owner, 2026-09-28, C8): la acción 16 ya no existe.
+- **Discontinuar una vertical** (revisión del owner, 2026-09-28, C8): **fuera de esta versión; si
+  algún día hace falta, se diseña entonces**. No hay acción administrativa que la haga, ni permiso
+  que la pida. Retirar planes, también todos los de una vertical, sigue siendo posible y no es una
+  acción de esta tabla sino una publicación del catálogo.

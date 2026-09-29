@@ -244,7 +244,7 @@ entre los estados vivos (cap. 02 §2.2).
 > barren»* la sacaba del barrido **en el mismo acto de escribirla**: el capítulo le atribuía a un
 > mecanismo un trabajo que ese mecanismo tenía escrito que no hacía. La cubre la **salvedad 4**
 > del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra**, ~~**hecha a mano y sin
-> nadie que verifique**~~ **la del sistema viejo en el paso 1b, verificada por el paso 2 releyendo
+> nadie que verifique**~~ ~~**la del sistema viejo en el paso 1b**~~ **la del script del corte en el paso 1b** (revisión del owner, 2026-09-28, L3-a)**, verificada por el paso 2 releyendo
 > por id** ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
 > §4.2; FASE 9 completa, `CT-2`/`C-6`), así que vuelve al barrido **hasta que la relectura la vea
 > `cancelled`**. **Entra al barrido aunque el paso 2 ya la haya visto `cancelled`**, y no mueve

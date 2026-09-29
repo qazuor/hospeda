@@ -138,7 +138,7 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D11 | **Lo que toca plata lo confirma una persona** | `DEC-CONC-001`, `DEC-CONC-002`, `DEC-RF-001` | servicio |
 | D12 | **El trial no se le pide al proveedor: el reloj del trial es nuestro** | `DEC-TRIAL-002`, cap. 03 §2 | guard + servicio |
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
-| D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
+| ~~D14~~ | ~~**Anunciada la discontinuación de una vertical, no se emite un cobro más en ella**~~ | ~~cap. 10 §4.2~~ | **retirado** (revisión del owner, 2026-09-28, C8): las verticales no se discontinúan. El número no se reusa |
 | D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **ninguna sucesión termina sin dejar rastro, con un rastro por forma de terminar**: la que se **cierra** deja `sucedida_por` puesta en la predecesora; la que **muere sin cerrarse** deja la sucesora no viva **con su `sucede_a` escrito**. **Nunca las dos columnas en la misma fila** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más las dos columnas anulables que no pueden estar puestas a la vez. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las escrituras del cierre vayan juntas y completas |
 | D16 | **El tope de una pausa, en días, es menor que el día del hard delete.** Hoy son **4 pausas-mes** —unos 120 días, cap. 03 §5 (épica de billing)— contra **180** (cap. 02 §4.1, épica de verticales). Es **una de las dos cosas** que impiden que una pausa del catálogo llegue a borrar contenido, porque el reloj de inactividad **no se detiene** durante la pausa: **arranca el primer día de la pausa, ~~cuando `PB2` baja la ficha publicada~~ en toda ficha del dueño en esa vertical, publicada o no (cap. 01 §1.2, hecho 5; FASE 8 completa, owner 2026-09-25)**, y se reinicia recién al reanudar (cap. 01 §1.2, hecho 2). **Las dos cifras son configuración**, así que el invariante es la relación entre ellas y nunca los números. **La otra cosa —que la reanudación ocurra— NO es de este invariante y no la vigila `G-R5`**: la vigilan la rama de fallo de `S10` y la quinta comprobación de cero llamadas de `B/09` §3 | `F-8cC1-001`, la decisión del owner del 2026-09-21 | **guard**: compara el tope de pausa del catálogo contra el día del hard delete y falla si el primero lo alcanza |
 | D17 | **Lo que dice el proveedor no se escribe ni se actúa sin releerlo por id, y se lee el campo que dice la verdad.** Son ~~tres~~ **cuatro** entradas y ninguna se salva: **un webhook es un aviso** y se relee el recurso (cap. 03 §10.1, épica de billing); **una mutación nuestra** se confirma releyendo (`D5`); ~~y~~ **un job que actúa por nuestro reloj** sobre algo que depende del estado del proveedor **le pregunta antes de actuar** (`S3`, `S6`, `A3`); **y un acto del cliente cuya condición depende de ese estado** (`S1`, sobre su predecesora **y sobre la `CHARGE_DECLINED` de ese `user + vertical`**; FASE 9 vuelta 1, `F-8V1D1-003` y `F-8V1B1-003`). *«¿Cobró o no?»* se contesta **sólo** con la lectura del cap. 09 §4 (épica de billing). **Una excepción declarada**: el barrido de creaciones sin respuesta busca ~~por correo del pagador y estado~~ **filtrando en el proveedor sólo por correo del pagador, y el estado de nuestro lado** —el filtro `status` devuelve un subconjunto en producción (`RC-1`; FASE 8 completa, `F-8CB3-011`, `F-8CB2-014`, `F-8CB1-014`)—, porque es la única forma de encontrar lo que nunca registramos (`DEC-CONC-001`, cap. 05 §1.2, épica de billing). **Y una segunda excepción declarada** (FASE 9 completa, la mitad de `F-8CB3-004` que la decisión 3d no cubre): *«¿qué intentos hubo?»* se lee del listado `GET /authorized_payments/search?preapproval_id=` (`EX-16`), que **no** es una lectura por id —es la única forma de conocer los ids—; cada id se relee después por id, y la completitud del listado se comprueba contra `charged_quantity`: mientras no iguala, la respuesta es *«todavía no se sabe»* y a los 3 días abre marca (cap. 09 §4 y ~~§6.2~~ **§6, punto 2**, épica de billing; owner 2026-09-25, 3d; referencia corregida en FASE 9 vuelta 1, clase de `F-8V1D1-007`). **Y la comparación de cambios sin aviso del barrido lee `last_modified`, no `version`**: la lectura por id no trae `version` (`RC-9`; `F-8CB3-010`) | pedido del owner, 2026-09-24 · `RC-1`, `RC-2`, `RC-5`, `EX-20` | servicio |
@@ -240,8 +240,10 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
    que un addon se cancela *«solo cuando queda efectivamente huérfano»*, y con `DEC-ADDON-002`
    cada addon recurrente es una suscripción aparte que **no se cancela sola**. Es `E-ADDON-04`,
    capítulo 16.
-2. ~~**Qué hace el sistema con una vertical discontinuada.**~~ **Cerrado por el capítulo 10 §4**,
-   y dejó los invariantes `D14` y `D13` arriba.
+2. ~~**Qué hace el sistema con una vertical discontinuada.**~~ ~~**Cerrado por el capítulo 10 §4**,
+   y dejó los invariantes `D14` y `D13` arriba.~~ **Fuera de esta versión** (revisión del owner,
+   2026-09-28, C8): las verticales no se discontinúan; si algún día hace falta, se diseña entonces.
+   `D14` se retiró; `D13`, retirar un plan, sigue.
 3. **Si el silencio del cliente vale como aceptación de un aumento.** Es `M-LEGAL-03`, y
    **cambia el diseño, no la redacción**: si no alcanza, `DEC-MP-002` necesita aceptación activa
    y a quien no responda no se lo puede aumentar. Capítulo 22, y pide revisión profesional.
@@ -253,13 +255,13 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 | nivel | cuántos del §64 | cuántos de las decisiones |
 |---|---|---|
 | base | 6 | **4** |
-| servicio | 14 | **11** |
+| servicio | 14 | ~~**11**~~ **10** |
 | guard | 5 | **6** |
 | principio o regla de método, **no verificable ejecutando** | 7 | 0 |
 | en un capítulo de subdominio | 5 | 0 |
-| **total** | **37** | **17** |
+| **total** | **37** | ~~**17**~~ **16** |
 
-> Las celdas de la columna derecha suman **21 apoyos** sobre **17 invariantes**, y no es un error
+> Las celdas de la columna derecha suman ~~**21 apoyos** sobre **17 invariantes**~~ **20 apoyos** sobre **16 invariantes** (revisión del owner, 2026-09-28, C8: sale `D14`, que era de servicio; recontado sobre las filas vivas del §3), y no es un error
 > de conteo: **`D3`, `D8`, `D12` y `D15` se sostienen en dos niveles a la vez**. `D3` necesita que
 > la base restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al
 > proveedor; `D8` necesita la columna en base **y** el guard que la compara; `D12` necesita un
@@ -267,7 +269,7 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 > necesita los dos índices parciales **y** el guard que exige que las escrituras del cierre vayan
 > juntas. Un invariante con dos apoyos no está contado de más: está apoyado dos veces.
 
-**Cincuenta y cuatro invariantes, y diez los sostiene la base.** El resto depende de que exista un
+~~**Cincuenta y cuatro invariantes**~~ **Cincuenta y tres invariantes** (revisión del owner, 2026-09-28, C8: 37 + 16)**, y diez los sostiene la base.** El resto depende de que exista un
 único lugar donde se evalúen — que es, en una línea, de qué se trata el §7.
 
 > **Corregido otra vez el 2026-09-19 — FASE 8-bis**, y la corrección anterior es el ejemplo de
@@ -315,6 +317,14 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 > **cuatro** filas de doble apoyo. El total de la derecha pasa de 16 a 17 y *«cincuenta y tres»* a
 > **cincuenta y cuatro**; *«diez los sostiene la base»* **no cambia**. La columna izquierda cierra
 > igual: 37.
+>
+> **Recorrido otra vez el 2026-09-28, al retirar `D14`** (revisión del owner, C8: las verticales no
+> se discontinúan). `D14` tenía **un** apoyo, servicio. Recorridas las **16** filas vivas del §3:
+> base `D2 D3 D8 D15` (4), guard `D8 D9 D10 D12 D15 D16` (6), servicio
+> `D1 D3 D4 D5 D6 D7 D11 D12 D13 D17` (10). Suman **20 apoyos** sobre 16, con las mismas **cuatro**
+> filas de doble apoyo. El total de la derecha pasa de 17 a 16 y *«cincuenta y cuatro»* a
+> **cincuenta y tres**; *«diez los sostiene la base»* **no cambia**. La columna izquierda cierra
+> igual: 37. El número `D14` queda retirado y no se reusa.
 
 Y la corrección anterior, que queda como registro:
 

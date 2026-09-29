@@ -120,10 +120,11 @@ una sola tabla hoja, `billing_option`**, que es de la otra épica.
 
 *(Desde la FASE 8 el catálogo de addons se parte por el mismo corte, por campo: `addon` y
 `addon_version` —qué otorga, vigencia, scope— son de esta épica, y `addon_product` —precio,
-recurrencia y **verticales compatibles**— de la otra (cap. 02 §2.1). Y `vertical` guarda
-`admite_altas` ~~y `fin_de_servicio`~~, que billing lee por la dirección inversa del contrato §4.1;
-la fecha de fin de servicio la calcula billing y verticales la pregunta por `finDeServicio` (owner
-2026-09-27, FASE 9 vuelta 2, `R5`).
+recurrencia y **verticales compatibles**— de la otra (cap. 02 §2.1). ~~Y `vertical` guarda
+`admite_altas`, que billing lee por la dirección inversa del contrato §4.1; la fecha de fin de
+servicio la calcula billing y verticales la pregunta por `finDeServicio` (owner 2026-09-27, FASE 9
+vuelta 2, `R5`).~~ (Salen con la revisión del owner, 2026-09-28, C8: las verticales no se
+discontinúan.)
 Nota de la salida 3 de la FASE 9 completa, sin cambio de sentido.)*
 
 **Eso es lo que vuelve independiente al trial**: deriva su plan del vendible de `rank` más alto y
@@ -208,8 +209,8 @@ que **ninguno los haga por su cuenta**.
 **un permiso de esa acción concreta**, nunca una condición general de «es administrador».
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto,
-y la excepción son las catorce primeras acciones de `NUCLEO/08` §3 **y la decimosexta,
-discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`): la decimoquinta,
+y la excepción son las catorce primeras acciones de `NUCLEO/08` §3 ~~**y la decimosexta,
+discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`)~~ (la decimosexta salió con la revisión del owner, 2026-09-28, C8): la decimoquinta,
 editar el contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
 `F-8V2A1-004`). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
 fila de aquel catálogo (cap. 17 §3.2 regla 1; `F-8V2A1-002`).

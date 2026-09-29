@@ -459,13 +459,14 @@ la suscripción que la pausaba ya está muerta, y la que iba a recibir el saldo 
 cuyo sujeto no existe**, sobre una población que `DEC-GRANT-007` creó el mismo día.
 
 **Qué pasa entonces, y la respuesta sale de recorrer los dos caminos de re-emisión, no de
-preferir.** `S9` sólo puede re-emitir un saldo por **dos** rutas (`B/03` §3.2): la del segundo
-disparador —la cortesía apunta a una fila cuyo `sucedida_por` es **esta**— y la del tercero —la
-fila que apunta murió **por `S25`** y el beneficiario tiene otra en `ACTIVE` en la misma vertical—.
-Si el saldo **sobreviviera** al grant, después de `S13` **ninguna de las dos vuelve a matchear
-nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13`, y la predecesora no murió por
-`S25`. Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía
-que recibirlo»* con esas mismas dos preguntas. El saldo quedaría **sin dueño, sin vencimiento y sin
+preferir.** `S9` sólo puede re-emitir un saldo por ~~**dos** rutas~~ **una** ruta (`B/03` §3.2): la del segundo
+disparador —la cortesía apunta a una fila cuyo `sucedida_por` es **esta**— ~~y la del tercero —la
+fila que apunta murió **por `S25`** y el beneficiario tiene otra en `ACTIVE` en la misma vertical—~~
+(la del tercero salió con `S25`: revisión del owner, 2026-09-28, C8).
+Si el saldo **sobreviviera** al grant, después de `S13` ~~**ninguna de las dos vuelve a matchear
+nunca**~~ **esa ruta no vuelve a matchear nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13` ~~, y la predecesora no murió por
+`S25`~~. Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía
+que recibirlo»* con esa misma pregunta. El saldo quedaría **sin dueño, sin vencimiento y sin
 nadie que lo mire** — palabra por palabra la forma que `DEC-GRANT-011` descartó ese mismo día, y
 que `B/16` §1.3 rechaza por escrito como *«un instrumento abierto sin fecha de cierre»*.
 
@@ -483,9 +484,10 @@ grant empieza a cubrir.
 exactamente el argumento con que este mismo § prohíbe **otorgar** una cortesía sobre un grant. Y si
 el grant después se revoca, el desenlace es el que `DEC-TRIAL-009` ya fijó para el instrumento
 hermano: **recibir el grant lo consume y la revocación no lo devuelve**, porque durante el grant la
-persona **recibió la cobertura completa**. La diferencia con `DEC-GRANT-010` —donde el saldo sí se
+persona **recibió la cobertura completa**. ~~La diferencia con `DEC-GRANT-010` —donde el saldo sí se
 conserva— es esa y se puede leer al pie: allá **el regalo no empezó a entregarse** y quien lo
-interrumpe somos nosotros retirando un servicio; acá se entregó, y de más.
+interrumpe somos nosotros retirando un servicio; acá se entregó, y de más.~~ (`DEC-GRANT-010` salió
+con la revisión del owner, 2026-09-28, C8.)
 
 **Y se declara en los dos lugares donde el acto se mira**: la confirmación de otorgar y la de
 anclar lo dicen antes de firmar (`NUCLEO/08` §3.1, que cubre las dos, y `B/19` §4 fila 13-bis, que
@@ -626,65 +628,16 @@ ningún origen, así que el techo no se puede saltear por un parámetro que veng
 palabra *«cortesía»* queda repartida entre las dos épicas: **la temporal, en meses, es de
 billing** (§4.7); **la del trial, en días, es de verticales**.
 
-### 4.6 Cortesía temporal + la vertical que se discontinúa
+### ~~4.6 Cortesía temporal + la vertical que se discontinúa~~
 
-**`SUPER_ADMIN` le firmó N ~~días~~ meses, la cortesía se implementa pausando (`DEC-GRANT-003`), y el plan
-sobre el que se la firmó deja de prestarse debajo.** Es el borde que `DEC-SUB-015` declaró abierto
-y que `DEC-GRANT-010` cierra: **la cortesía se difiere y se re-emite**, con **el mismo mecanismo
-del §4.4** y no con uno nuevo.
-
-| qué pasa | quién lo hace |
-|---|---|
-| la pausa termina y no se puede reanudar — el plan ya no se presta | **`S25`** (`B/03` §3.2) |
-| la cortesía **no se pierde**: se le escribe el `saldo_meses` que le quedaba (en meses desde `F-8CB1-001`; la fracción, abierta en `B/02` §2.4) y queda **diferida** | **`S25`**, que es su **segundo escritor** (`NUCLEO/01` §2.6) |
-| la persona elige de nuevo y su fila nueva llega a `ACTIVE` | `S1` + `S2` |
-| la cortesía se **re-emite** sobre esa fila: `subscription_id` a la nueva, `inicio` hoy, `fin` hoy + `saldo_meses`, saldo a nulo, y la fila queda `PAUSED · COURTESY` | **`S9`**, por su **tercer** disparador |
-
-**Y desde la fecha de fin de servicio la cortesía no cubre**, aunque la fila siga `PAUSED` hasta
-`S25`: ahí el contrato no emite ninguna fuente de título (`12-contrato…` §2.6; FASE 8 completa,
-`F-8CC1-001`, owner 2026-09-25). Qué significa eso para el `saldo_meses` está declarado en
-`B/10` §4.3, *«el día del fin de servicio»*.
-
-**Es literalmente el mismo mecanismo, y eso es la decisión y no una comodidad.** `DEC-GRANT-010`
-eligió *«el mismo mecanismo que `DEC-GRANT-007`»* con todas las letras: la misma columna, el
-mismo re-emisor, el mismo detector. Inventar un camino propio para este caso habría duplicado un
-mecanismo que **acaba de costar un crítico reportado por tres IDs**, y con eso la obligación de
-mantener los dos sincronizados.
-
-**Lo único que cambia es cómo se llega a la fila nueva, y hay que decirlo porque es la diferencia
-que un lector va a buscar.** En el §4.4 la sucesora se alcanza por `predecesora.sucedida_por`, que
-`S18` escribe en el mismo acto. **Acá no hay sucesión**: `G-R1-A` sólo deja declarar una desde
-`ACTIVE`, ~~`GRACE_PERIOD`,~~ `CANCEL_SCHEDULED` o una `SUSPENDED` de pagador con tarjeta con el
-preapproval releído `cancelled` (FASE 8 completa, `F-8CB1-002`; `GRACE_PERIOD` salió con
-`DEC-SUB-021`, owner 2026-09-25), y ésta estaba `PAUSED`. La fila nueva es **un alta
-nueva** (`S1`), y se la alcanza por **el beneficiario y la vertical** de la suscripción muerta
-—que la cortesía sigue apuntando, porque `subscription_id` no es anulable y la fila `CANCELLED`
-**no se borra**—.
-
-**El motivo, y es el criterio del owner sobre un caso donde la pérdida la causaríamos nosotros.**
-Retirar el servicio es **acto nuestro**, y la persona **todavía no recibió nada** del regalo: es
-`DEC-TRIAL-009` invertido —allá el beneficiario ya había recibido la cobertura completa y por eso
-el trial gastado no se repara; acá el regalo no empezó a entregarse—. Las dos alternativas las
-descarta `DEC-GRANT-010`: que la cortesía **corra hasta agotarse** mantiene vivo un plan retirado
-hasta que termine el regalo, que es justo la garantía que `DEC-SUB-015` conservó; que **se pierda
-avisando** contradice el criterio.
-
-**El costo aceptado**: el plan que elija puede ser **más caro**, así que los N ~~días~~ meses valen más de
-lo que valían el día que se firmaron. Es un sobrecosto nuestro, acotado, y consecuencia de una
-decisión nuestra.
-
-> **Y hay un desenlace en el que esta re-emisión NO llega, que va declarado y no resuelto.** El
-> único acto del corpus que produce este caso es **la discontinuación de una vertical** (`B/10`
-> §4.3), y una vertical discontinuada **queda cerrada a altas para siempre** (`B/10` §4.5, borde
-> 4): su fila *«no se borra nunca»* y queda con la fecha de fin de servicio cumplida. O sea que
-> **en esa vertical no va a haber nunca una fila nueva que llegue a `ACTIVE`**, y el saldo se
-> queda diferido indefinidamente. No se pierde —la fila sigue ahí, con su firma y sus ~~días~~ meses— pero
-> **no emite nada**, porque una cortesía diferida no emite fuente (`NUCLEO/01` §2.6). Re-emitirla
-> en **otra** vertical no es una salida disponible: la cortesía transporta *«la versión anclada de
-> la suscripción que pausa»*, y hacerlo sería el defecto que `DEC-GRANT-006` rechazó por escrito
-> —*«nadie puede emitir la cortesía en una segunda vertical transportando la versión anclada de
-> la suscripción de la primera»*—. **Queda como pregunta al owner**, junto con la que `B/09` §3
-> ya dejó abierta para el saldo de una sucesora que abandona: son el mismo hueco por dos puertas.
+~~Una cortesía pausaba un plan que dejaba de prestarse porque la vertical se discontinuaba: `S25`
+le escribía el `saldo_meses` y la difería, y `S9` la re-emitía por su tercer disparador sobre el
+alta nueva, alcanzada por el beneficiario y la vertical (`DEC-SUB-015`, `DEC-GRANT-010`); el saldo
+quedaba diferido para siempre si la vertical no volvía a admitir altas.~~ **Sale entero**
+(revisión del owner, 2026-09-28, C8): las verticales no se discontinúan. Una cortesía sobre un
+plan **retirado** no tiene nada que resolver: el plan retirado se sigue prestando (`B/10` §3.2), y
+la pausa termina reanudando por `S10`. El diferimiento del saldo tiene un solo escritor, el cierre
+de `S18` (§4.4).
 
 ### 4.7 La unidad de la cortesía temporal: meses enteros, y sólo sobre planes mensuales
 
@@ -708,7 +661,7 @@ trimestral o un semestral—.
 | **la cortesía permanente** | **no cambia** (`DEC-GRANT-003` impl. 5) |
 
 **Y el saldo diferido hereda la unidad**: `courtesy_grant.saldo_meses` —antes `saldo_días`— guarda
-meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
+meses (`B/02` §2.4), por ~~los dos escritores de §4.4 y §4.6~~ el escritor del §4.4 (el del §4.6 salió con la revisión del owner, 2026-09-28, C8).
 
 **Lo que esta regla deja abierto, sin resolver acá:**
 
@@ -717,8 +670,8 @@ meses (`B/02` §2.4), por los dos escritores de §4.4 y §4.6.
 2. ~~**La re-emisión sobre una fila de plan anual.**~~ **Cerrado el 2026-09-25**: **el saldo se
    pierde y se avisa antes**. Si la sucesora es de plan ~~anual~~ **no mensual —trimestral,
    semestral o anual—**, `S18` cierra el saldo con
-   `motivo_cierre = ~~DESTINO_DE_PLAN_ANUAL~~ DESTINO_DE_PLAN_NO_MENSUAL`; si es un alta nueva de plan ~~anual~~ no mensual tras `S25`, lo cierra
-   su `S2` (FASE 9 completa, contradicción 1 de `03` §R4.5: con *«anual»*, un saldo que caía
+   `motivo_cierre = ~~DESTINO_DE_PLAN_ANUAL~~ DESTINO_DE_PLAN_NO_MENSUAL` ~~; si es un alta nueva de plan no mensual tras `S25`, lo cierra
+   su `S2`~~ (el alta nueva tras `S25` salió con la revisión del owner, 2026-09-28, C8) (FASE 9 completa, contradicción 1 de `03` §R4.5: con *«anual»*, un saldo que caía
    sobre un trimestral o un semestral se re-emitía y `PS-6` lo volvía cero o un ciclo entero). En los dos casos la pantalla se lo dice a la persona antes de elegir el plan (`B/19` §4
    fila 13-quater).
 3. ~~**Cuántos términos de `puedePausar()` toma `S9`.**~~ **Cerrado el 2026-09-25**: `S9` toma
