@@ -76,8 +76,8 @@ import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
 
 const AUTH_TEXTS = {
     es: {
-        signOut: 'Cerrar sesion',
-        signingOut: 'Cerrando sesion…'
+        signOut: 'Cerrar sesión',
+        signingOut: 'Cerrando sesión…'
     },
     en: {
         signOut: 'Sign out',
