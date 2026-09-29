@@ -50,7 +50,7 @@ import type { APIRoute } from 'astro';
 import { buildStaticCacheHeaders } from '@/lib/cache/response-cache';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
 import { buildFacetDisallowDirectives } from '@/lib/filters/facet-crawl-policy';
-import { parseNoindexHosts } from '@/lib/middleware-helpers';
+import { parseNoindexHosts } from '@/lib/noindex-hosts';
 import { SITEMAP_EXCLUDED_PATHS } from '@/lib/seo-config';
 
 export const prerender = false;
