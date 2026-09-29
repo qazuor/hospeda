@@ -47,7 +47,42 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-28 (noche) — la revisión del owner está aplicada
+## Última actualización: 2026-09-29 (madrugada) — los casos vecinos están decididos y aplicados
+
+### El próximo paso exacto
+
+1. **Las mediciones antes de terminar el diseño**, con la cuenta de pruebas de Mercado Pago: `EX-52`
+   (cancelar desde la app), `EX-53` (pausar desde la app), `EX-54` (el correo al SUBIR el monto,
+   nueva), `WH-6` (los dos canales de avisos y sus duplicados; de ella depende dónde se guardan los
+   IPN, lote G-D), y la reapertura de `WH-5` y `EX-15` (causa: el filtro `source_news=webhooks` de
+   hospeda2, HOS-159). Si alguna necesita al owner en la app, avisarle qué y cuándo. Con los
+   resultados se deciden los huecos de N8 y `L3-g`.
+2. **Verificación corta** de lo aplicado en `30-…/11-`…`24-`.
+3. **Publicar** (con OK del owner): la presentación (15 hilos; corregir «commerce», la cuota de la
+   prueba que renueva, y las tres cifras del caso 29: «5 de 8» con su fuente, sin «hasta 14 días
+   de demora», «fuera de orden» como simulación), las fichas, el tablero y Linear.
+4. **FASE 5**.
+
+### Lo que pasó el 2026-09-29
+
+- **Los 50 casos vecinos** de `14-` §3, decididos con el owner en lotes A–E; al aplicarlos salieron
+  26 más (lotes F–K). **76 decididos** en
+  [`30-…/16-casos-vecinos-decididos.md`](./30-revision-del-owner/16-casos-vecinos-decididos.md),
+  aplicados en `17-`…`23-`. Contra la recomendación: caso 2 (no se registra a quién avisó el
+  owner), caso 30 (el package del cobro puede depender de packages internos, con la regla del
+  owner) y F-C (soporte hace los tres pasos de la baja de cuenta manual). I-C corrigió H-C: la
+  cuenta se seudonimiza, no se borra; el comprobante guarda nombre y correo del pagador (K-A).
+- **Log y matriz** con OK del owner (`24-`): 17 📌. Log **134** decisiones, precisadas sin
+  SUPERSEDED **66**, SUPERSEDED **11**, apartamientos del PDR **10**. Matriz **112 = 55 · 17 · 23 ·
+  17 `UNKNOWN`** (nueva `EX-54`).
+- **Listas**: acciones administrativas vivas **23** (nuevas 23 y 24), transiciones vivas de la
+  suscripción **34** (nueva `S38`), guards **33**, motivos **24**, pendientes de `G8` **3**.
+- **Commits** `e2cb3adc4a`…(el de este handoff). Sin pushear (PR #3360).
+- **Sueltos de forma, sin decidir** (`24-` §4): `DEC-DATA-008` conserva su «Sin decidir» sin tachar
+  y no tiene el campo «Apartamiento del PDR, declarado»; `EX-54` no figura en las tablas de `B/06`
+  §11 ni de `$B/spec.md` (tampoco `EX-52`, `EX-53`, `WH-6`).
+
+## Histórico: 2026-09-28 (noche) — la revisión del owner está aplicada
 
 ### El próximo paso exacto
 
