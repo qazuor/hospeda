@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import requiredManifest from '../../src/manifest-required.json';
 
 const execFileAsync = promisify(execFile);
 const seedPkgDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -175,6 +176,12 @@ describe('seed --required twice on the same database (HOS-735)', () => {
                 `1st run exited ${first.code}:\n${first.stdout}\n${first.stderr}`
             ).toBe(0);
             const afterFirst = await countRows(rerunDbUrl);
+
+            // A match-everything lookup skips every item after the first one it inserts, so
+            // the table would hold ONE row and stay "stable" across runs. Pin the absolute
+            // size to the fixtures so that shape cannot pass.
+            expect(afterFirst.amenities).toBe(requiredManifest.amenities.length);
+            expect(afterFirst.exchange_rates).toBe(requiredManifest.exchangeRates.length);
 
             // A lookup that matches EVERY row would skip every item and keep the counts
             // equal (the DB layer drops unknown where-keys). So delete one slug-keyed row
