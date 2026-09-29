@@ -155,8 +155,9 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    capacidad, §3.5), su precio actual y el nuevo, y **la fecha que le toca**. Escribe la fila de
    `plan_migration` y una de `plan_migration_subscription` por cliente (`B/02` §2.2).
 2. **Siempre con aviso previo, suba o baje**: **60 días por defecto, configurable, y nunca menos
-   que el mínimo del aviso de aumento** de `DEC-MP-002`. La migración guarda el plazo con que se
-   anunció, así que cambiar el plazo después no adelanta una fecha ya avisada. **Tres correos**:
+   que el mínimo del aviso de aumento** de `DEC-MP-002` (es el plazo 12 de `NUCLEO/02` §1.5, que
+   cambia el `SUPER_ADMIN` con *«cambiar un plazo»*: revisión del owner, 2026-09-28, C9). La
+   migración guarda ~~el plazo~~ la versión de plazos con que se anunció, así que cambiar el plazo después no adelanta una fecha ya avisada. **Tres correos**:
    al anunciar, a 30 días y a 7 días **de la fecha de ese cliente**; cada uno dice qué cambia en
    su plan, el precio nuevo, la fecha, **si pierde su promoción** y que puede darse de baja o
    elegir otro plan antes (`NUCLEO/07` §6, `B/19` §4).

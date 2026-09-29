@@ -106,7 +106,7 @@ preguntar **una vez** si están todos.
 |---|---|---|
 | `00` | este documento | el mapa y las reglas de escritura |
 | `01` | [glosario](./01-glosario.md) | los nombres, el glosario de estados, los cuatro conjuntos que nombra «vivo» (§2.4), el criterio Eje 1 / Eje 2 |
-| `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, y el registro de eventos |
+| `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, **cómo nacen los valores y quién los cambia, y los plazos configurables** (§1.4 y §1.5; revisión del owner, 2026-09-28, N1 y C9), y el registro de eventos |
 | `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las ~~nueve~~ diez máquinas (la décima, el reembolso: FASE 9 completa, 5a) |
 | `04` | [invariantes](./04-invariantes.md) | los 54 (37 del §64 del PDR y 17 de las decisiones), con quién sostiene cada uno |
 | `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario |

@@ -63,7 +63,7 @@ cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1
 | `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) **si publicar le arrancaría el trial, con la regla escrita sólo en `19` §4 fila 23** (FASE 9 vuelta 1, `F-8V1D1-004`) |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ **veintiún guards** (la cifra se mantiene con la revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ ~~**veintiún guards**~~ **diecinueve guards** (revisión del owner, 2026-09-28: `G-R3` y `G-R5-B` pasan a ser validaciones del panel, por N1 y C9, y conservan su fila sin contarse; antes, en la misma revisión, la cifra se mantuvo: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, **con su ficha a la vista publicada y una prueba gratis activa desde el día del corte** (revisión del owner, 2026-09-28, C12), la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | ~~las señales de identidad y~~ el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`); las señales que sólo observaban (teléfono, identificador fiscal, dispositivo) no se guardan (revisión del owner, 2026-09-28, N7, `g2`) |
 
@@ -210,7 +210,7 @@ que **ninguno los haga por su cuenta**.
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto,
 y la excepción son las catorce primeras acciones de `NUCLEO/08` §3 ~~**y la decimosexta,
-discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`)~~ (la decimosexta salió con la revisión del owner, 2026-09-28, C8) **y la decimoséptima, migrar a los clientes de un plan retirado** (la misma revisión, C15): la decimoquinta,
+discontinuar una vertical** (owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`)~~ (la decimosexta salió con la revisión del owner, 2026-09-28, C8) **y la decimoséptima, migrar a los clientes de un plan retirado** (la misma revisión, C15), **y de la decimoctava a la vigesimosegunda, las cinco del catálogo** (la misma revisión, N1 y C9): la decimoquinta,
 editar el contenido de una ficha ajena, se evalúa sobre el dueño (cap. 17 §3.2 regla 3; FASE 9 vuelta 2,
 `F-8V2A1-004`). **Y leer lo ajeno pide el permiso de inspección de esa entidad**, que no es una
 fila de aquel catálogo (cap. 17 §3.2 regla 1; `F-8V2A1-002`).
@@ -386,8 +386,8 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 **~~Siete~~ ~~Ocho~~ Nueve guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`) **y `G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6)—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**~~Siete~~ ~~Ocho~~ Nueve NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ **veintiuno** (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6) —el decimonoveno es
-`G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los **doce** que no
+**~~Siete~~ ~~Ocho~~ Nueve NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintiuno**~~ **diecinueve** (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
+`G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los ~~**doce**~~ **diez** que no
 están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`, C14)
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
 es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están todos?»*:
@@ -396,18 +396,18 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 |---|---|
 | `G1` | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 |
 | `G2` | una operación de dominio **no declara** su contexto de vertical; **o toma la vertical del pedido y no del recurso; o escribe la vertical de un recurso que ya existe** (tres mitades con tres mensajes: FASE 8 completa, `F-8CA1-001`; owner 2026-09-25, FASE 9 completa, 7a) |
-| `G3` | una clave de código no está en la base, **o una de la base no está en el catálogo** |
+| `G3` | una clave de código no está ~~en la base, **o una de la base no está en el catálogo**~~ **en el catálogo**; la otra dirección pasa a ser una restricción de la base (revisión del owner, 2026-09-28, N1; `NUCLEO/02` §1.4) |
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
 | `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
-| `G8` | aparece `commerce` en fuentes activas |
+| `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`) |
 | `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 | `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ ~~veinte~~ veintiuno: **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ ~~veinte~~ ~~veintiuno~~ diecinueve (revisión del owner, 2026-09-28, N1 y C9): **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---

@@ -389,7 +389,9 @@ a quien ya había ejercido el evento, y el procedimiento eran tres pasos en un s
 evento, publicar la versión con días > 0 y ejecutar `T7`); dejaba sin declarar el apagado.~~
 **Sale entera** (revisión del owner, 2026-09-28, N7): **encender o apagar la prueba de una vertical queda fuera de esta
 versión.** El panel, que es donde se editan los días de prueba, **rechaza pasar una vertical de 0
-días a más de 0, y de más de 0 a 0**; dentro de más de 0 los días se pueden cambiar como cualquier
+días a más de 0, y de más de 0 a 0** (es una validación de *«publicar una versión de plan»*,
+`NUCLEO/02` §1.4: los días de prueba cuelgan de la versión y no son un plazo de la lista del §1.5;
+revisión del owner, 2026-09-28, N1); dentro de más de 0 los días se pueden cambiar como cualquier
 plazo. Hoy la única vertical en cero es Partner (`DEC-TRIAL-003`), y queda en cero. Con eso `T7` no
 tiene disparador y sale de la máquina (cap. 03 §2; el número no se reusa), y la fila de *«no
 declara evento, o días = 0»* del cap. 03 §2 pasa a ser un estado final. Si algún día hace falta

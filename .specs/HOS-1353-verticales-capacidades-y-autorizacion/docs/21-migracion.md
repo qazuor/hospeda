@@ -512,9 +512,18 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   del admin sin tocar el cobro no se pierde**: pasa al bit de moderación de la presencia, que
   escribe la misma acción administrativa que `PB10` (cap. 18 §1.6; owner 2026-09-25, FASE 9
   completa, `7c`). Partner tiene cero filas, así que tampoco hay nada que migrar ahí.
-- **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
+- ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
-  Eso es trabajo de FASE 5 y de código, no de datos.
+  Eso es trabajo de FASE 5 y de código, no de datos.~~ **El agrupamiento viejo de Gastronomía y
+  Experiencia desaparece por completo, ni como histórico** (revisión del owner, 2026-09-28, C3,
+  `L2-a` a `L2-c`), sin la excepción del §55.1. **Y es también trabajo de datos**, de esta épica:
+  el rol de dueño de comercio, sus siete permisos, la tabla de contactos de alta de Gastronomía y
+  Experiencia y el tipo de partner que lo nombra entran en la limpieza **con su migración de
+  datos**, porque tienen filas vivas (renombrar un permiso es mover filas de `role_permission`);
+  **el tipo de partner se renombra a lo que es**, con un nombre a definir con el owner; y los
+  datos que lo nombren se reescriben o se borran. La historia de migraciones y el ledger del seed
+  se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6). **La única
+  exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11).
 
 ---
 

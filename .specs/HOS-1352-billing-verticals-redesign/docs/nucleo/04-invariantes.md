@@ -75,7 +75,7 @@ el invariante se puede perder.
 | 13 | rol ≠ entitlement | ídem, **y que ninguna construcción del conjunto efectivo lea un rol** (`V/17` §4.3; FASE 9 vuelta 1, `F-8V1A1-002`) |
 | 15 | toda configuración comercial viene de la base | **reescrito por el cap. 02**: el catálogo de claves es código verificado contra la base en las dos direcciones; ningún valor, precio ni asignación vive en código |
 | 16 | los archivos de configuración no son fuente de negocio | el mismo guard que el 15 |
-| 32 | Commerce no existe en la arquitectura nueva | el §55 pide eliminarlo de código, esquema, tipos, tests, docs, specs, comentarios y naming; es una búsqueda automática, no una revisión |
+| 32 | ~~Commerce no existe en la arquitectura nueva~~ **el agrupamiento viejo de Gastronomía y Experiencia no existe, ni como histórico** | el §55 pide eliminarlo de código, esquema, tipos, tests, docs, specs, comentarios y naming; es una búsqueda automática, no una revisión. **Desde la revisión del owner (2026-09-28, C3, `L2-a` a `L2-c`) sin la excepción histórica del §55.1 y en todo el repositorio**: los datos que lo nombran se reescriben o se borran, la historia de migraciones y el ledger del seed se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6), y **el único archivo exento es el PDR, por nombre y con la causa escrita**: no se edita. Lo vigila `G8` (`V/20` §2) |
 
 **El 15 y el 16 son el mismo invariante enunciado dos veces**, y el cap. 02 explicó por qué su
 forma literal es inaplicable: no hay manera de evaluar una capacidad sin nombrarla.

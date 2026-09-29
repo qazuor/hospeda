@@ -620,6 +620,22 @@ lo que las abrió para que nadie lo lea como una asignación inventada.
    tiene inventario que mantener**: se resuelve contra la respuesta del contrato en el momento. Y
    el precedente de que un § del núcleo sea capítulo de una unidad ya existe: el §1.2 es de `V9`.
 
+### 2.10 Lo que la revisión del owner agregó en la tanda 4, y qué unidad lo construye
+
+(Revisión del owner, 2026-09-28, tanda 4 de la aplicación: N1 con `L1-e` y `L1-f`, C9 y C11 con
+`L2-g` y `L2-h`, y C3 con `L2-a`, sobre `HOS-1352/docs/30-revision-del-owner/10-decisiones-del-owner.md`.)
+El mismo recorrido que `V/descomposicion.md` §2.11. **Ninguna dependencia nueva entre épicas**: cada
+mitad construye sus acciones, sus validaciones y sus plazos, y lo que se cruza (la política de una
+versión de plan o de complemento) ya pasa por las consultas del contrato.
+
+| qué | de dónde | unidad | qué la demuestra |
+|---|---|---|---|
+| **la acción *«fijar el precio de un ciclo»*** y su validación (el ciclo mayor que la gracia; `NUCLEO/02` §1.4), con el aumento que desencadena sobre los clientes por `DEC-MP-002` | N1, `L1-f` | **B2** *(la operación)* · **B13** *(el editor de precios del panel)* | fijar un precio mayor sobre una versión con clientes anuncia el aumento con la fecha de cada uno y no cambia ningún monto antes; un ciclo no mayor que la gracia se rechaza |
+| **la acción *«publicar una versión de complemento»*** | N1, `L1-f` | **B10** *(la operación)* · **B13** *(el editor)* | lo ya comprado sigue anclado a su versión; la confirmación dice qué cambia |
+| **la acción *«crear o cerrar un código promocional»*** | N1, `L1-f` | **B9** *(la operación)* · **B13** *(el editor)* | cerrar un código rechaza el canje siguiente y no toca los ya canjeados |
+| **los plazos de billing**: su tabla versionada, la acción *«cambiar un plazo»* sobre sus claves y sus validaciones (`NUCLEO/02` §1.5), y **la versión guardada en cada reloj**: la ventana de autorización, el aumento y la migración anunciados, el canje y la suscripción en cada ciclo | C9, C11, `L2-g`, `L2-h` | **B2** *(la tabla y la acción)* · **B3** *(la ventana)* · **B8** *(el mínimo para ofrecer un cambio)* · **B9** *(el canje)* · **B12** *(el aumento y la migración)* · **B13** *(la pantalla y los avisos de renovación)* | alargar el aviso de migración de 60 a 90 días no mueve la fecha de un cliente ya avisado, y uno avisado después cuenta 90; un aviso de migración menor que el mínimo de `DEC-MP-002` se rechaza |
+| **sale el archivo de configuración de planes** y lo que lo lee sólo para eso (`21` §4) | N1 | **ninguna**: es filtro 1 de FASE 5, el sujeto muere | `@repo/billing` no exporta ningún plan, precio ni límite |
+
 ---
 
 ## 3. El orden, y qué se puede hacer en paralelo
@@ -706,8 +722,8 @@ unidad se declara terminada.
 > no puede fallar es un comentario con exit code 0»*). La regla 1 del §1.3 dice **cuándo** va cada
 > guard —*«con la pieza que protege, nunca al final»*— y hasta esta pasada **no había ningún lugar
 > donde se comprobara que había ido**: la asignación vivía sólo en una columna que nadie consulta
-> al declarar una unidad lista. **Los ~~29~~ ~~30~~ ~~31~~ ~~32~~ 35 guards ~~están repartidos~~ —~~30~~ ~~**31**~~ ~~**32**~~ **35** repartidos entre las 22 unidades, ~~13~~ ~~**14**~~ ~~**13**~~ ~~**12**~~ **15** en esta
-> épica y ~~17~~ ~~**18**~~ ~~**19**~~ **20** en la otra (revisión del owner, 2026-09-28: sale `G-R5`, de `B8`, por C14; entra `G14`, de `V1`, por N6; el total sigue en 32; **y entran `G15`, `G16` y `G17`, los tres de `B1`**, por C13, N2 y N4: 35) (el nuevo, `G-R5-B`, de `V6`; FASE 8 completa, owner 2026-09-25;
+> al declarar una unidad lista. **Los ~~29~~ ~~30~~ ~~31~~ ~~32~~ ~~35~~ 33 guards ~~están repartidos~~ —~~30~~ ~~**31**~~ ~~**32**~~ ~~**35**~~ **33** repartidos entre las 22 unidades, ~~13~~ ~~**14**~~ ~~**13**~~ ~~**12**~~ **15** en esta
+> épica y ~~17~~ ~~**18**~~ ~~**19**~~ ~~**20**~~ **18** en la otra (revisión del owner, 2026-09-28: sale `G-R5`, de `B8`, por C14; entra `G14`, de `V1`, por N6; el total sigue en 32; **y entran `G15`, `G16` y `G17`, los tres de `B1`**, por C13, N2 y N4: 35; **y `G-R3`, de `V2`, y `G-R5-B`, de `V6`, pasan a ser validaciones del panel**, por N1 y C9: 33) (el nuevo, `G-R5-B`, de `V6`; FASE 8 completa, owner 2026-09-25;
 > **13 y 18** desde que `G13` pasó a `V4`, owner 2026-09-26, `G5-5`: FASE 9 vuelta 1, §4 punto 1 de
 > `25-verificado-G5`; **13 y 19** desde `G-R9`, de `V6`: FASE 9 vuelta 2, verificación, owner
 > 2026-09-27, `V2-k`) —,

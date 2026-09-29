@@ -424,9 +424,27 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   necesita leerlas**: los ids que cancela salen del proveedor (`16-fase-7…` §4.2, paso 1b) y, desde
   `2g`, no siembra trials consumidos, que era lo único que las leía. **Si algún día algo del corte
   volviera a leerlas, corre antes de retirarlas.**
-- **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
+- ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
-  Eso es trabajo de FASE 5 y de código, no de datos.
+  Eso es trabajo de FASE 5 y de código, no de datos.~~ **El agrupamiento viejo de Gastronomía y
+  Experiencia desaparece por completo, ni como histórico** (revisión del owner, 2026-09-28, C3,
+  `L2-a` a `L2-c`), sin la excepción del §55.1. De este lado lo nombran el dominio de producto
+  viejo de las suscripciones y sus planes, que mueren con el modelo nuevo y con el archivo de
+  configuración de planes (el punto siguiente). La limpieza del producto (el rol, los permisos, la
+  tabla de contactos y el tipo de partner) es de la otra épica (`V/21` §4), y la historia de
+  migraciones y el ledger del seed se reemplazan el día del corte por una foto de la base
+  (`16-fase-7…` §4.2, paso 6).
+- **El archivo de configuración de planes se borra entero** (revisión del owner, 2026-09-28, N1:
+  la configuración de planes vive 100 % en la base, `NUCLEO/02` §1.4). Medido en hospeda2 el
+  2026-09-28: `packages/billing/src/config/`, **11 archivos y 3378 líneas** (planes, planes de
+  prueba, complementos, códigos promocionales, los planes de las verticales viejas, los de Partner,
+  límites y entitlements), y lo que lo lee sólo para eso: `utils/config-drift-check.ts`,
+  `validation/config-validator.ts` y los seeders de planes (los de billing, los de prueba, los de
+  las verticales viejas y los de Partner). **Las 11 migraciones de datos del seed que importan
+  `@repo/billing`** dejan de compilar cuando el archivo se borra, y quedan sin sujeto: salen con el
+  reemplazo del ledger del seed en el paso 6 del corte. El catálogo de producción no sale de este
+  archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`). Es filtro 1
+  de FASE 5: el sujeto muere.
 
 ---
 
