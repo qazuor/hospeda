@@ -23,7 +23,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-import { unreadCountAdminConversationRoute } from '../../../../src/routes/conversations/admin/unread-count.js';
+import { adminConversationsRouter } from '../../../../src/routes/conversations/admin/index.js';
 
 const GUEST_ACTOR = {
     id: '00000000-0000-4000-8000-000000000000',
@@ -37,13 +37,37 @@ const buildApp = (actor: unknown): Hono => {
         c.set('actor', actor);
         await next();
     });
-    app.route('/', unreadCountAdminConversationRoute);
+    app.route('/', adminConversationsRouter);
     return app as unknown as Hono;
 };
 
-describe('GET /unread-count auth order (HOS-972)', () => {
+const ID = '22222222-2222-4222-8222-222222222222';
+
+const ANONYMOUS_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
+    ['GET', '/unread-count', 'unread-count'],
+    ['GET', '/', 'list'],
+    ['GET', `/${ID}`, 'thread'],
+    ['POST', `/${ID}/messages`, 'reply'],
+    ['PATCH', `/${ID}/status`, 'status'],
+    ['PATCH', `/${ID}/archive`, 'archive'],
+    ['DELETE', `/${ID}`, 'delete']
+];
+
+describe('admin conversations auth order (HOS-972)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it.each(ANONYMOUS_ROUTES)('%s %s (%s) answers 401 to the guest actor', async (method, path) => {
+        const res = await buildApp(GUEST_ACTOR).request(path, {
+            method,
+            headers: { 'content-type': 'application/json' },
+            body: method === 'GET' || method === 'DELETE' ? undefined : '{}'
+        });
+        const body = await res.json();
+
+        expect(res.status).toBe(401);
+        expect(body.error.code).toBe('UNAUTHORIZED');
     });
 
     it('answers 401 UNAUTHORIZED to the guest actor, without touching the service', async () => {

@@ -21,11 +21,15 @@ import { archiveAdminConversationRoute } from './archive';
 import { deleteAdminConversationRoute } from './delete';
 import { listAdminConversationsRoute } from './list';
 import { replyAdminConversationRoute } from './reply';
+import { requireAuthenticatedAdminConversation } from './require-authenticated';
 import { statusAdminConversationRoute } from './status';
 import { threadAdminConversationRoute } from './thread';
 import { unreadCountAdminConversationRoute } from './unread-count';
 
 const app = createRouter();
+
+// Anonymous -> 401 for every route below, before any inline permission check (HOS-972).
+app.use('*', requireAuthenticatedAdminConversation);
 
 // Literal path /unread-count MUST be registered before /:id to prevent
 // the dynamic param route from matching the literal segment.
