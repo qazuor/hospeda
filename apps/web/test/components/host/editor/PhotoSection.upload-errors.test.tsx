@@ -17,16 +17,20 @@ import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { buildUploadEntityError } from '@/lib/media/upload-entity-error';
 import { clearToasts } from '@/store/toast-store';
 
-const { mockListMedia, mockUploadEntityImage } = vi.hoisted(() => ({
-    mockListMedia: vi.fn(),
-    mockUploadEntityImage: vi.fn()
-}));
+const { mockListMedia, mockUploadEntityImage, mockAddMedia, mockAddFeaturedMedia } = vi.hoisted(
+    () => ({
+        mockListMedia: vi.fn(),
+        mockUploadEntityImage: vi.fn(),
+        mockAddMedia: vi.fn(),
+        mockAddFeaturedMedia: vi.fn()
+    })
+);
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationMediaApi: {
         listMedia: mockListMedia,
-        addMedia: vi.fn(),
-        addFeaturedMedia: vi.fn(),
+        addMedia: mockAddMedia,
+        addFeaturedMedia: mockAddFeaturedMedia,
         removeMedia: vi.fn(),
         setFeaturedMedia: vi.fn(),
         reorderMedia: vi.fn(),
@@ -187,4 +191,78 @@ describe('HOS-1218 — upload-entity refusals are shown in the host language', (
             });
         }
     }
+
+    describe('persisting the uploaded photo (addMedia / addFeaturedMedia)', () => {
+        const QUOTA = {
+            ok: false as const,
+            error: {
+                status: 429,
+                code: 'QUOTA_EXCEEDED',
+                message: 'Gallery limit of 50 photos reached for this accommodation',
+                details: { currentCount: 50, maxAllowed: 50 }
+            }
+        };
+
+        async function upload(slot: 'featured' | 'gallery'): Promise<void> {
+            mockUploadEntityImage.mockResolvedValue({
+                url: 'https://cdn.example.com/new.jpg',
+                publicId: 'hospeda/accommodations/abc/new',
+                width: 800,
+                height: 600
+            });
+            render(
+                <>
+                    <PhotoSection {...props} />
+                    <ToastViewport />
+                </>
+            );
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+            const input = document.querySelector(`#${slot}-image-input`) as HTMLInputElement;
+            fireEvent.change(input, {
+                target: { files: [new File(['img'], 'photo.jpg', { type: 'image/jpeg' })] }
+            });
+        }
+
+        it('gallery: a QUOTA_EXCEEDED refusal renders Spanish, not the English message', async () => {
+            mockAddMedia.mockResolvedValue(QUOTA);
+
+            await upload('gallery');
+
+            await waitFor(() => {
+                expect(
+                    screen.getAllByText('Alcanzaste el límite permitido para esta acción.').length
+                ).toBeGreaterThan(0);
+            });
+            expect(screen.queryByText(QUOTA.error.message)).not.toBeInTheDocument();
+        });
+
+        it('featured: a refusal renders Spanish, not the English message', async () => {
+            mockAddFeaturedMedia.mockResolvedValue(QUOTA);
+
+            await upload('featured');
+
+            await waitFor(() => {
+                expect(
+                    screen.getAllByText('Alcanzaste el límite permitido para esta acción.').length
+                ).toBeGreaterThan(0);
+            });
+            expect(screen.queryByText(QUOTA.error.message)).not.toBeInTheDocument();
+        });
+
+        it('an unmapped code degrades to the localized fallback, never the English message', async () => {
+            mockAddMedia.mockResolvedValue({
+                ok: false as const,
+                error: { status: 418, code: 'SOME_NEW_CODE', message: 'Teapot English text' }
+            });
+
+            await upload('gallery');
+
+            await waitFor(() => {
+                expect(screen.getAllByText('No se pudo guardar la imagen').length).toBeGreaterThan(
+                    0
+                );
+            });
+            expect(screen.queryByText('Teapot English text')).not.toBeInTheDocument();
+        });
+    });
 });
