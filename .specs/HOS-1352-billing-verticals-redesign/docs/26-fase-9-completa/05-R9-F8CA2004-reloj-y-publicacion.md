@@ -529,3 +529,9 @@ y la red del aviso perdido es más angosta de lo declarado (`B-1`).
 **R9 no se declara resuelto** mientras `OW-1` y `OW-2` no tengan respuesta del owner y `K-3` no se
 aplique. `K-3` no pide decisión: es cerrar un texto que ya dice lo correcto en otros cuatro
 lugares.
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `K-5`, `B-2` y `B-3`, el espacio entre archivado y borrado: lo cierra `DEC-DATA-008` (el archivado
+> escribe la fecha de borrado que anuncia y `PB9` no borra antes). Y `B-4`, los avisos previos sobre
+> una ficha moderada, que cerró la tanda 2 (N7: los avisos de retención releen el estado de la ficha). Punto 41 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4.

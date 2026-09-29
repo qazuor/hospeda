@@ -69,3 +69,8 @@ el camino principal de la baja, contra la razón de `DEC-SUB-009`).
 
 Se aplica en la FASE 9 de esta vuelta, junto con el gemelo generado `F-8V2D1-001`
 (`S36` no figura en la lista de disparadores de orfandad de `B/16` §4.3).
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `R15`, entera: cae con `DEC-MIG-006` (C12, `L1-b`). Con ella `N-B-01`, cuyo arreglo era dentro de
+> `R15` (`22-verificado-C-D.md`). Punto 39 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4.

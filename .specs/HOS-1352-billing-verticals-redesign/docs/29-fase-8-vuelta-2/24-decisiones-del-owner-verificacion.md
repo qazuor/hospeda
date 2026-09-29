@@ -90,3 +90,9 @@ vecinos, que se leyó como la opción 1, la recomendada.
 | `V2-z3` | el tope de purgas del borde no está escrito | **1**: se verifica en el paso 0 junto a `EX-49`, sin fila nueva | sí |
 | `V2-z4` | `EX-50` pide también el `expire_date` del anual | **1**: se acorta al conteo; si hay anuales vivos, el vencimiento se mide ahí | sí |
 | `V2-z5` | «la baja tiene CUATRO filas» en `B/03` | **1**: se deja, cuenta filas | sí |
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** Enteras, `V2-g`, `V2-h`, `V2-i`, `V2-n`, `V2-s` y `V2-z1`; a medias, `V2-d` (la mitad de `S26`; la
+> selección de `S32` en `S11` sigue) y `V2-x` (`PB9` esperando el hecho 4). Causa: C8, las verticales no
+> se discontinúan. Punto 37 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4.

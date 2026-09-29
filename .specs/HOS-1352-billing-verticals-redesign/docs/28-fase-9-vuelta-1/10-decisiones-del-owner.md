@@ -65,3 +65,9 @@ donde están las opciones enteras, el costo y el ejemplo con Juan.
 | L1–L6 | log: implicaciones 4 y 5 de `DEC-ARCH-006` (orden del empuje; `admiteDestaque`), 📌 de `DEC-SUB-010` (detector por regalo neto), 📌 de `DEC-RF-001` parte 4 (`S36` desde `PAUSED`), 📌 en `DEC-AUTH-002` (cuentas, no personas; detector); matriz: fila nueva `UNKNOWN` para medir el `expire` de la `Preference` (98 → 99, 5 `UNKNOWN`) | **OK** a las seis | — |
 | cláusula de `Y-2` | que el 📌 de `DEC-AUTH-002` diga que la confirmación por una segunda persona entra cuando haya otra persona con el permiso | **sí** | sí |
 | 📌 `DEC-CONC-002` | la lápida de recepción cancela su preapproval y entra en la salvedad 4 (`X-1`) | **OK** | — |
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `G1-1` y R1, en lo que decían de la cartera: los reemplaza `DEC-MIG-006` (C12). Y `G2-4`, el ⚠️ de
+> `T7`: `T7` salió (N7, `DEC-TRIAL-003`). Puntos 38 y 39 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4; el 39 agrupa `G2-4` bajo la FASE 9
+> vuelta 2, pero su registro es éste.

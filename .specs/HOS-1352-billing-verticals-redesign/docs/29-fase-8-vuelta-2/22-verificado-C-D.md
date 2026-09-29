@@ -500,3 +500,8 @@ de Ana se cerró.
    `desde`: la misma pregunta que se contestó para `PB8` y `PB9` quedó abierta para `PB10`.
 5. Seis de los trece vecinos de `13-` y `14-` los cerró un registro posterior; verificar el
    estado de un vecino contra el texto de hoy evita reportar como abierto lo ya aplicado.
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `N-B-01`: su arreglo era dentro de `R15`, que cae entera con `DEC-MIG-006` (C12, `L1-b`). Punto 39
+> de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4.

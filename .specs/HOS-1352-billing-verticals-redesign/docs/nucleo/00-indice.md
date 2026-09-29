@@ -41,9 +41,10 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
    escribirlo (regla 5);
 2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ ~~**117** al
    2026-09-25~~ ~~**124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
-   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ **126** al 2026-09-26, con las
+   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ ~~**126** al 2026-09-26~~ **134** al 2026-09-28, con las ocho de la
+   revisión del owner (`30-revision-del-owner/15-aplicacion-log-y-matriz.md`) y las
    dos de la FASE 9 vuelta 1 —`DEC-AUTH-002` y `DEC-AUTH-003`— (recontado con script en
-   `28-fase-9-vuelta-1/25-verificado-G5-y-registro.md` §4: 127 encabezados menos la plantilla), recontadas con
+   `28-fase-9-vuelta-1/25-verificado-G5-y-registro.md` §4: 127 encabezados menos la plantilla; el 134, 135 menos la plantilla), recontadas con
    `rg -c "^### DEC-"` menos la plantilla del formato. Las `SUPERSEDED` no cuentan como fuente:
    ~~`DEC-SUB-001` y `DEC-SUB-005` enteras~~ `DEC-SUB-001`, **`DEC-SUB-003`** y `DEC-SUB-005`
    enteras —`DEC-SUB-003` por `DEC-SUB-021`—, ~~`DEC-MIG-001` sólo en lo que `DEC-MIG-003`
@@ -51,6 +52,9 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
    completa, `C-9`), y
    `DEC-MP-003` sólo en lo que `DEC-MP-008` reemplazó (FASE 9 completa, `C-13`: la lista dejaba a
    `DEC-SUB-003` como fuente, y es el lugar donde un implementador busca qué decisiones valen);
+   y desde el 2026-09-28 (revisión del owner, C8 y C14) `DEC-SUB-015`, `DEC-SUB-018`,
+   `DEC-GRANT-010` y `DEC-ARCH-011` enteras, y `DEC-DATA-002` sólo en lo que `DEC-DATA-006`
+   reemplazó;
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
 
 **El registro de FASE 1B (`08`) no es fuente de diseño.** Un hallazgo de 1B puede aparecer en

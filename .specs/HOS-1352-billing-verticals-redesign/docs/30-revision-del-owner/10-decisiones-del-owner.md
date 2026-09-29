@@ -86,3 +86,10 @@ Los otros tres ítems a resolver se aplican como texto, sin objeción del owner:
 | L3-e | pruebas de punta a punta para reducir el smoke manual | **1**: Mercado Pago falso como servidor, reloj que se puede adelantar, y recorte sección por sección del checklist de smoke; queda manual lo que no se puede simular | sí |
 | L3-f | volver a consultar a Mercado Pago siempre | **1**: un control que falla si una decisión sale de un aviso sin releer, extendido a las acciones administrativas | sí |
 | L3-g | los dos canales de avisos de Mercado Pago | **Se analiza y se mide antes de decidir.** Hecho del owner: el filtro se agregó porque a veces llegaban dos avisos del mismo hecho, uno por cada canal. Si se aceptan los dos, hay que garantizar que un aviso duplicado no produzca ningún efecto doble | n/a (pide medición) |
+
+## El lote del log y la matriz (2026-09-28, noche)
+
+El owner dio el OK al lote entero de `14-aplicacion-transversal-y-lote.md` §4: 8 decisiones nuevas,
+4 SUPERSEDED enteras y 1 en parte, 30 📌, las notas de caducidad, 4 filas nuevas de matriz, 2
+reabiertas y 1 reformulada. Los 50 casos vecinos de las cuatro tandas quedan para la sesión
+siguiente, junto con las mediciones.

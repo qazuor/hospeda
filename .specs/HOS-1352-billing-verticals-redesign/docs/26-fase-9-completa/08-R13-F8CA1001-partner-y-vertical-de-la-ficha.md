@@ -465,3 +465,9 @@ existe para las fichas. Hoy Partner tiene cero filas (`D/07-facts-inventory.md:1
    presencia) y `listing.vertical` es inmutable? Recomendado: sí a las dos.
 2. **Owner 2**: ¿el carrusel se gobierna con una clave propia, igual que la página? Recomendado: sí.
 3. **Owner 3**: ¿la presencia lleva un bit de moderación que escribe la 13.ª acción? Recomendado: sí.
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `F-8CA2-012`, en lo que pedía del encendido de Partner: encender o apagar la prueba de una
+> vertical queda fuera de esta versión y `T7` salió (N7, `DEC-TRIAL-003`). Punto 39 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4, que lo
+> agrupa bajo la FASE 9 vuelta 2; su registro es éste.

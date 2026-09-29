@@ -731,3 +731,8 @@ líneas más abajo (`:172-173`). Es registro.
    contra un cupo) no tienen regla: la única regla de concurrencia del programa es de billing.
 5. Las entidades «publicables» que no son fichas (presencia de Partner) quedan fuera de `PB2`, y dos
    capítulos que se remiten mutuamente dejan su máquina sin dueño.
+
+---
+
+> **Caducada en todo o en parte por la revisión del owner, 2026-09-28 (ver `30-revision-del-owner/14-` §4).** `F-8CA2-014`, en la cota de 6 meses literales de `G-R5-B`: la reemplaza `DEC-DATA-008` (C9), que
+> ata el `N` de `PB5` al plazo de borrado configurable. Punto 40 de [`14-aplicacion-transversal-y-lote.md`](../30-revision-del-owner/14-aplicacion-transversal-y-lote.md) §4.4.
