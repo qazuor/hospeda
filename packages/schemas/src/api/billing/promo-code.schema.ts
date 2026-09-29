@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 // ---------------------------------------------------------------------------
 // Legacy enum (kept for backward compat — still used by response shape)
@@ -445,8 +445,8 @@ export type UpdatePromoCode = z.infer<typeof UpdatePromoCodeSchema>;
  * Query schema for listing promo codes (admin operation).
  */
 export const ListPromoCodesQuerySchema = z.object({
-    active: queryBooleanParam(),
-    expired: queryBooleanParam(),
+    active: createBooleanQueryParam('active filter'),
+    expired: createBooleanQueryParam('expired filter'),
     codeSearch: z.string().optional(),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20)

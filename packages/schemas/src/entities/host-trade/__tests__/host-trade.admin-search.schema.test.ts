@@ -30,9 +30,9 @@ describe('HostTradeAdminSearchSchema — declarationSuspended', () => {
         expect(parsed.declarationSuspended).toBeUndefined();
     });
 
-    it('leaves the filter undefined when it arrives empty', () => {
-        const parsed = HostTradeAdminSearchSchema.parse({ declarationSuspended: '' });
-
-        expect(parsed.declarationSuspended).toBeUndefined();
+    it('rejects an empty value instead of guessing (HOS-410)', () => {
+        expect(HostTradeAdminSearchSchema.safeParse({ declarationSuspended: '' }).success).toBe(
+            false
+        );
     });
 });

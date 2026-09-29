@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -46,7 +46,7 @@ export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by owner'),
 
     /** Filter featured gastronomy listings. */
-    isFeatured: queryBooleanParam().describe('Filter by featured status')
+    isFeatured: createBooleanQueryParam('Filter by featured status')
 });
 
 /**

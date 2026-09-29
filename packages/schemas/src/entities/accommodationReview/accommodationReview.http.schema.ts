@@ -100,7 +100,7 @@ export const AccommodationReviewCreateHttpSchema = z.object({
     content: z.string().min(10).max(2000).optional(),
     stayDate: z.coerce.date().optional(),
     guestType: z.string().optional(),
-    isBusinessTravel: z.coerce.boolean().default(false),
+    isBusinessTravel: httpBodyBoolean().default(false),
     language: z.string().length(2).default('en')
 });
 
@@ -121,6 +121,7 @@ export type AccommodationReviewUpdateHttp = z.infer<typeof AccommodationReviewUp
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import type {
     AccommodationReviewCreateInput,
     AccommodationReviewUpdateInput

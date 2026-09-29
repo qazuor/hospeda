@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
@@ -31,7 +31,7 @@ export const QrCodeAdminSearchSchema = AdminSearchBaseSchema.extend({
      * complement of what the operator asked for: "show me the retired codes"
      * would list the live ones under an "inactive" heading.
      */
-    isActive: queryBooleanParam().describe('Filter by active status')
+    isActive: createBooleanQueryParam('Filter by active status')
 });
 
 export type QrCodeAdminSearch = z.infer<typeof QrCodeAdminSearchSchema>;

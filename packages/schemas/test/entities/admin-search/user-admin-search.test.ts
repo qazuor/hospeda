@@ -117,11 +117,8 @@ describe('UserAdminSearchSchema', () => {
             expect(result.includeDeleted).toBe(true);
         });
 
-        it('should coerce falsy values to false', () => {
-            // Arrange & Act & Assert
-            // z.coerce.boolean() uses Boolean() coercion: empty string and 0 are false
-            expect(UserAdminSearchSchema.parse({ includeDeleted: '' }).includeDeleted).toBe(false);
-            expect(UserAdminSearchSchema.parse({ includeDeleted: 0 }).includeDeleted).toBe(false);
+        it.each(['', '0', '1'])('should reject the ambiguous value %j (HOS-410)', (value) => {
+            expect(() => UserAdminSearchSchema.parse({ includeDeleted: value })).toThrow();
         });
     });
 

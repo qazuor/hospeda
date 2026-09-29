@@ -129,11 +129,12 @@ Entity schemas extend this base and add entity-specific filters (e.g., `destinat
 
 ```typescript
 // Example entity admin search schema
-import { AdminSearchBaseSchema } from '@repo/schemas';
+import { AdminSearchBaseSchema, createBooleanQueryParam } from '@repo/schemas';
 
 export const AccommodationAdminSearchSchema = AdminSearchBaseSchema.extend({
   destinationId: z.string().uuid().optional(),
-  isFeatured: z.coerce.boolean().optional()
+  // Strict 'true' | 'false' query boolean. Never z.coerce.boolean() (HOS-410).
+  isFeatured: createBooleanQueryParam('Filter by featured status')
 });
 ```
 

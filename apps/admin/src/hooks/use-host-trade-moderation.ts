@@ -126,7 +126,7 @@ export interface HostTradePendingCounts {
  *
  * `undefined` is omitted rather than sent as the string "undefined", and
  * `respectedBenefit: false` is preserved — the API reads it with
- * `queryBooleanParam()` precisely because dropping or coercing a `false` here
+ * `createBooleanQueryParam()` precisely because dropping or coercing a `false` here
  * would silently invert the one filter that surfaces providers who did NOT
  * honour the benefit.
  *

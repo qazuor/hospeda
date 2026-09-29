@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 /**
  * Admin search schema for features.
@@ -19,7 +19,7 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  */
 export const FeatureAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by built-in status */
-    isBuiltin: queryBooleanParam().describe('Filter built-in features')
+    isBuiltin: createBooleanQueryParam('Filter built-in features')
 });
 
 /** Inferred TypeScript type for feature admin search parameters */

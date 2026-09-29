@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { RoleEnumSchema } from '../../enums/role.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import {
@@ -37,8 +38,8 @@ export const FeatureFlagCreateHttpSchema = z.object({
             message: 'zodError.featureFlag.key.invalidPattern'
         }),
     description: z.string().min(1).max(FEATURE_FLAG_DESCRIPTION_MAX_LENGTH),
-    enabled: z.coerce.boolean().default(false),
-    isActive: z.coerce.boolean().default(true),
+    enabled: httpBodyBoolean().default(false),
+    isActive: httpBodyBoolean().default(true),
     forceOnUserIds: z.array(z.string().uuid()).default([]),
     forceOffUserIds: z.array(z.string().uuid()).default([]),
     enabledForRoles: z.array(RoleEnumSchema).default([])

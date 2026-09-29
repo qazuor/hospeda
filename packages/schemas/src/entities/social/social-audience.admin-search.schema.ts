@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 /**
  * Admin search schema for social audiences.
@@ -16,7 +16,7 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  */
 export const SocialAudienceAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by active status */
-    active: queryBooleanParam().describe('Filter by active status')
+    active: createBooleanQueryParam('Filter by active status')
 });
 
 /**

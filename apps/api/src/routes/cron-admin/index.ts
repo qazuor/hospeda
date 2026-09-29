@@ -16,6 +16,7 @@ import {
     type CronCategory,
     CronJobsAdminListSchema,
     type CronRunStatus,
+    createBooleanQueryParamWithDefault,
     PermissionEnum
 } from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
@@ -249,7 +250,8 @@ export const triggerCronJobHandler = async (
 // ─── Route Definitions ───────────────────────────────────────────────────────
 
 /**
- * Strict `dryRun` query parser for the manual trigger (HOS-410).
+ * Strict `dryRun` query parser for the manual trigger (HOS-410): the shared
+ * `createBooleanQueryParamWithDefault` from `@repo/schemas`.
  *
  * Only the literal strings `'true'` and `'false'` are accepted; anything else
  * (empty, `1`, `yes`, ...) is a 400 rather than a guess, because a wrong guess
@@ -258,11 +260,10 @@ export const triggerCronJobHandler = async (
  *
  * Never use `z.coerce.boolean()` here: `Boolean('false') === true`.
  */
-export const cronDryRunQuerySchema = z
-    .enum(['true', 'false'])
-    .optional()
-    .default('false')
-    .transform((value) => value === 'true');
+export const cronDryRunQuerySchema = createBooleanQueryParamWithDefault(
+    'Simulate the run without making changes',
+    false
+);
 
 /**
  * GET /api/v1/admin/cron

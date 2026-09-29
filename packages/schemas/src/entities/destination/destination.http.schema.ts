@@ -81,7 +81,7 @@ export const DestinationCreateHttpSchema = z.object({
     city: z.string().min(1).max(100).optional(),
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
-    isFeatured: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
 
     // Hierarchy fields
     destinationType: DestinationTypeEnumSchema.optional(),
@@ -105,6 +105,7 @@ export type DestinationUpdateHttp = z.infer<typeof DestinationUpdateHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { DestinationTypeEnum } from '../../enums/destination-type.enum.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
