@@ -1,6 +1,7 @@
+import { AmenityModel } from '@repo/db';
 import { AmenityService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { createSeedFactory } from '../utils/index.js';
+import { createSeedFactory, whereFixtureSlug } from '../utils/index.js';
 
 /**
  * Seed factory for amenities
@@ -13,6 +14,9 @@ export const seedAmenities = createSeedFactory({
     serviceClass: AmenityService,
     folder: 'src/data/amenity',
     files: requiredManifest.amenities,
+
+    // HOS-735: re-runnable. A row already carrying this slug is skipped, not re-inserted.
+    existing: { modelClass: AmenityModel, getWhere: whereFixtureSlug() },
 
     // Exclude metadata fields and name (dropped in SPEC-266 T-001). Keep slug —
     // the service now requires it explicitly (name-based auto-generation is gone).

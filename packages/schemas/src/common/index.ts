@@ -65,6 +65,7 @@ export * from './price.schema.js';
 export { queryBooleanParam, queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';
 export * from './review.schema.js';
+export * from './safe-external-url.schema.js';
 export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';

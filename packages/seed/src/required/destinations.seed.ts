@@ -11,7 +11,11 @@ import {
 } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
-import { createSeedFactory, createServiceRelationBuilder } from '../utils/index.js';
+import {
+    createSeedFactory,
+    createServiceRelationBuilder,
+    whereFixtureSlug
+} from '../utils/index.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 
@@ -204,6 +208,11 @@ export const seedDestinations = createSeedFactory({
     files: requiredManifest.destinations,
 
     preProcess: preProcessDestination,
+
+    // HOS-735: re-runnable. `preProcess` still runs (it fills the in-memory hierarchy cache
+    // children read), but an existing destination is not re-inserted and its FAQs/relations,
+    // written on the first run, are not re-created.
+    existing: { modelClass: DestinationModel, getWhere: whereFixtureSlug() },
 
     // Exclude metadata fields. Keeps `slug` (see HOS-25 T-025): every
     // `required` destination is now created via the deterministic-id,

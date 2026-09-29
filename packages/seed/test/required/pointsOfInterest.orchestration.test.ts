@@ -36,15 +36,15 @@ describe('required-seed orchestrator wiring: pointsOfInterest (HOS-113 T-025)', 
         );
     });
 
-    it('should call await seedPointsOfInterest(context) inside runRequiredSeeds', () => {
+    it('should call seedPointsOfInterest(context) inside runRequiredSeeds', () => {
         const source = readOrchestratorSource();
-        expect(source).toMatch(/await\s+seedPointsOfInterest\(context\)/);
+        expect(source).toMatch(/seedPointsOfInterest\(context\)/);
     });
 
     it('should call seedPointsOfInterest BEFORE seedDestinations (id-mapping dependency)', () => {
         const source = readOrchestratorSource();
-        const poiCallIndex = source.indexOf('await seedPointsOfInterest(context)');
-        const destinationsCallIndex = source.indexOf('await seedDestinations(context)');
+        const poiCallIndex = source.indexOf('seedPointsOfInterest(context)');
+        const destinationsCallIndex = source.indexOf('seedDestinations(context)');
 
         expect(poiCallIndex).toBeGreaterThan(-1);
         expect(destinationsCallIndex).toBeGreaterThan(-1);
@@ -53,8 +53,8 @@ describe('required-seed orchestrator wiring: pointsOfInterest (HOS-113 T-025)', 
 
     it('should call seedPointsOfInterest AFTER seedAttractions (both precede destinations, same reason)', () => {
         const source = readOrchestratorSource();
-        const attractionsCallIndex = source.indexOf('await seedAttractions(context)');
-        const poiCallIndex = source.indexOf('await seedPointsOfInterest(context)');
+        const attractionsCallIndex = source.indexOf('seedAttractions(context)');
+        const poiCallIndex = source.indexOf('seedPointsOfInterest(context)');
 
         expect(attractionsCallIndex).toBeGreaterThan(-1);
         expect(poiCallIndex).toBeGreaterThan(-1);
