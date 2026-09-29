@@ -138,6 +138,14 @@ proveedor, y si lo es, la baja llega antes que nuestra suspensión.~~
 contra el pago (`S5`) o la autorización (`S2`), el espejo lleva la fila a `CANCEL_SCHEDULED` con el
 período pagado adentro, y no la corta (`B/03` §10.1; owner 2026-09-27, FASE 9 vuelta 2, `R18`).
 
+**Y la baja que la persona da desde su cuenta de Mercado Pago, y no desde Hospeda, se espeja como
+una del proveedor: corta en el acto** (mediciones del 2026-09-29, lote L-A, decidido por el owner
+contra la recomendación). Lo que llega de esa baja no dice quién la dio (`EX-52`), y el diseño no le
+agrega una regla para distinguirla: es el par `cancelled` × *(estado vivo)* de `B/03` §10.1, igual
+que una baja del proveedor. **Consecuencia aceptada**: esa persona pierde los días que ya pagó, y la
+misma baja tiene dos resultados según dónde la dio; desde Hospeda conserva el servicio hasta el fin
+del período pagado (`DEC-SUB-009`), y desde Mercado Pago no.
+
 **Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
 que llega a esta baja llega **desde `GRACE_PERIOD`**, que es ~~de donde también llega la
 predecesora de un cambio de plan en mora~~ donde también puede estar la predecesora de una
@@ -1148,8 +1156,8 @@ una regla: hace falta que nadie agregue esa transición.
   en los últimos minutos, un webhook demorado y, o bien un cobro fechado a las 00:00-00:02, o una
   cancelación de `S17` fallida: es doble cobro, sobre la intersección de tres bordes.
 - **Cancelar o pausar desde la cuenta de Mercado Pago, y no desde Hospeda: ~~pendiente de medición~~
-  medido el 2026-09-29; queda un hueco, y lo decide el owner** (revisión del owner, 2026-09-28, N8;
-  mediciones del 2026-09-29, punto 1). **Se detecta**: el aviso dispara una relectura por id
+  medido el 2026-09-29; ~~queda un hueco, y lo decide el owner~~ queda un hueco, y el owner lo
+  acepta** (revisión del owner, 2026-09-28, N8; mediciones del 2026-09-29, punto 1 y lote L-A). **Se detecta**: el aviso dispara una relectura por id
   (`B/03` §10.1) y el barrido relee cada día toda fila no terminal (`B/09` §3), así que a más tardar
   al día siguiente. **Lo medido** (`EX-52`, `EX-53`, `EX-56`): **el pagador puede cancelar desde su
   cuenta y no puede pausar**, y su baja llega como un aviso del preapproval, sólo por Webhooks,
@@ -1162,8 +1170,13 @@ una regla: hace falta que nadie agregue esa transición.
   aviso nuestro**: el espejo de `cancelled` sobre una fila viva sin baja programada la lleva a
   `CANCELLED` (§1.4, `B/03` §10.1), así que quien paga el 1 y se da de baja desde Mercado Pago el 10
   pierde veinte días que desde Hospeda conservaría (`DEC-SUB-009`), y ninguna fila de `B/19` §4 le
-  dice qué pasa con sus fichas. **Sigue, y cómo se trata lo decide el owner**
-  (`30-revision-del-owner/28-…`, decisión 1): hasta entonces el diseño se queda como está; (2)
+  dice qué pasa con sus fichas. ~~**Sigue, y cómo se trata lo decide el owner**
+  (`30-revision-del-owner/28-…`, decisión 1): hasta entonces el diseño se queda como está~~
+  **Sigue, y se deja así por decisión del owner, contra la recomendación** (mediciones del
+  2026-09-29, lote L-A; `30-revision-del-owner/27-…`, lote L, letra A): esa baja se espeja como
+  una del proveedor y corta en el acto (§1.4), sin regla nueva. **Consecuencia aceptada**: quien se
+  da de baja desde Mercado Pago pierde los días que ya pagó, y la misma baja da dos resultados
+  según dónde se dio; (2)
   ~~**una pausa del pagador se leería como mora**: el par `paused`
   sobre `ACTIVE` o `GRACE_PERIOD` corre `S6` por su segundo evento (`DEC-MP-008`), que suspende,
   cancela la autorización y le dice *«volvé a suscribirte»* a alguien que no debe nada~~ **cerrado:

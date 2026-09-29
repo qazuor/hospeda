@@ -41,7 +41,8 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
    escribirlo (regla 5);
 2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ ~~**117** al
    2026-09-25~~ ~~**124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
-   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ ~~**126** al 2026-09-26~~ **134** al 2026-09-28, con las ocho de la
+   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ ~~**126** al 2026-09-26~~ ~~**134** al 2026-09-28~~ **135** al 2026-09-29, con `DEC-MP-009` (mediciones del 2026-09-29, lote L;
+   `30-revision-del-owner/29-aplicacion-lote-l-log-y-matriz.md`), con las ocho de la
    revisión del owner (`30-revision-del-owner/15-aplicacion-log-y-matriz.md`) y las
    dos de la FASE 9 vuelta 1 —`DEC-AUTH-002` y `DEC-AUTH-003`— (recontado con script en
    `28-fase-9-vuelta-1/25-verificado-G5-y-registro.md` §4: 127 encabezados menos la plantilla; el 134, 135 menos la plantilla), recontadas con

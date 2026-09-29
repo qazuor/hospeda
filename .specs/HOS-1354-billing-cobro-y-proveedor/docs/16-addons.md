@@ -115,11 +115,16 @@ exactamente una de las dos es no nula.
   releyendo el pago (`RF3`). Producción no está medida.
 - **Una orden con la tarjeta rechazada devuelve `402` y queda creada igual**, `failed`, con su id en
   el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
-  instancia como el de cualquier orden, y la instancia sigue en `PENDING_AUTHORIZATION`, como con
-  cualquier pago no aprobado. **Qué pasa cuando la persona reintenta con otra tarjeta** lo decide el
-  owner (`30-revision-del-owner/28-…`, decisión 3): con el mismo pedido la instancia ya existe y
-  reusa su orden, que está `failed`; y una orden con la misma clave y otra tarjeta es otro cuerpo,
-  que el proveedor contesta con `409` (`EX-41`).
+  instancia como el de cualquier orden, ~~y la instancia sigue en `PENDING_AUTHORIZATION`, como con
+  cualquier pago no aprobado~~ **y la compra se cierra en el acto: `A7` lleva la instancia a
+  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). ~~**Qué pasa cuando la persona
+  reintenta con otra tarjeta** lo decide el owner (`30-revision-del-owner/28-…`, decisión 3): con
+  el mismo pedido la instancia ya existe y reusa su orden, que está `failed`; y una orden con la
+  misma clave y otra tarjeta es otro cuerpo, que el proveedor contesta con `409` (`EX-41`).~~
+  **Cuando la persona reintenta con otra tarjeta, la pantalla arranca un pedido nuevo**, con otro
+  identificador, así que `A1` crea otra instancia con otra clave (decidido por el owner, lote L-C).
+  Reusar el pedido rechazado no sirve: la instancia ya existe y su orden está `failed`, y una orden
+  con la misma clave y otra tarjeta es otro cuerpo, que el proveedor contesta con `409` (`EX-41`).
 
 ---
 
@@ -397,7 +402,7 @@ de acá.
 
 | la instancia está | qué le pasa | por qué |
 |---|---|---|
-| **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de `A1`–`A6`** | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando se revoque el grant (§3.3) |
+| **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de ~~`A1`–`A6`~~ `A1`–`A7`** (`A7`, mediciones del 2026-09-29, lote L-C) | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando se revoque el grant (§3.3) |
 | **`PENDING_AUTHORIZATION`** | **no se convierte** —no hay nada comprado todavía— pero **su cobro se cancela igual**, y la instancia muere por `A3` al vencer su ventana. La persona puede elegir el addon gratis en el acto (§3.2) | *«una instancia esperando autorización es una obligación de pago»*: su preapproval está creado y puede completar el checkout sin tener por qué saber que el grant llegó. Es el mismo argumento con el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` y en el `desde` de `A5`. La pantalla de *«esperando que completes el pago»* **deja de ofrecer el enlace en el mismo acto** |
 
 **Y el orden de las dos escrituras es parte de la transición, no una nota de implementación.**

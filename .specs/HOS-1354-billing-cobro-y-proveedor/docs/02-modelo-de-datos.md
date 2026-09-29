@@ -1216,19 +1216,24 @@ comprobación de cero llamadas del `B/09` §3.
 > **deja de colgar de donde colgaba**, y hacia dónde pasa a colgar es distinto: allá la sucesora,
 > acá el ancla. Con el flag en `false` no se mueve nada y el complemento sigue cobrando.
 
-### 2.7 Los avisos IPN guardados, que nadie lee
+### 2.7 ~~Los avisos IPN guardados, que nadie lee~~ Las entregas de los dos canales, guardadas, que nadie lee
 
 (Mediciones del 2026-09-29, M-2: reemplaza la tabla condicional de los casos 39 y G-D, `B/06`,
-*«lo que este capítulo NO cierra»*.)
+*«lo que este capítulo NO cierra»*. Desde el lote L-B guarda también las entregas de Webhooks, y
+por eso cambió de nombre.)
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`ipn_delivery`** ✚ | **cada entrega que llega por el canal IPN, tal cual**: la URL con su query, el cuerpo crudo y el instante de llegada. Una fila por entrega: un reintento del proveedor es otra fila | **sólo altas**: ninguna escritura la modifica, y la única que borra es la retención (abajo). **Sin `UNIQUE`**: un duplicado es dato para la revisión, no un error. **Ninguna decisión la lee**, ni una transición, ni una acción administrativa, ni el barrido: lo vigila `G17` (`B/20` §2) |
+| ~~**`ipn_delivery`**~~ **`provider_notification`** ✚ (mediciones del 2026-09-29, lote L-B) | **cada entrega que llega ~~por el canal IPN~~ por cualquiera de los dos canales, IPN y Webhooks, tal cual**: **el canal** (mediciones del 2026-09-29, lote L-B), la URL con su query, el cuerpo crudo y el instante de llegada. Una fila por entrega: un reintento del proveedor es otra fila. **El canal sale de la URL a la que llegó**, como lo sabe el receptor (`B/06`, «NO cierra»); nunca del cuerpo. **Guardar una entrega de Webhooks no es procesarla**: el receptor la procesa como siempre (`B/03` §10.1), sin leer esta tabla (mediciones del 2026-09-29, lote L-B) | **sólo altas**: ninguna escritura la modifica, y la única que borra es la retención (abajo). **Sin `UNIQUE`**: un duplicado es dato para la revisión, no un error. **Ninguna decisión la lee**, ni una transición, ni una acción administrativa, ni el barrido: lo vigila `G17` (`B/20` §2) |
 
 **Para qué existe**: para poder revisar, tres meses después del corte, si IPN trae algo que
 Webhooks no ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)), y decidir con ese dato si
-se apaga. Esa revisión es una consulta a mano, no código del repositorio. **Por qué no se actúa
-sobre lo que guarda**: IPN entrega sólo `payment`, que también llega por Webhooks, y sin una firma
+se apaga. Esa revisión es una consulta a mano, no código del repositorio. **Por qué guarda también
+Webhooks** (mediciones del 2026-09-29, lote L-B): lo que trajo Webhooks no se reconstruye desde la
+base, porque un `payment` nuestro no dice si lo trajo un aviso o lo encontró el barrido, y los
+registros del servidor duran unos cuatro días; sin las entregas de los dos lados, la revisión no
+puede contestar si Webhooks perdió algo, que es su pregunta. **Por qué no se actúa sobre lo que
+guarda de IPN**: IPN entrega sólo `payment`, que también llega por Webhooks, y sin una firma
 que se pueda verificar con la clave de la aplicación (`WH-6`, `EX-13`).
 
 **Retención: 180 días desde la llegada**, un plazo técnico y no configurable (`NUCLEO/02` §1.5, el
@@ -1244,7 +1249,7 @@ punto (b)); una pasada diaria borra las filas más viejas. **La construye la uni
 | | qué | por qué |
 |---|---|---|
 | **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor | los cuatro primeros son obligación legal y contable |
-| **Se borra a los 180 días** ✚ | los avisos IPN guardados, `ipn_delivery` (§2.7) | son un registro técnico para una revisión, sin valor contable; el plazo es técnico y no configurable (mediciones del 2026-09-29, M-2) |
+| **Se borra a los 180 días** ✚ | ~~los avisos IPN guardados, `ipn_delivery` (§2.7)~~ las entregas guardadas de los dos canales, `provider_notification` (§2.7; mediciones del 2026-09-29, lote L-B) | son un registro técnico para una revisión, sin valor contable; el plazo es técnico y no configurable (mediciones del 2026-09-29, M-2) |
 
 **La ~~fila de arriba~~ primera fila habla del modelo nuevo** (la segunda entró con las mediciones del 2026-09-29, M-2) —`payment`, `manual_payment`, `refund`, `provider_link`
 (§2.3)—, **no de las tablas del sistema viejo** (`billing_payments` y las demás). Del sistema viejo

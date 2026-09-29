@@ -136,7 +136,8 @@ colgando de la instancia (`B/02` §2.3).
 **Y dos cosas medidas en sandbox el 2026-09-29 que el camino tiene que respetar** (mediciones del
 2026-09-29, puntos 5 y 10): **una orden con la tarjeta rechazada devuelve `402` y queda creada
 igual**, `failed`, con su id en el cuerpo del error (`EX-30`), así que un `402` no es *«no hay
-orden»*: el id se guarda como el de cualquier orden; y **ni la orden ni su reembolso avisan por
+orden»*: el id se guarda como el de cualquier orden, y la compra se cierra en el acto (`A7`,
+`B/03` §8; mediciones del 2026-09-29, lote L-C); y **ni la orden ni su reembolso avisan por
 ningún canal** (`EX-15`, `RF-7`), así que nada de este camino espera un aviso: la orden se confirma
 con la respuesta y releyéndola, y el reembolso, releyendo el pago (`B/16` §1.4).
 
@@ -523,10 +524,13 @@ tres, suspendemos a alguien que iba a pagar bien.
   escuchando. La salvedad de `RF-7` sigue: en producción IPN trajo una vez un `merchant_order` tras
   un reembolso de `/v1/payments`. **Qué hace el receptor nuevo con IPN, decidido por el owner**
   (mediciones del 2026-09-29, M-2, que reemplaza a los casos 39 y G-D): **escucha el canal y guarda
-  cada entrega, sin actuar**. La guarda entera en **`ipn_delivery`** (`B/02` §2.7), una tabla sólo
+  cada entrega, sin actuar**. La guarda entera en ~~**`ipn_delivery`**~~ **`provider_notification`** (`B/02` §2.7), una tabla sólo
   de altas que **ninguna decisión lee** y que `G17` nombra (`B/20` §2), con **180 días de retención
   técnica, no configurable** (`NUCLEO/02` §1.5); y no hace nada más con ella: **las entregas
-  `payment` llegan por los dos canales, y el receptor procesa sólo la de Webhooks**. **Se revisa
+  `payment` llegan por los dos canales, y el receptor procesa sólo la de Webhooks**. **Y guarda en
+  la misma tabla cada entrega de Webhooks, con su canal**, además de procesarla, para que la
+  revisión de HOS-1399 tenga los dos lados; esa copia tampoco la lee nadie (mediciones del
+  2026-09-29, lote L-B, que le cambió el nombre a la tabla). **Se revisa
   tres meses después del corte** ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)): lo
   guardado de IPN contra lo recibido por Webhooks, para decidir si se apaga. **El panel de la
   aplicación de producción queda con IPN activo**, y en el corte su URL se apunta también al receptor
@@ -539,6 +543,8 @@ tres, suspendemos a alguien que iba a pagar bien.
   su prueba explícita**, ~~un mismo hecho entregado por Webhooks y por IPN, en los dos órdenes y en
   el mismo segundo, que deja exactamente una escritura y un correo~~ un mismo `payment` entregado
   dos veces por Webhooks a medio segundo (`WH-1`) y una por IPN en el mismo segundo, en cualquier
-  orden, que deja exactamente una escritura y un correo, y la entrega de IPN guardada en
-  `ipn_delivery` y en ningún otro lado (mediciones del 2026-09-29, punto 3). **Causa**: el filtro se
+  orden, que deja exactamente una escritura y un correo, y ~~la entrega de IPN guardada en
+  `ipn_delivery` y en ningún otro lado~~ las tres entregas guardadas en `provider_notification`,
+  cada una con su canal, y la de IPN en ningún otro lado (mediciones del 2026-09-29, punto 3 y
+  lote L-B). **Causa**: el filtro se
   agregó porque a veces llegaban dos avisos del mismo hecho, uno por cada canal (hecho del owner).

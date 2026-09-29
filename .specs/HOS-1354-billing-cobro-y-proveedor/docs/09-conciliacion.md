@@ -783,9 +783,11 @@ desde el panel del proveedor y lo asienta con la acción administrativa 14, que 
 el `refund` en `EXECUTED` (`RF4`). **El sujeto es `ABANDONED` y no *«cualquier instancia muerta»***:
 una `EXPIRED` o una `CANCELLED` llegaron ahí desde `ACTIVE`, así que su orden pagada es el cobro
 normal de lo que recibieron; la única que termina **sin haber estado nunca activa** es la que `A3`
-abandonó. **Y el barrido no reenvía nada**: reenviar con la clave puede crear la orden si nunca
+~~abandonó~~ o `A7` abandonaron (`A7`, la orden rechazada: mediciones del 2026-09-29, lote L-C; su
+orden quedó `failed` y la relectura no le encuentra un pago aprobado). **Y el barrido no reenvía nada**: reenviar con la clave puede crear la orden si nunca
 existió, y cobrar por una instancia ya abandonada. El reenvío es de `A3`, antes de abandonar; si
-nunca tuvo respuesta, `A3` no abandona (`B/03` §8), así que toda `ABANDONED` tiene el id de su
+nunca tuvo respuesta, `A3` no abandona (`B/03` §8), **y `A7` abandona con el id que vino en el
+error**, así que toda `ABANDONED` tiene el id de su
 orden o no llegó a mandar ninguna.
 
 > **No es una de las seis comprobaciones de cero llamadas**, igual que la de pagos acreditados:
@@ -897,7 +899,9 @@ registro de cobro sobre `80a633be…`, un preapproval que el proveedor había ca
 días antes, rechazado *«para forzar un reintento»*. Sobre un preapproval así el reintento nunca va a
 encontrar la suscripción, y cada entrega fallida alimenta los reintentos y la supersesión del
 proveedor (`WH-4`, `WH-5`). **En el diseño nuevo el disparador no es un error**: el receptor
-escribe la lápida de recepción y su marca (§2.4) y contesta `200` (`B/03` §10.1).
+escribe la lápida de recepción y su marca (§2.4) y contesta `200` (`B/03` §10.1). **El receptor de
+hoy no se arregla aparte**: sigue forzando esos reintentos hasta el corte, en que desaparece, y no
+se abre un issue para él (mediciones del 2026-09-29, lote L-D).
 
 ---
 

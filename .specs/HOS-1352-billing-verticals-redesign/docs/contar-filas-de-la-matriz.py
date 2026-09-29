@@ -68,6 +68,12 @@ ruta = sys.argv[1] if len(sys.argv) > 1 else "06-mp-validation-matrix.md"
 
 cuenta = Counter()
 filas = []
+# Desde el 2026-09-29 (mediciones, M-1 a M-5): una fila puede llevar en su conclusion la
+# marca de que NO SE MIDE, POR DECISION. No es un quinto estado (la regla 1 de la matriz no
+# deja llenar una fila sin experimento): el estado sigue siendo el que era, y la marca se
+# lista aparte para que "faltan N mediciones" no cuente las que nadie va a hacer.
+POR_DECISION = "🚫 **No se mide, por decisión"
+por_decision = []
 sin_estado = []
 
 for linea in open(ruta, encoding="utf-8"):
@@ -90,6 +96,8 @@ for linea in open(ruta, encoding="utf-8"):
         continue
     cuenta[estado] += 1
     filas.append((fid, estado))
+    if POR_DECISION in linea:
+        por_decision.append((fid, estado))
 
 total = sum(cuenta.values())
 print(f"archivo: {ruta}")
@@ -106,3 +114,9 @@ if duplicadas:
 
 print("\nsin cerrar (UNKNOWN):")
 print("  " + ", ".join(f for f, e in filas if e == "UNKNOWN"))
+
+no_se_miden = {f for f, _ in por_decision}
+print("\nde esas, esperan medición:")
+print("  " + ", ".join(f for f, e in filas if e == "UNKNOWN" and f not in no_se_miden))
+print(f"\nno se miden, por decisión ({len(por_decision)}; el estado no cambia):")
+print("  " + ", ".join(f"{f} ({e})" for f, e in por_decision))

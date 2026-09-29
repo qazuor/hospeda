@@ -77,7 +77,7 @@ nada** (§66):
 | # | Documento | Qué es |
 |---|---|---|
 | 1 | [`docs/00-PDR.md`](./docs/00-PDR.md) | El PDR rector del owner. **Inmutable.** |
-| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ **134 decisiones** (al 2026-09-28, con las ocho de la revisión del owner) |
+| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ **135 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L) |
 | 3 | [`docs/02-worklog.md`](./docs/02-worklog.md) | Qué se hizo, cronológicamente |
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
@@ -145,9 +145,10 @@ El mapa completo, con qué define cada uno, está en
 **La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
 
 ~~**106 decisiones** — 13 de metodología y 93 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 107
-encabezados; el que sobra es la plantilla del formato, en la l. 26).~~ **134 decisiones**, 15 de
-metodología y 119 funcionales, al 2026-09-28 tras la revisión del owner (`rg -o "^### DEC-[A-Z]+-\d+"`
-sobre el log, sin repetidos, da 134; la plantilla del formato no matchea). Ninguna pregunta del owner
+encabezados; el que sobra es la plantilla del formato, en la l. 26).~~ ~~**134 decisiones**, 15 de
+metodología y 119 funcionales, al 2026-09-28 tras la revisión del owner~~ **135 decisiones**, 15 de
+metodología y 120 funcionales, al 2026-09-29 tras las mediciones (`DEC-MP-009`, lote L) (`rg -o "^### DEC-[A-Z]+-\d+"`
+sobre el log, sin repetidos, da ~~134~~ 135; la plantilla del formato no matchea). Ninguna pregunta del owner
 queda abierta, y ningún bloqueante de diseño tampoco.
 
 ## La decisión que reorientó el programa
