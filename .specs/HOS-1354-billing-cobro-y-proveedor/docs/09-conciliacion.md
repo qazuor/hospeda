@@ -58,6 +58,13 @@ Si sólo miramos los ids que ya tenemos, una suscripción que **nunca registramo
 jamás. La cubre el otro lado: **toda suscripción que cobra emite un webhook**, así que uno que
 llegue de un preapproval desconocido **es** la detección.
 
+**Y lo que el proveedor NO avisa de un preapproval que ya conocemos lo ve la relectura, no un
+aviso** (mediciones del 2026-09-29, punto 7): la cancelación que hace él mismo tras un cobro
+rechazado no se notifica por ningún canal (`WH-5`, 3 de 3 en sandbox), mientras el aviso de ese
+cobro rechazado sí llega. Si es el primer cobro, lo ve la lectura de `S16`, que relee el
+preapproval antes de cancelarlo (`B/03` §3.2); si no, la comparación de estado de este barrido
+(§3), a más tardar al día siguiente, como ya acota la rama de la sucesora de `S4`.
+
 ### 2.3 Un barrido diario para lo que el webhook no cubre
 
 Sobre todo para lo que **diverge en silencio**. El caso exacto: **mutar el monto no emite
@@ -884,6 +891,13 @@ convertirse en el disparador de la re-vinculación.**
 
 > Esto aparece acá como **modo de falla ya observado**, no como razón de diseño: la forma de la
 > conciliación la fija `DEC-CONC-002`, no este incidente.
+
+**Y se volvió a ver en producción el 2026-09-28** (mediciones del 2026-09-29, punto 9): un aviso de
+registro de cobro sobre `80a633be…`, un preapproval que el proveedor había cancelado por antifraude
+días antes, rechazado *«para forzar un reintento»*. Sobre un preapproval así el reintento nunca va a
+encontrar la suscripción, y cada entrega fallida alimenta los reintentos y la supersesión del
+proveedor (`WH-4`, `WH-5`). **En el diseño nuevo el disparador no es un error**: el receptor
+escribe la lápida de recepción y su marca (§2.4) y contesta `200` (`B/03` §10.1).
 
 ---
 

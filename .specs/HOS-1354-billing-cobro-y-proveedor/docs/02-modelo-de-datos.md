@@ -57,7 +57,7 @@ a la restricción no obliga a nada.
 | **`reconciliation_mark`** | la suscripción ~~, el **motivo**~~ **—o, sólo con el motivo 23, la instancia de addon `UNA_VEZ`, que no tiene suscripción (FASE 9 vuelta 2, owner 2026-09-27, `R4`)—**, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables). **Los pagos que hay que devolver no son una columna de acá**: cuelgan de la marca en `reconciliation_mark_payment`, abajo | **un CHECK de que exactamente una de las dos referencias —`subscription_id` o `addon_instance_id`— es no nula, y de que la segunda sólo lleva el motivo 23** (la forma de `payment`, §2.3; FASE 9 vuelta 2, `R4`), con **`UNIQUE(addon_instance_id, motivo) WHERE levantada_en IS NULL`** al lado de la de abajo. La de la instancia la abre el barrido y la levanta una persona con la misma acción que `S15`, y ninguna de las dos mueve el estado de la instancia. **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila**. **Los dos motivos de `S21` —el 14 y el 15 del §2.5— no conviven, y no es esta clave la que lo impide**: abajo |
 | **`reconciliation_mark_payment`** | la marca y **un** pago que hay que devolver — FK a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) —, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta, las dos anulables | **`UNIQUE(marca, pago)`**: el mismo pago no se cuelga dos veces de la misma marca. Una marca lleva **cero, uno o N**: cero en los motivos que no piden pago, **N cuando el hecho que la abre se repite ciclo a ciclo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción. **La suscripción puede ser de complemento** desde la FASE 9 completa (owner 2026-09-25, 4a): `S32` le abre una con el mismo fin previsto que la de su principal (`B/03` §3.2). **Esas no cuentan contra los topes de `DEC-SUB-004`**, que se cuentan sobre las pausas de filas principales: la pausa que la persona pidió es una sola |
-| **`provider_link`** | **la suscripción que vincula** (FASE 9 vuelta 1, R12), el id del proveedor de una suscripción, cuál es el proveedor, **la última `version` del recurso que aplicamos** —la de un webhook, que es donde viene (`EX-2`)— **y el `last_modified` de la última relectura por id**, que es lo que compara el barrido porque la relectura no trae `version` (`RC-9`; FASE 8 completa, `F-8CB3-010`) | **`UNIQUE(proveedor, id_del_proveedor)`** **y `UNIQUE(subscription_id)`**: una suscripción tiene **a lo sumo un vínculo**, y el vínculo no tiene estado. *«Otro `provider_link` vivo»* (`B/09` §2.4) se lee *«la fila ya tiene su `provider_link`»*. **El `external_reference` de todo preapproval que crea el sistema nuevo es el `id` de su fila de `subscription`**, principal o de complemento. Se escribe en el cuerpo de la creación, con la clave ya persistida (`B/05` §1.1): no es un nonce ni el id del usuario (FASE 9 vuelta 1, R12, `F-8V1B3-004`). Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
+| **`provider_link`** | **la suscripción que vincula** (FASE 9 vuelta 1, R12), el id del proveedor de una suscripción, cuál es el proveedor, **la última `version` del recurso que aplicamos** —la de un webhook, que es donde viene (`EX-2`)— **y el `last_modified` de la última relectura por id**, que es lo que compara el barrido porque la relectura no trae `version` (`RC-9`; FASE 8 completa, `F-8CB3-010`) | **`UNIQUE(proveedor, id_del_proveedor)`** **y `UNIQUE(subscription_id)`**: una suscripción tiene **a lo sumo un vínculo**, y el vínculo no tiene estado. *«Otro `provider_link` vivo»* (`B/09` §2.4) se lee *«la fila ya tiene su `provider_link`»*. **El `external_reference` de todo preapproval que crea el sistema nuevo es el `id` de su fila de `subscription`**, principal o de complemento. Se escribe en el cuerpo de la creación, con la clave ya persistida (`B/05` §1.1): no es un nonce ni el id del usuario (FASE 9 vuelta 1, R12, `F-8V1B3-004`). Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido**. **Y no guarda al pagador del proveedor, a propósito**: `payer_id` no es una identidad estable por correo (el mismo correo tuvo dos, uno de ellos un pagador invitado que el proveedor creó, `EX-56`; y el del preapproval no es el `payer.id` de sus pagos, `EX-19`), así que ningún vínculo entre una cuenta nuestra y un pagador del proveedor se apoya en él (mediciones del 2026-09-29, punto 6) |
 | **`plan_migration`** ✚ | una migración de los clientes de un plan retirado (revisión del owner, 2026-09-28, C15; `B/10` §3.7): **la versión de origen** (retirada), **la versión destino** (vigente y vendible, de la misma vertical), **`anunciada_en`**, **el plazo del aviso con que se anunció** (el valor vigente ese día, que no cambia aunque después se cambie el plazo), quién la firmó, y **`cancelada_en`** y quién la canceló, las dos anulables | FK a `plan_version` para las dos versiones, y **las dos de la misma vertical**. El plazo del aviso **no es menor que el mínimo del aviso de aumento** de `DEC-MP-002`. La escribe la acción administrativa 17 (`NUCLEO/08` §3) y **ninguna transición** |
 | **`plan_migration_subscription`** ✚ | **una fila por suscripción alcanzada**: la migración, la suscripción, **su fecha de aplicación** (la de ese cliente, la que dicen sus correos), **su estado** (`PENDIENTE`, `APLICADA`, `FUERA`, `PARA_RESOLVER` o `CANCELADA`), el motivo de un `FUERA` (**cambió de plan** o **se dio de baja**) y `aplicada_en` | **`UNIQUE(subscription_id) WHERE estado = 'PENDIENTE'`**: una suscripción está a lo sumo en una migración viva. **`PARA_RESOLVER`** es la que no tiene su ciclo en el destino: nadie la mueve sola, y queda en el listado del panel. **La fecha de aplicación se recalcula** mientras la fila está `PAUSED` o en `GRACE_PERIOD` (`B/10` §3.7), y **la lee `S37`** (`B/03` §3.2) |
 
@@ -70,6 +70,12 @@ a la restricción no obliga a nada.
 > última relectura: es contra ese que el barrido compara (`B/09` §3; FASE 8 completa,
 > `F-8CB3-010`). ⚠️ **Que `last_modified` se mueva con una mutación de monto no está medido**; la
 > divergencia de monto la sigue viendo la comparación directa del monto (`B/09` §3).
+>
+> **Y un hueco en la `version` no prueba un aviso perdido** (`EX-15`, 2026-09-29): entre dos avisos
+> de un mismo preapproval la `version` saltó dos veces sin ninguna entrega, y sólo una se pudo
+> atribuir (a un cambio del `reason`). **Ningún componente compara versiones contiguas**: la
+> `version` sólo descarta el aviso más viejo que el último aplicado, y lo que cambió se relee
+> (mediciones del 2026-09-29, punto 8).
 
 **La lápida de recepción** (FASE 9 vuelta 1, `F-8V1B3-001`; owner 2026-09-26, `G3-2`). Un
 preapproval desconocido cuyo `external_reference` no nombra ninguna fila nuestra no tiene
@@ -1210,6 +1216,25 @@ comprobación de cero llamadas del `B/09` §3.
 > **deja de colgar de donde colgaba**, y hacia dónde pasa a colgar es distinto: allá la sucesora,
 > acá el ancla. Con el flag en `false` no se mueve nada y el complemento sigue cobrando.
 
+### 2.7 Los avisos IPN guardados, que nadie lee
+
+(Mediciones del 2026-09-29, M-2: reemplaza la tabla condicional de los casos 39 y G-D, `B/06`,
+*«lo que este capítulo NO cierra»*.)
+
+| entidad | qué guarda | restricciones |
+|---|---|---|
+| **`ipn_delivery`** ✚ | **cada entrega que llega por el canal IPN, tal cual**: la URL con su query, el cuerpo crudo y el instante de llegada. Una fila por entrega: un reintento del proveedor es otra fila | **sólo altas**: ninguna escritura la modifica, y la única que borra es la retención (abajo). **Sin `UNIQUE`**: un duplicado es dato para la revisión, no un error. **Ninguna decisión la lee**, ni una transición, ni una acción administrativa, ni el barrido: lo vigila `G17` (`B/20` §2) |
+
+**Para qué existe**: para poder revisar, tres meses después del corte, si IPN trae algo que
+Webhooks no ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)), y decidir con ese dato si
+se apaga. Esa revisión es una consulta a mano, no código del repositorio. **Por qué no se actúa
+sobre lo que guarda**: IPN entrega sólo `payment`, que también llega por Webhooks, y sin una firma
+que se pueda verificar con la clave de la aplicación (`WH-6`, `EX-13`).
+
+**Retención: 180 días desde la llegada**, un plazo técnico y no configurable (`NUCLEO/02` §1.5, el
+punto (b)); una pasada diaria borra las filas más viejas. **La construye la unidad del receptor**,
+`B3` (`B/descomposicion.md` §2).
+
 ---
 
 ## 4. Retención: qué se borra, qué se anonimiza, qué se conserva · cierra `M-DATA-01`
@@ -1219,8 +1244,9 @@ comprobación de cero llamadas del `B/09` §3.
 | | qué | por qué |
 |---|---|---|
 | **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor | los cuatro primeros son obligación legal y contable |
+| **Se borra a los 180 días** ✚ | los avisos IPN guardados, `ipn_delivery` (§2.7) | son un registro técnico para una revisión, sin valor contable; el plazo es técnico y no configurable (mediciones del 2026-09-29, M-2) |
 
-**La fila de arriba habla del modelo nuevo** —`payment`, `manual_payment`, `refund`, `provider_link`
+**La ~~fila de arriba~~ primera fila habla del modelo nuevo** (la segunda entró con las mediciones del 2026-09-29, M-2) —`payment`, `manual_payment`, `refund`, `provider_link`
 (§2.3)—, **no de las tablas del sistema viejo** (`billing_payments` y las demás). Del sistema viejo
 **no se conserva nada**, ni sus tablas ni las columnas que las copian: el owner lo decidió el
 2026-09-25 (FASE 9 completa, `2a`; `B/21` §4) —*«recién arrancamos; a los clientes que hay los

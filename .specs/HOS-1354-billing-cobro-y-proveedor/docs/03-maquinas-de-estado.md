@@ -2710,6 +2710,16 @@ decide con un estado del proveedor que no salió de una lectura por id. **Y la l
 instante**: una anterior al comienzo del acto la rechaza el tipo, y hay que releer (revisión del
 owner, casos vecinos, 2026-09-29, caso 35; `D17`).
 
+**Todo esto es del canal Webhooks. Una entrega que llega por IPN no entra acá** (mediciones del
+2026-09-29, M-2): se guarda entera en `ipn_delivery` (`B/02` §2.7), que ninguna decisión lee, y no
+se relee nada. El `payment` que llega por IPN es el mismo que llega por Webhooks (`WH-6`), así que
+no se pierde ningún hecho. **Y el receptor contesta `200` a una entrega que ya procesó, aunque su
+recurso sea desconocido o terminal**: la huérfana se resuelve con su lápida y su marca (`B/09`
+§2.4) y el terminal con la tabla de abajo; forzar un reintento no le agrega nada a una relectura que
+ya se hizo, y cada entrega fallida alimenta los reintentos y la supersesión del proveedor (`WH-4`,
+`WH-5`). Sólo contesta error cuando no pudo procesar ni guardar, y ahí el reintento sirve
+(mediciones del 2026-09-29, puntos 2 y 9).
+
 Está medido que ese camino es el confiable: leer por id es ~~`VERIFIED` (`RC-2`)~~ confiable
 (`RC-1`; FASE 9 vuelta 2, `F-8V2C2-007`), mientras que
 **buscar no lo es** y falla en tres direcciones sin avisar en ninguna (`RC-1`) — ignora nuestra
@@ -2782,7 +2792,14 @@ refleja campo a campo. Para esos:
   el reintento que se aprueba llega con el id que ya tenemos en `PENDING`. El choque con el
   `UNIQUE` no termina ahí: se relee la fila existente y, si la lectura por id dice `approved`,
   corre `P1` sobre ella (§6, `B/05` C6; FASE 8 completa, `F-8CB3-003`);
-- **un hecho más viejo que el último aplicado ~~se registra y no se aplica~~ sobre el mismo recurso —el mismo pago, el mismo reembolso— se registra y no se aplica.** Dos recursos distintos de una misma suscripción no se ordenan entre sí (FASE 9 completa, `DB-2`, `F-8CB2-012`: la regla no decía de qué era *«el último»*).
+- **un hecho más viejo que el último aplicado ~~se registra y no se aplica~~ sobre el mismo recurso —el mismo pago, el mismo reembolso— se registra y no se aplica.** Dos recursos distintos de una misma suscripción no se ordenan entre sí (FASE 9 completa, `DB-2`, `F-8CB2-012`: la regla no decía de qué era *«el último»*);
+- **un `payment` que la relectura muestra con `operation_type: card_validation` no es un cobro**
+  (mediciones del 2026-09-29, punto 4): es la validación de ARS 0 que el proveedor hace al autorizar
+  (`PA-3`) y al cambiar la tarjeta (`EX-36`), llega por los dos canales, no trae `external_reference`
+  ni nombra al preapproval (su único vínculo es `payer.id`, que no es identidad: `B/02` §2.2), y si
+  la tarjeta nueva se rechaza llega `rejected`. **No escribe ningún `payment`, no corre ninguna
+  transición y no cuenta como rechazo**: ni el primero de `S16` ni el que arranca el grace por `S4`.
+  El cambio de tarjeta que sí importa llega aparte, como aviso del preapproval.
 
 **El aviso de contracargo entra por acá** (FASE 8 completa, `F-8CB3-009`, `DEC-SUB-020`). Según la
 documentación del proveedor tiene un aviso propio, **`topic_chargebacks_wh`**, que trae el

@@ -65,7 +65,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | ~~G-R5~~ | ~~el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención~~ | **retirado** (revisión del owner, 2026-09-28, C14, `L1-c`): la pausa pedida por el dueño detiene el reloj de retención, así que el tope de pausa ya no tiene que quedar por debajo del día del borrado y el guard se queda sin sujeto; sale con `D16`. El número no se reusa |
 | **G15** ✚ | **las dos listas del proveedor falso, con dos predicados**: (a) el falso **miente en un lugar que no está en la lista cerrada de mentiras del §3.2**, o una fila de esa lista **no tiene los tres datos**: su nombre, la fila de la matriz de la que sale (con fecha y cuenta) y la prueba que demuestra que el código la resiste; (b) una prueba **apaga una mentira sin nombrarla o sin decir por qué**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, C13 y `L3-c` (§3.2). Lo construye `B1` |
 | **G16** ✚ | **el cobro vuelve a depender de lo que dejó**, con dos predicados: (a) aparece **`@qazuor/qzpay`**, cualquiera de sus paquetes, en un `package.json` o en un import del repo; (b) el package del cobro **importa de `apps/`**. **El mensaje nombra el predicado que falló** | revisión del owner, 2026-09-28, N2 (`B/spec.md` §3.1). Lo construye `B1`. **Que el package del cobro no importe de la mitad de verticales ya lo vigila `G14`** (`V/20` §2), y no se duplica acá. **No mira sus dependencias hacia packages internos de Hospeda** (`@repo/*`): el package del cobro puede tenerlas, con la regla del owner de evitarlas cuando sea simple; la prohibición de `qzpay` sigue (revisión del owner, casos vecinos, 2026-09-29, caso 30) |
-| **G17** ✚ | **una decisión sale de lo que dice un aviso del proveedor sin releerlo por id**, con dos predicados: (a) el código que recibe un aviso, por cualquiera de los dos canales, **lee del cuerpo otra cosa que el tipo de recurso, su id y su `version`** (la `version` es la que descarta un aviso viejo, `B/03` §10.1, y no es estado); (b) una transición de las tablas de `B/03` o una acción administrativa de `NUCLEO/08` §3 cuya condición depende del estado del proveedor **recibe ese estado por otro camino que una lectura por id del adaptador**, el tipo que sólo el adaptador construye. **El mensaje nombra el predicado que falló**. **El *cuándo* no es un tercer predicado: va dentro del tipo** (revisión del owner, casos vecinos, 2026-09-29, caso 35). Cada lectura por id lleva el instante en que se leyó, y el tipo sólo entrega el estado contra el comienzo del acto que decide: una lectura anterior a ese comienzo se rechaza y hay que releer. Con eso (b) alcanza, porque el único camino al estado ya exige el instante; el rechazo lo prueba un caso de `B1`, no el guard | `D17` y su quinta entrada (`NUCLEO/04` §3; revisión del owner, 2026-09-28, N4 y `L3-f`). Lo construye `B1` |
+| **G17** ✚ | **una decisión sale de lo que dice un aviso del proveedor sin releerlo por id**, con ~~dos~~ tres predicados: (a) el código que recibe un aviso, por cualquiera de los dos canales, **lee del cuerpo otra cosa que el tipo de recurso, su id y su `version`** (la `version` es la que descarta un aviso viejo, `B/03` §10.1, y no es estado); (b) una transición de las tablas de `B/03` o una acción administrativa de `NUCLEO/08` §3 cuya condición depende del estado del proveedor **recibe ese estado por otro camino que una lectura por id del adaptador**, el tipo que sólo el adaptador construye; **(c) algo lee `ipn_delivery`**, la tabla donde el receptor guarda las entregas del canal IPN (`B/02` §2.7): la escriben sólo el receptor y el borrado de sus 180 días, y ninguna transición, acción administrativa, barrido ni otro código la lee (mediciones del 2026-09-29, M-2). **El mensaje nombra el predicado que falló**. **El *cuándo* no es ~~un tercer~~ otro predicado: va dentro del tipo** (revisión del owner, casos vecinos, 2026-09-29, caso 35). Cada lectura por id lleva el instante en que se leyó, y el tipo sólo entrega el estado contra el comienzo del acto que decide: una lectura anterior a ese comienzo se rechaza y hay que releer. Con eso (b) alcanza, porque el único camino al estado ya exige el instante; el rechazo lo prueba un caso de `B1`, no el guard | `D17` y su quinta entrada (`NUCLEO/04` §3; revisión del owner, 2026-09-28, N4 y `L3-f`). Lo construye `B1` |
 
 **`G15`, `G16` y `G17` llegaron con la revisión del owner (2026-09-28), y los tres son de `B1`**,
 porque vigilan lo que `B1` construye primero: el falso y sus dos listas (§3.2), el package del
@@ -497,8 +497,8 @@ dos; queda tachada abajo, con dónde fue a parar cada fila.
 | **M2** | con **dos cambios en un pedido**, aplica uno y descarta el otro con un solo `200` | `EX-20` (2026-09-15, producción) | que la relectura compara **campo por campo** cada campo que se mandó |
 | **M3** | crea **un duplicado por cada pedido igual** | `EX-17` (2026-09-15, sandbox y producción, sonda 14: diez pedidos, diez ids) | el candado propio contra duplicados, persistido antes de llamar (`D4`, `DEC-CONC-001`) |
 | **M4** | el buscador **devuelve una parte sin error** (15 de 69 con `status=cancelled`) e **ignora nuestra referencia**; y trae menos campos que la lectura por id | `RC-1` (2026-09-15, sandbox y producción) · `RC-4` (2026-09-15, producción) | que el buscador nunca se usa como lista (`D6`) |
-| **M5** | un **cambio de monto no emite ningún aviso** | `EX-15` (2026-09-15, sandbox, **por el canal Webhooks**; su mitad IPN está pendiente de medición: ver el «NO cierra» de `B/06`) | que la conciliación compara el monto releído (`B/09` §3) |
-| **M6** | **avisa tarde, repetido o nunca**; una devolución genera **tres entregas en dos formatos** | `WH-1`, `WH-2`, `WH-4` (2026-09-15, sandbox) · `WH-5` (2026-09-23, sandbox y producción) · `RF-7` (2026-09-15, producción) | que un aviso nunca cambia un estado por sí solo (`D17`, `G17`) |
+| **M5** | un **cambio de monto no emite ningún aviso** | `EX-15` (2026-09-15, sandbox, **por el canal Webhooks**; ~~su mitad IPN está pendiente de medición: ver el «NO cierra» de `B/06`~~ y 2026-09-29, sandbox, **con los dos canales escuchando**: tampoco por IPN; mediciones del 2026-09-29, punto 2) | que la conciliación compara el monto releído (`B/09` §3) |
+| **M6** | **avisa tarde, repetido o nunca**; una devolución genera **tres entregas en dos formatos** | `WH-1`, `WH-2`, `WH-4` (2026-09-15, sandbox) · `WH-5` (2026-09-23, sandbox y producción; cerrada el 2026-09-29 con los dos canales) · `RF-7` (2026-09-15, producción) · **`WH-6` (2026-09-29, sandbox y producción): un mismo `payment` llega una vez por cada canal, y el de IPN lo guarda el receptor sin procesarlo** (`B/06`, «NO cierra»; mediciones del 2026-09-29, punto 3) | que un aviso nunca cambia un estado por sí solo (`D17`, `G17`) |
 | **M7** | **cuenta un cobro rechazado como cobro**, y el estado del intento no dice si cobró | `RC-5` y `RC-6` (2026-09-22, producción) | que «¿cobró?» se contesta mirando cada intento (`B/09` §4) |
 | **M8** | **cobra tarde y en tandas**: en el primer lote posterior a la hora de la fecha, al minuto `:02` | `PA-3` (2026-09-15; ~26 min en producción, 33 en sandbox) · la medición de lotes del 2026-09-24 en producción, **sin fila propia en la matriz** (`B/09` §6 punto 2; se propone una) | que nada supone que el cobro entra a la hora exacta (abajo) |
 | **M9** | **agrega sola una prueba gratis** cuando el primer cobro es a futuro | `EX-8` (2026-09-15, sandbox) · `EX-26` (2026-09-15, sandbox) · `EX-33` (2026-09-16, producción) | que no se confía en su estado de prueba (`D12`, `G11`) |
@@ -518,7 +518,8 @@ No son mentiras: el proveedor **exige** algo y lo dice. El falso las cumple igua
 que ya no existe. **Y desde los casos vecinos (2026-09-29, caso 28) la lista lleva también el
 comportamiento medido** que no es mentira ni regla que el proveedor exija, pero que el barrido de
 `B/09` y `S6` por su segundo evento necesitan que el falso reproduzca: `RP7` a `RP11`, marcadas
-como comportamiento medido en la columna.
+como comportamiento medido en la columna; **y `RP12`**, que necesita el receptor (mediciones del
+2026-09-29, punto 4).
 
 | # | qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido) | fila |
 |---|---|---|
@@ -533,11 +534,14 @@ como comportamiento medido en la columna.
 | **RP9** ✚ | *comportamiento medido*: **una pausada no cobra** | `PS-2` (2026-09-15, producción) |
 | **RP10** ✚ | *comportamiento medido*: al reanudar, **la fecha de cobro avanzó sin cobrar** | `PS-6` (2026-09-16, sandbox y producción) |
 | **RP11** ✚ | *comportamiento medido*: **`last_charged_date` es la del último intento, no la del último cobro**, y `last_charged_amount` no coincide con `charged_amount` | `RC-5` (2026-09-22, producción; precisada el 2026-09-24) |
+| **RP12** ✚ | *comportamiento medido*: **cambiar la tarjeta emite un `payment` de ARS 0 con `operation_type: card_validation`**, por los dos canales, sin `external_reference` y sin nombrar al preapproval, `rejected` si la tarjeta nueva no pasa; y autorizar deja otro igual en producción | `EX-36` (2026-09-29, sandbox) · `PA-3` (2026-09-15, producción) |
 
 ~~**Son seis, recontadas sobre la tabla**, y son las seis filas de la tabla vieja que no eran
-mentiras.~~ **Son once, recontadas sobre la tabla**: las seis filas de la tabla vieja que no eran
+mentiras.~~ ~~**Son once, recontadas sobre la tabla**:~~ **Son doce, recontadas sobre la tabla**: las seis filas de la tabla vieja que no eran
 mentiras, y las cinco de comportamiento medido que quedaban afuera de las dos listas (revisión del
-owner, casos vecinos, 2026-09-29, caso 28).
+owner, casos vecinos, 2026-09-29, caso 28), y `RP12`, el `payment` de validación de ARS 0 que el
+receptor tiene que ignorar (`B/03` §10.2), que entra por la misma regla del caso 28 (mediciones del
+2026-09-29, punto 4).
 
 #### Lo que el falso simula sin haberlo medido, aparte
 
@@ -643,7 +647,7 @@ producción, ni comparación de forma, ni quién avisara si no corría**. Desde 
 batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
 
 1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y ~~las seis
-   reglas propias~~ las once reglas propias y comportamientos medidos (caso 28): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
+   reglas propias~~ las ~~once~~ doce reglas propias y comportamientos medidos (caso 28; `RP12`, mediciones del 2026-09-29, punto 4): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
    cambiar ninguna mentira. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen
@@ -667,8 +671,10 @@ batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos 
 6. **Si no corre, avisa el vigía externo** que vigila el barrido diario (`B/09` §7.1), con la misma
    regla: ping al terminar una corrida completa y alerta si pasa su cadencia sin ping.
 7. **Qué avisos registra**: cada aviso que la corrida provoca, **con el canal por el que llegó**.
-   Es registro, no decisión: cómo se tratan los dos canales de avisos está pendiente de medición
-   (`B/06`, *«lo que este capítulo NO cierra»*).
+   Es registro, no decisión: cómo se tratan los dos canales de avisos ~~está pendiente de medición~~
+   está decidido desde el 2026-09-29: IPN se guarda sin actuar (`B/06`, *«lo que este capítulo NO
+   cierra»*; mediciones del 2026-09-29, M-2). **Si IPN empieza a traer algo que Webhooks no trae**,
+   es un cambio de `WH-6` y avisa como cualquier otro.
 
 **Ninguna credencial de producción la tiene un agente**: la corrida mensual y la manual en
 producción las dispara una persona o el programador de la batería, nunca quien implementa.

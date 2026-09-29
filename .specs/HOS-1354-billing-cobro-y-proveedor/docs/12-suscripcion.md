@@ -1147,19 +1147,31 @@ una regla: hace falta que nadie agregue esa transición.
   en el corte, y el primer lote puede caer dos minutos después. Tiene que coincidir una autorización
   en los últimos minutos, un webhook demorado y, o bien un cobro fechado a las 00:00-00:02, o una
   cancelación de `S17` fallida: es doble cobro, sobre la intersección de tres bordes.
-- **Cancelar o pausar desde la cuenta de Mercado Pago, y no desde Hospeda: pendiente de medición**
-  (revisión del owner, 2026-09-28, N8). **Se detecta**: el aviso dispara una relectura por id
+- **Cancelar o pausar desde la cuenta de Mercado Pago, y no desde Hospeda: ~~pendiente de medición~~
+  medido el 2026-09-29; queda un hueco, y lo decide el owner** (revisión del owner, 2026-09-28, N8;
+  mediciones del 2026-09-29, punto 1). **Se detecta**: el aviso dispara una relectura por id
   (`B/03` §10.1) y el barrido relee cada día toda fila no terminal (`B/09` §3), así que a más tardar
-  al día siguiente. **Lo que no está resuelto son dos huecos, y ninguno se decide antes de medir**:
+  al día siguiente. **Lo medido** (`EX-52`, `EX-53`, `EX-56`): **el pagador puede cancelar desde su
+  cuenta y no puede pausar**, y su baja llega como un aviso del preapproval, sólo por Webhooks,
+  **sin ningún campo que la distinga de una nuestra**: la autoría sólo la da nuestro propio registro
+  (si no la pedimos, vino de afuera). **Y el autoservicio existe porque el alta de este diseño va por
+  checkout** (`B/06` §2, fila 1): un alta por API con token queda a nombre de un pagador invitado que
+  no la ve. ~~**Lo que no está resuelto son dos huecos, y ninguno se decide antes de medir**:~~
+  **De los dos huecos, uno se cerró con la medición y el otro sigue**:
   (1) **cancelar desde la app del proveedor corta el servicio en el acto y pierde lo pagado, sin
   aviso nuestro**: el espejo de `cancelled` sobre una fila viva sin baja programada la lleva a
   `CANCELLED` (§1.4, `B/03` §10.1), así que quien paga el 1 y se da de baja desde Mercado Pago el 10
   pierde veinte días que desde Hospeda conservaría (`DEC-SUB-009`), y ninguna fila de `B/19` §4 le
-  dice qué pasa con sus fichas; (2) **una pausa del pagador se leería como mora**: el par `paused`
+  dice qué pasa con sus fichas. **Sigue, y cómo se trata lo decide el owner**
+  (`30-revision-del-owner/28-…`, decisión 1): hasta entonces el diseño se queda como está; (2)
+  ~~**una pausa del pagador se leería como mora**: el par `paused`
   sobre `ACTIVE` o `GRACE_PERIOD` corre `S6` por su segundo evento (`DEC-MP-008`), que suspende,
-  cancela la autorización y le dice *«volvé a suscribirte»* a alguien que no debe nada. **Causa**:
-  §1.4 y `DEC-MP-008` se escribieron para las bajas y pausas **del proveedor**, y ninguna fila de la
-  matriz mide un acto **del pagador** desde su cuenta. **Qué se mide** está propuesto como filas
+  cancela la autorización y le dice *«volvé a suscribirte»* a alguien que no debe nada~~ **cerrado:
+  el pagador no puede pausar** (`EX-53`, mirado en la web y en la app), así que un `paused` sin un
+  `PUT` nuestro es la mora de `DEC-MP-008`, que es lo que el par ya supone. **Causa**: §1.4 y
+  `DEC-MP-008` se escribieron para las bajas y pausas **del proveedor**, y ~~ninguna fila de la
+  matriz mide~~ hasta el 2026-09-29 ninguna fila de la matriz medía un acto **del pagador** desde su
+  cuenta. ~~**Qué se mide** está propuesto como filas
   nuevas de la matriz: si una cancelación desde la app se distingue de una nuestra o de una por
   antifraude, si pausar desde la app existe y cómo se ve, y por qué canal de avisos llega cada una
-  (`B/06`, *«lo que este capítulo NO cierra»*).
+  (`B/06`, *«lo que este capítulo NO cierra»*).~~

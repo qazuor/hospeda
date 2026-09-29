@@ -70,7 +70,7 @@ Subscription. Payment method distinto.»*
 | 5 | cancelar | ✅ | e **irreversible** (`PA-5`) |
 | 6 | reembolsar | ✅ | total y parcial, acumulativos contra el saldo, idempotente (`RF-1`, `RF-2`, `RF-6`) |
 | 7 | leer | ⚠️ **a medias** | **por id, confiable** (~~`RC-2`~~ `RC-1`, FASE 9 vuelta 2, `F-8V2C2-007`); **buscar, no** (`RC-1`) |
-| 8 | avisar | ⚠️ **a medias** | avisa el alta, la pausa, la reanudación y la cancelación; **no avisa el cambio de monto** (`EX-15`). **Y documenta un aviso propio de contracargo, `topic_chargebacks_wh`, que trae el `payment_id`** — **documental, no medido** (`RC-8`, `UNKNOWN`: no se puede fabricar un contracargo a voluntad). Entra como cualquier aviso: se relee el pago por id (`B/03` §10.2), y si no llega, lo ve el barrido (`B/09` §3) (FASE 8 completa, `F-8CB3-009`, `DEC-SUB-020`) |
+| 8 | avisar | ⚠️ **a medias** | avisa el alta, la pausa, la reanudación y la cancelación; **no avisa el cambio de monto** (`EX-15`). **Tampoco avisa la cancelación que hace él mismo tras un alta con el cobro rechazado, un cambio del `reason`, ni las órdenes de `/v1/orders` y sus reembolsos** (`WH-5`, `EX-15`, medidas con los dos canales escuchando); **la baja que da el pagador desde su cuenta sí llega, y ningún campo la distingue de una nuestra** (`EX-52`). **Y avisa por dos canales, de los que sólo Webhooks trae hechos de suscripción**: IPN entrega sólo `payment` (`WH-6`), y qué hace el receptor con eso está en *«lo que este capítulo NO cierra»* (mediciones del 2026-09-29, puntos 1, 2 y 7). **Y documenta un aviso propio de contracargo, `topic_chargebacks_wh`, que trae el `payment_id`** — **documental, no medido** (`RC-8`, `UNKNOWN`: no se puede fabricar un contracargo a voluntad). Entra como cualquier aviso: se relee el pago por id (`B/03` §10.2), y si no llega, lo ve el barrido (`B/09` §3) (FASE 8 completa, `F-8CB3-009`, `DEC-SUB-020`) |
 
 **Las tres «a medias» son las que gobiernan el diseño**, y cada una ya tiene su respuesta en un
 capítulo: el reloj de pausa es nuestro (cap. 03 §5), el inventario a conciliar es nuestro (cap.
@@ -133,6 +133,13 @@ colgando de la instancia (`B/02` §2.3).
   (`EX-41`): por `X-Idempotency-Key`, y el `external_reference` no deduplica;
 - **su comportamiento en producción**: `EX-30` es de sandbox.
 
+**Y dos cosas medidas en sandbox el 2026-09-29 que el camino tiene que respetar** (mediciones del
+2026-09-29, puntos 5 y 10): **una orden con la tarjeta rechazada devuelve `402` y queda creada
+igual**, `failed`, con su id en el cuerpo del error (`EX-30`), así que un `402` no es *«no hay
+orden»*: el id se guarda como el de cualquier orden; y **ni la orden ni su reembolso avisan por
+ningún canal** (`EX-15`, `RF-7`), así que nada de este camino espera un aviso: la orden se confirma
+con la respuesta y releyéndola, y el reembolso, releyendo el pago (`B/16` §1.4).
+
 ---
 
 ## 4. Las seis reglas duras de trato con este proveedor
@@ -146,6 +153,17 @@ Salen de la medición, no del criterio. Cada una tiene su caso que la produjo.
 No alcanza con releer «la» mutación: está medido que **un `PUT` con varios campos se aplica a
 medias con un solo `200`** — `frequency: 6` + `transaction_amount: 99` juntos dejaron la
 frecuencia intacta y el monto cambiado (`EX-20`). **El que falla no arrastra al que funciona.**
+
+**Y vale también al revés: un error al crear no prueba que no se creó nada** (mediciones del
+2026-09-29, punto 5). Un alta de preapproval con `card_token_id` que devuelve `400` sin id deja un
+preapproval creado con nuestro `external_reference`, que el proveedor cancela segundos después y
+cuyos avisos llegan con ids que nuestra base no conoce (`EX-55`, 3 de 3 en sandbox); y una orden
+con la tarjeta rechazada devuelve `402` y queda creada, `failed`, con el id en el cuerpo del error
+(`EX-30`). **El alta de este diseño no pasa por el primero**: va por checkout, sin token (§2, fila
+1). Lo que sí vale: el id que venga en el cuerpo de un error se guarda como el de un éxito; sobre
+un preapproval, la llave para asociar lo que llegue es el `external_reference`, que va en el cuerpo
+de la creación con la clave ya persistida (`B/02` §2.2); y un aviso de un recurso desconocido sigue
+el camino de la huérfana (`B/09` §2.4), no un error.
 
 ### 4.2 El `init_point` crudo no se muestra nunca
 
@@ -425,7 +443,7 @@ nada (ver `RF-3`, abajo).
 | **`EX-43`** ✚ | si reenviar una orden con la misma clave y el mismo cuerpo **horas después**, con el token de la tarjeta ya vencido, devuelve la misma orden si existía, y qué devuelve si nunca se creó | **no bloquea**: condiciona `A3` sobre el addon de única vez (`B/03` §8; `R4`), que es de **B10**. Si devuelve error con la orden existente, `A3` no la ve pagada y el caso cae en la comprobación de órdenes pagadas del barrido de **B11**, motivo 23 (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | pendiente de sonda; `EX-41` midió el reenvío inmediato |
 | **`EX-44`** ✚ | si cancelar un preapproval **corta el reciclado** de un registro de cobro abierto (`scheduled`/`recycling`), o un cambio de medio posterior todavía lo cobra | **no bloquea**: da el tamaño de la población del cobro sobre la lápida del corte y condiciona la exención de las terminales (`B/21` §2.5, `B/09` §3; `R2`), que lee **B11**. No es condición del corte (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | **en el paso 0 del corte** (`16-fase-7…` §4.2), sobre una sonda propia con un registro abierto |
 | **`EX-45`** ✚ | si una cancelación leída `cancelled` en el `PUT` y en un `GET` inmediato sigue `cancelled` releída **horas después** | **nada de esta épica**: condiciona el gate del paso 2 del corte y el cobro sobre su lápida (`F-8V2C2-004`). El código actual registra seis que no (`preapproval-recovery.service.ts:22`, HOS-937) (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | **en el paso 0 del corte**; `PA-5` midió la irreversibilidad en sandbox |
-| **`EX-46`** ✚ | a qué URL va el **reintento** de una notificación emitida antes de cambiar la URL de notificación de la aplicación: a la de entonces o a la vigente | **nada de esta épica**: condiciona el paso 4b del corte (`F-8V2C2-002`). Si va a la vieja, el evento se pierde y su cobro cae en el punto (3) del «NO cierra» de `B/21` sobre `G3-1`, que ve el barrido de **B11** (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | con el corte; `WH-4` midió los reintentos, no su destino |
+| **`EX-46`** ✚ | a qué URL va el **reintento** de una notificación emitida antes de cambiar la URL de notificación de la aplicación: a la de entonces o a la vigente | **nada de esta épica**: condiciona el paso 4b del corte (`F-8V2C2-002`). Si va a la vieja, el evento se pierde y su cobro cae en el punto (3) del «NO cierra» de `B/21` sobre `G3-1`, que ve el barrido de **B11** (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | ~~con el corte; `WH-4` midió los reintentos, no su destino~~ **no se mide, por decisión del owner**: si el día del corte se pierde un reintento, el barrido diario lo relee (mediciones del 2026-09-29, M-4) |
 | **`EX-47`** ✚ | si un registro de cobro ya creado cobra el monto viejo o el nuevo cuando el monto del preapproval se muta **después** de creado (antes del lote, o durante sus reintentos) | **no bloquea**: condiciona el importe cobrado contra el esperado (`B/09` §3, `B/14` §2.4; `F-8V2B3-001`, `R20`), que compara **B11**. Si cobra el viejo, lo ve el motivo 24 (`B/02` §2.5) cuando la mutación bajó el monto, y la línea del resumen del cobro de menos (`NUCLEO/08` §4.1) cuando lo subió (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-f`) (FASE 9 vuelta 2, con OK del owner, `Q-UNKNOWN`) | **en el paso 0 del corte**, sobre una sonda propia; `PC-1` midió el monto vigente con la mutación mucho antes del cobro |
 | **`EX-48`** ✚ | qué campo del pago que aprobó un registro de cobro en un **reintento** posterior a la creación del registro, leído por id, trae el instante de esa aprobación, distinto del `date_created` del registro | **no bloquea una unidad**: es el dato con el que la regla de la marca decide si un cobro sobre la lápida del corte es posterior al corte (`B/21` §2.5, `B/09` §3, `B/05` §3; `F-8V2B3-002`), que lee **B11**. **Y el paso 1b no arranca sin él**: si ningún campo es confiable, la ventana vuelve al owner antes del corte (FASE 9 vuelta 2, verificación, con OK del owner, `V2-a`, `V2-m` y `V2-y`) | **en el paso 0 del corte**, sobre una sonda propia con un registro que se rechaza y cobra en un reintento (`GR-1`, `RC-6`) |
 | **`EX-50`** ✚ | cuántas suscripciones del sistema viejo con ciclo anual siguen vivas el día del corte | **no bloquea**: dice cuándo cae la segunda corrida del detector del cobro sobre la lápida (`B/21` §1.3 y «NO cierra»), que lee **B11**; no es condición del corte. Si hay alguna, el `expire_date` de su registro de cobro abierto se mide ahí, porque `RC-7` lo midió sólo sobre ciclos de 1 y 2 días (FASE 9 vuelta 2, verificación, con OK del owner, `V2-r`, `V2-z4` y `V2-y`) | **en el paso 0 del corte**, sobre el recorrido del proveedor del 1b |
@@ -476,12 +494,13 @@ tres, suspendemos a alguien que iba a pagar bien.
 - ~~**La idempotencia de `/v1/orders`**, el camino del addon de única vez (§3.2), **no está medida**
   y queda pendiente de sonda (corrección de diseño, FASE 8 completa, `F-8CB1-008`).~~ **Cerrado el
   2026-09-25 por `EX-41`** (sonda 51, sandbox): es idempotente por la clave. Queda sólo producción.
-- **Los dos canales de avisos del proveedor: pendiente de medición** (revisión del owner,
-  2026-09-28, N9 y `L3-g`). El proveedor avisa por **dos canales**, Webhooks e IPN, y un mismo hecho
+- ~~**Los dos canales de avisos del proveedor: pendiente de medición**~~ **Los dos canales de avisos
+  del proveedor: medidos el 2026-09-29, y el canal IPN se escucha y se guarda sin actuar** (revisión
+  del owner, 2026-09-28, N9 y `L3-g`; mediciones del 2026-09-29, M-2 y punto 2). El proveedor avisa por **dos canales**, Webhooks e IPN, y un mismo hecho
   puede llegar por los dos (`RF-7`: tres entregas por una devolución, una de Webhooks y dos de IPN).
   **El código de hoy descarta en silencio todo lo que llega por IPN**: el receptor de hospeda2
   contesta `200` a toda entrega sin el marcador `source_news=webhooks` que el propio sistema le
-  agrega a la URL, con un log de nivel `debug` (HOS-159). No es de `qzpay`. **Y eso contamina dos
+  agrega a la URL, con un log de nivel `debug` (HOS-159). No es de `qzpay`. ~~**Y eso contamina dos
   mediciones**: la mitad de producción de `WH-5` (las dos cancelaciones por antifraude que no
   produjeron aviso se leyeron **después** de ese descarte) y `EX-15`, que midió que mutar el monto
   no avisa **por el canal Webhooks**, con el receptor de pruebas escuchando sólo ese canal. **Qué
@@ -495,10 +514,31 @@ tres, suspendemos a alguien que iba a pagar bien.
   cuerpo y el instante, que ninguna transición lee**: así registrar no puede volverse actuar. El
   modelo de `B/02` no la tiene, porque es condicional; entra el día que se sepa que `WH-6` no se
   mide (revisión del owner, casos vecinos, 2026-09-29, caso G-D). Mientras tanto la M5 del falso (`B/20` §3.2) se lee
-  como *«por el canal Webhooks»* hasta la remedición. **Y un requisito que vale si se aceptan los
-  dos canales**: **un aviso duplicado del mismo hecho, por el mismo canal o por los dos, no puede
+  como *«por el canal Webhooks»* hasta la remedición.~~ **Lo medido** (`WH-6`, `WH-5` y `EX-15`,
+  2026-09-29, sandbox con los dos canales escuchando y producción por sus logs): **IPN entrega sólo
+  `payment`**, sin firma que se pueda verificar con la clave de la aplicación (`EX-13`) y sin
+  `version` (`EX-2`); **ningún hecho de suscripción llega por IPN que no llegue por Webhooks**; y
+  **cada `payment` llega una vez por cada canal**, a milisegundos y sin canal que llegue primero. La
+  contaminación que esta entrada temía no estaba: `WH-5` y `EX-15` se cerraron con los dos canales
+  escuchando. La salvedad de `RF-7` sigue: en producción IPN trajo una vez un `merchant_order` tras
+  un reembolso de `/v1/payments`. **Qué hace el receptor nuevo con IPN, decidido por el owner**
+  (mediciones del 2026-09-29, M-2, que reemplaza a los casos 39 y G-D): **escucha el canal y guarda
+  cada entrega, sin actuar**. La guarda entera en **`ipn_delivery`** (`B/02` §2.7), una tabla sólo
+  de altas que **ninguna decisión lee** y que `G17` nombra (`B/20` §2), con **180 días de retención
+  técnica, no configurable** (`NUCLEO/02` §1.5); y no hace nada más con ella: **las entregas
+  `payment` llegan por los dos canales, y el receptor procesa sólo la de Webhooks**. **Se revisa
+  tres meses después del corte** ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)): lo
+  guardado de IPN contra lo recibido por Webhooks, para decidir si se apaga. **El panel de la
+  aplicación de producción queda con IPN activo**, y en el corte su URL se apunta también al receptor
+  nuevo (`16-fase-7…` §4.2, paso 4b). **Cómo sabe el receptor por qué canal entró una entrega**: por
+  la URL a la que llegó, que es una por canal en el panel, como hoy (`source_news=webhooks` en la de
+  Webhooks); nunca por el cuerpo, que `G17` le prohíbe leer. **Y el requisito del owner sigue**,
+  ahora sobre un solo canal procesado: **un aviso duplicado del mismo hecho no puede
   producir efecto doble**: ninguna escritura, ningún correo ni ningún aviso de cobertura dos veces.
   Con `D17` la relectura por id ya lo sostiene en el estado, pero no alcanza con decirlo: **lleva
-  su prueba explícita**, un mismo hecho entregado por Webhooks y por IPN, en los dos órdenes y en
-  el mismo segundo, que deja exactamente una escritura y un correo. **Causa**: el filtro se
+  su prueba explícita**, ~~un mismo hecho entregado por Webhooks y por IPN, en los dos órdenes y en
+  el mismo segundo, que deja exactamente una escritura y un correo~~ un mismo `payment` entregado
+  dos veces por Webhooks a medio segundo (`WH-1`) y una por IPN en el mismo segundo, en cualquier
+  orden, que deja exactamente una escritura y un correo, y la entrega de IPN guardada en
+  `ipn_delivery` y en ningún otro lado (mediciones del 2026-09-29, punto 3). **Causa**: el filtro se
   agregó porque a veces llegaban dos avisos del mismo hecho, uno por cada canal (hecho del owner).

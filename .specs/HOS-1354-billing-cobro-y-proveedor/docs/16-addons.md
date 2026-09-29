@@ -106,6 +106,21 @@ exactamente una de las dos es no nula.
 > la misma clave antes de abandonar (`B/03` §8), y la orden que se paga después de que `A3`
 > abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).
 
+**Y dos cosas medidas en sandbox el 2026-09-29** (mediciones del 2026-09-29, puntos 5 y 10):
+
+- **Ni la orden ni su reembolso avisan por ningún canal** (`EX-15`, `RF-7`): cinco órdenes y dos
+  reembolsos, total y parcial, sin una sola entrega en 23 a 43 minutos. **Nada de este camino
+  espera un aviso**: la orden se confirma con la respuesta y releyéndola (`A2`), la que queda sin
+  respuesta la reenvía `A3`, la que se paga después la ve el barrido, y el reembolso se confirma
+  releyendo el pago (`RF3`). Producción no está medida.
+- **Una orden con la tarjeta rechazada devuelve `402` y queda creada igual**, `failed`, con su id en
+  el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
+  instancia como el de cualquier orden, y la instancia sigue en `PENDING_AUTHORIZATION`, como con
+  cualquier pago no aprobado. **Qué pasa cuando la persona reintenta con otra tarjeta** lo decide el
+  owner (`30-revision-del-owner/28-…`, decisión 3): con el mismo pedido la instancia ya existe y
+  reusa su orden, que está `failed`; y una orden con la misma clave y otra tarjeta es otro cuerpo,
+  que el proveedor contesta con `409` (`EX-41`).
+
 ---
 
 ## 2. Qué es una suscripción «válida» · cierra `A-ADDON-02`

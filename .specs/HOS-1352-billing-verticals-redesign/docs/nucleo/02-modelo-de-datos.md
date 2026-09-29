@@ -167,7 +167,9 @@ corte en `staging`, y la migración única del catálogo falla si alguno está v
 prueba, la gracia y los topes de pausa de un plan cuelgan de su versión y cambian publicando una
 versión nueva (§1.4), no por esta acción. **(b) Ningún plazo técnico** (`L2-g`): los 15 minutos del
 caché, las 26 horas del vigía del proceso diario, los 3 días de reintento de una mutación, las
-esperas del corte y los 7 días de `S37` antes de la renovación; cada uno protege un invariante, y
+esperas del corte, los 7 días de `S37` antes de la renovación y los 180 días que se guarda un aviso
+IPN (`B/02` §2.7; mediciones del 2026-09-29, M-2, que la fijó para que la revisión de HOS-1399
+tenga tres meses de datos y la tabla no crezca sin fin); cada uno protege un invariante, y
 cambiarlo sin saber cuál es la optimización peligrosa. **(c) Los que fija Mercado Pago o la ley**:
 la ventana de reintentos del proveedor, los 10 días corridos del arrepentimiento y las 24 horas de
 la Resolución 424/2020 (`B/22`).

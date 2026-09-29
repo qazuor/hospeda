@@ -269,13 +269,19 @@ relectura de `S6` y corre `S5`, que lo asienta en el mismo acto**: lo lee por id
 creando la fila si no existe, y **el aviso que llegue después es justamente el duplicado que este
 cruce descarta**, porque encuentra la fila ya `SUCCEEDED` (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25).
 
-Con dos advertencias medidas:
+Con ~~dos~~ tres advertencias medidas:
 
 - **No alcanza con deduplicar por tipo de evento**: un reembolso emite **tres notificaciones en
   dos formatos distintos para el mismo hecho** (`RF-7`).
 - **Un evento sin id propio no se puede deduplicar así.** Para esos vale la regla del capítulo
   03 §10.1: el evento es un aviso, se relee el recurso, y procesarlo dos veces da el mismo
   resultado.
+- **Las dos instancias pueden correr en el mismo medio segundo**, y por eso lo que las separa es la
+  base y no una consulta previa del tipo *«¿ya lo tengo?»*: el proveedor manda el duplicado de un
+  aviso a ~0,5 s (`WH-1`), y un `payment` llega además por IPN a milisegundos del de Webhooks
+  (`WH-6`). **El de IPN no entra a este cruce**: se guarda sin procesar (`B/06`, *«lo que este
+  capítulo NO cierra»*), así que el único duplicado que se procesa es el de Webhooks (mediciones del
+  2026-09-29, punto 3).
 
 ---
 
