@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
@@ -9,6 +10,37 @@ import { PartnerPaymentReviewStateEnumSchema } from '../../enums/partner-payment
 import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
 import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
+
+/**
+ * The partner fields whose WRITE contract is stricter than the entity's (HOS-703).
+ *
+ * `partnerSchema` also validates rows read back from the database and is served
+ * as the response schema, so it stays on the tolerant `z.string().url()`:
+ * tightening a read contract against rows already stored turns each bad row into
+ * a permanent 500. The create, update and owner-edit input schemas spread this
+ * over the entity shape instead, so a `javascript:` / `data:` / `vbscript:`
+ * website is refused at the door.
+ *
+ * `pendingWebsiteUrl` is not listed because no input schema accepts it: it is
+ * filled by `PartnerService` from the owner's `websiteUrl`, which is validated
+ * here first.
+ */
+export const PARTNER_SAFE_WRITE_URL_FIELDS = {
+    websiteUrl: safeExternalUrl('zodError.partner.websiteUrl.invalid').nullable().optional(),
+    contactInfo: ContactInfoSchema.nullish()
+} as const;
+
+/**
+ * `contactInfo` as the partner ENTITY (and therefore its response) sees it.
+ *
+ * `ContactInfoSchema.website` is scheme-restricted since HOS-703, but this
+ * schema also validates rows read back from the database, so `website` keeps
+ * the tolerant `.url()` here and only the write schemas
+ * ({@link PARTNER_SAFE_WRITE_URL_FIELDS}) use the strict one.
+ */
+const PartnerStoredContactInfoSchema = ContactInfoSchema.extend({
+    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).nullish()
+});
 
 /**
  * Partner analytics JSONB structure
@@ -49,7 +81,7 @@ export const partnerSchema = z.object({
      * nothing here, but the same rule that protects users applies: a read must
      * never 500 on data already in the column.
      */
-    contactInfo: ContactInfoSchema.nullish(),
+    contactInfo: PartnerStoredContactInfoSchema.nullish(),
     /** Operational counterpart of {@link partnerSchema.shape.contactInfo}. */
     socialNetworks: SocialNetworkSchema.nullish(),
     subscriptionStatus: PartnerSubscriptionStatusEnumSchema,

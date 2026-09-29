@@ -717,7 +717,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
-        app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
+        app.route('/api/v1/admin/feature-flags', adminFeatureFlagRoutes);
 
         // Redirectable QR codes admin (HOS-981): CRUD plus the rendered
         // download. Gated on SETTINGS_MANAGE — a borrowed gate, kept until a

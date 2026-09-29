@@ -27,7 +27,11 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const SOURCE_PATH = resolve(__dirname, '../../../src/components/analytics/PostHogScript.astro');
-const source = readFileSync(SOURCE_PATH, 'utf8');
+// HOS-807 moved the env reads, the render gate and `snippetBody` out of the
+// component frontmatter into `posthog.snippet.ts` (so the CSP can hash the
+// snippet at boot). The assertions below read the pair as one source.
+const SNIPPET_PATH = resolve(__dirname, '../../../src/components/analytics/posthog.snippet.ts');
+const source = `${readFileSync(SOURCE_PATH, 'utf8')}\n${readFileSync(SNIPPET_PATH, 'utf8')}`;
 
 const TEST_KEY = 'phc_test_key';
 const TEST_HOST = 'https://us.i.posthog.com';
