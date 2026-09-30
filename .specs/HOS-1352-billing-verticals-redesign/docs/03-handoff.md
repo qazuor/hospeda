@@ -47,11 +47,41 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-30 (noche) — FASE 5 aplicada entera; falta publicar
+## Última actualización: 2026-09-30 (cierre) — FASE 5 publicada; falta definir cómo se implementa
 
 ### El próximo paso exacto
 
-1. **Publicar, con OK del owner (ya dado el 2026-09-30):**
+1. **Parar y hablar con el owner cómo se sigue.** La implementación arranca por `U1`
+   ([HOS-1400](https://linear.app/hospeda-beta/issue/HOS-1400)); el gate de la FASE 5
+   (`DEC-METH-003`) está cumplido. La branch sigue sin pushear (PR #3360).
+2. **Menores, anotados en los registros `38-fase-5/30-`, `31-` y `32-` y sin tocar**:
+   - residuos en la fuente: `spec.md:146` (FASE 5 todavía ⬜), `16-:450` (numeración (b)/(c) de la
+     rama de aborto), `$V/spec.md:414` («diecinueve» por veinte), `$V/descomposicion.md:536` (baja
+     física de cuentas en `V8` sin la confirmación de `13-` §4.8), `$B/docs/06-proveedor.md:442`
+     («catorce de las dieciséis»), y las listas de fichas de `$V/descomposicion.md:651-654` y
+     `$B/descomposicion.md:883-887` sin `U1` ni `U2`;
+   - la frase «se vuelve a medir la cartera» de la presentación no tiene fuente viva;
+   - las fichas no republicadas (V3, B2, B3, B5, B8, B13) conservan el esqueleto HTML duplicado de
+     publicaciones viejas: se ven bien, se limpian la próxima vez que se toquen.
+
+### Lo que pasó el 2026-09-30 (cierre)
+
+- **Artifacts**: 23 republicados (tablero, paraguas, contrato, presentación, `U1`, las dos épicas,
+  V1, V2, V4–V9, B1, B4, B6, B7, B9–B12) y la ficha nueva de `U2`
+  (<https://claude.ai/artifact/SSqQ7sSpUXzfiTCUbM8fGb>); V3, B2, B3, B5, B8 y B13 sin cambios. El
+  tablero tenía un bug: su `save()` republicaba con doble envoltorio; quedó arreglado.
+- **Linear**: issue nuevo **HOS-1401** (`U2`, sub-issue de HOS-1352, `kind-spec`); HOS-1400
+  reescrita con la `U1` crecida; 18 descripciones de las épicas y unidades actualizadas (HOS-1357 sólo
+  su callout); **HOS-354 reescrita**, no cerrada (el owner la quiere para una versión posterior);
+  comentario de progreso en HOS-1352.
+- Registros: [`38-fase-5/30-`](./38-fase-5/30-publicacion-paraguas.md),
+  [`31-`](./38-fase-5/31-publicacion-verticales.md), [`32-`](./38-fase-5/32-publicacion-cobro.md).
+
+## Histórico: 2026-09-30 (noche) — FASE 5 aplicada entera; falta publicar
+
+### El próximo paso exacto
+
+1. ~~**Publicar, con OK del owner (ya dado el 2026-09-30):**~~ **Hecho el 2026-09-30 (cierre).**
    - artifacts: republicar los que cambiaron (tablero, paraguas, las dos épicas, contrato, las fichas
      `V*`/`B*` afectadas y la de `U1`, <https://claude.ai/artifact/DAqq2XU5iLpm3p9Mb9wGNq>) y crear la
      ficha de `U2`;

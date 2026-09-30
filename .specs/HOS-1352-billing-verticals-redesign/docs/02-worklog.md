@@ -1454,3 +1454,19 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   sujeto («el script del corte» → la herramienta de `V6`), buscar la frase vieja en todo el texto
   vivo, no sólo en lo registrado.
 - Commits `9dac8201dd`…`59631ad440`. **Sin pushear** (PR #3360).
+
+## 2026-09-30 (cierre) — la FASE 5 publicada
+
+- **Artifacts** (con OK del owner): tres agentes en paralelo, uno por grupo sin artifacts
+  compartidos, contra `7a224777ad..73e6f0b167`. 23 republicados y la ficha nueva de `U2`; seis sin
+  cambios. Segunda pasada para linkear `U2` y poner su issue una vez creado.
+- **Linear**: HOS-1401 (`U2`) creado; HOS-1400 y 18 descripciones actualizadas por parches anclados,
+  sin tocar estado, prioridad ni etiquetas; HOS-354 reescrita como el «entrar como» de una versión
+  posterior (el owner: «lo vamos a hacer después»); comentario de progreso en HOS-1352.
+- **Aprendido**: `read` sin `path` es el que habilita republicar, pero no deja archivo; el que baja
+  con `path` trae el envoltorio del servicio. Las versiones viejas tenían el esqueleto doble y el
+  `save()` del tablero lo reproducía en cada tilde. Linear normaliza el markdown al guardar (negritas
+  alrededor de código, links a issues, tachados con backticks): los anchors de un `patch` se copian
+  de un `get_issue` reciente. «Queda el gate de la FASE 5» vivía en casi todas las descripciones y
+  ningún recuento numérico lo veía: las frases de estado también se buscan.
+- Registros `38-fase-5/30-`, `31-`, `32-`. **Sin pushear** (PR #3360).
