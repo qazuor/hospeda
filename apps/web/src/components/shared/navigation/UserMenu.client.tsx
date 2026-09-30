@@ -39,7 +39,7 @@ import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
 import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
 import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
-import { AUTH_ME_CACHE_KEY, type AuthMeUser } from '@/lib/auth-cache';
+import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
@@ -295,7 +295,9 @@ export function UserMenu({
     const handleSignOut = useCallback(async () => {
         setIsOpen(false);
         try {
-            sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+            // HOS-1206: shared helper — it also swallows a throwing storage,
+            // which the bare `removeItem` let skip `signOut()` entirely.
+            clearCachedAuthMe();
             resetUser();
             await signOut();
         } finally {

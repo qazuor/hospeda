@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 // ============================================================================
 // ThreadQuerySchema
@@ -81,7 +82,7 @@ export const GuestInboxQuerySchema = z.object({
      *
      * Coerced from string (`"true"` / `"false"`) for URL query param support.
      */
-    archivedByGuest: z.coerce.boolean().optional(),
+    archivedByGuest: createBooleanQueryParam('Filter by archived-by-guest status'),
 
     /**
      * When set, return only conversations attached to this accommodation.

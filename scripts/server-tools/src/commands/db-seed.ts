@@ -27,10 +27,14 @@
  *
  * Safety:
  *   - `--target=prod` (the default) prompts with a destructive
- *     confirmation before running. `--yes` skips it. The combination
- *     `--reset --example` wipes the database and loads Faker-generated
- *     demo content including the well-known `admin@hospeda.com`
- *     credentials — never silently. See `packages/seed/CLAUDE.md`.
+ *     confirmation before running. `--yes` skips it.
+ *   - `--example` is OFF by default on `--target=prod` (HOS-564): it loads
+ *     Faker-generated demo content with well-known credentials, so a bare
+ *     `hops db-seed --target=prod` seeds only the required group. An
+ *     EXPLICIT `--example` against prod is refused outright, before any
+ *     git pull / install / build, with no `--yes` bypass. The seed
+ *     package enforces the same rule at its own entrypoint. See
+ *     `packages/seed/CLAUDE.md`.
  *   - `--target=staging` does not require an extra confirmation (it is
  *     designed to be reseeded freely). The `--pull` prompt still runs
  *     unless `--pull` / `--no-pull` is passed.
@@ -61,11 +65,13 @@ Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour (schema-sync is NOT included by default — run \`hops
 db-migrate\` separately first, or pass \`--migrate\` to include it):
-  --reset, --required, --example are ON. --build, --clean-images,
+  --reset, --required are ON. --example is ON on --target=staging and OFF
+  on --target=prod (HOS-564: it creates accounts with a well-known password;
+  an explicit --example on prod is refused). --build, --clean-images,
   --migrate are OFF. The default invocation:
     1. (optional) git pull $HOPS_REPO_ROOT
     2. (after pull) pnpm install --frozen-lockfile
-    3. pnpm --filter @repo/seed seed --reset --required --example
+    3. pnpm --filter @repo/seed seed --reset --required [--example]
 
   The seed runs via tsx with tsconfig path resolution, so workspace
   deps resolve from their src/ directories without a build step.
@@ -96,7 +102,10 @@ Flags:
   --no-reset          Skip the database reset step (population only).
                       May fail on UNIQUE violations if rows already exist.
   --no-required       Skip the --required step (rare; tests / partial seeds).
-  --no-example        Skip the --example step (required-only seed).
+  --example           Opt INTO the example step. Accepted on staging (already
+                      the default there); REFUSED on --target=prod.
+  --no-example        Skip the --example step (required-only seed). Redundant
+                      on prod, where it is already off.
   --clean-images      Opt INTO Cloudinary cleanup. Forwards the
                       HOSPEDA_CLOUDINARY_* creds to the seed so it
                       deletes every asset under hospeda/<env>/seed/
@@ -123,7 +132,7 @@ Without --pull / --no-pull the command asks interactively:
 
 Unattended examples:
   hops db-seed --target=staging --no-pull --yes
-  hops db-seed --target=prod --pull --yes
+  hops db-seed --target=prod --pull --yes                      # prod: required only
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
   hops db-seed --target=staging --migrate --no-pull --yes      # migrate + seed
 
@@ -162,6 +171,12 @@ export interface ParsedArgs {
     readonly reset: boolean;
     readonly required: boolean;
     readonly example: boolean;
+    /**
+     * True only when `--example` was passed EXPLICITLY (and not cancelled by
+     * `--no-example`). Lets {@link resolveTargetFlags} tell "defaulted on"
+     * (silently turned off on prod) from "asked for" (refused on prod).
+     */
+    readonly exampleExplicit: boolean;
     readonly cleanImages: boolean;
     readonly build: boolean;
     /**
@@ -195,6 +210,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         reset: !args.includes('--no-reset'),
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
+        exampleExplicit: args.includes('--example') && !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
         build: args.includes('--build'),
         migrate: args.includes('--migrate'),
@@ -203,6 +219,40 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
+}
+
+/** Result of {@link resolveTargetFlags}. */
+export interface ResolvedTargetFlags {
+    /** Flags after applying the per-target policy. */
+    readonly parsed: ParsedArgs;
+    /** Set when the combination must be refused outright. */
+    readonly refusal?: string;
+}
+
+/**
+ * HOS-564: applies the per-target `--example` policy. `--example` creates
+ * accounts with the repo-committed password, so on `--target=prod` it is OFF
+ * by default and an explicit `--example` is refused (no `--yes` bypass).
+ * Pure: run it right after parsing, before any side effect.
+ *
+ * @param args.parsed - Flags from {@link parseArgs}.
+ * @param args.target - The active target (`prod`, `staging`, ...).
+ * @returns The flags to use, or a `refusal` message.
+ */
+export function resolveTargetFlags(args: {
+    readonly parsed: ParsedArgs;
+    readonly target: string;
+}): ResolvedTargetFlags {
+    const { parsed, target } = args;
+    if (target !== 'prod') return { parsed };
+    if (parsed.exampleExplicit) {
+        return {
+            parsed,
+            refusal:
+                '--example is refused on --target=prod: it creates accounts with a well-known password committed in the repo. Omit it (it is off by default on prod).'
+        };
+    }
+    return { parsed: { ...parsed, example: false } };
 }
 
 export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
@@ -354,8 +404,13 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         return;
     }
 
-    const parsed = parseArgs(argv);
     const target = getActiveTarget();
+    // HOS-564: per-target policy BEFORE any side effect (pull/install/build).
+    const resolved = resolveTargetFlags({ parsed: parseArgs(argv), target });
+    if (resolved.refusal) {
+        die(resolved.refusal);
+    }
+    const parsed = resolved.parsed;
 
     if (!parsed.reset && !parsed.required && !parsed.example) {
         die('Nothing to do: --no-reset --no-required --no-example were all passed.');
@@ -430,11 +485,6 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
     if (target === 'prod' && parsed.reset && !parsed.skipConfirm) {
         log.warn('THIS WILL WIPE THE PRODUCTION DATABASE.');
         log.warn('--reset drops every row before reseeding.');
-        if (parsed.example) {
-            log.warn(
-                '--example loads Faker-generated demo data including the well-known admin@hospeda.com credentials.'
-            );
-        }
         if (parsed.cleanImages) {
             log.warn(
                 '--clean-images deletes Cloudinary assets under hospeda/<env>/seed/ before reseeding.'

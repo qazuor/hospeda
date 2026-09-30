@@ -29,6 +29,8 @@ export {
     toBcp47Locale
 } from './formatting';
 // React hooks for translations
+export type { LocaleProviderProps } from './hooks/locale-context';
+export { LocaleProvider } from './hooks/locale-context';
 export { useTranslations } from './hooks/use-translations';
 export type {
     LocaleResolutionSource,

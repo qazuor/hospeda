@@ -5,6 +5,7 @@ import {
     PARTNER_REAPER_MANAGED_FIELDS,
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
+    PARTNER_SAFE_WRITE_URL_FIELDS,
     partnerSchema
 } from './partner.schema.js';
 
@@ -36,16 +37,18 @@ import {
 export const updatePartnerSchema = z
     .object(
         stripShapeDefaults(
-            partnerSchema.omit({
-                ...PARTNER_REVIEW_MANAGED_FIELDS,
-                ...PARTNER_REVOKE_MANAGED_FIELDS,
-                ...PARTNER_REAPER_MANAGED_FIELDS,
-                ...PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
-                id: true,
-                createdAt: true,
-                createdById: true,
-                ownerUserId: true
-            }).shape
+            partnerSchema
+                .omit({
+                    ...PARTNER_REVIEW_MANAGED_FIELDS,
+                    ...PARTNER_REVOKE_MANAGED_FIELDS,
+                    ...PARTNER_REAPER_MANAGED_FIELDS,
+                    ...PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
+                    id: true,
+                    createdAt: true,
+                    createdById: true,
+                    ownerUserId: true
+                })
+                .extend(PARTNER_SAFE_WRITE_URL_FIELDS).shape
         )
     )
     .partial();

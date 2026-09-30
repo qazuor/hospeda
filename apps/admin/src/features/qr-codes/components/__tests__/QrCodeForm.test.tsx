@@ -123,6 +123,31 @@ describe('QrCodeForm — edit mode', () => {
     });
 
     /**
+     * HOS-1298: retiring a printed code is "deactivate", not "delete". The flag
+     * must leave the form as `isActive: false`, alone.
+     */
+    it('turning Active off submits isActive false', async () => {
+        const { onSubmit } = renderEditForm();
+
+        fireEvent.click(screen.getByRole('switch'));
+        submit();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(onSubmit.mock.calls[0]?.[0]).toStrictEqual({ isActive: false });
+    });
+
+    it('turning Active off and renaming in one save submits both fields', async () => {
+        const { onSubmit } = renderEditForm();
+
+        fireEvent.change(screen.getByLabelText(/labelLabel/i), { target: { value: 'X' } });
+        fireEvent.click(screen.getByRole('switch'));
+        submit();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(onSubmit.mock.calls[0]?.[0]).toStrictEqual({ label: 'X', isActive: false });
+    });
+
+    /**
      * The slug is already printed on a sticker, and the API refuses a body that
      * carries one. Renaming the label must not smuggle it in.
      */

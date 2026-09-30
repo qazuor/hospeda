@@ -282,7 +282,7 @@ export function ReviewSidebarCard({
                         <p className={styles.cardText}>
                             {t(
                                 'review.sidebar.canLeaveReview',
-                                'Contaste con el anfitrión. Compartí tu experiencia para ayudar a otros viajeros.'
+                                'Contactaste con el anfitrión. Compartí tu experiencia para ayudar a otros viajeros.'
                             )}
                         </p>
                         <button

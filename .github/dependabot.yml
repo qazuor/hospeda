@@ -39,6 +39,23 @@ updates:
           - 'major'
           - 'minor'
           - 'patch'
+      # Radix must also move as ONE unit (HOS-80). Every overlay (dialog,
+      # select, popover, dropdown-menu, alert-dialog, plus cmdk, which wraps
+      # react-dialog) traps focus through @radix-ui/react-focus-scope, and
+      # that package keeps its stack of active scopes in module state. If two
+      # overlays resolve to different focus-scope copies, a Select opened
+      # inside a Dialog is trapped by two stacks that cannot see each other.
+      # They steal focus back and forth forever, which is the infinite recursion
+      # that OOM-crashed admin's shard 5 (PromoCodeFormDialog) in #2019 and #3365.
+      # Bumping part of the family is exactly what produces that split.
+      radix:
+        patterns:
+          - '@radix-ui/*'
+          - 'cmdk'
+        update-types:
+          - 'major'
+          - 'minor'
+          - 'patch'
       production-minor-patch:
         dependency-type: 'production'
         update-types:
@@ -99,21 +116,6 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'expo-*'
         update-types: ['version-update:semver-major']
-      # @radix-ui/*: the production-minor-patch group's Radix bumps (react-select
-      # 2.2.6 -> 2.3.1, plus dialog/popover/avatar/slot/... minors) collectively
-      # tip apps/admin's unit-test fork worker over its NATIVE V8 memory ceiling
-      # (RegExpCompiler Zone allocator, NOT the JS heap — --logHeapUsage stays flat
-      # at ~330-500MB) when rendering the heavy Radix-portal + cmdk + userEvent
-      # dialog tests (PermissionPicker, *CredentialDialog, PromoCodeFormDialog),
-      # crashing shard 5 with an OOM. Bisected across PRs #2054-2064: there is NO
-      # single culprit package — reverting select/slot/overlays/{select+slot+tabs}
-      # each still OOMs, only reverting ~all 13 clears it, so it's the aggregate
-      # native-memory cost of the group. staging (older Radix) sits just under the
-      # ceiling. The bumps are MINOR/patch, so this can't be scoped to majors like
-      # astro/recharts/expo — the whole scope is gated. Lift when the admin test
-      # native-memory ceiling is fixed (vmForks+vmMemoryLimit or heavy-test
-      # isolation). Owner: HOS-80.
-      - dependency-name: '@radix-ui/*'
       # @ai-sdk/openai + @ai-sdk/anthropic + ai: the Vercel AI SDK v4/v7 line
       # ships a LanguageModelV4 provider that the installed `ai` core's
       # generateText/streamText don't accept, so these three MUST move together

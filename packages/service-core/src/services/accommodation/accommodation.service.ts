@@ -2460,9 +2460,9 @@ export class AccommodationService extends BaseCrudService<
         // for an already-deleted entity, and re-revoking on every repeat delete
         // would be pure noise.
         //
-        // NOT gated on `ctx?.tx`, unlike the conversation cascade below: both
-        // delete routes call `softDelete(actor, id)` with no context, so a
-        // tx-gated cascade never runs from the application at all. The
+        // NOT gated on `ctx?.tx`: both delete routes call
+        // `softDelete(actor, id)` with no context, so a tx-gated cascade never
+        // runs from the application at all (HOS-1383). The
         // deactivation is a single UPDATE, atomic on its own, and joins the
         // caller's transaction when there is one — the provider round trips
         // inside the cascade deliberately do not (see its module doc).
@@ -2478,9 +2478,28 @@ export class AccommodationService extends BaseCrudService<
         // soft-deleted accommodation so guests cannot reply on a stale thread.
         // Best-effort: a failure here logs but does not block the accommodation
         // soft-delete itself.
-        if (deletedId && ctx?.tx) {
+        //
+        // HOS-1383: this used to be gated on `ctx?.tx`. Both delete routes call
+        // `softDelete(actor, id)` with no context and nothing on that path opens
+        // a transaction, so the cascade never ran from the application. Like
+        // the calendar cascade above, it is now gated on what actually happened
+        // (`result.count > 0`), not on how the caller invoked it.
+        // `closeAllForAccommodation` does an UPDATE plus one schedule
+        // cancellation per conversation, so it runs in its own transaction
+        // when the caller did not pass one. When the caller DID pass one, it
+        // runs inside a savepoint (`tx.transaction` on a transaction): after a
+        // failed statement Postgres aborts the whole transaction, so without
+        // the savepoint the catch below would swallow the error and leave the
+        // caller holding a dead transaction — "non-blocking" in name only.
+        if (deletedId && result.count > 0) {
+            const closeConversations = (tx: DrizzleClient) =>
+                this.conversationService.closeAllForAccommodation(deletedId, tx);
             try {
-                await this.conversationService.closeAllForAccommodation(deletedId, ctx.tx);
+                if (ctx?.tx) {
+                    await ctx.tx.transaction(closeConversations);
+                } else {
+                    await withTransaction(closeConversations);
+                }
             } catch (error) {
                 this.logger.warn(
                     { error, accommodationId: deletedId },
@@ -4272,7 +4291,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'
@@ -4720,7 +4743,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'
@@ -4808,7 +4835,11 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'

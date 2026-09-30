@@ -6,6 +6,14 @@
  */
 
 export {
+    DEFAULT_AUTH_COOKIE_PREFIX,
+    type GetAuthSessionCookieNamesInput,
+    getAuthSessionCookieNames,
+    type ResolveAuthCookiePrefixInput,
+    resolveAuthCookiePrefix,
+    STAGING_AUTH_COOKIE_PREFIX
+} from './auth-session-cookie.js';
+export {
     commonEnvMappings,
     commonEnvSchemas,
     createStartupValidator,

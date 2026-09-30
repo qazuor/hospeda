@@ -201,6 +201,18 @@ export const serverEnvBaseSchema = z.object({
      */
     PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
     /**
+     * Dailymotion Player ID (HOS-1217). `geo.dailymotion.com` refuses a third-party
+     * iframe unless the URL names a Player (`/player/<id>.html?video=<id>`). Public
+     * by design. When unset, Dailymotion videos degrade to an external link instead
+     * of an embedded player. Alphanumeric only — the value is interpolated into an
+     * iframe URL.
+     */
+    PUBLIC_DAILYMOTION_PLAYER_ID: z
+        .string()
+        .regex(/^[A-Za-z0-9]{1,20}$/, 'PUBLIC_DAILYMOTION_PLAYER_ID must be alphanumeric')
+        .optional()
+        .or(z.literal('')),
+    /**
      * PostHog Cloud project API key for the web app (SPEC-140). Public by
      * design — ships in the browser bundle. Leave unset to disable PostHog
      * init (no events sent, no cookies set, no network requests). Per-env

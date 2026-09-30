@@ -5392,5 +5392,3820 @@
         "featureType": "",
         "displayName": "Parroquia Nuestra Señora de los Dolores",
         "provider": "google-places"
+    },
+    "Predio ferroviario de Caseros, Entre Ríos, Argentina": {
+        "lat": -32.465423799999996,
+        "long": -58.4811756,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Caseros (FFCCGU)",
+        "provider": "google-places"
+    },
+    "Calle 15 N.º 310, entre Calle 6 y Calle 8, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4618429,
+        "long": -58.4826131,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "C. 6 310",
+        "provider": "google-places"
+    },
+    "Calle 8 N.º 765, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4635229,
+        "long": -58.479257,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Calle 8",
+        "provider": "google-places"
+    },
+    "Calle 15 N.º 130, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4624067,
+        "long": -58.4800383,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Calle 15",
+        "provider": "google-places"
+    },
+    "Acceso sur de Caseros, Entre Ríos, Argentina": {
+        "lat": -32.470043499999996,
+        "long": -58.479341299999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Caseros Acceso",
+        "provider": "google-places"
+    },
+    "Zona rural de San Justo, Entre Ríos, Argentina": null,
+    "Batalla de Cepeda 100, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2103272,
+        "long": -58.14596160000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Batalla de Cepeda 100",
+        "provider": "google-places"
+    },
+    "Costanera Norte, bajo Termas Colón, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2114179,
+        "long": -58.1412822,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera Norte",
+        "provider": "google-places"
+    },
+    "Acceso por Costanera Norte y arroyo Artalaz, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2012724,
+        "long": -58.149403500000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Arroyo Artalaz",
+        "provider": "google-places"
+    },
+    "Centro cívico de Colón, Entre Ríos, Argentina": {
+        "lat": -32.235064699999995,
+        "long": -58.1586461,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro para el Desarrollo de Colón",
+        "provider": "google-places"
+    },
+    "Avenida Costanera y Gouchón, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2157991,
+        "long": -58.1360537,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Gobernador Quiros & Gouchon",
+        "provider": "google-places"
+    },
+    "12 de Abril 461, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2235687,
+        "long": -58.1417119,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "12 de Abril 461",
+        "provider": "google-places"
+    },
+    "Combatientes de Malvinas 188, Colón, Entre Ríos, Argentina": {
+        "lat": -32.212398799999995,
+        "long": -58.1447974,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Combatientes de Malvinas 188",
+        "provider": "google-places"
+    },
+    "12 de Abril 208, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2206469,
+        "long": -58.137101099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "12 de Abril 208",
+        "provider": "google-places"
+    },
+    "12 de Abril 106, Colón, Entre Ríos, Argentina": {
+        "lat": -32.219463499999996,
+        "long": -58.1354487,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "12 de Abril 106",
+        "provider": "google-places"
+    },
+    "Boulevard Gaillard 179, Colón, Entre Ríos, Argentina": {
+        "lat": -32.214833899999995,
+        "long": -58.1419133,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Blvd. Gaillard 179",
+        "provider": "google-places"
+    },
+    "Laprida 86, Colón, Entre Ríos, Argentina": {
+        "lat": -32.221111199999996,
+        "long": -58.1360424,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Laprida 86",
+        "provider": "google-places"
+    },
+    "Avenida Costanera, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2195056,
+        "long": -58.1326945,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Gobernador Quiros",
+        "provider": "google-places"
+    },
+    "Avenida Costanera entre San Martín y Bolívar, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2170348,
+        "long": -58.134756599999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Feria Costanera Colón",
+        "provider": "google-places"
+    },
+    "Peyret y Chacabuco, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2157379,
+        "long": -58.1374205,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Alejo Peyret & Chacabuco",
+        "provider": "google-places"
+    },
+    "Tucumán y Juan José Paso, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2204578,
+        "long": -58.1408233,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Escuela Numero 1 Juan José Paso",
+        "provider": "google-places"
+    },
+    "Costanera Sur y Evita, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2186972,
+        "long": -58.132971399999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera de Colón",
+        "provider": "google-places"
+    },
+    "Costanera de Colón, Entre Ríos, Argentina": {
+        "lat": -32.2195056,
+        "long": -58.1326945,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Gobernador Quiros",
+        "provider": "google-places"
+    },
+    "Doctor Juan Adolfo Ansaldi, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2255043,
+        "long": -58.1306215,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Doctor Juan Adolfo Ansaldi",
+        "provider": "google-places"
+    },
+    "Ribera Sur de Colón, Entre Ríos, Argentina": {
+        "lat": -32.211445999999995,
+        "long": -58.142830399999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Rios Del Sur",
+        "provider": "google-places"
+    },
+    "Entorno del Parque Quirós, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2258165,
+        "long": -58.1333375,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Dr. Herminio J. Quirós",
+        "provider": "google-places"
+    },
+    "Zona costera de Colón, Entre Ríos, Argentina": {
+        "lat": -32.2110251,
+        "long": -58.1422595,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Playa Norte Colón",
+        "provider": "google-places"
+    },
+    "Zona rural de Colón, Entre Ríos, Argentina": {
+        "lat": -32.1629047,
+        "long": -58.4026778,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural de Colon",
+        "provider": "google-places"
+    },
+    "Calle 12 de Abril, Colón, Entre Ríos, Argentina": {
+        "lat": -32.2262031,
+        "long": -58.1451391,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "12 de Abril",
+        "provider": "google-places"
+    },
+    "Entorno del Puerto de Colón, Entre Ríos, Argentina": {
+        "lat": -32.2157724,
+        "long": -58.13603549999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto De Colón",
+        "provider": "google-places"
+    },
+    "Zona portuaria de Colón, Entre Ríos, Argentina": {
+        "lat": -32.2157724,
+        "long": -58.13603549999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto De Colón",
+        "provider": "google-places"
+    },
+    "Ruta Nacional 135, acceso a Colón, Entre Ríos, Argentina": {
+        "lat": -32.2398298,
+        "long": -58.1746214,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Nacional 135",
+        "provider": "google-places"
+    },
+    "Zona balnearia de San José, Entre Ríos, Argentina": {
+        "lat": -32.190039299999995,
+        "long": -58.160633999999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Balneario Camping San José",
+        "provider": "google-places"
+    },
+    "Zona termal y balnearia de San José, Entre Ríos, Argentina": {
+        "lat": -32.1920704,
+        "long": -58.1636979,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de San José",
+        "provider": "google-places"
+    },
+    "Camino colonial, zona rural de San José, Entre Ríos, Argentina": {
+        "lat": -32.2132797,
+        "long": -58.187545699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camino Viejo Colón, Salón De Eventos",
+        "provider": "google-places"
+    },
+    "Plaza General Urquiza, Centro de San José, Entre Ríos, Argentina": {
+        "lat": -32.2123807,
+        "long": -58.219126599999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza General Justo José de Urquiza",
+        "provider": "google-places"
+    },
+    "San Martín 1171, San José, Entre Ríos, Argentina": {
+        "lat": -32.2116799,
+        "long": -58.2181732,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San Martín 1171",
+        "provider": "google-places"
+    },
+    "Cine Urquiza, Centro de San José, Entre Ríos, Argentina": {
+        "lat": -32.2125617,
+        "long": -58.21792800000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cine y Teatro General Urquiza San Jose Entre Rios",
+        "provider": "google-places"
+    },
+    "Municipalidad de San José, Centro de San José, Entre Ríos, Argentina": {
+        "lat": -32.213132099999996,
+        "long": -58.2183129,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de San Jose",
+        "provider": "google-places"
+    },
+    "Acceso a San José, Entre Ríos, Argentina": {
+        "lat": -32.2094591,
+        "long": -58.219883,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Terminal de Ómnibus San José, Entre Ríos",
+        "provider": "google-places"
+    },
+    "Cementerio Municipal de San José, Entre Ríos, Argentina": {
+        "lat": -32.2014971,
+        "long": -58.2221131,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cementerio Municipal San José",
+        "provider": "google-places"
+    },
+    "Zona rural de San José, Entre Ríos, Argentina": {
+        "lat": -32.212656599999995,
+        "long": -58.219954400000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Museo Histórico Regional de la Colonia San José",
+        "provider": "google-places"
+    },
+    "Sector histórico del antiguo frigorífico, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1557568,
+        "long": -58.187684499999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Frigorífico Pueblo Liebig",
+        "provider": "google-places"
+    },
+    "Eric Evans 149, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.152462899999996,
+        "long": -58.19268159999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Eric Evans 149",
+        "provider": "google-places"
+    },
+    "Calle 17 de Mayo, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1546154,
+        "long": -58.193493,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "17 de Mayo",
+        "provider": "google-places"
+    },
+    "Casco histórico de Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1538932,
+        "long": -58.1899907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Turismo Pueblo Liebig",
+        "provider": "google-places"
+    },
+    "Costa del río Uruguay, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.4421663,
+        "long": -58.291303,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cabañas \"Costa del Río Uruguay\"",
+        "provider": "google-places"
+    },
+    "Centro Cívico de Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1550735,
+        "long": -58.1944717,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro civico Liebig",
+        "provider": "google-places"
+    },
+    "Ingreso a Pueblo Liebig, calle Santa Rita, Entre Ríos, Argentina": {
+        "lat": -32.1512855,
+        "long": -58.194296099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Hostería Santa Rita",
+        "provider": "google-places"
+    },
+    "Plaza General San Martín, Centro de Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.4801864,
+        "long": -58.2343407,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martin",
+        "provider": "google-places"
+    },
+    "Centro Cívico, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1550735,
+        "long": -58.1944717,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro civico Liebig",
+        "provider": "google-places"
+    },
+    "Irides Marito Moren s/n, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1513843,
+        "long": -58.1902721,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Irides Moren",
+        "provider": "google-places"
+    },
+    "Inicio en el Centro de Interpretación Audiovisual, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1538932,
+        "long": -58.1899907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Turismo Pueblo Liebig",
+        "provider": "google-places"
+    },
+    "Río Uruguay, frente a Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1545743,
+        "long": -58.193502599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Liebig",
+        "provider": "google-places"
+    },
+    "Frente a la Escuela Hipólito Vieytes, Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.155575,
+        "long": -58.192745800000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Escuela Numero 16 H Vieytes",
+        "provider": "google-places"
+    },
+    "Municipalidad de Pueblo Liebig, Entre Ríos, Argentina": {
+        "lat": -32.1553997,
+        "long": -58.194766099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de Pueblo Liebig",
+        "provider": "google-places"
+    },
+    "Ruta Nacional 130 km 20, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.129781,
+        "long": -58.440202500000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas Villa Elisa",
+        "provider": "google-places"
+    },
+    "Complejo Termas Villa Elisa, Ruta Nacional 130 km 20, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.129781,
+        "long": -58.440202500000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas Villa Elisa",
+        "provider": "google-places"
+    },
+    "Estancia Museo El Porvenir, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1736071,
+        "long": -58.4052941,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Museo Regional Estancia «El Porvenir»",
+        "provider": "google-places"
+    },
+    "Centenario 2200, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1600229,
+        "long": -58.41405220000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centenario 2200",
+        "provider": "google-places"
+    },
+    "Estación Ferroviaria, Centenario 2200, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.160054099999996,
+        "long": -58.414089000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Tren Histórico de Villa Elisa",
+        "provider": "google-places"
+    },
+    "Avenida Urquiza 1798, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1599441,
+        "long": -58.404157999999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. Urquiza 1798",
+        "provider": "google-places"
+    },
+    "Iglesia Natividad de Nuestra Señora, Centro de Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.165207699999996,
+        "long": -58.401718599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Natividad de Nuestra Se ora",
+        "provider": "google-places"
+    },
+    "Entre avenida Urquiza, avenida Mitre, San Martín y Héctor de Elia, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1599084,
+        "long": -58.4041288,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Oficina Municipal de Turismo de Villa Elisa",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1631333,
+        "long": -58.3994636,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza \"San Martin\"",
+        "provider": "google-places"
+    },
+    "Plaza Moreno, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.159143199999995,
+        "long": -58.41109410000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Moreno",
+        "provider": "google-places"
+    },
+    "Centro de Villa Elisa, próximo a la Iglesia Natividad de Nuestra Señora, Entre Ríos, Argentina": {
+        "lat": -32.165207699999996,
+        "long": -58.401718599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Natividad de Nuestra Se ora",
+        "provider": "google-places"
+    },
+    "Boulevard Churruarín 1506, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1653726,
+        "long": -58.395792699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Blvd. Churruarin 1506",
+        "provider": "google-places"
+    },
+    "Salón de Cultura Heraldo Peragallo, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.163501,
+        "long": -58.4013861,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Salon Heraldo Peragallo",
+        "provider": "google-places"
+    },
+    "Avenida Mitre 2039, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1585502,
+        "long": -58.395636,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. Mitre 2039",
+        "provider": "google-places"
+    },
+    "Terminal de Ómnibus Agustín Gutiérrez, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1631297,
+        "long": -58.40142799999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Terminal de Ómnibus de Villa Elisa",
+        "provider": "google-places"
+    },
+    "Polideportivo Municipal de Villa Elisa, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.167984,
+        "long": -58.397998799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Polideportivo",
+        "provider": "google-places"
+    },
+    "Natatorio Municipal de Villa Elisa, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1675945,
+        "long": -58.3977708,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Pileta Municipal de Villa Elisa (Club Atlético Villa Elisa)",
+        "provider": "google-places"
+    },
+    "Junto al Polideportivo Municipal, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.167984,
+        "long": -58.397998799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Polideportivo",
+        "provider": "google-places"
+    },
+    "Colonia Hocker, a 12 km de Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.08672,
+        "long": -58.3448933,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Almacén Don Leandro",
+        "provider": "google-places"
+    },
+    "Colonia El Carmen, a 16 km de Villa Elisa, Entre Ríos, Argentina": null,
+    "Ruta Provincial 23 km 28, zona de Arroyo Barú, Entre Ríos, Villa Elisa, Argentina": {
+        "lat": -32.129781,
+        "long": -58.440202500000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas Villa Elisa",
+        "provider": "google-places"
+    },
+    "Vidvir Enoteca, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1654986,
+        "long": -58.399271799999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "VidVir enoteca tour",
+        "provider": "google-places"
+    },
+    "Zona rural de Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1629047,
+        "long": -58.4026778,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural de Colon",
+        "provider": "google-places"
+    },
+    "Jardín Medicinal LL Yuyos, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1581003,
+        "long": -58.3900212,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "L L YUYOS",
+        "provider": "google-places"
+    },
+    "Patu Granja, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1680734,
+        "long": -58.4068894,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Vivero y Florería George Patu Granja",
+        "provider": "google-places"
+    },
+    "Punto de partida en Villa Elisa y colonias rurales cercanas, Entre Ríos, Argentina": {
+        "lat": -32.129781,
+        "long": -58.440202500000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas Villa Elisa",
+        "provider": "google-places"
+    },
+    "Punto habitual de salida en la Terminal de Ómnibus, Villa Elisa, Entre Ríos, Argentina": {
+        "lat": -32.1631297,
+        "long": -58.40142799999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Terminal de Ómnibus de Villa Elisa",
+        "provider": "google-places"
+    },
+    "Ruta Nacional 14 km 198, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.8568623,
+        "long": -58.324538600000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Bodega Altos del Palmar",
+        "provider": "google-places"
+    },
+    "Ruta Nacional 14 km 198, acceso al Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Área de servicios del Parque Nacional El Palmar, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "A 12 km de la portada del Parque Nacional El Palmar, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Sector de Ruinas Históricas, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Costa del río Uruguay, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Sector de la portada, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Camino al mirador del arroyo El Palmar, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8946084,
+        "long": -58.2379336,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Mirador Arroyo El Palmar",
+        "provider": "google-places"
+    },
+    "Camino al mirador Los Loros, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Sector de playa, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Mirador del arroyo El Palmar, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8946084,
+        "long": -58.2379336,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Mirador Arroyo El Palmar",
+        "provider": "google-places"
+    },
+    "Junto al Camping El Palmar, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.866703500000003,
+        "long": -58.209686,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping El Palmar",
+        "provider": "google-places"
+    },
+    "Centro de Visitantes, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8674095,
+        "long": -58.208841199999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro de Visitantes Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Intendencia del Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Destacamento de Prefectura, Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Boulevard Palmar Yatay, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.7954988,
+        "long": -58.312769,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Boulevard Palmar Yatay",
+        "provider": "google-places"
+    },
+    "Predio del Ferrocarril, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.816523399999994,
+        "long": -58.321273100000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Aurora del Palmar",
+        "provider": "google-places"
+    },
+    "Inicio en el Predio del Ferrocarril, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.7954778,
+        "long": -58.312284,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estacion Ubajay",
+        "provider": "google-places"
+    },
+    "Desde Ubajay hacia la Ruta Nacional 14 y Parque Nacional El Palmar, Entre Ríos, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.7951453,
+        "long": -58.3150706,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martin",
+        "provider": "google-places"
+    },
+    "Avenida Las Acacias 185, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.793992399999993,
+        "long": -58.3140576,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. las Acacias 185",
+        "provider": "google-places"
+    },
+    "Ceibal 162, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.793372,
+        "long": -58.3166812,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ceibal 162",
+        "provider": "google-places"
+    },
+    "Pasaje de los Peregrinos y Las Acacias, Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.816523399999994,
+        "long": -58.321273100000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Aurora del Palmar",
+        "provider": "google-places"
+    },
+    "Zona rural de Ubajay, Entre Ríos, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Aproximadamente 5 km de la entrada al Parque Nacional El Palmar, Entre Ríos, Ubajay, Argentina": {
+        "lat": -31.8543085,
+        "long": -58.3194309,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Nacional El Palmar",
+        "provider": "google-places"
+    },
+    "Frente a Plaza 25 de Mayo, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.625195599999998,
+        "long": -58.5051427,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza 25 de Mayo",
+        "provider": "google-places"
+    },
+    "Avenida Malarín, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.6164341,
+        "long": -58.5142959,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Malarín",
+        "provider": "google-places"
+    },
+    "Entorno de la Estación Ferroviaria, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.629210999999994,
+        "long": -58.5036142,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación de ferrocarril San Salvador - Entre Rios",
+        "provider": "google-places"
+    },
+    "Calle San Martín, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.6216253,
+        "long": -58.5099671,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San Martín",
+        "provider": "google-places"
+    },
+    "Junto a Villa Aurora, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.6289554,
+        "long": -58.501534400000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Villa Aurora",
+        "provider": "google-places"
+    },
+    "Conjunto de la Casa del Fundador, San Salvador, Entre Ríos, Argentina": null,
+    "San Salvador y área industrial, Entre Ríos, Argentina": {
+        "lat": -31.5901906,
+        "long": -58.46960430000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Industrial San Salvador/General Campos",
+        "provider": "google-places"
+    },
+    "Aproximadamente 3 km al este de San Salvador, Entre Ríos, Argentina": null,
+    "Zona del Arroyo Grande, departamento San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.623883300000003,
+        "long": -58.5050575,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San Salvador",
+        "provider": "google-places"
+    },
+    "Punto de referencia en San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.6111322,
+        "long": -58.467959,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Monumento a los Caídos en la Batalla de Arroyo Grande",
+        "provider": "google-places"
+    },
+    "Entorno del Parque Eva Perón, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.623705599999997,
+        "long": -58.5059597,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Eva Perón",
+        "provider": "google-places"
+    },
+    "Barrio Jardín Esperanza, San Salvador, Entre Ríos, Argentina": {
+        "lat": -31.629033599999996,
+        "long": -58.51346219999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Jardín Esperanza",
+        "provider": "google-places"
+    },
+    "Avenida Costanera, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3919781,
+        "long": -57.9891629,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera",
+        "provider": "google-places"
+    },
+    "Costanera de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.4017186,
+        "long": -58.0073398,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera Concordia",
+        "provider": "google-places"
+    },
+    "Barrio Nébel, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.395729999999997,
+        "long": -57.996887,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Barrio Nebel",
+        "provider": "google-places"
+    },
+    "Perilago de Salto Grande, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.2555835,
+        "long": -57.956172599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas y Parque Acuático del Ayuí",
+        "provider": "google-places"
+    },
+    "Complejo Hidroeléctrico Salto Grande, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.2742953,
+        "long": -57.93943429999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Represa Hidroeléctrica de Salto Grande",
+        "provider": "google-places"
+    },
+    "Camino al Lago de Salto Grande, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.2710088,
+        "long": -58.1079873,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Lago Salto Grande",
+        "provider": "google-places"
+    },
+    "Acceso norte de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.2919089,
+        "long": -58.00500590000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Rotonda Acceso Norte Concordia",
+        "provider": "google-places"
+    },
+    "Paso del Zorro s/n, Lago Salto Grande, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.2555835,
+        "long": -57.956172599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas y Parque Acuático del Ayuí",
+        "provider": "google-places"
+    },
+    "Parque Rivadavia, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3711607,
+        "long": -57.9976588,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque San Carlos",
+        "provider": "google-places"
+    },
+    "Victorino Simón y San Carlos, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3633357,
+        "long": -58.01394440000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Victorino Simón",
+        "provider": "google-places"
+    },
+    "Urquiza 638, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3973876,
+        "long": -58.018368,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Urquiza 638",
+        "provider": "google-places"
+    },
+    "Centro histórico de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.367828,
+        "long": -57.99815650000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Castillo San Carlos",
+        "provider": "google-places"
+    },
+    "Frente a la Catedral San Antonio de Padua, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.397471,
+        "long": -58.018217799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Catedral San Antonio de Padua de la Concordia",
+        "provider": "google-places"
+    },
+    "Entorno de la Catedral, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.397471,
+        "long": -58.018217799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Catedral San Antonio de Padua de la Concordia",
+        "provider": "google-places"
+    },
+    "Entre Ríos y Ramírez, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3913885,
+        "long": -58.0174774,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Entre Ríos & Ramírez",
+        "provider": "google-places"
+    },
+    "Mitre 76, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.396892800000003,
+        "long": -58.017152499999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Mitre 76",
+        "provider": "google-places"
+    },
+    "Calle Entre Ríos, centro de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.397605499999997,
+        "long": -58.0167028,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro De Concordia",
+        "provider": "google-places"
+    },
+    "Tavella 2000, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.364198,
+        "long": -58.0174677,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Monseñor Tavella 2000",
+        "provider": "google-places"
+    },
+    "Entre Ríos 135, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.406123200000003,
+        "long": -58.0207579,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Entre Ríos 135",
+        "provider": "google-places"
+    },
+    "Zona norte de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3849621,
+        "long": -58.01714419999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ex Estación Norte",
+        "provider": "google-places"
+    },
+    "Parque Ferré, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.392057400000002,
+        "long": -58.0327377,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Ferre",
+        "provider": "google-places"
+    },
+    "Avenida Monseñor Rösch, acceso al Aeropuerto, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.299772599999994,
+        "long": -58.0022006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Aeropuerto Concordia / Concordia Airport",
+        "provider": "google-places"
+    },
+    "Zona portuaria de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.403316399999998,
+        "long": -58.0020267,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto de Concordia",
+        "provider": "google-places"
+    },
+    "Costa del río Uruguay, Concordia, Entre Ríos, Argentina": {
+        "lat": -32.4421663,
+        "long": -58.291303,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cabañas \"Costa del Río Uruguay\"",
+        "provider": "google-places"
+    },
+    "Entre Ríos 567, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.398083900000003,
+        "long": -58.0189477,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Entre Ríos 567",
+        "provider": "google-places"
+    },
+    "1.º de Mayo 141, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.398113,
+        "long": -58.0160552,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Biblioteca Popular Olegario Víctor Andrade",
+        "provider": "google-places"
+    },
+    "Humberto Primo entre Ramírez y Sargento Cabral, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3894451,
+        "long": -58.02986089999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Humberto Primero & Ramírez",
+        "provider": "google-places"
+    },
+    "Las Heras y Feliciano, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.386157899999994,
+        "long": -58.03336009999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Las Heras & Feliciano",
+        "provider": "google-places"
+    },
+    "Zona rural de Concordia, Entre Ríos, Argentina": {
+        "lat": -31.358413199999994,
+        "long": -58.0614493,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural de Concordia",
+        "provider": "google-places"
+    },
+    "Boulevard San Lorenzo Oeste, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.382696,
+        "long": -58.0315439,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San Lorenzo Oeste",
+        "provider": "google-places"
+    },
+    "Entorno del Centro de Convenciones, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3844392,
+        "long": -58.018065,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro de Convenciones Concordia",
+        "provider": "google-places"
+    },
+    "Sector Salto Chico, costa del río Uruguay, Concordia, Entre Ríos, Argentina": {
+        "lat": -31.3577328,
+        "long": -57.9916851,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Salto chico",
+        "provider": "google-places"
+    },
+    "Complejo Termal Federación, Entre Ríos, Argentina": {
+        "lat": -30.9782285,
+        "long": -57.9295907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de Federación",
+        "provider": "google-places"
+    },
+    "Parque Acuático Federación, Entre Ríos, Argentina": {
+        "lat": -30.9774426,
+        "long": -57.93159929999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Acuático",
+        "provider": "google-places"
+    },
+    "A 12 km de Federación, costa del lago Salto Grande, Entre Ríos, Argentina": {
+        "lat": -30.9785583,
+        "long": -57.924975,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Hotel Salto Grande",
+        "provider": "google-places"
+    },
+    "Hipólito Yrigoyen y Las Rosas, Federación, Entre Ríos, Argentina": {
+        "lat": -30.986588,
+        "long": -57.918030800000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Las Rosas & Hipólito Yrigoyen",
+        "provider": "google-places"
+    },
+    "Vieja Federación, costa del lago Salto Grande, Entre Ríos, Argentina": {
+        "lat": -31.001888700000002,
+        "long": -57.889239999999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruinas Vieja Federación",
+        "provider": "google-places"
+    },
+    "Acceso a Vieja Federación, Entre Ríos, Argentina": {
+        "lat": -31.001888700000002,
+        "long": -57.889239999999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruinas Vieja Federación",
+        "provider": "google-places"
+    },
+    "Avenida Los Pinos, Federación, Entre Ríos, Argentina": {
+        "lat": -30.9857821,
+        "long": -57.9129475,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida los Pinos",
+        "provider": "google-places"
+    },
+    "Costanera de Federación, Entre Ríos, Argentina": {
+        "lat": -30.976440199999995,
+        "long": -57.9238674,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera Federación",
+        "provider": "google-places"
+    },
+    "Avenida Río de los Pájaros, Federación, Entre Ríos, Argentina": {
+        "lat": -30.9788099,
+        "long": -57.9181948,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Río de los Pajaros",
+        "provider": "google-places"
+    },
+    "Puerto de Federación, Entre Ríos, Argentina": {
+        "lat": -30.985898900000002,
+        "long": -57.9202185,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Federación",
+        "provider": "google-places"
+    },
+    "Desfilódromo José Luis Silvestri, Federación, Entre Ríos, Argentina": {
+        "lat": -30.984834,
+        "long": -57.917268199999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Desfilódromo \"Luis Silvestri\"",
+        "provider": "google-places"
+    },
+    "Avenida Río de los Pájaros y Las Magnolias, Federación, Entre Ríos, Argentina": {
+        "lat": -30.979394900000003,
+        "long": -57.91615299999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Las Magnolias & Avenida Río de los Pajaros",
+        "provider": "google-places"
+    },
+    "Salida habitual en esquina del Parque Termal, Federación, Entre Ríos, Argentina": {
+        "lat": -30.9782285,
+        "long": -57.9295907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de Federación",
+        "provider": "google-places"
+    },
+    "Zona portuaria de Federación, Entre Ríos, Argentina": {
+        "lat": -30.9774426,
+        "long": -57.93159929999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Acuático",
+        "provider": "google-places"
+    },
+    "Zona costera de Federación, Entre Ríos, Argentina": {
+        "lat": -30.9782285,
+        "long": -57.9295907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de Federación",
+        "provider": "google-places"
+    },
+    "Avenida San Martín, Federación, Entre Ríos, Argentina": {
+        "lat": -30.9932102,
+        "long": -57.9179315,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida San Martín",
+        "provider": "google-places"
+    },
+    "Monumento Torre Reloj, Centro de Federación, Entre Ríos, Argentina": {
+        "lat": -30.985943499999998,
+        "long": -57.920082799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Torre del Reloj",
+        "provider": "google-places"
+    },
+    "Plaza Libertad, Centro de Federación, Entre Ríos, Argentina": {
+        "lat": -30.984419100000004,
+        "long": -57.921269499999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Libertad",
+        "provider": "google-places"
+    },
+    "Auditorio Ciudad de Federación, Centro de Federación, Entre Ríos, Argentina": {
+        "lat": -30.985996499999995,
+        "long": -57.91788510000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Auditórium Ciudad de Federación",
+        "provider": "google-places"
+    },
+    "Avenida San Martín y Las Hortensias, Federación, Entre Ríos, Argentina": {
+        "lat": -30.991926399999997,
+        "long": -57.91946970000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Las Hortensias",
+        "provider": "google-places"
+    },
+    "Federación y Antigua Ciudad, Entre Ríos, Argentina": {
+        "lat": -31.0010608,
+        "long": -57.8857827,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Antigua ciudad de Federacion Sumergida",
+        "provider": "google-places"
+    },
+    "Antigua Ciudad de Federación, Entre Ríos, Argentina": {
+        "lat": -31.0010608,
+        "long": -57.8857827,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Antigua ciudad de Federacion Sumergida",
+        "provider": "google-places"
+    },
+    "Ruta de acceso a Federación, Entre Ríos, Argentina": {
+        "lat": -30.9782285,
+        "long": -57.9295907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de Federación",
+        "provider": "google-places"
+    },
+    "Antártida Argentina 526, Federación, Entre Ríos": {
+        "lat": -30.9774714,
+        "long": -57.924983999999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Antártida Argentina 526",
+        "provider": "google-places"
+    },
+    "Concepción del Uruguay 577, Federación, Entre Ríos, Argentina": {
+        "lat": -30.978172999999995,
+        "long": -57.926419300000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Concepción del Uruguay 577",
+        "provider": "google-places"
+    },
+    "Avenida Costanera, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0203196,
+        "long": -58.508707,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paseo Costanera Sur",
+        "provider": "google-places"
+    },
+    "Costanera y acceso a Parque Unzué, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.010432,
+        "long": -58.49796440000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Unzué",
+        "provider": "google-places"
+    },
+    "Avenida de las Américas, Parque Unzué, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.010432,
+        "long": -58.49796440000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Unzué",
+        "provider": "google-places"
+    },
+    "Los Talas, Parque Unzué, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.010432,
+        "long": -58.49796440000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Unzué",
+        "provider": "google-places"
+    },
+    "Paseo La Delfina, Parque Unzué, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.009277,
+        "long": -58.49183959999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paseo la Delfina",
+        "provider": "google-places"
+    },
+    "Río Uruguay, departamento Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.9568811,
+        "long": -58.9206295,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Gualeguaychú",
+        "provider": "google-places"
+    },
+    "Ruta Nacional 136 km 36,5, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0657402,
+        "long": -58.2561237,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro de Visitantes La Victoria | Reserva El Potrero",
+        "provider": "google-places"
+    },
+    "Alférez Sobral y Benito Méndez Casariego, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.987042699999996,
+        "long": -58.545967999999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Alferez Sobral & Benito Méndez Casariego",
+        "provider": "google-places"
+    },
+    "Ruta Provincial 20, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.9880626,
+        "long": -58.5221339,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Provincial 20",
+        "provider": "google-places"
+    },
+    "Camino a Ñandubaysal km 2,4, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.041078999999996,
+        "long": -58.454549199999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Glamping del Monte",
+        "provider": "google-places"
+    },
+    "Avenida Morrogh Bernard 0, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0095895,
+        "long": -58.504093,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. Morrogh Bernard 0",
+        "provider": "google-places"
+    },
+    "Ruta Internacional 136 y río Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.9823806,
+        "long": -58.3848372,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Nacional 136",
+        "provider": "google-places"
+    },
+    "Ituzaingó al Este, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0057269,
+        "long": -58.4953636,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Solar del Este",
+        "provider": "google-places"
+    },
+    "Costanera y Obeliscos, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0203196,
+        "long": -58.508707,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paseo Costanera Sur",
+        "provider": "google-places"
+    },
+    "Parque Unzué Chico, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.010432,
+        "long": -58.49796440000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Unzué",
+        "provider": "google-places"
+    },
+    "Ruta Provincial 42, a 15 km de Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0148963,
+        "long": -58.4910649,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Provincial 42",
+        "provider": "google-places"
+    },
+    "Ruta Provincial 20 y arroyo Gualeyán, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.7281178,
+        "long": -58.7398595,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Provincial 20",
+        "provider": "google-places"
+    },
+    "San Juan al Este, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0057269,
+        "long": -58.4953636,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Solar del Este",
+        "provider": "google-places"
+    },
+    "Costanera e Ibicuy, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.752561299999996,
+        "long": -59.1776751,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera -Puerto Ibicuy",
+        "provider": "google-places"
+    },
+    "Andrade y Borques, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0113407,
+        "long": -58.508147199999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Museo Casa de Andrade",
+        "provider": "google-places"
+    },
+    "25 de Mayo 734, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0092911,
+        "long": -58.513900799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "25 de Mayo 734",
+        "provider": "google-places"
+    },
+    "Roque Sáenz Peña y Luis N. Palma, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.007815199999996,
+        "long": -58.5101035,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Roque Sáenz Peña & Luis N. Palma",
+        "provider": "google-places"
+    },
+    "Ayacucho y Asisclo Méndez, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.025465000000004,
+        "long": -58.5235223,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ayacucho & Asisclo Méndez",
+        "provider": "google-places"
+    },
+    "Avenida del Valle 275, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0143877,
+        "long": -58.505337499999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. del Valle 275",
+        "provider": "google-places"
+    },
+    "Maestra Piccini y Maipú, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.017676,
+        "long": -58.5192086,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Maipú & Maestra Piccini",
+        "provider": "google-places"
+    },
+    "San José 7, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0085611,
+        "long": -58.511728899999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San José 7",
+        "provider": "google-places"
+    },
+    "Fray Mocho 135, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0068001,
+        "long": -58.5172612,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Fray Mocho 135",
+        "provider": "google-places"
+    },
+    "25 de Mayo 533, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0094041,
+        "long": -58.510533599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "25 de Mayo 533",
+        "provider": "google-places"
+    },
+    "San José y Rivadavia, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0071966,
+        "long": -58.511840799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San José & Rivadavia",
+        "provider": "google-places"
+    },
+    "Estrada y Rocamora, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0164572,
+        "long": -58.5211124,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Rocamora",
+        "provider": "google-places"
+    },
+    "Camila Nievas 78, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.009611,
+        "long": -58.5093317,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camila Nievas 78",
+        "provider": "google-places"
+    },
+    "Urquiza 705, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.008718,
+        "long": -58.51350979999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Urquiza 705",
+        "provider": "google-places"
+    },
+    "Jujuy 1403, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.003578,
+        "long": -58.526198799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Jujuy 1403",
+        "provider": "google-places"
+    },
+    "Maestra Piccini 1100, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0175737,
+        "long": -58.5200383,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Maestra Piccini 1100",
+        "provider": "google-places"
+    },
+    "Estrada 1091, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.019331,
+        "long": -58.52242450000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estrada 1091",
+        "provider": "google-places"
+    },
+    "Tala 680, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0177827,
+        "long": -58.513363500000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Tala 680",
+        "provider": "google-places"
+    },
+    "Estrada 1057, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0190214,
+        "long": -58.5135947,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estrada 1057L",
+        "provider": "google-places"
+    },
+    "Avenida Almirante Brown al Sur, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0203196,
+        "long": -58.508707,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paseo Costanera Sur",
+        "provider": "google-places"
+    },
+    "España 283, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0131108,
+        "long": -58.517271599999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "España 283",
+        "provider": "google-places"
+    },
+    "Autovía Ruta Nacional 14 km 63, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.9697573,
+        "long": -58.5953569,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Reserva natural privada Termas del Guaychú",
+        "provider": "google-places"
+    },
+    "Estrada 1080, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.019331,
+        "long": -58.52242450000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estrada 1080",
+        "provider": "google-places"
+    },
+    "Paseo del Puerto, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0153439,
+        "long": -58.5036609,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paseo del Puerto",
+        "provider": "google-places"
+    },
+    "Calle 4 entre 7 y 8, Colonia El Potrero, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -32.9426503,
+        "long": -58.38503850000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Altos del Gualeguaychú - Bodega Ianni",
+        "provider": "google-places"
+    },
+    "General Artigas, Acceso Sur km 4,3, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.010101899999995,
+        "long": -58.548175699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Instituto Agrotécnico Gualeguaychú",
+        "provider": "google-places"
+    },
+    "Julio Irazusta y Marcelo T. de Alvear, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0424922,
+        "long": -58.54379360000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Marcelo T. de Alvear & Julio Irazusta",
+        "provider": "google-places"
+    },
+    "General Artigas y Florida, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0310323,
+        "long": -58.567349799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "General Artigas & Florida",
+        "provider": "google-places"
+    },
+    "Boulevard Pedro Jurado y General Artigas, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0232275,
+        "long": -58.536512699999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "General Artigas & Pedro Jurado",
+        "provider": "google-places"
+    },
+    "Pasteur 50, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.0101703,
+        "long": -58.5319712,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Pasteur 50",
+        "provider": "google-places"
+    },
+    "Hipólito Yrigoyen 75, Gualeguaychú, Entre Ríos, Argentina": {
+        "lat": -33.007736699999995,
+        "long": -58.5189932,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de Gualeguaychú",
+        "provider": "google-places"
+    },
+    "Avenida Padre Gallay y colectora de la Autovía Nacional 14, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.7411132,
+        "long": -58.015504,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Nacional 14",
+        "provider": "google-places"
+    },
+    "Camping Municipal Chajarí, lago Salto Grande, Entre Ríos, Argentina": {
+        "lat": -30.746011,
+        "long": -58.010871,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Termas de Chajarí",
+        "provider": "google-places"
+    },
+    "Casco histórico de Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.762055900000004,
+        "long": -57.9809829,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ciudad de Chajarí",
+        "provider": "google-places"
+    },
+    "Avenida 9 de Julio y Salvarredy, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.753214499999995,
+        "long": -57.9822374,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida 9 de Julio & Salvarredy",
+        "provider": "google-places"
+    },
+    "Salvarredy y Falucho, Plaza Urquiza, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.755062,
+        "long": -57.9800098,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Urquiza",
+        "provider": "google-places"
+    },
+    "Salvarredy y Falucho, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.755046099999998,
+        "long": -57.980809099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Falucho & Salvarredy",
+        "provider": "google-places"
+    },
+    "Monumento a Manuel Belgrano, Chajarí, Entre Ríos, Argentina": null,
+    "Parque Tambor de Tacuarí, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.754809599999998,
+        "long": -57.981869399999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Tambor de Tacuarí",
+        "provider": "google-places"
+    },
+    "Zona rural de Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.753586600000002,
+        "long": -58.006836799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Zona Rural de Chajarí",
+        "provider": "google-places"
+    },
+    "Cristo de la Hermandad, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.761782,
+        "long": -57.976906400000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cristo Redentor",
+        "provider": "google-places"
+    },
+    "Biblioteca Popular Urquiza, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.757234200000003,
+        "long": -57.9819709,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Biblioteca Popular Urquiza",
+        "provider": "google-places"
+    },
+    "Predio ferroviario de Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.7622064,
+        "long": -57.98040030000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación del Ferrocarril Chajarí",
+        "provider": "google-places"
+    },
+    "Predio de la Estación del Ferrocarril, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.7622064,
+        "long": -57.98040030000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación del Ferrocarril Chajarí",
+        "provider": "google-places"
+    },
+    "Ex Fábrica de Aceites, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.7828667,
+        "long": -58.024892699999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "EbroSur (ex - La Loma Alimentos)",
+        "provider": "google-places"
+    },
+    "Plazoleta de los Jubilados, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.758631299999994,
+        "long": -57.9887976,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plazoleta de Los Jubilados",
+        "provider": "google-places"
+    },
+    "Monumento a Ramón Bernárdez, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.762111899999997,
+        "long": -57.99266,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Monumento Ramón Bernardez",
+        "provider": "google-places"
+    },
+    "Circuito de Gimnasia al Aire Libre, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.758315500000002,
+        "long": -57.98175929999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "GREEN CENTRO DE ENTRETENIMIENTO",
+        "provider": "google-places"
+    },
+    "Plaza Padre Max, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.758967799999997,
+        "long": -58.0006213,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plazoleta Padre Max",
+        "provider": "google-places"
+    },
+    "Sociedad Rural de Chajarí, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.761181699999998,
+        "long": -57.9818947,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural De Chajari",
+        "provider": "google-places"
+    },
+    "Terminal de Ómnibus de Chajarí, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.756099000000003,
+        "long": -57.988469699999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Terminal de Ómnibus de Chajarí",
+        "provider": "google-places"
+    },
+    "Gruta de Padre Pío, Chajarí, Entre Ríos, Argentina": null,
+    "Avenida 25 de Mayo y Avenida 9 de Julio, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.746316000000004,
+        "long": -57.9746476,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida 25 de Mayo & Avenida 9 de Julio",
+        "provider": "google-places"
+    },
+    "Sala Evocativa de Malvinas, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.763480899999994,
+        "long": -57.9938037,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "SALA EVOCATIVA MALVINAS",
+        "provider": "google-places"
+    },
+    "Ejido de Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.758922199999997,
+        "long": -57.9892301,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Chajarí",
+        "provider": "google-places"
+    },
+    "Corredor de Turismo Rural, Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.7543628,
+        "long": -58.005710199999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural Chajarí",
+        "provider": "google-places"
+    },
+    "Camino al Camping Municipal Chajarí, Entre Ríos, Argentina": {
+        "lat": -30.892386300000002,
+        "long": -57.96077150000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Chajarí",
+        "provider": "google-places"
+    },
+    "Ribera del río Gualeguay, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -32.0016403,
+        "long": -59.0718602,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Río Gualeguay",
+        "provider": "google-places"
+    },
+    "Costanera de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1586709,
+        "long": -59.306250399999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera de Gualeguay",
+        "provider": "google-places"
+    },
+    "Puerto Ruiz, municipio de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.22105,
+        "long": -59.363119899999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto Ruiz",
+        "provider": "google-places"
+    },
+    "Costa de Puerto Ruiz, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.219740699999996,
+        "long": -59.3629554,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto Ruiz Gualeguay",
+        "provider": "google-places"
+    },
+    "Plaza Constitución, Centro de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1503543,
+        "long": -59.3107183,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Constitución",
+        "provider": "google-places"
+    },
+    "Centro histórico de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.150050799999995,
+        "long": -59.299658199999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Oficina de Turismo Gualeguay",
+        "provider": "google-places"
+    },
+    "1.º de Mayo y Monte Caseros, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1497923,
+        "long": -59.31265719999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "CandyGuay",
+        "provider": "google-places"
+    },
+    "Islas Malvinas entre Bartolomé Mitre y Rivadavia, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -32.4750065,
+        "long": -58.2581909,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Islas Malvinas",
+        "provider": "google-places"
+    },
+    "Centro cívico de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1507958,
+        "long": -59.309428600000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro Económico de Gualeguay",
+        "provider": "google-places"
+    },
+    "25 de Mayo 414, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1496591,
+        "long": -59.312654099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "25 de Mayo 414",
+        "provider": "google-places"
+    },
+    "Alem 157, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1463938,
+        "long": -59.3159737,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Leandro N. Alem 157",
+        "provider": "google-places"
+    },
+    "Predio ferroviario de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1488192,
+        "long": -59.329031699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estacion Gualeguay (FFCCGU) EX FCPE",
+        "provider": "google-places"
+    },
+    "Avenida El Primer Entrerriano, frente a la estación Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1488192,
+        "long": -59.329031699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estacion Gualeguay (FFCCGU) EX FCPE",
+        "provider": "google-places"
+    },
+    "Maipú 79, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1492576,
+        "long": -59.31415020000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Maipú 79",
+        "provider": "google-places"
+    },
+    "Predio de la antigua estación ferroviaria, Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1488192,
+        "long": -59.329031699999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estacion Gualeguay (FFCCGU) EX FCPE",
+        "provider": "google-places"
+    },
+    "Corsódromo de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.148673599999995,
+        "long": -59.32862849999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Corsódromo",
+        "provider": "google-places"
+    },
+    "Río Gualeguay y predios de apoyo en Gualeguay, Entre Ríos, Argentina": {
+        "lat": -32.0016403,
+        "long": -59.0718602,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Río Gualeguay",
+        "provider": "google-places"
+    },
+    "Zona rural de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1465838,
+        "long": -59.313293599999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Rural Gualeguay",
+        "provider": "google-places"
+    },
+    "Sala de Juegos de Gualeguay, Centro de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.1581214,
+        "long": -59.305203999999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sala de Juegos Gualeguay Costanera",
+        "provider": "google-places"
+    },
+    "Sector noroeste de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.091985099999995,
+        "long": -59.2853916,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costa del Gualeguay",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.141271,
+        "long": -59.3129097,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martín",
+        "provider": "google-places"
+    },
+    "Parroquia San José, Centro de Gualeguay, Entre Ríos, Argentina": {
+        "lat": -33.14152,
+        "long": -59.3136,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia San José",
+        "provider": "google-places"
+    },
+    "Predio sanitario y termal del norte de Villaguay, Entre Ríos, Argentina": null,
+    "Avenida Raúl Alfonsín 1853, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8527,
+        "long": -59.0311752,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Av. Raúl Alfonsín 1853",
+        "provider": "google-places"
+    },
+    "Avenida Raúl Alfonsín, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8501688,
+        "long": -59.031716,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Raúl Alfonsín",
+        "provider": "google-places"
+    },
+    "Sector norte de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.854317099999996,
+        "long": -59.027187999999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Remises Norte,,",
+        "provider": "google-places"
+    },
+    "Ejido oeste, a 5 km del centro de Villaguay, Entre Ríos, Argentina": null,
+    "Sector este de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8908333,
+        "long": -58.994135199999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Villaguay Este",
+        "provider": "google-places"
+    },
+    "A 2 km del centro de Villaguay, Entre Ríos, Argentina": null,
+    "Ejido de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8677008,
+        "long": -59.0269219,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Villaguay",
+        "provider": "google-places"
+    },
+    "Reserva Natural Municipal La Chinita, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8384741,
+        "long": -59.00134800000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Reserva Municipal La Chinita",
+        "provider": "google-places"
+    },
+    "Hermelo y Saavedra, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.870785299999994,
+        "long": -59.02649350000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Hermelo & Saavedra",
+        "provider": "google-places"
+    },
+    "Plaza 25 de Mayo, Centro de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.867673399999997,
+        "long": -59.02698319999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza 25 De Mayo, Villaguay",
+        "provider": "google-places"
+    },
+    "Centro cívico, Plaza 25 de Mayo, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.867673399999997,
+        "long": -59.02698319999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza 25 De Mayo, Villaguay",
+        "provider": "google-places"
+    },
+    "Entorno de Plaza 25 de Mayo, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.867673399999997,
+        "long": -59.02698319999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza 25 De Mayo, Villaguay",
+        "provider": "google-places"
+    },
+    "Ex Teatro Mayo, Centro de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8650795,
+        "long": -59.0275559,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cine Teatro Emilio Berisso",
+        "provider": "google-places"
+    },
+    "Sociedad Italiana de Villaguay, Centro de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8670712,
+        "long": -59.026951,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sociedad Italiana",
+        "provider": "google-places"
+    },
+    "Esquina de Plaza 25 de Mayo, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.867673399999997,
+        "long": -59.02698319999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza 25 De Mayo, Villaguay",
+        "provider": "google-places"
+    },
+    "Calle San Martín, Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.8542218,
+        "long": -59.0272636,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "San Martín",
+        "provider": "google-places"
+    },
+    "Circuito Histórico y Cultural del Centro Cívico, Centro de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.870939699999997,
+        "long": -59.02637219999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Museo Histórico Municipal",
+        "provider": "google-places"
+    },
+    "Zona rural de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.863173,
+        "long": -59.012975000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "La Rural",
+        "provider": "google-places"
+    },
+    "Villaguay y colonias rurales cercanas, Entre Ríos, Argentina": {
+        "lat": -31.863173,
+        "long": -59.012975000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "La Rural",
+        "provider": "google-places"
+    },
+    "Área de colonias de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.6474647,
+        "long": -58.9206295,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Villaguay",
+        "provider": "google-places"
+    },
+    "Área de Lucienville, departamento Villaguay, Entre Ríos, Argentina": {
+        "lat": -32.3810646,
+        "long": -58.880753500000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cooperativa Agrícola Lucienville ADMINISTRACIÓN",
+        "provider": "google-places"
+    },
+    "Área rural del departamento Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.863173,
+        "long": -59.012975000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "La Rural",
+        "provider": "google-places"
+    },
+    "Leopoldo Herrera, sector norte de Villaguay, Entre Ríos, Argentina": {
+        "lat": -31.865695599999995,
+        "long": -59.027408300000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Escuela Secundaria N°1 Prof. leopoldo Herrera",
+        "provider": "google-places"
+    },
+    "Complejo Cultural La Estación, Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.6849274,
+        "long": -58.8916416,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Urdinarrain",
+        "provider": "google-places"
+    },
+    "Circuito Histórico Autoguiado, Casco urbano de Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.6849274,
+        "long": -58.8916416,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Urdinarrain",
+        "provider": "google-places"
+    },
+    "Zona rural de Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.6886776,
+        "long": -58.886785599999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Urdinarrain",
+        "provider": "google-places"
+    },
+    "A 20 km de Urdinarrain, costa del río Gualeguay, Entre Ríos, Argentina": null,
+    "Balneario Arenas Blancas, Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.6112415,
+        "long": -59.09829419999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Arenas Blancas",
+        "provider": "google-places"
+    },
+    "Aeroclub de Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.693492299999996,
+        "long": -58.89657390000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Club de Planeadores Urdinarrain",
+        "provider": "google-places"
+    },
+    "Club Juventud Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.688708,
+        "long": -58.88146159999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Club Atlético Juventud de Urdinarrain",
+        "provider": "google-places"
+    },
+    "Club Deportivo Urdinarrain, Entre Ríos, Argentina": {
+        "lat": -32.6871402,
+        "long": -58.896035499999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Club Deportivo Urdinarrain",
+        "provider": "google-places"
+    },
+    "Bulevar Ramírez, frente al Parque de la Estación, Larroque, Entre Ríos, Argentina": {
+        "lat": -33.035753,
+        "long": -59.006104099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque De La Estación Intendente Fabio Larrosa",
+        "provider": "google-places"
+    },
+    "Predio ferroviario, Larroque, Entre Ríos, Argentina": {
+        "lat": -33.034435,
+        "long": -59.005360100000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Larroque",
+        "provider": "google-places"
+    },
+    "Estación Larroque, Entre Ríos, Argentina": {
+        "lat": -33.034435,
+        "long": -59.005360100000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Larroque",
+        "provider": "google-places"
+    },
+    "Entre Estación Larroque y Casa Museo La Tera, Larroque, Entre Ríos, Argentina": {
+        "lat": -33.0328106,
+        "long": -59.014476099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "La Tera",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Larroque, Entre Ríos, Argentina": {
+        "lat": -33.0338424,
+        "long": -58.99855919999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martin",
+        "provider": "google-places"
+    },
+    "Parroquia Nuestra Señora del Perpetuo Socorro, Centro de Larroque, Entre Ríos, Argentina": {
+        "lat": -33.0364536,
+        "long": -58.998862599999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Nuestra Señora del Perpetuo Socorro",
+        "provider": "google-places"
+    },
+    "Zona rural Talitas, a 20 km de Larroque, Entre Ríos, Argentina": null,
+    "Paso El Corralito, zona rural Talitas, Entre Ríos, Larroque, Argentina": {
+        "lat": -32.9190545,
+        "long": -59.155007899999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Paso El Corralito",
+        "provider": "google-places"
+    },
+    "Zona de Arroyo Ceballos, ejido de Larroque, Entre Ríos, Argentina": {
+        "lat": -33.0418437,
+        "long": -59.079435100000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Combate de Arroyo Ceballos",
+        "provider": "google-places"
+    },
+    "Zona rural de Larroque, Entre Ríos, Argentina": {
+        "lat": -31.863173,
+        "long": -59.012975000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "La Rural",
+        "provider": "google-places"
+    },
+    "Sala de Teatro Padre Alberto Paoli y Parque de la Estación, Larroque, Entre Ríos, Argentina": {
+        "lat": -33.034479,
+        "long": -59.0057368,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Sala de Teatro Padre Alberto Paoli",
+        "provider": "google-places"
+    },
+    "Salón de Usos Múltiples, Parque La Estación, Larroque, Entre Ríos, Argentina": {
+        "lat": -33.035753,
+        "long": -59.006104099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque De La Estación Intendente Fabio Larrosa",
+        "provider": "google-places"
+    },
+    "Entorno rural de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.455799999999996,
+        "long": -58.802,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Shell",
+        "provider": "google-places"
+    },
+    "Caminos rurales de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.455799999999996,
+        "long": -58.802,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Shell",
+        "provider": "google-places"
+    },
+    "Zona rural de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.4984268,
+        "long": -58.7896651,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Zona de Estancias",
+        "provider": "google-places"
+    },
+    "Caminos rurales próximos al arroyo Ñancay, Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.3935695,
+        "long": -58.7272261,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Río Ñancay",
+        "provider": "google-places"
+    },
+    "Zona rural al noreste de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.500718299999996,
+        "long": -58.80455779999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Mi zona de pesca",
+        "provider": "google-places"
+    },
+    "Entorno natural de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.4912493,
+        "long": -58.6798977,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Reserva Natural Ceibas",
+        "provider": "google-places"
+    },
+    "Estancias rurales de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.4984268,
+        "long": -58.7896651,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Zona de Estancias",
+        "provider": "google-places"
+    },
+    "Cursos de agua del entorno de Ceibas, Entre Ríos, Argentina": null,
+    "Cursos de agua del municipio de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.455799999999996,
+        "long": -58.802,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Shell",
+        "provider": "google-places"
+    },
+    "Área central de Ceibas, Entre Ríos, Argentina": null,
+    "Cruce de RN 12 y RN 14, Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.502735,
+        "long": -58.798979,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ruta Nacional 12 & Ruta Nacional 14",
+        "provider": "google-places"
+    },
+    "Ejido rural de Ceibas, Entre Ríos, Argentina": {
+        "lat": -33.455799999999996,
+        "long": -58.802,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Shell",
+        "provider": "google-places"
+    },
+    "Ingreso a Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7434675,
+        "long": -59.155755299999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ibicuy",
+        "provider": "google-places"
+    },
+    "Entorno de la Cruz de los Ingleses, Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7462731,
+        "long": -59.156483099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cruz de los Ingleses",
+        "provider": "google-places"
+    },
+    "Estación Holt, Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.747011,
+        "long": -59.15447,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estacion Holt - FC General Urquiza",
+        "provider": "google-places"
+    },
+    "Calle Almirante Brown, antigua entrada de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.740030499999996,
+        "long": -59.170200799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Complejo Las Cabañas",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7424848,
+        "long": -59.157665400000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martin",
+        "provider": "google-places"
+    },
+    "Paseo costero de Puerto Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.752561299999996,
+        "long": -59.1776751,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera -Puerto Ibicuy",
+        "provider": "google-places"
+    },
+    "Puerto Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7434675,
+        "long": -59.155755299999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ibicuy",
+        "provider": "google-places"
+    },
+    "Costa de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.752561299999996,
+        "long": -59.1776751,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera -Puerto Ibicuy",
+        "provider": "google-places"
+    },
+    "Entorno natural de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.740030499999996,
+        "long": -59.170200799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Complejo Las Cabañas",
+        "provider": "google-places"
+    },
+    "Entorno de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.740030499999996,
+        "long": -59.170200799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Complejo Las Cabañas",
+        "provider": "google-places"
+    },
+    "Circuito Urbano Ibicuy en Bici, Casco urbano de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.745868699999995,
+        "long": -59.150378,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Bicicleteria Boxes",
+        "provider": "google-places"
+    },
+    "Cursos de agua de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7458867,
+        "long": -59.15574960000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "MUNICIPALIDAD DE IBICUY",
+        "provider": "google-places"
+    },
+    "La Arenera, municipio de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.7538797,
+        "long": -59.178289400000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Arenera Puerto Ibicuy",
+        "provider": "google-places"
+    },
+    "Boulevard 17 de Octubre, ingreso de Ibicuy, Entre Ríos, Argentina": {
+        "lat": -33.740030499999996,
+        "long": -59.170200799999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Complejo Las Cabañas",
+        "provider": "google-places"
+    },
+    "Costa del río Paranacito, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7163422,
+        "long": -58.65821039999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costa Villa",
+        "provider": "google-places"
+    },
+    "Balneario Municipal Costa Paranacito, Entre Ríos, Villa Paranacito, Argentina": {
+        "lat": -33.716545499999995,
+        "long": -58.660919799999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Playa Municipal Villa Paranacito",
+        "provider": "google-places"
+    },
+    "Costa urbana de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7389569,
+        "long": -58.604770699999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costa Calma Cabañas",
+        "provider": "google-places"
+    },
+    "Río Paranacito, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7146367,
+        "long": -58.658338099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Villa Paranacito",
+        "provider": "google-places"
+    },
+    "Municipio de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.715606,
+        "long": -58.66523199999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de Villa Paranacito",
+        "provider": "google-places"
+    },
+    "Área insular de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7152245,
+        "long": -58.6635013,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Club Isleños",
+        "provider": "google-places"
+    },
+    "Arroyo La Tinta, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.725231199999996,
+        "long": -58.6201538,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cabañas Rio La Tinta",
+        "provider": "google-places"
+    },
+    "Límite oriental del municipio de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.715606,
+        "long": -58.66523199999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de Villa Paranacito",
+        "provider": "google-places"
+    },
+    "Muelles y cursos de agua de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.9023247,
+        "long": -58.8835106,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "DEL GUAZU S.A.",
+        "provider": "google-places"
+    },
+    "Cursos de agua de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7192235,
+        "long": -58.6809902,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Top malo - Hostelling International",
+        "provider": "google-places"
+    },
+    "Paseos en Kayak, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -31.719082099999998,
+        "long": -60.51822429999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Kayak Travel Parana",
+        "provider": "google-places"
+    },
+    "Entorno natural de Villa Paranacito, Entre Ríos, Argentina": null,
+    "Caminatas Guiadas por el Delta, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.6817697,
+        "long": -58.7069666,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto Alto Delta",
+        "provider": "google-places"
+    },
+    "Circuito de Cicloturismo, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.695478,
+        "long": -58.653771600000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "POSTA DEL SILENCIO",
+        "provider": "google-places"
+    },
+    "Aeródromo Islas del Ibicuy, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7122919,
+        "long": -58.665282299999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Direccion Departamental de Escuelas Islas del Ibicuy",
+        "provider": "google-places"
+    },
+    "Aeroclub Islas del Ibicuy, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.74391,
+        "long": -58.6772923,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "aeroclub islas del ibicuy",
+        "provider": "google-places"
+    },
+    "Río Paranacito y costa urbana, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.6524101,
+        "long": -58.727856599999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Villa paranacito entre rios",
+        "provider": "google-places"
+    },
+    "Avenida Entre Ríos, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7162889,
+        "long": -58.6619316,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Avenida Entre Rios",
+        "provider": "google-places"
+    },
+    "Villa Paranacito y cursos de agua del delta, Entre Ríos, Argentina": {
+        "lat": -33.711700799999996,
+        "long": -58.6958249,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cabañas Ivy Maray - villa paranacito alojamiento con pileta",
+        "provider": "google-places"
+    },
+    "Centro cívico de Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7146367,
+        "long": -58.658338099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Municipal",
+        "provider": "google-places"
+    },
+    "Día del Isleño, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7152245,
+        "long": -58.6635013,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Club Isleños",
+        "provider": "google-places"
+    },
+    "Parroquia Nuestra Señora de las Islas y río Paranacito, Entre Ríos, Villa Paranacito, Argentina": {
+        "lat": -33.7164006,
+        "long": -58.656856399999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Nuestra Señora de las Islas",
+        "provider": "google-places"
+    },
+    "Parroquia Nuestra Señora de las Islas, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7164006,
+        "long": -58.656856399999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Nuestra Señora de las Islas",
+        "provider": "google-places"
+    },
+    "Polideportivo Municipal, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.7146367,
+        "long": -58.658338099999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Municipal",
+        "provider": "google-places"
+    },
+    "Centro Integrador Comunitario, Villa Paranacito, Entre Ríos, Argentina": {
+        "lat": -33.71397040000001,
+        "long": -58.6603299,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro Integrador Comunitario",
+        "provider": "google-places"
+    },
+    "Perilago de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9100085,
+        "long": -57.9232891,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Playa Santa Ana",
+        "provider": "google-places"
+    },
+    "Borde del lago Salto Grande, Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.8987766,
+        "long": -57.952814000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Lago Salto Grande",
+        "provider": "google-places"
+    },
+    "Camping Municipal de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9132853,
+        "long": -57.926673599999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Municipal de Santa Ana",
+        "provider": "google-places"
+    },
+    "Zona rural de Piedras Finas, Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.902216900000003,
+        "long": -57.8643395,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Alojamiento Piedras Finas",
+        "provider": "google-places"
+    },
+    "Zona de Piedras Finas, Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.902216900000003,
+        "long": -57.8643395,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Alojamiento Piedras Finas",
+        "provider": "google-places"
+    },
+    "Predio Termal de Santa Ana, Casco urbano de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9100085,
+        "long": -57.9232891,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Playa Santa Ana",
+        "provider": "google-places"
+    },
+    "Predio Termal de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9782285,
+        "long": -57.9295907,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Termas de Federación",
+        "provider": "google-places"
+    },
+    "Plaza San Martín, Centro de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.899253299999998,
+        "long": -57.930918,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza San Martín",
+        "provider": "google-places"
+    },
+    "Centro Cultural de Santa Ana, Centro de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.898784799999994,
+        "long": -57.9314432,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Centro Cultural",
+        "provider": "google-places"
+    },
+    "Municipalidad de Santa Ana, Cupertino Otaño 576, Entre Ríos, Argentina": {
+        "lat": -30.8999751,
+        "long": -57.9310975,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de Santa Ana",
+        "provider": "google-places"
+    },
+    "Zona rural de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9132853,
+        "long": -57.926673599999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Municipal de Santa Ana",
+        "provider": "google-places"
+    },
+    "Lago Salto Grande y costa de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.8987766,
+        "long": -57.952814000000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Lago Salto Grande",
+        "provider": "google-places"
+    },
+    "Costa de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9090857,
+        "long": -57.922405899999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costa de Santa Ana",
+        "provider": "google-places"
+    },
+    "Ejido de Santa Ana, Entre Ríos, Argentina": {
+        "lat": -30.9100085,
+        "long": -57.9232891,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Playa Santa Ana",
+        "provider": "google-places"
+    },
+    "Colonia Ensanche Sauce, Entre Ríos, Santa Ana, Argentina": {
+        "lat": -30.851891700000003,
+        "long": -57.930711699999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Colonia Ensanche Sauce",
+        "provider": "google-places"
+    },
+    "Parque Balneario Municipal Dr. Delio Panizza, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3080087,
+        "long": -59.0797007,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque Balneareo Municipal Dr Delio Panizza",
+        "provider": "google-places"
+    },
+    "Al sur del Balneario Delio Panizza, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3094366,
+        "long": -59.0768886,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Balneario Delio Panizza",
+        "provider": "google-places"
+    },
+    "Río Gualeguay, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3067333,
+        "long": -59.1262982,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Rio Gualeguay",
+        "provider": "google-places"
+    },
+    "Río Gualeguay, corredor ferroviario de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.322384899999996,
+        "long": -59.14874929999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cabañas Rio Gualeguay Rosario Del Tala",
+        "provider": "google-places"
+    },
+    "Estación Ferroviaria Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.2967826,
+        "long": -59.14084019999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Rosario Tala",
+        "provider": "google-places"
+    },
+    "Corredor ferroviario de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.2967826,
+        "long": -59.14084019999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Rosario Tala",
+        "provider": "google-places"
+    },
+    "Antigua Calera Osinalde-Izaguirre, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3032928,
+        "long": -59.1443327,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Casa de martiniano leguizamon",
+        "provider": "google-places"
+    },
+    "Predio del Hospital Dr. Luis A. Ellerman, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.2978425,
+        "long": -59.1484286,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Hospital Neuropsiquiátrico Dr.Luis Ellerman",
+        "provider": "google-places"
+    },
+    "Plaza Libertad, Centro de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3009409,
+        "long": -59.139274199999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Libertad",
+        "provider": "google-places"
+    },
+    "Cementerio Histórico de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3093391,
+        "long": -59.15594209999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cementerio Rosario del Tala",
+        "provider": "google-places"
+    },
+    "Antiguo Mercado de Abasto, Rosario del Tala, Entre Ríos, Argentina": null,
+    "Iglesia Evangélica Metodista del Centro, Centro de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3010568,
+        "long": -59.14022739999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Iglesia Evangelica Metodista",
+        "provider": "google-places"
+    },
+    "Bicitour Histórico de Rosario del Tala, Casco urbano de Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.301356399999996,
+        "long": -59.1389941,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Oficina de Turismo",
+        "provider": "google-places"
+    },
+    "Ejido Primer Cuartel, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3007381,
+        "long": -59.1430629,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Rosario del tala entre rios",
+        "provider": "google-places"
+    },
+    "Balneario Delio Panizza, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3094366,
+        "long": -59.0768886,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Camping Balneario Delio Panizza",
+        "provider": "google-places"
+    },
+    "Bulevar Belgrano y Bulevar Rivadavia, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3132826,
+        "long": -59.132246900000005,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Boulevard Rivadavia & Boulevard Belgrano",
+        "provider": "google-places"
+    },
+    "Acceso Eva Perón, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.3017924,
+        "long": -59.134071,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Justo José de Urquiza",
+        "provider": "google-places"
+    },
+    "Parroquia Nuestra Señora del Rosario, Rosario del Tala, Entre Ríos, Argentina": {
+        "lat": -32.301288299999996,
+        "long": -59.139431099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Nuestra Señora del Rosario",
+        "provider": "google-places"
+    },
+    "Isla del Puerto, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4987442,
+        "long": -58.2285935,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Isla del Puerto",
+        "provider": "google-places"
+    },
+    "Reserva Isla del Puerto, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4945064,
+        "long": -58.22087080000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Isla Del Puerto costanera De Concepción Del Uruguay Entre Rios",
+        "provider": "google-places"
+    },
+    "Portal de ingreso a la Costanera Isla del Puerto, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4865896,
+        "long": -58.215083199999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Costanera Isla del Puerto",
+        "provider": "google-places"
+    },
+    "Casa de Urquiza, Galarza 712, planta alta, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4838003,
+        "long": -58.23243720000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Casa de Urquiza (Edificios de Correo)",
+        "provider": "google-places"
+    },
+    "Predio ferroviario de Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4800172,
+        "long": -58.243522,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Ferroclub y Museo Ferroviario",
+        "provider": "google-places"
+    },
+    "Facultad de Ciencia y Tecnología de UADER, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.479084,
+        "long": -58.233459399999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "UADER - Facultad de Ciencia y Tecnología",
+        "provider": "google-places"
+    },
+    "Colegio del Uruguay Justo José de Urquiza, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.484460399999996,
+        "long": -58.23377980000001,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Colegio Superior del Uruguay \"Justo José de Urquiza\"",
+        "provider": "google-places"
+    },
+    "Biblioteca Popular El Porvenir, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4854718,
+        "long": -58.2333126,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Biblioteca Popular “El Porvenir”",
+        "provider": "google-places"
+    },
+    "Basílica de la Inmaculada Concepción, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4851484,
+        "long": -58.2330589,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Basílica de la Inmaculada Concepción",
+        "provider": "google-places"
+    },
+    "Zona sur de Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4983783,
+        "long": -58.228845299999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Defensa Sur Concepción Del Uruguay",
+        "provider": "google-places"
+    },
+    "Casco histórico de Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.484603,
+        "long": -58.232068500000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Guías de la Histórica Concepción del Uruguay",
+        "provider": "google-places"
+    },
+    "Centro histórico y Cementerio Municipal, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4884232,
+        "long": -58.25374769999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Cementerio Municipalidad de Concepción del Uruguay",
+        "provider": "google-places"
+    },
+    "Acceso a Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.485391199999995,
+        "long": -58.24194759999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Terminal de Omnibus de Concepción del Uruguay",
+        "provider": "google-places"
+    },
+    "Parque Itapé, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4916036,
+        "long": -58.263555399999994,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Itape",
+        "provider": "google-places"
+    },
+    "Galarza y Supremo Entrerriano, Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4836464,
+        "long": -58.23061369999999,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Supremo Entrerriano & General Galarza",
+        "provider": "google-places"
+    },
+    "Puerto de Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4854607,
+        "long": -58.2224009,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Puerto Concepción del Uruguay",
+        "provider": "google-places"
+    },
+    "Ejido de Concepción del Uruguay, Entre Ríos, Argentina": {
+        "lat": -32.4792066,
+        "long": -58.2438193,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Concepción del Uruguay",
+        "provider": "google-places"
+    },
+    "Frente a Plaza Justo José de Urquiza, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.462085699999996,
+        "long": -58.4793311,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza “Capitán Gral. Justo José de Urquiza”",
+        "provider": "google-places"
+    },
+    "Entorno de Plaza Justo José de Urquiza, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.462085699999996,
+        "long": -58.4793311,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza “Capitán Gral. Justo José de Urquiza”",
+        "provider": "google-places"
+    },
+    "Parque del Ferrocarril, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4650639,
+        "long": -58.480725899999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parque de la Estación y Centro Cultural Margarita Thea",
+        "provider": "google-places"
+    },
+    "Museo de la Estación Caseros, Entre Ríos, Argentina": {
+        "lat": -32.46547530000001,
+        "long": -58.4809474,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Museo a Cielo Abierto de la Estación",
+        "provider": "google-places"
+    },
+    "City Tour Audioguiado de Caseros, Casco urbano de Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4645167,
+        "long": -58.4774491,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad De Caseros",
+        "provider": "google-places"
+    },
+    "Cercanías del Predio del Ferrocarril, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.465423799999996,
+        "long": -58.4811756,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Estación Caseros (FFCCGU)",
+        "provider": "google-places"
+    },
+    "Calles 18 y 9, Caseros, Entre Ríos, Argentina": null,
+    "Polideportivo del Club Juventud, sudoeste de Caseros, Entre Ríos, Argentina": {
+        "lat": -32.464140799999996,
+        "long": -58.488910600000004,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Polideportivo Club Juventud de Caseros",
+        "provider": "google-places"
+    },
+    "Calles 10 y 17, Caseros, Entre Ríos, Argentina": null,
+    "Acceso al Palacio San José, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4277523,
+        "long": -58.520386099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Palacio San José",
+        "provider": "google-places"
+    },
+    "Ruta Provincial J, a 1 km de la RP 39, Caseros, Entre Ríos, Argentina": {
+        "lat": -32.4277523,
+        "long": -58.520386099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Palacio San José",
+        "provider": "google-places"
+    },
+    "Corsódromo de Caseros, calles 10 y 17, Entre Ríos, Argentina": {
+        "lat": -32.464897199999996,
+        "long": -58.478484400000006,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Corsódromo de Caseros",
+        "provider": "google-places"
+    },
+    "San Justo y camino al Palacio San José, Entre Ríos, Argentina": {
+        "lat": -32.4277523,
+        "long": -58.520386099999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Palacio San José",
+        "provider": "google-places"
+    },
+    "Plaza Justo José de Urquiza, San Justo, Entre Ríos, Argentina": {
+        "lat": -32.4453131,
+        "long": -58.4356691,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza Justo José De Urquiza",
+        "provider": "google-places"
+    },
+    "Escuela N.º 11 18 de Octubre, San Justo, Entre Ríos, Argentina": {
+        "lat": -32.455839,
+        "long": -58.385633999999996,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Escuela N°11",
+        "provider": "google-places"
+    },
+    "Monumento a Justo José de Urquiza, Centro de San Justo, Entre Ríos, Argentina": {
+        "lat": -32.4459109,
+        "long": -58.4346136,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Busto Justo José de Urquiza",
+        "provider": "google-places"
+    },
+    "Casco urbano y zona productiva de San Justo, Entre Ríos, Argentina": {
+        "lat": -32.4466811,
+        "long": -58.4353915,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de San Justo",
+        "provider": "google-places"
+    },
+    "Zona rural entre San Justo y Palacio San José, Entre Ríos, Argentina": {
+        "lat": -32.4262994,
+        "long": -58.524078499999995,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Plaza de la Jura. Palacio San José",
+        "provider": "google-places"
+    },
+    "Municipalidad de San Justo, Avenida 1 de Mayo, Entre Ríos, Argentina": {
+        "lat": -32.4466811,
+        "long": -58.4353915,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Municipalidad de San Justo",
+        "provider": "google-places"
+    },
+    "Parroquia Nuestra Señora de los Dolores, San Justo, Entre Ríos, Argentina": {
+        "lat": -32.445524,
+        "long": -58.4341248,
+        "importance": 0.9,
+        "featureClass": "google-places",
+        "featureType": "",
+        "displayName": "Parroquia Nuestra Señora de los Dolores",
+        "provider": "google-places"
     }
 }

@@ -51,7 +51,7 @@ export interface AuthRequiredPopoverProps {
     readonly dialogLabel?: string;
     /** Accessible label for the close button. Defaults to 'Cerrar'. */
     readonly closeLabel?: string;
-    /** Sign-in button text. Defaults to 'Iniciar sesion'. */
+    /** Sign-in button text. Defaults to 'Iniciar sesión'. */
     readonly signInLabel?: string;
     /** Register button text. Defaults to 'Crear cuenta'. */
     readonly registerLabel?: string;
@@ -149,7 +149,7 @@ export function AuthRequiredPopover({
     className = '',
     dialogLabel = 'Autenticacion requerida',
     closeLabel = 'Cerrar',
-    signInLabel = 'Iniciar sesion',
+    signInLabel = 'Iniciar sesión',
     registerLabel = 'Crear cuenta'
 }: AuthRequiredPopoverProps): JSX.Element | null {
     const popoverRef = useRef<HTMLDivElement>(null);

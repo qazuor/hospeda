@@ -162,9 +162,11 @@ describe('EntityViewService.getDailySeriesForOwnCommerceListings (HOS-734)', () 
             const callArg = asMock(modelMock.getDailySeriesForEntityIds).mock.calls[0]?.[0] as {
                 entityIds: string[];
                 windowDays: number;
+                entityType: string;
             };
             expect(callArg.entityIds).toEqual([UUID_LISTING_1]);
             expect(callArg.windowDays).toBe(30);
+            expect(callArg.entityType).toBe(EntityTypeEnum.GASTRONOMY);
             expect(asMock(experienceModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
         });
 
@@ -205,6 +207,10 @@ describe('EntityViewService.getDailySeriesForOwnCommerceListings (HOS-734)', () 
             // Assert
             expect(asMock(experienceModelMock.findIdsByOwnerId)).toHaveBeenCalledWith(UUID_OWNER);
             expect(asMock(gastronomyModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
+            const callArg = asMock(modelMock.getDailySeriesForEntityIds).mock.calls[0]?.[0] as {
+                entityType: string;
+            };
+            expect(callArg.entityType).toBe(EntityTypeEnum.EXPERIENCE);
         });
     });
 

@@ -22,10 +22,16 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
 
-const { mockAdminList, mockApplySuspension, mockLiftSuspension } = vi.hoisted(() => ({
+const { mockAdminList, mockApplySuspension, mockLiftSuspension, auditLogMock } = vi.hoisted(() => ({
     mockAdminList: vi.fn(),
     mockApplySuspension: vi.fn(),
-    mockLiftSuspension: vi.fn()
+    mockLiftSuspension: vi.fn(),
+    auditLogMock: vi.fn()
+}));
+
+vi.mock('../../../src/utils/audit-logger', async (importActual) => ({
+    ...(await importActual<typeof import('../../../src/utils/audit-logger')>()),
+    auditLog: auditLogMock
 }));
 
 vi.mock('@repo/service-core', async (importActual) => {
@@ -253,5 +259,52 @@ describe('POST /{id}/declaration-suspension', () => {
         const res = await post(app, `/${HT_ID}/declaration-suspension`, { suspended: false });
 
         expect(res.status).toBe(200);
+    });
+});
+
+/**
+ * HOS-884: the lift dialog promises "se registra quién lo hizo", but only the
+ * row's `updated_by_id` recorded it, and the next edit overwrites that.
+ * `auditMiddleware` is mounted nowhere, so these calls are the only record.
+ */
+describe('audit trail', () => {
+    it('records who lifted a suspension, against which listing', async () => {
+        const app = buildApp();
+
+        await post(app, `/${HT_ID}/declaration-suspension`, { suspended: false });
+
+        expect(auditLogMock).toHaveBeenCalledTimes(1);
+        expect(auditLogMock.mock.calls[0]?.[0]).toStrictEqual({
+            auditEvent: 'billing.mutation',
+            actorId: ADMIN_ID,
+            action: 'update',
+            resourceType: 'host-trade-declaration-suspension',
+            resourceId: HT_ID,
+            metadata: { suspended: false }
+        });
+    });
+
+    it('records nothing when there was no suspension to lift', async () => {
+        mockLiftSuspension.mockResolvedValue({ data: { lifted: false } });
+        const app = buildApp();
+
+        await post(app, `/${HT_ID}/declaration-suspension`, { suspended: false });
+
+        expect(auditLogMock).not.toHaveBeenCalled();
+    });
+
+    it('records who suspended, with the reason', async () => {
+        const app = buildApp();
+
+        await post(app, `/${HT_ID}/declaration-suspension`, { suspended: true, reason: 'Motivo.' });
+
+        expect(auditLogMock.mock.calls[0]?.[0]).toStrictEqual({
+            auditEvent: 'billing.mutation',
+            actorId: ADMIN_ID,
+            action: 'update',
+            resourceType: 'host-trade-declaration-suspension',
+            resourceId: HT_ID,
+            metadata: { suspended: true, reason: 'Motivo.' }
+        });
     });
 });

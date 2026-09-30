@@ -96,9 +96,9 @@ export const DestinationReviewCreateHttpSchema = z.object({
     visitDate: z.coerce.date().optional(),
     tripType: z.string().optional(),
     travelSeason: z.string().optional(),
-    isBusinessTravel: z.coerce.boolean().default(false),
-    isRecommended: z.coerce.boolean().default(true),
-    wouldVisitAgain: z.coerce.boolean().default(true),
+    isBusinessTravel: httpBodyBoolean().default(false),
+    isRecommended: httpBodyBoolean().default(true),
+    wouldVisitAgain: httpBodyBoolean().default(true),
     language: z.string().length(2).default('en')
 });
 
@@ -119,6 +119,7 @@ export type DestinationReviewUpdateHttp = z.infer<typeof DestinationReviewUpdate
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import type {
     DestinationReviewCreateInput,
     DestinationReviewUpdateInput

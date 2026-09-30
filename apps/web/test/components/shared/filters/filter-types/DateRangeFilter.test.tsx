@@ -147,6 +147,48 @@ describe('DateRangeFilter', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
+    describe('calendar caption casing (HOS-869)', () => {
+        it.each([
+            ['es', 'Agosto de 2026'],
+            ['en', 'August 2026']
+        ] as const)('range mode caption reads "%s" -> exact label', (locale, expected) => {
+            render(
+                <DateRangeFilter
+                    config={CONFIG}
+                    value={{ from: '2026-08-10', to: '2026-08-12' }}
+                    onChange={() => {}}
+                    locale={locale}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /fechas/i, expanded: false }));
+            expect(screen.getByText(expected)).toBeInTheDocument();
+        });
+
+        it.each([
+            ['es', 'Agosto de 2026'],
+            ['en', 'August 2026']
+        ] as const)('bounds mode (single picker) caption in %s is the exact label', (locale, expected) => {
+            render(
+                <DateRangeFilter
+                    config={{
+                        id: 'date',
+                        label: 'Fecha',
+                        type: 'date-range' as const,
+                        mode: 'bounds' as const,
+                        checkInPlaceholder: 'Desde',
+                        checkOutPlaceholder: 'Hasta',
+                        allowPastDates: true
+                    }}
+                    value={{ from: '2026-08-10', to: '' }}
+                    onChange={() => {}}
+                    locale={locale}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /10\/08|desde/i }));
+            expect(screen.getByText(expected)).toBeInTheDocument();
+        });
+    });
+
     describe('bounds mode — date presets (BETA-115)', () => {
         const BOUNDS_CONFIG = {
             id: 'date',

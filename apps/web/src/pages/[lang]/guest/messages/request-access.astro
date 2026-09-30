@@ -52,7 +52,13 @@ const pageDescription = t('conversations.form.requestAccessBody');
                     />
                 </div>
 
-                <div id="request-access-notice" aria-live="polite" class="request-access__notice" hidden></div>
+                <div
+                    id="request-access-notice"
+                    aria-live="polite"
+                    class="request-access__notice"
+                    data-sent-message={t('conversations.form.requestAccessSent')}
+                    hidden
+                ></div>
                 <div id="request-access-error" role="alert" class="request-access__error" hidden></div>
 
                 <button type="submit" class="request-access__submit">
@@ -63,49 +69,61 @@ const pageDescription = t('conversations.form.requestAccessBody');
     </section>
 </BaseLayout>
 
-<script define:vars={{ sentMessage: t('conversations.form.requestAccessSent') }}>
-    const form = document.getElementById('request-access-form');
-    const notice = document.getElementById('request-access-notice');
-    const errorEl = document.getElementById('request-access-error');
+{/*
+  HOS-807: this script used `define:vars` to receive the confirmation copy,
+  which made its content differ per render — so its CSP hash could not be
+  pre-computed into the soft-nav union, and it was blocked whenever the page
+  was reached by <ClientRouter /> navigation. The copy now travels in
+  `data-sent-message`, the script is static, and the build hashes it. It stays
+  an IIFE: an inline classic script re-runs on every soft visit, and a
+  top-level `const` would throw "already declared" on the second one.
+*/}
+<script is:inline>
+    (function () {
+        const form = document.getElementById('request-access-form');
+        const notice = document.getElementById('request-access-notice');
+        const sentMessage = notice ? (notice.dataset.sentMessage ?? '') : '';
+        const errorEl = document.getElementById('request-access-error');
 
-    if (form && notice && errorEl) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const emailInput = form.querySelector('input[name="email"]');
-            if (!emailInput || !(emailInput instanceof HTMLInputElement)) return;
+        if (form && notice && errorEl) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailInput = form.querySelector('input[name="email"]');
+                if (!emailInput || !(emailInput instanceof HTMLInputElement)) return;
 
-            const email = emailInput.value.trim();
-            if (!email) return;
+                const email = emailInput.value.trim();
+                if (!email) return;
 
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn instanceof HTMLButtonElement) {
-                submitBtn.disabled = true;
-            }
-
-            try {
-                await fetch('/api/v1/public/conversations/request-access', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-
-                // Anti-enumeration: always show same confirmation
-                notice.textContent = sentMessage;
-                notice.removeAttribute('hidden');
-                errorEl.setAttribute('hidden', '');
-                form.reset();
-            } catch {
-                // Still show the same confirmation — do not leak info on network error
-                notice.textContent = sentMessage;
-                notice.removeAttribute('hidden');
-                errorEl.setAttribute('hidden', '');
-            } finally {
+                const submitBtn = form.querySelector('button[type="submit"]');
                 if (submitBtn instanceof HTMLButtonElement) {
-                    submitBtn.disabled = false;
+                    submitBtn.disabled = true;
                 }
-            }
-        });
-    }
+
+                try {
+                    await fetch('/api/v1/public/conversations/request-access', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+
+                    // Anti-enumeration: always show same confirmation
+                    notice.textContent = sentMessage;
+                    notice.removeAttribute('hidden');
+                    errorEl.setAttribute('hidden', '');
+                    form.reset();
+                } catch {
+                    // Still show the same confirmation — do not leak info on network error
+                    notice.textContent = sentMessage;
+                    notice.removeAttribute('hidden');
+                    errorEl.setAttribute('hidden', '');
+                } finally {
+                    if (submitBtn instanceof HTMLButtonElement) {
+                        submitBtn.disabled = false;
+                    }
+                }
+            });
+        }
+    })();
 </script>
 
 <style>

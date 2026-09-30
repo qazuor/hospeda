@@ -503,12 +503,20 @@ const query = querySchema.parse({ page: '2', pageSize: '50' });
 
 #### String to Boolean
 
-```typescript
-const booleanSchema = z.coerce.boolean();
+> **Never use `z.coerce.boolean()` for HTTP input.** It is `Boolean(value)`, so
+> EVERY non-empty string is `true`, `'false'` and `'0'` included (HOS-410). A CI
+> guard (`pnpm check:no-coerce-boolean`) bans it in `apps/api/src` and
+> `packages/schemas/src`.
 
-// Parses:
-// 'true', '1', 'yes' → true
-// 'false', '0', 'no' → false
+```typescript
+import { createBooleanQueryParam, httpBodyBoolean } from '@repo/schemas';
+
+// Query string: only 'true' | 'false' are accepted, anything else is a 400.
+const filter = createBooleanQueryParam('Filter by active status');
+// 'true' → true, 'false' → false, '' / '1' / 'yes' → validation error
+
+// Request body: a real boolean, or the exact strings 'true' | 'false'.
+const field = httpBodyBoolean();
 ```
 
 #### String to Date

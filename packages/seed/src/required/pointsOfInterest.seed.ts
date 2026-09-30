@@ -1,6 +1,7 @@
+import { PointOfInterestModel } from '@repo/db';
 import { PointOfInterestService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { createSeedFactory, STATUS_ICONS } from '../utils/index.js';
+import { createSeedFactory, STATUS_ICONS, whereFixtureSlug } from '../utils/index.js';
 import type { SeedContext } from '../utils/seedContext.js';
 
 /**
@@ -71,6 +72,9 @@ export const seedPointsOfInterest = createSeedFactory({
     serviceClass: PointOfInterestService,
     folder: 'src/data/pointOfInterest',
     files: requiredManifest.pointsOfInterest,
+
+    // HOS-735: re-runnable. A row already carrying this slug is skipped, not re-inserted.
+    existing: { modelClass: PointOfInterestModel, getWhere: whereFixtureSlug() },
     normalizer: normalizePointOfInterestSeedItem,
     getEntityInfo: getPointOfInterestEntityInfo
 });

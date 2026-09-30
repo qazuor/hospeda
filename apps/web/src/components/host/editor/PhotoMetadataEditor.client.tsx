@@ -5,7 +5,8 @@
  * `alt`/`caption`/`description` on their own photos, so every one of them
  * fell back to the same generic text on the public listing).
  *
- * Shape: a single toggle button that expands an inline form BELOW the photo
+ * Shape: a single toggle button that expands an inline panel (a `<div>`, never
+ * a `<form>`: see HOS-1297 below) BELOW the photo
  * it belongs to — never a modal, never a route change (this editor lives
  * inside the single-page photo section, per owner decision).
  *
@@ -42,7 +43,7 @@
  * `validatePhotoMetadataFields`).
  */
 
-import { type FormEvent, useState } from 'react';
+import { type KeyboardEvent, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
@@ -115,8 +116,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         setIsOpen((prev) => !prev);
     };
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSave = async () => {
         const values = { alt, caption, description, photographer, creditUrl };
         const errors = validatePhotoMetadataFields(values, t);
         setFieldErrors(errors);
@@ -138,6 +138,18 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         }
     };
 
+    // Enter inside a single-line input would otherwise submit the enclosing
+    // editor's <form> (there is no form of our own to catch it). Save instead,
+    // the same way the button does. Textareas keep Enter as a newline.
+    const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (canOperate && !isSaving) {
+                void handleSave();
+            }
+        }
+    };
+
     const fieldId = (name: string) => `photo-${name}-${item.id || 'pending'}`;
 
     return (
@@ -156,9 +168,13 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             </button>
 
             {isOpen && (
-                <form
+                // A <div>, NOT a <form> (HOS-1297): every host editor mounts this
+                // panel inside its own page-level <form>, and nested forms are
+                // invalid HTML. The parser drops the inner <form>, so its submit
+                // button fell through to a native GET on the outer form and the
+                // page reloaded without ever calling the API.
+                <div
                     className={`${styles.metadataPanel} ${compactLayout ? styles.metadataPanelFloating : ''}`}
-                    onSubmit={handleSubmit}
                 >
                     <div className={styles.formGroup}>
                         <label
@@ -205,6 +221,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                                 'host.properties.editor.photo.captionPlaceholder',
                                 'Ej: Vista desde el balcón'
                             )}
+                            onKeyDown={handleInputKeyDown}
                             disabled={!canOperate || isSaving}
                         />
                         {fieldErrors.caption && (
@@ -273,6 +290,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                                     'host.properties.editor.photo.photographerPlaceholder',
                                     'Ej: Estudio Paraná'
                                 )}
+                                onKeyDown={handleInputKeyDown}
                                 disabled={!canOperate || isSaving}
                             />
                             {fieldErrors.photographer && (
@@ -298,6 +316,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                                 value={creditUrl}
                                 onChange={(e) => setCreditUrl(e.target.value)}
                                 placeholder="https://..."
+                                onKeyDown={handleInputKeyDown}
                                 disabled={!canOperate || isSaving}
                             />
                             {fieldErrors.creditUrl && (
@@ -308,8 +327,9 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
 
                     <div className={styles.metadataActions}>
                         <button
-                            type="submit"
+                            type="button"
                             className={styles.metadataSaveButton}
+                            onClick={() => void handleSave()}
                             disabled={!canOperate || isSaving}
                         >
                             {isSaving
@@ -333,7 +353,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                             </span>
                         )}
                     </div>
-                </form>
+                </div>
             )}
         </div>
     );

@@ -644,6 +644,7 @@
                 "disconnect": "Desconectar",
                 "disconnecting": "Desconectando...",
                 "disconnected": "Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están.",
+                "disconnectedIcalRotateLink": "Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están. Por seguridad, regenerá el link de exportación del calendario en el panel del proveedor: el link anterior sigue funcionando hasta que lo cambies.",
                 "disconnectError": "No pudimos desconectar. Probá de nuevo.",
                 "feedUrlLabel": "URL del feed .ics",
                 "feedUrlPlaceholder": "https://ejemplo.com/calendario.ics",

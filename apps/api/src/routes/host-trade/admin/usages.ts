@@ -31,9 +31,19 @@ import { HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute, createAdminRoute } from '../../../utils/route-factory';
+
+/**
+ * `resourceType` of the audit entries this route writes (HOS-884).
+ *
+ * `auditMiddleware` is mounted nowhere, so these explicit calls are the ONLY
+ * durable record of who suspended or lifted. The row's own `updated_by_id` is
+ * overwritten by the next edit, and lifting clears the suspension columns.
+ */
+const SUSPENSION_AUDIT_RESOURCE_TYPE = 'host-trade-declaration-suspension';
 
 const usageService = new HostTradeUsageService({ logger: apiLogger });
 
@@ -150,12 +160,31 @@ export const adminSetDeclarationSuspensionRoute = createAdminRoute({
             if (result.error) {
                 throw new ServiceError(result.error.code, result.error.message);
             }
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: SUSPENSION_AUDIT_RESOURCE_TYPE,
+                resourceId: hostTradeId,
+                metadata: { suspended: true, reason: parsed.data.reason }
+            });
             return { suspended: true };
         }
 
         const result = await usageService.liftDeclarationSuspension({ hostTradeId }, actor);
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+        // A lift that found nothing to lift changed nothing, so it records nothing.
+        if (result.data?.lifted) {
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: SUSPENSION_AUDIT_RESOURCE_TYPE,
+                resourceId: hostTradeId,
+                metadata: { suspended: false }
+            });
         }
         return { suspended: false };
     }

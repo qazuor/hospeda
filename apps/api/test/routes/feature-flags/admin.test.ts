@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -84,6 +86,79 @@ function actorHeaders(actor: Actor): Record<string, string> {
     };
 }
 
+/** Admin panel screens that call the feature flags admin API (HOS-1123). */
+const ADMIN_SCREENS_DIR = join(
+    __dirname,
+    '../../../../admin/src/routes/_authed/platform/feature-flags'
+);
+
+/** Collects every `/api/v1/admin/<segment>` prefix the admin screens request. */
+function collectAdminApiBases(): ReadonlySet<string> {
+    const bases = new Set<string>();
+    for (const file of readdirSync(ADMIN_SCREENS_DIR)) {
+        const source = readFileSync(join(ADMIN_SCREENS_DIR, file), 'utf8');
+        for (const match of source.matchAll(/\/api\/v1\/admin\/([a-z-]+)/g)) {
+            bases.add(`/api/v1/admin/${match[1]}`);
+        }
+    }
+    return bases;
+}
+
+describe('Feature flags admin mount path (HOS-1123)', () => {
+    let app: AppOpenAPI;
+
+    beforeAll(() => {
+        app = initApp();
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockFeatureFlagService.adminList.mockResolvedValue({
+            items: [],
+            pagination: {
+                page: 1,
+                pageSize: 20,
+                total: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        });
+    });
+
+    it('the admin screens request exactly one API base', () => {
+        // Arrange + Act
+        const bases = collectAdminApiBases();
+
+        // Assert (guards against the scan silently finding nothing)
+        expect([...bases]).toStrictEqual(['/api/v1/admin/feature-flags']);
+    });
+
+    it('every base the admin screens request is a mounted route, not a 404', async () => {
+        // Arrange
+        const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
+
+        for (const base of collectAdminApiBases()) {
+            // Act
+            const res = await app.request(base, { headers: actorHeaders(actor) });
+
+            // Assert
+            expect(res.status, base).toBe(200);
+        }
+    });
+
+    it('the retired /admin/flags mount no longer exists', async () => {
+        // Arrange
+        const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
+
+        // Act
+        const res = await app.request('/api/v1/admin/flags', { headers: actorHeaders(actor) });
+
+        // Assert
+        expect(res.status).toBe(404);
+    });
+});
+
 describe('Admin feature flag routes (SPEC-276)', () => {
     let app: AppOpenAPI;
 
@@ -95,9 +170,9 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         vi.clearAllMocks();
     });
 
-    describe('GET /api/v1/admin/flags', () => {
+    describe('GET /api/v1/admin/feature-flags', () => {
         it('returns 401 without authentication', async () => {
-            const res = await app.request('/api/v1/admin/flags', {
+            const res = await app.request('/api/v1/admin/feature-flags', {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             });
@@ -108,7 +183,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         it('returns 403 without FEATURE_FLAG_MANAGE permission', async () => {
             const actor = buildAdminActor([]);
 
-            const res = await app.request('/api/v1/admin/flags', {
+            const res = await app.request('/api/v1/admin/feature-flags', {
                 method: 'GET',
                 headers: actorHeaders(actor)
             });
@@ -131,7 +206,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
             });
 
             const res = await app.request(
-                '/api/v1/admin/flags?page=2&pageSize=5&search=checkout&isActive=true&enabled=true',
+                '/api/v1/admin/feature-flags?page=2&pageSize=5&search=checkout&isActive=true&enabled=true',
                 {
                     method: 'GET',
                     headers: actorHeaders(actor)
@@ -153,7 +228,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('POST /api/v1/admin/flags', () => {
+    describe('POST /api/v1/admin/feature-flags', () => {
         it('creates a feature flag with valid body', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.createFlag.mockResolvedValue(FEATURE_FLAG);
@@ -168,7 +243,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
                 enabledForRoles: [RoleEnum.ADMIN]
             };
 
-            const res = await app.request('/api/v1/admin/flags', {
+            const res = await app.request('/api/v1/admin/feature-flags', {
                 method: 'POST',
                 headers: actorHeaders(actor),
                 body: JSON.stringify(payload)
@@ -179,12 +254,12 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('GET /api/v1/admin/flags/:id', () => {
+    describe('GET /api/v1/admin/feature-flags/:id', () => {
         it('returns a flag by id', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.getById.mockResolvedValue(FEATURE_FLAG);
 
-            const res = await app.request(`/api/v1/admin/flags/${FLAG_ID}`, {
+            const res = await app.request(`/api/v1/admin/feature-flags/${FLAG_ID}`, {
                 method: 'GET',
                 headers: actorHeaders(actor)
             });
@@ -194,7 +269,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('PATCH /api/v1/admin/flags/:id', () => {
+    describe('PATCH /api/v1/admin/feature-flags/:id', () => {
         it('updates a feature flag with partial body', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.updateFlag.mockResolvedValue({
@@ -208,7 +283,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
                 enabled: false
             };
 
-            const res = await app.request(`/api/v1/admin/flags/${FLAG_ID}`, {
+            const res = await app.request(`/api/v1/admin/feature-flags/${FLAG_ID}`, {
                 method: 'PATCH',
                 headers: actorHeaders(actor),
                 body: JSON.stringify(payload)
@@ -219,7 +294,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('POST /api/v1/admin/flags/:id/toggle', () => {
+    describe('POST /api/v1/admin/feature-flags/:id/toggle', () => {
         it('toggles the kill-switch and forwards reason', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.toggleFlag.mockResolvedValue({
@@ -232,7 +307,7 @@ describe('Admin feature flag routes (SPEC-276)', () => {
                 reason: 'Emergency rollback'
             };
 
-            const res = await app.request(`/api/v1/admin/flags/${FLAG_ID}/toggle`, {
+            const res = await app.request(`/api/v1/admin/feature-flags/${FLAG_ID}/toggle`, {
                 method: 'POST',
                 headers: actorHeaders(actor),
                 body: JSON.stringify(payload)
@@ -248,12 +323,12 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('DELETE /api/v1/admin/flags/:id', () => {
+    describe('DELETE /api/v1/admin/feature-flags/:id', () => {
         it('deletes a feature flag', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.deleteFlag.mockResolvedValue(undefined);
 
-            const res = await app.request(`/api/v1/admin/flags/${FLAG_ID}`, {
+            const res = await app.request(`/api/v1/admin/feature-flags/${FLAG_ID}`, {
                 method: 'DELETE',
                 headers: actorHeaders(actor)
             });
@@ -263,12 +338,12 @@ describe('Admin feature flag routes (SPEC-276)', () => {
         });
     });
 
-    describe('GET /api/v1/admin/flags/:id/audit', () => {
+    describe('GET /api/v1/admin/feature-flags/:id/audit', () => {
         it('returns the audit log for a flag', async () => {
             const actor = buildAdminActor([PermissionEnum.FEATURE_FLAG_MANAGE]);
             mockFeatureFlagService.getAuditLog.mockResolvedValue(AUDIT_LOG);
 
-            const res = await app.request(`/api/v1/admin/flags/${FLAG_ID}/audit`, {
+            const res = await app.request(`/api/v1/admin/feature-flags/${FLAG_ID}/audit`, {
                 method: 'GET',
                 headers: actorHeaders(actor)
             });

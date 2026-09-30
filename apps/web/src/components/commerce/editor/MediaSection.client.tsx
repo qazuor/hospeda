@@ -50,6 +50,7 @@ import { webLogger } from '@/lib/logger';
 import type { MediaAttribution } from '@/lib/media';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
+import { buildUploadEntityError, describeUploadEntityError } from '@/lib/media/upload-entity-error';
 import { addToast } from '@/store/toast-store';
 import fieldStyles from './editor-fields.module.css';
 import styles from './MediaSection.module.css';
@@ -213,11 +214,16 @@ async function uploadEntityImage({
     const json = (await response.json().catch(() => null)) as {
         readonly success?: boolean;
         readonly data?: Image;
-        readonly error?: { readonly message?: string };
+        readonly error?: {
+            readonly code?: string;
+            readonly reason?: string;
+            readonly message?: string;
+            readonly details?: unknown;
+        };
     } | null;
 
     if (!response.ok || !json?.data) {
-        throw new Error(json?.error?.message ?? 'Upload failed');
+        throw buildUploadEntityError({ body: json, status: response.status });
     }
     return json.data;
 }
@@ -241,9 +247,11 @@ function describeUploadError(err: unknown, t: Translate): string {
             'La subida tardó demasiado. Probá de nuevo.'
         );
     }
-    return err instanceof Error
-        ? err.message
-        : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen');
+    return describeUploadEntityError({
+        err,
+        t,
+        fallback: t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen')
+    });
 }
 
 /**

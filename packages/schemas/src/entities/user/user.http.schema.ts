@@ -98,7 +98,7 @@ export const UserUpdateHttpSchema = z
     .partial()
     .extend({
         // ID is required for updates but comes from URL params, not body
-        isEmailVerified: z.coerce.boolean().optional(),
+        isEmailVerified: httpBodyBoolean().optional(),
         avatar: z.string().url().optional()
     });
 
@@ -121,6 +121,7 @@ export type UserGetHttp = z.infer<typeof UserGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import type { UserCreateInput, UserUpdateInput } from './user.crud.schema.js';
 import type { UserSearch } from './user.query.schema.js';
 

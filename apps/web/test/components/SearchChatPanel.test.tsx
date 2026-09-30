@@ -884,6 +884,127 @@ describe('SearchChatPanel', () => {
         });
     });
 
+    describe('Results vs uninterpreted turn (HOS-983)', () => {
+        const twoResults = [1, 2].map((n) => ({
+            id: `acc-${n}`,
+            slug: `acc-${n}`,
+            name: `Alojamiento ${n}`,
+            type: 'CABIN',
+            media: null,
+            price: null,
+            averageRating: 0 as const,
+            reviewsCount: 0 as const,
+            cityDestination: null
+        }));
+
+        it('interpreted turn with results: shows the results and no notice', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: true,
+                hasSearched: true,
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-results-count')).toHaveTextContent('2');
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+
+        it('uninterpreted turn with fallback (unfiltered) results: hides the results panel', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: false,
+                hasSearched: true,
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-results-count')).not.toBeInTheDocument();
+        });
+
+        it('uninterpreted turn with no results: shows the notice only, no empty-state card', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: false,
+                hasSearched: true,
+                results: []
+            });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-results-empty')).not.toBeInTheDocument();
+        });
+
+        it('low confidence but a filter reached the search: keeps the filtered results', () => {
+            mockHook({
+                confidence: 0.2,
+                lastTurnHadEntities: true,
+                hasSearched: true,
+                currentFilters: { hasPool: true },
+                lastSearchParams: { page: 1, pageSize: 20, hasPool: true },
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+            expect(screen.getByTestId('ai-search-results-count')).toHaveTextContent('2');
+        });
+
+        it('low confidence and the extracted entity never reached the search: hides the catalog', () => {
+            // Intent carries an entity (so lastTurnHadEntities is true) but the
+            // mapper forwarded none of it: params are pagination-only, i.e. the
+            // plain catalog. Reading intent instead of params would keep it.
+            mockHook({
+                confidence: 0.2,
+                lastTurnHadEntities: true,
+                hasSearched: true,
+                currentFilters: { hasPool: true },
+                lastSearchParams: { page: 1, pageSize: 20 },
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
+        });
+
+        it('uninterpreted turn while still streaming: keeps the catalog hidden (no flash before done)', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: false,
+                hasSearched: true,
+                isStreaming: true,
+                results: twoResults
+            });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-results')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+
+        it('resets the composer placeholder on an uninterpreted turn instead of the has-results hint', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: false,
+                hasSearched: true,
+                results: twoResults
+            });
+            renderPanel();
+            const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+            expect(textarea.placeholder).toMatch(/contame qué buscás/i);
+            expect(textarea.placeholder).not.toMatch(/afiná tu búsqueda/i);
+        });
+
+        it('keeps the has-results placeholder when the turn was interpreted', () => {
+            mockHook({
+                confidence: 0.9,
+                lastTurnHadEntities: true,
+                hasSearched: true,
+                results: twoResults
+            });
+            renderPanel();
+            const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+            expect(textarea.placeholder).toMatch(/afiná tu búsqueda/i);
+        });
+    });
+
     describe('Classified error copy (SPEC-265 C3)', () => {
         it('maps a 429 status to the rate-limit copy', () => {
             mockHook({ error: 'HTTP 429', errorStatus: 429 });

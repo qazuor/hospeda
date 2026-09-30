@@ -4,6 +4,7 @@ import {
     PARTNER_REAPER_MANAGED_FIELDS,
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
+    PARTNER_SAFE_WRITE_URL_FIELDS,
     partnerSchema
 } from './partner.schema.js';
 
@@ -22,20 +23,22 @@ import {
  * because content an admin typed has already been through the only review
  * AC-11 asks for.
  */
-export const createPartnerSchema = partnerSchema.omit({
-    ...PARTNER_REVIEW_MANAGED_FIELDS,
-    ...PARTNER_REVOKE_MANAGED_FIELDS,
-    ...PARTNER_REAPER_MANAGED_FIELDS,
-    ...PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    deletedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedById: true,
-    ownerUserId: true,
-    analytics: true // Will default to {}
-});
+export const createPartnerSchema = partnerSchema
+    .omit({
+        ...PARTNER_REVIEW_MANAGED_FIELDS,
+        ...PARTNER_REVOKE_MANAGED_FIELDS,
+        ...PARTNER_REAPER_MANAGED_FIELDS,
+        ...PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+        createdById: true,
+        updatedById: true,
+        deletedById: true,
+        ownerUserId: true,
+        analytics: true // Will default to {}
+    })
+    .extend(PARTNER_SAFE_WRITE_URL_FIELDS);
 
 export type CreatePartner = z.infer<typeof createPartnerSchema>;

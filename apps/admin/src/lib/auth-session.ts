@@ -40,6 +40,14 @@ export interface AuthState {
      * fall through to the next precedence step.
      */
     readonly languageWeb: string | null;
+    /**
+     * The account's saved admin-panel locale preference
+     * (`user.settings.languageAdmin`, falling back to the legacy
+     * `user.settings.language`), read off the same session `settings` field
+     * (HOS-992). `null` when nothing is stored. Seeds the panel's locale on the
+     * server render; the live value comes from the user profile.
+     */
+    readonly languageAdmin: string | null;
 }
 
 /**
@@ -63,23 +71,22 @@ const UNAUTHENTICATED_STATE: AuthState = {
     email: null,
     avatar: null,
     emailVerified: false,
-    languageWeb: null
+    languageWeb: null,
+    languageAdmin: null
 } as const;
 
 /**
- * Extracts `languageWeb` out of the Better Auth session's `settings`
- * additionalField (HOS-609). The field is mapped as a plain column on the
- * `users` table, but nothing here assumes a fixed wire shape: it may arrive
- * already parsed (a plain object, over an in-process call) or as a JSON
- * string (a stringified column value serialized across the HTTP hop this
- * function makes to `/api/auth/get-session`). Either is handled; anything
- * else — absent, malformed JSON, non-string `languageWeb` — resolves to
- * `null`, treated by every caller as "no account preference".
+ * Parses the Better Auth session's `settings` additionalField into a plain
+ * record. The field is mapped as a plain column on the `users` table, but
+ * nothing here assumes a fixed wire shape: it may arrive already parsed (a
+ * plain object, over an in-process call) or as a JSON string (a stringified
+ * column value serialized across the HTTP hop `resolveAuthSession` makes to
+ * `/api/auth/get-session`). Anything else resolves to `null`.
  *
  * @param rawSettings - The session user's raw `settings` value, of unknown shape.
- * @returns The saved web-locale preference, or `null`.
+ * @returns The settings record, or `null`.
  */
-function extractLanguageWeb(rawSettings: unknown): string | null {
+function parseSettings(rawSettings: unknown): Record<string, unknown> | null {
     let settings: unknown = rawSettings;
 
     if (typeof settings === 'string') {
@@ -94,8 +101,35 @@ function extractLanguageWeb(rawSettings: unknown): string | null {
         return null;
     }
 
-    const languageWeb = (settings as Record<string, unknown>).languageWeb;
+    return settings as Record<string, unknown>;
+}
+
+/**
+ * Extracts `languageWeb` out of the session `settings` (HOS-609). Absent,
+ * malformed JSON or a non-string value resolves to `null`, treated by every
+ * caller as "no account preference".
+ *
+ * @param rawSettings - The session user's raw `settings` value, of unknown shape.
+ * @returns The saved web-locale preference, or `null`.
+ */
+function extractLanguageWeb(rawSettings: unknown): string | null {
+    const languageWeb = parseSettings(rawSettings)?.languageWeb;
     return typeof languageWeb === 'string' ? languageWeb : null;
+}
+
+/**
+ * Extracts the admin-panel locale out of the session `settings` (HOS-992):
+ * `languageAdmin`, else the legacy single `language` field, else `null`. The
+ * fallback mirrors the preferences page, which shows the legacy value as the
+ * selected one until a per-surface value is saved.
+ *
+ * @param rawSettings - The session user's raw `settings` value, of unknown shape.
+ * @returns The saved admin-locale preference, or `null`.
+ */
+function extractLanguageAdmin(rawSettings: unknown): string | null {
+    const settings = parseSettings(rawSettings);
+    const value = settings?.languageAdmin ?? settings?.language;
+    return typeof value === 'string' ? value : null;
 }
 
 /**
@@ -228,7 +262,8 @@ export async function resolveAuthSession({
             email: sessionData.user.email || null,
             avatar: sessionData.user.image || null,
             emailVerified: sessionData.user.emailVerified ?? false,
-            languageWeb: extractLanguageWeb(sessionData.user.settings)
+            languageWeb: extractLanguageWeb(sessionData.user.settings),
+            languageAdmin: extractLanguageAdmin(sessionData.user.settings)
         };
     } catch {
         return UNAUTHENTICATED_STATE;

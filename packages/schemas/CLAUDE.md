@@ -534,6 +534,21 @@ Each entity follows a standard set of schema files:
 | `<entity>.admin-search.schema.ts` | Admin list search schemas extending `AdminSearchBaseSchema` |
 | `index.ts` | Re-exports all schemas from the entity directory |
 
+### Boolean query parameters (HOS-410)
+
+`z.coerce.boolean()` is banned in `packages/schemas/src` and `apps/api/src` (CI guard
+`pnpm check:no-coerce-boolean`). It is `Boolean(value)`, so `'false'` becomes `true`:
+`?includeDeleted=false` returned the deleted rows and `?dryRun=false` ran a cron as a dry-run.
+Use the helpers from `common/boolean-params.ts` (re-exported by `@repo/schemas`):
+
+| Helper | Use |
+|---|---|
+| `createBooleanQueryParam(description)` | Query filter. Only `'true'`/`'false'`; `''`, `1`, `yes` are a 400. Absent stays `undefined`. |
+| `createBooleanQueryParamWithDefault(description, default)` | Same, default applies ONLY when absent (`?flag=false` stays `false`). |
+| `httpBodyBoolean()` | Request body: a real boolean or the exact strings `'true'`/`'false'`. |
+
+Environment schemas are the only exception (`apps/api/src/utils/env-schema.ts`).
+
 ### AdminSearchBaseSchema
 
 Located in `common/admin-search.schema.ts`. All admin list routes use entity-specific schemas that extend this base:
@@ -546,7 +561,7 @@ export const AdminSearchBaseSchema = z.object({
     search: z.string().optional(),
     sort: z.string().optional(),
     status: z.string().optional(),
-    includeDeleted: z.coerce.boolean().default(false),
+    includeDeleted: createBooleanQueryParamWithDefault('Include soft-deleted items', false),
     createdAfter: z.string().optional(),
     createdBefore: z.string().optional(),
 });

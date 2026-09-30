@@ -36,7 +36,8 @@ import {
     isNotNull,
     isNull,
     MessageModel,
-    messages
+    messages,
+    notInArray
 } from '@repo/db';
 import type { HostConversationResponseRate } from '@repo/schemas';
 import {
@@ -1230,22 +1231,27 @@ export class ConversationService extends BaseService {
     // -------------------------------------------------------------------------
 
     /**
-     * Closes all non-deleted conversations for an accommodation and cancels
-     * their notification schedules. Intended to be called from
-     * `AccommodationService._afterSoftDelete` inside the accommodation
-     * soft-delete transaction.
+     * Closes every still-open, non-deleted conversation of an accommodation and
+     * cancels the notification schedules of the conversations it closed.
+     * Called from `AccommodationService._afterSoftDelete`, inside a
+     * transaction (or savepoint) that the hook provides.
      *
-     * Conversations already `BLOCKED` or `CLOSED` are re-updated (idempotent)
-     * to ensure all schedules are cancelled.
+     * Conversations already `BLOCKED` or `CLOSED` are left untouched (HOS-1383):
+     * - `BLOCKED` is terminal in `ALLOWED_TRANSITIONS`, while
+     *   `CLOSED → OPEN / PENDING_OWNER` is allowed. Overwriting BLOCKED with
+     *   CLOSED would let an accommodation delete + restore un-block a guest.
+     * - An already-`CLOSED` row keeps its original `closedAt`.
+     *
+     * A schedule cancellation that returns an error is logged, not thrown: the
+     * conversation itself is already closed by then.
      *
      * @param accommodationId - UUID of the accommodation being soft-deleted.
-     * @param tx - Drizzle transaction client from the accommodation transaction.
-     * @returns Number of conversations updated.
+     * @param tx - Drizzle transaction client provided by the caller.
+     * @returns Number of conversations this call closed.
      *
      * @example
      * ```ts
-     * // Inside AccommodationService._afterSoftDelete:
-     * await conversationSvc.closeAllForAccommodation(accommodationId, ctx.tx!);
+     * await withTransaction((tx) => conversationSvc.closeAllForAccommodation(accommodationId, tx));
      * ```
      */
     public async closeAllForAccommodation(
@@ -1260,19 +1266,31 @@ export class ConversationService extends BaseService {
             .where(
                 and(
                     eq(conversations.accommodationId, accommodationId),
-                    isNull(conversations.deletedAt)
+                    isNull(conversations.deletedAt),
+                    notInArray(conversations.status, [
+                        ConversationStatusEnum.BLOCKED,
+                        ConversationStatusEnum.CLOSED
+                    ])
                 )
             )
             .returning({ id: conversations.id });
 
         const systemActor = this._buildSystemActor();
 
+        // Only the rows this UPDATE actually closed: `returning` excludes the
+        // BLOCKED / CLOSED rows the WHERE skipped.
         for (const row of updatedRows) {
-            await this.notificationScheduleService.cancelAllForConversation(
+            const cancelResult = await this.notificationScheduleService.cancelAllForConversation(
                 systemActor,
                 { conversationId: row.id },
                 tx
             );
+            if (cancelResult.error) {
+                this.logger.warn(
+                    { error: cancelResult.error, conversationId: row.id, accommodationId },
+                    'closeAllForAccommodation: schedule cancellation failed'
+                );
+            }
         }
 
         return updatedRows.length;

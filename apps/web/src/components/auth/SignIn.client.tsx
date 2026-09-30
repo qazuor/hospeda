@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
+import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { signIn } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -118,6 +119,10 @@ export function SignIn({
                     })
                 );
             } else {
+                // HOS-1206: the guest `/auth/me` snapshot cached by the page
+                // the visitor came from is still "fresh" — drop it, or the
+                // session-blind page we return to paints them as anonymous.
+                clearCachedAuthMe();
                 // SPEC-182: when externalRedirect, redirectTo is a
                 // server-allowlisted absolute URL (e.g. the admin panel) and
                 // is used verbatim — the host-strip+reattach workaround below

@@ -97,6 +97,30 @@ export const AccommodationExtraInfoRequiredForPublishSchema = AccommodationExtra
 );
 
 /**
+ * Maximum accommodation slug length on the WRITE side (create, update, and the
+ * entity schema itself). Matches the cap `generateSlug` in service-core applies,
+ * so a slug the platform generates always satisfies it (HOS-855, BETA-172).
+ */
+export const ACCOMMODATION_SLUG_MAX_LENGTH = 50;
+
+/**
+ * Maximum accommodation slug length on the READ side. Deliberately looser than
+ * {@link ACCOMMODATION_SLUG_MAX_LENGTH}: rows persisted before the generator cap
+ * (BETA-172) or through the old `create` limit of 100 can legitimately hold
+ * 51-120 chars, and a read schema stricter than the DB turns those rows into a
+ * permanent 500 (SPEC-143 Finding #9). Every read/response schema MUST use
+ * {@link AccommodationReadSlugSchema}, never the write bound.
+ */
+export const ACCOMMODATION_SLUG_READ_MAX_LENGTH = 120;
+
+/**
+ * Slug shape for READ/response schemas (see {@link ACCOMMODATION_SLUG_READ_MAX_LENGTH}).
+ */
+export const AccommodationReadSlugSchema = z
+    .string()
+    .max(ACCOMMODATION_SLUG_READ_MAX_LENGTH, { message: 'zodError.accommodation.slug.max' });
+
+/**
  * Accommodation Schema - Main Entity Schema
  *
  * This schema defines the complete structure of an Accommodation entity
@@ -111,7 +135,7 @@ export const AccommodationSchema = z.object({
     slug: z
         .string()
         .min(3, { message: 'zodError.accommodation.slug.min' })
-        .max(50, { message: 'zodError.accommodation.slug.max' }),
+        .max(ACCOMMODATION_SLUG_MAX_LENGTH, { message: 'zodError.accommodation.slug.max' }),
     name: z
         .string()
         .min(3, { message: 'zodError.accommodation.name.min' })
@@ -294,4 +318,13 @@ export const AccommodationSchema = z.object({
     // Extra Info
     extraInfo: AccommodationExtraInfoSchema.nullish()
 });
+/**
+ * Read-side variant of {@link AccommodationSchema}: identical except `slug`
+ * tolerates legacy values up to {@link ACCOMMODATION_SLUG_READ_MAX_LENGTH}.
+ * Use it as the base of every response / read-model schema (HOS-855).
+ */
+export const AccommodationReadSchema = AccommodationSchema.extend({
+    slug: AccommodationReadSlugSchema
+});
+
 export type Accommodation = z.infer<typeof AccommodationSchema>;

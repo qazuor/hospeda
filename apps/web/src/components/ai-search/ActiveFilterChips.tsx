@@ -445,34 +445,26 @@ function resolveCityDestinationChip(
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 /**
- * ActiveFilterChips — renders one removable chip per active filter key.
- *
- * Used inside `SearchChatPanel` (T-010) to display the user's accumulated
- * search intent as dismissible pills. Removing a chip calls `onRemove(key)`,
- * which drops that filter slot from the hook state and re-fires the
- * accommodations search without starting a new LLM turn.
- *
- * Renders nothing when `filters` is null or has no displayable keys.
- *
- * @example
- * ```tsx
- * <ActiveFilterChips
- *   filters={chat.currentFilters}
- *   onRemove={chat.removeFilter}
- *   locale={locale}
- * />
- * ```
+ * Resolve the chips that would render for an intent, honoring which slots were
+ * ACTUALLY forwarded to the search (`appliedParams`). This is the single
+ * definition of "an active filter" for the AI search panel: both the chip list
+ * and the panel's "is anything really filtering the results" check (HOS-983)
+ * read it, so they cannot drift apart.
  */
-export function ActiveFilterChips({
+export function resolveActiveChips({
     filters,
-    onRemove,
     locale,
     destinations,
     appliedParams
-}: ActiveFilterChipsProps) {
+}: Pick<
+    ActiveFilterChipsProps,
+    'filters' | 'locale' | 'destinations' | 'appliedParams'
+>): ReadonlyArray<{
+    readonly key: keyof SearchIntentEntities;
+    readonly label: string;
+}> {
     const { t, tPlural } = createTranslations(locale);
-
-    if (!filters) return null;
+    if (!filters) return [];
 
     const entries = Object.entries(filters) as [keyof SearchIntentEntities, unknown][];
 
@@ -521,6 +513,39 @@ export function ActiveFilterChips({
         if (!descriptor.visible) continue;
         chips.push({ key, label: descriptor.label });
     }
+
+    return chips;
+}
+
+/**
+ * ActiveFilterChips — renders one removable chip per active filter key.
+ *
+ * Used inside `SearchChatPanel` (T-010) to display the user's accumulated
+ * search intent as dismissible pills. Removing a chip calls `onRemove(key)`,
+ * which drops that filter slot from the hook state and re-fires the
+ * accommodations search without starting a new LLM turn.
+ *
+ * Renders nothing when `filters` is null or has no displayable keys.
+ *
+ * @example
+ * ```tsx
+ * <ActiveFilterChips
+ *   filters={chat.currentFilters}
+ *   onRemove={chat.removeFilter}
+ *   locale={locale}
+ * />
+ * ```
+ */
+export function ActiveFilterChips({
+    filters,
+    onRemove,
+    locale,
+    destinations,
+    appliedParams
+}: ActiveFilterChipsProps) {
+    const { t } = createTranslations(locale);
+
+    const chips = resolveActiveChips({ filters, locale, destinations, appliedParams });
 
     if (chips.length === 0) return null;
 

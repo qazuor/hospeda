@@ -19,6 +19,7 @@ import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
+import { formatMonthYearLabel } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './DateRangeFilter.module.css';
@@ -298,6 +299,10 @@ function SingleBoundPicker({
                             disabled={disabledMatcher}
                             defaultMonth={defaultMonth ?? selected ?? new Date()}
                             classNames={classNames}
+                            formatters={{
+                                formatCaption: (month) =>
+                                    formatMonthYearLabel({ date: month, locale })
+                            }}
                         />
                         {hasValue && (
                             <div className={styles.popoverFooter}>
@@ -525,6 +530,10 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                             disabled={beforeToday}
                             defaultMonth={fromDate ?? today}
                             classNames={classNames}
+                            formatters={{
+                                formatCaption: (month) =>
+                                    formatMonthYearLabel({ date: month, locale })
+                            }}
                         />
                     </div>,
                     document.body

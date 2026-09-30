@@ -249,7 +249,7 @@ describe('EventService state transitions', () => {
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
-        it('refuses EVENT_PUBLISH_OWN on an event the actor did not author', async () => {
+        it('masks as NOT_FOUND (HOS-1106): EVENT_PUBLISH_OWN on an event the actor did not author, never FORBIDDEN', async () => {
             const stranger = createActor({
                 id: strangerId,
                 roles: [RoleEnum.EDITOR],
@@ -262,7 +262,8 @@ describe('EventService state transitions', () => {
                 visibility: VisibilityEnum.PUBLIC
             });
 
-            expectForbiddenError(result);
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
     });
 
@@ -303,6 +304,52 @@ describe('EventService state transitions', () => {
 
             expectForbiddenError(result);
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+
+        it('masks a foreign event as NOT_FOUND for an actor without EVENT_LIFECYCLE_CHANGE (HOS-1106)', async () => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_UPDATE]
+            });
+
+            const result = await service.setLifecycleState({
+                actor: stranger,
+                id: event.id,
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('foreign row vs missing id are indistinguishable (HOS-1106)', () => {
+        it.each([
+            ['setPublishState', { visibility: VisibilityEnum.PUBLIC }],
+            ['setLifecycleState', { lifecycleState: LifecycleStatusEnum.ARCHIVED }]
+        ] as const)('%s answers the identical error body for both', async (method, payload) => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+
+            const foreign = await service[method]({
+                actor: stranger,
+                id: event.id,
+                ...payload
+            } as never);
+            (modelMock.findById as Mock).mockResolvedValue(null);
+            const missing = await service[method]({
+                actor: stranger,
+                id: event.id,
+                ...payload
+            } as never);
+
+            expect(foreign.error).toBeDefined();
+            expect(foreign.error).toStrictEqual(missing.error);
+            expect(missing.error?.message).not.toContain(event.id);
         });
     });
 });

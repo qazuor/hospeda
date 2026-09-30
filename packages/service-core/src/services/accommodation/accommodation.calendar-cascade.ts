@@ -53,8 +53,10 @@
  * **Every connection, not every connection this call deactivated.** Those are
  * different sets, and the difference is a hole big enough to lose the point of
  * the issue through. `is_active = false` means "we stopped using it", never
- * "the provider closed it": the host-initiated disconnect route flips the flag
- * and revokes nothing. So a host who disconnects their Google calendar and
+ * "the provider closed it". Until HOS-1377 the host-initiated disconnect
+ * revoked nothing, so every row disconnected before it shipped still holds a
+ * live grant; and since HOS-1377 a disconnect whose revocation FAILED leaves
+ * the same thing behind. A host who disconnects their Google calendar and
  * deletes the listing a week later would, if revocation followed the flipped
  * set, keep a live refresh token at Google indefinitely — and with no active
  * row left to make it visible, more quietly than the bug that was reported.
@@ -92,6 +94,7 @@
 import { accommodationCalendarSyncModel, type DrizzleClient } from '@repo/db';
 import type { OccupancySourceEnum } from '@repo/schemas';
 import type { ServiceLogger } from '../../utils/service-logger';
+import { askPortToRevoke } from './accommodation.calendar-revocation-call';
 
 /**
  * Prefix stamped on `last_error_message` when a connection was deactivated but
@@ -273,8 +276,9 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
     // ---- 2. The set to revoke is WIDER than the set just deactivated. ----
     //
     // `deactivateAllByAccommodation` returns only the rows it flipped, and an
-    // already-inactive row is NOT an already-revoked one: the host-initiated
-    // disconnect route flips `is_active` and revokes nothing. Revoking only the
+    // already-inactive row is NOT an already-revoked one: rows disconnected
+    // before HOS-1377 were never revoked, and a disconnect whose revocation
+    // failed is inactive with a live grant. Revoking only the
     // flipped set means a host who disconnects first and deletes a week later
     // keeps a live refresh token at Google forever — with no active row to make
     // it visible, which is worse than the bug this cascade was written for.
@@ -431,58 +435,4 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
     }
 
     return { deactivated, revoked, revocationFailures };
-}
-
-/**
- * Calls the port for one connection and normalises every way it can go wrong
- * into a {@link CalendarConnectionRevocationResult}.
- *
- * The shape check is not paranoia about our own adapter: the port is a
- * registration hole any caller can fill, and reading `.revoked` off whatever
- * comes back would turn a malformed adapter into an uncaught `TypeError`
- * thrown out of `_afterSoftDelete` — a 500 on a DELETE whose row is already
- * gone. Anything that is not literally `{ revoked: true }` or a well-formed
- * failure is treated as a failure, so it gets recorded rather than crashing.
- *
- * @param input.port - The registered adapter, or `undefined` when none is.
- * @param input.accommodationId - The accommodation being closed out.
- * @param input.provider - The connection's provider.
- * @returns A well-formed outcome, always.
- */
-async function askPortToRevoke(input: {
-    readonly port: CalendarConnectionRevocationPort | undefined;
-    readonly accommodationId: string;
-    readonly provider: OccupancySourceEnum;
-}): Promise<CalendarConnectionRevocationResult> {
-    const { port, accommodationId, provider } = input;
-
-    if (port === undefined) {
-        return { revoked: false, reason: 'no revocation adapter registered' };
-    }
-
-    let raw: unknown;
-    try {
-        raw = await port.revoke({ accommodationId, provider });
-    } catch (error) {
-        return {
-            revoked: false,
-            reason: `adapter threw: ${error instanceof Error ? error.message : String(error)}`
-        };
-    }
-
-    if (typeof raw !== 'object' || raw === null) {
-        return { revoked: false, reason: 'adapter returned a malformed result' };
-    }
-
-    const result = raw as Partial<{ revoked: unknown; reason: unknown }>;
-    if (result.revoked === true) {
-        return { revoked: true };
-    }
-    if (result.revoked === false) {
-        return {
-            revoked: false,
-            reason: typeof result.reason === 'string' ? result.reason : 'adapter gave no reason'
-        };
-    }
-    return { revoked: false, reason: 'adapter returned a malformed result' };
 }

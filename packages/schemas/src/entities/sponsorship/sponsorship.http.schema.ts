@@ -11,6 +11,7 @@ import {
     createBooleanQueryParam,
     createDateQueryParam
 } from '../../api/http/base-http.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
@@ -82,7 +83,7 @@ export const SponsorshipCreateHttpSchema = z.object({
     endsAt: z.coerce.date().optional(),
     paymentId: z.string().optional(),
     logoUrl: z.string().url().optional(),
-    linkUrl: z.string().url().optional(),
+    linkUrl: safeExternalUrl('zodError.sponsorship.linkUrl.url').optional(),
     couponCode: z.string().optional(),
     couponDiscountPercent: z.coerce.number().int().min(0).max(100).optional()
 });

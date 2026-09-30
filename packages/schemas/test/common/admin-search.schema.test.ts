@@ -133,33 +133,20 @@ describe('AdminSearchBaseSchema', () => {
             );
         });
 
-        it('should coerce string "true" to boolean true', () => {
+        it('should parse string "true" to boolean true', () => {
             expect(AdminSearchBaseSchema.parse({ includeDeleted: 'true' }).includeDeleted).toBe(
                 true
             );
         });
 
-        it('should coerce falsy values to false', () => {
-            // queryBooleanParam: only "true", true, "1" are truthy
-            // everything else resolves to false via the .default(false) chain
-            expect(AdminSearchBaseSchema.parse({ includeDeleted: '' }).includeDeleted).toBe(false);
-            expect(AdminSearchBaseSchema.parse({ includeDeleted: 0 }).includeDeleted).toBe(false);
-        });
-
-        it('should coerce string "false" to boolean false (queryBooleanParam fix)', () => {
-            // Unlike z.coerce.boolean() where Boolean("false") === true,
-            // queryBooleanParam correctly treats "false" as falsy
+        it('should parse string "false" to false, not true (HOS-410)', () => {
             expect(AdminSearchBaseSchema.parse({ includeDeleted: 'false' }).includeDeleted).toBe(
                 false
             );
         });
 
-        it('should coerce string "1" to boolean true', () => {
-            expect(AdminSearchBaseSchema.parse({ includeDeleted: '1' }).includeDeleted).toBe(true);
-        });
-
-        it('should coerce string "0" to boolean false', () => {
-            expect(AdminSearchBaseSchema.parse({ includeDeleted: '0' }).includeDeleted).toBe(false);
+        it.each(['', '1', '0', 'yes'])('should reject the ambiguous value %j', (value) => {
+            expect(() => AdminSearchBaseSchema.parse({ includeDeleted: value })).toThrow(ZodError);
         });
     });
 

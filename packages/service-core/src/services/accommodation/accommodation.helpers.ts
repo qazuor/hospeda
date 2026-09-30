@@ -1,5 +1,5 @@
 import { AccommodationModel } from '@repo/db';
-import type { Accommodation } from '@repo/schemas';
+import { ACCOMMODATION_SLUG_MAX_LENGTH, type Accommodation } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
@@ -81,18 +81,6 @@ export function flattenAccommodationJoinRelationsList<T extends Accommodation>(i
     }
     return items;
 }
-
-/**
- * Maximum length allowed for an accommodation slug. MUST match
- * `AccommodationSchema.slug.max(50)` in
- * `packages/schemas/src/entities/accommodation/accommodation.schema.ts`.
- *
- * Enforcing this at generation time (rather than only validating it after
- * the fact) is the root-cause fix for BETA-172: without it, long onboarding
- * names produced slugs over 50 chars that the write schema rejected — or,
- * once persisted, that read schemas failed to parse.
- */
-const ACCOMMODATION_SLUG_MAX_LENGTH = 50;
 
 /**
  * Generates a unique slug for an accommodation based on its type and name.

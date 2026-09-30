@@ -57,7 +57,7 @@ describe('AuthRequiredPopover — returnUrl on both auth links (HOS-1185)', () =
     it('carries returnUrl on the sign-in link', () => {
         renderPopover({ returnUrl: '/es/alojamientos/entity-1/?foo=bar' });
 
-        const signInLink = screen.getByRole('link', { name: /iniciar sesion/i });
+        const signInLink = screen.getByRole('link', { name: /^iniciar sesión$/i });
         expect(signInLink).toHaveAttribute(
             'href',
             '/es/auth/signin/?returnUrl=%2Fes%2Falojamientos%2Fentity-1%2F%3Ffoo%3Dbar'
@@ -78,7 +78,7 @@ describe('AuthRequiredPopover — returnUrl on both auth links (HOS-1185)', () =
         renderPopover({ returnUrl: '/es/alojamientos/entity-1/?foo=bar' });
 
         const signInHref = screen
-            .getByRole('link', { name: /iniciar sesion/i })
+            .getByRole('link', { name: /^iniciar sesión$/i })
             .getAttribute('href');
         const registerHref = screen
             .getByRole('link', { name: /crear cuenta/i })
@@ -91,7 +91,7 @@ describe('AuthRequiredPopover — returnUrl on both auth links (HOS-1185)', () =
     it('degrades to no returnUrl value on both links when none is provided', () => {
         renderPopover();
 
-        expect(screen.getByRole('link', { name: /iniciar sesion/i })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: /^iniciar sesión$/i })).toHaveAttribute(
             'href',
             '/es/auth/signin/?returnUrl='
         );

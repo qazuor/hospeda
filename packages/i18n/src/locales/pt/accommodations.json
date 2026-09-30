@@ -482,7 +482,8 @@
         "videos": {
             "title": "Vídeos",
             "play": "Reproduzir vídeo",
-            "playNamed": "Reproduzir vídeo: {{caption}}"
+            "playNamed": "Reproduzir vídeo: {{caption}}",
+            "openExternal": "Assistir no {{provider}} (abre em uma nova aba)"
         },
         "pricing": {
             "from": "A partir de",

@@ -9,10 +9,10 @@
 import { ChatIcon } from '@repo/icons';
 import type { AiChatEntityType } from '@repo/schemas';
 import { forwardRef } from 'react';
+import { resolveAiChatCopy } from '@/lib/ai-chat-copy';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiChatFab.module.css';
-import { aiChatCopyKey } from './AiChatWidget';
 
 export interface AiChatFabProps {
     /** Which kind of listing the chat is about, for the vertical-specific label. */
@@ -44,7 +44,7 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             type="button"
             className={styles.fab}
             onClick={onClick}
-            aria-label={t(aiChatCopyKey(entityType, 'fabLabel'))}
+            aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
         >
             <ChatIcon
                 size={24}

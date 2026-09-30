@@ -7,7 +7,7 @@ import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.a
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
 import { UserAdminSchema, UserProtectedSchema } from '../user/user.access.schema.js';
-import { AccommodationSchema } from './accommodation.schema.js';
+import { AccommodationReadSlugSchema, AccommodationSchema } from './accommodation.schema.js';
 import {
     AccommodationPriceSchema,
     AdditionalFeesInfoSchema,
@@ -303,7 +303,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * where the max(50) gate is meaningful (and where the root-cause fix —
      * truncating at generation time — lives).
      */
-    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    slug: AccommodationReadSlugSchema,
     // HOS-190 read⊇write: assert type + presence only for free-form content
     // fields (see the lenient-shapes block at the top of this file). A legacy
     // value must never 500 the public page.
@@ -611,7 +611,7 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
      * where the max(50) gate is meaningful (and where the root-cause fix —
      * truncating at generation time — lives).
      */
-    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    slug: AccommodationReadSlugSchema,
     // HOS-190 read⊇write: the OWNER edits this accommodation off this exact
     // schema — a single stored value stricter than today's write bounds (a
     // legacy short `description`, an AR local-format phone, a `seo` block the
@@ -721,7 +721,7 @@ export const AccommodationAdminSchema = AccommodationSchema.extend({
      * Finding #9: read schemas must tolerate what the DB legitimately
      * contains; the write path is where the max(50) gate is meaningful.
      */
-    slug: z.string().max(120, { message: 'zodError.accommodation.slug.max' }),
+    slug: AccommodationReadSlugSchema,
     // HOS-190 read⊇write: assert type + presence only for free-form content
     // fields so a legacy/imported value never 500s the admin GET. Content
     // bounds stay on the write/domain schema. See the lenient-shapes block at

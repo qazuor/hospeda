@@ -17,6 +17,7 @@ import {
     fetchExperienceAmenities,
     fetchExperienceFeatures
 } from '../../../utils/commerce-catalog-relations';
+import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyExperienceDirectionsGate } from './directions-projection';
@@ -83,7 +84,7 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         // the projection module's doc.
         return applyExperienceDirectionsGate({
             experience: {
-                ...experience,
+                ...withPublicVisibleFaqs(experience),
                 // HOS-1286: PUBLIC tier ORs the two featuring sources.
                 isFeatured: resolvePublicIsFeatured(experience),
                 amenities: amenitiesData.length > 0 ? amenitiesData : undefined,

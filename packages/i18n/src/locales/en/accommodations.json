@@ -482,7 +482,8 @@
         "videos": {
             "title": "Videos",
             "play": "Play video",
-            "playNamed": "Play video: {{caption}}"
+            "playNamed": "Play video: {{caption}}",
+            "openExternal": "Watch on {{provider}} (opens in a new tab)"
         },
         "pricing": {
             "from": "From",

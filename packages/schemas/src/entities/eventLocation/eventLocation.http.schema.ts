@@ -84,12 +84,12 @@ export const EventLocationCreateHttpSchema = z.object({
     venueType: z.string().max(50).optional(),
 
     // Amenities
-    hasWifi: z.coerce.boolean().default(false),
-    hasParking: z.coerce.boolean().default(false),
-    hasAirConditioning: z.coerce.boolean().default(false),
-    isAccessible: z.coerce.boolean().default(false),
-    hasAudioVisual: z.coerce.boolean().default(false),
-    hasCatering: z.coerce.boolean().default(false)
+    hasWifi: httpBodyBoolean().default(false),
+    hasParking: httpBodyBoolean().default(false),
+    hasAirConditioning: httpBodyBoolean().default(false),
+    isAccessible: httpBodyBoolean().default(false),
+    hasAudioVisual: httpBodyBoolean().default(false),
+    hasCatering: httpBodyBoolean().default(false)
 });
 
 export type EventLocationCreateHttp = z.infer<typeof EventLocationCreateHttpSchema>;
@@ -165,6 +165,7 @@ export const httpToDomainEventLocationSearch = (
     };
 };
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 /**

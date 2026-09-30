@@ -459,13 +459,8 @@ describe('PublicPostTagQuerySchema — D-013', () => {
         }
     });
 
-    it('should coerce "1" to true', () => {
-        const result = PublicPostTagQuerySchema.safeParse({ withCounts: '1' });
-
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.withCounts).toBe(true);
-        }
+    it('should reject "1" (only "true"/"false" are accepted, HOS-410)', () => {
+        expect(PublicPostTagQuerySchema.safeParse({ withCounts: '1' }).success).toBe(false);
     });
 });
 
