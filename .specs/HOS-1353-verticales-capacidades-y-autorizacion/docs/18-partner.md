@@ -135,6 +135,13 @@ moderar—, que es lo que el código de hoy evita a propósito al revocar sin to
 
 - **El contenido se conserva.** No se baja, no se archiva y no se borra nada: lo único que cambia
   es la respuesta de la lectura.
+- **Lo que hoy archiva la presencia sale con el cobro viejo** (FASE 5, owner 2026-09-30, lote 1 D,
+  `F5-U1-044`, `F5-API-016`). `U1` borra las columnas de pago de `partners` (entre ellas
+  `subscription_status`, y `plan_id` y `subscription_id`, que llevan las FK), sus FK a tablas del
+  cobro viejo, y los tres crons de partner
+  (`partner-expiry` y `partner-unpaid-reaper`, que la archivan, y `partner-payment-review`). **Desde
+  `U1` hasta `V7` la lectura pública no muestra ninguna presencia**: la que la vuelve a mostrar es
+  la regla de este §, que construye `V7`. No tiene población: hoy Partner tiene cero filas.
 - **Si vuelve a Gold, la página reaparece sola**, sin ninguna transición: la próxima lectura
   encuentra la clave en el conjunto efectivo.
 - **404 y no otra respuesta**: un partner que no tiene la clave —**o cuya presencia está moderada**,
@@ -202,6 +209,13 @@ Se agrega porque tiene lo que define a una máquina: estados con reglas de movim
 impedir. La alternativa —leerla de dos fechas, como se hizo con la vertical en el capítulo 10
 §4.6— no alcanza acá: hay una decisión humana en el medio, y *«aprobada»* y *«rechazada»* no son
 el mismo dato con distinto signo.
+
+**Es una entidad propia, no la lista de postulaciones de hoy** (FASE 5, owner 2026-09-30, lote 4
+A, `F5-SUP-006`, `F5-AUT-018`). El código ya tiene una, `alliance_leads`, con un formulario
+público, cuatro estados y un campo que mezcla a Partner con otros tipos (patrocinadores, editores,
+proveedores). **`V7` crea `postulacion` (cap. 02 §2.7) sólo para Partner**, con la restricción de
+la base, el captcha y la excepción de la cadena de `PP1`, y **`alliance_leads` queda para los otros
+tipos, fuera de este programa**. Hoy hay cero partners, así que nada migra de una a la otra.
 
 ### 2.2 Se puede volver a postular, con una espera
 
@@ -329,6 +343,14 @@ subscription/pago»*— es el último de los nueve.
 De ahí sale que un Partner sin reclamar **no publica nada y no se le cobra nada**: no hay
 presencia publicada porque no hay quién la cargue, y no hay suscripción porque nadie autorizó un
 débito. Lo único que existe es una fila.
+
+**Y aprobar asigna el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la
+recomendación). Es un rol nuevo con su familia de operaciones y sus permisos, y llega con su
+migración de datos; el paso 3 de la cadena pregunta por esa familia en toda operación del dueño de
+un Partner (cap. 17 §1.2). **No se quita** cuando el socio pierde la página o el carrusel: perder
+el acceso nunca revoca un rol (cap. 17 §4.1). ⚠️ **A qué cuenta se asigna no está decidido**:
+aprobar no conoce la cuenta del dueño hasta el reclamo (§2.4), y el camino B no aprueba ninguna
+postulación; vuelve al owner (`HOS-1352/docs/38-fase-5/14-aplicacion-verticales-capitulos.md` §5).
 
 **No vence, y queda visible.** Igual que la pendiente del §2.3: aparece como no reclamada en el
 panel ~~y el admin puede darla de baja~~ y no se da de baja: es inofensiva y ninguna fila la saca

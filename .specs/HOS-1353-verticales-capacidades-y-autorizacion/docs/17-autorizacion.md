@@ -47,8 +47,11 @@ acceso, trial/suscripción/cortesía activa, entitlement y limits aplicables.
 | **el estado del recurso** | una ficha en borrador, archivada o eliminada acepta operaciones si su dueño está en regla |
 | **el estado de la persona** | alguien con el correo sin verificar ~~o **inhabilitado por abuso**~~ pasa las ocho con su suscripción al día |
 
-*(«Inhabilitado por abuso» sale de la lista: no tenía columna, transición ni acción que lo
-escribiera, y un control sin dato es peor que ninguno porque cada implementación lo llena distinto.
+*(«Inhabilitado por abuso» sale de la lista: ~~no tenía columna, transición ni acción que lo
+escribiera~~ **ninguna transición ni acción del diseño lo escribe. Columna sí tiene: `banned`,
+`ban_reason` y `ban_expires` existen en `users`, son del plugin `admin` de Better Auth, que rechaza
+la sesión de un baneado, y se conservan** (FASE 5, owner 2026-09-30, lote 6 G, `F5-AUT-016`: la
+razón decía que no había columna; la conclusión no cambia)~~, y un control sin dato es peor que ninguno porque cada implementación lo llena distinto~~.
 **El abuso se trata ficha por ficha con `MODERATED`** (`PB10`, cap. 03 §9) — owner 2026-09-25; FASE
 9 completa, decisión 8b, `F-8CA1-010`.)*
 
@@ -70,7 +73,7 @@ falla.
 | — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre ~~una ficha~~ un recurso que guarda su vertical, la vertical se lee ~~de la ficha~~ del recurso y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la ~~de la ficha~~ del recurso, **no existe**, con la respuesta del paso 4 |
 | 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) **y en `PP1`, postular un Partner, que es la segunda excepción** (precisión 9; FASE 9 vuelta 3, owner 2026-09-30, lotes I y M). **Una cuenta dada de baja no es un actor autenticado**: la acción 24 escribe `user.deleted_at` y borra sus credenciales, y ninguna sesión nace sobre ella (`NUCLEO/08` §3; FASE 9 vuelta 3, `F-8V3A1-004`) | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | ~~inhabilitada, o~~ correo sin verificar (FASE 9 completa, 8b) |
-| 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
+| 3 | **permiso** | ¿pertenece a la familia de operaciones? **En Partner también: la familia es la del rol de socio**, que se asigna al aprobar la postulación y no se quita cuando el socio pierde su presencia (§4.1; cap. 18 §2.5) (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación, que era declarar este paso vacuo en Partner y dejar que lo cubriera la propiedad del paso 4) | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? **Si el sujeto no es el dueño, el recurso existe sólo en estado público** (precisión 7) **y sólo para una operación que no escribe: una escritura exige `sujeto = dueño`** (FASE 9 vuelta 2, `F-8V2A1-001`). **El sujeto no lo elige el pedido** (precisión 8) | **no existe** — las tres juntas |
 | 5 | **fuente viva** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
@@ -198,6 +201,11 @@ hace cumplir** (la sexta, FASE 8 completa,
    borrador, la archivada, la moderada, la presencia sin la clave o moderada— es, para quien no es
    el dueño, lo mismo que no existir: la respuesta de la precisión 1.
 
+   **La excepción VIP del contrato de errores de hoy sale**: una ficha ajena `RESTRICTED` contesta
+   403 (*«VIP access required»*, `apps/api/docs/error-contract.md`, sección VIP, fijada por un
+   test), y eso confirma que existe. **`V5` la pasa a 404, con su test**, y la sección del contrato
+   se reescribe (FASE 5, owner 2026-09-30, lote 4 D, `F5-AUT-009`).
+
    **Y vale sólo para lo que no escribe** (FASE 9 vuelta 2, `F-8V2A1-001`). La precisión se
    escribió para el turista que lee, y su texto no lo decía: una escritura con `actor = sujeto ≠
    dueño` sobre una ficha `PUBLISHED` ajena no disparaba ninguna regla del §3.2, que se activan
@@ -260,6 +268,14 @@ hace cumplir** (la sexta, FASE 8 completa,
 orden, y es la única que las ejecuta.** Es el invariante §64.14 —*«los servicios validan
 vertical, acceso, entitlement y limits»*— en su forma aplicable: no que cada servicio las haga,
 sino que **ninguno las haga por su cuenta**.
+
+**En la rama, entre la limpieza del principio y esta resolución, las rutas de las verticales no
+tienen los pasos 5 a 7** (FASE 5, owner 2026-09-30, lote 1 A, `F5-U1-040`). Hoy los hacen los
+gates de entitlement y limits del cobro viejo, montados en cada ruta; `U1` los saca y deja la
+cadena de permiso y propiedad que esas rutas ya tienen, y **`V5` agrega el paso de cobertura**,
+con el criterio de salida *«ninguna ruta de escritura de vertical sin el paso de cobertura»*. En
+ese tramo un dueño con permiso escribe sin plan, y el riesgo vive sólo en la rama, que no se
+despliega hasta el corte.
 
 Repartidas, la pregunta *«¿este camino verifica el estado del recurso?»* tiene tantas respuestas
 como caminos, y `M-AUTH-01` existe justamente porque dos de los pasos faltaban en la lista
@@ -453,6 +469,13 @@ no una excepción a la lista.
    ficha a quien no sabe hacerlo, **con todo registrado como hecho por el admin en nombre del
    cliente** (actor el admin, sujeto el cliente), que es exactamente lo que esta regla protege
    (*«lo que este capítulo NO cierra»*).
+
+   **Y la impersonación que el código de hoy tiene apagada sale entera** (FASE 5, owner
+   2026-09-30, lote 4 C, `F5-AUT-017`): el código la conserva lista para volver, así que vale el
+   diseño. `V5` saca `impersonate` y `set-role` del rol del plugin `admin` de Better Auth
+   —`set-role` era además un segundo camino para asignar roles, fuera de la acción 26—, el botón
+   del panel y el permiso `USER_IMPERSONATE`. HOS-354, que la quería de vuelta, se cierra o se
+   reescribe como el *«entrar como»* de una versión posterior.
 5. **Una acción administrativa nunca tiene `actor = sujeto`: el paso 3 la rechaza** (*«sin
    permiso»*) y la hace otra cuenta con el permiso (owner 2026-09-26, `G5-1`; FASE 9 vuelta 1,
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
@@ -664,6 +687,15 @@ partes:
 **Perder el acceso NUNCA revoca un rol.** Ni la suspensión por impago, ni el vencimiento del
 trial, ni la cancelación, ni la pausa ~~, ni la discontinuación de una vertical (cap. 10 §4)~~ (las verticales no se discontinúan: revisión del owner, 2026-09-28, C8).
 
+**Tampoco el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B): se asigna al aprobar la
+postulación de Partner (§1.2 paso 3; cap. 18 §2.5), y cuando el socio pierde la página o el
+carrusel el rol queda, como cualquier otro.
+
+**Y el proceso de hoy que archiva borradores y revoca un rol sale** (FASE 5, owner 2026-09-30,
+lote 1 G, `F5-AUT-012`): `archive-abandoned-drafts` archiva a los 30 días un borrador de
+alojamiento sin tocar y le revoca a su dueño el rol `HOST`. Lo borra `U1`, aunque no sea cobro; el
+reloj de retención de la ficha llega con `PB5` (cap. 03 §9).
+
 ### 4.2 Por qué, en tres razones que apuntan al mismo lado
 
 1. **El §21 promete tres cosas que necesitan el rol vivo**: *«Mi Cuenta read-only»*, *«billing
@@ -698,6 +730,14 @@ retira**, se reutilice o no el resto del cargador. Lo que el staff necesita en s
 el §3.2 regla 1, acción por acción, nunca un conjunto (FASE 9 vuelta 1, `F-8V1A1-002`). Lo vigila
 la segunda mitad de `G6` (cap. 20 §2).
 
+**Y los permisos del cobro viejo salen de la base, no sólo del código** (FASE 5, owner 2026-09-30,
+lote 1 I, `F5-AUT-023`, contra la recomendación, que era dejarlos sin lectores y que la resolución
+los rechazara). `U1` recrea los tipos de la base sin los valores del cobro viejo —el enum de
+permisos, unos 790 valores, entre ellos `BILLING_MANAGE`, `MANAGE_SUBSCRIPTIONS`,
+`BILLING_PROMO_CODE_MANAGE` y `BILLING_RECONCILIATION_MANAGE`— y una migración de datos saca las
+filas de roles y de overrides que los daban. Nadie puede darle a una cuenta un permiso que ya no
+significa nada.
+
 ### 4.4 Y queda como invariante, porque es de los que alguien va a «optimizar»
 
 `A-AUTH-01` pedía textualmente dejarlo escrito *«porque es exactamente el tipo de regla que
@@ -708,6 +748,10 @@ alguien va a optimizar más adelante sin entender para qué estaba»*. Su forma 
 Es un guard, no una convención: se comprueba sobre los efectos declarados de las transiciones del
 capítulo 03, que están enumerados uno por uno. Una transición que agregue un efecto sobre roles
 falla.
+
+**El guard sigue mirando esas dos máquinas y no la de la ficha** (FASE 5, owner 2026-09-30, lote
+1 G: que mirara también la de la ficha, sugerido por `F5-AUT-012`, no se eligió). El único proceso
+que hoy revoca un rol al archivar una ficha, `archive-abandoned-drafts`, lo borra `U1` (§4.1).
 
 ---
 

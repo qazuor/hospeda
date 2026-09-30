@@ -3,7 +3,7 @@ title: Verticales — capacidades, entitlements, limits y autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-25
+updated: 2026-09-30
 type: feature
 areas:
   - api
@@ -423,14 +423,20 @@ un solo pago histórico**. Los tres compromisos de cobro vivos están del otro l
 Esta épica es independiente **por diseño** —no pregunta por dinero— y también **por datos**: no
 ~~tiene nada que migrar y nada que romper~~ **transcribe ninguna fila del sistema viejo** —ni
 siquiera de `trial`: el corte no siembra trials consumidos (owner 2026-09-25; FASE 9 completa,
-2g)—. **Lo único que toca de lo existente son las fichas**, y sin migrarlas: toda ficha que existe
-el día del corte nace con `listing.inactiva_desde` en el instante del corte —la escritura `C` de
+2g)—. **Lo único que toca de lo existente son las fichas**, y sin migrarlas: ~~toda ficha que existe
+el día del corte~~ **la migración del corte carga una lista cerrada de cinco fichas, que fija el
+owner cuando esté listo para el corte, una por cada cuenta de `DEC-MIG-007`, y borra las filas de
+todas las demás** (FASE 5, owner 2026-09-30, lote 1 J; simplificación del corte, S-01 y S-02, lote
+A); **las cinco nacen** con `listing.inactiva_desde` en el instante del corte —la escritura `C` de
 `NUCLEO/01` §1.2—, ~~las publicadas de Alojamiento las baja la primera corrida del reconciliador
-diario de cobertura~~ **las que estaban a la vista nacen `PUBLISHED`, como recién creadas, y el
+diario de cobertura~~ ~~**las que estaban a la vista nacen `PUBLISHED`, como recién creadas, y el
 corte le escribe a su dueño una prueba gratis activa que arranca ese día; las que el sistema viejo
 tenía bajadas por falta de pago nacen en `DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`:
 es la única fila nueva de verticales que escribe el corte, una prueba activa, no transcrita de
-ninguna), y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
+ninguna)~~ **nacen `PUBLISHED`, como recién creadas, y el script del corte, después de la
+migración, le escribe a cada dueño una prueba gratis activa que arranca ese día, con la función de
+la aplicación** (revisión del owner, 2026-09-28, C12; FASE 5, lote 2 D y S-12: es la única fila
+nueva de verticales que escribe el corte, una prueba activa, no transcrita de ninguna), y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
 §2.4 y §4). *(Decía «nada que migrar y nada que romper», y la escritura `C` es una escritura sobre
 filas existentes; salida 3 de la FASE 9 completa.)*
 
@@ -449,7 +455,10 @@ filas existentes; salida 3 de la FASE 9 completa.)*
   (`DEC-METH-003`).
 - **«Entrar como» el cliente** (revisión del owner, 2026-09-28, C7): no está en esta versión y se
   va a agregar; su condición (se registra como hecho por el admin en nombre del cliente) está en
-  `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3.
+  `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3. **Y el código apagado que hoy lo
+  prepara sale**: `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón del panel
+  y el permiso `USER_IMPERSONATE`; HOS-354 se cierra o se reescribe como el *«entrar como»* de esa
+  versión (FASE 5, owner 2026-09-30, lote 4 C; lo hace `V5`).
 - **La baja de cuenta pedida por el usuario** (revisión del owner, 2026-09-28, N7, `g1`): fuera de
   esta épica; la hace soporte a mano con una lista de pasos, y se corrige la FAQ
   ([HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393); `NUCLEO/08` §1). **La lista se

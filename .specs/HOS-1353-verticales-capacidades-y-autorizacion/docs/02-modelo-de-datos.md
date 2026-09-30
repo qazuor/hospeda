@@ -304,9 +304,14 @@ ahí la plataforma entera recibe de más, acá la población que menos puede def
 
 ### 2.2 Compromiso y ciclo de vida
 
+**`user` es el nombre lógico de la tabla `users` del código** (`packages/db/src/schemas/user/`),
+y así se lee en todo el capítulo: `user.deleted_at` es `users.deleted_at`, y la FK de
+`trial.user_id` apunta a `users` (FASE 5, owner 2026-09-30, lote 6 G, `F5-BD-007`: el texto usaba
+el nombre lógico como si fuera el de la tabla).
+
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el ~~hash irreversible~~ seudónimo determinístico del correo normalizado** —no permite leer el correo, pero reconoce a quien vuelve con el mismo (FASE 9 completa, `C-1`)— (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` ~~y `T7` (cap. 03 §2) y, una sola vez, el corte~~, ~~`T7`~~ y `T8` (cap. 03 §2; `T8` desde la FASE 9 completa, 6c; `T7` salió con la revisión del owner, 2026-09-28, N7)** **y, una sola vez, la migración estructural del corte: la prueba activa de cada dueño con una ficha `L8`** (`V/21` §2.4; revisión del owner, 2026-09-28, C12; FASE 9 vuelta 3, `F-8V3A3-008`)~~: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25)~~. ~~**El corte no escribe ninguna** (owner 2026-09-25; FASE 9 completa, decisión 2g): los dueños del sistema viejo arrancan como clientes nuevos, en `PRE_TRIAL` sin fila~~ **Desde C12 el corte sí escribe una, la de arriba**; el dueño sin ficha `L8` arranca como cliente nuevo, en `PRE_TRIAL` sin fila (FASE 9 vuelta 3, `F-8V3A3-008`) |
+| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el ~~hash irreversible~~ seudónimo determinístico del correo normalizado** —no permite leer el correo, pero reconoce a quien vuelve con el mismo (FASE 9 completa, `C-1`)— (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo. **La escriben `T1`, `T6` ~~y `T7` (cap. 03 §2) y, una sola vez, el corte~~, ~~`T7`~~ y `T8` (cap. 03 §2; `T8` desde la FASE 9 completa, 6c; `T7` salió con la revisión del owner, 2026-09-28, N7)** **y, una sola vez, ~~la migración estructural del corte: la prueba activa de cada dueño con una ficha `L8`~~ el corte: la prueba activa de cada una de las cinco cuentas de la lista cerrada del owner, que escribe el script del corte con la función de la aplicación, después de la migración** (FASE 5, simplificación del corte, S-12; lote 2 D; `DEC-MIG-007`) (`V/21` §2.4; revisión del owner, 2026-09-28, C12; FASE 9 vuelta 3, `F-8V3A3-008`)~~: una fila **ya consumida** por cada dueño con ficha o suscripción en el sistema viejo, por vertical, con el hash calculado con la misma función que las tres transiciones (`V/21` §2.4, *«el rastro de que ya fue cliente»*; FASE 8 completa, owner 2026-09-25)~~. ~~**El corte no escribe ninguna** (owner 2026-09-25; FASE 9 completa, decisión 2g): los dueños del sistema viejo arrancan como clientes nuevos, en `PRE_TRIAL` sin fila~~ **Desde C12 el corte sí escribe una, la de arriba**; ~~el dueño sin ficha `L8`~~ **toda cuenta que no es de las cinco** (S-12) arranca como cliente nuevo, en `PRE_TRIAL` sin fila (FASE 9 vuelta 3, `F-8V3A3-008`) |
 | **`canje_de_trial`** ✚ (FASE 9 vuelta 3, `F-8V3C1-003`) | `user`, vertical, **la clave de canje** que billing manda en `extenderTrial` (`12-contrato…` §4.1), los días aplicados y cuándo | **`UNIQUE(clave_de_canje)`**. La escribe `extenderTrial` en la misma transacción de `T4` que aplica la extensión, dentro del lock de la máquina de trial (cap. 03 §2); un rechazo no escribe nada, así que su reintento vuelve a evaluar sin riesgo. **Un reintento con una clave que ya tiene fila no corre `T4` y contesta `ACEPTADA`** (`12-contrato…` §4.1). Sin ella la clave no volvía idempotente nada: verticales no la guardaba, y un reintento tras una respuesta perdida corría `T4` otra vez y regalaba los días dos veces |
 | **`cuota_ventana`** ✚ | `user`, vertical, clave medida, **el instante en que abrió, el instante en que cierra y lo consumido**. **No guarda el cupo**: se resuelve en cada consumo contra el conjunto efectivo (cap. 15 §7; revisión del owner, 2026-09-28, C4, `L2-e`) | `UNIQUE(user_id, vertical, clave, abre)`; a lo sumo una abierta por `(user, vertical, clave)`. **La siguiente se abre en el primer consumo después de que venció**, con el cierre calculado desde el ancla (`desde` del título, contrato §2) y nunca desde el cierre anterior (cap. 15 §7, regla 3). **La clave medida es siempre de vertical**: una clave medida no puede declarar scope global, así que la ventana tiene siempre una vertical (cap. 15 §3.2; FASE 9 vuelta 3, `F-8V3A3-005`) |
 
@@ -434,11 +439,16 @@ guarda una copia del nombre y el correo de quien paga, escrita al emitirse desde
 `user` y nunca reescrita, así que la acción reemplaza los de acá y la copia queda como estaba
 (`B/02` §2.3; revisión del owner, casos vecinos, 2026-09-29, caso K-A).
 
+**Y el borrado físico de cuentas que el panel tiene hoy desaparece** (FASE 5, owner 2026-09-30,
+lote 3 C, `F5-BD-030`, `F5-SUP-030`): la ruta de admin que hace `DELETE` de la fila de `users`
+(`USER_HARD_DELETE`) choca con esta FK y con *«no borra la fila de `user`»*, y se retira. **Una
+cuenta sólo se da de baja por la acción 24**, a pedido de su dueño y con motivo (`NUCLEO/08` §3).
+
 ### 2.5 Publicación
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`listing`** | vertical, **un solo `owner_user_id`** (§6), estado del cap. 03 §9, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**, **y nace en el estado que le da la tabla de traducción de `V/21` §2.4**, en la misma migración (FASE 9 vuelta 1, R1): es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25). **Y guarda dos columnas más** (revisión del owner, 2026-09-28, C9, C11, `L2-h` y N7; `NUCLEO/02` §1.5): **`plazos_version`**, la versión de plazos con la que arrancó su reloj, que se escribe junto con `inactiva_desde`, por los mismos hechos y por la escritura `C`, y nunca sola (lo vigila la mitad *(a)* de `G-R6-B`, `V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso 48), así que un reloj que se reinicia toma la versión vigente y uno que corre conserva la suya; y **`borrado_anunciado`**, la fecha de borrado que anunció su último archivado, que escriben `PB4` y `PB5` y lee `PB9`, que no borra antes (cap. 03 §9). `plazos_version` no es anulable; `borrado_anunciado` es nula hasta el primer archivado |
+| **`listing`** | vertical, **un solo ~~`owner_user_id`~~ dueño, en la columna `owner_id` que las tres tablas ya tienen** (§6; FASE 5, owner 2026-09-30, lote 6 G, `F5-BD-007`: `owner_user_id` es la columna de `partners`, no la de las fichas), estado del cap. 03 §9 **—que reemplaza a `lifecycle_state`, `visibility` y `moderation_state`: `V6` migra sus lectores y los disparadores de revalidación al estado nuevo, y las tres viejas se borran en el paso 3 del corte (FASE 5, owner 2026-09-30, lote 3 A, `F5-SUP-010`, `F5-SUP-020`, `F5-SUP-014`)—**, contenido, **`inactiva_desde`** | **la vertical es inmutable desde el alta**: se escribe al crear la ficha y ninguna operación la cambia —*«nunca una ficha debería poder cambiar de vertical»* (owner 2026-09-25; FASE 9 completa, decisión 7a)—, y lo vigila la mitad *(c)* de `G2` (cap. 20 §2). La FK al dueño no es anulable: una ficha sin dueño no es un estado válido. **`inactiva_desde` no es anulable**: una ficha nace con el instante de su creación, que es el hecho 1 — **y una ficha que ya existía el día del corte nace en el modelo nuevo con el instante del corte, nunca con su `created_at`**, ~~**y nace en el estado que le da la tabla de traducción de `V/21` §2.4**~~ **y, si es la única ficha de una de las cinco cuentas de la lista cerrada del owner, nace en el estado que le da esa lista (`PUBLISHED`, salvo que la lista diga otro); toda otra ficha que ya existía la borra la misma migración** (FASE 5, simplificación del corte, S-01 y S-02; lote 1 J; `DEC-MIG-007`: la tabla de traducción salió), en la misma migración (FASE 9 vuelta 1, R1): es la escritura `C` del cap. 01 §1.2 (núcleo), la ejecuta la migración estructural del corte una sola vez (`V/21` §2.4; FASE 8 completa, `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25). **Y guarda dos columnas más** (revisión del owner, 2026-09-28, C9, C11, `L2-h` y N7; `NUCLEO/02` §1.5): **`plazos_version`**, la versión de plazos con la que arrancó su reloj, que se escribe junto con `inactiva_desde`, por los mismos hechos y por la escritura `C`, y nunca sola (lo vigila la mitad *(a)* de `G-R6-B`, `V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso 48), así que un reloj que se reinicia toma la versión vigente y uno que corre conserva la suya; y **`borrado_anunciado`**, la fecha de borrado que anunció su último archivado, que escriben `PB4` y `PB5` y lee `PB9`, que no borra antes (cap. 03 §9). `plazos_version` no es anulable; `borrado_anunciado` es nula hasta el primer archivado |
 | **`pedido_de_arreglo`** ✚ | la ficha, **el motivo**, una fecha sugerida (anulable), **si el dueño avisó que corrigió** y cuándo, quién lo abrió y cuándo, y cuándo y quién lo cerró (revisión del owner, 2026-09-28, C10) | **es una marca, no un estado**: no mueve el estado de la ficha ni el reloj, y no cambia `admiteDestaque` (cap. 03 §9, *«la moderación en dos niveles»*). **A lo sumo uno abierto por ficha** (índice parcial sobre los abiertos). Lo abre y lo cierra ~~sólo~~ la acción administrativa de moderar (`NUCLEO/08` §3), **y lo cierra también, en el mismo acto y sin correo, la llegada de la ficha a `PURGED`** (`PB9`, `PB12`; §4.1; FASE 9 vuelta 3, `F-8V3A2-004`, `F-8V3A3-007`); el aviso del dueño lo escribe su operación propia, que no lo cierra. **Y `listing` guarda de dónde venía una ficha moderada** en el evento de `PB10`, no en una columna: es lo que leen `PB11` y `PB13` |
 
 **`listing` son las filas que ya existen, no una tabla nueva** (FASE 9 vuelta 2, `F-8V2A3-003`).
@@ -449,9 +459,24 @@ para Experiencia (código actual, `packages/db/src/schemas/`)—, y las columnas
 pide a `listing` se agregan a las tres. **La vertical es la tabla**, así que es inmutable por
 construcción; Partner y Turista no tienen ficha. Lo que cuelga de cada una —contenido, medios,
 FAQ, reseñas, conversaciones— sigue colgando de la misma fila, y su lista cerrada está en el
-§4.1. **La tabla de traducción del corte está escrita sólo para `accommodations`**: las otras dos
+§4.1. ~~**La tabla de traducción del corte está escrita sólo para `accommodations`**: las otras dos
 no tienen `billing_unpublished_at`, `owner_suspended` ni `plan_restricted`, que son las columnas
-de `L5` y `L7` (código actual), y la regla para ellas está en `V/21` §2.4.
+de `L5` y `L7` (código actual), y la regla para ellas está en `V/21` §2.4.~~ **La tabla de
+traducción del corte salió** (FASE 5, simplificación del corte, S-01): la migración carga una lista
+cerrada de cinco fichas y borra las demás, en las tres tablas. **`billing_unpublished_at`,
+`owner_suspended` y `plan_restricted`, que sólo tiene `accommodations`, siguen vivas hasta la migración estructural de `V6`, que las borra en el paso 3 del corte, pero no por aquella tabla** (S-09):
+las leen partes que no son del cobro —quién ve la ficha, las búsquedas, su destino—, **y `V6`
+retira esos lectores en el mismo cambio que la migración que las borra**, reemplazados por el estado
+del cap. 03 §9 (FASE 5, owner 2026-09-30, lote 3 B, `F5-U1-030`, `F5-BD-015`, `F5-SUP-011`).
+Decir que *«sólo las usa el cobro viejo»* era falso (`16-` §4.6, `V/21`).
+
+**Lo que la limpieza del principio les saca antes a esas tablas y a `users`** (FASE 5, owner
+2026-09-30, lote 1 E y F, `F5-U1-032`, `F5-BD-017`, `F5-U1-045`, `F5-BD-032`), una lista cerrada:
+**`is_featured` y `featured_by_entitlement` en las tres tablas** —también la curada a mano por el
+equipo: el destaque vuelve sólo como complemento pagado, y la home queda sin destacados hasta
+entonces—, **`experiences.has_active_subscription`**, **`users.service_suspended`** y, fuera de
+`listing`, **`owner_promotions.plan_restricted`**, cada una con sus lectores. Las borra `U1`.
+**Ninguna ficha nace destacada.**
 
 **No hay multi-dueño y el modelo no lo deja expresar.** El §6 lo dice y la forma de cumplirlo es
 una columna, no una tabla de relación con un chequeo de cardinalidad.
@@ -588,6 +613,14 @@ por eso la razón de arriba no lo alcanza: `descomposicion.md` §4, con el desar
 
 FASE 9 vuelta 1, `F-8V1A2-005`: `03` §11 le delegaba a este capítulo *«dónde vive el vínculo»* y
 acá no había nada, así que el panel del §48 no tenía de dónde leer *«aprobada sin reclamar»*.
+
+**`postulacion` es una tabla nueva, sólo de Partner; no es `alliance_leads`** (FASE 5, owner
+2026-09-30, lote 4 A, `F5-SUP-006`, `F5-SUP-026`). La lista de postulaciones de hoy mezcla a
+Partner con patrocinadores, editores y proveedores, y queda para esos tipos, fuera de este
+programa; la construye `V7` (`18` §2.1). **Y la fila de `partner` pierde en `U1` sus columnas de
+pago y sus FK a tablas del cobro viejo** —entre ellas `subscription_status`, y `plan_id` y
+`subscription_id`, que son las que llevan las FK—
+(FASE 5, owner 2026-09-30, lote 1 D; `18` §1.6).
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
@@ -742,7 +775,7 @@ que cruza los saltos de línea (FASE 9 vuelta 2, verificación, `N-B-02`): la pr
 | **las reseñas** | del tercero que las escribió | **se conservan, sin mostrarse** (arriba) | `accommodation_reviews`, `gastronomy_reviews`, `experience_reviews` |
 | **los comentarios** sobre la ficha | del tercero que los escribió | **se conservan, sin mostrarse**, como las reseñas | `entity_comments` |
 | **las conversaciones** entre un turista y el dueño | de los dos, y el turista es un tercero | **se conservan en sólo lectura**, con *«esta ficha ya no existe»* (cap. 19 §4 fila 28). **La referencia a la ficha admite una ficha ausente**: es anulable, y leer la conversación no la exige. Hoy es `onDelete: restrict` y no anulable | `conversations` |
-| **los favoritos** de un turista | del turista | **se conservan**: para él la ficha no existe (cap. 17 §1.2, precisión 7), y la superficie la trata así. **Y llegar a `PURGED` no escribe `deleted_at`** (FASE 9 vuelta 3, `F-8V3A3-004`): el carril de extras del código actual tiene un trigger que borra de `user_bookmarks` los favoritos de un alojamiento cuando su `deleted_at` pasa de nulo a no nulo, y `PURGED` es un estado, no un soft delete. Ninguna transición del modelo nuevo escribe esa columna, que sólo lee la tabla de traducción del corte (`L1`, `V/21` §2.4) | `user_bookmarks` |
+| **los favoritos** de un turista | del turista | **se conservan**: para él la ficha no existe (cap. 17 §1.2, precisión 7), y la superficie la trata así. **Y llegar a `PURGED` no escribe `deleted_at`** (FASE 9 vuelta 3, `F-8V3A3-004`): el carril de extras del código actual tiene un trigger que borra de `user_bookmarks` los favoritos de un alojamiento cuando su `deleted_at` pasa de nulo a no nulo, y `PURGED` es un estado, no un soft delete. Ninguna transición del modelo nuevo escribe esa columna, ~~que sólo lee la tabla de traducción del corte (`L1`, `V/21` §2.4)~~ **y la tabla de traducción del corte, que la leía para `L1`, salió** (FASE 5, simplificación del corte, S-01). **Tampoco la escribe el borrado del dueño de hoy**, que sale (abajo, *«las puertas de borrado de hoy»*) | `user_bookmarks` |
 | **el pedido de arreglo** de una ficha moderada | de la moderación: el motivo es del admin y el aviso de que corrigió, del dueño | **se cierra en el mismo acto, sin correo, y la fila se conserva como registro de la moderación** (FASE 9 vuelta 3, `F-8V3A2-004`, `F-8V3A3-007`): sin ficha no hay arreglo que pedir, y el correo de *«moderación levantada»* le diría al dueño a dónde volvió una ficha que borró. Cerrado, sale del listado de arreglos pendientes (§2.5) | `pedido_de_arreglo` |
 | **las alertas de precio** de un turista | del turista | **se cierran, con un aviso al turista** (cap. 19 §4 fila 27; el correo, `NUCLEO/07` §6): sin ficha no hay precio que vigilar, y el job de alertas dejaría de evaluar una ficha vacía | `tourist_price_alerts` |
 | **la conexión de calendario** | del dueño | **se desconecta: su token se revoca en el proveedor y se borra** (arriba, `G1-5`) | `accommodation_calendar_sync` |
@@ -752,9 +785,22 @@ que cruza los saltos de línea (FASE 9 vuelta 2, verificación, `N-B-02`): la pr
 **La lista es cerrada**: una tabla nueva que cuelgue de `listing` entra acá en el mismo acto, con
 su fila, **y si no entra, `G-R9` falla**: la columna de tablas nombra hoy las 40, una por una (FASE 9
 vuelta 2, verificación, owner 2026-09-27, `V2-k`) **(38 del código actual que sobreviven a la
-limpieza del principio, 28 con FK y 10 con `entity_type`, y 2 del modelo nuevo, `pedido_de_arreglo`
-y `addon_instance`; las dos del cobro viejo salieron: FASE 9 vuelta 3, `F-8V3A3-007`)**.
+limpieza del principio, ~~28 con FK y 10 con `entity_type`~~ **29 con FK y 9 con `entity_type`**, y 2 del modelo nuevo, `pedido_de_arreglo`
+y `addon_instance`; las dos del cobro viejo salieron: FASE 9 vuelta 3, `F-8V3A3-007`)** (el reparto,
+FASE 5, owner 2026-09-30, lote 6 G, `F5-BD-011`: las dos del cobro viejo estaban las dos entre las
+de `entity_type`, así que las 29 con FK quedan y las 11 con `entity_type` bajan a 9; el total de 38
+no cambia).
 Lo construyen las dos transiciones que llegan a `PURGED`: `PB9` (V9) y `PB12` (V6).
+
+**Las puertas de borrado de hoy, fuera de `PB9` y `PB12`, se retiran todas** (FASE 5, owner
+2026-09-30, lote 3 C, `F5-BD-012`, `F5-SUP-017`). Hoy el dueño de un alojamiento borra su ficha
+escribiendo `deleted_at` —el trigger le borra los favoritos a los turistas, que esta lista
+conserva—, y el panel tiene, en las tres verticales, un borrado, un borrado físico y una
+restauración; el borrado físico hace `DELETE` de la fila y arrastra por `CASCADE` las reseñas de
+terceros. **El borrado del dueño pasa a ser `PB12`, el del equipo es la acción 23 —a pedido del
+dueño y con motivo, que corre `PB12`— y el borrado físico de fichas desaparece** (el de cuentas,
+§2.2). Sin eso, una ficha se borra sin llegar a `PURGED`, por una puerta que no corre `A6` ni
+esta lista.
 
 **Los dos borrados remotos van después del commit, y la fila los recuerda hasta que se
 confirman** (FASE 9 vuelta 3, `F-8V3A2-005`). Las fotos en el almacenamiento externo y la
@@ -937,6 +983,13 @@ son los que no dependen de que ningún camino de código se acuerde:
 > (`packages/db/src/migrations/extras/`): ningún camino legítimo borra esa fila, porque el borrado
 > de la cuenta la anonimiza (FASE 9 vuelta 1, `F-8V1A3-013`). Con eso el cap. 04 §2.1 (núcleo)
 > queda cierto sin cambiar el conteo de seis.
+>
+> **Y `trial` nace sin `deleted_at`, y las tablas de sólo agregar también** (FASE 5, owner 2026-09-30,
+> lote 4 E, `F5-BD-029`). El trigger ve un `DELETE`, no un `UPDATE` que ponga la fecha, y el
+> borrado suave de hoy la estampa en toda tabla que la tenga: una fila de `trial` *«borrada»* así
+> desaparecía para toda lectura que filtrara por `deleted_at`, y la guarda de `T1` dejaba de verla
+> mientras el `UNIQUE` seguía rechazando la inserción. Sin la columna, no hay borrado suave que
+> hacer.
 
 **Los demás no los puede sostener la base** —dependen de la resolución en el servicio— y son el
 capítulo 04 (núcleo). Lo que importa es la distinción: los de arriba **no admiten un camino que los

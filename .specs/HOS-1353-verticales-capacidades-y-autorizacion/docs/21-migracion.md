@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-27
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -83,8 +83,21 @@ sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin e
 dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
 disponible ahora**, mientras son ocho.
 
-### 2.4 Cómo amanece la población existente: ~~se despublica, y se la llama~~ con su ficha a la vista publicada y una prueba gratis que arranca ese día
+### 2.4 Cómo amanece la población existente: ~~se despublica, y se la llama~~ ~~con su ficha a la vista publicada y una prueba gratis que arranca ese día~~ cinco cuentas de una lista cerrada, con su ficha publicada y una prueba gratis que arranca ese día; las fichas de las demás se borran
 
+> **FASE 5, owner 2026-09-30: lote 1 J, lote A de la simplificación del corte y `DEC-MIG-007`.**
+> **La migración estructural del corte carga una lista cerrada de cinco fichas, que fija el owner
+> cuando esté listo para el corte, y borra las filas de todas las demás** (FASE 5, simplificación
+> del corte, S-01 y S-02). Son las cinco cuentas de `DEC-MIG-007` —tres en prueba o pagando y dos
+> de cortesía—, **una ficha cada una**; si entra alguien que el owner quiere conservar, lo suma a la
+> lista, y si trae más de una ficha, vuelve al owner (lote A). Las cinco nacen **`PUBLISHED`** (o
+> lo que diga la lista) y **ninguna otra ficha se clasifica**: sale la tabla de traducción
+> `L1`–`L8`. Si hay aborto, el backup del 2b restaura lo borrado (`16-fase-7…` §4.2). **La prueba
+> gratis de las cinco la escribe el script del corte, después de la migración, con la función de
+> la aplicación** (FASE 5, owner 2026-09-30, lote 2 D; S-12), y las fotos y el token de calendario
+> de las fichas borradas los borra el paso 5b (S-04). Lo que abajo razona sobre *«toda ficha
+> preexistente»*, *«el dueño con una ficha a la vista»* o la cartera queda tachado donde está.
+>
 > **Revisión del owner, 2026-09-28, C12, `L1-a`, `L1-b`.** **El día del corte, las fichas que
 > estaban a la vista nacen como recién creadas y PUBLICADAS, y el corte le escribe a su dueño una
 > prueba gratis activa en esa vertical, que arranca ese día.** Las que el sistema viejo tenía
@@ -105,8 +118,9 @@ de los usuarios de producción amanece ahí, otra vez**: el corte no escribe fil
 clientes actuales se tratan como nuevos (owner 2026-09-25; FASE 9 completa, `2g`; abajo, *«el
 rastro de que ya fue cliente»*, revertido). Y el evento que los sacaría **ya ocurrió**: `T1`
 dispara con *«la ficha queda publicada»*, que es la **transición** de publicar, y sus fichas ya
-están publicadas. **Salvo el dueño con una ficha a la vista, que amanece en `TRIAL_ACTIVE` en esa
-vertical** por la fila que el corte le escribe (revisión del owner, 2026-09-28, C12; abajo).
+están publicadas. **Salvo ~~el dueño con una ficha a la vista~~ las cinco cuentas de la lista
+(FASE 5, simplificación del corte, S-01), que ~~amanece~~ amanecen en `TRIAL_ACTIVE` en esa
+vertical** por la fila que el corte les escribe (revisión del owner, 2026-09-28, C12; abajo).
 
 **Y la guarda nueva del par `T1`/`T6` no cambia esta conclusión, que es lo que hay que
 verificar.** Desde que `T1` exige `cubierto` **falso** y `T6` lo exige **verdadero** (`V/03` §2),
@@ -159,8 +173,10 @@ su fila nace consumida. Si el grant se revocara quedarían sin grant y sin trial
 owner y *«regenerables de cero»* (`B/21` §2.4), y eso se declara, no se diseña.
 
 **Y desde C12 se declara así** (revisión del owner, 2026-09-28, C12; como lo dice
-`30-revision-del-owner/01-impacto-producto.md` § C12): **la migración del paso 3 les escribe la
-prueba activa**, porque tienen fichas a la vista, **y el 3b les escribe el grant**; el grant es un título
+`30-revision-del-owner/01-impacto-producto.md` § C12): **~~la migración del paso 3~~ el script del
+corte, después de la migración del paso 3, les escribe la prueba activa** (FASE 5, owner
+2026-09-30, lote 2 D), porque ~~tienen fichas a la vista~~ son dos de las cinco cuentas de la lista
+(FASE 5, simplificación del corte, S-13, que lo mantiene), **y el 3b les escribe el grant**; el grant es un título
 que convierte, así que `T2` convierte en el acto y **la prueba queda consumida**. Es inofensivo: las
 dos cuentas son del owner y *«regenerables de cero»*. No se las excluye de la migración.
 
@@ -173,9 +189,12 @@ despublica la primera corrida del reconciliador diario de cobertura** (`V/03` §
 consecuencia.~~
 
 **En qué estado nace cada ficha, y está determinado** (FASE 9 vuelta 1, R1; owner 2026-09-26,
-`G1-1` y `G1-2`; **las filas `L5`, `L7` y `L8` cambian con la revisión del owner, 2026-09-28, C12,
-`L1-a` y `L1-b`**: tabla de abajo). La migración estructural del corte le escribe a cada ficha preexistente el estado
-de la tabla de abajo, una sola vez, con la escritura `C`. ~~La ficha que estaba a la vista **nace
+`G1-1` y `G1-2`; ~~**las filas `L5`, `L7` y `L8` cambian con la revisión del owner, 2026-09-28, C12,
+`L1-a` y `L1-b`**: tabla de abajo~~; la tabla de ocho clases salió: FASE 5, simplificación del corte, S-01). ~~La migración estructural del corte le escribe a cada ficha preexistente el estado
+de la tabla de abajo, una sola vez, con la escritura `C`.~~ **La migración estructural del corte le
+escribe a cada una de las cinco fichas de la lista el estado con que la lista la carga
+—`PUBLISHED`, salvo que la lista diga otro—, una sola vez, con la escritura `C`, y borra las filas
+de todas las demás** (FASE 5, simplificación del corte, S-01 y S-02; owner 2026-09-30, lote 1 J). ~~La ficha que estaba a la vista **nace
 `UNPUBLISHED_BY_BILLING`**: es el estado al que `PB2` la llevaría en la primera corrida del
 reconciliador, porque `PRE_TRIAL` no cubre, y escribirlo en el corte le ahorra al dueño un día de
 ficha publicada sin cobertura y le deja estrenar el trial desde el primer minuto.~~ **La ficha que
@@ -188,21 +207,30 @@ revalidación que `PB2` habría programado (`16-fase-7…` §4.2; FASE 9 vuelta 
 (FASE 9 vuelta 2, verificación, `N-C-07`), **y la página de cada destino, que lista sus
 alojamientos: una purga por destino, 22** (FASE 9 vuelta 2, verificación, owner 2026-09-28,
 `V2-t`).~~ **La que estaba a la vista no cambia de visibilidad**, así que el paso 4c ya no la
-revalida; le quedan las fichas que nacen fuera del sitio y el sistema viejo servía, si alguna
-(`16-fase-7…` §4.2). **Si hay alguna se mide en el paso 0, y si da cero el 4c se saltea** (revisión
-del owner, casos vecinos, 2026-09-29, caso 5).
+revalida; le quedan las fichas que nacen fuera del sitio y el sistema viejo servía~~, si alguna~~
+(`16-fase-7…` §4.2). ~~**Si hay alguna se mide en el paso 0, y si da cero el 4c se saltea** (revisión
+del owner, casos vecinos, 2026-09-29, caso 5).~~ **El 4c corre siempre**: la migración borra
+fichas que el viejo mostraba (la población a avisar tenía doce alojamientos, §2.5), así que
+siempre tiene sujeto. **Revalida las páginas de las fichas borradas que el sistema viejo servía,
+los listados por la etiqueta de colección de cada tipo y la página de cada destino, 22**, y sale
+el recuento del paso 0 (FASE 5, simplificación del corte, S-28).
 
-**Un dueño con más de una ficha a la vista en la misma vertical no se diseña** (revisión del owner, 2026-09-28, C12,
+~~**Un dueño con más de una ficha a la vista en la misma vertical no se diseña** (revisión del owner, 2026-09-28, C12,
 `L1-a`, hecho del owner): **hoy no hay ninguno**. La prueba permite una ficha; si aparece alguno, se
 decide en ese momento. **Cómo aparece: un recuento en el paso 0 del corte, que no es gate**; si da
 más de cero, vuelve al owner antes del corte con el número a la vista (revisión del owner, casos
-vecinos, 2026-09-29, caso 6; `16-fase-7…` §4.2).
+vecinos, 2026-09-29, caso 6; `16-fase-7…` §4.2).~~ **Una ficha por cuenta es premisa**
+(`DEC-MIG-007`, punto 3): sale el recuento del paso 0; si una cuenta que el owner suma a la lista
+trae más de una ficha, vuelve al owner en ese momento (FASE 5, simplificación del corte, S-08;
+lote A).
 
-**La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
+~~**La tabla de traducción** cuantifica **toda ficha que existe en la base el día del corte**, por
 las columnas viejas de `accommodations` (las otras tres verticales tienen cero filas y se
-re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la primera que aplica.
+re-cuentan con la consulta de `B/21` §1.3). Se evalúa en este orden y gana la primera que aplica.~~
+**Sale la tabla entera, con sus ocho clases: ninguna ficha se clasifica** (FASE 5, simplificación
+del corte, S-01).
 
-**Y está escrita sólo para `accommodations`, así que el recuento de las otras tiene que dar cero, o
+~~**Y está escrita sólo para `accommodations`, así que el recuento de las otras tiene que dar cero, o
 el corte no sigue** (FASE 9 vuelta 2, `F-8V2A3-003`). `listing` son las filas que ya existen, una
 tabla por vertical (cap. 02 §2.5). `gastronomies` y `experiences` no tienen `billing_unpublished_at`,
 `owner_suspended` ni `plan_restricted`, que son las columnas de `L5` y `L7`, y `experiences` tiene
@@ -214,51 +242,77 @@ columnas a la vista. **Y el recuento se hace también antes del 1a, y si ahí ya
 corte no arranca** (owner 2026-09-27, FASE 9 vuelta 2, `R9-b`): en el paso 2 el 1b ya canceló, y
 detenerse ahí es la rama de aborto. **El del paso 2 queda como segundo control**, para la ficha que
 nazca entre los dos recuentos. `DEC-MIG-002` sigue tomando altas, así que el cero es una medición que vence y
-no una premisa. Partner no tiene ficha: su presencia no se traduce (§4).
+no una premisa.~~ **Sale el recuento de Gastronomía y Experiencia, las tres veces** (antes del 1a,
+en el paso 2 y en el paso 3): la tabla que protegía ya no existe, y cualquier ficha de esas
+verticales que no sea de las cinco se borra (FASE 5, simplificación del corte, S-07). Partner no
+tiene ficha: su presencia no se traduce (§4).
 
-**Y las tres columnas que la tabla lee sobreviven a la limpieza del principio hasta el corte**
-(FASE 9 vuelta 3, owner 2026-09-30, lote N; `F-8V3A3-002`). `owner_suspended`, `plan_restricted` y
-`billing_unpublished_at` son columnas de `accommodations` que sólo usa el cobro viejo, así que
+**Y las tres columnas ~~que la tabla lee~~ sobreviven a la limpieza del principio hasta ~~el corte~~
+`V6`** (FASE 9 vuelta 3, owner 2026-09-30, lote N; `F-8V3A3-002`). `owner_suspended`, `plan_restricted` y
+`billing_unpublished_at` son columnas de `accommodations` ~~que sólo usa el cobro viejo, así que
 `U1` las borraría con él, y la migración que las saca de la base se aplicaría en el paso 3 antes
 que la de clasificación: `L7` quedaba indistinguible de `L8`, y una ficha suspendida o fuera de
-cupo nacía `PUBLISHED` con prueba. **Son una excepción temporal y nombrada**: `U1` no las borra,
-los guards de limpieza las admiten hasta el corte, y **las borra una migración posterior al paso
+cupo nacía `PUBLISHED` con prueba~~ **que no sólo usa el cobro viejo: las leen también la
+búsqueda, los permisos, los destinos y las fichas parecidas (`accommodation.model.ts`,
+`accommodation.permissions.ts`, `destination.service.ts`, `similar.ts`, sobre `origin/staging`), y
+`service-core` escribe `billing_unpublished_at` al publicar y despublicar** (FASE 5, owner
+2026-09-30, lote 3 B, que corrige esta frase). **Siguen vivas hasta `V6` por esos lectores, no por
+ninguna tabla de traducción** (FASE 5, simplificación del corte, S-09: sale la razón `L5`/`L7` y la
+condición de orden). **Son una excepción temporal y nombrada**: `U1` no las borra, los guards de
+limpieza las admiten hasta el corte, y ~~**las borra una migración posterior al paso
 3, después de la clasificación de `V6`** (`16-fase-7…` §4.2 y §4.6), que la escribe `V6` con la
 migración estructural del corte.
 `16-fase-7…` §4.2 la aplica en el mismo despliegue del paso 3, fechada
-después de la clasificación ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9
-vuelta 3, lote N)~~, y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S). Ningún guard de verticales las mira (`V/20` §2: `G8` busca una
+después de la clasificación~~ ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9
+vuelta 3, lote N)~~ ~~, y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S).~~
+**las borra la migración de `V6` que se aplica en el paso 3, en el mismo cambio que retira sus
+lectores, reemplazados por el estado nuevo de la ficha** (FASE 5, owner 2026-09-30, lote 3 B),
+sin orden que respetar frente a ninguna clasificación. **Y la misma migración borra
+`lifecycle_state`, `visibility` y `moderation_state`**, que el estado nuevo reemplaza: `V6` migra
+sus lectores y los disparadores de revalidación, y cada fila de `V/03` §9 dice si revalida (FASE 5,
+owner 2026-09-30, lote 3 A). Ningún guard de verticales las mira (`V/20` §2: `G8` busca una
 palabra que ninguna de las tres tiene), así que la excepción no pide cambiar ninguna fila de allá.
+
+*(Sale entera, con sus ocho clases: FASE 5, simplificación del corte, S-01. Donde una celda tenía
+un valor tachado, se lee como «antes».)*
 
 | clase | condición sobre las columnas viejas | nace en |
 |---|---|---|
-| `L1` | `deleted_at` no nulo | **`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) —**el borrado, en el paso 5b del corte y no en la migración** (FASE 9 vuelta 2, `F-8V2A3-002`)— |
-| `L2` | `lifecycle_state = DRAFT` | `DRAFT` |
-| `L3` | `lifecycle_state = ARCHIVED` | `DRAFT` |
-| `L4` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` nulo | `DRAFT` |
-| `L5` | `lifecycle_state = INACTIVE` y `billing_unpublished_at` no nulo | ~~`UNPUBLISHED_BY_BILLING`~~ **`DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`) |
-| `L6` | `lifecycle_state = ACTIVE` y `visibility` distinta de `PUBLIC` | `DRAFT` |
-| `L7` | `ACTIVE` + `PUBLIC` y (`owner_suspended` o `plan_restricted`) | ~~`UNPUBLISHED_BY_BILLING`~~ **`DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`) |
-| `L8` | `ACTIVE` + `PUBLIC`, sin ninguna de las dos marcas | ~~`UNPUBLISHED_BY_BILLING`~~ **`PUBLISHED`**, **y su dueño recibe la prueba activa del corte en esa vertical** (revisión del owner, 2026-09-28, C12) |
+| ~~`L1`~~ | ~~`deleted_at` no nulo~~ | ~~**`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) —**el borrado, en el paso 5b del corte y no en la migración** (FASE 9 vuelta 2, `F-8V2A3-002`)—~~ |
+| ~~`L2`~~ | ~~`lifecycle_state = DRAFT`~~ | ~~`DRAFT`~~ |
+| ~~`L3`~~ | ~~`lifecycle_state = ARCHIVED`~~ | ~~`DRAFT`~~ |
+| ~~`L4`~~ | ~~`lifecycle_state = INACTIVE` y `billing_unpublished_at` nulo~~ | ~~`DRAFT`~~ |
+| ~~`L5`~~ | ~~`lifecycle_state = INACTIVE` y `billing_unpublished_at` no nulo~~ | ~~**`DRAFT`**, antes `UNPUBLISHED_BY_BILLING` (revisión del owner, 2026-09-28, C12, `L1-b`)~~ |
+| ~~`L6`~~ | ~~`lifecycle_state = ACTIVE` y `visibility` distinta de `PUBLIC`~~ | ~~`DRAFT`~~ |
+| ~~`L7`~~ | ~~`ACTIVE` + `PUBLIC` y (`owner_suspended` o `plan_restricted`)~~ | ~~**`DRAFT`**, antes `UNPUBLISHED_BY_BILLING` (revisión del owner, 2026-09-28, C12, `L1-b`)~~ |
+| ~~`L8`~~ | ~~`ACTIVE` + `PUBLIC`, sin ninguna de las dos marcas~~ | ~~**`PUBLISHED`**, antes `UNPUBLISHED_BY_BILLING`, **y su dueño recibe la prueba activa del corte en esa vertical** (revisión del owner, 2026-09-28, C12)~~ |
 
-**`L5` y `L7` nacen en borrador y no bajadas por billing** (revisión del owner, 2026-09-28, C12, `L1-b`): el sistema
+~~**`L5` y `L7` nacen en borrador y no bajadas por billing** (revisión del owner, 2026-09-28, C12, `L1-b`): el sistema
 viejo las tenía bajadas por falta de pago, no a la vista, así que no hay nada que mantener arriba.
 Si el dueño quiere publicarla, la publica y le arranca la prueba por `T1`, como a cualquier cliente
 nuevo. **Con esto ninguna ficha del corte nace `UNPUBLISHED_BY_BILLING`**, y cae entera la regla
-`R15` (*«la cartera que contrata sin publicar»*, `V/03` §2), cuyo único sujeto era esa ficha.
+`R15` (*«la cartera que contrata sin publicar»*, `V/03` §2), cuyo único sujeto era esa ficha.~~
+(FASE 5, simplificación del corte, S-01: sin tabla no hay `L5` ni `L7`. Sigue valiendo que
+ninguna ficha del corte nace `UNPUBLISHED_BY_BILLING` y que `R15` no vuelve.)
 
 Dos capas que no cambian el estado y se resuelven aparte:
 
 - **`moderation_state`**: `PENDING` y `APPROVED` no se traducen, porque la columna nunca gobernó la
-  visibilidad —el código de hoy lo dice (`packages/service-core/src/services/accommodation/`
+  visibilidad **en Alojamiento** (FASE 5, owner 2026-09-30, lote 6 G, `SUP-013`: en Gastronomía y
+  Experiencia sí la gobierna, `commerce-visibility.ts`) —el código de hoy lo dice (`packages/service-core/src/services/accommodation/`
   `accommodation.service.ts`: ninguna lectura pública filtra por `moderationState`)— y `PENDING` es
-  el default de toda fila. **`REJECTED` tampoco se traduce**: se lista en la re-verificación de
+  el default de toda fila. ~~**`REJECTED` tampoco se traduce**: se lista en la re-verificación de
   `B/21` §1.3 y el admin la modera después con `PB10` si quiere (owner 2026-09-26, `G1-2`).
-  `REJECTED` nunca bajó nada, así que ignorarla no cambia lo que se ve hoy.
+  `REJECTED` nunca bajó nada, así que ignorarla no cambia lo que se ve hoy.~~ (FASE 5, simplificación
+  del corte, S-06.) **La columna se borra en el paso 3 con `lifecycle_state` y `visibility`**: el
+  estado nuevo las reemplaza, y las cinco de la lista nacen con el estado que la lista dice (FASE 5,
+  owner 2026-09-30, lote 3 A).
 - **`is_featured`**: no cruza. El diseño nuevo no tiene destaque curado fuera de la capacidad
-  comercial, y `B/21` §4 lo retira.
+  comercial, y `B/21` §4 lo retira: **lo borra `U1` en las tres tablas, con
+  `featured_by_entitlement`, y la home queda sin destacados hasta el complemento pagado** (FASE 5,
+  owner 2026-09-30, lote 1 F).
 
-**Por qué la borrada nace `PURGED` con el contenido borrado** (`G1-2`): honra el acto del dueño con
+~~**Por qué la borrada nace `PURGED` con el contenido borrado** (`G1-2`): honra el acto del dueño con
 el mismo efecto que `PB12`, y no le reaparece como borrador. El borrado ~~corre en la migración~~
 **no corre en la migración: lo corre la herramienta del corte de V6 en el paso 5b**, cuando ya no
 hay rama de aborto (`16-fase-7…` §4.2; FASE 9 vuelta 2, `F-8V2A3-002`). El efecto de `PB12`
@@ -268,7 +322,17 @@ fichas que el viejo puede restaurar sin fotos y con el calendario muerto. Y no s
 —la base en la migración, lo externo después— porque las fotos quedarían sin fila que las nombre.
 Hasta el 5b la `L1` es `PURGED` con su contenido, sin mostrarse. El borrado es
 sobre lo que el dueño ya había borrado; si alguna la borró un admin y no su dueño, su contenido se
-pierde igual (declarado en el «NO cierra» del capítulo).
+pierde igual (declarado en el «NO cierra» del capítulo).~~
+
+**Qué borra el paso 5b** (FASE 5, simplificación del corte, S-04): **las fotos en el
+almacenamiento externo y el token de calendario en el proveedor de toda ficha que no es de las
+cinco**; la fila ya la borró la migración del paso 3 (S-02). Queda después del paso 5 por la misma
+razón que antes: lo externo no lo restaura ningún backup, y un aborto dejaría fichas que el viejo
+restaura sin fotos y con el calendario muerto. La herramienta se sigue pudiendo correr dos veces.
+⚠️ **Lo que esto reabre, y no está decidido**: el párrafo tachado no partía el borrado en dos
+*«porque las fotos quedarían sin fila que las nombre»*, y S-04 lo parte: con la fila borrada en el
+paso 3, el 5b tiene que saber de otro lado qué fotos y qué tokens borrar. De dónde lo lee vuelve al
+owner (`HOS-1352/docs/38-fase-5/13-aplicacion-verticales-migracion-y-descomposicion.md` §5).
 
 > ~~**Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
 > se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
@@ -278,30 +342,34 @@ pierde igual (declarado en el «NO cierra» del capítulo).
 > cualquiera (`T1`, `V/03` §2).~~
 >
 > ~~**Y eso es lo que se hace: no se siembra nada.** Se les avisa **antes** del corte y se los
-> llama.~~ **Superado por C12** (revisión del owner, 2026-09-28, C12): se siembra una prueba activa, y el owner les
+> llama.~~ ~~**Superado por C12** (revisión del owner, 2026-09-28, C12): se siembra una prueba activa, y el owner les
 > avisa en persona. Lo que sigue queda como historia de R1: **El camino que se les nombra es el del cliente nuevo** (`2g`): entrar y **publicar su
 > ficha**, que `PB1` admite desde `UNPUBLISHED_BY_BILLING` o desde `DRAFT` cuando arranca un trial
 > (`V/03` §9), y eso les arranca el trial por `T1`. El botón de suscribirse los manda ahí, porque
 > no tienen ningún `PB1` en el sistema nuevo (`V/19` fila 23), **siempre que publicar les arranque
 > el trial**: si la vertical no declara evento, sus días están en cero o el hash del correo ya tiene
-> fila, los manda al checkout ~~, y si la vertical no admite altas no les ofrece nada~~ (revisión del owner, 2026-09-28, C8) (la regla única
+> fila, los manda al checkout~~ ~~, y si la vertical no admite altas no les ofrece nada~~ ~~(revisión del owner, 2026-09-28, C8) (la regla única
 > del botón, escrita sólo en `V/19` §4 fila 23; FASE 9 vuelta 1, `F-8V1D1-004`; residuo de G4
 > resuelto el 2026-09-26). Al contratar, las fichas que siguen
 > abajo vuelven solas por `PB3`, hasta llenar el cupo (FASE 9 vuelta 1, R1; owner 2026-09-26,
 > `G1-1`), **en el orden de `V/03` §9 *«cuáles vuelven»*: como no tienen evento de publicación en el
 > registro nuevo, cuentan como publicadas en el instante del corte y desempatan por `created_at`**
-> (FASE 9 vuelta 1, `N-G1-01`).
+> (FASE 9 vuelta 1, `N-G1-01`).~~
+>
+> **Retirado entero, con lo que sigue hasta *«la llamada tarde»***:
+> ya estaba superado por C12 y ahora tampoco tiene población; las cinco cuentas las conoce el owner
+> y les avisa él (FASE 5, simplificación del corte, S-10; `DEC-MIG-007`, puntos 3 y 4).
 
-*(Con C12 la ficha no baja en el corte: baja recién cuando vence la prueba del corte sin que el
+~~*(Con C12 la ficha no baja en el corte: baja recién cuando vence la prueba del corte sin que el
 dueño contrate, por `T3` y `PB2`, como la de cualquier cliente nuevo. Lo que sigue sobre la
-llamada que tarda queda como historia de R1.)*
+llamada que tarda queda como historia de R1.)*~~
 
-**Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
+~~**Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
 puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
 **`PB7`**, con el mismo disparador y el mismo desenlace (`V/03` §9). No cambia el resultado, sino
 **de qué fila depende** — y conviene decirlo porque antes de la 9-bis-3 `PB7` no existía, así
 que una demora de tres meses en la agenda de llamados convertía *«vuelve sola»* en un incidente
-por cada cuenta.
+por cada cuenta.~~ (FASE 5, simplificación del corte, S-10.)
 
 **Y el reloj de esas fichas arranca el día del corte, no el día que se crearon** (FASE 8 completa,
 `F-8CA3-002`, `F-8CC2-003`, owner 2026-09-25). `listing.inactiva_desde` **no es anulable** (`V/02`
@@ -309,8 +377,10 @@ por cada cuenta.
 único que la regla de la columna ofrecía —*«una ficha nace con el instante de su creación»*— es su
 `created_at`: con él, toda ficha creada más de 90 días antes del corte se archivaba y toda ficha de
 más de 180 **se borraba en la primera corrida**, antes de que sonara el teléfono y con los tres
-avisos de retención fechados en el pasado. **Toda ficha que existía el día del corte nace con
-`inactiva_desde` = el instante del corte.** Es la escritura `C` de la lista cerrada del
+avisos de retención fechados en el pasado. **~~Toda ficha que existía el día del corte nace~~ Las
+cinco fichas de la lista nacen con `inactiva_desde` = el instante del corte** (FASE 5,
+simplificación del corte, S-14: la escritura se mantiene, porque la columna no admite nulo, y pasa
+a ser cinco filas). Es la escritura `C` de la lista cerrada del
 `NUCLEO/01` §1.2 —**una sola vez, en la migración estructural del corte, y en ningún otro lugar**—,
 y `G-R6-B` la admite por ese lugar. **Se mantiene con `2g`**: lo que el owner respeta de los
 clientes actuales es la ficha, y ésta es la escritura que la protege. **Y la de un corte abortado
@@ -328,50 +398,56 @@ preexistente nace `PUBLISHED`: las que estaban a la vista nacen `UNPUBLISHED_BY_
 escritura `C`, así que `PB2` no corre sobre ellas en el corte y el instante que les queda es el
 del corte, el mismo que `PB2` les habría escrito. FASE 9 vuelta 1, R1.)*
 
-> ⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
-> tiene un límite de hecho en el día 180**. *(Desde C12, para el dueño con una ficha a la vista el
+> ~~⚠️ **Lo que esto NO cierra** (no resuelto acá): con el reloj en el corte, **la agenda de llamados
+> tiene un límite de hecho en el día 180**.~~ ~~*(Desde C12, para el dueño con una ficha a la vista el
 > reloj se reinicia mientras dura la prueba (el hecho 2, porque está cubierto), así que el límite
-> corre desde que la prueba vence y no desde el corte; revisión del owner, 2026-09-28, C12.)* Pasado ese día, sin contratar, el hard delete ya corrió
-> y ~~lo que `PB7` devuelve es una ficha vacía~~ la ficha quedó en `PURGED`, que es final: no la
-> devuelve nada (`V/03` §9, `PB9`; `F-8CA2-008`, cerrado por el owner el 2026-09-25). ~~El límite de
+> corre desde que la prueba vence y no desde el corte; revisión del owner, 2026-09-28, C12.)*~~ ~~Pasado ese día, sin contratar, el hard delete ya corrió
+> y~~ ~~lo que `PB7` devuelve es una ficha vacía~~ ~~la ficha quedó en `PURGED`, que es final: no la
+> devuelve nada (`V/03` §9, `PB9`; `F-8CA2-008`, cerrado por el owner el 2026-09-25).~~ ~~El límite de
 > la agenda sigue abierto igual. El hallazgo propone
 > declararlo como límite de la agenda (`F-8CA3-002`); **si se declara y cómo se vigila lo decide el
-> owner**.~~ **El límite no tiene tratamiento especial, por decisión del owner** (2026-09-25; FASE 9
+> owner**.~~ ~~**El límite no tiene tratamiento especial, por decisión del owner** (2026-09-25; FASE 9
 > completa, `5c`): *«tenemos 180 días para que lo hagan, es un montón de tiempo»*. No hay fecha
 > tope ni vigilancia propia de la agenda; está declarado en el «NO cierra» del capítulo para que no
 > se vuelva a reportar. Y `DEC-MIG-004` retiró su defecto #7 con la causa *«no se transcribe ninguna»*: la ficha
 > sí sobrevive al corte y su reloj sí se siembra, así que esa causa no alcanza a esta columna — la
-> corrección del texto del log queda para el log.
+> corrección del texto del log queda para el log.~~
+>
+> **Retirado** (FASE 5, simplificación del corte, S-77): no hay agenda de llamados, y las fichas
+> que no son de las cinco se borran el día del corte (lote 1 J). Las cinco siguen el reloj de
+> cualquier ficha.
 
-*(**Superado por C12** (revisión del owner, 2026-09-28, C12): el owner eligió exactamente la alternativa de este
+~~*(**Superado por C12** (revisión del owner, 2026-09-28, C12): el owner eligió exactamente la alternativa de este
 párrafo, que ya tenía su precio escrito en `G1-1`: una escritura del corte con seudónimo, reloj y
 campaña, y una sola ficha en el cupo de la prueba. Este párrafo y los dos siguientes quedan como
-historia de R1.)*
+historia de R1.)*~~
 
-**Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
+~~**Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
 contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
 igual** —es lo que decide todo este capítulo: son pocos, la mayoría **no pagó nunca**, y el owner
 **los conoce a todos**—, así que la siembra no ahorra una sola conversación. Agregar filas para
 evitar un efecto que la llamada ya resuelve es el mecanismo que el §56 pide no construir: *«no
-contaminar la arquitectura nueva para salvar unas pocas relaciones legacy»*. ~~*(La fila de `trial`
+contaminar la arquitectura nueva para salvar unas pocas relaciones legacy»*.~~ ~~*(La fila de `trial`
 consumida que el corte sí escribe —abajo— no es esa siembra: no cubre ni deja ninguna ficha arriba;
-hace lo contrario, impedir un trial nuevo. FASE 8 completa, owner 2026-09-25.)*~~ *(Desde `2g` el
+hace lo contrario, impedir un trial nuevo. FASE 8 completa, owner 2026-09-25.)*~~ ~~*(Desde `2g` el
 corte no siembra ningún trial, ni activo ni consumido: el trial de cada cliente actual arranca
-cuando él publica, como el de cualquier cliente nuevo. Owner 2026-09-25, FASE 9 completa.)*
+cuando él publica, como el de cualquier cliente nuevo. Owner 2026-09-25, FASE 9 completa.)*~~
 
-**Qué se pierde, dicho sin adornos**: la ficha de cada uno está abajo **desde el corte hasta que esa
-persona ~~contrata~~ publica o contrata** (FASE 9 vuelta 1, R1). Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
-aviso va **antes** del corte, no después.
+~~**Qué se pierde, dicho sin adornos**: la ficha de cada uno está abajo desde el corte hasta que esa
+persona publica o contrata (FASE 9 vuelta 1, R1). Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
+aviso va **antes** del corte, no después.~~ (FASE 5, simplificación del corte, S-52: el owner elige
+cuándo avisa.)
 
-**Y qué se gana, que no es sólo ahorrarse la siembra**: el camino de vuelta —perder la cobertura,
+~~**Y qué se gana, que no es sólo ahorrarse la siembra**: el camino de vuelta —perder la cobertura,
 recuperarla, y que la ficha se republique sola— **se ejercita el primer día**, sobre un puñado de
 casos conocidos y con el owner al teléfono. Es exactamente cuando conviene descubrir que falla, si
-falla.
+falla.~~ (FASE 5, simplificación del corte, S-10.)
 
 **Consecuencia sobre la regla del capítulo, y es limpia**: ~~del lado de verticales **no se escribe
 ninguna fila**, así que *«el sistema nuevo no hereda una sola fila»* sigue siendo literal acá.~~
 del lado de verticales **no se transcribe ninguna fila viva**, que es la precisión de `DEC-MIG-003`
-(*«ninguna fila VIVA del sistema viejo pasa al nuevo»*).
+(*«ninguna fila VIVA del sistema viejo pasa al nuevo»*). **Y del lado de verticales el corte
+borra**: las filas de toda ficha que no es de las cinco (FASE 5, owner 2026-09-30, lote 1 J).
 **Lo que sí se escribe es un valor de columna sobre filas que ya existen** —el `inactiva_desde` de
 arriba—, y por eso figura en la lista cerrada de escritores de esa columna como escritura propia
 (FASE 8 completa, `F-8CC2-003`, owner 2026-09-25), ~~**y la fila de `trial` consumida de cada dueño
@@ -382,17 +458,24 @@ escribe son dos clases, y ninguna es una transcripción**: la lápida del `B/21`
 reconocible un cobro viejo, y la fila de `trial` consumida, que hace reconocible a un cliente viejo.~~
 ~~**Del lado de verticales el corte no escribe ninguna fila nueva** (owner 2026-09-25; FASE 9
 completa, `2g`).~~ **Del lado de verticales el corte escribe una clase de fila nueva: la prueba
-activa de cada dueño con una ficha a la vista** (revisión del owner, 2026-09-28, C12; abajo). No es una transcripción:
-no copia ningún trial del sistema viejo, escribe uno que arranca ese día. Las filas nuevas del corte son de billing y ninguna es una transcripción: la
-lápida del `B/21` §2.5, que hace reconocible un cobro viejo, y los dos `permanent_grant` del
-`B/21` §2.4, que son las cortesías del owner escritas como el caso normal del diseño nuevo.
+activa de ~~cada dueño con una ficha a la vista~~ cada una de las cinco cuentas de la lista**
+(revisión del owner, 2026-09-28, C12; FASE 5, simplificación del corte, S-12; abajo). No es una transcripción:
+no copia ningún trial del sistema viejo, escribe uno que arranca ese día. Las filas nuevas del corte son de billing y ninguna es una transcripción: ~~la
+lápida del `B/21` §2.5, que hace reconocible un cobro viejo, y~~ los dos `permanent_grant` del
+`B/21` §2.4, que son las cortesías del owner escritas como el caso normal del diseño nuevo (la
+lápida del corte sale: FASE 5, simplificación del corte, S-40, lote C).
 
 #### La prueba gratis que escribe el corte
 
 (revisión del owner, 2026-09-28, C12, `L1-a`, `L1-b`; revierte `G1-1` en lo que decía de la cartera.)
 
-> **La migración estructural del corte le escribe a cada `(dueño, vertical)` con al menos una
-> ficha `L8` una fila de `trial` en `TRIAL_ACTIVE`, que arranca en el instante del corte.**
+> ~~**La migración estructural del corte le escribe a cada `(dueño, vertical)` con al menos una
+> ficha `L8` una fila de `trial` en `TRIAL_ACTIVE`, que arranca en el instante del corte.**~~
+> **El script del corte, después de la migración estructural del paso 3, le escribe a cada una de
+> las cinco cuentas de la lista una fila de `trial` en `TRIAL_ACTIVE` en la vertical de su ficha,
+> que arranca en el instante del corte, con la función de la aplicación** (FASE 5, owner
+> 2026-09-30, lote 2 D; simplificación del corte, S-12). Las cinco se verifican a mano. Se resigna
+> que el corte sea una sola operación atómica: con cinco filas no importa (lote 2 D).
 
 - **Qué se escribe**: la fila que escribe `T1` (`V/03` §2): el `user_id`, la vertical, el plan de
   trial derivado de la versión vigente y vendible, las versiones vigentes al arrancar (el piso del
@@ -400,37 +483,47 @@ lápida del `B/21` §2.5, que hace reconocible un cobro viejo, y los dos `perman
   **seudónimo del correo calculado con la misma función que `T1`** (`V/02` §2.2), y **la campaña
   previa agendada** (§10.7). Es la misma fila con otro escritor. **La cuota mensual de la prueba
   ancla ese día** (`V/15` §7).
-- **Dónde y cuántas veces**: en la migración estructural del paso 3, **una sola vez**, como la
+- **Dónde y cuántas veces**: ~~en la migración estructural del paso 3~~ en el script del corte,
+  después de la migración estructural del paso 3 (lote 2 D), **una sola vez**, como la
   escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2). **Y después de cargar el catálogo de
-  producción, en esa misma migración** (FASE 9 vuelta 3, owner 2026-09-30, lote C;
+  producción, ~~en esa misma migración~~ que carga la migración como SQL generado** (FASE 5,
+  lote 2 D; FASE 9 vuelta 3, owner 2026-09-30, lote C;
   `F-8V3A2-001`, `F-8V3A3-001`): el plan de trial, las versiones vigentes y los días de prueba
   cuelgan del catálogo, que se carga en la migración estructural del paso 3 antes de la prueba,
   como la versión 1 de los plazos; el paso 3a sólo lo verifica (`16-fase-7…` §4.2). Sin ese
-  orden, la migración fallaba o, con las referencias anulables, la fila nacía sin plan ni fin y
+  orden, ~~la migración fallaba~~ la escritura fallaba o, con las referencias anulables, la fila nacía sin plan ni fin y
   `T3` no la vencía nunca. La de un corte abortado no cuenta: la rama
-  de aborto restaura el backup y el reintento escribe con su instante. Repetir la migración no
-  escribe dos: el `UNIQUE(user_id, vertical)` lo impide.
+  de aborto restaura el backup y el reintento escribe con su instante. ~~Repetir la migración no
+  escribe dos~~ Correr el script dos veces no escribe dos: el `UNIQUE(user_id, vertical)` lo impide.
 - **Es una fila de `trial` que ninguna transición produce**, igual que la lápida de billing es la
   única `CANCELLED` que ninguna transición produce (`B/21` §2.5). Los guards que enumeran los
-  escritores de `trial` la admiten **por su lugar**, como admiten la escritura `C`.
+  escritores de `trial` la admiten **por su lugar** —desde el lote 2 D, el script del corte—, como
+  admiten la escritura `C`.
 - **Qué pasa después**: lo de cualquier prueba. Si el dueño contrata, `T2` convierte; si vence sin
   título, `T3` la vence y `PB2` baja la ficha, con el hecho 5 en el reloj.
-- **Una sola ficha a la vista por dueño y vertical** (`L1-a`, hecho del owner): hoy no hay ningún
-  dueño con más de una; **no se diseña** qué pasa si aparece, se decide en ese momento.
+- **Una sola ficha ~~a la vista~~ por ~~dueño y vertical~~ cuenta** (`L1-a`, hecho del owner; desde la
+  FASE 5, premisa: `DEC-MIG-007`, punto 3): ~~hoy no hay ningún
+  dueño con más de una; **no se diseña** qué pasa si aparece, se decide en ese momento~~ si una
+  cuenta que el owner suma a la lista trae más de una, vuelve al owner (lote A; S-08).
 
-**Dos condiciones nuevas del corte, que la prueba trae** (revisión del owner, 2026-09-28, C12; `16-fase-7…` §4.2,
-pasos 0 y 2):
+**~~Dos condiciones nuevas~~ Una condición nueva del corte, que la prueba trae** (revisión del owner, 2026-09-28, C12; `16-fase-7…` §4.2,
+pasos 0 y 2; la segunda sale: FASE 5, simplificación del corte, S-36):
 
 1. **La lista de proveedores del seudónimo tiene que estar cerrada y medida antes del corte**
    (`V/02` §2.2, punto 1): el primer seudónimo que el sistema nuevo calcula ya no es el del primer
-   cliente nuevo, es el de la cartera entera el día del corte, y el seudónimo no se recalcula.
-2. **El recuento de cuentas de la cartera que comparten seudónimo en la misma vertical**: el
+   cliente nuevo, es el de ~~la cartera entera~~ las cinco cuentas de la lista el día del corte, y
+   el seudónimo no se recalcula (FASE 5, simplificación del corte, S-35, que la mantiene: la usa
+   también la primera prueba de cualquier cliente nuevo).
+2. ~~**El recuento de cuentas de la cartera que comparten seudónimo en la misma vertical**: el
    `UNIQUE(seudónimo, vertical)` rechaza la segunda fila y la migración del paso 3 se cae. Tiene que
-   dar cero; si no, se decide a mano antes del corte.
+   dar cero; si no, se decide a mano antes del corte.~~ **Sale**: son cinco filas, que el script
+   escribe y se verifican a mano (FASE 5, simplificación del corte, S-36; lote 2 D).
 
-**Y el riesgo que la escritura trae, declarado**: el reloj de la prueba corre desde el corte aunque
+~~**Y el riesgo que la escritura trae, declarado**: el reloj de la prueba corre desde el corte aunque
 el owner tarde en avisarle a la persona. Lo acota que el owner avise en persona, y el aviso de la
-campaña previa (§10.7).
+campaña previa (§10.7).~~ **El owner elige cuándo avisa** (FASE 5, simplificación del corte, S-52;
+`DEC-MIG-007`, punto 4). La campaña previa al vencimiento de la prueba (§10.7) sigue: es el aviso
+de toda prueba, no uno del corte (S-55).
 
 #### El rastro de que ya fue cliente: la fila de `trial` consumida que escribe el corte
 
@@ -506,24 +599,30 @@ fila 21).~~
 >    las filas `T` no la ve. **Causa**: es una escritura única del corte, no algo que pase en la vida
 >    de un trial. La máquina la lee igual que la de `T6`/`T7`: no sale nada de `TRIAL_CONVERTED`.~~
 
-### 2.5 La condición de caducidad, que es lo único que hay que vigilar
+### 2.5 ~~La condición de caducidad, que es lo único que hay que vigilar~~ Sin condición de caducidad
 
-> ⚠️ `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece.
+**Sale entera** (FASE 5, simplificación del corte, S-56): la migración carga una lista cerrada de
+cinco cuentas que fija el owner, así que el tamaño de la cartera ya no decide nada (`DEC-MIG-007`,
+punto 3; lote A). Lo que decía:
+
+> ~~⚠️ `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece.
 > ~~Con ocho filas *«no migrar»* son tres llamadas~~ Con la población de `B/21` §1.3 —hoy, los
 > dueños de doce alojamientos y tres suscriptores— (FASE 9 vuelta 1, R7); **el umbral medido está
 > en unas veinte**, y arriba de eso deja de ser viable. **El umbral se mide en personas a llamar,
 > no en suscripciones**: el corte le hace efecto a toda ficha preexistente (§2.4), no sólo a quien
-> tenía una suscripción viva.
+> tenía una suscripción viva.~~
 
-El aviso que el owner ya se comprometió a dar —*«si veo que empiezan a entrar registros nuevos, te
-aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir esta decisión.**
+~~El aviso que el owner ya se comprometió a dar —*«si veo que empiezan a entrar registros nuevos, te
+aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir esta decisión.**~~
 
 ---
 
 ## 4. Lo que NO se migra, y no es una omisión
 
-- **Gastronomía, experiencia y partner**: cero filas al 2026-09-15; se re-cuentan el día del corte
-  con la consulta de `B/21` §1.3 (FASE 9 vuelta 1, R7). El rediseño de esas tres verticales no
+- **Gastronomía, experiencia y partner**: cero filas al 2026-09-15; ~~se re-cuentan el día del corte
+  con la consulta de `B/21` §1.3 (FASE 9 vuelta 1, R7)~~ no se re-cuentan: una ficha de
+  Gastronomía o de Experiencia que no sea de las cinco se borra en el corte (FASE 5, simplificación
+  del corte, S-07; lote 1 J). El rediseño de esas tres verticales no
   toca un solo dato existente.
 - **La respuesta de la página de un partner que ya no tiene la presencia sí cambia, aunque no se
   migre ningún dato** (FASE 8 completa, `F-8CA1-014`, owner 2026-09-25). El código de hoy
@@ -595,20 +694,24 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
 
 ## Lo que este capítulo NO cierra
 
-- **Cómo se le avisa ~~a las tres personas~~ a la población de `B/21` §1.3 (FASE 9 vuelta 1, R7) y cuándo se cancelan sus suscripciones** es FASE 7: acá
+- **Cómo se le avisa ~~a las tres personas~~ ~~a la población de `B/21` §1.3 (FASE 9 vuelta 1, R7)~~
+  a las cinco cuentas de la lista** lo decide el owner, que les avisa por privado y sin nada
+  programado (`DEC-MIG-007`, punto 4; FASE 5, simplificación del corte, S-51 y S-53); **cuándo se
+  cancelan sus suscripciones** es FASE 7: acá
   está que no se migra, no el procedimiento de la conversación.
 - **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
   (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
-- **La agenda de llamados del corte no tiene tratamiento especial frente al día 180** (§2.4;
+- ~~**La agenda de llamados del corte no tiene tratamiento especial frente al día 180** (§2.4;
   declarado por `DEC-METH-015`, FASE 9 completa, `5c`, `OW-2` del informe `05`, `F-8CA3-002`): no
   hay fecha tope ni vigilancia propia. Un dueño que no contrata ni vuelve a publicar en 180 días
   desde el corte pierde su ficha por `PB9` (`PURGED`, final), con los tres avisos de retención
   llegándole igual por correo. **Causa**: decisión del owner, *«tenemos 180 días para que lo
-  hagan, es un montón de tiempo»*. Se declara para que no se vuelva a reportar.
+  hagan, es un montón de tiempo»*. Se declara para que no se vuelva a reportar.~~ **Sale**: no hay
+  agenda de llamados (FASE 5, simplificación del corte, S-77).
 - **El trial de los clientes actuales no se preserva** (§2.3 y §2.4; declarado por
   `DEC-METH-015`, FASE 9 completa, `2g`): quien tenía ficha o suscripción en el sistema viejo
-  estrena el trial en el sistema nuevo, aunque ya lo hubiera usado. **Y desde C12 quien tenía una
-  ficha a la vista lo estrena el día del corte**, sin tener que publicar (revisión del owner, 2026-09-28, C12). **Causa**: decisión del owner,
+  estrena el trial en el sistema nuevo, aunque ya lo hubiera usado. **Y desde C12 ~~quien tenía una
+  ficha a la vista~~ cada una de las cinco cuentas de la lista (FASE 5, S-12) lo estrena el día del corte**, sin tener que publicar (revisión del owner, 2026-09-28, C12). **Causa**: decisión del owner,
   que los trata como clientes nuevos y sólo les respeta la ficha.
 - **Sale** (revisión del owner, 2026-09-28, C12, `L1-b`): el dueño del corte con una ficha a la vista amanece en
   prueba y convierte por `T2` al contratar, y las fichas bajadas por el viejo nacen en borrador,
@@ -621,22 +724,27 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   `T8`, y sólo para ella** (`V/03` §2; owner 2026-09-27, FASE 9 vuelta 2, `R15`). Ya no conserva
   un trial para el día que cancele. ~~**hasta su próximo `PB1` cubierto: si después publica otra ficha cubierto por un título que convierte —su suscripción ya cobró—, `T6` consume la fila sin darle el trial (`V/03` §2), que es la misma regla que para cualquier cubierto que publica** (FASE 9 vuelta 1, §4 punto 4 de `21-verificado-G1`).~~ **Causa**: el guion y el botón lo mandan a
   publicar; cobrarle al que elige pagar no es un defecto. No da acceso indebido ni borra nada.
-- **Varias fichas a la vista de un mismo dueño y vertical el día del corte: no se diseña**
+- ~~**Varias fichas a la vista de un mismo dueño y vertical el día del corte: no se diseña**
   (revisión del owner, 2026-09-28, C12, `L1-a`, hecho del owner: hoy no hay ninguno; si aparece, se decide en ese
   momento). **Detector**: el recuento del paso 0 del corte, que no es gate y vuelve al owner si da
   más de cero (revisión del owner, casos vecinos, 2026-09-29, caso 6). Lo que decía este ítem: **Durante el trial vuelve una sola ficha** (§2.4; declarado por `DEC-METH-015`, FASE 9 vuelta 1,
   R1). El cupo del trial es una (invariante 6); las demás esperan a que contrate. **Causa**: `2g`
-  le da el trial de un cliente nuevo, no uno más grande. El aviso lo dice.
-- **En una vertical sin trial, el dueño del corte no tiene trial que estrenar** (§2.4; declarado
+  le da el trial de un cliente nuevo, no uno más grande. El aviso lo dice.~~ **Sale**: una ficha por
+  cuenta es premisa (`DEC-MIG-007`, punto 3), y sale el recuento del paso 0 (FASE 5, simplificación
+  del corte, S-08).
+- ~~**En una vertical sin trial, el dueño del corte no tiene trial que estrenar** (§2.4; declarado
   por `DEC-METH-015`, FASE 9 vuelta 1, R1). Hoy son cero fichas (§4, re-contadas por `B/21` §1.3).
   *(Desde C12 la prueba del corte se escribe sólo donde la vertical tiene días > 0; hoy es
   Alojamiento, y el panel no deja pasarla a cero: revisión del owner, 2026-09-28, N7.)*
   **Causa**: la configuración de la vertical, no el corte. **Sin prueba automática**: hoy no tiene
   población; el owner lo prueba a mano en `staging`, con fichas de prueba en una vertical con días
-  en cero (revisión del owner, casos vecinos, 2026-09-29, caso 17).
-- **Una ficha vieja borrada por un admin, y no por su dueño, pierde su contenido en el corte**
+  en cero (revisión del owner, casos vecinos, 2026-09-29, caso 17).~~ **Sale**: las cinco son de
+  Alojamiento (`DEC-MIG-001`, `G1-3`; FASE 5, simplificación del corte, S-11).
+- ~~**Una ficha vieja borrada por un admin, y no por su dueño, pierde su contenido en el corte**
   (§2.4, `L1`; declarado por `DEC-METH-015`, owner 2026-09-26, `G1-2`). Toda `L1` nace `PURGED`
   con el contenido borrado, la haya borrado quien la haya borrado: la regla no lee
   `deleted_by_id`, que además queda nulo si esa cuenta ya no existe (`ON DELETE SET NULL`).
   **Causa**: el owner eligió honrar el borrado con el efecto de `PB12` sobre toda la clase, sin
-  una rama por autor. No mueve plata ni da acceso: borra lo que ya no estaba a la vista.
+  una rama por autor. No mueve plata ni da acceso: borra lo que ya no estaba a la vista.~~
+  **Sale**: la J del lote 1 borra todas las fichas que no son de las cinco, sin distinguir quién
+  las borró (FASE 5, simplificación del corte, S-05).
