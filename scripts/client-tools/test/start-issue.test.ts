@@ -183,6 +183,10 @@ describe('parseStartIssueArgs', () => {
         );
         expect(parseStartIssueArgs({ argv: ['273', '--agent', 'codex'] }).agent).toBe('codex');
         expect(parseStartIssueArgs({ argv: ['273', '--codex'] }).agent).toBe('codex');
+        expect(parseStartIssueArgs({ argv: ['273', '--agent', 'gentle-shell'] }).agent).toBe(
+            'gentle-shell'
+        );
+        expect(parseStartIssueArgs({ argv: ['273', '--gentle-shell'] }).agent).toBe('gentle-shell');
     });
 
     it('should default dryRun to false so a normal run actually creates', () => {

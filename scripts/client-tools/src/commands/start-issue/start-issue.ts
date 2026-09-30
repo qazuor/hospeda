@@ -27,7 +27,7 @@ export interface StartIssueOptions {
     /** Whether to launch the selected agent once the worktree exists. */
     readonly launchClaude: boolean;
     /** Agent to launch after the worktree exists. */
-    readonly agent: 'claude' | 'opencode' | 'codex' | 'none';
+    readonly agent: 'claude' | 'opencode' | 'codex' | 'gentle-shell' | 'none';
     /** Whether to hand the selected agent `/hops-start-issue` instead of an empty prompt. */
     readonly withStartIssue: boolean;
     /** Whether to stop after reporting what would be created. */
@@ -57,8 +57,8 @@ export function parseStartIssueArgs({
     const baseBranch =
         argv.find((arg) => arg.startsWith('--base='))?.slice(7) ??
         (baseIndex >= 0 ? argv[baseIndex + 1] : null);
-    const convenienceAgents = (['claude', 'opencode', 'codex'] as const).filter((name) =>
-        argv.includes(`--${name}`)
+    const convenienceAgents = (['claude', 'opencode', 'codex', 'gentle-shell'] as const).filter(
+        (name) => argv.includes(`--${name}`)
     );
     const selectedAgents = explicitAgent
         ? [explicitAgent, ...convenienceAgents]
@@ -66,10 +66,13 @@ export function parseStartIssueArgs({
     const agentValue = selectedAgents[0];
     const agentError =
         selectedAgents.length > 1
-            ? 'Elegí un solo agente: --agent <nombre> o un único alias --claude/--opencode/--codex.'
+            ? 'Elegí un solo agente: --agent <nombre> o un único alias --claude/--opencode/--codex/--gentle-shell.'
             : null;
     const agent =
-        agentValue === 'opencode' || agentValue === 'claude' || agentValue === 'codex'
+        agentValue === 'opencode' ||
+        agentValue === 'claude' ||
+        agentValue === 'codex' ||
+        agentValue === 'gentle-shell'
             ? agentValue
             : 'none';
     return {
@@ -97,7 +100,7 @@ ${pc.bold('hops start-issue')} — arrancar a laburar un issue de Linear
 
 ${pc.bold('Uso')}
 
-  hops start-issue <issue> [tipo] [--base <branch>] [--agent claude|opencode|codex] [--claude|--opencode|--codex] [--bare]
+  hops start-issue <issue> [tipo] [--base <branch>] [--agent claude|opencode|codex|gentle-shell] [--claude|--opencode|--codex|--gentle-shell] [--bare]
 
   ${pc.bold('<issue>')}       273, hos-273, HOS-273 o #273 — todos valen.
   ${pc.bold('[tipo]')}        ${BRANCH_TYPES.join(' | ')}. Si no lo pasás sale de los labels
@@ -105,10 +108,10 @@ ${pc.bold('Uso')}
   ${pc.bold('--bare')}        Abre el agente elegido sin prompt inicial. Por default le pasa
                 «/hops-start-issue HOS-N», que flipea el issue a In Progress en
                 Linear y te resume los criterios de aceptación.
-  ${pc.bold('--agent')}       Agente a abrir: claude, opencode o codex. Si falta, no abre ninguno.
+  ${pc.bold('--agent')}       Agente a abrir: claude, opencode, codex o gentle-shell. Si falta, no abre ninguno.
   ${pc.bold('--base')}        Base de la branch. Por default usa la configurada en el adapter (develop);
                 usá «--base staging» para un trabajo urgente directo a staging.
-  ${pc.bold('--claude/--opencode/--codex')}  Alias directos de --agent; no combines más de uno.
+  ${pc.bold('--claude/--opencode/--codex/--gentle-shell')}  Alias directos de --agent; no combines más de uno.
   ${pc.bold('--dry-run')}     Te dice qué branch y qué worktree armaría, y no toca nada.
   ${pc.bold('--help')}        Esta página.
 
@@ -165,10 +168,12 @@ function launchAgentIn({
 }: {
     readonly cwd: string;
     readonly prompt: string | null;
-    readonly agent: 'claude' | 'opencode' | 'codex';
+    readonly agent: 'claude' | 'opencode' | 'codex' | 'gentle-shell';
 }): Promise<number> {
     return new Promise((resolve) => {
-        const args = prompt === null ? [] : [prompt];
+        // Gentle Shell (Pi-compatible) accepts the initial prompt through -p;
+        // the other harnesses accept it as their first positional argument.
+        const args = prompt === null ? [] : agent === 'gentle-shell' ? ['-p', prompt] : [prompt];
         const child = spawn(agent, args, { cwd, stdio: 'inherit' });
         child.on('error', () => {
             process.stderr.write(
