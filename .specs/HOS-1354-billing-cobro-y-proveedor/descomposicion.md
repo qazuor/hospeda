@@ -447,6 +447,11 @@ queda tachada fila por fila: de sus ocho, **cuatro cerraron** y **dos entraron**
 | `RF-3` | **B6** | el caso viejo del reembolso. ~~Ya está en la unidad bloqueada~~ **Ya no bloquea** (`DEC-RF-007`): pasado el plazo del proveedor la operación no se ofrece, y la reparación manual se asienta por `RF4` (`DEC-RF-008`) |
 | ~~`EX-1`~~ | ~~**B3**~~ | ~~nada: la ventana de autorización es nuestra justamente porque esta fila está abierta —y por eso `DEC-SUB-016` la pudo partir en **dos** plazos sin esperar respuesta del proveedor—, y cancelar al vencer **falla hacia el lado seguro sin saber la respuesta**~~ **`PARTIALLY_SUPPORTED` desde el 2026-09-23**; lo que la fila decía sobre la ventana sigue valiendo |
 
+**Las tres filas nuevas se miden en sandbox antes de construir la unidad que las lee** (owner
+2026-09-30, al cerrar la FASE 9 vuelta 3): `EX-57` y `EX-59` antes de `B11`, y `EX-58` antes de
+`B6`. Ninguna bloquea: cada una tiene escritas sus dos ramas. Pero construir el detector sin saber
+qué rama vale es arriesgarse a reescribir la comprobación, y las tres son sondas baratas.
+
 ~~**Ninguna de las ocho bloquea una unidad que no estuviera ya bloqueada.** El §61 prohíbe empezar
 una capability crítica con su fila abierta, y la única que lo está es B6.~~ **B6 dejó de estar
 bloqueada por `RF-3`** (`DEC-RF-007`), y `PA-6` y `RC-8` están declaradas con su salvedad en las

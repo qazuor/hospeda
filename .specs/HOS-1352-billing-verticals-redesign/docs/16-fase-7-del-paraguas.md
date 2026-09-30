@@ -527,6 +527,12 @@ previa** y el daño de cada una es de clase crítica. No se agrega ninguna regla
    del viejo. Con menos daño, lo mismo pasa con una cuenta o una ficha que alguien creó en esos
    minutos, que desaparece sin aviso.
 
+**Estas cuatro se releen antes del ensayo del corte en `staging`** (owner 2026-09-30, al cerrar la
+FASE 9 vuelta 3): quien escriba la herramienta del corte las vuelve a leer con el procedimiento ya
+escrito, y si alguna se puede cerrar con una regla que no agregue mecanismo, se le trae al owner
+antes de ensayar. Declararlas no las vuelve imposibles: el ensayo recorre la misma secuencia, y es
+la única red que las ve antes del día del corte.
+
 **Y el titular que sólo conoce el proveedor, si ninguna lectura trae su pagador** (FASE 9 vuelta
 3, owner 2026-09-30, lote G; `F-8V3B3-001`; declarado por `DEC-METH-015`). **Causa**: el `GET` del
 preapproval devuelve `payer_email` vacío (`EX-19`), y que otra lectura lo traiga se mide en sandbox
