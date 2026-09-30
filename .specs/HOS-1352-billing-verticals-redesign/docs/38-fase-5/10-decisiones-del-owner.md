@@ -100,3 +100,20 @@ lo cubra la propiedad del paso 4, como hoy (una línea). El owner eligió crear 
 igual para todas las cuentas, al precio de un rol, sus permisos, su migración y la asignación al
 aprobar. El choque que la recomendación señalaba (quitar el rol al perder la presencia) se resuelve
 no quitándolo, como manda `V/17`.
+
+## Lote de simplificación del corte (2026-09-30)
+
+Sobre [`20-simplificacion-del-corte.md`](./20-simplificacion-del-corte.md): 78 piezas (38 RETIRAR,
+18 SIMPLIFICAR, 22 MANTENER).
+
+| letra | elegida | contra la recomendación | qué decide |
+|---|---|---|---|
+| A | 1 | no | las cuentas que se conservan son **una lista cerrada que fija el owner**, cada una con su única ficha; si entra alguien que quiere conservar, lo suma; si trae más de una ficha, vuelve al owner. **La lista se fija en el momento en que se esté listo para el corte** (aclaración del owner), no antes |
+| B | 1 | no | una sola regla bloquea toda escritura en el sitio viejo y en el nuevo, desde antes de cancelar nada hasta abrir el sistema nuevo; sólo queda abierta la entrada de avisos de Mercado Pago. Salen la lista de rutas, la espera de 30 minutos y los recuentos repetidos |
+| C | 1 | no | se retira el rastro de los débitos viejos (lápidas, regla del día del corte, detector y su segunda corrida, mediciones del corte, pasada del correo, vencimiento de links, Worker que cierra la entrada): un cobro tardío de un débito viejo se trata como cualquier débito desconocido, se anota, se cancela y le aparece al owner marcado para decidir la devolución |
+| D | 1 | no | abortar el corte es restaurar la base y volver a la imagen vieja, sin reabrir la venta; las cinco cuentas esperan el reintento y el owner les avisa. Sale la prueba en producción del paso 0 |
+| E | 1 | no | OK a las 32 consecuencias directas de `DEC-MIG-007` y la J, y a los cambios del log del §11: `DEC-MIG-004` SUPERSEDED por `DEC-MIG-007`; se precisan `DEC-MIG-002`, `DEC-MIG-003`, `DEC-MIG-005`, `DEC-MIG-006`, `DEC-CONC-002` y `DEC-ARCH-014` |
+
+Con esto quedan contestados todos los lotes de la FASE 5. Lo que sigue es la **aplicación**: llevar
+las decisiones de este archivo al diseño (núcleo, contrato, `16-`, las dos épicas), al log, a la
+matriz y a las descomposiciones (una unidad nueva, la del outbox: 24).
