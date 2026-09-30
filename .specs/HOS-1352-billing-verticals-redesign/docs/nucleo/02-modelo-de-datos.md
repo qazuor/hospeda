@@ -89,7 +89,13 @@ la base.** El §1.2 ya lo decía; lo que faltaba era cómo llegan los valores y 
    hospeda2 el 2026-09-28) **se borra entero**, con lo que lo lee sólo para eso; la lista está en
    `B/21` §4.
 2. **El catálogo de producción nace el día del corte con una migración de datos única** (`L1-e`):
-   corre una vez, en el paso 3a del corte (`16-fase-7…` §4.2), y **nunca más es fuente de nada**.
+   corre una vez, ~~en el paso 3a del corte~~ **dentro de la migración estructural del paso 3 del
+   corte, antes que la escritura `C` y la prueba del corte, que la leen, como la versión 1 de los
+   plazos (§1.5); el paso 3a sólo la verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C: la prueba
+   del corte deriva su plan de trial, sus versiones y su fin del catálogo, que antes nacía después)
+   (`16-fase-7…` §4.2), y **nunca más es fuente de nada**. **Si falla a la mitad, falla la migración
+   del paso 3 y el corte entra en la rama de aborto**, que restaura el backup del 2b: no queda un
+   catálogo a medias ni una prueba sin plan.
    Es historia y no configuración: el paso 6 del mismo corte la reemplaza con la foto de la base.
 3. **Después, los valores sólo cambian por cinco acciones administrativas** (`L1-f`;
    `NUCLEO/08` §3, de la 18 a la 22): **publicar una versión de plan, fijar el precio de un ciclo,
@@ -116,7 +122,9 @@ regalar una capacidad paga a toda la plataforma sin que ningún guard lo viera.
 | un plazo que contradice a otro | `G-R5-B` | **validación de *«cambiar un plazo»*** (§1.5) |
 
 **Las mismas validaciones corren en el paso 3a del corte sobre la base de producción**, después de
-la migración única del catálogo, y si no dan, el corte no sigue (`16-fase-7…` §4.2). ~~**Qué pasa con
+la migración única del catálogo **(que desde el lote C corre dentro de la migración estructural del
+paso 3: FASE 9 vuelta 3, owner 2026-09-30)**, y si no dan, el corte no sigue (`16-fase-7…` §4.2).
+~~**Qué pasa con
 los datos de planes que usan desarrollo y las pruebas no está decidido**
 (`30-revision-del-owner/14-` §5).~~ **Los datos de planes que usan desarrollo y las pruebas son
 datos de demostración, fuera del dual-write del seed** (revisión del owner, casos vecinos, 2026-09-29, caso 42): no
@@ -158,10 +166,23 @@ al log en `30-revision-del-owner/19-` §4).
 | 13 | la renovación por venir | billing | 5 y 1 días antes | `NUCLEO/07` §6 | la suscripción, en cada ciclo |
 | 14 | el aviso de que una promo termina | billing | 7 días antes | `NUCLEO/07` §6 | el canje |
 | 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h | `B/12` §5.4 | la suscripción, en cada ciclo |
+| 16 ✚ | la **ventana de relectura de la cancelación por rechazo** | billing | sin valor escrito (a proponer al owner: §1.5, abajo) | cuánto sigue el barrido releyendo una suscripción que Mercado Pago canceló ante un rechazo antes de darla por terminada, porque ese `cancelled` se puede deshacer (`EX-45`; `B/09` §3, criterio de exención, y `S16`) (FASE 9 vuelta 3, owner 2026-09-30, lote K) | la suscripción, al leerse `cancelled` por primera vez |
+| 17 ✚ | el **escalamiento de una marca abierta** | billing | sin valor escrito (a proponer al owner) | cuándo escala una marca que sigue abierta (`B/09` §3, *«si sigue abierta pasado su plazo, escala»*) (FASE 9 vuelta 3, F-8V3B3-003) | la marca, al abrirse (`puesta_en`) |
+| 18 ✚ | la **ventana de las comprobaciones de pagos acreditados y de órdenes pagadas** | billing | sin valor escrito (a proponer al owner) | hasta cuánto después el barrido relee un pago acreditado, y una orden de una instancia `ABANDONED`: es una sola ventana, porque la de órdenes remite a la de pagos (`B/09` §3), y de ella cuelga el único productor del motivo 23 (FASE 9 vuelta 3, F-8V3B3-003) | el pago, o la instancia, que la comprobación relee |
 
-**Los cinco sin valor escrito, el 3, el 4, el 7, el 8 y el 9, los fija el owner antes del ensayo del
+**Son dieciocho** (FASE 9 vuelta 3: el 16 por el lote K, owner 2026-09-30; el 17 y el 18 por
+`F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla ni unidad; recontados sobre la tabla).
+**Los ~~cinco~~ ocho sin valor escrito, el 3, el 4, el 7, el 8 ~~y el 9~~, el 9, el 16, el 17 y el 18, los fija el owner antes del ensayo del
 corte en `staging`, y ~~la migración única del catálogo~~ la migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43; la migración, verificación corta, 2026-09-29, lote N-H): ~~la primera versión de los plazos de cada mitad nace en el paso 3a
-(`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los quince valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica**, y un plazo vacío dejaría un reloj sin fecha.
+(`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los ~~quince~~ dieciocho valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica**, y un plazo vacío dejaría un reloj sin fecha.
+
+**Los valores que se le proponen al owner para los tres nuevos** (FASE 9 vuelta 3; pregunta
+abierta, `37-fase-8-vuelta-3/13-aplicacion-nucleo-contrato-y-corte.md` §6): para el 16, **7 días**,
+que cubre con margen las *«horas después»* que registra el código actual en los seis casos de
+`EX-45`; para el 17, **7 días**, una revisión por semana de lo que nadie resolvió; para el 18, **180
+días**, un techo prudente mientras la matriz no mida cuánto después de acreditado llega un
+contracargo (`RF-3` sigue `UNKNOWN`), sabiendo que su costo crece con los pagos (`B/09` §3). Ninguno
+está medido. **Qué hace concretamente *«escalar»*** no es de esta lista: lo escribe `B/09` §3.
 
 **Lo que no está en la lista, y por qué.** **(a) Los plazos que son del catálogo**: los días de
 prueba, la gracia y los topes de pausa de un plan cuelgan de su versión y cambian publicando una

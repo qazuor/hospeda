@@ -1115,7 +1115,7 @@ en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que 
 (§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.
 
-**`puedeCobrarle` es la otra pregunta de la dirección de ida, y entra por la baja de una cuenta** (verificación corta, 2026-09-29, lotes M-F y M-G). Contesta `sí` si a la cuenta, en cualquier vertical, le queda **una autorización que todavía puede cobrar**: una suscripción, principal o de complemento, en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, que son las filas vivas (`NUCLEO/01` §2.4) **sin `CANCEL_SCHEDULED`**, porque ésa ya está dada de baja en el proveedor y termina sola por `S12` en su fecha de fin; **o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta** sobre una suscripción suya (`B/02` §2.5), porque su cancelación en el proveedor no se confirmó y el preapproval todavía puede cobrar (verificación corta, 2026-09-29, lote N-C); y `no` en cualquier otro caso. **Contesta sobre la cuenta entera y sin estado**: un sí o no, con la forma de `fichaPurgada`, así que el estado exacto de la suscripción sigue sin cruzar (§4). **Su único lector es la acción 24, *«dar de baja una cuenta a pedido de su dueño»*** (`NUCLEO/08` §3), que es de verticales (`V8`) y se rechaza con `sí`: sin esta pregunta, la precondición de la 24 se condicionaba sobre una fila viva, que ninguna regla de verticales puede evaluar (`NUCLEO/01` §2.4, regla 1). **La construye `B4`** en la real, y **`V4`** en la de arranque, que contesta `no`, porque sin billing no hay suscripción (§5.1); la consume `V8`. **Entra al inventario de consumidores de *«fila viva»*** (`NUCLEO/01` §2.4, fila 27), del lado de billing, que es donde se evalúa, y lo vigila `G-R1-E` (`B/20` §2).
+**`puedeCobrarle` es la otra pregunta de la dirección de ida, y entra por la baja de una cuenta** (verificación corta, 2026-09-29, lotes M-F y M-G). Contesta `sí` si a la cuenta, en cualquier vertical, le queda **una autorización que todavía puede cobrar**: una suscripción, principal o de complemento, en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, que son las filas vivas (`NUCLEO/01` §2.4) ~~**sin `CANCEL_SCHEDULED`**, porque ésa ya está dada de baja en el proveedor y termina sola por `S12` en su fecha de fin~~ **menos `CANCEL_SCHEDULED`, que tiene su propia regla abajo; o una `CANCEL_SCHEDULED` o una fila terminal cuyo preapproval canceló una llamada nuestra que ninguna relectura vio todavía `cancelled`** (FASE 9 vuelta 3, owner 2026-09-30, lote D); **o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta** sobre una suscripción suya (`B/02` §2.5), porque su cancelación en el proveedor no se confirmó y el preapproval todavía puede cobrar (verificación corta, 2026-09-29, lote N-C); y `no` en cualquier otro caso. **Contesta sobre la cancelación confirmada por Mercado Pago, no sobre el estado de la fila** (FASE 9 vuelta 3, owner 2026-09-30, lote D): el estado de la fila dice que decidimos cancelar, y no que el proveedor lo aplicó. `S11` manda la cancelación en el acto, pero si el correo previo o la llamada fallan de forma transitoria el barrido la reintenta hasta 3 días con el preapproval `authorized`, y recién ahí abre la marca (`B/03` §3.2, *«el correo antes de cancelar»*; `B/09` §3, salvedades 1 y 4); lo mismo vale para una fila terminal a la que llevó una transición nuestra *«pase lo que pase con la llamada»*. **Una suscripción deja de contar cuando una relectura de su preapproval lo ve `cancelled`**, que es lo mismo con que el barrido la saca de esas salvedades. **Mientras no esté confirmada, contesta `sí` y la acción 24 espera**: hasta que el barrido la confirme o, pasados los 3 días, abra la marca, con la que sigue contestando `sí` hasta que una persona la resuelva. *(Qué dato de billing guarda que una relectura confirmó la cancelación lo escribe `B/09` §3: es el que el barrido ya necesita para saber qué fila sigue en las salvedades 1 y 4.)* **Contesta sobre la cuenta entera y sin estado**: un sí o no, con la forma de `fichaPurgada`, así que el estado exacto de la suscripción sigue sin cruzar (§4). **Su único lector es la acción 24, *«dar de baja una cuenta a pedido de su dueño»*** (`NUCLEO/08` §3), que es de verticales (`V8`) y se rechaza con `sí`: sin esta pregunta, la precondición de la 24 se condicionaba sobre una fila viva, que ninguna regla de verticales puede evaluar (`NUCLEO/01` §2.4, regla 1). **La construye `B4`** en la real, y **`V4`** en la de arranque, que contesta `no`, porque sin billing no hay suscripción (§5.1); la consume `V8`. **Entra al inventario de consumidores de *«fila viva»*** (`NUCLEO/01` §2.4, fila 27), del lado de billing, que es donde se evalúa, y lo vigila `G-R1-E` (`B/20` §2). **Y al de *«marca abierta»*** (`NUCLEO/01` §2.5, fila 12), por su mitad de la marca, que vigila `G-R1-F` (FASE 9 vuelta 3, F-8V3C1-004, F-8V3D1-002).
 
 ~~**`finDeServicio` salió de `situaciónDeVertical` y es ahora una entrada propia, en la otra
 dirección**: la fecha la calculaba billing con la fórmula de `B/10` §4.3, la leían la fuente de
@@ -1164,9 +1164,24 @@ versión—, nunca qué otorga. **`extenderTrial` es la única escritura de bill
 canje de una extensión de trial le pide a verticales que corra `T4`, y verticales contesta con el
 techo ya aplicado (`V/11` §3) y dentro del lock de la máquina de trial, así que `T3` y el canje no
 se pisan. Billing asienta el canje sólo con `ACEPTADA`; la clave de canje hace idempotente el
-reintento. Las construyen `V2` (`políticaDeAddon`: `addon_version` es de `V/02` §2.1), `V6`
+reintento. **La guarda verticales, que es quien ejecuta**: la escribe en la misma transacción de
+`T4` que aplica la extensión, y a un reintento con una clave ya aplicada contesta `ACEPTADA` sin
+volver a correr `T4` (FASE 9 vuelta 3, F-8V3C1-003). La columna es de `V/02` y la construye `V4`;
+el juego de la dirección inversa (§6.2) trae el caso que reintenta la misma clave.
+Las construyen `V2` (`políticaDeAddon`: `addon_version` es de `V/02` §2.1), `V6`
 (`ficha`: es de la ficha, como `fichaPurgada`) y `V4` (la operación, dueña de la máquina de
 trial); las consumen `B10` (`A1`) y `B9` (el canje).
+
+**Y publicar una versión de addon cruza por `políticaDeAddon`, sin entrada nueva** (FASE 9 vuelta
+3, F-8V3C1-007). Publicar es crear la `addon_version` (lo que otorga, de verticales, `V/02` §2.1) y
+re-apuntar `addon_product.version_id` (de billing). Es la acción 20 de `NUCLEO/08` §3, *«publicar
+una versión de complemento»*, y escribe en las dos épicas, así que entra en la segunda mitad de la
+regla de vigilancia (§4.2) como cualquier escritura. **Cada mitad escribe en la suya**: verticales
+crea la versión, y billing re-apunta el producto con un acto propio que recibe el id de la versión
+y lo valida con `políticaDeAddon` (que sea versión de ese addon) antes de escribir. Nada escribe en
+la otra épica ni lee sus tablas: la única lectura es la pregunta ya declarada. La pantalla es una,
+compuesta en la app del panel, como la de plazos (`NUCLEO/02` §1.5). Una versión creada y no
+apuntada no la vende nadie, y ninguna instancia comprada cambia: queda anclada a la suya.
 
 > **Las superficies no pasan por acá** (owner 2026-09-26, `G4-2`). La pricing, Mi Suscripción y el
 > botón de suscribirse son una **capa de composición**: muestran lo que cada épica resolvió leyendo
@@ -1462,7 +1477,12 @@ módulo entero: la resolución del trial y la del título `BASE` son de vertical
 implementaciones** (§2.6, §5.2 *«no toca nada de lo construido»*), así que en producción corren
 siempre. **Es el cableado que contesta por billing**: el `no` a las cuatro fuentes de billing ~~y el
 `NINGUNA` de `finDeServicio`~~ (§5.1; revisión del owner, 2026-09-28, C8) **y el `no` de
-`retenciónDetenida`** (revisión del owner, 2026-09-28, C14). La implementación de arranque lo tiene en un módulo propio,
+`retenciónDetenida`** (revisión del owner, 2026-09-28, C14) **y el `no` de `puedeCobrarle`**
+(FASE 9 vuelta 3, F-8V3C1-002, F-8V3D1-001). **Son las seis respuestas de arranque que contestan
+por billing, las del §5.1: las cuatro fuentes, `retenciónDetenida` y `puedeCobrarle`**, y la fila
+de `G13` en `V/20` §2 cita este § en vez de repetir la lista. **`G13` lleva un
+caso por cada una**, que falla si un build destinado a producción la importa.
+La implementación de arranque lo tiene en un módulo propio,
 separado de la resolución del trial y de `BASE`, y **`G13` falla si un build destinado a
 producción importa ese módulo**. Con el predicado sobre el módulo entero, `G13` se ponía rojo en
 el primer build de producción, y la excepción que alguien le agregara para destrabar dejaba pasar
@@ -1516,7 +1536,11 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
    único package que importan las dos mitades. **`G14` no cambia**: importar el contrato nunca fue
    cruzar (revisión del owner, casos vecinos, 2026-09-29, caso G-B). **La construye `B1`**, con el
    reloj adelantable (revisión del owner, casos vecinos, 2026-09-29, caso I-E). La implementación
-   real no vive acá: la inyecta la raíz de composición de `apps/api` (abajo; caso J-A).
+   real no vive acá: la inyecta la raíz de composición de `apps/api` (abajo; caso J-A). **Y `V4`
+   depende de `B1`**: es la primera unidad de verticales que lee la hora (el vencimiento del
+   trial), y `V9` (los plazos de retención) llega después de `V4`. Es la duodécima dependencia
+   entre épicas (FASE 9 vuelta 3, F-8V3C1-006): sin ella `V4` se podía mergear antes de que
+   existiera la interfaz y leer la hora del sistema, que el reloj adelantable no mueve.
 
 **Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
 billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque
@@ -1527,7 +1551,12 @@ adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). **La l
 lo inyecta la escribe `B1`**, la unidad que construye la interfaz y el adelantable (revisión del
 owner, casos vecinos, 2026-09-29, caso K-C). Y **`G14`** (`V/20` §2) falla si una mitad
 importa a la otra: es lo que vuelve ejecutable la parte de la regla de vigilancia que se ve en un
-import (§4.2). **Quién lo construye**: ~~`V1` crea el package y `G14`~~ **`U1` crea el package vacío, la estructura sin contenido, al terminar la limpieza del principio; `V1` construye `G14` y llena las cuatro primeras cosas, y `B1` la quinta, en paralelo** (verificación corta, 2026-09-29, lote P-C; `16-fase-7…` §4.6); cada entrada entra con la
-unidad que construye su implementación (§4.1, *«quién construye»*), y la épica de billing lo
-consume desde `B1` con el simulador de la dirección inversa (`V/descomposicion.md`,
-`B/descomposicion.md` §2).
+import (§4.2). **Quién lo construye**: ~~`V1` crea el package y `G14`~~ **`U1` crea el package vacío, la estructura sin contenido, al terminar la limpieza del principio; `V1` construye `G14` y llena las cuatro primeras cosas, y `B1` la quinta, en paralelo** (verificación corta, 2026-09-29, lote P-C; `16-fase-7…` §4.6); ~~cada entrada entra con la
+unidad que construye su implementación (§4.1, *«quién construye»*)~~ **`V1` escribe las
+interfaces, las validaciones y los simuladores de todas las entradas, las de ida y las de la
+dirección inversa, y cada unidad que construye una implementación (§4.1, *«quién construye»*) trae
+sólo esa implementación** (FASE 9 vuelta 3, F-8V3C1-005: las dos lecturas daban órdenes distintos,
+y con la segunda `B10` no tenía contra qué probar antes de `V6`), y la épica de billing lo
+consume ~~desde `B1`~~ **desde que `V1` lo escribe, cada unidad cuando lee la dirección inversa por
+primera vez** (FASE 9 vuelta 3, F-8V3C1-008: `B1` corre en paralelo con `V1`) con el simulador de
+la dirección inversa (`V/descomposicion.md`, `B/descomposicion.md` §2).

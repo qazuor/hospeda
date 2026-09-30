@@ -97,7 +97,7 @@ mandando dos. Lo que entra es **a qué día apunta el aviso**, no **cuándo se l
 entera y no tiene lista: **todo hito de schedule cuelga de una fecha, y toda fecha de la que
 cuelga un hito se puede mover**. El trial se extiende por `T4` (cap. 03), la renovación llega una
 vez por ciclo, y el reloj de retención se reinicia por cualquiera de los ~~**cuatro hechos**~~
-~~**cinco hechos**~~ **seis hechos** del §1.2 del cap. 01 (el quinto, FASE 8 completa, `F-8CA2-001`, owner 2026-09-25; el sexto, FASE 9 completa, decisión 5b). Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
+~~**cinco hechos**~~ ~~**seis hechos**~~ **cinco hechos** del §1.2 del cap. 01 (el quinto, FASE 8 completa, `F-8CA2-001`, owner 2026-09-25; el sexto, FASE 9 completa, decisión 5b; el 4 salió con la revisión del owner, 2026-09-28, C8, y quedan el 1, el 2, el 3, el 5 y el 6: FASE 9 vuelta 3, F-8V3A2-007). Una ocurrencia sin fecha es única sólo mientras su hito ocurra **una vez en la
 vida del sujeto**, y ningún hito del catálogo del §6 cumple eso.
 
 > ⚠️ **Escrito como excepción por sujeto, esto ya falló una vez, y falló en silencio.** La versión
