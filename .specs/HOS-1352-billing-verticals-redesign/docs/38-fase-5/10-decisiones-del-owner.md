@@ -44,3 +44,19 @@ migraciones; `helpers/billingCleanupGuards.ts` sólo lo usa `0068`, del mismo co
 `0092-hos-1084-backfill-accommodation-subscription-cache.ts` (`contentOnly`, `required`): una base
 nueva deja de correr ese relleno, **y no importa**, porque su tabla, `entity_subscriptions`, se retira
 con el cobro viejo (`B/docs/21-migracion.md:439`). C queda decidida sin volver al owner.
+
+## Lote 2 — `V1`, `B1` y la infraestructura común (2026-09-30)
+
+Planteado ya filtrado contra `DEC-MIG-007`: la pregunta de `R5-13` se reformuló porque el corte
+escribe sólo cinco cuentas.
+
+| letra | racimo | elegida | contra la recomendación | qué decide |
+|---|---|---|---|---|
+| A | `R5-10` | 1 | no | el outbox lo construye **una unidad nueva del paraguas**, después de `U1` y antes de cualquier unidad que encole, sobre el precedente del newsletter; incluye la supresión y absorbe la bitácora de correos renombrada en el lote 1 B |
+| B | `R5-11` | 1 | no | la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs los agrega la misma unidad del outbox; el reloj sigue en `B1` |
+| C | `R5-12` | 1 | no | las bases de desarrollo, de tests de integración y del e2e nocturno pasan a armarse con `db:migrate`, como `e2e-pr`: una sola fuente para las filas de referencia |
+| D | `R5-13` | 2 | no | el catálogo va en la migración como SQL generado por un script TypeScript y vigilado por un guard que lo regenera y compara; las pruebas y los seudónimos de las cinco cuentas los escribe después el script del corte, con la función de la aplicación, y se verifican a mano. Se resigna que sea todo una sola operación atómica: con cinco filas no importa |
+| E | `R5-14` | 1 | no | quedan para `B1` las variables de Mercado Pago salvo `STATEMENT_DESCRIPTOR`; `U1` borra las cuatro de rate limit del cobro y las diez que sólo usa el sistema viejo (`U1-021`) |
+
+Consecuencia de A: **las unidades pasan de 23 a 24**. La nueva va entre `U1` y las primeras que
+encolan (`V6`, `V9`, `B4`, `B12`), y su id y dependencias se fijan al aplicar.
