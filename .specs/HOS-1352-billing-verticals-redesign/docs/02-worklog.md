@@ -1400,3 +1400,11 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   ejecuta (U en `B/03` §10.1). Un cambio de nombre (la acción 26) no arrastra su confirmación ni sus
   espejos.
 - Pendiente: publicar (con OK del owner), después hablar con el owner cómo sigue (FASE 5).
+- **Salida 5** (mismo 2026-09-30, con OK del owner): mapa de cambios `377a7c568b..a348c52903` (70
+  commits) y seis tramos en paralelo sin artifacts compartidos. 29 artifacts republicados, la ficha
+  nueva de `U1` y el issue HOS-1400, 25 descripciones de Linear y comentario en HOS-1352. La
+  presentación tenía 36 contradicciones con el diseño vigente además de las tres del handoff; los
+  15 hilos quedaron resueltos. Los residuos sin tachar que vio la publicación se corrigieron en la
+  fuente (`37-…/24-`). **Aprendido**: `discontinu\w*` no encuentra «discontinúan»; una frase partida
+  en dos renglones no aparece con `rg` línea por línea; las cifras infladas por algo retirado no
+  nombran lo retirado, hay que buscarlas por número.

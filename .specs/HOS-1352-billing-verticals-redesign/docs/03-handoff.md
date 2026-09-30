@@ -51,10 +51,13 @@ status: CURRENT
 
 ### El próximo paso exacto
 
-1. **Publicar** (el owner dio el OK el 2026-09-30, en curso en esta sesión): la presentación (15
-   hilos; corregir «commerce», la cuota de la prueba que renueva y las tres cifras del caso 29),
-   las fichas de unidad (sumar `U1`), el tablero y Linear. Rango a publicar: `377a7c568b..HEAD`
-   (la última publicación, la salida 4 de la verificación de la vuelta 2, fue en `377a7c568b`).
+1. ~~**Publicar**~~ **Hecho el 2026-09-30** (salida 5, con OK del owner): 29 artifacts
+   republicados (tablero, paraguas, dos épicas, contrato, V1–V9, B1–B13 y la presentación, con sus
+   15 hilos respondidos y resueltos), una ficha nueva de `U1`
+   (<https://claude.ai/artifact/DAqq2XU5iLpm3p9Mb9wGNq>) y su issue **HOS-1400**, 25 descripciones de
+   Linear y el comentario de progreso en HOS-1352. Los residuos sin tachar que vio la publicación se
+   corrigieron en la fuente (`37-…/24-`). Quedan anotados sin tocar, en ese registro: `V/02:731`
+   (29/11 contra 40 tablas), la cláusula `N-G1-01` de `V/03` §9 y la fila 20 de `V/19` («día 180»).
 2. **Parar y hablar con el owner cómo se sigue** (lo pidió así). La recomendación es la **FASE 5**
    (gap analysis contra el código), sin otra vuelta 8↔9: `DEC-METH-016` fue una excepción de una
    sola vez y el tope de `DEC-METH-013` vuelve a valer. Antes de `U1`, la FASE 5 fija el nombre
