@@ -486,7 +486,7 @@ corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición
   sólo les respeta la ficha (`V/21` §2.4; owner 2026-09-25, FASE 9 completa, `2g`).~~
   ~~**Verticales escribe una prueba activa por cada `(dueño, vertical)` con una ficha `L8`**~~
   **Verticales escribe una prueba activa para cada cuenta de la lista cerrada del owner, y la
-  escribe el script del corte con la función de la aplicación** (FASE 5, simplificación del
+  escribe ~~el script del corte~~ la herramienta del corte de `V6`, que es del sistema nuevo, con la función de la aplicación** (FASE 5, lote de la aplicación, owner 2026-09-30, B; verificación, `VF5-01`) (FASE 5, simplificación del
   corte, S-01 y S-12; owner 2026-09-30, lote 2 D), que no
   es una transcripción sino la prueba de un cliente nuevo (revisión del owner, C12; `V/21` §2.4;
   FASE 9 vuelta 3, `F-8V3C2-009`).
@@ -573,7 +573,7 @@ corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición
   dentro de la migración estructural del paso 3, antes de la prueba del corte; el 3a sólo la
   verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C), **como SQL generado por un script
   TypeScript que un guard regenera y compara; las pruebas y los seudónimos de las cinco cuentas los
-  escribe después el script del corte** (FASE 5, owner 2026-09-30, lote 2 D). Es filtro 1
+  escribe después ~~el script del corte~~ la herramienta del corte de `V6`, que es del sistema nuevo** (FASE 5, lote de la aplicación, owner 2026-09-30, B; verificación, `VF5-01`) (FASE 5, owner 2026-09-30, lote 2 D). Es filtro 1
   de FASE 5: el sujeto muere, **y lo borra la limpieza del principio** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A).
 
 ---
