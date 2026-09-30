@@ -268,10 +268,11 @@ de verdad y no se hace nada. Las dos instancias paralelas siguen sin coordinarse
 `P1` sobre la fila usa la concurrencia optimista del cap. 03 §10.3, y la segunda que llegue
 encuentra el `SUCCEEDED`. **Y si el cobro aprobado lo ve primero el barrido y no un evento**, no lo
 escribe él: abre la marca `COBRO_SIN_REGISTRAR` (`B/02` §2.5, `B/09` §3) **sobre una fila que la
-lista del §3 da por receptora; sobre otra, el motivo que asigna la tabla de desempate del §3, y
-sobre la lápida del corte nada** (FASE 9 vuelta 1, §4 de `23-verificado-G3`) **si el cobro es del
+lista del §3 da por receptora; sobre otra, el motivo que asigna la tabla de desempate del §3~~, y
+sobre la lápida del corte nada~~** ~~(FASE 9 vuelta 1, §4 de `23-verificado-G3`)~~ ~~**si el cobro es del
 día del corte o anterior; si es posterior, lo que asigna esa tabla, `PAGO_TARDÍO_RECHAZADO`**
-(`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`) — **salvo cuando lo ve la
+(`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`)~~ (la lápida del corte y su ventana
+salieron: FASE 5, simplificación del corte, S-40, S-41 y S-70) — **salvo cuando lo ve la
 relectura de `S6` y corre `S5`, que lo asienta en el mismo acto**: lo lee por id y corre `P1`,
 creando la fila si no existe, y **el aviso que llegue después es justamente el duplicado que este
 cruce descarta**, porque encuentra la fila ya `SUCCEEDED` (`B/03` §3.2; FASE 8 completa, pendiente 6, owner 2026-09-25).
@@ -303,7 +304,7 @@ implementación traza la línea en otro lado.
 
 | # | condición | qué pasa si no se cumple |
 |---|---|---|
-| 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | ~~si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva~~ en **cualquier otro estado** el pago no la reactiva. Adónde va lo dice la tabla de desempate de abajo, que clasifica los nueve estados y la lápida de recepción. **Este § no corre sobre una fila que puede recibir el cobro ni sobre la lápida del corte** (lista de abajo) (FASE 9 vuelta 1, R4; owner 2026-09-26, `G3-1`) **con un cobro del día del corte o anterior; el posterior cae en la tercera fila de la tabla de desempate** (owner 2026-09-27, FASE 9 vuelta 2, `R2`) |
+| 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | ~~si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva~~ en **cualquier otro estado** el pago no la reactiva. Adónde va lo dice la tabla de desempate de abajo, que clasifica los nueve estados y la lápida de recepción. ~~**Este § no corre sobre una fila que puede recibir el cobro ni sobre la lápida del corte** (lista de abajo) (FASE 9 vuelta 1, R4; owner 2026-09-26, `G3-1`) **con un cobro del día del corte o anterior; el posterior cae en la tercera fila de la tabla de desempate** (owner 2026-09-27, FASE 9 vuelta 2, `R2`)~~ **Este § no corre sobre una fila que puede recibir el cobro** (lista de abajo) (FASE 9 vuelta 1, R4; la lápida del corte y su ventana salieron: FASE 5, simplificación del corte, S-40, S-41 y S-70) |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
 | 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una **sucesora viva** con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
@@ -344,7 +345,7 @@ que el pago llegó tarde.**
 |---|---|
 | ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, ~~`S25`, `S27`,~~ `S31`, **`S36`** o el espejo del `B/03` §10.1 (**`S36`**, FASE 9 vuelta 1, `N-G3V-04`: el criterio ya la cubría y la enumeración no); `ABANDONED` por `S3` ~~, `S28`~~ o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7` o `S11` ~~o `S26`~~— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`; `S25`, `S27`, `S28` y `S26` salieron con la revisión del owner, 2026-09-28, C8, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
-| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4); **y el cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es posterior al día del corte** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-a`) (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`) | **`PAGO_TARDÍO_RECHAZADO`** |
+| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4)~~; **y el cobro sobre la lápida del corte**~~ ~~con `date_created`~~ ~~**cuyo pago aprobado es posterior al día del corte** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-a`) (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`)~~ (la lápida del corte salió: un cobro tardío de un débito viejo entra por la de recepción, como cualquier desconocido; FASE 5, simplificación del corte, S-40 y S-70) | **`PAGO_TARDÍO_RECHAZADO`** |
 
 > **Lo que este § no desempata, porque la fila puede recibir el cobro** (FASE 9 vuelta 1, R4): una
 > `PENDING_AUTHORIZATION` —se relee el preapproval por id, corre `S2` y el cobro se asienta sobre
@@ -363,17 +364,21 @@ que el pago llegó tarde.**
 > `CANCEL_SCHEDULED` —Juan pagaba el período y no lo recibía— y la retención de la predecesora
 > —`S18` no encontraba el pago y nadie proponía devolverle el período doble—.
 >
-> **Y lo que no desempata por decisión: la lápida del corte** —`origen_de_lápida = CORTE`, `B/02`
+> ~~**Y lo que no desempata por decisión: la lápida del corte** —`origen_de_lápida = CORTE`, `B/02`
 > §2.2; `B/21` §2.5— **con un cobro del día del corte o anterior** (owner 2026-09-27, FASE 9 vuelta
 > 2, `R2`). Un cobro del
-> preapproval viejo que entra sobre ella ~~—también el que estaba en vuelo cuando el paso 1b lo
-> canceló—~~ **con ~~`date_created`~~ el pago aprobado (`V2-a`) de ese día o anterior —también el que estaba en vuelo cuando el
+> preapproval viejo que entra sobre ella~~ ~~—también el que estaba en vuelo cuando el paso 1b lo
+> canceló—~~ ~~**con**~~ ~~`date_created`~~ ~~**el pago aprobado (`V2-a`) de ese día o anterior —también el que estaba en vuelo cuando el
 > paso 1b lo canceló—** **se asienta sobre la lápida sin marca**: no reactiva nada, no extiende nada y no se le
 > propone devolver a nadie. Lo que eso deja sin cerrar está declarado en el «NO cierra» de `B/21`
 > (owner 2026-09-26, `G3-1`, contra la recomendación, coherente con `2d` y con `G1-4`). **Uno
 > posterior sí desempata**: cae en la tercera fila de la tabla, `PAGO_TARDÍO_RECHAZADO`, con la
 > propuesta de devolverlo, porque ya no es un cobro en vuelo sino un registro que siguió
-> reintentando o una cancelación que se deshizo (`B/21` §2.5; `R2`). Si la
+> reintentando o una cancelación que se deshizo (`B/21` §2.5; `R2`).~~
+> **Y un cobro de un preapproval del sistema viejo ya no tiene regla propia**: la lápida del corte
+> y la ventana del día del corte salieron, así que entra por la lápida de recepción, como cualquier
+> desconocido, y cae en la tercera fila de la tabla, `PAGO_TARDÍO_RECHAZADO`, con la propuesta de
+> devolverlo; la persona decide (FASE 5, simplificación del corte, S-40, S-41, S-46 y S-70). Si la
 > cancelación del 1b no se aplicó, lo que avisa no es el cobro sino la salvedad 4 del `B/09` §3,
 > que la sigue releyendo y marca a los 3 días.
 >
@@ -386,9 +391,10 @@ que el pago llegó tarde.**
 > vuelo en el instante de `S6` con su aviso perdido (`WH-5`) no abría nada y Juan quedaba
 > suspendido con el período pagado (FASE 9 vuelta 1, `N-G3V-01`; la `GRACE_PERIOD` que alcanza la
 > relectura de `S6` sigue asentándose por `S5` en el acto, `B/09` §3). Sobre cualquier otra abre
-> el motivo que esta tabla asigna, con el cobro colgado; sobre la lápida del corte ~~no compara~~
-> **compara sólo los registros ~~posteriores al día del corte~~ cuyo pago aprobado es posterior al
-> día del corte** (`B/09` §3; `R2`; la fecha del pago y no la del registro, `V2-a`).
+> el motivo que esta tabla asigna, con el cobro colgado~~; sobre la lápida del corte~~ ~~no compara~~
+> ~~**compara sólo los registros**~~ ~~posteriores al día del corte~~ ~~**cuyo pago aprobado es posterior al
+> día del corte** (`B/09` §3; `R2`; la fecha del pago y no la del registro, `V2-a`)~~ (la lápida del
+> corte salió: FASE 5, simplificación del corte, S-40 y S-70).
 > Escrita por criterio y no por productor, una fila
 > nueva —o una escrita a mano— cae en la fila del acto que la dejó sin poder cobrar y no en el
 > comodín.

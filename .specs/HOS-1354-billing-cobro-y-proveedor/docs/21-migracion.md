@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-27
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -60,17 +60,29 @@ cerró midiendo, que es la única forma en que se cierra una objeción de este t
 ### 1.3 Y caduca
 
 `S-METH-01`: esta medición vale mientras el hecho no cambie, y **este hecho cambia solo** — el
-2026-09-26 (§3). Se re-verifica antes de implementar nada de FASE 10, con la consulta que el
-inventario deja escrita.
+2026-09-26 (§3). ~~Se re-verifica antes de implementar nada de FASE 10, con la consulta que el
+inventario deja escrita.~~ **No se re-verifica: el tamaño de la cartera ya no decide nada**
+(FASE 5, simplificación del corte, S-30). El corte conserva una lista cerrada de cuentas que fija
+el owner cuando esté listo para el corte, cada una con su única ficha, y a esas cuentas les avisa
+él por privado (`DEC-MIG-007`; FASE 5, owner 2026-09-30, simplificación del corte, lote A).
 
-**Y la re-verificación cuenta más que `billing_subscriptions` vivas** (FASE 8 completa,
+**Y lo que seguía en este § sale entero** (FASE 5, owner 2026-09-30, simplificación del corte,
+lotes A, C y E): la re-verificación de la cartera y la lista de a quién llamar (S-29), el
+recuento de fichas de Gastronomía y Experiencia que detenía el corte (S-07), la población a
+avisar (S-51), la lista de fichas `REJECTED` (S-06), la pasada de sólo lectura sobre el
+proveedor (S-37), el titular que sólo conoce el proveedor (S-38) y la población y la segunda
+corrida del detector del cobro sobre la lápida del corte (S-74), que ya no existe (§2.5). Las
+cuentas que importan las conoce el owner (`DEC-MIG-007`, punto 3), y un cobro tardío de un
+débito viejo entra por la lápida de recepción como cualquier desconocido (§2.5).
+
+~~**Y la re-verificación cuenta más que `billing_subscriptions` vivas** (FASE 8 completa,
 `F-8CA3-012`; FASE 9 completa, `DB-5` del informe 09): también las soft-deleted y las tablas que el
 corte descarta sin nombrar hasta ahora —compras de addon, canjes de promo, grants de destaque y
 `entity_subscriptions`—. Ya no es para decidir qué se conserva, porque no se conserva nada (§4;
 owner 2026-09-25, FASE 9 completa, `2a`): es para saber **a quién hay que llamar** y qué le toca
-perder a cada uno antes de que el corte lo descarte.
+perder a cada uno antes de que el corte lo descarte.~~
 
-**Y cuenta fichas por dueño en las cinco verticales**, con la clase `L1`–`L8` de `V/21` §2.4.
+~~**Y cuenta fichas por dueño en las cinco verticales**, con la clase `L1`–`L8` de `V/21` §2.4.
 **Las de Gastronomía y de Experiencia tienen que dar cero, o el corte no avanza**: la tabla de
 traducción está escrita sólo para `accommodations`, y el paso 2 del corte lo verifica como parte
 de su gate (`16-fase-7…` §4.2; `V/21` §2.4; FASE 9 vuelta 2, `F-8V2A3-003`). **Y se cuentan también
@@ -81,30 +93,30 @@ detenerse ahí es la rama de aborto y los clientes se re-suscriben por el link r
 viva en el sistema viejo, **medida el día del corte** (FASE 9 vuelta 1, R7). Quien tiene sólo
 fichas `L1` no pierde nada y no se avisa. **Y lista las fichas con `moderation_state = REJECTED`**,
 que no se traducen: el admin las modera después con `PB10` si quiere (`V/21` §2.4; owner
-2026-09-26, `G1-2`).
+2026-09-26, `G1-2`).~~
 
-**Y el titular de toda autorización que el censo del 1b cancela y la base no conoce entra a la
+~~**Y el titular de toda autorización que el censo del 1b cancela y la base no conoce entra a la
 población a avisar y a la lista con la que el owner llama** (owner 2026-09-27, FASE 9 vuelta 2,
-`R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador ~~—el `payer_email` del
-preapproval—~~ **si alguna lectura lo da: el `GET` del preapproval devuelve `payer_email` vacío
+`R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador~~ ~~—el `payer_email` del
+preapproval—~~ ~~**si alguna lectura lo da: el `GET` del preapproval devuelve `payer_email` vacío
 (`EX-19`) y ni `payer_id` identifica a la persona (`EX-56`), así que si lo traen el buscador sin
-filtro o el pago asociado se mide en sandbox** (~~propuesto a la matriz~~ `EX-59`; FASE 9 vuelta 3, owner
+filtro o el pago asociado se mide en sandbox**~~ (~~propuesto a la matriz~~ ~~`EX-59`; FASE 9 vuelta 3, owner
 2026-09-30, lote G, `F-8V3B3-001`), y esa persona entra aunque no tenga ficha ni fila en la base.
-**Si ninguna lectura trae el pagador, esa persona no tiene detector**, y el «NO cierra» lo dice.
+**Si ninguna lectura trae el pagador, esa persona no tiene detector**, y el «NO cierra» lo dice.~~
  ~~Como el manifiesto
 nace en el 1b, **su aviso llega después de la cancelación y no antes**; lo que pierde está
-declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~ **Y su aviso es previo,
+declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~ ~~**Y su aviso es previo,
 como el de los demás** (owner 2026-09-27, FASE 9 vuelta 2, `R21-b`): **antes del aviso previo hay
 una pasada de sólo lectura sobre el proveedor** —el mismo recorrido sin filtro del 1b, sin
-cancelar nada— que lista las autorizaciones vivas con su ~~`payer_email`~~ pagador, **si la
+cancelar nada— que lista las autorizaciones vivas con su~~ ~~`payer_email`~~ ~~pagador, **si la
 medición del lote G (`EX-59`) encuentra una lectura que lo traiga** (FASE 9 vuelta 3), y **suma a la
 población a los titulares que la base no conoce**.
 El 1b cancela después, como está, y su manifiesto sigue
 haciendo falta: la lista puede envejecer entre la pasada y el 1b, y el titular que aparezca recién
 en el manifiesto del 1b entra igual a la población, con un aviso que ya no es previo. Lo que pierde
-cada uno está declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.
+cada uno está declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~
 
-**Y de acá, y no de un número fijo, sale la población del cobro sobre la lápida del corte** (§2.5):
+~~**Y de acá, y no de un número fijo, sale la población del cobro sobre la lápida del corte** (§2.5):
 los clientes del viejo con un preapproval cancelado en el 1b —conocidos por la base o sólo por el
 manifiesto—, incluidas las altas que `DEC-MIG-002` siguió tomando hasta el 0b (owner 2026-09-27,
 FASE 9 vuelta 2, `R2`; `F-8V2B1-006`). **Y por eso la re-verificación lee, por cada id del
@@ -115,12 +127,12 @@ después del corte**, porque `RC-7` la midió sobre ciclos de 1 y 2 días; por e
 las anuales vivas (`16-fase-7…` §4.2; FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-r`).
 **Hecho aportado por el owner: no hay anuales vivas en el sistema viejo ni las va a haber antes
 del corte** (FASE 9 vuelta 3, owner 2026-09-30, lote F); el recuento del paso 0 lo confirma.
-**Un registro abierto que es el de un alta no trae `expire_date`** (`RC-7`), ~~y **con qué fecha
+**Un registro abierto que es el de un alta no trae `expire_date`** (`RC-7`),~~ ~~y **con qué fecha
 entra a la segunda corrida es pregunta abierta** (registro de la FASE 9 vuelta 3, B;
-`F-8V3B3-004`)~~ **y entra a la segunda corrida con su `date_created` más un ciclo**, que es lo que
+`F-8V3B3-004`)~~ ~~**y entra a la segunda corrida con su `date_created` más un ciclo**, que es lo que
 `RC-7` mide en las renovaciones; **y la segunda corrida lista igual todo registro de los ids del
 manifiesto que siga abierto**, con o sin `expire_date`, así que un alta que sigue en `recycling`
-después de esa fecha no se pierde (FASE 9 vuelta 3, owner 2026-09-30, lote X; `F-8V3B3-004`).
+después de esa fecha no se pierde (FASE 9 vuelta 3, owner 2026-09-30, lote X; `F-8V3B3-004`).~~
 
 > 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
 > pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
@@ -162,15 +174,17 @@ catálogo posterior les llega solo. Si el owner algún día quiere esas cuentas 
 intermedio, se revoca el grant y se escribe otro: no se diseña para eso. El plan tiene que existir
 antes del 3b, y por eso el catálogo de producción ~~es el paso 3a~~ **se carga en la migración
 estructural del paso 3, antes de la prueba del corte, como los plazos, y el 3a sólo lo verifica**
-(`16-fase-7-del-paraguas.md` §4.2; FASE 9 vuelta 3, owner 2026-09-30, lote C).
+(`16-fase-7-del-paraguas.md` §4.2; FASE 9 vuelta 3, owner 2026-09-30, lote C), **como SQL
+generado por un script TypeScript que un guard regenera y compara** (FASE 5, owner 2026-09-30,
+lote 2 D).
 
 **Y esas dos filas cruzan la frontera, así que la mitad de verticales las tiene que ver.** Un
 `GRANT` con `hasta: NO_VENCE` es de clase `TÍTULO` (`12-contrato…` §2.4), de modo que las dos
 cuentas amanecen con `cubierto` **verdadero**: no las alcanza `PB2` y, el día que publiquen algo,
 la transición que dispara es `T6` y no `T1`. La verificación completa ~~—y el orden entre esta
 escritura y el paso 4, que hay que fijar en el procedimiento—~~ está en la mitad de verticales,
-cap. 21 §2.4; **el orden quedó fijado en el procedimiento**: los grants son el paso 3b, antes de
-las lápidas del paso 4 (`16-fase-7-del-paraguas.md` §4.2; FASE 9 completa, `DB-7`). Se dice acá porque **el efecto lo produce esta escritura y se observa allá**.
+cap. 21 §2.4; **el orden quedó fijado en el procedimiento**: los grants son el paso 3b~~, antes de
+las lápidas del paso 4~~ (el paso 4 salió: FASE 5, simplificación del corte, S-40) (`16-fase-7-del-paraguas.md` §4.2; FASE 9 completa, `DB-7`). Se dice acá porque **el efecto lo produce esta escritura y se observa allá**.
 
 **Con una precisión que no es de forma: un ANCLA por cada vertical de su scope, sobre UNA sola fila
 de grant.** Un grant ancla **un plan por vertical** (`12-contrato…` §2.8, `B/02` §2.4), porque un
@@ -181,44 +195,57 @@ primera»*—; y escribir **dos grants** de una vertical cada uno es el otro ext
 pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
 `permanent_grant_vertical`, **nunca la concesión**.
 
-### 2.5 Cancelar no es olvidar: el compromiso viejo se conserva
+### 2.5 ~~Cancelar no es olvidar: el compromiso viejo se conserva~~ Un cobro tardío de un débito viejo entra como cualquier desconocido
 
-**Ésta es la única fila ~~que el sistema nuevo sí escribe~~ ~~de billing que el sistema nuevo sí
-escribe~~ de rastro que el corte escribe** —~~del lado de verticales el corte escribe además una
+**El corte no escribe ninguna fila de rastro** (FASE 5, owner 2026-09-30, simplificación del
+corte, lote C; S-40, S-41, S-42, S-76). Salen la lápida del corte con su paso 4, su herramienta,
+los dos choques del `UNIQUE` y `origen_de_lápida = CORTE`; la ventana del día del corte, y el
+detector posterior al corte con sus dos corridas. **Un cobro tardío de un preapproval del sistema
+viejo** —porque la cancelación del 1b se aceptó y no se aplicó, o porque ya estaba en vuelo—
+**entra por la lápida de recepción, como cualquier desconocido** (cap. 09 §2.4; owner
+2026-09-26, `G3-2`): el handler la escribe, manda cancelar el preapproval, cuelga el `payment` y
+abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo, **y le aparece al owner marcado para
+que decida la devolución**. Las únicas filas nuevas de billing que escribe el corte son los dos
+`permanent_grant` del §2.4, que son cortesías vigentes y no rastro. Lo que sigue de este § queda
+tachado donde hablaba de la lápida del corte; la regla de re-vinculación sigue (S-49).
+
+~~**Ésta es la única fila~~ ~~que el sistema nuevo sí escribe~~ ~~de billing que el sistema nuevo sí
+escribe~~ ~~de rastro que el corte escribe**~~ —~~del lado de verticales el corte escribe además una
 fila de `trial` ya consumida por cada dueño existente, que es el mismo tipo de rastro (`V/21` §2.4;
-FASE 8 completa, owner 2026-09-25)~~ **los dos `permanent_grant` del §2.4 también son filas nuevas
-de billing, pero son cortesías vigentes, no rastro; y del lado de verticales el corte ~~ya no escribe
-filas de `trial`, porque los clientes actuales se tratan como nuevos~~** **escribe una prueba
+FASE 8 completa, owner 2026-09-25)~~ ~~**los dos `permanent_grant` del §2.4 también son filas nuevas
+de billing, pero son cortesías vigentes, no rastro; y del lado de verticales el corte~~ ~~ya no escribe
+filas de `trial`, porque los clientes actuales se tratan como nuevos~~** ~~**escribe una prueba
 activa, no un rastro, por cada `(dueño, vertical)` con una ficha `L8`** (revisión del owner, C12;
 `V/21` §2.4, *«la prueba gratis que escribe el corte»*; FASE 9 vuelta 3, `F-8V3C2-009`) (owner
-2026-09-25; FASE 9 completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
+2026-09-25; FASE 9 completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.~~
 
-> **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
-> escrita DESPUÉS de cancelarlo en el proveedor.**
+> ~~**El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
+> escrita DESPUÉS de cancelarlo en el proveedor.**~~
 
-**Qué lleva y sobre qué ids** (FASE 9 vuelta 1, R6). Se escribe una lápida por cada preapproval
+~~**Qué lleva y sobre qué ids** (FASE 9 vuelta 1, R6). Se escribe una lápida por cada preapproval
 que el paso 1b canceló y el paso 2 verificó, **conocido por la base o no, sondas incluidas**; no se
 escribe sobre las sondas del manifiesto, que siguen vivas. Lleva `clase = LÁPIDA`, `origen_de_lápida = CORTE`,
 `estado = CANCELLED` y su `provider_link`, y nada más: ni usuario, ni vertical, ni versión, ni billing option
-(`B/02` §2.2). El barrido no necesita más para lo ~~único~~ que hace con ella —encontrar el id y
+(`B/02` §2.2). El barrido no necesita más para lo~~ ~~único~~ ~~que hace con ella —encontrar el id y
 tratarlo por la salvedad 4 del cap. 09 §3, **y comparar los cobros posteriores al día del corte**
 (abajo; FASE 9 vuelta 2, `R2`)—, y el corte no tendría de dónde sacarlo sin leer las
 tablas que retira. **La dispara una persona**: el operador corre, en el paso 4, la herramienta del
 corte sobre el manifiesto que produjo el 1b. La escritura la construye y la prueba **B11**.
-**Y corre antes de que ~~la URL de notificación apunte al handler nuevo~~ el borde abra la ruta de avisos, que el receptor nuevo comparte con el viejo y que el paso 3 dejó cerrada** **con un Worker del borde que contesta `500`, así que el proveedor reintenta** (verificación corta, 2026-09-29, lote P-A) (FASE 9 vuelta 2,
+**Y corre antes de que~~ ~~la URL de notificación apunte al handler nuevo~~ ~~el borde abra la ruta de avisos, que el receptor nuevo comparte con el viejo y que el paso 3 dejó cerrada** **con un Worker del borde que contesta `500`, así que el proveedor reintenta** (verificación corta, 2026-09-29, lote P-A) (FASE 9 vuelta 2,
 `F-8V2B3-003`, `F-8V2C2-002`; `16-fase-7…` §4.2, pasos 3, 4 y 4b; verificación corta, 2026-09-29, lote O-B): así ningún evento de un id del
 manifiesto llega al handler nuevo sin su lápida del corte, y ninguno se vuelve lápida de
 recepción. **Ante `UNIQUE(proveedor, id)` la herramienta distingue dos choques**: con una lápida
 del corte del mismo id **saltea**, porque es la misma fila de una corrida anterior y correrla dos
 veces tiene que dar lo mismo; con **cualquier otra fila** —una lápida de recepción o una fila
 viva— **aborta antes de escribir nada**, porque ese choque sólo existe si el orden se rompió, y
-ahí la rama de aborto todavía cubre (~~el 4b no corrió~~ la ruta no se abrió: lote O-B). Saltearlo dejaría el cobro en vuelo de ese
+ahí la rama de aborto todavía cubre~~ (~~el 4b no corrió~~ ~~la ruta no se abrió: lote O-B). Saltearlo dejaría el cobro en vuelo de ese
 id con la marca de devolver, contra `G3-1`. **La
 misma forma de fila la usa la lápida de recepción** que el webhook escribe al recibir un
 preapproval desconocido que no nombra ninguna fila (cap. 09 §2.4; owner 2026-09-26, `G3-2`): la
-diferencia es quién la escribe —`origen_de_lápida = RECEPCIÓN`—, no qué lleva.
+diferencia es quién la escribe —`origen_de_lápida = RECEPCIÓN`—, no qué lleva.~~
 
-**Qué pasa sin ella, y es el caso que la justifica.** Los preapprovals vivos se cancelan en
+~~**Qué pasa sin ella, y es el caso que la justifica.**~~ **Por qué hace falta la regla de
+re-vinculación** (FASE 5, simplificación del corte, S-40 y S-49). Los preapprovals vivos se cancelan en
 el proveedor y no queda rastro. **Cuáles son los saca el recorrido sin filtro del proveedor, no
 nuestra base**, y antes se cancelan los `preapproval_plan` viejos para cerrar sus links
 (`16-fase-7-del-paraguas.md` §4.2, pasos 1a y 1b): el 2026-09-24 ese recorrido encontró una
@@ -246,77 +273,90 @@ Cada preapproval del sistema nuevo nace con ~~nuestro `external_reference` (`PA-
 de su fila de `subscription`** como `external_reference` (`PA-2`, `B/02` §2.2; FASE 9 vuelta 1,
 R12), así que una
 huérfana legítima siempre nombra su fila; lo que venga del sistema viejo —~~un cobro en vuelo sin
-lápida porque su id sólo estaba en el proveedor,~~ una sonda que siguió viva (desde R6 el id que
-sólo estaba en el proveedor tiene lápida; FASE 9 vuelta 1)— no la nombra y termina
+lápida porque su id sólo estaba en el proveedor,~~ ~~una sonda que siguió viva (desde R6 el id que
+sólo estaba en el proveedor tiene lápida; FASE 9 vuelta 1)~~ **un cobro tardío de un débito viejo o
+una sonda que siguió viva** (la lápida del corte salió: FASE 5, simplificación del corte, S-40)— no la nombra y termina
 en una persona. **Ya no hay candidato plausible**: la suscripción nueva de la misma persona tiene su
 propio `provider_link` vivo, así que no puede recibir el cobro viejo. La precondición ~~se escribe en~~
 **está escrita en** el cap. 09 §2.4, que es donde vive la re-vinculación, con las mismas palabras
 (FASE 9 completa; verificado contra ese § en la misma pasada).
 
-Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancelado durante el
+~~Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancelado durante el
 corte»* en vez de *«huérfana»*. Y **no compite por el candado del §11**, porque `CANCELLED` no está
-entre los estados vivos (cap. 02 §2.2).
+entre los estados vivos (cap. 02 §2.2).~~
 
-> **Y el barrido la recorre de verdad, que es lo que hacía falta decir.** La lápida es una
+**La lápida de recepción no compite por el candado del §11**, porque `CANCELLED` no está entre
+los estados vivos (cap. 02 §2.2; FASE 5, simplificación del corte, S-40).
+
+> ~~**Y el barrido la recorre de verdad, que es lo que hacía falta decir.** La lápida es una
 > `CANCELLED`, o sea un estado terminal, y *«los estados terminales de una suscripción no se
 > barren»* la sacaba del barrido **en el mismo acto de escribirla**: el capítulo le atribuía a un
 > mecanismo un trabajo que ese mecanismo tenía escrito que no hacía. La cubre la **salvedad 4**
-> del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra**, ~~**hecha a mano y sin
-> nadie que verifique**~~ ~~**la del sistema viejo en el paso 1b**~~ **la del script del corte en el paso 1b** (revisión del owner, 2026-09-28, L3-a)**, verificada por el paso 2 releyendo
+> del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra**,~~ ~~**hecha a mano y sin
+> nadie que verifique**~~ ~~**la del sistema viejo en el paso 1b**~~ ~~**la del script del corte en el paso 1b** (revisión del owner, 2026-09-28, L3-a)**, verificada por el paso 2 releyendo
 > por id** ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
 > §4.2; FASE 9 completa, `CT-2`/`C-6`), así que vuelve al barrido **hasta que la relectura la vea
 > `cancelled`**. **Entra al barrido aunque el paso 2 ya la haya visto `cancelled`**, y no mueve
-> ninguna cifra del cap. 09: ~~la escribe una persona, sin idempotencia ni registro de nuestro lado,~~
-> la dispara una persona con la herramienta del corte, sobre el manifiesto del 1b (FASE 9 vuelta 1, R6),
+> ninguna cifra del cap. 09:~~ ~~la escribe una persona, sin idempotencia ni registro de nuestro lado,~~
+> ~~la dispara una persona con la herramienta del corte, sobre el manifiesto del 1b (FASE 9 vuelta 1, R6),
 > y la primera relectura del barrido es la que la confirma desde el sistema nuevo. Es exactamente
 > el caso que el párrafo de arriba describe —*«la cancelación se aceptó y no se aplicó»*—, y sin
-> la salvedad el único aviso llegaba **después del cobro**, por la vía del webhook del §2.2.
+> la salvedad el único aviso llegaba **después del cobro**, por la vía del webhook del §2.2.~~
 >
 > ~~**La lápida es la única fila `CANCELLED` de todo el sistema que ninguna transición produce**~~
-> **Las lápidas son las únicas filas `CANCELLED` de todo el sistema que ninguna transición
+> ~~**Las lápidas son las únicas filas `CANCELLED` de todo el sistema que ninguna transición
 > produce, y son dos** —la del corte (`origen_de_lápida = CORTE`, de la herramienta del paso 4) y
 > la de recepción (`RECEPCIÓN`, que escribe el handler al recibir un desconocido que no nombra
 > ninguna fila); desde `G3-2` son dos formas de la misma fila, las dos con `clase = LÁPIDA` (owner
-> 2026-09-26; FASE 9 vuelta 1, corregido el *«única»*)—, y
+> 2026-09-26; FASE 9 vuelta 1, corregido el *«única»*)—,~~ **la de recepción es la única fila `CANCELLED` de todo el sistema
+> que ninguna transición produce, y `origen_de_lápida` queda con un solo valor, `RECEPCIÓN`**
+> (FASE 5, simplificación del corte, S-40 y S-70), y
 > eso no es exclusivo del corte: cualquier escritura manual futura hereda el mismo agujero. Por
 > eso la exención del cap. 09 §3 quedó escrita como **criterio** —quién dejó al preapproval sin
 > poder cobrar— y no como enumeración de transiciones: una fila que no nace de ninguna transición
 > no aparece en ninguna enumeración de transiciones.
 
-**El orden importa y es parte de la regla**: primero se cancela en el proveedor, después se
+~~**El orden importa y es parte de la regla**: primero se cancela en el proveedor, después se
 escribe. Al revés quedaría una lápida sobre un preapproval que sigue vivo, que es peor que no
-tenerla — afirmaría que está cerrado algo que cobra. **La lápida de recepción no puede seguir ese orden** —cuando llega su
+tenerla — afirmaría que está cerrado algo que cobra.~~ **La lápida de recepción no puede ~~seguir ese orden~~ cancelar primero y escribir después, como
+hacía la del corte** (que salió: FASE 5, simplificación del corte, S-40) —cuando llega su
 desconocido no hay nada cancelado, y el `payment` y la marca necesitan la fila en ese acto—, así
 que **el handler la escribe y manda cancelar su preapproval en el mismo acto**, y lo que la hace
 verdad es la salvedad 4 del cap. 09 §3: el barrido la relee, reintenta la cancelación y marca a los
 3 días (cap. 09 §2.4; owner 2026-09-26, `X-1`; FASE 9 vuelta 1, `N-G1-02`, que señalaba
 justamente eso: una lápida `CANCELLED` sobre un preapproval vivo que nadie cancelaba).
 
-**El cobro en vuelo del corte que sale bien no se devuelve** (owner 2026-09-26, `G3-1`, contra la
+*(Los cuatro bloques que siguen hablaban del cobro sobre la lápida del corte y salen enteros: el
+asiento sin marca del cobro en vuelo, `G3-1`; la ventana del día del corte, `R2`, con `EX-48`, que
+ya no se mide; la posición que la extendía, y la advertencia que los acompañaba. Desde la FASE 5
+ese cobro entra por la lápida de recepción, como dice el principio de este §. FASE 5,
+simplificación del corte, lote C; S-40, S-41, S-76.)*
+
+~~**El cobro en vuelo del corte que sale bien no se devuelve** (owner 2026-09-26, `G3-1`, contra la
 recomendación; FASE 9 vuelta 1, `F-8V1B3-002`). Un cobro del preapproval viejo que el proveedor
 procesa **después** de que el paso 1b lo canceló —porque ya estaba en vuelo— llega por su evento,
 encuentra la lápida por su `provider_link` y **se asienta sobre ella sin marca**: se escribe su
 `payment` colgado de la lápida, la lápida sigue `CANCELLED`, no se extiende nada y a nadie se le
 propone devolverlo. **Asentar es `P1` con menos efectos** (cap. 03 §6; FASE 9 vuelta 2,
 `F-8V2B3-005`): el `payment` pasa a `SUCCEEDED` y lleva su comprobante, sin `covered_period`, sin
-tocar promos y sin aviso de cobertura, que no tendría usuario ni vertical. ~~**La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
+tocar promos y sin aviso de cobertura, que no tendría usuario ni vertical.~~ ~~**La lápida del corte (`origen_de_lápida = CORTE`) no entra al desempate de
 motivos** (cap. 05 §3) **ni a la comparación de cobros del barrido** (cap. 09 §3): los registros de
 su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 
-> **«No devolver» vale sólo para la ventana del corte** (owner 2026-09-27, FASE 9 vuelta 2, `R2`;
+> ~~**«No devolver» vale sólo para la ventana del corte** (owner 2026-09-27, FASE 9 vuelta 2, `R2`;
 > `F-8V2B3-002`, `F-8V2C2-004`, `F-8V2B1-006`; precisa `G3-1`, no lo revierte). La ventana es el
-> día del corte —el del paso 1b, en hora de Argentina— y se lee en el cobro, no en su evento: ~~el
-> `date_created` del registro de cobro, leído por id (`B/02` §2.3)~~ **la fecha del pago que aprobó
+> día del corte —el del paso 1b, en hora de Argentina— y se lee en el cobro, no en su evento:~~ ~~el
+> `date_created` del registro de cobro, leído por id (`B/02` §2.3)~~ ~~**la fecha del pago que aprobó
 > el registro de cobro, leído por id, y no el `date_created` del registro**, que es uno por ciclo
 > con los reintentos adentro y no se mueve con ellos (`B/02` §2.3) (FASE 9 vuelta 2, verificación,
 > owner 2026-09-27, `V2-a`, `F-8V2B3-002`: con la fecha del registro, el reintento que cobra
 > después del corte sobre un registro nacido antes se asentaba sin marca, y ése es justo el caso
 > que esta regla nombra). **Qué campo del pago trae esa fecha se mide en el paso 0 del corte**
-> (`16-fase-7…` §4.2; ~~la fila de la matriz está propuesta al owner en el registro de la
-> verificación de la FASE 9 vuelta 2~~ es la fila `EX-48` de la matriz, FASE 9 vuelta 2,
+> (`16-fase-7…` §4.2;~~ ~~la fila de la matriz está propuesta al owner en el registro de la
+> verificación de la FASE 9 vuelta 2~~ ~~es la fila `EX-48` de la matriz, FASE 9 vuelta 2,
 > verificación, owner 2026-09-28, `V2-y`); **si ningún campo es confiable, la ventana vuelve al
 > owner**, **y el 1b no arranca sin ese dato**: vuelve al owner antes del corte (FASE 9 vuelta 2,
-> verificación, owner 2026-09-28, `V2-m`). **Un cobro sobre la lápida del corte ~~con `date_created`~~ cuyo pago aprobado es de
+> verificación, owner 2026-09-28, `V2-m`). **Un cobro sobre la lápida del corte~~ ~~con `date_created`~~ ~~cuyo pago aprobado es de
 > ese día o anterior se asienta sin marca**, como dice el párrafo de
 > arriba. **Uno posterior abre la marca `PAGO_TARDÍO_RECHAZADO`** (el 7 de `B/02` §2.5, **SÍ**), la
 > misma que abre el cobro sobre una lápida de recepción, **con el `payment` colgado y la propuesta
@@ -324,11 +364,11 @@ su preapproval no abren nada, sean del sistema viejo o del cobro en vuelo.~~
 > siguió reintentando después (`GR-3`, `RC-6`, `GR-1`) o una cancelación que se deshizo horas
 > después (el código actual registra seis, `preapproval-recovery.service.ts:22`). La abren los
 > dos productores de la tabla de desempate: el evento del cobro y la comparación de cobros del
-> barrido (cap. 09 §3), que sobre la lápida del corte compara **sólo** los registros ~~posteriores a
-> ese día~~ cuyo pago aprobado es posterior a ese día (`V2-a`). Los del día del corte o anteriores —los del sistema viejo, que no se conserva (§4), y el
-> que estaba en vuelo— siguen sin abrir nada.
+> barrido (cap. 09 §3), que sobre la lápida del corte compara **sólo** los registros~~ ~~posteriores a
+> ese día~~ ~~cuyo pago aprobado es posterior a ese día (`V2-a`). Los del día del corte o anteriores —los del sistema viejo, que no se conserva (§4), y el
+> que estaba en vuelo— siguen sin abrir nada.~~
 
-Es la posición de `2d`
+~~Es la posición de `2d`
 —la diferencia de un corte abortado no se devuelve— y de `G1-4` —lo pagado en el sistema viejo por
 un período que el corte corta se acepta y se declara— extendida al cobro que cae en la ventana del
 corte: el cliente arranca de cero con un trial nuevo (`2g`). **Lo que la lápida sigue haciendo es
@@ -336,13 +376,13 @@ la salvedad 4**: si la cancelación del 1b no se aplicó, el barrido la relee po
 y marca a los 3 días (cap. 09 §3); ese detector no depende del cobro. Lo que la decisión deja sin
 cerrar está en *«lo que este capítulo NO cierra»*. **No alcanza a la lápida de recepción**
 (`origen_de_lápida = RECEPCIÓN`, cap. 09 §2.4), cuyo cobro sí va a `PAGO_TARDÍO_RECHAZADO` con la
-propuesta de devolver (owner 2026-09-26, `G3-2`).
+propuesta de devolver (owner 2026-09-26, `G3-2`).~~
 
-> ⚠️ **Esta regla ya estaba escrita y no se aplicó.** Se decidió junto con el resto de la
+> ~~⚠️ **Esta regla ya estaba escrita y no se aplicó.** Se decidió junto con el resto de la
 > migración, y **al decidir que no se migra se la llevó puesta el mismo movimiento** — aunque no
 > migra nada: sólo conserva el rastro de lo que se cancela. Es el modo de falla que conviene
 > recordar: **una decisión que vuelve innecesario un trabajo puede llevarse algo que seguía
-> haciendo falta.**
+> haciendo falta.**~~
 
 **Qué deja de existir con esto, y no es que se resuelva: se elimina.** La migración dejaba afuera
 las relaciones con trial, transcribía un trial y dejaba los compromisos sin vínculo, tenía un punto
@@ -390,9 +430,10 @@ día que pase. Este capítulo la registra con fecha para que no llegue por sorpr
 
 **(c) Las altas nuevas.** ~~Es lo único de los tres que sigue abierto, y **no lo cierra esta spec.**~~
 **Cerrado por el log**: se siguen tomando (`DEC-MIG-002`) y se resuelven como la cartera, sin
-transcribir (`DEC-MIG-003`, `DEC-MIG-004` #16) — §3.3 (FASE 9 completa, `C-9`).
+transcribir (`DEC-MIG-003`, ~~`DEC-MIG-004` #16~~ `DEC-MIG-007`, que la superó: FASE 5, simplificación
+del corte, lote E) — §3.3 (FASE 9 completa, `C-9`).
 
-### 3.3 Las altas nuevas se siguen tomando (`DEC-MIG-002`) y se resuelven como la cartera (`DEC-MIG-003`, `DEC-MIG-004` #16)
+### 3.3 Las altas nuevas se siguen tomando (`DEC-MIG-002`) y se resuelven como la cartera (`DEC-MIG-003`, ~~`DEC-MIG-004` #16~~ `DEC-MIG-007`)
 
 *(Título hasta el 2026-09-25: ~~«Las altas nuevas son una decisión del owner, y se declara
 abierta»~~. FASE 9 completa, `C-9`.)*
@@ -405,7 +446,7 @@ Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido
 
 | # | opción | costo | riesgo |
 |---|---|---|---|
-| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | la cohorte crece, y con ella se vuelve inviable *«no migrar»*: hoy son 8 y el umbral medido está en unas 20 (~~§2.4~~ `V/21` §2.5; FASE 9 completa, `C-10`) |
+| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | ~~la cohorte crece, y con ella se vuelve inviable *«no migrar»*: hoy son 8 y el umbral medido está en unas 20~~ (~~§2.4~~ ~~`V/21` §2.5; FASE 9 completa, `C-10`~~) **quien entra no se conserva, salvo que el owner lo sume a la lista cerrada del corte** (FASE 5, simplificación del corte, S-03 y S-56) |
 | 2 | **congelar altas nuevas** hasta FASE 10 | comercial, y no es chico: tres verticales todavía no vendieron nada | cero cohorte nueva |
 | 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
 
@@ -413,21 +454,33 @@ Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido
 [`04-open-decisions.md`](../../HOS-1352-billing-verticals-redesign/docs/04-open-decisions.md) — la única que este capítulo abre en vez de
 cerrar.~~ **Y ya no está abierta**: el owner eligió la opción 1 (`DEC-MIG-002`, se siguen tomando
 altas en el sistema actual), y `DEC-MIG-003` le sacó la mitad cara —*«se transcriben a mano»*—: las
-altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como a la cartera
-(`DEC-MIG-004` #16; FASE 9 completa, `C-9`). Lo que sigue vigente es la condición de caducidad de
-`V/21` §2.5: si la cartera pasa de unas veinte, se vuelve a discutir.
+altas nuevas **no se transcriben**, se cancelan en el corte ~~y se las llama como a la cartera~~
+(~~`DEC-MIG-004` #16;~~ FASE 9 completa, `C-9`). ~~Lo que sigue vigente es la condición de caducidad de
+`V/21` §2.5: si la cartera pasa de unas veinte, se vuelve a discutir.~~
+
+**Y lo que entre al sistema viejo hasta el corte no se conserva, salvo que el owner lo sume a la
+lista cerrada de cuentas**, que fija cuando esté listo para el corte, cada una con su única ficha;
+si trae más de una, vuelve al owner. La ficha de quien no esté en la lista se borra en el corte
+(`DEC-MIG-002`, precisada; `DEC-MIG-007`; FASE 5, owner 2026-09-30, lote 1 J y simplificación del
+corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición de caducidad**
+(S-56): el tamaño de la cartera ya no decide nada.
 
 ---
 
 ## 4. Lo que NO se migra, y no es una omisión
 
-- **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que ~~se escribe~~ escribe billing es la lápida del
-  §2.5, que no es una transcripción: es el rastro del id que se canceló, **y los dos
-  `permanent_grant` del §2.4**, que son cortesías del diseño nuevo. ~~**Verticales escribe el
+- **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que ~~se escribe~~ escribe billing ~~es la lápida del
+  §2.5, que no es una transcripción: es el rastro del id que se canceló,~~ ~~**y los dos
+  `permanent_grant` del §2.4**, que son cortesías del diseño nuevo.~~ **son los dos
+  `permanent_grant` del §2.4, que son cortesías del diseño nuevo; la lápida del corte salió**
+  (FASE 5, simplificación del corte, S-40). ~~**Verticales escribe el
   otro rastro**, la fila de `trial` consumida (`V/21` §2.4; FASE 8 completa, owner 2026-09-25).~~
   ~~**Verticales no escribe filas de `trial`**: el corte trata a los clientes actuales como nuevos y
   sólo les respeta la ficha (`V/21` §2.4; owner 2026-09-25, FASE 9 completa, `2g`).~~
-  **Verticales escribe una prueba activa por cada `(dueño, vertical)` con una ficha `L8`**, que no
+  ~~**Verticales escribe una prueba activa por cada `(dueño, vertical)` con una ficha `L8`**~~
+  **Verticales escribe una prueba activa para cada cuenta de la lista cerrada del owner, y la
+  escribe el script del corte con la función de la aplicación** (FASE 5, simplificación del
+  corte, S-01 y S-12; owner 2026-09-30, lote 2 D), que no
   es una transcripción sino la prueba de un cliente nuevo (revisión del owner, C12; `V/21` §2.4;
   FASE 9 vuelta 3, `F-8V3C2-009`).
 - **Los pagos**: ~~no hay ninguno.~~ los hay desde el 2026-09-26, bajo el sistema viejo (§1.3), y
@@ -435,26 +488,42 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
 - **Las tablas viejas de billing, con todo lo que tengan adentro, y las columnas que las copian**
   (owner 2026-09-25; FASE 9 completa, `2a`; cierra `F-8CB3-014`, `F-8CA3-007`, `F-8CC2-007`): **no
   se conserva nada** —ni se transcribe, ni se congela en solo lectura, ni se exporta—. Eso abarca
-  `billing_*` entero (suscripciones, pagos, compras de addon, canjes de promo), los grants de
-  destaque, `entity_subscriptions`, **`partner_subscriptions`** (FASE 9 vuelta 1, `F-8V1C2-014`) y
-  las columnas denormalizadas que el código de hoy lee, como `featured_by_entitlement` **y
-  `is_featured`**: ninguna ficha nace destacada; el destaque es una capacidad comercial (FASE 9
+  `billing_*` entero (suscripciones, pagos, compras de addon, canjes de promo) **salvo
+  `billing_notification_log`**, que es la bitácora de todos los correos de la plataforma y no del
+  cobro: `U1` la renombra con un nombre neutro, le saca la columna y la FK de cliente del cobro y
+  le da un índice propio fuera del extra `004`, y después la absorbe el outbox común de `U2`
+  (FASE 5, owner 2026-09-30, lote 1 B y lote 2 A), los grants de
+  destaque, `entity_subscriptions`, **`partner_subscriptions`** (FASE 9 vuelta 1, `F-8V1C2-014`), **con las columnas de pago de
+  `partners`, sus FK y los tres crons de Partner, que borra `U1`** (FASE 5, owner 2026-09-30,
+  lote 1 D), y
+  las columnas denormalizadas que el código de hoy lee, ~~como~~ **en una lista cerrada** (FASE 5,
+  owner 2026-09-30, lote 1 E y F): `featured_by_entitlement` **y
+  `is_featured`** en las tres
+  tablas de fichas, y `users.service_suspended`, `owner_promotions.plan_restricted` y
+  `experiences.has_active_subscription`, con sus lectores (el tipo de cambio, los patrocinios y
+  las promociones del dueño no son del cobro y quedan): ninguna ficha nace destacada; el destaque es una capacidad comercial (FASE 9
   vuelta 1, R1). El sistema nuevo no lee ninguna, y se retiran con el código que las lee
   ~~(FASE 5)~~: **el código sale de la rama en la limpieza del principio, y su esquema con él, así que la migración que genera ese borrado las saca de la base en el paso 3 del corte** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A). *«Recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
   vuelven a suscribir. Guardarlo sólo deja basura que después cuesta limpiar.»* **El corte no
   necesita leerlas**: los ids que cancela salen del proveedor (`16-fase-7…` §4.2, paso 1b) y, desde
   `2g`, no siembra trials consumidos, que era lo único que las leía. ~~**Si algún día algo del corte
-  volviera a leerlas, corre antes de retirarlas.**~~ **Salvo tres columnas de `accommodations`,
+  volviera a leerlas, corre antes de retirarlas.**~~ ~~**Salvo tres columnas de `accommodations`,
   `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que la tabla de traducción de
   `V/21` §2.4 lee para `L5` y `L7`: sobreviven a `U1` como excepción temporal y nombrada, que los
   guards de limpieza admiten hasta el corte, y las borra una migración posterior al paso 3,
   después de la clasificación de `V6`** (`16-fase-7…` §4.6; FASE 9 vuelta 3, owner 2026-09-30,
   lote N).
   `16-fase-7…` §4.2 la aplica en el mismo despliegue del paso 3, fechada después de la
-  clasificación ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9 vuelta 3, lote N)~~,
-  y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S).
+  clasificación~~ ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9 vuelta 3, lote N)~~,
+  ~~y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S).
   La frase tachada no se podía cumplir por orden: la migración de `U1` corre en el paso 3
-  antes que la de clasificación.
+  antes que la de clasificación.~~
+  **Salvo tres columnas de `accommodations`, `owner_suspended`, `plan_restricted` y
+  `billing_unpublished_at`, que sobreviven a `U1` porque tienen lectores fuera del cobro: `V6`
+  retira esos lectores, reemplazados por el estado nuevo de la ficha, en el mismo cambio que la
+  migración que las borra** (FASE 5, owner 2026-09-30, lote 3 B; simplificación del corte, S-09).
+  Sale la razón de la tabla de traducción, que ya no existe (S-01), y con ella la condición de
+  orden respecto de la clasificación.
 - ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
   Eso es trabajo de FASE 5 y de código, no de datos.~~ **El agrupamiento viejo de Gastronomía y
@@ -471,20 +540,29 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   prueba, complementos, códigos promocionales, los planes de las verticales viejas, los de Partner,
   límites y entitlements), y lo que lo lee sólo para eso: `utils/config-drift-check.ts`,
   `validation/config-validator.ts` y los seeders de planes (los de billing, los de prueba, los de
-  las verticales viejas y los de Partner). **Las 11 migraciones de datos del seed que importan
+  las verticales viejas y los de Partner). ~~**Las 11 migraciones de datos del seed que importan
   `@repo/billing`** dejan de compilar cuando el archivo se borra, y quedan sin sujeto: salen con el
   reemplazo del ledger del seed en el paso 6 del corte. **Hasta entonces se congelan con sus valores
   adentro** (revisión del owner, casos vecinos, 2026-09-29, caso 9): cuando el archivo se borra en
   la rama, antes del paso 6, cada una deja de importar `@repo/billing` y lleva escritos los valores
   que leía, así que compila sin el archivo y no cambia lo que ya aplicó; nadie las edita después, y
-  el paso 6 las saca con el resto de `packages/seed/src/data-migrations/**`. **Y en el mismo cambio que
+  el paso 6 las saca con el resto de `packages/seed/src/data-migrations/**`.~~
+  **`U1` saca de la rama las migraciones de datos del seed que usan el cobro viejo** —las que
+  importan `@repo/billing` y las que importan tablas del cobro de `@repo/db`, unas cincuenta y no
+  once—, **adelantando para ellas lo que el paso 6 iba a hacer** (FASE 5, owner 2026-09-30, lote 1
+  C; `R5-03`). La condición de la decisión se cumplió: el runner ignora sin error las filas del
+  registro sin archivo y `--baseline-stamp` sólo sella lo que está en disco; la única que una base
+  nueva deja de correr, `0092`, rellenaba `entity_subscriptions`, que se retira con el cobro viejo
+  (`38-fase-5/10-decisiones-del-owner.md`, lote 1 C). **Y en el mismo cambio que
   borra el archivo salen la rama que lo vigila en `scripts/check-seed-dual-write.sh` y la mención a
   los planes, límites y entitlements de billing en la regla de dual-write del `CLAUDE.md` raíz**: los
   datos de planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write
   (revisión del owner, casos vecinos, 2026-09-29, caso 42; `NUCLEO/02` §1.4). El catálogo de producción no sale de este
   archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`), **que corre
   dentro de la migración estructural del paso 3, antes de la prueba del corte; el 3a sólo la
-  verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C). Es filtro 1
+  verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C), **como SQL generado por un script
+  TypeScript que un guard regenera y compara; las pruebas y los seudónimos de las cinco cuentas los
+  escribe después el script del corte** (FASE 5, owner 2026-09-30, lote 2 D). Es filtro 1
   de FASE 5: el sujeto muere, **y lo borra la limpieza del principio** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A).
 
 ---
@@ -509,37 +587,46 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   al publicar su ficha estrena el trial de un cliente nuevo (`V/21` §2.4), que no es una
   equivalencia de lo perdido (FASE 9 vuelta 3, owner 2026-09-30, lote F). El owner aporta el
   hecho que acota la población: **no hay anuales vivas en el sistema viejo ni las va a haber
-  antes del corte**. **El aviso previo lo dice** (`16-fase-7-del-paraguas.md` §4.2, guion del aviso),
-  y le pide que no contrate ni compre nada en el sistema viejo después de recibirlo. **Causa**:
+  antes del corte**. ~~**El aviso previo lo dice** (`16-fase-7-del-paraguas.md` §4.2, guion del aviso),
+  y le pide que no contrate ni compre nada en el sistema viejo después de recibirlo.~~ **Qué les dice lo decide el
+  owner, que les avisa por privado** (`DEC-MIG-007`, punto 4; el guion del aviso salió: FASE 5,
+  simplificación del corte, S-50). **Causa**:
   es la posición coherente con `2a` (no se conserva nada del sistema viejo) y con `2d` (la
   diferencia de un corte abortado no se devuelve); el owner prefiere un trial nuevo a unos pocos
-  reembolsos a mano. **Mueve plata, y por eso se declara con su detector**: la re-verificación del
-  §1.3 lista quién pagó y qué, y es la lista con la que el owner llama; un reclamo que llegue
+  reembolsos a mano. ~~**Mueve plata, y por eso se declara con su detector**: la re-verificación del
+  §1.3 lista quién pagó y qué, y es la lista con la que el owner llama;~~ **Mueve plata, y su población son las cuentas
+  de la lista cerrada, que el owner conoce** (`DEC-MIG-007`, punto 3; la re-verificación del §1.3
+  salió: FASE 5, simplificación del corte, S-29); un reclamo que llegue
   después del corte se atiende contra el comprobante del proveedor (punto anterior), no contra
-  nada nuestro. **Y no queda constancia de que el aviso se dio**: el owner avisa en persona y no
+  nada nuestro. ~~**Y no queda constancia de que el aviso se dio**: el owner avisa en persona y no
   se registra a quién ni cuándo, ni por el sistema ni a mano (revisión del owner, casos vecinos,
   2026-09-29, caso 2, contra la recomendación de anotarlo en la lista del script). Si un cliente
   reclama después que no le avisaron, no hay registro que lo muestre: consecuencia aceptada por el
   owner (`16-fase-7…` §4.2, guion del aviso). No da acceso indebido ni borra datos de nadie más. **Y no es el cobro en vuelo del
-  corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).
-  **Y alcanza igual al titular de una autorización que sólo conoce el proveedor** (owner
+  corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).~~ *(Lo de la constancia sale: lo cubre
+  `DEC-MIG-007`; FASE 5, simplificación del corte, S-53.)* **Y un cobro tardío de un débito viejo
+  después del corte le aparece al owner**, marcado para decidir la devolución (§2.5; FASE 5,
+  simplificación del corte, lote C).
+  ~~**Y alcanza igual al titular de una autorización que sólo conoce el proveedor** (owner
   2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por el período en curso,
   como los demás, y **el correo de baja del sistema viejo no le llega** —el handler viejo responde
-  `local_row_not_found` y no manda nada—. ~~pero **se entera después de la cancelación**, porque su
-  pagador sale del manifiesto del 1b (§1.3)~~ **Desde `R21-b` se entera antes, por el aviso previo**:
+  `local_row_not_found` y no manda nada—.~~ ~~pero **se entera después de la cancelación**, porque su
+  pagador sale del manifiesto del 1b (§1.3)~~ ~~**Desde `R21-b` se entera antes, por el aviso previo**:
   la pasada de sólo lectura sobre el proveedor lo suma a la población (§1.3). **Con un aviso que no
   es previo queda sólo el que aparece en el manifiesto del 1b y no apareció en esa pasada.**
   **Población**: los ids del manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del
   propio owner, `16-fase-7…` §4.2), y de ellos, sin aviso previo, los que la pasada no vio.
-  **Detector**: ~~la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
-  con la que el owner llama.~~ **condicionado a la medición del lote G (`EX-59`)**: la pasada y el manifiesto
+  **Detector**:~~ ~~la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
+  con la que el owner llama.~~ ~~**condicionado a la medición del lote G (`EX-59`)**: la pasada y el manifiesto
   suman esas personas a la lista con la que el owner llama **sólo si alguna lectura trae el
   pagador** (el buscador sin filtro o el pago asociado), porque el `GET` devuelve `payer_email`
   vacío (`EX-19`); **si ninguna lo trae, esta población no tiene detector**: el owner ve el id
   cancelado y no sabe a quién llamar
   (FASE 9 vuelta 3, owner 2026-09-30, lote G, `F-8V3B3-001`). **Causa**: la misma de arriba, y que el censo que
-  las encuentra es el del 1b.
-- **El cobro en vuelo del corte que sale bien se asienta sobre la lápida sin marca y no se
+  las encuentra es el del 1b.~~
+  *(El titular que sólo conoce el proveedor sale: FASE 5, simplificación del corte, S-37 y
+  S-38; el lote 3 de la FASE 5 ya había descartado `R5-22` por `DEC-MIG-007`.)*
+- ~~**El cobro en vuelo del corte que sale bien se asienta sobre la lápida sin marca y no se
   devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G3-1`, elegida contra la
   recomendación de proponer devolverlo con confirmación de una persona; `F-8V1B3-002`, `F-8V1B1-007`,
   `F-8V1C2-013`). Un cobro del preapproval viejo que el proveedor procesa después de la
@@ -550,20 +637,20 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   no se lo pone delante a nadie**: la lápida del corte queda fuera del desempate (cap. 05 §3) y de
   la comparación de cobros (cap. 09 §3) **para los cobros del día del corte** (FASE 9 vuelta 2,
   `R2`), así que ningún listado lo muestra; (3) si el evento de ese
-  cobro se pierde, **tampoco queda el `payment`**, porque el barrido no compara ~~cobros~~ **los
+  cobro se pierde, **tampoco queda el `payment`**, porque el barrido no compara~~ ~~cobros~~ ~~**los
   cobros de ese día** sobre la lápida. **Y no queda invisible: lo lista el detector del día siguiente al corte** (abajo, *Detector*; verificación corta, 2026-09-29, lote P-B). **Causa**: el owner eligió la posición coherente con `2d` y
   con su `G1-4`, y prefiere
-  tratarlo en la llamada uno por uno a ese cliente antes que con una confirmación por cobro.
+  tratarlo en la llamada uno por uno a ese cliente antes que con una confirmación por cobro.~~
   ~~**Población**: los clientes con un cobro en vuelo en la ventana de minutos del paso 1b —a lo
-  sumo los tres de la cartera—.~~ **Población, leída y no fijada** (owner 2026-09-27, FASE 9 vuelta
+  sumo los tres de la cartera—.~~ ~~**Población, leída y no fijada** (owner 2026-09-27, FASE 9 vuelta
   2, `R2`; `F-8V2B3-002`, `F-8V2B1-006`): los clientes del viejo cuyo preapproval cancelado en el
   1b cobra **el día del corte**, sobre la cartera que la re-verificación del §1.3 lee ese día —con
   las altas que siguieron entrando hasta el 0b, y con los ids que sólo conoce el proveedor—, no un
   número escrito acá. **Un cobro posterior a ese día ya no está en esta población**: abre la marca
   `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo (§2.5), sea de un registro que siguió
-  reintentando o de una cancelación que se deshizo. **Detector**: ~~el `payment` asentado sobre la
+  reintentando o de una cancelación que se deshizo. **Detector**:~~ ~~el `payment` asentado sobre la
   lápida, que una consulta sobre las lápidas del corte con `payment` lista, y la re-verificación del
-  §1.3, que es la lista con la que el owner llama~~ **la consulta que lista las lápidas del corte con
+  §1.3, que es la lista con la que el owner llama~~ ~~**la consulta que lista las lápidas del corte con
   `payment`, y corre DESPUÉS del corte**: la corre quien opera el corte, el día siguiente al corte
   y otra vez el día siguiente al último `expire_date` (`RC-7`) de los registros de cobro que la
   re-verificación leyó abiertos sobre los ids del manifiesto del 1b; la primera da la lista de
@@ -582,7 +669,10 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   verificación, owner 2026-09-28, `V2-r`); el owner aporta que no hay ni va a haber anuales vivas
   (FASE 9 vuelta 3, lote F). La re-verificación del §1.3 es la lista con la que el
   owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la
-  salvedad 4 del cap. 09 §3 y marca a los 3 días.
+  salvedad 4 del cap. 09 §3 y marca a los 3 días.~~
+  *(Sale entero con la lápida del corte: ese cobro ya no se asienta sin marca, entra por la
+  lápida de recepción y le aparece al owner con la propuesta de devolverlo, §2.5. FASE 5,
+  simplificación del corte, lote C; S-40, S-41, S-42, S-74.)*
 - ~~**La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita
   allá. **Causa**: el cap. 09 es de otra pasada de esta misma ronda; hasta que la tenga, la regla vive
   sólo en este capítulo.~~ **Cerrado el 2026-09-25**: está escrita en el cap. 09 §2.4, con el motivo 6

@@ -54,7 +54,8 @@ avisaron, lo que vale es la evidencia del envío»*.
 
 **Ya está resuelto por el capítulo 07 (núcleo) y no hacía falta un abogado**: el §44 exige que el
 intento de notificación quede registrado, y el outbox guarda destinatario, plantilla, estado,
-identificador del proveedor e intentos. La clave de una-sola-vez del capítulo 07 (núcleo) §2 —el
+identificador del proveedor e intentos (lo construye `U2`, el outbox común, y absorbe la bitácora
+de correos que renombró `U1`: FASE 5, owner 2026-09-30, lote 2 A). La clave de una-sola-vez del capítulo 07 (núcleo) §2 —el
 sujeto, el hito **y la fecha objetivo vigente**, `sub:<id>:aumento:-30d:2026-11-01`— hace que
 **cada aviso sea localizable por lo que es**, no por una búsqueda de texto. **Y la fecha es parte
 de la prueba, no un adorno de la clave**: los tres avisos de aumento apuntan a una fecha de
@@ -131,8 +132,12 @@ instancia moría por la orfandad y su pago quedaba sin propuesta. **`S36` crea `
 del pago de cada instancia `UNA_VEZ` que su orfandad apaga, si se acreditó dentro de los mismos 10
 días corridos** (cap. 03 §3.2 y §6.1), y **se devuelve por el camino de las órdenes**,
 `POST /v1/orders/{id}/refund`, que la sonda 56 midió en sandbox; su idempotencia y lo que devuelve
-un reenvío ~~están propuestos a la matriz~~ no están medidos (`EX-58`, `PARTIALLY_SUPPORTED`; cap. 06 §3.2;
-FASE 9 vuelta 3, verificación, VC3-cobro-05). Fuera de ese plazo, un `UNA_VEZ` se consume
+un reenvío ~~están propuestos a la matriz~~ ~~no están medidos (`EX-58`, `PARTIALLY_SUPPORTED`; cap. 06 §3.2;
+FASE 9 vuelta 3, verificación, VC3-cobro-05)~~ **están medidos** (`EX-58`, `VERIFIED`, 2026-09-30,
+sandbox): la clave es obligatoria, el reenvío con la misma clave devuelve la misma devolución, y
+como el `POST` devuelve todas las de la orden, la nueva sale por resta contra las registradas;
+**las devoluciones de una misma orden se serializan** (FASE 5, owner 2026-09-30, lote 5 F,
+`R5-27`; cap. 09 §3). Fuera de ese plazo, un `UNA_VEZ` se consume
 (`DEC-ADDON-001`) y no se abre nada.
 
 **Lo que queda abierto son tres cosas, y ninguna es el mecanismo:**

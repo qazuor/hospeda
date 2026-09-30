@@ -138,7 +138,11 @@ exactamente una de las dos es no nula.
   espera un aviso**: la orden se confirma con la respuesta y releyéndola (`A2`), la que queda sin
   respuesta ~~la reenvía `A3`~~ la confirma `A3` releyéndola si tiene su id,
   y si no la abandona sin reenviar (FASE 9 vuelta 3, lote E), la que se paga después la ve el barrido, y el reembolso se confirma
-  releyendo el pago (`RF3`). Producción no está medida.
+  releyendo el pago (`RF3`). Producción no está medida. **Y la devolución de una orden trae su
+  id**: el `POST` devuelve todas las de la orden, así que la nueva sale por resta contra las ya
+  registradas, y por eso las devoluciones de una misma orden se serializan; un `409` es un error
+  de programación, no *«ya estaba hecha»* (FASE 5, owner 2026-09-30, lote 5 F, `R5-27`; `EX-58`,
+  `VERIFIED`, sandbox).
 - **Una orden con la tarjeta rechazada devuelve `402` y queda creada igual**, `failed`, con su id en
   el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
   instancia como el de cualquier orden, ~~y la instancia sigue en `PENDING_AUTHORIZATION`, como con
@@ -900,7 +904,7 @@ llamada nuestra**, y el preapproval de un **complemento** lo cancelamos siempre 
 llamada que puede fallar sin emitir nada. **Esa asimetría no parte suscripciones contra
 complementos**, y creerlo fue el error de la versión anterior de esta frase: hay terminales de
 suscripción que también dependen de una llamada nuestra —`S12`, `S3`, `S13`, **`S20`**, **`S21`**
-y la lápida del corte—, y `B/09` §3 las devuelve al barrido con la misma condición de corte.
+y ~~la lápida del corte~~ la lápida de recepción (FASE 5, simplificación del corte, S-40 y S-70: la del corte salió)—, y `B/09` §3 las devuelve al barrido con la misma condición de corte.
 **`S20` es además la prueba de que la asimetría no parte por ahí**: es una suscripción **de
 complemento** que llega a terminal por una llamada nuestra, o sea las dos cosas a la vez.
 
@@ -1014,7 +1018,7 @@ comprobación al barrido**: la
 escribe la transición, en el mismo acto.
 
 **Y el barrido gana una puerta y no gana una comprobación.** `S21` agrega **una** fila a la tabla
-de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ ~~**dieciocho**~~ **quince** (la decimoséptima, `S36`, FASE 9 vuelta 1; la decimoctava, la lápida de recepción, owner 2026-09-26, `X-1`; `S25`, `S27` y `S28` salieron con la revisión del owner, 2026-09-28, C8), desde que `S22`, `S23` y
+de puertas a un estado terminal de `B/09` §3 —que hoy tiene ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ ~~**dieciocho**~~ ~~**quince**~~ **catorce** (sale la lápida del corte, FASE 5, simplificación del corte, S-40; la decimoséptima, `S36`, FASE 9 vuelta 1; la decimoctava, la lápida de recepción, owner 2026-09-26, `X-1`; `S25`, `S27` y `S28` salieron con la revisión del owner, 2026-09-28, C8), desde que `S22`, `S23` y
 `S24` ~~, `S25` y las **dos** terminales de la discontinuación, `S27` y `S28`,~~ le agregaron las suyas
 (`B/03` §3.2), **y `S31` la suya** (FASE 8 completa, owner 2026-09-25)—, y su veredicto es **no exenta**: el
 preapproval lo dejó sin poder cobrar **una llamada nuestra** —la de `A5` o `A6`—, que puede fallar
