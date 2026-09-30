@@ -26,3 +26,20 @@ decididos con el owner el 2026-09-29. **Todavía no están aplicados.**
 | F | `VC-VT-02` | la acción 24 condicionada sobre una fila viva | **1**: una entrada nueva en la dirección de ida del contrato, que billing contesta con sí o no sobre la cuenta entera («¿le queda algo que todavía pueda cobrarle?»), y entra al inventario de «fila viva» del lado de billing; la 24 sigue en `V8` | sí |
 | G | `VC-VT-03` | la 24 trabada por `CANCEL_SCHEDULED` | **1**: la precondición pregunta por una autorización que puede cobrar (sin `CANCEL_SCHEDULED`); la fila `CANCEL_SCHEDULED` termina sola por `S12` sobre la cuenta ya seudonimizada | sí |
 | H | `VC-VT-04` | los avisos de retención y `pausaTerminadaEn` | **1**: la fila «retención» de `nucleo/07` §6 cuenta los avisos previos desde el más tardío de los dos instantes, con la versión de plazos de la ficha, y la fecha objetivo de la ocurrencia sale de esa cuenta | sí |
+
+## Lote N · lo que pidió elegir la tanda que aplicó el lote M (2026-09-29)
+
+Decisiones de [`33-aplicacion-lote-m-y-menores.md`](./33-aplicacion-lote-m-y-menores.md) §3.
+
+| Letra | Decisión de `33-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | D-1 | quién borra el sistema viejo | **Reformulada por el owner**: *«ya habíamos definido que no conviven nunca los 2 sistemas, así que esta pregunta no tiene sentido [...] tenemos que estar 100 % seguros de eliminarlo por completo y no dejar código basura»*. Entre sus dos caminos (limpieza total al principio, o borrar a medida que se avanza) eligió **limpieza total al principio**: la primera unidad de la épica borra todo el cobro viejo (`qzpay`, rutas, crons, adaptador) y renombra o borra todo lo que nombra el agrupamiento viejo; recién después se construye lo nuevo. Consecuencias: `G8` y `G16` miran todo el repo sin listas de pendientes de código (el trinquete de M-E y la pregunta de D-1 desaparecen; se revisa qué queda de las tres entradas); las mitades se construyen contra el simulador del contrato mientras la app en la rama está rota; y se rehace el orden de los pasos 3 y 4b del corte, porque el receptor viejo desaparece con el despliegue del paso 3 | sí (la recomendada entre las dos del owner) |
+| B | D-2 | el `402` que no llega | **1**: el segundo pedido reenvía con la misma clave y el mismo cuerpo; un `409` muestra «tu pago anterior se está procesando, probá en unos minutos», sin abrir un pedido nuevo | sí |
+| C | D-3 | un cobro que llega después de la acción 24 | **1**: la 24 se rechaza con una `CANCELACIÓN_SIN_CONFIRMAR` abierta (suma a `puedeCobrarle`), y si igual llega un cobro, `P1` deja nombre y correo nulos y el comprobante sin enviar, como sobre una lápida | sí |
+| D | D-4 | verificar la URL de IPN en el 4b | **1**: la herramienta del corte hace un pago chico con la tarjeta del owner, verifica la entrega IPN guardada y lo devuelve | sí |
+| E | D-5 | el cliente `PARA_RESOLVER` | **1**: recibe sólo el anuncio con un texto de «te vamos a contactar»; su fila sale a `FUERA` al resolverse o si termina; cancelar la migración la pasa a `CANCELADA` | sí |
+| F | D-6 | el correo de `PB12` cuando soporte corre la 24 enseguida | **1**: el outbox guarda la dirección al encolar, y la supresión por cuenta dada de baja no alcanza a lo encolado antes | sí |
+| G | D-7 | la presencia de un Partner que se da de baja | **1**: acción administrativa 25, que la vacía, dentro de la baja manual | sí |
+| H | D-8 | la versión de plazos el día del corte | **1**: la migración estructural crea la versión 1 con los quince valores; el 3a sólo la verifica | sí |
+| I | D-9 | cuando muere el título que ancla la cuota | **1**: la ventana en curso sigue hasta su fin y la próxima arranca con el ancla nueva | sí |
+| J | — | el lote de `33-` §4 para el log | **1**: OK, con lo que sumen A a I | sí |
