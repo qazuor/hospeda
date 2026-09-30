@@ -126,7 +126,15 @@ wt_template_fingerprint() {
 
 wt_template_fingerprint_ref() {
   local ref="$1" root cfg cfg_rel ref_cfg paths tmp fp
-  root="$(wt_root)"; cfg="$(wt_config_path)"
+  root="$(wt_root)"
+  # qz is the authoritative project contract when present. The legacy
+  # .claude config can still exist for compatibility, but must not determine
+  # fingerprints for a project that has migrated to .qz/project.json.
+  if [ -f "$root/.qz/project.json" ]; then
+    cfg="$root/.qz/project.json"
+  else
+    cfg="$(wt_config_path)"
+  fi
   [ -f "$cfg" ] || return 0
   cfg_rel="${cfg#"$root"/}"
   ref_cfg="$(git -C "$root" show "$ref:$cfg_rel" 2>/dev/null || true)"
