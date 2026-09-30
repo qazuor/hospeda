@@ -59,6 +59,16 @@ else
   exit 1
 fi
 
+# A qz adapter must travel with the base branch. Without this check the
+# worktree can be created successfully but every qz command inside it is
+# undiscoverable. This is especially easy to hit while an adapter is prepared
+# on a side branch before it has been merged into the configured base.
+if [ -f "$QZ_CFG" ] && ! git -C "$ROOT" cat-file -e "$START:.qz/project.json" 2>/dev/null; then
+  echo "ERROR: base '$BASE' does not contain .qz/project.json." >&2
+  echo "       Merge/publish the project adapter into '$BASE' before creating worktrees." >&2
+  exit 1
+fi
+
 # The shared template is the fast path, but it must never be silently stale.
 # Compare the versioned source fingerprint with metadata stored inside the
 # template DB. Missing metadata/journal is a legacy template and blocks create;
