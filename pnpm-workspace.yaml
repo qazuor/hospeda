@@ -185,7 +185,9 @@ overrides:
   # ">=5.0.8" floor here was itself resolving the tree onto the vulnerable
   # 5.0.8. Transitive only (glob > minimatch > brace-expansion), so raising
   # this floor is the only reachable fix.
-  brace-expansion: ">=5.0.9"
+  # GHSA-6j4f-fj2g-mc7p (<5.0.10) + GHSA-qhr7-859c-m2p7 (<5.0.11), 2026-09:
+  # same story, the floor moves again.
+  brace-expansion: ">=5.0.11"
   shell-quote: ">=1.8.5"
   mdast-util-to-hast: ">=13.2.1"
   preact: ">=10.26.10"
@@ -256,7 +258,10 @@ overrides:
   # close it — the range still ALLOWS 8.7.0 for transitive paths. Raise the floor.
   # Stays bounded below 9: the h2-by-default concern that gated adopting 8.x was
   # settled on that major, and this is a minor within it.
-  undici: ">=8.9.0 <9"
+  # GHSA-rfgv-xxqx-mfg5 + BalancedPool TLS bypass (2026-09): <8.10.2. Same trap
+  # twice: Dependabot #3413 bumped only the direct paths and left
+  # @remix-run/node and unifont on 8.10.0, so the floor moves again.
+  undici: ">=8.10.2 <9"
   "vite@^6.0.0": ">=8.0.16 <9"
   "vite@^7.0.0": ">=8.0.16 <9"
   "vite@>=6.0.0": ">=8.0.16 <9"
