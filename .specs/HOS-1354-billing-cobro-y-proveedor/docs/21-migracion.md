@@ -85,14 +85,21 @@ que no se traducen: el admin las modera después con `PB10` si quiere (`V/21` §
 
 **Y el titular de toda autorización que el censo del 1b cancela y la base no conoce entra a la
 población a avisar y a la lista con la que el owner llama** (owner 2026-09-27, FASE 9 vuelta 2,
-`R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador —el `payer_email` del
-preapproval—, y esa persona entra aunque no tenga ficha ni fila en la base. ~~Como el manifiesto
+`R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador ~~—el `payer_email` del
+preapproval—~~ **si alguna lectura lo da: el `GET` del preapproval devuelve `payer_email` vacío
+(`EX-19`) y ni `payer_id` identifica a la persona (`EX-56`), así que si lo traen el buscador sin
+filtro o el pago asociado se mide en sandbox** (propuesto a la matriz; FASE 9 vuelta 3, owner
+2026-09-30, lote G, `F-8V3B3-001`), y esa persona entra aunque no tenga ficha ni fila en la base.
+**Si ninguna lectura trae el pagador, esa persona no tiene detector**, y el «NO cierra» lo dice.
+ ~~Como el manifiesto
 nace en el 1b, **su aviso llega después de la cancelación y no antes**; lo que pierde está
 declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~ **Y su aviso es previo,
 como el de los demás** (owner 2026-09-27, FASE 9 vuelta 2, `R21-b`): **antes del aviso previo hay
 una pasada de sólo lectura sobre el proveedor** —el mismo recorrido sin filtro del 1b, sin
-cancelar nada— que lista las autorizaciones vivas con su `payer_email` y **suma a la población a
-los titulares que la base no conoce**. El 1b cancela después, como está, y su manifiesto sigue
+cancelar nada— que lista las autorizaciones vivas con su ~~`payer_email`~~ pagador, **si la
+medición del lote G encuentra una lectura que lo traiga** (FASE 9 vuelta 3), y **suma a la
+población a los titulares que la base no conoce**.
+El 1b cancela después, como está, y su manifiesto sigue
 haciendo falta: la lista puede envejecer entre la pasada y el 1b, y el titular que aparezca recién
 en el manifiesto del 1b entra igual a la población, con un aviso que ya no es previo. Lo que pierde
 cada uno está declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.
@@ -106,6 +113,11 @@ manifiesto del 1b, sus registros de cobro abiertos** —`scheduled` o `recycling
 detector del «NO cierra». **Sobre una suscripción anual del viejo esa fecha puede caer hasta un año
 después del corte**, porque `RC-7` la midió sobre ciclos de 1 y 2 días; por eso el paso 0 cuenta
 las anuales vivas (`16-fase-7…` §4.2; FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-r`).
+**Hecho aportado por el owner: no hay anuales vivas en el sistema viejo ni las va a haber antes
+del corte** (FASE 9 vuelta 3, owner 2026-09-30, lote F); el recuento del paso 0 lo confirma.
+**Un registro abierto que es el de un alta no trae `expire_date`** (`RC-7`), y **con qué fecha
+entra a la segunda corrida es pregunta abierta** (registro de la FASE 9 vuelta 3, B;
+`F-8V3B3-004`).
 
 > 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
 > pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
@@ -145,8 +157,9 @@ la versión que elige quien opera el corte, aceptada sólo si `políticaDePlan(v
 demostración, y el grant lee la versión vigente (`12-contrato…` §2.8), así que un cambio de
 catálogo posterior les llega solo. Si el owner algún día quiere esas cuentas para probar un plan
 intermedio, se revoca el grant y se escribe otro: no se diseña para eso. El plan tiene que existir
-antes del 3b, y por eso el catálogo de producción es el paso 3a (`16-fase-7-del-paraguas.md`
-§4.2).
+antes del 3b, y por eso el catálogo de producción ~~es el paso 3a~~ **se carga en la migración
+estructural del paso 3, antes de la prueba del corte, como los plazos, y el 3a sólo lo verifica**
+(`16-fase-7-del-paraguas.md` §4.2; FASE 9 vuelta 3, owner 2026-09-30, lote C).
 
 **Y esas dos filas cruzan la frontera, así que la mitad de verticales las tiene que ver.** Un
 `GRANT` con `hasta: NO_VENCE` es de clase `TÍTULO` (`12-contrato…` §2.4), de modo que las dos
@@ -171,9 +184,11 @@ pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
 escribe~~ de rastro que el corte escribe** —~~del lado de verticales el corte escribe además una
 fila de `trial` ya consumida por cada dueño existente, que es el mismo tipo de rastro (`V/21` §2.4;
 FASE 8 completa, owner 2026-09-25)~~ **los dos `permanent_grant` del §2.4 también son filas nuevas
-de billing, pero son cortesías vigentes, no rastro; y del lado de verticales el corte ya no escribe
-filas de `trial`, porque los clientes actuales se tratan como nuevos** (owner 2026-09-25; FASE 9
-completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
+de billing, pero son cortesías vigentes, no rastro; y del lado de verticales el corte ~~ya no escribe
+filas de `trial`, porque los clientes actuales se tratan como nuevos~~** **escribe una prueba
+activa, no un rastro, por cada `(dueño, vertical)` con una ficha `L8`** (revisión del owner, C12;
+`V/21` §2.4, *«la prueba gratis que escribe el corte»*; FASE 9 vuelta 3, `F-8V3C2-009`) (owner
+2026-09-25; FASE 9 completa, `2g`; `V/21` §2.4)—, y no contradice *«no se hereda ninguna fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
 
 > **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
 > escrita DESPUÉS de cancelarlo en el proveedor.**
@@ -407,8 +422,11 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   §2.5, que no es una transcripción: es el rastro del id que se canceló, **y los dos
   `permanent_grant` del §2.4**, que son cortesías del diseño nuevo. ~~**Verticales escribe el
   otro rastro**, la fila de `trial` consumida (`V/21` §2.4; FASE 8 completa, owner 2026-09-25).~~
-  **Verticales no escribe filas de `trial`**: el corte trata a los clientes actuales como nuevos y
-  sólo les respeta la ficha (`V/21` §2.4; owner 2026-09-25, FASE 9 completa, `2g`).
+  ~~**Verticales no escribe filas de `trial`**: el corte trata a los clientes actuales como nuevos y
+  sólo les respeta la ficha (`V/21` §2.4; owner 2026-09-25, FASE 9 completa, `2g`).~~
+  **Verticales escribe una prueba activa por cada `(dueño, vertical)` con una ficha `L8`**, que no
+  es una transcripción sino la prueba de un cliente nuevo (revisión del owner, C12; `V/21` §2.4;
+  FASE 9 vuelta 3, `F-8V3C2-009`).
 - **Los pagos**: ~~no hay ninguno.~~ los hay desde el 2026-09-26, bajo el sistema viejo (§1.3), y
   **no se conservan** (FASE 9 completa, `CT-6` y `2a`).
 - **Las tablas viejas de billing, con todo lo que tengan adentro, y las columnas que las copian**
@@ -422,8 +440,14 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   ~~(FASE 5)~~: **el código sale de la rama en la limpieza del principio, y su esquema con él, así que la migración que genera ese borrado las saca de la base en el paso 3 del corte** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A). *«Recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
   vuelven a suscribir. Guardarlo sólo deja basura que después cuesta limpiar.»* **El corte no
   necesita leerlas**: los ids que cancela salen del proveedor (`16-fase-7…` §4.2, paso 1b) y, desde
-  `2g`, no siembra trials consumidos, que era lo único que las leía. **Si algún día algo del corte
-  volviera a leerlas, corre antes de retirarlas.**
+  `2g`, no siembra trials consumidos, que era lo único que las leía. ~~**Si algún día algo del corte
+  volviera a leerlas, corre antes de retirarlas.**~~ **Salvo tres columnas de `accommodations`,
+  `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que la tabla de traducción de
+  `V/21` §2.4 lee para `L5` y `L7`: sobreviven a `U1` como excepción temporal y nombrada, que los
+  guards de limpieza admiten hasta el corte, y las borra una migración posterior al paso 3,
+  después de la clasificación de `V6`** (`16-fase-7…` §4.6; FASE 9 vuelta 3, owner 2026-09-30,
+  lote N). La frase tachada no se podía cumplir por orden: la migración de `U1` corre en el paso 3
+  antes que la de clasificación.
 - ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
   Eso es trabajo de FASE 5 y de código, no de datos.~~ **El agrupamiento viejo de Gastronomía y
@@ -451,7 +475,9 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   los planes, límites y entitlements de billing en la regla de dual-write del `CLAUDE.md` raíz**: los
   datos de planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write
   (revisión del owner, casos vecinos, 2026-09-29, caso 42; `NUCLEO/02` §1.4). El catálogo de producción no sale de este
-  archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`). Es filtro 1
+  archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`), **que corre
+  dentro de la migración estructural del paso 3, antes de la prueba del corte; el 3a sólo la
+  verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C). Es filtro 1
   de FASE 5: el sujeto muere, **y lo borra la limpieza del principio** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A).
 
 ---
@@ -469,10 +495,14 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   pierde y no se devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G1-4`, elegida
   contra la recomendación de devolver completo antes del corte; `F-8V1C2-002`). El cliente que
   pagó un ciclo el 25/11 y ve el corte el 05/12 pierde los días que le quedaban, y el addon que
-  compró deja de existir con las tablas viejas (§4). **Lo compensa de hecho el trial de `2g`**:
+  compró deja de existir con las tablas viejas (§4). ~~**Lo compensa de hecho el trial de `2g`**:
   al publicar su ficha estrena el trial entero de un cliente nuevo (`V/21` §2.4), que suele cubrir
   esos días —pero no es una equivalencia calculada, y un addon no tiene trial que
-  lo reemplace—. **El aviso previo lo dice** (`16-fase-7-del-paraguas.md` §4.2, guion del aviso),
+  lo reemplace—.~~ **No se devuelve, para nadie, y el trial no se presenta como compensación**:
+  al publicar su ficha estrena el trial de un cliente nuevo (`V/21` §2.4), que no es una
+  equivalencia de lo perdido (FASE 9 vuelta 3, owner 2026-09-30, lote F). El owner aporta el
+  hecho que acota la población: **no hay anuales vivas en el sistema viejo ni las va a haber
+  antes del corte**. **El aviso previo lo dice** (`16-fase-7-del-paraguas.md` §4.2, guion del aviso),
   y le pide que no contrate ni compre nada en el sistema viejo después de recibirlo. **Causa**:
   es la posición coherente con `2a` (no se conserva nada del sistema viejo) y con `2d` (la
   diferencia de un corte abortado no se devuelve); el owner prefiere un trial nuevo a unos pocos
@@ -494,8 +524,13 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   es previo queda sólo el que aparece en el manifiesto del 1b y no apareció en esa pasada.**
   **Población**: los ids del manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del
   propio owner, `16-fase-7…` §4.2), y de ellos, sin aviso previo, los que la pasada no vio.
-  **Detector**: la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
-  con la que el owner llama. **Causa**: la misma de arriba, y que el censo que
+  **Detector**: ~~la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
+  con la que el owner llama.~~ **condicionado a la medición del lote G**: la pasada y el manifiesto
+  suman esas personas a la lista con la que el owner llama **sólo si alguna lectura trae el
+  pagador** (el buscador sin filtro o el pago asociado), porque el `GET` devuelve `payer_email`
+  vacío (`EX-19`); **si ninguna lo trae, esta población no tiene detector**: el owner ve el id
+  cancelado y no sabe a quién llamar
+  (FASE 9 vuelta 3, owner 2026-09-30, lote G, `F-8V3B3-001`). **Causa**: la misma de arriba, y que el censo que
   las encuentra es el del 1b.
 - **El cobro en vuelo del corte que sale bien se asienta sobre la lápida sin marca y no se
   devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G3-1`, elegida contra la
@@ -537,7 +572,8 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   la lista todavía puede recibir su `payment` por un reintento que llegue después de la corrida.
   *(Las dos últimas frases las derivé y las marco.)* **Sobre un anual del viejo la segunda corrida puede
   caer hasta un año después del corte**, y cuántos hay lo cuenta el paso 0 (FASE 9 vuelta 2,
-  verificación, owner 2026-09-28, `V2-r`). La re-verificación del §1.3 es la lista con la que el
+  verificación, owner 2026-09-28, `V2-r`); el owner aporta que no hay ni va a haber anuales vivas
+  (FASE 9 vuelta 3, lote F). La re-verificación del §1.3 es la lista con la que el
   owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la
   salvedad 4 del cap. 09 §3 y marca a los 3 días.
 - ~~**La precondición de la re-vinculación en el cap. 09 §2.4** (§2.5, `2b`) todavía no está escrita

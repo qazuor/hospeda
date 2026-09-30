@@ -242,7 +242,10 @@ puso el default, y es **DEVOLVER**.
 significa **devolverlos todos**; `S15` no la puede levantar mientras a alguno le falte su
 resolución (`B/03` §3.2). Ésa es la mitad sin la cual el default era peor que la marca muda: le
 decía a la persona *«éste es el pago, devolvelo»* sobre **uno** de los N, y la persona que hacía
-bien su trabajo cerraba el caso con el resto adentro.
+bien su trabajo cerraba el caso con el resto adentro. **Y un pago colgado que el banco ya le
+devolvió a la persona por un contracargo se muestra con el contracargo y fuera del default**: la
+devolución que lo propusiera no sale (`RF2` relee el pago antes, `B/03` §6.1), y la persona lo
+resuelve sin devolver (FASE 9 vuelta 3, `F-8V3B2-002`).
 
 **El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.** La persona confirma —o se niega, con
 lo que vea delante— y el sistema **no dispara ningún reembolso solo**. Lo que cambia es que ahora

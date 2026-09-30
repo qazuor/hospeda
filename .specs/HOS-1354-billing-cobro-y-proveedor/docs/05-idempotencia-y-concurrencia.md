@@ -79,8 +79,14 @@ este § era falso para las órdenes desde `EX-41`). **La clave sale del pedido d
 llamada, y el reenvío tiene quién lo haga** (FASE 9 vuelta 2, owner 2026-09-27, `R4`): el
 identificador del pedido lo acuña la pantalla de compra y `A1` lo persiste en la instancia, único,
 así que el doble clic —que el §51 pide en la primera línea de este capítulo— encuentra la instancia
-que ya existe y reusa su orden en vez de mandar otra (`F-8V2B2-003`); y una orden sin respuesta la
-reenvía `A3` con la misma clave antes de abandonar (`B/03` §8; `F-8V2B1-003`, `F-8V2B2-004`).
+que ya existe y reusa su orden en vez de mandar otra (`F-8V2B2-003`); ~~y una orden sin respuesta la
+reenvía `A3` con la misma clave antes de abandonar (`B/03` §8; `F-8V2B1-003`, `F-8V2B2-004`).~~
+**`A3` sólo confirma, nunca reenvía**: el reenvío de horas después es `EX-43`, `UNKNOWN`, y no
+`EX-41`, que midió el inmediato (`B/03` §8; FASE 9 vuelta 3, owner 2026-09-30, lote E). **Y la
+compra tiene un candado propio más allá de la pantalla**: mientras haya una instancia del mismo
+`(dueño, producto, objetivo)` en `PENDING_AUTHORIZATION`, un pedido nuevo no crea otra (`B/02`
+§2.4), que es también el candado del addon recurrente contra el doble clic, que no tenía ninguno
+(`EX-17`: el proveedor no deduplica).
 
 ---
 

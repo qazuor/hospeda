@@ -109,8 +109,13 @@ todos los meses da **un solo caso**.
 
 > **Y antes de mandar cancelar, el handler consulta el manifiesto de sondas del corte** (FASE 9
 > vuelta 2, `F-8V2B3-004`, `F-8V2C2-005`): los ids que `16-fase-7…` §4.2 exceptúa del 1b porque
-> tienen una medición abierta —enumerados en el manifiesto versionado de `mp-probes/`, que el
-> despliegue lleva consigo—. **Sobre uno de esos ids el handler escribe la lápida de recepción,
+> tienen una medición abierta —enumerados en el manifiesto versionado de `mp-probes/`~~, que el
+> despliegue lleva consigo~~—. **Esa carpeta es de la spec, está marcada no productiva (`B/06`
+> §9) y sale del repositorio al cerrar HOS-1352, así que el handler de producción no puede
+> depender de ella** (FASE 9 vuelta 3, `F-8V3B3-006`): **de dónde lee la lista y qué hace si le
+> falta es pregunta abierta** (registro de la FASE 9 vuelta 3, B), porque las dos respuestas
+> tienen daños distintos; hasta que se conteste, el test de **B11** que la ejercita no cierra.
+> **Sobre uno de esos ids el handler escribe la lápida de recepción,
 > el `payment` y la marca, y no manda cancelar**, y el barrido tampoco: sin llamada nuestra no
 > entra a la salvedad 4 del §3, y la sigue la salvedad 2 mientras la marca esté abierta. La marca
 > la levanta una persona sin devolver —es la tarjeta del owner, y el id está en el manifiesto—
@@ -199,7 +204,13 @@ razón, escrita como criterio y no como lista, es una sola:
 > canceló el proveedor**, o **nuestra llamada ya fue confirmada por una relectura**. **Y en los
 > dos, recién cuando cerró el registro de cobro del último ciclo de su preapproval** —pasó a
 > `processed` o venció su `expire_date` (`RC-6`, `RC-7`)— (owner 2026-09-27, FASE 9 vuelta 2,
-> `R2`; `F-8V2B3-006`).
+> `R2`; `F-8V2B3-006`). **Un registro sin `expire_date` cierra sólo con `processed`**: es el del
+> alta, que `RC-7` mide sin ese campo, y es justo la población en que se midió `recycling`
+> (FASE 9 vuelta 3, `F-8V3B3-004`). **Y si lo canceló el proveedor después de un cobro
+> rechazado, recién cuando pasó la ventana de relectura de la cancelación por rechazo**
+> (`NUCLEO/02` §1.5) **con el preapproval releído todavía `cancelled`**: el proveedor deshace esa
+> cancelación (`EX-45`; seis casos en el código actual, horas después) (FASE 9 vuelta 3, owner
+> 2026-09-30, lote K, `F-8V3B3-002`).
 
 **Por qué el registro y no sólo la cancelación.** Que un preapproval cancelado no cobre es diseño y
 no medición (`GR-2` sigue `UNKNOWN`): el estado `recycling` se midió justamente sobre preapprovals
@@ -211,14 +222,28 @@ parte de *«imposibilitada de cobrar»*, y no mueve las cifras de la tabla de ab
 salvedades. Si la medición del paso 0 del corte (`16-fase-7…` §4.2) muestra que cancelar corta el
 reciclado, la condición queda como defensa sin población; si muestra que no, es la que lo ve.
 
+**Por qué la ventana de relectura, y qué pasa si el preapproval vuelve** (FASE 9 vuelta 3, owner
+2026-09-30, lote K, `F-8V3B3-002`). Un `cancelled` que el proveedor escribió ante un rechazo de
+tarjeta no es definitivo: el código actual registra seis que se leyeron `cancelled` en el `PUT` y
+en un `GET` inmediato y horas después decían `authorized` o `pending` (`EX-45`). Es la población
+que esta exención soltaba en la primera relectura (la de `S16` sin llamada, y la del espejo), y
+una vez fuera del barrido sólo el aviso del cobro la devolvía, que puede no llegar (`WH-5`). **Se
+cuenta desde la primera relectura que lo vio `cancelled`**, y su valor es el del plazo 16 de la
+lista cerrada (`NUCLEO/02` §1.5). **Si
+durante la ventana la relectura lo ve `authorized` o `pending`**, la fila está en el barrido y la
+lee la fila de estado del §3: un preapproval vivo sobre una fila que nunca mandamos cancelar es
+divergencia de estado y la mira una persona (§2.4), y si cobra, la comparación de cobros lo
+cuelga con el motivo de la tabla de desempate del `B/05` §3. **Si en cambio el barrido debe mandar
+la cancelación que `S16` habría mandado es pregunta abierta** (registro de la FASE 9 vuelta 3, B).
+
 **Escrita como enumeración de transiciones, la garantía era falsa, y hay que decir dónde.** La
 versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobre un conjunto de
 ~~**quince**~~ ~~**dieciséis**~~ ~~**diecisiete**~~ ~~**dieciocho**~~ **quince** puertas a un estado terminal (la decimosexta, `S31`, FASE 8 completa, owner 2026-09-25; **la decimoséptima, `S36`**, FASE 9 vuelta 1; **la decimoctava, la lápida de recepción**, owner 2026-09-26, `X-1`; y salen `S25`, `S27` y `S28` con la revisión del owner, 2026-09-28, C8, recontadas sobre la tabla), y de las tres que nombraba una era al revés —**y desde la FASE 8 completa otra más, `CHARGE_DECLINED`**, porque `S16` cancela de nuestro lado (owner 2026-09-25): las exentas quedan en **dos**, el espejo y `S17`, recontadas sobre la tabla—:
 
 | puerta a un estado terminal | ¿quién dejó el preapproval sin poder cobrar? | ¿exenta? |
 |---|---|---|
-| `S16` → `CHARGE_DECLINED` | ~~**el proveedor**, en el mismo milisegundo del rechazo (`B/12` §4.4, medido el 2026-09-17)~~ **nuestra llamada**, con la relectura de `S17`: `S16` cancela el preapproval de nuestro lado y la fila llega a `CHARGE_DECLINED` pase lo que pase con la llamada (`B/03` §3.2; FASE 8 completa, owner 2026-09-25). Que el proveedor cancele solo está medido únicamente ante el antifraude (`B/12` §4.4); con otro motivo no se sabe (`PA-6`, `UNKNOWN`), y el diseño dejó de depender de eso | ~~**sí**~~ **no** — **salvo cuando la relectura ya lo ve `cancelled`**, que es lo medido ante el antifraude: ahí no se manda ninguna llamada y la salvedad 4 lo suelta en la primera relectura, por su condición de corte |
-| el **espejo** del §10.1 → `CANCELLED` | **el proveedor**, por su cuenta: el espejo copia ese hecho | **sí** — **cerrado el registro de cobro del ciclo** (criterio de arriba; FASE 9 vuelta 2, `F-8V2B3-006`) |
+| `S16` → `CHARGE_DECLINED` | ~~**el proveedor**, en el mismo milisegundo del rechazo (`B/12` §4.4, medido el 2026-09-17)~~ **nuestra llamada**, con la relectura de `S17`: `S16` cancela el preapproval de nuestro lado y la fila llega a `CHARGE_DECLINED` pase lo que pase con la llamada (`B/03` §3.2; FASE 8 completa, owner 2026-09-25). Que el proveedor cancele solo está medido únicamente ante el antifraude (`B/12` §4.4); con otro motivo no se sabe (`PA-6`, `UNKNOWN`), y el diseño dejó de depender de eso | ~~**sí**~~ **no** — **salvo cuando la relectura ya lo ve `cancelled`**, que es lo medido ante el antifraude: ahí no se manda ninguna llamada y la salvedad 4 ~~lo suelta en la primera relectura, por su condición de corte~~ lo sigue releyendo hasta que pase la ventana de relectura de la cancelación por rechazo con el preapproval todavía `cancelled` (FASE 9 vuelta 3, owner 2026-09-30, lote K) |
+| el **espejo** del §10.1 → `CANCELLED` | **el proveedor**, por su cuenta: el espejo copia ese hecho | **sí** — **cerrado el registro de cobro del ciclo** (criterio de arriba; FASE 9 vuelta 2, `F-8V2B3-006`) **y, si la cancelación siguió a un cobro rechazado, pasada la ventana de relectura de la cancelación por rechazo** (FASE 9 vuelta 3, lote K) |
 | `S17` → `CANCELLED` | nuestra llamada, **pero con relectura**: si falla, `S17` **no ocurre** y la fila no llega a terminal (`B/03` §3.2) | **sí**, por construcción — **cerrado el registro de cobro del ciclo** (ídem) |
 | `S12` → `CANCELLED` | nuestra llamada: la de `S11`, *«de inmediato»* (`DEC-SUB-009`), emitida un tiempo antes y **no confirmada al llegar acá** | **no** |
 | `S3` → `ABANDONED` | **nuestra llamada**: el job que recorre las vencidas *«cancela el preapproval en el proveedor»* (`B/03` §3.4 punto 2), y `B/06` §6 lo subraya con `EX-1` ~~todavía `UNKNOWN`~~ (`PARTIALLY_SUPPORTED` desde el 2026-09-23: un `pending` no vence solo; FASE 9 vuelta 1, `F-8V1D1-005`) — *«es lo único que impide una autorización viva que puede cobrar»* | **no** — **con la misma salvedad de `S23` y `S24`: sobre un pagador manual sí está exenta**, porque ahí no hubo llamada que confirmar (`B/06` §7) y la fila es **la de un alta que nunca pagó su primera cuota** (`B/03` §7.2). No mueve el conteo de la salvedad 4: `S3` sigue siendo una de sus ~~**once**~~ ~~**doce**~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ **doce** filas, igual que `S23` y `S24` (~~**catorce**~~ con `S36`, FASE 9 vuelta 1, §4 punto 4 de `25-verificado-G5`; **quince** con la lápida de recepción, owner 2026-09-26, `X-1`; **doce** sin `S25`, `S27` ni `S28`, revisión del owner, 2026-09-28, C8) |
@@ -244,7 +269,7 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 | 1 | **la suscripción de complemento de una instancia de addon en estado terminal** — seleccionada **por el estado terminal de la instancia** y, desde `S21`, también **por el suyo propio** cuando llegó a `CANCELLED` junto con ella (`B/16` §4.4) | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación que ~~`A5`/`A6`~~ `A3`/`A5`/`A6` mandaron** (**`A3`** desde la FASE 9 completa, C-R5-2), con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 | 2 | **una suscripción terminal con al menos una marca `requiere_conciliación` abierta** | hasta que una persona **las levante todas** (`S15`, que levanta **una por vez**) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre. **Y el reloj existe desde la FASE 9-bis-4**: es `puesta_en`, por marca (`B/02` §2.2 y §2.5). Mientras la marca era un booleano no había *«desde cuándo»*, así que esta salvedad declaraba como su razón de existir un dato que la base no tenía y el escalamiento de más abajo **no se podía evaluar** |
 | 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. Las ramas **1, 5 y 6** de `B/12` §5.3 dejan la predecesora en `CANCELLED` **con una marca `REEMBOLSO_POR_CONFIRMAR`** (`B/02` §2.5), así que sin esta salvedad los desenlaces que mueven dinero son los únicos que ningún proceso vuelve a mirar |
-| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — ~~**once** de las **doce**~~ ~~**doce** de las **trece**~~ ~~**trece** de las **catorce**~~ ~~**catorce** de las **quince**~~ ~~**quince** de las **dieciséis**~~ **doce** de las **trece** filas *«no»* de la tabla de arriba (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`): `S12`, `S3`, `S13`, **`S16`**, **`S20`**, **`S22`**, **`S23`**, **`S24`**, ~~**`S25`**, **`S27`**, **`S28`**,~~ **`S31`**, **`S36`** y ~~la lápida~~ **las dos lápidas, la del corte y la de recepción** (**la de recepción** desde el owner 2026-09-26, `X-1`; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la FASE 8 completa, owner 2026-09-25, residuo A de `R12`: pasó de *«sí»* a *«no»* al cancelar de nuestro lado). **La ~~duodécima~~ ~~decimotercera~~ ~~decimocuarta~~ ~~decimoquinta~~ ~~decimosexta~~ decimotercera, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras ~~diez~~ ~~once~~ ~~doce~~ ~~trece~~ ~~catorce~~ once son principales** (las dos lápidas, con su clase propia, cuentan de este lado) ~~—`S27` y `S28` alcanzan a las dos clases (`B/10` §4.3), así que aportan filas a los dos lados—~~, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y ~~`S23`, `S24` y `S31`~~ ~~`S3`, `S23`, `S24`, `S27`, `S28` y `S31`~~ ~~`S3`, `S23`, `S24`, `S27`, `S28`, `S31` y `S36`~~ `S3`, `S23`, `S24`, `S31` y `S36` entran sólo cuando hubo llamada** (FASE 9 completa, C-R5-4: la tabla de arriba da la misma salvedad a las ~~seis~~ ~~siete~~ cinco; `S36`, FASE 9 vuelta 1; sin `S27` ni `S28` desde la revisión del owner, 2026-09-28, C8): sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` —**y después, hasta que cierre el registro de cobro del ciclo, por el criterio de la exención** (FASE 9 vuelta 2, `F-8V2B3-006`)—. **Sobre una lápida —cualquiera de las dos— la relectura mira ~~sólo el estado~~ el estado y los cobros, no el monto** (de la del corte, sólo los cobros posteriores al día del corte; FASE 9 vuelta 2, `R2`): no tiene versión contra la cual comparar un monto (`B/02` §2.2; FASE 9 vuelta 1, R6) | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: ~~cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó~~ el aviso de cancelación existe **sólo si la cancelación se aplicó** (`EX-15` mide que cancelar sí notifica), así que si la llamada no se aplicó (FASE 9 vuelta 1, `F-8V1B3-007`) **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
+| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — ~~**once** de las **doce**~~ ~~**doce** de las **trece**~~ ~~**trece** de las **catorce**~~ ~~**catorce** de las **quince**~~ ~~**quince** de las **dieciséis**~~ **doce** de las **trece** filas *«no»* de la tabla de arriba (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`): `S12`, `S3`, `S13`, **`S16`**, **`S20`**, **`S22`**, **`S23`**, **`S24`**, ~~**`S25`**, **`S27`**, **`S28`**,~~ **`S31`**, **`S36`** y ~~la lápida~~ **las dos lápidas, la del corte y la de recepción** (**la de recepción** desde el owner 2026-09-26, `X-1`; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la FASE 8 completa, owner 2026-09-25, residuo A de `R12`: pasó de *«sí»* a *«no»* al cancelar de nuestro lado). **La ~~duodécima~~ ~~decimotercera~~ ~~decimocuarta~~ ~~decimoquinta~~ ~~decimosexta~~ decimotercera, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras ~~diez~~ ~~once~~ ~~doce~~ ~~trece~~ ~~catorce~~ once son principales** (las dos lápidas, con su clase propia, cuentan de este lado) ~~—`S27` y `S28` alcanzan a las dos clases (`B/10` §4.3), así que aportan filas a los dos lados—~~, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y ~~`S23`, `S24` y `S31`~~ ~~`S3`, `S23`, `S24`, `S27`, `S28` y `S31`~~ ~~`S3`, `S23`, `S24`, `S27`, `S28`, `S31` y `S36`~~ `S3`, `S23`, `S24`, `S31` y `S36` entran sólo cuando hubo llamada** (FASE 9 completa, C-R5-4: la tabla de arriba da la misma salvedad a las ~~seis~~ ~~siete~~ cinco; `S36`, FASE 9 vuelta 1; sin `S27` ni `S28` desde la revisión del owner, 2026-09-28, C8): sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` —**y después, hasta que cierre el registro de cobro del ciclo, por el criterio de la exención** (FASE 9 vuelta 2, `F-8V2B3-006`)—; **sobre la de `S16` que el proveedor ya había cancelado, hasta que pase la ventana de relectura de la cancelación por rechazo** (FASE 9 vuelta 3, lote K). **Sobre una lápida —cualquiera de las dos— la relectura mira ~~sólo el estado~~ el estado y los cobros, no el monto** (de la del corte, sólo los cobros posteriores al día del corte; FASE 9 vuelta 2, `R2`): no tiene versión contra la cual comparar un monto (`B/02` §2.2; FASE 9 vuelta 1, R6) | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: ~~cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó~~ el aviso de cancelación existe **sólo si la cancelación se aplicó** (`EX-15` mide que cancelar sí notifica), así que si la llamada no se aplicó (FASE 9 vuelta 1, `F-8V1B3-007`) **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |
 
 **El reintento de una cancelación nuestra: lo que el barrido hace con las salvedades 1 y 4** (FASE
 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌). Las dos salvedades
@@ -713,13 +738,15 @@ lee los **registros de cobro** para contestar *«¿cobró?»*; **ninguna vuelve 
 registramos como `SUCCEEDED`**, así que si después cambia —el cliente lo desconoce ante su banco, o
 alguien lo reembolsa desde el panel del proveedor— la fila sigue diciendo cobrado, el período
 sigue cubierto y el servicio sigue. **Por cada `payment` en `SUCCEEDED` —o `PARTIALLY_REFUNDED`
-(FASE 9 completa, C-R7-3: la tabla de abajo ya valía sobre ése y la selección no lo leía)— cuya fecha del hecho cae
+(FASE 9 completa, C-R7-3: la tabla de abajo ya valía sobre ése y la selección no lo leía), **o
+`REFUNDED`** (FASE 9 vuelta 3, `F-8V3B2-002`: un contracargo sobre algo que ya devolvimos no lo
+veía nadie)— cuya fecha del hecho cae
 dentro de la ventana, el barrido lo relee por id** y compara su estado:
 
 | lo que lee | qué se hace |
 |---|---|
 | lo mismo que tenemos | nada |
-| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD` **—o en `PAUSED` con motivo `COURTESY`** (pendiente 8, owner 2026-09-25)—, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) —**aunque sea la predecesora de una sucesión en curso**—; **si está en `CANCEL_SCHEDULED`, pasa a `CANCELLED` ya por `S12`**; **en los dos casos, si es la predecesora de una sucesión en curso, `S31` corta a su sucesora** (pendiente 8); en cualquier otro estado, sólo la marca (FASE 8 completa, pendiente 6, owner 2026-09-25). **Vale igual sobre un pago `PARTIALLY_REFUNDED`** |
+| **`charged_back`** | **`P6`** (`B/03` §6): el pago pasa a `CHARGED_BACK`, **`S14` abre la marca `CONTRACARGO`** y, si la suscripción está en `ACTIVE` o `GRACE_PERIOD` **—o en `PAUSED` con motivo `COURTESY`** (pendiente 8, owner 2026-09-25)—, **corre `S6` por su tercer evento** —suspende sin grace y cancela el preapproval— (`B/03` §3.2) —**aunque sea la predecesora de una sucesión en curso**—; **si está en `CANCEL_SCHEDULED`, pasa a `CANCELLED` ya por `S12`**; **en los dos casos, si es la predecesora de una sucesión en curso, `S31` corta a su sucesora** (pendiente 8); en cualquier otro estado, sólo la marca (FASE 8 completa, pendiente 6, owner 2026-09-25). **Vale igual sobre un pago `PARTIALLY_REFUNDED`**. **Sobre un pago `REFUNDED` no corre `P6`, que no sale de ese estado: `S14` abre la marca `CONTRACARGO` con el pago colgado y nada más se mueve**, porque la plata ya salió dos veces y lo que queda es la disputa, con el comprobante de la devolución (FASE 9 vuelta 3, `F-8V3B2-002`) |
 | **reembolsado, o con más reembolsado que nuestros `refund`**, sin que el reembolso haya pasado por nuestro flujo | **`S14` abre la marca `REEMBOLSO_FUERA_DEL_FLUJO`** (`B/02` §2.5), **sin suspender**: fue un acto nuestro, no del cliente (`DEC-SUB-020`, *«lo que NO decide»*; `DEC-RF-007`). El `refund` que falta lo asienta la persona |
 
 **Y los pagos en `CHARGED_BACK` también se releen, hasta que la disputa se resuelva** (FASE 8
@@ -735,7 +762,9 @@ resultado de la disputa aunque el aviso de contracargo del proveedor no llegue (
 
 Resuelta la disputa, el pago deja de releerse por esta vía.
 
-**La ventana es un parámetro configurable, y su longitud NO está medida.** No hay en la matriz una
+**La ventana es un parámetro configurable, y su longitud NO está medida.** **Es «la ventana de las
+comprobaciones de pagos acreditados y de órdenes pagadas», el plazo 18 de la lista cerrada de
+`NUCLEO/02` §1.5, con su valor inicial a proponer al owner** (FASE 9 vuelta 3, `F-8V3B3-003`). No hay en la matriz una
 fila que diga cuánto después de acreditado un pago puede llegarle un contracargo, y la del plazo
 de reembolso (`RF-3`) sigue `UNKNOWN`; así que el número no se fija acá, se declara **como
 configuración sin medir**, igual que el plazo de la marca (más abajo). **El costo, dicho**: es la
@@ -765,7 +794,17 @@ lee en el pago en dos grupos, y cada uno tiene su acto:
 | lo que lee en el pago | qué se hace |
 |---|---|
 | **una devolución cuyo id está en una fila de `refund` nuestra en `CONFIRMED`** | es **nuestro flujo con el aviso perdido** (`WH-5`), no una divergencia: si las devoluciones de esa fila ya suman lo confirmado, **corre `RF3`**; si todavía no, nada, y la fila sigue la regla de `RF2`. **Y por eso el barrido relee también todo pago que tenga un `refund` en `CONFIRMED`**, esté o no en la ventana de arriba, hasta que la fila salga de ese estado |
-| **una devolución cuyo id no está en ninguna fila de `refund`** | es la del panel, **fuera del flujo**: el motivo 18, como decía la fila de arriba. *«Con más reembolsado que nuestros `refund`»* se lee así desde ahora: sobra una devolución que ninguna fila nombra, no un monto |
+| **una devolución cuyo id no está en ninguna fila de `refund`** | es la del panel, **fuera del flujo**: el motivo 18, como decía la fila de arriba. *«Con más reembolsado que nuestros `refund`»* se lee así desde ahora: sobra una devolución que ninguna fila nombra, no un monto. **Salvo que el mismo pago tenga una fila en `CONFIRMED` con una llamada sin id** (FASE 9 vuelta 3, `F-8V3B1-004`, `F-8V3B2-003`): ahí es **nuestro flujo con la respuesta perdida**, y la fila toma el id de la devolución cuyo monto es el de esa llamada; si hay más de una candidata del mismo monto, no elige ninguna y abre el motivo 18, con la fila `CONFIRMED` a la vista de quien lo resuelve |
+
+**Y antes de separar los dos grupos, el barrido reenvía las llamadas sin respuesta** (FASE 9 vuelta
+3, `F-8V3B1-004`, `F-8V3B2-003`). Por cada fila de `refund` en `CONFIRMED` con una llamada cuya
+clave está persistida y cuyo id no volvió, reenvía esa llamada con la misma clave y el mismo
+cuerpo (`B/03` §6.1, `RF2`): `201` trae el id y se guarda; `200` con el cuerpo vacío dice que la
+devolución ya existía y no trae el id (`RF-6`), que la fila toma de la relectura del pago como
+dice la tabla de arriba; un error la deja para la corrida siguiente. **Nunca con una clave nueva**:
+sobre un parcial con saldo, eso devolvía dos veces. Como el reintento de una cancelación nuestra,
+repite un acto que ya se decidió (acá, una persona lo confirmó); el de las órdenes sigue
+prohibido, porque ahí el reenvío podía crear un cobro que nadie decidió.
 
 Sin esto, la devolución hecha por nuestro flujo cuyo aviso se perdía terminaba en el motivo 18,
 la persona asentaba un `RF4` por el mismo monto y la fila `CONFIRMED` seguía esperando un `RF3`
@@ -776,7 +815,7 @@ que lo sumaba otra vez al acumulado. **Y *«menos devuelto que lo asentado»* no
 **Y una comprobación más que le pregunta al proveedor, sobre una ORDEN: la de única vez que se
 pagó sin que su instancia llegara a `ACTIVE`** (FASE 9 vuelta 2, owner 2026-09-27, `R4`,
 `F-8V2B1-003`, `F-8V2B2-003`). **Por cada instancia de addon `UNA_VEZ` en `ABANDONED` con el id
-de su orden guardado** (`B/02` §2.4), dentro de la misma ventana configurable de arriba, el barrido
+de su orden guardado** (`B/02` §2.4), dentro de la misma ventana ~~configurable~~ de arriba **(el plazo 18 de `NUCLEO/02` §1.5, una sola ventana para las dos comprobaciones: FASE 9 vuelta 3, `F-8V3B3-003`)**, el barrido
 **relee la orden por id**; si tiene un pago aprobado, **abre la marca con motivo
 `ORDEN_PAGADA_SIN_INSTANCIA`** (`B/02` §2.5, el 23), colgada de la instancia. La persona devuelve
 desde el panel del proveedor y lo asienta con la acción administrativa 14, que crea el `payment` y
@@ -785,13 +824,26 @@ una `EXPIRED` o una `CANCELLED` llegaron ahí desde `ACTIVE`, así que su orden 
 normal de lo que recibieron; la única que termina **sin haber estado nunca activa** es la que `A3`
 ~~abandonó~~ o `A7` abandonaron (`A7`, la orden rechazada: mediciones del 2026-09-29, lote L-C; su
 orden quedó `failed` y la relectura no le encuentra un pago aprobado). **Y el barrido no reenvía nada**: reenviar con la clave puede crear la orden si nunca
-existió, y cobrar por una instancia ya abandonada. El reenvío es de `A3`, antes de abandonar; si
+existió, y cobrar por una instancia ya abandonada. ~~El reenvío es de `A3`, antes de abandonar; si
 nunca tuvo respuesta, `A3` no abandona (`B/03` §8), **y `A7` abandona con el id que vino en el
 error**, así que toda `ABANDONED` tiene el id de su
-orden o no llegó a mandar ninguna.
+orden o no llegó a mandar ninguna.~~ **`A3` tampoco reenvía: sólo confirma, y sin id de orden
+abandona sin reenviar** (`B/03` §8; FASE 9 vuelta 3, owner 2026-09-30, lote E), así que **una
+`ABANDONED` puede no tener el id de una orden que sí existió**: la respuesta se perdió y el
+proveedor igual la creó y la cobró. **Por eso la comprobación busca también por el identificador
+del pedido**: por cada instancia `UNA_VEZ` en `ABANDONED` sin id de orden y con su clave
+persistida (la clave se persiste antes de la llamada, así que sin clave no salió ninguna), dentro
+de la misma ventana, el barrido busca en el proveedor la orden cuya referencia es el identificador
+del pedido (`B/06` §3.2) y, si la encuentra con un pago aprobado, abre la misma marca con el
+motivo 23. **Que el proveedor permita buscar una orden por esa referencia no está medido**
+(propuesto a la matriz, registro de la FASE 9 vuelta 3, B): si no lo permite, esa población queda
+sin detector y declarada (*«lo que este capítulo NO cierra»*). La búsqueda sólo lee; no crea ni
+reenvía nada.
 
 > **No es una de las seis comprobaciones de cero llamadas**, igual que la de pagos acreditados:
-> relee por id cada orden de la ventana. El conteo de seis no se mueve.
+> relee por id cada orden de la ventana. El conteo de seis no se mueve. **Tampoco lo mueve la
+> búsqueda por el identificador del pedido**, que es parte de esta misma comprobación (FASE 9
+> vuelta 3, lote E).
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.
@@ -813,7 +865,9 @@ evento»*— y cuyo canal primario es el listado accionable, no el correo.
 **La marca lleva reloj, y desde la FASE 9-bis-4 lleva la columna que lo sostiene.** Si sigue
 abierta pasado su plazo, **escala**: es una divergencia de plata
 que nadie resolvió, y sin reloj el servicio que la fila sostiene **no tiene cota**. El plazo es
-configuración, como todos los del §42.
+configuración, como todos los del §42: **«el escalamiento de una marca abierta»**, el plazo 17 de
+la lista cerrada de `NUCLEO/02` §1.5, con su valor inicial a proponer al owner (FASE 9 vuelta 3,
+`F-8V3B3-003`).
 
 > **Esta frase se escribió antes que la columna, y hasta la FASE 9-bis-4 no se podía evaluar.**
 > `requiere_conciliación` era un booleano: decía *«hay un caso»* y no *«desde cuándo»*, así que
@@ -862,6 +916,7 @@ más: el rechazo **es** un registro.
 | contador **igual** a los registros listados, y **ninguno** con `payment.status` = `approved` | **intentó y se rechazó**: no cobró |
 | contador **mayor** que los registros listados | **lag**: hay un intento que el listado todavía no indexó — **no se sabe todavía** |
 | la lectura por id del preapproval falla | **el id es de otra cuenta** |
+| **un registro que el listado devuelve y cuya lectura por id da `404`** (`EX-55`: el alta que el proveedor canceló al rechazar el primer cobro) | **se contesta con el pago que el listado nombra, leído por id** con `GET /v1/payments/{id}` —que en producción se lee por id (`RF-3`)—: `approved` es *«cobró»*, cualquier otro estado es *«intentó y se rechazó»*, y esa lectura es la que dispara `S16`. **No es una lectura fallida de la corrida**; si el listado no nombra pago, o esa lectura también falla, sí lo es (FASE 9 vuelta 3, `F-8V3B3-005`) |
 
 **La regla:**
 
@@ -1071,7 +1126,9 @@ pruebas, o **un mes más un día** sin el de producción. El día de margen es e
   2026-09-25: **sale una vez por cancelación, antes del primer intento**, y los reintentos no lo
   repiten si ya se entregó (`B/03` §3.2, precisión 3).
 - **La longitud de la ventana de la comprobación de pagos acreditados** (§3; FASE 8 completa,
-  `F-8CB3-009`). Es configuración y **no está medida**: ninguna fila de la matriz dice cuánto
+  `F-8CB3-009`). Es configuración ~~y~~ **(entra a la lista cerrada de `NUCLEO/02` §1.5 con valor a
+  proponer al owner; FASE 9 vuelta 3, `F-8V3B3-003`)** y
+**no está medida**: ninguna fila de la matriz dice cuánto
   después de acreditado un pago puede llegarle un contracargo. Y todo el comportamiento del
   proveedor en un contracargo es **documental** (`RC-8`, `UNKNOWN`): no se puede fabricar uno a
   voluntad.
@@ -1142,3 +1199,22 @@ pruebas, o **un mes más un día** sin el de producción. El día de margen es e
   sale del motivo, por una población que es sólo del owner y se cierra con la medición. **Causa**:
   la sonda cobra por diseño mientras su medición está abierta, y el id que lo explica está en el
   manifiesto, no en la marca.
+- **La orden de un addon de única vez que `A3` abandonó sin id sólo se ve si el proveedor deja
+  buscarla por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E,
+  `F-8V3B1-001`). La medición está propuesta a la matriz. **Si da que no se puede, ese caso queda
+  sin detector**: la persona pagó, no recibió el addon y ninguna marca propone devolverle, hasta
+  que reclame. **Causa**: `A3` dejó de reenviar para no crear órdenes que nadie pidió (`EX-43`,
+  `UNKNOWN`), y sin el id de la orden no hay otra lectura. Exige una respuesta perdida y un
+  proveedor que igual creó y cobró la orden.
+- **Dos devoluciones parciales del mismo monto sobre el mismo pago, las dos con la respuesta
+  perdida**, no se pueden atar solas a su fila (FASE 9 vuelta 3, `F-8V3B1-004`, `F-8V3B2-003`;
+  declarado por `DEC-METH-015`): el reenvío de la misma clave no trae el id (`RF-6`) y la relectura
+  del pago muestra dos candidatas iguales. El barrido no elige y abre el motivo 18 con la fila
+  `CONFIRMED` a la vista; la persona que lo resuelve ve las dos. **Causa**: el proveedor no
+  devuelve el id en la repetición. Es de borde: exige dos parciales iguales y dos respuestas
+  perdidas.
+- **Si el preapproval de una fila cancelada por el proveedor tras un rechazo vuelve a leerse vivo
+  pasada la ventana de relectura de la cancelación por rechazo**, la fila ya salió del barrido y
+  sólo la devuelve el aviso del cobro (FASE 9 vuelta 3, owner 2026-09-30, lote K, `F-8V3B3-002`).
+  **Causa**: la ventana acota la relectura en el tiempo, que es lo que el owner eligió frente a
+  releer para siempre; su valor, a proponer, sale de la medición de `EX-45`.

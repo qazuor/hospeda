@@ -125,6 +125,15 @@ principal de las filas vivas, la orfandad corre en el mismo acto, y el último c
 complemento se devuelve por `RF1` **si cae dentro de sus propios 10 días corridos**; si no, va al
 motivo 14 y la propuesta es no devolver (`R1-b`, `F-8V2D1-001`; cap. 03 §3.2, cap. 16 §4.3).
 
+**Y el addon de única vez comprado en la misma ventana también** (FASE 9 vuelta 3, owner
+2026-09-30, lote L, `F-8V3B1-006`). No tiene fila de complemento, así que `S21` no lo tomaba: su
+instancia moría por la orfandad y su pago quedaba sin propuesta. **`S36` crea `RF1` por el total
+del pago de cada instancia `UNA_VEZ` que su orfandad apaga, si se acreditó dentro de los mismos 10
+días corridos** (cap. 03 §3.2 y §6.1), y **se devuelve por el camino de las órdenes**,
+`POST /v1/orders/{id}/refund`, que la sonda 56 midió en sandbox; su idempotencia y lo que devuelve
+un reenvío están propuestos a la matriz (cap. 06 §3.2). Fuera de ese plazo, un `UNA_VEZ` se consume
+(`DEC-ADDON-001`) y no se abre nada.
+
 **Lo que queda abierto son tres cosas, y ninguna es el mecanismo:**
 
 1. **Si cada renovación abre una ventana nueva** o si corre una sola vez desde el alta. **Cambia

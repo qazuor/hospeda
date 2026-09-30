@@ -95,29 +95,52 @@ exactamente una de las dos es no nula.
 > reenviarla puede dejar plata sin registrar. Tampoco hay todavía una recuperación declarada para
 > ese caso: la de `B/05` §1.2 pregunta por suscripciones.~~
 >
-> **Medida el 2026-09-25 (`EX-41`, sonda 51, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`** —la misma clave con el mismo cuerpo devuelve la misma orden y un solo pago; con otro cuerpo, `409 idempotency_key_already_used`—, y el `external_reference` **no deduplica nada**. Así que la clave se acuña y se persiste antes de la llamada (`D4`), y **una orden sin respuesta se recupera reenviándola con la misma clave**: si ya existía, vuelve la misma; si no, se crea. Producción no está medida.
+> **Medida el 2026-09-25 (`EX-41`, sonda 51, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`** —la misma clave con el mismo cuerpo devuelve la misma orden y un solo pago; con otro cuerpo, `409 idempotency_key_already_used`—, y el `external_reference` **no deduplica nada**. Así que la clave se acuña y se persiste antes de la llamada (`D4`), y **una orden sin respuesta se recupera reenviándola con la misma clave**: si ya existía, vuelve la misma; si no, se crea. Producción no está medida. **Eso vale para el reenvío inmediato, el del mismo pedido**; el de horas después, con el token de la tarjeta vencido, es `EX-43`, `UNKNOWN`, y por eso `A3` no reenvía (FASE 9 vuelta 3, owner 2026-09-30, lote E).
 >
 > **Y la clave sale del PEDIDO del cliente, no de la llamada** (FASE 9 vuelta 2, owner 2026-09-27,
 > `R4`, `F-8V2B2-003`). La pantalla de compra acuña un identificador de pedido al abrirse; `A1` lo
 > persiste en la instancia, único (`B/02` §2.4), y la clave de la orden sale de él. **El doble clic
 > reusa la orden**: el segundo pedido trae el mismo identificador, encuentra la instancia que ya
-> existe y no manda otra orden (salvo que la instancia todavía no tenga id de orden: ahí reenvía la misma, §1.4; verificación corta, 2026-09-29, lote N-B); una recompra es otro pedido, con otro identificador. **Y la
+> existe y no manda otra orden (salvo que la instancia todavía no tenga id de orden: ahí reenvía la misma, §1.4; verificación corta, 2026-09-29, lote N-B); una recompra es otro pedido, con otro identificador. ~~**Y la
 > recuperación tiene quién la ejecute** (`F-8V2B1-003`, `F-8V2B2-004`): `A3` reenvía la orden con
 > la misma clave antes de abandonar (`B/03` §8), y la orden que se paga después de que `A3`
-> abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).
+> abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).~~
+>
+> **Y la compra tiene identidad propia, más allá de la pantalla** (FASE 9 vuelta 3, owner
+> 2026-09-30, lote E, `F-8V3B2-001`, `F-8V3B1-001`, `F-8V3B1-002`, `F-8V3B1-003`). El
+> identificador del pedido cubre el doble clic de la misma pantalla y no la pantalla recargada
+> después de un error, que es justo el caso de la respuesta perdida. Por eso:
+>
+> - **una pantalla nueva que encuentra una compra del mismo producto sobre el mismo objetivo sin
+>   resolver no deja comprar otra**: la identidad es `(dueño, producto, objetivo)`, con un
+>   `UNIQUE` parcial sobre las instancias en `PENDING_AUTHORIZATION` (`B/02` §2.4). Resuelta la
+>   instancia, en el estado que sea, se puede volver a comprar: la recompra legítima no choca;
+> - **la misma identidad es el candado del addon recurrente contra el doble clic** (`B/03` §8,
+>   `A1`), que no tenía ninguno;
+> - **`A3` sólo confirma, nunca crea**: con id de orden la relee por id; sin id abandona sin
+>   reenviar (`B/03` §8);
+> - **la orden que se paga después de que `A3` abandonó la ve la comprobación de órdenes pagadas**
+>   del barrido, que la busca por el id guardado y, sin id, por el identificador del pedido que
+>   la orden lleva como referencia (`B/09` §3), si el proveedor permite esa búsqueda (propuesto a
+>   la matriz); si no la permite, ese caso queda sin detector y declarado (*«lo que este capítulo
+>   NO cierra»*).
+>
+> **El costo, dicho**: quien perdió la respuesta no puede volver a comprar ese producto para ese
+> objetivo hasta que la instancia se resuelva, como mucho la ventana de `A3` (72 h con tarjeta).
 
 **Y dos cosas medidas en sandbox el 2026-09-29** (mediciones del 2026-09-29, puntos 5 y 10):
 
 - **Ni la orden ni su reembolso avisan por ningún canal** (`EX-15`, `RF-7`): cinco órdenes y dos
   reembolsos, total y parcial, sin una sola entrega en 23 a 43 minutos. **Nada de este camino
   espera un aviso**: la orden se confirma con la respuesta y releyéndola (`A2`), la que queda sin
-  respuesta la reenvía `A3`, la que se paga después la ve el barrido, y el reembolso se confirma
+  respuesta ~~la reenvía `A3`~~ la confirma `A3` releyéndola si tiene su id,
+  y si no la abandona sin reenviar (FASE 9 vuelta 3, lote E), la que se paga después la ve el barrido, y el reembolso se confirma
   releyendo el pago (`RF3`). Producción no está medida.
 - **Una orden con la tarjeta rechazada devuelve `402` y queda creada igual**, `failed`, con su id en
   el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
   instancia como el de cualquier orden, ~~y la instancia sigue en `PENDING_AUTHORIZATION`, como con
   cualquier pago no aprobado~~ **y la compra se cierra en el acto: `A7` lleva la instancia a
-  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). **La cierra releyendo la orden por su id, no con la respuesta del `402`** (verificación corta, 2026-09-29, VC-cobro-05). **Y un `402` que no llega** (verificación corta, 2026-09-29, lote N-B): si la respuesta de la orden se perdió, la instancia queda en `PENDING_AUTHORIZATION` con su clave y sin id de orden, y `A7` no tiene con qué dispararse. **El segundo pedido que la encuentra así reenvía la orden con la misma clave y el mismo cuerpo**, que es seguro por `EX-41`: si el proveedor la tenía, vuelve la misma, y con su `402` corre `A7`; si no la tenía, la crea. **Y si en el segundo pedido la persona eligió otra tarjeta**, es otro cuerpo con la misma clave y el proveedor contesta `409`: la pantalla dice *«tu pago anterior se está procesando, probá en unos minutos»* y **no abre un pedido nuevo**, porque la primera orden pudo haberse aprobado y lo perdido ser la aprobación. Cualquiera de los dos termina como toda orden de ese pedido: por `A2`, por `A7` o, sin respuesta, por `A3` al vencer la ventana. ~~**Qué pasa cuando la persona
+  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). **La cierra releyendo la orden por su id, no con la respuesta del `402`** (verificación corta, 2026-09-29, VC-cobro-05). **Y un `402` que no llega** (verificación corta, 2026-09-29, lote N-B): si la respuesta de la orden se perdió, la instancia queda en `PENDING_AUTHORIZATION` con su clave y sin id de orden, y `A7` no tiene con qué dispararse. **El segundo pedido que la encuentra así —el mismo pedido, con el mismo identificador— reenvía la orden con la misma clave y el mismo cuerpo**, que es seguro por `EX-41` (una pantalla nueva, con otro identificador, no la reenvía: choca con la identidad de la compra y espera; FASE 9 vuelta 3, lote E): si el proveedor la tenía, vuelve la misma, y con su `402` corre `A7`; si no la tenía, la crea. **Y si en el segundo pedido la persona eligió otra tarjeta**, es otro cuerpo con la misma clave y el proveedor contesta `409`: la pantalla dice *«tu pago anterior se está procesando, probá en unos minutos»* y **no abre un pedido nuevo**, porque la primera orden pudo haberse aprobado y lo perdido ser la aprobación. Cualquiera de los dos termina como toda orden de ese pedido: por `A2`, por `A7` o, sin respuesta, por `A3` al vencer la ventana. ~~**Qué pasa cuando la persona
   reintenta con otra tarjeta** lo decide el owner (`30-revision-del-owner/28-…`, decisión 3): con
   el mismo pedido la instancia ya existe y reusa su orden, que está `failed`; y una orden con la
   misma clave y otra tarjeta es otro cuerpo, que el proveedor contesta con `409` (`EX-41`).~~
@@ -1042,7 +1065,8 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   `EX-41`** (idempotente por la clave; una orden sin respuesta se reenvía con la misma clave); ~~y **su pago no lo ve la conciliación ni
   admite una marca**, porque las dos cuelgan de suscripciones (`B/02` §2.3, `B/09`).~~ **y la tercera
   quedó acotada el 2026-09-27** (owner, FASE 9 vuelta 2, `R4`): la clave sale del pedido y el doble
-  clic reusa la orden; el reenvío lo ejecuta `A3` antes de abandonar; **la orden pagada cuya
+  clic reusa la orden; ~~el reenvío lo ejecuta `A3` antes de abandonar~~ `A3` sólo confirma y nunca reenvía (FASE 9 vuelta 3, lote E);
+  **la orden pagada cuya
   instancia terminó `ABANDONED` la ve el barrido y abre una marca colgada de la instancia**, con el
   motivo `ORDEN_PAGADA_SIN_INSTANCIA` (`B/09` §3, `B/02` §2.5); y **la devolución va por la acción
   administrativa 14**: la persona devuelve desde el panel del proveedor y la asienta, con el cobro
@@ -1050,6 +1074,15 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   instancia que sí llegó a `ACTIVE`: un contracargo o un reembolso desde el panel sobre él no lo
   relee ninguna comprobación, porque la de pagos acreditados selecciona pagos de suscripción. **Y
   está medido sólo en sandbox** (`EX-30`).
+- **La orden pagada cuya instancia `A3` abandonó sin id sólo se ve si el proveedor deja buscar una
+  orden por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E). La medición
+  está propuesta a la matriz; **si da que no se puede, ese caso queda sin detector**: la persona
+  pagó, no recibió el addon y ninguna marca propone devolverle, hasta que reclame. Exige una
+  respuesta perdida y un proveedor que igual creó y cobró la orden.
+- **Dos instancias `ACTIVE` del mismo addon recurrente sobre el mismo objetivo, compradas una
+  después de que la otra se resolvió**, no las frena la identidad de la compra, que mira sólo las
+  pendientes (FASE 9 vuelta 3, lote E). Si eso es una recompra legítima o un error del cliente no
+  está decidido; hoy lo ve la persona en Mi Suscripción, con los dos cobros.
 - **Qué hace un contracargo sobre el cobro de un addon periódico** (FASE 9 completa, borde 4 de
   §R7.5.2 de `04`; declarado por `DEC-METH-015`). `P6` abre la marca `CONTRACARGO` sobre la
   suscripción de complemento, que es la dueña del pago; si además corre `S6` sobre ella —y qué le
