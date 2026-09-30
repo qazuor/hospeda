@@ -1470,3 +1470,20 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   de un `get_issue` reciente. «Queda el gate de la FASE 5» vivía en casi todas las descripciones y
   ningún recuento numérico lo veía: las frases de estado también se buscan.
 - Registros `38-fase-5/30-`, `31-`, `32-`. **Sin pushear** (PR #3360).
+
+## 2026-09-30 (noche tarde) — FASES 6 y 7 cerradas y publicadas
+
+- **Por qué**: el recap mostró dos fases sueltas antes de la FASE 10: la 6 (rewrite/reuse) sin
+  registro de cierre y el último ítem de la 7 (`acceptance gates`), con fecha antes de que nazca la
+  rama.
+- **Propuesta, tres lotes y verificación** (`39-fases-6-y-7/`): A–G, H–J (pase de la FASE 6) y K–M
+  (dudas de la aplicación), todas la recomendada. `DEC-METH-018`, `DEC-ARCH-016`, `U3` y `G19`.
+  Verificación ajena: 14 hallazgos, 4 bloqueaban, todos arreglados.
+- **Publicación**: tres agentes en paralelo; ficha nueva de `U3`, HOS-1402, HOS-1352 reescrita.
+- **Aprendido**: el pase de la FASE 6 partió «el núcleo de autorización» en cinco piezas y sólo una
+  iba contra el modelo (el actor de sistema, 31 copias); «remendar todo» y «reescribir todo» eran
+  las dos respuestas equivocadas. Tachar la consecuencia en los espejos sin tachar la decisión
+  madre deja al log diciendo las dos cosas (`DEC-TEST-003`). Las letras de lote se repiten entre
+  fases: el origen tiene que nombrar el lote. Un subject de commit de 101 caracteres falla el
+  commitlint y deja todo stageado: se destagea y se commitea por partes.
+- Commits `2a430303fa`…(el de este handoff). **Sin pushear** (PR #3360).

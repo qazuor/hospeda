@@ -47,11 +47,43 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-30 (cierre) — FASE 5 publicada; falta definir cómo se implementa
+## Última actualización: 2026-09-30 (FASES 6 y 7) — diseño cerrado entero; falta arrancar la FASE 10
 
 ### El próximo paso exacto
 
-1. **Parar y hablar con el owner cómo se sigue.** La implementación arranca por `U1`
+1. **Parar y hablar con el owner cómo se sigue.** Con `DEC-ARCH-016` (A) lo primero **no es
+   `U1`**: es el PR chico `[NOSPEC:epic-ci]` a `staging` que enciende el CI para `epic/**` (cambios
+   `C-1` a `C-8` y el guard de destino, `39-fases-6-y-7/00-propuesta.md`). Después se crea
+   `epic/HOS-1352-verticales-billing` desde `staging` y entra `U1` (HOS-1400) como primer PR; `U3`
+   (HOS-1402) entra después, en paralelo con `V1`, `B1` y `U2`. Antes de todo eso, **pushear esta
+   branch** (PR #3360, sin pushear) y decidir cuándo entra a `staging`.
+2. Residuos menores sin tocar: el título del §5 de `16-` ya no corresponde; la frase «se vuelve a
+   medir la cartera» de la presentación sigue sin fuente viva; los del tramo anterior (abajo).
+
+### Lo que pasó el 2026-09-30 (FASES 6 y 7)
+
+- **FASES 6 y 7 cerradas** (`39-fases-6-y-7/`): propuesta `00-`, decisiones del owner `10-` (lotes
+  A–G, H–J del pase de la FASE 6 y K–M de la aplicación, **todas la recomendada**), aplicación
+  `11-`, pase de la FASE 6 `20-` (29 piezas: 13 KEEP · 11 ADAPT · 1 REWRITE · 4 ya no se
+  conservan), verificación ajena `21-` (14 hallazgos, 4 bloqueaban, todos arreglados) y publicación
+  `30-`…`32-`.
+- **Decisiones nuevas**: `DEC-METH-018` (FASE 6 por absorción más el pase) y `DEC-ARCH-016` (los
+  cinco gates de aceptación); 📌 en `DEC-ARCH-014`, `DEC-CI-001`, `DEC-TEST-002`, `DEC-TEST-003` y
+  `DEC-ENT-006`.
+- **Cifras**: log **144** (18 · 126), precisadas 73, matriz 117 = 63 · 16 · 24 · 14, unidades
+  **25** (`U3`, el script del corte), guards **35** = 19 · 15 · 1 (`G19`, el actor de sistema),
+  dependencias entre épicas 12.
+- **Hecho aparte**: los tres checklists de smoke del sistema viejo restaurados en esta branch (B);
+  HOS-1402 (`U3`) creado; `status-needs-smoke-prod` en HOS-1352; ficha de `U3`
+  (<https://claude.ai/artifact/NGgcaALco8MR4FjKe3ozhU>); HOS-1352 reescrita entera; el HTML
+  duplicado de las fichas viejas, limpio.
+
+## Histórico: 2026-09-30 (cierre) — FASE 5 publicada; falta definir cómo se implementa
+
+### El próximo paso exacto
+
+1. ~~**Parar y hablar con el owner cómo se sigue.**~~ **Hecho: se cerraron antes las FASES 6 y 7
+   (arriba).** La implementación arranca por `U1`
    ([HOS-1400](https://linear.app/hospeda-beta/issue/HOS-1400)); el gate de la FASE 5
    (`DEC-METH-003`) está cumplido. La branch sigue sin pushear (PR #3360).
 2. **Menores, anotados en los registros `38-fase-5/30-`, `31-` y `32-` y sin tocar**:
