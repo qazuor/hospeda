@@ -32,5 +32,15 @@ borran con ellas; los valores de permisos y de `entity_type_enum` quedan sin lec
 resolución los rechaza), por costo y riesgo menores. El owner eligió la 1: la base queda sin
 vocabulario del cobro viejo, al precio de recrear el enum de permisos en `U1`.
 
-**Pendiente de C**: la lectura del runner del seed, de sólo lectura, antes de escribir `U1`. Si el
-runner no tolera filas del registro sin archivo, C vuelve al owner.
+**Condición de C, cumplida el 2026-09-30** (lectura del runner sobre `origin/staging` `35e2d63e81`,
+sólo lectura): el runner calcula los pendientes en un solo sentido, disco menos registro
+(`packages/seed/src/data-migrations/discover.ts:243-256`), así que **ignora sin error las filas del
+registro sin archivo**; el checksum se guarda y no se verifica (`ledger.ts:14-16`).
+`--baseline-stamp` sólo sella lo que está en disco (`baselineStamp.ts:134-158`). Ningún guard exige
+numeración contigua (ya hay un hueco en `0063`, `real-directory-identity.guard.test.ts:67-84`), y
+`scripts/check-seed-dual-write.sh` no mira borrados en `data-migrations/`. Sin imports entre
+migraciones; `helpers/billingCleanupGuards.ts` sólo lo usa `0068`, del mismo conjunto, y
+`helpers/trialPlanMigration.ts` lo usan `0073`–`0075`, que no están en él. La única pérdida es
+`0092-hos-1084-backfill-accommodation-subscription-cache.ts` (`contentOnly`, `required`): una base
+nueva deja de correr ese relleno, **y no importa**, porque su tabla, `entity_subscriptions`, se retira
+con el cobro viejo (`B/docs/21-migracion.md:439`). C queda decidida sin volver al owner.
