@@ -4578,6 +4578,11 @@ Cada entrada lleva, según §3.4:
   unidad lo construye ni a qué mitad suma en el reparto de 18 de verticales y 15 de billing (o 17,
   15 y 1 de `U1`, 📌 O-A de `DEC-ARCH-014`); queda para el owner. Origen: (FASE 5, lote de la
   aplicación, owner 2026-09-30, E).
+- 📌 **Precisada el 2026-09-30, con OK del owner (FASE 5, lote de la aplicación, letra Q;
+  `38-fase-5/10-decisiones-del-owner.md`; verificación, `VF5-04`)**: el guard 34 es **`G18`** y lo
+  construye **`V1`**, con la primera carga que vigila (la tabla de claves), como pide esta decisión
+  (*«la unidad nazca ANTES o CON lo que el guard vigila»*). El reparto queda **18 de verticales, 15
+  de billing y 1 de `U1`**. Cierra lo que el 📌 anterior dejaba para el owner.
 
 ---
 

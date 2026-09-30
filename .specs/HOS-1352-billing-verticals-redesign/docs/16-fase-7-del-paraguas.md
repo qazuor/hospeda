@@ -781,7 +781,7 @@ la demuestra y lo que impide que `V1` o `B1`, que arrancan después, en paralelo
 la palabra. `G16` tiene dos predicados, y el (b) mira el package del cobro, que todavía no existe;
 partirlo en dos unidades lo volvería dos guards. Entre `U1` y `B1` el predicado (a) queda sin
 vigilancia automática, y lo único que corre en ese rato son `V1` y `B1`, que no tienen por qué
-declarar `qzpay`. **El reparto de guards cambia y el total no**: ~~17~~ 18 de verticales, 15 de billing y 1
+declarar `qzpay`. ~~**El reparto de guards cambia y el total no**~~ **El reparto de guards cambia, y el total también desde el lote de la aplicación** (verificación, `VF5-02`; la unidad de `G18`, owner 2026-09-30, Q): ~~17~~ 18 de verticales, 15 de billing y 1
 de `U1`, ~~33~~ 34 (entra `G18`, de `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E;
 verificación, `VF5-02`) (`V/descomposicion.md` §4, `B/descomposicion.md` §4). **`U2` no suma ninguno** (FASE 5,
 lote 2 A).

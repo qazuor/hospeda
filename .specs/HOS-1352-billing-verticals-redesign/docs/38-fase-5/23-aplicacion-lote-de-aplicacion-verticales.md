@@ -174,7 +174,7 @@ panel le muestra un `ends_at` que nadie escribe.
 2. **`V7` las vuelve a escribir** desde la presencia. Costo: medio. Riesgo: una fecha que el
    diseño no usa.
 
-### 4 · `G18` en `V1`, condicionado a la pregunta de `25-` §5
+### 4 · `G18` en `V1` (decidido por el owner el 2026-09-30, letra Q de `10-`)
 
 La consigna fijó el guard en los criterios de `V1`, y así quedó (columna, criterio, conteos). Es
 la opción 1 que `25-` §5 le pregunta al owner. Si el owner elige otra unidad (`V6` o `U1`), hay que

@@ -153,3 +153,12 @@ al owner como M a P.
 | N | 1 | no | el alta directa de un Partner por el admin **no fija dueño**: manda el aviso de reclamo, y el rol de socio llega con el reclamo. F se lee *«cuando queda con dueño»*; `owner_user_id` lo sigue escribiendo sólo el reclamo |
 | O | 1 | no | `V7` borra `partners.starts_at` y `partners.ends_at` con su migración, junto con sus lectores del panel |
 | P | 1 | no | la tabla de paso del corte (D) vive sólo en el SQL de la migración del paso 3, fuera del esquema de Drizzle; el 5b la borra. Ni `G-R9` ni el control de drift la ven |
+
+## Lote de la aplicación, pregunta de la verificación (2026-09-30)
+
+La verificación ajena ([`28-verificacion.md`](./28-verificacion.md), `VF5-04`) encontró que la
+pregunta de `25-` §5 no se le había planteado al owner y ya estaba escrita como arreglo mecánico.
+
+| letra | elegida | contra la recomendación | qué decide |
+|---|---|---|---|
+| Q | 1 | no | el guard 34, `G18` (el control que regenera y compara el SQL generado de la tabla de claves y del catálogo), lo construye `V1`, con la primera carga que vigila; el reparto queda 18 · 15 · 1 |
