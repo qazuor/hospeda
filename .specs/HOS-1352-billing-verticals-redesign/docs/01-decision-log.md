@@ -2540,11 +2540,13 @@ Cada entrada lleva, según §3.4:
   estructura, sin interfaces, validaciones, simuladores ni casos. `V1` y `B1` arrancan en paralelo
   y cada una llena su parte: `V1` las cuatro primeras cosas, y construye `G14`, y `B1` la quinta,
   la interfaz del reloj. Así `B1` no espera a `V1`, y las dependencias entre épicas siguen en once.
-- 📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lotes D y Q)**: `puedeCobrarle`
+- 📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lotes D, Q y AD)**: `puedeCobrarle`
   contesta sobre la cancelación confirmada por Mercado Pago: mientras una relectura no vea
   `cancelled` contesta `sí` y la baja de cuenta espera. `G13` vigila las seis respuestas de
-  arranque. Y el contrato devuelve cuándo perdió cobertura por última vez una ficha: el borrado de
-  una ficha inactiva (`PB9`) cuenta su plazo desde ahí. Mientras el contrato no devuelva ese dato,
+  arranque. Y el contrato devuelve ~~cuándo perdió cobertura por última vez una ficha~~ cuándo
+  perdió la cobertura por última vez la persona en esa vertical (`coberturaPerdidaEn`, un campo de
+  `retenciónDetenida`; lote AD): el borrado de una ficha inactiva (`PB9`) cuenta su plazo también
+  desde ahí. Que una relectura confirmó la cancelación lo guarda `provider_link.cancelado_visto_en`. Mientras el contrato no devuelva ese dato,
   `PB9` no corre en la misma pasada en que ve la ficha sin cobertura por primera vez.
 
 ---

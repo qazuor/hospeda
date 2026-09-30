@@ -393,7 +393,7 @@ no una excepción a la lista.
    marca así (de la 17 a la 22 y la 26) tiene su permiso propio, como las demás (§4.3, `G6` mitad
    *(a)*), y el paso 3 pregunta por ese permiso. **Ese permiso no se da suelto**: lo trae el rol
    `SUPER_ADMIN` y ningún override por usuario lo puede dar, así que un `CLIENT_MANAGER` no llega
-   a fijar precios por un override. **Asignar el rol es la vigesimosexta acción**, con su registro,
+   a fijar precios por un override. **~~Asignar~~ Asignar o quitar el rol es la vigesimosexta acción** (lote AC), con su registro,
    su actor, su sujeto y su motivo: el poder de fijar precios sólo cambia de manos con rastro.
 
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).

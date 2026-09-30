@@ -47,6 +47,8 @@ letras. Cada fila nombra la opción elegida.
 | Z | lote D, K | dónde se guarda que una relectura vio la suscripción cancelada | **1**: una columna con el instante de la primera relectura que la vio `cancelled`, en el vínculo con el proveedor | sí |
 | AA | R1 | si el link de reclamo de un Partner lleva un secreto | **1**: sí; un secreto de un solo uso que viaja sólo en el aviso | sí |
 | AB | log y matriz | si se aplican las nueve propuestas al log (siete 📌 y `DEC-AUTH-004`/`-005` nuevas) y las tres filas nuevas de la matriz (`EX-57` a `EX-59`) de `14-aplicacion-cierre.md` § «Para el owner», con Q sumado a `DEC-ARCH-006`, Y a `DEC-CONC-001` y los valores de R a `DEC-DATA-008` | **1**: sí, todo como está | sí |
+| AC | R21 (lote P) | si quitarle el rol `SUPER_ADMIN` a una cuenta es también la acción 26 | **1**: la acción 26 pasa a «asignar o quitar el rol», con registro en los dos casos | sí |
+| AD | log (`DEC-ARCH-006`) | si se corrige el 📌 recién aprobado que dice que el contrato devuelve cuándo perdió cobertura «una ficha» | **1**: se corrige a «la persona en esa vertical» (`coberturaPerdidaEn`) y se nombra `provider_link.cancelado_visto_en` | sí |
 
 ## Lo que no pidió decisión
 
@@ -56,6 +58,6 @@ según el §6 del consolidado. Va a la tanda de aplicación.
 
 ## Contra la recomendación
 
-Tres de veintiocho: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
+Tres de treinta: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
 existe por arrastre de I. La J deja declaradas en el «NO cierra» del corte tres
 situaciones con daño de clase crítica que exigen una falla previa.
