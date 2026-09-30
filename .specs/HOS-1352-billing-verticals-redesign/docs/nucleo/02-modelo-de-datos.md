@@ -128,7 +128,10 @@ paso 3: FASE 9 vuelta 3, owner 2026-09-30)**, y si no dan, el corte no sigue (`1
 los datos de planes que usan desarrollo y las pruebas no está decidido**
 (`30-revision-del-owner/14-` §5).~~ **Los datos de planes que usan desarrollo y las pruebas son
 datos de demostración, fuera del dual-write del seed** (revisión del owner, casos vecinos, 2026-09-29, caso 42): no
-representan ningún entorno vivo. **Sale de `scripts/check-seed-dual-write.sh` la rama que vigila el
+representan ningún entorno vivo. **Y el seed de demostración no carga catálogo en una base que ya
+tiene uno** (FASE 9 vuelta 3, owner 2026-09-30, lote AL): hasta el paso 6, la migración estructural
+del paso 3 carga el de producción en toda base que aplique las migraciones, producción, `staging`,
+desarrollo y CI (`16-fase-7…` §4.2), y el seed deja el que encuentra. **Sale de `scripts/check-seed-dual-write.sh` la rama que vigila el
 archivo de configuración de planes, y de la regla de dual-write del `CLAUDE.md` raíz la mención a
 los planes, límites y entitlements de billing**, en el mismo cambio que borra el archivo (`B/21` §4),
 que es cuando esa rama se queda sin sujeto.

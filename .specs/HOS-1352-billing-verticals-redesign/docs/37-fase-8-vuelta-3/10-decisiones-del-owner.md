@@ -55,6 +55,10 @@ letras. Cada fila nombra la opción elegida.
 | AH | `VC3-VT-02` | lo que el sistema viejo asentó después del backup del 2b y un aborto borra | **1**: se declara en el «NO cierra» del corte junto a las tres de J, con su causa | sí |
 | AI | `VC3-VT-08` | quién borra el correo de una postulación hecha sin cuenta | **1**: la acción 24 alcanza también a una postulación sin cuenta: soporte la borra a pedido, con motivo y registro | sí |
 | AJ | `VC3-VT-10` | si una cuenta con sesión y sin correo verificado puede postular | **2**: se le pide verificar el correo antes de postular | **no** (la recomendada era la 1, que postule como un visitante sin cuenta) |
+| AK | `VC3-cobro-07` (`EX-58`) | qué hace `RF3` sobre una orden cuya relectura no trae el id de la devolución | **1**: la fila toma la devolución de la orden de su mismo monto; con dos del mismo monto, decide una persona; se mide si la relectura trae el monto de cada devolución | sí |
+| AL | `VC3-VT-07` | dónde corre la carga del catálogo antes del paso 6 | **1**: en toda base que aplique las migraciones; el seed de demostración no carga catálogo donde ya hay uno | sí |
+| AM | `VC3-cobro-03` (sigue de AF) | qué pasa con `MP6` sobre una `ABANDONED` de pagador manual con la primera cuota `DECLARED_UNPAID` | **1**: la misma regla de AF: motivo 2 con propuesta de devolver; no escribe cobertura | sí |
+| AN | log y matriz | si se aplican los 📌 de `DEC-ARCH-006` (AE) y `DEC-AUTH-005` (AI, AJ), la corrección del resumen del log (16 de metodología) y lo que condicionan `EX-45` y `EX-58` | **1**: sí, todo | sí |
 
 ## Lo que no pidió decisión
 
@@ -64,6 +68,6 @@ según el §6 del consolidado. Va a la tanda de aplicación.
 
 ## Contra la recomendación
 
-Cuatro de treinta y seis: F (con un hecho aportado por el owner que la vuelve innecesaria), I, J y AJ. La M
+Cuatro de cuarenta: F (con un hecho aportado por el owner que la vuelve innecesaria), I, J y AJ. La M
 existe por arrastre de I. La J deja declaradas en el «NO cierra» del corte tres
 situaciones con daño de clase crítica que exigen una falla previa.

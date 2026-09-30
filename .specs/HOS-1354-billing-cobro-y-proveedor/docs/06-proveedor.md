@@ -129,7 +129,9 @@ es por donde la busca la comprobación de órdenes pagadas cuando su id no volvi
 9 vuelta 3, owner 2026-09-30, lote E). **Y se devuelve por su propio endpoint,
 `POST /v1/orders/{id}/refund`** (sonda 56, sandbox, 2026-09-29: total sin cuerpo y parcial con
 monto, `201`); su idempotencia y lo que devuelve un reenvío no están medidos (`EX-58`,
-`PARTIALLY_SUPPORTED`; `B/03` §6.1, `RF2`; FASE 9 vuelta 3, lote L).
+`PARTIALLY_SUPPORTED`; `B/03` §6.1, `RF2`; FASE 9 vuelta 3, lote L), **ni si la relectura de la
+orden trae el id y el monto de cada devolución**, que es con lo que `RF3` ata las suyas (FASE 9
+vuelta 3, owner 2026-09-30, lote AK).
 
 **Lo que NO está medido, y por eso no se afirma:**
 
