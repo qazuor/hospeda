@@ -74,7 +74,7 @@ Filtrado contra `DEC-MIG-007` y la J del lote 1, **se descartan sin volver al ow
 |---|---|---|---|---|
 | A | `R5-15` | 1 | no | el estado nuevo de la ficha reemplaza a `lifecycle_state`, `visibility` y `moderation_state`: `V6` migra los lectores y los disparadores de revalidación, y cada fila de `V/03` §9 dice si revalida; las viejas se borran en el paso 3 |
 | B | `R5-16` | 1 | no | `V6` retira los lectores de las tres columnas que sobreviven en el mismo cambio que la migración que las borra, reemplazados por el estado nuevo; se corrige el texto *«sólo las usa el cobro viejo»* (`16-` §4.6, `V/21`) |
-| C | `R5-17` | 1 | no | se retiran todas las puertas de borrado y restauración fuera del diseño: el borrado del dueño pasa a `PB9`, el del equipo a la acción 23 (a pedido y con motivo), y desaparece el borrado físico de fichas y de cuentas |
+| C | `R5-17` | 1 | no | se retiran todas las puertas de borrado y restauración fuera del diseño: el borrado del dueño pasa a ~~`PB9`~~ `PB12` (corregido en la aplicación, 2026-09-30: la opción 1 de `R5-17` dice *«el del diseño»*, que es `PB12`, `V/03:498`), el del equipo a la acción 23 (a pedido y con motivo), y desaparece el borrado físico de fichas y de cuentas |
 | D | `R5-19` | 1 | no | los plazos sin valor los fija el owner **antes del merge de `V6`**, no antes del ensayo del corte |
 | E | `R5-20` | 1 | no | el paso 3 despliega con `HOSPEDA_CRON_ADAPTER` apagado y los crons se prenden al confirmar el corte (paso 5); se acepta que los del resto de la plataforma paren esas horas |
 | F | `R5-21` | 1 | no | el paso 3 se escribe como tres actos: apagar lo viejo, `hops db-migrate --pull` sobre el mismo commit que la imagen, levantar la imagen nueva; se exige la igualdad de commit |
