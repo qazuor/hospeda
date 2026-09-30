@@ -349,8 +349,9 @@ conjunto y el límite dejaron de coincidir — en las DOS direcciones.**
 
 Y no hace falta una lista nueva: **es la misma lista que invalida el caché** (cap. 02 §3.2), con
 ~~sus siete entradas~~ **todas sus entradas** —eran siete cuando se escribió; la FASE 9 le sumó
-cuatro, `DEC-ARCH-009` la del reconciliador diario de cobertura y la FASE 9 completa la del fin de
-servicio de una vertical (decisión 6b), y el número vive allá, no acá
+cuatro, `DEC-ARCH-009` la del reconciliador diario de cobertura ~~y la FASE 9 completa la del fin de
+servicio de una vertical (decisión 6b)~~ (residuo visto al publicar, 2026-09-30; vale cap. 02
+§3.2: esa fila salió con la revisión del owner, 2026-09-28, C8), y el número vive allá, no acá
 (FASE 8 completa, owner 2026-09-25)—. Una lista, dos consumidores. Que a veces se dispare sin nada que hacer es
 gratis; que falte un disparo es una capacidad regalada o un límite incumplido.
 

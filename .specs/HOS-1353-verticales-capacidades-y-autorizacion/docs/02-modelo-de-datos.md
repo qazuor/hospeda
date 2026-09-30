@@ -530,8 +530,10 @@ FASE 8 completa es la transición **`PB9`** del cap. 03 §9 (`F-8CA2-008`, owner
 **el mismo lector**: el recuento no cambia—, **(4)** el
 aviso previo **antes del día 90** y **(5)** el aviso previo **antes del día 180**, los dos de
 schedule del cap. 07 §6 (núcleo), y **(6)** la fecha que el cap. 19 §4 fila 18 obliga a
-imprimirle al cliente en el aviso al archivar — que es **`inactiva_desde` + 180** y hasta esta
-pasada no tenía de dónde salir. *(~~El quinto **es** el aviso al archivar,~~ **El sexto es el
+imprimirle al cliente en el aviso al archivar — que es ~~**`inactiva_desde` + 180** y hasta esta
+pasada no tenía de dónde salir~~ **la que `PB4` o `PB5` calculan sobre este reloj y escriben en
+`listing.borrado_anunciado`** (residuo visto al publicar, 2026-09-30; vale cap. 03 §9).
+*(~~El quinto **es** el aviso al archivar,~~ **El sexto es el
 aviso al archivar**, el que `DEC-DATA-002` agregó: los avisos de
 retención son **tres** —`NUCLEO/07` §6— y acá entran **dos por el schedule y el tercero por la
 superficie que imprime su fecha**, que es por qué el renglón dice «dos» sin contradecir al núcleo.
