@@ -6677,6 +6677,36 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MIG-007 — Las premisas del corte: reemplazo sin convivencia, cinco cuentas que importan y el resto a cargo del owner, por privado
+
+- **Fecha**: 2026-09-30 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: al abrir la FASE 5, las preguntas del lote 1 volvían a traer casos del corte (un
+  usuario que entra mientras se corta, un dueño con varias fichas, fichas que no son de clientes)
+  que el owner considera fuera de alcance. Sin fijarlo por escrito, cada tanda los vuelve a abrir.
+- **Decisión** (palabras del owner, 2026-09-30, al empezar el lote 1 de la FASE 5):
+  1. **No conviven las dos versiones.** La vieja se va y entra la nueva; no hay período de
+     convivencia que diseñar.
+  2. **Un usuario que entre durante el corte no se diseña.** Es casi imposible; si pasa, se ve
+     sobre la marcha. Alternativa del owner: antes del corte se bloquea que nadie, nuevo o
+     existente, pueda hacer nada.
+  3. **Sólo importan cinco cuentas**: las tres que están en prueba o ya pagan y las dos de
+     cortesía. De ellas se conserva la información de sus fichas. **Cada una tiene una sola ficha**:
+     no se diseña nada para más de una ficha por cuenta después del corte. El resto de las cuentas
+     no importa.
+  4. **A esas cinco les avisa el owner, por privado**: que después del corte arrancan de cero, con
+     la prueba recién iniciada, y que al terminar la prueba se tienen que volver a suscribir. **No se
+     programa nada para eso**: ni correos, ni avisos, ni flujos de continuidad.
+- **Implicaciones**:
+  1. Toda pregunta, hallazgo o mecanismo sobre convivencia, sobre usuarios activos durante el corte,
+     sobre varias fichas por cuenta, sobre cuentas fuera de esas cinco o sobre comunicar el corte se
+     descarta citando esta decisión, sin volver al owner.
+  2. Las decisiones y capítulos del corte que diseñan para esos casos quedan por revisar a la luz de
+     ésta. No se marcan `SUPERSEDED` sueltas: cada una se revisa con el owner y se precisa o se
+     supera con su motivo.
+- **Origen**: owner, 2026-09-30, antes de contestar el lote 1 de la FASE 5 (`38-fase-5/00-consolidado.md`).
+
+---
+
 ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
 
 - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 12, F-A y H-E; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote M-H y `VC-VT-05`; ver su último 📌) · **Decide**: owner
