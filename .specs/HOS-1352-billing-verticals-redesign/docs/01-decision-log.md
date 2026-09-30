@@ -7134,6 +7134,30 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-015 — El package del contrato se llama `@repo/billing-verticals-contract`
+
+- **Fecha**: 2026-09-30 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el package del contrato (`12-contrato-de-cobertura.md` §7.1; `DEC-ARCH-006`) lo
+  crea vacío `U1` (lote P-C), así que su nombre tiene que estar fijo antes de construir `U1`, y la
+  FASE 5 es quien lo fija (`DEC-METH-017`, implicaciones). El nombre tiene que decir, a quien lo lea
+  dentro de un año, que es el acuerdo entre la mitad que cobra y la que publica, y no un pedazo de
+  ninguna de las dos.
+- **Alternativas**: `@repo/coverage-contract` (el owner la descartó: no se entiende qué es;
+  *coverage* se lee también como cobertura de tests); `@repo/billing-contract` y
+  `@repo/billing-boundary` (nombran un solo lado y parecen parte de billing);
+  `@repo/vertical-billing-contract` (largo); `@repo/billing-verticals-bridge` (*puente* sugiere
+  código que traduce o mueve datos, y el package sólo define preguntas y respuestas);
+  `@repo/plan-access` (esconde la dirección inversa y el reloj); `@repo/entitlements-contract` (se
+  confunde con el catálogo de claves de `V1`).
+- **Decisión**: **`@repo/billing-verticals-contract`**, en `packages/billing-verticals-contract`.
+- **Motivo**: nombra las dos partes y qué es. La palabra `billing` no complica a `G14`, que
+  reconoce el package por su nombre exacto y no por prefijo.
+- **Implicaciones**: `U1` lo crea con ese nombre; `G14` lo nombra exacto.
+- **Origen**: FASE 5, lote B, 2026-09-30; el owner descartó la primera propuesta del orquestador
+  (`@repo/coverage-contract`), pidió más opciones y eligió la 1 de la segunda tanda, la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |

@@ -1511,7 +1511,9 @@ el proveedor le sigue cobrando.
 ### 7.1 Dónde vive: un package compartido, único punto de comunicación
 
 (Revisión del owner, 2026-09-28, N6, `L1-d`.) **Toda comunicación entre verticales y billing pasa
-por un package compartido del monorepo**, y por ningún otro lado. No depende de ninguna de las
+por un package compartido del monorepo**, y por ningún otro lado. **Se llama
+`@repo/billing-verticals-contract`**, en `packages/billing-verticals-contract` (FASE 5, lote B,
+2026-09-30, `DEC-ARCH-015`). No depende de ninguna de las
 dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales de `@repo/schemas`.
 ~~Tiene cuatro cosas:~~ Tiene cinco cosas (la quinta, revisión del owner, casos vecinos,
 2026-09-29, caso G-B):
