@@ -43,6 +43,6 @@ según el §6 del consolidado. Va a la tanda de aplicación.
 
 ## Contra la recomendación
 
-Cuatro de quince: F (con un hecho aportado por el owner que la vuelve innecesaria), I, J y, por
-arrastre de I, la pregunta M existe. La J deja declaradas en el «NO cierra» del corte tres
+Tres de quince: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
+existe por arrastre de I. La J deja declaradas en el «NO cierra» del corte tres
 situaciones con daño de clase crítica que exigen una falla previa.
