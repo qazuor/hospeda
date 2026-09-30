@@ -1527,7 +1527,7 @@ adelantable** (revisión del owner, casos vecinos, 2026-09-29, caso J-A). **La l
 lo inyecta la escribe `B1`**, la unidad que construye la interfaz y el adelantable (revisión del
 owner, casos vecinos, 2026-09-29, caso K-C). Y **`G14`** (`V/20` §2) falla si una mitad
 importa a la otra: es lo que vuelve ejecutable la parte de la regla de vigilancia que se ve en un
-import (§4.2). **Quién lo construye**: `V1` crea el package y `G14`; cada entrada entra con la
+import (§4.2). **Quién lo construye**: ~~`V1` crea el package y `G14`~~ **`U1` crea el package vacío, la estructura sin contenido, al terminar la limpieza del principio; `V1` construye `G14` y llena las cuatro primeras cosas, y `B1` la quinta, en paralelo** (verificación corta, 2026-09-29, lote P-C; `16-fase-7…` §4.6); cada entrada entra con la
 unidad que construye su implementación (§4.1, *«quién construye»*), y la épica de billing lo
 consume desde `B1` con el simulador de la dirección inversa (`V/descomposicion.md`,
 `B/descomposicion.md` §2).

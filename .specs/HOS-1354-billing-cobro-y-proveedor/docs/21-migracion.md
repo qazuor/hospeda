@@ -187,7 +187,7 @@ tratarlo por la salvedad 4 del cap. 09 §3, **y comparar los cobros posteriores 
 (abajo; FASE 9 vuelta 2, `R2`)—, y el corte no tendría de dónde sacarlo sin leer las
 tablas que retira. **La dispara una persona**: el operador corre, en el paso 4, la herramienta del
 corte sobre el manifiesto que produjo el 1b. La escritura la construye y la prueba **B11**.
-**Y corre antes de que ~~la URL de notificación apunte al handler nuevo~~ el borde abra la ruta de avisos, que el receptor nuevo comparte con el viejo y que el paso 3 dejó cerrada** (FASE 9 vuelta 2,
+**Y corre antes de que ~~la URL de notificación apunte al handler nuevo~~ el borde abra la ruta de avisos, que el receptor nuevo comparte con el viejo y que el paso 3 dejó cerrada** **con un Worker del borde que contesta `500`, así que el proveedor reintenta** (verificación corta, 2026-09-29, lote P-A) (FASE 9 vuelta 2,
 `F-8V2B3-003`, `F-8V2C2-002`; `16-fase-7…` §4.2, pasos 3, 4 y 4b; verificación corta, 2026-09-29, lote O-B): así ningún evento de un id del
 manifiesto llega al handler nuevo sin su lápida del corte, y ninguno se vuelve lápida de
 recepción. **Ante `UNIQUE(proveedor, id)` la herramienta distingue dos choques**: con una lápida
@@ -509,7 +509,7 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   la comparación de cobros (cap. 09 §3) **para los cobros del día del corte** (FASE 9 vuelta 2,
   `R2`), así que ningún listado lo muestra; (3) si el evento de ese
   cobro se pierde, **tampoco queda el `payment`**, porque el barrido no compara ~~cobros~~ **los
-  cobros de ese día** sobre la lápida. **Causa**: el owner eligió la posición coherente con `2d` y
+  cobros de ese día** sobre la lápida. **Y no queda invisible: lo lista el detector del día siguiente al corte** (abajo, *Detector*; verificación corta, 2026-09-29, lote P-B). **Causa**: el owner eligió la posición coherente con `2d` y
   con su `G1-4`, y prefiere
   tratarlo en la llamada uno por uno a ese cliente antes que con una confirmación por cobro.
   ~~**Población**: los clientes con un cobro en vuelo en la ventana de minutos del paso 1b —a lo
@@ -526,7 +526,16 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   y otra vez el día siguiente al último `expire_date` (`RC-7`) de los registros de cobro que la
   re-verificación leyó abiertos sobre los ids del manifiesto del 1b; la primera da la lista de
   llamadas por los cobros del día, y la segunda confirma que todo cobro posterior abrió su marca
-  (owner 2026-09-27, FASE 9 vuelta 2, `R2`). **Sobre un anual del viejo la segunda corrida puede
+  (owner 2026-09-27, FASE 9 vuelta 2, `R2`). **Y la primera corrida lista también, por cada lápida del corte, los
+  registros de cobro que el proveedor da aprobados con un pago del día del corte y que no tienen
+  `payment`** (verificación corta, 2026-09-29, lote P-B): la misma lectura que hace el barrido
+  (`authorized_payments`, y el pago que aprobó cada registro, leído por id con el campo de `EX-48`),
+  **sin abrir marca ni asentar**. Es una lista para quien opera el corte, como la de las lápidas con
+  `payment`, y suma sus titulares a la lista de llamadas. **No distingue** el cobro cuyo evento se
+  perdió del que el viejo registró antes del paso 3, que la base nueva no conserva (§4): los dos son
+  cobros del día del corte sobre un preapproval cancelado, y los dos van a la llamada. Un registro de
+  la lista todavía puede recibir su `payment` por un reintento que llegue después de la corrida.
+  *(Las dos últimas frases las derivé y las marco.)* **Sobre un anual del viejo la segunda corrida puede
   caer hasta un año después del corte**, y cuántos hay lo cuenta el paso 0 (FASE 9 vuelta 2,
   verificación, owner 2026-09-28, `V2-r`). La re-verificación del §1.3 es la lista con la que el
   owner llama. **No cubre** la cancelación del 1b que no se aplicó: ésa la detecta la

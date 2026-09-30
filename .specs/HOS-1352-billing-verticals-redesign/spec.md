@@ -17,7 +17,7 @@ areas:
 
 > **Esto es el paraguas del programa. Desde el 2026-09-18 no se implementa: se implementan sus dos
 > hijas.** **Salvo una unidad propia, `U1`, la limpieza del principio: borra el sistema viejo de la
-> rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo**
+> rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo** *(salvo, desde el lote P-C, la estructura vacía del package del contrato, que llenan `V1` y `B1` en paralelo)*
 > (verificación corta, 2026-09-29, lote O-A; [`docs/16-fase-7-del-paraguas.md`](./docs/16-fase-7-del-paraguas.md) §4.6).
 >
 > | | | |
