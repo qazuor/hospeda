@@ -257,6 +257,12 @@ vertical en su lógica"* manda **todo el Eje 2 a `REWRITE` por definición**, po
 Eje 2 como comportamiento específico de vertical. El criterio tiene que decir explícitamente
 cómo trata al Eje 2.
 
+**Criterio fijado el 2026-09-30: [`DEC-METH-017`](./01-decision-log.md)** (FASE 5, lote A). Lo
+que `U1` borra se lista como `DELETE` citando el lote N; lo demás que el diseño toca se clasifica
+contra el diseño (confirma · contradice · falta · adaptar); la plantilla del PDR sólo para lo que
+se conserva fuera del billing viejo; y el Eje 2 no se penaliza por no ser genérico cuando vive en
+el módulo de su vertical.
+
 ---
 
 ## Huecos técnicos — los resuelve la Master Spec

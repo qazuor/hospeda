@@ -6111,6 +6111,48 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-017 — El criterio de la FASE 5: lo que `U1` borra se lista, y lo demás se clasifica contra el diseño
+
+- **Fecha**: 2026-09-30 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cumple el gate de `DEC-METH-003`**: es el criterio que esa decisión manda fijar al empezar la
+  FASE 5, antes de clasificar ninguna pieza, con el inventario de la FASE 1B
+  ([`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md)) terminado.
+- **⚠️ Apartamiento declarado del PDR** (FASE 5, *«Clasificar: KEEP · ADAPT · REWRITE · DELETE ·
+  MISSING»*). El PDR no se edita (§3.1): queda registrado acá.
+- **Problema**: la plantilla de la FASE 5 está hecha para decidir qué código viejo se salva, y el
+  programa ya decidió que `U1` borra al principio todo el sistema viejo de billing (lote N, `30-revision-del-owner/32-`),
+  salvo las columnas `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que viven
+  hasta el paso 3 del corte. Aplicada literal, la mitad del trabajo es escribir *«se borra porque
+  lo dice `U1`»* pieza por pieza, y lo que sí tiene riesgo no tiene casilla: lo que el diseño **da
+  por hecho** del código que queda (permisos, triggers, migraciones `extras`, rutas) y que el
+  código puede no hacer. Y la condición *«usable por todas las verticales»* del `KEEP` manda al
+  Eje 2 a `REWRITE` por definición (la trampa que nombra `DEC-METH-003`, implicación 3).
+- **Alternativas**: (1) la plantilla del PDR, literal, pieza por pieza; (2) dos preguntas
+  separadas, la de abajo; (3) sin criterio fijo, caso por caso con argumento.
+- **Decisión**: **(2)**, la recomendada.
+  1. **Lo de billing que `U1` borra** se lista como `DELETE` citando el lote N, sin otro argumento.
+     La lista sirve para verificar que `U1` no deja nada vivo, no para rediscutir el borrado.
+  2. **Todo lo demás que el diseño toca** se clasifica **contra el diseño**, en una de cuatro:
+     **confirma** (el código hace lo que el diseño supone), **contradice** (el diseño supone algo
+     que el código no hace, o hace distinto), **falta** (`MISSING`: el diseño lo necesita y no
+     existe) o **adaptar** (existe y hay que cambiarlo para que el diseño se cumpla).
+  3. **La plantilla del PDR** (`KEEP`/`ADAPT`/`REWRITE` con sus cinco condiciones) se aplica sólo a
+     lo que el diseño **conserva** de fuera del billing viejo.
+  4. **Eje 2, explícito**: el comportamiento propio de una vertical (la lista cerrada de ocho ítems
+     del cap. 01) **no** se penaliza por no ser genérico ni por no ser usable por todas las
+     verticales cuando vive en el módulo de esa vertical, como manda el diseño. Se le exigen las
+     otras tres condiciones: correcto, bien testeado y representa el modelo nuevo.
+  5. **Toda clasificación lleva su argumento escrito** (`DEC-METH-003`, implicación 4), incluidas
+     las de la categoría 2; en la 1, el argumento es la cita.
+- **Motivo**: pone el trabajo donde está el riesgo real —las contradicciones entre el diseño y el
+  código que queda— sin agregar mecanismo, y no rediscute un borrado ya decidido.
+- **Implicaciones**: una **contradice** vuelve al owner si corrige el diseño; si corrige el código,
+  entra como trabajo de la unidad que lo toca. La FASE 5 también fija el nombre del package del
+  contrato antes de construir `U1` (lote B).
+- **Origen**: FASE 5, lote A, 2026-09-30; propuesta del orquestador, el owner eligió la 2.
+
+---
+
 ### DEC-SUB-022 — La sucesora de quien venía pagando entra en grace si falla su primer cobro, y el barrido corta ese grace si el proveedor ya se rindió
 
 - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día, con OK del owner** (FASE 9 completa, 9d: el alcance de *«venía pagando»*; ver su 📌) · **Decide**: owner
