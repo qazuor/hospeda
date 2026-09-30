@@ -37,6 +37,13 @@ grant que lo cubra?»*, y **tres de esas cuatro fuentes son de billing**.
 Este contrato es ese paso 5, enunciado una sola vez, para que verticales lo pueda responder hoy y
 billing lo pueda responder de verdad mañana **sin que verticales cambie**.
 
+> **En las rutas de escritura de las verticales, ese paso lo agrega `V5`** ✚ (FASE 5, owner
+> 2026-09-30, lote 1 A). Hoy esas rutas chequean el plan con los gates de entitlements y limits
+> del cobro viejo; `U1` los saca y deja la cadena de permiso y propiedad que ya tienen, y `V5`
+> suma este paso con el criterio de salida *«ninguna ruta de escritura de vertical sin el paso de
+> cobertura»*. Entre las dos, en la rama, un dueño con permiso escribe sin plan: la rama no se
+> despliega hasta el corte.
+
 ### 1.1 El mismo hecho, en cuatro lugares
 
 Lo que verticales necesita de billing no está repartido: es **un hecho**, que el diseño ya pedía
@@ -988,7 +995,11 @@ fila que `PB9` o `PB12`»*); el que queda es el borrado de la cuenta pedido por 
 de pasos** (revisión del owner, 2026-09-28, N7, `g1`; `NUCLEO/08` §1, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393)), que borra la fila de la ficha sin pasar por ninguna de las dos
 (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—**, que
 no empuja nada, y la red lo alcanza porque `fichaPurgada` contesta `sí` también cuando la fila no
-existe. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8).
+existe. Está declarado en el NO cierra de `B/16` y en el ⚠️ de `V/03` §9 (punto 8). **Y desde la
+FASE 5 ese borrado tampoco queda** (owner 2026-09-30, lote 3 C): la baja manual corre `PB12` por
+cada ficha (`NUCLEO/08` §1.3, paso 2), las puertas de borrado y restauración que el código de hoy
+tiene fuera del diseño se retiran, y desaparece el borrado físico de fichas y de cuentas. La red
+por `fichaPurgada` queda igual, para la fila que falte por la causa que sea.
 
 **No es un quinto consumidor del aviso ni lo reemplaza**: son dos eventos distintos, en
 direcciones opuestas, y ninguno lleva el dato del otro. Lo emiten las dueñas de las dos filas —V6 el
@@ -1546,7 +1557,10 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
    depende de `B1`**: es la primera unidad de verticales que lee la hora (el vencimiento del
    trial), y `V9` (los plazos de retención) llega después de `V4`. Es la duodécima dependencia
    entre épicas (FASE 9 vuelta 3, F-8V3C1-006): sin ella `V4` se podía mergear antes de que
-   existiera la interfaz y leer la hora del sistema, que el reloj adelantable no mueve.
+   existiera la interfaz y leer la hora del sistema, que el reloj adelantable no mueve. **La FASE 5
+   no lo mueve**: el reloj sigue en `B1`, y lo que los jobs necesitan además —el huso del mercado,
+   el id de corrida y la correlación— lo construye `U2`, con el outbox (owner 2026-09-30, lote 2 B;
+   `NUCLEO/07` §1.4, `NUCLEO/08` §2.4).
 
 **Las implementaciones no viven en el package**: la real de la dirección de ida en la mitad de
 billing (`DEC-ARCH-004`), la de la inversa y la de arranque en la de verticales (la de arranque

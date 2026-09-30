@@ -3,7 +3,7 @@ title: La partición del programa en dos épicas
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-18
+updated: 2026-09-30
 status: CURRENT
 ---
 
@@ -180,8 +180,8 @@ necesitan igual y no se puede partir sin duplicarlo).
 | 04 | invariantes | **PARTIDO** — los de acceso, trial y roles a verticales; los de dinero y proveedor a billing; los de método, compartidos |
 | 05 | idempotencia y concurrencia | **BILLING** |
 | 06 | abstracción de proveedor | **BILLING** |
-| 07 | outbox y notificaciones | **PARTIDO** — el mecanismo es compartido; del catálogo de correos, los dos del trial a verticales y el resto a billing |
-| 08 | auditoría y observabilidad | **PARTIDO** — el criterio y la correlación son compartidos; del catálogo de acciones admin, la postulación de Partner y la extensión de trial a verticales |
+| 07 | outbox y notificaciones | **PARTIDO** — el mecanismo es compartido, **y lo construye `U2`, una unidad del paraguas y no de ninguna de las dos épicas, que depende de `U1` y va antes de `V6`, `V9`, `B4` y `B12`** (FASE 5, owner 2026-09-30, lote 2 A; `NUCLEO/07` §1.4; las dependencias, recogidas en los cruces de la aplicación); del catálogo de correos, los dos del trial a verticales y el resto a billing |
+| 08 | auditoría y observabilidad | **PARTIDO** — el criterio y la correlación son compartidos, **y la correlación la construye `U2`, con el outbox** (FASE 5, owner 2026-09-30, lote 2 B; `NUCLEO/08` §2.4); del catálogo de acciones admin, la postulación de Partner y la extensión de trial a verticales |
 | 09 | conciliación | **BILLING** |
 | 10 | verticales, planes y billing options | **PARTIDO** — el Eje 2 y la lectura del catálogo a verticales; el retiro de un plan y la vertical discontinuada a billing |
 | 11 | trial | **VERTICALES** |

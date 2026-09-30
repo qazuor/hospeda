@@ -73,7 +73,9 @@ no lo pide ningún capítulo (FASE 9 completa, 8e).
 
 ### 1.3 Es inmutable, y por eso sirve
 
-**Append-only: sin `update` y sin `delete`.** Un registro que se puede editar no sirve para lo
+**Append-only: sin `update` y sin `delete`, y nace sin `deleted_at`** (FASE 5, owner
+2026-09-30, lote 4 E: un borrado suave es una escritura que ningún candado contra `delete` ve, y
+eso vale para toda tabla de sólo agregar). Un registro que se puede editar no sirve para lo
 que el PDR lo necesita: el §29 tiene que poder **demostrar** que se avisó un aumento con su
 precio anterior, su precio nuevo y su fecha efectiva; y el §35.4 exige el registro del grant con
 su firmante.
@@ -165,6 +167,15 @@ Un job lleva **la correlación de su corrida** y, por cada ítem que procesa, **
 la entidad**. Sin la primera no se puede leer una corrida completa; sin la segunda no se puede
 seguir a un cliente a través de un job.
 
+### 2.4 Quién lo construye: `U2` ✚
+
+(FASE 5, owner 2026-09-30, lote 2 B.) **La correlación acuñada en el borde, su campo en el evento y
+en la fila del outbox, y las dos de cada job —la de su corrida y la de cada entidad— las construye
+`U2`**, la misma unidad que construye el outbox (`NUCLEO/07` §1.4), porque la correlación viaja a
+su fila. Hoy el contexto de una request lleva sólo su id y ninguna corrida de job lleva uno propio.
+**El reloj con que un job lee la hora no es de `U2`**: sigue siendo la interfaz que construye `B1`
+(`12-contrato…` §7.1, punto 5).
+
 ---
 
 ## 3. El catálogo de acciones administrativas · cierra `M-ADMIN-01`
@@ -181,7 +192,7 @@ si es destructiva o mueve dinero.**
 | otorgar, **anclarle una vertical nueva**, o revocar un **grant permanente** | §35, §35.4, `12-contrato…` §2.8 | **sí**, y la más grave: revocar deja al cliente **sin grant y sin suscripción**, o sea sin servicio, hasta que autorice un débito nuevo (`DEC-GRANT-001`). **Anclar también mueve dinero**: concede servicio gratuito permanente en una vertical nueva y **cancela la suscripción que el beneficiario pagaba ahí** (`S13`, `B/03` §3.2) — **y, con `includesAddons: true`, la de cada addon compatible que venía pagando** (`S20`, `B/16` §3.4) |
 | registrar un **pago manual**, **también la transferencia que no cae en ninguna cuota abierta**, que `MP6` asienta como un segundo pago del mismo período y que abre `COBRO_DUPLICADO` con propuesta de devolver (`B/03` §7; FASE 9 vuelta 3, owner 2026-09-30, lote W): es esta fila y no una nueva, como `MP4` | §30 | **sí** |
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
-| aprobar o rechazar una **postulación de Partner** —**o anular la espera tras un rechazo**, para que el dueño real de un correo cargado por un tercero pueda postularse (`V/18` §2.2; owner 2026-09-27, FASE 9 vuelta 2, `R7`)— | §17.3 | no |
+| aprobar o rechazar una **postulación de Partner** —**o anular la espera tras un rechazo**, para que el dueño real de un correo cargado por un tercero pueda postularse (`V/18` §2.2; owner 2026-09-27, FASE 9 vuelta 2, `R7`)—. **Aprobar asigna además el rol de socio**, con su familia de operaciones y sus permisos, que es por lo que pregunta el paso 3 de la cadena sobre las acciones de un Partner; **y ese rol no se quita** cuando el socio pierde su presencia, porque perder el acceso nunca revoca un rol (`V/17` §4.1) (FASE 5, owner 2026-09-30, lote 4 B, contra la recomendación, que era declarar el paso 3 vacuo para Partner) | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
 | **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintidós**~~ ~~**veintitrés**~~ **veinticuatro** motivos (el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`; el 16 desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE 8 completa, owner 2026-09-25; el 20 desde la pendiente 6 —el 21 y el 22 desde la FASE 9 completa (`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y `PAUSA_NO_APLICADA`, `F-8CB2-003`)—) y ~~**seis**~~ ~~**siete**~~ ~~**ocho**~~ **nueve** tienen una confirmación de reembolso encima — **y los ~~seis~~ ~~siete~~ ~~ocho~~ nueve se leen en el motivo, sin mirar nada más**, desde que `DEC-RF-006` partió en dos el que `DEC-RF-004` había dejado dependiendo del disparador |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`). **Con motivo revocación del derecho de arrepentimiento es la misma acción y corre `S36`** (cap. 03 (billing) §3.2): cancela, corta el servicio en el acto y crea `RF1` por el total, así que su confirmación dice las tres cosas (owner 2026-09-26, `G5-4`) |
@@ -245,6 +256,11 @@ ni dispara `T1` (el trial es de por vida y lo gasta sólo el dueño, `V/03` §2)
 borrado de ficha sale de otra fila que `PB9` o `PB12`**, que es lo que hace correr `A6`
 (`B/03` §8) y cancela el addon `LISTING` de la ficha borrada (FASE 9 vuelta 1, `F-8V1A1-003`). La
 vigesimotercera no es la excepción: borra corriendo `PB12` (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
+**Y las puertas que hoy borran por otro lado se retiran** (FASE 5, owner 2026-09-30, lote 3 C): el
+botón con que el dueño borra su ficha pasa a ser el borrado del diseño, el borrado del equipo pasa a
+la vigesimotercera, a pedido y con motivo, y **desaparecen el borrado físico de fichas y de cuentas
+y la restauración de fichas del panel** en las tres verticales. Una cuenta no se borra: se da de
+baja con la vigesimocuarta.
 
 > **«Entrar como» el cliente queda para una versión posterior, y su condición se escribe hoy**
 > (revisión del owner, 2026-09-28, C7). Un admin que le maneja la ficha a quien no sabe hacerlo
@@ -255,6 +271,11 @@ vigesimotercera no es la excepción: borra corriendo `PB12` (revisión del owner
 > frase de arriba *«ni las que se agreguen»* se reabre**: si el admin publica en nombre del
 > cliente, o esa publicación le arranca la prueba al cliente (y la frase cae) o no se la arranca
 > (y el admin no puede publicar la ficha de quien no tiene plan). No se decide ahora.
+> **Y lo que el código de hoy tiene apagado no espera a esa versión: sale en `V5`** (FASE 5, owner
+> 2026-09-30, lote 4 C): `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón de
+> impersonar del panel y el permiso `USER_IMPERSONATE`. HOS-354 se cierra o se reescribe como el
+> *«entrar como»* de esa versión posterior. Con `set-role` sale además un segundo camino para
+> asignar roles que no pasa por ninguna fila de esta tabla, y que la vigesimosexta no contaba.
 
 **Y ninguna fila de esta tabla se ejecuta con `actor = sujeto`**: el paso 3 de la autorización la
 rechaza y la hace otra cuenta con el permiso (`V/17` §3.2 regla 5; owner 2026-09-26, `G5-1`).

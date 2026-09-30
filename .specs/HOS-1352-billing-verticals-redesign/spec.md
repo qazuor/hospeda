@@ -3,7 +3,7 @@ title: Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-18
+updated: 2026-09-30
 type: feature
 areas:
   - billing
@@ -16,9 +16,12 @@ areas:
 # Rediseño integral de Verticales y Billing
 
 > **Esto es el paraguas del programa. Desde el 2026-09-18 no se implementa: se implementan sus dos
-> hijas.** **Salvo una unidad propia, `U1`, la limpieza del principio: borra el sistema viejo de la
+> hijas.** **Salvo ~~una unidad propia, `U1`~~ dos unidades propias. `U1`, la limpieza del principio: borra el sistema viejo de la
 > rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo** *(salvo, desde el lote P-C, la estructura vacía del package del contrato, que llenan `V1` y `B1` en paralelo)*
 > (verificación corta, 2026-09-29, lote O-A; [`docs/16-fase-7-del-paraguas.md`](./docs/16-fase-7-del-paraguas.md) §4.6).
+> **Y `U2`, el outbox común, que las dos hijas usan: depende de `U1` y va antes de las primeras
+> unidades que encolan** (FASE 5, owner 2026-09-30, lote 2 A; el mismo §4.6). **El programa tiene
+> 24 unidades**: nueve de verticales, trece de billing y estas dos.
 >
 > | | | |
 > |---|---|---|
@@ -79,12 +82,12 @@ nada** (§66):
 | # | Documento | Qué es |
 |---|---|---|
 | 1 | [`docs/00-PDR.md`](./docs/00-PDR.md) | El PDR rector del owner. **Inmutable.** |
-| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ ~~**135 decisiones**~~ **139 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L; al 2026-09-30, con `DEC-METH-016` y, de la FASE 9 vuelta 3, `DEC-AUTH-004` y `DEC-AUTH-005`) |
+| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ ~~**135 decisiones**~~ ~~**139 decisiones**~~ **142 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L; al 2026-09-30, con `DEC-METH-016` y, de la FASE 9 vuelta 3, `DEC-AUTH-004` y `DEC-AUTH-005`; y de la FASE 5, `DEC-METH-017`, `DEC-ARCH-015` y `DEC-MIG-007`) |
 | 3 | [`docs/02-worklog.md`](./docs/02-worklog.md) | Qué se hizo, cronológicamente |
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
-| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas, ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ 101 cerradas, ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ 16 `UNKNOWN`** (30/09, FASE 9 vuelta 3: entraron `EX-57` y `EX-59` (`UNKNOWN`) y `EX-58` (`PARTIALLY_SUPPORTED`); 25/09, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`; 26/09, `GR-1` `VERIFIED` y entró `EX-42`; 27/09, entraron `EX-43` a `EX-47`; 28/09, entraron `EX-48` a `EX-50`, FASE 9 vuelta 2, verificación, `V2-y`; 28/09, revisión del owner: entraron `EX-51` (`VERIFIED`), `EX-52`, `EX-53` y `WH-6`, y `WH-5` y `EX-15` se reabrieron a `PARTIALLY_SUPPORTED`; 29/09, entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 29/09, mediciones de los dos canales (sondas 52 a 57): cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; recontado con el script) |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas, ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ ~~101~~ 103 cerradas, ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ ~~16~~ 14 `UNKNOWN`** (recontado con el script en los cruces de la aplicación de la FASE 5, 2026-09-30: las mediciones del 30/09 cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a `PARTIALLY_SUPPORTED`) (30/09, FASE 9 vuelta 3: entraron `EX-57` y `EX-59` (`UNKNOWN`) y `EX-58` (`PARTIALLY_SUPPORTED`); 25/09, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`; 26/09, `GR-1` `VERIFIED` y entró `EX-42`; 27/09, entraron `EX-43` a `EX-47`; 28/09, entraron `EX-48` a `EX-50`, FASE 9 vuelta 2, verificación, `V2-y`; 28/09, revisión del owner: entraron `EX-51` (`VERIFIED`), `EX-52`, `EX-53` y `WH-6`, y `WH-5` y `EX-15` se reabrieron a `PARTIALLY_SUPPORTED`; 29/09, entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 29/09, mediciones de los dos canales (sondas 52 a 57): cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; recontado con el script) |
 | 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
 | 9 | [`docs/08-phase-1b-code-discovery.md`](./docs/08-phase-1b-code-discovery.md) | El billing que corre hoy — **132 hallazgos**. **No es fuente de diseño** |
 | 10 | [`docs/10-evaluacion-de-proveedor.md`](./docs/10-evaluacion-de-proveedor.md) | La evaluación de reemplazo de Mercado Pago |
@@ -136,7 +139,7 @@ El mapa completo, con qué define cada uno, está en
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio, sin mirar código | ✅ **25 de 25 preguntas** |
 | FASE 1B — discovery del sistema actual | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
-| FASE 1C — experimentación contra Mercado Pago | 🟡 **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas · ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ 101 cerradas · ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ 16 `UNKNOWN`** (30/09, recontado con el script tras la FASE 9 vuelta 3: entraron `EX-57` a `EX-59`; 29/09, recontado con el script tras las mediciones de los dos canales: cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; 29/09, recontado con el script tras los casos vecinos de la revisión del owner: entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 28/09, recontado con el script tras la revisión del owner: entraron `EX-51` a `EX-53` y `WH-6`, y se reabrieron `WH-5` y `EX-15`; antes entraron `EX-42` el 26/09, `EX-43` a `EX-47` el 27/09 y `EX-48` a `EX-50` el 28/09, FASE 9 vuelta 2, verificación, `V2-y`; 26/09: salió `GR-1`, `VERIFIED`; `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9` sumadas a las 93 recontadas el 2026-09-24 con `contar-filas-de-la-matriz.py`, **después de arreglarlo**: descartaba en silencio cuatro filas cuyo identificador está en negrita) — ~~**tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`)~~ (tachado 2026-09-26): `RN-3` salió el 25/09 noche y `GR-1` el 26/09) **del camino del cobro fallido quedan `GR-2` y `PA-6`**, que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
+| FASE 1C — experimentación contra Mercado Pago | 🟡 **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas · ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ ~~101~~ 103 cerradas · ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ ~~16~~ 14 `UNKNOWN`** (recontado con el script en los cruces de la aplicación de la FASE 5, 2026-09-30: las mediciones del 30/09 cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a `PARTIALLY_SUPPORTED`) (30/09, recontado con el script tras la FASE 9 vuelta 3: entraron `EX-57` a `EX-59`; 29/09, recontado con el script tras las mediciones de los dos canales: cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; 29/09, recontado con el script tras los casos vecinos de la revisión del owner: entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 28/09, recontado con el script tras la revisión del owner: entraron `EX-51` a `EX-53` y `WH-6`, y se reabrieron `WH-5` y `EX-15`; antes entraron `EX-42` el 26/09, `EX-43` a `EX-47` el 27/09 y `EX-48` a `EX-50` el 28/09, FASE 9 vuelta 2, verificación, `V2-y`; 26/09: salió `GR-1`, `VERIFIED`; `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9` sumadas a las 93 recontadas el 2026-09-24 con `contar-filas-de-la-matriz.py`, **después de arreglarlo**: descartaba en silencio cuatro filas cuyo identificador está en negrita) — ~~**tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`)~~ (tachado 2026-09-26): `RN-3` salió el 25/09 noche y `GR-1` el 26/09) **del camino del cobro fallido quedan `GR-2` y `PA-6`**, que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
 | FASE 1C-bis — evaluación de proveedor | ✅ **cerrada el 2026-09-24 por `DEC-MP-005`** en el paso 4 de 6 — **no se completó, se cerró**: los dos pasos que faltaban dependían de una habilitación de Mobbex y de una respuesta de MP que nunca llegaron |
 | FASE 2 — el diseño | ✅ **22 de 22**, desarmado en tres partes (2026-09-24). El `13` (Pagos) **nunca llegó a existir como archivo**: sus ítems se repartieron entre los capítulos que los reclamaban —`S29` en el `03`, `covered_period` en el `02` y el `05`, la mecánica del reembolso en el `06` §4.6— y uno resultó **un deber mal atribuido**. El reparto completo está en [`nucleo/00-indice.md`](./docs/nucleo/00-indice.md) |
 | FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
@@ -149,9 +152,10 @@ El mapa completo, con qué define cada uno, está en
 ~~**106 decisiones** — 13 de metodología y 93 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 107
 encabezados; el que sobra es la plantilla del formato, en la l. 26).~~ ~~**134 decisiones**, 15 de
 metodología y 119 funcionales, al 2026-09-28 tras la revisión del owner~~ ~~**135 decisiones**, 15 de
-metodología y 120 funcionales, al 2026-09-29 tras las mediciones (`DEC-MP-009`, lote L)~~ **139 decisiones**,
-16 de metodología y 123 funcionales, al 2026-09-30 tras la FASE 9 vuelta 3 (`rg -o "^### DEC-[A-Z]+-\d+"`
-sobre el log, sin repetidos, da ~~134~~ ~~135~~ 139; la plantilla del formato no matchea). Ninguna pregunta del owner
+metodología y 120 funcionales, al 2026-09-29 tras las mediciones (`DEC-MP-009`, lote L)~~ ~~**139 decisiones**,
+16 de metodología y 123 funcionales, al 2026-09-30 tras la FASE 9 vuelta 3~~ **142 decisiones**, 17 de
+metodología y 125 funcionales, al 2026-09-30 tras la FASE 5 (`rg -o "^### DEC-[A-Z]+-\d+"`
+sobre el log, sin repetidos, da ~~134~~ ~~135~~ ~~139~~ 142; la plantilla del formato no matchea). Ninguna pregunta del owner
 queda abierta, y ningún bloqueante de diseño tampoco.
 
 ## La decisión que reorientó el programa
@@ -201,7 +205,7 @@ abortan si el máximo a cobrar no coincide con la cifra autorizada.
    carpetas no fallan por `G8`, porque los puntos 1 a 3 todavía no se hicieron.
 
 El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
-limpieza ~~de `V1`~~ del principio (`V/21` §4; `docs/16-fase-7-del-paraguas.md` §4.6; verificación corta, 2026-09-29, lote N-A), que hace `U1`, la unidad del paraguas (lote O-A).
+limpieza ~~de `V1`~~ del principio (`V/21` §4; `docs/16-fase-7-del-paraguas.md` §4.6; verificación corta, 2026-09-29, lote N-A), que hace `U1`, la ~~unidad~~ primera unidad del paraguas (lote O-A; *«primera»*, FASE 5, lote 2 A).
 
 ## Lo que necesita al owner
 

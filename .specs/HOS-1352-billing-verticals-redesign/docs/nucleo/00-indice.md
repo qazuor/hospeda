@@ -41,7 +41,7 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
    escribirlo (regla 5);
 2. **una decisión registrada** en `01-decision-log.md` — son ~~**111** al 2026-09-24~~ ~~**117** al
    2026-09-25~~ ~~**124** al 2026-09-25, con las siete nuevas de la FASE 9 completa (recontado al
-   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ ~~**126** al 2026-09-26~~ ~~**134** al 2026-09-28~~ ~~**135** al 2026-09-29~~ **139** al 2026-09-30 (FASE 9 vuelta 3, owner 2026-09-30, lote AB: entre ellas `DEC-AUTH-004` y `DEC-AUTH-005`; recontado con script, 140 encabezados menos la plantilla), y el 135 del 2026-09-29 con `DEC-MP-009` (mediciones del 2026-09-29, lote L;
+   cierre de la tanda de aplicación; `26-fase-9-completa/14` §5.1)~~ ~~**126** al 2026-09-26~~ ~~**134** al 2026-09-28~~ ~~**135** al 2026-09-29~~ ~~**139** al 2026-09-30~~ **142** al 2026-09-30, con las tres de la FASE 5 —`DEC-METH-017`, `DEC-MIG-007` y `DEC-ARCH-015`— (recontado con script: `rg -c '^### DEC-'` da 143 encabezados, menos la plantilla), y el 139 (FASE 9 vuelta 3, owner 2026-09-30, lote AB: entre ellas `DEC-AUTH-004` y `DEC-AUTH-005`; recontado con script, 140 encabezados menos la plantilla), y el 135 del 2026-09-29 con `DEC-MP-009` (mediciones del 2026-09-29, lote L;
    `30-revision-del-owner/29-aplicacion-lote-l-log-y-matriz.md`), con las ocho de la
    revisión del owner (`30-revision-del-owner/15-aplicacion-log-y-matriz.md`) y las
    dos de la FASE 9 vuelta 1 —`DEC-AUTH-002` y `DEC-AUTH-003`— (recontado con script en
@@ -55,7 +55,9 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
    `DEC-SUB-003` como fuente, y es el lugar donde un implementador busca qué decisiones valen);
    y desde el 2026-09-28 (revisión del owner, C8 y C14) `DEC-SUB-015`, `DEC-SUB-018`,
    `DEC-GRANT-010` y `DEC-ARCH-011` enteras, y `DEC-DATA-002` sólo en lo que `DEC-DATA-006`
-   reemplazó;
+   reemplazó; y desde el 2026-09-30 (FASE 5, simplificación del corte, lote E) `DEC-MIG-004`
+   entera, por `DEC-MIG-007`, y `DEC-MIG-005` sólo en sus 📌 que el mismo lote marca `SUPERSEDED`
+   (los del 27/09, el de `V2-a`/`V2-m`/`V2-r`, el del 29/09 y el del 30/09);
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
 
 **El registro de FASE 1B (`08`) no es fuente de diseño.** Un hallazgo de 1B puede aparecer en
@@ -114,8 +116,8 @@ preguntar **una vez** si están todos.
 | `02` | [modelo de datos](./02-modelo-de-datos.md) | qué sale de la base y qué del código, **cómo nacen los valores y quién los cambia, y los plazos configurables** (§1.4 y §1.5; revisión del owner, 2026-09-28, N1 y C9), y el registro de eventos |
 | `03` | [máquinas de estado](./03-maquinas-de-estado.md) | las siete reglas de lectura que valen para las ~~nueve~~ diez máquinas (la décima, el reembolso: FASE 9 completa, 5a) |
 | `04` | [invariantes](./04-invariantes.md) | los 54 (37 del §64 del PDR y 17 de las decisiones), con quién sostiene cada uno |
-| `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario |
-| `08` | [auditoría y observabilidad](./08-auditoria-y-observabilidad.md) | qué es auditable y los identificadores de correlación |
+| `07` | [outbox y notificaciones](./07-outbox-y-notificaciones.md) | el mecanismo de entrega, el dedup y el huso horario; **lo construye `U2`** (§1.4; FASE 5, owner 2026-09-30, lote 2 A) |
+| `08` | [auditoría y observabilidad](./08-auditoria-y-observabilidad.md) | qué es auditable y los identificadores de correlación, **que construye `U2`** (§2.4; FASE 5, owner 2026-09-30, lote 2 B) |
 
 ### Épica de verticales · `HOS-1353-…/docs/` — **arranca ya**
 

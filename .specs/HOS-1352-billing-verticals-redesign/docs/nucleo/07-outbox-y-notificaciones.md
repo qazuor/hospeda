@@ -64,6 +64,23 @@ que sin destinatario (§5.3, regla 2). El `failed` definitivo es, por definició
 falla que no pasó, y esperarla dejaba `S17` y `S6` sin ocurrir nunca: cobraban las dos
 suscripciones, o el moroso conservaba el servicio sin límite.
 
+### 1.4 Quién lo construye: `U2`, el outbox común ✚
+
+(FASE 5, owner 2026-09-30, lote 2 A.) **Lo construye `U2`**, una unidad del paraguas como `U1`:
+depende de `U1` y va antes de las primeras unidades que encolan, `V6`, `V9`, `B4` y `B12`. Hasta la
+FASE 5 ninguna unidad lo tenía asignado. Se construye **sobre el precedente del newsletter**, que es
+el único outbox que hay hoy en el repositorio, y trae tres cosas más:
+
+1. **La supresión del §4**, entera: rebote duro, cuenta borrada, opt-out y tope diario.
+2. **La bitácora de correos**, que `U1` renombra desde `billing_notification_log` a un nombre
+   neutro, sin la columna ni la FK de cliente del cobro y con su índice propio fuera del extra
+   `004` (FASE 5, owner 2026-09-30, lote 1 B). Hoy registra cada correo de la plataforma, sea del
+   tipo que sea, después de mandarlo y fuera de toda transacción. `U2` la absorbe: desde `U2` el
+   registro del intento del §44 es uno solo.
+3. **Lo que los jobs necesitan para cumplir el §3 y `NUCLEO/08` §2**: el huso del mercado, el id
+   de corrida y la correlación de punta a punta (FASE 5, owner 2026-09-30, lote 2 B). El reloj que
+   leen no es de `U2`: sigue siendo la interfaz que construye `B1` (`12-contrato…` §7.1, punto 5).
+
 ---
 
 ## 2. Que se mande una sola vez · cierra `M-MAIL-02`
@@ -127,7 +144,9 @@ Tres consecuencias operativas:
 1. **«Tres días antes» significa un día del calendario, no 72 horas.** El límite del día es
    medianoche del huso del mercado.
 2. **Un proceso que corre en UTC tiene que convertir**, y eso incluye a los jobs: el error no se
-   ve en un servidor en UTC y sí se ve en la máquina de quien desarrolla, o al revés.
+   ve en un servidor en UTC y sí se ve en la máquina de quien desarrolla, o al revés. **Lo lleva a
+   la infraestructura de jobs `U2`** (§1.4; FASE 5, owner 2026-09-30, lote 2 B): hoy el
+   programador de jobs no fija ningún huso.
 3. **Se cruza con la cuota mensual de `DEC-ENT-002`**: el momento del reset es una ventana
    temporal y se computa igual, en el huso del mercado. **Y el día del reset es el del ciclo de cada
    persona**, no el primero del mes (revisión del owner, 2026-09-28, C4; `V/15` §7): el día del
