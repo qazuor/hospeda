@@ -3,7 +3,7 @@ title: Master Spec 17 — Autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 17
@@ -572,6 +572,23 @@ excepción es ésta sola**: vale para la mitad de billing del acto que esa perso
 esa vertical, y no para ninguna otra fila de la tabla.~~ **Sin excepción** (revisión del owner,
 2026-09-28, C8): el reintento era de la mitad de billing de discontinuar una vertical, y la acción
 salió. Ningún actor de sistema ejecuta una fila de la tabla.
+
+**Cómo se cumple, y no por lista** (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H). El actor de sistema de hoy es lo contrario de esta regla:
+lleva el rol `SUPER_ADMIN` y todos los permisos, y no es uno sino una fábrica y unos treinta
+armados a mano, nueve de ellos con todos los permisos y sin la marca `_isSystemActor` que mira la
+barrera HTTP (`39-fases-6-y-7/20-pase-fase-6.md` §2.1, `AUT-005`). **Se reescribe en `V5`**, y queda
+así:
+
+1. **una sola fábrica**, con el rol `SYSTEM` (que ya existe y no se puede asignar), **un
+   identificador por job** y **los permisos que cada job usa, escritos uno por uno**;
+2. **la fábrica rechaza al construirse** cualquier permiso de las veinticinco acciones: un actor de
+   sistema con uno de ellos no llega a existir;
+3. **los actores armados a mano pasan a la fábrica**, y **`G19`** falla si aparece uno fuera de
+   ella (`20` §2);
+4. **y la cadena, además, rechaza `_isSystemActor` en las veinticinco acciones**: dos capas.
+
+Un job que usaba un permiso sin saberlo deja de poder, y falla **cerrado**, con un error de permiso
+que el test o el log muestran.
 
 ### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
 

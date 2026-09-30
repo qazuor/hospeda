@@ -63,7 +63,7 @@ cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1
 | `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) **si publicar le arrancaría el trial, con la regla escrita sólo en `19` §4 fila 23** (FASE 9 vuelta 1, `F-8V1D1-004`) |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ ~~**veintiún guards**~~ ~~**diecinueve guards**~~ **veinte guards** (entra `G18`, el control que regenera y compara el SQL generado del catálogo y de la tabla de claves: FASE 5, lote de la aplicación, owner 2026-09-30, E) (revisión del owner, 2026-09-28: `G-R3` y `G-R5-B` pasan a ser validaciones del panel, por N1 y C9, y conservan su fila sin contarse; antes, en la misma revisión, la cifra se mantuvo: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ ~~**veintiún guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ **veintiún guards** (entra `G19`, el actor de sistema armado fuera de la fábrica, de `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H) (entra `G18`, el control que regenera y compara el SQL generado del catálogo y de la tabla de claves: FASE 5, lote de la aplicación, owner 2026-09-30, E) (revisión del owner, 2026-09-28: `G-R3` y `G-R5-B` pasan a ser validaciones del panel, por N1 y C9, y conservan su fila sin contarse; antes, en la misma revisión, la cifra se mantuvo: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, **con su ficha a la vista publicada y una prueba gratis activa desde el día del corte** (revisión del owner, 2026-09-28, C12), la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | ~~las señales de identidad y~~ el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`); las señales que sólo observaban (teléfono, identificador fiscal, dispositivo) no se guardan (revisión del owner, 2026-09-28, N7, `g2`) |
 
@@ -387,9 +387,9 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ## 5. Cómo se comprueba que está bien
 
-**~~Siete~~ ~~Ocho~~ ~~Nueve~~ Diez guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`), **`G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6) **y `G18`** (el décimo, el control del SQL generado del catálogo y de la tabla de claves; lo construye `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E)—, y cada uno **lleva un caso que lo
+**~~Siete~~ ~~Ocho~~ ~~Nueve~~ ~~Diez~~ Once guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`), **`G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6) **y `G18`** (el décimo, el control del SQL generado del catálogo y de la tabla de claves; lo construye `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E), **y `G19`** (el undécimo, el actor de sistema armado fuera de la fábrica; lo construye `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H)—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**~~Siete~~ ~~Ocho~~ ~~Nueve~~ Diez NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintiuno**~~ ~~**diecinueve**~~ **veinte** (con `G18`: FASE 5, lote de la aplicación, owner 2026-09-30, E) (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
+**~~Siete~~ ~~Ocho~~ ~~Nueve~~ ~~Diez~~ Once NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintiuno**~~ ~~**diecinueve**~~ ~~**veinte**~~ **veintiuno** (con `G18`: FASE 5, lote de la aplicación, owner 2026-09-30, E; con `G19`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H) (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
 `G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los ~~**doce**~~ **diez** que no
 están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`, C14)
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
@@ -411,7 +411,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
 
-Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ ~~veinte~~ ~~veintiuno~~ diecinueve (revisión del owner, 2026-09-28, N1 y C9): **el texto con que falla no puede afirmar más de lo que el
+Y la regla que vale para los ~~diecisiete~~ ~~dieciocho~~ ~~diecinueve~~ ~~veinte~~ ~~veintiuno~~ ~~diecinueve~~ **veintiuno** (con `G18`: FASE 5, lote de la aplicación, E; con `G19`: FASES 6 y 7, pase de la FASE 6, H) (FASES 6 y 7, verificación, 2026-09-30, F3) (revisión del owner, 2026-09-28, N1 y C9): **el texto con que falla no puede afirmar más de lo que el
 predicado verifica.**
 
 ---
@@ -454,8 +454,9 @@ filas existentes; salida 3 de la FASE 9 completa.)*
 - ~~**Si el mes de una cuota corre por calendario o por aniversario.** Sigue abierto desde
   `DEC-ENT-002`.~~ **Cerrado** (revisión del owner, 2026-09-28, C4): por la fecha del ciclo de
   cada persona, también en anual y en la prueba gratis (`15` §7).
-- **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5 y tiene su gate propio
-  (`DEC-METH-003`).
+- **Qué se reescribe y qué se reutiliza del código actual.** ~~Es FASE 5 y tiene su gate propio
+  (`DEC-METH-003`).~~ **Lo contestó la FASE 5 (`DEC-METH-017`), y lo que dejó sin veredicto lo
+  contestó el pase de la FASE 6** (`DEC-METH-018`) (FASES 6 y 7, verificación, 2026-09-30, F5).
 - **«Entrar como» el cliente** (revisión del owner, 2026-09-28, C7): no está en esta versión y se
   va a agregar; su condición (se registra como hecho por el admin en nombre del cliente) está en
   `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3. **Y el código apagado que hoy lo

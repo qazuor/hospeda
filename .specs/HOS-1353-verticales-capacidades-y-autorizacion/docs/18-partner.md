@@ -3,7 +3,7 @@ title: Master Spec 18 — Partner
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 18
@@ -142,7 +142,9 @@ moderar—, que es lo que el código de hoy evita a propósito al revocar sin to
   `payment_review_state` y `payment_confirmed_through`**; `plan_id` y `subscription_id` llevan las
   FK; **`starts_at` y `ends_at` quedan hasta `V7`**: FASE 5, lote de la aplicación, owner
   2026-09-30, H; **y `V7` las borra con su migración, junto con sus lectores del panel**: FASE 5,
-  lote de la aplicación, segunda tanda, owner 2026-09-30, O), sus FK a tablas del cobro viejo, y los tres crons de partner
+  lote de la aplicación, segunda tanda, owner 2026-09-30, O; **y en la misma migración, `tier` con
+  su índice, y sus lectores —la página pública y las tres rutas del socio— pasan a leer la
+  clave**: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, J; FASES 6 y 7, verificación, 2026-09-30, F7), sus FK a tablas del cobro viejo, y los tres crons de partner
   (`partner-expiry` y `partner-unpaid-reaper`, que la archivan, y `partner-payment-review`). **Desde
   `U1` hasta `V7` la lectura pública no muestra ninguna presencia**: la que la vuelve a mostrar es
   la regla de este §, que construye `V7`. No tiene población: hoy Partner tiene cero filas.

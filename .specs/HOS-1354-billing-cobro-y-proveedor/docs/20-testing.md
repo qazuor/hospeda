@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -387,9 +387,9 @@ de `DEC-TEST-001` —la que reparte los catorce sin unidad—, que es el último
 | | cuántos | quiénes |
 |---|---|---|
 | filas de `B/20` §2 | ~~**16**~~ ~~**15**~~ ~~**14**~~ **17** | `G7` `G9` `G10` `G11` `G12` ~~`G13`~~ **`G15` `G16` `G17`** · los **seis** de `R1` · `G-R4` ~~`G-R5`~~ `G-R6` `G-R6-B` — `G13` pasó a `V/20` §2 (owner 2026-09-26, `G5-5`); `G-R5` salió (revisión del owner, 2026-09-28, C14; su fila queda tachada y no se cuenta); **`G15`, `G16` y `G17` entraron con la revisión del owner, 2026-09-28** (C13 y `L3-c`, N2, N4 y `L3-f`), recontadas sobre la tabla |
-| filas de `V/20` §2 | ~~**17**~~ ~~**18**~~ ~~**19**~~ ~~**20**~~ ~~**21**~~ ~~**19**~~ **20** | `G1`-`G6` `G8` **`G13`** **`G14`** **`G18`** · `G-R2` `G-R2-B` **`G-R2-C`** · ~~`G-R3`~~ `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` ~~`G-R5`~~ ~~**`G-R5-B`**~~ `G-R6` `G-R6-B` · **`G-R9`** — **`G18`**, el control que regenera y compara el SQL generado del catálogo y de la tabla de claves, entra con su fila en `V/20` §2 y lo construye `V1` (FASE 5, lote de la aplicación, owner 2026-09-30, E; recontado sobre `V/20` §2 en la segunda tanda) — **`G-R3` y `G-R5-B` pasan a ser validaciones del panel** (revisión del owner, 2026-09-28, N1 y C9: el catálogo y los plazos viven en la base y se editan desde el panel, así que CI no ve los de producción); conservan su fila y su nombre, y no se cuentan. Antes, en la misma revisión, **la cifra no se movió y la composición sí**: sale `G-R5` y entra `G14`, el de la frontera del package del contrato (revisión del owner, 2026-09-28, C14 y N6); **`G-R9`**, **`G-R9`**, el de la lista cerrada de `PURGED`, desde la FASE 9 vuelta 2, verificación (owner 2026-09-27, `V2-k`);  `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25); **`G-R2-C`**, el gemelo de `G-R2-B` para la emisión de un addon `USER`/`GLOBAL` sólo en sus verticales compatibles, desde la FASE 9 completa (owner 2026-09-25, 4e, `F-8CA1-008`; recontado sobre `V/20` §2) |
-| **guards distintos** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ ~~**35**~~ ~~**33**~~ **34** (el 34 es **`G18`, de `V1`: el control que regenera y compara el SQL generado del catálogo y de la tabla de claves**: FASE 5, lote de la aplicación, owner 2026-09-30, E; no es de este catálogo, su fila vive en `V/20` §2) | ~~16~~ ~~15~~ ~~14~~ 17 + ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~19~~ 20 (sin `G-R3` ni `G-R5-B`, que pasan al panel: revisión del owner, 2026-09-28, N1 y C9) menos las ~~**cuatro**~~ **tres** referencias cruzadas (mover `G13` de un catálogo al otro no cambia el total): `G-R4`, ~~`G-R5`,~~ `G-R6` y `G-R6-B` (revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6, así que el total queda en 32; **y entran `G15`, `G16` y `G17`**, los tres de este catálogo y ninguno referencia cruzada, así que queda en **35**). `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
-| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ ~~**35**~~ ~~**33**~~ **34** de los que cuenta esta tabla; ~~**el 34, el control del SQL generado, no entra en este recuento: su fila y su unidad las escribe la épica de verticales**~~ **el 34 es `G18`, con su fila en `V/20` §2 y su unidad, `V1`** (FASE 5, lote de la aplicación, owner 2026-09-30, E; recontado en la segunda tanda) (salen `G-R3`, de `V2`, y `G-R5-B`, de `V6`, que pasan a ser validaciones del panel y las construyen las mismas unidades: revisión del owner, 2026-09-28, N1 y C9) | **`G15` `G16` `G17` (`B1`)**, que nacen con unidad (revisión del owner, 2026-09-28), más los ~~**15**~~ **16** (FASE 5, lote de la aplicación, owner 2026-09-30, E; verificación, `VF5-05`) que ya la tenían — `G1` `G3` ~~`G8`~~ (`V1`), **`G8` (`U1`**, la unidad del paraguas que hace la limpieza del principio: verificación corta, 2026-09-29, lote O-A), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (~~`B4`~~ **`V4`**: owner 2026-09-26, `G5-5`), ~~`G-R5` (ver abajo)~~ **`G14` (`V1`**, revisión del owner, 2026-09-28, N6; `G-R5` salió por C14) **y `G18` (`V1`**, FASE 5, lote de la aplicación, owner 2026-09-30, E) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) **y `G-R9` (`V6`)**, que nace con unidad (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| filas de `V/20` §2 | ~~**17**~~ ~~**18**~~ ~~**19**~~ ~~**20**~~ ~~**21**~~ ~~**19**~~ ~~**20**~~ **21** | `G1`-`G6` `G8` **`G13`** **`G14`** **`G18`** **`G19`** *(el actor de sistema armado fuera de la fábrica, de `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H)* · `G-R2` `G-R2-B` **`G-R2-C`** · ~~`G-R3`~~ `G-R3-B` `G-R3-C` · `G-R4` `G-R4-B` ~~`G-R5`~~ ~~**`G-R5-B`**~~ `G-R6` `G-R6-B` · **`G-R9`** — **`G18`**, el control que regenera y compara el SQL generado del catálogo y de la tabla de claves, entra con su fila en `V/20` §2 y lo construye `V1` (FASE 5, lote de la aplicación, owner 2026-09-30, E; recontado sobre `V/20` §2 en la segunda tanda) — **`G-R3` y `G-R5-B` pasan a ser validaciones del panel** (revisión del owner, 2026-09-28, N1 y C9: el catálogo y los plazos viven en la base y se editan desde el panel, así que CI no ve los de producción); conservan su fila y su nombre, y no se cuentan. Antes, en la misma revisión, **la cifra no se movió y la composición sí**: sale `G-R5` y entra `G14`, el de la frontera del package del contrato (revisión del owner, 2026-09-28, C14 y N6); **`G-R9`**, **`G-R9`**, el de la lista cerrada de `PURGED`, desde la FASE 9 vuelta 2, verificación (owner 2026-09-27, `V2-k`);  `G-R5-B` desde la FASE 8 completa (`F-8CA2-014`, owner 2026-09-25); **`G-R2-C`**, el gemelo de `G-R2-B` para la emisión de un addon `USER`/`GLOBAL` sólo en sus verticales compatibles, desde la FASE 9 completa (owner 2026-09-25, 4e, `F-8CA1-008`; recontado sobre `V/20` §2) |
+| **guards distintos** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ ~~**35**~~ ~~**33**~~ ~~**34**~~ **35** (el 35 es **`G19`, de `V5`**, con su fila en `V/20` §2: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H) (el 34 es **`G18`, de `V1`: el control que regenera y compara el SQL generado del catálogo y de la tabla de claves**: FASE 5, lote de la aplicación, owner 2026-09-30, E; no es de este catálogo, su fila vive en `V/20` §2) | ~~16~~ ~~15~~ ~~14~~ 17 + ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~19~~ ~~20~~ 21 (sin `G-R3` ni `G-R5-B`, que pasan al panel: revisión del owner, 2026-09-28, N1 y C9) menos las ~~**cuatro**~~ **tres** referencias cruzadas (mover `G13` de un catálogo al otro no cambia el total): `G-R4`, ~~`G-R5`,~~ `G-R6` y `G-R6-B` (revisión del owner, 2026-09-28: sale `G-R5` por C14 y entra `G14` por N6, así que el total queda en 32; **y entran `G15`, `G16` y `G17`**, los tres de este catálogo y ninguno referencia cruzada, así que queda en **35**). `G-R5-B` **no** es referencia cruzada: sus dos cifras son de la épica de verticales. **`G-R2-C` tampoco**: vive en `V/20` §2 y su dato de billing es el catálogo de `addon_product` (`B/02` §2.4) |
+| **con unidad que los construya** | ~~**29**~~ ~~**30**~~ ~~**31**~~ ~~**32**~~ ~~**35**~~ ~~**33**~~ ~~**34**~~ **35** de los que cuenta esta tabla; **el 35 es `G19`, con su unidad, `V5`** (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H); ~~**el 34, el control del SQL generado, no entra en este recuento: su fila y su unidad las escribe la épica de verticales**~~ **el 34 es `G18`, con su fila en `V/20` §2 y su unidad, `V1`** (FASE 5, lote de la aplicación, owner 2026-09-30, E; recontado en la segunda tanda) (salen `G-R3`, de `V2`, y `G-R5-B`, de `V6`, que pasan a ser validaciones del panel y las construyen las mismas unidades: revisión del owner, 2026-09-28, N1 y C9) | **`G15` `G16` `G17` (`B1`)**, que nacen con unidad (revisión del owner, 2026-09-28), más los ~~**15**~~ ~~**16**~~ **17** (FASE 5, lote de la aplicación, owner 2026-09-30, E; verificación, `VF5-05`; con `G19`, FASES 6 y 7, verificación, 2026-09-30, F8) que ya la tenían — `G1` `G3` ~~`G8`~~ (`V1`), **`G8` (`U1`**, la unidad del paraguas que hace la limpieza del principio: verificación corta, 2026-09-29, lote O-A), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (~~`B4`~~ **`V4`**: owner 2026-09-26, `G5-5`), ~~`G-R5` (ver abajo)~~ **`G14` (`V1`**, revisión del owner, 2026-09-28, N6; `G-R5` salió por C14) **y `G18` (`V1`**, FASE 5, lote de la aplicación, owner 2026-09-30, E) **y `G19` (`V5`**, FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B10`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B10`) **y `G-R9` (`V6`)**, que nace con unidad (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
 | **sin unidad** | ~~**0**~~ ~~**1**~~ **0** | **ninguno**: `G-R2-C` (FASE 9 completa, 4e) ~~tenía por su capítulo la de `G-R2-B`, `V3`~~ ya tiene unidad, **`B10`** (owner 2026-09-25, decisión 10c; la asignación la escribe `B/descomposicion.md`, no `V/descomposicion.md`). Entre la FASE 9 completa y esta decisión fue **uno**, la primera vez en la serie; el reparto, unidad por unidad y con su razón medida, está en `V/descomposicion.md` §2.10 y en `B/descomposicion.md` §2 |
 
 *(`G-R5` salió con la revisión del owner, 2026-09-28, C14: el párrafo queda como historia de su reparto.)*
@@ -453,6 +453,13 @@ que funciona salvo rompiéndolo.
 Vale igual para el mensaje: **el texto con que falla no puede afirmar más de lo que el predicado
 verifica.** Un guard que dice *«ninguna operación cruza verticales»* y sólo mira una forma
 sintáctica está mintiendo con precisión, que es peor que no estar.
+
+**Y romperlo una vez no alcanza: se rompe contra el job.** Para que la unidad que lo trae se dé por
+terminada, el guard está enchufado en `pnpm check:guards` y en el job `guards` de `ci.yml`, y su
+caso de rojo pone rojo al job, no sólo al script corrido a mano (FASES 6 y 7, owner 2026-09-30;
+lo derivado, D-2; `DEC-ARCH-016`; el gate por unidad entero está en
+[`16-fase-7…` §4.7](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md),
+momento 1).
 
 ---
 
@@ -686,6 +693,13 @@ nuestro código. **Y de `RP7` a `RP11`, las que no se puedan releer sobre un suj
 se declaran *«vigiladas a mano»* al construir la batería, cada una por nombre (punto 1; revisión
 del owner, casos vecinos, 2026-09-29, caso G-C).
 
+**Y la batería es la que cierra las filas `UNKNOWN` en que se apoya una unidad ya terminada**
+(FASES 6 y 7, owner 2026-09-30, D; `DEC-ARCH-016`): una unidad se da por terminada si cada fila
+`UNKNOWN` en que se apoya tiene sus dos ramas escritas y una prueba por rama contra el proveedor
+falso; la batería semanal la sigue midiendo, y **cuando la fila cierra, la rama que no vale se
+borra**. Es el caso de las que el proveedor no deja fabricar a voluntad: `GR-2`, `PA-6` y `RC-8`
+(`descomposicion.md` §2.7).
+
 ---
 
 ## 5. E2E: lo que hoy se hace a mano
@@ -749,13 +763,22 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
    sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
    **Cada unidad escribe la de su flujo**: el alta `B3`, la mora `B7`, los cambios, la pausa y la
    cancelación `B8`, la revocación `B5`, el addon `B10` y la migración `B12`.
-4. **El recorte del checklist de smoke manual, sección por sección**: cada sección del checklist
+4. ~~**El recorte del checklist de smoke manual, sección por sección**: cada sección del checklist
    de staging que tenga su prueba de punta a punta **sale del manual**, con el nombre de la prueba
    que la reemplaza al lado. El ahorro llega de a poco y cada recorte tiene evidencia. **Lo lleva
    `B13`**, **y en el mismo cambio en que una sección sale del manual actualiza la regla de smoke
    del `CLAUDE.md` raíz** (hoy exige el smoke manual de staging a todo PR de billing), a medida que
    exista el E2E de cada sección y no antes (revisión del owner, casos vecinos, 2026-09-29, caso
-   32).
+   32).~~ **El recorte del checklist viejo se retira por quedar sin sujeto: el checklist viejo vive en `staging` y gobierna al sistema viejo hasta el corte, y el nuevo de `B13` lo reemplaza con el corte** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, L). **Y `B13` escribe~~, junto con ese recorte,~~ el checklist del sistema nuevo, en
+   `docs/billing/` y en dos partes** (FASES 6 y 7, owner 2026-09-30, B; `F-8cC2-005`): **la de
+   `staging`**, que se ejecuta dentro del ensayo del corte, y **la de producción**, que corre el
+   owner en el paso 5c, después del paso 5, con su tarjeta y un monto aprobado de antemano: un
+   checkout real por la página de la aplicación, su devolución, el correo que manda Mercado Pago,
+   la caché del borde y los horarios de los crons el primer día (`16-fase-7…` §4.2 y §4.7). Vive en
+   `docs/billing/` y no en `.specs/`, que sale del repositorio al cerrar HOS-1352. **La regla del
+   `CLAUDE.md` raíz ya apunta ahí desde `U1`**, que la reapunta en la rama al borrar `.qtm/`
+   (`16-fase-7…` §4.6); **los tres checklists viejos siguen en `staging`**, restaurados en la rama
+   de spec, y gobiernan al sistema viejo hasta el corte.
 
 **Lo que queda manual, porque no se puede simular**:
 

@@ -339,8 +339,9 @@ rama del paraguas**, nunca al revés hasta el final.
 - ~~**El modelo canónico de cobro.**~~ **DECIDIDO el 2026-09-24 por `DEC-MP-006`**: es el **mandato
   del proveedor**, y el reloj de cobro es suyo. Ver §5.1.
 - **El orden de implementación.** Sale de las dependencias entre capítulos.
-- **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5, con su gate propio
-  (`DEC-METH-003`) — salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: ~~**se absorbe**~~ **se saca, y queda
+- **Qué se reescribe y qué se reutiliza del código actual.** ~~Es FASE 5, con su gate propio
+  (`DEC-METH-003`)~~ **Lo contestó la FASE 5 (`DEC-METH-017`), y lo que dejó sin veredicto lo
+  contestó el pase de la FASE 6** (`DEC-METH-018`) (FASES 6 y 7, verificación, 2026-09-30, F5) — salvo `qzpay`, que `DEC-ARCH-004` ya resolvió: ~~**se absorbe**~~ **se saca, y queda
   sólo como referencia de lectura** (revisión del owner, 2026-09-28, N2; §3.1).
 - **Nada de la épica de verticales.** Su diseño se sostiene solo en
   [HOS-1353](../HOS-1353-verticales-capacidades-y-autorizacion/spec.md).

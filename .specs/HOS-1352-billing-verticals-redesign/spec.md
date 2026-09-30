@@ -16,12 +16,16 @@ areas:
 # Rediseño integral de Verticales y Billing
 
 > **Esto es el paraguas del programa. Desde el 2026-09-18 no se implementa: se implementan sus dos
-> hijas.** **Salvo ~~una unidad propia, `U1`~~ dos unidades propias. `U1`, la limpieza del principio: borra el sistema viejo de la
+> hijas.** **Salvo ~~una unidad propia, `U1`~~ ~~dos unidades propias~~ tres unidades propias. `U1`, la limpieza del principio: borra el sistema viejo de la
 > rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo** *(salvo, desde el lote P-C, la estructura vacía del package del contrato, que llenan `V1` y `B1` en paralelo)*
 > (verificación corta, 2026-09-29, lote O-A; [`docs/16-fase-7-del-paraguas.md`](./docs/16-fase-7-del-paraguas.md) §4.6).
 > **Y `U2`, el outbox común, que las dos hijas usan: depende de `U1` y va antes de las primeras
-> unidades que encolan** (FASE 5, owner 2026-09-30, lote 2 A; el mismo §4.6). **El programa tiene
-> 24 unidades**: nueve de verticales, trece de billing y estas dos.
+> unidades que encolan** (FASE 5, owner 2026-09-30, lote 2 A; el mismo §4.6).
+> **Y `U3`, el script del corte: los pasos 1a, 1b y 2 del corte, sin dependencias de código,
+> mergeado en la rama antes del ensayo** (FASES 6 y 7, owner 2026-09-30, F; el mismo §4.6).
+> ~~**El programa tiene 24 unidades**: nueve de verticales, trece de billing y estas dos.~~
+> **El programa tiene 25 unidades**: nueve de verticales, trece de billing y estas tres (FASES 6 y
+> 7, owner 2026-09-30, F).
 >
 > | | | |
 > |---|---|---|
@@ -82,7 +86,7 @@ nada** (§66):
 | # | Documento | Qué es |
 |---|---|---|
 | 1 | [`docs/00-PDR.md`](./docs/00-PDR.md) | El PDR rector del owner. **Inmutable.** |
-| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ ~~**135 decisiones**~~ ~~**139 decisiones**~~ **142 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L; al 2026-09-30, con `DEC-METH-016` y, de la FASE 9 vuelta 3, `DEC-AUTH-004` y `DEC-AUTH-005`; y de la FASE 5, `DEC-METH-017`, `DEC-ARCH-015` y `DEC-MIG-007`) |
+| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ ~~**135 decisiones**~~ ~~**139 decisiones**~~ ~~**142 decisiones**~~ **144 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L; al 2026-09-30, con `DEC-METH-016` y, de la FASE 9 vuelta 3, `DEC-AUTH-004` y `DEC-AUTH-005`; y de la FASE 5, `DEC-METH-017`, `DEC-ARCH-015` y `DEC-MIG-007`; y de las FASES 6 y 7, `DEC-METH-018` y `DEC-ARCH-016`) (FASES 6 y 7, verificación, 2026-09-30, F1) |
 | 3 | [`docs/02-worklog.md`](./docs/02-worklog.md) | Qué se hizo, cronológicamente |
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
@@ -143,8 +147,8 @@ El mapa completo, con qué define cada uno, está en
 | FASE 1C-bis — evaluación de proveedor | ✅ **cerrada el 2026-09-24 por `DEC-MP-005`** en el paso 4 de 6 — **no se completó, se cerró**: los dos pasos que faltaban dependían de una habilitación de Mobbex y de una respuesta de MP que nunca llegaron |
 | FASE 2 — el diseño | ✅ **22 de 22**, desarmado en tres partes (2026-09-24). El `13` (Pagos) **nunca llegó a existir como archivo**: sus ítems se repartieron entre los capítulos que los reclamaban —`S29` en el `03`, `covered_period` en el `02` y el `05`, la mecánica del reembolso en el `06` §4.6— y uno resultó **un deber mal atribuido**. El reparto completo está en [`nucleo/00-indice.md`](./docs/nucleo/00-indice.md) |
 | FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
-| FASE 5 · gap analysis · FASE 6 · rewrite/reuse · FASE 7 · estrategia | ⬜ **se parten limpio**: cada épica hace la suya |
-| FASE 8 · revisión adversarial · FASE 9 · diseño final | ⬜ cada épica la suya, **más una final sobre el conjunto** |
+| FASE 5 · gap analysis · FASE 6 · rewrite/reuse · FASE 7 · estrategia | ~~⬜ **se parten limpio**: cada épica hace la suya~~ ✅ **FASE 5**: cerrada el 2026-09-30 (`docs/38-fase-5/`; `DEC-METH-017`) · ✅ **FASE 6**: cerrada por absorción en la 5 (`DEC-METH-017`), con el pase sobre las 29 piezas de autorización y base y los tres guards sin destino~~, que corre en paralelo a `U1` y vuelve al owner sólo si sale `REWRITE` o cambia el alcance de una unidad~~ (`DEC-METH-018`): **el pase se hizo** (13 `KEEP` · 11 `ADAPT` · 1 `REWRITE` · 4 ya no se conservan) y lo cerraron H, I y J, con el actor de sistema reescrito en `V5` y un guard nuevo, `G19` (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H a J; `docs/39-fases-6-y-7/20-pase-fase-6.md`) · ✅ **FASE 7**: cada épica la suya en su descomposición, y la del paraguas, cerrada con los gates de aceptación (`docs/16-fase-7-del-paraguas.md` §4.7; `DEC-ARCH-016`) (FASES 6 y 7, owner 2026-09-30) |
+| FASE 8 · revisión adversarial · FASE 9 · diseño final | ~~⬜ cada épica la suya, **más una final sobre el conjunto**~~ ✅ **la final sobre el conjunto se hizo**: la FASE 8 completa corrió *«sobre el núcleo, las dos épicas y el contrato de cobertura»* (`DEC-METH-014`), y la vuelta 3, *«entera y desde cero»* (`DEC-METH-016`), otra vez sobre el conjunto; la revisión de cada épica quedó adentro de esas mismas vueltas, que leyeron las dos a la vez (FASES 6 y 7, verificación, 2026-09-30, F6); en tres vueltas: la completa y las vueltas 1 a 3, con la 3 como excepción declarada al tope (`DEC-METH-013`, `DEC-METH-014`, `DEC-METH-016`); la vuelta 3 cerró el 2026-09-30 (`docs/03-handoff.md`, *«FASE 8 y FASE 9 vuelta 3, cerradas»*; `docs/37-fase-8-vuelta-3/`) |
 | FASE 10 · implementación | ⬜ **se desarrolla en paralelo y despliega una sola vez** |
 
 **La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
@@ -153,9 +157,10 @@ El mapa completo, con qué define cada uno, está en
 encabezados; el que sobra es la plantilla del formato, en la l. 26).~~ ~~**134 decisiones**, 15 de
 metodología y 119 funcionales, al 2026-09-28 tras la revisión del owner~~ ~~**135 decisiones**, 15 de
 metodología y 120 funcionales, al 2026-09-29 tras las mediciones (`DEC-MP-009`, lote L)~~ ~~**139 decisiones**,
-16 de metodología y 123 funcionales, al 2026-09-30 tras la FASE 9 vuelta 3~~ **142 decisiones**, 17 de
-metodología y 125 funcionales, al 2026-09-30 tras la FASE 5 (`rg -o "^### DEC-[A-Z]+-\d+"`
-sobre el log, sin repetidos, da ~~134~~ ~~135~~ ~~139~~ 142; la plantilla del formato no matchea). Ninguna pregunta del owner
+16 de metodología y 123 funcionales, al 2026-09-30 tras la FASE 9 vuelta 3~~ ~~**142 decisiones**, 17 de
+metodología y 125 funcionales, al 2026-09-30 tras la FASE 5~~ **144 decisiones**, 18 de metodología
+y 126 funcionales, al 2026-09-30 tras las FASES 6 y 7 (`rg -o "^### DEC-[A-Z]+-\d+"`
+sobre el log, sin repetidos, da ~~134~~ ~~135~~ ~~139~~ ~~142~~ 144; la plantilla del formato no matchea). Ninguna pregunta del owner
 queda abierta, y ningún bloqueante de diseño tampoco.
 
 ## La decisión que reorientó el programa
@@ -183,7 +188,9 @@ abortan si el máximo a cobrar no coincide con la cifra autorizada.
 ## Al cerrar HOS-1352
 
 **Es una tarea del cierre del programa, no de ahora** (revisión del owner, casos vecinos,
-2026-09-29, caso 41). Al cerrar HOS-1352:
+2026-09-29, caso 41). **Corre cuando el programa se da por aceptado**
+(`docs/16-fase-7-del-paraguas.md` §4.7, momento 5; FASES 6 y 7, owner 2026-09-30, E) (FASES 6 y 7, verificación, 2026-09-30, F11).
+Al cerrar HOS-1352:
 
 1. **Los informes históricos del programa salen del repositorio**: las fases, las vueltas, los
    registros de la revisión del owner y el resto de lo que no es diseño vigente. Quedan en el

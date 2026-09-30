@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-25
+updated: 2026-09-30
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -47,7 +47,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 
 | # | qué falla si se rompe | de dónde sale |
 |---|---|---|
-| G1 | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 | cap. 01 §4.4 (núcleo) |
+| G1 | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2. **Entre los casos que lo hacen fallar a propósito está el de `HOS-1079`**, un despacho binario por vertical en código compartido (`x === 'gastronomy' ? A : B`), **y con `G1` sale del repositorio `check-no-binary-vertical-ternary.sh`**, que lo vigilaba hasta entonces: `U1` le reescribe el texto y `V1` lo retira en el mismo PR (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, I) | cap. 01 §4.4 (núcleo) |
 | G2 | ~~**dos mitades, con dos mensajes**~~ **tres mitades, con tres mensajes**. **(a)** una operación de dominio **no declara** su contexto de vertical; **(b)** una operación **sobre ~~una ficha~~ un recurso que guarda su vertical** —la ficha y su contenido, la presencia de Partner, la instancia de addon— toma su contexto de vertical **del pedido y no ~~de la ficha~~ del recurso** (FASE 8 completa, `F-8CA1-001`, owner 2026-09-25; generalizada por la FASE 9 completa, decisión 7a); **(c)** una operación **escribe la vertical de un recurso que ya existe** —la vertical de una ficha es inmutable desde el alta, `V/02` §2.5— (owner 2026-09-25; FASE 9 completa, decisión 7a) | cap. 17 §2.3 y §1.2 precisión 6 (épica de verticales); cap. 02 §2.5 |
 | G3 | una clave usada en código **no existe ~~en la base~~ en el catálogo**~~, o una de la base **no existe en el catálogo** — las dos direcciones~~. **La otra dirección, una clave de la base que no está en el catálogo, deja de ser del guard y pasa a ser una restricción de la base** (revisión del owner, 2026-09-28, N1): la tabla de claves la escribe la migración desde el catálogo **—como SQL generado por el script TypeScript, que vigila `G18`: FASE 5, lote de la aplicación, owner 2026-09-30, E—**, y toda asignación de un plan apunta a ella por FK, así que el panel no puede cargar una clave que el código no conoce. CI no ve la base de producción, que desde N1 se edita desde el panel | cap. 02 §1.2; `NUCLEO/02` §1.2 y §1.4 |
 | G4 | una transición de suscripción o de trial **escribe roles** | cap. 17 §4.4 (épica de verticales) |
@@ -57,6 +57,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | **G13** ✚ | ~~la implementación **de arranque** de `cobertura()` llega a producción~~ **un build destinado a producción importa el módulo de la implementación de arranque que contesta por billing** (~~el `no` a las cuatro fuentes de billing~~ ~~y el `NINGUNA` de `finDeServicio`~~; la pregunta salió con la revisión del owner, 2026-09-28, C8). **Son las seis respuestas de arranque que contestan por billing: el `no` a las cuatro fuentes de billing, el `detenida: no` de `retenciónDetenida` y el `no` de `puedeCobrarle` (contrato §5.1 y §6.3), las seis en el módulo vigilado, y un caso de `G13` por cada una que lo pone en rojo si el build de producción la enlaza** (FASE 9 vuelta 3, `F-8V3C1-002`, `F-8V3D1-001`), **no** la resolución del trial ni la del título `BASE`, que son de verticales en las dos implementaciones (contrato §6.3; FASE 9 vuelta 2, `F-8V2C1-005`; la fila, corregida en la verificación, `22-` §5) | [contrato](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3. **Lo construye `V4`**, con la implementación de arranque: falla sobre un build destinado a producción, no sobre la rama, así que calla hasta que un build apunte a producción y la defensa existe desde el primer día. **Vino de `B/20` §2** (owner 2026-09-26, `G5-5`): allá lo construía `B4` con la razón *«el consumidor del contrato es billing»*, que era falsa —el consumidor de `cobertura()` es verticales— |
 | **G14** ✚ | **una mitad importa a la otra**: el código de la épica de verticales importa algo de la de billing, o al revés, fuera del package del contrato (`12-contrato…` §7.1). Las dos importan sólo ese package, y el único lugar que junta las dos es la raíz de composición de `apps/api`, que el guard nombra como única excepción. **Importar el package de pruebas compartido del reloj adelantable no es cruzar**: no es de ninguna de las dos mitades (`B/20` §5.1; revisión del owner, casos vecinos, 2026-09-29, caso 31). **La app del panel no junta las dos**: la pantalla única de plazos las lee por la API, sin importar ninguna (revisión del owner, casos vecinos, 2026-09-29, caso H-F). **Se rompe a propósito** agregando en verticales un import de billing, y el rojo tiene que nombrar el archivo y la mitad importada | revisión del owner, 2026-09-28, N6, `L1-d`; `12-contrato…` §4.2 y §7.1. **Lo construye `V1`**, que crea el package. **No ve** una lectura de tablas de la otra mitad por `@repo/db` (`12-contrato…` §4.2) |
 | **G18** ✚ | **el SQL generado que viaja en la migración no es el que el script TypeScript regenera desde el código**, en cualquiera de las dos cargas: **el catálogo de producción** (FASE 5, owner 2026-09-30, lote 2 D) **y la tabla de claves de entitlement y limit** (FASE 5, lote de la aplicación, owner 2026-09-30, E). Una migración no puede llamar código, así que las dos viajan como SQL generado por el mismo script y vigiladas por este mismo control, que lo regenera y lo compara. **Se rompe a propósito** agregando una clave al catálogo de claves en código sin regenerar el SQL, y el rojo tiene que nombrar la carga y la clave que difieren | FASE 5, owner 2026-09-30, lote 2 D, y lote de la aplicación, E: el control ya estaba pedido para el catálogo y no figuraba entre los guards; contarlo lleva el total del programa de 33 a 34. **Lo construye `V1`**, con la tabla de claves, que es la primera de las dos cargas en llegar; `V2` suma la del catálogo, con la pieza que lo carga (`descomposicion.md` §2). *(El id es el siguiente libre de la numeración `G`: `G15` a `G17` son de `B1`.)* |
+| **G19** ✚ | **aparece un actor de sistema armado fuera de la fábrica**: un objeto de actor con `_isSystemActor`, o con todos los permisos (`Object.values(PermissionEnum)`), en cualquier archivo de producción que no sea la fábrica. **Se rompe a propósito** armando un actor así en un servicio, y el rojo nombra el archivo | cap. 17 §3.3 (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H): el actor de sistema se reescribe en `V5` con una fábrica única; hoy son una fábrica y unos treinta literales, nueve con todos los permisos y sin la marca que mira la barrera HTTP (`39-fases-6-y-7/20-pase-fase-6.md` §2.1). **Lo construye `V5`**. *(El id es el siguiente libre de la numeración `G`, como `G18`.)* |
 | G-R2 | el pliegue del conjunto efectivo **recibe una fuente de clase `COMPLEMENTO`** cuando el conjunto no tiene ninguna de clase `TÍTULO` viva **que no sea de `tipo: TRIAL`** — en cualquiera de sus dos tramos. **El caso que lo distingue de la versión anterior**: un addon `USER` o `GLOBAL` comprado con la suscripción de otra vertical, contra una vertical cuyo único título es un trial, **no entra** (`V/11` §5.3; FASE 8 completa, `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`) | cap. 15 §2.6, `V/11` §5.2–§5.3 |
 | G-R2-B | una fuente `GRANT` transporta **un plan de otra vertical** que la de la fuente | cap. 15 §2.5, `12-contrato…` §2.8 |
 | **G-R2-C** | una fuente `ADDON` de alcance `USER` o `GLOBAL` **se emite en una vertical que no está entre las compatibles de su producto** (`addon_product`, `B/02` §2.4). **Gemelo de `G-R2-B`**: aquél vigila que un grant no transporte el ancla de otra vertical, éste que un addon global no aparezca donde su producto no llega | `12-contrato…` §2.7; owner 2026-09-25, FASE 9 completa, decisión 4e, `F-8CA1-008`. **Lo construye `B10`** de la otra épica (owner 2026-09-25, FASE 9 completa, decisión 10c; `B/descomposicion.md` §2, fila `B10`) |
@@ -358,9 +359,23 @@ Vale igual para el mensaje: **el texto con que falla no puede afirmar más de lo
 verifica.** Un guard que dice *«ninguna operación cruza verticales»* y sólo mira una forma
 sintáctica está mintiendo con precisión, que es peor que no estar.
 
+**Y romperlo una vez no alcanza: se rompe contra el job.** Para que la unidad que lo trae se dé por
+terminada, el guard está enchufado en `pnpm check:guards` y en el job `guards` de `ci.yml`, y su
+caso de rojo pone rojo al job, no sólo al script corrido a mano (FASES 6 y 7, owner 2026-09-30;
+lo derivado, D-2; `DEC-ARCH-016`; el gate por unidad entero está en
+[`16-fase-7…` §4.7](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md),
+momento 1).
+
 ---
 
 ## 5. E2E: lo que hoy se hace a mano
+
+(FASES 6 y 7, owner 2026-09-30; lo derivado, D-2 y D-3; `DEC-ARCH-016`.) **Cada unidad adapta sus
+e2e en el mismo PR**, como parte de su gate, y **el PR final de la épica no se abre sin `e2e-pr`,
+`codeql` (FASES 6 y 7, verificación, 2026-09-30, F9), `lighthouse` y `a11y-sweep` con `success` fechado después del último merge a la rama del paraguas**
+([`16-fase-7…` §4.7](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md),
+momentos 1 y 2). El smoke manual del sistema nuevo no es de esta mitad: es el checklist que escribe
+`B13` (`B/20` §5.1, punto 4).
 
 7. **trial** completo: activación, campaña previa, vencimiento, campaña de recuperación y
    conversión tardía;
