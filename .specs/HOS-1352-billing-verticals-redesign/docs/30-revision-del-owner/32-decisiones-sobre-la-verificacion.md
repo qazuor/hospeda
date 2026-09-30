@@ -52,3 +52,13 @@ Decisiones de [`34-aplicacion-lote-n.md`](./34-aplicacion-lote-n.md) (N-A-1 y N-
 |---|---|---|---|---|
 | A | N-A-1 | quién hace la limpieza total del principio | **1**: una unidad propia del paraguas, antes de `V1` y `B1`, que hace sólo la limpieza; las dependencias entre épicas siguen en 11 | sí |
 | B | N-A-2 | el hueco del corte entre el paso 3 y el 4b | **1**: el receptor nuevo sirve la misma ruta que el viejo (`/api/v1/webhooks/mercadopago`); el borde la cierra durante el corte (el proveedor recibe error y reintenta) y la abre cuando están las lápidas; el 4b sólo verifica; `EX-46` queda sin sujeto | sí |
+
+## Lote P · lo que pidió elegir la tanda que aplicó el lote O (2026-09-29)
+
+Decisiones de [`35-aplicacion-lote-o.md`](./35-aplicacion-lote-o.md) §3 y su caso vecino.
+
+| Letra | Decisión de `35-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | O-B-1 | con qué código contesta el borde cerrado durante el corte | **1**: un Worker en el borde contesta `500` mientras la ruta está cerrada (el único código con reintento medido) | sí |
+| B | O-B-2 | lo que se pierde durante el cierre y el barrido no ve sobre una lápida | **1**: el detector del día siguiente al corte lista también los cobros que el proveedor da aprobados y no tienen `payment`, sin abrir marca ni asentar | sí |
+| C | caso vecino | quién crea el package del contrato | **1**: `U1`, al terminar la limpieza, crea el package vacío (la estructura, sin contenido); `V1` y `B1` arrancan en paralelo y llenan cada uno su parte; las dependencias entre épicas siguen en 11 | sí |
