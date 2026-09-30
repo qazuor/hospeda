@@ -85,6 +85,10 @@ for linea in open(ruta, encoding="utf-8"):
     fid = ID.match(celdas[0]).group(1)
     estado = None
     for celda in celdas[1:]:
+        # Un estado tachado (`~~X~~`) es el anterior y no cuenta. Sin quitarlo, el orden por
+        # largo hacía ganar a un PARTIALLY_SUPPORTED tachado sobre el VERIFIED vigente
+        # (EX-58, 2026-09-30: la primera transición hacia un estado más corto).
+        celda = re.sub(r"~~.*?~~", "", celda)
         for e in ORDEN:
             if re.search(rf"\b{e}\b", celda):
                 estado = e

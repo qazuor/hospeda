@@ -626,10 +626,14 @@ recién después se construye lo nuevo.** Hace ~~dos~~ tres cosas, en el mismo c
    (`30-revision-del-owner/31-` §2, `VC-VT-01`). Lo que tenga que nombrar un valor de la base lo arma en
    partes, como el script del corte (§4.2, *«las herramientas del corte»*).
 3. **Al terminar, crea el package del contrato vacío** (verificación corta, 2026-09-29, lote P-C): la
-   estructura, con el nombre que fije la FASE 5 (`12-contrato…` §7), su `package.json`, su
+   estructura, con el nombre que fije la FASE 5 (`12-contrato…` §7) —**`@repo/billing-verticals-contract`**,
+   en `packages/billing-verticals-contract` (FASE 5, lote B, 2026-09-30, `DEC-ARCH-015`)—, su `package.json`, su
    configuración de compilación y un punto de entrada que no exporta nada, y ningún contenido:
    ninguna interfaz, validación, simulador ni caso. Lo llenan `V1` y `B1`, que arrancan en paralelo
-   (abajo; `12-contrato…` §7.1). *(Qué es «la estructura» lo derivé y lo marco.)*
+   (abajo; `12-contrato…` §7.1). *(Qué es «la estructura» lo derivé y lo marco.)* **Y nace
+   diciendo qué es** (FASE 5, lote C3, 2026-09-30, con OK del owner): la `description` de su
+   `package.json` y un `README.md` de pocas líneas dicen que es el único punto por donde se hablan
+   verticales y billing, y que ninguna de las dos importa a la otra fuera de ahí (`G14`).
 
 **Qué deja demostrado:**
 
