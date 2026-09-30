@@ -216,6 +216,17 @@ detenerse ahí es la rama de aborto. **El del paso 2 queda como segundo control*
 nazca entre los dos recuentos. `DEC-MIG-002` sigue tomando altas, así que el cero es una medición que vence y
 no una premisa. Partner no tiene ficha: su presencia no se traduce (§4).
 
+**Y las tres columnas que la tabla lee sobreviven a la limpieza del principio hasta el corte**
+(FASE 9 vuelta 3, owner 2026-09-30, lote N; `F-8V3A3-002`). `owner_suspended`, `plan_restricted` y
+`billing_unpublished_at` son columnas de `accommodations` que sólo usa el cobro viejo, así que
+`U1` las borraría con él, y la migración que las saca de la base se aplicaría en el paso 3 antes
+que la de clasificación: `L7` quedaba indistinguible de `L8`, y una ficha suspendida o fuera de
+cupo nacía `PUBLISHED` con prueba. **Son una excepción temporal y nombrada**: `U1` no las borra,
+los guards de limpieza las admiten hasta el corte, y **las borra una migración posterior al paso
+3, después de la clasificación de `V6`** (`16-fase-7…` §4.2 y §4.6), que la escribe `V6` con la
+migración estructural del corte. Ningún guard de verticales las mira (`V/20` §2: `G8` busca una
+palabra que ninguna de las tres tiene), así que la excepción no pide cambiar ninguna fila de allá.
+
 | clase | condición sobre las columnas viejas | nace en |
 |---|---|---|
 | `L1` | `deleted_at` no nulo | **`PURGED`, con el contenido borrado** como en `PB12` (`G1-2`) —**el borrado, en el paso 5b del corte y no en la migración** (FASE 9 vuelta 2, `F-8V2A3-002`)— |
@@ -387,7 +398,13 @@ lápida del `B/21` §2.5, que hace reconocible un cobro viejo, y los dos `perman
   previa agendada** (§10.7). Es la misma fila con otro escritor. **La cuota mensual de la prueba
   ancla ese día** (`V/15` §7).
 - **Dónde y cuántas veces**: en la migración estructural del paso 3, **una sola vez**, como la
-  escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2). La de un corte abortado no cuenta: la rama
+  escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2). **Y después de cargar el catálogo de
+  producción, en esa misma migración** (FASE 9 vuelta 3, owner 2026-09-30, lote C;
+  `F-8V3A2-001`, `F-8V3A3-001`): el plan de trial, las versiones vigentes y los días de prueba
+  cuelgan del catálogo, que se carga en la migración estructural del paso 3 antes de la prueba,
+  como la versión 1 de los plazos; el paso 3a sólo lo verifica (`16-fase-7…` §4.2). Sin ese
+  orden, la migración fallaba o, con las referencias anulables, la fila nacía sin plan ni fin y
+  `T3` no la vencía nunca. La de un corte abortado no cuenta: la rama
   de aborto restaura el backup y el reintento escribe con su instante. Repetir la migración no
   escribe dos: el `UNIQUE(user_id, vertical)` lo impide.
 - **Es una fila de `trial` que ninguna transición produce**, igual que la lápida de billing es la

@@ -79,8 +79,10 @@ informada. Es el mismo criterio que `DEC-TRIAL-006` aplicó al botón *Empezar*.
 trial**. El hueco preguntaba si eso amerita una excepción al §10.2.
 
 **La baja por moderación tiene fila desde la FASE 8 completa**: es `PB10`, que lleva la ficha a
-`MODERATED`, y de ahí sólo un admin la saca, a `DRAFT` (`PB11`; cap. 03 §9; `F-8CA2-004`, owner
-2026-09-25). **Ninguna de las dos toca la máquina de trial**: lo que sigue vale igual.
+`MODERATED`, y de ahí sólo un admin la saca, ~~a `DRAFT` (`PB11`;~~ a donde estaba: a `DRAFT`
+(`PB11`) o a `UNPUBLISHED_BY_BILLING`, de donde `PB3` la sube si le toca (`PB13`; revisión del
+owner, 2026-09-28, C10; FASE 9 vuelta 3, `F-8V3A2-008`); el dueño también la puede borrar
+(`PB12`); cap. 03 §9; `F-8CA2-004`, owner 2026-09-25). **Ninguna de ~~las dos~~ ellas toca la máquina de trial**: lo que sigue vale igual.
 
 ### 2.2 No hay excepción, porque no son el mismo caso
 

@@ -255,6 +255,13 @@ Y la defensa contra el cruce es estructural, no un chequeo:
 vertical**, igual que el capítulo 17 §2 hizo con las operaciones. No hay un control que alguien
 pueda olvidar: hay una resolución que no se puede invocar sin el dato.
 
+**Una clave medida es siempre de vertical** (FASE 9 vuelta 3, `F-8V3A3-005`). Su ventana
+(`cuota_ventana`, §7) cuenta por `user + vertical`, y una clave medida global que otorgaran dos
+verticales abriría dos ventanas contra el mismo cupo, una por vertical, que no se ven entre sí:
+el cliente gastaría el doble, o menos de lo que pagó según qué vertical eligiera el que
+implementa. **El catálogo rechaza una clave medida con scope global**, y lo prueba `V3`. Hoy
+ninguna clave medida es global; si algún día hace falta una, se diseña su ventana entonces.
+
 ### 3.3 Una clave global otorgada por un plan de vertical se pierde con ese plan
 
 Es el caso que motiva todo esto —la insignia que da el plan premium de Alojamiento— y no necesita

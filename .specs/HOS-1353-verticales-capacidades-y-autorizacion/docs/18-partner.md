@@ -73,7 +73,10 @@ rama de código que alguien tenga que escribir ni un control que pueda olvidarse
 
 **Y no hace falta un quinto scope para la presencia.** Un addon que agrande la presencia —*«+10
 fotos en mi página»*— usa **`VERTICAL_SUBSCRIPTION`**, y es exacto: como Partner tiene **una sola
-presencia por suscripción**, ese scope la identifica sin ambigüedad. El §40 dice *«como mínimo»*
+presencia por suscripción**, ese scope la identifica sin ambigüedad. **Y ahora lo garantiza la
+base**: una cuenta es dueña de un solo Partner, por una unicidad sobre `owner_user_id` (cap. 02
+§2.7; regla 5 del §2.4), así que la suscripción de `user + Partner` enciende una sola presencia
+(FASE 9 vuelta 3, owner 2026-09-30, lote B). El §40 dice *«como mínimo»*
 cuatro scopes, así que agregar uno sería legítimo; no se agrega porque no hace falta.
 
 ### 1.5 Y el §10.5 no se cruza HOY
@@ -256,7 +259,8 @@ para que quien apruebe crea que lo pidió.
 `F-8V2A1-003`). La regla vinculaba al usuario *que ya tenía ese correo*, verificado o no, y ese
 usuario podía ser una cuenta que otro creó con esa dirección sin poder verificarla: la dueña de la
 casilla reclamaba, el Partner quedaba en la cuenta del ocupante, y el ocupante se cambiaba el
-correo y se lo llevaba. Tres reglas lo cierran:
+correo y se lo llevaba. ~~Tres~~ Cinco reglas lo cierran (las dos últimas, FASE 9 vuelta 3, owner
+2026-09-30, lotes A y B):
 
 1. **El reclamo exige sesión y vincula a la cuenta que reclama.** El link llega a la casilla, y
    quien lo abre inicia sesión en su cuenta, que es la que queda en `owner_user_id`. Nunca se
@@ -264,12 +268,33 @@ correo y se lo llevaba. Tres reglas lo cierran:
 2. **Si la cuenta que reclama es la de ese correo y no lo tiene verificado, el reclamo lo
    verifica**: el link llega sólo a quien lee la casilla, y esa persona es la de la sesión. Si
    reclama desde otra cuenta, la cuenta con esa dirección no se toca: nada prueba que la
-   controle quien leyó el link.
+   controle quien leyó el link. **Y al verificarla, el reclamo cierra todas sus sesiones y
+   credenciales previas** (FASE 9 vuelta 3, owner 2026-09-30, lote A; `F-8V3A1-001`): queda viva
+   sólo la sesión del reclamo y la credencial con que se abrió; toda otra sesión se cierra, y
+   toda otra credencial se borra: la contraseña, si la sesión no se abrió con ella, y las cuentas
+   vinculadas (Google, Facebook) que no la abrieron, con la misma capacidad con que la baja de
+   cuenta borra las credenciales (`NUCLEO/08` §3, acción 24). La cuenta podía ser de un ocupante que la
+   creó con esa dirección sin poder verificarla, y la dueña de la casilla entró recuperando el
+   acceso: sin esto el ocupante seguía adentro con su sesión y, con el correo ya verificado, la
+   regla 3 no lo frenaba.
 3. **Un correo nunca verificado no se cambia llevándose vínculos.** Una cuenta con un vínculo de
    Partner y el correo sin verificar no puede cambiar el correo: el paso 2 del cap. 17 §1.2 la
    deja verificarlo, no cambiarlo. **El cambio se rechaza mientras haya vínculo, y la pantalla lo deriva a
    soporte** (owner 2026-09-27, FASE 9 vuelta 2, `R7-b`): quien escribió mal su correo lo corrige
    con una persona que puede verificar quién es, y el vínculo no se suelta en silencio.
+4. **El reclamo escribe `owner_user_id` sólo si está nulo, y el link de reclamo es de un solo
+   uso** (FASE 9 vuelta 3, owner 2026-09-30, lote A; `F-8V3A1-002`). Lo gasta el primer reclamo
+   que escribe el vínculo: desde ahí el vínculo ya no es nulo, así que el link no tiene nada que
+   escribir y no hace falta otra marca. **Un Partner ya reclamado no se reclama de nuevo por
+   link**: quien abre un link ya usado ve que ese Partner ya tiene dueño, y la pantalla lo deriva
+   a soporte. Sin esto, cualquiera que leyera el aviso después (una casilla compartida, un ex
+   empleado) movía el Partner a su cuenta, y la dueña seguía pagando una suscripción sin página.
+5. **Una cuenta, un Partner** (FASE 9 vuelta 3, owner 2026-09-30, lote B; `F-8V3A2-002`). La base
+   no deja que una cuenta sea dueña de dos: una unicidad sobre `owner_user_id` donde no es nulo
+   (cap. 02 §2.7). **El reclamo de un segundo Partner desde una cuenta que ya es dueña de uno se
+   rechaza, y la pantalla lo deriva a soporte**: el segundo negocio se reclama con otra cuenta. El
+   link no se gasta, porque el vínculo no se escribió. Sin esto, la suscripción es por `user +
+   vertical` y un Gold encendía todas las presencias de la cuenta pagando una.
 
 ### 2.5 El usuario fantasma es inofensivo, porque la suscripción va última
 

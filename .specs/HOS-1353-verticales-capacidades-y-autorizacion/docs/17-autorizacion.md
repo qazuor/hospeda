@@ -68,7 +68,7 @@ falla.
 | # | paso | qué pregunta | si falla |
 |---|---|---|---|
 | — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre ~~una ficha~~ un recurso que guarda su vertical, la vertical se lee ~~de la ficha~~ del recurso y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la ~~de la ficha~~ del recurso, **no existe**, con la respuesta del paso 4 |
-| 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) | no autenticado |
+| 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) **y en `PP1`, postular un Partner, que es la segunda excepción** (precisión 9; FASE 9 vuelta 3, owner 2026-09-30, lotes I y M). **Una cuenta dada de baja no es un actor autenticado**: la acción 24 escribe `user.deleted_at` y borra sus credenciales, y ninguna sesión nace sobre ella (`NUCLEO/08` §3; FASE 9 vuelta 3, `F-8V3A1-004`) | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | ~~inhabilitada, o~~ correo sin verificar (FASE 9 completa, 8b) |
 | 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? **Si el sujeto no es el dueño, el recurso existe sólo en estado público** (precisión 7) **y sólo para una operación que no escribe: una escritura exige `sujeto = dueño`** (FASE 9 vuelta 2, `F-8V2A1-001`). **El sujeto no lo elige el pedido** (precisión 8) | **no existe** — las tres juntas |
@@ -78,9 +78,10 @@ falla.
 
 ~~**Cinco precisiones que el orden hace cumplir:**~~ ~~**Seis precisiones que el orden hace cumplir**
 (la sexta, FASE 8 completa, `F-8CA1-001`, owner 2026-09-25):~~ ~~**Siete precisiones que el orden
-hace cumplir**~~ **Ocho precisiones que el orden hace cumplir** (la sexta, FASE 8 completa,
+hace cumplir**~~ ~~**Ocho precisiones que el orden hace cumplir**~~ **Nueve precisiones que el orden
+hace cumplir** (la sexta, FASE 8 completa,
 `F-8CA1-001`, owner 2026-09-25; la séptima, FASE 9 completa, decisión 8c; la octava, FASE 9 vuelta
-2, `F-8V2A1-002`):
+2, `F-8V2A1-002`; la novena, FASE 9 vuelta 3, owner 2026-09-30, lotes I y M):
 
 1. **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
    inexistente son indistinguibles desde afuera. Contestar *«no es tuyo»* confirma que el
@@ -206,6 +207,20 @@ hace cumplir**~~ **Ocho precisiones que el orden hace cumplir** (la sexta, FASE 
    algo que cuelga de él: editar la ficha o su contenido, subir fotos, despublicarla, y **comprar
    un addon de alcance `LISTING` con esa ficha de objetivo**. Lo ajeno sólo se escribe con una
    acción administrativa, que tiene su permiso (§3.2 regla 1).
+
+   **Las conversaciones, las reseñas y los comentarios no son escritura sobre la ficha: son de
+   quien los escribe** (FASE 9 vuelta 3, `F-8V3A1-003`). Cap. 02 §4.1 ya dice de quién son: la
+   reseña y el comentario, del tercero que los escribió; la conversación, de los dos. Crearlos es
+   una escritura sobre un recurso propio que **nombra** una ficha, no una que la muta, así que no
+   caen bajo *«una escritura exige `sujeto = dueño`»* de la ficha: el paso 4 pregunta por el dueño
+   de la conversación, la reseña o el comentario, que es quien escribe. **Y la ficha que nombran
+   tiene que existir para quien escribe, con la lista cerrada de esta precisión**: el turista crea
+   una conversación, escribe un mensaje nuevo, deja una reseña o un comentario, o edita los suyos,
+   sólo sobre una ficha en `PUBLISHED`. Sobre una que no lo está (borrador, archivada, moderada,
+   bajada por billing o borrada) contesta *«no existe»*, la respuesta de la precisión 1, y no hay
+   exención por superficie (§3.5): un mensaje aceptado sobre un borrador confirmaría que el
+   identificador existe. Leer la propia conversación sigue siendo una lectura de lo suyo, también
+   sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED` (cap. 19 §4 fila 28).
 8. **El sujeto no viene del pedido: se lee de la sesión o del recurso** (FASE 9 vuelta 2,
    `F-8V2A1-002`). Es la regla de la precisión 6 aplicada a la otra identidad. Nadie escribía de
    dónde salía el sujeto, y con el paso 4 preguntando *«¿es del sujeto?»* y el §3.5 sacando del
@@ -218,6 +233,18 @@ hace cumplir**~~ **Ocho precisiones que el orden hace cumplir** (la sexta, FASE 
    - **en una de `actor ≠ sujeto`, el sujeto es el dueño del recurso sobre el que opera, leído del
      recurso** —la cuenta misma, si el recurso es una cuenta—. Si el pedido declara otro, **no
      existe**, igual que la vertical en la precisión 6.
+9. **Postular un Partner (`PP1`) es la segunda excepción del guest en el paso 1** (FASE 9 vuelta
+   3, owner 2026-09-30, lotes I y M; `F-8V3A1-005`). El formulario del camino A es público (cap.
+   18 §2.2) y la rama *«el correo no corresponde a ningún usuario»* (cap. 18 §2.4) existe para
+   quien no tiene cuenta, así que exigirla le quitaba esa población, y eximir la ruta era la
+   exención por superficie que el §3.5 prohíbe. **Es una excepción de la cadena, declarada acá, no
+   una ruta exenta**: la resolución corre igual. **Está acotada a esa escritura**: crea una
+   postulación `PENDIENTE` y nada más. El paso 2 no le aplica, porque no hay cuenta, y los pasos 5
+   a 7 tampoco: no hay `user + vertical` sobre el que resolverlos, y postular no consume una
+   capacidad comercial. **Y tiene dos límites contra el abuso**: un captcha (Turnstile, que el
+   sitio ya usa) y **una sola postulación abierta por correo**, que es la guarda de `PP1` ya hecha
+   restricción de la base (cap. 02 §2.7, cap. 03 §11). Cualquier otra escritura del guest sigue
+   fallando en el paso 1.
 
 ### 1.3 Los ~~nueve~~ siete pasos se resuelven en un solo lugar
 
@@ -352,6 +379,16 @@ no una excepción a la lista.
    vigesimocuarta, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), las dos a pedido de su dueño y con
    motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C; **la vigesimoquinta, vaciar la presencia de un Partner a pedido de su dueño, con motivo**, parte del paso 2 en un Partner: verificación corta, 2026-09-29, lote N-G).
 
+   ⚠️ **«De `SUPER_ADMIN`» es un rol, y el paso 3 pregunta por permiso** (FASE 9 vuelta 3,
+   `F-8V3A1-006`). Cada acción que la tabla de `NUCLEO/08` §3 marca así tiene que tener su permiso
+   propio, como las demás (§4.3, `G6` mitad *(a)*), y queda sin escribir quién lo puede recibir:
+   el código actual tiene overrides de permiso por usuario que alcanzan a cualquier cuenta que no
+   sea `SUPER_ADMIN`, así que uno que diera *«fijar el precio de un ciclo»* dejaría a un
+   `CLIENT_MANAGER` fijando precios sin que ninguna fila registre quién le dio el poder. Si ese
+   permiso lo trae sólo el rol `SUPER_ADMIN` y el override no lo puede dar, o si asignarlo es una
+   fila de aquella tabla con su auditoría, pide decisión: `NUCLEO/08` §3 lo deja abierto, y las
+   dos lecturas están en `HOS-1352/docs/37-fase-8-vuelta-3/11-aplicacion-verticales.md` §6.
+
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).
    Las ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
    era el permiso de familia de leer lo propio, que cualquier cliente tiene. **Cada entidad que el
@@ -439,7 +476,7 @@ Dos actores más, y nombrarlos evita que alguien los trate como ausencia de acto
 
 | actor | qué es |
 |---|---|
-| **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15. **No pasa del paso 1** salvo en la lectura pública, y el paso 2 no le aplica: no tiene cuenta (FASE 9 vuelta 1, `F-8V1A1-006`) |
+| **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15. **No pasa del paso 1** salvo en la lectura pública **y en `PP1`, postular un Partner** (§1.2, precisión 9; FASE 9 vuelta 3, owner 2026-09-30, lotes I y M), y el paso 2 no le aplica: no tiene cuenta (FASE 9 vuelta 1, `F-8V1A1-006`) |
 | **el sistema** | los jobs y los webhooks operan sin persona detrás. Llevan su propio identificador de actor y sus dos identificadores de correlación (cap. 08 §2.3) |
 
 **Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro acciones del capítulo 08 §3.** *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* ~~Las
@@ -493,8 +530,8 @@ reloj**, y esos tres pasos preguntan por el título, las capacidades y el cupo *
 existe**.
 
 > **Las transiciones disparadas por el reloj son una segunda clase de operación, evaluada por
-> analogía con las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~veinte~~ veintiuna acciones administrativas
-> que son capacidad del actor (§3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; ~~`Q-ACC16`~~ la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15; las cinco del catálogo, con N1 y C9; la vigesimocuarta, con los casos vecinos, 2026-09-29, F-C): los pasos 5, 6 y 7 se
+> analogía con las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~veinte~~ ~~veintiuna~~ veintidós acciones administrativas
+> que son capacidad del actor (§3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; ~~`Q-ACC16`~~ la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15; las cinco del catálogo, con N1 y C9; la vigesimocuarta, con los casos vecinos, 2026-09-29, F-C; la vigesimoquinta, con la verificación corta, 2026-09-29, lote N-G: FASE 9 vuelta 3, `F-8V3D1-004`): los pasos 5, 6 y 7 se
 > resuelven sobre la capacidad del ACTOR, no sobre la del sujeto.**
 
 **La clase se declara transición por transición**, nunca se infiere — es la regla que este mismo
@@ -521,8 +558,8 @@ reconciliador diario corre por calendario pero no cambia el evento de ninguna—
 > **En ellas los pasos 5, 6 y 7 se evalúan sobre el SUJETO, que es el dueño de la ficha, con el
 > sistema como actor.** Es la regla general del §3.2 —*«los pasos 5, 6 y 7 se evalúan sobre el
 > sujeto»*— sin caer en ninguna de las dos excepciones: las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
-> ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~veinte~~ veintiuna acciones del cap. 08 §3 que son capacidad del actor —las catorce primeras ~~y la
-> decimosexta, `Q-ACC16`~~ ~~**y la decimoséptima**~~ **y de la decimoséptima a la vigesimosegunda** (revisión del owner, 2026-09-28, N1 y C9: de la decimoctava a la vigesimosegunda, las cinco del catálogo) **y la vigesimocuarta** (casos vecinos, 2026-09-29, F-C)— (la decimoquinta no lo es, ni la vigesimotercera, por el mismo criterio: §3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y la decimoséptima entró con C15) y la clase del reloj de este §.
+> ~~catorce~~ ~~quince~~ ~~catorce~~ ~~quince~~ ~~veinte~~ ~~veintiuna~~ veintidós acciones del cap. 08 §3 que son capacidad del actor —las catorce primeras ~~y la
+> decimosexta, `Q-ACC16`~~ ~~**y la decimoséptima**~~ **y de la decimoséptima a la vigesimosegunda** (revisión del owner, 2026-09-28, N1 y C9: de la decimoctava a la vigesimosegunda, las cinco del catálogo) **y la vigesimocuarta** (casos vecinos, 2026-09-29, F-C) **y la vigesimoquinta** (verificación corta, 2026-09-29, lote N-G; FASE 9 vuelta 3, `F-8V3D1-004`)— (la decimoquinta no lo es, ni la vigesimotercera, por el mismo criterio: §3.2 regla 3; FASE 9 vuelta 2, `F-8V2A1-004`; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y la decimoséptima entró con C15) y la clase del reloj de este §.
 
 **No es una clase nueva: es declarar que no están en ninguna de las dos excepciones**, que es lo
 que la regla 3 del §3.2 exige hacer por escrito. Y es la lectura que las filas ya pedían: `PB3` y
@@ -539,8 +576,8 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
-El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ ~~**16**~~ ~~**15**~~ ~~**16**~~ ~~**21**~~ **23**
-**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C), que son **la excepción, no el conjunto**. Y hay una regla en uso que
+El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ ~~**16**~~ ~~**15**~~ ~~**16**~~ ~~**21**~~ ~~**23**~~ **24**
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; **la 25, vaciar la presencia de un Partner a pedido de su dueño: verificación corta, 2026-09-29, lote N-G**, FASE 9 vuelta 3, `F-8V3D1-004`), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.

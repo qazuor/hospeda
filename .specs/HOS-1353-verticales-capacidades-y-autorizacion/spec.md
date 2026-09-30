@@ -168,7 +168,7 @@ inmutable desde el alta** (cap. 17 §1.2, precisión 6; la mitad *(c)* de `G2`) 
 `F-8CA1-001`; owner 2026-09-25, FASE 9 completa, 7a.
 
 ~~Tres precisiones que el orden hace cumplir:~~ **Las precisiones que el orden hace cumplir** —el
-cap. 17 §1.2 tiene ~~siete~~ ocho (la octava, FASE 9 vuelta 2, `F-8V2A1-002`); éstas son las que esta spec necesita para leerse sola (salida 3 de la
+cap. 17 §1.2 tiene ~~siete~~ ~~ocho~~ nueve (la octava, FASE 9 vuelta 2, `F-8V2A1-002`; la novena, `PP1` como segunda excepción del guest, FASE 9 vuelta 3, owner 2026-09-30, lotes I y M); éstas son las que esta spec necesita para leerse sola (salida 3 de la
 FASE 9 completa)—:
 
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
@@ -184,6 +184,9 @@ FASE 9 completa)—:
   moderar** (FASE 9 vuelta 1, `F-8V1A1-004`). Todo lo demás contesta como inexistente. **Y sólo
   para leer: una escritura exige `sujeto = dueño`, y sobre lo ajeno contesta *«no existe»*** (FASE 9
   vuelta 2, `F-8V2A1-001`).
+  **Las conversaciones, las reseñas y los comentarios son de quien los escribe**, y el turista
+  los crea sólo sobre una ficha `PUBLISHED`; sobre otra contesta *«no existe»*, sin exención por
+  superficie (FASE 9 vuelta 3, `F-8V3A1-003`).
 - **El sujeto no lo elige el pedido** (precisión 8; FASE 9 vuelta 2, `F-8V2A1-002`): fuera de las
   operaciones de `actor ≠ sujeto` es el actor, y en ellas es el dueño del recurso, leído del
   recurso.
@@ -401,7 +404,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
 | `G6` | una autorización **decide sólo por rol**; **o una construcción del conjunto efectivo lee un rol** (segunda mitad, mensaje propio: FASE 9 vuelta 1, `F-8V1A1-002`) |
 | `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`), **y hasta el corte con una lista de pendientes cerrada, las dos historias, que el paso 6 del corte ~~vacía~~ saca; un build destinado a producción después del corte falla si ~~no está vacía~~ le queda una** (revisión del owner, casos vecinos, 2026-09-29, caso 8), **regla que enciende el mismo commit del paso 6** (caso F-B); **y una tercera entrada, las carpetas del programa en `.specs/`, hasta el commit del cierre de HOS-1352, que la saca y extiende la regla a la lista entera** (revisión del owner, casos vecinos, 2026-09-29, caso H-A)**, sólo esas: las specs de otros issues y `.qtm/` las limpia ~~`V1`~~ la limpieza del principio** (caso I-D; lote N-A)**, que hace `U1`, la unidad del paraguas, y construye este guard en el mismo cambio** (verificación corta, 2026-09-29, lote O-A)~~**; y un trinquete de archivos, la lista medida del código que la nombra el día que nace el guard, que sólo se achica y que el cierre exige vacío** (verificación corta, 2026-09-29, lote M-E)~~; **sin lista de pendientes de código: el código del sistema viejo sale de la rama en la limpieza del principio, antes de construir lo nuevo** (verificación corta, 2026-09-29, lote N-A; `16-fase-7…` §4.6) |
-| `G13` | la implementación **de arranque** de `cobertura()` llega a producción (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
+| `G13` | ~~la implementación **de arranque** de `cobertura()` llega a producción~~ **un build destinado a producción importa una de las seis respuestas de arranque que contestan por billing: las cuatro fuentes, `retenciónDetenida` y `puedeCobrarle`** (`V/20` §2; FASE 9 vuelta 3, `F-8V3C1-002`, `F-8V3D1-001`) (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 | `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que

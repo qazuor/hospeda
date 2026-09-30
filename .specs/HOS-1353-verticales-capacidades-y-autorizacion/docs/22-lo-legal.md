@@ -30,7 +30,7 @@ Los tres huecos se cierran acá **separando dos cosas que venían juntas**:
 
 ---
 
-## 2. Las tres preguntas legales
+## 2. ~~Las tres preguntas legales~~ La pregunta legal que queda
 
 ### 2.3 Las señales de identidad: finalidad, plazo, y un conflicto concreto
 
@@ -115,6 +115,9 @@ Es la formulación útil porque tiene dos respuestas y las dos tienen consecuenc
   que se promete~~ **cambia un mecanismo**: hay que poder borrar el seudónimo de una fila que hoy se
   declara íntegra (cap. 02 §4.1), con un escritor nuevo y una columna anulable, y el `UNIQUE` deja
   de bloquear a esa persona (FASE 9 completa, `C-1`).
+  **El escritor nuevo es una tarea puntual de soporte que los borra todos, y se anota quién
+  la corrió y cuándo; hasta la respuesta, la baja de cuenta conserva el seudónimo** (cap. 02
+  §2.2; FASE 9 vuelta 3, owner 2026-09-30, lote H; `F-8V3A3-006`).
 
 ---
 
@@ -128,5 +131,6 @@ Es la formulación útil porque tiene dos respuestas y las dos tienen consecuenc
 
 ## Lo que este capítulo NO cierra
 
-- **Las seis preguntas**, por definición. Lo que sí queda cerrado es **qué depende de cada una**,
+- ~~**Las seis preguntas**~~ **La pregunta 5, la única que queda** (FASE 9 vuelta 3,
+  `F-8V3A3-009`), por definición. Lo que sí queda cerrado es **qué depende de cada una**,
   que es lo que permite implementar el resto sin esperarlas.
