@@ -16,15 +16,17 @@
  * one line: a click and a view of the same partner would become
  * indistinguishable and the views card would over-report.
  *
- * **`isBotUserAgent` is imported, not re-implemented.** A second copy of that
- * regex is a second thing to update, and the failure mode of the copies drifting
- * is that one of the two numbers quietly starts counting crawlers.
+ * **`isBotUserAgent` is imported from `@repo/utils`, not re-implemented.** A
+ * second copy of that regex is a second thing to update, and the failure mode of
+ * the copies drifting is that one of the two numbers quietly starts counting
+ * crawlers.
  *
  * @module routes/partner-logo-clicks/capture
  */
 
 import { PartnerLogoClickCaptureBodySchema, ServiceErrorCode } from '@repo/schemas';
 import { PartnerStatsService } from '@repo/service-core';
+import { isBotUserAgent } from '@repo/utils';
 import type { Context } from 'hono';
 import { getClientIp } from '../../middlewares/rate-limit';
 import { isGuestActor } from '../../utils/actor';
@@ -33,7 +35,6 @@ import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 import { computeVisitorHash } from '../../utils/visitor-hash';
 import { z } from '../../utils/zod';
-import { isBotUserAgent } from '../views/capture';
 
 const statsService = new PartnerStatsService({ logger: apiLogger });
 
