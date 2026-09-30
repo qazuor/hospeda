@@ -158,7 +158,7 @@ era que alguien la hiciera en la lectura.
 >
 > 1. **La presencia no tiene reloj de retención.** No tiene `inactiva_desde` ni ninguna fila de
 >    `PB4`/`PB5`/`PB9` que la alcance, así que el contenido de un partner que dejó de ser Gold se
->    conserva sin fin (`F-8CA3-006`). La decisión dice que se conserva; hasta cuándo no.
+>    conserva sin fin (`F-8CA3-006`). La decisión dice que se conserva; hasta cuándo no. **Salvo que pida la baja**: la acción 25 la vacía en la baja de cuenta manual (`NUCLEO/08` §1.3 y §3; verificación corta, 2026-09-29, lote N-G).
 > 2. **Cerrado** (revisión del owner, 2026-09-28, N7): **el contenido de la presencia vive en la
 >    tabla de partners de hoy** (`partners`; cap. 02 §2.7, fila `partner`), y **el bit de moderación
 >    es una columna de esa tabla**. La retención de la presencia (punto 1) sigue declarada. Lo que

@@ -160,8 +160,8 @@ al log en `30-revision-del-owner/19-` §4).
 | 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h | `B/12` §5.4 | la suscripción, en cada ciclo |
 
 **Los cinco sin valor escrito, el 3, el 4, el 7, el 8 y el 9, los fija el owner antes del ensayo del
-corte en `staging`, y la migración única del catálogo falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43): la primera versión de los plazos de cada mitad nace en el paso 3a
-(`16-fase-7…` §4.2), y un plazo vacío dejaría un reloj sin fecha.
+corte en `staging`, y ~~la migración única del catálogo~~ la migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43; la migración, verificación corta, 2026-09-29, lote N-H): ~~la primera versión de los plazos de cada mitad nace en el paso 3a
+(`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los quince valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica**, y un plazo vacío dejaría un reloj sin fecha.
 
 **Lo que no está en la lista, y por qué.** **(a) Los plazos que son del catálogo**: los días de
 prueba, la gracia y los topes de pausa de un plan cuelgan de su versión y cambian publicando una

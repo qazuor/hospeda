@@ -419,7 +419,7 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   las columnas denormalizadas que el código de hoy lee, como `featured_by_entitlement` **y
   `is_featured`**: ninguna ficha nace destacada; el destaque es una capacidad comercial (FASE 9
   vuelta 1, R1). El sistema nuevo no lee ninguna, y se retiran con el código que las lee
-  (FASE 5). *«Recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
+  ~~(FASE 5)~~: **el código sale de la rama en la limpieza del principio, y su esquema con él, así que la migración que genera ese borrado las saca de la base en el paso 3 del corte** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A). *«Recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
   vuelven a suscribir. Guardarlo sólo deja basura que después cuesta limpiar.»* **El corte no
   necesita leerlas**: los ids que cancela salen del proveedor (`16-fase-7…` §4.2, paso 1b) y, desde
   `2g`, no siembra trials consumidos, que era lo único que las leía. **Si algún día algo del corte
@@ -430,7 +430,7 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   Experiencia desaparece por completo, ni como histórico** (revisión del owner, 2026-09-28, C3,
   `L2-a` a `L2-c`), sin la excepción del §55.1. De este lado lo nombran el dominio de producto
   viejo de las suscripciones y sus planes, que mueren con el modelo nuevo y con el archivo de
-  configuración de planes (el punto siguiente). La limpieza del producto (el rol, los permisos, la
+  configuración de planes (el punto siguiente), **y los dos salen de la rama en la limpieza del principio** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A). La limpieza del producto (el rol, los permisos, la
   tabla de contactos y el tipo de partner) es de la otra épica (`V/21` §4), y la historia de
   migraciones y el ledger del seed se reemplazan el día del corte por una foto de la base
   (`16-fase-7…` §4.2, paso 6).
@@ -452,7 +452,7 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   datos de planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write
   (revisión del owner, casos vecinos, 2026-09-29, caso 42; `NUCLEO/02` §1.4). El catálogo de producción no sale de este
   archivo: nace con la migración de datos única del corte (`NUCLEO/02` §1.4, `L1-e`). Es filtro 1
-  de FASE 5: el sujeto muere.
+  de FASE 5: el sujeto muere, **y lo borra la limpieza del principio** (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A).
 
 ---
 

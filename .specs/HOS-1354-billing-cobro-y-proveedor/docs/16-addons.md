@@ -101,7 +101,7 @@ exactamente una de las dos es no nula.
 > `R4`, `F-8V2B2-003`). La pantalla de compra acuña un identificador de pedido al abrirse; `A1` lo
 > persiste en la instancia, único (`B/02` §2.4), y la clave de la orden sale de él. **El doble clic
 > reusa la orden**: el segundo pedido trae el mismo identificador, encuentra la instancia que ya
-> existe y no manda otra orden; una recompra es otro pedido, con otro identificador. **Y la
+> existe y no manda otra orden (salvo que la instancia todavía no tenga id de orden: ahí reenvía la misma, §1.4; verificación corta, 2026-09-29, lote N-B); una recompra es otro pedido, con otro identificador. **Y la
 > recuperación tiene quién la ejecute** (`F-8V2B1-003`, `F-8V2B2-004`): `A3` reenvía la orden con
 > la misma clave antes de abandonar (`B/03` §8), y la orden que se paga después de que `A3`
 > abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).
@@ -117,7 +117,7 @@ exactamente una de las dos es no nula.
   el cuerpo del error (`EX-30`). **Un `402` no es *«no hay orden»***: el id se guarda en la
   instancia como el de cualquier orden, ~~y la instancia sigue en `PENDING_AUTHORIZATION`, como con
   cualquier pago no aprobado~~ **y la compra se cierra en el acto: `A7` lleva la instancia a
-  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). **La cierra releyendo la orden por su id, no con la respuesta del `402`** (verificación corta, 2026-09-29, VC-cobro-05). ~~**Qué pasa cuando la persona
+  `ABANDONED`** (`B/03` §8; mediciones del 2026-09-29, lote L-C). **La cierra releyendo la orden por su id, no con la respuesta del `402`** (verificación corta, 2026-09-29, VC-cobro-05). **Y un `402` que no llega** (verificación corta, 2026-09-29, lote N-B): si la respuesta de la orden se perdió, la instancia queda en `PENDING_AUTHORIZATION` con su clave y sin id de orden, y `A7` no tiene con qué dispararse. **El segundo pedido que la encuentra así reenvía la orden con la misma clave y el mismo cuerpo**, que es seguro por `EX-41`: si el proveedor la tenía, vuelve la misma, y con su `402` corre `A7`; si no la tenía, la crea. **Y si en el segundo pedido la persona eligió otra tarjeta**, es otro cuerpo con la misma clave y el proveedor contesta `409`: la pantalla dice *«tu pago anterior se está procesando, probá en unos minutos»* y **no abre un pedido nuevo**, porque la primera orden pudo haberse aprobado y lo perdido ser la aprobación. Cualquiera de los dos termina como toda orden de ese pedido: por `A2`, por `A7` o, sin respuesta, por `A3` al vencer la ventana. ~~**Qué pasa cuando la persona
   reintenta con otra tarjeta** lo decide el owner (`30-revision-del-owner/28-…`, decisión 3): con
   el mismo pedido la instancia ya existe y reusa su orden, que está `failed`; y una orden con la
   misma clave y otra tarjeta es otro cuerpo, que el proveedor contesta con `409` (`EX-41`).~~

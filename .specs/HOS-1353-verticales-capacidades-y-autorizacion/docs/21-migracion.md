@@ -531,7 +531,7 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   «Comercio», sin cambios**, y sólo cambia su clave de i18n; y los
   datos que lo nombren se reescriben o se borran. La historia de migraciones y el ledger del seed
   se reemplazan el día del corte por una foto de la base (`16-fase-7…` §4.2, paso 6). **La única
-  exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11). **El código del sistema viejo que lo nombra no entra en esta limpieza**: `G8` lo lleva en su trinquete (`V/20` §2) y lo vacían las unidades que lo reescriben o lo borran y, al final, el retiro del sistema viejo (verificación corta, 2026-09-29, lote M-E).
+  exención es el PDR, por nombre** (`V/20` §2, `G8`). Lo construye `V1` (`descomposicion.md` §2.11). ~~**El código del sistema viejo que lo nombra no entra en esta limpieza**: `G8` lo lleva en su trinquete (`V/20` §2) y lo vacían las unidades que lo reescriben o lo borran y, al final, el retiro del sistema viejo (verificación corta, 2026-09-29, lote M-E).~~ **Y entra también el código del sistema viejo que lo nombra**, con el cobro viejo entero: es la limpieza del principio, que va antes de construir lo nuevo (`16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A). ⚠️ Si la hace `V1` o una unidad propia anterior pide decisión del owner (`30-revision-del-owner/34-` §3, N-A-1).
   **Y entran en esta limpieza el `CLAUDE.md` raíz y los archivos de i18n que lo nombran**
   (revisión del owner, casos vecinos, 2026-09-29, caso 41): medido en el worktree del programa el 2026-09-29 (`e1004e7922`),
   el `CLAUDE.md` raíz lo nombra 23 veces, y `packages/i18n` en 30 archivos, 24 de ellos en

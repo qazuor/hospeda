@@ -1115,7 +1115,7 @@ en la real (lee `subscription_pause`, `B/02`) y **`V4`** en la de arranque, que 
 (§5.1); la consumen `V9` (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado (`D16`, `G-R5`), que sale.
 
-**`puedeCobrarle` es la otra pregunta de la dirección de ida, y entra por la baja de una cuenta** (verificación corta, 2026-09-29, lotes M-F y M-G). Contesta `sí` si a la cuenta, en cualquier vertical, le queda **una autorización que todavía puede cobrar**: una suscripción, principal o de complemento, en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, que son las filas vivas (`NUCLEO/01` §2.4) **sin `CANCEL_SCHEDULED`**, porque ésa ya está dada de baja en el proveedor y termina sola por `S12` en su fecha de fin; y `no` en cualquier otro caso. **Contesta sobre la cuenta entera y sin estado**: un sí o no, con la forma de `fichaPurgada`, así que el estado exacto de la suscripción sigue sin cruzar (§4). **Su único lector es la acción 24, *«dar de baja una cuenta a pedido de su dueño»*** (`NUCLEO/08` §3), que es de verticales (`V8`) y se rechaza con `sí`: sin esta pregunta, la precondición de la 24 se condicionaba sobre una fila viva, que ninguna regla de verticales puede evaluar (`NUCLEO/01` §2.4, regla 1). **La construye `B4`** en la real, y **`V4`** en la de arranque, que contesta `no`, porque sin billing no hay suscripción (§5.1); la consume `V8`. **Entra al inventario de consumidores de *«fila viva»*** (`NUCLEO/01` §2.4, fila 27), del lado de billing, que es donde se evalúa, y lo vigila `G-R1-E` (`B/20` §2).
+**`puedeCobrarle` es la otra pregunta de la dirección de ida, y entra por la baja de una cuenta** (verificación corta, 2026-09-29, lotes M-F y M-G). Contesta `sí` si a la cuenta, en cualquier vertical, le queda **una autorización que todavía puede cobrar**: una suscripción, principal o de complemento, en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, que son las filas vivas (`NUCLEO/01` §2.4) **sin `CANCEL_SCHEDULED`**, porque ésa ya está dada de baja en el proveedor y termina sola por `S12` en su fecha de fin; **o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta** sobre una suscripción suya (`B/02` §2.5), porque su cancelación en el proveedor no se confirmó y el preapproval todavía puede cobrar (verificación corta, 2026-09-29, lote N-C); y `no` en cualquier otro caso. **Contesta sobre la cuenta entera y sin estado**: un sí o no, con la forma de `fichaPurgada`, así que el estado exacto de la suscripción sigue sin cruzar (§4). **Su único lector es la acción 24, *«dar de baja una cuenta a pedido de su dueño»*** (`NUCLEO/08` §3), que es de verticales (`V8`) y se rechaza con `sí`: sin esta pregunta, la precondición de la 24 se condicionaba sobre una fila viva, que ninguna regla de verticales puede evaluar (`NUCLEO/01` §2.4, regla 1). **La construye `B4`** en la real, y **`V4`** en la de arranque, que contesta `no`, porque sin billing no hay suscripción (§5.1); la consume `V8`. **Entra al inventario de consumidores de *«fila viva»*** (`NUCLEO/01` §2.4, fila 27), del lado de billing, que es donde se evalúa, y lo vigila `G-R1-E` (`B/20` §2).
 
 ~~**`finDeServicio` salió de `situaciónDeVertical` y es ahora una entrada propia, en la otra
 dirección**: la fecha la calculaba billing con la fórmula de `B/10` §4.3, la leían la fuente de
@@ -1493,7 +1493,7 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
 2026-09-29, caso G-B):
 
 1. **Las dos interfaces.** **Lo que verticales le pregunta a billing**: `cobertura` (§2),
-   `retenciónDetenida` (§4.1) y el aviso de que la cobertura cambió (§3). **Lo que billing le lee a
+   `retenciónDetenida` ~~(§4.1)~~, **`puedeCobrarle`** (§4.1; faltaba en esta lista desde el lote M-F: verificación corta, 2026-09-29, lote N-C) y el aviso de que la cobertura cambió (§3). **Lo que billing le lee a
    verticales**: `políticaDePlan`, `direcciónDeCambio`, `fichaPurgada`, `ficha`,
    `políticaDeAddon`, la escritura `extenderTrial` (§4.1) y el empuje de la ficha que llegó a
    `PURGED` (§3.1). Los dos eventos llevan la regla *«se emite después del commit»* (§3).
@@ -1503,6 +1503,10 @@ dos mitades ni de `@repo/db`: sólo de la validación y del enum de verticales d
    una ruta de pruebas que ningún build de producción importa (la técnica de `G13`, §6.3). **Con
    ellos verticales se prueba entera sin billing, y billing entera sin verticales**: la mitad que
    faltaba era la segunda, porque para la dirección inversa no había falso ni juego de casos.
+   **Y mientras la app de la rama está rota, son lo único contra qué probar** (verificación corta,
+   2026-09-29, lote N-A): la limpieza del principio borra el sistema viejo antes de construir el
+   nuevo (`16-fase-7…` §4.6), y hasta que `B4` integra la implementación real de billing en la raíz
+   de composición de `apps/api` las dos mitades se construyen y se prueban contra estos simuladores.
 4. **Los juegos de casos compartidos**: el del §6.2 (la dirección de ida, contra las dos
    implementaciones de `cobertura`) y **uno nuevo de la dirección inversa**, que corre contra el
    simulador y contra la implementación de verticales, con su caso que una constante no pasa.

@@ -536,6 +536,12 @@ anual, que renueva la cuota cada mes aunque pague una vez por año.
    ventana siguiente**. Juan arrancó el 15 y gastó 80 de 100 consultas; el 20 sube a un plan de
    300: hasta el 15 que viene le quedan 220, y desde ahí renueva siempre el 20. Si baja a uno de 50,
    hasta el 15 no le queda ninguna (nunca un saldo negativo), y desde ahí renueva el 20 con 50.
+   **Y lo mismo cuando cambia el título que ancla** (verificación corta, 2026-09-29, lote N-I): si
+   muere el que anclaba (la prueba que `T2` convierte, una cortesía que termina) y otro título vivo
+   pasa a anclar, la ventana en curso sigue hasta su fin, medida contra el cupo del título que queda
+   menos lo ya gastado, y la próxima arranca con el ancla nueva. Juan arranca la prueba el 5 y
+   contrata el 20: la ventana que abrió el 5 sigue hasta el 5 del mes siguiente con la cuota de su
+   suscripción, y desde ahí renueva el 20.
 
 **Dónde vive**: una fila por persona, vertical y clave medida, con el instante en que abrió, el
 instante en que cierra y lo consumido (`02` §2.2, `cuota_ventana`). **No guarda el cupo**: el

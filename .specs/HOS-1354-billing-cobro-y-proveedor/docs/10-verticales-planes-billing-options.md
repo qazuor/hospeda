@@ -190,7 +190,12 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    aparece en el listado del panel, para que una persona lo resuelva con él, porque cambiar de
    ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su
    antigüedad**, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto
-   lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26).
+   lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26). **Recibe sólo el correo
+   del anuncio**, con un texto que le dice que lo van a contactar, y no los de 30 y 7 días, que le
+   prometen una fecha y un precio que no tiene (`NUCLEO/07` §6). **Su fila sale a `FUERA`**, con el
+   motivo *«cambió de plan»* cuando una persona lo resuelve con él, o con *«terminó»* si su suscripción
+   llega antes a un estado terminal, como una `PENDIENTE` (punto 8). **Y cancelar la migración la pasa
+   a `CANCELADA`** (punto 9) (verificación corta, 2026-09-29, lote N-E).
 6. **Si pierde algo** (le sobran fichas, por ejemplo), **es un excedente con fecha conocida**, la
    de aplicación: se le avisa antes y elige qué conserva (`V/15` §4.2).
 7. **Pausados y en gracia esperan**: la migración se les aplica en la primera renovación después
@@ -209,7 +214,7 @@ clientes de una versión retirada a una versión vigente y vendible **de la mism
    migración**: su fila pasa a `FUERA`, con el motivo. **Y sale igual si su suscripción termina por cualquier otro camino** (la baja del proveedor o la que da desde Mercado Pago, `S13`, `S12`, la muerte de la predecesora en una sucesión, un alta que no autorizó): su fila pasa a `FUERA` con el motivo *«terminó»*, en la misma transacción que la lleva al estado terminal (`B/03` §3.2; verificación corta, 2026-09-29, lote M-A). Su propio acto sigue su camino (§3.5,
    `DEC-SUB-009`), y la colisión con la cola es la del `B/12` §2.2.
 9. **El `SUPER_ADMIN` puede cancelar una migración anunciada** (`L1-h`), con la misma acción 17:
-   alcanza a las filas en `PENDIENTE`, que pasan a `CANCELADA`, y a cada una le sale **el correo
+   alcanza a las filas en `PENDIENTE`, que pasan a `CANCELADA`, **y a las `PARA_RESOLVER`, que también pasan a `CANCELADA`, sin correo: sólo reciben el del anuncio** (punto 5; verificación corta, 2026-09-29, lote N-E); a cada `PENDIENTE` le sale **el correo
    *«ya no cambia nada»***. **Las ya aplicadas no vuelven**: `S37` ya mutó su monto, y deshacerlo
    sería otra migración. **Tampoco las que están dentro de sus siete días**, con el monto ya
    mutado y la versión todavía sin cambiar: la mutación no se deshace, y a cada una le sale **un

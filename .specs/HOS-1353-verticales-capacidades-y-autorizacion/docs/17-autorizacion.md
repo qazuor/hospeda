@@ -335,7 +335,7 @@ no una excepción a la lista.
 2026-09-26, `G5-1`):
 
 1. **`actor ≠ sujeto` exige un permiso de esa acción concreta**, no una condición general de
-   «es administrador». Las ~~doce~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ ~~**dieciséis**~~ ~~**quince**~~ ~~**dieciséis**~~ ~~**veintiuna**~~ **veintitrés** acciones del capítulo 08 §3 llevan permiso propio, una por una
+   «es administrador». Las ~~doce~~ ~~**trece**~~ ~~**catorce**~~ ~~**quince**~~ ~~**dieciséis**~~ ~~**quince**~~ ~~**dieciséis**~~ ~~**veintiuna**~~ ~~**veintitrés**~~ **veinticuatro** *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* acciones del capítulo 08 §3 llevan permiso propio, una por una
    (la decimotercera, moderar una ficha —**o la presencia de un Partner**, desde la FASE 9 completa,
    decisión 7c—: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; **la decimocuarta, asentar un cobro
    o una devolución que ya ocurrió por fuera de nuestro flujo**: owner 2026-09-25, FASE 9 completa,
@@ -350,10 +350,10 @@ no una excepción a la lista.
    ciclo, publicar una versión de complemento, crear o cerrar un código promocional y cambiar un
    plazo), de `SUPER_ADMIN`**: la misma revisión, N1, C9 y `L1-f`; **la vigesimotercera y la
    vigesimocuarta, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), las dos a pedido de su dueño y con
-   motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C).
+   motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C; **la vigesimoquinta, vaciar la presencia de un Partner a pedido de su dueño, con motivo**, parte del paso 2 en un Partner: verificación corta, 2026-09-29, lote N-G).
 
    **Y una lectura con `actor ≠ sujeto` también exige el suyo** (FASE 9 vuelta 2, `F-8V2A1-002`).
-   Las ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ veintitrés son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
+   Las ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* son escrituras, y las inspecciones del §48 no tenían ninguno: la única pieza a mano
    era el permiso de familia de leer lo propio, que cualquier cliente tiene. **Cada entidad que el
    §48 manda inspeccionar —usuarios, suscripciones, pagos, cortesías, grants y las demás de su
    lista— tiene su permiso de inspección**, y ninguno es *«es administrador»*. **No son filas de
@@ -368,8 +368,8 @@ no una excepción a la lista.
 3. **El admin no hereda los entitlements del sujeto.** Los pasos 5, 6 y 7 se evalúan **sobre el
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
    hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
-   ~~catorce primeras~~ ~~quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta—~~ ~~catorce primeras acciones del capítulo 08 §3~~ ~~**quince acciones del capítulo 08 §3, las catorce primeras y la decimoséptima,**~~ ~~**veinte acciones del capítulo 08 §3, las catorce primeras y de la decimoséptima a la vigesimosegunda,**~~ **veintiuna acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda y la vigesimocuarta,** son
-   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer), no del sujeto —
+   ~~catorce primeras~~ ~~quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta—~~ ~~catorce primeras acciones del capítulo 08 §3~~ ~~**quince acciones del capítulo 08 §3, las catorce primeras y la decimoséptima,**~~ ~~**veinte acciones del capítulo 08 §3, las catorce primeras y de la decimoséptima a la vigesimosegunda,**~~ ~~**veintiuna acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda y la vigesimocuarta,**~~ **veintidós acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda, la vigesimocuarta y la vigesimoquinta,** son
+   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer; la vigesimoquinta, vaciar la presencia de un Partner, con la verificación corta, 2026-09-29, lote N-G), no del sujeto —
    otorgar una cortesía no consulta si el cliente tiene derecho a una, porque su objeto es
    dárselo. **A qué clase pertenece una operación se declara, nunca se infiere.**
 
@@ -406,7 +406,7 @@ no una excepción a la lista.
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
    que además es cliente registrándose su propia cuota— y `D11` (*«lo que toca plata lo confirma
    una persona»*) se cumplía a la letra sin proteger nada: la regla lo vuelve lo que quiso decir,
-   ~~**otra** persona~~ **otra cuenta** (no otra persona: ver abajo). Es una regla sin lista, vale para las ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ veintitrés acciones del capítulo 08 §3, y su
+   ~~**otra** persona~~ **otra cuenta** (no otra persona: ver abajo). Es una regla sin lista, vale para las ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* acciones del capítulo 08 §3, y su
    costo es de una sola vez: quien administra y además es cliente necesita una segunda cuenta —la de
    admin separada de la de cliente— para que lo suyo lo opere otra. Lo prueba un caso de `V5`.
    **La regla compara cuentas, no personas** (owner 2026-09-26, `Y-2`; FASE 9 vuelta 1, `N-1` de
@@ -429,7 +429,7 @@ no una excepción a la lista.
    demás. No se le escribe fila de alcance, la previsualización la muestra excluida con esta
    regla como razón, y otra cuenta con el permiso la puede migrar en otro acto (`B/10` §3.7
    punto 1; revisión del owner, casos vecinos, 2026-09-29, caso 24).
-   **En la vigesimotercera y la vigesimocuarta el sujeto es el dueño que pidió la baja**, y la
+   **En la vigesimotercera, la vigesimocuarta y la vigesimoquinta el sujeto es el dueño que pidió la baja** (la tercera, lote N-G), y la
    regla se cumple igual: la hace una cuenta de soporte con el permiso, y si quien pide ~~borrar su
    cuenta~~ **dar de baja su cuenta** (verificación corta, 2026-09-29, VC-VT-11) es a la vez del equipo, la hace otra cuenta (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
 
@@ -442,7 +442,7 @@ Dos actores más, y nombrarlos evita que alguien los trate como ausencia de acto
 | **el visitante sin cuenta** | el `Guest` del §6 es **un actor del modelo, no la falta de uno** — igual que `PRE_TRIAL` es un estado real y no la ausencia de uno (`DEC-TRIAL-007`). Qué puede hacer es `A-ENT-02`, capítulo 15. **No pasa del paso 1** salvo en la lectura pública, y el paso 2 no le aplica: no tiene cuenta (FASE 9 vuelta 1, `F-8V1A1-006`) |
 | **el sistema** | los jobs y los webhooks operan sin persona detrás. Llevan su propio identificador de actor y sus dos identificadores de correlación (cap. 08 §2.3) |
 
-**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ veintitrés acciones del capítulo 08 §3.** ~~Las
+**Un actor de sistema no puede ejecutar ninguna de las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro acciones del capítulo 08 §3.** *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G)* ~~Las
 doce mueven dinero o conceden servicio~~ Doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toca plata lo
 confirma una persona. La decimotercera, moderar una ficha (`PB10`/`PB11`, cap. 03 §9) **o la
 presencia de un Partner** (cap. 18 §1.6; FASE 9 completa, 7c), no toca
@@ -470,7 +470,7 @@ a la vigesimosegunda, también las decide y las confirma una persona** (revisió
 versión nueva cambia después lo aplican las transiciones de siempre, con la versión que cada reloj
 guarda (`NUCLEO/02` §1.5). **La vigesimotercera y la vigesimocuarta, borrar una ficha ajena y
 ~~borrar una cuenta~~ **dar de baja una cuenta** a pedido de su dueño, no tocan plata: ~~borran~~ **borran o dan de baja** (caso I-C), y lo que no vuelve lo decide una
-persona a pedido del dueño y con motivo** (revisión del owner, casos vecinos, 2026-09-29, caso F-C). Un job que
+persona a pedido del dueño y con motivo** (revisión del owner, casos vecinos, 2026-09-29, caso F-C). **La vigesimoquinta, vaciar la presencia de un Partner, tampoco** (verificación corta, 2026-09-29, lote N-G). Un job que
 pudiera otorgar una cortesía convierte ese invariante en una sugerencia.
 
 ~~**La excepción que no es una acción nueva: el reintento de la mitad de billing de la
@@ -535,7 +535,7 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 > `actor ≠ sujeto`, **un permiso de esa acción concreta**, y está escrita para una persona. Cómo lo
 > cumple un actor de sistema —en esta clase y en la del reloj, que tienen el mismo `actor ≠
 > sujeto`— no está escrito. No da acceso a ninguna persona: el §3.3 ya le prohíbe al sistema las
-> ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ veintitrés acciones del cap. 08 §3 (~~`Q-ACC16`~~ revisión del owner, 2026-09-28, C8, C15, N1 y C9; casos vecinos, 2026-09-29, F-C).
+> ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~ ~~dieciséis~~ ~~quince~~ ~~dieciséis~~ ~~veintiuna~~ ~~veintitrés~~ veinticuatro acciones del cap. 08 §3 (verificación corta, 2026-09-29, lote N-G; ~~`Q-ACC16`~~ revisión del owner, 2026-09-28, C8, C15, N1 y C9; casos vecinos, 2026-09-29, F-C).
 
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
