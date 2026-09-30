@@ -47,7 +47,35 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-29 (noche) — mediciones cerradas, llevadas al diseño y verificadas
+## Última actualización: 2026-09-29 (noche, tarde) — la verificación corta está decidida y aplicada
+
+### El próximo paso exacto
+
+1. **Publicar** (con OK del owner): la presentación (15 hilos; corregir «commerce», la cuota de la
+   prueba que renueva y las tres cifras del caso 29), las fichas de unidad (sumar `U1`), el tablero
+   y Linear.
+2. **FASE 5** (gap analysis contra el código). Antes de `U1`, la FASE 5 fija el nombre del package
+   del contrato.
+
+Menor pendiente: `EX-46` y sus espejos (incluida su fila de la matriz) todavía dicen «el barrido lo
+relee»; con O-B quedó sin sujeto (`36-` § para la implementación).
+
+### Lo que pasó el 2026-09-29 (noche, tarde)
+
+- Los 8 hallazgos que bloqueaban se decidieron (lote M, `32-`) y aplicaron (`33-`), con los lotes
+  que salieron al aplicar: N (**limpieza total del sistema viejo al principio**: `G8`/`G16` sobre
+  todo el repo sin listas de código; el trinquete de M-E se retiró), O (**unidad `U1`** de
+  limpieza antes de `V1`/`B1`; el receptor nuevo sirve **la misma ruta** que el viejo y el borde la
+  cierra durante el corte) y P (**Worker que contesta `500`** durante el cierre; el detector del
+  día siguiente lista cobros aprobados sin `payment`; **`U1` crea el package del contrato vacío**
+  y `V1`/`B1` arrancan en paralelo). Registros `33-`…`36-`.
+- Cifras: log **136** decisiones, precisadas sin SUPERSEDED **69**, SUPERSEDED 11; matriz **114 =
+  61 · 15 · 24 · 14**; unidades **23**; guards **33** (17 · 15 · 1); acciones administrativas vivas
+  **24** (nueva 25: vaciar la presencia de un Partner); entradas del contrato **8**
+  (`puedeCobrarle`); dependencias entre épicas **11**.
+- Commits hasta `d1b5e966a3`. Sin pushear (PR #3360).
+
+## Histórico: 2026-09-29 (noche) — mediciones cerradas, llevadas al diseño y verificadas
 
 ### El próximo paso exacto
 
