@@ -1434,3 +1434,23 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   `billing_*` puede ser infraestructura de toda la plataforma (`billing_notification_log`). Un
   número que viene en el encargo se recuenta (184 declarado, 200 reales).
 - **Pendiente**: la aplicación de todo lo decidido (ver el handoff).
+
+## 2026-09-30 (noche) — FASE 5 aplicada entera
+
+- **Aplicación** de todo `38-fase-5/10-decisiones-del-owner.md` (lotes 1 a 6 y la simplificación del
+  corte) con ocho agentes en paralelo, un dueño por archivo (registros `38-fase-5/11-`…`18-`), y un
+  agente de cruces que recontó y aplicó lo mecánico (`21-cruces.md`). Lo no decidido volvió al owner
+  en tres tandas: **A–L** (contra la recomendación: A, la regla que bloquea toda escritura queda
+  hasta el reintento si se aborta), **M–P** y **Q** (la unidad del guard nuevo). Registros `22-`…`27-`.
+- **Verificación ajena** (`28-verificacion.md`): 8 hallazgos, 4 bloqueaban (3 mecánicos resueltos,
+  1 era una elección escrita sin letra del owner, `VF5-04`, contestada con la Q). Citas de los
+  registros: 80 % en su línea, el resto corridas por tandas posteriores.
+- **Cifras** (script): log **142** (1 SUPERSEDED más: `DEC-MIG-004` por `DEC-MIG-007`); matriz
+  **117 = 63 · 16 · 24 · 14**, esperan medición 9, no se miden 9; unidades **24** (`U2`, outbox
+  común); guards **34** (`G18` en `V1`) = 18 · 15 · 1; dependencias entre épicas 12.
+- **Aprendido**: el resumen de las decisiones del owner puede transcribir mal la opción (`PB9` por
+  `PB12`): manda el texto de la opción en el consolidado. Una pregunta que queda en «Vuelve al owner»
+  de un registro se pierde si la tanda siguiente toma sólo algunos registros. Al reemplazar un
+  sujeto («el script del corte» → la herramienta de `V6`), buscar la frase vieja en todo el texto
+  vivo, no sólo en lo registrado.
+- Commits `9dac8201dd`…`59631ad440`. **Sin pushear** (PR #3360).

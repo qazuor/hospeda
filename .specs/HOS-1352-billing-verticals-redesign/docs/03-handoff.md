@@ -47,7 +47,28 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-30 (tarde) — FASE 5 decidida entera; falta aplicarla
+## Última actualización: 2026-09-30 (noche) — FASE 5 aplicada entera; falta publicar
+
+### El próximo paso exacto
+
+1. **Publicar, con OK del owner (ya dado el 2026-09-30):**
+   - artifacts: republicar los que cambiaron (tablero, paraguas, las dos épicas, contrato, las fichas
+     `V*`/`B*` afectadas y la de `U1`, <https://claude.ai/artifact/DAqq2XU5iLpm3p9Mb9wGNq>) y crear la
+     ficha de `U2`;
+   - Linear: actualizar la descripción de **HOS-1400** (`U1` creció: lote 1 entero, lote 2 E, lote H
+     de la aplicación), crear un issue nuevo para **`U2`** (outbox común), cerrar o reescribir
+     **HOS-354** (la impersonación sale, lote 4 C) y un comentario de progreso en **HOS-1352**.
+2. Después: parar y hablar con el owner cómo se sigue (la implementación arranca por `U1`).
+
+### Lo que pasó el 2026-09-30 (noche)
+
+- Aplicación de la FASE 5 entera: registros `38-fase-5/11-`…`18-`, cruces `21-`, tandas del owner
+  A–L, M–P y Q (en `10-`), registros `22-`…`27-`, verificación ajena `28-` con sus arreglos.
+- Cifras: log **142**, matriz **117 = 63 · 16 · 24 · 14** (esperan medición 9, no se miden 9),
+  unidades **24**, guards **34** (18 · 15 · 1), dependencias entre épicas 12.
+- Commits `9dac8201dd`…(el de este handoff). **Sin pushear** (PR #3360).
+
+## Histórico: 2026-09-30 (tarde) — FASE 5 decidida entera; falta aplicarla
 
 ### El próximo paso exacto
 
