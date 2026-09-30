@@ -446,7 +446,10 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   `V/21` §2.4 lee para `L5` y `L7`: sobreviven a `U1` como excepción temporal y nombrada, que los
   guards de limpieza admiten hasta el corte, y las borra una migración posterior al paso 3,
   después de la clasificación de `V6`** (`16-fase-7…` §4.6; FASE 9 vuelta 3, owner 2026-09-30,
-  lote N). La frase tachada no se podía cumplir por orden: la migración de `U1` corre en el paso 3
+  lote N).
+  `16-fase-7…` §4.2 la aplica en el mismo despliegue del paso 3, fechada después de la
+  clasificación; si es ése o uno posterior al corte lo confirma el owner (FASE 9 vuelta 3, lote N).
+  La frase tachada no se podía cumplir por orden: la migración de `U1` corre en el paso 3
   antes que la de clasificación.
 - ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.

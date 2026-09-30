@@ -387,7 +387,7 @@ sólo se sostiene si las pruebas se pueden volver a correr.
 
 | | |
 |---|---|
-| **dónde viven** | `docs/mp-probes/`, versionadas, marcadas como no productivas (§4 del PDR las permite como *«scripts experimentales descartables»*). **Ningún proceso de producción las lee**: el handler que exceptúa las sondas del corte (`B/09` §2.4) no puede depender de esta carpeta, y de dónde lee su lista es pregunta abierta (FASE 9 vuelta 3, `F-8V3B3-006`) |
+| **dónde viven** | `docs/mp-probes/`, versionadas, marcadas como no productivas (§4 del PDR las permite como *«scripts experimentales descartables»*). **Ningún proceso de producción las lee**: el handler que exceptúa las sondas del corte (`B/09` §2.4) no puede depender de esta carpeta, y de dónde lee su lista es pregunta abierta (FASE 9 vuelta 3, `F-8V3B3-006`), con la lectura que recomienda `16-fase-7…` §4.2: el código del package del cobro (`F-8V3C2-008`) |
 | **qué registran** | request, response y webhook, con su fecha |
 | **los ids de los sujetos** | en un **manifiesto versionado**, y **sin eso se pierde el experimento**: el buscador del proveedor ignora nuestra referencia (`RC-1`), así que un sujeto sin id no se vuelve a encontrar |
 | **el guard de entorno** | toda sonda que mute abre con `GET /users/me` (§4.4) |

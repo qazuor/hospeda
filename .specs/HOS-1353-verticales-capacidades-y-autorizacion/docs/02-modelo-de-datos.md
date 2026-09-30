@@ -416,7 +416,7 @@ la vigesimocuarta acción administrativa (`NUCLEO/08` §3), que ~~**borra** la f
 sesiones y seudonimiza lo personal (revisión del owner, casos vecinos, 2026-09-29, caso H-C). ⚠️ **Eso choca con esta FK**: con `RESTRICT` la base
 no deja borrar la fila de una cuenta que tuvo un trial, y cuál de las dos cede pide decisión del
 owner (`30-revision-del-owner/20-` §3).~~ **no borra la fila de `user`: la seudonimiza**, con el
-nombre, el correo y el teléfono reemplazados, las sesiones cerradas y sin acceso **(con dato: la baja escribe `user.deleted_at`, que el paso 1 de la cadena lee, y borra las credenciales de la cuenta; `NUCLEO/08` §3, cap. 17 §1.2; FASE 9 vuelta 3, `F-8V3A1-004`)**, y la fila de
+nombre, el correo y el teléfono reemplazados, las sesiones cerradas y sin acceso **(con dato: la baja escribe `user.deleted_at`, que el paso 1 de la cadena lee, y borra las credenciales de la cuenta; `NUCLEO/08` §3, cap. 17 §1.2; FASE 9 vuelta 3, `F-8V3A1-004`)** **y esa escritura dispara el trigger de favoritos sobre `users` del carril de extras, que borra los favoritos que otros guardaron sobre la cuenta** (`NUCLEO/08` §3, acción 24; FASE 9 vuelta 3, caso vecino de `F-8V3A1-004`), y la fila de
 `trial` sigue apuntándola, así que esta FK no cambia y la traba contra repetir la prueba sigue
 (revisión del owner, casos vecinos, 2026-09-29, caso I-C, que corrige la elección del caso H-C).
 **El seudónimo de esa fila se conserva hasta que el abogado conteste la pregunta 5** (cap. 22

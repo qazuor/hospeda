@@ -362,7 +362,8 @@ verticales**: la fila de `trial` es suya, así que billing no la toca; el canje 
 `extenderTrial(user, vertical, días, claveDeCanje)` (`12-contrato…` §4.1), verticales corre `T4`
 dentro del lock de la máquina de trial con el techo ya aplicado (`V/11` §3) y contesta `ACEPTADA`
 o `RECHAZADA(motivo)`, y **billing gasta el código sólo con `ACEPTADA`**; la clave de canje hace
-idempotente el reintento (owner 2026-09-26, `G4-2`; FASE 9 vuelta 1, `F-8V1C1-009`).
+idempotente el reintento (owner 2026-09-26, `G4-2`; FASE 9 vuelta 1, `F-8V1C1-009`), y verticales
+la guarda en `canje_de_trial`, `V/02` §2.2 (FASE 9 vuelta 3, `F-8V3C1-003`).
 
 - Un canje a las 23:59:59 del día del vencimiento, con el job todavía sin correr, **es válido**.
 - Un canje después de que el job escribió `TRIAL_EXPIRED` **se rechaza**, aunque sea el mismo día.

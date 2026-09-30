@@ -114,7 +114,9 @@ todos los meses da **un solo caso**.
 > §9) y sale del repositorio al cerrar HOS-1352, así que el handler de producción no puede
 > depender de ella** (FASE 9 vuelta 3, `F-8V3B3-006`): **de dónde lee la lista y qué hace si le
 > falta es pregunta abierta** (registro de la FASE 9 vuelta 3, B), porque las dos respuestas
-> tienen daños distintos; hasta que se conteste, el test de **B11** que la ejercita no cierra.
+> tienen daños distintos; `16-fase-7…` §4.2 recomienda el código del package del cobro,
+> importado como módulo, sin rama *«si le falta»*, y la decide el owner (FASE 9 vuelta 3, `F-8V3C2-008`);
+> hasta que se conteste, el test de **B11** que la ejercita no cierra.
 > **Sobre uno de esos ids el handler escribe la lápida de recepción,
 > el `payment` y la marca, y no manda cancelar**, y el barrido tampoco: sin llamada nuestra no
 > entra a la salvedad 4 del §3, y la sigue la salvedad 2 mientras la marca esté abierta. La marca
@@ -235,6 +237,14 @@ lee la fila de estado del §3: un preapproval vivo sobre una fila que nunca mand
 divergencia de estado y la mira una persona (§2.4), y si cobra, la comparación de cobros lo
 cuelga con el motivo de la tabla de desempate del `B/05` §3. **Si en cambio el barrido debe mandar
 la cancelación que `S16` habría mandado es pregunta abierta** (registro de la FASE 9 vuelta 3, B).
+
+⚠️ **Qué dato guarda que una relectura vio `cancelled` no está escrito** (FASE 9 vuelta 3,
+lote D). Lo leen tres cosas: la exención de arriba (*«nuestra llamada ya fue confirmada por una
+relectura»*), el reloj del plazo 16 (*«desde la primera relectura que lo vio `cancelled`»*) y
+`puedeCobrarle`, que `12-contrato…` §4.1 manda escribir acá. `provider_link` (`B/02` §2.2)
+guarda sólo el `last_modified` de la última relectura, y el registro de corridas del §7.1 no
+tiene entidad. Dónde vive es pregunta abierta del owner; hasta que conteste, `B4` y `B11` no
+tienen de dónde leerlo.
 
 **Escrita como enumeración de transiciones, la garantía era falsa, y hay que decir dónde.** La
 versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobre un conjunto de
@@ -1070,6 +1080,11 @@ alerta a las 26 h sin ping. Lo que este § deja abierto del vigía vale igual pa
 una corrida completa, y el monitor alerta si pasa **una semana más un día** sin el de la cuenta de
 pruebas, o **un mes más un día** sin el de producción. El día de margen es el mismo criterio de las
 26 h del barrido, y **tampoco está medido**.
+
+**Y vigila la corrida diaria que reintenta los borrados remotos de `PB9` y `PB12`** (`V/02` §4.1;
+FASE 9 vuelta 3, `F-8V3A2-005`), con la regla del reconciliador: ping al terminar una corrida
+completa, alerta a las 26 h sin ping. Si la elección concreta del monitor cuenta los jobs
+vigilados, es uno más.
 
 ---
 

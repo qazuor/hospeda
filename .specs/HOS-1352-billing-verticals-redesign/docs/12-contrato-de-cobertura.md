@@ -1166,7 +1166,8 @@ techo ya aplicado (`V/11` §3) y dentro del lock de la máquina de trial, así q
 se pisan. Billing asienta el canje sólo con `ACEPTADA`; la clave de canje hace idempotente el
 reintento. **La guarda verticales, que es quien ejecuta**: la escribe en la misma transacción de
 `T4` que aplica la extensión, y a un reintento con una clave ya aplicada contesta `ACEPTADA` sin
-volver a correr `T4` (FASE 9 vuelta 3, F-8V3C1-003). La columna es de `V/02` y la construye `V4`;
+volver a correr `T4` (FASE 9 vuelta 3, F-8V3C1-003). ~~La columna es de `V/02`~~ La tabla es
+`canje_de_trial`, de `V/02` §2.2 (FASE 9 vuelta 3, F-8V3C1-003), y la construye `V4`;
 el juego de la dirección inversa (§6.2) trae el caso que reintenta la misma clave.
 Las construyen `V2` (`políticaDeAddon`: `addon_version` es de `V/02` §2.1), `V6`
 (`ficha`: es de la ficha, como `fichaPurgada`) y `V4` (la operación, dueña de la máquina de
