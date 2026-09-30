@@ -34,6 +34,19 @@ letras. Cada fila nombra la opción elegida.
 | M | R13 (sigue de I) | qué límites tiene la postulación sin cuenta | **1**: captcha (Turnstile, que el sitio ya usa) y una sola postulación abierta por correo, la guarda de `PP1` que ya pasa a restricción de la base | sí |
 | N | R3 (`F-8V3A3-002`) | qué pasa con `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que `U1` borra y la traducción del corte lee | **1**: sobreviven a `U1` como excepción temporal y nombrada que los guards de limpieza admiten hasta el corte; las borra una migración posterior al paso 3, después de la clasificación | sí |
 | O | R22 | qué hace `PB13` con el lugar que la moderación cedió | **1**: la ficha que vuelve de la moderación entra a la misma cola ordenada que `PB3`/`PB7`; si le toca, recupera su lugar y la otra vuelve a esperar | sí |
+| P | R21 | si el permiso de las acciones «sólo `SUPER_ADMIN`» se puede dar suelto | **1**: no; viene sólo con el rol, y asignar el rol es una acción administrativa nueva (la 26), registrada | sí |
+| Q | R24 | cómo se impide que el borrado de una ficha inactiva (`PB9`) se adelante a un aviso atrasado de cobertura | **1**: el borrado exige que su plazo corra desde la última pérdida de cobertura, dato nuevo que devuelve el contrato; mientras no exista, no corre en la misma pasada en que ve la ficha sin cobertura por primera vez | sí |
+| R | plazos 16 a 18 | los valores de la ventana de relectura de la cancelación por rechazo, el escalamiento de una marca abierta y la ventana de pagos y órdenes | **1**: 7 días, 7 días y 180 días | sí |
+| S | R3 (lote N) | cuándo se borran las tres columnas viejas | **1**: en el mismo despliegue del paso 3, después de la clasificación (lo ya aplicado) | sí |
+| T | R30 | qué se hace con lo que el viejo acepta entre el recuento del paso 2 y la migración del paso 3 | **1**: se repiten los recuentos con el viejo apagado, antes de migrar; si no coinciden, aborto (lo ya aplicado) | sí |
+| U | R17 (lote K) | qué hace el barrido con una suscripción cancelada por rechazo que el proveedor revive dentro de la ventana | **1**: manda la cancelación que habría mandado, con sus 3 días de reintento y la marca si no se confirma; los cobros entrados quedan propuestos para devolver | sí |
+| V | R9 | dónde vive la lista de sondas que el receptor de producción no debe cancelar | **1**: en el código del package del cobro, importada como módulo; si falta, no compila | sí |
+| W | R26 | dónde se asienta la transferencia de un pagador manual que no cae en una cuota abierta | **1**: un segundo pago del mismo período, que abre la marca de cobro duplicado con propuesta de devolver (simétrico con la tarjeta) | sí |
+| X | `F-8V3B3-004` | con qué fecha entra a la segunda corrida del detector del corte un alta sin `expire_date` | **1**: la fecha de creación más un ciclo, y la segunda corrida lista igual todo registro que siga abierto | sí |
+| Y | R6 (lote E) | si dos addons recurrentes iguales sobre el mismo objetivo son una recompra legítima | **1**: no; el candado de la identidad de compra frena también si ya hay uno vivo | sí |
+| Z | lote D, K | dónde se guarda que una relectura vio la suscripción cancelada | **1**: una columna con el instante de la primera relectura que la vio `cancelled`, en el vínculo con el proveedor | sí |
+| AA | R1 | si el link de reclamo de un Partner lleva un secreto | **1**: sí; un secreto de un solo uso que viaja sólo en el aviso | sí |
+| AB | log y matriz | si se aplican las nueve propuestas al log (siete 📌 y `DEC-AUTH-004`/`-005` nuevas) y las tres filas nuevas de la matriz (`EX-57` a `EX-59`) de `14-aplicacion-cierre.md` § «Para el owner», con Q sumado a `DEC-ARCH-006`, Y a `DEC-CONC-001` y los valores de R a `DEC-DATA-008` | **1**: sí, todo como está | sí |
 
 ## Lo que no pidió decisión
 
@@ -43,6 +56,6 @@ según el §6 del consolidado. Va a la tanda de aplicación.
 
 ## Contra la recomendación
 
-Tres de quince: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
+Tres de veintiocho: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
 existe por arrastre de I. La J deja declaradas en el «NO cierra» del corte tres
 situaciones con daño de clase crítica que exigen una falla previa.
