@@ -352,8 +352,12 @@ terminal con el preapproval vivo. **Cuando la relectura lo ve vivo —`authorize
    que se escribió (~~`B/21` §2.5, paso 4 de `16-fase-7…` §4.2~~ §2.4), ~~y el reintento sale **sin** correo
    *«antes de cancelar»*: la comunicación del corte es la del corte, no la de una baja~~ (FASE 5,
    simplificación del corte, S-40 y S-70: esa excepción del correo era de la lápida del corte, que
-   salió; ⚠️ si el reintento sobre la de recepción repite el correo del handler vuelve al owner,
-   registro `17-aplicacion-cobro-capitulos-b.md`).
+   salió; ~~⚠️ si el reintento sobre la de recepción repite el correo del handler vuelve al owner,
+   registro `17-aplicacion-cobro-capitulos-b.md`~~). **El reintento sobre la lápida de recepción
+   sigue la regla de toda cancelación nuestra, la del punto 1: el correo sale una sola vez, el del
+   handler antes del primer intento, y no se repite si se entregó**; si no había destinatario, el
+   reintento lo intenta de nuevo sin efecto y no bloquea (`B/03` §3.2) (FASE 5, lote de la
+   aplicación, owner 2026-09-30, K).
 3. **Y la misma regla alcanza a la fila que la cancelación dejó VIVA**: la `CANCEL_SCHEDULED` de
    `S11` ~~y de `S26`, que mandan~~ (`S26` salió con la revisión del owner, 2026-09-28, C8), que manda la cancelación en el acto y no llega a terminal hasta `S12`. El
    barrido la reintenta ya ahí, por el par `authorized`/`paused`/`pending` × `CANCEL_SCHEDULED` de

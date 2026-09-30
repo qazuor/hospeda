@@ -136,9 +136,12 @@ moderar—, que es lo que el código de hoy evita a propósito al revocar sin to
 - **El contenido se conserva.** No se baja, no se archiva y no se borra nada: lo único que cambia
   es la respuesta de la lectura.
 - **Lo que hoy archiva la presencia sale con el cobro viejo** (FASE 5, owner 2026-09-30, lote 1 D,
-  `F5-U1-044`, `F5-API-016`). `U1` borra las columnas de pago de `partners` (entre ellas
-  `subscription_status`, y `plan_id` y `subscription_id`, que llevan las FK), sus FK a tablas del
-  cobro viejo, y los tres crons de partner
+  `F5-U1-044`, `F5-API-016`). `U1` borra las columnas de pago de `partners` (~~entre ellas
+  `subscription_status`, y `plan_id` y `subscription_id`, que llevan las FK~~ **las seis:
+  `subscription_status`, `plan_id`, `subscription_id`, `unpaid_notice_sent_at`,
+  `payment_review_state` y `payment_confirmed_through`**; `plan_id` y `subscription_id` llevan las
+  FK; **`starts_at` y `ends_at` quedan hasta `V7`**: FASE 5, lote de la aplicación, owner
+  2026-09-30, H), sus FK a tablas del cobro viejo, y los tres crons de partner
   (`partner-expiry` y `partner-unpaid-reaper`, que la archivan, y `partner-payment-review`). **Desde
   `U1` hasta `V7` la lectura pública no muestra ninguna presencia**: la que la vuelve a mostrar es
   la regla de este §, que construye `V7`. No tiene población: hoy Partner tiene cero filas.
@@ -344,13 +347,19 @@ De ahí sale que un Partner sin reclamar **no publica nada y no se le cobra nada
 presencia publicada porque no hay quién la cargue, y no hay suscripción porque nadie autorizó un
 débito. Lo único que existe es una fila.
 
-**Y aprobar asigna el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la
-recomendación). Es un rol nuevo con su familia de operaciones y sus permisos, y llega con su
+**Y ~~aprobar asigna~~ el rol de socio se da en el acto que fija al dueño de la presencia** (FASE
+5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación; **a qué cuenta y en qué
+acto: FASE 5, lote de la aplicación, owner 2026-09-30, F**): **el reclamo** (§2.4), que lo da a la
+cuenta con que se reclama, **o el alta directa del admin con dueño** (camino B); **no al aprobar
+la postulación**. Es un rol nuevo con su familia de operaciones y sus permisos, y llega con su
 migración de datos; el paso 3 de la cadena pregunta por esa familia en toda operación del dueño de
 un Partner (cap. 17 §1.2). **No se quita** cuando el socio pierde la página o el carrusel: perder
-el acceso nunca revoca un rol (cap. 17 §4.1). ⚠️ **A qué cuenta se asigna no está decidido**:
+el acceso nunca revoca un rol (cap. 17 §4.1). ~~⚠️ **A qué cuenta se asigna no está decidido**:
 aprobar no conoce la cuenta del dueño hasta el reclamo (§2.4), y el camino B no aprueba ninguna
-postulación; vuelve al owner (`HOS-1352/docs/38-fase-5/14-aplicacion-verticales-capitulos.md` §5).
+postulación; vuelve al owner (`HOS-1352/docs/38-fase-5/14-aplicacion-verticales-capitulos.md` §5).~~
+Darlo al aprobar lo recibía la cuenta que tiene el correo, y no la que reclama: Juan postula con
+`juan@almacen.com`, una cuenta vieja con ese correo es de otra persona, y Juan, que reclama desde
+la suya, quedaba dueño sin el rol.
 
 **No vence, y queda visible.** Igual que la pendiente del §2.3: aparece como no reclamada en el
 panel ~~y el admin puede darla de baja~~ y no se da de baja: es inofensiva y ninguna fila la saca

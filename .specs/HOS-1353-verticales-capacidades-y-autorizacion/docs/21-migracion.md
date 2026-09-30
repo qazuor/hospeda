@@ -92,10 +92,17 @@ disponible ahora**, mientras son ocho.
 > de cortesía—, **una ficha cada una**; si entra alguien que el owner quiere conservar, lo suma a la
 > lista, y si trae más de una ficha, vuelve al owner (lote A). Las cinco nacen **`PUBLISHED`** (o
 > lo que diga la lista) y **ninguna otra ficha se clasifica**: sale la tabla de traducción
-> `L1`–`L8`. Si hay aborto, el backup del 2b restaura lo borrado (`16-fase-7…` §4.2). **La prueba
-> gratis de las cinco la escribe el script del corte, después de la migración, con la función de
-> la aplicación** (FASE 5, owner 2026-09-30, lote 2 D; S-12), y las fotos y el token de calendario
-> de las fichas borradas los borra el paso 5b (S-04). Lo que abajo razona sobre *«toda ficha
+> `L1`–`L8`. Si hay aborto, el backup del 2b restaura lo borrado (`16-fase-7…` §4.2), **y la regla
+> que bloquea toda escritura queda puesta hasta el reintento: la plataforma entera, las cinco
+> cuentas incluidas, queda en sólo lectura mientras tanto** (FASE 5, lote de la aplicación, owner
+> 2026-09-30, A, elegida contra la recomendación, que era levantar la regla general y bloquear sólo
+> las rutas de venta del viejo). **La prueba gratis de las cinco la escribe ~~el script del corte~~
+> la herramienta del corte de `V6`, que es del sistema nuevo, después de la migración, con la
+> función de la aplicación; el script suelto del corte sigue sin importar código de ningún
+> sistema** (FASE 5, owner 2026-09-30, lote 2 D; S-12; FASE 5, lote de la aplicación, owner
+> 2026-09-30, B), y las fotos y el token de calendario de las fichas borradas los borra el paso 5b
+> (S-04), **que los lee de la tabla de paso que la migración llenó antes de borrarlas** (FASE 5,
+> lote de la aplicación, owner 2026-09-30, D; abajo, *«qué borra el paso 5b»*). Lo que abajo razona sobre *«toda ficha
 > preexistente»*, *«el dueño con una ficha a la vista»* o la cartera queda tachado donde está.
 >
 > **Revisión del owner, 2026-09-28, C12, `L1-a`, `L1-b`.** **El día del corte, las fichas que
@@ -173,9 +180,9 @@ su fila nace consumida. Si el grant se revocara quedarían sin grant y sin trial
 owner y *«regenerables de cero»* (`B/21` §2.4), y eso se declara, no se diseña.
 
 **Y desde C12 se declara así** (revisión del owner, 2026-09-28, C12; como lo dice
-`30-revision-del-owner/01-impacto-producto.md` § C12): **~~la migración del paso 3~~ el script del
-corte, después de la migración del paso 3, les escribe la prueba activa** (FASE 5, owner
-2026-09-30, lote 2 D), porque ~~tienen fichas a la vista~~ son dos de las cinco cuentas de la lista
+`30-revision-del-owner/01-impacto-producto.md` § C12): **~~la migración del paso 3~~ ~~el script del
+corte~~ la herramienta del corte de `V6`, después de la migración del paso 3, les escribe la prueba
+activa** (FASE 5, owner 2026-09-30, lote 2 D; FASE 5, lote de la aplicación, owner 2026-09-30, B), porque ~~tienen fichas a la vista~~ son dos de las cinco cuentas de la lista
 (FASE 5, simplificación del corte, S-13, que lo mantiene), **y el 3b les escribe el grant**; el grant es un título
 que convierte, así que `T2` convierte en el acto y **la prueba queda consumida**. Es inofensivo: las
 dos cuentas son del owner y *«regenerables de cero»*. No se las excluye de la migración.
@@ -329,10 +336,20 @@ almacenamiento externo y el token de calendario en el proveedor de toda ficha qu
 cinco**; la fila ya la borró la migración del paso 3 (S-02). Queda después del paso 5 por la misma
 razón que antes: lo externo no lo restaura ningún backup, y un aborto dejaría fichas que el viejo
 restaura sin fotos y con el calendario muerto. La herramienta se sigue pudiendo correr dos veces.
-⚠️ **Lo que esto reabre, y no está decidido**: el párrafo tachado no partía el borrado en dos
+~~⚠️ **Lo que esto reabre, y no está decidido**: el párrafo tachado no partía el borrado en dos
 *«porque las fotos quedarían sin fila que las nombre»*, y S-04 lo parte: con la fila borrada en el
 paso 3, el 5b tiene que saber de otro lado qué fotos y qué tokens borrar. De dónde lo lee vuelve al
-owner (`HOS-1352/docs/38-fase-5/13-aplicacion-verticales-migracion-y-descomposicion.md` §5).
+owner (`HOS-1352/docs/38-fase-5/13-aplicacion-verticales-migracion-y-descomposicion.md` §5).~~
+**De dónde lo lee el 5b: de una tabla de paso** (FASE 5, lote de la aplicación, owner 2026-09-30,
+D). El párrafo tachado no partía el borrado en dos *«porque las fotos quedarían sin fila que las
+nombre»*, y S-04 lo parte; lo que las nombra ahora es esa tabla. **La migración del paso 3, antes
+de borrar las fichas que no son de las cinco, copia a una tabla de paso el id de cada una, las
+rutas de sus fotos y su token de calendario; el 5b la recorre —borra las fotos, revoca y borra
+cada token— y la borra al terminar.** El token no sale de la base: ningún archivo fuera de ella
+guarda credenciales de terceros. **El backup del 2b es anterior a la migración del paso 3, así que
+no la contiene**: un aborto restaura las fichas sin la tabla, que no hace falta porque las filas
+siguen ahí, y la migración del reintento la vuelve a llenar (derivado de D y del orden de los
+pasos; `16-fase-7…` §4.2).
 
 > ~~**Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
 > se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
@@ -471,10 +488,13 @@ lápida del corte sale: FASE 5, simplificación del corte, S-40, lote C).
 
 > ~~**La migración estructural del corte le escribe a cada `(dueño, vertical)` con al menos una
 > ficha `L8` una fila de `trial` en `TRIAL_ACTIVE`, que arranca en el instante del corte.**~~
-> **El script del corte, después de la migración estructural del paso 3, le escribe a cada una de
-> las cinco cuentas de la lista una fila de `trial` en `TRIAL_ACTIVE` en la vertical de su ficha,
-> que arranca en el instante del corte, con la función de la aplicación** (FASE 5, owner
-> 2026-09-30, lote 2 D; simplificación del corte, S-12). Las cinco se verifican a mano. Se resigna
+> **~~El script del corte~~ La herramienta del corte de `V6`, después de la migración estructural
+> del paso 3, le escribe a cada una de las cinco cuentas de la lista una fila de `trial` en
+> `TRIAL_ACTIVE` en la vertical de su ficha, que arranca en el instante del corte, con la función
+> de la aplicación** (FASE 5, owner 2026-09-30, lote 2 D; simplificación del corte, S-12). **Es
+> la herramienta de `V6`, del sistema nuevo, como las del 4c y el 5b, porque la función del
+> seudónimo es del sistema nuevo; el script suelto del corte sigue sin importar código de ningún
+> sistema** (FASE 5, lote de la aplicación, owner 2026-09-30, B). Las cinco se verifican a mano. Se resigna
 > que el corte sea una sola operación atómica: con cinco filas no importa (lote 2 D).
 
 - **Qué se escribe**: la fila que escribe `T1` (`V/03` §2): el `user_id`, la vertical, el plan de
@@ -483,7 +503,8 @@ lápida del corte sale: FASE 5, simplificación del corte, S-40, lote C).
   **seudónimo del correo calculado con la misma función que `T1`** (`V/02` §2.2), y **la campaña
   previa agendada** (§10.7). Es la misma fila con otro escritor. **La cuota mensual de la prueba
   ancla ese día** (`V/15` §7).
-- **Dónde y cuántas veces**: ~~en la migración estructural del paso 3~~ en el script del corte,
+- **Dónde y cuántas veces**: ~~en la migración estructural del paso 3~~ ~~en el script del corte~~
+  en la herramienta del corte de `V6` (FASE 5, lote de la aplicación, owner 2026-09-30, B),
   después de la migración estructural del paso 3 (lote 2 D), **una sola vez**, como la
   escritura `C` de `inactiva_desde` (`NUCLEO/01` §1.2). **Y después de cargar el catálogo de
   producción, ~~en esa misma migración~~ que carga la migración como SQL generado** (FASE 5,
@@ -494,10 +515,12 @@ lápida del corte sale: FASE 5, simplificación del corte, S-40, lote C).
   orden, ~~la migración fallaba~~ la escritura fallaba o, con las referencias anulables, la fila nacía sin plan ni fin y
   `T3` no la vencía nunca. La de un corte abortado no cuenta: la rama
   de aborto restaura el backup y el reintento escribe con su instante. ~~Repetir la migración no
-  escribe dos~~ Correr el script dos veces no escribe dos: el `UNIQUE(user_id, vertical)` lo impide.
+  escribe dos~~ Correr ~~el script~~ la herramienta dos veces no escribe dos: el
+  `UNIQUE(user_id, vertical)` lo impide.
 - **Es una fila de `trial` que ninguna transición produce**, igual que la lápida de billing es la
   única `CANCELLED` que ninguna transición produce (`B/21` §2.5). Los guards que enumeran los
-  escritores de `trial` la admiten **por su lugar** —desde el lote 2 D, el script del corte—, como
+  escritores de `trial` la admiten **por su lugar** —desde el lote 2 D, ~~el script del corte~~ la
+  herramienta del corte de `V6` (FASE 5, lote de la aplicación, owner 2026-09-30, B)—, como
   admiten la escritura `C`.
 - **Qué pasa después**: lo de cualquier prueba. Si el dueño contrata, `T2` convierte; si vence sin
   título, `T3` la vence y `PB2` baja la ficha, con el hecho 5 en el reloj.
@@ -516,8 +539,9 @@ pasos 0 y 2; la segunda sale: FASE 5, simplificación del corte, S-36):
    también la primera prueba de cualquier cliente nuevo).
 2. ~~**El recuento de cuentas de la cartera que comparten seudónimo en la misma vertical**: el
    `UNIQUE(seudónimo, vertical)` rechaza la segunda fila y la migración del paso 3 se cae. Tiene que
-   dar cero; si no, se decide a mano antes del corte.~~ **Sale**: son cinco filas, que el script
-   escribe y se verifican a mano (FASE 5, simplificación del corte, S-36; lote 2 D).
+   dar cero; si no, se decide a mano antes del corte.~~ **Sale**: son cinco filas, que ~~el script~~
+   la herramienta del corte de `V6` escribe y se verifican a mano (FASE 5, simplificación del
+   corte, S-36; lote 2 D; FASE 5, lote de la aplicación, owner 2026-09-30, B).
 
 ~~**Y el riesgo que la escritura trae, declarado**: el reloj de la prueba corre desde el corte aunque
 el owner tarde en avisarle a la persona. Lo acota que el owner avise en persona, y el aviso de la

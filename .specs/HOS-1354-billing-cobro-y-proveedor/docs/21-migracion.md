@@ -199,7 +199,8 @@ pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
 
 **El corte no escribe ninguna fila de rastro** (FASE 5, owner 2026-09-30, simplificación del
 corte, lote C; S-40, S-41, S-42, S-76). Salen la lápida del corte con su paso 4, su herramienta,
-los dos choques del `UNIQUE` y `origen_de_lápida = CORTE`; la ventana del día del corte, y el
+los dos choques del `UNIQUE` y `origen_de_lápida = CORTE` (y después la columna entera: FASE 5,
+lote de la aplicación, owner 2026-09-30, I); la ventana del día del corte, y el
 detector posterior al corte con sus dos corridas. **Un cobro tardío de un preapproval del sistema
 viejo** —porque la cancelación del 1b se aceptó y no se aplicó, o porque ya estaba en vuelo—
 **entra por la lápida de recepción, como cualquier desconocido** (cap. 09 §2.4; owner
@@ -264,7 +265,8 @@ viejo se imputaba como pago del ciclo nuevo: pagó dos veces y el sistema regist
 > motivo `TRANSICIÓN_NO_DECLARADA`, el 6 de `B/02` §2.5, el mismo que escribe el cap. 09 §2.4—, y
 > lo mira una persona. **Si lo que llega es un cobro aprobado, el motivo es
 > `PAGO_TARDÍO_RECHAZADO`; y si el desconocido no nombra ninguna fila, la marca cuelga de una
-> lápida de recepción** (`origen_de_lápida = RECEPCIÓN`) que el handler escribe al recibirlo (cap.
+> lápida de recepción** (~~`origen_de_lápida = RECEPCIÓN`~~ `clase = LÁPIDA`; FASE 5, lote de la
+> aplicación, owner 2026-09-30, I) que el handler escribe al recibirlo (cap.
 > 09 §2.4; FASE 9 vuelta 1, `F-8V1B3-001`; owner 2026-09-26, `G3-2`). *«Otro `provider_link`
 > vivo»* se lee *«la fila ya tiene su `provider_link`»* (`B/02` §2.2, `UNIQUE(subscription_id)`;
 > FASE 9 vuelta 1, R12).
@@ -309,8 +311,9 @@ los estados vivos (cap. 02 §2.2; FASE 5, simplificación del corte, S-40).
 > la de recepción (`RECEPCIÓN`, que escribe el handler al recibir un desconocido que no nombra
 > ninguna fila); desde `G3-2` son dos formas de la misma fila, las dos con `clase = LÁPIDA` (owner
 > 2026-09-26; FASE 9 vuelta 1, corregido el *«única»*)—,~~ **la de recepción es la única fila `CANCELLED` de todo el sistema
-> que ninguna transición produce, y `origen_de_lápida` queda con un solo valor, `RECEPCIÓN`**
-> (FASE 5, simplificación del corte, S-40 y S-70), y
+> que ninguna transición produce~~, y `origen_de_lápida` queda con un solo valor, `RECEPCIÓN`~~**
+> (FASE 5, simplificación del corte, S-40 y S-70; **sale la columna `origen_de_lápida`: `clase =
+> LÁPIDA` alcanza**, FASE 5, lote de la aplicación, owner 2026-09-30, I), y
 > eso no es exclusivo del corte: cualquier escritura manual futura hereda el mismo agujero. Por
 > eso la exención del cap. 09 §3 quedó escrita como **criterio** —quién dejó al preapproval sin
 > poder cobrar— y no como enumeración de transiciones: una fila que no nace de ninguna transición
@@ -394,7 +397,11 @@ se crea.
 volver atrás el reemplazo entero del sistema de cobro— que no es el rollback de ocho filas y no se
 escribe acá. **Y ya está decidido: pasado el paso 3 del corte, sólo hacia adelante**; antes, la
 rama de aborto restaura el backup (`16-fase-7-del-paraguas.md` §4.2 y §4.3; owner 2026-09-25, FASE 9
-completa, `2c` y `2e`).
+completa, `2c` y `2e`). **Y tras un aborto, la regla que bloquea toda escritura queda puesta
+hasta el reintento**: la plataforma entera, las cinco cuentas incluidas, queda en sólo lectura
+mientras tanto, sin lista de rutas, así que el sistema viejo no vuelve a vender (FASE 5, lote de
+la aplicación, owner 2026-09-30, A, elegida contra la recomendación de levantar la regla general y
+bloquear sólo las rutas de venta del viejo).
 
 ---
 
@@ -495,7 +502,10 @@ corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición
   (FASE 5, owner 2026-09-30, lote 1 B y lote 2 A), los grants de
   destaque, `entity_subscriptions`, **`partner_subscriptions`** (FASE 9 vuelta 1, `F-8V1C2-014`), **con las columnas de pago de
   `partners`, sus FK y los tres crons de Partner, que borra `U1`** (FASE 5, owner 2026-09-30,
-  lote 1 D), y
+  lote 1 D) —**en una lista cerrada de seis**: `subscription_status`, `plan_id`,
+  `subscription_id`, `unpaid_notice_sent_at`, `payment_review_state` y
+  `payment_confirmed_through`; **`starts_at` y `ends_at` quedan** hasta la unidad de socios
+  (FASE 5, lote de la aplicación, owner 2026-09-30, H)—, y
   las columnas denormalizadas que el código de hoy lee, ~~como~~ **en una lista cerrada** (FASE 5,
   owner 2026-09-30, lote 1 E y F): `featured_by_entitlement` **y
   `is_featured`** en las tres
@@ -606,7 +616,11 @@ corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición
   corte**, que tiene su propia decisión (`G3-1`: se asienta sobre la lápida sin marca, §2.5).~~ *(Lo de la constancia sale: lo cubre
   `DEC-MIG-007`; FASE 5, simplificación del corte, S-53.)* **Y un cobro tardío de un débito viejo
   después del corte le aparece al owner**, marcado para decidir la devolución (§2.5; FASE 5,
-  simplificación del corte, lote C).
+  simplificación del corte, lote C). **Salvo el aviso que llegue entre apagar lo viejo y levantar lo
+  nuevo**: en esos minutos no hay servidor que lo atienda ni Worker del borde que conteste `500`,
+  así que puede no reintentarse y no aparecer; se declara y se acepta, porque son minutos y tres
+  cuentas con débito que el owner conoce, y si pasa lo ve en su cuenta de Mercado Pago o se lo dice
+  la persona (`DEC-MIG-007`, puntos 3 y 4; FASE 5, lote de la aplicación, owner 2026-09-30, C).
   ~~**Y alcanza igual al titular de una autorización que sólo conoce el proveedor** (owner
   2026-09-27, FASE 9 vuelta 2, `R21`; `F-8V2C2-003`): pierde lo que pagó por el período en curso,
   como los demás, y **el correo de baja del sistema viejo no le llega** —el handler viejo responde

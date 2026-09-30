@@ -99,8 +99,13 @@ la base.** El §1.2 ya lo decía; lo que faltaba era cómo llegan los valores y 
    Es historia y no configuración: el paso 6 del mismo corte la reemplaza con la foto de la base.
    **La migración lleva el catálogo como SQL generado por un script TypeScript**, que se commitea,
    y **un guard lo regenera y lo compara**, porque una migración estructural es SQL y no puede
-   llamar código TypeScript. **La prueba del corte ya no la escribe la migración: la escribe después
-   el script del corte**, con la función de la aplicación y el seudónimo del correo, sólo para las
+   llamar código TypeScript. **La tabla de claves viaja igual: SQL generado por script desde el
+   catálogo de claves del código, vigilado por el mismo control, que cubre las dos cargas y cuenta
+   como guard: los guards pasan de 33 a 34** (FASE 5, lote de la aplicación, owner 2026-09-30, E;
+   llega antes que el catálogo, con `V1`). **La prueba del corte ya no la escribe la migración: la
+   escribe después** ~~el script del corte~~ **la herramienta del corte de `V6`, que es del sistema
+   nuevo; el script suelto del corte sigue sin importar código de ningún sistema** (FASE 5, lote de
+   la aplicación, owner 2026-09-30, B), con la función de la aplicación y el seudónimo del correo, sólo para las
    cinco cuentas de la lista, y se verifica a mano. Se resigna que catálogo y pruebas sean una sola
    operación atómica: con cinco filas no importa (FASE 5, owner 2026-09-30, lote 2 D;
    simplificación del corte, S-12).
@@ -120,7 +125,7 @@ regalar una capacidad paga a toda la plataforma sin que ningún guard lo viera.
 
 | lo que se rechaza | antes | ahora |
 |---|---|---|
-| una clave de la base que no está en el catálogo | `G3`, segunda dirección | **restricción de la base**: la tabla de claves la escribe la migración desde el catálogo, y toda asignación apunta a ella por FK |
+| una clave de la base que no está en el catálogo | `G3`, segunda dirección | **restricción de la base**: la tabla de claves la escribe la migración desde el catálogo, **como SQL generado por script y vigilado por el control que lo regenera y compara, el mismo del catálogo de producción (§1.4 punto 2)** (FASE 5, lote de la aplicación, owner 2026-09-30, E), y toda asignación apunta a ella por FK |
 | lo que las dos versiones no vendibles otorgan, las dos claves del piso, la capacidad de activación y la herencia de VIP (`V/02` §2.1) | `G-R3`, sus cuatro mitades | **validación de *«publicar una versión de plan»***, con el mismo nombre y cada mitad con su mensaje (`V/20` §2) |
 | dos versiones vendibles y vigentes con el mismo `rank` en una vertical | restricción de la base (`V/10` §2) | **la misma restricción**, y el panel la chequea antes para dar el mensaje |
 | un plan sin exactamente una versión vigente | regla escrita (`V/10` §2) | **restricción de la base** (a lo sumo una) y **validación del panel** (al menos una) |
@@ -189,7 +194,7 @@ al log en `30-revision-del-owner/19-` §4).
 **Los ~~cinco~~ ~~ocho~~ cinco sin valor escrito, el 3, el 4, el 7, el 8 ~~y el 9~~ y el 9 ~~, el 16, el 17 y el 18~~ (el 16, el 17 y el 18 los fijó el owner: FASE 9 vuelta 3, owner 2026-09-30, lote R), los fija el owner ~~antes del ensayo del
 corte en `staging`~~ **antes del merge de `V6`** (FASE 5, owner 2026-09-30, lote 3 D: la migración
 que los necesita corre en el e2e de cada PR desde que se mergea, no desde el ensayo), y ~~la migración única del catálogo~~ la migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43; la migración, verificación corta, 2026-09-29, lote N-H): ~~la primera versión de los plazos de cada mitad nace en el paso 3a
-(`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los ~~quince~~ dieciocho valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica** (la prueba la escribe después el script del corte: FASE 5, owner 2026-09-30, lote 2 D), y un plazo vacío dejaría un reloj sin fecha.
+(`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los ~~quince~~ dieciocho valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica** (la prueba la escribe después ~~el script del corte~~ la herramienta del corte de `V6`: FASE 5, owner 2026-09-30, lote 2 D; FASE 5, lote de la aplicación, owner 2026-09-30, B), y un plazo vacío dejaría un reloj sin fecha.
 
 ~~**Los valores que se le proponen al owner para los tres nuevos** (FASE 9 vuelta 3; pregunta
 abierta, `37-fase-8-vuelta-3/13-aplicacion-nucleo-contrato-y-corte.md` §6)~~ **Los valores de los tres

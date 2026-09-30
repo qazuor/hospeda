@@ -89,6 +89,14 @@ compra tiene un candado propio más allá de la pantalla**: mientras haya una in
 (`EX-17`: el proveedor no deduplica). **Y en el recurrente frena también si ya hay una instancia
 viva del mismo `(dueño, producto, objetivo)`**: el mismo `UNIQUE` parcial la incluye (FASE 9 vuelta 3, owner 2026-09-30, lote Y).
 
+**Y la devolución de una orden también se serializa con la base, no con un lock**: el `POST` de
+la devolución devuelve todas las de la orden y el id de la nueva sale por resta (`EX-58`), así que
+dos simultáneas vuelven ambigua la resta. **Un índice parcial impone a lo sumo una devolución de la
+misma orden esperando su id** —con su clave persistida y sin el id todavía escrito— (`B/02` §2.3):
+la segunda no puede persistir su llamada hasta que la primera tenga su id. Una llamada que nunca
+responde deja la orden esperando hasta que el barrido la reenvía con la misma clave (`B/03` §6.1
+`RF2`, `B/09` §3) (FASE 5, lote de la aplicación, owner 2026-09-30, J).
+
 ---
 
 ## 2. Los seis cruces del §52 · cierra `E-CONC-01`
@@ -345,7 +353,7 @@ que el pago llegó tarde.**
 |---|---|
 | ~~la condición **1** falla porque la fila está `CANCELLED` **y la cancelamos nosotros o la pidió el cliente** —~~ ~~`S11`/`S12`, `S17`, `S22`, `S23`, `S24` o el espejo del `B/03` §10.1~~ ~~**toda transición que lleva la fila a `CANCELLED` salvo las de un *Free Forever***: `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, `S25`, `S27`, `S31` o el espejo del `B/03` §10.1 (FASE 9 completa, C-5, `F-8CB1-017`: `S21`, `S25`, `S27` y `S31` caían en el comodín, contra el criterio de abajo)~~ **una terminal cuyo preapproval canceló un acto nuestro o del cliente, o el proveedor**, salvo un *Free Forever*: `CANCELLED` por `S11`/`S12`, `S17`, `S21`, `S22`, `S23`, `S24`, ~~`S25`, `S27`,~~ `S31`, **`S36`** o el espejo del `B/03` §10.1 (**`S36`**, FASE 9 vuelta 1, `N-G3V-04`: el criterio ya la cubría y la enumeración no); `ABANDONED` por `S3` ~~, `S28`~~ o `S31`; `CHARGE_DECLINED` por `S16`. **Y una `CANCEL_SCHEDULED` —de `S7` o `S11` ~~o `S26`~~— con el cobro posterior a la cancelación** (FASE 9 vuelta 1, R4: la lista enumeraba transiciones a `CANCELLED` y dejaba en el comodín a `ABANDONED`; `S25`, `S27`, `S28` y `S26` salieron con la revisión del owner, 2026-09-28, C8, a `CHARGE_DECLINED` y a toda fila que no nace de una transición) | **`COBRO_POSTERIOR_A_LA_BAJA`** (§2 `C2`) |
 | la condición **1** falla porque la fila está `CANCELLED` **y la cerró un *Free Forever*** — `S13` o `S20` | **`COBRO_POSTERIOR_AL_GRANT`** (§2 `C3`) |
-| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —`origen_de_lápida = RECEPCIÓN`, `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4)~~; **y el cobro sobre la lápida del corte**~~ ~~con `date_created`~~ ~~**cuyo pago aprobado es posterior al día del corte** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-a`) (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`)~~ (la lápida del corte salió: un cobro tardío de un débito viejo entra por la de recepción, como cualquier desconocido; FASE 5, simplificación del corte, S-40 y S-70) | **`PAGO_TARDÍO_RECHAZADO`** |
+| **cualquier otra forma de fallar**: ~~la **1** sobre una fila `ABANDONED` o ya `ACTIVE`, y las condiciones **2**, **3** y **4** enteras~~ la **1** sobre una `ACTIVE`, o sobre una `PAUSED` con el cobro posterior a la pausa; las condiciones **2**, **3** y **4** enteras; **el cobro de un preapproval que no es el vínculo de la fila** (`B/09` §2.4); y **todo cobro sobre una lápida de recepción** —~~`origen_de_lápida = RECEPCIÓN`~~ `clase = LÁPIDA` (FASE 5, lote de la aplicación, owner 2026-09-30, I: sale la columna de origen), `B/02` §2.2— (`B/09` §2.4, owner 2026-09-26, `G3-2`) (FASE 9 vuelta 1, R4)~~; **y el cobro sobre la lápida del corte**~~ ~~con `date_created`~~ ~~**cuyo pago aprobado es posterior al día del corte** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-a`) (`B/21` §2.5; owner 2026-09-27, FASE 9 vuelta 2, `R2`)~~ (la lápida del corte salió: un cobro tardío de un débito viejo entra por la de recepción, como cualquier desconocido; FASE 5, simplificación del corte, S-40 y S-70) | **`PAGO_TARDÍO_RECHAZADO`** |
 
 > **Lo que este § no desempata, porque la fila puede recibir el cobro** (FASE 9 vuelta 1, R4): una
 > `PENDING_AUTHORIZATION` —se relee el preapproval por id, corre `S2` y el cobro se asienta sobre

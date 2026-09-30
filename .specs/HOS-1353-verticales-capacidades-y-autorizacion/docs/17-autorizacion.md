@@ -73,7 +73,7 @@ falla.
 | — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre ~~una ficha~~ un recurso que guarda su vertical, la vertical se lee ~~de la ficha~~ del recurso y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la ~~de la ficha~~ del recurso, **no existe**, con la respuesta del paso 4 |
 | 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) **y en `PP1`, postular un Partner, que es la segunda excepción** (precisión 9; FASE 9 vuelta 3, owner 2026-09-30, lotes I y M). **Una cuenta dada de baja no es un actor autenticado**: la acción 24 escribe `user.deleted_at` y borra sus credenciales, y ninguna sesión nace sobre ella (`NUCLEO/08` §3; FASE 9 vuelta 3, `F-8V3A1-004`) | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | ~~inhabilitada, o~~ correo sin verificar (FASE 9 completa, 8b) |
-| 3 | **permiso** | ¿pertenece a la familia de operaciones? **En Partner también: la familia es la del rol de socio**, que se asigna al aprobar la postulación y no se quita cuando el socio pierde su presencia (§4.1; cap. 18 §2.5) (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación, que era declarar este paso vacuo en Partner y dejar que lo cubriera la propiedad del paso 4) | sin permiso |
+| 3 | **permiso** | ¿pertenece a la familia de operaciones? **En Partner también: la familia es la del rol de socio**, que se asigna ~~al aprobar la postulación~~ **en el acto que fija al dueño de la presencia —el reclamo, o el alta directa del admin con dueño— (FASE 5, lote de la aplicación, owner 2026-09-30, F)** y no se quita cuando el socio pierde su presencia (§4.1; cap. 18 §2.5) (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación, que era declarar este paso vacuo en Partner y dejar que lo cubriera la propiedad del paso 4) | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? **Si el sujeto no es el dueño, el recurso existe sólo en estado público** (precisión 7) **y sólo para una operación que no escribe: una escritura exige `sujeto = dueño`** (FASE 9 vuelta 2, `F-8V2A1-001`). **El sujeto no lo elige el pedido** (precisión 8) | **no existe** — las tres juntas |
 | 5 | **fuente viva** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
@@ -476,6 +476,15 @@ no una excepción a la lista.
    —`set-role` era además un segundo camino para asignar roles, fuera de la acción 26—, el botón
    del panel y el permiso `USER_IMPERSONATE`. HOS-354, que la quería de vuelta, se cierra o se
    reescribe como el *«entrar como»* de una versión posterior.
+
+   **Y el rol de administrador del plugin queda sin ninguna acción** (FASE 5, lote de la
+   aplicación, owner 2026-09-30, L): `fullAdminRole` (`apps/api/src/lib/auth.ts:76-89` en
+   `origin/staging`), que `SUPER_ADMIN` y `ADMIN` reciben, lista hoy `create`, `list`, `set-role`,
+   `ban`, `impersonate`, `delete`, `set-password`, `get` y `update` sobre `user`, y `list`,
+   `revoke` y `delete` sobre `session`; `V5` lo deja vacío, como `noAdminRole`. `user: delete` era
+   una puerta de borrado físico de cuentas, contra el lote 3 C. **El plugin queda sólo como guardia
+   del baneo en el inicio de sesión**: rechaza la sesión de un baneado, y eso no depende del rol.
+   Hoy toda ruta del plugin ya contesta `403`, así que vaciar el rol no rompe nada que funcione.
 5. **Una acción administrativa nunca tiene `actor = sujeto`: el paso 3 la rechaza** (*«sin
    permiso»*) y la hace otra cuenta con el permiso (owner 2026-09-26, `G5-1`; FASE 9 vuelta 1,
    `F-8V1A1-001`). Con roles aditivos, la persona que confirma podía ser la interesada —un `ADMIN`
@@ -687,8 +696,10 @@ partes:
 **Perder el acceso NUNCA revoca un rol.** Ni la suspensión por impago, ni el vencimiento del
 trial, ni la cancelación, ni la pausa ~~, ni la discontinuación de una vertical (cap. 10 §4)~~ (las verticales no se discontinúan: revisión del owner, 2026-09-28, C8).
 
-**Tampoco el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B): se asigna al aprobar la
-postulación de Partner (§1.2 paso 3; cap. 18 §2.5), y cuando el socio pierde la página o el
+**Tampoco el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B): se asigna ~~al aprobar la
+postulación de Partner~~ **en el acto que fija al dueño de la presencia —el reclamo, o el alta
+directa del admin con dueño—, no al aprobar la postulación** (FASE 5, lote de la aplicación,
+owner 2026-09-30, F) (§1.2 paso 3; cap. 18 §2.5), y cuando el socio pierde la página o el
 carrusel el rol queda, como cualquier otro.
 
 **Y el proceso de hoy que archiva borradores y revoca un rol sale** (FASE 5, owner 2026-09-30,

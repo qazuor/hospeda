@@ -73,8 +73,10 @@ consumida de cada dueño existente, `V/21` §2.4; FASE 8 completa, owner 2026-09
 no escribe ninguna fila de `trial` en el corte: los dueños del sistema viejo arrancan como clientes
 nuevos — owner 2026-09-25, FASE 9 completa, decisión 2g; **y desde la revisión del owner,
 2026-09-28, C12, escribe una: la prueba activa** ~~de cada dueño con una ficha a la vista, `V/21`
-§2.4,~~ **de cada una de las cinco cuentas de la lista, que escribe el script del corte con la
-función de la aplicación, después de la migración** (FASE 5, owner 2026-09-30, lote 2 D;
+§2.4,~~ **de cada una de las cinco cuentas de la lista, que escribe** ~~el script del corte~~
+**la herramienta del corte de `V6`, que es del sistema nuevo,** (FASE 5, lote de la aplicación,
+owner 2026-09-30, B: el script suelto del corte sigue sin importar código de ningún sistema) **con
+la función de la aplicación, después de la migración** (FASE 5, owner 2026-09-30, lote 2 D;
 simplificación del corte, S-12), **que tampoco es una transición y se admite por su lugar, como
 `C`**)* ~~, nombrada aparte de las transiciones en toda lista que la cuenta (`B/21` §2.5, `B/09`
 §3)—~~.

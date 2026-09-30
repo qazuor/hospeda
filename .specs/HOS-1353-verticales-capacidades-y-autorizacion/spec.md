@@ -63,7 +63,7 @@ cruza por contrato es la cobertura (`12-contrato…`) (FASE 9 vuelta 1, `F-8V1D1
 | `17` | [autorización](./docs/17-autorizacion.md) | los ~~nueve~~ siete pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia —la página y el carrusel, cada uno con su clave, y su bit de moderación (owner 2026-09-25; FASE 9 completa, 7b y 7c)— y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones, **y el botón de suscribirse que manda a publicar a quien todavía no publicó** (owner 2026-09-25; FASE 9 completa, 6c) **si publicar le arrancaría el trial, con la regla escrita sólo en `19` §4 fila 23** (FASE 9 vuelta 1, `F-8V1D1-004`) |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ ~~**veintiún guards**~~ **diecinueve guards** (revisión del owner, 2026-09-28: `G-R3` y `G-R5-B` pasan a ser validaciones del panel, por N1 y C9, y conservan su fila sin contarse; antes, en la misma revisión, la cifra se mantuvo: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y ~~**diecisiete guards**~~ ~~**dieciocho guards**~~ ~~**diecinueve guards**~~ ~~**veinte guards**~~ ~~**veintiún guards**~~ ~~**diecinueve guards**~~ **veinte guards** (entra `G18`, el control que regenera y compara el SQL generado del catálogo y de la tabla de claves: FASE 5, lote de la aplicación, owner 2026-09-30, E) (revisión del owner, 2026-09-28: `G-R3` y `G-R5-B` pasan a ser validaciones del panel, por N1 y C9, y conservan su fila sin contarse; antes, en la misma revisión, la cifra se mantuvo: sale `G-R5` por C14 y entra `G14` por N6; `G-R5-B`, FASE 8 completa; `G-R2-C`, owner 2026-09-25, FASE 9 completa, 4e; `G13`, que vino de `B/20` §2: owner 2026-09-26, `G5-5`; `G-R9`, la lista cerrada de `PURGED`: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido —~~que el corte sembraba~~ **que el corte no siembra: los dueños del sistema viejo arrancan como clientes nuevos** (owner 2026-09-25; FASE 9 completa, 2g)—, cómo amanece la población existente, **con su ficha a la vista publicada y una prueba gratis activa desde el día del corte** (revisión del owner, 2026-09-28, C12), la escritura `C` de `inactiva_desde`, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | ~~las señales de identidad y~~ el ~~hash irreversible~~ **seudónimo determinístico** del correo (FASE 9 completa, `C-1`); las señales que sólo observaban (teléfono, identificador fiscal, dispositivo) no se guardan (revisión del owner, 2026-09-28, N7, `g2`) |
 
@@ -387,9 +387,9 @@ acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ## 5. Cómo se comprueba que está bien
 
-**~~Siete~~ ~~Ocho~~ Nueve guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`) **y `G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6)—, y cada uno **lleva un caso que lo
+**~~Siete~~ ~~Ocho~~ ~~Nueve~~ Diez guards con id propio de esta épica** —`G1`-`G6`, `G8`, **`G13`** (el octavo lo construye `V4`: owner 2026-09-26, `G5-5`), **`G14`** (el noveno, la frontera del package del contrato; lo construye `V1`: revisión del owner, 2026-09-28, N6) **y `G18`** (el décimo, el control del SQL generado del catálogo y de la tabla de claves; lo construye `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E)—, y cada uno **lleva un caso que lo
 hace fallar a propósito**, porque un guard que no puede fallar es un comentario con exit code 0.
-**~~Siete~~ ~~Ocho~~ Nueve NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintiuno**~~ **diecinueve** (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
+**~~Siete~~ ~~Ocho~~ ~~Nueve~~ Diez NO es el total**: el catálogo del capítulo `20` §2 lista ~~**diecisiete**, y los diez~~ ~~**dieciocho**, y los once~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintiuno**~~ ~~**diecinueve**~~ **veinte** (con `G18`: FASE 5, lote de la aplicación, owner 2026-09-30, E) (recontado el 2026-09-28 sobre la tabla: decía veinte sin `G-R9`; sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
 `G-R2-C` (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo, `G13`, que vino de `B/20` §2—, y los ~~**doce**~~ **diez** que no
 están en esta tabla son los `G-R*` —los racimos de la FASE 9 y sus ~~**cuatro**~~ **tres** referencias cruzadas (sale `G-R5`, C14)
 con billing—, que se numeran ahí y no acá. Esta lista es **la porción con id propio**; la lista entera
@@ -406,6 +406,7 @@ es la del `20` §2, que es el único lugar donde se puede preguntar *«¿están 
 | `G8` | ~~aparece `commerce` en fuentes activas~~ **aparece el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo del repositorio, con el PDR como única exención por nombre** (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`), **y hasta el corte con una lista de pendientes cerrada, las dos historias, que el paso 6 del corte ~~vacía~~ saca; un build destinado a producción después del corte falla si ~~no está vacía~~ le queda una** (revisión del owner, casos vecinos, 2026-09-29, caso 8), **regla que enciende el mismo commit del paso 6** (caso F-B); **y una tercera entrada, las carpetas del programa en `.specs/`, hasta el commit del cierre de HOS-1352, que la saca y extiende la regla a la lista entera** (revisión del owner, casos vecinos, 2026-09-29, caso H-A)**, sólo esas: las specs de otros issues y `.qtm/` las limpia ~~`V1`~~ la limpieza del principio** (caso I-D; lote N-A)**, que hace `U1`, la unidad del paraguas, y construye este guard en el mismo cambio** (verificación corta, 2026-09-29, lote O-A)~~**; y un trinquete de archivos, la lista medida del código que la nombra el día que nace el guard, que sólo se achica y que el cierre exige vacío** (verificación corta, 2026-09-29, lote M-E)~~; **sin lista de pendientes de código: el código del sistema viejo sale de la rama en la limpieza del principio, antes de construir lo nuevo** (verificación corta, 2026-09-29, lote N-A; `16-fase-7…` §4.6) |
 | `G13` | ~~la implementación **de arranque** de `cobertura()` llega a producción~~ **un build destinado a producción importa una de las seis respuestas de arranque que contestan por billing: las cuatro fuentes, `retenciónDetenida` y `puedeCobrarle`** (`V/20` §2; FASE 9 vuelta 3, `F-8V3C1-002`, `F-8V3D1-001`) (contrato §6.3; lo construye `V4`: owner 2026-09-26, `G5-5`) |
 | `G14` ✚ | **una mitad importa a la otra** fuera del package del contrato (contrato §7.1; lo construye `V1`: revisión del owner, 2026-09-28, N6, `L1-d`) |
+| `G18` ✚ | **el SQL generado del catálogo o de la tabla de claves no es el que el script regenera desde el código** (`V/20` §2; lo construye `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E) |
 
 **`G1` y `G2` son la pinza**: uno acota quién **puede** nombrar una vertical, el otro obliga a que
 las operaciones **lo hagan**. Por separado, cada uno deja pasar lo que el otro atrapa.
@@ -433,9 +434,11 @@ diario de cobertura~~ ~~**las que estaban a la vista nacen `PUBLISHED`, como rec
 corte le escribe a su dueño una prueba gratis activa que arranca ese día; las que el sistema viejo
 tenía bajadas por falta de pago nacen en `DRAFT`** (revisión del owner, 2026-09-28, C12, `L1-b`:
 es la única fila nueva de verticales que escribe el corte, una prueba activa, no transcrita de
-ninguna)~~ **nacen `PUBLISHED`, como recién creadas, y el script del corte, después de la
-migración, le escribe a cada dueño una prueba gratis activa que arranca ese día, con la función de
-la aplicación** (revisión del owner, 2026-09-28, C12; FASE 5, lote 2 D y S-12: es la única fila
+ninguna)~~ **nacen `PUBLISHED`, como recién creadas, y ~~el script del corte~~ la herramienta
+del corte de `V6`, que es del sistema nuevo, después de la migración, le escribe a cada dueño una
+prueba gratis activa que arranca ese día, con la función de la aplicación; el script suelto del
+corte sigue sin importar código de ningún sistema** (FASE 5, lote de la aplicación, owner
+2026-09-30, B) (revisión del owner, 2026-09-28, C12; FASE 5, lote 2 D y S-12: es la única fila
 nueva de verticales que escribe el corte, una prueba activa, no transcrita de ninguna), y la página del partner sin presencia pasa de responder 410 a 404 (`V/21`
 §2.4 y §4). *(Decía «nada que migrar y nada que romper», y la escritura `C` es una escritura sobre
 filas existentes; salida 3 de la FASE 9 completa.)*
@@ -458,7 +461,9 @@ filas existentes; salida 3 de la FASE 9 completa.)*
   `17` (*«lo que este capítulo NO cierra»*) y en `NUCLEO/08` §3. **Y el código apagado que hoy lo
   prepara sale**: `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón del panel
   y el permiso `USER_IMPERSONATE`; HOS-354 se cierra o se reescribe como el *«entrar como»* de esa
-  versión (FASE 5, owner 2026-09-30, lote 4 C; lo hace `V5`).
+  versión (FASE 5, owner 2026-09-30, lote 4 C; lo hace `V5`). **Y el rol de administrador del
+  plugin (`fullAdminRole`) queda sin ninguna acción**: el plugin sigue sólo como guardia del baneo
+  en el inicio de sesión (FASE 5, lote de la aplicación, owner 2026-09-30, L).
 - **La baja de cuenta pedida por el usuario** (revisión del owner, 2026-09-28, N7, `g1`): fuera de
   esta épica; la hace soporte a mano con una lista de pasos, y se corrige la FAQ
   ([HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393); `NUCLEO/08` §1). **La lista se

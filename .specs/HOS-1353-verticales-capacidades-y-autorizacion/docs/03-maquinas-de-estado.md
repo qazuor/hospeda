@@ -373,9 +373,10 @@ queda fuera de esta versión, y **el panel no deja pasar los días de prueba de 
 más de 0 ni al revés** (`11` §8). Sin encendido, la fila de *«no declara evento, o días = 0»* es un
 estado final. **Lo que decía del corte** (que no escribe filas de `trial`, `2g`) **lo supera la
 revisión del owner, C12**: el corte escribe una prueba activa a ~~cada dueño con una ficha a la vista
-(`V/21` §2.4)~~ **cada una de las cinco cuentas de la lista cerrada, y la escribe el script del
-corte con la función de la aplicación, después de la migración** (FASE 5, simplificación del corte,
-S-12; lote 2 D; `V/21` §2.4).
+(`V/21` §2.4)~~ **cada una de las cinco cuentas de la lista cerrada, y la escribe ~~el script del
+corte~~ la herramienta del corte de `V6` con la función de la aplicación, después de la migración**
+(FASE 5, simplificación del corte, S-12; lote 2 D; `V/21` §2.4; FASE 5, lote de la aplicación,
+owner 2026-09-30, B).
 
 **Y `cubierto` no se puede referir a sí mismo por accidente**, que es la trampa obvia de
 condicionar una máquina de trial sobre la cobertura: la fuente del trial en `PRE_TRIAL` tiene
@@ -534,7 +535,8 @@ revalidación a este estado**, que reemplaza a `lifecycle_state`, `visibility` y
 `moderation_state`, y las tres viejas se borran en el paso 3 del corte (cap. 02 §2.5). Sin esto,
 `PB2`, `PB4` y sobre todo `PB10` dejaban la página servida desde el borde hasta que venciera su
 caché. **`PB9` no revalida**, aunque `F5-SUP-020` la listaba: sale de `ARCHIVED`, que ya no se
-veía.
+veía. **El criterio lo confirmó el owner: refrescan la página pública sólo los pasos que entran o
+salen de `PUBLISHED`, lo ya aplicado** (FASE 5, lote de la aplicación, owner 2026-09-30, G).
 
 **Ninguna otra puerta borra ni restaura una ficha** (FASE 5, owner 2026-09-30, lote 3 C,
 `F5-BD-012`, `F5-SUP-017`). Las de hoy —el borrado del dueño que escribe `deleted_at`, y el
