@@ -103,6 +103,7 @@ fi
 
 # Copy env (script must run from ROOT, absolute dest). Prefer the declarative
 # adapter path; older checkouts continue using setup.envCopyScript.
+ADAPTER_CFG="$WTPATH/.qz/project.json"
 ECS="$(jq -r '.worktree.envSource.relativePath // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
 [ -n "$ECS" ] || [ -z "$NEWCFG" ] || ECS="$(jq -r '.setup.envCopyScript // empty' "$NEWCFG")"
 if [ -n "$ECS" ] && [ -f "$ROOT/$ECS" ]; then
@@ -125,7 +126,6 @@ if [ -x "$ENV_PREPARE" ]; then
 fi
 
 # Install + build inside the worktree (packages must build before dev).
-ADAPTER_CFG="$WTPATH/.qz/project.json"
 INSTALL="$(jq -r '.worktree.install // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
 BUILD="$(jq -r '.worktree.build // empty' "$ADAPTER_CFG" 2>/dev/null || true)"
 [ -n "$INSTALL" ] || [ -z "$NEWCFG" ] || INSTALL="$(jq -r '.setup.install // empty' "$NEWCFG")"
