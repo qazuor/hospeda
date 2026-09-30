@@ -82,3 +82,21 @@ Filtrado contra `DEC-MIG-007` y la J del lote 1, **se descartan sin volver al ow
 Pendiente anunciado al owner: un lote propio de **simplificación del corte** a la luz de
 `DEC-MIG-007` (clasificación de fichas `L1`–`L8`, restauraciones, recuentos del paso 0, gates del
 seudónimo), después de los lotes 4 a 6.
+
+## Lotes 4, 5 y 6 — producto, `B6` y textos (2026-09-30)
+
+| letra | racimo | elegida | contra la recomendación | qué decide |
+|---|---|---|---|---|
+| A | `R5-23` | 2 | no | `V7` crea la postulación propia de Partner (la de `V/02` §2.7); `alliance_leads` queda para los otros tipos (patrocinadores, editores, proveedores), fuera de este programa |
+| B | `R5-24` | 2 | **sí** | se crea un **rol de socio** con su familia de operaciones, sus permisos y su migración de datos, asignado al aprobar la postulación; el paso 3 de la cadena pregunta por esa familia. Por `V/17` (*«perder el acceso nunca revoca un rol»*), el rol **no se quita** cuando el socio pierde su presencia |
+| C | `R5-25` | 1 | no | vale el diseño: salen `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón y el permiso `USER_IMPERSONATE`; HOS-354 se cierra o se reescribe como el *«entrar como»* de una versión posterior |
+| D | `R5-26` | 1 | no | `V5` pasa a `404` la respuesta a una ficha ajena `RESTRICTED` (la excepción VIP de `error-contract.md`) y su test |
+| E | `R5-29` | 1 | no | `trial` y las tablas de sólo agregar nacen sin `deleted_at` |
+| F | `R5-27` | 1 | no | las devoluciones de una misma orden se serializan; el id de la nueva sale por resta contra las registradas; sale de `RF3` la rama *«de su mismo monto»* para órdenes; un `409` es error de programación (clave mal derivada), no *«ya estaba hecha»*; se corrige la nota de `RF2` sobre `RF-6`, que es del pago |
+| G | `R5-28` | 1 | no | se corrigen las siete frases de una vez; en `AUT-016` se corrige sólo la razón (`banned`, `ban_reason`, `ban_expires` existen y son de Better Auth) y esas columnas se conservan |
+
+**Contra la recomendación: B.** La recomendada era declarar el paso 3 vacuo para Partner y dejar que
+lo cubra la propiedad del paso 4, como hoy (una línea). El owner eligió crear el rol: la cadena queda
+igual para todas las cuentas, al precio de un rol, sus permisos, su migración y la asignación al
+aprobar. El choque que la recomendación señalaba (quitar el rol al perder la presencia) se resuelve
+no quitándolo, como manda `V/17`.
