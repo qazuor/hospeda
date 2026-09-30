@@ -16,7 +16,9 @@ areas:
 # Rediseño integral de Verticales y Billing
 
 > **Esto es el paraguas del programa. Desde el 2026-09-18 no se implementa: se implementan sus dos
-> hijas.**
+> hijas.** **Salvo una unidad propia, `U1`, la limpieza del principio: borra el sistema viejo de la
+> rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo**
+> (verificación corta, 2026-09-29, lote O-A; [`docs/16-fase-7-del-paraguas.md`](./docs/16-fase-7-del-paraguas.md) §4.6).
 >
 > | | | |
 > |---|---|---|
@@ -198,7 +200,7 @@ abortan si el máximo a cobrar no coincide con la cifra autorizada.
    carpetas no fallan por `G8`, porque los puntos 1 a 3 todavía no se hicieron.
 
 El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
-limpieza ~~de `V1`~~ del principio (`V/21` §4; `docs/16-fase-7-del-paraguas.md` §4.6; verificación corta, 2026-09-29, lote N-A).
+limpieza ~~de `V1`~~ del principio (`V/21` §4; `docs/16-fase-7-del-paraguas.md` §4.6; verificación corta, 2026-09-29, lote N-A), que hace `U1`, la unidad del paraguas (lote O-A).
 
 ## Lo que necesita al owner
 

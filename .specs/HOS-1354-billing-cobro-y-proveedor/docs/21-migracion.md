@@ -187,14 +187,14 @@ tratarlo por la salvedad 4 del cap. 09 §3, **y comparar los cobros posteriores 
 (abajo; FASE 9 vuelta 2, `R2`)—, y el corte no tendría de dónde sacarlo sin leer las
 tablas que retira. **La dispara una persona**: el operador corre, en el paso 4, la herramienta del
 corte sobre el manifiesto que produjo el 1b. La escritura la construye y la prueba **B11**.
-**Y corre antes de que la URL de notificación apunte al handler nuevo** (FASE 9 vuelta 2,
-`F-8V2B3-003`, `F-8V2C2-002`; `16-fase-7…` §4.2, paso 4b): así ningún evento de un id del
+**Y corre antes de que ~~la URL de notificación apunte al handler nuevo~~ el borde abra la ruta de avisos, que el receptor nuevo comparte con el viejo y que el paso 3 dejó cerrada** (FASE 9 vuelta 2,
+`F-8V2B3-003`, `F-8V2C2-002`; `16-fase-7…` §4.2, pasos 3, 4 y 4b; verificación corta, 2026-09-29, lote O-B): así ningún evento de un id del
 manifiesto llega al handler nuevo sin su lápida del corte, y ninguno se vuelve lápida de
 recepción. **Ante `UNIQUE(proveedor, id)` la herramienta distingue dos choques**: con una lápida
 del corte del mismo id **saltea**, porque es la misma fila de una corrida anterior y correrla dos
 veces tiene que dar lo mismo; con **cualquier otra fila** —una lápida de recepción o una fila
 viva— **aborta antes de escribir nada**, porque ese choque sólo existe si el orden se rompió, y
-ahí la rama de aborto todavía cubre (el 4b no corrió). Saltearlo dejaría el cobro en vuelo de ese
+ahí la rama de aborto todavía cubre (~~el 4b no corrió~~ la ruta no se abrió: lote O-B). Saltearlo dejaría el cobro en vuelo de ese
 id con la marca de devolver, contra `G3-1`. **La
 misma forma de fila la usa la lápida de recepción** que el webhook escribe al recibir un
 preapproval desconocido que no nombra ninguna fila (cap. 09 §2.4; owner 2026-09-26, `G3-2`): la
