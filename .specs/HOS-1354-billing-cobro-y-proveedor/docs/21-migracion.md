@@ -505,7 +505,8 @@ corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición
   lote 1 D) —**en una lista cerrada de seis**: `subscription_status`, `plan_id`,
   `subscription_id`, `unpaid_notice_sent_at`, `payment_review_state` y
   `payment_confirmed_through`; **`starts_at` y `ends_at` quedan** hasta la unidad de socios
-  (FASE 5, lote de la aplicación, owner 2026-09-30, H)—, y
+  (FASE 5, lote de la aplicación, owner 2026-09-30, H), **y las borra `V7` con su migración,
+  junto con sus lectores del panel** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, O)—, y
   las columnas denormalizadas que el código de hoy lee, ~~como~~ **en una lista cerrada** (FASE 5,
   owner 2026-09-30, lote 1 E y F): `featured_by_entitlement` **y
   `is_featured`** en las tres

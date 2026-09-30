@@ -73,7 +73,7 @@ falla.
 | — | **contexto de vertical** | *(precondición estructural, §2)* — **en una operación sobre ~~una ficha~~ un recurso que guarda su vertical, la vertical se lee ~~de la ficha~~ del recurso y nunca del pedido** (precisión 6) | la operación no se puede expresar — y si el pedido declara otra vertical que la ~~de la ficha~~ del recurso, **no existe**, con la respuesta del paso 4 |
 | 1 | **quién es** | ¿hay un actor ~~?~~ **autenticado**? El `Guest` es un actor (§3.3) y **falla acá**, salvo en una lectura de lo ajeno en estado público (precisión 7) (FASE 9 vuelta 1, `F-8V1A1-006`) **y en `PP1`, postular un Partner, que es la segunda excepción** (precisión 9; FASE 9 vuelta 3, owner 2026-09-30, lotes I y M). **Una cuenta dada de baja no es un actor autenticado**: la acción 24 escribe `user.deleted_at` y borra sus credenciales, y ninguna sesión nace sobre ella (`NUCLEO/08` §3; FASE 9 vuelta 3, `F-8V3A1-004`) | no autenticado |
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | ~~inhabilitada, o~~ correo sin verificar (FASE 9 completa, 8b) |
-| 3 | **permiso** | ¿pertenece a la familia de operaciones? **En Partner también: la familia es la del rol de socio**, que se asigna ~~al aprobar la postulación~~ **en el acto que fija al dueño de la presencia —el reclamo, o el alta directa del admin con dueño— (FASE 5, lote de la aplicación, owner 2026-09-30, F)** y no se quita cuando el socio pierde su presencia (§4.1; cap. 18 §2.5) (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación, que era declarar este paso vacuo en Partner y dejar que lo cubriera la propiedad del paso 4) | sin permiso |
+| 3 | **permiso** | ¿pertenece a la familia de operaciones? **En Partner también: la familia es la del rol de socio**, que se asigna ~~al aprobar la postulación~~ **en el acto que fija al dueño de la presencia —~~el reclamo, o el alta directa del admin con dueño~~ el reclamo— (FASE 5, lote de la aplicación, owner 2026-09-30, F); el alta directa del admin no fija dueño: manda el aviso de reclamo, y el rol llega con el reclamo (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N)** y no se quita cuando el socio pierde su presencia (§4.1; cap. 18 §2.5) (FASE 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación, que era declarar este paso vacuo en Partner y dejar que lo cubriera la propiedad del paso 4) | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? **Si el sujeto no es el dueño, el recurso existe sólo en estado público** (precisión 7) **y sólo para una operación que no escribe: una escritura exige `sujeto = dueño`** (FASE 9 vuelta 2, `F-8V2A1-001`). **El sujeto no lo elige el pedido** (precisión 8) | **no existe** — las tres juntas |
 | 5 | **fuente viva** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
@@ -697,9 +697,10 @@ partes:
 trial, ni la cancelación, ni la pausa ~~, ni la discontinuación de una vertical (cap. 10 §4)~~ (las verticales no se discontinúan: revisión del owner, 2026-09-28, C8).
 
 **Tampoco el rol de socio** (FASE 5, owner 2026-09-30, lote 4 B): se asigna ~~al aprobar la
-postulación de Partner~~ **en el acto que fija al dueño de la presencia —el reclamo, o el alta
-directa del admin con dueño—, no al aprobar la postulación** (FASE 5, lote de la aplicación,
-owner 2026-09-30, F) (§1.2 paso 3; cap. 18 §2.5), y cuando el socio pierde la página o el
+postulación de Partner~~ **en el acto que fija al dueño de la presencia —~~el reclamo, o el alta
+directa del admin con dueño~~ el reclamo—, no al aprobar la postulación** (FASE 5, lote de la aplicación,
+owner 2026-09-30, F); **el alta directa del admin no fija dueño: manda el aviso de reclamo, y el
+rol llega con el reclamo** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N) (§1.2 paso 3; cap. 18 §2.5), y cuando el socio pierde la página o el
 carrusel el rol queda, como cualquier otro.
 
 **Y el proceso de hoy que archiva borradores y revoca un rol sale** (FASE 5, owner 2026-09-30,

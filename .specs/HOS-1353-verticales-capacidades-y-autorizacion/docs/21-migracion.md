@@ -345,7 +345,10 @@ D). El párrafo tachado no partía el borrado en dos *«porque las fotos quedar�
 nombre»*, y S-04 lo parte; lo que las nombra ahora es esa tabla. **La migración del paso 3, antes
 de borrar las fichas que no son de las cinco, copia a una tabla de paso el id de cada una, las
 rutas de sus fotos y su token de calendario; el 5b la recorre —borra las fotos, revoca y borra
-cada token— y la borra al terminar.** El token no sale de la base: ningún archivo fuera de ella
+cada token— y la borra al terminar.** **La tabla de paso vive sólo en el SQL de esa migración,
+fuera del esquema de Drizzle** (`packages/db/src/schemas/`): la crea el paso 3 y la borra el 5b,
+así que ni `G-R9` (`V/20` §2), que recorre el esquema, ni el control de drift entre el esquema y
+las migraciones la ven (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, P). El token no sale de la base: ningún archivo fuera de ella
 guarda credenciales de terceros. **El backup del 2b es anterior a la migración del paso 3, así que
 no la contiene**: un aborto restaura las fichas sin la tabla, que no hace falta porque las filas
 siguen ahí, y la migración del reintento la vuelve a llenar (derivado de D y del orden de los

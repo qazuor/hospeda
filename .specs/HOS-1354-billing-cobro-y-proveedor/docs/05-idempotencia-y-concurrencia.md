@@ -95,7 +95,9 @@ dos simultáneas vuelven ambigua la resta. **Un índice parcial impone a lo sumo
 misma orden esperando su id** —con su clave persistida y sin el id todavía escrito— (`B/02` §2.3):
 la segunda no puede persistir su llamada hasta que la primera tenga su id. Una llamada que nunca
 responde deja la orden esperando hasta que el barrido la reenvía con la misma clave (`B/03` §6.1
-`RF2`, `B/09` §3) (FASE 5, lote de la aplicación, owner 2026-09-30, J).
+`RF2`, `B/09` §3) (FASE 5, lote de la aplicación, owner 2026-09-30, J). **La segunda, la que la
+base frenó, la manda el barrido en su corrida siguiente**, cuando ya no queda ninguna de esa orden
+esperando su id (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, M).
 
 ---
 

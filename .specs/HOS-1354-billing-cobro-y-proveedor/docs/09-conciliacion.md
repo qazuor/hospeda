@@ -872,6 +872,14 @@ devoluciones de una misma orden se serializan**: dos a la vez vuelven ambigua la
 `409` es un error de programación** (la clave se derivó mal), no *«ya estaba hecha»*. La tabla de
 arriba y su *«salvo»* del mismo monto siguen valiendo para las devoluciones de un pago.
 
+**Y el barrido manda la devolución de una orden que la base frenó** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, M). El índice parcial
+de `B/02` §2.3 deja a lo sumo una devolución de la orden esperando su id, así que la segunda que
+se confirma a la vez queda en `CONFIRMED` sin llamada persistida. En su corrida siguiente, después
+de reenviar las llamadas sin respuesta, el barrido mira cada orden con una fila de `refund` en
+`CONFIRMED` sin llamada: **si ya no queda ninguna devolución de esa orden esperando su id, la
+manda**, con su clave persistida antes (`B/03` §6.1, `RF2`); si todavía queda una, la deja para la
+corrida siguiente. El mismo índice tampoco lo deja a él mandar dos de la misma orden a la vez.
+
 Sin esto, la devolución hecha por nuestro flujo cuyo aviso se perdía terminaba en el motivo 18,
 la persona asentaba un `RF4` por el mismo monto y la fila `CONFIRMED` seguía esperando un `RF3`
 que lo sumaba otra vez al acumulado. **Y *«menos devuelto que lo asentado»* no pide detector**:

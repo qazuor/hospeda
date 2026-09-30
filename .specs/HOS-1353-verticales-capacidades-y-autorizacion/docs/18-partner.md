@@ -141,7 +141,8 @@ moderar—, que es lo que el código de hoy evita a propósito al revocar sin to
   `subscription_status`, `plan_id`, `subscription_id`, `unpaid_notice_sent_at`,
   `payment_review_state` y `payment_confirmed_through`**; `plan_id` y `subscription_id` llevan las
   FK; **`starts_at` y `ends_at` quedan hasta `V7`**: FASE 5, lote de la aplicación, owner
-  2026-09-30, H), sus FK a tablas del cobro viejo, y los tres crons de partner
+  2026-09-30, H; **y `V7` las borra con su migración, junto con sus lectores del panel**: FASE 5,
+  lote de la aplicación, segunda tanda, owner 2026-09-30, O), sus FK a tablas del cobro viejo, y los tres crons de partner
   (`partner-expiry` y `partner-unpaid-reaper`, que la archivan, y `partner-payment-review`). **Desde
   `U1` hasta `V7` la lectura pública no muestra ninguna presencia**: la que la vuelve a mostrar es
   la regla de este §, que construye `V7`. No tiene población: hoy Partner tiene cero filas.
@@ -350,8 +351,10 @@ débito. Lo único que existe es una fila.
 **Y ~~aprobar asigna~~ el rol de socio se da en el acto que fija al dueño de la presencia** (FASE
 5, owner 2026-09-30, lote 4 B, `F5-AUT-025`, contra la recomendación; **a qué cuenta y en qué
 acto: FASE 5, lote de la aplicación, owner 2026-09-30, F**): **el reclamo** (§2.4), que lo da a la
-cuenta con que se reclama, **o el alta directa del admin con dueño** (camino B); **no al aprobar
-la postulación**. Es un rol nuevo con su familia de operaciones y sus permisos, y llega con su
+cuenta con que se reclama~~, **o el alta directa del admin con dueño** (camino B)~~; **no al aprobar
+la postulación**. **El alta directa del admin (camino B) no fija dueño: crea el Partner con
+`owner_user_id` nulo, manda el aviso de reclamo, y el rol llega con el reclamo**, como en el camino
+A; `owner_user_id` lo sigue escribiendo sólo el reclamo (cap. 02 §2.7) (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N). Es un rol nuevo con su familia de operaciones y sus permisos, y llega con su
 migración de datos; el paso 3 de la cadena pregunta por esa familia en toda operación del dueño de
 un Partner (cap. 17 §1.2). **No se quita** cuando el socio pierde la página o el carrusel: perder
 el acceso nunca revoca un rol (cap. 17 §4.1). ~~⚠️ **A qué cuenta se asigna no está decidido**:
