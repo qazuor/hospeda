@@ -86,7 +86,8 @@ reenvía `A3` con la misma clave antes de abandonar (`B/03` §8; `F-8V2B1-003`, 
 compra tiene un candado propio más allá de la pantalla**: mientras haya una instancia del mismo
 `(dueño, producto, objetivo)` en `PENDING_AUTHORIZATION`, un pedido nuevo no crea otra (`B/02`
 §2.4), que es también el candado del addon recurrente contra el doble clic, que no tenía ninguno
-(`EX-17`: el proveedor no deduplica).
+(`EX-17`: el proveedor no deduplica). **Y en el recurrente frena también si ya hay una instancia
+viva del mismo `(dueño, producto, objetivo)`**: el mismo `UNIQUE` parcial la incluye (FASE 9 vuelta 3, owner 2026-09-30, lote Y).
 
 ---
 

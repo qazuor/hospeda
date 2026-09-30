@@ -226,8 +226,8 @@ los guards de limpieza las admiten hasta el corte, y **las borra una migración 
 3, después de la clasificación de `V6`** (`16-fase-7…` §4.2 y §4.6), que la escribe `V6` con la
 migración estructural del corte.
 `16-fase-7…` §4.2 la aplica en el mismo despliegue del paso 3, fechada
-después de la clasificación; si es ése o uno posterior al corte lo confirma el owner (FASE 9
-vuelta 3, lote N). Ningún guard de verticales las mira (`V/20` §2: `G8` busca una
+después de la clasificación ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9
+vuelta 3, lote N)~~, y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S). Ningún guard de verticales las mira (`V/20` §2: `G8` busca una
 palabra que ninguna de las tres tiene), así que la excepción no pide cambiar ninguna fila de allá.
 
 | clase | condición sobre las columnas viejas | nace en |

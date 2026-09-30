@@ -260,7 +260,7 @@ para que quien apruebe crea que lo pidió.
 usuario podía ser una cuenta que otro creó con esa dirección sin poder verificarla: la dueña de la
 casilla reclamaba, el Partner quedaba en la cuenta del ocupante, y el ocupante se cambiaba el
 correo y se lo llevaba. ~~Tres~~ Cinco reglas lo cierran (las dos últimas, FASE 9 vuelta 3, owner
-2026-09-30, lotes A y B):
+2026-09-30, lotes A y B; `DEC-AUTH-004`):
 
 1. **El reclamo exige sesión y vincula a la cuenta que reclama.** El link llega a la casilla, y
    quien lo abre inicia sesión en su cuenta, que es la que queda en `owner_user_id`. Nunca se
@@ -289,6 +289,13 @@ correo y se lo llevaba. ~~Tres~~ Cinco reglas lo cierran (las dos últimas, FASE
    link**: quien abre un link ya usado ve que ese Partner ya tiene dueño, y la pantalla lo deriva
    a soporte. Sin esto, cualquiera que leyera el aviso después (una casilla compartida, un ex
    empleado) movía el Partner a su cuenta, y la dueña seguía pagando una suscripción sin página.
+   **Y el link lleva un secreto de un solo uso que viaja sólo en el aviso** (FASE 9 vuelta 3, owner 2026-09-30, lote AA): lo
+   genera el acto que manda el aviso, al azar y sin derivarse del id del Partner ni del correo, y
+   la base guarda sólo su hash (`partner.secreto_de_reclamo`, cap. 02 §2.7), nunca el secreto. Un
+   link con el secreto equivocado, o sin él, contesta lo mismo que uno de un Partner que no
+   existe. El reclamo que escribe el vínculo vacía la columna, así que el mismo secreto no vuelve a
+   servir. Sin el secreto, leer la casilla no probaba nada: cualquiera que armara el link con el id
+   del Partner lo reclamaba.
 5. **Una cuenta, un Partner** (FASE 9 vuelta 3, owner 2026-09-30, lote B; `F-8V3A2-002`). La base
    no deja que una cuenta sea dueña de dos: una unicidad sobre `owner_user_id` donde no es nulo
    (cap. 02 §2.7). **El reclamo de un segundo Partner desde una cuenta que ya es dueña de uno se

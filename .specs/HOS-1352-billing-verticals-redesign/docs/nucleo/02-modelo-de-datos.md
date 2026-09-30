@@ -91,7 +91,7 @@ la base.** El §1.2 ya lo decía; lo que faltaba era cómo llegan los valores y 
 2. **El catálogo de producción nace el día del corte con una migración de datos única** (`L1-e`):
    corre una vez, ~~en el paso 3a del corte~~ **dentro de la migración estructural del paso 3 del
    corte, antes que la escritura `C` y la prueba del corte, que la leen, como la versión 1 de los
-   plazos (§1.5); el paso 3a sólo la verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C: la prueba
+   plazos (§1.5); el paso 3a sólo la verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C; `DEC-ARCH-013`, 📌: la prueba
    del corte deriva su plan de trial, sus versiones y su fin del catálogo, que antes nacía después)
    (`16-fase-7…` §4.2), y **nunca más es fuente de nada**. **Si falla a la mitad, falla la migración
    del paso 3 y el corte entra en la rama de aborto**, que restaura el backup del 2b: no queda un
@@ -166,23 +166,24 @@ al log en `30-revision-del-owner/19-` §4).
 | 13 | la renovación por venir | billing | 5 y 1 días antes | `NUCLEO/07` §6 | la suscripción, en cada ciclo |
 | 14 | el aviso de que una promo termina | billing | 7 días antes | `NUCLEO/07` §6 | el canje |
 | 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h | `B/12` §5.4 | la suscripción, en cada ciclo |
-| 16 ✚ | la **ventana de relectura de la cancelación por rechazo** | billing | sin valor escrito (a proponer al owner: §1.5, abajo) | cuánto sigue el barrido releyendo una suscripción que Mercado Pago canceló ante un rechazo antes de darla por terminada, porque ese `cancelled` se puede deshacer (`EX-45`; `B/09` §3, criterio de exención, y `S16`) (FASE 9 vuelta 3, owner 2026-09-30, lote K) | la suscripción, al leerse `cancelled` por primera vez |
-| 17 ✚ | el **escalamiento de una marca abierta** | billing | sin valor escrito (a proponer al owner) | cuándo escala una marca que sigue abierta (`B/09` §3, *«si sigue abierta pasado su plazo, escala»*) (FASE 9 vuelta 3, F-8V3B3-003) | la marca, al abrirse (`puesta_en`) |
-| 18 ✚ | la **ventana de las comprobaciones de pagos acreditados y de órdenes pagadas** | billing | sin valor escrito (a proponer al owner) | hasta cuánto después el barrido relee un pago acreditado, y una orden de una instancia `ABANDONED`: es una sola ventana, porque la de órdenes remite a la de pagos (`B/09` §3), y de ella cuelga el único productor del motivo 23 (FASE 9 vuelta 3, F-8V3B3-003) | el pago, o la instancia, que la comprobación relee |
+| 16 ✚ | la **ventana de relectura de la cancelación por rechazo** | billing | ~~sin valor escrito (a proponer al owner: §1.5, abajo)~~ **7 días** (FASE 9 vuelta 3, owner 2026-09-30, lote R) | cuánto sigue el barrido releyendo una suscripción que Mercado Pago canceló ante un rechazo antes de darla por terminada, porque ese `cancelled` se puede deshacer (`EX-45`; `B/09` §3, criterio de exención, y `S16`) (FASE 9 vuelta 3, owner 2026-09-30, lote K) | la suscripción, al leerse `cancelled` por primera vez: **`provider_link.cancelado_visto_en`** (`B/02` §2.2; FASE 9 vuelta 3, owner 2026-09-30, lote Z) |
+| 17 ✚ | el **escalamiento de una marca abierta** | billing | ~~sin valor escrito (a proponer al owner)~~ **7 días** (FASE 9 vuelta 3, owner 2026-09-30, lote R) | cuándo escala una marca que sigue abierta (`B/09` §3, *«si sigue abierta pasado su plazo, escala»*) (FASE 9 vuelta 3, F-8V3B3-003) | la marca, al abrirse (`puesta_en`) |
+| 18 ✚ | la **ventana de las comprobaciones de pagos acreditados y de órdenes pagadas** | billing | ~~sin valor escrito (a proponer al owner)~~ **180 días** (FASE 9 vuelta 3, owner 2026-09-30, lote R) | hasta cuánto después el barrido relee un pago acreditado, y una orden de una instancia `ABANDONED`: es una sola ventana, porque la de órdenes remite a la de pagos (`B/09` §3), y de ella cuelga el único productor del motivo 23 (FASE 9 vuelta 3, F-8V3B3-003) | el pago, o la instancia, que la comprobación relee |
 
 **Son dieciocho** (FASE 9 vuelta 3: el 16 por el lote K, owner 2026-09-30; el 17 y el 18 por
 `F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla ni unidad; recontados sobre la tabla).
-**Los ~~cinco~~ ocho sin valor escrito, el 3, el 4, el 7, el 8 ~~y el 9~~, el 9, el 16, el 17 y el 18, los fija el owner antes del ensayo del
+**Los ~~cinco~~ ~~ocho~~ cinco sin valor escrito, el 3, el 4, el 7, el 8 ~~y el 9~~ y el 9 ~~, el 16, el 17 y el 18~~ (el 16, el 17 y el 18 los fijó el owner: FASE 9 vuelta 3, owner 2026-09-30, lote R), los fija el owner antes del ensayo del
 corte en `staging`, y ~~la migración única del catálogo~~ la migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos, 2026-09-29, caso 43; la migración, verificación corta, 2026-09-29, lote N-H): ~~la primera versión de los plazos de cada mitad nace en el paso 3a
 (`16-fase-7…` §4.2)~~ **la versión 1 de los plazos de cada mitad, con los ~~quince~~ dieciocho valores, nace en la migración estructural del paso 3 (`16-fase-7…` §4.2), antes que la escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica**, y un plazo vacío dejaría un reloj sin fecha.
 
-**Los valores que se le proponen al owner para los tres nuevos** (FASE 9 vuelta 3; pregunta
-abierta, `37-fase-8-vuelta-3/13-aplicacion-nucleo-contrato-y-corte.md` §6): para el 16, **7 días**,
+~~**Los valores que se le proponen al owner para los tres nuevos** (FASE 9 vuelta 3; pregunta
+abierta, `37-fase-8-vuelta-3/13-aplicacion-nucleo-contrato-y-corte.md` §6)~~ **Los valores de los tres
+nuevos, fijados por el owner** (FASE 9 vuelta 3, owner 2026-09-30, lote R; `DEC-DATA-008`, 📌): para el 16, **7 días**,
 que cubre con margen las *«horas después»* que registra el código actual en los seis casos de
 `EX-45`; para el 17, **7 días**, una revisión por semana de lo que nadie resolvió; para el 18, **180
 días**, un techo prudente mientras la matriz no mida cuánto después de acreditado llega un
 contracargo (`RF-3` sigue `UNKNOWN`), sabiendo que su costo crece con los pagos (`B/09` §3). Ninguno
-está medido. **Qué hace concretamente *«escalar»*** no es de esta lista: lo escribe `B/09` §3.
+está medido: son los valores iniciales, y los cambia la acción 22 como a cualquier plazo. **Qué hace concretamente *«escalar»*** no es de esta lista: lo escribe `B/09` §3.
 
 **Lo que no está en la lista, y por qué.** **(a) Los plazos que son del catálogo**: los días de
 prueba, la gracia y los topes de pausa de un plan cuelgan de su versión y cambian publicando una

@@ -107,22 +107,25 @@ exactamente una de las dos es no nula.
 > abandonó la ve la comprobación de órdenes pagadas del barrido (`B/09` §3).~~
 >
 > **Y la compra tiene identidad propia, más allá de la pantalla** (FASE 9 vuelta 3, owner
-> 2026-09-30, lote E, `F-8V3B2-001`, `F-8V3B1-001`, `F-8V3B1-002`, `F-8V3B1-003`). El
+> 2026-09-30, lote E, `F-8V3B2-001`, `F-8V3B1-001`, `F-8V3B1-002`, `F-8V3B1-003`; `DEC-CONC-001`, 📌). El
 > identificador del pedido cubre el doble clic de la misma pantalla y no la pantalla recargada
 > después de un error, que es justo el caso de la respuesta perdida. Por eso:
 >
 > - **una pantalla nueva que encuentra una compra del mismo producto sobre el mismo objetivo sin
 >   resolver no deja comprar otra**: la identidad es `(dueño, producto, objetivo)`, con un
 >   `UNIQUE` parcial sobre las instancias en `PENDING_AUTHORIZATION` (`B/02` §2.4). Resuelta la
->   instancia, en el estado que sea, se puede volver a comprar: la recompra legítima no choca;
+>   instancia, en el estado que sea, se puede volver a comprar: la recompra legítima no choca
+>   (en el recurrente, salvo que la instancia siga viva: abajo);
 > - **la misma identidad es el candado del addon recurrente contra el doble clic** (`B/03` §8,
->   `A1`), que no tenía ninguno;
+>   `A1`), que no tenía ninguno; **y en el recurrente frena también si ya hay una instancia viva
+>   igual sobre el mismo objetivo** (FASE 9 vuelta 3, owner 2026-09-30, lote Y): dos destaques mensuales de la misma ficha no son una
+>   recompra legítima, porque el segundo cobra todos los meses sin comprar nada;
 > - **`A3` sólo confirma, nunca crea**: con id de orden la relee por id; sin id abandona sin
 >   reenviar (`B/03` §8);
 > - **la orden que se paga después de que `A3` abandonó la ve la comprobación de órdenes pagadas**
 >   del barrido, que la busca por el id guardado y, sin id, por el identificador del pedido que
->   la orden lleva como referencia (`B/09` §3), si el proveedor permite esa búsqueda (propuesto a
->   la matriz); si no la permite, ese caso queda sin detector y declarado (*«lo que este capítulo
+>   la orden lleva como referencia (`B/09` §3), si el proveedor permite esa búsqueda (~~propuesto a
+>   la matriz~~ `EX-57`); si no la permite, ese caso queda sin detector y declarado (*«lo que este capítulo
 >   NO cierra»*).
 >
 > **El costo, dicho**: quien perdió la respuesta no puede volver a comprar ese producto para ese
@@ -1076,13 +1079,15 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   está medido sólo en sandbox** (`EX-30`).
 - **La orden pagada cuya instancia `A3` abandonó sin id sólo se ve si el proveedor deja buscar una
   orden por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E). La medición
-  está propuesta a la matriz; **si da que no se puede, ese caso queda sin detector**: la persona
+  ~~está propuesta a la matriz~~ es `EX-57`, `UNKNOWN`; **si da que no se puede, ese caso queda sin detector**: la persona
   pagó, no recibió el addon y ninguna marca propone devolverle, hasta que reclame. Exige una
   respuesta perdida y un proveedor que igual creó y cobró la orden.
-- **Dos instancias `ACTIVE` del mismo addon recurrente sobre el mismo objetivo, compradas una
+- ~~**Dos instancias `ACTIVE` del mismo addon recurrente sobre el mismo objetivo, compradas una
   después de que la otra se resolvió**, no las frena la identidad de la compra, que mira sólo las
   pendientes (FASE 9 vuelta 3, lote E). Si eso es una recompra legítima o un error del cliente no
-  está decidido; hoy lo ve la persona en Mi Suscripción, con los dos cobros.
+  está decidido; hoy lo ve la persona en Mi Suscripción, con los dos cobros.~~ **Cerrado**: la
+  identidad de la compra frena también un addon recurrente igual sobre un objetivo que ya tiene uno
+  vivo, así que dos instancias `ACTIVE` iguales no pueden existir (FASE 9 vuelta 3, owner 2026-09-30, lote Y; §1.4, `B/02` §2.4).
 - **Qué hace un contracargo sobre el cobro de un addon periódico** (FASE 9 completa, borde 4 de
   §R7.5.2 de `04`; declarado por `DEC-METH-015`). `P6` abre la marca `CONTRACARGO` sobre la
   suscripción de complemento, que es la dueña del pago; si además corre `S6` sobre ella —y qué le

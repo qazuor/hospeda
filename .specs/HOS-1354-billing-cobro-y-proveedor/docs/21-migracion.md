@@ -88,7 +88,7 @@ población a avisar y a la lista con la que el owner llama** (owner 2026-09-27, 
 `R21`; `F-8V2C2-003`). El manifiesto del 1b trae, por cada id, su pagador ~~—el `payer_email` del
 preapproval—~~ **si alguna lectura lo da: el `GET` del preapproval devuelve `payer_email` vacío
 (`EX-19`) y ni `payer_id` identifica a la persona (`EX-56`), así que si lo traen el buscador sin
-filtro o el pago asociado se mide en sandbox** (propuesto a la matriz; FASE 9 vuelta 3, owner
+filtro o el pago asociado se mide en sandbox** (~~propuesto a la matriz~~ `EX-59`; FASE 9 vuelta 3, owner
 2026-09-30, lote G, `F-8V3B3-001`), y esa persona entra aunque no tenga ficha ni fila en la base.
 **Si ninguna lectura trae el pagador, esa persona no tiene detector**, y el «NO cierra» lo dice.
  ~~Como el manifiesto
@@ -97,7 +97,7 @@ declarado en *«lo que este capítulo NO cierra»*, con la forma de `G1-4`.~~ **
 como el de los demás** (owner 2026-09-27, FASE 9 vuelta 2, `R21-b`): **antes del aviso previo hay
 una pasada de sólo lectura sobre el proveedor** —el mismo recorrido sin filtro del 1b, sin
 cancelar nada— que lista las autorizaciones vivas con su ~~`payer_email`~~ pagador, **si la
-medición del lote G encuentra una lectura que lo traiga** (FASE 9 vuelta 3), y **suma a la
+medición del lote G (`EX-59`) encuentra una lectura que lo traiga** (FASE 9 vuelta 3), y **suma a la
 población a los titulares que la base no conoce**.
 El 1b cancela después, como está, y su manifiesto sigue
 haciendo falta: la lista puede envejecer entre la pasada y el 1b, y el titular que aparezca recién
@@ -115,9 +115,12 @@ después del corte**, porque `RC-7` la midió sobre ciclos de 1 y 2 días; por e
 las anuales vivas (`16-fase-7…` §4.2; FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-r`).
 **Hecho aportado por el owner: no hay anuales vivas en el sistema viejo ni las va a haber antes
 del corte** (FASE 9 vuelta 3, owner 2026-09-30, lote F); el recuento del paso 0 lo confirma.
-**Un registro abierto que es el de un alta no trae `expire_date`** (`RC-7`), y **con qué fecha
+**Un registro abierto que es el de un alta no trae `expire_date`** (`RC-7`), ~~y **con qué fecha
 entra a la segunda corrida es pregunta abierta** (registro de la FASE 9 vuelta 3, B;
-`F-8V3B3-004`).
+`F-8V3B3-004`)~~ **y entra a la segunda corrida con su `date_created` más un ciclo**, que es lo que
+`RC-7` mide en las renovaciones; **y la segunda corrida lista igual todo registro de los ids del
+manifiesto que siga abierto**, con o sin `expire_date`, así que un alta que sigue en `recycling`
+después de esa fecha no se pierde (FASE 9 vuelta 3, owner 2026-09-30, lote X; `F-8V3B3-004`).
 
 > 📌 **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
 > pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 del §3.1). Desde entonces *«cero pagos»* del §1.2 y *«no hay débitos
@@ -448,7 +451,8 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   después de la clasificación de `V6`** (`16-fase-7…` §4.6; FASE 9 vuelta 3, owner 2026-09-30,
   lote N).
   `16-fase-7…` §4.2 la aplica en el mismo despliegue del paso 3, fechada después de la
-  clasificación; si es ése o uno posterior al corte lo confirma el owner (FASE 9 vuelta 3, lote N).
+  clasificación ~~; si es ése o uno posterior al corte lo confirma el owner (FASE 9 vuelta 3, lote N)~~,
+  y es el que decidió el owner (FASE 9 vuelta 3, owner 2026-09-30, lote S).
   La frase tachada no se podía cumplir por orden: la migración de `U1` corre en el paso 3
   antes que la de clasificación.
 - ~~**`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
@@ -528,7 +532,7 @@ altas nuevas **no se transcriben**, se cancelan en el corte y se las llama como 
   **Población**: los ids del manifiesto del 1b que la base no conoce (el 2026-09-24 había uno, del
   propio owner, `16-fase-7…` §4.2), y de ellos, sin aviso previo, los que la pasada no vio.
   **Detector**: ~~la pasada y el manifiesto, con su `payer_email`, que suman esas personas a la lista
-  con la que el owner llama.~~ **condicionado a la medición del lote G**: la pasada y el manifiesto
+  con la que el owner llama.~~ **condicionado a la medición del lote G (`EX-59`)**: la pasada y el manifiesto
   suman esas personas a la lista con la que el owner llama **sólo si alguna lectura trae el
   pagador** (el buscador sin filtro o el pago asociado), porque el `GET` devuelve `payer_email`
   vacío (`EX-19`); **si ninguna lo trae, esta población no tiene detector**: el owner ve el id

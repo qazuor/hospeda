@@ -112,11 +112,15 @@ todos los meses da **un solo caso**.
 > tienen una medición abierta —enumerados en el manifiesto versionado de `mp-probes/`~~, que el
 > despliegue lleva consigo~~—. **Esa carpeta es de la spec, está marcada no productiva (`B/06`
 > §9) y sale del repositorio al cerrar HOS-1352, así que el handler de producción no puede
-> depender de ella** (FASE 9 vuelta 3, `F-8V3B3-006`): **de dónde lee la lista y qué hace si le
+> depender de ella** (FASE 9 vuelta 3, `F-8V3B3-006`): ~~**de dónde lee la lista y qué hace si le
 > falta es pregunta abierta** (registro de la FASE 9 vuelta 3, B), porque las dos respuestas
 > tienen daños distintos; `16-fase-7…` §4.2 recomienda el código del package del cobro,
 > importado como módulo, sin rama *«si le falta»*, y la decide el owner (FASE 9 vuelta 3, `F-8V3C2-008`);
-> hasta que se conteste, el test de **B11** que la ejercita no cierra.
+> hasta que se conteste, el test de **B11** que la ejercita no cierra.~~ **la lista vive en el código
+> del package del cobro, versionada con él, y el handler la importa como un módulo: si falta, el
+> build no compila, así que no hay rama *«si le falta»*** (FASE 9 vuelta 3, owner 2026-09-30, lote V; `16-fase-7…` §4.2). Agregar o
+> sacar una sonda es un cambio de código con su despliegue. El test de **B11** que la ejercita
+> importa la lista del módulo.
 > **Sobre uno de esos ids el handler escribe la lápida de recepción,
 > el `payment` y la marca, y no manda cancelar**, y el barrido tampoco: sin llamada nuestra no
 > entra a la salvedad 4 del §3, y la sigue la salvedad 2 mientras la marca esté abierta. La marca
@@ -231,20 +235,44 @@ en un `GET` inmediato y horas después decían `authorized` o `pending` (`EX-45`
 que esta exención soltaba en la primera relectura (la de `S16` sin llamada, y la del espejo), y
 una vez fuera del barrido sólo el aviso del cobro la devolvía, que puede no llegar (`WH-5`). **Se
 cuenta desde la primera relectura que lo vio `cancelled`**, y su valor es el del plazo 16 de la
-lista cerrada (`NUCLEO/02` §1.5). **Si
-durante la ventana la relectura lo ve `authorized` o `pending`**, la fila está en el barrido y la
+lista cerrada (`NUCLEO/02` §1.5), 7 días al inicio (FASE 9 vuelta 3, owner 2026-09-30, lote R). **Si
+durante la ventana la relectura lo ve `authorized` o `pending`**, ~~la fila está en el barrido y la
 lee la fila de estado del §3: un preapproval vivo sobre una fila que nunca mandamos cancelar es
 divergencia de estado y la mira una persona (§2.4), y si cobra, la comparación de cobros lo
 cuelga con el motivo de la tabla de desempate del `B/05` §3. **Si en cambio el barrido debe mandar
-la cancelación que `S16` habría mandado es pregunta abierta** (registro de la FASE 9 vuelta 3, B).
+la cancelación que `S16` habría mandado es pregunta abierta** (registro de la FASE 9 vuelta 3, B).~~
+**el barrido manda la cancelación que `S16` habría mandado** (FASE 9 vuelta 3, owner 2026-09-30, lote U): la misma llamada, con
+el correo antes y la relectura después (la regla de `S17`, `B/03` §3.2), sobre la fila de `S16` y
+sobre la del espejo, que la ventana sigue por igual. Desde esa relectura la fila entra a la
+salvedad 4 como una cancelación nuestra sin confirmar: **el barrido la reintenta durante 3 días,
+contados desde la relectura que la vio viva, y si no la ve `cancelled` abre la marca
+`CANCELACIÓN_SIN_CONFIRMAR`** (`B/02` §2.5, motivo 16). **Los cobros que entraron mientras tanto
+quedan propuestos para devolver**: la fila es terminal, así que la comparación de cobros los cuelga
+con el motivo que la tabla de desempate del `B/05` §3 le da a una terminal,
+`COBRO_POSTERIOR_A_LA_BAJA` (motivo 2), que ya propone devolver; no hace falta un motivo nuevo. Si
+la persona reautorizó a propósito, se le corta algo que igual no le daba servicio: la fila está
+terminal y no vuelve por esto. La relectura que la vio viva vacía `cancelado_visto_en` (abajo), así
+que la exención y la ventana vuelven a contar desde la próxima relectura que la vea `cancelled`.
 
-⚠️ **Qué dato guarda que una relectura vio `cancelled` no está escrito** (FASE 9 vuelta 3,
+~~⚠️ **Qué dato guarda que una relectura vio `cancelled` no está escrito** (FASE 9 vuelta 3,
 lote D). Lo leen tres cosas: la exención de arriba (*«nuestra llamada ya fue confirmada por una
 relectura»*), el reloj del plazo 16 (*«desde la primera relectura que lo vio `cancelled`»*) y
 `puedeCobrarle`, que `12-contrato…` §4.1 manda escribir acá. `provider_link` (`B/02` §2.2)
 guarda sólo el `last_modified` de la última relectura, y el registro de corridas del §7.1 no
 tiene entidad. Dónde vive es pregunta abierta del owner; hasta que conteste, `B4` y `B11` no
-tienen de dónde leerlo.
+tienen de dónde leerlo.~~
+**Que una relectura vio `cancelled` lo guarda `provider_link.cancelado_visto_en`** (FASE 9 vuelta 3, owner 2026-09-30, lote Z):
+el instante de la primera relectura por id que vio el preapproval `cancelled` (`B/02` §2.2). Lo
+escribe esa relectura, sea del barrido, del handler o de la de una transición, y no lo reescriben
+las siguientes que lo sigan viendo `cancelled`. **Lo leen tres cosas**: la exención de arriba
+(*«nuestra llamada ya fue confirmada por una relectura»* es una fila con la columna escrita), el
+reloj del plazo 16 (*«desde la primera relectura que lo vio `cancelled`»* es la columna) y
+`puedeCobrarle` (`12-contrato…` §4.1), que deja de contar una suscripción cuando la columna está
+escrita. **Una relectura posterior que lo ve `authorized`, `pending` o `paused` la vacía**: el
+proveedor deshizo la cancelación (`EX-45`), y ninguna de las tres puede seguir leyéndola como
+confirmada. *(Que la vacía lo derivé y lo marco: sin eso, un preapproval revivido seguía contando
+como cancelado para la baja de cuenta.)* La construye `B4`, con la relectura que la escribe en
+`B11`.
 
 **Escrita como enumeración de transiciones, la garantía era falsa, y hay que decir dónde.** La
 versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobre un conjunto de
@@ -774,7 +802,7 @@ Resuelta la disputa, el pago deja de releerse por esta vía.
 
 **La ventana es un parámetro configurable, y su longitud NO está medida.** **Es «la ventana de las
 comprobaciones de pagos acreditados y de órdenes pagadas», el plazo 18 de la lista cerrada de
-`NUCLEO/02` §1.5, con su valor inicial a proponer al owner** (FASE 9 vuelta 3, `F-8V3B3-003`). No hay en la matriz una
+`NUCLEO/02` §1.5, con su valor inicial ~~a proponer al owner~~ de 180 días** (FASE 9 vuelta 3, `F-8V3B3-003`; el valor, FASE 9 vuelta 3, owner 2026-09-30, lote R). No hay en la matriz una
 fila que diga cuánto después de acreditado un pago puede llegarle un contracargo, y la del plazo
 de reembolso (`RF-3`) sigue `UNKNOWN`; así que el número no se fija acá, se declara **como
 configuración sin medir**, igual que el plazo de la marca (más abajo). **El costo, dicho**: es la
@@ -846,7 +874,7 @@ persistida (la clave se persiste antes de la llamada, así que sin clave no sali
 de la misma ventana, el barrido busca en el proveedor la orden cuya referencia es el identificador
 del pedido (`B/06` §3.2) y, si la encuentra con un pago aprobado, abre la misma marca con el
 motivo 23. **Que el proveedor permita buscar una orden por esa referencia no está medido**
-(propuesto a la matriz, registro de la FASE 9 vuelta 3, B): si no lo permite, esa población queda
+(~~propuesto a la matriz, registro de la FASE 9 vuelta 3, B~~ `EX-57`, `UNKNOWN`): si no lo permite, esa población queda
 sin detector y declarada (*«lo que este capítulo NO cierra»*). La búsqueda sólo lee; no crea ni
 reenvía nada.
 
@@ -876,8 +904,8 @@ evento»*— y cuyo canal primario es el listado accionable, no el correo.
 abierta pasado su plazo, **escala**: es una divergencia de plata
 que nadie resolvió, y sin reloj el servicio que la fila sostiene **no tiene cota**. El plazo es
 configuración, como todos los del §42: **«el escalamiento de una marca abierta»**, el plazo 17 de
-la lista cerrada de `NUCLEO/02` §1.5, con su valor inicial a proponer al owner (FASE 9 vuelta 3,
-`F-8V3B3-003`).
+la lista cerrada de `NUCLEO/02` §1.5, con su valor inicial ~~a proponer al owner~~ de 7 días (FASE 9 vuelta 3,
+`F-8V3B3-003`; el valor, FASE 9 vuelta 3, owner 2026-09-30, lote R).
 
 > **Esta frase se escribió antes que la columna, y hasta la FASE 9-bis-4 no se podía evaluar.**
 > `requiere_conciliación` era un booleano: decía *«hay un caso»* y no *«desde cuándo»*, así que
@@ -1216,7 +1244,7 @@ vigilados, es uno más.
   manifiesto, no en la marca.
 - **La orden de un addon de única vez que `A3` abandonó sin id sólo se ve si el proveedor deja
   buscarla por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E,
-  `F-8V3B1-001`). La medición está propuesta a la matriz. **Si da que no se puede, ese caso queda
+  `F-8V3B1-001`). ~~La medición está propuesta a la matriz.~~ La medición es `EX-57`, `UNKNOWN`. **Si da que no se puede, ese caso queda
   sin detector**: la persona pagó, no recibió el addon y ninguna marca propone devolverle, hasta
   que reclame. **Causa**: `A3` dejó de reenviar para no crear órdenes que nadie pidió (`EX-43`,
   `UNKNOWN`), y sin el id de la orden no hay otra lectura. Exige una respuesta perdida y un
@@ -1232,4 +1260,6 @@ vigilados, es uno más.
   pasada la ventana de relectura de la cancelación por rechazo**, la fila ya salió del barrido y
   sólo la devuelve el aviso del cobro (FASE 9 vuelta 3, owner 2026-09-30, lote K, `F-8V3B3-002`).
   **Causa**: la ventana acota la relectura en el tiempo, que es lo que el owner eligió frente a
-  releer para siempre; su valor, a proponer, sale de la medición de `EX-45`.
+  releer para siempre; su valor ~~, a proponer, sale de la medición de `EX-45`~~ es de 7 días al inicio,
+  fijado por el owner sin medición (FASE 9 vuelta 3, owner 2026-09-30, lote R), y `EX-45` dirá si
+  alcanza. **Dentro de la ventana, en cambio, el barrido manda la cancelación** (lote U, §3).
