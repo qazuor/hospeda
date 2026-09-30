@@ -1372,3 +1372,31 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
 - **Aprendido**: una tanda puede invalidar en silencio lo que otra acababa de escribir (la frase de
   que verticales no le pregunta nada a billing); se relee lo recién aplicado antes de proponer.
 - Pendiente: casos vecinos, mediciones, verificación corta, publicar, FASE 5.
+
+## 2026-09-29 (noche) al 2026-09-30 — FASE 8 y FASE 9, vuelta 3 (`DEC-METH-016`)
+
+- **FASE 8 vuelta 3** (`37-fase-8-vuelta-3/`): nueve revisores Opus ciegos sobre `923b23586b`, con
+  los mismos vectores que la vuelta 2. **65 hallazgos: 1 CRITICA, 26 ALTA, 25 MEDIA, 13 BAJA**, en
+  30 racimos (`00-`). Tendencia 133/15 → 100/1 → 56/1 → 65/1. La atribución contra los diffs
+  `377a7c568b..923b23586b` (`01-`) dio la crítica **preexistente**, y de las 27 ALTA o más, 10
+  generadas, 1 agravada y 16 preexistentes; las generadas salen de seis commits de la revisión del
+  owner y de los lotes M a O, ninguna de los casos vecinos ni de las mediciones.
+- **FASE 9 vuelta 3** (`10-decisiones-del-owner.md`): **40 decisiones** en lotes A a AN; 4 contra
+  la recomendación (F, I, J, AJ). La crítica bajó a ALTA con arreglo (lote A).
+- **Aplicación**: tres grupos en paralelo, cada uno dueño de sus archivos (`11-` verticales, `12-`
+  billing, `13-` núcleo, contrato y corte), un cuarto que aplicó los cruces y recontó (`14-`), los
+  lotes P a AA (`15-`), el log y la matriz con OK (`16-`), la verificación corta (`20-` cobro, `21-`
+  verticales y transversal: 21 hallazgos, 5 bloqueaban) y su aplicación (`22-`, `23-`).
+- **Cifras**: log **139** (123 funcionales y 16 de metodología), precisadas sin SUPERSEDED **70**,
+  nuevas `DEC-AUTH-004` y `DEC-AUTH-005`; matriz **117 = 61 · 16 · 24 · 16** (`EX-57` a `EX-59`);
+  acciones administrativas vivas **25**; plazos **18** (los nuevos, 7, 7 y 180 días; 5 sin valor);
+  dependencias entre épicas **12**; guards 33; unidades 23; entradas del contrato 8.
+- **Anotado al cerrar**: las tres mediciones nuevas se corren antes de `B6`/`B11`
+  (`$B/descomposicion.md`), y las cuatro situaciones que una restauración no deshace se releen antes
+  del ensayo del corte (`16-` §4.3).
+- **Aprendido**: aplicar en paralelo con un dueño por archivo y un cuarto agente de cruces
+  funciona, pero la verificación corta siempre encuentra dos lotes que escribieron distinto sobre la
+  misma regla (A y AA sobre el link de reclamo) y decisiones que no llegaron a la tabla que se
+  ejecuta (U en `B/03` §10.1). Un cambio de nombre (la acción 26) no arrastra su confirmación ni sus
+  espejos.
+- Pendiente: publicar (con OK del owner), después hablar con el owner cómo sigue (FASE 5).

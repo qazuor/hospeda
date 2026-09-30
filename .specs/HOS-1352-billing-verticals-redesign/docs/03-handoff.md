@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-27
+updated: 2026-09-30
 status: CURRENT
 ---
 
@@ -47,7 +47,53 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-29 (noche, tarde) — la verificación corta está decidida y aplicada
+## Última actualización: 2026-09-30 — FASE 8 y FASE 9 vuelta 3, cerradas
+
+### El próximo paso exacto
+
+1. **Publicar** (el owner dio el OK el 2026-09-30, en curso en esta sesión): la presentación (15
+   hilos; corregir «commerce», la cuota de la prueba que renueva y las tres cifras del caso 29),
+   las fichas de unidad (sumar `U1`), el tablero y Linear. Rango a publicar: `377a7c568b..HEAD`
+   (la última publicación, la salida 4 de la verificación de la vuelta 2, fue en `377a7c568b`).
+2. **Parar y hablar con el owner cómo se sigue** (lo pidió así). La recomendación es la **FASE 5**
+   (gap analysis contra el código), sin otra vuelta 8↔9: `DEC-METH-016` fue una excepción de una
+   sola vez y el tope de `DEC-METH-013` vuelve a valer. Antes de `U1`, la FASE 5 fija el nombre
+   del package del contrato.
+3. **En paralelo con la FASE 5**: medir en sandbox `EX-57` y `EX-59` (antes de `B11`) y `EX-58`
+   (antes de `B6`), anotado en `$B/descomposicion.md`.
+4. **Antes del ensayo del corte**: releer las cuatro situaciones que una restauración no deshace
+   (`16-` §4.3, lotes J y AH), anotado ahí.
+
+Menor pendiente, heredado: `EX-46` y sus espejos todavía dicen «el barrido lo relee».
+
+### Lo que pasó el 2026-09-29 (noche) y el 2026-09-30
+
+- **FASE 8 vuelta 3** (`37-fase-8-vuelta-3/`, informes `A1`…`D1`, consolidado `00-`, atribución
+  `01-`): **65 hallazgos, 1 CRITICA, 26 ALTA, 25 MEDIA, 13 BAJA**, 30 racimos. La crítica
+  (`F-8V3A1-001`, el reclamo de Partner que deja al ocupante adentro) es **preexistente**; de las
+  27 ALTA o más, 10 las generó la tanda posterior a la vuelta 2 (orden del corte, `U1`,
+  `puedeCobrarle`, `G13`, paso 6).
+- **FASE 9 vuelta 3** (`10-decisiones-del-owner.md`): **40 decisiones** (A a AN), 4 contra la
+  recomendación: F (no se devuelven anuales; hecho del owner: no hay ni habrá), I (postular Partner
+  sin cuenta), J (las restauraciones del corte se declaran) y AJ (con sesión sin verificar, se
+  verifica antes de postular). La crítica bajó a ALTA con arreglo.
+- **Estado de las 27 ALTA**: 21 arregladas en el diseño; 2 arregladas con el detector condicionado
+  a una medición (`EX-57`, `EX-59`); 4 declaradas por decisión del owner (J y F), más la gemela que
+  encontró la verificación (AH). **Ningún crítico abierto.**
+- **Aplicación y verificación**: registros `11-`…`16-`, verificación corta `20-` y `21-` (21
+  hallazgos, 5 bloqueaban, todos resueltos en `22-` y `23-`). Lo último aplicado no tuvo segunda
+  lectura; por `DEC-METH-015` no se vuelve a girar.
+- **Cifras**: log **139** (123 funcionales, 16 de metodología), precisadas sin SUPERSEDED **70**,
+  SUPERSEDED 11, apartamientos 10; matriz **117 = 61 · 16 · 24 · 16** (16 `UNKNOWN`, 14 esperan
+  medición); unidades **23**; guards **33**; acciones administrativas vivas **25** (la 26, asignar
+  o quitar el rol `SUPER_ADMIN`); transiciones vivas de la suscripción 34; motivos 24; plazos
+  **18** (5 sin valor); entradas del contrato 8 (14 campos en sus consultas); dependencias entre
+  épicas **12**.
+- **Engram**: `hos-1352/fase-8-vuelta-3/cierre`, `hos-1352/fase-9-vuelta-3/decisiones`,
+  `hos-1352/fase-9-vuelta-3/cierre`.
+- Commits `2a9c5d9c80`…(el de este handoff). **Sin pushear** (PR #3360).
+
+## Histórico: 2026-09-29 (noche, tarde) — la verificación corta está decidida y aplicada
 
 ### El próximo paso exacto
 
