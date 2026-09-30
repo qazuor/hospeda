@@ -43,3 +43,12 @@ Decisiones de [`33-aplicacion-lote-m-y-menores.md`](./33-aplicacion-lote-m-y-men
 | H | D-8 | la versión de plazos el día del corte | **1**: la migración estructural crea la versión 1 con los quince valores; el 3a sólo la verifica | sí |
 | I | D-9 | cuando muere el título que ancla la cuota | **1**: la ventana en curso sigue hasta su fin y la próxima arranca con el ancla nueva | sí |
 | J | — | el lote de `33-` §4 para el log | **1**: OK, con lo que sumen A a I | sí |
+
+## Lote O · lo que pidió elegir la tanda que aplicó el lote N (2026-09-29)
+
+Decisiones de [`34-aplicacion-lote-n.md`](./34-aplicacion-lote-n.md) (N-A-1 y N-A-2).
+
+| Letra | Decisión de `34-` | Tema | Elección | ¿La recomendada? |
+|---|---|---|---|---|
+| A | N-A-1 | quién hace la limpieza total del principio | **1**: una unidad propia del paraguas, antes de `V1` y `B1`, que hace sólo la limpieza; las dependencias entre épicas siguen en 11 | sí |
+| B | N-A-2 | el hueco del corte entre el paso 3 y el 4b | **1**: el receptor nuevo sirve la misma ruta que el viejo (`/api/v1/webhooks/mercadopago`); el borde la cierra durante el corte (el proveedor recibe error y reintenta) y la abre cuando están las lápidas; el 4b sólo verifica; `EX-46` queda sin sujeto | sí |
