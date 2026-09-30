@@ -236,7 +236,8 @@ que esta exención soltaba en la primera relectura (la de `S16` sin llamada, y l
 una vez fuera del barrido sólo el aviso del cobro la devolvía, que puede no llegar (`WH-5`). **Se
 cuenta desde la primera relectura que lo vio `cancelled`**, y su valor es el del plazo 16 de la
 lista cerrada (`NUCLEO/02` §1.5), 7 días al inicio (FASE 9 vuelta 3, owner 2026-09-30, lote R). **Si
-durante la ventana la relectura lo ve `authorized` o `pending`**, ~~la fila está en el barrido y la
+durante la ventana la relectura lo ve ~~`authorized` o `pending`~~ `authorized`, `pending` o `paused`**
+(FASE 9 vuelta 3, verificación, VC3-cobro-01), ~~la fila está en el barrido y la
 lee la fila de estado del §3: un preapproval vivo sobre una fila que nunca mandamos cancelar es
 divergencia de estado y la mira una persona (§2.4), y si cobra, la comparación de cobros lo
 cuelga con el motivo de la tabla de desempate del `B/05` §3. **Si en cambio el barrido debe mandar
@@ -253,6 +254,9 @@ con el motivo que la tabla de desempate del `B/05` §3 le da a una terminal,
 la persona reautorizó a propósito, se le corta algo que igual no le daba servicio: la fila está
 terminal y no vuelve por esto. La relectura que la vio viva vacía `cancelado_visto_en` (abajo), así
 que la exención y la ventana vuelven a contar desde la próxima relectura que la vea `cancelled`.
+La tabla que lo ejecuta es la de pares del `B/03` §10.1, con un par propio para esta población, y
+el correo de antes tiene por ocurrencia la relectura que la vio viva, porque no hay transición que
+decida esta cancelación (`B/03` §3.2, precisión 3; FASE 9 vuelta 3, verificación, VC3-cobro-01).
 
 ~~⚠️ **Qué dato guarda que una relectura vio `cancelled` no está escrito** (FASE 9 vuelta 3,
 lote D). Lo leen tres cosas: la exención de arriba (*«nuestra llamada ya fue confirmada por una
@@ -268,7 +272,10 @@ las siguientes que lo sigan viendo `cancelled`. **Lo leen tres cosas**: la exenc
 (*«nuestra llamada ya fue confirmada por una relectura»* es una fila con la columna escrita), el
 reloj del plazo 16 (*«desde la primera relectura que lo vio `cancelled`»* es la columna) y
 `puedeCobrarle` (`12-contrato…` §4.1), que deja de contar una suscripción cuando la columna está
-escrita. **Una relectura posterior que lo ve `authorized`, `pending` o `paused` la vacía**: el
+escrita, **salvo la que canceló el proveedor tras un cobro rechazado, que deja de contar recién
+cuando pasa el plazo 16 desde la columna con el preapproval todavía `cancelled`**, lo mismo que
+esta exención (FASE 9 vuelta 3, owner 2026-09-30, lote AE; verificación, VC3-cobro-02). **Una
+relectura posterior que lo ve `authorized`, `pending` o `paused` la vacía**: el
 proveedor deshizo la cancelación (`EX-45`), y ninguna de las tres puede seguir leyéndola como
 confirmada. *(Que la vacía lo derivé y lo marco: sin eso, un preapproval revivido seguía contando
 como cancelado para la baja de cuenta.)* La construye `B4`, con la relectura que la escribe en
@@ -325,7 +332,10 @@ terminal con el preapproval vivo. **Cuando la relectura lo ve vivo —`authorize
    (`DEC-MAIL-001`, *«el correo antes de cancelar»* de `B/03` §3.2, con sus ~~dos~~ tres ramas —la tercera, el correo que agota sus reintentos, no bloquea: owner 2026-09-25, FASE 9 completa, decisión 1—) **y la
    relectura después**. **El correo sale UNA vez por cancelación, antes del primer intento**: un
    reintento no lo repite si ya se entregó, porque su ocurrencia es la transición que decidió la
-   cancelación y no la corrida (`B/03` §3.2, precisión 3; owner 2026-09-25).
+   cancelación y no la corrida (`B/03` §3.2, precisión 3; owner 2026-09-25). **Sobre la terminal
+   que el proveedor canceló tras un rechazo y revivió dentro de la ventana, la ocurrencia y el
+   reloj de los 3 días son la relectura que la vio viva** (arriba, *«qué pasa si el preapproval
+   vuelve»*; FASE 9 vuelta 3, verificación, VC3-cobro-01).
 2. **Si los 3 días de la transición que decidió la cancelación la relectura todavía no la ve `cancelled`**, recién entonces **abre la marca con motivo
    `CANCELACIÓN_SIN_CONFIRMAR`** (`B/02` §2.5, motivo 16) **y avisa** por el canal de
    `DEC-OBS-001`. **El plazo se cuenta por tiempo, no por corridas** (owner 2026-09-25): el instante
@@ -910,11 +920,14 @@ la lista cerrada de `NUCLEO/02` §1.5, con su valor inicial ~~a proponer al owne
 > **Esta frase se escribió antes que la columna, y hasta la FASE 9-bis-4 no se podía evaluar.**
 > `requiere_conciliación` era un booleano: decía *«hay un caso»* y no *«desde cuándo»*, así que
 > *«pasado su plazo»* no tenía contra qué medirse. Hoy es `puesta_en`, **por marca y no por fila**
-> (`B/02` §2.2 y §2.5), que es lo que hace que el plazo pueda ser distinto según el motivo — un
+> (`B/02` §2.2 y §2.5), que es lo que ~~hace que el plazo pueda ser distinto según el motivo~~
+> permite medir el plazo por marca. **El plazo es uno solo, el 17 de la lista cerrada, para todos
+> los motivos** (FASE 9 vuelta 3, owner 2026-09-30, lote R; verificación, VC3-cobro-08): un plazo
+> por motivo sería otro plazo de la lista cerrada, y lo decide el owner. ~~— un
 > `REEMBOLSO_POR_CONFIRMAR` tiene plata del cliente parada y un `TRANSICIÓN_NO_DECLARADA` no.
 > **El ejemplo era `PAGO_TARDÍO_RECHAZADO` y se cambió porque dejó de ser cierto**: ese motivo
 > lleva `SÍ` desde que se recorrieron sus cuatro condiciones (`B/02` §2.5), así que tiene plata
-> parada igual que el 1 y el plazo corto le corresponde a él también.
+> parada igual que el 1 y el plazo corto le corresponde a él también.~~
 > Lo que cambió no es el enunciado sino contra qué se lee.
 
 ---

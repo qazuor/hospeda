@@ -1242,9 +1242,13 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    `PB2`, por la razón de arriba—. Alcanza al que sólo tiene borradores, que además está fuera de
 >    la población, **y al que tiene todas sus fichas en `UNPUBLISHED_BY_BILLING`, `ARCHIVED` o
 >    `MODERATED`**, que está adentro. Su red sigue siendo la relectura de `PB4`, `PB5` y `PB9`
->    sobre el reloj viejo, **y eso puede adelantar el borrado del día 180**: el reloj de una ficha
+>    sobre el reloj viejo, ~~**y eso puede adelantar el borrado del día 180**: el reloj de una ficha
 >    `ARCHIVED` de un dueño cubierto puede tener hasta 180 días, porque `PB9` lo reinicia al
->    releer. **Causa**: la fila compara estados de ficha, y la ficha publicada es la única que
+>    releer~~ **y eso puede adelantar el archivado (`PB4` y `PB5`), que no es irreversible; el
+>    borrado del día 180 no, porque `PB9` cuenta además desde `coberturaPerdidaEn`, que se guarda
+>    con el encolado del aviso y no depende de que llegue** (punto 5; FASE 9 vuelta 3, owner
+>    2026-09-30, lote Q; el cuerpo, verificación, VC3-VT-05). **Causa**: la fila compara estados de
+>    ficha, y la ficha publicada es la única que
 >    guarda la memoria de que hubo cobertura (cap. 01 §1.2, núcleo, ⚠️ punto 3).
 > 2. ~~**La fecha que vence sin transición se corrige sólo si produce una diferencia de fichas.**~~
 >    **Una diferencia que no mueve fichas no invalida el caché**, venga de una fecha que vence sin

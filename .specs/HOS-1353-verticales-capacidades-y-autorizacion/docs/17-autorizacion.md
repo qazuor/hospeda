@@ -221,6 +221,10 @@ hace cumplir** (la sexta, FASE 8 completa,
    exención por superficie (§3.5): un mensaje aceptado sobre un borrador confirmaría que el
    identificador existe. Leer la propia conversación sigue siendo una lectura de lo suyo, también
    sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED` (cap. 19 §4 fila 28).
+   **Sobre una ficha que dejó de publicarse sin llegar a `PURGED`, el turista ve la conversación
+   entera en sólo lectura y no puede mandar mensajes**, aunque el dueño le siga escribiendo; la
+   pantalla no dice por qué (cap. 19 §4 fila 35), y si la ficha vuelve a `PUBLISHED` puede escribir
+   otra vez (FASE 9 vuelta 3, verificación, VC3-VT-11).
 8. **El sujeto no viene del pedido: se lee de la sesión o del recurso** (FASE 9 vuelta 2,
    `F-8V2A1-002`). Es la regla de la precisión 6 aplicada a la otra identidad. Nadie escribía de
    dónde salía el sujeto, y con el paso 4 preguntando *«¿es del sujeto?»* y el §3.5 sacando del
@@ -239,7 +243,11 @@ hace cumplir** (la sexta, FASE 8 completa,
    quien no tiene cuenta, así que exigirla le quitaba esa población, y eximir la ruta era la
    exención por superficie que el §3.5 prohíbe. **Es una excepción de la cadena, declarada acá, no
    una ruta exenta**: la resolución corre igual. **Está acotada a esa escritura**: crea una
-   postulación `PENDIENTE` y nada más. El paso 2 no le aplica, porque no hay cuenta, y los pasos 5
+   postulación `PENDIENTE` y nada más. El paso 2 no le aplica, porque no hay cuenta ~~, y los pasos 5~~.
+   **Una cuenta con sesión y el correo sin verificar no postula como guest: el paso 2 le aplica como
+   a toda cuenta, y la pantalla le pide verificar el correo antes de postular** (cap. 19 §4
+   fila 34; FASE 9 vuelta 3, owner 2026-09-30, lote AJ, contra la recomendación, que era que
+   postulara como un visitante sin cuenta; verificación, VC3-VT-10). Los pasos 5
    a 7 tampoco: no hay `user + vertical` sobre el que resolverlos, y postular no consume una
    capacidad comercial. **Y tiene dos límites contra el abuso**: un captcha (Turnstile, que el
    sitio ya usa) y **una sola postulación abierta por correo**, que es la guarda de `PP1` ya hecha
@@ -377,7 +385,7 @@ no una excepción a la lista.
    ciclo, publicar una versión de complemento, crear o cerrar un código promocional y cambiar un
    plazo), de `SUPER_ADMIN`**: la misma revisión, N1, C9 y `L1-f`; **la vigesimotercera y la
    vigesimocuarta, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), las dos a pedido de su dueño y con
-   motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C; **la vigesimoquinta, vaciar la presencia de un Partner a pedido de su dueño, con motivo**, parte del paso 2 en un Partner: verificación corta, 2026-09-29, lote N-G; **la vigesimosexta, asignar el rol `SUPER_ADMIN` a una cuenta, de `SUPER_ADMIN`**: FASE 9 vuelta 3, owner 2026-09-30, lote P).
+   motivo**, que son los pasos 2 y 3 de la baja de cuenta manual: revisión del owner, casos vecinos, 2026-09-29, caso F-C; **la vigesimoquinta, vaciar la presencia de un Partner a pedido de su dueño, con motivo**, parte del paso 2 en un Partner: verificación corta, 2026-09-29, lote N-G; **la vigesimosexta, ~~asignar~~ asignar o quitar el rol `SUPER_ADMIN` a una cuenta, de `SUPER_ADMIN`** (el nombre, lote AC): FASE 9 vuelta 3, owner 2026-09-30, lote P).
 
    ~~⚠️ **«De `SUPER_ADMIN`» es un rol, y el paso 3 pregunta por permiso** (FASE 9 vuelta 3,
    `F-8V3A1-006`). Cada acción que la tabla de `NUCLEO/08` §3 marca así tiene que tener su permiso
@@ -413,7 +421,7 @@ no una excepción a la lista.
    sujeto**, así que un administrador no puede hacerle a un cliente algo que el cliente no podría
    hacer. La excepción está declarada y es acotada: **las ~~doce~~ ~~trece~~ ~~catorce~~ ~~quince~~
    ~~catorce primeras~~ ~~quince acciones del capítulo 08 §3 —las catorce primeras y la decimosexta—~~ ~~catorce primeras acciones del capítulo 08 §3~~ ~~**quince acciones del capítulo 08 §3, las catorce primeras y la decimoséptima,**~~ ~~**veinte acciones del capítulo 08 §3, las catorce primeras y de la decimoséptima a la vigesimosegunda,**~~ ~~**veintiuna acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda y la vigesimocuarta,**~~ ~~**veintidós acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda, la vigesimocuarta y la vigesimoquinta,**~~ **veintitrés acciones del capítulo 08 §3, las catorce primeras, de la decimoséptima a la vigesimosegunda y de la vigesimocuarta a la vigesimosexta,** son
-   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer; la vigesimoquinta, vaciar la presencia de un Partner, con la verificación corta, 2026-09-29, lote N-G; la vigesimosexta, asignar el rol `SUPER_ADMIN`, con la FASE 9 vuelta 3, owner 2026-09-30, lote P: su sujeto es la cuenta que recibe el rol, sin cupo que preguntarle), no del sujeto —
+   capacidades del actor** (FASE 9 vuelta 2, `F-8V2A1-004` ~~y `Q-ACC16`~~; la decimosexta salió con la revisión del owner, 2026-09-28, C8; la decimoséptima entró con la misma revisión, C15, y las cinco del catálogo con N1 y C9: su sujeto es el catálogo, no un cliente; la vigesimocuarta, ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C), con los casos vecinos, F-C: el dueño no puede borrar su cuenta en esta versión, así que no hay nada suyo que el sujeto pudiera hacer; la vigesimoquinta, vaciar la presencia de un Partner, con la verificación corta, 2026-09-29, lote N-G; la vigesimosexta, ~~asignar~~ asignar o quitar el rol `SUPER_ADMIN`, con la FASE 9 vuelta 3, owner 2026-09-30, lote P (el nombre, lote AC): su sujeto es la cuenta que recibe ~~el rol~~ o pierde el rol, sin cupo que preguntarle), no del sujeto —
    otorgar una cortesía no consulta si el cliente tiene derecho a una, porque su objeto es
    dárselo. **A qué clase pertenece una operación se declara, nunca se infiere.**
 
@@ -473,11 +481,13 @@ no una excepción a la lista.
    demás. No se le escribe fila de alcance, la previsualización la muestra excluida con esta
    regla como razón, y otra cuenta con el permiso la puede migrar en otro acto (`B/10` §3.7
    punto 1; revisión del owner, casos vecinos, 2026-09-29, caso 24).
-   **En la vigesimotercera, la vigesimocuarta y la vigesimoquinta el sujeto es el dueño que pidió la baja** (la tercera, lote N-G), y la
+   **En la vigesimotercera, la vigesimocuarta y la vigesimoquinta el sujeto es el dueño que pidió la baja** (la tercera, lote N-G) **o, en la vigesimocuarta, quien postuló un Partner sin cuenta y pidió que se borre su correo** (FASE 9 vuelta 3, owner 2026-09-30, lote AI), y la
    regla se cumple igual: la hace una cuenta de soporte con el permiso, y si quien pide ~~borrar su
    cuenta~~ **dar de baja su cuenta** (verificación corta, 2026-09-29, VC-VT-11) es a la vez del equipo, la hace otra cuenta (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
-   **En la vigesimosexta el sujeto es la cuenta que recibe el rol**, así que nadie se da el rol a
-   sí mismo: se lo da otra cuenta que ya lo tiene (FASE 9 vuelta 3, owner 2026-09-30, lote P).
+   **En la vigesimosexta el sujeto es la cuenta que recibe ~~el rol~~ o pierde el rol**, así que
+   nadie se da el rol a
+   sí mismo ni se lo quita: lo hace otra cuenta que ya lo tiene (FASE 9 vuelta 3, owner 2026-09-30, lote P;
+   quitar, lote AC; verificación, VC3-VT-03).
 
 ### 3.3 El actor no siempre es una persona
 
@@ -516,7 +526,7 @@ a la vigesimosegunda, también las decide y las confirma una persona** (revisió
 versión nueva cambia después lo aplican las transiciones de siempre, con la versión que cada reloj
 guarda (`NUCLEO/02` §1.5). **La vigesimotercera y la vigesimocuarta, borrar una ficha ajena y
 ~~borrar una cuenta~~ **dar de baja una cuenta** a pedido de su dueño, no tocan plata: ~~borran~~ **borran o dan de baja** (caso I-C), y lo que no vuelve lo decide una
-persona a pedido del dueño y con motivo** (revisión del owner, casos vecinos, 2026-09-29, caso F-C). **La vigesimoquinta, vaciar la presencia de un Partner, tampoco** (verificación corta, 2026-09-29, lote N-G). **La vigesimosexta, asignar el rol `SUPER_ADMIN`, no toca plata, pero da el permiso de las que sí la tocan**, y por eso la decide y la confirma una persona (FASE 9 vuelta 3, owner 2026-09-30, lote P). Un job que
+persona a pedido del dueño y con motivo** (revisión del owner, casos vecinos, 2026-09-29, caso F-C). **La vigesimoquinta, vaciar la presencia de un Partner, tampoco** (verificación corta, 2026-09-29, lote N-G). **La vigesimosexta, ~~asignar~~ asignar o quitar el rol `SUPER_ADMIN` (el nombre, lote AC), no toca plata, pero da o saca el permiso de las que sí la tocan**, y por eso la decide y la confirma una persona (FASE 9 vuelta 3, owner 2026-09-30, lote P). Un job que
 pudiera otorgar una cortesía convierte ese invariante en una sugerencia.
 
 ~~**La excepción que no es una acción nueva: el reintento de la mitad de billing de la
@@ -586,7 +596,7 @@ ninguno y la restitución publicaba sin límite. **Y la propiedad *«nunca otorg
 ### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
 
 El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las ~~**12**~~ ~~**13**~~ ~~**14**~~ ~~**15**~~ ~~**16**~~ ~~**15**~~ ~~**16**~~ ~~**21**~~ ~~**23**~~ ~~**24**~~ **25**
-**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; **la 25, vaciar la presencia de un Partner a pedido de su dueño: verificación corta, 2026-09-29, lote N-G**, FASE 9 vuelta 3, `F-8V3D1-004`; **la 26, asignar el rol `SUPER_ADMIN` a una cuenta: FASE 9 vuelta 3, owner 2026-09-30, lote P**), que son **la excepción, no el conjunto**. Y hay una regla en uso que
+**acciones administrativas** (la 13, moderar una ficha: FASE 8 completa, `F-8CA2-004`; la 14, asentar un cobro o una devolución hecha por fuera: FASE 9 completa, 5a; la 15, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; ~~la 16, discontinuar una vertical: owner 2026-09-27, FASE 9 vuelta 2, `Q-ACC16`~~ la 16 salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la 17, migrar a los clientes de un plan retirado: la misma revisión, C15; de la 18 a la 22, las cinco del catálogo: la misma revisión, N1 y C9; la 23 y la 24, borrar una ficha ajena y ~~borrar una cuenta~~ **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; **la 25, vaciar la presencia de un Partner a pedido de su dueño: verificación corta, 2026-09-29, lote N-G**, FASE 9 vuelta 3, `F-8V3D1-004`; **la 26, ~~asignar~~ asignar o quitar el rol `SUPER_ADMIN` a una cuenta: FASE 9 vuelta 3, owner 2026-09-30, lote P; el nombre, lote AC**), que son **la excepción, no el conjunto**. Y hay una regla en uso que
 nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
 criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
 todo capítulo.

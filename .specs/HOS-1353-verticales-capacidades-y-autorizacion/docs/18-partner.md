@@ -255,6 +255,11 @@ misma prueba que el §17.3 ya exige en la otra rama. Acá se aplica a la que que
 Sin esto, cargar el correo de un tercero alcanza para colgarle un Partner que no pidió — o, peor,
 para que quien apruebe crea que lo pidió.
 
+**Quién postula.** El formulario es público y un visitante sin cuenta postula (cap. 17 §1.2
+precisión 9; `DEC-AUTH-005`). **Una cuenta con sesión y el correo sin verificar, en cambio, no
+postula como si no tuviera cuenta: se le pide verificar el correo antes** (cap. 19 §4 fila 34;
+FASE 9 vuelta 3, owner 2026-09-30, lote AJ; verificación, VC3-VT-10).
+
 **Leer la casilla prueba la casilla, no la cuenta** (owner 2026-09-27, FASE 9 vuelta 2, `R7`;
 `F-8V2A1-003`). La regla vinculaba al usuario *que ya tenía ese correo*, verificado o no, y ese
 usuario podía ser una cuenta que otro creó con esa dirección sin poder verificarla: la dueña de la
@@ -287,14 +292,23 @@ correo y se lo llevaba. ~~Tres~~ Cinco reglas lo cierran (las dos últimas, FASE
    que escribe el vínculo: desde ahí el vínculo ya no es nulo, así que el link no tiene nada que
    escribir y no hace falta otra marca. **Un Partner ya reclamado no se reclama de nuevo por
    link**: quien abre un link ya usado ve que ese Partner ya tiene dueño, y la pantalla lo deriva
-   a soporte. Sin esto, cualquiera que leyera el aviso después (una casilla compartida, un ex
+   a soporte: *«este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»* (FASE 9
+   vuelta 3, owner 2026-09-30, lote AG). Sin esto, cualquiera que leyera el aviso después (una
+   casilla compartida, un ex
    empleado) movía el Partner a su cuenta, y la dueña seguía pagando una suscripción sin página.
    **Y el link lleva un secreto de un solo uso que viaja sólo en el aviso** (FASE 9 vuelta 3, owner 2026-09-30, lote AA): lo
    genera el acto que manda el aviso, al azar y sin derivarse del id del Partner ni del correo, y
    la base guarda sólo su hash (`partner.secreto_de_reclamo`, cap. 02 §2.7), nunca el secreto. Un
    link con el secreto equivocado, o sin él, contesta lo mismo que uno de un Partner que no
-   existe. El reclamo que escribe el vínculo vacía la columna, así que el mismo secreto no vuelve a
-   servir. Sin el secreto, leer la casilla no probaba nada: cualquiera que armara el link con el id
+   existe. ~~El reclamo que escribe el vínculo vacía la columna, así que el mismo secreto no vuelve a
+   servir.~~ **El reclamo que escribe el vínculo conserva el hash, y el secreto sólo reclama con
+   `owner_user_id` nulo** (FASE 9 vuelta 3, owner 2026-09-30, lote AG; verificación, VC3-VT-01):
+   con el vínculo ya escrito, el mismo secreto no vuelve a reclamar. **Un link ya usado, con el
+   secreto correcto, muestra la pantalla de arriba; con uno equivocado o sin él, contesta como un
+   Partner que no existe.** Vaciar la columna hacía que el link usado contestara *«no existe»*, que
+   es lo contrario de la pantalla que el owner aprobó, y sólo quien tiene el secreto aprende que
+   ese Partner ya tiene dueño. Sin el secreto, leer la casilla no probaba nada: cualquiera que
+   armara el link con el id
    del Partner lo reclamaba.
 5. **Una cuenta, un Partner** (FASE 9 vuelta 3, owner 2026-09-30, lote B; `F-8V3A2-002`). La base
    no deja que una cuenta sea dueña de dos: una unicidad sobre `owner_user_id` donde no es nulo

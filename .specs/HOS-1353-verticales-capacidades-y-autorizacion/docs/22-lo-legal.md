@@ -75,6 +75,11 @@ trial nuevo. **El defecto sigue en pie sin la pieza 2**: la 3 alcanza sola (FASE
 `F-8CA3-009`). ⚠️ Esa baja pedida por el usuario es el proceso que `DEC-DATA-005` declara que no
 decide, y ningún capítulo la diseña: queda pendiente, fuera de esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`.
 
+**Y el pedido de supresión de quien postuló un Partner sin cuenta** (FASE 9 vuelta 3, owner
+2026-09-30, lote AI; verificación, VC3-VT-08): su correo queda en `postulacion` (cap. 02 §2.7) y no
+hay cuenta que dar de baja. Lo borra la acción 24 de `NUCLEO/08` §3, que alcanza también a esa
+postulación: soporte reemplaza el correo a pedido de quien la escribió, con motivo y registro.
+
 **Y el capítulo 02 lo dice de frente**: la fila se conserva *«porque el trial no se devuelve, así
 que la evidencia de que se consumió tiene que sobrevivir al borrado o el borrado se convierte en
 la forma de conseguir otro»*. Eso es exactamente lo que pasa — no por lo que se borra, sino por lo

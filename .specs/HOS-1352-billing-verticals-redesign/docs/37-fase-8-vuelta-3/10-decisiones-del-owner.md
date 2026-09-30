@@ -49,6 +49,12 @@ letras. Cada fila nombra la opción elegida.
 | AB | log y matriz | si se aplican las nueve propuestas al log (siete 📌 y `DEC-AUTH-004`/`-005` nuevas) y las tres filas nuevas de la matriz (`EX-57` a `EX-59`) de `14-aplicacion-cierre.md` § «Para el owner», con Q sumado a `DEC-ARCH-006`, Y a `DEC-CONC-001` y los valores de R a `DEC-DATA-008` | **1**: sí, todo como está | sí |
 | AC | R21 (lote P) | si quitarle el rol `SUPER_ADMIN` a una cuenta es también la acción 26 | **1**: la acción 26 pasa a «asignar o quitar el rol», con registro en los dos casos | sí |
 | AD | log (`DEC-ARCH-006`) | si se corrige el 📌 recién aprobado que dice que el contrato devuelve cuándo perdió cobertura «una ficha» | **1**: se corrige a «la persona en esa vertical» (`coberturaPerdidaEn`) y se nombra `provider_link.cancelado_visto_en` | sí |
+| AE | `VC3-cobro-02` | cuándo da por cancelada una suscripción `puedeCobrarle` tras una cancelación del proveedor por rechazo | **1**: contesta «sí» mientras no pase el plazo 16 (7 días) desde la primera relectura `cancelled`; la baja de cuenta espera | sí |
+| AF | `VC3-cobro-03` | qué pasa con una transferencia (`MP6`) sobre una suscripción `CANCELLED` con la última cuota `DECLARED_UNPAID` | **1**: el pago va al motivo 2 (`COBRO_POSTERIOR_A_LA_BAJA`) con propuesta de devolver; no escribe cobertura | sí |
+| AG | `VC3-VT-01` | qué ve quien abre un link de reclamo ya usado | **1**: «este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; el hash del secreto se conserva tras el reclamo (sólo sirve con `owner_user_id` nulo) | sí |
+| AH | `VC3-VT-02` | lo que el sistema viejo asentó después del backup del 2b y un aborto borra | **1**: se declara en el «NO cierra» del corte junto a las tres de J, con su causa | sí |
+| AI | `VC3-VT-08` | quién borra el correo de una postulación hecha sin cuenta | **1**: la acción 24 alcanza también a una postulación sin cuenta: soporte la borra a pedido, con motivo y registro | sí |
+| AJ | `VC3-VT-10` | si una cuenta con sesión y sin correo verificado puede postular | **2**: se le pide verificar el correo antes de postular | **no** (la recomendada era la 1, que postule como un visitante sin cuenta) |
 
 ## Lo que no pidió decisión
 
@@ -58,6 +64,6 @@ según el §6 del consolidado. Va a la tanda de aplicación.
 
 ## Contra la recomendación
 
-Tres de treinta: F (con un hecho aportado por el owner que la vuelve innecesaria), I y J. La M
+Cuatro de treinta y seis: F (con un hecho aportado por el owner que la vuelve innecesaria), I, J y AJ. La M
 existe por arrastre de I. La J deja declaradas en el «NO cierra» del corte tres
 situaciones con daño de clase crítica que exigen una falla previa.

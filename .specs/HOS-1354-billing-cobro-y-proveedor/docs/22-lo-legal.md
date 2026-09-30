@@ -131,7 +131,8 @@ instancia moría por la orfandad y su pago quedaba sin propuesta. **`S36` crea `
 del pago de cada instancia `UNA_VEZ` que su orfandad apaga, si se acreditó dentro de los mismos 10
 días corridos** (cap. 03 §3.2 y §6.1), y **se devuelve por el camino de las órdenes**,
 `POST /v1/orders/{id}/refund`, que la sonda 56 midió en sandbox; su idempotencia y lo que devuelve
-un reenvío están propuestos a la matriz (cap. 06 §3.2). Fuera de ese plazo, un `UNA_VEZ` se consume
+un reenvío ~~están propuestos a la matriz~~ no están medidos (`EX-58`, `PARTIALLY_SUPPORTED`; cap. 06 §3.2;
+FASE 9 vuelta 3, verificación, VC3-cobro-05). Fuera de ese plazo, un `UNA_VEZ` se consume
 (`DEC-ADDON-001`) y no se abre nada.
 
 **Lo que queda abierto son tres cosas, y ninguna es el mecanismo:**
