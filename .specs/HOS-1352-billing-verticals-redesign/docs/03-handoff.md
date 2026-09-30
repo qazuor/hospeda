@@ -51,6 +51,11 @@ status: CURRENT
 
 ### El próximo paso exacto
 
+0. **FASE 8 vuelta 3, ENTERA y desde cero** (`DEC-METH-016`, owner 2026-09-29, excepción declarada al
+   tope de `DEC-METH-013`), y después la FASE 9 con el owner. Formato a copiar: `29-fase-8-vuelta-2/`
+   (agentes ciegos entre sí y al historial, mismos vectores, núcleo + dos épicas + contrato + FASE 7;
+   consolidado por causa; citas con `27-fase-8-vuelta-1/verificar-citas.py`; atribución contra los
+   diffs desde el cierre de la vuelta 2). Publicar y la FASE 5 van **después**.
 1. **Publicar** (con OK del owner): la presentación (15 hilos; corregir «commerce», la cuota de la
    prueba que renueva y las tres cifras del caso 29), las fichas de unidad (sumar `U1`), el tablero
    y Linear.
