@@ -47,7 +47,34 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-30 — FASE 8 y FASE 9 vuelta 3, cerradas
+## Última actualización: 2026-09-30 (tarde) — FASE 5 decidida entera; falta aplicarla
+
+### El próximo paso exacto
+
+1. **Aplicar** todo lo decidido en
+   [`38-fase-5/10-decisiones-del-owner.md`](./38-fase-5/10-decisiones-del-owner.md) (lotes 1 a 6 y
+   la simplificación del corte) al diseño (núcleo, contrato, `16-`, `V/`, `B/`), al log (las
+   SUPERSEDED y precisiones del §11 de [`38-fase-5/20-`](./38-fase-5/20-simplificacion-del-corte.md),
+   con el 📌 de siempre), a la matriz (`EX-42`, `EX-48`, `EX-50` pasan a *«no se miden, por
+   decisión»*) y a las descomposiciones (**unidad nueva del outbox: 24 unidades**; `U1` crece
+   mucho). Método de siempre: grupos en paralelo con un dueño por archivo, un agente de cruces, y
+   una verificación corta. Cada consecuencia que no esté decidida vuelve al owner en lotes.
+2. Después: recontar con script (log, matriz, unidades, guards, plazos) y publicar con OK del owner
+   (artifacts y Linear: HOS-1400 `U1`, y un issue nuevo para la unidad del outbox).
+
+### Lo que pasó el 2026-09-30 (tarde)
+
+- Mediciones `EX-57`/`EX-58` `VERIFIED` (sandbox) y `EX-59` `PARTIALLY_SUPPORTED` (sandbox y
+  producción): [`mp-probes/RESULTS-2026-09-30.md`](./mp-probes/RESULTS-2026-09-30.md). Matriz
+  **117 = 63 · 16 · 24 · 14**.
+- `DEC-METH-017` (criterio de la FASE 5), `DEC-ARCH-015` (`@repo/billing-verticals-contract`),
+  `DEC-MIG-007` (premisas del corte: **filtrar contra ella toda pregunta del corte antes de hacerla**).
+  Log **142**.
+- FASE 5: informes `38-fase-5/01-`…`05-` (200 piezas contra `origin/staging` `35e2d63e81`),
+  consolidado `00-` (44 racimos), decisiones `10-`, barrido del corte `20-` (78 piezas).
+- Commits `f699246e81`…`bf9fafd7ac`. **Sin pushear** (PR #3360).
+
+## Histórico: 2026-09-30 — FASE 8 y FASE 9 vuelta 3, cerradas
 
 ### El próximo paso exacto
 

@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-27
+updated: 2026-09-30
 status: CURRENT
 ---
 
@@ -1408,3 +1408,29 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   fuente (`37-…/24-`). **Aprendido**: `discontinu\w*` no encuentra «discontinúan»; una frase partida
   en dos renglones no aparece con `rg` línea por línea; las cifras infladas por algo retirado no
   nombran lo retirado, hay que buscarlas por número.
+
+## 2026-09-30 (tarde) — mediciones EX-57/58/59 y FASE 5 decidida
+
+- **Mediciones** (`mp-probes/RESULTS-2026-09-30.md`, sondas 58, 59 y 60; el número de la sonda no
+  es el de la fila): `EX-57` `VERIFIED` en sandbox (`GET /v1/orders` con `begin_date`/`end_date` de
+  30 días como máximo y `external_reference` exacto; `/v1/payments/search` de respaldo); `EX-58`
+  `VERIFIED` en sandbox (clave obligatoria, reenvío idempotente, `409` con otro monto, id y monto
+  por devolución; la nueva sale por resta, así que las devoluciones de una orden van de a una);
+  `EX-59` `PARTIALLY_SUPPORTED` en sandbox **y producción** (corrida de sólo lectura del owner:
+  sólo `/v1/payments/{id}` de un pago **aprobado** trae el correo; los rechazados traen `null`).
+  Matriz **117 = 63 · 16 · 24 · 14**. Se arregló `contar-filas-de-la-matriz.py`: un estado tachado
+  más largo ganaba al vigente.
+- **FASE 5**: criterio con el owner (`DEC-METH-017`, apartamiento del PDR), nombre del package del
+  contrato (`DEC-ARCH-015`, `@repo/billing-verticals-contract`, tras descartar el owner la primera
+  propuesta) y premisas del corte fijadas por el owner (`DEC-MIG-007`: sin convivencia, cinco
+  cuentas con una ficha cada una, el resto no importa, aviso por privado sin nada programado). Log
+  **142**. Cinco agentes en paralelo contra `origin/staging` `35e2d63e81` (`38-fase-5/01-`…`05-`,
+  200 piezas), consolidado por causa (`00-`, 44 racimos), lotes 1 a 6 decididos y un barrido del
+  corte contra `DEC-MIG-007` (`20-`, 78 piezas) también decidido. Todo en
+  `38-fase-5/10-decisiones-del-owner.md`. Contra la recomendación: lote 1 I (se recrean los enums
+  sin los valores del cobro viejo) y lote 4 B (rol de socio para Partner, que no se quita).
+- **Aprendido**: el índice de codegraph está sobre el clone principal, atrasado respecto de
+  staging: sirve para orientarse, y toda cita se verifica con `git show origin/staging:`. Una tabla
+  `billing_*` puede ser infraestructura de toda la plataforma (`billing_notification_log`). Un
+  número que viene en el encargo se recuenta (184 declarado, 200 reales).
+- **Pendiente**: la aplicación de todo lo decidido (ver el handoff).
