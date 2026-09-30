@@ -117,3 +117,27 @@ Sobre [`20-simplificacion-del-corte.md`](./20-simplificacion-del-corte.md): 78 p
 Con esto quedan contestados todos los lotes de la FASE 5. Lo que sigue es la **aplicación**: llevar
 las decisiones de este archivo al diseño (núcleo, contrato, `16-`, las dos épicas), al log, a la
 matriz y a las descomposiciones (una unidad nueva, la del outbox: 24).
+
+## Lote de la aplicación (2026-09-30)
+
+Las consecuencias que la aplicación no podía decidir sola, deduplicadas en
+[`21-cruces.md`](./21-cruces.md) §5, con las opciones tal como se plantearon ahí.
+
+| letra | elegida | contra la recomendación | qué decide |
+|---|---|---|---|
+| A | 1 | **sí** | si el corte se aborta, la regla que bloquea toda escritura **queda puesta hasta el reintento**: la plataforma entera, las cinco cuentas incluidas, queda en sólo lectura mientras tanto |
+| B | 1 | no | las cinco pruebas gratis y sus seudónimos los escribe la herramienta del corte de `V6`, que es del sistema nuevo; el script suelto del corte sigue sin importar código de ningún sistema |
+| C | 1 | no | un aviso de Mercado Pago que llegue entre apagar lo viejo y levantar lo nuevo, sin servidor que lo atienda, se declara y se acepta (`DEC-MIG-007`, puntos 3 y 4) |
+| D | 1 | no | antes de borrar las fichas que no son de las cinco, la migración copia a una tabla de paso el id de cada una, las rutas de sus fotos y su token de calendario; el 5b la recorre y la borra al terminar |
+| E | 1 | no | la tabla de claves de `V1` viaja como SQL generado y vigilado, con el mismo mecanismo y el mismo control que el catálogo; ese control cuenta como guard: **33 → 34** |
+| F | 1 | no | el rol de socio se da en el acto que fija al dueño de la presencia (el reclamo, o el alta directa del admin con dueño), no al aprobar la postulación |
+| G | 1 | no | refrescan la página pública sólo los pasos de la ficha que entran o salen de `PUBLISHED` (lo ya aplicado) |
+| H | 1 | no | `U1` borra de `partners` las seis columnas del cobro viejo (`subscription_status`, `plan_id`, `subscription_id`, `unpaid_notice_sent_at`, `payment_review_state`, `payment_confirmed_through`); `starts_at` y `ends_at` quedan hasta la unidad de socios |
+| I | 1 | no | sale la columna `origen_de_lápida` y su restricción: `clase = LÁPIDA` alcanza |
+| J | 1 | no | una restricción de la base (índice parcial) impone a lo sumo una devolución de la misma orden esperando su id |
+| K | 1 | no | el reintento de cancelar un débito viejo sobre la lápida de recepción sigue la regla de toda cancelación nuestra: un solo correo, antes del primer intento, que no se repite si se entregó |
+| L | 2 | no | `fullAdminRole` del plugin `admin` de Better Auth queda **sin ninguna acción**; el plugin sigue sólo como guardia del baneo. La recomendación inicial era la 1 (sacar sólo `delete`); tras pedir más información, el coordinador corrigió el riesgo de la 2 (hoy todas las rutas del plugin ya contestan `403`, así que vaciar el rol no rompe nada que funcione) y recomendó la 2, que el owner eligió |
+
+**Contra la recomendación: A.** La recomendada era la 3 (levantar la regla general y, hasta el
+reintento, bloquear sólo las rutas de venta del viejo). El owner eligió la 1: tras un aborto, la
+plataforma queda en sólo lectura hasta el reintento, sin lista de rutas.
