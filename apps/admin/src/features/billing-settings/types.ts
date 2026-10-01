@@ -32,6 +32,12 @@ export interface BillingSettings {
     sendPaymentFailedNotification: boolean;
     /** Notify the customer when a subscription is cancelled. */
     sendSubscriptionCancelledNotification: boolean;
+    /**
+     * Pause every NEW self-service paid signup (plan checkout, owner commerce
+     * checkout, add-on purchase) without a deploy. Existing subscriptions,
+     * upgrades of paying customers and admin actions are unaffected.
+     */
+    newPaidSignupsFrozen: boolean;
 }
 
 /**
