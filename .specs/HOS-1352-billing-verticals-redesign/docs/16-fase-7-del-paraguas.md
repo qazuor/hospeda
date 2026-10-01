@@ -3,7 +3,7 @@ title: "FASE 7 del paraguas — la estrategia de despliegue que ninguna épica t
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-19
-updated: 2026-09-30
+updated: 2026-10-01
 status: CURRENT
 fase: 7
 ---
@@ -855,7 +855,7 @@ vigilancia automática, y lo único que corre en ese rato son `V1` y `B1`, que n
 declarar `qzpay`. ~~**El reparto de guards cambia y el total no**~~ **El reparto de guards cambia, y el total también desde el lote de la aplicación** (verificación, `VF5-02`; la unidad de `G18`, owner 2026-09-30, Q): ~~17~~ 18 de verticales, 15 de billing y 1
 de `U1`, ~~33~~ 34 (entra `G18`, de `V1`: FASE 5, lote de la aplicación, owner 2026-09-30, E;
 verificación, `VF5-02`) (`V/descomposicion.md` §4, `B/descomposicion.md` §4); **~~18~~ 19 de verticales, 15 de billing y 1 de `U1`, ~~34~~ 35: entra `G19`, de `V5`, que falla ante un actor de sistema armado fuera de la fábrica** (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H); recontado con script sobre la columna *guards* de las dos tablas de unidades. **`U2` no suma ninguno** (FASE 5,
-lote 2 A), **ni `U3`** (FASES 6 y 7, owner 2026-09-30, F): ~~siguen 34~~ el total lo mueve sólo `G19`, 35.
+lote 2 A), **ni `U3`** (FASES 6 y 7, owner 2026-09-30, F): ~~siguen 34~~ el total lo mueve sólo `G19`, 35. **Al corte, 34 de 35**: queda afuera `G-R1-C`, que pasa a `B8b`, y `G-R2-C` pasa de `B10` a `B4` (corte del MVP, owner 2026-10-01, Z y AA; recontado con `41-corte-del-mvp/contar.py`).
 
 **Dónde vive**: en Linear, como sub-issue de HOS-1352 (el paraguas), no de ninguna de las dos
 épicas; la issue la crea quien abre el programa. **Sus dependencias**: ninguna. **Quién depende de
@@ -873,7 +873,7 @@ ninguna de las dos épicas, porque las dos lo usan, y ponerlo en `B1` haría dep
 package del cobro para mandar un correo (`12-contrato…` §7.1). El nombre sigue la familia de `U1`.
 **Dónde vive**: en Linear, como sub-issue de HOS-1352, igual que `U1`. **Sus dependencias**: `U1`,
 que le deja renombrada la bitácora de correos. **Quién depende de ella**: `V6`, `V9`, `B4` y `B12`,
-las primeras unidades que encolan. **No es una dependencia entre épicas**: `U2` no es de ninguna, así
+las primeras unidades que encolan *(con el corte del MVP, `V9` es `V9a` y `V9b`, que heredan la flecha; corte del MVP, owner 2026-10-01, Z)*. **No es una dependencia entre épicas**: `U2` no es de ninguna, así
 que no le suma ninguna a las doce de `B/descomposicion.md` §2.6. ~~**Con ella el programa tiene 24
 unidades.**~~ **Con ella el programa tenía 24 unidades; con `U3`, abajo, tiene 25** (FASES 6 y 7,
 owner 2026-09-30, F).
@@ -922,6 +922,53 @@ se cerró sin mover la URL** (verificación corta, 2026-09-29, lote O-B): el rec
 misma ruta que el viejo, `/api/v1/webhooks/mercadopago`, ~~el borde la cierra desde que se apaga el
 contenedor viejo hasta que las lápidas están escritas,~~ y el 4b sólo verifica (§4.2, pasos 3~~, 4~~ y 4b; el cierre del borde y las lápidas salieron: FASE 5, simplificación del corte, S-40, S-45).
 
+**El corte del MVP: las 25 unidades son 30 piezas, 22 al corte y 8 después** (corte del MVP, owner 2026-10-01, Y a AE;
+`DEC-ARCH-017`; `41-corte-del-mvp/10-decisiones-del-owner.md`). Cinco unidades se parten en una
+mitad *a*, al corte, y una *b*, después (Z); una unidad partida deja de ser pieza y queda como el
+origen de sus mitades. Esta tabla es **la lista de las piezas**: la leen `41-corte-del-mvp/contar.py`
+y `41-corte-del-mvp/aristas.py` por su encabezado, y lo que dice cada pieza vive en su fila de
+`V/descomposicion.md` §2 (§2.14), de `B/descomposicion.md` §2 (§2.12) o de la tabla de arriba.
+
+<a id="piezas-del-corte"></a>
+
+| pieza | unidad | cuándo | fuente |
+|---|---|---|---|
+| `U1` | `U1` | corte | entera |
+| `U2` | `U2` | corte | entera |
+| `U3` | `U3` | corte | entera |
+| `V1` | `V1` | corte | entera |
+| `V2` | `V2` | corte | entera |
+| `V3` | `V3` | corte | entera |
+| `V4` | `V4` | corte | entera; suma la función del seudónimo, que era de `V9` (AC) |
+| `V5` | `V5` | corte | entera |
+| `V6` | `V6` | corte | entera |
+| `V7` | `V7` | después | entera, salvo su migración estructural, que va al corte (AB; qué pieza la lleva: `41-corte-del-mvp/20-aplicacion.md`, AP) |
+| `V8a` | `V8` | corte | Z |
+| `V8b` | `V8` | después | Z |
+| `V9a` | `V9` | corte | Z y AC |
+| `V9b` | `V9` | después | Z y AC |
+| `B1` | `B1` | corte | entera |
+| `B2` | `B2` | corte | entera |
+| `B3` | `B3` | corte | entera; la rama de sucesión de `S1` sin ruta hasta `B8b` (Z) |
+| `B4` | `B4` | corte | entera; suma el modelo de addons y la fuente `ADDON`, con `G-R2-C` (AA) |
+| `B5` | `B5` | corte | entera |
+| `B6` | `B6` | corte | entera |
+| `B7` | `B7` | corte | entera |
+| `B8a` | `B8` | corte | Z |
+| `B8b` | `B8` | después | Z |
+| `B9a` | `B9` | corte | Z |
+| `B9b` | `B9` | después | Z |
+| `B10` | `B10` | después | entera, salvo su modelo y la fuente `ADDON`, que van a `B4` (AA) |
+| `B11` | `B11` | corte | entera |
+| `B12` | `B12` | después | entera |
+| `B13a` | `B13` | corte | Z |
+| `B13b` | `B13` | después | Z |
+
+**Todo el esquema de las 25 unidades nace en las migraciones de la rama antes del corte** —tablas,
+columnas, enums, `FK`, `UNIQUE`, `CHECK` y los extras—, aunque su lógica se difiera: una fase
+posterior no trae migración estructural (AD). **Qué pieza del corte crea el esquema de lo que va
+después** —salvo el de addons, que AA pone en `B4`— no lo fija el lote, y vuelve al owner (`41-corte-del-mvp/20-aplicacion.md`, AP).
+
 ### 4.7 Los gates de aceptación ✚
 
 (FASES 6 y 7, owner 2026-09-30, A a E, con lo derivado D-1 a D-5; `DEC-ARCH-016`;
@@ -933,7 +980,7 @@ que nace para recibir el PR de `U1` (D-1; §2).
 
 #### Momento 1 · una unidad se da por terminada
 
-Una de las 25 se da por terminada cuando (D-2):
+Una de las ~~25~~ **30 piezas** (corte del MVP, owner 2026-10-01, Z: una mitad *a* o *b* se da por terminada como cualquier unidad) se da por terminada cuando (D-2):
 
 1. cumple el criterio de su fila en el §4 de su descomposición (`V/descomposicion.md`,
    `B/descomposicion.md`) o, para `U1`, `U2` y `U3`, el de su fila del §4.6;
@@ -960,7 +1007,8 @@ unidades**: si no, 25 issues quedan meses en *In Review* con una etiqueta que na
 
 El PR final del paraguas a `staging` no se abre hasta que (D-3):
 
-1. las 25 unidades están en `Done`;
+1. ~~las 25 unidades están en `Done`~~ **las 22 piezas del corte están en `Done`** (corte del MVP, owner 2026-10-01, Y; el 📌 de
+   `DEC-ARCH-016`; la lista, en el §4.6); las ocho posteriores no lo frenan;
 2. `staging` está mergeado hacia la rama y la rama está verde en su último `push`;
 3. `e2e-pr`, `codeql`, y `lighthouse` y `a11y-sweep` por `workflow_dispatch`, tienen conclusión
    `success` fechada después del último merge a la rama (`15-fase-9/01-R6-resuelto.md`, chequeo 7).
@@ -999,6 +1047,16 @@ divergencia sin explicar** (E). Esa observación retira la etiqueta `status-need
 `HOS-1352` y dispara la tarea de cierre (sacar los informes del repositorio y reescribir el diseño
 sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la espera se revisa a los
 30 días** (E).
+
+#### Las fases posteriores ✚
+
+(corte del MVP, owner 2026-10-01, Y y AE; `DEC-ARCH-017`.) Las ocho piezas que van después llegan en **fases posteriores,
+aditivas sobre el sistema nuevo**: no reescriben filas ni código del corte, y no traen migración
+estructural (AD). **Cada fase posterior viaja en una rama épica nueva** (`epic/**`, `DEC-CI-001`),
+con **los mismos gates por unidad** —el momento 1, pieza por pieza—, y **entra a `staging`
+entera** (AE). Los momentos 3 a 5 son del corte y no se repiten. **Qué otra condición tiene el PR
+de una fase posterior a `staging`** —el *«propio gate»* de Y— no lo escribe el lote, y vuelve al
+owner (`41-corte-del-mvp/20-aplicacion.md`, AT).
 
 #### El smoke manual del cobro nuevo
 
