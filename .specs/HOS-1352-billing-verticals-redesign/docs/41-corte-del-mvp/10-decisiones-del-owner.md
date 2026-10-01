@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO y AP a AU (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU y AV (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -62,6 +62,15 @@ Respuestas del owner, 2026-10-01, a las preguntas que dejó la pasada de depende
 | AS | las ramas del corte que tocan lo que sólo existe después | 1 | sí | se implementan enteras al corte sobre el esquema vacío; `S20`, `S21`, `S32` y `S33` pasan a la pieza del corte que las llama; se prueban con filas sembradas; la fase posterior sólo agrega lo que crea filas |
 | AT | el gate propio de una fase posterior | 1 | sí | el momento 2 aplicado a la rama de la fase, más el checklist de smoke extendido con lo de la fase: la parte de `staging` antes del merge y la de producción como un 5c propio |
 | AU | cómo se dice que todavía no se puede cambiar de plan | 1 | sí | `B13a` muestra en Mi Suscripción *«todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte»*, y `B8b` lo saca, como excepción declarada y acotada a ese texto |
+
+## Lote AV (2026-10-01)
+
+Respuesta del owner, 2026-10-01, a la pregunta que dejó la aplicación de AP y AS
+(`20-aplicacion.md` §5). Es la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| AV | dónde viven al corte `S21`, `S32`, `S33` y la orfandad que dispara a `S21` | 1 | sí | las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`; `S21` y la orfandad (`A5`) van a `B5`, su primer llamador; `S32` y `S33`, a `B7`. Sin flechas nuevas. Precisa AP en el renglón de addons |
 
 ## Resultado del corte
 

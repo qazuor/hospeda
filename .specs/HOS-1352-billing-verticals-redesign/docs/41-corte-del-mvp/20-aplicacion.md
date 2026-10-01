@@ -241,6 +241,9 @@ opción y no sabe si existe.
 
 ### AV · Dónde viven al corte `S21`, `S32`, `S33` y la orfandad que dispara a `S21`
 
+> **Respondida el 2026-10-01: la 1, la recomendada** (`10-decisiones-del-owner.md`, lote AV). El
+> análisis de abajo queda como estaba; su aplicación está en el §6.
+
 AS manda cada transición a la pieza del corte que la llama. Las que llaman son: `S36`, de `B5`
 (revocar corre la orfandad, `A5`, y su instancia en `CANCELLED` corre `S21`, `R1-b`); `S6` y `S7`,
 de `B7` (`S32` y `S33` sobre la suspensión, `G2-2`, y `R18-b`); `S11`, de `B8a` (`R1-a`); y las
