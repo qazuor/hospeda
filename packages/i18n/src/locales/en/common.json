@@ -118,7 +118,8 @@
         "GALLERY_LIMIT_EXCEEDED_other": "You have reached the gallery limit of {{count}} photos.",
         "MISSING_FILE": "No image was received. Choose a file and try again.",
         "EMPTY_FILE": "The file is empty. Choose another image.",
-        "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
+        "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual.",
+        "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
     },
     "filters": "Filters",
     "filterChips": {

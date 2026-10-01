@@ -282,6 +282,10 @@
         "signupsPaused": {
             "title": "New sign-ups are paused",
             "body": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
+        },
+        "firstPublishPaused": {
+            "title": "Publishing new listings is paused",
+            "body": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
         }
     },
     "checkoutRetry": {

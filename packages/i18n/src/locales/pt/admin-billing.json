@@ -513,7 +513,7 @@
             "title": "Novas contratações",
             "description": "Pause as contratações self-service sem fazer deploy",
             "label": "Pausar novas contratações pagas",
-            "hint": "Bloqueia assinar um plano (incluindo novos testes iniciados no checkout), publicar um comércio que ainda não tem assinatura e comprar complementos. Não afeta renovações, cobranças, cancelamentos, trocas de cartão, upgrades de quem já paga nem as ações do admin.",
+            "hint": "Bloqueia assinar um plano (incluindo novos testes iniciados no checkout), a primeira publicação de um anfitrião sem teste nem assinatura (que é o que inicia o teste), as reativações, publicar um comércio que ainda não tem assinatura e comprar complementos. Não afeta renovações, cobranças, cancelamentos, trocas de cartão, upgrades de quem já paga, publicar ou editar com uma assinatura ou teste vigente, nem as ações do admin.",
             "activeWarning": "As novas contratações estão pausadas: o site mostra um aviso no lugar do botão de assinar, e a API recusa essas contratações."
         }
     },

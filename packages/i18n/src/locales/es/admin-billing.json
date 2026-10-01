@@ -513,7 +513,7 @@
             "title": "Altas nuevas",
             "description": "Pausá las contrataciones self-service sin hacer un deploy",
             "label": "Pausar altas pagas nuevas",
-            "hint": "Bloquea contratar un plan (incluidas las pruebas nuevas desde el checkout), publicar un comercio que todavía no tiene suscripción y comprar complementos. No afecta renovaciones, cobros, cancelaciones, cambios de tarjeta, upgrades de quien ya paga ni las acciones del admin.",
+            "hint": "Bloquea contratar un plan (incluidas las pruebas nuevas desde el checkout), la primera publicación de un anfitrión sin prueba ni suscripción (que es lo que inicia la prueba), las reactivaciones, publicar un comercio que todavía no tiene suscripción y comprar complementos. No afecta renovaciones, cobros, cancelaciones, cambios de tarjeta, upgrades de quien ya paga, publicar o editar con una suscripción o prueba vigente, ni las acciones del admin.",
             "activeWarning": "Las altas nuevas están pausadas: en la web se muestra un aviso en lugar del botón de contratar, y la API rechaza esas contrataciones."
         }
     },

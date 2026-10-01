@@ -282,6 +282,10 @@
         "signupsPaused": {
             "title": "Contrataciones nuevas en pausa",
             "body": "Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad."
+        },
+        "firstPublishPaused": {
+            "title": "Publicación de fichas nuevas en pausa",
+            "body": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden."
         }
     },
     "checkoutRetry": {
