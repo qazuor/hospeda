@@ -13,8 +13,8 @@ vivo es un error, porque se contaría dos veces.
 Y verifica dos traslados del corte (owner 2026-10-01, AP a AU), también por encabezado:
   - la tabla `| transición | pieza | nota |` de B/descomposicion.md §2.12 contra las filas vivas de
     B/docs/03-maquinas-de-estado.md §3.2: cada transición viva aparece una vez, su pieza existe, y
-    las que trasladan AR y AS caen en una pieza del corte. Una pieza `AV` es una pregunta abierta
-    del owner: se informa como pendiente, no como falla;
+    las que trasladan AR y AS caen en una pieza del corte. Una celda sin pieza —la marca `AV` que
+    usó la pregunta abierta, ya contestada— es una falla;
   - la tabla `| esquema | de | lo crea | fuente |` de D/16 §4.6: cada fila va de una pieza posterior
     a una pieza del corte (AD: una fase posterior no trae migración estructural).
 
@@ -145,11 +145,10 @@ for f in filas:
     s = f[0].strip('`')
     vistas.append(s)
     dueñas = re.findall(r'`(' + PIEZA + r')`', f[1])
-    if 'AV' in f[1] and not dueñas:
+    if not dueñas and f[1]:
         pendientes.append(s)
-        continue
     if not dueñas:
-        fallas.append(f'transición {s} sin pieza')
+        fallas.append(f'transición {s} sin pieza (celda: «{f[1]}»)')
     for x in dueñas:
         if x not in piezas:
             fallas.append(f'transición {s}: la pieza {x} no existe')
@@ -161,7 +160,7 @@ if set(vistas) != vivas:
     fallas.append(f'vivas sin fila: {sorted(vivas - set(vistas))} · '
                   f'filas que no están vivas: {sorted(set(vistas) - vivas)}')
 print(f'transiciones: {len(vivas)} vivas en 03 §3.2 · {len(set(vistas))} en la tabla de B §2.12 '
-      f'· pendientes de AV: {" ".join(pendientes) or "ninguna"}')
+      f'· sin pieza (marca abierta): {" ".join(pendientes) or "ninguna"}')
 cols, filas = tabla(seccion(D16, r'^### 4\.6 '), r'^\| esquema \| de \| lo crea \|')
 for f in filas:
     de, crea = f[1].strip('`'), f[2].strip('`')
