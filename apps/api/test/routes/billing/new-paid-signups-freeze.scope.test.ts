@@ -120,7 +120,9 @@ describe('new paid signups freeze — admin provisioning is exempt', () => {
 const GATED_ROUTE_FILES = [
     'billing/start-paid.ts',
     'commerce/protected/start-subscription.ts',
-    'billing/addons.ts'
+    'billing/addons.ts',
+    // Owner decision R: both reactivation routes open a new checkout.
+    'billing/trial.ts'
 ] as const;
 
 const EXEMPT_ROUTE_FILES = [
@@ -133,7 +135,10 @@ const EXEMPT_ROUTE_FILES = [
     'billing/subscription-pause.ts',
     'billing/replace-payment-method.ts',
     'billing/checkout-retry.ts',
-    'webhooks/mercadopago/payment-logic.ts'
+    'webhooks/mercadopago/payment-logic.ts',
+    // Owner decision R: an admin publishing on the owner's behalf is exempt.
+    'accommodation/admin/update.ts',
+    'accommodation/admin/patch.ts'
 ] as const;
 
 const GATE_IMPORT = 'new-paid-signups-freeze';
@@ -142,6 +147,27 @@ const GATE_CALL = /\bawait assertNewPaidSignupsAllowed\(\{\s*entryPoint:/;
 function readRoute(relativePath: string): string {
     return readFileSync(resolve(__dirname, '../../../src/routes', relativePath), 'utf8');
 }
+
+/**
+ * The accommodation first publish is gated inside `AccommodationService.publish()`
+ * (service-core), through the `readNewSignupsFreeze` dep. The API's half of the
+ * wiring is that the ONE deps factory every publish route uses passes the real
+ * reader — drop it and every first publish silently ignores the freeze.
+ */
+const PUBLISH_DEPS_FILE = resolve(__dirname, '../../../src/services/accommodation-publish-deps.ts');
+
+describe('new paid signups freeze — first publish wiring', () => {
+    it('the accommodation publish deps factory passes the freeze reader', () => {
+        // Arrange
+        const source = readFileSync(PUBLISH_DEPS_FILE, 'utf8');
+
+        // Act
+        const wiresReader = /readNewSignupsFreeze:\s*readNewPaidSignupsFreeze\b/.test(source);
+
+        // Assert
+        expect(wiresReader).toBe(true);
+    });
+});
 
 describe('new paid signups freeze — wiring', () => {
     it.each(GATED_ROUTE_FILES)('%s calls the freeze gate', (file) => {

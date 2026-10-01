@@ -14,6 +14,13 @@
  * - `POST /protected/commerce/listings/:entityType/:entityId/start-subscription`
  *   — the owner commerce self-checkout, in its trial and checkout branches.
  * - `POST /protected/billing/addons/:slug/purchase` — add-on purchases.
+ * - `POST /protected/billing/trial/reactivate` and
+ *   `POST /protected/billing/trial/reactivate-subscription` — both open a new
+ *   MercadoPago checkout (owner decision R).
+ * - The accommodation FIRST publish — the one that starts the local trial
+ *   (HOS-1012). Gated inside `AccommodationService.publish()` through the
+ *   `readNewSignupsFreeze` publish dep ({@link readNewPaidSignupsFreeze}), only
+ *   when the owner publishes; an admin publishing on their behalf is exempt.
  *
  * ## What it deliberately does NOT freeze
  *
@@ -54,7 +61,12 @@ import { getBillingSettingsService } from '../billing-settings.service';
  * The self-service entry points the freeze applies to. Used only to label the
  * log line, so support can tell which surface a refused visitor came from.
  */
-export type NewPaidSignupEntryPoint = 'start-paid' | 'commerce-self-checkout' | 'addon-purchase';
+export type NewPaidSignupEntryPoint =
+    | 'start-paid'
+    | 'commerce-self-checkout'
+    | 'addon-purchase'
+    | 'trial-reactivate'
+    | 'subscription-reactivate';
 
 /**
  * Client-facing message of the refusal. English, like every API message: the
