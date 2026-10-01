@@ -91,10 +91,24 @@ const HIDDEN_ATTR_RE = /(?:^|\s)hidden(?=[\s=/]|$)/i;
  */
 const MAIN_MIN_VISIBLE_CHARS = 120;
 
+/** Opens an HTML comment. */
+const COMMENT_OPEN = '<!--';
+
+/** Closes an HTML comment. */
+const COMMENT_CLOSE = '-->';
+
 /**
- * Matches an HTML comment, including its content.
+ * Replaces every HTML comment, including its content, with a single space.
  *
- * This MUST be stripped before anything else in the pipeline — before even
+ * Equivalent to `html.replace(/<!--[\s\S]*?-->/g, ' ')` — each comment ends at
+ * the first `-->` that starts AFTER its `<!--` (so `<!-->` does not close
+ * itself), and an opener with no closer is left in place — but implemented as
+ * a single forward scan. The regex rescanned the rest of the input from every
+ * `<!--` that had no closer, which is quadratic on third-party HTML full of
+ * unclosed openers (CodeQL js/polynomial-redos, alert #105). Once one opener
+ * has no closer, no later opener can have one either, so the scan stops there.
+ *
+ * This MUST run before anything else in the pipeline — before even
  * the body-scope (HOS-1029). Two independent reasons:
  *
  * 1. {@link BODY_CONTENT_RE} matches the first LITERAL `<body` in the
@@ -107,8 +121,29 @@ const MAIN_MIN_VISIBLE_CHARS = 120;
  * 2. {@link HTML_TAG_RE} stops at the first `>`. A comment whose text
  *    contains a `>` truncates the tag match there, leaving the remainder of
  *    the comment — including the closing `-->` — as literal output text.
+ *
+ * @param html - Raw HTML.
+ * @returns The HTML with every closed comment replaced by a space.
  */
-const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+function removeHtmlComments(html: string): string {
+    let result = '';
+    let cursor = 0;
+
+    for (;;) {
+        const open = html.indexOf(COMMENT_OPEN, cursor);
+        if (open === -1) {
+            break;
+        }
+        const close = html.indexOf(COMMENT_CLOSE, open + COMMENT_OPEN.length);
+        if (close === -1) {
+            break;
+        }
+        result += `${html.slice(cursor, open)} `;
+        cursor = close + COMMENT_CLOSE.length;
+    }
+
+    return result + html.slice(cursor);
+}
 
 /**
  * Captures the contents of `<body>`.
@@ -116,7 +151,7 @@ const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
  * Scoping to the body is not cosmetic: `<head>` holds `<title>`, and without
  * this the title text lands in the extracted "content" — enough, on a thin
  * page, for a scrap of chrome to clear the description minimum and preempt a
- * better candidate. Must run AFTER {@link HTML_COMMENT_RE} strips comments —
+ * better candidate. Must run AFTER {@link removeHtmlComments} strips comments —
  * see its doc comment for why.
  */
 const BODY_CONTENT_RE = /<body(?=[\s>/])[^>]{0,2000}>([\s\S]*?)<\/body\s*>/i;
@@ -252,8 +287,7 @@ export function stripHtmlToText(input: {
         return '';
     }
 
-    HTML_COMMENT_RE.lastIndex = 0;
-    let text = html.replace(HTML_COMMENT_RE, ' ');
+    let text = removeHtmlComments(html);
 
     SCRIPT_STYLE_RE.lastIndex = 0;
     text = text.replace(SCRIPT_STYLE_RE, ' ');
@@ -278,7 +312,7 @@ export function stripHtmlToText(input: {
  *
  * **Pipeline:**
  * 0. Remove HTML comments (HOS-1029) — BEFORE anything else, including the
- *    body-scope. See {@link HTML_COMMENT_RE} for why the ordering is load-bearing.
+ *    body-scope. See {@link removeHtmlComments} for why the ordering is load-bearing.
  * 1. Scope to `<body>` (falls back to stripping `<head>` when there is none).
  * 2. Remove `<script>` / `<style>` blocks and their content, then narrow to
  *    the `<main>` element when the page has one (HOS-1219).
@@ -316,11 +350,10 @@ export function stripHtmlToParagraphText(input: {
     }
 
     // Step 0 — remove HTML comments FIRST, before the body-scope or anything
-    // else (HOS-1029). See HTML_COMMENT_RE's doc comment: a <head> comment
+    // else (HOS-1029). See removeHtmlComments' doc comment: a <head> comment
     // that merely mentions "<body>" in its prose would otherwise anchor the
     // scope tens of thousands of characters too early.
-    HTML_COMMENT_RE.lastIndex = 0;
-    const withoutComments = html.replace(HTML_COMMENT_RE, ' ');
+    const withoutComments = removeHtmlComments(html);
 
     // Step 1 — scope to <body>. Falls back to stripping <head> when the markup
     // has no explicit body element (fragments, malformed pages).

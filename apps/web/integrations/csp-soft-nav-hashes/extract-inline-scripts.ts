@@ -36,7 +36,16 @@ const EXECUTABLE_SCRIPT_TYPES: ReadonlySet<string> = new Set([
     'text/ecmascript'
 ]);
 
-const SCRIPT_BLOCK_PATTERN = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+/**
+ * An inline `<script>` block. The end tag follows the HTML tokenizer, not the
+ * tidy spelling: a browser ends a script at `</script` followed by whitespace,
+ * `/` or `>`, in any letter case and with any junk before the `>`
+ * (`</script\t\n bar>`). Accepting only `</script\s*>` would let the body run
+ * past the real end tag and hash text the browser never executes (CodeQL
+ * js/bad-tag-filter, alert #115). `</scripts>` and `</script-x>` are NOT end
+ * tags, hence the `[\s/]` guard before the junk.
+ */
+const SCRIPT_BLOCK_PATTERN = /<script\b([^>]*)>([\s\S]*?)<\/script(?:[\s/][^>]*)?>/gi;
 const SRC_ATTRIBUTE_PATTERN = /(?:^|\s)src\s*=/i;
 const TYPE_ATTRIBUTE_PATTERN = /(?:^|\s)type\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i;
 

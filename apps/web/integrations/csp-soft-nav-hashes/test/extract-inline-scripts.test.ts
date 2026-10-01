@@ -153,3 +153,42 @@ describe('extractInlineScripts', () => {
         expect(result.staticBodies).toEqual(['run()']);
     });
 });
+
+describe('extractInlineScripts — script end tag (CodeQL js/bad-tag-filter, #115)', () => {
+    // A browser ends a script at `</script` followed by whitespace, `/` or `>`,
+    // whatever junk precedes the `>` and in any letter case. The body we hash
+    // must end exactly where the browser ends it.
+    const validEndTags: readonly string[] = [
+        '</script>',
+        '</SCRIPT>',
+        '</Script >',
+        '</script\t\n bar>',
+        '</script foo="1">',
+        '</script/>',
+        '</script\n>'
+    ];
+
+    for (const endTag of validEndTags) {
+        it(`ends the body at ${JSON.stringify(endTag)}`, () => {
+            // Arrange
+            const templates = [[`<script>run()${endTag}<p>after</p><script>next()</script>`]];
+
+            // Act
+            const result = extractInlineScripts({ templates });
+
+            // Assert — two separate scripts, not one body swallowing the markup.
+            expect(result.staticBodies).toEqual(['run()', 'next()']);
+        });
+    }
+
+    it('does not end the body at a tag whose name merely starts with "script"', () => {
+        // Arrange — `</scripts>` and `</script-x>` are not script end tags.
+        const templates = [['<script>a("</scripts>"); b("</script-x>")</script>']];
+
+        // Act
+        const result = extractInlineScripts({ templates });
+
+        // Assert
+        expect(result.staticBodies).toEqual(['a("</scripts>"); b("</script-x>")']);
+    });
+});
