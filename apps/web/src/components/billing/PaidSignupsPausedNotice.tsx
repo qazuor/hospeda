@@ -21,20 +21,60 @@ export interface PaidSignupsPausedNoticeProps {
     readonly locale: SupportedLocale;
     /** Optional test id, so each surface can be targeted independently. */
     readonly testId?: string;
+    /**
+     * Which promise the notice makes. `signup` (default) is for checkouts and
+     * purchases; `firstPublish` is for a host's FIRST publish, which starts a
+     * trial and is paused too — its copy says the listing stays a draft.
+     */
+    readonly variant?: PaidSignupsPausedVariant;
 }
+
+/** The two copies the notice can carry. */
+export type PaidSignupsPausedVariant = 'signup' | 'firstPublish';
+
+/** i18n keys + Spanish fallbacks per variant. */
+const COPY_BY_VARIANT: Readonly<
+    Record<
+        PaidSignupsPausedVariant,
+        {
+            readonly titleKey: string;
+            readonly titleFallback: string;
+            readonly bodyKey: string;
+            readonly bodyFallback: string;
+        }
+    >
+> = {
+    signup: {
+        titleKey: 'billing.checkout.signupsPaused.title',
+        titleFallback: 'Contrataciones nuevas en pausa',
+        bodyKey: 'billing.checkout.signupsPaused.body',
+        bodyFallback:
+            'Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.'
+    },
+    firstPublish: {
+        titleKey: 'billing.checkout.firstPublishPaused.title',
+        titleFallback: 'Publicación de fichas nuevas en pausa',
+        bodyKey: 'billing.checkout.firstPublishPaused.body',
+        bodyFallback:
+            'Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden.'
+    }
+};
 
 /**
  * "New signups are paused" notice.
  *
  * @param props.locale - Active locale.
  * @param props.testId - Optional `data-testid` (defaults to `paid-signups-paused-notice`).
+ * @param props.variant - `signup` (default) or `firstPublish`.
  * @returns The notice element.
  */
 export function PaidSignupsPausedNotice({
     locale,
-    testId = 'paid-signups-paused-notice'
+    testId = 'paid-signups-paused-notice',
+    variant = 'signup'
 }: PaidSignupsPausedNoticeProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const copy = COPY_BY_VARIANT[variant];
 
     return (
         <div
@@ -42,15 +82,8 @@ export function PaidSignupsPausedNotice({
             className={styles.notice}
             data-testid={testId}
         >
-            <p className={styles.title}>
-                {t('billing.checkout.signupsPaused.title', 'Contrataciones nuevas en pausa')}
-            </p>
-            <p className={styles.body}>
-                {t(
-                    'billing.checkout.signupsPaused.body',
-                    'Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.'
-                )}
-            </p>
+            <p className={styles.title}>{t(copy.titleKey, copy.titleFallback)}</p>
+            <p className={styles.body}>{t(copy.bodyKey, copy.bodyFallback)}</p>
         </div>
     );
 }
