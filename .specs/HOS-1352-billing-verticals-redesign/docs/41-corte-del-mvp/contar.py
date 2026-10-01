@@ -10,7 +10,16 @@ Saca lo tachado (~~...~~) y los comentarios en itálica (*(...)*). Una unidad pa
 B8, B9, B13) deja de ser pieza: su fila queda como origen de sus mitades, y si conserva un guard
 vivo es un error, porque se contaría dos veces.
 
-Sale 1 si algo no cierra: piezas sin fila, filas sin pieza, guards repetidos u origen con guard.
+Y verifica dos traslados del corte (owner 2026-10-01, AP a AU), también por encabezado:
+  - la tabla `| transición | pieza | nota |` de B/descomposicion.md §2.12 contra las filas vivas de
+    B/docs/03-maquinas-de-estado.md §3.2: cada transición viva aparece una vez, su pieza existe, y
+    las que trasladan AR y AS caen en una pieza del corte. Una pieza `AV` es una pregunta abierta
+    del owner: se informa como pendiente, no como falla;
+  - la tabla `| esquema | de | lo crea | fuente |` de D/16 §4.6: cada fila va de una pieza posterior
+    a una pieza del corte (AD: una fase posterior no trae migración estructural).
+
+Sale 1 si algo no cierra: piezas sin fila, filas sin pieza, guards repetidos, origen con guard, o
+un traslado que no cumple lo de arriba.
 """
 import os
 import re
@@ -123,6 +132,45 @@ print(f'guards: {len(todos)} · distintos: {len(set(todos))} · al corte: {len(a
       f'· después: {len(afuera)} {" ".join(afuera)}')
 print('por familia:', ' · '.join(f'{k}: {sum(len(g) for u, g in filas_pieza.items() if u[0] == k)}'
                                  for k in 'VBU'))
+# 3. los traslados: transiciones (B §2.12) y esquema (D/16 §4.6)
+B03 = 'HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md'
+vivas = set()
+for l in seccion(B03, r'^### 3\.2 '):
+    m = re.match(r'\| (\*\*)?(S\d+)(\*\*)?( ✚)? \|', l)
+    if m:
+        vivas.add(m.group(2))
+cols, filas = tabla(seccion(B, r'^### 2\.12 '), r'^\| transición \| pieza \| nota \|')
+vistas, pendientes = [], []
+for f in filas:
+    s = f[0].strip('`')
+    vistas.append(s)
+    dueñas = re.findall(r'`(' + PIEZA + r')`', f[1])
+    if 'AV' in f[1] and not dueñas:
+        pendientes.append(s)
+        continue
+    if not dueñas:
+        fallas.append(f'transición {s} sin pieza')
+    for x in dueñas:
+        if x not in piezas:
+            fallas.append(f'transición {s}: la pieza {x} no existe')
+        elif re.fullmatch(r'AR|AS', f[2]) and piezas[x] != 'corte':
+            fallas.append(f'transición {s} ({f[2]}) en {x}, que no es del corte')
+if sorted(vistas) != sorted(set(vistas)):
+    fallas.append(f'transiciones repetidas: {sorted({s for s in vistas if vistas.count(s) > 1})}')
+if set(vistas) != vivas:
+    fallas.append(f'vivas sin fila: {sorted(vivas - set(vistas))} · '
+                  f'filas que no están vivas: {sorted(set(vistas) - vivas)}')
+print(f'transiciones: {len(vivas)} vivas en 03 §3.2 · {len(set(vistas))} en la tabla de B §2.12 '
+      f'· pendientes de AV: {" ".join(pendientes) or "ninguna"}')
+cols, filas = tabla(seccion(D16, r'^### 4\.6 '), r'^\| esquema \| de \| lo crea \|')
+for f in filas:
+    de, crea = f[1].strip('`'), f[2].strip('`')
+    if piezas.get(crea) != 'corte':
+        fallas.append(f'esquema «{f[0][:40]}…»: lo crea {crea}, que no es una pieza del corte')
+    if piezas.get(de) != 'después':
+        fallas.append(f'esquema «{f[0][:40]}…»: es de {de}, que no es una pieza posterior')
+print(f'esquema de lo posterior creado al corte: {len(filas)} filas · '
+      f'piezas que lo crean: {" ".join(sorted({f[2].strip("`") for f in filas}, key=orden))}')
 for f in fallas:
     print('✗', f)
 sys.exit(1 if fallas else 0)
