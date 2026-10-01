@@ -346,6 +346,124 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
         expect(result.exitCode).toBe(1);
     });
 
+    /** Advances `staging` past `main` with one commit, pushed. */
+    function advanceStaging({ file }: { readonly file: string }): void {
+        const cwd = sandbox.clone;
+        git({ cwd, args: ['checkout', '-q', 'staging'] });
+        commit({ cwd, file });
+        push({ cwd, branch: 'staging' });
+    }
+
+    /**
+     * Umbrella with work of its own that has since merged the latest
+     * `staging` (which is ahead of `main`), pushed.
+     */
+    function createSyncedUmbrellaWithWork(): void {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        advanceStaging({ file: 'staging-2.txt' });
+        git({ cwd, args: ['checkout', '-q', UMBRELLA] });
+        git({ cwd, args: ['merge', '-q', '--no-ff', '--no-edit', 'staging'] });
+        commit({ cwd, file: 'umbrella-2.txt' });
+        push({ cwd, branch: UMBRELLA });
+    }
+
+    it('passes the staging -> main promotion when the umbrella tip IS the staging tip', () => {
+        // Arrange — the umbrella shares every commit with staging, and staging
+        // is ahead of main. Measured against main alone, staging's own
+        // commits looked like umbrella commits and the promotion went red.
+        const cwd = sandbox.clone;
+        advanceStaging({ file: 'staging-2.txt' });
+        git({ cwd, args: ['checkout', '-q', '-b', UMBRELLA, 'staging'] });
+        push({ cwd, branch: UMBRELLA });
+        checkoutPrMerge({ cwd, head: 'staging', base: 'main' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'main', GITHUB_HEAD_REF: 'staging' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('OK: no umbrella-only commit');
+    });
+
+    it('passes the staging -> main promotion when the umbrella synced staging and has work of its own', () => {
+        // Arrange — staging does not carry the umbrella's own commits, so the
+        // promotion delivers nothing of the umbrella.
+        const cwd = sandbox.clone;
+        createSyncedUmbrellaWithWork();
+        checkoutPrMerge({ cwd, head: 'staging', base: 'main' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'main', GITHUB_HEAD_REF: 'staging' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+    });
+
+    it('passes the staging -> main promotion when staging is not fetched locally', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createSyncedUmbrellaWithWork();
+        checkoutPrMerge({ cwd, head: 'staging', base: 'main' });
+        git({ cwd, args: ['branch', '-q', '-D', 'staging'] });
+        git({ cwd, args: ['update-ref', '-d', 'refs/remotes/origin/staging'] });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'main', GITHUB_HEAD_REF: 'staging' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+    });
+
+    it('fails a branch cut from a synced umbrella with work of its own that targets main', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createSyncedUmbrellaWithWork();
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/synced-main', UMBRELLA] });
+        commit({ cwd, file: 'synced-main.txt' });
+        push({ cwd, branch: 'feat/synced-main' });
+        checkoutPrMerge({ cwd, head: 'feat/synced-main', base: 'main' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'main', GITHUB_HEAD_REF: 'feat/synced-main' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+    });
+
+    it('fails a branch cut from a synced umbrella with work of its own that targets staging', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createSyncedUmbrellaWithWork();
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/synced-staging', UMBRELLA] });
+        commit({ cwd, file: 'synced-staging.txt' });
+        push({ cwd, branch: 'feat/synced-staging' });
+        checkoutPrMerge({ cwd, head: 'feat/synced-staging', base: 'staging' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/synced-staging' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+    });
+
     it('skips when there is no protected target (push or local run)', () => {
         // Arrange
         const cwd = sandbox.clone;
