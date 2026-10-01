@@ -33,6 +33,14 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_AUTH_MAX_REQUESTS: 5, // Higher limit for auth
         API_RATE_LIMIT_AUTH_MESSAGE: 'Too many authentication requests, please try again later.',
 
+        // Session-read rate limiting (HOS-1153) — its own tier, deliberately
+        // higher than `auth`: these GETs accept no credential.
+        API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED: true,
+        API_RATE_LIMIT_AUTH_SESSION_READ_WINDOW_MS: 1000,
+        API_RATE_LIMIT_AUTH_SESSION_READ_MAX_REQUESTS: 9,
+        API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE:
+            'Too many session checks, please try again later.',
+
         // Public API rate limiting
         API_RATE_LIMIT_PUBLIC_ENABLED: true,
         API_RATE_LIMIT_PUBLIC_WINDOW_MS: 1000,
@@ -85,6 +93,12 @@ vi.mock('../../src/utils/env', () => {
         authWindowMs: mockEnv.API_RATE_LIMIT_AUTH_WINDOW_MS,
         authMaxRequests: mockEnv.API_RATE_LIMIT_AUTH_MAX_REQUESTS,
         authMessage: mockEnv.API_RATE_LIMIT_AUTH_MESSAGE,
+
+        // Session-read-specific (HOS-1153)
+        authSessionReadEnabled: mockEnv.API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED,
+        authSessionReadWindowMs: mockEnv.API_RATE_LIMIT_AUTH_SESSION_READ_WINDOW_MS,
+        authSessionReadMaxRequests: mockEnv.API_RATE_LIMIT_AUTH_SESSION_READ_MAX_REQUESTS,
+        authSessionReadMessage: mockEnv.API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE,
 
         // Public API-specific
         publicEnabled: mockEnv.API_RATE_LIMIT_PUBLIC_ENABLED,

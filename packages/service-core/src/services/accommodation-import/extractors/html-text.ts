@@ -49,9 +49,66 @@ const PAGE_CHROME_RE =
     /<(nav|header|footer|aside|form|noscript|svg|iframe|select|button)\b[^>]{0,2000}>[\s\S]*?<\/\1\s*>/gi;
 
 /**
- * Matches an HTML comment, including its content.
+ * Matches a "skip to content" link: an `<a>` whose own `class` or `id`
+ * attribute carries a skip TOKEN (`skip`, `skip-to-*`, `skip-link`,
+ * `skip-nav`, `skip-main`, `skip-content`) — HOS-1219.
  *
- * This MUST be stripped before anything else in the pipeline — before even
+ * Accessibility templates render it as a loose anchor BEFORE the `<header>`,
+ * so none of the {@link PAGE_CHROME_RE} tags covers it. Deliberately narrow:
+ * the attribute name is anchored (`data-id="skip"` does not count), the value
+ * must contain `skip` as a whole space-separated token (`skipper-boat` and
+ * `skipass-info` do not), and the body may not cross another `<a` (an
+ * unclosed skip link cannot swallow the prose up to a later `</a>`).
+ * Applied ONLY when the page has no usable `<main>` — see
+ * {@link MAIN_OPEN_RE}.
+ */
+const SKIP_LINK_RE =
+    /<a(?=[\s>])[^>]{0,2000}?(?<![\w-])(?:class|id)\s*=\s*["'](?:[^"']{0,200}\s)?skip(?:-(?:to|link|nav|main|content)[\w-]*)?(?=[\s"'])[^>]{0,2000}>(?:(?!<a[\s>])[\s\S]){0,400}?<\/a\s*>/gi;
+
+/** Matches `<noscript>` / `<template>` elements including their content (HOS-1219). */
+const INERT_CONTAINER_RE = /<(noscript|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi;
+
+/**
+ * Matches each opening `<main>` tag (HOS-1219). The lookahead keeps custom
+ * elements such as `<main-nav>` out. The scope is chosen by
+ * {@link selectMainContent}, not by one regex: the first `<main>` is not
+ * always the right one (`hidden`), nor always big enough.
+ */
+const MAIN_OPEN_RE = /<main(?=[\s>/])([^>]{0,2000})>/gi;
+
+/** Matches the closing `</main>` tag. */
+const MAIN_CLOSE_RE = /<\/main\s*>/i;
+
+/** Matches the boolean `hidden` attribute inside an opening tag's attributes. */
+const HIDDEN_ATTR_RE = /(?:^|\s)hidden(?=[\s=/]|$)/i;
+
+/**
+ * Minimum visible characters a `<main>` must hold to be trusted as the scope.
+ * Below this the page is treated as having no useful `<main>` (an empty SSR
+ * shell, or the description living in a sibling section) and the whole body is
+ * used, so a thin `<main>` can never turn a good body into an empty result and
+ * silently fall through to the truncated metadata summary (the HOS-799 defect).
+ */
+const MAIN_MIN_VISIBLE_CHARS = 120;
+
+/** Opens an HTML comment. */
+const COMMENT_OPEN = '<!--';
+
+/** Closes an HTML comment. */
+const COMMENT_CLOSE = '-->';
+
+/**
+ * Replaces every HTML comment, including its content, with a single space.
+ *
+ * Equivalent to `html.replace(/<!--[\s\S]*?-->/g, ' ')` — each comment ends at
+ * the first `-->` that starts AFTER its `<!--` (so `<!-->` does not close
+ * itself), and an opener with no closer is left in place — but implemented as
+ * a single forward scan. The regex rescanned the rest of the input from every
+ * `<!--` that had no closer, which is quadratic on third-party HTML full of
+ * unclosed openers (CodeQL js/polynomial-redos, alert #105). Once one opener
+ * has no closer, no later opener can have one either, so the scan stops there.
+ *
+ * This MUST run before anything else in the pipeline — before even
  * the body-scope (HOS-1029). Two independent reasons:
  *
  * 1. {@link BODY_CONTENT_RE} matches the first LITERAL `<body` in the
@@ -64,8 +121,29 @@ const PAGE_CHROME_RE =
  * 2. {@link HTML_TAG_RE} stops at the first `>`. A comment whose text
  *    contains a `>` truncates the tag match there, leaving the remainder of
  *    the comment — including the closing `-->` — as literal output text.
+ *
+ * @param html - Raw HTML.
+ * @returns The HTML with every closed comment replaced by a space.
  */
-const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+function removeHtmlComments(html: string): string {
+    let result = '';
+    let cursor = 0;
+
+    for (;;) {
+        const open = html.indexOf(COMMENT_OPEN, cursor);
+        if (open === -1) {
+            break;
+        }
+        const close = html.indexOf(COMMENT_CLOSE, open + COMMENT_OPEN.length);
+        if (close === -1) {
+            break;
+        }
+        result += `${html.slice(cursor, open)} `;
+        cursor = close + COMMENT_CLOSE.length;
+    }
+
+    return result + html.slice(cursor);
+}
 
 /**
  * Captures the contents of `<body>`.
@@ -73,10 +151,10 @@ const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
  * Scoping to the body is not cosmetic: `<head>` holds `<title>`, and without
  * this the title text lands in the extracted "content" — enough, on a thin
  * page, for a scrap of chrome to clear the description minimum and preempt a
- * better candidate. Must run AFTER {@link HTML_COMMENT_RE} strips comments —
+ * better candidate. Must run AFTER {@link removeHtmlComments} strips comments —
  * see its doc comment for why.
  */
-const BODY_CONTENT_RE = /<body\b[^>]{0,2000}>([\s\S]*?)<\/body\s*>/i;
+const BODY_CONTENT_RE = /<body(?=[\s>/])[^>]{0,2000}>([\s\S]*?)<\/body\s*>/i;
 
 /** Matches the whole `<head>` element — the fallback when there is no `<body>`. */
 const HEAD_RE = /<head\b[^>]{0,2000}>[\s\S]*?<\/head\s*>/i;
@@ -108,6 +186,33 @@ const EXCESS_NEWLINES_RE = /\n{3,}/g;
 
 /** The HTML entities worth decoding for plain-text extraction. */
 const HTML_ENTITY_RE = /&(?:amp|lt|gt|quot|#39|nbsp);/g;
+
+// ---------------------------------------------------------------------------
+// <main> selection (HOS-1219)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the inner HTML of the first visible, sufficiently large `<main>`,
+ * or `null` when the caller should keep the whole body.
+ *
+ * @param html - Body HTML with scripts, styles and inert containers removed.
+ * @returns The `<main>` inner HTML, or `null` when none qualifies.
+ */
+function selectMainContent(html: string): string | null {
+    MAIN_OPEN_RE.lastIndex = 0;
+    for (let open = MAIN_OPEN_RE.exec(html); open !== null; open = MAIN_OPEN_RE.exec(html)) {
+        if (HIDDEN_ATTR_RE.test(open[1] ?? '')) {
+            continue;
+        }
+        const start = open.index + open[0].length;
+        const rest = html.slice(start);
+        const close = MAIN_CLOSE_RE.exec(rest);
+        const inner = close === null ? rest : rest.slice(0, close.index);
+        const visible = inner.replace(HTML_TAG_RE, ' ').replace(ANY_WHITESPACE_RE, ' ').trim();
+        return visible.length >= MAIN_MIN_VISIBLE_CHARS ? inner : null;
+    }
+    return null;
+}
 
 // ---------------------------------------------------------------------------
 // Entity decoding
@@ -182,8 +287,7 @@ export function stripHtmlToText(input: {
         return '';
     }
 
-    HTML_COMMENT_RE.lastIndex = 0;
-    let text = html.replace(HTML_COMMENT_RE, ' ');
+    let text = removeHtmlComments(html);
 
     SCRIPT_STYLE_RE.lastIndex = 0;
     text = text.replace(SCRIPT_STYLE_RE, ' ');
@@ -208,11 +312,13 @@ export function stripHtmlToText(input: {
  *
  * **Pipeline:**
  * 0. Remove HTML comments (HOS-1029) — BEFORE anything else, including the
- *    body-scope. See {@link HTML_COMMENT_RE} for why the ordering is load-bearing.
+ *    body-scope. See {@link removeHtmlComments} for why the ordering is load-bearing.
  * 1. Scope to `<body>` (falls back to stripping `<head>` when there is none).
- * 2. Remove `<script>` / `<style>` blocks and their content.
- * 3. Remove page chrome (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<form>`,
- *    …) so menus and cookie banners never reach the host's description.
+ * 2. Remove `<script>` / `<style>` blocks and their content, then narrow to
+ *    the `<main>` element when the page has one (HOS-1219).
+ * 3. Remove skip-to-content links and page chrome (`<nav>`, `<header>`,
+ *    `<footer>`, `<aside>`, `<form>`, …) so menus and cookie banners never
+ *    reach the host's description.
  * 4. Turn `<br>` and every block-level CLOSING tag into a line break — this
  *    step is what separates this function from {@link stripHtmlToText}, and it
  *    must run BEFORE the generic tag strip or the boundaries are gone.
@@ -244,11 +350,10 @@ export function stripHtmlToParagraphText(input: {
     }
 
     // Step 0 — remove HTML comments FIRST, before the body-scope or anything
-    // else (HOS-1029). See HTML_COMMENT_RE's doc comment: a <head> comment
+    // else (HOS-1029). See removeHtmlComments' doc comment: a <head> comment
     // that merely mentions "<body>" in its prose would otherwise anchor the
     // scope tens of thousands of characters too early.
-    HTML_COMMENT_RE.lastIndex = 0;
-    const withoutComments = html.replace(HTML_COMMENT_RE, ' ');
+    const withoutComments = removeHtmlComments(html);
 
     // Step 1 — scope to <body>. Falls back to stripping <head> when the markup
     // has no explicit body element (fragments, malformed pages).
@@ -259,7 +364,20 @@ export function stripHtmlToParagraphText(input: {
     SCRIPT_STYLE_RE.lastIndex = 0;
     let text = scoped.replace(SCRIPT_STYLE_RE, ' ');
 
-    // Step 3 — drop page chrome.
+    // Step 2b — inert containers never render, so a <main> inside them must
+    // not be picked (HOS-1219). Then prefer a usable <main> over the body.
+    INERT_CONTAINER_RE.lastIndex = 0;
+    text = text.replace(INERT_CONTAINER_RE, ' ');
+    const mainContent = selectMainContent(text);
+    text = mainContent ?? text;
+
+    // Step 3 — drop skip-to-content links (only when no <main> excluded them
+    // already, so a link inside the listing content is never touched), then
+    // page chrome.
+    if (mainContent === null) {
+        SKIP_LINK_RE.lastIndex = 0;
+        text = text.replace(SKIP_LINK_RE, ' ');
+    }
     PAGE_CHROME_RE.lastIndex = 0;
     text = text.replace(PAGE_CHROME_RE, ' ');
 

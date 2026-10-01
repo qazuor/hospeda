@@ -159,10 +159,10 @@ const tr = (value: string): string => value.trim();
  * each save) rather than the load-time initial user, so reverting a just-saved
  * field is correctly detected as a change (bug F6). Reproduces the JSONB
  * nesting rules the form uses: `province → location.region`, whole-block
- * rebuild for the REPLACE-mode columns (`socialNetworks`, `location`) — and a
- * changed-keys-only delta with explicit nulls for `profile` and `contactInfo`,
- * which the API MERGES rather than replaces (HOS-375; see the comments on
- * those blocks).
+ * rebuild for the REPLACE-mode `location` column — and a changed-keys-only
+ * delta with explicit nulls for `profile`, `contactInfo` and `socialNetworks`,
+ * which the API MERGES rather than replaces (HOS-375, HOS-1262; see the
+ * comments on those blocks).
  *
  * @param params.current - Snapshot of the current form field values.
  * @param params.baseline - Snapshot of the last-persisted values.
@@ -260,7 +260,10 @@ export function buildProfilePatch({
         payload.contactInfo = { mobilePhone: phone.length > 0 ? phone : null };
     }
 
-    // socialNetworks JSONB — whole block rebuilt (non-empty only) on any change.
+    // socialNetworks JSONB — changed keys only, with an explicit `null` for a
+    // cleared one. The column is MERGED by the API (HOS-1262), so an omitted key
+    // is PRESERVED and only `null` clears it; `SocialNetworkSchema` is `.nullish()`
+    // per key for exactly that reason (`''` would fail the URL regex).
     const socialFields: ReadonlyArray<{
         readonly flatKey: string;
         readonly jsonKey: 'facebook' | 'instagram' | 'twitter' | 'linkedIn' | 'youtube';
@@ -298,16 +301,14 @@ export function buildProfilePatch({
             base: tr(baseline.youtubeUrl)
         }
     ];
-    let socialChanged = false;
-    const socialPatch: Record<string, string> = {};
+    const socialPatch: Record<string, string | null> = {};
     for (const s of socialFields) {
         if (s.cur !== s.base) {
-            socialChanged = true;
             flatChanged[s.flatKey] = s.cur;
+            socialPatch[s.jsonKey] = s.cur.length > 0 ? s.cur : null;
         }
-        if (s.cur.length > 0) socialPatch[s.jsonKey] = s.cur;
     }
-    if (socialChanged) {
+    if (Object.keys(socialPatch).length > 0) {
         payload.socialNetworks = socialPatch;
     }
 

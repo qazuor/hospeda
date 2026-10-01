@@ -195,11 +195,18 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     // averageRating/hasActiveSubscription get their schema defaults.
     //
     // `safeParse`, not `.parse()` (H-156): the CHECKED schema carries the
-    // cross-field pricing rule, and the route factory does NOT enforce
-    // refinements at the requestBody boundary — verified against a running API,
-    // where a listing with a price but no unit sailed past validation and blew
-    // up here as an unmapped ZodError, i.e. a 500 for what is plainly a bad
-    // request. Mapping it to a 422 keeps the field name reaching the caller.
+    // cross-field pricing rule. The factory USED to drop it at the requestBody
+    // boundary — verified against a running API, where a listing with a price
+    // but no unit sailed past validation and blew up here as an unmapped
+    // ZodError, i.e. a 500 for what is plainly a bad request. HOS-425 fixed
+    // that at the source, so the route's own
+    // `ExperienceOwnerCreateInputCheckedSchema` refuses such a body with a 400
+    // before this line runs.
+    //
+    // The parse stays for the reason in the paragraph above — the admin
+    // defaults — and `safeParse` stays because this call re-checks a body that
+    // has had `ownerId`/`visibility`/`lifecycleState` stamped onto it since
+    // validation. It is no longer the only thing enforcing the pricing rule.
     const parsed = ExperienceAdminCreateInputCheckedSchema.safeParse({
         ...data,
         ownerId: actor.id,

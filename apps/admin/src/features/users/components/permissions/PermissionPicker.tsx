@@ -12,7 +12,6 @@
  * warning icon so the admin double-checks before granting (R-1).
  */
 
-import type { TranslationKey } from '@repo/i18n';
 import { AddIcon, AlertTriangleIcon } from '@repo/icons';
 import {
     getPermissionsByCategory,
@@ -41,6 +40,7 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
+import { categoryTranslationKey } from '@/lib/permission-category-groups';
 
 export interface PermissionPickerProps {
     readonly fromRole: readonly PermissionEnum[];
@@ -82,7 +82,9 @@ export function PermissionPicker({
     }, [fromRole, grantOverrides, denyOverrides]);
 
     const categoryLabel = (category: PermissionCategoryEnum): string => {
-        const key = `admin-pages.access.permissions.categories.${category}` as TranslationKey;
+        // Same key shape the catalogue screen uses, built in one place so the
+        // two surfaces cannot drift apart (HOS-1124).
+        const key = categoryTranslationKey(category);
         const label = t(key);
         // Fall back to the raw category when no label is defined.
         return label.startsWith('[MISSING') || label === key ? category : label;

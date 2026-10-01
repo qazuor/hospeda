@@ -182,3 +182,9 @@ docs/marketing/placas/
 
 # Cache local de wrangler (sonda 08 de HOS-1352) — no versionar
 .wrangler/
+
+# Local Pi runtime state
+.atl/
+
+# Local Claude/Pi notification logs
+tools/.claude/.log/

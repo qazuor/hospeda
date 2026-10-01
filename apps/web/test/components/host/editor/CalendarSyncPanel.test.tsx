@@ -405,6 +405,57 @@ describe('CalendarSyncPanel', () => {
         );
     });
 
+    // HOS-1377: an iCal feed's export URL cannot be revoked by us, so the host
+    // is told to rotate it; Google's grant is revoked server-side, so it is not.
+    it('asks the host to regenerate the export link after disconnecting an iCal provider', async () => {
+        mockStatus.mockResolvedValue({
+            ok: true,
+            data: { connections: [connectionRow({ provider: 'AIRBNB' })] }
+        });
+        mockDisconnect.mockResolvedValue({ ok: true, data: { disconnected: true } });
+        const user = userEvent.setup();
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        const airbnbRow = within(await screen.findByTestId('calendar-provider-row-AIRBNB'));
+        await user.click(airbnbRow.getByText('Desconectar'));
+
+        expect(
+            await airbnbRow.findByText(/regenerá el link de exportación del calendario/)
+        ).toBeInTheDocument();
+    });
+
+    it('does not ask to rotate a link after disconnecting Google', async () => {
+        mockStatus.mockResolvedValue({
+            ok: true,
+            data: { connections: [connectionRow({ provider: 'GOOGLE_CALENDAR' })] }
+        });
+        mockDisconnect.mockResolvedValue({ ok: true, data: { disconnected: true } });
+        const user = userEvent.setup();
+
+        render(
+            <CalendarSyncPanel
+                locale="es"
+                accommodationId={ACC_ID}
+            />
+        );
+        const googleRow = within(
+            await screen.findByTestId('calendar-provider-row-GOOGLE_CALENDAR')
+        );
+        await user.click(googleRow.getByText('Desconectar'));
+
+        expect(
+            await googleRow.findByText(
+                'Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están.'
+            )
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/regenerá el link de exportación/)).not.toBeInTheDocument();
+    });
+
     it('keeps other providers usable while one provider is busy syncing (per-row busy state)', async () => {
         mockStatus.mockResolvedValue({
             ok: true,

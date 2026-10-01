@@ -98,9 +98,9 @@ describe('Security Middleware', () => {
             expect(res.status).toBe(200);
             const permissionsPolicy = res.headers.get('Permissions-Policy');
             expect(permissionsPolicy).toBeDefined();
-            expect(permissionsPolicy).toContain('camera=none');
-            expect(permissionsPolicy).toContain('microphone=none');
-            expect(permissionsPolicy).toContain('geolocation=none');
+            expect(permissionsPolicy).toContain('camera=()');
+            expect(permissionsPolicy).toContain('microphone=()');
+            expect(permissionsPolicy).toContain('geolocation=()');
         });
     });
 
@@ -335,40 +335,45 @@ describe('Security Middleware', () => {
         });
     });
 
+    // The empty allowlist serializes as `camera=()`, not `camera=none`. `()` is
+    // the form the Permissions-Policy spec defines for "no origin is allowed";
+    // `none` is not valid syntax and browsers drop the whole directive, so the
+    // restriction silently did not apply. hono emitted `none` up to 4.13.0 and
+    // fixed it in 4.13.5 — these assertions track the corrected output.
     describe('Permissions Policy', () => {
         it('should restrict camera access', async () => {
             const res = await app.request('/test');
 
             const permissionsPolicy = res.headers.get('Permissions-Policy');
-            expect(permissionsPolicy).toContain('camera=none');
+            expect(permissionsPolicy).toContain('camera=()');
         });
 
         it('should restrict microphone access', async () => {
             const res = await app.request('/test');
 
             const permissionsPolicy = res.headers.get('Permissions-Policy');
-            expect(permissionsPolicy).toContain('microphone=none');
+            expect(permissionsPolicy).toContain('microphone=()');
         });
 
         it('should restrict geolocation access', async () => {
             const res = await app.request('/test');
 
             const permissionsPolicy = res.headers.get('Permissions-Policy');
-            expect(permissionsPolicy).toContain('geolocation=none');
+            expect(permissionsPolicy).toContain('geolocation=()');
         });
 
         it('should include all restricted permissions', async () => {
             const res = await app.request('/test');
 
             const permissionsPolicy = res.headers.get('Permissions-Policy');
-            expect(permissionsPolicy).toContain('camera=none');
-            expect(permissionsPolicy).toContain('microphone=none');
-            expect(permissionsPolicy).toContain('geolocation=none');
-            expect(permissionsPolicy).toContain('payment=none');
-            expect(permissionsPolicy).toContain('usb=none');
-            expect(permissionsPolicy).toContain('magnetometer=none');
-            expect(permissionsPolicy).toContain('gyroscope=none');
-            expect(permissionsPolicy).toContain('accelerometer=none');
+            expect(permissionsPolicy).toContain('camera=()');
+            expect(permissionsPolicy).toContain('microphone=()');
+            expect(permissionsPolicy).toContain('geolocation=()');
+            expect(permissionsPolicy).toContain('payment=()');
+            expect(permissionsPolicy).toContain('usb=()');
+            expect(permissionsPolicy).toContain('magnetometer=()');
+            expect(permissionsPolicy).toContain('gyroscope=()');
+            expect(permissionsPolicy).toContain('accelerometer=()');
         });
     });
 

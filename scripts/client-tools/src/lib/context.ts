@@ -62,7 +62,7 @@ export async function resolveRunContext({
         currentWorktree({ cwd, repoRoot }),
         listWorktrees({ repoRoot })
     ]);
-    const dbConfig = readDbConfig({ repoRoot: all[0]?.path ?? repoRoot });
+    const dbConfig = await readDbConfig({ repoRoot: all[0]?.path ?? repoRoot });
 
     // `--wt` is resolved HERE, beside `--target`, and not inside the commands
     // that accept it. Both answer "where does this act", and both have to be

@@ -6,7 +6,12 @@
  * `airbnb`/`booking`/`other`).
  *
  * Soft disconnect: sets `isActive=false` (the cron's `findAllActiveByProvider`
- * stops picking the row up) but keeps the row for audit. Existing occupancy
+ * stops picking the row up) but keeps the row for audit. Since HOS-1377 it
+ * also asks the provider to revoke the credential (Google: the OAuth grant is
+ * closed; iCal feeds have no revocation API, so the web panel asks the host to
+ * rotate the export link). A revocation failure never fails the disconnect: it
+ * is logged and stamped on the row — see `disconnectCalendarConnection` in
+ * `@repo/service-core`. Existing occupancy
  * rows previously synced from the calendar are intentionally LEFT in place —
  * disconnecting stops future syncs, it does not retroactively free dates the
  * host may still be honoring.
@@ -19,7 +24,6 @@
  * @module routes/accommodation/protected/calendarDisconnect
  */
 
-import { accommodationCalendarSyncModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type CalendarDisconnectResponse,
@@ -28,9 +32,10 @@ import {
     CalendarProviderTokenSchema,
     OccupancySourceEnum
 } from '@repo/schemas';
-import { assertOccupancyManageAccess } from '@repo/service-core';
+import { assertOccupancyManageAccess, disconnectCalendarConnection } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /** Maps the public `:provider` path token to the internal occupancy source. */
@@ -54,7 +59,9 @@ export const protectedCalendarDisconnectRoute = createProtectedRoute({
     summary: 'Disconnect an external calendar connection (owner)',
     description:
         "Soft-disconnects (isActive=false, row kept for audit) the accommodation's calendar " +
-        'connection for the given provider (google/airbnb/booking/other). Previously-synced ' +
+        'connection for the given provider (google/airbnb/booking/other) and revokes the ' +
+        'credential at the provider where possible (Google). A failed revocation does not ' +
+        'fail the disconnect. Previously-synced ' +
         'occupancy rows are left in place. Requires ACCOMMODATION_OCCUPANCY_MANAGE + ownership; ' +
         'no entitlement gate.',
     tags: ['Accommodations'],
@@ -80,8 +87,12 @@ export const protectedCalendarDisconnectRoute = createProtectedRoute({
 
         await assertOccupancyManageAccess({ actor, accommodationId });
 
-        const row = await accommodationCalendarSyncModel.deactivate({ accommodationId, provider });
+        const { disconnected } = await disconnectCalendarConnection({
+            accommodationId,
+            provider,
+            logger: apiLogger
+        });
 
-        return { disconnected: row !== null };
+        return { disconnected };
     }
 });

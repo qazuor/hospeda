@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 /**
  * Admin search schema for social campaigns.
@@ -17,7 +17,7 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  */
 export const SocialCampaignAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by active status */
-    active: queryBooleanParam().describe('Filter by active status'),
+    active: createBooleanQueryParam('Filter by active status'),
 
     /** Filter campaigns starting after this date */
     startsAfter: z.coerce.date().optional().describe('Filter campaigns starting after this date'),

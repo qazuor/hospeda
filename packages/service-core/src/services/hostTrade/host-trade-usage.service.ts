@@ -393,32 +393,24 @@ export class HostTradeUsageService extends BaseCrudService<
     }
 
     /**
-     * Rescues the `status` filter from the base's lifecycle handling (T-038).
+     * Names both parties of every row (T-056) — see
+     * {@link HostTradeUsageService.attachAdminParties}. The enrichment hangs off
+     * `_executeAdminSearch` because `adminList` returns it verbatim: there is no
+     * `_afterAdminList` hook.
      *
-     * `status` is a key `AdminSearchBaseSchema` RESERVES. `adminList` pulls it
-     * out of the entity filters and writes `where.lifecycleState` from it,
-     * because for every other entity that is what `status` means. This one
+     * It used to do a second, unrelated job (T-038): rescue the `status` filter
+     * from the base's lifecycle handling. `status` is a key
+     * `AdminSearchBaseSchema` RESERVES for `lifecycleState`, this entity
      * OVERRIDES it with the usage state machine (`PENDING`/`CONFIRMED`/
      * `REJECTED`/`EXPIRED`), and `host_trade_benefit_usages` has no
-     * `lifecycleState` column at all.
-     *
-     * WITHOUT THIS OVERRIDE THE FILTER DISAPPEARS SILENTLY. `buildWhereClause`
-     * warns about an unknown column and SKIPS it — it only throws when every
-     * key is unknown, and `deletedAt` is always there to keep it quiet. So
-     * `?status=REJECTED` would answer with every usage in the system: filtered
-     * by nothing, green in every test, wrong only in production.
-     *
-     * The fix is deliberately local. Teaching the base to check the column's
-     * existence would touch the admin listing of some thirty services to
-     * correct one entity that renamed a reserved key.
-     *
-     * It ALSO names both parties of every row (T-056) — see
-     * {@link HostTradeUsageService.attachAdminParties}. Two unrelated concerns
-     * share this method because `adminList` returns `_executeAdminSearch`
-     * verbatim: there is no `_afterAdminList` hook to hang the enrichment on.
+     * `lifecycleState` column — so `adminList` wrote a key `buildWhereClause`
+     * would drop with a warning, and `?status=REJECTED` answered with every
+     * usage in the system. That local rescue is gone because HOS-1379 fixed the
+     * base: `adminList` resolves the reserved key to a column that exists, which
+     * for this table is `status` itself.
      *
      * @param params - The query the base assembled.
-     * @returns The page, with `status` restored as a filter and both sides named.
+     * @returns The page, with both sides of every usage named.
      */
     protected override async _executeAdminSearch(
         params: Parameters<
@@ -431,17 +423,7 @@ export class HostTradeUsageService extends BaseCrudService<
             >['_executeAdminSearch']
         >[0]
     ): Promise<PaginatedListOutput<HostTradeBenefitUsage>> {
-        const { where, entityFilters, ...rest } = params;
-        const { lifecycleState, ...cleanWhere } = where as Record<string, unknown>;
-
-        const result = await super._executeAdminSearch({
-            ...rest,
-            where: cleanWhere,
-            entityFilters: {
-                ...entityFilters,
-                ...(lifecycleState === undefined ? {} : { status: lifecycleState })
-            }
-        });
+        const result = await super._executeAdminSearch(params);
 
         return { ...result, items: await this.attachAdminParties(result.items, params.ctx) };
     }

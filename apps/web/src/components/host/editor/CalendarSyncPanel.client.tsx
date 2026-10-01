@@ -320,15 +320,23 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
             });
 
             if (result.ok) {
+                // HOS-1377: Google's grant is revoked server-side on disconnect.
+                // An iCal feed's credential is its secret export URL, which no
+                // provider lets us invalidate — only the host can rotate it, so
+                // tell them to.
+                const message =
+                    provider === OccupancySourceEnum.GOOGLE_CALENDAR
+                        ? t(
+                              'host.properties.editor.calendarSync.disconnected',
+                              'Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están.'
+                          )
+                        : t(
+                              'host.properties.editor.calendarSync.disconnectedIcalRotateLink',
+                              'Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están. Por seguridad, regenerá el link de exportación del calendario en el panel del proveedor: el link anterior sigue funcionando hasta que lo cambies.'
+                          );
                 setRowInfo((prev) => ({
                     ...prev,
-                    [provider]: {
-                        kind: 'info',
-                        message: t(
-                            'host.properties.editor.calendarSync.disconnected',
-                            'Desconectamos el calendario. Tus fechas ya sincronizadas quedan como están.'
-                        )
-                    }
+                    [provider]: { kind: 'info', message }
                 }));
             } else {
                 setRowError((prev) => ({

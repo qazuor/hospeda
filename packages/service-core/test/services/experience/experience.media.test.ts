@@ -284,6 +284,27 @@ describe('removeExperienceMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
+    it('should return NOT_FOUND for an already soft-deleted row instead of deleting it again (HOS-1175)', async () => {
+        const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ deletedAt: new Date('2024-02-01') })
+        );
+
+        const input: ExperienceMediaRemoveInput = {
+            experienceId: EXPERIENCE_ID,
+            mediaId: MEDIA_ID
+        };
+
+        const result = await removeExperienceMedia(
+            model as unknown as Parameters<typeof removeExperienceMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+    });
+
     it('should soft-delete and resequence remaining visible rows to a dense 0-based sortOrder', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ sortOrder: 1 }));

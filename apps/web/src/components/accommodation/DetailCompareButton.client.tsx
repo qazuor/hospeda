@@ -118,9 +118,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
                 message: t('accommodations.comparison.toast.added', 'Agregado a la comparación'),
                 action: {
                     label: t('accommodations.comparison.toast.view', 'Comparar ahora'),
-                    href: comparePageHref,
-                    // HOS-566: the comparison page needs a full load, see ToastAction.reload.
-                    reload: true
+                    href: comparePageHref
                 }
             });
             return;

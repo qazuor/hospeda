@@ -718,6 +718,17 @@ Operative rule (verifiable without judgment):
 2. After EVERY merge to `main`, back-merging `main` → `staging` is MANDATORY. The `sync-main-to-staging.yml` workflow opens that PR automatically; if it does not run, do it by hand. Skipping this does not avoid the problem — it MOVES the baseline-mismatch red from `main` to `staging` (a feature PR on `staging` then fails `pnpm audit` for a fix that only exists on `main`).
 3. A security PR can be born red purely because `main` lags `staging` on an unrelated fix (e.g. a transitive `undici` override). That red is a baseline artifact, not the bumped dependency. Promote the missing fix into `main` first (or rebase the PR after the back-merge lands), then re-check.
 
+#### Umbrella integration branches — `epic/**` (DEC-CI-001)
+
+`epic/**` is a first-class branch type: the integration branch of a multi-epic program that must reach `staging` as ONE unit (the first is `epic/HOS-1352-verticales-billing`, DEC-ARCH-007). It is a declared exception to the 6-step flow below — do not "fix" it back:
+
+1. The umbrella is cut from `staging`. Sub-epic/unit branches are cut from the **umbrella** and PR back into the **umbrella**, never into `staging` or `main`. Review happens on those PRs.
+2. `staging` is merged INTO the umbrella periodically, as an obligation. Never the reverse until the end.
+3. Only the umbrella's own PR goes to `staging`, once, when the program is done.
+4. Enforced, not remembered: `scripts/check-umbrella-branch-target.sh` (Guards job + `pnpm check:guards`) fails any PR to `staging`/`main` whose branch carries umbrella commits the target does not have. The umbrella's own PR is exempt.
+5. Which workflows run on `epic/**`: `ci.yml` (push + PR), `e2e-pr.yml`, `validate-pr-title.yml`, `validate-docs.yml`, `codeql.yml` (push + PR); `docs.yml` already runs (no branch filter). They do **NOT** run there: `lighthouse.yml` and `a11y-sweep.yml` (they measure deployed pages and an umbrella deploys nothing), `whats-new-gate.yml` (a `main` gate by design), and **`smoke-gate-sync.yml`** — it moves Linear issues on merge, and sub-epic PRs carry `[HOS-NNN]` titles, so running it there would close every unit as done with nothing deployed (the PR #1982/#1983 footgun). Keep it off `epic/**`.
+6. A `push` run of `ci.yml` on the periodic `staging` → umbrella merge measures the whole `staging` delta as new in the two diff-based checks (semgrep baseline and seed dual-write). Re-run it via `workflow_dispatch` with `baseline_ref: staging` instead of chasing that noise.
+
 ### Branch Workflow (since 2026-05-12)
 
 ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch-workflow.md`](.claude/docs/git-branch-workflow.md)):

@@ -43,8 +43,9 @@ import { defineMiddleware } from 'astro:middleware';
 import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
 import type { APIContext, MiddlewareNext } from 'astro';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { LISTING_PRIVATE_CONTROL } from './lib/cache/listing-cache';
 import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy';
-import { isEdgeCacheableControl } from './lib/cache/response-cache';
+import { isEdgeCacheableControl, isResponseDegraded } from './lib/cache/response-cache';
 import {
     getInternalApiUrl,
     getInternalRequestSecret,
@@ -213,6 +214,15 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // downstream caller, whatever path the request takes. Serialized into the
     // `Cache-Tag` header at Step 11 (HOS-369 W1-1).
     context.locals.cacheTags = new Set<string>();
+
+    // Step 0b: Open the degraded-render veto for this request (HOS-1154).
+    // Same lifecycle and same rationale as the collector above — created
+    // before any branch returns so no consumer ever reads `undefined`, raised
+    // during the render by whatever component draws a failure state, and
+    // applied at Step 11 once the render is over. It starts `false` because
+    // "nothing said this render failed" is the only honest starting point;
+    // only a render can raise it.
+    context.locals.responseDegraded = false;
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -473,8 +483,13 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
 
     // Step 8: If the downstream handler returned a 404, rewrite to our custom 404 page
     // so it renders with the full site layout and i18n context.
+    //
+    // The rewritten response is assigned to `response` and FALLS THROUGH to
+    // Steps 9-11 instead of returning (HOS-263): an early `return` here skipped
+    // the CSP header, the noindex `X-Robots-Tag` and the cache-tag handling, so
+    // every error page shipped without a policy.
     if (response.status === 404) {
-        return context.rewrite('/404');
+        response = await context.rewrite('/404');
     }
 
     // Step 8b: A soft-deleted PUBLIC entity returns 410 Gone (the SEO desindex
@@ -487,14 +502,11 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // (verified empirically); the re-wrap below only overrides the status line
     // while the body and headers pass through unchanged.
     //
-    // The rewritten error page (404 and 410 alike) ships WITHOUT the CSP header.
-    // `context.rewrite('/404')` DOES re-run onRequest for `/404` (Astro spins up
-    // a fresh middleware pass per rewrite — the same reason it caps rewrite depth
-    // at 4 with a 508 "Loop Detected"), but that re-entered pass hits Step 1's
-    // `isStaticAssetRoute()` match for `/404` (`path === '/404'`/`'/404/'`) and
-    // returns immediately, BEFORE Step 9 (CSP) ever runs — so CSP is never applied
-    // to error pages regardless. Pre-existing gap the 404 branch already has; the
-    // 410 branch inherits it for parity (not a new regression), tracked in HOS-263.
+    // Like the 404 branch above, the result falls through to Step 9 so the error
+    // page gets the same CSP as every other HTML response (HOS-263). The
+    // re-entered `/404` pass inside `context.rewrite()` hits Step 1's
+    // `isStaticAssetRoute()` shortcut and never reaches Step 9 itself, which is
+    // why the header has to be applied here, on the outer pass, after the rewrite.
     //
     // This branch intentionally uses `rendered.headers` and drops the original
     // 410 response's headers. That is safe ONLY because every current 410
@@ -506,7 +518,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // them here.
     if (response.status === 410) {
         const rendered = await context.rewrite('/404');
-        return new Response(rendered.body, {
+        response = new Response(rendered.body, {
             status: 410,
             headers: rendered.headers
         });
@@ -619,6 +631,36 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // Cloudflare consumes and strips `Cache-Tag` before the response reaches the
     // visitor, so the entity slugs and ids inside it are never exposed and cost
     // the client nothing.
+    //
+    // Step 11a runs FIRST and can cancel all of it — see below.
+
+    // Step 11a: Withdraw shared cacheability from a DEGRADED render (HOS-1154).
+    //
+    // Every listing calls `applyCacheHeaders()` in the opening lines of its
+    // frontmatter, before the fetch it depends on has resolved; the error state
+    // is derived a hundred lines later and the banner drawn a few hundred after
+    // that. The header was therefore decided by a page that could not yet know
+    // its own render was about to fail — and a degraded SSR page answers 200,
+    // so nothing about the response object reveals it either. Left alone,
+    // Cloudflare stored "No pudimos cargar…" under the catalog's full TTL and
+    // kept serving it for up to 2h AFTER the API recovered, because tag purges
+    // fire on entity writes and fixing an API is not a write.
+    //
+    // Here rather than at the 18 call sites, for the same reason the `Cache-Tag`
+    // header is written here: this is the one place that runs after everything
+    // the render decided, so it is the one place that cannot be forgotten. The
+    // signal it reads is raised by the components that DRAW the failure state,
+    // never by the pages — see `markResponseDegraded` in
+    // `lib/cache/response-cache.ts` for why that is what makes it non-optional.
+    //
+    // Ordered before the tag emission on purpose: a demoted response must also
+    // lose its `Cache-Tag`, and letting the demotion fall through to the check
+    // below achieves that with one rule instead of two. Placed after the CSP
+    // branch for the same reason Step 11 is — that branch REPLACES `response`.
+    if (isResponseDegraded({ locals: context.locals })) {
+        response.headers.set('Cache-Control', LISTING_PRIVATE_CONTROL);
+    }
+
     if (context.locals.cacheTags.size > 0) {
         const cacheControl = response.headers.get('Cache-Control');
         if (isEdgeCacheableControl({ cacheControl })) {

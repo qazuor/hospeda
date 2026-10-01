@@ -228,11 +228,16 @@ function resolve({
         return raw;
     }
 
+    // Keys are escaped and values inserted through a replacer function: params
+    // can originate in an API payload (`error.details`, HOS-1218), so a key with
+    // regex metacharacters must not throw and a value with `$&` / `$1` must not
+    // be read as a replacement pattern.
     return Object.keys(params).reduce((acc, k) => {
-        const v = params[k];
+        const v = String(params[k]);
+        const key = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         return acc
-            .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
-            .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+            .replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => v)
+            .replace(new RegExp(`\\{${key}\\}`, 'g'), () => v);
     }, raw);
 }
 

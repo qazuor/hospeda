@@ -90,6 +90,15 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+// New-paid-signups freeze: ON for this whole file. A paying customer's upgrade
+// is exempt from the freeze (owner decision O), so every upgrade case below
+// must keep passing with `billing_settings.newPaidSignupsFrozen` switched on.
+const { mockGetBillingSettings } = vi.hoisted(() => ({ mockGetBillingSettings: vi.fn() }));
+vi.mock('../../../src/services/billing-settings.service', () => ({
+    getBillingSettingsService: () => ({ getSettings: mockGetBillingSettings })
+}));
+mockGetBillingSettings.mockResolvedValue({ newPaidSignupsFrozen: true });
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
@@ -208,6 +217,30 @@ describe('handlePlanChange — SPEC-141 D7 upgrade branch', () => {
         });
         // Legacy synchronous path must NOT run on an upgrade.
         expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+    });
+
+    it('still upgrades a paying customer while new paid signups are frozen (exempt)', async () => {
+        // Arrange
+        mockGetBillingSettings.mockResolvedValue({ newPaidSignupsFrozen: true });
+        const billing = makeUpgradeBillingMock();
+        mockBilling(billing);
+        vi.mocked(initiatePaidPlanUpgrade).mockResolvedValue({
+            checkoutUrl: 'https://mp.test/checkout/up-frozen',
+            localSubscriptionId: SUB_ID,
+            expiresAt: '2026-06-16T00:30:00.000Z',
+            newPlanId: TARGET_PLAN_ID,
+            deltaCentavos: 50_000
+        });
+
+        // Act
+        const result = await handlePlanChange(makeContext() as never);
+
+        // Assert
+        expect(result).toMatchObject({
+            status: 'pending_payment',
+            checkoutUrl: 'https://mp.test/checkout/up-frozen'
+        });
+        expect(initiatePaidPlanUpgrade).toHaveBeenCalledTimes(1);
     });
 
     it('passes successUrl, cancelUrl, notificationUrl and statementDescriptor from env to the service', async () => {

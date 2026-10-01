@@ -104,8 +104,13 @@ describe('fotos.astro — video URL derivation goes through resolveVideoEmbed (H
     });
 
     it('skips a video entry resolveVideoEmbed rejects (continue, not pushed)', () => {
-        expect(fotosSrc).toMatch(/const resolved = resolveVideoEmbed\(\{ url: entry\.url \}\);/);
-        expect(fotosSrc).toContain('if (!resolved) continue;');
+        expect(fotosSrc).toMatch(
+            /const resolved = resolveVideoEmbed\(\{\s*url: entry\.url,\s*dailymotionPlayerId: getDailymotionPlayerId\(\)\s*\}\);/
+        );
+        // HOS-1217: a Dailymotion video with no Player ID resolves with a null
+        // embedUrl; the guard must skip it, not only a fully-rejected (null) result.
+        expect(fotosSrc).toContain('if (!resolved?.embedUrl) continue;');
+        expect(fotosSrc).not.toContain('if (!resolved) continue;');
     });
 
     it('uses the derived embedUrl as the GLightbox href for videos, never the raw entry.url', () => {

@@ -106,6 +106,10 @@ let hasOwnerPlan = true;
 // surprise; an announced one that never starts is a broken promise.
 let canPublish = true;
 let publishStartsTrial = false;
+// Admin-paused new signups: the owner's FIRST publish (the one that starts the
+// trial) is refused while the freeze is on. Defaults to `false` — on a failed
+// read the card offers Publish and `/publish` refuses with the same copy.
+let publishFirstPaused = false;
 
 try {
     const apiUrl = getApiUrl();
@@ -153,6 +157,7 @@ try {
         if (eligibilityResult.ok) {
             canPublish = eligibilityResult.data.canPublish;
             publishStartsTrial = eligibilityResult.data.startsTrial;
+            publishFirstPaused = eligibilityResult.data.firstPublishPaused === true;
         } else {
             // Both defaults already hold; logged so a systematic failure is
             // visible rather than silently degrading every card to "publishable
@@ -317,7 +322,7 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} trialDays={genericTrialDays} />
+                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} firstPublishPaused={publishFirstPaused} trialDays={genericTrialDays} />
                 </div>
             ))}
         </div>

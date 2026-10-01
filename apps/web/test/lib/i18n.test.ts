@@ -131,3 +131,24 @@ describe('client i18n dictionary delivery (HOS-160 lever A / HOS-369 Wave D)', (
         expect(createT('pt')('nav.home')).not.toContain('MISSING');
     });
 });
+
+describe('createT interpolation with hostile params (HOS-1218)', () => {
+    it('does not throw on a param key with regex metacharacters', () => {
+        const t = createT('es');
+
+        expect(() => t('no.such.key', 'Hola {{name}}', { 'a(b': 1, name: 'Ana' })).not.toThrow();
+        expect(t('no.such.key', 'Hola {{name}}', { 'a(b': 1, name: 'Ana' })).toBe('Hola Ana');
+    });
+
+    it('substitutes a value containing replacement patterns literally', () => {
+        const t = createT('es');
+
+        expect(t('no.such.key', 'Hola {{name}}', { name: '$& $1' })).toBe('Hola $& $1');
+    });
+
+    it('still substitutes a metacharacter key when the placeholder names it', () => {
+        const t = createT('es');
+
+        expect(t('no.such.key', 'Tope {{a.b}}', { 'a.b': 5 })).toBe('Tope 5');
+    });
+});

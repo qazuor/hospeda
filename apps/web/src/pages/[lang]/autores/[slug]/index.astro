@@ -68,7 +68,7 @@ import { webLogger } from '@/lib/logger';
 import { isCloudinaryDeliveryUrl, toRenderableImageUrl } from '@/lib/media';
 import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
 import { buildUrl } from '@/lib/urls';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import {
@@ -169,6 +169,16 @@ if (eventsFetchFailed) {
 // into the indexability gate below so the two are not confused: a broken
 // endpoint must not de-index a URL the sitemap still advertises (§6.6).
 const contentCountsUnavailable = postsFetchFailed || eventsFetchFailed;
+
+// The same conflation the line above guards against for INDEXABILITY has to be
+// guarded for CACHEABILITY (HOS-1154 review finding): with the posts endpoint
+// down this page renders "este autor no tiene publicaciones" and, because
+// `applyCacheHeaders` already ran, hands that claim to the edge for the full
+// TTL. A broken endpoint must not de-index the URL, and it must not get the
+// wrong answer pinned either.
+if (contentCountsUnavailable) {
+	markResponseDegraded({ locals: Astro.locals });
+}
 
 const postItems = postsResult?.ok ? postsResult.data.items : [];
 const postsPagination = postsResult?.ok ? postsResult.data.pagination : null;

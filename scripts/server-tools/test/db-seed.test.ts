@@ -16,7 +16,8 @@ import {
     buildSeedArgs,
     collectCloudinaryEnv,
     formatFlagSummary,
-    parseArgs
+    parseArgs,
+    resolveTargetFlags
 } from '../src/commands/db-seed.ts';
 
 const ENV_KEYS_TOUCHED = [
@@ -176,6 +177,43 @@ describe('parseArgs(argv)', () => {
             const b = parseArgs(['--yes', '--pull', '--no-reset']);
             expect(a).toEqual(b);
         });
+    });
+});
+
+describe('resolveTargetFlags (HOS-564)', () => {
+    it('parseArgs marks example as explicit only when --example is passed', () => {
+        expect(parseArgs([]).exampleExplicit).toBe(false);
+        expect(parseArgs(['--example']).exampleExplicit).toBe(true);
+        expect(parseArgs(['--example', '--no-example']).exampleExplicit).toBe(false);
+    });
+
+    it('turns example OFF by default on prod (bare and --pull --yes forms)', () => {
+        for (const argv of [[], ['--pull', '--yes']]) {
+            const result = resolveTargetFlags({ parsed: parseArgs(argv), target: 'prod' });
+            expect(result.refusal).toBeUndefined();
+            expect(result.parsed.example).toBe(false);
+            expect(buildSeedArgs(result.parsed)).not.toContain('--example');
+        }
+    });
+
+    it('refuses an explicit --example on prod, even with --yes', () => {
+        const result = resolveTargetFlags({
+            parsed: parseArgs(['--example', '--yes']),
+            target: 'prod'
+        });
+        expect(result.refusal).toContain('--example is refused');
+    });
+
+    it('keeps example ON by default on staging and accepts an explicit --example', () => {
+        expect(
+            resolveTargetFlags({ parsed: parseArgs([]), target: 'staging' }).parsed.example
+        ).toBe(true);
+        const explicit = resolveTargetFlags({
+            parsed: parseArgs(['--example']),
+            target: 'staging'
+        });
+        expect(explicit.refusal).toBeUndefined();
+        expect(explicit.parsed.example).toBe(true);
     });
 });
 

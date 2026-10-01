@@ -67,13 +67,9 @@ export function buildPartnerEditSnapshot(partner: MyPartner): PartnerEditSnapsho
 const CONTACT_KEYS = ['workEmail', 'workPhone', 'whatsapp'] as const;
 
 /**
- * Every key `SocialNetworkSchema` declares — ALL SIX, deliberately.
- *
- * `socialNetworks` is replaced wholesale rather than merged, so this list has
- * to be exhaustive: a key the form does not model would be dropped on the first
- * save. Modelling all six is what makes wholesale replacement safe, and it is
- * also what makes "delete my Instagram" expressible at all (see the atom-rule
- * note below).
+ * Every key `SocialNetworkSchema` declares — all six. Each one is diffed
+ * independently: `socialNetworks` is shallow-MERGED by the model (HOS-1262),
+ * so only the changed keys travel and the rest survive.
  */
 const SOCIAL_KEYS = ['facebook', 'instagram', 'twitter', 'linkedIn', 'tiktok', 'youtube'] as const;
 
@@ -92,19 +88,12 @@ const SOCIAL_KEYS = ['facebook', 'instagram', 'twitter', 'linkedIn', 'tiktok', '
  * is dirty, ALL THREE travel together in the payload — never a partial content
  * patch. Identical to the host-trade benefit rule, for an identical reason.
  *
- * The two JSONB groups behave differently from each other, and the difference
- * is forced by their schemas rather than chosen here:
- *
- * - `contactInfo` is MERGED by the model, so only the changed keys are sent and
- *   the six keys this form does not model survive untouched. Clearing works
- *   because every `ContactInfoSchema` field is `.nullish()` — an emptied input
- *   travels as an explicit `null`.
- * - `socialNetworks` is REPLACED wholesale, so the whole six-key object is sent
- *   whenever any one of them changes, with the empty ones OMITTED. That
- *   omission is what deletes them. It has to work this way: the schema's
- *   fields are `.optional()` but NOT `.nullable()`, so `null` is rejected and
- *   `''` fails the URL regex — under a merge there would be no way to express
- *   "remove this link" at all.
+ * Both JSONB groups are MERGED by the model, so only the changed keys are sent
+ * and the keys this form does not touch survive. Clearing works because every
+ * `ContactInfoSchema` and `SocialNetworkSchema` field is `.nullish()` — an
+ * emptied input travels as an explicit `null`. (`socialNetworks` used to be
+ * replaced wholesale, with cleared links OMITTED; that stopped when HOS-1262
+ * made it mergeable. Omitting a key now PRESERVES it.)
  *
  * Content empty strings become `null` for the same validator reason: `''`
  * fails `.url()`, so "I cleared my logo" would 400 instead of clearing.
@@ -143,19 +132,14 @@ export function buildPartnerOwnerPatch({
         payload.contactInfo = contactChanges;
     }
 
-    const socialDirty = SOCIAL_KEYS.some((key) => current[key].trim() !== baseline[key].trim());
-    if (socialDirty) {
-        // The WHOLE object, not just the changed keys: the column is replaced
-        // wholesale, so anything left out here is deleted. Empty values are
-        // left out ON PURPOSE — that omission is how a link gets removed.
-        const socialNetworks: Record<string, string> = {};
-        for (const key of SOCIAL_KEYS) {
-            const value = current[key].trim();
-            if (value) {
-                socialNetworks[key] = value;
-            }
+    const socialChanges: Record<string, string | null> = {};
+    for (const key of SOCIAL_KEYS) {
+        if (current[key].trim() !== baseline[key].trim()) {
+            socialChanges[key] = current[key].trim() || null;
         }
-        payload.socialNetworks = socialNetworks;
+    }
+    if (Object.keys(socialChanges).length > 0) {
+        payload.socialNetworks = socialChanges;
     }
 
     return payload as MyPartnerUpdate;

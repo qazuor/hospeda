@@ -499,22 +499,20 @@ function daysBetweenInclusive(startDate: string, endDate: string): number {
  * {@link MAX_EVENT_UPDATE_RANGE_DAYS} days here, even though
  * `AccommodationOccupancyEventUpdateSchema` (in `@repo/schemas`) already
  * declares the same invariants via `.refine()`.
- * This is NOT redundant: `apps/api`'s route factory feeds every request body
- * schema through `createOpenAPISchema` for OpenAPI doc generation, and under
- * Zod v4 a `.refine()` on a `z.object()` no longer produces a distinct
- * `ZodEffects` wrapper (refinements are now stored as inline `checks` on the
- * `ZodObject` itself) — the factory's `_def.typeName === 'ZodEffects'`
- * detection is Zod v3-only and never matches, so `createOpenAPISchema`
- * rebuilds the object via `z.object(newShape)` and silently drops the
- * top-level `.refine()` checks before the schema ever reaches the runtime
- * body validator. Per-field checks (e.g. `OccupancyDateSchema`'s regex +
- * calendar-validity refine) survive because the field instances are reused
- * as-is; only whole-object `.refine()`s are lost. This is a pre-existing,
- * broader route-factory/Zod-v4 compatibility gap (also affects
- * `AccommodationOccupancyRangeQuerySchema`, unrelated to this endpoint) —
- * out of scope to fix generically here, so this function guards every
- * invariant itself (including the 366-day cap on BOTH ranges) rather than
- * trusting the HTTP layer to have already done so — without it, an
+ * The reason it was written that way is now HISTORY, and the conclusion
+ * survives it (HOS-425). `apps/api`'s route factory feeds every request body
+ * schema through `createOpenAPISchema`, and under Zod v4 a `.refine()` on a
+ * `z.object()` no longer produces a distinct `ZodEffects` wrapper (refinements
+ * are stored as inline `checks` on the `ZodObject` itself) — the factory's
+ * `_def.typeName === 'ZodEffects'` detection was Zod v3-only and never
+ * matched, so the rebuild silently dropped the top-level `.refine()` checks
+ * before the schema reached the runtime body validator. That is FIXED: the
+ * rebuild now carries object-level checks across, and the HTTP layer rejects
+ * an inverted or oversized range with a 400 before this function is called.
+ *
+ * These checks stay anyway, for a reason that does not depend on the factory:
+ * this function is reachable from callers that are not an HTTP request, and
+ * the failure it prevents is not cosmetic — without it, an
  * unbounded/typo'd `newEndDate` (e.g. a year decades out) would expand into
  * tens of thousands of rows written in a single transaction, and an
  * unbounded OLD range (e.g. `oldStartDate:'1970-01-01'`,

@@ -9,6 +9,7 @@
  * - HTTP create/update schemas: coerce query-string booleans for API compatibility.
  */
 import { z } from 'zod';
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { HostTradeSchema } from './host-trade.schema.js';
 
@@ -89,9 +90,9 @@ export const HostTradeCreateHttpSchema = z.object({
     contact: z.string().min(1),
     benefit: z.string().min(1),
     destinationId: z.string().uuid(),
-    is24h: z.coerce.boolean().default(false),
+    is24h: httpBodyBoolean().default(false),
     scheduleText: z.string().nullish(),
-    isActive: z.coerce.boolean().default(true)
+    isActive: httpBodyBoolean().default(true)
 });
 
 /**

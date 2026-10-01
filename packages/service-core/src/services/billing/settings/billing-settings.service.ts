@@ -11,6 +11,7 @@
  * - Payment configuration (currency, tax rate)
  * - Retry settings (max retries, retry intervals)
  * - Notification settings (trial expiry, payment failed, etc.)
+ * - New paid signups freeze (pause self-service checkouts without a deploy)
  *
  * @module services/billing-settings
  */
@@ -63,6 +64,22 @@ export interface BillingSettings {
     sendPaymentFailedNotification: boolean;
     /** Send notification when subscription is cancelled */
     sendSubscriptionCancelledNotification: boolean;
+
+    /**
+     * Pause every NEW self-service paid signup platform-wide, without a deploy.
+     *
+     * When `true`, the three self-service entry points refuse before touching
+     * the database or MercadoPago: `POST /protected/billing/subscriptions/start-paid`,
+     * the owner commerce checkout (`POST /protected/commerce/listings/.../start-subscription`,
+     * its trial and checkout branches) and `POST /protected/billing/addons/:slug/purchase`.
+     *
+     * It deliberately does NOT touch anything an existing customer relies on:
+     * renewals, webhooks, dunning, cancellations, payment-method changes,
+     * checkout retries, pauses, plan upgrades of a paying customer, or any
+     * admin-initiated provisioning. Defaults to `false`, so a row written
+     * before this key existed reads as "not frozen".
+     */
+    newPaidSignupsFrozen: boolean;
 }
 
 /**
@@ -80,7 +97,8 @@ const DEFAULT_SETTINGS: BillingSettings = {
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
     sendPaymentFailedNotification: true,
-    sendSubscriptionCancelledNotification: true
+    sendSubscriptionCancelledNotification: true,
+    newPaidSignupsFrozen: false
 };
 
 /** Key used for the global settings row in billing_settings table */
@@ -348,6 +366,12 @@ export class BillingSettingsService {
         }
         if (settings.retryIntervalHours < 1 || settings.retryIntervalHours > 168) {
             errors.push('retryIntervalHours must be between 1 and 168 (1 week)');
+        }
+
+        // The freeze is read with a strict `=== true`, so a stored string
+        // "true" would silently read as "not frozen". Refuse it at write time.
+        if (typeof settings.newPaidSignupsFrozen !== 'boolean') {
+            errors.push('newPaidSignupsFrozen must be a boolean');
         }
 
         if (errors.length > 0) {

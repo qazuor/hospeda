@@ -538,6 +538,36 @@ describe('buildGptActionSchema() — unit', () => {
         expect(description.toLowerCase()).toContain('batches');
         expect(description).toMatch(/propose|associat/i);
     });
+
+    // The ceiling that motivated NOSPEC:gpt-action-300-chars. Without this the
+    // limit lives only in a source comment, and the way it gets violated is by
+    // ADDING guidance — the same edit every assertion above rewards. Sweeping
+    // every operation, not just the two named here, is what makes it a gate
+    // instead of two more hand-maintained cases: an operation added later is
+    // covered the day it appears.
+    it('keeps every operation description within the 300-char Custom GPT Actions ceiling', () => {
+        const doc = buildGptActionSchema('https://api.example.com');
+        const paths = doc.paths as Record<string, Record<string, { description?: unknown }>>;
+
+        const overLimit: string[] = [];
+        let checked = 0;
+
+        for (const [path, methods] of Object.entries(paths)) {
+            for (const [method, operation] of Object.entries(methods)) {
+                const description = operation?.description;
+                if (typeof description !== 'string') continue;
+                checked += 1;
+                if (description.length > 300) {
+                    overLimit.push(`${method.toUpperCase()} ${path} — ${description.length} chars`);
+                }
+            }
+        }
+
+        // A sweep that matches nothing prints the same "no violations" as a
+        // clean one, so pin the population too.
+        expect(checked).toBeGreaterThanOrEqual(2);
+        expect(overLimit).toEqual([]);
+    });
 });
 
 // ---------------------------------------------------------------------------

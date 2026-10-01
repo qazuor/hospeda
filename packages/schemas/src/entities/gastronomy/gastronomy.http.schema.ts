@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
@@ -108,7 +109,7 @@ export const GastronomyCreateHttpSchema = z.object({
         .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
         .optional(),
     /** Whether the listing is featured. */
-    isFeatured: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -132,14 +133,14 @@ export const GastronomyCreateHttpSchema = z.object({
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
         .optional(),
-    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
     // Social media links (flat fields mapped to SocialNetworkSchema in converter)
-    twitter: z.string().url({ message: 'zodError.common.social.twitter.invalid' }).optional(),
-    facebook: z.string().url({ message: 'zodError.common.social.facebook.invalid' }).optional(),
-    instagram: z.string().url({ message: 'zodError.common.social.instagram.invalid' }).optional(),
-    linkedin: z.string().url({ message: 'zodError.common.social.linkedIn.invalid' }).optional(),
-    tiktok: z.string().url({ message: 'zodError.common.social.tiktok.invalid' }).optional(),
-    youtube: z.string().url({ message: 'zodError.common.social.youtube.invalid' }).optional()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish(),
+    tiktok: safeExternalUrl('zodError.common.social.tiktok.invalid').nullish(),
+    youtube: safeExternalUrl('zodError.common.social.youtube.invalid').nullish()
 });
 
 export type GastronomyCreateHttp = z.infer<typeof GastronomyCreateHttpSchema>;
@@ -175,6 +176,7 @@ export type GastronomyGetHttp = z.infer<typeof GastronomyGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';

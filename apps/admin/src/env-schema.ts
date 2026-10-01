@@ -94,6 +94,35 @@ export const AdminEnvSchema = z.object({
         'API base URL for server-side requests (server functions)'
     ),
 
+    // HOS-1153: internal API base URL for the admin's server functions. When
+    // set, the two session reads go here instead of the public URL AND the
+    // shared secret below is allowed onto the wire. Unset, neither happens —
+    // this var IS the gate that keeps the credential off Cloudflare, which
+    // terminates TLS. Server-only, deliberately un-prefixed.
+    HOSPEDA_INTERNAL_API_URL: z
+        .string()
+        .url()
+        .optional()
+        .describe(
+            'Internal API base URL for the admin server functions; gates the X-Internal-Request header'
+        ),
+
+    // HOS-1153: shared secret sent as `X-Internal-Request` on the two session
+    // reads `resolveAuthSession` makes server-side, so the API exempts them
+    // from its per-IP rate limit instead of collapsing every admin operator
+    // into one `proxy:<container-ip>` bucket (the HOS-103 fix, extended here).
+    // Server-only and deliberately un-prefixed, so Vite never inlines it into
+    // the browser bundle. Optional: unset means no header and therefore no
+    // exemption — it fails safe, never open. Only ever sent together with
+    // HOSPEDA_INTERNAL_API_URL above.
+    HOSPEDA_INTERNAL_REQUEST_SECRET: z
+        .string()
+        .min(32)
+        .optional()
+        .describe(
+            'Shared secret exempting the admin server functions from the API rate limit; must equal the API and web values'
+        ),
+
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
 

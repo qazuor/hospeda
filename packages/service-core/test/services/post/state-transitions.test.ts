@@ -262,7 +262,7 @@ describe('PostService state transitions', () => {
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
-        it('refuses POST_PUBLISH_OWN on a post the actor did not author', async () => {
+        it('masks as NOT_FOUND (HOS-1106): POST_PUBLISH_OWN on a post the actor did not author, never FORBIDDEN', async () => {
             const stranger = createActor({
                 id: strangerId,
                 roles: [RoleEnum.EDITOR],
@@ -275,7 +275,8 @@ describe('PostService state transitions', () => {
                 visibility: VisibilityEnum.PUBLIC
             });
 
-            expectForbiddenError(result);
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
         it('accepts RESTRICTED — visibility is an enum, not a published boolean', async () => {
@@ -332,6 +333,52 @@ describe('PostService state transitions', () => {
 
             expectForbiddenError(result);
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+
+        it('masks a foreign post as NOT_FOUND for an actor without POST_LIFECYCLE_CHANGE (HOS-1106)', async () => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_UPDATE]
+            });
+
+            const result = await service.setLifecycleState({
+                actor: stranger,
+                id: post.id,
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            });
+
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('foreign row vs missing id are indistinguishable (HOS-1106)', () => {
+        it.each([
+            ['setPublishState', { visibility: VisibilityEnum.PUBLIC }],
+            ['setLifecycleState', { lifecycleState: LifecycleStatusEnum.ARCHIVED }]
+        ] as const)('%s answers the identical error body for both', async (method, payload) => {
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            });
+
+            const foreign = await service[method]({
+                actor: stranger,
+                id: post.id,
+                ...payload
+            } as never);
+            (modelMock.findById as Mock).mockResolvedValue(null);
+            const missing = await service[method]({
+                actor: stranger,
+                id: post.id,
+                ...payload
+            } as never);
+
+            expect(foreign.error).toBeDefined();
+            expect(foreign.error).toStrictEqual(missing.error);
+            expect(missing.error?.message).not.toContain(post.id);
         });
     });
 });

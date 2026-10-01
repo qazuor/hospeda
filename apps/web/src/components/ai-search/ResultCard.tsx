@@ -16,6 +16,7 @@
  */
 
 import { StarIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
 import type { AccommodationPublic } from '@repo/schemas';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
@@ -51,7 +52,9 @@ export interface ResultCardProps {
  */
 export function ResultCard({ item, locale, t }: ResultCardProps) {
     const detailHref = buildUrl({ locale, path: `/alojamientos/${item.slug}/` });
-    const thumbnail = item.media?.featuredImage?.url ?? null;
+    const rawThumbnail = item.media?.featuredImage?.url ?? null;
+    // HOS-1094: grid card, never the untransformed original.
+    const thumbnail = rawThumbnail ? getMediaUrl(rawThumbnail, { preset: 'card' }) : null;
     const cityName = item.cityDestination?.name ?? null;
 
     const priceValue = item.price?.price;

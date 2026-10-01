@@ -7,6 +7,7 @@
  * @module schemas/webhook
  */
 
+import { createBooleanQueryParam } from '@repo/schemas';
 import { z } from 'zod';
 
 /**
@@ -20,7 +21,7 @@ export const ListWebhookEventsQuerySchema = z.object({
     /** Filter by provider */
     provider: z.string().optional(),
     /** Filter by livemode */
-    livemode: z.coerce.boolean().optional(),
+    livemode: createBooleanQueryParam('Filter by livemode'),
     /** Filter by start date (ISO 8601) */
     startDate: z.string().datetime().optional(),
     /** Filter by end date (ISO 8601) */
@@ -73,9 +74,9 @@ export const ListDeadLetterQueueQuerySchema = z.object({
     /** Filter by event type */
     type: z.string().optional(),
     /** Filter by resolved status */
-    resolved: z.coerce.boolean().optional(),
+    resolved: createBooleanQueryParam('Filter by resolved status'),
     /** Filter by livemode */
-    livemode: z.coerce.boolean().optional(),
+    livemode: createBooleanQueryParam('Filter by livemode'),
     /** Filter by start date (ISO 8601) */
     startDate: z.string().datetime().optional(),
     /** Filter by end date (ISO 8601) */

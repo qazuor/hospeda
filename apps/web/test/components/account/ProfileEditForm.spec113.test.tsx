@@ -275,12 +275,9 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                     (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1].body as string
                 )
             ) as Record<string, unknown>;
-            const social = body.socialNetworks as Record<string, string>;
-            expect(social).toBeDefined();
-            expect(social.facebook).toBe('https://facebook.com/changed');
-            expect(social.instagram).toBe('https://instagram.com/juan');
-            // Schema key is `linkedIn`, not `linkedinUrl`.
-            expect(social.linkedIn).toBe('https://linkedin.com/in/juan');
+            // Only the CHANGED network travels: `socialNetworks` is merged by the
+            // API (HOS-1262), so the untouched ones survive without being re-sent.
+            expect(body.socialNetworks).toStrictEqual({ facebook: 'https://facebook.com/changed' });
         });
 
         it('puts phone changes inside contactInfo.mobilePhone', async () => {

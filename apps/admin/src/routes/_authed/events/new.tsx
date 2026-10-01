@@ -1,4 +1,4 @@
-import { EventCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { EventAdminCreateBodySchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import type { EntityCreateConfig } from '@/components/entity-pages';
@@ -42,7 +42,11 @@ function EventCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.EVENT_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
-                zodSchema={EventCreateInputSchema}
+                // The API's create body, not the domain schema: `authorId` is
+                // the authenticated actor and no screen collects it (HOS-998).
+                // Validating against the domain schema here blocked the form
+                // client-side on a field that could never be filled.
+                zodSchema={EventAdminCreateBodySchema}
                 createConsolidatedConfig={() => createEventConsolidatedConfig(t)}
                 configDeps={[t]}
                 createMutation={createMutation}

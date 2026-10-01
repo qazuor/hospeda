@@ -1,8 +1,14 @@
+import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core/index.js';
 import requiredManifest from '../manifest-required.json';
 import { grantFixtureRole } from '../utils/fixtureRoleGrants.js';
-import { createDateTransformer, createSeedFactory, STATUS_ICONS } from '../utils/index.js';
+import {
+    createDateTransformer,
+    createSeedFactory,
+    STATUS_ICONS,
+    whereFixtureSlug
+} from '../utils/index.js';
 
 /**
  * Seed factory for users
@@ -24,6 +30,27 @@ export const seedUsers = createSeedFactory({
     serviceClass: UserService,
     folder: 'src/data/user/required',
     files: requiredManifest.users.filter((file) => file !== 'super-admin-user.json'),
+
+    // HOS-735: skip-if-exists, mirroring the super admin's "existing found" path in
+    // `utils/superAdminLoader.ts`. The row is left untouched. No Better Auth `account`
+    // is written or reset here: this fixture never creates a credential (only the
+    // super admin gets one), so a re-run neither duplicates accounts nor changes a
+    // password. The role grant is idempotent and self-heals a row missing its hats.
+    existing: {
+        modelClass: UserModel,
+        getWhere: whereFixtureSlug(),
+        onExisting: async (result, item) => {
+            const fixture = item as { id?: string; role?: string } | null;
+            if (fixture?.role === RoleEnum.SUPER_ADMIN) {
+                throw new Error('Super admin user must be created separately');
+            }
+            await grantFixtureRole({
+                result,
+                item,
+                source: fixture?.id ?? 'required user'
+            });
+        }
+    },
 
     // Exclude metadata fields and transform date strings to Date objects
     normalizer: (data) => {

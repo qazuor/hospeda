@@ -78,6 +78,18 @@ export class FeatureService extends BaseCrudRelatedService<
         return undefined;
     }
 
+    /**
+     * Features are searched by `slug`.
+     *
+     * Same shape as `AmenityService`: SPEC-266 dropped the `name` column and
+     * labels come from `@repo/i18n` keyed by slug, so the inherited
+     * `['name']` default matched nothing and admin search returned the whole
+     * catalogue (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['slug'];
+    }
+
     protected readonly normalizers: CrudNormalizersFromSchemas<
         typeof CreateFeatureSchema,
         typeof UpdateFeatureSchema,

@@ -240,8 +240,10 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
             const callArg = asMock(modelMock.getDailySeriesForEntityIds).mock.calls[0]?.[0] as {
                 entityIds: string[];
                 windowDays: number;
+                entityType: string;
             };
             expect(callArg.entityIds).toEqual([UUID_ACC_1, UUID_ACC_2]);
+            expect(callArg.entityType).toBe('ACCOMMODATION');
         });
 
         it('should pass windowDays=30 for window 30d', async () => {

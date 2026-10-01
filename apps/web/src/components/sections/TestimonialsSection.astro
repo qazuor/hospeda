@@ -15,6 +15,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { SSR_PUBLIC_CACHE_TTL_MS, testimonialsApi, toTestimonialCardProps } from '@/lib/api';
 import type { ReviewCardData } from '@/data/types';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
 
@@ -33,9 +34,16 @@ try {
     const result = await testimonialsApi.list({ pageSize: 20, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
     if (result.ok) {
         reviews = result.data.items.map((raw) => toTestimonialCardProps({ item: raw as unknown as Record<string, unknown> }));
+    } else {
+        // The response is now a homepage section that silently renders nothing.
+        // Fail-soft is right — a dead endpoint must not 500 the home — but the page
+        // declared itself cacheable before this fetch was issued, so without this the
+        // edge would store the hollow copy for the full `home` TTL (HOS-1154).
+        markResponseDegraded({ locals: Astro.locals });
     }
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'testimonials', error: err instanceof Error ? err.message : err });
+    markResponseDegraded({ locals: Astro.locals });
 }
 
 // Pre-optimize reviewer avatar images before passing to the React island.

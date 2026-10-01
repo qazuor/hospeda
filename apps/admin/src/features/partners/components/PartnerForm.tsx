@@ -78,8 +78,21 @@ function toInputDate(value: Date | string | null | undefined): string {
  * Extracts the conflicting field name from a 409 `ALREADY_EXISTS` API error
  * message (HOS-1061), e.g. `"A partner with this slug already exists"` → `"slug"`.
  *
- * Matches the message shape `handleRouteError` builds in
- * `apps/api/src/utils/response-helpers.ts` for a unique-constraint violation.
+ * Matches the message shape built by `resolveUniqueViolationMessage` in
+ * `apps/api/src/utils/constraint-violation.ts` (moved there from
+ * `response-helpers.ts` by HOS-1174). This regex and that function are the only
+ * thing tying the admin form to the API's conflict copy, and no guard enforces
+ * the pair — a change on either side MUST update the other.
+ *
+ * Deliberately narrow. Since HOS-1174 the API emits this shape ONLY when it
+ * derived the column with confidence; a constraint whose name does not follow
+ * `<table>_<column>_unique` gets a generic conflict message instead, precisely
+ * so this regex does NOT match and no field is highlighted. Highlighting the
+ * wrong control is worse than highlighting none:
+ * `uq_accommodation_media_single_featured` used to yield "…with this featured
+ * already exists", which would have pointed the operator at a field that does
+ * not exist on the form.
+ *
  * Returns `null` when the message doesn't match — the caller falls back to a
  * form-wide error only, still visible via `role="alert"`.
  *

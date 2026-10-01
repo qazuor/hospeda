@@ -32,9 +32,17 @@
  * is the alternative: the API reads its own env once and hands the resolved
  * boolean over HTTP, so there is exactly one source of truth.
  *
+ * `newPaidSignupsFrozen` is the second flag, and unlike the first it is NOT an
+ * env var: it is the admin-editable `billing_settings.newPaidSignupsFrozen`
+ * (no deploy needed). The web reads it to show a "signups are paused" notice
+ * instead of a checkout button. It is a UX hint only — the authoritative
+ * refusal is `assertNewPaidSignupsAllowed` inside each checkout route, so a
+ * stale cached `false` costs a visitor one click, never a charge.
+ *
  * @module routes/billing/public/getCheckoutConfig
  */
 
+import { readNewPaidSignupsFreeze } from '../../../services/billing/new-paid-signups-freeze.js';
 import { env } from '../../../utils/env.js';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
 import { z } from '../../../utils/zod';
@@ -42,13 +50,17 @@ import { z } from '../../../utils/zod';
 /**
  * Public response schema for checkout-config flags.
  *
- * A single boolean today; add fields here (not a second endpoint) if more
- * checkout-behavior flags ever need to reach the web frontend.
+ * Add fields here (not a second endpoint) if more checkout-behavior flags
+ * ever need to reach the web frontend.
  */
 const CheckoutConfigResponseSchema = z.object({
     ownPreapprovalEnabled: z.boolean().openapi({
         description:
             'Whether the own-preapproval checkout path (HOS-937) is active for all four checkouts (accommodation monthly/annual, commerce, partner). When false (the default), the payer-email confirm dialog must not be rendered — the legacy MercadoPago share-link checkout never binds payer_email server-side, so the dialog would be a no-op extra step.'
+    }),
+    newPaidSignupsFrozen: z.boolean().openapi({
+        description:
+            'Whether an admin paused new self-service paid signups (billing settings). When true, the web shows a "signups are paused" notice instead of the checkout buttons for new plans, owner commerce checkouts and add-on purchases. The checkout routes refuse with 409 NEW_PAID_SIGNUPS_FROZEN regardless of what the client renders.'
     })
 });
 
@@ -57,19 +69,25 @@ const CheckoutConfigResponseSchema = z.object({
  * Read-only checkout-behavior flags — Public endpoint.
  *
  * Cached for 60s (matches the feature-flags public routes' TTL) — cheap to
- * serve and changes only on a deliberate deploy, never per-request.
+ * serve. `ownPreapprovalEnabled` changes only on a deliberate deploy;
+ * `newPaidSignupsFrozen` changes when an admin flips it, so the web may show
+ * the previous value for up to that TTL (plus any page cache in front of it).
  */
 export const publicGetCheckoutConfigRoute = createSimpleRoute({
     method: 'get',
     path: '/',
     summary: 'Get public checkout config flags',
     description:
-        'Returns read-only checkout-behavior flags the web frontend needs to render the correct pre-checkout UI. Currently a single flag: whether the own-preapproval checkout path (HOS-937) is enabled.',
+        'Returns read-only checkout-behavior flags the web frontend needs to render the correct pre-checkout UI: whether the own-preapproval checkout path (HOS-937) is enabled, and whether new self-service paid signups are paused by an admin.',
     tags: ['Billing'],
     responseSchema: CheckoutConfigResponseSchema,
-    handler: async () => ({
-        ownPreapprovalEnabled: env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
-    }),
+    handler: async () => {
+        const { frozen } = await readNewPaidSignupsFreeze();
+        return {
+            ownPreapprovalEnabled: env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED,
+            newPaidSignupsFrozen: frozen
+        };
+    },
     options: {
         skipAuth: true,
         cacheTTL: 60,

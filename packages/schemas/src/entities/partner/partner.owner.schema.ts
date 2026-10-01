@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { partnerSchema } from './partner.schema.js';
+import { PARTNER_SAFE_WRITE_URL_FIELDS, partnerSchema } from './partner.schema.js';
 
 /**
  * @file partner.owner.schema.ts
@@ -32,6 +32,7 @@ export const PartnerOwnerOperationalSchema = partnerSchema
         contactInfo: true,
         socialNetworks: true
     })
+    .extend({ contactInfo: PARTNER_SAFE_WRITE_URL_FIELDS.contactInfo })
     .partial();
 
 /**
@@ -48,6 +49,7 @@ export const PartnerOwnerContentSchema = partnerSchema
         description: true,
         websiteUrl: true
     })
+    .extend({ websiteUrl: PARTNER_SAFE_WRITE_URL_FIELDS.websiteUrl })
     .partial();
 
 /**

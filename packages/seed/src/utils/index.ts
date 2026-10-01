@@ -26,6 +26,7 @@ export {
     type ErrorDescription,
     toError
 } from './errorSerialization.js';
+export { whereFixtureFields, whereFixtureSlug } from './existingLookup.js';
 export * from './icons';
 // Core utilities
 export { IdMapper } from './idMapper.js';

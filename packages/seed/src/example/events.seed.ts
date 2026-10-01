@@ -156,15 +156,24 @@ async function seedEventMediaRows({
 /**
  * Seed-factory `postProcess` hook: mirrors the fixture's photos into
  * `event_media` right after the event row exists.
+ *
+ * Twin of `postProcessPost`: the factory hands over `{ data: { id } }`, and a
+ * missing id throws rather than silently skipping the photos (HOS-1034).
+ *
+ * @param result - The factory's create result (`{ data: { id } }`).
+ * @param item - The raw event fixture.
+ * @throws {Error} When the result carries no created id.
  */
-const postProcessEvent = async (result: unknown, item: unknown): Promise<void> => {
-    const created = result as { id?: string } | null;
+export const postProcessEvent = async (result: unknown, item: unknown): Promise<void> => {
+    const eventId = (result as { data?: { id?: string } } | null)?.data?.id;
     const fixture = item as { media?: FixtureMediaBlock; name?: string };
-    if (!created?.id) return;
+    if (!eventId) {
+        throw new Error(`postProcessEvent: no created id for "${fixture.name ?? 'unknown event'}"`);
+    }
     await seedEventMediaRows({
-        eventId: created.id,
+        eventId,
         media: fixture.media,
-        label: fixture.name ?? created.id
+        label: fixture.name ?? eventId
     });
 };
 

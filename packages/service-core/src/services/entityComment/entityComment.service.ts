@@ -21,7 +21,6 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import {
     type Actor,
-    type AdminSearchExecuteParams,
     type PaginatedListOutput,
     type ServiceConfig,
     type ServiceContext,
@@ -654,19 +653,13 @@ export class EntityCommentService extends BaseCrudService<
         });
     }
 
-    /**
-     * Override of the base admin-search executor (AC-17).
-     *
-     * The base `adminList` injects `where.lifecycleState = status` for any
-     * `?status` other than the default `'all'`, but `entity_comments` has no
-     * `lifecycleState` column. Drop that key here before delegating so a stray
-     * status filter can never produce an invalid WHERE clause. Everything else
-     * (author relation loading, pagination, search) is preserved by `super`.
-     */
-    protected async _executeAdminSearch(
-        params: AdminSearchExecuteParams
-    ): Promise<PaginatedListOutput<EntityComment>> {
-        const { lifecycleState: _lifecycleState, ...where } = params.where;
-        return super._executeAdminSearch({ ...params, where });
-    }
+    // The `_executeAdminSearch` override that used to sit here (AC-17) dropped
+    // `where.lifecycleState` before delegating, because `adminList` wrote that
+    // key for any `?status` other than `'all'` and `entity_comments` has no such
+    // column. HOS-1379 moved that concern into `adminList` itself, for all 20
+    // tables in the same position rather than the two that had noticed: the base
+    // now resolves the reserved `status` key to a column that exists and answers
+    // 400 when there is none, so the key can no longer arrive here at all.
+    // Silently swallowing it was never right either — it answered a status
+    // filter with the whole table.
 }

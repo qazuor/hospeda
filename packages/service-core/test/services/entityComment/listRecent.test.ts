@@ -1,8 +1,7 @@
-import { EntityCommentModel, EventModel, PostModel } from '@repo/db';
+import { EntityCommentModel, EventModel, entityComments, PostModel } from '@repo/db';
 import { EntityTypeEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EntityCommentService } from '../../../src/services/entityComment/entityComment.service';
-import type { AdminSearchExecuteParams, PaginatedListOutput } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { expectForbiddenError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
@@ -120,16 +119,18 @@ describe('EntityCommentService.listRecent', () => {
 });
 
 /**
- * The `_executeAdminSearch` override exists so a stray `?status` admin filter
- * cannot inject `where.lifecycleState` (a column `entity_comments` lacks).
- * Invoked directly: `adminList` assembles the where (including the offending
- * key) before delegating here, so this is the exact seam under test (AC-17).
+ * `entity_comments` has no `lifecycleState` column, so the reserved `?status`
+ * admin filter has nothing to bind to.
+ *
+ * This used to be handled by an `_executeAdminSearch` override that STRIPPED
+ * `where.lifecycleState` after `adminList` had already written it (AC-17) —
+ * which kept the query valid while answering a status filter with the whole
+ * table. HOS-1379 moved the decision up into `adminList`, for the 20 tables in
+ * the same position rather than the two that had noticed, and made it a refusal
+ * instead of a silent drop. The seam under test is therefore `adminList`
+ * itself, and the model must not be reached at all.
  */
-type AdminSearchExecutor = {
-    _executeAdminSearch(params: AdminSearchExecuteParams): Promise<PaginatedListOutput<unknown>>;
-};
-
-describe('EntityCommentService._executeAdminSearch (lifecycleState guard)', () => {
+describe('EntityCommentService.adminList — reserved status filter (HOS-1379)', () => {
     let service: EntityCommentService;
     let modelMock: EntityCommentModel;
     let actor: ReturnType<typeof createActor>;
@@ -138,7 +139,11 @@ describe('EntityCommentService._executeAdminSearch (lifecycleState guard)', () =
         modelMock = createTypedModelMock(EntityCommentModel);
         actor = createActor({
             id: ACTOR_ID,
-            permissions: [PermissionEnum.POST_COMMENT_VIEW, PermissionEnum.EVENT_COMMENT_VIEW]
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.POST_COMMENT_VIEW,
+                PermissionEnum.EVENT_COMMENT_VIEW
+            ]
         });
         service = new EntityCommentService(
             { logger: createLoggerMock() },
@@ -146,18 +151,34 @@ describe('EntityCommentService._executeAdminSearch (lifecycleState guard)', () =
             createTypedModelMock(PostModel),
             createTypedModelMock(EventModel)
         );
+        // The REAL Drizzle table: which columns it has IS the question.
+        asMock(modelMock.getTable).mockReturnValue(entityComments as never);
         asMock(modelMock.findAllWithRelations).mockResolvedValue({ items: [], total: 0 });
     });
 
-    it('strips lifecycleState before delegating to the model', async () => {
-        const executor = service as unknown as AdminSearchExecutor;
-        await executor._executeAdminSearch({
-            where: { lifecycleState: 'ACTIVE', deletedAt: null },
-            entityFilters: {},
-            pagination: { page: 1, pageSize: 10 },
-            sort: { sortBy: 'createdAt', sortOrder: 'desc' },
-            actor
+    it('refuses ?status=ACTIVE instead of answering with every comment', async () => {
+        const result = await service.adminList(actor, {
+            page: 1,
+            pageSize: 10,
+            sort: 'createdAt:desc',
+            status: 'ACTIVE',
+            includeDeleted: false
         });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(asMock(modelMock.findAllWithRelations)).not.toHaveBeenCalled();
+    });
+
+    it("still lists normally for the default status: 'all'", async () => {
+        const result = await service.adminList(actor, {
+            page: 1,
+            pageSize: 10,
+            sort: 'createdAt:desc',
+            status: 'all',
+            includeDeleted: false
+        });
+
+        expect(result.error).toBeUndefined();
         const where = asMock(modelMock.findAllWithRelations).mock.calls[0]?.[1] as Record<
             string,
             unknown

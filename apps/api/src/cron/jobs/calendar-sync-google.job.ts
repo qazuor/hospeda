@@ -5,6 +5,15 @@
  * declarative occupancy reconcile (`syncAccommodationCalendar`) for each. The
  * same primitive backs the owner's on-demand "sync now" route.
  *
+ * ## Deleted accommodations are not iterated (HOS-663)
+ *
+ * "Active" means active AND belonging to a live listing: the exclusion of
+ * soft-deleted accommodations is enforced inside `findAllActiveByProvider`, not
+ * here, so both calendar crons and every other caller inherit it from one
+ * place. It is the read-side half of the fix — the delete-time cascade in
+ * `AccommodationService._afterSoftDelete` is the write-side half, and this one
+ * additionally covers rows that went wrong before either existed.
+ *
  * ## Why no advisory lock
  *
  * Unlike the billing/weather crons, this job deliberately does NOT take a

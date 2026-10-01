@@ -23,6 +23,7 @@ import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import dayPickerCssUrl from 'react-day-picker/style.css?url';
 import { ensureStylesheet } from '@/lib/ensure-stylesheet';
+import { formatMonthYearLabel } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import styles from './SearchBar.module.css';
 
@@ -59,6 +60,7 @@ export function SearchBarCalendar({ locale, selected, onSelect }: SearchBarCalen
             numberOfMonths={2}
             disabled={{ before: today }}
             defaultMonth={today}
+            formatters={{ formatCaption: (month) => formatMonthYearLabel({ date: month, locale }) }}
             classNames={{
                 root: `${defaultClassNames.root} ${styles.calendarRoot}`,
                 months: styles.calendarMonths,

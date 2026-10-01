@@ -133,14 +133,14 @@ describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', ()
         setDb(null as unknown as DrizzleClient);
     });
 
-    it('declares exactly `contactInfo` as mergeable', () => {
+    it('declares exactly `contactInfo` and `socialNetworks` as mergeable', () => {
         // Non-vacuity pin: catches both "declaration removed" and "list
         // silently widened to every JSONB column" mutations.
         const mergeable = (
             new EventOrganizerModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
-        expect([...mergeable]).toStrictEqual(['contactInfo']);
+        expect([...mergeable]).toStrictEqual(['contactInfo', 'socialNetworks']);
     });
 
     it('opens a transaction for a partial `contactInfo` patch instead of replacing the column', async () => {
@@ -318,14 +318,15 @@ describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', ()
         const withTransaction = vi.spyOn(clientModule, 'withTransaction');
         setDb(plainDb as unknown as DrizzleClient);
 
-        // Act — `socialNetworks` is NOT declared mergeable on this model.
+        // Act — `adminInfo` is NOT declared mergeable on this model (HOS-1262 moved
+        // `socialNetworks` into the mergeable set, so it can no longer be the control).
         await new EventOrganizerModel().update({ id: 'organizer-1' }, {
-            socialNetworks: { facebook: 'https://facebook.com/x' }
+            adminInfo: { notes: 'x' }
         } as unknown as Parameters<EventOrganizerModel['update']>[1]);
 
         // Assert
         expect(withTransaction).not.toHaveBeenCalled();
         const setPayload = plainDb.set.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(setPayload?.socialNetworks).toStrictEqual({ facebook: 'https://facebook.com/x' });
+        expect(setPayload?.adminInfo).toStrictEqual({ notes: 'x' });
     });
 });

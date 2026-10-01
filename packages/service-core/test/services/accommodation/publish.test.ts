@@ -616,4 +616,101 @@ describe('AccommodationService.publish', () => {
             expect(result.error?.message).toBe('subscription_required');
         });
     });
+
+    // Admin-paused signups (`billing_settings.newPaidSignupsFrozen`, read through
+    // the optional `readNewSignupsFreeze` dep). A first publish starts a trial,
+    // and a trial is a new signup, so the OWNER's own first publish is refused
+    // before the trial insert and the lifecycle flip. A publish under a live
+    // subscription, and an admin publishing on the owner's behalf, are exempt.
+    describe('new signups freeze', () => {
+        function draft(ownerId: string) {
+            const accommodation = createMockAccommodation({
+                id: 'acc-freeze',
+                ownerId,
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+            return accommodation;
+        }
+
+        it('refuses the owner FIRST publish with NEW_PAID_SIGNUPS_FROZEN and writes nothing', async () => {
+            // Arrange
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('first_publish'),
+                readNewSignupsFreeze: vi.fn().mockResolvedValue({ frozen: true })
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            draft('host-first');
+
+            // Act
+            const result = await service.publish(createActor({ id: 'host-first' }), 'acc-freeze');
+
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN);
+            expect(result.error?.reason).toBe('FIRST_PUBLISH_PAUSED');
+            expect(deps.startLocalTrial).not.toHaveBeenCalled();
+            expect(accommodationModel.update).not.toHaveBeenCalled();
+        });
+
+        it('still publishes for an owner with a live subscription (no trial, never asks)', async () => {
+            // Arrange
+            const readNewSignupsFreeze = vi.fn().mockResolvedValue({ frozen: true });
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('has_active_sub'),
+                readNewSignupsFreeze
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            draft('host-paying');
+
+            // Act
+            const result = await service.publish(createActor({ id: 'host-paying' }), 'acc-freeze');
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            expect(readNewSignupsFreeze).not.toHaveBeenCalled();
+        });
+
+        it('lets an admin publish on the owner behalf while frozen (admin actions are exempt)', async () => {
+            // Arrange
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('first_publish'),
+                readNewSignupsFreeze: vi.fn().mockResolvedValue({ frozen: true })
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            draft('host-first');
+            const admin = createAdminActor({
+                id: 'admin-001',
+                permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+            });
+
+            // Act
+            const result = await service.publish(admin, 'acc-freeze');
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(deps.startLocalTrial).toHaveBeenCalledTimes(1);
+        });
+
+        it('publishes and starts the trial when signups are not frozen', async () => {
+            // Arrange
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('first_publish'),
+                readNewSignupsFreeze: vi.fn().mockResolvedValue({ frozen: false })
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            draft('host-first');
+
+            // Act
+            const result = await service.publish(createActor({ id: 'host-first' }), 'acc-freeze');
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(deps.startLocalTrial).toHaveBeenCalledTimes(1);
+        });
+    });
 });

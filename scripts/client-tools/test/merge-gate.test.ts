@@ -9,7 +9,11 @@ import type { PrSnapshot } from '../src/lib/github.ts';
 
 const passed: Check = { name: 'CI Pass', outcome: 'passed', detail: 'SUCCESS' };
 const failed: Check = { name: 'E2E P0 Suite', outcome: 'failed', detail: 'FAILURE' };
-const pending: Check = { name: 'Unit Tests (shard 3/5)', outcome: 'pending', detail: 'IN_PROGRESS' };
+const pending: Check = {
+    name: 'Unit Tests (shard 3/5)',
+    outcome: 'pending',
+    detail: 'IN_PROGRESS'
+};
 
 /** A pull request that would merge, so each test can break exactly one thing. */
 function makePr(overrides: Partial<PrSnapshot> = {}): PrSnapshot {
@@ -109,6 +113,13 @@ describe('evaluateMergeGate', () => {
 
         expect(result.verdict).toBe('blocked');
         expect(result.reason).toContain('main');
+    });
+
+    it('should accept the configured develop integration base', () => {
+        expect(
+            evaluateMergeGate({ pr: makePr({ baseRefName: 'develop' }), expectedBase: 'develop' })
+                .verdict
+        ).toBe('ready');
     });
 
     it('should tell a merged PR that new commits need a new branch', () => {

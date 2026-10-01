@@ -40,8 +40,13 @@ type CapturedHandler = (
 // Hoisted refs
 // ---------------------------------------------------------------------------
 
-const { capturedHandlers } = vi.hoisted(() => ({
-    capturedHandlers: new Map<string, CapturedHandler>()
+const { capturedHandlers, capturedMiddlewares } = vi.hoisted(() => ({
+    capturedHandlers: new Map<string, CapturedHandler>(),
+    // HOS-425: the operator-PIN gate moved out of the handler and into a route
+    // middleware, so that a caller without the PIN is refused BEFORE the body
+    // is validated and cannot read schema errors. Capturing it keeps the six
+    // PIN cases below testing the thing that now decides them.
+    capturedMiddlewares: new Map<string, unknown[]>()
 }));
 
 // ---------------------------------------------------------------------------
@@ -89,10 +94,17 @@ vi.mock('../../../../src/services/social-credential-vault.service.js', () => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../../src/utils/route-factory-tiered', () => ({
-    createApiKeyRoute: vi.fn((config: { path: string; handler: CapturedHandler }) => {
-        capturedHandlers.set(config.path, config.handler);
-        return config.handler;
-    })
+    createApiKeyRoute: vi.fn(
+        (config: {
+            path: string;
+            handler: CapturedHandler;
+            options?: { middlewares?: unknown[] };
+        }) => {
+            capturedHandlers.set(config.path, config.handler);
+            capturedMiddlewares.set(config.path, config.options?.middlewares ?? []);
+            return config.handler;
+        }
+    )
 }));
 
 // ---------------------------------------------------------------------------
@@ -123,6 +135,8 @@ function buildCtxMock() {
 
     const ctx = {
         _calls: calls,
+        /** Only the PIN middleware reads this; the handler is handed a parsed body. */
+        req: { json: async () => ({}) as unknown },
         json(body: unknown, status = 200) {
             calls.push({ body, status });
             // Return a sentinel that the handler returns; the test reads `ctx._calls`
@@ -195,6 +209,10 @@ const HASHTAG_LIMIT_EXCEEDED_RESULT = {
 // ---------------------------------------------------------------------------
 
 let draftsHandler: CapturedHandler | undefined;
+/** The operator-PIN gate, which HOS-425 moved from the handler to a middleware. */
+let pinMiddleware:
+    | ((ctx: unknown, next: () => Promise<void>) => Promise<unknown> | unknown)
+    | undefined;
 
 beforeEach(async () => {
     vi.clearAllMocks();
@@ -212,6 +230,7 @@ beforeEach(async () => {
     // Trigger module evaluation so createApiKeyRoute is called and captures the handler
     await import('../../../../src/routes/ai/social/drafts');
     draftsHandler = capturedHandlers.get('/');
+    pinMiddleware = (capturedMiddlewares.get('/') ?? [])[0] as typeof pinMiddleware;
 });
 
 afterEach(() => {
@@ -290,83 +309,107 @@ describe('POST /api/v1/ai/social/drafts', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Tests — Operator PIN validation (403 via handler-level)
+    // Tests — Operator PIN validation (403, in the route MIDDLEWARE)
+    //
+    // These used to drive the handler directly, because the PIN was checked
+    // there. HOS-425 moved the check into a route middleware so it runs BEFORE
+    // the OpenAPI request validator: while it sat in the handler, a caller with
+    // the API key but no PIN received the body's validation errors first —
+    // `details[].field` and all — and the 403 only if the body happened to be
+    // well-formed. The cases are unchanged; what decides them moved, so the
+    // tests moved with it.
     // -------------------------------------------------------------------------
 
-    describe('operator PIN validation (handler-level)', () => {
-        it('should return 403 when operatorPin is missing from body', async () => {
+    describe('operator PIN validation (route middleware)', () => {
+        /**
+         * Runs the gate over one body.
+         *
+         * @returns the recorded `ctx.json` calls and whether the chain continued
+         */
+        const runGate = async (body: unknown) => {
             const ctx = buildCtxMock();
-            const bodyWithoutPin: Record<string, unknown> = {
-                ...VALID_BODY,
-                operatorPin: undefined
-            };
+            ctx.req.json = async () => body;
+            const next = vi.fn(async () => {});
 
-            const result = await draftsHandler!(ctx, {}, bodyWithoutPin, {});
+            await pinMiddleware!(ctx, next);
 
+            return { ctx, next };
+        };
+
+        /** Every rejection looks the same from outside: 403 FORBIDDEN, chain stopped. */
+        const expectRefused = (
+            ctx: ReturnType<typeof buildCtxMock>,
+            next: { mock: { calls: unknown[] } }
+        ) => {
             expect(ctx._calls).toHaveLength(1);
             expect(ctx._calls[0]?.status).toBe(403);
             expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
                 'FORBIDDEN'
             );
-            expect(result).toMatchObject({ __jsonResponse: true });
+            // The gate must STOP the chain, not merely answer: letting `next()`
+            // run would hand the body to the validator anyway, which is the
+            // whole failure being prevented.
+            expect(next.mock.calls).toHaveLength(0);
             expect(mockIngestDraft).not.toHaveBeenCalled();
+        };
+
+        it('should return 403 when operatorPin is missing from body', async () => {
+            const { ctx, next } = await runGate({ ...VALID_BODY, operatorPin: undefined });
+            expectRefused(ctx, next);
         });
 
         it('should return 403 when operatorPin is an empty string', async () => {
-            const ctx = buildCtxMock();
-            const body = { ...VALID_BODY, operatorPin: '' };
-
-            await draftsHandler!(ctx, {}, body, {});
-
-            expect(ctx._calls[0]?.status).toBe(403);
-            expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
-                'FORBIDDEN'
-            );
-            expect(mockIngestDraft).not.toHaveBeenCalled();
+            const { ctx, next } = await runGate({ ...VALID_BODY, operatorPin: '' });
+            expectRefused(ctx, next);
         });
 
         it('should return 403 when operatorPin is wrong', async () => {
-            const ctx = buildCtxMock();
-            const body = { ...VALID_BODY, operatorPin: 'wrong-pin' };
-
-            await draftsHandler!(ctx, {}, body, {});
-
-            expect(ctx._calls[0]?.status).toBe(403);
-            expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
-                'FORBIDDEN'
-            );
-            expect(mockIngestDraft).not.toHaveBeenCalled();
+            const { ctx, next } = await runGate({ ...VALID_BODY, operatorPin: 'not-the-pin' });
+            expectRefused(ctx, next);
         });
 
         it('should return 403 when operatorPin is a non-string value', async () => {
-            const ctx = buildCtxMock();
-            const body = { ...VALID_BODY, operatorPin: 12345 };
+            const { ctx, next } = await runGate({ ...VALID_BODY, operatorPin: 12345 });
+            expectRefused(ctx, next);
+        });
 
-            await draftsHandler!(ctx, {}, body, {});
-
-            expect(ctx._calls[0]?.status).toBe(403);
-            expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
-                'FORBIDDEN'
-            );
-            expect(mockIngestDraft).not.toHaveBeenCalled();
+        it('should return 403 when operatorPin is whitespace-only', async () => {
+            const { ctx, next } = await runGate({ ...VALID_BODY, operatorPin: '   ' });
+            expectRefused(ctx, next);
         });
 
         it('should return 403 when no active operator_pin credential exists in the vault (HOS-64 T-021)', async () => {
             mockGetDecryptedSocialCredential.mockResolvedValue({
+                data: null,
                 error: {
                     code: 'NOT_FOUND',
                     message: "No active credential found for key 'operator_pin'"
                 }
             });
+
+            const { ctx, next } = await runGate(VALID_BODY);
+            expectRefused(ctx, next);
+        });
+
+        it('lets a valid PIN through to the rest of the chain', async () => {
+            // The negative cases above all pass if the gate simply refuses
+            // everything; this is what stops that from reading as a suite.
+            const { ctx, next } = await runGate(VALID_BODY);
+
+            expect(ctx._calls).toHaveLength(0);
+            expect(next.mock.calls).toHaveLength(1);
+        });
+
+        it('refuses a body that is not JSON at all, rather than throwing', async () => {
             const ctx = buildCtxMock();
+            ctx.req.json = async () => {
+                throw new SyntaxError('Unexpected token');
+            };
+            const next = vi.fn(async () => {});
 
-            await draftsHandler!(ctx, {}, VALID_BODY, {});
+            await pinMiddleware!(ctx, next);
 
-            expect(ctx._calls[0]?.status).toBe(403);
-            expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
-                'FORBIDDEN'
-            );
-            expect(mockIngestDraft).not.toHaveBeenCalled();
+            expectRefused(ctx, next);
         });
     });
 
@@ -556,16 +599,20 @@ describe('POST /api/v1/ai/social/drafts', () => {
 
     describe('PIN env guard — edge cases', () => {
         it('should return 403 when operatorPin is whitespace-only', async () => {
-            // The validateOperatorPin function trims the pin and rejects empty after trim.
+            // `validateOperatorPin` trims the pin and rejects empty after trim.
+            // Driven through the MIDDLEWARE, which is where the check lives
+            // since HOS-425 — the handler no longer looks at the PIN at all.
             const ctx = buildCtxMock();
-            const body = { ...VALID_BODY, operatorPin: '   ' };
+            ctx.req.json = async () => ({ ...VALID_BODY, operatorPin: '   ' });
+            const next = vi.fn(async () => {});
 
-            await draftsHandler!(ctx, {}, body, {});
+            await pinMiddleware!(ctx, next);
 
             expect(ctx._calls[0]?.status).toBe(403);
             expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
                 'FORBIDDEN'
             );
+            expect(next.mock.calls).toHaveLength(0);
             expect(mockIngestDraft).not.toHaveBeenCalled();
         });
 

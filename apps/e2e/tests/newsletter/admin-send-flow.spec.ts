@@ -117,26 +117,22 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
         expect(draftRow[0]?.status).toBe('draft');
 
         // ── 3. Send the campaign ───────────────────────────────────────────
-        // Dispatch needs BOTH Redis and HOSPEDA_EMAIL_API_KEY; with either missing
-        // the route resolves the stub delivery service and answers 503
-        // BULLMQ_NOT_CONFIGURED. Redis is provided in CI, the key is not, so this
-        // leg cannot run there — the earlier draft assertions above do.
-        //
-        // Deliberately NOT worked around by adding the key to the workflow: its
-        // absence is also what makes apps/api auto-verify signups in non-prod
-        // (auth.ts — "HOSPEDA_EMAIL_API_KEY not set - auto-verified user in non-prod
-        // env"). Setting it would switch the whole suite to real verification
-        // emails, which is a decision about the environment, not about this spec.
-        test.fixme(
-            true,
-            'campaign dispatch needs HOSPEDA_EMAIL_API_KEY, unset in CI — setting it would also disable signup auto-verification suite-wide'
-        );
+        // HOS-1267: this leg was `test.fixme(true)` on the premise that dispatch
+        // needs HOSPEDA_EMAIL_API_KEY and would otherwise answer 503
+        // BULLMQ_NOT_CONFIGURED. Measured 2026-09-21 against the e2e stack with
+        // the key UNSET and only docker-compose.e2e's Redis running, the route
+        // answers `202 {dispatched: true, enqueued: 1}`. Redis is what dispatch
+        // needs, and both e2e workflows declare a `redis:7-alpine` service, so
+        // the leg runs everywhere the suite does.
         const sendResponse = await page.request.post(
             `${API_URL}/api/v1/admin/newsletter/campaigns/${campaignId}/send`,
             { headers: { cookie: admin.sessionCookie } }
         );
         // 202 (accepted) on happy path; 200 when no eligible audience.
-        expect([200, 202].includes(sendResponse.status())).toBe(true);
+        expect(
+            [200, 202].includes(sendResponse.status()),
+            `send should be accepted, got ${sendResponse.status()}: ${await sendResponse.text()}`
+        ).toBe(true);
 
         // DB invariant: status = 'sending' (or 'sent' if cron raced; tolerate both).
         const sendingRow = await execSQL<{ status: string; total_recipients: number | null }>(

@@ -16,10 +16,14 @@ on:
     branches:
       - main
       - staging
+      # Umbrella integration branches (DEC-CI-001). `push` covers the periodic
+      # staging -> umbrella merge, which is not a PR.
+      - 'epic/**'
   pull_request:
     branches:
       - main
       - staging
+      - 'epic/**'
     types:
       - opened
       - synchronize
@@ -149,14 +153,40 @@ jobs:
         run: pnpm --filter admin run validate:sidebar-routes
 
   # ------------------------------------------------------------------
-  # Security checks: dependency audit + SAST. ~3-4 min.
+  # Dependency vulnerability audit. Split from SAST (below) by HOS-1136:
+  # both used to be steps of one `Security` job, with no `continue-on-error`
+  # anywhere. `pnpm audit` talks to registry.npmjs.org's advisories endpoint,
+  # an external dependency this job does not control, and that endpoint's
+  # 2026-09-03 outage aborted `pnpm audit` — which, as step 1 of that job,
+  # meant GitHub Actions never reached the semgrep step that followed. An
+  # unrelated third-party outage silently skipped the code-security scan for
+  # hours, and nothing in the rollup said so. As two independent jobs,
+  # neither one's outcome can suppress the other's run.
+  # `run-dependency-audit.sh` additionally distinguishes a genuine
+  # vulnerability finding from a registry network/timeout failure (HOS-1136
+  # option 4) — only the former fails this job. ~1 min.
   # ------------------------------------------------------------------
-  security:
-    name: Security
-    # Uses the semgrep CLI (via uv) instead of the archived
-    # `semgrep/semgrep-action@v1` Docker action. Rule packs are identical:
-    # p/typescript, p/nodejs, p/owasp-top-ten, p/secrets. `--error` makes
-    # semgrep exit non-zero on any finding, preserving the old action's gate.
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Audit production dependencies (critical/high)
+        run: bash scripts/run-dependency-audit.sh
+
+  # ------------------------------------------------------------------
+  # Static analysis (SAST). Split from dependency audit (above) by
+  # HOS-1136, so an npm-registry outage can never suppress this scan
+  # again — see the comment on that job for the full incident. Uses the
+  # semgrep CLI (via uv) instead of the archived `semgrep/semgrep-action@v1`
+  # Docker action. Rule packs are identical: p/typescript, p/nodejs,
+  # p/owasp-top-ten, p/secrets. `--error` makes semgrep exit non-zero on any
+  # finding, preserving the old action's gate. ~3 min.
+  # ------------------------------------------------------------------
+  sast:
+    name: SAST
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -175,8 +205,6 @@ jobs:
           BASELINE_REF: ${{ inputs.baseline_ref }}
         run: bash scripts/resolve-ci-baseline.sh
       - uses: ./.github/actions/setup
-      - name: Audit production dependencies (critical/high)
-        run: pnpm audit --prod --audit-level=high
       - name: Install uv (provides Python + semgrep CLI)
         # uv fetches a pinned, semgrep-compatible Python (3.12) without relying
         # on the GitHub tool-cache (which actions/setup-python lacks for some
@@ -218,7 +246,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           # Full history so the seed dual-write guard (HOS-25 T-024) can diff
-          # the PR base ref against HEAD (same reason the `security` job uses
+          # the PR base ref against HEAD (same reason the `sast` job uses
           # fetch-depth: 0 for its semgrep --baseline-commit diff).
           fetch-depth: 0
       - name: Resolve diff baseline
@@ -230,6 +258,13 @@ jobs:
           PUSH_BEFORE: ${{ github.event.before }}
           BASELINE_REF: ${{ inputs.baseline_ref }}
         run: bash scripts/resolve-ci-baseline.sh
+      # Its own step, and in `pnpm check:guards` too (see the note further
+      # down). Right after the baseline step because it reads CI_BASELINE_SHA,
+      # and before setup because it only needs git. Only a PR to a protected
+      # branch can take the forbidden path, so only those run it.
+      - name: A branch cut from the umbrella may not target staging or main (DEC-ARCH-007)
+        if: github.base_ref == 'staging' || github.base_ref == 'main'
+        run: bash scripts/check-umbrella-branch-target.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
@@ -319,6 +354,14 @@ jobs:
         run: bash scripts/check-local-date-math.sh
       - name: Check the qzpay wave converges on one core (HOS-232)
         run: bash scripts/check-qzpay-wave-convergence.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above). Fails
+      # when admin's dependency tree resolves two copies of a Radix primitive
+      # with module-level state. Two focus-scope copies made a Select inside a
+      # Dialog trap focus forever. #3365 got there through lockfile drift alone,
+      # with no Radix bump, which neither package.json nor Dependabot can see.
+      - name: Check admin resolves one copy of each stateful Radix primitive (HOS-80)
+        run: pnpm check:radix-single-focus-scope
       - name: Check published contact addresses use hospeda.com.ar (HOS-928)
         run: bash scripts/check-hospeda-email-domain.sh
       # Not redundant with `pnpm check:guards`: this job runs each guard as its
@@ -369,6 +412,22 @@ jobs:
       # (HOS-1214 AC-11).
       - name: Check What's New catalog integrity (HOS-1214 AC-11)
         run: pnpm check:whats-new-catalog
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above, F-6).
+      # This one fails on a `test.fixme` in apps/e2e that no branch guards — the
+      # construct that kept four @p0/@p1 specs in the inventory while running
+      # nothing, one of them for four months. The conditional seed guard
+      # (`test.fixme(!planId, ...)`, or a `test.fixme(true, ...)` inside the `if`
+      # that found the precondition missing) is legitimate and stays allowed,
+      # which is why the check is an AST walk and not a grep.
+      - name: Check no unconditional test.fixme in apps/e2e (HOS-1267)
+        run: pnpm check:no-unconditional-fixme
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above, F-6).
+      # `z.coerce.boolean()` is `Boolean(value)`, so `?dryRun=false` ran a cron
+      # as a dry-run and `?includeDeleted=false` returned the deleted set.
+      - name: Check no z.coerce.boolean() in apps/api/src or packages/schemas/src (HOS-410)
+        run: pnpm check:no-coerce-boolean
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
@@ -545,25 +604,19 @@ jobs:
     needs: build
     # Fork count on CI. Repo is public now, so every shard runs on its own
     # isolated ubuntu-latest VM (no shared-host-RAM concern from the old
-    # self-hosted leo-laptop era, see file-level comment above). Even so,
-    # apps/admin's shard 4/4 (under the previous 4-way split) OOM-crashed 3x
-    # in a row in native V8 memory (RegExpCompiler Zone allocator, NOT the JS
-    # heap — confirmed via --logHeapUsage staying flat at 330-500MB) after
-    # accumulating ~45 sequential test files in the same reused forked
-    # worker process, tipping over on a memory-heavy real-interaction test
-    # (userEvent + Radix Select portal in PromoCodeFormDialog.test.tsx).
-    # Bisected against every dependency bumped in dependabot PR #2019 (react,
-    # radix-ui, tailwind-merge/tailwindcss, sentry, tanstack-table/virtual,
-    # driver.js, posthog-js) with none isolating as the sole cause — this is
-    # a structural test-runner memory ceiling, not a specific package
-    # regression. Splitting 4-way -> 5-way (2026-07-03) lowers the average
-    # files-per-shard so fewer forks accumulate anywhere near the ~45-file
-    # danger zone; VITEST_MAX_FORKS lowered 2 -> 1 removes fork-vs-fork
-    # concurrent memory competition entirely within a shard; execArgv in
-    # vitest.shared.config.ts raises --max-old-space-size for more headroom.
-    # This mitigates likelihood, it does not eliminate the underlying
-    # accumulation — if it resurfaces as the suite grows, rebalance again or
-    # tune worker recycling instead of just adding another shard.
+    # self-hosted leo-laptop era, see file-level comment above).
+    # History (HOS-80): apps/admin's shard kept OOM-crashing on
+    # PromoCodeFormDialog.test.tsx (#2019, then #3365). It was first read as
+    # native memory accumulating across ~45 files in a reused fork, and
+    # mitigated with the 5-way split, VITEST_MAX_FORKS=1 and --max-old-space-size.
+    # The real cause was different. Under Vitest 4 with isolate: true (the
+    # default), every file gets a fresh fork, so nothing accumulates across
+    # files. The test itself looped forever: a Radix Select inside a Radix
+    # Dialog resolved to two different copies of @radix-ui/react-focus-scope,
+    # and each copy's focus trap stole focus back from the other with no end.
+    # Keep all of Radix on one version set (the dependabot `radix` group
+    # enforces this). A worker that dies on one file while its shard runs far
+    # longer than usual points to a hang in THAT file, not a memory ceiling.
     env:
       VITEST_MAX_FORKS: 1
     strategy:
@@ -850,7 +903,8 @@ jobs:
   # (or `hops redeploy <app>` from inside the VPS), NOT from this repo's
   # workflows. The aggregator stays because it makes branch-protection
   # rules simpler: one required status check ("CI Pass") instead of
-  # nine independent ones.
+  # ten independent ones (HOS-1136 split `security` into `dependency-audit`
+  # + `sast`, raising the count from nine).
   # ------------------------------------------------------------------
   ci-pass:
     name: CI Pass
@@ -858,7 +912,8 @@ jobs:
     if: always()
     needs:
       - lint
-      - security
+      - dependency-audit
+      - sast
       - guards
       - build
       - typecheck
@@ -875,7 +930,8 @@ jobs:
         # Every other job must report "success".
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] \
-            || [ "${{ needs.security.result }}" != "success" ] \
+            || [ "${{ needs.dependency-audit.result }}" != "success" ] \
+            || [ "${{ needs.sast.result }}" != "success" ] \
             || [ "${{ needs.guards.result }}" != "success" ] \
             || [ "${{ needs.build.result }}" != "success" ] \
             || [ "${{ needs.typecheck.result }}" != "success" ] \

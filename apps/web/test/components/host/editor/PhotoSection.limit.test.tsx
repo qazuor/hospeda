@@ -268,8 +268,14 @@ describe('HOS-724 — an upload failure that is NOT the cap', () => {
         await uploadOneGalleryPhoto();
 
         await waitFor(() => {
-            expect(screen.getAllByText('Server exploded').length).toBeGreaterThan(0);
+            // HOS-1218: localized copy for the code, never the API's English text.
+            expect(
+                screen.getAllByText(
+                    'Algo salió mal del lado nuestro. Intentá de nuevo en un momento.'
+                ).length
+            ).toBeGreaterThan(0);
         });
+        expect(screen.queryByText('Server exploded')).not.toBeInTheDocument();
 
         // No CTA of any kind: an add-on offer bolted onto a 500 would be a
         // misdiagnosis, and a plan-upgrade link would be one too.

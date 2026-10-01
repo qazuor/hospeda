@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParamWithDefault } from '../../common/boolean-params.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { TagColorEnumSchema } from '../../enums/tag-color.schema.js';
 import { PostTagSchema } from './post-tag.schema.js';
@@ -39,10 +39,10 @@ export const PublicPostTagQuerySchema = z.object({
      * When `true`, each PostTag in the response includes `usageCount` — the
      * number of published posts that reference this tag.
      *
-     * Coerced from query string (`'true'`/`'false'`/`'1'`/`'0'`).
+     * Strict query string boolean (`'true'` or `'false'` only).
      * Defaults to `false`.
      */
-    withCounts: queryBooleanParam().default(false)
+    withCounts: createBooleanQueryParamWithDefault('withCounts filter', false)
 });
 
 export type PublicPostTagQuery = z.infer<typeof PublicPostTagQuerySchema>;

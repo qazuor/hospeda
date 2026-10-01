@@ -93,7 +93,7 @@ export const UserBookmarkCreateHttpSchema = z
         // Optional bookmark metadata
         notes: z.string().optional(),
         priority: z.coerce.number().min(1).max(5).optional(),
-        isPrivate: z.coerce.boolean().optional()
+        isPrivate: httpBodyBoolean().optional()
     })
     .refine(
         (data) =>
@@ -112,8 +112,8 @@ export type UserBookmarkCreateHttp = z.infer<typeof UserBookmarkCreateHttpSchema
 export const UserBookmarkUpdateHttpSchema = z.object({
     notes: z.string().optional(),
     priority: z.coerce.number().min(1).max(5).optional(),
-    isPrivate: z.coerce.boolean().optional(),
-    isActive: z.coerce.boolean().optional()
+    isPrivate: httpBodyBoolean().optional(),
+    isActive: httpBodyBoolean().optional()
 });
 
 export type UserBookmarkUpdateHttp = z.infer<typeof UserBookmarkUpdateHttpSchema>;
@@ -225,8 +225,8 @@ export type UserBookmarksCheckBulkResponse = z.infer<typeof UserBookmarksCheckBu
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
-
 import type {
     UserBookmarkCreateInput,
     UserBookmarkUpdateInput

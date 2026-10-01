@@ -566,6 +566,7 @@ export const createPerRouteRateLimitMiddleware = ({
 /** Supported rate limit endpoint categories */
 export type RateLimitEndpointType =
     | 'auth'
+    | 'auth-session-read'
     | 'public'
     | 'admin'
     | 'protected'
@@ -574,6 +575,61 @@ export type RateLimitEndpointType =
     | 'ai-inbound'
     | 'make-callback'
     | 'general';
+
+/**
+ * Endpoints whose GET form is a SESSION READ (HOS-1153).
+ *
+ * A session read accepts no credential: it answers "who is the bearer of this
+ * cookie?" and nothing more. A legitimately signed-in client repeats it dozens
+ * of times in a normal session — the admin panel issues two of them
+ * (`get-session` + `auth/me`) on every route `beforeLoad`, and every
+ * server-rendered page of the web app reads `auth/me` once.
+ *
+ * That traffic profile is the exact opposite of an authentication ATTEMPT, so
+ * the two must not share a budget: see {@link getEndpointType}.
+ *
+ * Matched EXACTLY, never by prefix — `/api/v1/public/auth/menu` is not a
+ * session read, and a future `/api/v1/public/auth/me/something` would have to
+ * be added here deliberately rather than inherit the looser tier by accident.
+ */
+const SESSION_READ_PATHS: ReadonlySet<string> = new Set([
+    // Better Auth's own session lookup (the admin and the web both poll it).
+    '/api/auth/get-session',
+    // The actor/roles/permissions snapshot every authenticated surface reads.
+    '/api/v1/public/auth/me',
+    // The lightweight "am I signed in?" probe.
+    '/api/v1/public/auth/status'
+]);
+
+/**
+ * Strips a single trailing slash so `/api/v1/public/auth/me/` classifies like
+ * `/api/v1/public/auth/me`. The root path is left alone.
+ *
+ * @param path - The raw request path.
+ * @returns The path without a trailing slash.
+ */
+const stripTrailingSlash = (path: string): string =>
+    path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+
+/**
+ * Returns true when the request is a session READ rather than an
+ * authentication ATTEMPT (HOS-1153).
+ *
+ * The discriminator is the METHOD as well as the path. A POST to one of the
+ * {@link SESSION_READ_PATHS} is not a read — it carries a body and must keep
+ * the tight anti-brute-force ceiling — and a GET to any other auth path
+ * (`reset-password/check`, which probes a token) is not a read either.
+ *
+ * @param params - RO: `{ path, method }` straight off the request.
+ * @returns `true` only for a GET on an exact session-read path.
+ */
+export const isSessionReadRequest = ({
+    path,
+    method
+}: {
+    readonly path: string;
+    readonly method: string;
+}): boolean => method.toUpperCase() === 'GET' && SESSION_READ_PATHS.has(stripTrailingSlash(path));
 
 /**
  * Determines the endpoint type based on the request path and method.
@@ -588,11 +644,12 @@ export type RateLimitEndpointType =
  *   2. `billing`      — POST requests on paths containing `/billing/`
  *   3. `ai-inbound`   — `/api/v1/ai/*` (Custom GPT inbound calls)
  *   4. `make-callback` — `/api/v1/integrations/make/*` (Make.com callbacks)
- *   5. `auth`         — auth paths
- *   6. `admin`        — `/api/v1/admin/*`
- *   7. `public`       — `/api/v1/public/*`
- *   8. `protected`    — `/api/v1/protected/*`
- *   9. `general`      — everything else
+ *   5. `auth-session-read` — GET on an exact session-read path
+ *   6. `auth`         — auth paths
+ *   7. `admin`        — `/api/v1/admin/*`
+ *   8. `public`       — `/api/v1/public/*`
+ *   9. `protected`    — `/api/v1/protected/*`
+ *  10. `general`      — everything else
  *
  * @param path - The request path
  * @param method - The HTTP method (uppercase)
@@ -616,6 +673,16 @@ export const getEndpointType = (path: string, method: string): RateLimitEndpoint
     // Paths are /api/v1/integrations/make/* — no "/webhook" segment, no collision above.
     if (path.startsWith('/api/v1/integrations/make/')) {
         return 'make-callback';
+    }
+    // HOS-1153: session READS leave the anti-brute-force bucket. They must be
+    // checked BEFORE the `auth` prefix match below, which is what used to claim
+    // them. The `auth` tier (50 req / 5 min per IP) is calibrated for
+    // credential-accepting attempts; a signed-in operator navigating the admin
+    // panel spends two of those per `beforeLoad` and hits 429 within a few
+    // clicks, while the real anti-brute-force control — the per-EMAIL lockout in
+    // `auth-lockout.ts` — is untouched by this split.
+    if (isSessionReadRequest({ path, method })) {
+        return 'auth-session-read';
     }
     if (
         path.startsWith('/api/auth/') ||
@@ -658,6 +725,17 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.authWindowMs,
                 maxRequests: baseConfig.authMaxRequests,
                 message: baseConfig.authMessage,
+                headers: baseConfig.headers
+            };
+        case 'auth-session-read':
+            // HOS-1153. A ceiling, not an exemption: it still caps a single IP,
+            // it just stops ordinary session polling from spending the
+            // anti-brute-force budget.
+            return {
+                enabled: baseConfig.authSessionReadEnabled,
+                windowMs: baseConfig.authSessionReadWindowMs,
+                maxRequests: baseConfig.authSessionReadMaxRequests,
+                message: baseConfig.authSessionReadMessage,
                 headers: baseConfig.headers
             };
         case 'public':

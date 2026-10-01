@@ -143,11 +143,21 @@ export class UserModel extends BaseModelImpl<User> {
      * the WRITE and READ halves of the shared `ContactInfoSchema` accept `null`
      * for exactly that reason. `contactInfo: null` (the whole value) still
      * clears the entire column — that is plain assignment, not a merge.
+     *
+     * `socialNetworks` is merged for the same reason (HOS-1262): it is one JSONB
+     * value of up to six independent network URLs, and a PATCH that sent one
+     * network used to replace the column and silently delete the rest. The price
+     * is the same as for `contactInfo`: clearing a network is an explicit `null`
+     * (`{ socialNetworks: { instagram: null } }`), never an omission. The shared
+     * `SocialNetworkSchema` (WRITE) and `SocialNetworkReadSchema` (READ) both
+     * accept `null` per key for exactly that reason. `socialNetworks: null` (the
+     * whole value) still clears the entire column.
      */
     protected override readonly mergeableJsonbColumns = [
         'settings',
         'profile',
-        'contactInfo'
+        'contactInfo',
+        'socialNetworks'
     ] as const;
 
     protected getTableName(): string {

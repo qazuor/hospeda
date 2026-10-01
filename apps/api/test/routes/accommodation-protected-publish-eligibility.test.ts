@@ -86,7 +86,12 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
         vi.clearAllMocks();
         app = initApp();
         mockGetPublishEligibility.mockResolvedValue({
-            data: { eligibility: 'has_active_sub', canPublish: true, startsTrial: false },
+            data: {
+                eligibility: 'has_active_sub',
+                canPublish: true,
+                startsTrial: false,
+                firstPublishPaused: false
+            },
             error: undefined
         });
     });
@@ -121,7 +126,8 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
             expect(body.data).toEqual({
                 eligibility: 'has_active_sub',
                 canPublish: true,
-                startsTrial: false
+                startsTrial: false,
+                firstPublishPaused: false
             });
         });
 
@@ -130,7 +136,12 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
             // button". It must cross the wire as publishable, and as starting
             // a trial so the dialog can say so.
             mockGetPublishEligibility.mockResolvedValue({
-                data: { eligibility: 'first_publish', canPublish: true, startsTrial: true },
+                data: {
+                    eligibility: 'first_publish',
+                    canPublish: true,
+                    startsTrial: true,
+                    firstPublishPaused: false
+                },
                 error: undefined
             });
 
@@ -141,7 +152,8 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
             expect(body.data).toEqual({
                 eligibility: 'first_publish',
                 canPublish: true,
-                startsTrial: true
+                startsTrial: true,
+                firstPublishPaused: false
             });
         });
 
@@ -153,7 +165,8 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
                 data: {
                     eligibility: 'subscription_required',
                     canPublish: false,
-                    startsTrial: false
+                    startsTrial: false,
+                    firstPublishPaused: false
                 },
                 error: undefined
             });
@@ -165,7 +178,36 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
             expect(body.data).toEqual({
                 eligibility: 'subscription_required',
                 canPublish: false,
-                startsTrial: false
+                startsTrial: false,
+                firstPublishPaused: false
+            });
+        });
+    });
+
+    describe('admin-paused new signups', () => {
+        it('forwards firstPublishPaused so the client can say the listing stays a draft', async () => {
+            // Arrange
+            mockGetPublishEligibility.mockResolvedValue({
+                data: {
+                    eligibility: 'first_publish',
+                    canPublish: false,
+                    startsTrial: false,
+                    firstPublishPaused: true
+                },
+                error: undefined
+            });
+
+            // Act
+            const res = await app.request(URL, { headers: AUTH_HEADERS });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data).toEqual({
+                eligibility: 'first_publish',
+                canPublish: false,
+                startsTrial: false,
+                firstPublishPaused: true
             });
         });
     });
@@ -180,7 +222,8 @@ describe('GET /api/v1/protected/accommodations/publish-eligibility (HOS-1183)', 
                 data: {
                     eligibility: 'subscription_required',
                     canPublish: true,
-                    startsTrial: false
+                    startsTrial: false,
+                    firstPublishPaused: false
                 },
                 error: undefined
             });

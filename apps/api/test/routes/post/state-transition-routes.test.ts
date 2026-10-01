@@ -277,7 +277,7 @@ describe('post state-transition routes', () => {
             });
         });
 
-        it('surfaces the service FORBIDDEN for a non-author', async () => {
+        it('surfaces a service FORBIDDEN unchanged (own row, refused by permission; foreign rows arrive as NOT_FOUND, HOS-1106)', async () => {
             mockSetPublishState.mockResolvedValue({
                 error: {
                     code: ServiceErrorCode.FORBIDDEN,

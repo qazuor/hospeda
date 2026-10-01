@@ -511,8 +511,38 @@ export abstract class BaseCrudRead<
                 // Build where clause from base admin filters
                 const where: Record<string, unknown> = {};
 
-                if (status !== 'all') {
-                    where.lifecycleState = status;
+                // `status` is a key AdminSearchBaseSchema RESERVES, and the
+                // column it maps to is not the same on every table. It used to
+                // be written as `lifecycleState` unconditionally — two lines
+                // above the `'deletedAt' in tableRecord` check below — which on
+                // the 20 service tables that have no such column produced two
+                // different dishonest answers: buildWhereClause dropped the
+                // unknown key and answered with the WHOLE table looking
+                // filtered, or, where there was no `deletedAt` to keep it
+                // company, threw on the lone unknown key and answered 500
+                // (HOS-1379, reproducible on GET /admin/social/settings).
+                //
+                // So resolve it to the column that actually exists, and refuse
+                // when there is none. `status: 'all'` is the schema default and
+                // still sets nothing, so a request that does not use the filter
+                // reaches none of this.
+                if (status !== undefined && status !== 'all') {
+                    if ('lifecycleState' in tableRecord) {
+                        where.lifecycleState = status;
+                    } else if ('status' in tableRecord) {
+                        // The entity carries its own state column under the
+                        // reserved name and REDEFINES `status` in its admin
+                        // search schema to that domain enum — see
+                        // HostTradeBenefitUsageAdminSearchSchema. Filtering on
+                        // the column it named is the only reading of the key
+                        // that is not a guess.
+                        where.status = status;
+                    } else {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            `Filter "status" is not supported by ${this.entityName}: its table has neither a "lifecycleState" nor a "status" column. Remove the parameter, or use "status=all".`
+                        );
+                    }
                 }
 
                 if (!includeDeleted && 'deletedAt' in tableRecord) {

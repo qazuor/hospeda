@@ -19,6 +19,7 @@
  */
 
 import { type JSX, useState } from 'react';
+import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import {
     Dialog,
     DialogBody,
@@ -48,7 +49,12 @@ export interface PublishReadyDialogProps {
 }
 
 /** What the dialog is doing right now. */
-type DialogState = 'offering' | 'publishing' | 'error' | 'subscriptionRequired';
+type DialogState =
+    | 'offering'
+    | 'publishing'
+    | 'error'
+    | 'subscriptionRequired'
+    | 'firstPublishPaused';
 
 /**
  * The "your listing is ready" dialog.
@@ -88,6 +94,12 @@ export function PublishReadyDialog({
             setState('subscriptionRequired');
             return;
         }
+        // Admin-paused signups: a first publish starts a trial, and new signups
+        // are frozen. The listing stays a draft; a retry fails identically.
+        if (result.error.code === 'NEW_PAID_SIGNUPS_FROZEN') {
+            setState('firstPublishPaused');
+            return;
+        }
         setState('error');
     }
 
@@ -114,7 +126,13 @@ export function PublishReadyDialog({
             </DialogHeader>
 
             <DialogBody>
-                {state === 'subscriptionRequired' ? (
+                {state === 'firstPublishPaused' ? (
+                    <PaidSignupsPausedNotice
+                        locale={locale}
+                        variant="firstPublish"
+                        testId="publish-ready-paused-notice"
+                    />
+                ) : state === 'subscriptionRequired' ? (
                     <p className={styles.text}>
                         {t(
                             'host.properties.card.publishSubscriptionRequiredMessage',
@@ -161,6 +179,14 @@ export function PublishReadyDialog({
                     >
                         {t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     </a>
+                ) : state === 'firstPublishPaused' ? (
+                    <button
+                        type="button"
+                        className={styles.secondary}
+                        onClick={onClose}
+                    >
+                        {t('host.properties.editor.publishReady.keepEditing', 'Seguir editando')}
+                    </button>
                 ) : (
                     <>
                         <button
