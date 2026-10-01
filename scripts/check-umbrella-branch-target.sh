@@ -18,11 +18,25 @@
 # WHAT IS CHECKED
 #
 # Ancestry, not branch names — a name can be changed, history cannot. The PR
-# fails when HEAD contains at least one umbrella commit that the target branch
-# does not have yet. Concretely: every merge-base between HEAD and the umbrella
-# must already be an ancestor of the target. If one is not, HEAD carries
-# umbrella-only work and is trying to deliver it to `staging`/`main` around
-# the umbrella.
+# fails when HEAD contains at least one of the umbrella's OWN commits — one
+# that neither the target branch nor `staging` has. Concretely: every
+# merge-base between HEAD and the umbrella must already be an ancestor of the
+# target OR of `staging`. If one is neither, HEAD carries umbrella-only work
+# and is trying to deliver it to `staging`/`main` around the umbrella.
+#
+# Why `staging` counts as well as the target: the umbrella is cut from
+# `staging` and merges `staging` in periodically, so it shares with `staging`
+# commits that `main` does not have yet. Those commits are not the umbrella's;
+# they reach `main` through the normal `staging -> main` promotion. Measuring
+# only against the target turned EVERY promotion red while the umbrella
+# branch existed (DEC-CI-001, owner decision T, 2026-10-01). For a PR to
+# `staging` the two checks coincide, so nothing changes there.
+#
+# Soundness: if HEAD contains an umbrella commit E that `staging` lacks, E is a
+# common ancestor of HEAD and the umbrella, so some merge-base M descends from
+# E — and M cannot be an ancestor of `staging` (E would be too). So the
+# predicate can only pass a branch whose umbrella commits are all in `staging`
+# already.
 #
 # Why not the simpler "is the umbrella TIP an ancestor of HEAD?":
 #   - it misses every branch cut from an OLDER umbrella commit (the umbrella
@@ -48,9 +62,10 @@
 #     own carries nothing umbrella-only, so it is indistinguishable from a
 #     normal staging branch and passes. It also delivers nothing of the
 #     umbrella, so nothing is lost.
-#   - The `staging -> main` promotion after the umbrella has landed in
-#     `staging` DOES fail here while the umbrella branch still exists on the
-#     remote. Deleting the umbrella branch once it is merged clears it.
+#   - Once the umbrella has landed in `staging`, its commits are `staging`
+#     commits like any other, so a branch cut from it may target `main` and
+#     pass. Whatever it carries of the umbrella is already in `staging`; this
+#     guard protects the umbrella, not the `staging -> main` soak rule.
 #
 # INPUTS (env, all optional)
 #
@@ -72,6 +87,8 @@ readonly UMBRELLA_BRANCH="${UMBRELLA_BRANCH:-epic/HOS-1352-verticales-billing}"
 readonly REMOTE="${UMBRELLA_REMOTE:-origin}"
 readonly BASE_REF="${GITHUB_BASE_REF:-}"
 readonly HEAD_REF="${GITHUB_HEAD_REF:-}"
+# The integration line the umbrella is cut from and syncs with.
+readonly STAGING_BRANCH="staging"
 
 case "${BASE_REF}" in
     staging | main) ;;
@@ -122,12 +139,27 @@ if ! git rev-parse --verify --quiet "${base}^{commit}" >/dev/null 2>&1; then
     exit 1
 fi
 
+# `staging` is resolved the same way as the target: fetched when missing, and
+# the check fails closed when it still cannot be resolved.
+staging_ref="refs/remotes/${REMOTE}/${STAGING_BRANCH}"
+if ! git rev-parse --verify --quiet "${staging_ref}" >/dev/null 2>&1; then
+    git fetch --no-tags "${REMOTE}" "+refs/heads/${STAGING_BRANCH}:${staging_ref}" >/dev/null 2>&1 || true
+fi
+if ! git rev-parse --verify --quiet "${staging_ref}^{commit}" >/dev/null 2>&1; then
+    echo "FAIL: cannot resolve '${STAGING_BRANCH}' on '${REMOTE}' to tell the umbrella's own commits apart."
+    exit 1
+fi
+
 # No common history at all: HEAD cannot carry umbrella commits.
 merge_bases="$(git merge-base --all HEAD "${umbrella_ref}" || true)"
 
 for mb in ${merge_bases}; do
-    if ! git merge-base --is-ancestor "${mb}" "${base}"; then
-        echo "FAIL (DEC-ARCH-007): this branch carries commits of '${UMBRELLA_BRANCH}' that '${BASE_REF}' does not have."
+    # A merge-base that `staging` already has is shared history the umbrella
+    # took from `staging`, legitimate on any target. Only the umbrella's own
+    # commits — in neither the target nor `staging` — are a leak.
+    if ! git merge-base --is-ancestor "${mb}" "${base}" &&
+        ! git merge-base --is-ancestor "${mb}" "${staging_ref}"; then
+        echo "FAIL (DEC-ARCH-007): this branch carries commits of '${UMBRELLA_BRANCH}' that neither '${BASE_REF}' nor '${STAGING_BRANCH}' has."
         echo "  A branch cut from the umbrella may not target staging or main."
         echo "  Retarget the PR to '${UMBRELLA_BRANCH}'. Only the umbrella's own PR goes to ${BASE_REF}."
         echo "  Umbrella-only commit shared with HEAD: $(git rev-parse --short "${mb}")"
