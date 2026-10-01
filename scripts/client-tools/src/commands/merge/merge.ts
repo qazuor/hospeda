@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { findPr, type PrLookup } from '../../lib/github.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
 import { evaluateMergeGate, exitCodeForGate, type MergeGateResult } from './gate.ts';
@@ -22,11 +23,13 @@ ${pc.bold('hops merge')} — ¿se puede mergear el PR de esta branch?
 
 ${pc.bold('Uso')}
 
-  hops merge [--wt <nombre>]
+  hops merge [--wt <nombre>] [--json]
+
+  ${pc.dim('--json emite el veredicto estructurado sin ejecutar el merge.')}
 
 ${pc.bold('Qué mira')}
 
-  ${pc.dim('· Que esté abierto, no sea draft y apunte a staging.')}
+  ${pc.dim('· Que esté abierto, no sea draft y apunte a la base de integración declarada.')}
   ${pc.dim('· mergeable / mergeStateStatus, reconsultando mientras den UNKNOWN:')}
   ${pc.dim('  GitHub los calcula recién cuando se los pide, y contesta UNKNOWN')}
   ${pc.dim('  en la primera consulta. Leer eso como «se puede» es fail-open.')}
@@ -69,8 +72,7 @@ export async function fetchSettledPr({
     for (let attempt = 0; attempt < Math.max(1, attempts); attempt += 1) {
         last = await findPr({ branch, cwd });
         if (typeof last !== 'object' || 'error' in last) return last;
-        const stillComputing =
-            last.mergeable === 'UNKNOWN' || last.mergeStateStatus === 'UNKNOWN';
+        const stillComputing = last.mergeable === 'UNKNOWN' || last.mergeStateStatus === 'UNKNOWN';
         if (!stillComputing) return last;
         if (attempt < attempts - 1) await sleep(RETRY_PAUSE_MS);
     }
@@ -114,23 +116,41 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
         process.stdout.write(renderHelp());
         return 0;
     }
+    const json = argv.includes('--json');
 
     const { target, rest } = extractTarget({ argv });
     const { name: worktreeName } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const expectedBase = adapter?.branches?.base ?? 'staging';
+    const integrationBranches = new Set(
+        adapter?.branches?.promotion ?? ['develop', 'staging', 'main']
+    );
     const cwd = context.worktree?.path ?? context.repoRoot;
     const worktree = context.worktree;
 
     // Same refusal as `ci`: a branch that could not be resolved is not a branch
     // to ask GitHub about.
     if (worktree === null || worktree.detached || worktree.branch === '') {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ error: 'worktree sin branch', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.red('No pude resolver la branch de este worktree.')}\n` +
                 `${pc.dim('Sin branch no hay PR que evaluar.')}\n`
         );
         return 1;
     }
-    if (worktree.branch === 'staging' || worktree.branch === 'main') {
+    if (integrationBranches.has(worktree.branch)) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch: worktree.branch, error: 'branch sin PR propio', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.yellow(`Estás en ${worktree.branch}.`)} Esa branch no tiene PR propio.\n`
         );
@@ -139,6 +159,12 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
 
     const found = await fetchSettledPr({ branch: worktree.branch, cwd });
     if (typeof found === 'object' && 'error' in found) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch: worktree.branch, error: found.error, readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.red('No pude consultar GitHub.')} ${pc.dim(found.error.split('\n')[0] ?? '')}\n` +
                 `${pc.dim('Si dice 401, un GITHUB_TOKEN vencido le gana a las credenciales de gh.')}\n`
@@ -146,11 +172,34 @@ export async function runMerge({ argv }: { readonly argv: readonly string[] }): 
         return 1;
     }
     if (found === 'none') {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch: worktree.branch, pullRequest: null, verdict: 'no-pr', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(`${pc.yellow('No hay PR para')} ${pc.bold(worktree.branch)}.\n`);
         return 1;
     }
 
-    const result = evaluateMergeGate({ pr: found });
+    const result = evaluateMergeGate({ pr: found, expectedBase });
+    if (json) {
+        process.stdout.write(
+            `${JSON.stringify({
+                branch: worktree.branch,
+                pullRequest: {
+                    number: found.number,
+                    title: found.title,
+                    state: found.state,
+                    base: found.baseRefName
+                },
+                verdict: result.verdict,
+                reason: result.reason,
+                readOnly: true
+            })}\n`
+        );
+        return exitCodeForGate({ verdict: result.verdict });
+    }
     process.stderr.write(
         renderVerdict({
             result,

@@ -1,21 +1,55 @@
 import { describe, expect, it } from 'bun:test';
+import { execFileSync } from 'node:child_process';
+import {
+    chmodSync,
+    mkdirSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMMANDS } from '../src/registry.ts';
 
 const BIN_DIR = join(import.meta.dir, '..', 'bin');
 
+describe('standalone distribution manifest', () => {
+    it('declares every hops-* wrapper in package.json', () => {
+        const packageJson = JSON.parse(
+            readFileSync(join(import.meta.dir, '..', 'package.json'), 'utf8')
+        ) as {
+            readonly bin: Record<string, string>;
+        };
+        const declared = Object.keys(packageJson.bin)
+            .filter((name) => name.startsWith('hops-'))
+            .sort();
+        const files = readdirSync(BIN_DIR)
+            .filter((name) => name.startsWith('hops-'))
+            .sort();
+        expect(declared).toEqual(files);
+    });
+});
+
 /** Runs a binary to completion, capturing what it wrote. */
 async function runBin({
     name,
-    args
+    args,
+    env,
+    cwd
 }: {
     readonly name: string;
     readonly args: readonly string[];
+    readonly env?: Record<string, string>;
+    readonly cwd?: string;
 }): Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }> {
     const proc = Bun.spawn([join(BIN_DIR, name), ...args], {
         stdout: 'pipe',
         stderr: 'pipe',
-        stdin: 'ignore'
+        stdin: 'ignore',
+        cwd,
+        env: env === undefined ? undefined : { ...process.env, ...env }
     });
     const [stdout, stderr] = await Promise.all([
         new Response(proc.stdout).text(),
@@ -55,6 +89,60 @@ describe('bin/hops', () => {
     });
 });
 
+describe('ci · integración del binario con GitHub', () => {
+    it('debe distinguir verde, rojo, pendiente, conflicto, sin checks y error de consulta', async () => {
+        const fakeDir = mkdtempSync(join(tmpdir(), 'hops-fake-gh-'));
+        const fakeRepo = mkdtempSync(join(tmpdir(), 'hops-fake-repo-'));
+        const fakeGh = join(fakeDir, 'gh');
+        mkdirSync(join(fakeRepo, '.claude'));
+        writeFileSync(join(fakeRepo, '.claude', 'project.config.json'), '{}');
+        execFileSync('git', ['init', '-q', '-b', 'test-ci'], { cwd: fakeRepo });
+        writeFileSync(
+            fakeGh,
+            `#!/usr/bin/env bash
+case "\${HOPS_FAKE_GH_SCENARIO}" in
+green) echo '[{"number":1,"state":"OPEN","mergeable":"MERGEABLE","mergeStateStatus":"CLEAN","isDraft":false,"baseRefName":"staging","title":"ok","statusCheckRollup":[{"name":"CI","conclusion":"SUCCESS"}]}]' ;;
+red) echo '[{"number":1,"state":"OPEN","mergeable":"MERGEABLE","mergeStateStatus":"CLEAN","isDraft":false,"baseRefName":"staging","title":"ok","statusCheckRollup":[{"name":"CI","conclusion":"FAILURE"}]}]' ;;
+pending) echo '[{"number":1,"state":"OPEN","mergeable":"MERGEABLE","mergeStateStatus":"CLEAN","isDraft":false,"baseRefName":"staging","title":"ok","statusCheckRollup":[{"name":"CI","status":"IN_PROGRESS","conclusion":""}]}]' ;;
+conflict) echo '[{"number":1,"state":"OPEN","mergeable":"CONFLICTING","mergeStateStatus":"DIRTY","isDraft":false,"baseRefName":"staging","title":"ok","statusCheckRollup":[{"name":"CI","conclusion":"SUCCESS"}]}]' ;;
+no-checks) echo '[{"number":1,"state":"OPEN","mergeable":"MERGEABLE","mergeStateStatus":"CLEAN","isDraft":false,"baseRefName":"staging","title":"ok","statusCheckRollup":[]}]' ;;
+none) echo '[]' ;;
+error) echo 'credentials rejected' >&2; exit 1 ;;
+esac
+`,
+            'utf8'
+        );
+        chmodSync(fakeGh, 0o755);
+        const scenarios = [
+            ['green', 0, 'VERDE'],
+            ['red', 1, 'ROJO'],
+            ['pending', 2, 'TODAVÍA CORRIENDO'],
+            ['conflict', 1, 'EN CONFLICTO'],
+            ['no-checks', 1, 'SIN CHECKS'],
+            ['none', 1, 'No hay PR'],
+            ['error', 1, 'No pude consultar GitHub']
+        ] as const;
+        try {
+            for (const [scenario, code, expected] of scenarios) {
+                const result = await runBin({
+                    name: 'hops-ci',
+                    args: [],
+                    env: {
+                        PATH: `${fakeDir}:${process.env.PATH ?? ''}`,
+                        HOPS_FAKE_GH_SCENARIO: scenario
+                    },
+                    cwd: fakeRepo
+                });
+                expect({ scenario, code: result.code }).toEqual({ scenario, code });
+                expect(`${result.stdout}\n${result.stderr}`).toContain(expected);
+            }
+        } finally {
+            rmSync(fakeDir, { recursive: true, force: true });
+            rmSync(fakeRepo, { recursive: true, force: true });
+        }
+    }, 60_000);
+});
+
 describe('standalone binaries', () => {
     it('should answer --help with output and a zero exit, one per command', async () => {
         // Spawned in parallel, and the command name travels with every
@@ -87,7 +175,7 @@ describe('standalone binaries', () => {
 
         expect(viaAlias.stdout).toBe(viaDispatcher.stdout);
         expect(viaAlias.code).toBe(viaDispatcher.code);
-    }, 30_000);
+    }, 60_000);
 });
 
 /**

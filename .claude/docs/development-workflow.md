@@ -1,10 +1,20 @@
 # Development Workflow
 
+> **Legacy reference during the CLI migration.** The active policy is
+> [`docs/architecture/spec-workflow-migration.md`](../../docs/architecture/spec-workflow-migration.md):
+> ODD is the normal workflow, `.specs/` scales with risk, and SDD/OpenSpec is
+> exceptional unless the user explicitly requests it. The detailed SDD recipes
+> below remain available for that exceptional case and for historical context;
+> they are not mandatory for every change.
+
 ## Overview
 
-This document defines the **mandatory development workflow** for all non-trivial changes. The workflow is built on **Spec-Driven Development (SDD)** as the primary methodology, complemented by **Test-Informed Development** to ensure every line of code is backed by tests.
+This document describes the former SDD + Test-Informed workflow for projects or
+changes that explicitly opt into it. It is no longer the mandatory workflow for
+all non-trivial changes.
 
-**Core philosophy:** Nothing is done without a spec. Nothing is done without tests. No exceptions.
+**Current philosophy:** use the smallest ODD workflow that preserves a
+verifiable outcome; escalate to a spec when risk or shared context justifies it.
 
 ---
 
