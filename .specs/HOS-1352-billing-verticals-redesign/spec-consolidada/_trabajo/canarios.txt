@@ -1,0 +1,34 @@
+✓ base: exit 0
+✓ R1   exit 1 · un ítem vivo definido dos veces
+✓ R1   exit 1 · un ítem vivo definido sólo en 90-retirados
+✓ R2   exit 1 · un ítem muerto definido fuera de 90-retirados
+✓ R3   exit 1 · un MIXTO sin adjudicar
+✓ R3   exit 1 · una adjudicación con el hash de otra línea
+✓ R3   exit 1 · un veredicto fuera de VIVO|MUERTO|PARCIAL
+✓ R3b  exit 1 · la fuente cambió desde el SHA (hash del inventario ≠ árbol de trabajo)
+✓ R4   exit 1 · una referencia colgada
+✓ R5   exit 1 · un ancla inventada con Origen
+✓ R6   exit 1 · una definición sin Origen
+✓ R6   exit 1 · un Origen que no cita la posición del ítem
+✓ R6   exit 1 · la línea citada no contiene el id local
+✓ R7   exit 1 · un ítem normativo vivo sin AC
+✓ R8   exit 1 · un AC sin test
+✓ R9   exit 1 · un AC inventado, sin fuente (y con test, para que sólo falte la fuente)
+✓ R9   exit 1 · un test que cita sólo un ancla de US (no un ítem fuente)
+✓ R10  exit 1 · una US dentro de 80-abiertos
+✓ R11  exit 1 · un AC sin Entonces
+✓ R11  exit 1 · una US con un actor fuera de la lista
+✓ R11  exit 1 · un AC cuyo id visible no coincide con el ancla
+✓ R11  exit 1 · una pieza sin AC de salida
+✓ R11  exit 1 · un AC de una pieza inexistente
+✓ R12  exit 1 · un tipo de test fuera de la lista cerrada
+✓ R12  exit 1 · un smoke sin etiqueta
+✓ R13  exit 1 · una invariante sin test (citada por un AC sin test)
+✓ R14  exit 1 · una transición sin test de integración con DB
+✓ R15  exit 1 · un guard sin prueba de mutación
+✓ R16  exit 1 · una sección de la plantilla borrada
+✓ R16  exit 1 · un N/A sin razón
+✓ R16  exit 1 · una pieza del corte en la carpeta de una fase posterior
+✓ R17  exit 1 · una sección del diseño sin ninguna línea citada
+
+31 canarios · 0 fallas
