@@ -117,7 +117,8 @@
         "GALLERY_LIMIT_EXCEEDED_one": "You have reached the gallery limit of {{count}} photo.",
         "GALLERY_LIMIT_EXCEEDED_other": "You have reached the gallery limit of {{count}} photos.",
         "MISSING_FILE": "No image was received. Choose a file and try again.",
-        "EMPTY_FILE": "The file is empty. Choose another image."
+        "EMPTY_FILE": "The file is empty. Choose another image.",
+        "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
     },
     "filters": "Filters",
     "filterChips": {

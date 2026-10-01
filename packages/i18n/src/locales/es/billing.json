@@ -278,6 +278,10 @@
             "plusError": "Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.",
             "confirm": "Continuar",
             "cancel": "Cancelar"
+        },
+        "signupsPaused": {
+            "title": "Contrataciones nuevas en pausa",
+            "body": "Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad."
         }
     },
     "checkoutRetry": {

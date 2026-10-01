@@ -508,6 +508,13 @@
             "paymentFailedHint": "Avisar al cliente cuando un pago falla",
             "subscriptionCancelledLabel": "Notificar cancelación de suscripción",
             "subscriptionCancelledHint": "Avisar al cliente cuando se cancela la suscripción"
+        },
+        "signupFreeze": {
+            "title": "Altas nuevas",
+            "description": "Pausá las contrataciones self-service sin hacer un deploy",
+            "label": "Pausar altas pagas nuevas",
+            "hint": "Bloquea contratar un plan (incluidas las pruebas nuevas desde el checkout), publicar un comercio que todavía no tiene suscripción y comprar complementos. No afecta renovaciones, cobros, cancelaciones, cambios de tarjeta, upgrades de quien ya paga ni las acciones del admin.",
+            "activeWarning": "Las altas nuevas están pausadas: en la web se muestra un aviso en lugar del botón de contratar, y la API rechaza esas contrataciones."
         }
     },
     "sponsorships": {

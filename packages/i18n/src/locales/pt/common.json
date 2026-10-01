@@ -117,7 +117,8 @@
         "GALLERY_LIMIT_EXCEEDED_one": "Você atingiu o limite de {{count}} foto da galeria.",
         "GALLERY_LIMIT_EXCEEDED_other": "Você atingiu o limite de {{count}} fotos da galeria.",
         "MISSING_FILE": "Nenhuma imagem foi recebida. Escolha um arquivo e tente novamente.",
-        "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem."
+        "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem.",
+        "NEW_PAID_SIGNUPS_FROZEN": "Pausamos temporariamente novas assinaturas e compras. Se você já tem uma assinatura, ela continua funcionando normalmente."
     },
     "filters": "Filtros",
     "filterChips": {
