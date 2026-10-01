@@ -941,33 +941,61 @@ y `41-corte-del-mvp/aristas.py` por su encabezado, y lo que dice cada pieza vive
 | `V3` | `V3` | corte | entera |
 | `V4` | `V4` | corte | entera; suma la función del seudónimo, que era de `V9` (AC) |
 | `V5` | `V5` | corte | entera |
-| `V6` | `V6` | corte | entera |
-| `V7` | `V7` | después | entera, salvo su migración estructural, que va al corte (AB; qué pieza la lleva: `41-corte-del-mvp/20-aplicacion.md`, AP) |
+| `V6` | `V6` | corte | entera; suma el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados (AP) |
+| `V7` | `V7` | después | entera, salvo su migración estructural y su esquema, que van al corte en `V6` (AB y AP) |
 | `V8a` | `V8` | corte | Z |
 | `V8b` | `V8` | después | Z |
 | `V9a` | `V9` | corte | Z y AC |
 | `V9b` | `V9` | después | Z y AC |
 | `B1` | `B1` | corte | entera |
 | `B2` | `B2` | corte | entera |
-| `B3` | `B3` | corte | entera; la rama de sucesión de `S1` sin ruta hasta `B8b` (Z) |
-| `B4` | `B4` | corte | entera; suma el modelo de addons y la fuente `ADDON`, con `G-R2-C` (AA) |
+| `B3` | `B3` | corte | entera; la rama de sucesión de `S1` sin ruta hasta `B8b` (Z); suma la cola de cambios, las columnas de la sucesión y las dos tablas de `B12` (AP) |
+| `B4` | `B4` | corte | entera; suma el modelo de addons y la fuente `ADDON`, con `G-R2-C` (AA), y la columna de la instancia en `payment` (AP) |
 | `B5` | `B5` | corte | entera |
 | `B6` | `B6` | corte | entera |
 | `B7` | `B7` | corte | entera |
-| `B8a` | `B8` | corte | Z |
+| `B8a` | `B8` | corte | Z; `S11`, `S12`, `S23` y `S24` (AR) |
 | `B8b` | `B8` | después | Z |
-| `B9a` | `B9` | corte | Z |
+| `B9a` | `B9` | corte | Z; la fuente `CORTESÍA` (AQ), el esquema de promos y cortesías (AP) y `S20` (AS) |
 | `B9b` | `B9` | después | Z |
-| `B10` | `B10` | después | entera, salvo su modelo y la fuente `ADDON`, que van a `B4` (AA) |
+| `B10` | `B10` | después | entera, salvo su modelo y la fuente `ADDON`, que van a `B4` (AA), y `S20`, `S21`, `S32` y `S33`, que van a la pieza del corte que las llama (AS; las tres últimas, según AV) |
 | `B11` | `B11` | corte | entera |
-| `B12` | `B12` | después | entera |
-| `B13a` | `B13` | corte | Z |
+| `B12` | `B12` | después | entera, salvo sus dos tablas, que crea `B3` (AP) |
+| `B13a` | `B13` | corte | Z; el aviso de que todavía no se puede cambiar de plan (AU) |
 | `B13b` | `B13` | después | Z |
 
 **Todo el esquema de las 25 unidades nace en las migraciones de la rama antes del corte** —tablas,
 columnas, enums, `FK`, `UNIQUE`, `CHECK` y los extras—, aunque su lógica se difiera: una fase
-posterior no trae migración estructural (AD). **Qué pieza del corte crea el esquema de lo que va
-después** —salvo el de addons, que AA pone en `B4`— no lo fija el lote, y vuelve al owner (`41-corte-del-mvp/20-aplicacion.md`, AP).
+posterior no trae migración estructural (AD). ~~**Qué pieza del corte crea el esquema de lo que va
+después** —salvo el de addons, que AA pone en `B4`— no lo fija el lote, y vuelve al owner (`41-corte-del-mvp/20-aplicacion.md`, AP).~~
+**Lo crea la pieza del corte dueña de la tabla de la que cuelga** (corte del MVP, owner 2026-10-01, AP, la 1). Esta tabla la
+lee `41-corte-del-mvp/contar.py` por su encabezado: cada fila tiene que ir de una pieza o unidad
+posterior a una pieza del corte.
+
+<a id="esquema-del-corte"></a>
+
+| esquema | de | lo crea | fuente |
+|---|---|---|---|
+| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice, agrega el `UNIQUE` parcial sobre `owner_user_id`, y retira los lectores de `tier` | `V7` | `V6` | AB y AP |
+| la postulación de Partner, el rol de socio y el bit de moderación de la presencia | `V7` | `V6` | AP |
+| la cola de cambios programados | `B8b` | `B3` | AP |
+| las columnas de la sucesión, `sucede_a` y `sucedida_por` | `B8b` | `B3` | AP |
+| las dos tablas de la migración de un plan retirado | `B12` | `B3` | AP |
+| promos: códigos y redenciones | `B9b` | `B9a` | AP |
+| cortesías | `B9b` | `B9a` | AP |
+| el modelo de addons: productos, instancias y compra | `B10` | `B4` | AA y AP |
+| la columna de `payment` que apunta a la instancia de addon | `B10` | `B4` | AP |
+
+*(Las versiones de addon no están en la tabla: `addon_version` es de verticales y la construye `V2`
+con `políticaDeAddon`, que ya es del corte, `B/02` §2.4. `V8b`, `V9b` y `B13b` no tienen esquema
+propio en sus filas; el inventario de la spec consolidada lo comprueba. Las dos cosas las derivé y
+las marco.)*
+
+**La mitigación** (AP): **el drift guard del esquema, corriendo sobre la rama de cada fase
+posterior, falla si la fase trae una migración estructural**. Es el mismo control que hoy exige la
+migración commiteada con el esquema; en la rama de una fase posterior se lee al revés: cualquier
+migración estructural nueva es un rojo. *(Cómo se enciende sobre una rama `epic/**` lo fija
+`DEC-CI-001`; lo marco como lo que falta escribir al abrir la primera fase.)*
 
 ### 4.7 Los gates de aceptación ✚
 
@@ -1054,9 +1082,23 @@ sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la e
 aditivas sobre el sistema nuevo**: no reescriben filas ni código del corte, y no traen migración
 estructural (AD). **Cada fase posterior viaja en una rama épica nueva** (`epic/**`, `DEC-CI-001`),
 con **los mismos gates por unidad** —el momento 1, pieza por pieza—, y **entra a `staging`
-entera** (AE). Los momentos 3 a 5 son del corte y no se repiten. **Qué otra condición tiene el PR
+entera** (AE). Los momentos 3 a 5 son del corte y no se repiten. ~~**Qué otra condición tiene el PR
 de una fase posterior a `staging`** —el *«propio gate»* de Y— no lo escribe el lote, y vuelve al
-owner (`41-corte-del-mvp/20-aplicacion.md`, AT).
+owner (`41-corte-del-mvp/20-aplicacion.md`, AT).~~ **El gate propio de una fase posterior** (corte del MVP, owner 2026-10-01, AT, la 1) es:
+
+1. **el momento 2 aplicado a la rama de la fase**: sus piezas en `Done`; `staging` mergeado hacia
+   la rama y verde en su último `push`; `e2e-pr`, `codeql`, `lighthouse` y `a11y-sweep` con
+   conclusión `success` fechada después del último merge a la rama; y el merge lo decide el owner;
+2. **el checklist de smoke del sistema nuevo, extendido con lo de la fase**: la parte de `staging`,
+   ejecutada antes del merge de la rama a `staging`, y la de producción, como **un 5c propio** de
+   la fase, con la tarjeta del owner y un monto aprobado de antemano, después de que la fase llegue
+   a producción;
+3. **el drift guard sobre la rama de la fase, en verde**: ninguna migración estructural (AP, §4.6).
+   *(Que el drift guard entre como condición del gate lo derivé de la mitigación de AP; lo marco.)*
+
+Y una excepción declarada a *«aditiva»*, la única: **`B8b` saca de Mi Suscripción el aviso
+*«todavía no se puede cambiar de plan…»* que `B13a` muestra al corte** (AU), y nada más que ese
+texto.
 
 #### El smoke manual del cobro nuevo
 
