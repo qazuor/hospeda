@@ -28,8 +28,9 @@
  *   See "Why `main` alone is not enough" in `resolve-dates.ts`. A blank
  *   `STAGING_CATALOG`, `IN_FLIGHT_CATALOGS` without it, or a path that does
  *   not exist is an error: silently resolving everything is exactly the bug
- *   this exists to stop. Neither set (a local manual run) resolves every
- *   marker, as before.
+ *   this exists to stop. So is neither being set under GitHub Actions
+ *   (`GITHUB_ACTIONS=true`). Neither set in a local manual run resolves
+ *   every marker, as before.
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -96,19 +97,27 @@ export interface ReferenceCatalogPaths {
  *
  * @param input.stagingEnv  - Raw `STAGING_CATALOG`, or `undefined`.
  * @param input.inFlightEnv - Raw `IN_FLIGHT_CATALOGS`, or `undefined`.
- * @returns `undefined` when neither is set (no filtering); otherwise the paths.
- * @throws When `STAGING_CATALOG` is blank, or `IN_FLIGHT_CATALOGS` is set
- *         without it — both mean a broken workflow step, which must fail
- *         closed rather than resolve every marker.
+ * @param input.inCi        - Whether this runs in GitHub Actions
+ *                            (`GITHUB_ACTIONS === 'true'`).
+ * @returns `undefined` when neither is set outside CI (a local manual run, no
+ *          filtering); otherwise the paths.
+ * @throws When `STAGING_CATALOG` is blank, missing in CI, or absent while
+ *         `IN_FLIGHT_CATALOGS` is set — each means a broken workflow step,
+ *         which must fail closed rather than resolve every marker.
  */
 export function parseReferenceCatalogs({
     stagingEnv,
-    inFlightEnv
+    inFlightEnv,
+    inCi
 }: {
     readonly stagingEnv: string | undefined;
     readonly inFlightEnv: string | undefined;
+    readonly inCi: boolean;
 }): ReferenceCatalogPaths | undefined {
     if (stagingEnv === undefined) {
+        if (inCi) {
+            throw new Error('STAGING_CATALOG is required in CI; refusing to resolve unfiltered.');
+        }
         if (inFlightEnv !== undefined) {
             throw new Error('IN_FLIGHT_CATALOGS is set but STAGING_CATALOG is not.');
         }
@@ -147,7 +156,8 @@ function main(): void {
 
     const references = parseReferenceCatalogs({
         stagingEnv: process.env.STAGING_CATALOG,
-        inFlightEnv: process.env.IN_FLIGHT_CATALOGS
+        inFlightEnv: process.env.IN_FLIGHT_CATALOGS,
+        inCi: process.env.GITHUB_ACTIONS === 'true'
     });
     // readFileSync throws on a missing reference: fail loud, never fall open.
     const onlyIds =

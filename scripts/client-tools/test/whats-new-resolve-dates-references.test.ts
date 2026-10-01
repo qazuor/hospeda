@@ -242,27 +242,43 @@ describe('computeResolvableIds', () => {
 describe('parseReferenceCatalogs', () => {
     it('returns undefined when neither variable is set (local manual run)', () => {
         expect(
-            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: undefined })
+            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: undefined, inCi: false })
         ).toBeUndefined();
     });
 
     it('accepts an empty in-flight list and splits a non-empty one on newlines', () => {
-        expect(parseReferenceCatalogs({ stagingEnv: '/s.ts', inFlightEnv: '' })).toStrictEqual({
+        expect(
+            parseReferenceCatalogs({ stagingEnv: '/s.ts', inFlightEnv: '', inCi: false })
+        ).toStrictEqual({
             stagingPath: '/s.ts',
             inFlightPaths: []
         });
         expect(
-            parseReferenceCatalogs({ stagingEnv: '/s.ts', inFlightEnv: '/a.ts\n\n /b.ts \n' })
+            parseReferenceCatalogs({
+                stagingEnv: '/s.ts',
+                inFlightEnv: '/a.ts\n\n /b.ts \n',
+                inCi: false
+            })
         ).toStrictEqual({ stagingPath: '/s.ts', inFlightPaths: ['/a.ts', '/b.ts'] });
     });
 
     it('throws on a blank STAGING_CATALOG, so a broken workflow step fails closed', () => {
-        expect(() => parseReferenceCatalogs({ stagingEnv: '  ', inFlightEnv: '' })).toThrow();
+        expect(() =>
+            parseReferenceCatalogs({ stagingEnv: '  ', inFlightEnv: '', inCi: false })
+        ).toThrow();
     });
 
     it('throws on IN_FLIGHT_CATALOGS without STAGING_CATALOG', () => {
         expect(() =>
-            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: '/a.ts' })
+            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: '/a.ts', inCi: false })
+        ).toThrow();
+    });
+
+    it('throws in CI when STAGING_CATALOG is missing, instead of resolving unfiltered', () => {
+        // Arrange — someone dropped the workflow's env lines: both vars unset.
+        // Act + Assert
+        expect(() =>
+            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: undefined, inCi: true })
         ).toThrow();
     });
 });
