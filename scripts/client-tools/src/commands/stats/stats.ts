@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts';
 import { Command } from 'commander';
 import pc from 'picocolors';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { resolveRepoRoot } from '../../lib/repo.ts';
 import { collectCode, collectPackages, scanWorkspace } from './collectors/code.ts';
 import { collectDebt } from './collectors/debt.ts';
@@ -63,7 +64,17 @@ async function resolveRepo(
     if (!top.ok) return null;
     const root = top.stdout.trim();
     const sha = (await run('git', ['rev-parse', '--short', 'HEAD'], { cwd: root })).stdout.trim();
-    for (const candidate of ['origin/staging', 'origin/main', 'origin/master', 'main', 'master']) {
+    const adapter = await loadProjectAdapter(root);
+    const baseBranch = adapter?.branches?.base;
+    const candidates = [
+        ...(baseBranch ? [`origin/${baseBranch}`, baseBranch] : []),
+        'origin/staging',
+        'origin/main',
+        'origin/master',
+        'main',
+        'master'
+    ];
+    for (const candidate of [...new Set(candidates)]) {
         const found = await run('git', ['rev-parse', '--verify', '--quiet', candidate], {
             cwd: root
         });

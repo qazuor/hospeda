@@ -53,8 +53,40 @@ export interface CommandEntry {
     load(): Promise<ClientCommand>;
 }
 
+/** Commands whose behavior is adapter-driven and reusable outside Hospeda. */
+export const GENERIC_COMMANDS: ReadonlySet<string> = new Set([
+    'artifact',
+    'wt-clean',
+    'handoff',
+    'smoke-plan',
+    'context',
+    'issue-preflight',
+    'recap',
+    'close-issue',
+    'start-issue',
+    'verify',
+    'ci',
+    'merge',
+    'promote',
+    'back-merge',
+    'run',
+    'engram',
+    'gentle-status',
+    'gentle-sdd-status',
+    'linear-backlog'
+] as const);
+
+export function commandKind(name: string): 'generic' | 'project' {
+    return GENERIC_COMMANDS.has(name) ? 'generic' : 'project';
+}
+
 /** Every command the client CLI exposes, in menu order. */
 export const COMMANDS: readonly CommandEntry[] = [
+    {
+        name: 'artifact',
+        summary: 'Publica y lista artifacts locales versionados',
+        load: async () => (await import('./commands/artifact/command.ts')).artifactCommand
+    },
     {
         name: 'stats',
         summary: 'Estadísticas del repo: código, tests, deuda, git, PRs, Linear',
@@ -66,8 +98,45 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/wt-clean/command.ts')).wtCleanCommand
     },
     {
+        name: 'handoff',
+        summary: 'Prepara un handoff read-only de la sesión actual',
+        load: async () => (await import('./commands/handoff/command.ts')).handoffCommand
+    },
+    {
+        name: 'smoke-plan',
+        summary: 'Enumera gates de smoke requeridos por un issue (read-only)',
+        load: async () => (await import('./commands/smoke-plan/command.ts')).smokePlanCommand
+    },
+    {
+        name: 'context',
+        summary: 'Entrega contexto compacto y verificable de un issue/worktree',
+        load: async () => (await import('./commands/context/command.ts')).contextCommand
+    },
+    {
+        name: 'issue-preflight',
+        summary: 'Consulta Linear y recursos de un issue sin mutar nada',
+        load: async () =>
+            (await import('./commands/issue-preflight/command.ts')).issuePreflightCommand
+    },
+    {
+        name: 'linear-backlog',
+        summary: 'Prepara una issue de backlog y crea sólo con --yes',
+        load: async () =>
+            (await import('./commands/linear-backlog/command.ts')).linearBacklogCommand
+    },
+    {
+        name: 'recap',
+        summary: 'Resumen compacto read-only del worktree actual',
+        load: async () => (await import('./commands/recap/command.ts')).recapCommand
+    },
+    {
+        name: 'close-issue',
+        summary: 'Preflight read-only para cerrar un issue (requiere --plan)',
+        load: async () => (await import('./commands/close-issue/command.ts')).closeIssueCommand
+    },
+    {
         name: 'start-issue',
-        summary: 'Crea el worktree de un issue de Linear y abre Claude adentro',
+        summary: 'Crea el worktree de un issue de Linear y abre Claude u OpenCode',
         load: async () => (await import('./commands/start-issue/command.ts')).startIssueCommand
     },
     {
@@ -136,6 +205,22 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/merge/command.ts')).mergeCommand
     },
     {
+        name: 'promote',
+        summary: 'Plan read-only de promoción entre ramas',
+        load: async () => (await import('./commands/branch-plan/command.ts')).promoteCommand
+    },
+    {
+        name: 'dependabot-review',
+        summary: 'Analiza PRs de Dependabot sin mutar GitHub',
+        load: async () =>
+            (await import('./commands/dependabot-review/command.ts')).dependabotReviewCommand
+    },
+    {
+        name: 'back-merge',
+        summary: 'Plan read-only de back-merge entre ramas',
+        load: async () => (await import('./commands/branch-plan/command.ts')).backMergeCommand
+    },
+    {
         name: 'env',
         summary: 'Chequea las variables de entorno (los seis checks)',
         load: async () => (await import('./commands/env/command.ts')).envCommand
@@ -151,10 +236,20 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/update/command.ts')).updateCommand
     },
     {
-        name: 'whats-new',
-        summary:
-            'Novedades: auditar la promoción, ver lo pendiente, retirar (audit | pending | drop)',
-        load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
+        name: 'engram',
+        summary: 'Acceso seguro y descubrible a la memoria Engram',
+        load: async () => (await import('./commands/engram/command.ts')).engramCommand
+    },
+    {
+        name: 'gentle-status',
+        summary: 'Estado read-only de Gentle-AI, review y telemetría',
+        load: async () => (await import('./commands/gentle-status/command.ts')).gentleStatusCommand
+    },
+    {
+        name: 'gentle-sdd-status',
+        summary: 'Estado read-only del SDD excepcional de Gentle-AI',
+        load: async () =>
+            (await import('./commands/gentle-sdd-status/command.ts')).gentleSddStatusCommand
     }
 ];
 

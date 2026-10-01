@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from './exec.ts';
+import { loadProjectAdapter } from './project-config.ts';
 
 /** A server recorded in a worktree's state file. */
 export interface WorktreeServer {
@@ -110,7 +111,10 @@ export function parseWorktreePorcelain({
             flush();
             path = line.slice('worktree '.length).trim();
         } else if (line.startsWith('branch ')) {
-            branch = line.slice('branch '.length).trim().replace(/^refs\/heads\//, '');
+            branch = line
+                .slice('branch '.length)
+                .trim()
+                .replace(/^refs\/heads\//, '');
         } else if (line.trim() === 'detached') {
             detached = true;
         }
@@ -177,7 +181,7 @@ export function buildWorktrees({
             // Git first, state file only as a last resort: the state file
             // records what the branch was at creation, and a worktree that was
             // switched since would report the old name with full confidence.
-            branch: entry.branch !== '' ? entry.branch : (state.branch ?? ''),
+            branch: entry.branch === '' ? (state.branch ?? '') : entry.branch,
             detached: entry.detached,
             database: state.db ?? null,
             servers
@@ -228,7 +232,11 @@ export interface DbConfig {
  * @param input.repoRoot - Repository root holding `.claude/project.config.json`.
  * @returns The settings, or `null` when the config is missing or unreadable.
  */
-export function readDbConfig({ repoRoot }: { readonly repoRoot: string }): DbConfig | null {
+export async function readDbConfig({
+    repoRoot
+}: {
+    readonly repoRoot: string;
+}): Promise<DbConfig | null> {
     const path = join(repoRoot, '.claude', 'project.config.json');
     if (!existsSync(path)) return null;
     try {
@@ -244,13 +252,16 @@ export function readDbConfig({ repoRoot }: { readonly repoRoot: string }): DbCon
         };
         const db = parsed.db;
         if (db?.devDb === undefined || db.templateDb === undefined) return null;
+        const adapter = await loadProjectAdapter(repoRoot);
+        const declarative = adapter?.database;
         return {
             devDb: db.devDb,
-            templateDb: db.templateDb,
-            container: db.container ?? 'hospeda-postgres',
+            templateDb: declarative?.templateDatabase ?? db.templateDb,
+            container: declarative?.container ?? db.container ?? 'hospeda-postgres',
             user: db.user ?? 'postgres',
             connStringTemplate: db.connStringTemplate ?? '',
-            connStringEnvVar: db.connStringEnvVar ?? 'HOSPEDA_DATABASE_URL'
+            connStringEnvVar:
+                declarative?.connectionEnvVar ?? db.connStringEnvVar ?? 'HOSPEDA_DATABASE_URL'
         };
     } catch {
         return null;

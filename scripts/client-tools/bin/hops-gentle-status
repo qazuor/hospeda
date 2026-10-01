@@ -1,0 +1,5 @@
+#!/usr/bin/env bun
+// Standalone alias for `hops gentle-status`.
+import { runCommand } from '../src/index.ts';
+
+process.exit(await runCommand({ name: 'gentle-status', argv: process.argv.slice(2) }));

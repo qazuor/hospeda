@@ -21,18 +21,24 @@ const MAX_TITLE_SLUG = 40;
  * normalizeIssueId({ raw: '#273' }); // 'HOS-273'
  * ```
  */
-export function normalizeIssueId({ raw }: { readonly raw: string }): string | null {
+export function normalizeIssueId({
+    raw,
+    teamKey = 'HOS'
+}: {
+    readonly raw: string;
+    readonly teamKey?: string;
+}): string | null {
     const match = /^\s*#?(?:([a-zA-Z]+)-)?(\d+)\s*$/.exec(raw);
     const number = match?.[2];
     if (number === undefined) return null;
-    const team = (match?.[1] ?? 'HOS').toUpperCase();
+    const team = (match?.[1] ?? teamKey).toUpperCase();
     return `${team}-${number}`;
 }
 
 /**
  * Picks the conventional-commit type from the issue's labels.
  *
- * Mirrors the `/startIssue` command's rule so a worktree created from the
+ * Mirrors the `/hops-start-issue` command's rule so a worktree created from the
  * terminal and one created from a Claude session get the same branch name.
  *
  * @param input.labels - Label names on the issue.
@@ -122,7 +128,7 @@ export function extractWorktreePath({ output }: { readonly output: string }): st
     if (existsIndex >= 0) {
         for (const line of lines.slice(existsIndex + 1)) {
             const first = line.split(/\s+/)[0];
-            if (first !== undefined && first.startsWith('/')) return first;
+            if (first?.startsWith('/')) return first;
         }
     }
     return null;

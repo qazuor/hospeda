@@ -26,19 +26,19 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "→ Checking API schema ↔ registry..."
-pnpm --filter hospeda-api test test/utils/env-registry-cross-validation.test.ts
+pnpm --filter hospeda-api exec vitest run --configLoader runner --passWithNoTests test/utils/env-registry-cross-validation.test.ts
 
 echo
 echo "→ Checking Admin schema ↔ registry..."
-pnpm --filter admin test test/env-registry-cross-validation.test.ts
+pnpm --filter admin exec vitest run --configLoader runner --passWithNoTests test/env-registry-cross-validation.test.ts
 
 echo
 echo "→ Checking Web schema ↔ registry..."
-pnpm --filter hospeda-web test test/lib/env-registry-cross-validation.test.ts
+pnpm --filter hospeda-web exec vitest run --configLoader runner --passWithNoTests test/lib/env-registry-cross-validation.test.ts
 
 echo
 echo "→ Checking Dockerfile build ARGs ↔ registry..."
-pnpm --filter @repo/config test src/__tests__/dockerfile-build-args.test.ts
+pnpm --filter @repo/config exec vitest run --configLoader runner --passWithNoTests src/__tests__/dockerfile-build-args.test.ts
 
 echo
 echo "✓ All env schemas (runtime + build ARGs) are in sync with @repo/config's ENV_REGISTRY"
