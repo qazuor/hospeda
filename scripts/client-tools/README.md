@@ -54,6 +54,7 @@ Hospeda; los prefijos se leen desde `.qz/project.json`.
 | `db-update-template` | Actualiza el template de base desde staging. |
 | `servers-up` / `servers-down` | Levanta o detiene los servidores del worktree. |
 | `update` | Actualiza client-tools desde la copia de staging. |
+| `whats-new` | Novedades: `audit` del rango de promoción, `pending` (lo que espera revisión) y `drop`. Lo corre el gate `whats-new-gate.yml`. |
 
 Cada uno tiene su propio `--help` con el detalle.
 
