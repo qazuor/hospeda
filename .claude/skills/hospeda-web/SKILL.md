@@ -26,6 +26,11 @@ SEO, navegación pública, estilos, i18n, auth web o pruebas de frontend.
 - Tokens y estilos: `packages/design-tokens/`, `packages/tailwind-config/` y
   los estilos locales de la app.
 
+Las referencias visuales históricas de SPEC-075 no son una especificación
+autónoma: cuando exista una duda, prevalecen los layouts y componentes actuales
+(`ListingLayout.astro`, `LegalLayout.astro`, `MarketingLayout.astro`,
+`WaveHeader.astro`), los tokens y las pruebas visuales vigentes.
+
 Antes de copiar una regla del documento legacy, confirmá que todavía coincide
 con el código y con los tokens actuales.
 

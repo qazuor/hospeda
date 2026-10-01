@@ -83,6 +83,14 @@ está modificando.
 - Para cambios acotados preferí `qz-verify --changed`.
 - Si el cambio toca SSR o build, ejecutá el build del admin además de tests.
 
+## Smoke y onboarding
+
+Si una navegación del admin parece volver a `/dashboard`, comprobá primero si
+está visible el welcome guide/tour. Cerrá el overlay (`Salir`, skip o close) y
+repetí la navegación antes de investigar guards, permisos o rutas. Un error de
+parámetros de billing puede ser un problema separado y no necesariamente la
+causa del rebote.
+
 ## Checklist
 
 - [ ] Se respetó el patrón CRUD y el routing file-based.

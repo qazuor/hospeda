@@ -22,6 +22,8 @@ traducción, pluralización, fechas, números o tipos generados.
 - No hardcodees texto visible nuevo en componentes o handlers.
 - Generá tipos y ejecutá las validaciones después de cambiar traducciones.
 - Separá copy de producto de mensajes técnicos y errores de API.
+- `packages/i18n/src/types.ts` es un artefacto generado e ignorado por Git:
+  nunca lo agregues manualmente ni lo uses como fuente de verdad.
 
 ## Verificación
 
@@ -36,3 +38,4 @@ traducción, pluralización, fechas, números o tipos generados.
 - [ ] Tipos generados están actualizados.
 - [ ] No hay texto visible hardcodeado nuevo.
 - [ ] Tests de locale pasaron.
+- [ ] El archivo generado quedó sin cambios versionables inesperados.
