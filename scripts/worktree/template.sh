@@ -28,7 +28,16 @@ TEMPLATE="$(wt_qz_cfg '.database.templateDatabase')"
 
 pg() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" "$@"; else "$@"; fi; }
 pgsh() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" bash -c "$1"; else bash -c "$1"; fi; }
-conn_for() { printf '%s' "${CONNTMPL//\{dbname\}/$1}"; }
+conn_for() {
+  local name="$1" conn="${CONNTMPL//\{dbname\}/$1}" ip
+  if [ "$DOCKER" = "true" ] && command -v docker >/dev/null 2>&1; then
+    ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER" 2>/dev/null || true)"
+    if [ -n "$ip" ]; then
+      conn="$(printf '%s' "$conn" | sed -E "s#(@)[^/:]+:[0-9]+/#\\1${ip}:5432/#")"
+    fi
+  fi
+  printf '%s' "$conn"
+}
 
 ensure_manifest_table() {
   local db="$1"
