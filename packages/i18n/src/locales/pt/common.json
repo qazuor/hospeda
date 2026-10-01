@@ -108,7 +108,16 @@
         "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar.",
         "SUBSCRIPTION_CANCEL_PENDING": "Sua assinatura está programada para ser cancelada no fim do período. Você não pode mudar de plano até o período atual terminar.",
         "NO_ACTIVE_TRIAL": "Você não tem um período de teste grátis em andamento, então não há nada para estender. O código não foi usado — guarde-o.",
-        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código não pode ser resgatado. Uma assinatura de cortesia é concedida pela equipe — fale com a gente se prometeram uma a você."
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código não pode ser resgatado. Uma assinatura de cortesia é concedida pela equipe — fale com a gente se prometeram uma a você.",
+        "CLOUDINARY_NOT_CONFIGURED": "O serviço de envio de fotos não está disponível no momento. Tente novamente em alguns minutos.",
+        "SESSION_STALE": "Sua sessão expirou. Entre novamente e tente de novo.",
+        "INVALID_MULTIPART_DATA": "Não conseguimos ler o arquivo enviado. Tente novamente.",
+        "INVALID_FORM_FIELDS": "Os dados do envio não são válidos. Recarregue a página e tente novamente.",
+        "UNSUPPORTED_ENTITY_TYPE": "Não é possível enviar fotos para este tipo de conteúdo.",
+        "GALLERY_LIMIT_EXCEEDED_one": "Você atingiu o limite de {{count}} foto da galeria.",
+        "GALLERY_LIMIT_EXCEEDED_other": "Você atingiu o limite de {{count}} fotos da galeria.",
+        "MISSING_FILE": "Nenhuma imagem foi recebida. Escolha um arquivo e tente novamente.",
+        "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem."
     },
     "filters": "Filtros",
     "filterChips": {

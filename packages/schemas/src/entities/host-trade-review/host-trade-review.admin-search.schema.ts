@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 
 /**
@@ -26,12 +26,12 @@ export const HostTradeReviewAdminSearchSchema = AdminSearchBaseSchema.extend({
     /**
      * Filter by the benefit answer.
      *
-     * `queryBooleanParam()` rather than `z.coerce.boolean()`, which turns the
+     * `createBooleanQueryParam()` rather than `z.coerce.boolean()`, which turns the
      * string "false" into `true` and would silently invert this filter — the
      * one worth reading on its own, since a provider not honouring the benefit
      * is the failure the directory most needs to surface.
      */
-    respectedBenefit: queryBooleanParam().describe('Filter by whether the benefit was honoured')
+    respectedBenefit: createBooleanQueryParam('Filter by whether the benefit was honoured')
 });
 
 /** Inferred type for {@link HostTradeReviewAdminSearchSchema}. */

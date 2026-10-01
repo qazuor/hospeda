@@ -72,9 +72,9 @@ export const FeatureCreateHttpSchema = z.object({
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
-    isAvailable: z.coerce.boolean().default(true),
-    isPremium: z.coerce.boolean().default(false),
-    requiresPayment: z.coerce.boolean().default(false),
+    isAvailable: httpBodyBoolean().default(true),
+    isPremium: httpBodyBoolean().default(false),
+    requiresPayment: httpBodyBoolean().default(false),
     displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
@@ -108,6 +108,7 @@ export type FeatureGetHttp = z.infer<typeof FeatureGetHttpSchema>;
  * These functions convert HTTP request data to domain-compatible formats
  */
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import type { FeatureCreateInputSchema, FeatureUpdateInputSchema } from './feature.crud.schema.js';
 
 /**

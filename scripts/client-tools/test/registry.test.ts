@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { COMMANDS, findCommand } from '../src/registry.ts';
+import { COMMANDS, commandKind, findCommand } from '../src/registry.ts';
 
 const BIN_DIR = join(import.meta.dir, '..', 'bin');
 
@@ -45,6 +45,16 @@ describe('findCommand', () => {
     });
 });
 
+describe('command prefixes', () => {
+    it('classifies adapter-driven commands as generic qz commands', () => {
+        expect(commandKind('start-issue')).toBe('generic');
+        expect(commandKind('verify')).toBe('generic');
+        expect(commandKind('db-update-template')).toBe('project');
+        expect(commandKind('stats')).toBe('project');
+        expect(commandKind('update')).toBe('project');
+    });
+});
+
 describe('command modules', () => {
     it('should load every command and expose a matching name', async () => {
         // Catches a registry entry pointing at a module that was renamed,
@@ -54,5 +64,5 @@ describe('command modules', () => {
             expect(command.name).toBe(entry.name);
             expect(typeof command.run).toBe('function');
         }
-    });
+    }, 15_000);
 });

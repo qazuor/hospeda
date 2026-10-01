@@ -14,8 +14,8 @@
  */
 
 import { z } from 'zod';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
 import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ export const ListAddonsQuerySchema = z.object({
     /** Filter by target category */
     targetCategory: AddonTargetCategorySchema.optional(),
     /** Filter by active status */
-    active: queryBooleanParam()
+    active: createBooleanQueryParam('active filter')
 });
 
 /** Cancel add-on request schema */
@@ -435,12 +435,12 @@ export const AdminAddonListQuerySchema = z.object({
     /** Filter by a single target category */
     targetCategory: AddonTargetCategorySchema.optional(),
     /** Filter by active flag (coerced from query-string `"true"` / `"false"`) */
-    isActive: queryBooleanParam(),
+    isActive: createBooleanQueryParam('isActive filter'),
     /**
      * When true, soft-deleted addons (`deletedAt IS NOT NULL`) are included in
      * the result. Defaults to excluding them. Admin-only.
      */
-    includeDeleted: queryBooleanParam(),
+    includeDeleted: createBooleanQueryParam('includeDeleted filter'),
     /** Free-text search over slug/name */
     search: z.string().optional(),
     /** Page number (1-based) */

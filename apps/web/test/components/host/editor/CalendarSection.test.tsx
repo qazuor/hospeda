@@ -210,6 +210,21 @@ describe('CalendarSection', () => {
         await waitFor(() => expect(mockList).toHaveBeenCalled());
     });
 
+    it.each([
+        ['es', 'Julio de 2026'],
+        ['en', 'July 2026'],
+        ['pt', 'Julho de 2026']
+    ] as const)('renders the month heading with only its first letter capitalized in %s (HOS-869)', async (locale, expected) => {
+        render(
+            <CalendarSection
+                {...defaultProps}
+                locale={locale}
+            />
+        );
+        expect(screen.getByText(expected)).toBeInTheDocument();
+        await waitFor(() => expect(mockList).toHaveBeenCalled());
+    });
+
     it('renders a free day as an enabled button labeled "Libre"', async () => {
         mockList.mockReturnValue(makeListOk([]));
         render(<CalendarSection {...defaultProps} />);

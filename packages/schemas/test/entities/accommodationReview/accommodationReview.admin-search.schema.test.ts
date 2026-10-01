@@ -263,7 +263,7 @@ describe('AccommodationReviewAdminSearchSchema', () => {
     });
 
     /**
-     * GAP-005 (SPEC-049 T-068): includeDeleted is declared via queryBooleanParam()
+     * GAP-005 (SPEC-049 T-068): includeDeleted is declared via createBooleanQueryParam()
      * in AdminSearchBaseSchema. This wrapper exists explicitly to avoid the
      * z.coerce.boolean() trap where Boolean('false') === true. Tests anchor the
      * full contract so any future change is intentional, not silent.
@@ -290,7 +290,7 @@ describe('AccommodationReviewAdminSearchSchema', () => {
         });
 
         it('should coerce the string "false" to false (NOT true — guards the z.coerce.boolean trap)', () => {
-            // This is the precise reason queryBooleanParam exists. Without it,
+            // This is the precise reason createBooleanQueryParam exists. Without it,
             // z.coerce.boolean() would interpret 'false' as truthy and silently
             // expose soft-deleted rows whenever the API received a string flag.
             const result = AccommodationReviewAdminSearchSchema.safeParse({
@@ -302,36 +302,11 @@ describe('AccommodationReviewAdminSearchSchema', () => {
             }
         });
 
-        it('should coerce the string "1" to true', () => {
+        it.each(['1', '0', ''])('should reject the ambiguous string %j (HOS-410)', (value) => {
             const result = AccommodationReviewAdminSearchSchema.safeParse({
-                includeDeleted: '1'
+                includeDeleted: value
             });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.includeDeleted).toBe(true);
-            }
-        });
-
-        it('should coerce the string "0" to false', () => {
-            const result = AccommodationReviewAdminSearchSchema.safeParse({
-                includeDeleted: '0'
-            });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.includeDeleted).toBe(false);
-            }
-        });
-
-        it('should fall back to the default (false) for empty string', () => {
-            // Empty string is mapped to undefined by the preprocess step, then
-            // .default(false) on the wrapper kicks in.
-            const result = AccommodationReviewAdminSearchSchema.safeParse({
-                includeDeleted: ''
-            });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.includeDeleted).toBe(false);
-            }
+            expect(result.success).toBe(false);
         });
 
         it('should default includeDeleted to false when omitted', () => {

@@ -58,8 +58,8 @@ export const PointOfInterestCreateHttpSchema = z.object({
     type: PointOfInterestTypeEnumSchema,
     description: z.string().min(10).max(500).optional(),
     icon: z.string().min(1).max(100).optional(),
-    isFeatured: z.coerce.boolean().default(false),
-    isBuiltin: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
+    isBuiltin: httpBodyBoolean().default(false),
     displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
@@ -91,8 +91,8 @@ export type PointOfInterestGetHttp = z.infer<typeof PointOfInterestGetHttpSchema
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-
 import type {
     PointOfInterestCreateInput,
     PointOfInterestUpdateInput

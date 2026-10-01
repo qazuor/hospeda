@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { findPr } from '../../lib/github.ts';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
 import { type Check, explainVerdict, groupChecks, overallVerdict } from './verdict.ts';
@@ -29,10 +30,11 @@ ${pc.bold('hops ci')} — ¿está verde el PR de esta branch?
 
 ${pc.bold('Uso')}
 
-  hops ci [--wt <nombre>] [--all] [--wait [--timeout=<min>]]
+  hops ci [--wt <nombre>] [--all] [--json] [--wait [--timeout=<min>]]
 
   ${pc.bold('--all')}      Lista también los checks que pasaron.
   ${pc.bold('--wait')}     Bloquea hasta que CI cierre y devuelve UNA línea.
+  ${pc.bold('--json')}     Emite JSON en consultas inmediatas; no combinar con --wait.
   ${pc.bold('--timeout')}  Techo de la espera en minutos (default 30).
   ${pc.bold('--help')}     Esta página.
 
@@ -118,17 +120,32 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
         process.stderr.write(`${pc.red(options.error)}\n`);
         return 1;
     }
+    const json = argv.includes('--json');
+    if (json && options.wait) {
+        process.stdout.write(
+            `${JSON.stringify({ error: '--json no se combina con --wait', readOnly: true })}\n`
+        );
+        return 1;
+    }
 
     const { target, rest } = extractTarget({ argv });
     const { name: worktreeName } = extractWorktreeFlag({ argv: rest });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const cwd = context.worktree?.path ?? context.repoRoot;
+    const adapter = await loadProjectAdapter(context.repoRoot);
+    const integrationBranches = new Set(adapter?.branches?.promotion ?? ['staging', 'main']);
 
     // A branch that could not be resolved is NOT a branch to ask GitHub about.
     // Querying `--head '(desconocida)'` returns zero rows, and zero rows read
     // as "no hay PR" — a confident answer to a question that was never asked.
     const worktree = context.worktree;
     if (worktree === null) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ error: 'no se pudo resolver el worktree', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.red('No pude resolver en qué worktree estoy.')}\n` +
                 `${pc.dim('Sin branch no hay PR que consultar: corré esto desde adentro del repo.')}\n`
@@ -136,6 +153,12 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
         return 1;
     }
     if (worktree.detached || worktree.branch === '') {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ error: 'worktree sin branch', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.red('Este worktree no está en una branch.')} ${pc.dim(worktree.detached ? '(HEAD detached)' : '')}\n` +
                 `${pc.dim('No hay branch contra la cual buscar un PR.')}\n`
@@ -144,7 +167,13 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
     }
     const branch = worktree.branch;
 
-    if (branch === 'staging' || branch === 'main') {
+    if (integrationBranches.has(branch)) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch, error: 'branch sin PR propio', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.yellow(`Estás en ${branch}.`)} Esa branch no tiene PR propio.\n`
         );
@@ -157,6 +186,12 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
 
     const found = await findPr({ branch, cwd });
     if (typeof found === 'object' && 'error' in found) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch, error: found.error, readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.red('No pude consultar GitHub.')} ${pc.dim(found.error.split('\n')[0] ?? '')}\n` +
                 `${pc.dim('Si dice 401, revisá `gh auth status`: un GITHUB_TOKEN vencido en el')}\n` +
@@ -165,6 +200,12 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
         return 1;
     }
     if (found === 'none') {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({ branch, pullRequest: null, verdict: 'no-pr', readOnly: true })}\n`
+            );
+            return 1;
+        }
         process.stderr.write(
             `${pc.yellow('No hay PR para')} ${pc.bold(branch)}.\n` +
                 `${pc.dim('Si lo abriste recién, puede tardar un momento en aparecer.')}\n`
@@ -186,6 +227,28 @@ export async function runCi({ argv }: { readonly argv: readonly string[] }): Pro
                 : verdict === 'conflict'
                   ? pc.red('EN CONFLICTO')
                   : pc.yellow('SIN CHECKS');
+
+    if (json) {
+        process.stdout.write(
+            `${JSON.stringify({
+                branch,
+                pullRequest: {
+                    number: pr.number,
+                    title: pr.title,
+                    state: pr.state,
+                    base: pr.baseRefName
+                },
+                verdict,
+                checks: {
+                    passed: passed.map((check) => check.name),
+                    failed: failed.map((check) => check.name),
+                    pending: pending.map((check) => check.name)
+                },
+                readOnly: true
+            })}\n`
+        );
+        return verdict === 'green' ? 0 : verdict === 'pending' ? 2 : 1;
+    }
 
     process.stderr.write(
         `${headline}  ${pc.dim(`PR #${pr.number} · ${branch}`)}\n` +

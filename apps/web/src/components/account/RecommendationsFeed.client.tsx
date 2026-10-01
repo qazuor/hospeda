@@ -35,6 +35,7 @@
  * directive guide).
  */
 
+import { getMediaUrl } from '@repo/media';
 import type {
     RecommendationFeedResponse,
     RecommendationReason,
@@ -133,7 +134,9 @@ interface RecommendationCardProps {
 function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
     const { accommodation } = scored;
     const detailHref = buildUrl({ locale, path: `/alojamientos/${accommodation.slug}/` });
-    const thumbnail = accommodation.media?.featuredImage?.url ?? null;
+    const rawThumbnail = accommodation.media?.featuredImage?.url ?? null;
+    // HOS-1094: grid card, never the untransformed original.
+    const thumbnail = rawThumbnail ? getMediaUrl(rawThumbnail, { preset: 'card' }) : null;
 
     const priceValue = accommodation.price?.price;
     const formattedPrice =

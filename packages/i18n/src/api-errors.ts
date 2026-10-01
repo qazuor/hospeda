@@ -31,6 +31,7 @@
 import type { Locale } from './config.shared';
 import { defaultLocale, webTrans as trans } from './config.shared';
 import { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
+import { pluralize } from './pluralization';
 
 /**
  * Type alias for supported locale values. Exported so web can re-export it
@@ -64,6 +65,26 @@ export interface ApiErrorShape {
      * statuses to a dedicated localized message (BETA-146).
      */
     readonly status?: number | null;
+    /**
+     * Optional structured details supplied by the endpoint. When it is a plain
+     * object it is forwarded to `t()` as interpolation params for the
+     * `reason` / `code` lookup, so a message can name a value the API knows
+     * (e.g. `GALLERY_LIMIT_EXCEEDED` -> `{{limit}}`). Ignored otherwise
+     * (validation errors carry an array here).
+     */
+    readonly details?: unknown;
+}
+
+/**
+ * Narrows `details` to interpolation params: only a plain object qualifies.
+ *
+ * @param details - The error's `details` payload.
+ * @returns The params record, or `undefined` for arrays, primitives and null.
+ */
+function toInterpolationParams(details: unknown): Record<string, unknown> | undefined {
+    return typeof details === 'object' && details !== null && !Array.isArray(details)
+        ? (details as Record<string, unknown>)
+        : undefined;
 }
 
 /**
@@ -110,6 +131,35 @@ function lookupTrans(locale: Locale, key: string): string | undefined {
     const localeMap = trans[locale] ?? trans[defaultLocale];
     const value = localeMap?.[key];
     return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * The count that selects a plural form, taken from `details.limit`.
+ *
+ * `limit` is the one quantity the API attaches to a refusal that names a number
+ * of things (`GALLERY_LIMIT_EXCEEDED`). Any other shape selects no plural form.
+ *
+ * @param details - The error's `details` payload.
+ * @returns A finite number, or `undefined`.
+ */
+function toPluralCount(details: unknown): number | undefined {
+    const limit = (details as { limit?: unknown } | null | undefined)?.limit;
+    return typeof limit === 'number' && Number.isFinite(limit) ? limit : undefined;
+}
+
+/**
+ * Replaces `{{name}}` placeholders with the matching value. Placeholders with
+ * no value are left untouched.
+ *
+ * @param text - The translated text.
+ * @param values - Interpolation values, if any.
+ * @returns The text with known placeholders filled in.
+ */
+function interpolate(text: string, values: Record<string, unknown> | undefined): string {
+    if (values === undefined) return text;
+    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, name: string) =>
+        name in values ? String(values[name]) : match
+    );
 }
 
 /**
@@ -163,6 +213,7 @@ export function translateApiErrorWithT(params: {
     const { error, t, fallback } = params;
 
     const apiMessage = error?.message ?? '';
+    const interpolation = toInterpolationParams(error?.details);
     const genericFallback =
         fallback ?? t('common.apiError.GENERIC', 'Algo salió mal. Intentá de nuevo en un momento.');
 
@@ -172,16 +223,39 @@ export function translateApiErrorWithT(params: {
     // Detect absence via the canonical predicate so the fall-through to `code`
     // works in production too: a DEV build reports an absent key with the
     // `[MISSING:` marker, a production build echoes the raw key back.
+    // When `details.limit` names a quantity, a `<KEY>_one` / `<KEY>_other` pair
+    // wins over a plain `<KEY>` (same convention as `tPlural`); an absent pair
+    // falls through to the plain key below.
+    const pluralCount = toPluralCount(error?.details);
+    const lookupPlural = (key: string): string | undefined => {
+        if (pluralCount === undefined) return undefined;
+        const text = pluralize({
+            t: (k, p) => t(k, undefined, p),
+            key,
+            count: pluralCount,
+            params: interpolation
+        });
+        return isMissingTranslation({ key, value: text }) ? undefined : text;
+    };
+
     if (error?.reason) {
         const reasonKey = `common.apiError.${error.reason}`;
-        const reasonText = t(reasonKey);
+        const pluralReason = lookupPlural(reasonKey);
+        if (pluralReason !== undefined) return pluralReason;
+        const reasonText =
+            interpolation === undefined ? t(reasonKey) : t(reasonKey, undefined, interpolation);
         if (!isMissingTranslation({ key: reasonKey, value: reasonText })) return reasonText;
     }
 
     if (error?.code) {
+        const codeKey = `common.apiError.${error.code}`;
+        const pluralCode = lookupPlural(codeKey);
+        if (pluralCode !== undefined) return pluralCode;
         // `t()` returns the translation if present, otherwise the fallback
         // (the API's English message), otherwise the generic localized text.
-        return t(`common.apiError.${error.code}`, apiMessage || genericFallback);
+        return interpolation === undefined
+            ? t(codeKey, apiMessage || genericFallback)
+            : t(codeKey, apiMessage || genericFallback, interpolation);
     }
 
     // No `code` (or `reason`) resolved — some failure modes only carry an HTTP
@@ -215,10 +289,13 @@ export function translateApiError(params: {
     const t: TranslationFn | undefined =
         params.t ??
         (params.locale
-            ? (key: string, fb?: string) =>
-                  lookupTrans(params.locale as Locale, key) ??
-                  fb ??
-                  `${MISSING_TRANSLATION_MARKER} ${key}]`
+            ? (key: string, fb?: string, values?: Record<string, unknown>) =>
+                  interpolate(
+                      lookupTrans(params.locale as Locale, key) ??
+                          fb ??
+                          `${MISSING_TRANSLATION_MARKER} ${key}]`,
+                      values
+                  )
             : undefined);
 
     if (!t) {

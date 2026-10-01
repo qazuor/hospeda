@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { DestinationIdSchema, PoiCategoryIdSchema } from '../../common/id.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
 import { PointOfInterestTypeEnumSchema } from '../../enums/point-of-interest-type.schema.js';
 
 /**
@@ -29,16 +29,16 @@ export const PointOfInterestAdminSearchSchema = AdminSearchBaseSchema.extend({
     type: PointOfInterestTypeEnumSchema.optional(),
 
     /** Filter featured points of interest */
-    isFeatured: queryBooleanParam().describe('Filter by featured status'),
+    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Filter builtin (system-seeded) points of interest */
-    isBuiltin: queryBooleanParam().describe('Filter by builtin status'),
+    isBuiltin: createBooleanQueryParam('Filter by builtin status'),
 
     /** Filter points of interest that have a dedicated detail page */
-    hasOwnPage: queryBooleanParam().describe('Filter by has-own-page status'),
+    hasOwnPage: createBooleanQueryParam('Filter by has-own-page status'),
 
     /** Filter points of interest that have been curator-verified */
-    verified: queryBooleanParam().describe('Filter by verified status'),
+    verified: createBooleanQueryParam('Filter by verified status'),
 
     /** Filter by destination relation (many-to-many via `r_destination_point_of_interest`) */
     destinationId: DestinationIdSchema.optional(),

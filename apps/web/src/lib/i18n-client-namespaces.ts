@@ -234,6 +234,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // above, whose vertical split created it. `UserMenu.client.tsx` reads all
     // three so a gastronomy-only or experience-only owner is still segmented as
     // an `owner` in PostHog rather than a `tourist`.
+    // HOS-1264 — the AI chat's vertical-specific copy, named via
+    // `aiChatCopyKey` in `lib/ai-chat-copy.ts`. Missing, the panel title and
+    // disclaimer printed as raw keys on the experience page.
+    'experience.aiChat',
     'experience.editOwn',
     'experience.reviews',
     // HOS-822 — the commerce owner form and the public listing page now name
@@ -253,6 +257,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'footer.newsletter',
     // HOS-1077: gastronomy half of the permission-value pair described at
     // `experience.editOwn` above. Not an i18n key.
+    // HOS-1264 — gastronomy half of `experience.aiChat` above.
+    'gastronomy.aiChat',
     'gastronomy.editOwn',
     // HOS-822 — gastronomy half of the shared listing-type source above.
     'gastronomy.types',

@@ -175,14 +175,14 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        expect(screen.getByRole('button', { name: /cerrar sesion/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument();
     });
 
     it('sign-out button does NOT show "..." text in idle state', () => {
         renderMenu();
         openAccountMenu();
 
-        const btn = screen.getByRole('button', { name: /cerrar sesion/i });
+        const btn = screen.getByRole('button', { name: /cerrar sesión/i });
         expect(btn.textContent).not.toContain('...');
     });
 
@@ -190,7 +190,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        const btn = screen.getByRole('button', { name: /cerrar sesion/i });
+        const btn = screen.getByRole('button', { name: /cerrar sesión/i });
         expect(btn).not.toHaveAttribute('aria-busy', 'true');
     });
 
@@ -201,11 +201,11 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
 
         // LoadingButton renders the loadingLabel text while loading
         await waitFor(() => {
-            expect(screen.getByText(/cerrando sesion/i)).toBeInTheDocument();
+            expect(screen.getByText(/cerrando sesión/i)).toBeInTheDocument();
         });
     });
 
@@ -215,7 +215,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
 
         await waitFor(() => {
             // While loading, LoadingButton sets aria-busy on the button
@@ -230,7 +230,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
 
         await waitFor(() => {
             // The button becomes disabled when loading
@@ -245,10 +245,10 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         renderMenu();
         openAccountMenu();
 
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/cerrando sesion/i)).toBeInTheDocument();
+            expect(screen.getByText(/cerrando sesión/i)).toBeInTheDocument();
         });
 
         expect(document.body.textContent).not.toContain('...');
@@ -267,7 +267,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         openAccountMenu();
 
         // Act
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }));
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
 
         // Assert
         await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));

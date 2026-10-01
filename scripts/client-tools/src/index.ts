@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { resolveRunContext, runBarContext } from './lib/context.ts';
@@ -5,7 +7,32 @@ import { splitPassthrough } from './lib/passthrough.ts';
 import { renderOpen, withStatusBar } from './lib/statusbar.ts';
 import { extractTarget } from './lib/target.ts';
 import { extractWorktreeFlag } from './lib/wt-flag.ts';
-import { COMMANDS, findCommand } from './registry.ts';
+import type { ClientCommand } from './registry.ts';
+import { COMMANDS, commandKind, findCommand } from './registry.ts';
+
+function configuredPrefixes(): { generic: string; project: string } {
+    let current = resolve(process.cwd());
+    while (true) {
+        const manifest = join(current, '.qz', 'project.json');
+        if (existsSync(manifest)) {
+            try {
+                const config = JSON.parse(readFileSync(manifest, 'utf8')) as {
+                    commands?: { genericPrefix?: string; projectPrefix?: string };
+                };
+                return {
+                    generic: config.commands?.genericPrefix ?? 'qz-',
+                    project: config.commands?.projectPrefix ?? 'hops-'
+                };
+            } catch {
+                break;
+            }
+        }
+        const parent = dirname(current);
+        if (parent === current) break;
+        current = parent;
+    }
+    return { generic: 'qz-', project: 'hops-' };
+}
 
 /** Flags that ask for the help page rather than running anything. */
 const HELP_FLAGS = ['--help', '-h'] as const;
@@ -18,7 +45,12 @@ function renderHelp(): string {
     const rows = COMMANDS.map(
         (command) => `  ${pc.bold(`hops ${command.name}`.padEnd(width))}${command.summary}`
     ).join('\n');
-    const aliases = COMMANDS.map((command) => `  hops-${command.name}`).join('\n');
+    const prefixes = configuredPrefixes();
+    const aliases = COMMANDS.map((command) => {
+        const prefix =
+            commandKind(command.name) === 'generic' ? prefixes.generic : prefixes.project;
+        return `  ${prefix}${command.name}`;
+    }).join('\n');
     return `
 ${pc.bold('hops')} — herramientas de desarrollo del monorepo Hospeda
 
@@ -98,10 +130,26 @@ export async function runCommand({
         return 1;
     }
 
+    if (command.name === 'close-issue') {
+        return await withStatusBar({
+            context: runBarContext({ context }),
+            run: () => runCloseIssueWithContext(command, argv, context)
+        });
+    }
     return await withStatusBar({
         context: runBarContext({ context }),
         run: () => command.run(argv)
     });
+}
+
+async function runCloseIssueWithContext(
+    command: ClientCommand,
+    argv: readonly string[],
+    context: import('./lib/context.ts').RunContext
+): Promise<number> {
+    if (command.name !== 'close-issue') return command.run(argv);
+    const mod = await import('./commands/close-issue/close-issue.ts');
+    return mod.runCloseIssue({ argv, context });
 }
 
 /**
@@ -145,7 +193,9 @@ export async function main({ argv }: { readonly argv: readonly string[] }): Prom
     // list that silently goes stale every time a command is added.
     if (first === '--commands') {
         for (const command of COMMANDS)
-            process.stdout.write(`${command.name}\t${command.summary}\n`);
+            process.stdout.write(
+                `${command.name}\t${command.summary}\t${commandKind(command.name)}\n`
+            );
         return 0;
     }
 

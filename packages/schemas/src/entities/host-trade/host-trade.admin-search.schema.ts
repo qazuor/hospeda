@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 
 /**
@@ -29,13 +29,13 @@ export const HostTradeAdminSearchSchema = AdminSearchBaseSchema.extend({
 
     /**
      * Filter by active status.
-     * Uses `queryBooleanParam()` to safely coerce "true"/"false" query strings
+     * Uses `createBooleanQueryParam()` to safely coerce "true"/"false" query strings
      * (unlike `z.coerce.boolean()`, which incorrectly converts "false" → true).
      */
-    isActive: queryBooleanParam().describe('Filter by active status'),
+    isActive: createBooleanQueryParam('Filter by active status'),
 
     /** Filter to show only 24h-available providers */
-    is24h: queryBooleanParam().describe('Filter by 24h availability'),
+    is24h: createBooleanQueryParam('Filter by 24h availability'),
 
     /**
      * Filter by whether the provider's ability to declare usages is suspended
@@ -51,7 +51,7 @@ export const HostTradeAdminSearchSchema = AdminSearchBaseSchema.extend({
      * both leave the provider unable to record work until someone looks. Without
      * this filter that someone would have to page through the whole directory.
      */
-    declarationSuspended: queryBooleanParam().describe(
+    declarationSuspended: createBooleanQueryParam(
         'Filter by declaration-suspension state (true = suspended, false = able to declare)'
     )
 });

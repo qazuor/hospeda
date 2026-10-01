@@ -483,8 +483,13 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
 
     // Step 8: If the downstream handler returned a 404, rewrite to our custom 404 page
     // so it renders with the full site layout and i18n context.
+    //
+    // The rewritten response is assigned to `response` and FALLS THROUGH to
+    // Steps 9-11 instead of returning (HOS-263): an early `return` here skipped
+    // the CSP header, the noindex `X-Robots-Tag` and the cache-tag handling, so
+    // every error page shipped without a policy.
     if (response.status === 404) {
-        return context.rewrite('/404');
+        response = await context.rewrite('/404');
     }
 
     // Step 8b: A soft-deleted PUBLIC entity returns 410 Gone (the SEO desindex
@@ -497,14 +502,11 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // (verified empirically); the re-wrap below only overrides the status line
     // while the body and headers pass through unchanged.
     //
-    // The rewritten error page (404 and 410 alike) ships WITHOUT the CSP header.
-    // `context.rewrite('/404')` DOES re-run onRequest for `/404` (Astro spins up
-    // a fresh middleware pass per rewrite — the same reason it caps rewrite depth
-    // at 4 with a 508 "Loop Detected"), but that re-entered pass hits Step 1's
-    // `isStaticAssetRoute()` match for `/404` (`path === '/404'`/`'/404/'`) and
-    // returns immediately, BEFORE Step 9 (CSP) ever runs — so CSP is never applied
-    // to error pages regardless. Pre-existing gap the 404 branch already has; the
-    // 410 branch inherits it for parity (not a new regression), tracked in HOS-263.
+    // Like the 404 branch above, the result falls through to Step 9 so the error
+    // page gets the same CSP as every other HTML response (HOS-263). The
+    // re-entered `/404` pass inside `context.rewrite()` hits Step 1's
+    // `isStaticAssetRoute()` shortcut and never reaches Step 9 itself, which is
+    // why the header has to be applied here, on the outer pass, after the rewrite.
     //
     // This branch intentionally uses `rendered.headers` and drops the original
     // 410 response's headers. That is safe ONLY because every current 410
@@ -516,7 +518,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // them here.
     if (response.status === 410) {
         const rendered = await context.rewrite('/404');
-        return new Response(rendered.body, {
+        response = new Response(rendered.body, {
             status: 410,
             headers: rendered.headers
         });

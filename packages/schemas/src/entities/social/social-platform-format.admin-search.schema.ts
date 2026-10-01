@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { SocialMediaTypeEnumSchema } from '../../enums/social-media-type.schema.js';
 import { SocialPlatformEnumSchema } from '../../enums/social-platform.schema.js';
 import { SocialPublishFormatEnumSchema } from '../../enums/social-publish-format.schema.js';
@@ -30,10 +30,10 @@ export const SocialPlatformFormatAdminSearchSchema = AdminSearchBaseSchema.exten
     mediaType: SocialMediaTypeEnumSchema.optional().describe('Filter by media type'),
 
     /** Filter by enabled status */
-    enabled: queryBooleanParam().describe('Filter by enabled status'),
+    enabled: createBooleanQueryParam('Filter by enabled status'),
 
     /** Filter by MVP-enabled status */
-    mvpEnabled: queryBooleanParam().describe('Filter by MVP-enabled status')
+    mvpEnabled: createBooleanQueryParam('Filter by MVP-enabled status')
 });
 
 /**

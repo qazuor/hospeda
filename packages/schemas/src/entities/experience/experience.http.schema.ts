@@ -69,9 +69,9 @@ export const ExperienceCreateHttpSchema = z.object({
     /**
      * When true, the UI shows "Consultar precio" instead of the numeric price.
      */
-    isPriceOnRequest: z.coerce.boolean().default(false),
+    isPriceOnRequest: httpBodyBoolean().default(false),
     /** Whether the listing is featured. */
-    isFeatured: z.coerce.boolean().default(false),
+    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -138,6 +138,7 @@ export type ExperienceGetHttp = z.infer<typeof ExperienceGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';

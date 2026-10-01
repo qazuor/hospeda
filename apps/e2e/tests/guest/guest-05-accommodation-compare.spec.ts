@@ -171,19 +171,23 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         );
 
         // ── Act: open the listing and add the first two accommodations ──────
-        await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
-
         // The CompareButton is a `client:visible` island: its SSR HTML is visible
         // from first paint, but the onClick handler early-returns while
         // `useMyEntitlements` is still loading (`if (isLoading) return`). isLoading
         // only flips to false after the entitlements fetch resolves. Wait for that
         // request before clicking, or both clicks are silent no-ops and the bar
         // never appears.
-        await page.waitForResponse(
+        //
+        // The listener is armed BEFORE `goto`: against a fast local build the
+        // response can land before `domcontentloaded` resolves, and a listener
+        // registered afterwards then waits for a response that already happened.
+        const entitlementsLoaded = page.waitForResponse(
             (r) =>
                 r.url().includes('/api/v1/protected/users/me/entitlements') && r.status() === 200,
             { timeout: 15_000 }
         );
+        await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
+        await entitlementsLoaded;
 
         // Selecting is a two-step flow: one CompareModeToggle for the whole listing
         // (a <button> with aria-pressed), and then a per-card overlay
@@ -232,9 +236,41 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         // "Comparar ahora" is the toast action, which lives outside the bar.
         const compareNow = bar.getByRole('link', { name: /ver comparaci[oó]n/i });
         await expect(compareNow).toBeVisible({ timeout: 10_000 });
+
+        // HOS-575: this navigation must be a ClientRouter SOFT navigation, and
+        // the comparison page's `client:only` islands must still hydrate.
+        //
+        // The listing ships no `client:only` island, so its CSP never carried
+        // the hash of Astro's `client:only` runtime; a soft nav keeps the
+        // ORIGIN page's CSP in force, so the destination's runtime was blocked
+        // and both islands stayed as bare `<astro-island ssr>` shells — a blank
+        // page. HOS-798 hash-allows Astro's runtimes on every response, which
+        // is what makes the soft nav safe, and HOS-575 removed the
+        // `data-astro-reload` workaround HOS-566 had put on this link.
+        //
+        // A marker on `window` survives a soft nav and dies on a full load, so
+        // it tells the two apart: without it, a re-added `data-astro-reload`
+        // would keep this test green while no longer exercising the soft path.
+        await page.evaluate(() => {
+            (window as Window & { __hos575SoftNav?: boolean }).__hos575SoftNav = true;
+        });
         await compareNow.click();
 
         await page.waitForURL(/\/es\/alojamientos\/comparar\/?/, { timeout: 15_000 });
+
+        const survivedSoftNav = await page.evaluate(
+            () => (window as Window & { __hos575SoftNav?: boolean }).__hos575SoftNav === true
+        );
+        expect(
+            survivedSoftNav,
+            'the CompareBar CTA must reach /comparar/ through a ClientRouter soft navigation'
+        ).toBe(true);
+
+        // Astro removes the `ssr` attribute from an island once it hydrates, so
+        // a `client:only` island still carrying it never mounted.
+        await expect(page.locator('astro-island[client="only"][ssr]')).toHaveCount(0, {
+            timeout: 15_000
+        });
 
         // ── Assert: the side-by-side matrix renders with the two columns ────
         // HOS-1267: these three lines were unreachable behind a

@@ -8,6 +8,11 @@
  */
 
 import { getApiUrl } from '@/lib/env';
+import {
+    buildUploadEntityError,
+    UploadEntityError,
+    type UploadErrorBody
+} from './upload-entity-error';
 
 /**
  * Server-side budget (ms) the client must always allow for, on top of the
@@ -141,12 +146,12 @@ export async function uploadEntityImage({
                 const response = JSON.parse(xhr.responseText) as {
                     success?: boolean;
                     data?: { url: string; publicId: string; width: number; height: number };
-                    error?: { message?: string };
+                    error?: UploadErrorBody['error'];
                 };
                 if (xhr.status >= 200 && xhr.status < 300 && response.data) {
                     resolve(response.data);
                 } else {
-                    reject(new Error(response.error?.message ?? 'Upload failed'));
+                    reject(buildUploadEntityError({ body: response, status: xhr.status }));
                 }
             } catch {
                 // BETA-134: an empty body at this point most likely means an
@@ -155,21 +160,38 @@ export async function uploadEntityImage({
                 // than a genuinely malformed payload — surface a clearer,
                 // actionable message than a generic parse failure.
                 reject(
-                    new Error(
-                        xhr.responseText
-                            ? 'Invalid response from upload endpoint'
-                            : 'Upload timed out or the server did not respond. Please try again.'
-                    )
+                    xhr.responseText
+                        ? new UploadEntityError({
+                              message: 'Invalid response from upload endpoint',
+                              code: 'GENERIC',
+                              status: xhr.status
+                          })
+                        : new UploadEntityError({
+                              message:
+                                  'Upload timed out or the server did not respond. Please try again.',
+                              code: 'TIMEOUT',
+                              status: xhr.status
+                          })
                 );
             }
         });
 
         xhr.addEventListener('error', () => {
-            reject(new Error('Network error during upload'));
+            reject(
+                new UploadEntityError({
+                    message: 'Network error during upload',
+                    code: 'NETWORK_ERROR'
+                })
+            );
         });
 
         xhr.addEventListener('timeout', () => {
-            reject(new Error('Upload timed out. Please try again.'));
+            reject(
+                new UploadEntityError({
+                    message: 'Upload timed out. Please try again.',
+                    code: 'TIMEOUT'
+                })
+            );
         });
 
         xhr.send(formData);

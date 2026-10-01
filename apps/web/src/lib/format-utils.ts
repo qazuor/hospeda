@@ -120,6 +120,29 @@ export function formatDate({ date, locale, options }: FormatDateParams): string 
     return i18nFormatDate({ date, locale: toBcp47Locale(locale), options });
 }
 
+/**
+ * Formats a date as a month-and-year label with ONLY the first letter upper-cased.
+ *
+ * Intl yields lower-case Spanish/Portuguese month names joined by a lower-case
+ * preposition ("agosto de 2026"). CSS `text-transform: capitalize` upper-cases
+ * every word and produces "Agosto De 2026" (HOS-869), so the casing is done here.
+ *
+ * @param params - Date and locale.
+ * @returns The label, e.g. "Agosto de 2026" (es/pt) or "August 2026" (en).
+ */
+export function formatMonthYearLabel({ date, locale }: FormatMonthYearLabelParams): string {
+    const label = formatDate({ date, locale, options: { month: 'long', year: 'numeric' } });
+    return label.charAt(0).toLocaleUpperCase(toBcp47Locale(locale)) + label.slice(1);
+}
+
+/** Input for {@link formatMonthYearLabel}. */
+export interface FormatMonthYearLabelParams {
+    /** Any date inside the month to label. */
+    readonly date: Date;
+    /** Short locale code. */
+    readonly locale: SupportedLocale;
+}
+
 // ---------------------------------------------------------------------------
 // Event detail date range (HOS-280 — month-only precision)
 // ---------------------------------------------------------------------------

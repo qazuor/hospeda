@@ -13,6 +13,7 @@
  * @rendering SSR
  */
 
+import { getMediaUrl } from '@repo/media';
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
@@ -381,7 +382,7 @@ const apiBase = getApiUrl();
 									<div class="coleccion-card__image">
 										{bookmark.entityImage ? (
 											<img
-												src={bookmark.entityImage}
+												src={getMediaUrl(bookmark.entityImage, { preset: 'card' })}
 												alt={displayTitle}
 												class="coleccion-card__img"
 												loading="lazy"

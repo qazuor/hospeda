@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 
 /**
  * Admin search schema for attractions.
@@ -21,7 +21,7 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  */
 export const AttractionAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter featured attractions */
-    isFeatured: queryBooleanParam().describe('Filter by featured status')
+    isFeatured: createBooleanQueryParam('Filter by featured status')
 });
 
 /** Inferred TypeScript type for attraction admin search parameters */

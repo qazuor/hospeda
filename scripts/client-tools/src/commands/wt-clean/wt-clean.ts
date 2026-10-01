@@ -1,5 +1,6 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import { loadProjectAdapter } from '../../lib/project-config.ts';
 import { parseArgs } from './args.ts';
 import { freedMb, readFree } from './disk.ts';
 import {
@@ -73,16 +74,21 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
         return 0;
     }
 
-    const scriptPath = resolveRemoveScript();
+    const scriptPath = resolveRemoveScript(opts.repoPath);
     if (scriptPath === null) {
         process.stderr.write(
-            'ERROR: no encontré wt-remove.sh en ~/.claude/skills/worktree/scripts/.\n' +
-                'La skill worktree tiene que estar instalada para que esto funcione.\n'
+            'ERROR: no encontré scripts/worktree/wt-remove.sh en el proyecto ni el fallback legacy.\n' +
+                'El adapter necesita declarar o incluir una rutina de teardown de worktrees.\n'
         );
         return 1;
     }
 
     const currentPath = await resolveCurrentWorktree({ cwd: opts.repoPath });
+    const adapter = await loadProjectAdapter(opts.repoPath);
+    const protectedBranches = new Set([
+        ...(adapter?.branches?.protected ?? []),
+        ...(adapter?.branches?.promotion ?? ['staging', 'main'])
+    ]);
     const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
 
     if (interactive) p.intro(pc.bgCyan(pc.black(' hops-wt-clean ')));
@@ -97,7 +103,8 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
     const worktrees = await collectWorktrees({
         repoRoot: opts.repoPath,
         currentPath,
-        measureDisk: opts.measureDisk
+        measureDisk: opts.measureDisk,
+        preferredBase: adapter?.branches?.base
     });
     spin.stop(`${worktrees.length} worktrees`);
 
@@ -108,7 +115,7 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
 
     const mainPath = worktrees.find((worktree) => worktree.isMain)?.path ?? opts.repoPath;
     const missing = worktrees.filter((worktree) => worktree.state === 'missing');
-    const choices = buildOptions({ worktrees });
+    const choices = buildOptions({ worktrees, protectedBranches });
 
     if (!interactive) {
         // No terminal means nothing can be selected, so the useful thing left

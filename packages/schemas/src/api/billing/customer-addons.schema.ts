@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod';
+import { createBooleanQueryParamWithDefault } from '../../common/boolean-params.js';
 
 // ─── Status Constants ───────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ export const ListCustomerAddonsQuerySchema = z.object({
     /** Filter by customer email (case-insensitive partial match) */
     customerEmail: z.string().optional(),
     /** Include soft-deleted records */
-    includeDeleted: z.coerce.boolean().optional().default(false)
+    includeDeleted: createBooleanQueryParamWithDefault('Include soft-deleted records', false)
 });
 
 export type ListCustomerAddonsQuery = z.infer<typeof ListCustomerAddonsQuerySchema>;

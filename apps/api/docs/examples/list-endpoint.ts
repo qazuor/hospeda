@@ -5,7 +5,7 @@
  * with advanced filtering and search capabilities
  */
 
-import { accommodationSchema } from '@repo/schemas';
+import { accommodationSchema, createBooleanQueryParam } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -26,7 +26,8 @@ const advancedSearchSchema = z.object({
     maxPrice: z.coerce.number().positive().optional(),
 
     // Status filter
-    isActive: z.coerce.boolean().optional(),
+    // Strict 'true' | 'false' (never z.coerce.boolean(), HOS-410)
+    isActive: createBooleanQueryParam('Filter by active status'),
 
     // Sorting
     sortBy: z.enum(['name', 'price', 'createdAt']).default('name'),

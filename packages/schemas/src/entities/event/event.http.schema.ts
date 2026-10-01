@@ -206,7 +206,7 @@ export const EventCreateHttpSchema = z
         // for the same reason, and stamps the actor in
         // `adminBodyToDomainEventCreate`. Neither tier takes an author from the
         // body any more (HOS-998).
-        isFeatured: z.coerce.boolean().default(false),
+        isFeatured: httpBodyBoolean().default(false),
         // `price` and `currency` are create-only. `httpToDomainEventCreate` folds
         // them into the domain's nested `pricing` object; the UPDATE surface drops
         // them (see `EventUpdateHttpSchema`).
@@ -241,6 +241,7 @@ export type EventUpdateHttp = z.infer<typeof EventUpdateHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';

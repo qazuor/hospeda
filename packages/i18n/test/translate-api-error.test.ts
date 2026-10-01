@@ -395,4 +395,103 @@ describe('translateApiError', () => {
             expect(message).toBe('Forbidden translation');
         });
     });
+
+    describe('upload-entity errors (HOS-1218)', () => {
+        it('interpolates `details` into the gallery-limit copy in every locale', () => {
+            // Arrange
+            const error = {
+                code: 'GALLERY_LIMIT_EXCEEDED',
+                message: 'Gallery limit of 50 items reached for this entity',
+                details: { limit: 50 }
+            };
+
+            // Act + Assert
+            expect(translateApiError({ error, locale: 'es' })).toBe(
+                'Llegaste al límite de 50 fotos de la galería.'
+            );
+            expect(translateApiError({ error, locale: 'en' })).toBe(
+                'You have reached the gallery limit of 50 photos.'
+            );
+            expect(translateApiError({ error, locale: 'pt' })).toBe(
+                'Você atingiu o limite de 50 fotos da galeria.'
+            );
+        });
+
+        it('selects the singular form from details.limit when it is 1', () => {
+            // Arrange
+            const error = {
+                code: 'GALLERY_LIMIT_EXCEEDED',
+                message: 'Gallery limit of 1 items reached for this entity',
+                details: { limit: 1 }
+            };
+
+            // Act + Assert
+            expect(translateApiError({ error, locale: 'es' })).toBe(
+                'Llegaste al límite de 1 foto de la galería.'
+            );
+            expect(translateApiError({ error, locale: 'en' })).toBe(
+                'You have reached the gallery limit of 1 photo.'
+            );
+            expect(translateApiError({ error, locale: 'pt' })).toBe(
+                'Você atingiu o limite de 1 foto da galeria.'
+            );
+        });
+
+        it('leaves a code without a plural pair on its plain key even when details.limit is set', () => {
+            // Arrange
+            const error = { code: 'FORBIDDEN', message: 'No', details: { limit: 3 } };
+
+            // Act
+            const message = translateApiError({ error, locale: 'es' });
+
+            // Assert
+            expect(message).toBe('No tenés permiso para realizar esta acción.');
+        });
+
+        it('ignores array `details` (validation issues) instead of using them as params', () => {
+            // Arrange
+            const error = {
+                code: 'VALIDATION_ERROR',
+                reason: 'INVALID_FORM_FIELDS',
+                message: 'Invalid form fields',
+                details: [{ field: 'role', message: 'bad' }]
+            };
+
+            // Act
+            const message = translateApiError({ error, locale: 'es' });
+
+            // Assert
+            expect(message).toBe(
+                'Los datos de la subida no son válidos. Recargá la página y probá de nuevo.'
+            );
+        });
+
+        it('resolves every reason/code the nine upload messages use, in es/en/pt', () => {
+            // Arrange
+            const keys = [
+                'CLOUDINARY_NOT_CONFIGURED',
+                'SESSION_STALE',
+                'INVALID_MULTIPART_DATA',
+                'INVALID_FORM_FIELDS',
+                'UNSUPPORTED_ENTITY_TYPE',
+                'GALLERY_LIMIT_EXCEEDED',
+                'MISSING_FILE',
+                'EMPTY_FILE'
+            ];
+
+            for (const locale of ['es', 'en', 'pt'] as const) {
+                for (const key of keys) {
+                    // Act
+                    const message = translateApiError({
+                        error: { code: key, message: 'ENGLISH-LOG-MESSAGE', details: { limit: 1 } },
+                        locale
+                    });
+
+                    // Assert
+                    expect(message, `${locale}:${key}`).not.toBe('ENGLISH-LOG-MESSAGE');
+                    expect(message, `${locale}:${key}`).not.toContain('MISSING');
+                }
+            }
+        });
+    });
 });
