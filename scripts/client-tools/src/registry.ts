@@ -236,6 +236,15 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/update/command.ts')).updateCommand
     },
     {
+        // Load-bearing for CI: `.github/workflows/whats-new-gate.yml` runs
+        // `bin/hops-whats-new pending` and `audit` on every PR into `main`.
+        // Dropping this entry (and its wrapper) silently broke that gate once.
+        name: 'whats-new',
+        summary:
+            'Novedades: auditar la promoción, ver lo pendiente, retirar (audit | pending | drop)',
+        load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
+    },
+    {
         name: 'engram',
         summary: 'Acceso seguro y descubrible a la memoria Engram',
         load: async () => (await import('./commands/engram/command.ts')).engramCommand
