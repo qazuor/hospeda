@@ -72,7 +72,8 @@ export const GENERIC_COMMANDS: ReadonlySet<string> = new Set([
     'run',
     'engram',
     'gentle-status',
-    'gentle-sdd-status'
+    'gentle-sdd-status',
+    'linear-backlog'
 ] as const);
 
 export function commandKind(name: string): 'generic' | 'project' {
@@ -116,6 +117,12 @@ export const COMMANDS: readonly CommandEntry[] = [
         summary: 'Consulta Linear y recursos de un issue sin mutar nada',
         load: async () =>
             (await import('./commands/issue-preflight/command.ts')).issuePreflightCommand
+    },
+    {
+        name: 'linear-backlog',
+        summary: 'Prepara una issue de backlog y crea sólo con --yes',
+        load: async () =>
+            (await import('./commands/linear-backlog/command.ts')).linearBacklogCommand
     },
     {
         name: 'recap',

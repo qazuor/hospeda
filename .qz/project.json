@@ -8,6 +8,10 @@
         "provider": "linear",
         "teamKey": "HOS",
         "identifierPattern": "^HOS-[0-9]+$",
+        "backlogState": "Backlog",
+        "defaultLabels": ["QAZUOR"],
+        "commandLabel": "agent-reported",
+        "defaultPriority": 4,
         "baseBranch": "develop",
         "states": {
             "backlog": "Backlog",

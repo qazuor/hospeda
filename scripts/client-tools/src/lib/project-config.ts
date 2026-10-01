@@ -45,6 +45,16 @@ export interface ProjectAdapter {
         readonly provider?: string;
         readonly teamKey?: string;
         readonly identifierPattern?: string;
+        readonly states?: {
+            readonly backlog?: string;
+            readonly inProgress?: string;
+            readonly done?: string;
+            readonly canceled?: string;
+        };
+        readonly backlogState?: string;
+        readonly defaultLabels?: readonly string[];
+        readonly commandLabel?: string;
+        readonly defaultPriority?: number;
     };
     readonly branches?: {
         readonly base?: string;
