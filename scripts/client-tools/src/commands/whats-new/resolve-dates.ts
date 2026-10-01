@@ -33,6 +33,20 @@
  * - Everything else in the file (formatting, comments, other fields) is
  *   copied through byte-for-byte; only the matched `publishedAt: '<marker>'`
  *   substrings are replaced.
+ * - When `onlyIds` is given, a marker whose entry id is NOT in it is left
+ *   as-is. See "Why `main` alone is not enough" below.
+ *
+ * ## Why `main` alone is not enough
+ *
+ * The resolved dates reach `staging` through a PR, never `main`. So after a
+ * promotion `main` keeps its `'on-promotion'` markers until the NEXT
+ * promotion, and every push to `main` in between — a Dependabot security
+ * merge, a hotfix — found them again and opened another PR re-dating entries
+ * `staging` had already dated (#3432, #3435, #3439, #3441, #3442 in a single
+ * night). The caller therefore intersects `main`'s pending ids with the ids
+ * still pending on `staging` and on every resolve-dates PR still open
+ * ({@link collectPendingMarkerIds}), and passes the result as `onlyIds`: a
+ * marker is resolved only while it is unresolved EVERYWHERE.
  */
 
 /** The literal unresolved-date marker written by the sign-off flow (D-1). */
@@ -84,6 +98,13 @@ export interface ResolvePublishedAtMarkersInput {
      * for a single day (HOS-964 used 3h gaps for four entries).
      */
     readonly hoursApart?: number;
+    /**
+     * When set, only markers whose entry id is in this set are resolved; the
+     * rest are left untouched and reported in `skippedIds`. A marker with no
+     * readable id is never in the set, so it is skipped too. When omitted,
+     * every marker is resolved.
+     */
+    readonly onlyIds?: ReadonlySet<string>;
 }
 
 export interface ResolvePublishedAtMarkersResult {
@@ -97,6 +118,11 @@ export interface ResolvePublishedAtMarkersResult {
      * a marker with no preceding `id` field in the same scan.
      */
     readonly resolvedIds: readonly string[];
+    /**
+     * Ids of the markers left untouched because they were not in `onlyIds`,
+     * in declared order. Always empty when `onlyIds` is omitted.
+     */
+    readonly skippedIds: readonly string[];
 }
 
 /**
@@ -110,30 +136,10 @@ function toCatalogIsoString({ ms }: { readonly ms: number }): string {
 }
 
 /**
- * Rewrites every `publishedAt: 'on-promotion'` marker in `content` to a real
- * date derived from `mergedAt`, preserving declared newest-first order with
- * hours spread descending (AC-14). Pure and side-effect free — the caller
- * (`resolve-dates-cli.ts`) owns reading/writing the actual file.
- *
- * @param input.content    - The catalog source.
- * @param input.mergedAt   - ISO 8601 merge timestamp; every resolved date is
- *                            derived from this instant.
- * @param input.hoursApart - Hour step between consecutive resolved markers
- *                            (default 1).
- * @returns The rewritten content plus a count and ordered id list. When no
- *          marker is present, `updatedContent === content` exactly (a true
- *          no-op) and both other fields are empty.
+ * Finds every `'on-promotion'` marker in the live entries of `content`, in
+ * declared order, with the id of the entry it belongs to.
  */
-export function resolvePublishedAtMarkers({
-    content,
-    mergedAt,
-    hoursApart = 1
-}: ResolvePublishedAtMarkersInput): ResolvePublishedAtMarkersResult {
-    const mergedAtMs = new Date(mergedAt).getTime();
-    if (Number.isNaN(mergedAtMs)) {
-        throw new Error(`resolvePublishedAtMarkers: mergedAt is not a valid date: ${mergedAt}`);
-    }
-
+function findMarkers({ content }: { readonly content: string }): MarkerOccurrence[] {
     const markers: MarkerOccurrence[] = [];
     let currentId: string | null = null;
     let match: RegExpExecArray | null;
@@ -167,15 +173,80 @@ export function resolvePublishedAtMarkers({
             });
         }
     }
+    return markers;
+}
+
+/**
+ * Returns the ids of every entry whose `publishedAt` is still the
+ * `'on-promotion'` marker in `content`. Markers with no readable id are left
+ * out — an id is what lets two versions of the catalog be compared.
+ *
+ * @param input.content - A version of the catalog source (e.g. `staging`'s).
+ * @returns The set of still-pending entry ids; empty when nothing is pending.
+ */
+export function collectPendingMarkerIds({
+    content
+}: {
+    readonly content: string;
+}): ReadonlySet<string> {
+    const ids = new Set<string>();
+    for (const marker of findMarkers({ content })) {
+        if (marker.id !== null) {
+            ids.add(marker.id);
+        }
+    }
+    return ids;
+}
+
+/**
+ * Rewrites every `publishedAt: 'on-promotion'` marker in `content` to a real
+ * date derived from `mergedAt`, preserving declared newest-first order with
+ * hours spread descending (AC-14). Pure and side-effect free — the caller
+ * (`resolve-dates-cli.ts`) owns reading/writing the actual file.
+ *
+ * @param input.content    - The catalog source.
+ * @param input.mergedAt   - ISO 8601 merge timestamp; every resolved date is
+ *                            derived from this instant.
+ * @param input.hoursApart - Hour step between consecutive resolved markers
+ *                            (default 1).
+ * @param input.onlyIds    - Optional allow-list of entry ids; markers outside
+ *                            it are left untouched and reported as skipped.
+ * @returns The rewritten content plus a count, the ordered resolved ids and
+ *          the skipped ids. When nothing is resolved,
+ *          `updatedContent === content` exactly (a true no-op).
+ */
+export function resolvePublishedAtMarkers({
+    content,
+    mergedAt,
+    hoursApart = 1,
+    onlyIds
+}: ResolvePublishedAtMarkersInput): ResolvePublishedAtMarkersResult {
+    const mergedAtMs = new Date(mergedAt).getTime();
+    if (Number.isNaN(mergedAtMs)) {
+        throw new Error(`resolvePublishedAtMarkers: mergedAt is not a valid date: ${mergedAt}`);
+    }
+
+    const skippedIds: string[] = [];
+    const markers = findMarkers({ content }).filter((marker) => {
+        if (onlyIds === undefined) {
+            return true;
+        }
+        if (marker.id !== null && onlyIds.has(marker.id)) {
+            return true;
+        }
+        skippedIds.push(marker.id ?? '(unknown id)');
+        return false;
+    });
 
     if (markers.length === 0) {
-        return { updatedContent: content, resolvedCount: 0, resolvedIds: [] };
+        return { updatedContent: content, resolvedCount: 0, resolvedIds: [], skippedIds };
     }
 
     let updatedContent = '';
     let cursor = 0;
     const resolvedIds: string[] = [];
 
+    // Hours step over RESOLVED markers only, so a skipped one leaves no gap.
     markers.forEach((marker, index) => {
         const resolvedMs = mergedAtMs - index * hoursApart * 60 * 60 * 1000;
         const resolvedIso = toCatalogIsoString({ ms: resolvedMs });
@@ -186,5 +257,5 @@ export function resolvePublishedAtMarkers({
     });
     updatedContent += content.slice(cursor);
 
-    return { updatedContent, resolvedCount: markers.length, resolvedIds };
+    return { updatedContent, resolvedCount: markers.length, resolvedIds, skippedIds };
 }
