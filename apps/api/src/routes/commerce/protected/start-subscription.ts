@@ -72,6 +72,7 @@ import { getQZPayBilling } from '../../../middlewares/billing';
 import { resolveCommerceVerticalCap } from '../../../middlewares/commerce-entitlement';
 import { idempotencyKeyMiddleware } from '../../../middlewares/idempotency-key';
 import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+import { assertNewPaidSignupsAllowed } from '../../../services/billing/new-paid-signups-freeze';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../../services/billing/subscription-checkout-error-http';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { loadCommerceListingMedia } from '../../../services/commerce-listing-media';
@@ -205,7 +206,9 @@ async function loadRawListing(
  * enforced by the explicit `protectedAuthMiddleware` mounted on
  * `startCommerceSubscriptionRouter` below (see that router's docstring for
  * why it is applied manually instead of via `createProtectedRoute`). Full
- * status-code contract: spec §7.1.
+ * status-code contract: spec §7.1, plus 409 `NEW_PAID_SIGNUPS_FROZEN` when an
+ * admin paused new self-service signups (trial and checkout branches only —
+ * attaching to a subscription the owner already pays for is not a new signup).
  */
 export async function handleCommerceStartSubscription(
     ctx: Context,
@@ -350,6 +353,21 @@ export async function handleCommerceStartSubscription(
     // join, so it has to be resolved before deciding whether to open a checkout
     // at all.
     let billingCustomerId = ctx.get('billingCustomerId');
+
+    // ── Admin-paused signups (billing_settings.newPaidSignupsFrozen) ────────
+    //
+    // A caller with no billing customer cannot hold a subscription for this
+    // listing to join, so whatever happens below is a NEW signup (a trial or a
+    // checkout). Refuse it here, BEFORE the self-heal: `ensureCustomerExists`
+    // already writes a row and may create a MercadoPago customer.
+    //
+    // A caller WITH a customer is checked again right after the per-owner fork
+    // below, once we know whether this is an attach (an existing subscription,
+    // no new charge — not frozen) or a new signup (frozen).
+    if (!billingCustomerId) {
+        await assertNewPaidSignupsAllowed({ entryPoint: 'commerce-self-checkout' });
+    }
+
     if (!billingCustomerId && actor.email) {
         // HOS-596: customer creation runs on the tolerant facade so a
         // MercadoPago hiccup cannot delete the row it just wrote and turn this
@@ -467,6 +485,16 @@ export async function handleCommerceStartSubscription(
             appliedEffect: 'attached' as const
         };
     }
+
+    // ── Admin-paused signups, second checkpoint ─────────────────────────────
+    //
+    // Everything below opens a NEW subscription for this vertical — a local
+    // trial (branch 1a) or a MercadoPago checkout (branch 1) — so the freeze
+    // applies to both. The attach branch above is left alone on purpose: it
+    // creates no subscription and no charge, it publishes a listing under the
+    // plan the owner already pays for, and the freeze promises that an existing
+    // subscription keeps working normally.
+    await assertNewPaidSignupsAllowed({ entryPoint: 'commerce-self-checkout' });
 
     // ── Branch 1a — no subscription yet, and this vertical's trial is intact
     // (HOS-1184) ────────────────────────────────────────────────────────────

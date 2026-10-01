@@ -117,7 +117,9 @@
         "GALLERY_LIMIT_EXCEEDED_one": "Llegaste al límite de {{count}} foto de la galería.",
         "GALLERY_LIMIT_EXCEEDED_other": "Llegaste al límite de {{count}} fotos de la galería.",
         "MISSING_FILE": "No se recibió ninguna imagen. Elegí un archivo y probá de nuevo.",
-        "EMPTY_FILE": "El archivo está vacío. Elegí otra imagen."
+        "EMPTY_FILE": "El archivo está vacío. Elegí otra imagen.",
+        "NEW_PAID_SIGNUPS_FROZEN": "Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.",
+        "FIRST_PUBLISH_PAUSED": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden."
     },
     "filters": "Filtros",
     "filterChips": {

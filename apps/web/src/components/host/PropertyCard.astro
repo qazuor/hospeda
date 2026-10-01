@@ -65,6 +65,12 @@ export interface Props {
      */
     readonly startsTrial?: boolean;
     /**
+     * Whether the owner's FIRST publish is paused (admin-frozen new signups),
+     * from the same read. Forwarded to `PublishButton`, which shows the
+     * "publishing new listings is paused" notice. Defaults to `false`.
+     */
+    readonly firstPublishPaused?: boolean;
+    /**
      * Generic owner trial length in days (H-98), shown on the publish confirm
      * step when publishing would start the owner's trial.
      * Resolved by the caller from the live billing plans — the minimum
@@ -86,6 +92,7 @@ const {
     locale,
     canPublish = true,
     startsTrial = false,
+    firstPublishPaused = false,
     trialDays = OWNER_TRIAL_DAYS
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
@@ -307,6 +314,7 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                     missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
                     canPublish={canPublish}
                     startsTrial={startsTrial}
+                    firstPublishPaused={firstPublishPaused}
                     choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
                 />
             )}

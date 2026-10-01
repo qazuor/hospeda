@@ -508,6 +508,13 @@
             "paymentFailedHint": "Notify the customer when a payment fails",
             "subscriptionCancelledLabel": "Notify subscription cancellation",
             "subscriptionCancelledHint": "Notify the customer when the subscription is cancelled"
+        },
+        "signupFreeze": {
+            "title": "New sign-ups",
+            "description": "Pause self-service sign-ups without a deploy",
+            "label": "Pause new paid sign-ups",
+            "hint": "Blocks subscribing to a plan (including new trials started from checkout), the first publish of a host with no trial or subscription (which is what starts the trial), reactivations, publishing a business listing that has no subscription yet, and buying add-ons. Does not affect renewals, charges, cancellations, card changes, upgrades by paying customers, publishing or editing under a live subscription or trial, or admin actions.",
+            "activeWarning": "New sign-ups are paused: the website shows a notice instead of the subscribe button, and the API refuses those sign-ups."
         }
     },
     "sponsorships": {

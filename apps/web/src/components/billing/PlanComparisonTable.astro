@@ -70,7 +70,9 @@ const { t } = createTranslations(locale);
 // HOS-937 review fix: same SSR gate as PricingCardsGrid.astro — resolves
 // server-side so PlanPurchaseButton can decide whether the payer-email
 // confirm dialog has any effect. Fails closed on error.
-const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
+// `newPaidSignupsFrozen`: an admin paused new self-service paid signups
+// (billing settings) — the button renders a "paused" notice instead.
+const { ownPreapprovalEnabled, newPaidSignupsFrozen } = await fetchCheckoutConfig();
 
 const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
 const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
@@ -174,6 +176,7 @@ function formatPriceArs(cents: number): string {
 									audience={audience}
 									showPromo={false}
 									ownPreapprovalEnabled={ownPreapprovalEnabled}
+									newPaidSignupsFrozen={newPaidSignupsFrozen}
 								/>
 							) : (
 								ctaHref && (

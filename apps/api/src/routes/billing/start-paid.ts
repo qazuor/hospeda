@@ -63,6 +63,7 @@ import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
+import { assertNewPaidSignupsAllowed } from '../../services/billing/new-paid-signups-freeze';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import { BillingCustomerSyncService } from '../../services/billing-customer-sync';
 import {
@@ -320,6 +321,8 @@ const isHospedaOwnedLocalTrial = (
  * Handler for the start-paid endpoint.
  *
  * Errors:
+ * - 409 `NEW_PAID_SIGNUPS_FROZEN` when an admin paused new self-service paid
+ *   signups from the billing settings (checked before any write or MP call).
  * - 400 when the caller has no billing customer on session.
  * - 404 when the plan slug is unknown, has no active price for the
  *   requested interval, or (annual only) the resolved customer cannot
@@ -363,6 +366,13 @@ export const handleStartPaidSubscription = async (
             message: 'Billing service is not available'
         });
     }
+
+    // Admin-paused signups (billing_settings.newPaidSignupsFrozen). Every
+    // checkout through here is a NEW paid subscription — a paying customer
+    // changes plan through plan-change, not this route — so the freeze applies
+    // to the whole endpoint. It runs before the customer self-heal below,
+    // because that already writes a row and may create a MercadoPago customer.
+    await assertNewPaidSignupsAllowed({ entryPoint: 'start-paid' });
 
     // HOS-189: the billing_customers row is normally created once at signup
     // (the user.create.after hook), and billingCustomerMiddleware only looks it

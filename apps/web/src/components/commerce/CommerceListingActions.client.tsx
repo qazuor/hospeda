@@ -24,6 +24,7 @@
 import type { CommerceTrialVerdictKind } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import { Dialog } from '@/components/shared/ui/Dialog.client';
@@ -106,6 +107,19 @@ export interface CommerceListingActionsProps {
      */
     readonly ownPreapprovalEnabled?: boolean;
     /**
+     * Whether an admin paused new self-service paid signups
+     * (`billing_settings.newPaidSignupsFrozen`), resolved SSR-side by the page
+     * via `fetchCheckoutConfig()`.
+     *
+     * When `true`, a draft whose publish would START a subscription — a trial
+     * (`trial_available`) or a checkout (`payment_required`) — renders
+     * {@link PaidSignupsPausedNotice} instead of the publish button. Under
+     * `has_active_sub` the publish only attaches the listing to the plan the
+     * owner already pays for, which the API does not freeze, so it keeps
+     * working. Defaults to `false`.
+     */
+    readonly newPaidSignupsFrozen?: boolean;
+    /**
      * Active tiers of this listing's vertical (HOS-1119), resolved SSR-side
      * by the page via `fetchPublicPlans({ domain: vertical })` +
      * `filterPlansByCategory(..., 'owner')`.
@@ -138,6 +152,7 @@ export function CommerceListingActions({
     trialVerdict,
     trialDays,
     ownPreapprovalEnabled = false,
+    newPaidSignupsFrozen = false,
     availablePlans = []
 }: CommerceListingActionsProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
@@ -246,6 +261,18 @@ export function CommerceListingActions({
                     t(
                         'commerce.owner.checklist.incompleteError',
                         'Todavía faltan datos para publicar.'
+                    )
+                );
+                return;
+            }
+
+            // Admin-paused signups reached the API (the page's flag was stale).
+            // Checked BEFORE the bare 409 below, which means "already subscribed".
+            if (result.error.code === 'NEW_PAID_SIGNUPS_FROZEN') {
+                setCheckoutError(
+                    t(
+                        'common.apiError.NEW_PAID_SIGNUPS_FROZEN',
+                        'Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.'
                     )
                 );
                 return;
@@ -547,6 +574,10 @@ export function CommerceListingActions({
 
     const { cta: publishCtaLabel, busy: publishingLabel } = resolvePublishLabels();
 
+    // Admin-paused signups: only a publish that would START a subscription is
+    // paused. Attaching to the owner's existing plan stays available.
+    const isNewSignupPaused = newPaidSignupsFrozen && trialVerdict !== 'has_active_sub';
+
     return (
         <div className={styles.actions}>
             <span className={`${styles.badge} ${styles.badgeDraft}`}>
@@ -571,16 +602,23 @@ export function CommerceListingActions({
                 </ul>
             )}
 
-            <button
-                type="button"
-                className={styles.publishButton}
-                disabled={!canPublish || isCheckoutStarting}
-                aria-busy={isCheckoutStarting}
-                onClick={handlePublishAndPay}
-                data-testid="commerce-publish-button"
-            >
-                {isCheckoutStarting ? publishingLabel : publishCtaLabel}
-            </button>
+            {isNewSignupPaused ? (
+                <PaidSignupsPausedNotice
+                    locale={locale}
+                    testId="commerce-signups-paused-notice"
+                />
+            ) : (
+                <button
+                    type="button"
+                    className={styles.publishButton}
+                    disabled={!canPublish || isCheckoutStarting}
+                    aria-busy={isCheckoutStarting}
+                    onClick={handlePublishAndPay}
+                    data-testid="commerce-publish-button"
+                >
+                    {isCheckoutStarting ? publishingLabel : publishCtaLabel}
+                </button>
+            )}
 
             {checkoutError && (
                 <p

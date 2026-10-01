@@ -32,6 +32,7 @@ import {
     type ProductDomainScope,
     ProductDomainScopeEnumSchema
 } from '../../schemas/product-domain-query.schema';
+import { assertNewPaidSignupsAllowed } from '../../services/billing/new-paid-signups-freeze';
 import { SubscriptionCheckoutError } from '../../services/billing/subscription-checkout-error';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import { TrialService } from '../../services/trial.service';
@@ -299,6 +300,12 @@ export const reactivateTrialRoute = createSimpleRoute({
             });
         }
 
+        // Admin-paused signups (billing_settings.newPaidSignupsFrozen): a
+        // reactivation opens a NEW MercadoPago checkout, so it is frozen with
+        // the other self-service signups. After auth and input shape, before
+        // any read of the plan or call to MercadoPago.
+        await assertNewPaidSignupsAllowed({ entryPoint: 'trial-reactivate' });
+
         const { planId, billingInterval } = parseResult.data;
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
@@ -495,6 +502,12 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
                 cause: parseResult.error.flatten()
             });
         }
+
+        // Admin-paused signups (billing_settings.newPaidSignupsFrozen): a
+        // reactivation opens a NEW MercadoPago checkout, so it is frozen with
+        // the other self-service signups. After auth and input shape, before
+        // any read of the plan or call to MercadoPago.
+        await assertNewPaidSignupsAllowed({ entryPoint: 'subscription-reactivate' });
 
         const { planId, billingInterval } = parseResult.data;
         const billing = getQZPayBilling();

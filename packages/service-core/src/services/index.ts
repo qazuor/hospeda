@@ -46,6 +46,7 @@ export type {
 // `GET /publish-eligibility` route needs the same predicate `publish()` uses,
 // so it is a value export rather than joining the type-only block above.
 export {
+    FIRST_PUBLISH_PAUSED_REASON,
     PUBLISH_ELIGIBILITY_VALUES,
     publishEligibilityAllowsPublish,
     publishEligibilityStartsLocalTrial

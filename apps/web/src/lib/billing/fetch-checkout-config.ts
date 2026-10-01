@@ -24,6 +24,12 @@
  * Fails CLOSED on any error (network, non-OK status, unexpected shape): the
  * dialog stays hidden, which matches the flag's own dark-by-default posture
  * and never adds friction the API didn't actually ask for.
+ *
+ * `newPaidSignupsFrozen` (admin-paused self-service signups) is parsed on its
+ * own and falls back to `false` — the buttons keep rendering. That is safe:
+ * the flag is a UX hint, and every checkout route refuses with
+ * `NEW_PAID_SIGNUPS_FROZEN` server-side regardless, which the buttons already
+ * translate into the same "paused" copy.
  */
 
 import { getApiUrl } from '@/lib/env';
@@ -39,10 +45,20 @@ export interface CheckoutConfig {
      * before a checkout.
      */
     readonly ownPreapprovalEnabled: boolean;
+    /**
+     * Whether an admin paused new self-service paid signups (billing
+     * settings). When `true`, the checkout CTAs for a NEW plan, an owner
+     * commerce checkout and an add-on purchase render a "paused" notice
+     * instead. Existing subscribers' actions (plan change, etc.) are untouched.
+     */
+    readonly newPaidSignupsFrozen: boolean;
 }
 
-/** Safe fallback — matches the API's own dark-by-default flag value. */
-const FAIL_CLOSED_CONFIG: CheckoutConfig = { ownPreapprovalEnabled: false };
+/** Safe fallback — matches the API's own dark-by-default flag values. */
+const FAIL_CLOSED_CONFIG: CheckoutConfig = {
+    ownPreapprovalEnabled: false,
+    newPaidSignupsFrozen: false
+};
 
 /**
  * Fetch public checkout-behavior flags from the API at runtime (SSR).
@@ -53,8 +69,9 @@ const FAIL_CLOSED_CONFIG: CheckoutConfig = { ownPreapprovalEnabled: false };
  * showing it unconditionally.
  *
  * @returns The resolved config, or the fail-closed default
- *   (`ownPreapprovalEnabled: false`) on any network/parse error or
- *   non-OK response — the same behavior as the flag being off.
+ *   (`ownPreapprovalEnabled: false`, `newPaidSignupsFrozen: false`) on any
+ *   network/parse error or non-OK response — the same behavior as both flags
+ *   being off.
  */
 export async function fetchCheckoutConfig(): Promise<CheckoutConfig> {
     try {
@@ -68,13 +85,22 @@ export async function fetchCheckoutConfig(): Promise<CheckoutConfig> {
         }
 
         const body: unknown = await response.json();
-        const data = (body as { data?: { ownPreapprovalEnabled?: unknown } } | null)?.data;
+        const data = (
+            body as {
+                data?: { ownPreapprovalEnabled?: unknown; newPaidSignupsFrozen?: unknown };
+            } | null
+        )?.data;
 
         if (typeof data?.ownPreapprovalEnabled !== 'boolean') {
             return FAIL_CLOSED_CONFIG;
         }
 
-        return { ownPreapprovalEnabled: data.ownPreapprovalEnabled };
+        return {
+            ownPreapprovalEnabled: data.ownPreapprovalEnabled,
+            // Strict `=== true`: an older API without the field, or a malformed
+            // value, reads as "not frozen".
+            newPaidSignupsFrozen: data.newPaidSignupsFrozen === true
+        };
     } catch {
         return FAIL_CLOSED_CONFIG;
     }

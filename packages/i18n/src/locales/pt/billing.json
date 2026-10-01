@@ -278,6 +278,14 @@
             "plusError": "O Mercado Pago não aceita emails com \"+\". Digite outro endereço para poder pagar.",
             "confirm": "Continuar",
             "cancel": "Cancelar"
+        },
+        "signupsPaused": {
+            "title": "Novas contratações em pausa",
+            "body": "Pausamos temporariamente novas assinaturas e compras. Se você já tem uma assinatura, ela continua funcionando normalmente."
+        },
+        "firstPublishPaused": {
+            "title": "Publicação de novos anúncios em pausa",
+            "body": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos."
         }
     },
     "checkoutRetry": {
