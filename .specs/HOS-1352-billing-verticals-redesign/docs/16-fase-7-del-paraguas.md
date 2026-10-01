@@ -949,16 +949,16 @@ y `41-corte-del-mvp/aristas.py` por su encabezado, y lo que dice cada pieza vive
 | `V9b` | `V9` | después | Z y AC |
 | `B1` | `B1` | corte | entera |
 | `B2` | `B2` | corte | entera |
-| `B3` | `B3` | corte | entera; la rama de sucesión de `S1` sin ruta hasta `B8b` (Z); suma la cola de cambios, las columnas de la sucesión y las dos tablas de `B12` (AP) |
-| `B4` | `B4` | corte | entera; suma el modelo de addons y la fuente `ADDON`, con `G-R2-C` (AA), y la columna de la instancia en `payment` (AP) |
-| `B5` | `B5` | corte | entera |
+| `B3` | `B3` | corte | entera; la rama de sucesión de `S1` sin ruta hasta `B8b` (Z); suma la cola de cambios, las columnas de la sucesión y las dos tablas de `B12` (AP), y las tablas del modelo de addons (AV) |
+| `B4` | `B4` | corte | entera; suma la fuente `ADDON`, con `G-R2-C` (AA); el modelo de addons pasó a `B3` y la columna de `payment` nace en `B5` (AV) |
+| `B5` | `B5` | corte | entera; `payment` nace con la columna de la instancia, y suma `S21` y la orfandad, `A5` (AV) |
 | `B6` | `B6` | corte | entera |
-| `B7` | `B7` | corte | entera |
+| `B7` | `B7` | corte | entera; suma `S32` y `S33` (AV) |
 | `B8a` | `B8` | corte | Z; `S11`, `S12`, `S23` y `S24` (AR) |
 | `B8b` | `B8` | después | Z |
 | `B9a` | `B9` | corte | Z; la fuente `CORTESÍA` (AQ), el esquema de promos y cortesías (AP) y `S20` (AS) |
 | `B9b` | `B9` | después | Z |
-| `B10` | `B10` | después | entera, salvo su modelo y la fuente `ADDON`, que van a `B4` (AA), y `S20`, `S21`, `S32` y `S33`, que van a la pieza del corte que las llama (AS; las tres últimas, según AV) |
+| `B10` | `B10` | después | entera, salvo su modelo, que va a `B3` (AV), la fuente `ADDON`, que va a `B4` (AA), y `S20`, `S21` con `A5`, `S32` y `S33`, que van a `B9a`, `B5` y `B7` (AS y AV) |
 | `B11` | `B11` | corte | entera |
 | `B12` | `B12` | después | entera, salvo sus dos tablas, que crea `B3` (AP) |
 | `B13a` | `B13` | corte | Z; el aviso de que todavía no se puede cambiar de plan (AU) |
@@ -983,8 +983,8 @@ posterior a una pieza del corte.
 | las dos tablas de la migración de un plan retirado | `B12` | `B3` | AP |
 | promos: códigos y redenciones | `B9b` | `B9a` | AP |
 | cortesías | `B9b` | `B9a` | AP |
-| el modelo de addons: productos, instancias y compra | `B10` | `B4` | AA y AP |
-| la columna de `payment` que apunta a la instancia de addon | `B10` | `B4` | AP |
+| el modelo de addons: productos, instancias y compra | `B10` | `B3` | AA, AP y AV |
+| la columna de `payment` que apunta a la instancia de addon, con la que `payment` nace | `B10` | `B5` | AP y AV |
 
 *(Las versiones de addon no están en la tabla: `addon_version` es de verticales y la construye `V2`
 con `políticaDeAddon`, que ya es del corte, `B/02` §2.4. `V8b`, `V9b` y `B13b` no tienen esquema
