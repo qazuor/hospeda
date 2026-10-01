@@ -47,11 +47,66 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-30 (FASES 6 y 7) — diseño cerrado entero; falta arrancar la FASE 10
+## Última actualización: 2026-10-01 — altas congeladas, promovido a `main`, rama épica creada; sigue el corte del MVP
 
 ### El próximo paso exacto
 
-1. **Parar y hablar con el owner cómo se sigue.** Con `DEC-ARCH-016` (A) lo primero **no es
+1. **Del owner, antes de seguir** (los hace él): deployar `main` en Coolify; en el VPS correr
+   `hops db-seed-migrate --target=prod` (la data-migration `0107-hos-1034-backfill-content-media-again`;
+   con el checkout del VPS actualizado); prender en el admin de producción **Facturación →
+   Configuración → «Altas nuevas»**; y smokear en producción la tanda **HOS-1403** (primero el
+   login, HOS-955 / #3429).
+2. **El plan acordado con el owner (2026-10-01), una sesión por paso, con handoff entre cada uno:**
+   1. **El corte del MVP**: un agente cruza las 25 unidades con sus dependencias y propone qué entra
+      el día del corte y qué va en fases posteriores (aditivas sobre el sistema nuevo: el modelo de
+      datos nace completo). Va al owner en lote. Lo que no puede faltar (lectura previa, a medir):
+      limpieza, catálogo, cobertura, resolución, autorización, publicación, trial, checkout,
+      receptor, registro del dinero, concesiones (las cinco cuentas), barrido diario (gate E), `U3`;
+      la mora antes del primer vencimiento (~30 días). Parece diferible: addons, Partner, cambios
+      de plan, retención (primer borrado a 180 días), retirada de planes, parte de superficies.
+   2. **La spec consolidada**: reescritura limpia del diseño vigente, organizada por fase del MVP,
+      sin tachados (adelantar la tarea de cierre: una `DEC-METH-019`). Método exigido por el owner
+      («si no es perfecto, desarrollamos sobre una base no sólida»): inventario cerrado por script
+      (144 decisiones con sus 📌, 117 filas, 35 guards, 25 acciones, transiciones, motivos, 18
+      plazos, reglas `PB`/`RP`, pasos del corte, criterios «lista cuando», 12 dependencias); un
+      agente por capítulo, cada regla con su cita de origen; comprobación mecánica de que cada ítem
+      aparece; dos verificaciones ajenas ciegas en sentidos opuestos (qué falta / qué se inventó); lo
+      viejo queda congelado como histórico.
+   3. **El árbol completo en Linear**, atomizado desde la spec consolidada: HOS-1352 → issue del
+      package del contrato (con U1/V1/B1 como hijos) y las sub-épicas → unidades → sub-issues del
+      tamaño de un PR (más niveles en V5, V6, B11). Cada sub-issue = un PR chico a la rama épica con
+      `[HOS-N]` en el título (la automatización de Linear lo pasa a Done al mergear, que es lo que
+      quiere `DEC-ARCH-016`).
+   4. Recién ahí la FASE 10 con `U1` (HOS-1400), primer PR de la rama épica.
+3. **PR #3360** (este diseño, a `staging`) sigue abierto: mergearlo cuando el owner diga. Tiene
+   `[HOS-1352]` en el título: al mergear, Linear pasa el paraguas a Done; volverlo a In Progress.
+
+### Lo que pasó el 2026-10-01
+
+- **Congelamiento de altas del sistema viejo** (decisiones N, O, R, S; registro
+  `40-congelamiento-y-ci/10-decisiones-del-owner.md`): PR #3437, setting `newPaidSignupsFrozen` en
+  `billing_settings` con su toggle en el admin (arranca apagado). Congela start-paid, el
+  self-checkout de comercio, la compra de addons, **la primera publicación de un anfitrión sin trial
+  ni suscripción** (el corte borra fichas, `DEC-MIG-007`) y las dos reactivaciones de trial; deja
+  libres a quien ya paga o tiene trial, las acciones del admin y agregar un comercio a un plan ya
+  pago. Los trials que ya corren convierten solos (MP cobra al vencer). Sin smoke de staging, por
+  decisión del owner.
+- **CI de la rama épica** (`DEC-CI-001`, PR #3436) y **guard de destino** corregido dos veces: P
+  (la condición del diseño tenía tres fallas) y T (bloqueaba toda promoción `staging → main` con la
+  épica viva; PR #3448). Q: la rama épica se borra al mergearse a `staging`. 📌 en `DEC-CI-001`.
+- **Promoción `staging → main`** (#3447, `c52c57b587`), sin smoke previo: destrabarla pidió revisar
+  72 traducciones de novedades (#3449, restauró además `hops whats-new`, que un refactor había
+  borrado y escondía el audit), etiquetar 48 PRs `whats-new-none`, cerrar dos alertas de CodeQL
+  (#3450; la tercera, falso positivo en un test, descartada) y re-correr un flake conocido
+  (`protected-upload-entity.test.ts`). Tanda de smoke en producción: **HOS-1403**. Backlog:
+  **BETA-214** (un segundo ReDoS en el importador).
+- **Rama `epic/HOS-1352-verticales-billing`** creada desde `staging` (`832b9429d2`), con CI y guard.
+
+## Histórico: 2026-09-30 (FASES 6 y 7) — diseño cerrado entero; falta arrancar la FASE 10
+
+### El próximo paso exacto
+
+1. ~~**Parar y hablar con el owner cómo se sigue.**~~ **Hecho el 2026-10-01 (arriba).** Con `DEC-ARCH-016` (A) lo primero **no es
    `U1`**: es el PR chico `[NOSPEC:epic-ci]` a `staging` que enciende el CI para `epic/**` (cambios
    `C-1` a `C-8` y el guard de destino, `39-fases-6-y-7/00-propuesta.md`). Después se crea
    `epic/HOS-1352-verticales-billing` desde `staging` y entra `U1` (HOS-1400) como primer PR; `U3`

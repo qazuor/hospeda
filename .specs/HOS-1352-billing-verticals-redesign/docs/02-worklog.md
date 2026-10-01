@@ -1487,3 +1487,21 @@ Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-
   fases: el origen tiene que nombrar el lote. Un subject de commit de 101 caracteres falla el
   commitlint y deja todo stageado: se destagea y se commitea por partes.
 - Commits `2a430303fa`…(el de este handoff). **Sin pushear** (PR #3360).
+
+## 2026-10-01 — congelamiento, CI de la épica, promoción a `main` y la rama épica
+
+- **Plan nuevo del owner**: antes de la FASE 10, (1) el corte del MVP, (2) una spec consolidada sin
+  tachados con verificación mecánica y doble, (3) el árbol completo en Linear; un handoff entre
+  cada paso. Y congelar ya las altas del sistema viejo para cerrar la ventana.
+- **Hecho**: congelamiento (#3437, N/O/R/S), CI de `epic/**` (#3436) y guard de destino corregido
+  (P y T, #3448), promoción `staging → main` (#3447) con sus destrabes (#3449 novedades, #3450
+  CodeQL), tanda de smoke HOS-1403, backlog BETA-214, rama épica creada.
+- **Aprendido**: desactivar un plan desde el admin **no** congela altas (el checkout resuelve por
+  slug) y **sí** agenda la cancelación de todos sus suscriptores: el interruptor obvio era el
+  peligroso. El trial de alojamiento nace al publicar, no en el checkout (HOS-1012), así que
+  congelar el checkout no cerraba la ventana. Un guard corregido una vez puede seguir equivocado:
+  P pasaba sus 12 tests y bloqueaba toda promoción con la épica viva, porque ningún test probaba una
+  promoción; T lo vio al promover de verdad. Un gate que nunca corría (el audit de novedades,
+  matado por `bash -e` y por un comando borrado) esconde deuda que aparece toda junta el día de la
+  promoción. CodeQL no corre en PRs a `staging`: sus alertas aparecen recién en la promoción.
+- **Sin pushear al cierre**: nada; branch de spec pusheada.
