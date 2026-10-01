@@ -84,7 +84,16 @@ export const PublishEligibilityResponseSchema = z.object({
      * given a trial. A trial line shown to them would promise a clock that
      * never starts.
      */
-    startsTrial: z.boolean()
+    startsTrial: z.boolean(),
+    /**
+     * Whether the owner's FIRST publish is refused because an admin paused new
+     * signups (`billing_settings.newPaidSignupsFrozen`). When `true`,
+     * `canPublish` and `startsTrial` are `false`: the listing stays a draft and
+     * the client shows the "publishing new listings is paused" notice instead
+     * of a plans link. Never `true` for staff or for an owner already on a live
+     * subscription or trial.
+     */
+    firstPublishPaused: z.boolean()
 });
 
 /** Response of the accommodation publish-eligibility endpoint. */
