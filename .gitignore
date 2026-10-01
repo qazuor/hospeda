@@ -179,3 +179,8 @@ docs/marketing/placas/
 
 # Smoke tanda working state (canonical record lives in Linear comments)
 .smoke/
+# Local Pi runtime state
+.atl/
+
+# Local Claude/Pi notification logs
+tools/.claude/.log/
