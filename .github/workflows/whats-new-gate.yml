@@ -291,6 +291,11 @@ jobs:
       - name: List the entries awaiting review (hops whats-new pending)
         working-directory: scripts/client-tools
         run: |
+          # `set +e`: GitHub's default shell is `bash -e`, so without it a
+          # non-zero exit kills this step before `rc` is read — the UNKNOWN
+          # branch below never runs and every later step is skipped instead of
+          # reporting (how a missing wrapper hid the range audit entirely).
+          set +e
           set -o pipefail
           bun run bin/hops-whats-new pending 2>&1 | tee /tmp/whats-new-gate-pending.txt
           rc="${PIPESTATUS[0]}"
@@ -312,6 +317,7 @@ jobs:
           # is load-bearing.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e  # see the `pending` step above
           set -o pipefail
           bun run bin/hops-whats-new audit 2>&1 | tee /tmp/whats-new-gate-range-output.txt
           rc="${PIPESTATUS[0]}"

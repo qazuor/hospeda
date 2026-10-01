@@ -38,7 +38,8 @@
         "hops-promote": "./bin/hops-promote",
         "hops-back-merge": "./bin/hops-back-merge",
         "hops-dependabot-review": "./bin/hops-dependabot-review",
-        "hops-linear-backlog": "./bin/hops-linear-backlog"
+        "hops-linear-backlog": "./bin/hops-linear-backlog",
+        "hops-whats-new": "./bin/hops-whats-new"
     },
     "scripts": {
         "dev": "bun run src/index.ts",
