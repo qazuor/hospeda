@@ -59,6 +59,11 @@ verificaciones ciegas opuestas (qué falta / qué se inventó) con canarios, has
 
 ## Pendiente de aplicar
 
+> **Aplicado el 2026-10-01** (`20-aplicacion.md` §1): Y y AF en el log (`DEC-ARCH-017`,
+> `DEC-METH-019` y los dos 📌); Z, AA, AB, AC, AD y AE en las dos descomposiciones y en `D/16`
+> §4.6–§4.7. Falta el árbol de Linear, que sale de la spec consolidada. La pasada de Z dejó seis
+> preguntas nuevas para el owner, AP a AU (`20-aplicacion.md` §3).
+
 - **Y**: los dos 📌 en `01-decision-log.md` (sobre `DEC-ARCH-007` y `DEC-ARCH-016`) y la DEC nueva
   que registra el MVP. El owner los aprobó en el contenido con la elección 1; el texto se escribe en
   el paso de la spec consolidada.
