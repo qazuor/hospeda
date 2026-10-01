@@ -180,7 +180,7 @@ function accommodationSchemasNamedIn(source: string): string[] {
  * straight for `AccommodationWithRelationsSchema` is not discovered. Tracked as a
  * follow-up alongside the other guard-hardening items.
  */
-const ACCOMMODATION_TIER = /\bAccommodation(?:Public|Protected|Admin)?(?:Card)?Schema\b/;
+const ACCOMMODATION_TIER = /\bAccommodation(?:Public|Protected|Admin|Read)?(?:Card)?Schema\b/;
 
 /** Files referencing an accommodation tier, excluding the ones that define it. */
 function referencingFiles(): string[] {

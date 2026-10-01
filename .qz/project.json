@@ -1,0 +1,106 @@
+{
+    "$schema": "https://qz.dev/schemas/project.v1.json",
+    "schemaVersion": 1,
+    "projectId": "hospeda",
+    "adapter": "hospeda",
+    "displayName": "Hospeda",
+    "issues": {
+        "provider": "linear",
+        "teamKey": "HOS",
+        "identifierPattern": "^HOS-[0-9]+$",
+        "backlogState": "Backlog",
+        "defaultLabels": ["QAZUOR"],
+        "commandLabel": "agent-reported",
+        "defaultPriority": 4,
+        "baseBranch": "develop",
+        "states": {
+            "backlog": "Backlog",
+            "inProgress": "In Progress",
+            "done": "Done",
+            "canceled": "Canceled"
+        }
+    },
+    "branches": {
+        "base": "develop",
+        "protected": ["main"],
+        "pattern": "{type}/{slug}",
+        "promotion": ["develop", "staging", "main"],
+        "backMerge": [
+            {
+                "from": "main",
+                "to": "staging"
+            },
+            {
+                "from": "staging",
+                "to": "develop"
+            }
+        ]
+    },
+    "worktree": {
+        "pathPattern": "../hospeda-{slug}",
+        "envSource": {
+            "kind": "protected-checkout",
+            "checkoutName": "hospeda-staging",
+            "relativePath": "scripts/copy-env-to-worktree.sh"
+        },
+        "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile)",
+        "build": "pnpm exec turbo run build --filter='./packages/*'"
+    },
+    "verification": {
+        "generatedPaths": ["apps/admin/src/routeTree.gen.ts"],
+        "build": "pnpm build"
+    },
+    "database": {
+        "strategy": "postgres-template",
+        "container": "hospeda-postgres",
+        "templateDatabase": "hospeda_template",
+        "databaseNamePattern": "worktree_{slug}",
+        "connectionEnvFile": "apps/api/.env.local",
+        "connectionEnvVar": "HOSPEDA_DATABASE_URL",
+        "schemaFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations"
+        ],
+        "schemaSentinelTables": ["gastronomies", "experiences"],
+        "templateFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations",
+            "packages/seed/src",
+            "packages/billing/src/config"
+        ]
+    },
+    "servers": [
+        {
+            "id": "api",
+            "portEnv": "API_PORT",
+            "defaultPort": 3001,
+            "start": "pnpm --filter hospeda-api dev",
+            "healthPath": "/health"
+        },
+        {
+            "id": "admin",
+            "defaultPort": 3000,
+            "start": "pnpm --filter admin exec vite dev --port {port}"
+        },
+        {
+            "id": "web",
+            "defaultPort": 4321,
+            "start": "env ASTRO_DEV_BACKGROUND=0 pnpm --filter hospeda-web exec astro dev --port {port}"
+        }
+    ],
+    "commands": {
+        "genericPrefix": "qz-",
+        "projectPrefix": "hops-",
+        "source": "scripts/client-tools",
+        "dispatch": "node .qz/dispatch.mjs"
+    },
+    "knowledge": {
+        "root": ".qz/knowledge",
+        "instructions": "AGENTS.md",
+        "skillsDir": "skills",
+        "agentsDir": "agents",
+        "commandsDir": "commands"
+    }
+}

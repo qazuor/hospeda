@@ -152,9 +152,61 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3373
+    {
+        id: '2026-09-22-pages-recover-after-an-outage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Si una sección falla, se recupera apenas se arregla',
+            en: 'When a section fails, it recovers as soon as it is fixed',
+            pt: 'Se uma seção falha, ela se recupera assim que é corrigida'
+        },
+        body: {
+            es: 'Antes, cuando un listado no cargaba, ese error podía quedar guardado hasta dos horas y lo seguías viendo aunque el problema ya estuviera resuelto. Ahora la página vuelve sola en cuanto se arregla.',
+            en: 'Previously, when a listing failed to load, that error could stay cached for up to two hours and you kept seeing it even after the problem was fixed. Now the page comes back on its own as soon as it is resolved.',
+            pt: 'Antes, quando uma listagem não carregava, esse erro podia ficar guardado por até duas horas e você continuava vendo-o mesmo depois de o problema ser resolvido. Agora a página volta sozinha assim que é corrigida.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3379
+    {
+        id: '2026-09-22-rss-feeds-signal-outages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los feeds RSS avisan cuando algo falla, en vez de aparecer vacíos',
+            en: 'RSS feeds now signal an outage instead of looking empty',
+            pt: 'Os feeds RSS avisam quando algo falha, em vez de aparecerem vazios'
+        },
+        body: {
+            es: 'Si seguís las publicaciones o los eventos por RSS, un problema temporal ya no te llega como un feed sin novedades: tu lector entiende que hubo un error y vuelve a intentar.',
+            en: 'If you follow posts or events via RSS, a temporary problem no longer reaches you as a feed with no news: your reader understands there was an error and tries again.',
+            pt: 'Se você acompanha as publicações ou os eventos por RSS, um problema temporário não chega mais como um feed sem novidades: seu leitor entende que houve um erro e tenta de novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3370
+    {
+        id: '2026-09-22-double-click-save-no-longer-errors',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        title: {
+            es: 'Guardar dos veces seguidas ya no te da un error',
+            en: 'Saving twice in a row no longer gives you an error',
+            pt: 'Salvar duas vezes seguidas não gera mais um erro'
+        },
+        body: {
+            es: 'Si hacés doble clic o tenés dos pestañas abiertas editando lo mismo, el sistema reconoce que es la misma acción repetida en lugar de cortar con un error.',
+            en: 'If you double-click or have two tabs open editing the same thing, the system recognises it as the same repeated action instead of failing with an error.',
+            pt: 'Se você clicar duas vezes ou tiver duas abas abertas editando a mesma coisa, o sistema reconhece que é a mesma ação repetida em vez de falhar com um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     {
         id: '2026-09-08-mobile-menu-single-controls',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T15:25:19Z',
         highlight: false,
         title: {
             es: 'El menú del celular ya no repite los mismos botones',
@@ -166,11 +218,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The language and preference controls used to appear twice when opening the menu on small screens. Now there is only one of each.',
             pt: 'Os controles de idioma e preferências apareciam duas vezes ao abrir o menu em telas pequenas. Agora há apenas um de cada.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-dialog-back-button',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T14:25:19Z',
         highlight: false,
         title: {
             es: 'El botón «atrás» del celular cierra el diálogo, no la página',
@@ -179,35 +231,35 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Si tenés abierto un diálogo y apretás «atrás», ahora se cierra el diálogo y te quedás donde estabas, en vez de salir de la ficha entera.',
-            en: 'If a dialog is open and you press back, the dialog now closes and you stay where you were, instead of leaving the whole page.',
+            en: 'If a dialog is open and you press “back”, the dialog now closes and you stay where you were, instead of leaving the whole listing.',
             pt: 'Se um diálogo está aberto e você aperta «voltar», agora o diálogo fecha e você permanece onde estava, em vez de sair da ficha inteira.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-public-user-listings-are-actor-blind',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T13:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
             es: 'Tus borradores no se ven desde tu perfil público',
-            en: 'Your drafts are not visible from your public profile',
+            en: 'Your drafts don’t show on your public profile',
             pt: 'Seus rascunhos não aparecem no seu perfil público'
         },
         body: {
             es: 'La lista pública de alojamientos de un anfitrión muestra únicamente los publicados. Un alojamiento en borrador o privado ya no aparece ahí para nadie, ni siquiera para vos mismo estando conectado.',
-            en: "A host's public listing page now shows only published places. A draft or private listing no longer appears there for anyone, not even for you while signed in.",
-            pt: 'A lista pública de acomodações de um anfitrião mostra apenas as publicadas. Uma acomodação em rascunho ou privada não aparece mais ali para ninguém, nem para você mesmo conectado.'
+            en: "A host's public list of accommodations shows only the published ones. A draft or private accommodation no longer appears there for anyone, not even for you while signed in.",
+            pt: 'A lista pública de acomodações de um anfitrião mostra apenas as publicadas. Uma acomodação em rascunho ou privada não aparece mais ali para ninguém, nem mesmo para você quando está conectado.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-single-brand-phone-number',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T12:25:19Z',
         highlight: false,
         title: {
             es: 'Un solo teléfono de contacto en todo el sitio',
-            en: 'One single contact phone across the site',
+            en: 'A single contact phone number across the whole site',
             pt: 'Um único telefone de contato em todo o site'
         },
         body: {
@@ -215,33 +267,33 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: "Hospeda's phone number used to appear in different formats depending on the page. Now it is the same number everywhere: on the WhatsApp button, on the call link and in the visible text.",
             pt: 'O telefone da Hospeda aparecia em formatos diferentes conforme a página. Agora é o mesmo número em todas: no botão de WhatsApp, no link para ligar e no texto visível.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-host-trade-benefit-usage-and-reviews',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T11:25:19Z',
         highlight: true,
         roles: ['HOST'],
         title: {
             es: 'Registrá el uso del beneficio y valorá a los proveedores',
-            en: 'Record benefit usage and rate your providers',
+            en: 'Record benefit usage and rate providers',
             pt: 'Registre o uso do benefício e avalie os fornecedores'
         },
         body: {
             es: 'El proveedor registra que te atendió y a vos te llega un pedido de confirmación de un solo clic. Una vez confirmado, podés dejarle una valoración pública, y él puede responderte. Sólo cuentan los usos confirmados.',
-            en: 'The provider records that they served you and you get a one-click confirmation request. Once confirmed, you can leave a public review, and they can reply to it. Only confirmed usages count.',
-            pt: 'O fornecedor registra que atendeu você e você recebe um pedido de confirmação de um clique. Uma vez confirmado, você pode deixar uma avaliação pública, e ele pode responder. Só valem os usos confirmados.'
+            en: 'The provider records that they served you and you get a one-click confirmation request. Once confirmed, you can leave them a public review, and they can reply to you. Only confirmed uses count.',
+            pt: 'O fornecedor registra que atendeu você, e você recebe um pedido de confirmação com um só clique. Depois de confirmado, você pode deixar uma avaliação pública para ele, e ele pode responder. Só contam os usos confirmados.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-uploaded-photos-optimised-cards',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T10:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
             es: 'Las fotos que subís se muestran optimizadas en las tarjetas',
-            en: 'The photos you upload are shown optimised on cards',
+            en: 'The photos you upload are shown optimized on cards',
             pt: 'As fotos que você envia aparecem otimizadas nos cartões'
         },
         body: {
@@ -249,27 +301,27 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you upload a photo to your listing, the thumbnail in the results list is served already resized, so the page loads lighter without the image looking worse.',
             pt: 'Ao enviar uma foto para sua ficha, a miniatura da lista já vem redimensionada, então a página carrega mais leve sem a imagem ficar pior.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-provider-signup-benefit-value',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T09:25:19Z',
         highlight: false,
         title: {
             es: 'El alta de proveedor sólo pide el valor cuando hace falta',
-            en: 'Provider signup only asks for a value when it applies',
-            pt: 'O cadastro de fornecedor só pede o valor quando faz sentido'
+            en: 'Provider signup only asks for the value when it is needed',
+            pt: 'O cadastro de fornecedor só pede o valor quando é necessário'
         },
         body: {
             es: 'Si tu beneficio es un porcentaje o un monto fijo, el formulario te pide el valor. Si es un 2x1 o una condición especial, ese campo directamente no aparece.',
             en: 'If your benefit is a percentage or a fixed amount, the form asks for the value. If it is a two-for-one or a special condition, that field simply does not appear.',
             pt: 'Se o seu benefício é uma porcentagem ou um valor fixo, o formulário pede o valor. Se é um 2x1 ou uma condição especial, esse campo simplesmente não aparece.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-ai-chat-answers-from-listing-faqs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T08:25:19Z',
         highlight: true,
         roles: ['USER'],
         title: {
@@ -279,14 +331,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Si preguntás por el horario de ingreso o si aceptan mascotas, la respuesta sale de las preguntas frecuentes que cargó el anfitrión, no de un texto genérico.',
-            en: 'If you ask about check-in times or whether pets are allowed, the answer comes from the FAQs the host filled in, not from generic copy.',
-            pt: 'Se você pergunta pelo horário de entrada ou se aceitam animais, a resposta sai das perguntas frequentes que o anfitrião preencheu, não de um texto genérico.'
+            en: 'If you ask about check-in times or whether pets are allowed, the answer comes from the FAQs the host filled in, not from generic text.',
+            pt: 'Se você pergunta sobre o horário de check-in ou se aceitam pets, a resposta vem das perguntas frequentes que o anfitrião cadastrou, não de um texto genérico.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-slug-stays-put-after-publishing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T07:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -299,11 +351,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'While the listing is a draft, the link follows the name. Once published, renaming no longer changes the link unless you ask for it: we warn you that Google and anything you shared point to the old one.',
             pt: 'Enquanto a ficha está em rascunho, o link acompanha o nome. Depois de publicada, renomear não muda mais o link a não ser que você peça: avisamos que o Google e o que você compartilhou apontam para o anterior.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-bulk-photo-upload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T06:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -314,13 +366,13 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         body: {
             es: 'Podés cargar una tanda entera de fotos sin que el sistema te corte a mitad de camino. Y si alguna vez llegás al límite, el aviso te lo dice en tu idioma.',
             en: 'You can upload a whole batch of photos without the system cutting you off halfway. And if you ever hit the limit, the notice tells you in your own language.',
-            pt: 'Você pode enviar um lote inteiro de fotos sem o sistema cortar no meio. E se em algum momento atingir o limite, o aviso aparece no seu idioma.'
+            pt: 'Você pode enviar um lote inteiro de fotos sem que o sistema interrompa no meio do caminho. E, se algum dia atingir o limite, o aviso aparece no seu idioma.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-listing-editor-form-polish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T05:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -333,11 +385,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'We tuned the video form and the editor buttons: labels no longer stick to their fields, titles fit on one line and buttons are the right size.',
             pt: 'Ajustamos o formulário de vídeos e os botões do editor: os rótulos não colam mais nos campos, os títulos cabem em uma linha e os botões têm o tamanho certo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-import-listing-keeps-formatting',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T04:25:19Z',
         highlight: true,
         roles: ['HOST'],
         title: {
@@ -348,13 +400,13 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         body: {
             es: 'Al importar una ficha, la descripción llega completa y con sus párrafos y saltos de línea tal como estaban, en vez de quedar como un bloque de texto corrido.',
             en: 'When importing a listing, the description arrives complete, with its paragraphs and line breaks intact, instead of collapsing into one run-on block.',
-            pt: 'Ao importar uma ficha, a descrição chega completa e com seus parágrafos e quebras de linha, em vez de virar um bloco corrido.'
+            pt: 'Ao importar uma ficha, a descrição chega completa e com seus parágrafos e quebras de linha, em vez de virar um bloco de texto corrido.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-menu-as-photo-or-pdf',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T03:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -364,30 +416,30 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Ahora tenés tres formas de mostrar la carta: un enlace externo, una foto, un PDF, o cargarla plato por plato. Y el botón de la ficha dice si lo que hay es una foto o un PDF.',
-            en: 'You now have three ways to show your menu: an external link, a photo, a PDF, or item by item. And the button on your page says whether it is a photo or a PDF.',
-            pt: 'Agora você tem três formas de mostrar o cardápio: um link externo, uma foto, um PDF, ou item por item. E o botão da ficha diz se é uma foto ou um PDF.'
+            en: 'You now have three ways to show your menu: an external link, a photo, a PDF, or entering it dish by dish. And the button on your page says whether what is there is a photo or a PDF.',
+            pt: 'Agora você tem três formas de mostrar o cardápio: um link externo, uma foto, um PDF, ou cadastrá-lo prato por prato. E o botão da ficha diz se o que há é uma foto ou um PDF.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-no-native-browser-dialogs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T02:25:19Z',
         highlight: false,
         title: {
             es: 'Se terminaron los avisos grises del navegador',
-            en: 'No more grey browser pop-ups',
-            pt: 'Acabaram os avisos cinzas do navegador'
+            en: 'No more gray browser pop-ups',
+            pt: 'Acabaram os avisos cinza do navegador'
         },
         body: {
             es: 'Borrar una colección, cancelar el boletín o pegar un enlace ya no abren esos cuadros grises del navegador: ahora son diálogos propios, en tu idioma y con el estilo del sitio.',
-            en: 'Deleting a collection, unsubscribing from the newsletter or pasting a link no longer open those grey browser boxes: they are now proper dialogs, in your language and in the site’s style.',
-            pt: 'Excluir uma coleção, cancelar a newsletter ou colar um link não abrem mais aquelas caixas cinzas do navegador: agora são diálogos próprios, no seu idioma e com o estilo do site.'
+            en: 'Deleting a collection, unsubscribing from the newsletter or pasting a link no longer open those gray browser boxes: they are now proper dialogs, in your language and in the site’s style.',
+            pt: 'Excluir uma coleção, cancelar a inscrição na newsletter ou colar um link não abre mais aquelas caixas cinza do navegador: agora são diálogos próprios, no seu idioma e com o estilo do site.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-single-auth-screen-with-tabs',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T01:25:19Z',
         highlight: false,
         title: {
             es: 'Entrar y registrarse, en una sola pantalla',
@@ -399,28 +451,28 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'There is now a single screen with two tabs. Switching tabs keeps the email you already typed and where you were heading, and you can reveal the password as you type it.',
             pt: 'Agora há uma única tela com duas abas. Ao trocar de aba você não perde o e-mail já digitado nem para onde ia, e pode ver a senha enquanto digita.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-similar-listings-real-photos',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-23T00:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
             es: '«Alojamientos similares» muestra fotos de verdad',
-            en: '“Similar places” now shows real photos',
+            en: '“Similar accommodations” shows real photos',
             pt: '«Acomodações similares» mostra fotos de verdade'
         },
         body: {
             es: 'La sección de alojamientos similares al pie de cada ficha ya no muestra recuadros vacíos: cada sugerencia aparece con su propia foto.',
-            en: 'The similar-places section at the bottom of each listing no longer shows empty boxes: every suggestion comes with its own photo.',
+            en: 'The “Similar accommodations” section at the bottom of each listing no longer shows empty boxes: every suggestion comes with its own photo.',
             pt: 'A seção de acomodações similares no rodapé de cada ficha não mostra mais quadros vazios: cada sugestão vem com sua própria foto.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-search-ignores-accents',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T23:25:19Z',
         highlight: true,
         roles: ['USER'],
         title: {
@@ -433,11 +485,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Typing “Colon” finds Colón, “Gualeguaychu” finds Gualeguaychú and “cabana” finds Cabaña. You no longer have to get the accent or the ñ right.',
             pt: 'Digitar «Colon» encontra Colón, «Gualeguaychu» encontra Gualeguaychú e «cabana» encontra Cabaña. Não é mais preciso acertar o acento nem o ñ.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-collections-update-without-reload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T22:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -447,14 +499,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Al crear una colección de favoritos aparece al instante en la lista, con su aviso de confirmación, sin que se recargue nada.',
-            en: 'When you create a favourites collection it shows up in the list instantly, with a confirmation notice, and nothing reloads.',
+            en: 'When you create a favorites collection it shows up in the list instantly, with its confirmation notice, and nothing reloads.',
             pt: 'Ao criar uma coleção de favoritos ela aparece na hora na lista, com o aviso de confirmação, sem recarregar nada.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-editor-back-button-consistency',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T21:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -467,11 +519,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Editor sections now share a single “Back” button that always lands you on your listing’s index, no matter where you came from.',
             pt: 'As seções do editor compartilham um mesmo botão «Voltar» que sempre leva ao índice da sua ficha, venha de onde vier.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-menu-headers-readable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T20:25:19Z',
         highlight: false,
         title: {
             es: 'Los títulos de los menús se distinguen de sus opciones',
@@ -483,28 +535,28 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In dropdown menus, each group heading now looks clearly different from the items it groups, in both light and dark mode.',
             pt: 'Nos menus suspensos, o título de cada grupo fica claramente diferente das opções que agrupa, tanto no modo claro quanto no escuro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-alt-text-reminder-on-photos',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T19:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
             es: 'Te avisamos si tus fotos quedaron sin descripción',
-            en: 'We warn you when your photos have no description',
+            en: 'We let you know if your photos were left without a description',
             pt: 'Avisamos se suas fotos ficaram sem descrição'
         },
         body: {
             es: 'Al salir de la sección de fotos, si alguna quedó sin texto alternativo te lo recordamos y te explicamos para qué sirve: para los lectores de pantalla y para que Google entienda tu ficha.',
-            en: 'When you leave the photos section, if any photo has no alternative text we remind you and explain what it is for: screen readers, and so Google understands your listing.',
-            pt: 'Ao sair da seção de fotos, se alguma ficou sem texto alternativo lembramos você e explicamos para que serve: leitores de tela e para o Google entender sua ficha.'
+            en: 'When you leave the photos section, if any photo is missing alt text we remind you and explain what it is for: screen readers, and helping Google understand your listing.',
+            pt: 'Ao sair da seção de fotos, se alguma ficou sem texto alternativo, nós lembramos você e explicamos para que serve: para os leitores de tela e para o Google entender sua ficha.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-photo-thumbnails-less-covered',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T18:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -517,11 +569,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the photo grid, controls now take up less than a tenth of each thumbnail, stay inside the frame and are comfortable to tap on a phone.',
             pt: 'Na grade de fotos, os controles passaram a ocupar menos de um décimo de cada miniatura, ficam dentro do quadro e são confortáveis de tocar no celular.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-photo-quota-warning-before-upload',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T17:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -534,11 +586,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you pick more photos than you have room for, we tell you the exact number before uploading anything, instead of cutting off halfway.',
             pt: 'Se você escolher mais fotos do que o espaço disponível, avisamos o número exato antes de enviar qualquer coisa, em vez de cortar no meio.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-shared-report-view-is-clean',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T16:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -549,13 +601,13 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         body: {
             es: 'La vista compartida de un informe ya no arrastra restos del sitio: quien la abre ve el informe y nada más.',
             en: 'The shared view of a report no longer drags in leftovers from the site: whoever opens it sees the report and nothing else.',
-            pt: 'A visualização compartilhada de um relatório não arrasta mais restos do site: quem abre vê o relatório e nada mais.'
+            pt: 'A visualização compartilhada de um relatório não traz mais restos do site: quem abre vê o relatório e nada mais.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-featured-addon-offer-on-editor',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T15:25:19Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -565,14 +617,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Si tu alojamiento todavía no está destacado, en el índice del editor ves la sección «Destacá este alojamiento» con la opción disponible. Si ya lo está por tu plan, la oferta no te molesta.',
-            en: 'If your listing is not featured yet, the editor index shows a “Feature this listing” section with the available option. If your plan already grants it, the offer stays out of your way.',
-            pt: 'Se sua acomodação ainda não está em destaque, o índice do editor mostra a seção «Destaque esta acomodação» com a opção disponível. Se o seu plano já garante isso, a oferta não incomoda.'
+            en: 'If your listing is not featured yet, the editor index shows the “Feature this accommodation” section with the available option. If your plan already grants it, the offer stays out of your way.',
+            pt: 'Se sua acomodação ainda não está em destaque, o índice do editor mostra a seção «Destaque esta hospedagem» com a opção disponível. Se o seu plano já garante isso, a oferta não incomoda.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-menu-in-three-languages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T14:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -585,11 +637,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'You can enter the name and description of every section and dish in all three languages. Your page shows a picker so visitors choose which one to read it in.',
             pt: 'Você pode cadastrar o nome e a descrição de cada seção e cada prato nos três idiomas. Na sua página aparece um seletor para o visitante escolher em qual ler.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-photo-per-dish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T13:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -602,11 +654,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Each dish can carry its own photo, uploaded from the same row where you edit the price, and it shows next to the dish on your page.',
             pt: 'Cada prato pode ter sua própria foto, enviada da mesma linha onde você edita o preço, e ela aparece ao lado do prato na sua página.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-dietary-options-filter',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T12:25:19Z',
         highlight: true,
         roles: ['USER', 'GASTRONOMY_OWNER'],
         title: {
@@ -616,14 +668,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Los restaurantes pueden declarar si tienen opciones sin gluten, veganas o sin lactosa, y aparecen en la sección «Características» de su página. Vos podés filtrar el listado por eso.',
-            en: 'Restaurants can declare whether they offer gluten-free, vegan or lactose-free options, shown in the “Features” section of their page. You can filter the listing by that.',
+            en: 'Restaurants can declare whether they offer gluten-free, vegan or lactose-free options, shown in the “Features” section of their page. You can filter the list by them.',
             pt: 'Os restaurantes podem declarar se têm opções sem glúten, veganas ou sem lactose, mostradas na seção «Características» da página. Você pode filtrar a lista por isso.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-multi-vertical-subscription-card',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T11:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -633,14 +685,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Cuando tenés más de una suscripción activa, tu cuenta te lo dice y el panel se abre con una pestaña por rubro, en vez de mostrarte sólo una y esconder el resto.',
-            en: 'When you hold more than one active subscription, your account says so and the panel opens with one tab per vertical, instead of showing one and hiding the rest.',
-            pt: 'Quando você tem mais de uma assinatura ativa, sua conta informa isso e o painel abre com uma aba por segmento, em vez de mostrar só uma e esconder o resto.'
+            en: 'When you hold more than one active subscription, your account says so and the panel opens with one tab per category, instead of showing only one and hiding the rest.',
+            pt: 'Quando você tem mais de uma assinatura ativa, sua conta informa isso e o painel abre com uma aba por ramo, em vez de mostrar só uma e esconder o resto.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-features-on-commerce-pages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T10:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
@@ -653,11 +705,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'What the owner filled in — from “outdoor activity” to “air conditioning” — now shows on the public page, grouped under “Features” and “Amenities”.',
             pt: 'O que o dono cadastrou — de «atividade ao ar livre» a «ar-condicionado» — agora aparece na página pública, agrupado em «Características» e «Comodidades».'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-cuisine-type-catalog',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T09:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER'],
         title: {
@@ -667,14 +719,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Podés declarar a la vez qué clase de local tenés — cervecería, parrilla, rotisería — y qué cocinas ofrecés, eligiendo más de una de un catálogo.',
-            en: 'You can now state both what kind of venue you run — brewpub, grill, deli — and which cuisines you serve, picking more than one from a catalogue.',
+            en: 'You can now state both what kind of venue you run — brewpub, grill, deli — and which cuisines you serve, picking more than one from a catalog.',
             pt: 'Você pode declarar ao mesmo tempo que tipo de local tem — cervejaria, churrascaria, rotisseria — e quais cozinhas oferece, escolhendo mais de uma de um catálogo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-commerce-editor-by-sections',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T08:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -687,11 +739,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Instead of one giant form, you now edit your listing in parts — details, photos, hours, menu — just like accommodations already worked. Each section saves on its own.',
             pt: 'Em vez de um formulário único gigante, agora você edita sua ficha por partes — dados, fotos, horários, cardápio — como já funcionava nas acomodações. Cada seção salva por conta própria.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-addon-raises-listing-quota',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T07:25:19Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -704,16 +756,16 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you hit your plan’s listing cap, you can buy an extra slot and the quota goes up right away, with no plan change and no waiting for the next period.',
             pt: 'Se você atingiu o limite de fichas do seu plano, pode comprar uma vaga extra e a cota sobe na hora, sem trocar de plano nem esperar o próximo período.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-favourites-return-to-the-listing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T06:25:19Z',
         highlight: false,
         roles: ['USER'],
         title: {
             es: 'Guardar un favorito te devuelve al listado con tu filtro',
-            en: 'Saving a favourite returns you to the listing with your filter',
+            en: 'Saving a favorite returns you to the list with your filter',
             pt: 'Salvar um favorito devolve você à lista com seu filtro'
         },
         body: {
@@ -721,11 +773,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you tap the heart or compare mode from a filtered list, you come back to that list with the filter still applied, not to your account page.',
             pt: 'Se você toca no coração ou no modo comparar em uma lista filtrada, ao voltar continua nessa lista com o filtro aplicado, e não na sua conta.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-ai-writing-helpers',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T05:25:19Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
@@ -738,11 +790,11 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'From the editor you can ask the AI to improve a text or translate it, alongside the question chat.',
             pt: 'No editor você pode pedir à IA que melhore um texto ou o traduza, além do chat de dúvidas.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-08-whats-new-has-content',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-09-22T04:25:19Z',
         highlight: false,
         title: {
             es: 'Esta sección ahora te cuenta lo que cambió',
@@ -754,7 +806,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: '“What’s new” now has real content, and each item reaches only the people it is for: host news to hosts, restaurant news to restaurants.',
             pt: '«O que há de novo» passou a ter conteúdo de verdade, e cada novidade chega só a quem interessa: o de anfitriões aos anfitriões, o de restaurantes aos restaurantes.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
         id: '2026-09-05-commerce-publish-free-trial',

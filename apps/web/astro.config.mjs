@@ -5,6 +5,7 @@ import react from '@astrojs/react';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { cspSoftNavHashes } from './integrations/csp-soft-nav-hashes/index.ts';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import {
@@ -157,7 +158,14 @@ export default defineConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN
             })
         }),
-        react()
+        react(),
+        // HOS-807: derives, at build time, the union of every page's inline
+        // script hashes and writes it into the server bundle, so a
+        // <ClientRouter /> soft navigation never lands on a page whose inline
+        // scripts the ORIGIN page's CSP has not authorised. Fails the build
+        // when a script cannot be pre-hashed. See
+        // src/lib/csp-soft-nav-script-hashes.ts.
+        cspSoftNavHashes()
         // NO `@astrojs/sitemap` here, deliberately. It only enumerates routes
         // rendered to static HTML at build time, and this app prerenders none
         // (zero `prerender = true` pages), so it emitted a `<urlset>` with no

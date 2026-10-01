@@ -722,6 +722,73 @@ export const API_CONFIG_ENV_VARS = [
             'Texto libre que se devuelve cuando salta el limiter de auth. Personalizalo a tu tono.'
     },
     {
+        name: 'API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED',
+        description:
+            'Enable the dedicated rate limiter for session READS (HOS-1153): GET /api/auth/get-session, GET /api/v1/public/auth/me, GET /api/v1/public/auth/status',
+        descriptionEs:
+            'Activa el rate limiter dedicado a las LECTURAS de sesión (HOS-1153): GET /api/auth/get-session, GET /api/v1/public/auth/me, GET /api/v1/public/auth/status',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Default true. These GETs accept no credential, so they get their own ceiling instead of spending the anti-brute-force auth budget. Disabling it removes the ceiling on session reads entirely; the auth tier does NOT take them back.',
+        howToObtainEs:
+            'Por defecto true. Estos GET no aceptan credencial, así que tienen su propio techo en vez de gastar el presupuesto anti-fuerza-bruta de auth. Desactivarlo saca el techo de las lecturas de sesión por completo; el tier auth NO vuelve a tomarlas.'
+    },
+    {
+        name: 'API_RATE_LIMIT_AUTH_SESSION_READ_WINDOW_MS',
+        description: 'Session-read rate-limit window duration in milliseconds',
+        descriptionEs: 'Duración de la ventana de rate-limit de lectura de sesión, en milisegundos',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '300000',
+        exampleValue: '300000',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Window in ms for the session-read counter. Default 300000 (5 min), matching the auth window so the two tiers are directly comparable.',
+        howToObtainEs:
+            'Ventana en ms para el contador de lectura de sesión. Por defecto 300000 (5 min), igual que la ventana de auth para que los dos tiers se comparen directo.'
+    },
+    {
+        name: 'API_RATE_LIMIT_AUTH_SESSION_READ_MAX_REQUESTS',
+        description: 'Maximum requests allowed per window for the session-read limiter',
+        descriptionEs: 'Máximo de requests por ventana en el limiter de lectura de sesión',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '600',
+        exampleValue: '600',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Max session reads per IP per window. Default 600 over 5 min = 120 req/min — a coarse anti-abuse ceiling of the same order as the protected tier, NOT a governor. Keep it well above normal use: the admin fires two per route beforeLoad, and any IP-keyed limit on authenticated traffic is hostile to CGNAT.',
+        howToObtainEs:
+            'Máximo de lecturas de sesión por IP por ventana. Por defecto 600 cada 5 min = 120 req/min: un techo grueso anti-abuso del mismo orden que el tier protected, NO un gobernador. Dejalo bien por encima del uso normal: el admin dispara dos por cada beforeLoad, y cualquier límite por IP sobre tráfico autenticado es hostil a CGNAT.'
+    },
+    {
+        name: 'API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE',
+        description: 'Error message returned when the session-read rate limit is exceeded',
+        descriptionEs:
+            'Mensaje de error devuelto cuando se excede el rate limit de lectura de sesión',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'Too many session checks, please try again later.',
+        exampleValue: 'Too many session checks, please try again later.',
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Free text returned when the session-read limiter trips. Customise to your tone.',
+        howToObtainEs:
+            'Texto libre que se devuelve cuando salta el limiter de lectura de sesión. Personalizalo a tu tono.'
+    },
+    {
         name: 'API_RATE_LIMIT_PUBLIC_ENABLED',
         description: 'Enable dedicated rate limiter for public API endpoints',
         descriptionEs: 'Activa el rate limiter dedicado para endpoints de API pública',

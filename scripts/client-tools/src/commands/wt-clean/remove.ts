@@ -14,9 +14,13 @@ import type { RemovalResult, WorktreeInfo } from './types.ts';
  *
  * @returns The script path, or `null` when the worktree skill is not installed.
  */
-export function resolveRemoveScript(): string | null {
-    const path = join(homedir(), '.claude', 'skills', 'worktree', 'scripts', 'wt-remove.sh');
-    return existsSync(path) ? path : null;
+export function resolveRemoveScript(repoRoot?: string): string | null {
+    if (repoRoot !== undefined) {
+        const projectPath = join(repoRoot, 'scripts', 'worktree', 'wt-remove.sh');
+        if (existsSync(projectPath)) return projectPath;
+    }
+    const legacyPath = join(homedir(), '.claude', 'skills', 'worktree', 'scripts', 'wt-remove.sh');
+    return existsSync(legacyPath) ? legacyPath : null;
 }
 
 /**

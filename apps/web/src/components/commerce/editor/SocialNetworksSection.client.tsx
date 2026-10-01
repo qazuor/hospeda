@@ -4,7 +4,8 @@
  *
  * Covers facebook / instagram / twitter / tiktok / youtube plus linkedIn
  * (SPEC-253 AC-4). Like `ContactSection`, it takes a group-level change
- * callback because the API replaces the whole `socialNetworks` JSONB block.
+ * callback because the whole block is saved together (a cleared network is sent
+ * as an explicit `null`, since the API merges the `socialNetworks` JSONB block).
  */
 
 import type { JSX } from 'react';

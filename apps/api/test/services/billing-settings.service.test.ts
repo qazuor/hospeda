@@ -89,7 +89,8 @@ describe('BillingSettingsService', () => {
         retryIntervalHours: 24,
         sendTrialExpiryReminder: true,
         sendPaymentFailedNotification: true,
-        sendSubscriptionCancelledNotification: true
+        sendSubscriptionCancelledNotification: true,
+        newPaidSignupsFrozen: false
     };
 
     // Global settings have no real entity; the service writes a sentinel UUID as

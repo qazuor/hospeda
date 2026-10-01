@@ -96,6 +96,7 @@ import {
     parsePublishRequirementsReason
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
+import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -113,6 +114,7 @@ const REQUIREMENT_LABEL_KEYS: Readonly<Record<string, string>> = Object.fromEntr
 
 /** State machine for the publish button. */
 type PublishState =
+    | 'firstPublishPaused'
     | 'idle'
     | 'confirming'
     | 'pending'
@@ -201,6 +203,14 @@ export interface PublishButtonProps {
     readonly confirmTrialNote: string;
     /** Label for the "choose a plan" action shown in place of Publish. */
     readonly choosePlanLabel: string;
+    /**
+     * Whether this owner's FIRST publish is paused because an admin froze new
+     * signups (`firstPublishPaused` from the publish-eligibility endpoint).
+     * When `true` the card shows the shared "publishing new listings is
+     * paused" notice instead of Publish — and instead of a plans link, which
+     * would send the host to a checkout that is paused too. Defaults to `false`.
+     */
+    readonly firstPublishPaused?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -232,7 +242,8 @@ export function PublishButton({
     canPublish,
     startsTrial,
     confirmTrialNote,
-    choosePlanLabel
+    choosePlanLabel,
+    firstPublishPaused = false
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -267,6 +278,12 @@ export function PublishButton({
             // a first publish, not just for someone who burnt their trial.
             if (result.error.status === 403 && result.error.message === 'subscription_required') {
                 setState('subscriptionRequired');
+                return;
+            }
+            // Admin-paused signups reached the API (the page's verdict was
+            // stale). The listing stays a draft; retrying cannot help.
+            if (result.error.code === 'NEW_PAID_SIGNUPS_FROZEN') {
+                setState('firstPublishPaused');
                 return;
             }
             // The publish gate rejects with a 400 `VALIDATION_ERROR` and names
@@ -305,6 +322,20 @@ export function PublishButton({
     // fire on "no plan loaded", which swept up every owner with an intact
     // trial. It now fires only when the server itself would refuse. Deleting
     // the branch instead of narrowing it would bring H-99 straight back.
+    // ── First publish paused (admin-frozen new signups) ──────────────────
+    // Checked BEFORE `!canPublish`: the server reports `canPublish: false`
+    // here too, and the plans link that branch offers leads to a checkout
+    // that is paused as well.
+    if (firstPublishPaused || state === 'firstPublishPaused') {
+        return (
+            <PaidSignupsPausedNotice
+                locale={locale}
+                variant="firstPublish"
+                testId="publish-paused-notice"
+            />
+        );
+    }
+
     if (!canPublish) {
         return (
             <a

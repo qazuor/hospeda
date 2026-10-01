@@ -328,22 +328,26 @@ auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
-    # image-size: DoS en los parsers de ICNS (GHSA-w3rx-r6r6-pgpr) y de JXL/HEIF
-    # (GHSA-5p2g-fcmc-qvqq). Ignorados porque NO HAY PARCHE: el advisory declara
-    # `>=2.0.3` como versión corregida y esa versión no existe — 2.0.2, el último
-    # release publicado (abril 2025), es el vulnerable. No hay override posible.
+    # image-size DoS in its ICNS (GHSA-w3rx-r6r6-pgpr) and JXL/HEIF
+    # (GHSA-5p2g-fcmc-qvqq) parsers, fixed in 2.0.3 (HOS-418).
     #
-    # RIESGO ACEPTADO, NO INEXISTENTE. `packages/media/src/server/validate-media-file.ts`
-    # llama `imageSize()` sobre el buffer que sube el usuario, e `image/heic` está
-    # en `ENTITY_MIME_TYPES`, así que el vector HEIF es alcanzable: la allowlist de
-    # MIME y el chequeo de magic bytes corren ANTES, y un HEIF bien formado los pasa
-    # a los dos. ICNS y JXL no están en la allowlist, así que ese vector sí está
-    # cerrado. Decisión del owner (2026-08-07) para no romperle la subida a los
-    # usuarios de iPhone, que mandan HEIC por defecto.
+    # The copy that parses user uploads is fixed: apps/api and packages/media pin
+    # image-size ^2.0.4 (`validate-media-file.ts` runs it on every upload, and
+    # `image/heic` is allowed, so the HEIF vector WAS reachable before). The API
+    # no longer ships expo either — `@better-auth/expo` is bundled from
+    # devDependencies, pinned by
+    # `apps/api/test/static-guards/better-auth-expo-bundled.guard.test.ts`.
     #
-    # REVISAR: HOS-418 sigue el arreglo real (migrar la medición de dimensiones a
-    # `sharp`, que ya está en el árbol y usa libvips en vez del parser JS) y el
-    # release de image-size 2.0.3 cuando salga. Sacar estas dos líneas al cerrarlo.
+    # What is still ignored is ONE path: apps/mobile > expo > react-native >
+    # metro > image-size@1.2.1. Metro is the mobile app's build-time bundler and
+    # only sizes the app's own image assets; no user input reaches it. There is
+    # no 1.x fix, and overriding to 2.x breaks metro: it passes a FILE PATH to
+    # image-size (`metro/src/Assets.js`), which 2.x no longer accepts, so every
+    # image asset in the app would fail to bundle. Metro 0.87.1 dropped
+    # image-size entirely (0.84.4 is resolved today, via Expo SDK 56), so these
+    # two lines go away with the Expo/React Native bump that brings it.
+    # Before removing them, confirm with:
+    #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
 

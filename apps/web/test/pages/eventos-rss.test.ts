@@ -137,19 +137,26 @@ describe('feeds.ts — events RSS helpers', () => {
                     .mockResolvedValue(makeEventsApiResponse([{ slug: 'festival-litoral-2026' }]))
             );
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            expect(events).toHaveLength(1);
-            expect(events[0].slug).toBe('festival-litoral-2026');
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({
+                ok: true,
+                items: [expect.objectContaining({ slug: 'festival-litoral-2026' })]
+            });
         });
 
-        it('returns empty array when API fetch throws', async () => {
+        // HOS-1381: these three used to assert `toHaveLength(0)`. An empty array
+        // was the same value a calendar with nothing upcoming produces, so the
+        // assertion could not tell the two apart — which is exactly what let the
+        // feed answer a cacheable 200 during an outage.
+
+        it('reports `unreachable` when the API fetch throws', async () => {
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            expect(events).toHaveLength(0);
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'unreachable' });
         });
 
-        it('returns empty array when API response is not ok (HTTP 500)', async () => {
+        it('reports `http-error` when the API response is not ok (HTTP 500)', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi
@@ -157,11 +164,11 @@ describe('feeds.ts — events RSS helpers', () => {
                     .mockResolvedValue(new Response(JSON.stringify({ ok: false }), { status: 500 }))
             );
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            expect(events).toHaveLength(0);
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'http-error' });
         });
 
-        it('returns empty array when API ok field is false', async () => {
+        it('reports `bad-payload` when the API ok field is false', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue(
@@ -175,8 +182,18 @@ describe('feeds.ts — events RSS helpers', () => {
                 )
             );
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            expect(events).toHaveLength(0);
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'bad-payload' });
+        });
+
+        it('reports success with zero items when nothing is upcoming', async () => {
+            // The counterpart of the three above: this one MUST stay on the
+            // success branch, or a quiet calendar would 503 instead of saying
+            // there is nothing on.
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEventsApiResponse([])));
+
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: true, items: [] });
         });
 
         // ---------------------------------------------------------------------
@@ -198,8 +215,10 @@ describe('feeds.ts — events RSS helpers', () => {
                     )
             );
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
 
+            expect(result.ok).toBe(true);
+            const events = result.ok ? result.items : [];
             expect(events).toHaveLength(2);
             expect(events.map((e) => e.slug)).toEqual(['fiesta-playa', 'novembeer']);
         });
@@ -359,21 +378,16 @@ describe('feeds.ts — events RSS helpers', () => {
     // -------------------------------------------------------------------------
 
     describe('fetch → build pipeline', () => {
-        it('graceful degradation: API failure → empty events → valid empty RSS', async () => {
+        it('API failure never reaches the feed builder at all (HOS-1381)', async () => {
+            // Was "graceful degradation: API failure → empty events → valid
+            // empty RSS", asserting a 200. That degradation WAS the defect: the
+            // route now short-circuits on the failure branch, and the end-to-end
+            // status is covered in `feeds-api-down.test.ts`.
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            const response = await buildEventsFeed({
-                locale: 'es',
-                siteUrl: 'https://hospeda.test',
-                events
-            });
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
 
-            expect(response.status).toBe(200);
-            const body = await response.text();
-            expect(body).toContain('<rss');
-            expect(body).toContain('<channel>');
-            expect(body).not.toContain('<item>');
+            expect(result.ok).toBe(false);
         });
 
         it('full pipeline: fetch → build with items', async () => {
@@ -387,11 +401,11 @@ describe('feeds.ts — events RSS helpers', () => {
                 )
             );
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
             const response = await buildEventsFeed({
                 locale: 'es',
                 siteUrl: 'https://hospeda.test',
-                events
+                events: result.ok ? result.items : []
             });
 
             const body = await response.text();
@@ -401,18 +415,19 @@ describe('feeds.ts — events RSS helpers', () => {
             expect(body).toContain('Evento Dos');
         });
 
-        it('empty API response → empty feed', async () => {
+        it('empty API response → SUCCESSFUL empty feed, not a failure', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyEventsApiResponse()));
 
-            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
-            expect(events).toHaveLength(0);
+            const result = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: true, items: [] });
 
             const response = await buildEventsFeed({
                 locale: 'es',
                 siteUrl: 'https://hospeda.test',
-                events
+                events: result.ok ? result.items : []
             });
 
+            expect(response.status).toBe(200);
             const body = await response.text();
             expect(body).not.toContain('<item>');
         });

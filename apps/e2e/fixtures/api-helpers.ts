@@ -212,6 +212,93 @@ export async function markProfileCompleted(options: { readonly userId: string })
 }
 
 /**
+ * Seen-version written by {@link markAdminToursSeen}. Deliberately far above
+ * any real tour config version, so bumping a tour cannot silently re-arm the
+ * welcome redirect across the suite.
+ */
+const ADMIN_TOUR_SEEN_VERSION = 9999;
+
+/**
+ * Marks every admin onboarding tour as already seen for a user.
+ *
+ * ## Why a test that never mentions tours needs this (HOS-1267)
+ *
+ * The admin panel auto-offers its welcome tour on first visit, and D13 of
+ * SPEC-174 says an eligible welcome tour offered from a NON-dashboard route
+ * redirects to the dashboard FIRST (`decideAutoTrigger` returns
+ * `{ kind: 'welcome-redirect' }`, which `TourAutoTrigger` turns into
+ * `navigate({ to: '/dashboard' })`). An account created mid-test has seen
+ * nothing, so any deep admin URL it opens bounces to `/dashboard` — whatever
+ * its permissions are.
+ *
+ * That bounce is what `spec172-amenity-chips-smoke` was disabled for. Its
+ * `test.fixme` blamed `RoutePermissionGuard` and the admin permission mirror,
+ * and that diagnosis was wrong: `/auth/me` was answering 200 with the full
+ * permission set the entire time. A wrong reason sitting under a correct
+ * observation is nobody's job to re-check, which is how it stayed disabled.
+ *
+ * Seen-state lives in `users.settings.onboarding.adminTours` as
+ * `{ [tourId]: seenVersion }` (`apps/api/src/routes/user/protected/tourProgress.ts`),
+ * and `shouldOfferTour` offers a tour when `seenVersion` is absent, 0, or lower
+ * than the tour's config version.
+ *
+ * The write merges into any existing map instead of replacing `settings`, so a
+ * caller that already set other preferences keeps them.
+ *
+ * Deliberately NOT written with `jsonb_set(settings, '{onboarding,adminTours}',
+ * …, true)`. That form creates only the LAST path element: when `onboarding` is
+ * absent — which it is on every freshly signed-up account, the only kind this
+ * helper is ever called on — `jsonb_set` returns the row UNCHANGED, reports one
+ * row updated, and the redirect stays armed. Nesting `jsonb_build_object` builds
+ * every missing level instead.
+ *
+ * @param options.userId - UUID of the user.
+ * @throws When the row does not exist, or when the seen-map did not actually
+ *   land in `settings.onboarding.adminTours`.
+ */
+export async function markAdminToursSeen(options: { readonly userId: string }): Promise<void> {
+    const seen: Record<string, number> = {
+        'admin.welcome': ADMIN_TOUR_SEEN_VERSION,
+        'superAdmin.welcome': ADMIN_TOUR_SEEN_VERSION,
+        'editor.welcome': ADMIN_TOUR_SEEN_VERSION,
+        'host.welcome': ADMIN_TOUR_SEEN_VERSION
+    };
+
+    const rows = await execSQL<{ admin_tours: Record<string, number> | null }>(
+        `UPDATE users
+            SET settings = COALESCE(settings, '{}'::jsonb) || jsonb_build_object(
+                    'onboarding',
+                    COALESCE(settings -> 'onboarding', '{}'::jsonb) || jsonb_build_object(
+                        'adminTours',
+                        COALESCE(settings -> 'onboarding' -> 'adminTours', '{}'::jsonb) || $2::jsonb
+                    )
+                )
+          WHERE id = $1
+      RETURNING settings -> 'onboarding' -> 'adminTours' AS admin_tours`,
+        [options.userId, JSON.stringify(seen)]
+    );
+
+    const stored = rows[0]?.admin_tours;
+    if (!stored) {
+        throw new Error(
+            `markAdminToursSeen: no settings.onboarding.adminTours stored for ${options.userId} ` +
+                '(no such user, or the JSON merge did not land)'
+        );
+    }
+    // Read-back check, for the same reason `backdateAccommodation` has one: a
+    // fixture that quietly does nothing sends the test it feeds into a state it
+    // was never set up for, and the resulting failure points anywhere but here.
+    for (const tourId of Object.keys(seen)) {
+        if (stored[tourId] !== ADMIN_TOUR_SEEN_VERSION) {
+            throw new Error(
+                `markAdminToursSeen: '${tourId}' is ${String(stored[tourId])} after the write, ` +
+                    `expected ${ADMIN_TOUR_SEEN_VERSION}. The admin welcome redirect is still armed.`
+            );
+        }
+    }
+}
+
+/**
  * Refreshes a user's session by signing in again with their credentials.
  *
  * Better Auth still uses a cookie-based session cache (`better-auth.session_data`,

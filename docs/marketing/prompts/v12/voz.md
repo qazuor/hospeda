@@ -60,10 +60,10 @@ pace and finishes at 61%. Do not slow it down, do not stretch it to fill the 15 
 and do not insert any pause other than the short one listed above. There is no pause
 inside a sentence: each one is spoken in one flow.
 
-FIRST sentence: [Spanish] Treinta días para probar Hospeda sin que se te cobre nada.
+FIRST sentence: [Spanish] Empezá a usar Hospeda gratis, sin que se te cobre nada.
 
 SECOND sentence: [Spanish] Entrás, elegís tu plan, publicás tu alojamiento y recién al
-día treinta y uno se te cobra.
+antes del primer cobro siempre te avisamos.
 
 SOUND — THIS IS CRITICAL: the ONLY sound in this clip is his speaking voice, the one
 cloned from @######VOZ#######. Complete silence otherwise. NO ambience, NO countryside
@@ -76,7 +76,7 @@ audible at any point.
 
 - **Que no haya ambiente audible.** Si trae ruido de fondo, se duplica con el ambiente
   de las tres tomas de imagen al montarla debajo. Regenerar antes que intentar limpiarla.
-- **Que la última frase esté completa** — incluye "treinta y uno", el dato que no puede
+- **Que la última frase esté completa** — incluye "te avisamos", el dato que no puede
   perderse.
 - **Que no haya estirado la locución** para llenar los 15 s.
 - **Que el timbre no cambie** entre la primera frase y la última.

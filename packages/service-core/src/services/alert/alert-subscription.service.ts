@@ -108,6 +108,20 @@ export class AlertSubscriptionService extends BaseCrudService<
         return { accommodation: true };
     }
 
+    /**
+     * No free-text search surface: `tourist_price_alerts` has no text column
+     * at all. Every column is a foreign key, an enum, a numeric bound or a
+     * timestamp, so a search term has nothing to match.
+     *
+     * Declared here rather than inherited (HOS-1117). The base default is
+     * `['name']`, which this table does not have, and
+     * `buildSearchCondition` drops columns that do not exist — so inheriting
+     * it made `?search=` return the WHOLE table instead of nothing.
+     */
+    protected override getSearchableColumns(): string[] {
+        return [];
+    }
+
     constructor(
         ctx: ServiceConfig & {
             model?: TouristPriceAlertModel;

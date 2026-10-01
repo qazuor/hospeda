@@ -101,6 +101,20 @@ Se usan los de Phosphor — <https://phosphoricons.com/>
 7. **Nunca listamos todos los destinos.** Se nombran algunos y se cierra con "y muchos más". Una lista completa queda vieja apenas se suma uno nuevo, y hay que rehacer la placa.
 8. **Decimos "sin tarjeta", porque es cierto** (HOS-1012, 01/09/2026). La prueba arranca sola al publicar la primera ficha y no pide medio de pago. Regla invertida: entre HOS-171 y HOS-1012 la tarjeta sí se pedía y esta línea prohibía la frase. Todo material anterior a esa fecha que diga "cargás tu tarjeta" está desactualizado.
 9. **Ninguna placa lleva cupones de descuento.** Los códigos se entregan a mano, a personas o momentos puntuales.
+10. **Ningún plazo de prueba va dentro de las imágenes.** Es la regla 1 aplicada a los días: la cantidad puede cambiar, y si queda quemada en la placa hay que rehacerla entera. Los días se mencionan solamente en la página web, que los lee del sistema. En las piezas se dice **"empezá gratis"** y se apoya en el aviso previo al cobro.
+
+### El aviso antes del primer cobro
+
+La frase *"te avisamos antes del primer cobro"* se puede prometer porque **está
+construida y funcionando**: el sistema manda un aviso automático **tres días antes** de
+que termine la prueba y otro **un día antes**. El asunto del mail es *"Tu período de
+prueba termina pronto"*.
+
+Es lo que reemplaza al número de días, y es mejor que el número: lo que el anfitrión
+quiere saber no es cuántos días tiene, es si le van a cobrar sin que se entere.
+
+> Si alguna vez ese aviso se apaga, esta frase deja de ser cierta y hay que sacarla de
+> todas las piezas. No es copy decorativo: describe una funcionalidad concreta.
 
 ### Destinos
 
@@ -1954,8 +1968,8 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16, 4:5 y 2:3
 - **Título**: Llevá tu alojamiento a la vidriera del Litoral.
-- **Cuerpo**: Publicá en 10 segundos importando tu ficha. 30 días sin pagar nada. Tus alquileres, tus reglas, tus huéspedes.
-- **Idea**: Es la placa más importante de todo el plan, tiene que ser imposible de malinterpretar. Lo que más pesa visualmente es **"30 días sin pagar nada"**: destacarlo con color, subrayado o recuadro para que se despegue del resto. Lo demás va chico. Si hay que elegir qué se lee primero de lejos, es eso.
+- **Cuerpo**: Publicá en 10 segundos importando tu ficha. Empezá gratis, te avisamos antes del primer cobro. Tus alquileres, tus reglas, tus huéspedes.
+- **Idea**: Es la placa más importante de todo el plan, tiene que ser imposible de malinterpretar. Lo que más pesa visualmente es **"Empezá gratis"**: destacarlo con color, subrayado o recuadro para que se despegue del resto. Lo demás va chico. Si hay que elegir qué se lee primero de lejos, es eso. El *"te avisamos antes del primer cobro"* va inmediatamente abajo y más chico: no compite por la mirada, pero tiene que estar, porque es lo que evita que "gratis" se lea como "gratis para siempre".
 - **Foto/s**: Opcional y en segundo plano: el interior de una cabaña bien puesta, muy clarita o al 20% de opacidad, solo como textura de fondo. Que no compita con el texto.
 - **CTA**: Sumá tu propiedad en hospeda.com.ar
 - **Idioma**: Español
@@ -1970,12 +1984,13 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16, 4:5 y 2:3
 - **Título**: Queremos que lo pruebes.
-- **Cuerpo**: Te regalamos 30 días de prueba. Entrás, elegís tu plan, publicás tu alojamiento y no se te cobra nada hasta el día 31.
-- **Idea**: Placa de invitación, más cálida que la 12.1. El **30** bien grande como protagonista, y el resto del texto abajo, chico. Fondo de color pleno de la paleta. Sin foto.
+- **Cuerpo**: Entrás, elegís tu plan y publicás tu alojamiento. Empezás gratis y te avisamos antes del primer cobro.
+- **Idea**: Placa de invitación, más cálida que la 12.1. **"Gratis"** bien grande como protagonista, y el resto del texto abajo, chico. Fondo de color pleno de la paleta. Sin foto.
+- **Ojo con el rediseño**: esta placa estaba armada alrededor de un **30** enorme. Ese número ya no va (regla 10), así que la pieza **no se retoca, se rediseña**: la palabra que ocupa ese lugar ahora es *gratis*, que es más corta y de otra forma. Reemplazar el número por la palabra en la misma caja deja una composición desbalanceada.
 - **Foto/s**: Ninguna.
 - **CTA**: Entrá a hospeda.com.ar, hacé clic en "Publicar mi alojamiento" y poné tu propiedad en el mapa turístico de la región.
 - **Idioma**: Español
-- **Cuidado con la tarjeta**: ver la nota de la 12.1. Acá el "no se te cobra nada hasta el día 31" hace todo el trabajo y es preferible a decir "gratis" a secas, porque adelanta que en algún momento sí se cobra.
+- **Cuidado con la tarjeta**: ver la nota de la 12.1. Acá el *"te avisamos antes del primer cobro"* hace todo el trabajo y es lo que impide que "gratis" a secas se lea como "gratis para siempre": adelanta que en algún momento sí se cobra, y que no va a ser por sorpresa. **"Gratis" nunca va solo en esta placa.**
 
 ---
 
@@ -1991,7 +2006,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
   3. **Calendario sincronizado** — Conectá Google, Airbnb, Booking o cualquier calendario para evitar reservas dobles.
 - **Idea**: En la versión carrusel, una imagen por motivo, con un ícono de Phosphor grande arriba y el texto abajo. En la versión listado, los tres motivos en una sola placa, uno debajo del otro, con el mismo ícono más chico a la izquierda. Mismo contenido, dos armados.
 - **Foto/s**: Sin fotos. Íconos de Phosphor sobre fondos de color de la paleta, uno distinto por motivo.
-- **CTA**: Publicá tus primeros 30 días en hospeda.com.ar
+- **CTA**: Publicá tu alojamiento en hospeda.com.ar
 - **Idioma**: Español
 - **Con qué marcas se puede y con cuáles no**: en el punto del **calendario sí se nombran** Google, Airbnb y Booking, porque son las que efectivamente se conectan. En el punto de **importar la ficha no se nombran Airbnb ni Booking**: ahí se dice "Google, Mercado Libre y otras plataformas de alquiler".
 
@@ -2021,7 +2036,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Cuerpo**: Tu propiedad traducida automáticamente al español, al inglés y al portugués. Mostrá tu lugar a los que visitan la región sin preocuparte por el idioma.
 - **Idea**: La misma descripción de un alojamiento repetida en los tres idiomas, una abajo de la otra, con la versión en español destacada y las otras dos más apagadas. Que se vea que es el mismo texto y no tres cosas distintas. Se puede sumar una bandera chiquita al costado de cada una.
 - **Foto/s**: Ninguna, o una textura suave de fondo.
-- **CTA**: Publicá tu espacio gratis por 30 días en hospeda.com.ar
+- **CTA**: Publicá tu espacio gratis en hospeda.com.ar
 - **Idioma**: Español
 
 ---
@@ -2121,7 +2136,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Cuerpo**: Las fechas ocupadas se bloquean solas. Sin planillas ni anotar en un cuaderno.
 - **Idea**: Varios calendarios entrando a uno solo — ese es el mensaje entero y se entiende sin leer. Los logos de Google, Airbnb y Booking chiquitos de un lado, y del otro el calendario de Hospeda con las fechas ya bloqueadas. La sensación tiene que ser de tranquilidad, no de complejidad.
 - **Foto/s**: Captura de pantalla real del calendario de la plataforma con fechas ocupadas cargadas.
-- **CTA**: Publicá tus primeros 30 días en hospeda.com.ar
+- **CTA**: Publicá tu alojamiento en hospeda.com.ar
 - **Idioma**: Español
 - **Marcas**: acá **sí se nombran** Airbnb y Booking, porque son calendarios que realmente se conectan. Se sincroniza con Google, con Airbnb, con Booking y con cualquier calendario que use el formato estándar.
 

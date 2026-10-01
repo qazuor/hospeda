@@ -24,6 +24,7 @@ import {
     useBillingSettingsQuery,
     useUpdateBillingSettingsMutation
 } from '@/features/billing-settings';
+import { NewPaidSignupsFreezeCard } from '@/features/billing-settings/NewPaidSignupsFreezeCard';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
@@ -45,7 +46,8 @@ const DEFAULT_VALUES = {
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
     sendPaymentFailedNotification: true,
-    sendSubscriptionCancelledNotification: true
+    sendSubscriptionCancelledNotification: true,
+    newPaidSignupsFrozen: false
 };
 
 /**
@@ -70,7 +72,8 @@ function toFormValues(settings: BillingSettings): typeof DEFAULT_VALUES {
             settings.sendPaymentFailedNotification ?? DEFAULT_VALUES.sendPaymentFailedNotification,
         sendSubscriptionCancelledNotification:
             settings.sendSubscriptionCancelledNotification ??
-            DEFAULT_VALUES.sendSubscriptionCancelledNotification
+            DEFAULT_VALUES.sendSubscriptionCancelledNotification,
+        newPaidSignupsFrozen: settings.newPaidSignupsFrozen ?? DEFAULT_VALUES.newPaidSignupsFrozen
     };
 }
 
@@ -223,6 +226,17 @@ function BillingSettingsPage() {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* New paid signups freeze — first, because it is the switch an
+                    operator reaches for under pressure. */}
+                <form.Field name="newPaidSignupsFrozen">
+                    {(field) => (
+                        <NewPaidSignupsFreezeCard
+                            checked={field.state.value}
+                            onCheckedChange={field.handleChange}
+                        />
+                    )}
+                </form.Field>
 
                 {/* Trial Settings */}
                 <Card>

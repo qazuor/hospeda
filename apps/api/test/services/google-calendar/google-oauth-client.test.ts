@@ -23,7 +23,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     exchangeAuthorizationCode,
     GoogleOAuthClientError,
-    refreshAccessToken
+    refreshAccessToken,
+    revokeToken
 } from '../../../src/services/google-calendar/google-oauth-client.js';
 
 // ---------------------------------------------------------------------------
@@ -246,6 +247,219 @@ describe('google-oauth-client', () => {
             // Assert
             expect(caught).toBeInstanceOf(Error);
             expect((caught as Error).message).not.toContain(secret);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // revokeToken (HOS-663)
+    //
+    // This is the function that actually ends the platform's access to a host's
+    // calendar, and nothing exercised it: the adapter's own tests mock it away,
+    // so they verify WHICH token it is handed and nothing about what it does
+    // with it. A mutation moving the token onto the query string with a GET
+    // passed the whole suite.
+    //
+    // Two properties are pinned here, because they are the two a refactor gets
+    // wrong:
+    //   - the token travels in the POST body, NEVER in the URL. A refresh token
+    //     in a URL lands in undici's access log, in any outbound proxy, and in
+    //     a Sentry breadcrumb the moment somebody instruments fetch.
+    //   - ANY non-2xx is a failure. A 403 is Google refusing; counting it as
+    //     success because it is not a 5xx reports a wide-open grant as closed.
+    // -------------------------------------------------------------------------
+
+    describe('revokeToken', () => {
+        const REFRESH_TOKEN = '1//refresh-token-to-revoke';
+
+        /** Google answers 200 with an empty body on a successful revocation. */
+        const emptyOkResponse = (): Partial<Response> => ({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({}),
+            text: () => Promise.resolve('')
+        });
+
+        it('should POST the token in the form-encoded BODY and never in the URL', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act
+            await revokeToken({ token: REFRESH_TOKEN });
+
+            // Assert
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+            const [url, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+
+            expect(url).toBe('https://oauth2.googleapis.com/revoke');
+            // Asserted against the raw string so a `?token=` anywhere fails,
+            // not only a well-formed one.
+            expect(url).not.toContain('?');
+            expect(url).not.toContain(REFRESH_TOKEN);
+            expect(url).not.toContain(encodeURIComponent(REFRESH_TOKEN));
+
+            expect(requestInit.method).toBe('POST');
+            expect((requestInit.headers as Record<string, string>)['Content-Type']).toBe(
+                'application/x-www-form-urlencoded'
+            );
+            expect(requestInit.body).toBe(`token=${encodeURIComponent(REFRESH_TOKEN)}`);
+        });
+
+        it('should not carry the token in ANY header either', async () => {
+            // The URL and the body were covered; the headers were not, so
+            // adding `Authorization: Bearer ${token}` alongside an untouched
+            // body passed everything. An `Authorization` header lands in the
+            // same outbound proxies and the same Sentry breadcrumb the docblock
+            // rejects a query string for — the argument does not stop at URLs.
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act
+            await revokeToken({ token: REFRESH_TOKEN });
+
+            // Assert
+            const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const headers = requestInit.headers as Record<string, string>;
+
+            for (const [name, value] of Object.entries(headers)) {
+                expect(`${name}: ${value}`).not.toContain(REFRESH_TOKEN);
+                expect(`${name}: ${value}`).not.toContain(encodeURIComponent(REFRESH_TOKEN));
+            }
+            // Pinned exactly, so a new header has to be added deliberately here
+            // rather than slipped past a "does not contain" loop by encoding.
+            expect(Object.keys(headers).sort()).toEqual(['Accept', 'Content-Type']);
+        });
+
+        it('should bound the request with a REAL timeout signal, at 8s', async () => {
+            // `instanceof AbortSignal` on its own is vacuous: a
+            // `new AbortController().signal` satisfies it and never fires,
+            // which is precisely the regression that puts an unbounded fetch
+            // back on the synchronous path of a user's DELETE. And the
+            // duration was unasserted, so 600_000 passed too — a Cloudflare 524
+            // with extra steps.
+            //
+            // Spying on `AbortSignal.timeout` pins both at once: a plain
+            // controller never calls it (spy uncalled → fail), and a changed
+            // duration shows up in the argument. Fake timers cannot be used
+            // here — `AbortSignal.timeout` is driven by a Node-internal timer
+            // that vitest does not patch, so advancing the clock never aborts
+            // it and the assertion would be testing the harness.
+            // Arrange
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+            try {
+                mockFetch.mockResolvedValue(emptyOkResponse());
+
+                // Act
+                await revokeToken({ token: REFRESH_TOKEN });
+
+                // Assert
+                expect(timeoutSpy).toHaveBeenCalledTimes(1);
+                expect(timeoutSpy).toHaveBeenCalledWith(8_000);
+
+                // ...and the signal handed to fetch is the one it produced,
+                // not a lookalike created alongside it.
+                const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+                expect(requestInit.signal).toBe(timeoutSpy.mock.results[0]?.value);
+            } finally {
+                timeoutSpy.mockRestore();
+            }
+        });
+
+        it('should attach an abort signal at all', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act
+            await revokeToken({ token: REFRESH_TOKEN });
+
+            // Assert
+            const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(requestInit.signal).toBeInstanceOf(AbortSignal);
+        });
+
+        it('should resolve when Google answers 200', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act + Assert
+            await expect(revokeToken({ token: REFRESH_TOKEN })).resolves.toBeUndefined();
+        });
+
+        it.each([
+            [400, { error: 'invalid_token' }],
+            [401, { error: 'invalid_client' }],
+            [403, { error: 'forbidden' }],
+            [429, { error: 'rate_limit_exceeded' }],
+            [500, { error: 'internal' }],
+            [503, { error: 'unavailable' }]
+        ])('should throw GoogleOAuthClientError on %i', async (status, body) => {
+            // Arrange
+            mockFetch.mockResolvedValue(jsonResponse(body, { ok: false, status }));
+
+            // Act
+            let caught: unknown;
+            try {
+                await revokeToken({ token: REFRESH_TOKEN });
+            } catch (error) {
+                caught = error;
+            }
+
+            // Assert
+            expect(caught).toBeInstanceOf(GoogleOAuthClientError);
+            expect((caught as GoogleOAuthClientError).status).toBe(status);
+            expect((caught as GoogleOAuthClientError).body).toEqual(body);
+        });
+
+        it('should attach the parsed body so the caller can recognise invalid_token', async () => {
+            // The adapter maps `invalid_token` to "already closed"; that mapping
+            // is only possible if the body survives the throw.
+            // Arrange
+            mockFetch.mockResolvedValue(
+                jsonResponse({ error: 'invalid_token' }, { ok: false, status: 400 })
+            );
+
+            // Act
+            let caught: unknown;
+            try {
+                await revokeToken({ token: REFRESH_TOKEN });
+            } catch (error) {
+                caught = error;
+            }
+
+            // Assert
+            expect((caught as GoogleOAuthClientError).body?.error).toBe('invalid_token');
+        });
+
+        it('should never leak the token into the thrown error message', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue(
+                jsonResponse({ error: 'invalid_token' }, { ok: false, status: 400 })
+            );
+
+            // Act
+            let caught: unknown;
+            try {
+                await revokeToken({ token: REFRESH_TOKEN });
+            } catch (error) {
+                caught = error;
+            }
+
+            // Assert
+            expect((caught as Error).message).not.toContain(REFRESH_TOKEN);
+            expect((caught as Error).message).toContain('400');
+        });
+
+        it('should not send client credentials — the token identifies the grant', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue(emptyOkResponse());
+
+            // Act
+            await revokeToken({ token: REFRESH_TOKEN });
+
+            // Assert
+            const [, requestInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const body = requestInit.body as string;
+            expect(body).not.toContain('client_secret');
+            expect(body).not.toContain(mockEnv.HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET as string);
         });
     });
 });

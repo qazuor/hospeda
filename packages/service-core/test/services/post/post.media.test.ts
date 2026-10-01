@@ -21,6 +21,7 @@
 
 const mockMediaModel = {
     findAll: vi.fn(),
+    count: vi.fn(),
     findById: vi.fn(),
     findByPost: vi.fn(),
     findFeatured: vi.fn(),
@@ -50,7 +51,13 @@ import type {
     PostMediaReorderInput,
     PostMediaSetFeaturedInput
 } from '@repo/schemas';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    getGalleryCap,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addPostMedia,
@@ -136,6 +143,7 @@ beforeEach(() => {
     );
 
     mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+    mockMediaModel.count.mockResolvedValue(0);
     mockMediaModel.findById.mockResolvedValue(null);
     mockMediaModel.findByPost.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.findFeatured.mockResolvedValue(null);
@@ -276,6 +284,22 @@ describe('removePostMedia', () => {
     it('returns NOT_FOUND when the media belongs to a different post', async () => {
         const model = makePostModel(makePost());
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ postId: OTHER_POST_ID }));
+
+        const result = await removePostMedia(
+            model as unknown as PostModelArg,
+            authorActor,
+            removeInput
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('returns NOT_FOUND for an already soft-deleted row instead of deleting it again (HOS-1175)', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ deletedAt: new Date('2024-02-01') })
+        );
 
         const result = await removePostMedia(
             model as unknown as PostModelArg,
@@ -442,6 +466,25 @@ describe('setFeaturedPostMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
+    it('returns NOT_FOUND for a soft-deleted media row and touches nothing (HOS-1175)', async () => {
+        // findById does NOT filter soft-deletes and softDelete leaves is_featured
+        // set, so a dead row is otherwise a promotable target.
+        const model = makePostModel(makePost());
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ isFeatured: true, deletedAt: new Date('2024-02-01') })
+        );
+
+        const result = await setFeaturedPostMedia(
+            model as unknown as PostModelArg,
+            authorActor,
+            featuredInput
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockMediaModel.findFeatured).not.toHaveBeenCalled();
+        expect(mockMediaModel.update).not.toHaveBeenCalled();
+    });
+
     it('rejects featuring an archived photo before the DB CHECK constraint can fire', async () => {
         const model = makePostModel(makePost());
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ state: 'archived' }));
@@ -546,5 +589,62 @@ describe('getPostMedia', () => {
             expect.objectContaining({ state: 'archived' })
         );
         expect(result.data?.media).toEqual(rows);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Gallery cap (HOS-1164)
+//
+// Registering an already-uploaded URL was never capped for posts: only the
+// upload routes checked the limit, so a direct call walked past it. Same
+// `getGalleryCap` constant and same filter as the experience/gastronomy twins.
+// ---------------------------------------------------------------------------
+
+describe('addPostMedia — gallery cap', () => {
+    const CAP = getGalleryCap('post');
+
+    const input: PostMediaAddInput = {
+        postId: POST_ID,
+        media: { url: 'https://cdn.example.com/new.jpg' }
+    };
+
+    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockResolvedValue(CAP);
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
+        expect(mockMediaModel.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts the last photo that still fits', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockResolvedValue(CAP - 1);
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('measures the cap on the GALLERY ONLY, not counting the featured image', async () => {
+        const model = makePostModel(makePost());
+        mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
+            where.isFeatured === false ? CAP - 1 : CAP
+        );
+
+        const result = await addPostMedia(model as unknown as PostModelArg, authorActor, input);
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.count).toHaveBeenCalledWith(
+            expect.objectContaining({
+                postId: POST_ID,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            }),
+            expect.anything()
+        );
     });
 });

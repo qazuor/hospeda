@@ -6,13 +6,17 @@
  *   - GET /[lang]/publicaciones/rss.xml
  *   - GET /[lang]/eventos/rss.xml
  *
- * All fetch functions degrade gracefully: any network error, HTTP error, or
- * JSON parse failure returns an empty array so the RSS endpoint always returns
- * a valid (possibly empty) channel instead of a 500.
+ * The fetch functions report FAILURE rather than degrading to an empty list
+ * (HOS-1381). An empty RSS channel is a statement — "nothing was published" —
+ * and an aggregator has no way to tell it apart from "the API was down", so it
+ * may not ask again until its own cache expires. Because these routes bypass
+ * middleware (see {@link applyFeedCacheHeaders}), no later stage can correct
+ * that: the decision is made here, and a failed fetch answers 503.
  */
 
 import rss from '@astrojs/rss';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { LISTING_PRIVATE_CONTROL } from './cache/listing-cache';
 import { buildStaticCacheHeaders } from './cache/response-cache';
 import type { SupportedLocale } from './i18n';
 import { SUPPORTED_LOCALES } from './i18n';
@@ -62,6 +66,116 @@ interface ListApiResponse<T> {
 }
 
 /**
+ * Why a feed fetch could not produce a trustworthy item list (HOS-1381).
+ *
+ * Carried only so the 503 can say which of the three it was; the route treats
+ * all three identically, because from an aggregator's side they are the same
+ * event: this feed's contents are unknown right now.
+ */
+export type FeedFetchFailure =
+    /** The request never completed — DNS, connection refused, or the 15s timeout. */
+    | 'unreachable'
+    /** The API answered, with a status outside 2xx. */
+    | 'http-error'
+    /** A 2xx whose envelope reported failure or carried no readable item list. */
+    | 'bad-payload'
+    /** The deployment's API/site URLs could not be resolved, so nothing was asked. */
+    | 'not-configured';
+
+/**
+ * The outcome of a feed fetch.
+ *
+ * Deliberately NOT `readonly T[]`, which is the shape this file used to return.
+ * An array cannot distinguish a published-nothing collection from an outage, so
+ * every caller that received one had already lost the only fact it needed.
+ * `items: []` on the success branch is a real, cacheable answer; the failure
+ * branch is not.
+ */
+export type FeedFetchResult<TItem> =
+    | { readonly ok: true; readonly items: readonly TItem[] }
+    | { readonly ok: false; readonly failure: FeedFetchFailure };
+
+/**
+ * How long an aggregator is asked to wait before retrying a failed feed.
+ *
+ * Well under the 24h TTL a healthy feed carries: the point of answering 503 is
+ * that the reader comes back soon, while the API outage is likely still being
+ * fixed, instead of treating the gap as editorial silence.
+ */
+const FEED_RETRY_AFTER_SECONDS = 300;
+
+/**
+ * The response a feed route returns when it could not obtain its items.
+ *
+ * 503 + `Retry-After` is the pair that separates "we could not tell you" from
+ * "there is nothing to tell": an RSS reader retries a 503 and keeps the entries
+ * it already has, whereas a 200 with an empty `<channel>` invites it to
+ * conclude the publication stopped — and, at `public, max-age=86400`, to be
+ * served that conclusion from the edge for a day after the API recovered.
+ *
+ * `private, no-cache` is the same demotion value `buildStaticCacheHeaders` uses
+ * when it must fail closed, reused rather than re-spelled so there is one
+ * string in the app meaning "not for the shared cache". No `Cache-Tag` is
+ * emitted: nothing is being stored, so there would be nothing to purge.
+ *
+ * @param params.failure - Which failure mode produced this response.
+ * @returns A 503 XML response that no shared cache may store.
+ */
+export function buildFeedUnavailableResponse({
+    failure
+}: {
+    readonly failure: FeedFetchFailure;
+}): Response {
+    return new Response(`<!-- feed temporarily unavailable: ${failure} -->`, {
+        status: 503,
+        headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': LISTING_PRIVATE_CONTROL,
+            'Retry-After': String(FEED_RETRY_AFTER_SECONDS)
+        }
+    });
+}
+
+/**
+ * Read a public list endpoint and report either its items or why they are
+ * unknown.
+ *
+ * Shared by both feeds because the envelope, the timeout and the three failure
+ * modes are identical; only the path and the query differ.
+ *
+ * @param params.url - Fully-built request URL, query string included.
+ * @returns The item list, or the failure that prevented reading one.
+ */
+async function fetchFeedItems<TItem>({
+    url
+}: {
+    readonly url: string;
+}): Promise<FeedFetchResult<TItem>> {
+    let response: Response;
+
+    try {
+        response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+    } catch {
+        return { ok: false, failure: 'unreachable' };
+    }
+
+    if (!response.ok) return { ok: false, failure: 'http-error' };
+
+    try {
+        const json = (await response.json()) as ListApiResponse<TItem>;
+        if (!json.ok && !json.success) return { ok: false, failure: 'bad-payload' };
+
+        const data = json.data;
+        if (!data || !Array.isArray(data.items)) return { ok: false, failure: 'bad-payload' };
+
+        return { ok: true, items: data.items };
+    } catch {
+        // A body that is not JSON is the API misbehaving, not an empty feed.
+        return { ok: false, failure: 'bad-payload' };
+    }
+}
+
+/**
  * Apply the shared feed caching policy to an `@astrojs/rss` response.
  *
  * Feeds bypass middleware (the `.xml` extension short-circuits
@@ -107,16 +221,18 @@ export function validateLocale(lang: string | undefined): SupportedLocale | null
 
 /**
  * Fetch the most recent published posts from the public API.
- * Returns an empty array on any fetch / parse failure.
+ *
+ * Reports failure instead of returning an empty array (HOS-1381) — see
+ * {@link FeedFetchResult}.
  *
  * @param apiUrl - API base URL without trailing slash.
- * @returns Array of post feed items (at most RSS_FEED_SIZE entries).
+ * @returns At most RSS_FEED_SIZE post items, or the failure that hid them.
  */
 export async function fetchLatestPosts({
     apiUrl
 }: {
     readonly apiUrl: string;
-}): Promise<readonly PostFeedItem[]> {
+}): Promise<FeedFetchResult<PostFeedItem>> {
     // HOS-560: no `status` param. `PostSearchHttpSchema` does not declare it and
     // `createPublicListRoute` rejects unknown query params, so sending it made
     // the API answer 400 and this function return `[]`. The endpoint is the
@@ -129,37 +245,25 @@ export async function fetchLatestPosts({
         sortOrder: 'desc'
     });
 
-    try {
-        const response = await fetch(`${apiUrl}/api/v1/public/posts?${searchParams.toString()}`, {
-            signal: AbortSignal.timeout(15_000)
-        });
-
-        if (!response.ok) return [];
-
-        const json = (await response.json()) as ListApiResponse<PostFeedItem>;
-        if (!json.ok && !json.success) return [];
-
-        const data = json.data;
-        if (!data || !Array.isArray(data.items)) return [];
-
-        return data.items;
-    } catch {
-        return [];
-    }
+    return fetchFeedItems<PostFeedItem>({
+        url: `${apiUrl}/api/v1/public/posts?${searchParams.toString()}`
+    });
 }
 
 /**
  * Fetch the most recent published events from the public API.
- * Returns an empty array on any fetch / parse failure.
+ *
+ * Reports failure instead of returning an empty array (HOS-1381) — see
+ * {@link FeedFetchResult}.
  *
  * @param apiUrl - API base URL without trailing slash.
- * @returns Array of event feed items (at most RSS_FEED_SIZE entries).
+ * @returns At most RSS_FEED_SIZE event items, or the failure that hid them.
  */
 export async function fetchLatestEvents({
     apiUrl
 }: {
     readonly apiUrl: string;
-}): Promise<readonly EventFeedItem[]> {
+}): Promise<FeedFetchResult<EventFeedItem>> {
     // HOS-560: same two defects as the posts feed — the events feed was empty in
     // production too, which the original report had not measured. `status` makes
     // the endpoint answer 400 (`INVALID_PAGINATION_PARAMS`) and the payload key
@@ -171,23 +275,9 @@ export async function fetchLatestEvents({
         sortOrder: 'asc'
     });
 
-    try {
-        const response = await fetch(`${apiUrl}/api/v1/public/events?${searchParams.toString()}`, {
-            signal: AbortSignal.timeout(15_000)
-        });
-
-        if (!response.ok) return [];
-
-        const json = (await response.json()) as ListApiResponse<EventFeedItem>;
-        if (!json.ok && !json.success) return [];
-
-        const data = json.data;
-        if (!data || !Array.isArray(data.items)) return [];
-
-        return data.items;
-    } catch {
-        return [];
-    }
+    return fetchFeedItems<EventFeedItem>({
+        url: `${apiUrl}/api/v1/public/events?${searchParams.toString()}`
+    });
 }
 
 /**

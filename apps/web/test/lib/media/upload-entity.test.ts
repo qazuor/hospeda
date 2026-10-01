@@ -24,6 +24,7 @@
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveUploadTimeoutMs, uploadEntityImage } from '../../../src/lib/media/upload-entity';
+import { UploadEntityError } from '../../../src/lib/media/upload-entity-error';
 
 /**
  * Minimal XHR stub sufficient to drive `uploadEntityImage`'s event-driven
@@ -194,6 +195,43 @@ describe('uploadEntityImage', () => {
             xhr.trigger('load');
 
             await expect(promise).rejects.toThrow('Image upload failed');
+        });
+
+        it('should carry code, reason and details on the typed error (HOS-1218)', async () => {
+            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const xhr = MockXHR.instances[0];
+            if (!xhr) throw new Error('expected an XHR instance to have been created');
+            xhr.status = 422;
+            xhr.responseText = JSON.stringify({
+                success: false,
+                error: {
+                    code: 'GALLERY_LIMIT_EXCEEDED',
+                    message: 'Gallery limit of 50 items reached for this entity',
+                    details: { limit: 50 }
+                }
+            });
+
+            xhr.trigger('load');
+
+            const err = await promise.catch((e: unknown) => e);
+            expect(err).toBeInstanceOf(UploadEntityError);
+            expect(err).toMatchObject({
+                code: 'GALLERY_LIMIT_EXCEEDED',
+                status: 422,
+                details: { limit: 50 }
+            });
+        });
+
+        it('should tag transport failures with a translatable code (HOS-1218)', async () => {
+            const timeout = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            MockXHR.instances[0]?.trigger('timeout');
+            expect(await timeout.catch((e: unknown) => e)).toMatchObject({ code: 'TIMEOUT' });
+
+            const network = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            MockXHR.instances[1]?.trigger('error');
+            expect(await network.catch((e: unknown) => e)).toMatchObject({
+                code: 'NETWORK_ERROR'
+            });
         });
     });
 

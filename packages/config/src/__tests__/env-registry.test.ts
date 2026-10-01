@@ -280,8 +280,22 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * independently, off the same 279 base as HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED
  * above — both merge in together, so the combined total is 279 + 2 = 281, not
  * 280 (the value each side would compute alone against the shared base).
+ *
+ * +4 = API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED / _WINDOW_MS / _MAX_REQUESTS /
+ * _MESSAGE (HOS-1153: session READS — `GET /api/auth/get-session`,
+ * `GET /api/v1/public/auth/me`, `GET /api/v1/public/auth/status` — get their
+ * own tier instead of spending the anti-brute-force `auth` budget, which one
+ * admin operator exhausted in a handful of navigations). 281 + 4 = 285.
+ *
+ * NOT counted here: HOSPEDA_INTERNAL_REQUEST_SECRET gained 'admin' in its
+ * `apps` list in the same change. That is an edit to an existing entry, not a
+ * new var, so the total is unaffected.
+ *
+ * +1 = PUBLIC_DAILYMOTION_PLAYER_ID (HOS-1217, integrations category, optional,
+ * web only) — Dailymotion's geo host 403s a third-party embed without a Player
+ * ID in the URL. 285 + 1 = 286.
  */
-const EXPECTED_VAR_COUNT = 281;
+const EXPECTED_VAR_COUNT = 286;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

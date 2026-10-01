@@ -36,7 +36,16 @@ const COPY = {
 } as const;
 
 /**
- * Opens the dialog and waits for the throwaway root to paint it.
+ * Opens the dialog and waits until it is both painted AND interactive.
+ *
+ * Painted is not enough. `Dialog` attaches its `keydown` listener (Escape +
+ * focus trap) in a passive `useEffect`, which React may flush on a later task
+ * than the DOM commit `findByRole` observes. On a loaded CI runner an Escape
+ * fired in that gap reached no listener, the answer never settled, the test
+ * timed out at 15s and the `afterEach` below reported the dialog still mounted.
+ * The scroll lock is set by an effect of the same component, flushed in the
+ * same passive-effects pass, so `overflow: hidden` is the observable proof that
+ * the keyboard listener is attached too.
  *
  * The pending answer is returned WRAPPED. An async function that returns a
  * promise flattens it, so handing `Promise<boolean>` back directly would make
@@ -47,6 +56,9 @@ const COPY = {
 async function openDialog(): Promise<{ readonly answer: Promise<boolean> }> {
     const answer = showConfirmationDialog(COPY);
     await screen.findByRole('dialog');
+    await waitFor(() => {
+        expect(document.documentElement.style.overflow).toBe('hidden');
+    });
     return { answer };
 }
 
@@ -55,14 +67,41 @@ describe('showConfirmationDialog', () => {
         acquireDialogHistoryEntry.mockClear();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         // The helper owns throwaway roots outside React Testing Library's
         // registry, so its auto-cleanup does not reach them. A test that leaves
         // a dialog open would otherwise make every later `getByRole('dialog')`
         // ambiguous.
-        document.body.innerHTML = '';
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
+        //
+        // `showConfirmationDialog`'s `finish()` defers `root.unmount()` to a
+        // `queueMicrotask` (deliberately — see note 2 in
+        // `show-confirmation-dialog.tsx`'s file header), so a test that
+        // resolves its answer and returns does NOT guarantee that unmount —
+        // and the scroll-lock effect cleanup it triggers — has actually run
+        // yet. Wiping `document.body.innerHTML` right away would then leave
+        // that still-pending unmount to fire LATER, during whichever test
+        // runs next, clobbering ITS `document.documentElement.style.overflow`
+        // back to whatever this dialog captured as "original" (HOS-1384:
+        // `expected '' to be 'hidden'` on an unrelated test, at random).
+        // Waiting for the dialog to actually leave the DOM first flushes that
+        // pending unmount HERE, so no test ever inherits another test's
+        // straggling cleanup.
+        //
+        // The flush goes in `try`, the wipe in `finally`: `waitFor` THROWS on
+        // timeout, so leaving the three lines below it unguarded would make the
+        // teardown conditional on the test having passed — and a single genuine
+        // failure would then leak the mounted dialog and `overflow: 'hidden'`
+        // into every later test in the worker. That is this file's own bug
+        // (HOS-1384) rebuilt inside its fix.
+        try {
+            await waitFor(() => {
+                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            });
+        } finally {
+            document.body.innerHTML = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
     });
 
     it('renders a real, labelled dialog with both actions', async () => {
@@ -153,7 +192,15 @@ describe('showConfirmationDialog', () => {
     it('tears the dialog down and releases the scroll lock after answering', async () => {
         // Arrange
         const { answer } = await openDialog();
-        expect(document.documentElement.style.overflow).toBe('hidden');
+        // The scroll lock is applied by a passive `useEffect` in `Dialog`
+        // (see Dialog.client.tsx), which React may flush on a later task than
+        // the DOM commit `findByRole` above just observed — a bare synchronous
+        // read here raced that flush independently of any other test
+        // (HOS-1384). `waitFor` absorbs that lag instead of assuming it never
+        // happens.
+        await waitFor(() => {
+            expect(document.documentElement.style.overflow).toBe('hidden');
+        });
 
         // Act
         fireEvent.click(screen.getByRole('button', { name: COPY.confirmLabel }));

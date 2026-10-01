@@ -1,6 +1,7 @@
+import { FeatureModel } from '@repo/db';
 import { FeatureService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { createSeedFactory } from '../utils/index.js';
+import { createSeedFactory, whereFixtureSlug } from '../utils/index.js';
 
 /**
  * Seed factory for features
@@ -13,6 +14,9 @@ export const seedFeatures = createSeedFactory({
     serviceClass: FeatureService,
     folder: 'src/data/feature',
     files: requiredManifest.features,
+
+    // HOS-735: re-runnable. A row already carrying this slug is skipped, not re-inserted.
+    existing: { modelClass: FeatureModel, getWhere: whereFixtureSlug() },
 
     // Exclude metadata fields, lifecycleState (auto-generated), and name (dropped in
     // SPEC-266 T-001). Keep slug — the service now requires it explicitly.

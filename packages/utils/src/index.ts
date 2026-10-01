@@ -4,6 +4,7 @@
  */
 
 export * from './array';
+export * from './bot-user-agent';
 export * from './calendar-date';
 export * from './currency';
 export * from './date';

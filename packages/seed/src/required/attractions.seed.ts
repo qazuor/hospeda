@@ -1,6 +1,7 @@
+import { AttractionModel } from '@repo/db';
 import { AttractionService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { createSeedFactory, STATUS_ICONS } from '../utils/index.js';
+import { createSeedFactory, STATUS_ICONS, whereFixtureFields } from '../utils/index.js';
 
 /**
  * Seed factory for attractions
@@ -13,6 +14,13 @@ export const seedAttractions = createSeedFactory({
     serviceClass: AttractionService,
     folder: 'src/data/attraction',
     files: requiredManifest.attractions,
+
+    // HOS-735: re-runnable. Keyed by NAME, not slug: the normalizer below drops the fixture
+    // slug on purpose so the service regenerates it, and the fixtures spell it with
+    // underscores while the generated one uses hyphens (`aqua_parque_termal` ->
+    // `aqua-parque-termal`). A slug lookup never matched, so a re-run did not fail: it
+    // silently inserted the whole catalog again as `anfiteatro-2`, `anfiteatro-3`, ...
+    existing: { modelClass: AttractionModel, getWhere: whereFixtureFields({ fields: ['name'] }) },
 
     // Exclude metadata fields and slug field as it's auto-generated
     normalizer: (data) => {

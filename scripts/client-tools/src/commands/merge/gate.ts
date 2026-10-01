@@ -1,5 +1,5 @@
-import { groupChecks, verdictOf } from '../ci/verdict.ts';
 import type { PrSnapshot } from '../../lib/github.ts';
+import { groupChecks, verdictOf } from '../ci/verdict.ts';
 
 /**
  * What the gate concluded.
@@ -36,7 +36,13 @@ export const EXPECTED_BASE = 'staging';
  * @param input.pr - The pull request as GitHub reports it.
  * @returns The {@link MergeGateResult}.
  */
-export function evaluateMergeGate({ pr }: { readonly pr: PrSnapshot }): MergeGateResult {
+export function evaluateMergeGate({
+    pr,
+    expectedBase = EXPECTED_BASE
+}: {
+    readonly pr: PrSnapshot;
+    readonly expectedBase?: string;
+}): MergeGateResult {
     if (pr.state === 'MERGED') {
         return {
             verdict: 'blocked',
@@ -49,10 +55,10 @@ export function evaluateMergeGate({ pr }: { readonly pr: PrSnapshot }): MergeGat
     if (pr.isDraft) {
         return { verdict: 'blocked', reason: 'Es un draft. Sacalo de draft antes de mergear.' };
     }
-    if (pr.baseRefName !== EXPECTED_BASE) {
+    if (pr.baseRefName !== expectedBase) {
         return {
             verdict: 'blocked',
-            reason: `Apunta a «${pr.baseRefName}», no a «${EXPECTED_BASE}». El trabajo entra por staging; a main sólo va un hotfix, y esa es decisión tuya.`
+            reason: `Apunta a «${pr.baseRefName}», no a «${expectedBase}». El trabajo debe entrar por la base de integración declarada; las promociones posteriores requieren una decisión explícita.`
         };
     }
 

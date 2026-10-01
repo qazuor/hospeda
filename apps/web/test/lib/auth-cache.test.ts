@@ -10,6 +10,7 @@ import {
     AUTH_ME_CACHE_KEY,
     AUTH_ME_CACHE_TTL_MS,
     type AuthMeSnapshot,
+    clearCachedAuthMe,
     fetchAuthMe,
     readCachedAuthMe,
     writeCachedAuthMe
@@ -219,5 +220,34 @@ describe('fetchAuthMe in-flight dedup (HOS-160 lever D)', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(s1).toMatchObject({ isAuthenticated: false, user: null, roles: [] });
         expect(s2).toEqual(s1);
+    });
+});
+
+describe('clearCachedAuthMe (HOS-1206)', () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+    });
+
+    it('removes a fresh snapshot so the next reader refetches /auth/me', () => {
+        writeCachedAuthMe({
+            ...SNAPSHOT,
+            isAuthenticated: false,
+            user: null,
+            cachedAt: Date.now()
+        });
+
+        clearCachedAuthMe();
+
+        expect(readCachedAuthMe()).toBeNull();
+        expect(sessionStorage.getItem(AUTH_ME_CACHE_KEY)).toBeNull();
+    });
+
+    it('does not throw when sessionStorage is unavailable', () => {
+        const spy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+            throw new Error('SecurityError');
+        });
+
+        expect(() => clearCachedAuthMe()).not.toThrow();
+        spy.mockRestore();
     });
 });

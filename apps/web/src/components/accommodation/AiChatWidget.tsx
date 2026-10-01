@@ -22,6 +22,7 @@ import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
+import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '@/lib/ai-chat-copy';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 // Shared with every other modal-like surface (Dialog, the AI search drawer).
 // This file used to keep a private copy of the Tab-cycling logic, bound to
@@ -40,6 +41,8 @@ import styles from './AiChatWidget.module.css';
  */
 const KEYBOARD_INSET_THRESHOLD_PX = 120;
 
+export { aiChatCopyKey };
+
 export interface AiChatWidgetProps {
     /** Which kind of listing the chat is about (HOS-400). */
     readonly entityType: AiChatEntityType;
@@ -47,117 +50,6 @@ export interface AiChatWidgetProps {
     readonly entityId: string;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-}
-
-/**
- * The i18n namespace each vertical's chat copy lives in (HOS-400).
- *
- * Only the FIVE strings that NAME the thing being asked about are duplicated per
- * vertical — the label, the panel title, the two disclaimers and the unavailable
- * message. Everything else ("Enviar", "Pensando…", "Nueva conversación") is
- * vertical-agnostic and stays in the accommodations bundle, where it is already
- * translated: copying eighteen keys three times to vary five of them would have
- * created two more places for the other thirteen to drift.
- */
-const AI_CHAT_NS_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
-    accommodation: 'accommodations',
-    gastronomy: 'gastronomy',
-    experience: 'experience'
-};
-
-/** The copy keys that differ per vertical; every other key is shared. */
-const VERTICAL_SPECIFIC_KEYS = new Set([
-    'fabLabel',
-    'panelLabel',
-    'headerDisclaimer',
-    'priceDisclaimer',
-    'unavailable'
-]);
-
-/**
- * Builds the i18n key for one chat copy string.
- *
- * @param entityType - The listing's vertical.
- * @param suffix - The key under `<ns>.aiChat.`.
- * @returns The fully-qualified key.
- */
-export function aiChatCopyKey(entityType: AiChatEntityType, suffix: string): string {
-    const ns = VERTICAL_SPECIFIC_KEYS.has(suffix)
-        ? AI_CHAT_NS_BY_ENTITY_TYPE[entityType]
-        : 'accommodations';
-    return `${ns}.aiChat.${suffix}`;
-}
-
-// ---------------------------------------------------------------------------
-// Error resolution (HOS-292)
-// ---------------------------------------------------------------------------
-
-/**
- * Sentinel passed as `t()`'s fallback to tell a real translation apart from a
- * miss. Necessary because `t()` returns the KEY ITSELF for an unknown key in
- * production (only DEV yields `[MISSING: ...]`) - which is exactly how a raw
- * `accommodations.aiChat.unavailable` ended up on screen.
- */
-const UNRESOLVED = '__hospeda_unresolved__';
-
-/** Looks like a dotted i18n key rather than human prose. */
-const I18N_KEY_PATTERN = /^[a-zA-Z][\w-]*(\.[\w-]+)+$/;
-
-/**
- * Localized copy per error code, used when the API's `message` is not a key we
- * can resolve. Mirrors `AiTextImprovePanel.client.tsx`'s `ERROR_FALLBACKS`
- * convention: Spanish fallbacks so the widget stays sensible even before the
- * `accommodations.aiChat.error.*` keys exist in every locale bundle.
- */
-const ERROR_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
-    UNAUTHORIZED: 'Necesitás iniciar sesión para usar el chat.',
-    NOT_FOUND: 'No encontramos este alojamiento.',
-    ENTITLEMENT_REQUIRED: 'El chat de IA no está disponible para este alojamiento.',
-    LIMIT_REACHED: 'El chat de IA no está disponible para este alojamiento en este momento.',
-    MODERATION_BLOCKED: 'Tu mensaje no pasa las políticas de uso. Probá reformularlo.',
-    RATE_LIMIT_EXCEEDED: 'Demasiadas consultas seguidas. Esperá un momento e intentá de nuevo.',
-    ENGINE_EXHAUSTED:
-        'Los proveedores de IA no están disponibles temporalmente. Intentá más tarde.',
-    FEATURE_DISABLED: 'El chat de IA está deshabilitado temporalmente.',
-    CEILING_HIT: 'Se alcanzó el límite de costo de IA. Intentá más tarde.',
-    SERVICE_UNAVAILABLE: 'Servicio temporalmente no disponible. Intentá más tarde.',
-    NETWORK_INTERRUPTED: 'Se cortó la conexión. Reintentá.',
-    INTERNAL_ERROR: 'Ocurrió un error inesperado. Intentá de nuevo.'
-});
-
-/**
- * Turns an API failure into copy a person can read.
- *
- * Precedence matters. The API sends a resolvable i18n key as the `message`
- * where it wants a SPECIFIC message - notably to tell the consumer-side quota
- * (`consumerLimitReached`, actionable: upgrade) apart from the owner-side one,
- * which share the `LIMIT_REACHED` code and would otherwise collapse into one
- * misleading string. So the message is tried first, the code second, and the
- * generic copy last. The raw message is never rendered: it is either an i18n
- * key or Spanish prose from the API, and both are wrong to show as-is.
- */
-function resolveChatError({
-    t,
-    code,
-    message
-}: {
-    readonly t: (key: string, fallback?: string) => string;
-    readonly code: string | null;
-    readonly message: string | null;
-}): string {
-    if (message && I18N_KEY_PATTERN.test(message)) {
-        const translated = t(message, UNRESOLVED);
-        if (translated !== UNRESOLVED) return translated;
-    }
-
-    if (code) {
-        const fallback = ERROR_FALLBACKS[code];
-        const translated = t(`accommodations.aiChat.error.${code}`, UNRESOLVED);
-        if (translated !== UNRESOLVED) return translated;
-        if (fallback) return fallback;
-    }
-
-    return t('accommodations.aiChat.errorDefault');
 }
 
 /**
@@ -175,6 +67,8 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
     const [draft, setDraft] = useState('');
     const chat = useAccommodationChat({ entityType, entityId, locale, apiUrl });
     const { t } = createTranslations(locale);
+    /** Resolves one chat string; a miss falls to human copy, never a raw key. */
+    const copy = (suffix: string): string => resolveAiChatCopy({ t, entityType, suffix });
 
     const panelRef = useRef<HTMLDivElement>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
@@ -277,7 +171,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                     ref={panelRef}
                     role="dialog"
                     aria-modal="true"
-                    aria-label={t(aiChatCopyKey(entityType, 'panelLabel'))}
+                    aria-label={copy('panelLabel')}
                     className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''}`}
                     data-keyboard-open={isKeyboardOpen ? 'true' : undefined}
                     style={
@@ -290,9 +184,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                     }
                 >
                     <div className={styles.header}>
-                        <h2 className={styles.title}>
-                            {t(aiChatCopyKey(entityType, 'panelLabel'))}
-                        </h2>
+                        <h2 className={styles.title}>{copy('panelLabel')}</h2>
                         <div className={styles.headerActions}>
                             {/* HOS-552 / H-139: hidden below the mobile breakpoint via
                                  `.expandButton`'s media query — see AiChatWidget.module.css.
@@ -303,11 +195,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 type="button"
                                 className={`${styles.iconButton} ${styles.expandButton}`}
                                 onClick={() => setIsExpanded(!isExpanded)}
-                                aria-label={
-                                    isExpanded
-                                        ? t(aiChatCopyKey(entityType, 'collapse'))
-                                        : t(aiChatCopyKey(entityType, 'expand'))
-                                }
+                                aria-label={isExpanded ? copy('collapse') : copy('expand')}
                             >
                                 {isExpanded ? '↘' : '↗'}
                             </button>
@@ -315,16 +203,14 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 type="button"
                                 className={styles.iconButton}
                                 onClick={() => setIsOpen(false)}
-                                aria-label={t(aiChatCopyKey(entityType, 'close'))}
+                                aria-label={copy('close')}
                             >
                                 ✕
                             </button>
                         </div>
                     </div>
 
-                    <div className={styles.disclaimer}>
-                        {t(aiChatCopyKey(entityType, 'headerDisclaimer'))}
-                    </div>
+                    <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
 
                     <div
                         className={styles.messages}
@@ -368,9 +254,9 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         {showThinking && (
                             <output
                                 className={styles.thinking}
-                                aria-label={t(aiChatCopyKey(entityType, 'thinking'), 'Pensando…')}
+                                aria-label={copy('thinking')}
                             >
-                                <span>{t(aiChatCopyKey(entityType, 'thinking'), 'Pensando…')}</span>
+                                <span>{copy('thinking')}</span>
                                 <span
                                     className={styles.thinkingDots}
                                     aria-hidden="true"
@@ -382,14 +268,13 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                             </output>
                         )}
                         {chat.state.showPriceDisclaimer && (
-                            <div className={styles.priceNotice}>
-                                {t(aiChatCopyKey(entityType, 'priceDisclaimer'))}
-                            </div>
+                            <div className={styles.priceNotice}>{copy('priceDisclaimer')}</div>
                         )}
                         {chat.state.status === 'error' && (
                             <div className={styles.errorBubble}>
                                 {resolveChatError({
                                     t,
+                                    entityType,
                                     code: chat.state.errorCode,
                                     message: chat.state.errorMessage
                                 })}
@@ -397,13 +282,13 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         )}
                         {chat.state.status === 'at_cap' && (
                             <div className={styles.capBanner}>
-                                {t(aiChatCopyKey(entityType, 'atCapMessage'))}
+                                {copy('atCapMessage')}
                                 <button
                                     type="button"
                                     className={styles.resetButton}
                                     onClick={chat.reset}
                                 >
-                                    {t(aiChatCopyKey(entityType, 'newConversation'))}
+                                    {copy('newConversation')}
                                 </button>
                             </div>
                         )}
@@ -419,7 +304,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         <textarea
                             ref={composerTextareaRef}
                             className={styles.textarea}
-                            placeholder={t(aiChatCopyKey(entityType, 'placeholder'))}
+                            placeholder={copy('placeholder')}
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}
                             onKeyDown={(e) => {
@@ -442,9 +327,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 !draft.trim()
                             }
                             aria-label={
-                                chat.state.status === 'streaming'
-                                    ? t(aiChatCopyKey(entityType, 'sending'))
-                                    : t(aiChatCopyKey(entityType, 'send'))
+                                chat.state.status === 'streaming' ? copy('sending') : copy('send')
                             }
                         >
                             {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}

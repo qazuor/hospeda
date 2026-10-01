@@ -31,9 +31,19 @@ import { HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute, createAdminRoute } from '../../../utils/route-factory';
+
+/**
+ * `resourceType` of the audit entries this route writes (HOS-884).
+ *
+ * `auditMiddleware` is mounted nowhere, so these explicit calls are the ONLY
+ * durable record of who suspended or lifted. The row's own `updated_by_id` is
+ * overwritten by the next edit, and lifting clears the suspension columns.
+ */
+const SUSPENSION_AUDIT_RESOURCE_TYPE = 'host-trade-declaration-suspension';
 
 const usageService = new HostTradeUsageService({ logger: apiLogger });
 
@@ -44,8 +54,17 @@ const usageService = new HostTradeUsageService({ logger: apiLogger });
  * away a provider's ability to record work at all and he is owed an answer, while
  * lifting one restores the normal state and explains itself. Enforced by a
  * refinement rather than two endpoints, so the screen has one thing to call.
+ *
+ * EXPORTED so the HOS-425 guard can see it.
+ * `test/static-guards/refined-request-body-reaches-the-request.guard.test.ts`
+ * sweeps the refined request bodies to check the factory still enforces them.
+ * A body declared inside a route file and kept private is invisible to that
+ * sweep — which is exactly how this schema, and the one in
+ * `point-of-interest/admin/categories.ts`, were missed by the first inventory
+ * of this issue. The guard now fails on any refined route-local body it cannot
+ * import.
  */
-const DeclarationSuspensionBodySchema = z
+export const DeclarationSuspensionBodySchema = z
     .object({
         suspended: z.boolean(),
         reason: z.string().min(1).max(1000).optional()
@@ -96,13 +115,18 @@ export const adminListHostTradeUsagesRoute = createAdminListRoute({
 /**
  * POST /api/v1/admin/host-trades/{id}/declaration-suspension
  *
- * The body is re-parsed in the handler for the HOS-425 reason documented in
- * `protected/mine-usages.ts`: in Zod 4 a `.superRefine()` leaves a `ZodObject`
- * whose `_def.typeName` is gone, so the route factory's Zod-3-era probe reads
- * this schema as plain and rebuilds it, dropping the refinement. Without the
- * re-parse a suspension with no reason would reach the service, which refuses
- * it too — the rule holds either way, but the refusal would come from the wrong
- * layer.
+ * The handler used to re-parse the body because the route factory dropped the
+ * schema's `.superRefine()` — in Zod 4 a refinement leaves a plain `ZodObject`
+ * and the factory's Zod-3-era `_def.typeName` probe never matched, so the
+ * rebuild lost it. HOS-425 fixed that at the source: the declared
+ * `requestBody` now enforces "suspending requires a reason" at the boundary,
+ * and `test/routes/refinement-enforcement.test.ts` covers this schema
+ * specifically.
+ *
+ * The re-parse stays anyway, and NOT as belt-and-braces: it is what narrows
+ * `body` from `Record<string, unknown>` to the typed shape this handler reads,
+ * so deleting it would trade a runtime check for an unchecked cast. It can no
+ * longer be the only thing enforcing the rule.
  */
 export const adminSetDeclarationSuspensionRoute = createAdminRoute({
     method: 'post',
@@ -136,12 +160,31 @@ export const adminSetDeclarationSuspensionRoute = createAdminRoute({
             if (result.error) {
                 throw new ServiceError(result.error.code, result.error.message);
             }
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: SUSPENSION_AUDIT_RESOURCE_TYPE,
+                resourceId: hostTradeId,
+                metadata: { suspended: true, reason: parsed.data.reason }
+            });
             return { suspended: true };
         }
 
         const result = await usageService.liftDeclarationSuspension({ hostTradeId }, actor);
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+        // A lift that found nothing to lift changed nothing, so it records nothing.
+        if (result.data?.lifted) {
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: SUSPENSION_AUDIT_RESOURCE_TYPE,
+                resourceId: hostTradeId,
+                metadata: { suspended: false }
+            });
         }
         return { suspended: false };
     }

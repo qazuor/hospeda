@@ -3,6 +3,10 @@ import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import {
+    buildModerationCategoryFilterOptions,
+    buildModerationTermKindFilterOptions
+} from '../moderation-term-options';
 import { createModerationTermColumns } from './moderation-terms.columns';
 
 /**
@@ -23,52 +27,14 @@ export const moderationTermsConfig: EntityConfig<ContentModerationTerm> = {
                 labelKey: 'content-moderation.terms.fields.kind',
                 type: 'select',
                 order: 1,
-                options: [
-                    {
-                        value: 'word',
-                        labelKey: 'content-moderation.terms.kinds.word'
-                    },
-                    {
-                        value: 'domain',
-                        labelKey: 'content-moderation.terms.kinds.domain'
-                    }
-                ]
+                options: buildModerationTermKindFilterOptions().options
             },
             {
                 paramKey: 'category',
                 labelKey: 'content-moderation.terms.fields.category',
                 type: 'select',
                 order: 2,
-                options: [
-                    {
-                        value: 'hate',
-                        labelKey: 'content-moderation.categories.hate'
-                    },
-                    {
-                        value: 'sexual',
-                        labelKey: 'content-moderation.categories.sexual'
-                    },
-                    {
-                        value: 'violence',
-                        labelKey: 'content-moderation.categories.violence'
-                    },
-                    {
-                        value: 'harassment',
-                        labelKey: 'content-moderation.categories.harassment'
-                    },
-                    {
-                        value: 'self_harm',
-                        labelKey: 'content-moderation.categories.self_harm'
-                    },
-                    {
-                        value: 'spam',
-                        labelKey: 'content-moderation.categories.spam'
-                    },
-                    {
-                        value: 'other',
-                        labelKey: 'content-moderation.categories.other'
-                    }
-                ]
+                options: buildModerationCategoryFilterOptions().options
             },
             {
                 paramKey: 'enabled',

@@ -1,50 +1,44 @@
 /**
- * GUEST-04 — Conversational AI search panel: query → results → refinement.
+ * GUEST-04 — Conversational AI search panel is members-only for anonymous
+ * visitors.
  *
  * Actors: Anonymous guest.
  * Tags: @p1 @guest @ai
  *
- * Preconditions:
- *   - Suite seed populates accommodations in the DB.
- *   - The `search` AI feature is ENABLED in the target environment's AI settings.
- *     (This test requires a live AI provider — OpenAI-compatible endpoint — and
- *     will fail if the feature flag is off or the provider is unreachable.)
+ * Preconditions: suite seed populates accommodations in the DB. Nothing here
+ * talks to an AI provider — see below.
  *
- * NOTE: Runs in CI/staging where the app + AI provider are live.
- * DO NOT run locally unless `wt:up` is active and AI keys are configured.
+ * ## The deleted second test (HOS-1267)
  *
- * Flow validated (SPEC-212 §7):
- *   1. Navigate to `/es/alojamientos/` — panel textarea + send button are visible.
- *   2. Type a conversational query, submit via send button.
- *   3. Panel reaches a settled state: in-panel results section appears (cards,
- *      empty-state, or skeleton that resolves) AND an assistant reply is committed.
- *   4. Type a refinement query, submit — panel updates (new settled state /
- *      new assistant reply). Demonstrates multi-turn conversation.
+ * This file used to hold a second test, "authenticated user can query the AI
+ * panel and refine results", which was `test.fixme(true, 'ai_settings is not
+ * seeded in the E2E environment — no AI provider')` — permanently off, and
+ * counted in the inventory as coverage of conversational search.
  *
- * Flakiness notes:
- *   - Reply text and filter values are LLM-non-deterministic. Assertions are
- *     purely structural — we check that the reply region is non-empty and that
- *     the results section renders, NOT specific text or card counts.
- *   - Active-filter chips are asserted optionally: they appear only when the LLM
- *     extracts structured intent, which is not guaranteed for every query. The
- *     chips assertion is wrapped in a conditional check and will not fail the test
- *     if chips are absent.
- *   - Timeouts are generous (60 s first turn, 45 s refinement) to accommodate
- *     cold LLM provider latency and slow DB hydration in CI environments.
+ * It was deleted rather than repaired, because seeding `ai_settings` would not
+ * have made it pass. The body navigated as an ANONYMOUS visitor and then
+ * reached for the composer — and the very test above this one proves an
+ * anonymous visitor is served `LoginCta` with no composer at all (SPEC-265 W14
+ * made conversational search members-only). So the test asserted a flow that
+ * the product had already removed, on top of an environment that could not run
+ * it. Its own comment conceded the assertions would have to be "re-pointed at
+ * an authenticated session".
+ *
+ * Restoring real coverage of the authenticated multi-turn flow needs three
+ * things this issue does not deliver: an `ai_settings` row in the E2E seed, a
+ * deterministic AI provider stub that can serve SSE turns (a live LLM makes a
+ * `@p0`-gate suite slow, paid and non-deterministic), and an authenticated
+ * session in the spec. That is a feature-sized piece of work and belongs to the
+ * AI-search testing effort, not to a disabled file that looked like a guard.
  *
  * @see SPEC-212 spec.md §7 — conversational search acceptance criteria
+ * @see https://linear.app/hospeda-beta/issue/HOS-1267
  */
 
 import { expect, test } from '@playwright/test';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
-
-/** Generous timeout for the first AI turn (cold provider + results hydration). */
-const FIRST_TURN_TIMEOUT = 60_000;
-
-/** Slightly tighter timeout for the second turn (provider is warm). */
-const SECOND_TURN_TIMEOUT = 45_000;
 
 test.describe('GUEST-04: conversational AI search panel @p1 @guest @ai', () => {
     test.beforeEach(async ({ page }) => {
@@ -80,99 +74,5 @@ test.describe('GUEST-04: conversational AI search panel @p1 @guest @ai', () => {
         // …and the composer is absent, which is the part that actually gates usage.
         await expect(panel.getByRole('textbox', { name: 'Mensaje' })).toHaveCount(0);
         await expect(panel.getByRole('button', { name: 'Enviar mensaje' })).toHaveCount(0);
-    });
-
-    test('authenticated user can query the AI panel and refine results', async ({ page }) => {
-        // NOT RUNNABLE in the E2E environment as seeded: this drives real SSE turns
-        // against the configured AI provider, and `ai_settings` is empty here (0
-        // rows), so no provider — not even the stub — is resolvable. Enabling it
-        // needs an `ai_settings` row in the E2E seed; the assertions below are kept
-        // verbatim so they can be re-pointed at an authenticated session once it is.
-        test.fixme(true, 'ai_settings is not seeded in the E2E environment — no AI provider');
-
-        await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
-        const aiTrigger = page.getByRole('button', { name: 'Buscá con IA' }).first();
-        await aiTrigger.click();
-        const panel = page.getByRole('region', {
-            name: 'Panel de búsqueda conversacional con IA'
-        });
-        await expect(panel).toBeVisible({ timeout: 10_000 });
-
-        // The composer textarea (label: "Mensaje") and send button must be ready.
-        const textarea = panel.getByRole('textbox', { name: 'Mensaje' });
-        const sendButton = panel.getByRole('button', { name: 'Enviar mensaje' });
-        await expect(textarea).toBeVisible({ timeout: 10_000 });
-        await expect(sendButton).toBeVisible({ timeout: 10_000 });
-
-        // ── 3. Submit a first query ────────────────────────────────────────────
-        await textarea.fill('cabaña para 4 con pileta');
-        await sendButton.click();
-
-        // ── 4. Wait for panel to reach a settled state after first turn ────────
-        //
-        // "Settled" means: the AI has responded AND results have hydrated (or the
-        // API returned zero results). We wait for EITHER:
-        //   a) [data-testid="ai-search-results"] to appear (results section mounted),
-        //   b) the "Resultados encontrados" list to be present (results with cards),
-        //   c) the empty-state paragraph to appear (zero results is still settled),
-        //   d) AND at least one committed assistant reply to appear.
-        //
-        // We do NOT assert specific card count or exact reply text.
-
-        const resultsSection = panel.locator('[data-testid="ai-search-results"]');
-        const resultsGrid = panel.getByRole('list', { name: 'Resultados encontrados' });
-        const emptyState = panel.getByText('No encontramos alojamientos con esos filtros.', {
-            exact: true
-        });
-        const assistantReply = panel.locator('[data-testid="ai-search-reply"]').first();
-
-        // Wait for the results section wrapper to mount (signals filters SSE arrived
-        // and the accommodations fetch started or completed).
-        await expect(resultsSection).toBeVisible({ timeout: FIRST_TURN_TIMEOUT });
-
-        // Wait for skeleton / loading state to resolve: either the results grid OR
-        // the empty-state paragraph must become visible (loading skeleton disappears).
-        await expect(resultsGrid.or(emptyState)).toBeVisible({
-            timeout: FIRST_TURN_TIMEOUT
-        });
-
-        // A committed assistant reply bubble must be present (reply SSE completed).
-        await expect(assistantReply).toBeVisible({ timeout: FIRST_TURN_TIMEOUT });
-        // The reply must contain some text — not just an empty bubble.
-        await expect(assistantReply).not.toBeEmpty();
-
-        // ── 5. Optional: check active-filter chips appeared ────────────────────
-        // Chips only render when the LLM extracts structured intent. We check
-        // opportunistically — fail-open so the test is not brittle on chip presence.
-        const chipsList = panel.getByRole('list', { name: 'Filtros activos' });
-        const chipsCount = await chipsList.count();
-        if (chipsCount > 0) {
-            await expect(chipsList).toBeVisible({ timeout: 5_000 });
-        }
-
-        // ── 6. Submit a refinement query ───────────────────────────────────────
-        // The textarea is re-enabled after streaming ends. Wait for it.
-        await expect(textarea).toBeEnabled({ timeout: FIRST_TURN_TIMEOUT });
-        await textarea.fill('más barata, hasta 50 mil');
-        await sendButton.click();
-
-        // ── 7. Assert the panel accepts the refinement and updates ─────────────
-        //
-        // After the second turn the panel must show a new (second) assistant reply.
-        // We assert there are now at least 2 committed assistant bubbles — the panel
-        // has progressed through a second turn.
-
-        await expect(panel.locator('[data-testid="ai-search-reply"]').nth(1)).toBeVisible({
-            timeout: SECOND_TURN_TIMEOUT
-        });
-
-        // Results section should still be mounted (may have updated results or same).
-        await expect(resultsSection).toBeVisible({ timeout: SECOND_TURN_TIMEOUT });
-
-        // ── 8. Final settled state ─────────────────────────────────────────────
-        // After the second turn completes, the loading/streaming state should resolve.
-        await expect(resultsGrid.or(emptyState)).toBeVisible({
-            timeout: SECOND_TURN_TIMEOUT
-        });
     });
 });

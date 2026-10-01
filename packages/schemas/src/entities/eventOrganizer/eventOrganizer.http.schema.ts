@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 
 /**
  * HTTP-compatible event organizer search schema with automatic coercion
@@ -56,13 +57,13 @@ export const EventOrganizerCreateHttpSchema = z.object({
     // Contact information
     email: z.string().email().optional(),
     phone: z.string().optional(),
-    website: z.string().url().optional(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
     // Social media links
-    twitter: z.string().url().optional(),
-    facebook: z.string().url().optional(),
-    instagram: z.string().url().optional(),
-    linkedin: z.string().url().optional()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish()
 });
 
 export type EventOrganizerCreateHttp = z.infer<typeof EventOrganizerCreateHttpSchema>;
@@ -201,14 +202,24 @@ export const httpToDomainEventOrganizerUpdate = (
               }
             : undefined,
 
-        // Social networks as nested object (only if fields are provided)
+        // Social networks as a PARTIAL nested object: only the keys the caller
+        // actually sent are emitted, because `event_organizers.social` is a
+        // shallow-MERGED column (HOS-1262). A key sent as `null` clears that
+        // network; a key left out is preserved. Presence is tested with
+        // `!== undefined`, never truthiness, or a `null` (a clear) would be dropped.
         socialNetworks:
-            httpData.twitter || httpData.facebook || httpData.instagram || httpData.linkedin
+            httpData.twitter !== undefined ||
+            httpData.facebook !== undefined ||
+            httpData.instagram !== undefined ||
+            httpData.linkedin !== undefined
                 ? {
-                      twitter: httpData.twitter,
-                      facebook: httpData.facebook,
-                      instagram: httpData.instagram,
-                      linkedIn: httpData.linkedin // Note: field name is linkedIn (capital I)
+                      ...(httpData.twitter === undefined ? {} : { twitter: httpData.twitter }),
+                      ...(httpData.facebook === undefined ? {} : { facebook: httpData.facebook }),
+                      ...(httpData.instagram === undefined
+                          ? {}
+                          : { instagram: httpData.instagram }),
+                      // Note: field name is linkedIn (capital I)
+                      ...(httpData.linkedin === undefined ? {} : { linkedIn: httpData.linkedin })
                   }
                 : undefined
     };

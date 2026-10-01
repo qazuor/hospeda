@@ -176,6 +176,15 @@ export interface PublishEligibilityVerdict {
      * staff — they bypass billing, so no trial is ever inserted for them.
      */
     readonly startsTrial: boolean;
+    /**
+     * Whether this owner's FIRST publish is refused right now because an admin
+     * paused new signups (`billing_settings.newPaidSignupsFrozen`): the publish
+     * would have started a trial, and starting one is a new signup. When
+     * `true`, `canPublish` and `startsTrial` are both `false` — the listing
+     * stays a draft and no clock starts. Always `false` for staff and for an
+     * owner who already holds a live owner subscription or trial.
+     */
+    readonly firstPublishPaused: boolean;
 }
 
 /**
@@ -242,6 +251,22 @@ export interface StartLocalTrialResult {
 export interface AccommodationPublishDeps {
     /** Resolves the publish eligibility for a given owner. */
     checkEligibility: (ownerId: string, ctx?: ServiceContext) => Promise<PublishEligibility>;
+
+    /**
+     * Reads whether an admin paused new self-service signups
+     * (`billing_settings.newPaidSignupsFrozen`).
+     *
+     * Consulted ONLY when a publish would start a local trial — a first
+     * publish is a new signup — and only when the OWNER is the one publishing:
+     * an admin publishing on the owner's behalf is exempt, like every other
+     * admin action. A publish under a live subscription or trial never asks.
+     *
+     * Optional so consumers that never wired the freeze keep today's
+     * behaviour; absent reads as "not frozen".
+     *
+     * @returns `{ frozen }`, `true` only while the freeze is on.
+     */
+    readNewSignupsFreeze?: () => Promise<{ readonly frozen: boolean }>;
 
     /**
      * Inserts a Hospeda-owned, no-card trial subscription for the owner —
@@ -389,3 +414,12 @@ export interface AccommodationHookState extends Record<string, unknown> {
     /** Auto-regenerated slug for an unpublished rename (HOS-784 stage 1). */
     regeneratedSlug?: string;
 }
+
+/**
+ * `reason` carried by the `NEW_PAID_SIGNUPS_FROZEN` refusal of a FIRST publish
+ * (one that would start a trial) while an admin has paused new signups.
+ *
+ * The code is shared with the checkout routes; the reason is what lets a
+ * client say "your listing was kept as a draft" instead of the checkout copy.
+ */
+export const FIRST_PUBLISH_PAUSED_REASON = 'FIRST_PUBLISH_PAUSED' as const;

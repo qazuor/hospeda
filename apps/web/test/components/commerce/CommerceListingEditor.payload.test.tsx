@@ -577,10 +577,40 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body.socialNetworks).toEqual({
+            // Strict: every member is present. The empty ones are `null`, never
+            // omitted, because `socialNetworks` is merged by the API (HOS-1262).
+            expect(body.socialNetworks).toStrictEqual({
                 facebook: 'https://facebook.com/new',
-                instagram: 'https://instagram.com/keepme'
+                instagram: 'https://instagram.com/keepme',
+                twitter: null,
+                tiktok: null,
+                youtube: null,
+                linkedIn: null
             });
+        });
+
+        it('sends an explicit null for a social URL the owner cleared (HOS-1262)', async () => {
+            renderEditor(
+                'gastronomy',
+                buildListing({
+                    socialNetworks: {
+                        facebook: 'https://facebook.com/old',
+                        instagram: 'https://instagram.com/keepme'
+                    }
+                }),
+                'contact'
+            );
+
+            fireEvent.change(screen.getByLabelText('facebook'), { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            // `null` is the only way to clear a key of a merged column; `''`
+            // would fail the URL regex and omission would keep the stored link.
+            expect((body.socialNetworks as Record<string, unknown>).facebook).toBeNull();
+            expect((body.socialNetworks as Record<string, unknown>).instagram).toBe(
+                'https://instagram.com/keepme'
+            );
         });
 
         it('sends all four i18n fields together when EVERY one of them was actually edited', async () => {

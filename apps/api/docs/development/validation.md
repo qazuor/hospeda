@@ -130,7 +130,8 @@ export const searchUsersRoute = createOpenApiRoute({
   requestQuery: {
     email: z.string().email().optional(),
     role: z.enum(['admin', 'user']).optional(),
-    isActive: z.coerce.boolean().optional()
+    // Query booleans are strict: 'true' | 'false' only (HOS-410)
+    isActive: createBooleanQueryParam('Filter by active status')
   },
   responseSchema: z.array(userSchema),
   handler: async (c, params, body, query) => {
@@ -201,8 +202,15 @@ pageSize: z.coerce.number().default(10)
 // Boolean
 isActive: z.boolean()
 
-// Coerce from string ('true', 'false', '1', '0')
-isActive: z.coerce.boolean()
+// From a query string: 'true' | 'false' only, anything else is a 400.
+// NEVER z.coerce.boolean(): it is Boolean(value), so 'false' becomes true (HOS-410).
+isActive: createBooleanQueryParam('Filter by active status')
+
+// Same, with a default that applies only when the parameter is absent
+fuzzySearch: createBooleanQueryParamWithDefault('Enable fuzzy search', true)
+
+// From a request body (real boolean, or the exact strings 'true' | 'false')
+isPublished: httpBodyBoolean()
 
 // Optional with default
 isPublished: z.boolean().default(false)

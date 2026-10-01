@@ -89,6 +89,16 @@ export function createRouter() {
                     success: false,
                     error: {
                         code: transformedError.code,
+                        // R5 (docs/error-contract.md): "the client gets the code
+                        // and a message." This body carried no `message` at all,
+                        // so a client reading `error.message` for a generic toast
+                        // rendered `undefined` on every field-level rejection.
+                        // HOS-425 made that reachable on seven more routes: a
+                        // cross-field rejection that used to leave the handler as
+                        // a flat `ServiceError(VALIDATION_ERROR)` `{code,
+                        // message}` is now refused here instead. Additive — every
+                        // existing key keeps its value.
+                        message: transformedError.userFriendlyMessage,
                         messageKey: transformedError.messageKey,
                         details: transformedError.details,
                         summary: transformedError.summary,

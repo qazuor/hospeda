@@ -17,6 +17,7 @@ import { defineConfig } from 'vitest/config';
 process.env.NODE_ENV = 'test';
 
 export default defineConfig({
+    cacheDir: resolve(import.meta.dirname, '../../.vite/api'),
     test: {
         globals: true,
         environment: 'node',
@@ -78,52 +79,61 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@': resolve(__dirname, './src'),
-            '@repo/schemas': resolve(__dirname, '../../packages/schemas/src'),
+            '@': resolve(import.meta.dirname, './src'),
+            '@repo/schemas': resolve(import.meta.dirname, '../../packages/schemas/src'),
             // Subpath aliases for @repo/db must be listed before the base alias
             // so Vite matches the more specific path first.
-            '@repo/db/client': resolve(__dirname, '../../packages/db/src/client.ts'),
+            '@repo/db/client': resolve(import.meta.dirname, '../../packages/db/src/client.ts'),
             '@repo/db/schemas/billing': resolve(
-                __dirname,
+                import.meta.dirname,
                 '../../packages/db/src/schemas/billing/index.ts'
             ),
-            '@repo/db/schemas': resolve(__dirname, '../../packages/db/src/schemas/index.ts'),
-            '@repo/db': resolve(__dirname, '../../packages/db/src'),
-            '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
-            '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
-            '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
-            '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
-            '@repo/email': resolve(__dirname, '../../packages/email/src'),
+            '@repo/db/schemas': resolve(
+                import.meta.dirname,
+                '../../packages/db/src/schemas/index.ts'
+            ),
+            '@repo/db': resolve(import.meta.dirname, '../../packages/db/src'),
+            '@repo/logger': resolve(import.meta.dirname, '../../packages/logger/src'),
+            '@repo/utils': resolve(import.meta.dirname, '../../packages/utils/src'),
+            '@repo/config': resolve(import.meta.dirname, '../../packages/config/src'),
+            '@repo/service-core': resolve(import.meta.dirname, '../../packages/service-core/src'),
+            '@repo/billing': resolve(import.meta.dirname, '../../packages/billing/src'),
+            '@repo/notifications': resolve(import.meta.dirname, '../../packages/notifications/src'),
+            '@repo/email': resolve(import.meta.dirname, '../../packages/email/src'),
             // SPEC-187: alias content-moderation so unit tests of files in the
             // entitlement-filter chain (e.g. entitlement-filter-strip.test.ts
             // importing stripMarkdown) can resolve the transitive import in
             // service-core's message.service.ts without needing the package's
             // dist/ to be built. Mirrors the pattern used for the other
             // @repo/* packages above.
-            '@repo/content-moderation': resolve(__dirname, '../../packages/content-moderation/src'),
+            '@repo/content-moderation': resolve(
+                import.meta.dirname,
+                '../../packages/content-moderation/src'
+            ),
             // Pre-existing: ai-core has the same dist-required problem; without
             // this alias, every test that transitively imports
             // `apps/api/src/utils/ai-error-mapper.ts` (e.g. platform-settings
             // routes under SPEC-156) fails to load.
-            '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),
+            '@repo/ai-core': resolve(import.meta.dirname, '../../packages/ai-core/src'),
             // Subpath aliases for @repo/feedback must be listed before the base alias
             // so Vite matches the more specific path first.
             '@repo/feedback/schemas': resolve(
-                __dirname,
+                import.meta.dirname,
                 '../../packages/feedback/src/schemas/index.ts'
             ),
-            '@repo/feedback': resolve(__dirname, '../../packages/feedback/src'),
+            '@repo/feedback': resolve(import.meta.dirname, '../../packages/feedback/src'),
             // Subpath aliases for @repo/media must be listed before the base alias
             // so Vite matches the more specific path first.
-            '@repo/media/server': resolve(__dirname, '../../packages/media/src/server/index.ts'),
-            '@repo/media': resolve(__dirname, '../../packages/media/src'),
+            '@repo/media/server': resolve(
+                import.meta.dirname,
+                '../../packages/media/src/server/index.ts'
+            ),
+            '@repo/media': resolve(import.meta.dirname, '../../packages/media/src'),
             // Workaround for pnpm hoisting issue: the better-auth instance installed in
             // apps/api/node_modules does not carry @better-auth/core as a local sub-dependency.
             // Alias it explicitly to the canonical pnpm store location so Vite can resolve it.
             '@better-auth/core': resolve(
-                __dirname,
+                import.meta.dirname,
                 '../../node_modules/.pnpm/@better-auth+core@1.4.18_@better-auth+utils@0.3.0_@better-fetch+fetch@1.1.21_better-call@1.1._5kqvb5jwd4bes4w5eajzywfnli/node_modules/@better-auth/core'
             )
         }

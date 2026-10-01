@@ -507,12 +507,16 @@ describe('CommerceListingEditor', () => {
         expect(mockPatch).toHaveBeenCalledWith({
             path: '/api/v1/protected/gastronomies/abc',
             body: {
+                // An empty member travels as `null`, not `undefined`: the column
+                // is merged by the API (HOS-1262), so an omitted key would
+                // leave a stored link in place.
                 socialNetworks: {
                     facebook: 'https://facebook.com/x',
-                    instagram: undefined,
-                    twitter: undefined,
-                    tiktok: undefined,
-                    youtube: undefined
+                    instagram: null,
+                    twitter: null,
+                    tiktok: null,
+                    youtube: null,
+                    linkedIn: null
                 }
             }
         });

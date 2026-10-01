@@ -59,6 +59,25 @@ function transformRelationsForDrizzle(
  * Provides standardized CRUD, soft/hard delete, restore, and relation methods with logging and error handling.
  * Extend this class for each domain model and provide the required schema/table and entity name.
  *
+ * ## Error contract: every caught failure keeps its `cause` (HOS-1174)
+ *
+ * Every `DbError` thrown from a `catch` block here passes the caught error as
+ * its `cause`. This is load-bearing, not cosmetic: Drizzle wraps a query
+ * failure in an error whose `message` is only `"Failed query: <SQL>\nparams:
+ * <...>"`, while the PostgreSQL SQLSTATE (`23505` for a unique violation,
+ * `23503` for a foreign key), the offending `constraint`, `table` and `column`
+ * live one level down on `error.cause`, on the pg driver's own error. Copying
+ * only `err.message` — which is what every site here used to do — destroyed
+ * that chain at the model boundary for EVERY entity in the repo, so no caller
+ * could tell a unique-constraint conflict (a 409) from a genuine backend
+ * failure (a 500), in violation of `apps/api/docs/error-contract.md`.
+ *
+ * The only call sites that legitimately omit a `cause` are the pre-flight
+ * guards (empty `where`, missing `deletedAt` column): they reject a CALLER
+ * mistake before any query runs, so there is no driver error to attach. A
+ * static guard in `test/models/base.model.error-cause.test.ts` freezes that
+ * set, so a new catch-site cannot silently go back to dropping the cause.
+ *
  * @template T - The entity type managed by the model
  */
 export abstract class BaseModelImpl<T extends Record<string, unknown>> implements BaseModel<T> {
@@ -220,7 +239,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'findAll', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findAll', logContext, err.message);
+            throw new DbError(this.entityName, 'findAll', logContext, err.message, err);
         }
     }
 
@@ -245,7 +264,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'findById', { id }, err);
             } catch {}
-            throw new DbError(this.entityName, 'findById', { id }, err.message);
+            throw new DbError(this.entityName, 'findById', { id }, err.message, err);
         }
     }
 
@@ -292,7 +311,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'findByIds', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findByIds', logContext, err.message);
+            throw new DbError(this.entityName, 'findByIds', logContext, err.message, err);
         }
     }
 
@@ -317,7 +336,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'findOne', safeWhere, err);
             } catch {}
-            throw new DbError(this.entityName, 'findOne', safeWhere, err.message);
+            throw new DbError(this.entityName, 'findOne', safeWhere, err.message, err);
         }
     }
 
@@ -341,7 +360,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'create', data, err);
             } catch {}
-            throw new DbError(this.entityName, 'create', data, err.message);
+            throw new DbError(this.entityName, 'create', data, err.message, err);
         }
     }
 
@@ -410,7 +429,8 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 this.entityName,
                 'update',
                 { where: safeWhere, data: safeData },
-                err.message
+                err.message,
+                err
             );
         }
     }
@@ -485,7 +505,8 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 this.entityName,
                 'update',
                 { where: safeWhere, data: safeData },
-                err.message
+                err.message,
+                err
             );
         }
     }
@@ -536,7 +557,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'count', safeWhere, err);
             } catch {}
-            throw new DbError(this.entityName, 'count', safeWhere, err.message);
+            throw new DbError(this.entityName, 'count', safeWhere, err.message, err);
         }
     }
 
@@ -559,7 +580,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'raw', query, err);
             } catch {}
-            throw new DbError(this.entityName, 'raw', query, err.message);
+            throw new DbError(this.entityName, 'raw', query, err.message, err);
         }
     }
 
@@ -592,7 +613,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'hardDelete', safeWhere, err);
             } catch {}
-            throw new DbError(this.entityName, 'hardDelete', safeWhere, err.message);
+            throw new DbError(this.entityName, 'hardDelete', safeWhere, err.message, err);
         }
     }
 
@@ -658,7 +679,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'softDelete', safeWhere, err);
             } catch {}
-            throw new DbError(this.entityName, 'softDelete', safeWhere, err.message);
+            throw new DbError(this.entityName, 'softDelete', safeWhere, err.message, err);
         }
     }
 
@@ -723,7 +744,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'restore', safeWhere, err);
             } catch {}
-            throw new DbError(this.entityName, 'restore', safeWhere, err.message);
+            throw new DbError(this.entityName, 'restore', safeWhere, err.message, err);
         }
     }
 
@@ -780,7 +801,8 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 this.entityName,
                 'findWithRelations',
                 { where: safeWhere, relations },
-                err.message
+                err.message,
+                err
             );
         }
     }
@@ -935,7 +957,13 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logError(this.entityName, 'findOneWithRelations', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findOneWithRelations', logContext, err.message);
+            throw new DbError(
+                this.entityName,
+                'findOneWithRelations',
+                logContext,
+                err.message,
+                err
+            );
         }
     }
 
@@ -1124,7 +1152,8 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 this.entityName,
                 'findAllWithRelations',
                 { where, options, relations },
-                err.message
+                err.message,
+                err
             );
         }
     }

@@ -160,19 +160,26 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                 vi.fn().mockResolvedValue(makePostsApiResponse([{ slug: 'turismo-litoral' }]))
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            expect(posts).toHaveLength(1);
-            expect(posts[0].slug).toBe('turismo-litoral');
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({
+                ok: true,
+                items: [expect.objectContaining({ slug: 'turismo-litoral' })]
+            });
         });
 
-        it('returns empty array when API fetch throws', async () => {
+        // HOS-1381: these three used to assert `toHaveLength(0)`. An empty array
+        // was the same value a blog with nothing published produces, so the
+        // assertion could not tell the two apart — which is exactly what let the
+        // feed answer a cacheable 200 during an outage.
+
+        it('reports `unreachable` when the API fetch throws', async () => {
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            expect(posts).toHaveLength(0);
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'unreachable' });
         });
 
-        it('returns empty array when API response is not ok (HTTP 500)', async () => {
+        it('reports `http-error` when the API response is not ok (HTTP 500)', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue(
@@ -182,11 +189,11 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                 )
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            expect(posts).toHaveLength(0);
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'http-error' });
         });
 
-        it('returns empty array when API ok field is false', async () => {
+        it('reports `bad-payload` when the API ok field is false', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi
@@ -199,8 +206,17 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                     )
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            expect(posts).toHaveLength(0);
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: false, failure: 'bad-payload' });
+        });
+
+        it('reports success with zero items when the blog really has none', async () => {
+            // The counterpart of the three above: this one MUST stay on the
+            // success branch, or a brand-new locale's feed would 503 forever.
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makePostsApiResponse([])));
+
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            expect(result).toEqual({ ok: true, items: [] });
         });
 
         // ---------------------------------------------------------------------
@@ -226,9 +242,11 @@ describe('feeds.ts — blog posts RSS helpers', () => {
             );
 
             // Act
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
 
             // Assert
+            expect(result.ok).toBe(true);
+            const posts = result.ok ? result.items : [];
             expect(posts).toHaveLength(2);
             expect(posts.map((p) => p.slug)).toEqual(['turismo-litoral', 'costanera']);
         });
@@ -268,11 +286,11 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                     )
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
             const response = await buildPostsFeed({
                 locale: 'es',
                 siteUrl: 'https://hospeda.com.ar',
-                posts
+                posts: result.ok ? result.items : []
             });
             const body = await response.text();
 
@@ -404,21 +422,16 @@ describe('feeds.ts — blog posts RSS helpers', () => {
     // -------------------------------------------------------------------------
 
     describe('fetch → build pipeline', () => {
-        it('graceful degradation: API failure → empty posts → valid empty RSS', async () => {
+        it('API failure never reaches the feed builder at all (HOS-1381)', async () => {
+            // Was "graceful degradation: API failure → empty posts → valid empty
+            // RSS", asserting a 200. That degradation WAS the defect: the route
+            // now short-circuits on the failure branch, and the end-to-end
+            // status is covered in `feeds-api-down.test.ts`.
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            const response = await buildPostsFeed({
-                locale: 'es',
-                siteUrl: 'https://hospeda.test',
-                posts
-            });
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
 
-            expect(response.status).toBe(200);
-            const body = await response.text();
-            expect(body).toContain('<rss');
-            expect(body).toContain('<channel>');
-            expect(body).not.toContain('<item>');
+            expect(result.ok).toBe(false);
         });
 
         it('full pipeline: fetch → build with items', async () => {
@@ -432,11 +445,11 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                 )
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
             const response = await buildPostsFeed({
                 locale: 'es',
                 siteUrl: 'https://hospeda.test',
-                posts
+                posts: result.ok ? result.items : []
             });
 
             const body = await response.text();
@@ -446,7 +459,7 @@ describe('feeds.ts — blog posts RSS helpers', () => {
             expect(body).toContain('Artículo Dos');
         });
 
-        it('API non-ok HTTP response → empty feed', async () => {
+        it('API non-ok HTTP response is a failure, not an empty feed (HOS-1381)', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi
@@ -454,17 +467,9 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                     .mockResolvedValue(new Response(JSON.stringify({ ok: false }), { status: 500 }))
             );
 
-            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
-            expect(posts).toHaveLength(0);
+            const result = await fetchLatestPosts({ apiUrl: 'http://api.test' });
 
-            const response = await buildPostsFeed({
-                locale: 'es',
-                siteUrl: 'https://hospeda.test',
-                posts
-            });
-
-            const body = await response.text();
-            expect(body).not.toContain('<item>');
+            expect(result).toEqual({ ok: false, failure: 'http-error' });
         });
     });
 });

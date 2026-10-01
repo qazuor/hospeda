@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
+import { translateApiError } from '@/lib/api-errors';
 import {
     buildLimitReachedPayloadFromDetails,
     type LimitReachedToastPayload
@@ -23,6 +24,7 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
+import { describeUploadEntityError } from '@/lib/media/upload-entity-error';
 import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
@@ -285,12 +287,24 @@ export function usePhotoSection({
                 return;
             }
 
+            // HOS-1218: the API's `message` is English (or Spanish, for the
+            // plan-limit copy) log text. Resolve from `code`/`reason`/`details`
+            // instead; an unmapped code degrades to the localized fallback, so
+            // `message` is deliberately not forwarded.
             reportUploadError(
-                error.message ??
-                    t(
+                translateApiError({
+                    error: {
+                        code: error.code,
+                        reason: error.reason,
+                        details: error.details,
+                        status: error.status
+                    },
+                    t,
+                    fallback: t(
                         'host.properties.editor.photo.persistFailed',
                         'No se pudo guardar la imagen en la base de datos'
                     )
+                })
             );
         },
         [locale, t, reportUploadError]
@@ -368,9 +382,14 @@ export function usePhotoSection({
                 setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
-                    err instanceof Error
-                        ? err.message
-                        : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
+                    describeUploadEntityError({
+                        err,
+                        t,
+                        fallback: t(
+                            'host.properties.editor.photo.uploadFailed',
+                            'Error al subir la imagen'
+                        )
+                    })
                 );
             } finally {
                 setIsUploading(false);
@@ -507,12 +526,14 @@ export function usePhotoSection({
                     setGalleryItems((prev) => [...prev, mediaRowToItem(addResult.data.media)]);
                 } catch (err) {
                     reportUploadError(
-                        err instanceof Error
-                            ? err.message
-                            : t(
-                                  'host.properties.editor.photo.uploadFailed',
-                                  'Error al subir la imagen'
-                              )
+                        describeUploadEntityError({
+                            err,
+                            t,
+                            fallback: t(
+                                'host.properties.editor.photo.uploadFailed',
+                                'Error al subir la imagen'
+                            )
+                        })
                     );
                 }
             }

@@ -108,7 +108,18 @@
         "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue.",
         "SUBSCRIPTION_CANCEL_PENDING": "Your subscription is scheduled to cancel at the end of the period. You can't change plans until the current period ends.",
         "NO_ACTIVE_TRIAL": "You have no free trial running, so there is nothing to extend. The code was not used — keep it.",
-        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "This code cannot be redeemed. A complimentary subscription is granted by the team — get in touch if you were promised one."
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "This code cannot be redeemed. A complimentary subscription is granted by the team — get in touch if you were promised one.",
+        "CLOUDINARY_NOT_CONFIGURED": "The photo upload service is not available right now. Please try again in a few minutes.",
+        "SESSION_STALE": "Your session has expired. Sign in again and try once more.",
+        "INVALID_MULTIPART_DATA": "We could not read the file you sent. Please try again.",
+        "INVALID_FORM_FIELDS": "The upload data is not valid. Reload the page and try again.",
+        "UNSUPPORTED_ENTITY_TYPE": "Photos cannot be uploaded for this type of content.",
+        "GALLERY_LIMIT_EXCEEDED_one": "You have reached the gallery limit of {{count}} photo.",
+        "GALLERY_LIMIT_EXCEEDED_other": "You have reached the gallery limit of {{count}} photos.",
+        "MISSING_FILE": "No image was received. Choose a file and try again.",
+        "EMPTY_FILE": "The file is empty. Choose another image.",
+        "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual.",
+        "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
     },
     "filters": "Filters",
     "filterChips": {

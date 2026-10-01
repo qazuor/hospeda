@@ -33,8 +33,13 @@ ${pc.bold('Uso')}
   hops update [--dry-run]
 
   ${pc.bold('--dry-run')}  Te dice qué traería y no toca nada.
+  ${pc.bold('--json')}     Con --dry-run devuelve un resultado estructurado por stdout.
   ${pc.bold('--help')}     Esta página.
 `;
+}
+
+function printDryRunJson(value: Record<string, unknown>): void {
+    process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
 /** Reads the SHA the staging checkout currently sits on. */
@@ -65,6 +70,25 @@ async function toolChanges({
         .filter((line) => line.length > 0);
 }
 
+/** Reconciles ignored local env files after the code checkout moves. */
+async function reconcileLocalEnv({
+    stagingPath,
+    exec
+}: {
+    readonly stagingPath: string;
+    readonly exec: (job: Parameters<ReturnType<typeof runnerFor>['exec']>[0]) => Promise<number>;
+}): Promise<number> {
+    const script = join(stagingPath, 'scripts/reconcile-local-env.sh');
+    if (!existsSync(script)) {
+        process.stderr.write(
+            `${pc.yellow('Aviso:')} staging todavía no trae reconcile-local-env.sh; ` +
+                'se mantiene el entorno existente.\n'
+        );
+        return 0;
+    }
+    return await exec({ command: 'bash', args: [script, stagingPath], cwd: stagingPath });
+}
+
 /** Hashes a lockfile so a dependency change can be detected. */
 function lockfileOf({ toolsPath }: { readonly toolsPath: string }): string | null {
     const path = join(toolsPath, 'bun.lock');
@@ -89,7 +113,18 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     }
     const { target, rest } = extractTarget({ argv });
     const dryRun = rest.includes('--dry-run');
+    const json = rest.includes('--json');
     const runner = runnerFor({ target });
+    const steps: Array<{ readonly name: string; readonly code: number }> = [];
+    const execStep = async (
+        name: string,
+        job: Parameters<ReturnType<typeof runnerFor>['exec']>[0]
+    ): Promise<number> => {
+        if (!json) return await runner.exec(job);
+        const result = await runner.execCapture(job);
+        steps.push({ name, code: result.code });
+        return result.code;
+    };
 
     const repoRoot = await resolveRepoRoot({ cwd: process.cwd() });
     const all = await listWorktrees({ repoRoot });
@@ -107,9 +142,26 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
                     `${pc.dim(candidate)}\n` +
                     'Hasta que se mergee a staging, hops corre desde el checkout donde lo instalaste.\n'
             );
+            if (dryRun && json) {
+                printDryRunJson({
+                    dryRun: true,
+                    status: 'unusable-staging-checkout',
+                    checkout: candidate,
+                    touched: false
+                });
+            }
             return dryRun ? 0 : 1;
         }
         if (dryRun) {
+            if (json) {
+                printDryRunJson({
+                    dryRun: true,
+                    status: 'would-create-staging-checkout',
+                    checkout: candidate,
+                    touched: false
+                });
+                return 0;
+            }
             process.stderr.write(
                 `${pc.dim('(--dry-run)')} crearía el checkout de staging en ${candidate}\n`
             );
@@ -135,7 +187,42 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     const before = await headSha({ cwd: stagingPath });
     const lockBefore = lockfileOf({ toolsPath });
 
-    const fetched = await runner.exec({
+    if (dryRun) {
+        // `git fetch --dry-run` still advertises FETCH_HEAD and can touch Git
+        // metadata on some versions. ls-remote is enough to compare SHAs and
+        // is the only network operation allowed in a genuinely read-only plan.
+        const remote = await run({
+            command: 'git',
+            args: ['ls-remote', 'origin', `refs/heads/${STAGING_BRANCH}`],
+            cwd: stagingPath
+        });
+        const wanted = remote.ok ? (remote.stdout.trim().split(/\s+/)[0] ?? null) : null;
+        if (json) {
+            printDryRunJson({
+                dryRun: true,
+                status: before !== null && wanted === before ? 'up-to-date' : 'would-update',
+                checkout: stagingPath,
+                before,
+                wanted,
+                touched: false,
+                remoteOk: remote.ok
+            });
+            return remote.ok ? 0 : 1;
+        }
+        if (before !== null && wanted === before) {
+            process.stderr.write(
+                `${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`
+            );
+            return 0;
+        }
+        process.stderr.write(
+            `${pc.dim('(--dry-run) no se tocó nada.')} ` +
+                `${before?.slice(0, 9) ?? '?'} → ${wanted?.slice(0, 9) ?? '?'}\n`
+        );
+        return remote.ok ? 0 : 1;
+    }
+
+    const fetched = await execStep('fetch', {
         command: 'git',
         args: ['fetch', 'origin', STAGING_BRANCH],
         cwd: stagingPath
@@ -151,7 +238,21 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
 
     if (before !== null && wanted === before) {
         process.stderr.write(`${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`);
-        return 0;
+        if (dryRun) return 0;
+        const reconciled = await reconcileLocalEnv({
+            stagingPath,
+            exec: (job) => execStep('env-reconcile', job)
+        });
+        if (json) {
+            printDryRunJson({
+                dryRun: false,
+                status: reconciled === 0 ? 'up-to-date' : 'failed',
+                checkout: stagingPath,
+                steps,
+                touched: false
+            });
+        }
+        return reconciled;
     }
 
     if (before !== null && wanted !== null) {
@@ -163,27 +264,25 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
         }
     }
 
-    if (dryRun) {
-        process.stderr.write(
-            `${pc.dim('(--dry-run) no se tocó nada.')} ` +
-                `${before?.slice(0, 9) ?? '?'} → ${wanted?.slice(0, 9) ?? '?'}\n`
-        );
-        return 0;
-    }
-
     // Hard reset, not pull: nothing is ever authored in this checkout, so there
     // is no work to preserve and a rewritten history upstream must not be able
     // to wedge the tool.
-    const reset = await runner.exec({
+    const reset = await execStep('reset', {
         command: 'git',
         args: ['reset', '--hard', `origin/${STAGING_BRANCH}`],
         cwd: stagingPath
     });
     if (reset !== 0) return reset;
 
+    const reconciled = await reconcileLocalEnv({
+        stagingPath,
+        exec: (job) => execStep('env-reconcile', job)
+    });
+    if (reconciled !== 0) return reconciled;
+
     if (lockfileOf({ toolsPath }) !== lockBefore) {
         process.stderr.write(`${pc.dim('Cambiaron las dependencias, reinstalando…')}\n`);
-        const installed = await runner.exec({
+        const installed = await execStep('install-dependencies', {
             command: 'bun',
             args: ['install'],
             cwd: toolsPath
@@ -193,9 +292,19 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
 
     // Regenerate the shell functions: staging may have added a command, and
     // without this it exists in the menu but has no binary alias.
-    return await runner.exec({
+    const installedWrappers = await execStep('install-wrappers', {
         command: 'bash',
         args: [join(toolsPath, 'install.sh')],
         cwd: toolsPath
     });
+    if (json) {
+        printDryRunJson({
+            dryRun: false,
+            status: installedWrappers === 0 ? 'updated' : 'failed',
+            checkout: stagingPath,
+            steps,
+            touched: true
+        });
+    }
+    return installedWrappers;
 }

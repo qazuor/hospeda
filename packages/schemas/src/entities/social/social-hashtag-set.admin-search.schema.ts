@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { SocialPlatformEnumSchema } from '../../enums/social-platform.schema.js';
 
 /**
@@ -21,7 +21,7 @@ export const SocialHashtagSetAdminSearchSchema = AdminSearchBaseSchema.extend({
     platform: SocialPlatformEnumSchema.optional().describe('Filter by platform restriction'),
 
     /** Filter by active status */
-    active: queryBooleanParam().describe('Filter by active status')
+    active: createBooleanQueryParam('Filter by active status')
 });
 
 /**

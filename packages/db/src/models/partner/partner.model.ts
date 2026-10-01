@@ -63,16 +63,17 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      * for. Clearing still works: every `ContactInfoSchema` field is
      * `.nullish()`, so "I deleted my phone" travels as an explicit `null`.
      *
-     * `socialNetworks` is deliberately NOT here, and the reason is a real
-     * dead-end rather than an oversight. Its schema fields are `.optional()`
-     * but NOT `.nullable()`, so a cleared link cannot be expressed: `null` is
-     * rejected by Zod, `''` fails the `.url()` regex, and under a merge an
-     * omitted key is PRESERVED. Merging would ship a form whose "delete my
-     * Instagram" button silently does nothing. Replacing wholesale makes
-     * omission mean removal — which is safe here precisely because the partner
-     * form models all six keys, so there is no sibling for it to lose.
+     * `socialNetworks` is merged for the same reason (HOS-1262): it is one JSONB
+     * value of up to six independent network URLs, and a PATCH that sent one
+     * network used to replace the column and silently delete the rest. The price
+     * is the same as for `contactInfo`: clearing a network is an explicit `null`
+     * (`{ socialNetworks: { instagram: null } }`), never an omission. The shared
+     * `SocialNetworkSchema` (WRITE) and `SocialNetworkReadSchema` (READ) both
+     * accept `null` per key for exactly that reason. `socialNetworks: null` (the
+     * whole value) still clears the entire column. `PartnerEditForm` therefore sends an explicit `null` for every
+     * network the partner cleared.
      */
-    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 
     protected getTableName(): string {
         return 'partners';

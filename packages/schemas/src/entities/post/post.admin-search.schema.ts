@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { PostCategoryEnumSchema } from '../../enums/index.js';
 
 /**
@@ -35,10 +35,10 @@ export const PostAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by author'),
 
     /** Filter featured posts */
-    isFeatured: queryBooleanParam().describe('Filter by featured status'),
+    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Filter news posts */
-    isNews: queryBooleanParam().describe('Filter news posts'),
+    isNews: createBooleanQueryParam('Filter news posts'),
 
     /** Filter by related accommodation UUID */
     relatedAccommodationId: z
@@ -55,7 +55,7 @@ export const PostAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by related destination'),
 
     /** Filter by featured in website status */
-    isFeaturedInWebsite: queryBooleanParam().describe('Filter by featured in website status')
+    isFeaturedInWebsite: createBooleanQueryParam('Filter by featured in website status')
 });
 
 /**

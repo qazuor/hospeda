@@ -1,0 +1,293 @@
+/**
+ * HOS-663 — the adapter that actually closes a host's calendar grant.
+ *
+ * Deactivating a connection stops US from using the token; only revocation
+ * ends the provider's grant. This file pins the three answers that matter and
+ * that a future refactor could quietly get wrong:
+ *
+ *  1. Google revokes the REFRESH token when there is one. Revoking only the
+ *     access token would leave the refresh token free to mint new ones — the
+ *     exact access the issue is about closing.
+ *  2. A Google `400 invalid_token` counts as revoked. A grant Google no longer
+ *     recognises cannot be used; reporting it as a failure would fill the
+ *     failure column with rows that are already closed.
+ *  3. An iCal provider reports `revoked: false` WITH a reason. There is no
+ *     revocation endpoint for a secret feed URL, and claiming success for an
+ *     act never performed is the silent failure this issue exists to prevent.
+ *
+ * @module test/services/calendar-sync/calendar-connection-revocation.adapter
+ */
+
+import { OccupancySourceEnum } from '@repo/schemas';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { getGoogleCredential, revokeToken } = vi.hoisted(() => ({
+    getGoogleCredential: vi.fn(),
+    revokeToken: vi.fn()
+}));
+
+vi.mock('../../../src/services/google-calendar/google-calendar-credential.repository.js', () => ({
+    getGoogleCredential
+}));
+
+vi.mock('../../../src/services/google-calendar/google-oauth-client.js', async (importOriginal) => {
+    const actual =
+        await importOriginal<
+            typeof import('../../../src/services/google-calendar/google-oauth-client.js')
+        >();
+    return {
+        // The real GoogleOAuthClientError is kept: the adapter branches on
+        // `instanceof`, and a stubbed class would make that branch unreachable
+        // while every assertion still passed.
+        ...actual,
+        revokeToken
+    };
+});
+
+import { calendarConnectionRevocationAdapter } from '../../../src/services/calendar-sync/calendar-connection-revocation.adapter.js';
+import { GoogleOAuthClientError } from '../../../src/services/google-calendar/google-oauth-client.js';
+
+const googleCredential = (overrides: Record<string, unknown> = {}) => ({
+    accessToken: 'access-token-value',
+    refreshToken: 'refresh-token-value',
+    expiresAt: null,
+    externalCalendarId: 'primary',
+    syncToken: null,
+    isActive: false,
+    createdById: 'user-1',
+    ...overrides
+});
+
+describe('calendarConnectionRevocationAdapter — Google', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('revokes the REFRESH token, not the access token', async () => {
+        getGoogleCredential.mockResolvedValue(googleCredential());
+        revokeToken.mockResolvedValue(undefined);
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-1',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result).toEqual({ revoked: true });
+        expect(revokeToken).toHaveBeenCalledWith({ token: 'refresh-token-value' });
+    });
+
+    it('falls back to the access token when the connection has no refresh token', async () => {
+        getGoogleCredential.mockResolvedValue(googleCredential({ refreshToken: null }));
+        revokeToken.mockResolvedValue(undefined);
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-2',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result).toEqual({ revoked: true });
+        expect(revokeToken).toHaveBeenCalledWith({ token: 'access-token-value' });
+    });
+
+    it('treats an already-invalid token as revoked', async () => {
+        getGoogleCredential.mockResolvedValue(googleCredential());
+        revokeToken.mockRejectedValue(
+            new GoogleOAuthClientError(
+                'Google OAuth token revocation failed with status 400',
+                400,
+                {
+                    error: 'invalid_token'
+                }
+            )
+        );
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-3',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result).toEqual({ revoked: true });
+    });
+
+    it('reports a real Google failure instead of claiming success', async () => {
+        getGoogleCredential.mockResolvedValue(googleCredential());
+        revokeToken.mockRejectedValue(
+            new GoogleOAuthClientError('Google OAuth token revocation failed with status 503', 503)
+        );
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-4',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).toContain('503');
+    });
+
+    it('never leaks the token into the failure reason', async () => {
+        getGoogleCredential.mockResolvedValue(googleCredential());
+        revokeToken.mockRejectedValue(new Error('network unreachable'));
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-5',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).not.toContain('refresh-token-value');
+        expect(result.revoked === false && result.reason).not.toContain('access-token-value');
+    });
+
+    it('reports a failure when the stored credential cannot be read', async () => {
+        getGoogleCredential.mockRejectedValue(new Error('vault key missing'));
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-6',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).toContain('vault key missing');
+        expect(revokeToken).not.toHaveBeenCalled();
+    });
+
+    it('counts a missing connection row as nothing left to close', async () => {
+        getGoogleCredential.mockResolvedValue(null);
+
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-7',
+            provider: OccupancySourceEnum.GOOGLE_CALENDAR
+        });
+
+        expect(result).toEqual({ revoked: true });
+        expect(revokeToken).not.toHaveBeenCalled();
+    });
+});
+
+describe('calendarConnectionRevocationAdapter — iCal providers', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it.each([
+        OccupancySourceEnum.AIRBNB,
+        OccupancySourceEnum.BOOKING,
+        OccupancySourceEnum.OTHER
+    ])('reports %s as NOT revoked, with the reason recorded', async (provider) => {
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-8',
+            provider
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).toContain('iCal feed');
+        // No Google call is made for an iCal provider.
+        expect(revokeToken).not.toHaveBeenCalled();
+        expect(getGoogleCredential).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * The `switch` used to enumerate what to handle and wave everything else
+ * through as `{ revoked: true }` — a gate by exclusion, which fails OPEN.
+ *
+ * The failure that invites is specific and silent: add `VRBO` or `EXPEDIA` to
+ * `OccupancySourceEnum` — real OAuth providers with real grants — and the
+ * adapter reports a successful revocation without calling anyone, the cascade
+ * counts it in `revoked`, nothing is stamped on the row, and the log line reads
+ * "Revoked calendar credential". That is the exact lie this feature exists to
+ * refuse, arriving through the door the `default` left open.
+ *
+ * So `MANUAL` is now an explicit case and `default` fails closed. The
+ * enum-completeness test below is what keeps it that way: it enumerates
+ * `OccupancySourceEnum` from the schema package rather than restating it, so a
+ * value added there without a matching `case` lands in `default` and is
+ * asserted to fail closed — without anyone having to remember this file.
+ */
+describe('calendarConnectionRevocationAdapter — unknown providers fail CLOSED', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('reports MANUAL as revoked — there is no connection and no credential', async () => {
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-9',
+            provider: OccupancySourceEnum.MANUAL
+        });
+
+        expect(result).toEqual({ revoked: true });
+        expect(revokeToken).not.toHaveBeenCalled();
+        expect(getGoogleCredential).not.toHaveBeenCalled();
+    });
+
+    it('has an EXPLICIT case for every value of OccupancySourceEnum', async () => {
+        // The fail-closed test below proves a new enum value cannot be waved
+        // through as revoked. It does NOT prove anybody NOTICES it exists:
+        // `VRBO` added to the enum lands in `default`, is reported as a
+        // failure, and stamps REVOCATION_FAILED on every delete forever while
+        // looking like ordinary operation — a real OAuth provider nobody ever
+        // got around to implementing.
+        //
+        // So this asserts the stronger property: every enum value is handled by
+        // NAME. Adding one fails here, and the failure names it.
+        // Arrange: Google's credential row absent, so its branch resolves
+        // without an HTTP call.
+        getGoogleCredential.mockResolvedValue(null);
+
+        // Act
+        const unhandled: string[] = [];
+        for (const provider of Object.values(OccupancySourceEnum)) {
+            const result = await calendarConnectionRevocationAdapter.revoke({
+                accommodationId: 'acc-enum',
+                provider
+            });
+            if (!result.revoked && result.reason.includes('unknown provider')) {
+                unhandled.push(provider);
+            }
+        }
+
+        // Assert
+        expect(unhandled).toEqual([]);
+    });
+
+    it('reports a provider the switch does not know as NOT revoked', async () => {
+        // Stands in for the `VRBO` somebody adds to the enum next year without
+        // touching this adapter.
+        const result = await calendarConnectionRevocationAdapter.revoke({
+            accommodationId: 'acc-10',
+            provider: 'VRBO' as OccupancySourceEnum
+        });
+
+        expect(result.revoked).toBe(false);
+        expect(result.revoked === false && result.reason).toContain('unknown provider');
+        expect(revokeToken).not.toHaveBeenCalled();
+    });
+
+    it('answers revoked:true for MANUAL and Google only, across the WHOLE enum', async () => {
+        // Arrange: Google's credential row is absent, so its branch reports
+        // "nothing left to close". Every other value must justify itself.
+        getGoogleCredential.mockResolvedValue(null);
+
+        // Act
+        const revokedTrue: string[] = [];
+        for (const provider of Object.values(OccupancySourceEnum)) {
+            const result = await calendarConnectionRevocationAdapter.revoke({
+                accommodationId: 'acc-11',
+                provider
+            });
+            if (result.revoked) {
+                revokedTrue.push(provider);
+            } else {
+                // A failure without a reason is a failure nobody can act on.
+                expect(result.reason.length).toBeGreaterThan(0);
+            }
+        }
+
+        // Assert: MANUAL is unconditionally true; GOOGLE_CALENDAR is true only
+        // because the row was mocked absent. Anything else appearing here is a
+        // new enum value silently taking the fail-open path.
+        expect(revokedTrue.sort()).toEqual(
+            [OccupancySourceEnum.GOOGLE_CALENDAR, OccupancySourceEnum.MANUAL].sort()
+        );
+    });
+});

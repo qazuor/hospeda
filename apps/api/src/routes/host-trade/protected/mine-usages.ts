@@ -80,27 +80,20 @@ async function requireOwnListing(ctx: Context) {
 /**
  * Declares a usage from the provider side. Exported standalone for testability.
  *
- * The body is re-parsed HERE, against the same schema the route declares, and
- * that is not belt-and-braces — it is the only thing enforcing "exactly one
- * host identifier". In Zod 4 a `.superRefine()` on an object returns a
- * `ZodObject` and `_def.typeName` is gone, so the route factory's Zod-3-era
- * `typeName === 'ZodEffects'` probe reads the schema as plain and rebuilds it
- * through `createOpenAPISchema()`, dropping the refinement. Without this parse
- * a body carrying BOTH identifiers reaches the service, which refuses it too —
- * so the rule holds either way, but the refusal would come from the wrong layer
- * and after a database round trip.
+ * "Exactly one host identifier" is enforced by the route's declared
+ * `requestBody`, which now reaches the request intact: the factory used to
+ * rebuild the schema and drop its `.superRefine()` on the way, so this function
+ * re-parsed the body itself to put the rule back (HOS-425). That local parse is
+ * gone with the cause — `createOpenAPISchema` carries object-level checks
+ * across the rebuild, and `routes/refinement-enforcement.test.ts` is what says
+ * so for this schema specifically.
+ *
+ * Callers reaching this function OUTSIDE the route therefore get no body
+ * validation. Nothing does today; the route is the only entry point.
  */
 export async function handleDeclareUsageAsProvider(ctx: Context, body: unknown) {
-    const parsed = HostTradeBenefitUsageProviderCreateBodySchema.safeParse(body);
-    if (!parsed.success) {
-        throw new ServiceError(
-            ServiceErrorCode.VALIDATION_ERROR,
-            parsed.error.issues[0]?.message ?? 'Invalid body'
-        );
-    }
-
     const { actor, trade } = await requireOwnListing(ctx);
-    const input = parsed.data as {
+    const input = body as {
         servicedAt: string;
         note?: string;
         hostUserId?: string;

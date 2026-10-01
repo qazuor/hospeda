@@ -157,16 +157,23 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         path: '/api/v1/ai/social/catalog',
         operationId: 'getSocialCatalog',
         summary: 'Fetch the social automation catalog',
+        // NOTE: OpenAI Custom GPT Actions reject any operation `description`
+        // longer than 300 characters, so both descriptions below are written to
+        // that ceiling and pinned by `keeps every operation description within
+        // the 300-char Custom GPT Actions ceiling` in this route's test.
+        //
+        // They are NOT free prose to trim for length: these strings are the
+        // Custom GPT's OWN instructions, and per HOS-66 T-003 they are the only
+        // implementation surface for G-5's LLM-reasoning requirement (NG-2
+        // forbids backend heuristic matching). Shortening one by dropping the
+        // association guidance below removes the feature, not a sentence — an
+        // earlier pass at this ceiling did exactly that. Cut adjectives, never
+        // the instruction.
         description:
-            'Returns the full read-only catalog (hashtags, hashtag sets, footers, ' +
-            'platform formats, campaigns, batches, audiences, and operator defaults) ' +
-            'the Custom GPT must fetch before drafting a post. ' +
-            'The `campaigns` and `batches` arrays list every currently ACTIVE campaign/batch. ' +
-            'If the operator did not explicitly name a campaign or batch for this draft, ' +
-            'reason over these active lists against the draft content: when confident the ' +
-            'draft fits one of them, propose that association to the operator before saving ' +
-            '(never associate silently); when unsure or there is no plausible match, offer the ' +
-            'list and let the operator decide, or ship the draft unassociated if declined.',
+            'Catalog to fetch before drafting: hashtags, sets, footers, platform formats, ' +
+            'campaigns, batches, audiences, defaults. Only ACTIVE campaigns/batches are ' +
+            'listed. Never invent slugs. If the operator named none, propose an association ' +
+            'from these lists and confirm it — never associate silently.',
         tags: ['AI - Social'],
         security: [{ HospedaAiKey: [] }],
         responses: {
@@ -199,15 +206,10 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         operationId: 'saveSocialDraft',
         summary: 'Submit a social post draft for review',
         description:
-            'Ingests a structured social post draft authored by the Custom GPT. ' +
-            'The post is created in NEEDS_REVIEW / PENDING state for operator approval. ' +
-            'Requires a valid operatorPin in the body. ' +
-            'Before submitting a NEW `campaignSlug`/`batchSlug` name (one not already in the ' +
-            "catalog's active campaigns/batches lists), check that list for a near-duplicate " +
-            'name (e.g. "Lanzamiento 2026" vs. "Lanzamiento 26") and ask the operator to confirm ' +
-            '"use existing" vs. "create new" — never create a likely-duplicate campaign/batch ' +
-            'silently. An unknown slug that the operator confirms as new is created automatically ' +
-            'on submission.',
+            'Saves one draft authored by the GPT as NEEDS_REVIEW / PENDING. Requires ' +
+            'operatorPin. An unknown campaignSlug/batchSlug is CREATED automatically, so first ' +
+            'scan the catalog for a near-duplicate name and ask the operator to confirm ' +
+            '"use existing" vs "create new".',
         tags: ['AI - Social'],
         security: [{ HospedaAiKey: [] }],
         request: {

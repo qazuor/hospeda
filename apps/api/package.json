@@ -30,7 +30,6 @@
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.41",
-        "@better-auth/expo": "1.6.23",
         "@hono/node-server": "^2.1.0",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.5.2",
@@ -69,7 +68,7 @@
         "file-type": "^22.0.1",
         "hono": "^4.13.7",
         "hono-rate-limiter": "^0.5.3",
-        "image-size": "^2.0.3",
+        "image-size": "^2.0.4",
         "ioredis": "^6.0.0",
         "jose": "^6.2.8",
         "lru-cache": "^11.5.2",
@@ -86,11 +85,12 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
+        "@better-auth/expo": "1.6.23",
         "@repo/typescript-config": "workspace:*",
         "@sentry/esbuild-plugin": "^5.4.0",
         "@types/bcryptjs": "^3.0.0",
         "@types/lru-cache": "^7.10.10",
-        "@types/node": "^26.2.0",
+        "@types/node": "^26.6.1",
         "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.21.0",
         "@types/pngjs": "^6.0.5",
@@ -99,7 +99,7 @@
         "@vitest/coverage-v8": "^4.1.10",
         "jsqr": "^1.4.0",
         "tsup": "^8.5.1",
-        "tsx": "^4.23.11",
+        "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^4.1.11"

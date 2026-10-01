@@ -1,0 +1,38 @@
+{
+    "$schema": "https://qz.dev/schemas/project.v1.json",
+    "schemaVersion": 1,
+    "projectId": "demo-project",
+    "adapter": "qz",
+    "displayName": "Demo project",
+    "issues": {
+        "provider": "linear",
+        "teamKey": "DEM",
+        "identifierPattern": "^DEM-[0-9]+$"
+    },
+    "branches": {
+        "base": "develop",
+        "protected": ["main"],
+        "pattern": "{type}/{slug}",
+        "promotion": ["develop", "main"]
+    },
+    "worktree": {
+        "pathPattern": "../demo-{slug}",
+        "envSource": { "kind": "none" },
+        "install": "npm ci",
+        "build": "npm run build"
+    },
+    "database": { "strategy": "none" },
+    "servers": [
+        {
+            "id": "app",
+            "defaultPort": 4173,
+            "start": "npm run dev -- --port {port}",
+            "healthPath": "/"
+        }
+    ],
+    "commands": {
+        "genericPrefix": "qz-",
+        "projectPrefix": "demo-",
+        "source": "tools"
+    }
+}

@@ -3,7 +3,8 @@
  * @description Cookie consent banner React island.
  *
  * Shows on first visit and when the `cookie-consent:reopen` custom event fires
- * (dispatched by the footer "Cookie preferences" button).
+ * (dispatched by the footer "Cookie preferences" button). Never auto-opens for
+ * bots, crawlers or auditing tools (`isBotUserAgent` from `@repo/utils`).
  *
  * State is persisted as a `cookie-consent` cookie (JSON, Max-Age 1 year).
  * The banner is a fixed-position element at the bottom of the viewport to
@@ -16,6 +17,7 @@
  * - Keyboard navigable via native focus order
  */
 
+import { isBotUserAgent } from '@repo/utils';
 import { useEffect, useId, useRef, useState } from 'react';
 import { getConsent, saveConsent } from '@/lib/cookie-consent';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -63,6 +65,11 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     useEffect(() => {
         const existing = getConsent();
         if (!existing) {
+            // Crawlers and auditing tools (Googlebot's renderer, Lighthouse/PSI)
+            // never persist the consent cookie, so they would get the banner on
+            // every visit and index or measure a page no returning user sees.
+            // Without consent nothing is tracked, so staying closed is safe.
+            if (isBotUserAgent(navigator.userAgent)) return;
             setIsOpen(true);
             return;
         }

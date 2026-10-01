@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AccommodationSchema } from './accommodation.schema';
+import { AccommodationReadSchema } from './accommodation.schema';
 
 /**
  * Batch request schema for accommodation operations
@@ -50,7 +50,7 @@ export const AccommodationBatchRequestSchema = z.object({
  * using `fields` receive a partial object; callers without get the full
  * accommodation.
  */
-export const AccommodationBatchItemSchema = AccommodationSchema.partial().required({
+export const AccommodationBatchItemSchema = AccommodationReadSchema.partial().required({
     id: true
 });
 

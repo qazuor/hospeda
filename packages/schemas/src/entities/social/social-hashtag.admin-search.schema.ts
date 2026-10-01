@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
+import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { SocialPlatformEnumSchema } from '../../enums/social-platform.schema.js';
 
 /**
@@ -31,7 +31,7 @@ export const SocialHashtagAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by audience association'),
 
     /** Filter by active status */
-    active: queryBooleanParam().describe('Filter by active status')
+    active: createBooleanQueryParam('Filter by active status')
 });
 
 /**

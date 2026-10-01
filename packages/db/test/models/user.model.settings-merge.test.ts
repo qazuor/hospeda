@@ -144,16 +144,16 @@ describe('UserModel — `settings` is a mergeable JSONB column (HOS-375)', () =>
         expect(chunks.join(' ')).not.toContain('onboarding');
     });
 
-    it('declares `settings`, `profile` and `contactInfo` — and nothing else — as mergeable', () => {
+    it('declares `settings`, `profile`, `contactInfo` and `socialNetworks` — and nothing else — as mergeable', () => {
         // Non-vacuity: the three tests above all pass trivially if the model
         // ever widens the list to every JSONB column, which would make
-        // `socialNetworks`/`location` un-clearable by omission without any of
+        // `location` un-clearable by omission without any of
         // their writers being taught the explicit-null rule. Pin the exact set.
         const mergeable = (
             new UserModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
-        expect([...mergeable]).toEqual(['settings', 'profile', 'contactInfo']);
+        expect([...mergeable]).toEqual(['settings', 'profile', 'contactInfo', 'socialNetworks']);
     });
 
     it('still replaces a non-mergeable column, so this did not become a blanket merge', async () => {
@@ -162,16 +162,14 @@ describe('UserModel — `settings` is a mergeable JSONB column (HOS-375)', () =>
         const withTransaction = vi.spyOn(clientModule, 'withTransaction');
         setDb(plainDb as unknown as DrizzleClient);
 
-        // Act — `socialNetworks` is NOT declared mergeable.
-        await new UserModel().update(
-            { id: 'user-1' },
-            { socialNetworks: { facebook: 'https://facebook.com/x' } }
-        );
+        // Act — `location` is NOT declared mergeable (`socialNetworks` was the
+        // control until HOS-1262 moved it into the mergeable set).
+        await new UserModel().update({ id: 'user-1' }, { location: { country: 'AR' } });
 
         // Assert
         expect(withTransaction).not.toHaveBeenCalled();
         const setPayload = plainDb.set.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(setPayload?.socialNetworks).toEqual({ facebook: 'https://facebook.com/x' });
+        expect(setPayload?.location).toEqual({ country: 'AR' });
     });
 });
 

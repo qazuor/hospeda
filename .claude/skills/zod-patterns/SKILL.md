@@ -91,7 +91,8 @@ const NumberSchema = z.number()
 
 // Coercion (convert string inputs to numbers)
 const coercedNumber = z.coerce.number();    // "42" -> 42
-const coercedBoolean = z.coerce.boolean();  // "true" -> true
+// z.coerce.boolean() is Boolean(value): "false" -> true. Never use it for HTTP input
+// (HOS-410); use createBooleanQueryParam() from @repo/schemas.
 const coercedDate = z.coerce.date();        // "2024-01-01" -> Date
 const coercedString = z.coerce.string();    // 42 -> "42"
 ```

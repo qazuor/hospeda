@@ -60,7 +60,9 @@ const VISIBLE_FAQ = {
     category: null,
     displayOrder: 0,
     isVisibleOnListing: true,
-    isUsableByAi: true
+    isUsableByAi: true,
+    lifecycleState: 'ACTIVE',
+    deletedAt: null
 };
 
 const HIDDEN_FAQ = {
@@ -71,7 +73,9 @@ const HIDDEN_FAQ = {
     category: null,
     displayOrder: 1,
     isVisibleOnListing: false,
-    isUsableByAi: true
+    isUsableByAi: true,
+    lifecycleState: 'ACTIVE',
+    deletedAt: null
 };
 
 /** `user-agent` is required by the global validation middleware. */

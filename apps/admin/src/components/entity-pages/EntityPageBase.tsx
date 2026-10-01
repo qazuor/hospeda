@@ -4,6 +4,7 @@ import React, { type ReactNode, Suspense } from 'react';
 import type { ZodSchema } from 'zod';
 import { EntityFormProvider, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { nullifyClearedSocialNetworks } from '@/components/entity-form/utils/social-networks-payload.utils';
 import {
     prepareFormValues,
     unflattenValues
@@ -220,7 +221,12 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 }
             }
 
-            const payload = unflattenValues(fieldsToSave);
+            // A cleared social network must travel as `null`: the column is merged
+            // server-side, so an omitted (or empty-string) key would leave the stored
+            // link in place, or fail URL validation (HOS-1262).
+            const payload = nullifyClearedSocialNetworks({
+                payload: unflattenValues(fieldsToSave)
+            });
 
             // Merge optional extra save payload (e.g. aiAssistedFields audit metadata).
             // Supports both static objects and lazy-evaluated functions for ref-based data.

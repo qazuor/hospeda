@@ -55,6 +55,7 @@ import {
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+import { readNewPaidSignupsFreeze } from './billing/new-paid-signups-freeze';
 import { resolveTrialEligibility } from './billing/trial-eligibility.service';
 import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service';
 import { createTrialSubscription } from './subscription-trial-create.service';
@@ -204,6 +205,12 @@ export function buildAccommodationPublishDeps(
             });
             return eligible ? 'first_publish' : 'subscription_required';
         },
+
+        // Admin-paused signups (billing_settings.newPaidSignupsFrozen). The
+        // decision of WHEN to ask lives in `AccommodationService.publish()`:
+        // only for a publish that would start a trial (a first publish, i.e. a
+        // new signup), and only when the owner is the one publishing.
+        readNewSignupsFreeze: readNewPaidSignupsFreeze,
 
         startLocalTrial: async ({ ownerId, ctx }): Promise<StartLocalTrialResult | null> => {
             // Every read and the insert use the caller's transaction client, so

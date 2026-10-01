@@ -31,7 +31,7 @@ import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ActiveFilterChips } from './ActiveFilterChips';
+import { ActiveFilterChips, resolveActiveChips } from './ActiveFilterChips';
 import { LoginCta } from './LoginCta';
 import { NearbyDestinationsIndicator } from './NearbyDestinationsIndicator';
 import { OnboardingExamples } from './OnboardingExamples';
@@ -170,6 +170,38 @@ export function SearchChatPanel({
 
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
+    // Low-confidence notice (SPEC-265 A2): show once a turn has completed
+    // (not during streaming) when EITHER the confidence is below threshold OR
+    // the model extracted no usable slots — instead of showing 0 results in
+    // silence. `confidence !== null` marks that a `filters` event arrived.
+    // `lastTurnHadEntities` is a snapshot of THAT turn (not recomputed from the
+    // mutable chip set), so removing chips by hand doesn't trip the notice.
+    // No numeric badge — just the reformulation suggestion from i18n.
+    const lowConfidenceSignal =
+        chat.confidence !== null &&
+        (chat.confidence < LOW_CONFIDENCE_THRESHOLD || !chat.lastTurnHadEntities);
+    const isLowConfidence = !chat.isStreaming && lowConfidenceSignal;
+
+    // Uninterpreted turn (HOS-983): the turn looked uninterpreted (the notice's
+    // signal, deliberately WITHOUT its `!isStreaming` gate: the filters event
+    // lands before `done`, and the catalog must not flash meanwhile) AND no filter
+    // actually reached the search, so the accommodations GET returned the plain
+    // catalog. Rendering that under "Resultados encontrados" next to a "could
+    // not interpret" notice contradicts it, so the results panel is withheld.
+    // "No filter reached the search" is read off the SAME chip resolution the
+    // chips use (`resolveActiveChips`, which checks `lastSearchParams`), not off
+    // the raw intent: an entity the mapper dropped (e.g. HOS-298 orphan
+    // `locationType`) must not count as filtering. A low-confidence turn whose
+    // filters DID reach the search keeps its genuinely filtered results.
+    const isUninterpretedTurn =
+        lowConfidenceSignal &&
+        resolveActiveChips({
+            filters: chat.currentFilters,
+            locale,
+            destinations,
+            appliedParams: chat.lastSearchParams
+        }).length === 0;
+
     // BUG FIX: previously only `results.length > 0 || resultsLoading`, which
     // means a completed search with ZERO results (resultsLoading false,
     // results empty) never rendered the results section at all — the
@@ -178,7 +210,9 @@ export function SearchChatPanel({
     // section — and its empty-state message — visible after a 0-result turn,
     // so the user sees "no matches" instead of an empty drawer that looks
     // like the search never ran.
-    const showResults = chat.results.length > 0 || chat.resultsLoading || chat.hasSearched;
+    const showResults =
+        !isUninterpretedTurn &&
+        (chat.results.length > 0 || chat.resultsLoading || chat.hasSearched);
 
     // State-aware composer placeholder (HOS-111 T-007 / OQ-5): the copy
     // changes across three states so the hint always matches what the user
@@ -188,6 +222,12 @@ export function SearchChatPanel({
     //   suggest loosening criteria or searching nearby.
     // - initial: no search has completed yet — the original onboarding copy.
     const composerPlaceholder = (() => {
+        if (isUninterpretedTurn) {
+            return t(
+                'aiSearch.chat.placeholder',
+                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+            );
+        }
         if (chat.results.length > 0) {
             return t('aiSearch.chat.placeholderHasResults');
         }
@@ -199,18 +239,6 @@ export function SearchChatPanel({
             'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
         );
     })();
-
-    // Low-confidence notice (SPEC-265 A2): show once a turn has completed
-    // (not during streaming) when EITHER the confidence is below threshold OR
-    // the model extracted no usable slots — instead of showing 0 results in
-    // silence. `confidence !== null` marks that a `filters` event arrived.
-    // `lastTurnHadEntities` is a snapshot of THAT turn (not recomputed from the
-    // mutable chip set), so removing chips by hand doesn't trip the notice.
-    // No numeric badge — just the reformulation suggestion from i18n.
-    const isLowConfidence =
-        !chat.isStreaming &&
-        chat.confidence !== null &&
-        (chat.confidence < LOW_CONFIDENCE_THRESHOLD || !chat.lastTurnHadEntities);
 
     // Classified error copy (SPEC-265 C3): map HTTP status to translated
     // i18n keys instead of showing raw "HTTP 429" / provider messages.

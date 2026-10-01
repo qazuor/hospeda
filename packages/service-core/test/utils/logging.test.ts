@@ -211,6 +211,10 @@ describe('resolveErrorLogLevel', () => {
         expect(resolveErrorLogLevel(ServiceErrorCode.LIMIT_REACHED)).toBe('warn');
     });
 
+    it('maps NEW_PAID_SIGNUPS_FROZEN (409) to warn — an expected refusal, not a fault', () => {
+        expect(resolveErrorLogLevel(ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN)).toBe('warn');
+    });
+
     it('maps INTERNAL_ERROR to error', () => {
         expect(resolveErrorLogLevel(ServiceErrorCode.INTERNAL_ERROR)).toBe('error');
     });

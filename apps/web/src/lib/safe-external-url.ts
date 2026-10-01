@@ -3,14 +3,23 @@
  * @description Scheme allow-list for user-authored outbound links.
  */
 
+import { SAFE_EXTERNAL_URL_SCHEMES } from '@repo/schemas';
+
 /**
- * The only two schemes that may reach an `href` built from user-authored input.
+ * The only schemes that may reach an `href` built from user-authored input.
+ *
+ * Derived from `SAFE_EXTERNAL_URL_SCHEMES` in `@repo/schemas`, the single source
+ * the write-side `safeExternalUrl()` validator reads too (HOS-703). Never
+ * re-declare the list here: two copies is how the read and write contracts
+ * drift apart.
  *
  * An allow-list, not a deny-list: blocking `javascript:` and `data:` by name
  * invites the next scheme nobody thought of (`vbscript:`, `blob:`, whatever a
  * future engine adds). Anything not named here is refused.
  */
-const ALLOWED_PROTOCOLS: readonly string[] = ['http:', 'https:'];
+const ALLOWED_PROTOCOLS: readonly string[] = SAFE_EXTERNAL_URL_SCHEMES.map(
+    (scheme) => `${scheme}:`
+);
 
 /**
  * Highest code point the HTML parser discards before it reads a URL's scheme.

@@ -118,9 +118,9 @@ describe('HOS-1063 A-3 — the public capture endpoint keeps the view beacon con
      * one of the two numbers in the panel quietly starts counting crawlers while
      * the other does not.
      */
-    it('imports isBotUserAgent from the view capture route instead of redefining it', () => {
+    it('imports isBotUserAgent from @repo/utils instead of redefining it', () => {
         const code = readCode(CLICK_CAPTURE_ROUTE);
-        expect(code).toMatch(/import\s*\{\s*isBotUserAgent\s*\}\s*from\s*'\.\.\/views\/capture'/);
+        expect(code).toMatch(/import\s*\{\s*isBotUserAgent\s*\}\s*from\s*'@repo\/utils'/);
         expect(code).not.toMatch(/BOT_UA_REGEX\s*=/);
     });
 

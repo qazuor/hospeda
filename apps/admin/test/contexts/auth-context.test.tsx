@@ -69,7 +69,8 @@ const AUTHENTICATED_SERVER_STATE = {
     email: 'staff@hospeda.com.ar',
     avatar: null,
     emailVerified: true,
-    languageWeb: null
+    languageWeb: null,
+    languageAdmin: null
 };
 
 /** Minimal consumer exposing `signOut` behind a button, mirroring how real
@@ -126,7 +127,8 @@ describe('AuthProvider — Sentry user context wiring', () => {
             emailVerified: true,
             // Sentry-wiring test only — no assertion here touches locale
             // resolution, so no account preference needs to be asserted.
-            languageWeb: null
+            languageWeb: null,
+            languageAdmin: null
         });
 
         await waitFor(() => {
@@ -161,7 +163,8 @@ describe('AuthProvider — Sentry user context wiring', () => {
             emailVerified: true,
             // Sentry-wiring test only — no assertion here touches locale
             // resolution, so no account preference needs to be asserted.
-            languageWeb: null
+            languageWeb: null,
+            languageAdmin: null
         });
 
         await waitFor(() => {

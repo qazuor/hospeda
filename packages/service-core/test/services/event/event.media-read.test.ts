@@ -105,6 +105,32 @@ describe('attachComposedEventMedia', () => {
         ]);
     });
 
+    it('puts only visible non-featured rows in media.gallery (HOS-1164 gallery-count contract)', async () => {
+        // The upload routes count `entity.media.gallery.length` via
+        // `resolveVisibleGalleryCount`'s JSONB branch, on an entity that
+        // `getById` has already composed. That count is only correct because
+        // the composer leaves the featured image and archived rows OUT of
+        // `gallery` — pin it so the cap cannot drift by a slot.
+        const rows = [
+            makeRow({ id: '00000000-0000-4000-a000-0000000000f1', isFeatured: true }),
+            makeRow({ id: '00000000-0000-4000-a000-0000000000a1', sortOrder: 0 }),
+            makeRow({ id: '00000000-0000-4000-a000-0000000000a2', sortOrder: 1 }),
+            makeRow({
+                id: '00000000-0000-4000-a000-0000000000c1',
+                state: 'archived',
+                sortOrder: 2
+            })
+        ];
+        const mediaModel = makeMediaModel(new Map([[EVENT_ID, rows]]));
+
+        const result = await attachComposedEventMedia({
+            entity: makeEventWithBlob(),
+            mediaModel
+        });
+
+        expect(result?.media?.gallery).toHaveLength(2);
+    });
+
     it('keeps videos, which still live in the JSONB blob', async () => {
         const mediaModel = makeMediaModel(new Map([[EVENT_ID, [makeRow()]]]));
         const entity = makeEventWithBlob({

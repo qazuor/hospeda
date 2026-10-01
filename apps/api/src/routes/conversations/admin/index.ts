@@ -16,6 +16,7 @@
  * IMPORTANT: /unread-count MUST be registered before /:id to avoid path conflicts.
  */
 
+import { requireAuthenticatedAdminConversation } from '../../../middlewares/require-authenticated-admin-conversation.middleware';
 import { createRouter } from '../../../utils/create-app';
 import { archiveAdminConversationRoute } from './archive';
 import { deleteAdminConversationRoute } from './delete';
@@ -26,6 +27,9 @@ import { threadAdminConversationRoute } from './thread';
 import { unreadCountAdminConversationRoute } from './unread-count';
 
 const app = createRouter();
+
+// Anonymous -> 401 for every route below, before any inline permission check (HOS-972).
+app.use('*', requireAuthenticatedAdminConversation);
 
 // Literal path /unread-count MUST be registered before /:id to prevent
 // the dynamic param route from matching the literal segment.

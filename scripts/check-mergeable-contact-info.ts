@@ -2,6 +2,11 @@
 /**
  * check-mergeable-contact-info.ts
  *
+ * (The file keeps its HOS-1190 name because `check:mergeable-contact-info` is a
+ * wired CI entry point. Since HOS-1262 it guards EVERY JSONB column of the two
+ * shared "object of independent sub-keys" shapes — `ContactInfo` and
+ * `SocialNetwork` — not only `contact_info`. See "WHAT COUNTS AS GUARDED".)
+ *
  * `BaseModelImpl.mergeableJsonbColumns` decides whether `update({ column })`
  * MERGES a JSONB column against the stored row (PostgreSQL `||`) or REPLACES
  * it wholesale. The default is replace. A model whose table has a
@@ -15,10 +20,50 @@
  * `accommodations`, `users` and `partners` had already opted in.
  *
  * ---------------------------------------------------------------------------
+ * WHAT COUNTS AS GUARDED (HOS-1262)
+ * ---------------------------------------------------------------------------
+ *
+ * A guard anchored on ONE column name dies on the next column: HOS-1190 shipped
+ * one for `contact_info`, and `socialNetworks` — the same shape, six independent
+ * sub-keys — went unwatched until a smoke found it. A jsonb column is therefore
+ * guarded when EITHER of these holds (see {@link isGuardedColumn}):
+ *
+ *   - its Drizzle type is one of {@link GUARDED_TYPES}: `.$type<ContactInfo>()`
+ *     or `.$type<SocialNetwork>()`. This is the SHAPE anchor, and it is what
+ *     catches a column whose database name does not say what it holds —
+ *     `event_organizers.social` (property `socialNetworks`) and
+ *     `events.contact` (property `contact`) both do;
+ *   - its database name is one of {@link GUARDED_DB_COLUMNS}. This is the
+ *     fallback for a column declared with no `$type` at all.
+ *
+ * WHY NOT "EVERY OBJECT-SHAPED JSONB COLUMN". A fully shape-based guard would
+ * need the column's Zod type, and a Drizzle `$type<X>` is only a name: telling
+ * `ContactInfo` (independent sub-keys, merge is right) from `Seo` (also
+ * independent sub-keys) from `Coordinates` (ONE value that must travel as a
+ * unit) from `Record<string, unknown>` (an opaque bag) needs a human decision
+ * per type, not a regex. Auto-flagging all of them would either bury the guard
+ * in exemptions or push a merge onto a column where merge is WRONG. So the
+ * decision is made once, per SHAPE, in {@link GUARDED_TYPES}; widening it is a
+ * one-line change plus a model declaration, and the columns deliberately left
+ * out are listed under "KNOWN UNGUARDED" below so the gap is written down
+ * instead of implied.
+ *
+ * EXEMPTIONS ({@link EXEMPTIONS}) are the written escape hatch: a guarded
+ * column that must NOT be merged yet carries a `table::property` key and a
+ * reason. An exemption for a column the scan does not find, or for one its
+ * model already declares mergeable, FAILS the run — a stale exemption is a lie
+ * about the code.
+ *
+ * KNOWN UNGUARDED (object-shaped jsonb, not covered; decided per column):
+ *   `seo`, `location`, `media`, `price`, `extraInfo`, `profile`, `settings`
+ *   on models that do not yet declare them, plus the opaque
+ *   `Record<string, unknown>` bags. Most are single values or already merged.
+ *
+ * ---------------------------------------------------------------------------
  * WHAT THIS GUARD ASSERTS — nothing more, nothing less
  * ---------------------------------------------------------------------------
  *
- * 1. Every `contact_info` JSONB column is discovered by SCANNING every `.ts`
+ * 1. Every guarded JSONB column (see above) is discovered by SCANNING every `.ts`
  *    file under `packages/db/src/schemas/**` — never from a hardcoded list of
  *    table names. Discovery is anchored on the DATABASE column name alone
  *    (`jsonb('contact_info')`, in any of the three JavaScript quote styles,
@@ -124,10 +169,9 @@
  * the line while a real table was missing.
  *
  * WHAT IT DOES NOT PROVE
- *   - That `mergeableJsonbColumns` is *correct* for OTHER JSONB columns on
- *     the same table (e.g. `socialNetworks`, `seo`). Widening the merge set
- *     beyond `contactInfo` is a product decision, not something this guard
- *     opines on.
+ *   - That `mergeableJsonbColumns` is *correct* for JSONB columns outside the
+ *     guarded shapes (e.g. `seo`). Widening the merge set is a product
+ *     decision, not something this guard opines on.
  *   - Runtime behaviour of the `||` merge itself — that is
  *     `packages/db/test/base/jsonb-merge.test.ts`'s job.
  *   - That a declaration INHERITED from an intermediate base class (rather
@@ -173,30 +217,61 @@ const SCHEMA_DIR = 'packages/db/src/schemas';
 const MODELS_DIR = 'packages/db/src/models';
 
 /**
- * The number of `contact_info` tables this repository is known to have. Used
- * ONLY as a floor on a run over {@link REPO_ROOT} (see
- * {@link tableFloorViolation}).
+ * The number of guarded columns this repository is known to have, one per
+ * `(table, property)` pair: 7 `contact_info` + 7 `social_networks`-shaped +
+ * `events.contact`. Used ONLY as a floor on a run over {@link REPO_ROOT} (see
+ * {@link tableFloorViolation}). The name predates HOS-1262 and is kept because
+ * the CI entry point and its tests import it.
  */
-export const MIN_KNOWN_CONTACT_INFO_TABLES = 7;
+export const MIN_KNOWN_CONTACT_INFO_TABLES = 15;
+
+/** Database names of columns guarded whatever their Drizzle `$type`. */
+export const GUARDED_DB_COLUMNS: readonly string[] = ['contact_info', 'social_networks'];
 
 /**
- * A `jsonb('contact_info')` column, anywhere in the file, at any indentation,
- * with or without extra arguments.
+ * Drizzle `.$type<...>()` names that mark an object of independent sub-keys.
+ * This is the SHAPE anchor: it catches `jsonb('social').$type<SocialNetwork>()`
+ * and `jsonb('contact').$type<ContactInfo>()`, whose database names say nothing.
+ */
+export const GUARDED_TYPES: readonly string[] = ['ContactInfo', 'SocialNetwork'];
+
+/**
+ * Guarded columns that are deliberately NOT mergeable, keyed
+ * `<tableVar>::<propertyName>`, each with the written reason. A column here is
+ * skipped by the verdict; an entry that matches nothing, or whose model already
+ * declares the column mergeable, fails the run.
+ */
+export const EXEMPTIONS: Readonly<Record<string, string>> = {
+    'events::contact':
+        'HOS-1262 follow-up: `events.contact` is a ContactInfo written by the admin generic ' +
+        'form and the events services, none of which send an explicit `null` for a cleared ' +
+        'field yet. Declaring it mergeable before they do would make "clear my phone" a ' +
+        'silent no-op. Remove this entry in the same change that makes those writers send `null` ' +
+        "and adds `'contact'` to `EventModel.mergeableJsonbColumns`."
+};
+
+/**
+ * Any `jsonb('<name>')` column, anywhere in the file, at any indentation, with
+ * or without extra arguments. Group 2 is the database column name.
  *
  * Deliberately NOT anchored to a line start nor to a `contactInfo:` prefix:
- * the DATABASE column name is the thing that decides whether a PATCH can lose
- * data, so it is the thing discovery keys on. The Drizzle property name is
- * read separately ({@link COLUMN_PROPERTY_TAIL_RE}) and its absence is a
- * violation rather than a reason to look away.
+ * the DATABASE column name (and the `$type` read from the same expression)
+ * decides whether a PATCH can lose data, so discovery keys on those. The Drizzle
+ * property name is read separately ({@link COLUMN_PROPERTY_TAIL_RE}) and its
+ * absence is a violation rather than a reason to look away.
  *
  * All THREE JavaScript string delimiters are accepted, backtick included.
  * ``jsonb(`contact_info`)`` is ordinary TypeScript and Biome leaves it alone —
  * the repo's preset does not enable `noUnusedTemplateLiteral` — so a
  * single-quote-only class made that column not merely unchecked but ABSENT
- * from the report: it was neither a violation nor an unattributed column, it
- * simply did not exist as far as the guard was concerned.
+ * from the report.
  */
-const CONTACT_INFO_JSONB_RE = /\bjsonb\s*\(\s*(['"`])contact_info\1\s*[,)]/g;
+const JSONB_COLUMN_RE = /\bjsonb\s*\(\s*(['"`])([A-Za-z0-9_]+)\1\s*[,)]/g;
+
+/** A `.$type<ContactInfo>` / `.$type<SocialNetwork>` (not `SocialNetworkRead`). */
+const GUARDED_TYPE_RE = new RegExp(
+    `\\$type\\s*<\\s*(?:${GUARDED_TYPES.join('|')})(?![A-Za-z0-9_$])`
+);
 
 /** The property key immediately preceding a column definition, quoted or bare. */
 const COLUMN_PROPERTY_TAIL_RE = /(?:['"]([A-Za-z_$][\w$]*)['"]|([A-Za-z_$][\w$]*))\s*:\s*$/;
@@ -250,6 +325,8 @@ const ANONYMOUS_CLASS_NAME = '(anonymous default export)';
 
 export interface ContactInfoTable {
     readonly tableVar: string;
+    /** The database column name, e.g. `contact_info` or `social`. */
+    readonly dbColumn: string;
     readonly schemaFile: string;
     /** The Drizzle property key the column is defined under, e.g. `contactInfo`. */
     readonly propertyName: string;
@@ -791,6 +868,64 @@ function findTableSpans(strippedSource: string): readonly TableSpan[] {
     return spans;
 }
 
+/**
+ * The text of the column expression that starts at `from` (just past
+ * `jsonb('name')`), up to the `,` or `}` that ends the column definition:
+ * `.$type<ContactInfo>().default({})` and the like. `()`, `[]`, `{}` and the
+ * `<...>` of a type argument are tracked so a comma INSIDE
+ * `$type<Record<string, unknown>>` does not end it early. Expects
+ * comment-stripped input.
+ */
+export function columnExpressionAfter(strippedSource: string, from: number): string {
+    let i = from;
+    let depth = 0;
+    let angle = 0;
+    const n = strippedSource.length;
+
+    while (i < n) {
+        const ch = strippedSource[i] as string;
+
+        if (ch === "'" || ch === '"' || ch === '`') {
+            i++;
+            while (i < n) {
+                if (strippedSource[i] === '\\') {
+                    i += 2;
+                    continue;
+                }
+                const closed = strippedSource[i] === ch;
+                i++;
+                if (closed) break;
+            }
+            continue;
+        }
+
+        if (ch === '=' && strippedSource[i + 1] === '>') {
+            i += 2;
+            continue;
+        }
+        if (ch === '<') angle++;
+        else if (ch === '>') angle = Math.max(0, angle - 1);
+        else if (ch === '(' || ch === '[' || ch === '{') depth++;
+        else if (ch === ')' || ch === ']' || ch === '}') {
+            if (depth === 0) break;
+            depth--;
+        } else if (ch === ',' && depth === 0 && angle === 0) break;
+
+        i++;
+    }
+
+    return strippedSource.slice(from, i);
+}
+
+/**
+ * Whether a jsonb column is guarded: its database name is in
+ * {@link GUARDED_DB_COLUMNS}, or its `$type` (read from `expression`) is one of
+ * {@link GUARDED_TYPES}. See "WHAT COUNTS AS GUARDED" in the file header.
+ */
+export function isGuardedColumn(dbColumn: string, expression: string): boolean {
+    return GUARDED_DB_COLUMNS.includes(dbColumn) || GUARDED_TYPE_RE.test(expression);
+}
+
 interface SchemaScan {
     readonly tables: readonly ContactInfoTable[];
     readonly unattributed: readonly UnattributedContactInfoColumn[];
@@ -812,9 +947,18 @@ export function scanContactInfoColumns(root: string): SchemaScan {
         const strings = findStringRanges(content);
         const spans = findTableSpans(content);
 
-        for (const match of content.matchAll(CONTACT_INFO_JSONB_RE)) {
+        for (const match of content.matchAll(JSONB_COLUMN_RE)) {
             const at = match.index;
             if (at === undefined) continue;
+
+            const dbColumn = match[2] as string;
+            // The expression starts after the closing `)` of `jsonb(...)`, so a
+            // `jsonb('x', { ... })` with options reads the same as a bare one.
+            const closeParen = findMatchingDelimiter(content, at + match[0].indexOf('('), '(', ')');
+            const expressionStart = closeParen < 0 ? at + match[0].length : closeParen + 1;
+            if (!isGuardedColumn(dbColumn, columnExpressionAfter(content, expressionStart))) {
+                continue;
+            }
 
             const line = lineOf(content, at);
 
@@ -870,6 +1014,7 @@ export function scanContactInfoColumns(root: string): SchemaScan {
             // discovery had genuinely lost.
             tables.set(`${owning.name}::${propertyName}`, {
                 tableVar: owning.name,
+                dbColumn,
                 schemaFile,
                 propertyName
             });
@@ -879,7 +1024,7 @@ export function scanContactInfoColumns(root: string): SchemaScan {
     return { tables: [...tables.values()], unattributed };
 }
 
-/** The resolvable `contact_info` tables. See {@link scanContactInfoColumns}. */
+/** The resolvable guarded columns (one entry per table+property). See {@link scanContactInfoColumns}. */
 export function findContactInfoTables(root: string): ContactInfoTable[] {
     return [...scanContactInfoColumns(root).tables];
 }
@@ -934,19 +1079,25 @@ export function findOwningModels(
     return out;
 }
 
-const FIX_ADD_DECLARATION =
-    "Fix: add `protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;`\n" +
-    '  (extending the array if the model already declares other mergeable columns)\n' +
-    '  to the owning model, following packages/db/src/models/partner/partner.model.ts.';
+/** Remediation for a guarded column its model does not declare mergeable. */
+function fixAddDeclaration(propertyName: string): string {
+    return (
+        `Fix: add '${propertyName}' to \`protected override readonly mergeableJsonbColumns\`\n` +
+        '  in the owning model (extending the array if it already declares other columns),\n' +
+        '  following packages/db/src/models/partner/partner.model.ts. Clearing a key then travels\n' +
+        '  as an explicit `null`, so every writer of the column must send `null` for a cleared field.\n' +
+        '  If the column genuinely must not be merged yet, add a written entry to EXEMPTIONS instead.'
+    );
+}
 
 const FIX_NO_OWNER =
     'Fix: this column is unreachable through any model, so nothing enforces its merge\n' +
     '  semantics. Either attach it to a model that assigns `protected table = <table>;`\n' +
-    '  (and declare `contactInfo` mergeable there), or drop the column if the table is dead.';
+    '  (and declare the column mergeable there), or drop the column if the table is dead.';
 
 const FIX_UNRESOLVED_SPREAD =
     'Fix: spell the mergeable columns as a literal array in the model itself, e.g.\n' +
-    "  `= ['contactInfo'] as const;`. This guard reads the declaration statically and\n" +
+    "  `= ['contactInfo', 'socialNetworks'] as const;`. This guard reads the declaration statically and\n" +
     '  refuses to assume an unresolvable value contains the column.';
 
 const FIX_UNATTRIBUTED =
@@ -973,21 +1124,36 @@ export function tableFloorViolation(root: string, found: number): string | undef
     if (resolve(root) !== resolve(REPO_ROOT)) return undefined;
     if (found >= MIN_KNOWN_CONTACT_INFO_TABLES) return undefined;
     return (
-        `ERROR: discovery found ${found} contact_info table(s); this repository has at least ` +
+        `ERROR: discovery found ${found} guarded column(s); this repository has at least ` +
         `${MIN_KNOWN_CONTACT_INFO_TABLES}.\n` +
         '  A table went missing from the SCAN, which is a guard regression, not a green run.\n' +
         '  If a table was genuinely removed, lower MIN_KNOWN_CONTACT_INFO_TABLES in the same commit.'
     );
 }
 
-export function run(root: string): number {
-    console.log('=== Checking contact_info columns declare mergeableJsonbColumns ===\n');
+/**
+ * Runs the guard over `root`.
+ *
+ * @param root - Repository root to walk.
+ * @param exemptions - Written exemptions to honour. Defaults to {@link EXEMPTIONS}
+ *   for a run over this repository and to none for any other tree: the entries
+ *   describe THIS repo's columns, and a throwaway fixture must not be judged
+ *   stale for lacking them.
+ * @returns Process exit code: 0 clean, 1 on any violation.
+ */
+export function run(
+    root: string,
+    exemptions: Readonly<Record<string, string>> = resolve(root) === resolve(REPO_ROOT)
+        ? EXEMPTIONS
+        : {}
+): number {
+    console.log('=== Checking contact / social JSONB columns declare mergeableJsonbColumns ===\n');
 
     const scan = scanContactInfoColumns(root);
     const tables = scan.tables;
 
     if (tables.length === 0 && scan.unattributed.length === 0) {
-        console.log('ERROR: found zero contact_info columns across packages/db/src/schemas/**.');
+        console.log('ERROR: found zero guarded JSONB columns across packages/db/src/schemas/**.');
         console.log(
             '  This almost certainly means the scan regex broke, not that the column disappeared.'
         );
@@ -1000,8 +1166,10 @@ export function run(root: string): number {
         return 1;
     }
 
-    console.log(`Found ${tables.length} table(s) with a contact_info JSONB column:`);
-    for (const t of tables) console.log(`  - ${t.tableVar} (${t.schemaFile})`);
+    console.log(`Found ${tables.length} guarded JSONB column(s):`);
+    for (const t of tables) {
+        console.log(`  - ${t.tableVar}.${t.propertyName} [${t.dbColumn}] (${t.schemaFile})`);
+    }
     console.log('');
 
     const modelFiles = collectModelFiles(root);
@@ -1011,12 +1179,26 @@ export function run(root: string): number {
         violations.push({
             columnLocation: `${orphan.schemaFile}:${orphan.line}`,
             schemaFile: orphan.schemaFile,
-            reason: `a contact_info column could not be attributed to a table: ${orphan.reason}`,
+            reason: `a guarded JSONB column could not be attributed to a table: ${orphan.reason}`,
             fix: orphan.fix ?? FIX_UNATTRIBUTED
         });
     }
 
+    const usedExemptions = new Set<string>();
+
     for (const table of tables) {
+        const exemptionKey = `${table.tableVar}::${table.propertyName}`;
+        const exemption = exemptions[exemptionKey];
+        if (exemption !== undefined && exemption.trim() === '') {
+            violations.push({
+                table: table.tableVar,
+                schemaFile: table.schemaFile,
+                reason: `the exemption for '${table.propertyName}' has no written reason`,
+                fix: 'Fix: an exemption is only valid with the reason it exists. Write it, or remove the entry.'
+            });
+            continue;
+        }
+
         const owners = findOwningModels(root, modelFiles, table.tableVar);
         if (owners.length === 0) {
             violations.push({
@@ -1043,6 +1225,23 @@ export function run(root: string): number {
                 owner.module,
                 table.propertyName
             );
+            if (exemption !== undefined) {
+                usedExemptions.add(exemptionKey);
+                if (verdict.kind === 'declared') {
+                    violations.push({
+                        table: table.tableVar,
+                        schemaFile: table.schemaFile,
+                        modelFile: owner.file,
+                        modelClass: owner.className,
+                        reason: `'${table.propertyName}' is exempt but its model already declares it mergeable, so the exemption is stale`,
+                        fix: `Fix: remove the '${exemptionKey}' entry from EXEMPTIONS.`
+                    });
+                } else {
+                    console.log(`  EXEMPT: ${exemptionKey} — ${exemption}`);
+                    console.log('');
+                }
+                continue;
+            }
             if (verdict.kind === 'declared') continue;
             violations.push({
                 table: table.tableVar,
@@ -1053,16 +1252,29 @@ export function run(root: string): number {
                     verdict.kind === 'absent'
                         ? `does not declare '${table.propertyName}' in mergeableJsonbColumns`
                         : `declares mergeableJsonbColumns but this guard cannot read it: ${verdict.detail}`,
-                fix: verdict.kind === 'absent' ? FIX_ADD_DECLARATION : FIX_UNRESOLVED_SPREAD
+                fix:
+                    verdict.kind === 'absent'
+                        ? fixAddDeclaration(table.propertyName)
+                        : FIX_UNRESOLVED_SPREAD
             });
         }
     }
 
+    for (const key of Object.keys(exemptions)) {
+        if (usedExemptions.has(key)) continue;
+        violations.push({
+            schemaFile: 'scripts/check-mergeable-contact-info.ts',
+            columnLocation: 'EXEMPTIONS',
+            reason: `the exemption '${key}' matches no guarded column the scan found (or no model owns it)`,
+            fix: 'Fix: a stale exemption is a lie about the code. Remove the entry, or fix the key.'
+        });
+    }
+
     if (violations.length > 0) {
-        console.log('ERROR: the following contact_info columns are NOT protected:\n');
+        console.log('ERROR: the following guarded JSONB columns are NOT protected:\n');
         for (const v of violations) {
             if (v.table) console.log(`  Table: ${v.table} (${v.schemaFile})`);
-            else console.log(`  Column: contact_info at ${v.columnLocation}`);
+            else console.log(`  Column: guarded JSONB column at ${v.columnLocation}`);
             if (v.modelFile) console.log(`  Model: ${v.modelFile} :: ${v.modelClass}`);
             console.log(`  Reason: ${v.reason}`);
             console.log(`  ${v.fix}`);
@@ -1072,7 +1284,7 @@ export function run(root: string): number {
     }
 
     console.log(
-        `OK — all ${tables.length} contact_info column(s) are declared mergeable by their model.`
+        `OK — all ${tables.length} guarded JSONB column(s) are declared mergeable by their model or carry a written exemption.`
     );
     console.log('');
     console.log('All checks passed.');

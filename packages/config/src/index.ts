@@ -6,6 +6,14 @@
  */
 
 export {
+    DEFAULT_AUTH_COOKIE_PREFIX,
+    type GetAuthSessionCookieNamesInput,
+    getAuthSessionCookieNames,
+    type ResolveAuthCookiePrefixInput,
+    resolveAuthCookiePrefix,
+    STAGING_AUTH_COOKIE_PREFIX
+} from './auth-session-cookie.js';
+export {
     commonEnvMappings,
     commonEnvSchemas,
     createStartupValidator,
@@ -29,6 +37,10 @@ export {
     HOSPEDA_ENV_VARS,
     SYSTEM_ENV_VARS
 } from './env-registry.js';
+export {
+    checkInternalBypassConfig,
+    type InternalBypassCheckResult
+} from './internal-bypass-selfcheck.js';
 export {
     type ExchangeRateConfig,
     ExchangeRateSchema,

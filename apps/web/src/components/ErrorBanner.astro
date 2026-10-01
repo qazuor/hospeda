@@ -32,6 +32,7 @@
 import { XCircleIcon } from '@repo/icons';
 import { AlertTriangleIcon } from '@repo/icons';
 import { InfoIcon } from '@repo/icons';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 
 type BannerVariant = 'error' | 'warning' | 'info';
 
@@ -48,6 +49,22 @@ interface Props {
 }
 
 const { variant, message, onRetryUrl } = Astro.props;
+
+/*
+ * The `error` variant means this response is showing a failure instead of the
+ * content it was asked for, so it must not be stored by a shared cache
+ * (HOS-1154) — see `markResponseDegraded` for why the call lives in the
+ * component rather than in the pages that render it.
+ *
+ * ONLY the `error` variant. `warning` and `info` are advisory notes ON content
+ * that rendered fine ("esta página se actualiza cada 24 horas"); demoting those
+ * would cost real edge cache for a response that has nothing wrong with it.
+ *
+ * This component has no callers today. It is wired anyway, because an unwired
+ * error surface is exactly how the next listing to adopt one ends up caching
+ * its own error — the failure this whole mechanism exists to make impossible.
+ */
+if (variant === 'error') markResponseDegraded({ locals: Astro.locals });
 
 const hasSlot = Astro.slots.has('default');
 const showDefaultRetry = !hasSlot && !!onRetryUrl;

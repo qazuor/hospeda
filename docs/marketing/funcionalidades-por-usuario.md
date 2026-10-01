@@ -126,13 +126,15 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 ## 3. Anfitrión — Básico / Pro / Premium
 
-**El gancho**: 🟢 **30 días sin que se te cobre nada**. Los datos se conservan al vencer.
+**El gancho**: 🟢 **Empezá gratis, te avisamos antes del primer cobro**. Los datos se conservan al vencer.
 
 > ✅ **La prueba NO pide tarjeta** (HOS-1012, 01/09/2026). Arranca sola cuando el anfitrión publica su primera ficha, dura 30 días y no hay checkout de por medio. **"Sin tarjeta" se puede y se debe comunicar** — es cierto y es lo más fuerte que tenemos para decir.
 >
 > Esta regla estuvo invertida entre HOS-171 y HOS-1012: durante ese período la tarjeta sí se pedía al registrarse y prometer lo contrario rompía la promesa en el alta. Ya no. Si encontrás material viejo que dice "cargás tu tarjeta", está desactualizado.
 >
-> Los días de prueba se configuran en la base de datos, no en el código. Verificar ahí antes de imprimir nada.
+> ⚠️ **Nunca comunicar una cantidad de días** (regla 10 del plan de contenido). Los días de prueba se configuran en la base de datos, no en el código: pueden cambiar sin que nadie toque el plan de marketing. El número vive solo en la página web, que lo lee del sistema.
+>
+> El aviso previo al cobro **existe y funciona**: sale automático tres días antes del fin de la prueba y otra vez un día antes. Es lo que reemplaza al número, y es mejor que el número.
 
 | Funcionalidad | Básico | Pro | Premium |
 |---|---|---|---|
@@ -166,7 +168,7 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 🔴 **Responder reseñas** — todavía no está. El permiso existe, la pantalla no. Confirmado el 11/08/2026.
 
-**Ángulos**: "30 días sin que se te cobre nada" · "Pegá el link y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis" · "Que las IA te recomienden"
+**Ángulos**: "Empezá gratis, te avisamos antes del primer cobro" · "Pegá el link y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis" · "Que las IA te recomienden"
 
 **Qué marcas se pueden nombrar**: en **calendarios**, sí — Google, Airbnb, Booking. En **importar la ficha**, no se nombran Airbnb ni Booking: se dice "Google, Mercado Libre y otras plataformas de alquiler".
 

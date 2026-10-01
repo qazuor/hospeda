@@ -22,6 +22,7 @@ import {
     fetchGastronomyAmenities,
     fetchGastronomyFeatures
 } from '../../../utils/commerce-catalog-relations';
+import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyGastronomyDailySpecialsGate } from './daily-specials-projection';
@@ -160,7 +161,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         });
 
         return {
-            ...gastronomy,
+            ...withPublicVisibleFaqs(gastronomy),
             // HOS-1286: PUBLIC tier ORs the two featuring sources.
             isFeatured: resolvePublicIsFeatured(gastronomy),
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,

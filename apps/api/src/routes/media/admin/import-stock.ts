@@ -103,6 +103,7 @@ export const adminImportStockMediaRoute = createAdminRoute({
             return createErrorResponse(
                 {
                     code: 'VALIDATION_ERROR',
+                    reason: 'UNSUPPORTED_ENTITY_TYPE',
                     message: `Unsupported entity type: ${parsedBody.entityType}`
                 },
                 ctx,

@@ -22,6 +22,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { signIn as authClientSignIn } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -305,6 +306,12 @@ export function AuthTabs({
                 currentOrigin: origin,
                 currentPathname: window.location.pathname
             });
+            // HOS-1206: the provider sends the visitor back to a session-blind
+            // page in this same tab, and sessionStorage survives the round
+            // trip — drop the guest `/auth/me` snapshot before the tab leaves,
+            // or that page trusts it and paints them as anonymous. Clearing
+            // on a cancelled OAuth costs one extra `/auth/me` fetch, nothing more.
+            clearCachedAuthMe();
             await authClientSignIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
             // Surface the actual Better Auth error to console so the

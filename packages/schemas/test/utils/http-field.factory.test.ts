@@ -45,16 +45,16 @@ describe('HTTP Field Factory', () => {
             expect(() => lngField.parse('200')).toThrow(); // lng > 180
         });
 
-        it('should create boolean fields with coercion', () => {
+        it('should create strict boolean fields (HOS-410)', () => {
             const boolField = HttpFieldFactories.booleanField('testBoolean');
 
-            // Zod's coercion behavior for boolean fields:
-            // - Strings: any non-empty string coerces to true (including 'false', '0')
-            // - Empty string or undefined: false/undefined
+            // Only the literals 'true'/'false' are accepted; 'false' must NOT be truthy.
             expect(boolField.parse('true')).toBe(true);
-            expect(boolField.parse('1')).toBe(true);
-            expect(boolField.parse('0')).toBe(true); // '0' is a non-empty string, so it's true
+            expect(boolField.parse('false')).toBe(false);
             expect(boolField.parse(undefined)).toBeUndefined();
+            expect(() => boolField.parse('1')).toThrow();
+            expect(() => boolField.parse('0')).toThrow();
+            expect(() => boolField.parse('')).toThrow();
         });
 
         it('should create array fields from comma-separated strings', () => {

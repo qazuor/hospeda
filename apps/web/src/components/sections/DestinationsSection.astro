@@ -19,6 +19,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, toDestinationCardProps } from '@/lib/api';
 import type { DestinationCardData } from '@/lib/api/transforms';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { webLogger } from '@/lib/logger';
 import { buildImageEndpointUrl, isCloudinaryDeliveryUrl } from '@/lib/media';
 
@@ -47,9 +48,16 @@ try {
     });
     if (result.ok) {
         destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown>, locale }));
+    } else {
+        // The response is now a homepage section that silently renders nothing.
+        // Fail-soft is right — a dead endpoint must not 500 the home — but the page
+        // declared itself cacheable before this fetch was issued, so without this the
+        // edge would store the hollow copy for the full `home` TTL (HOS-1154).
+        markResponseDegraded({ locals: Astro.locals });
     }
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });
+    markResponseDegraded({ locals: Astro.locals });
 }
 
 // Public destination images inside the React island cannot use Astro `<Image>`

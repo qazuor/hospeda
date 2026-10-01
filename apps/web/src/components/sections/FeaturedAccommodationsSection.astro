@@ -26,6 +26,7 @@ import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { webLogger } from '@/lib/logger';
 import { revealStagger } from '@/lib/reveal-stagger';
 
@@ -73,9 +74,16 @@ try {
       toAccommodationCardProps({ item: raw as Record<string, unknown>, locale })
     );
     items = filterFeaturedCards(mapped);
+  } else {
+    // The response is now a homepage section that silently renders nothing.
+    // Fail-soft is right — a dead endpoint must not 500 the home — but the page
+    // declared itself cacheable before this fetch was issued, so without this the
+    // edge would store the hollow copy for the full `home` TTL (HOS-1154).
+    markResponseDegraded({ locals: Astro.locals });
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
+  markResponseDegraded({ locals: Astro.locals });
 }
 
 const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos');

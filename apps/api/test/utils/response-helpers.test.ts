@@ -277,10 +277,20 @@ describe('handleRouteError — RefinedBodyValidationError (HOS-607)', () => {
 
         expect(body.success).toBe(false);
         expect(body.error.code).toBe('VALIDATION_ERROR');
-        // No flat `message` field carrying a raw key — the exact bug HOS-607
-        // reported (`zodError.billing.plan.create.trialDays.requiredWhenTrial`
-        // shown verbatim as `error.message`).
-        expect(body.error.message).toBeUndefined();
+        // HOS-607's bug was a raw i18n key shown verbatim as `error.message`
+        // (`zodError.billing.plan.create.trialDays.requiredWhenTrial`), and the
+        // fix removed the field outright. Removing it went one step too far:
+        // R5 of docs/error-contract.md says "the client gets the code and a
+        // message", and a client reading `error.message` for a generic toast
+        // got `undefined` (HOS-425). The field is back, carrying the SAME
+        // human-readable string as `userFriendlyMessage`.
+        //
+        // So the assertion now states HOS-607's actual guarantee rather than
+        // the shape it happened to produce: a message is present, and it is not
+        // a raw key.
+        expect(typeof body.error.message).toBe('string');
+        expect(body.error.message).not.toMatch(/^zodError\./);
+        expect(body.error.message).toBe(body.error.userFriendlyMessage);
         expect(Array.isArray(body.error.details)).toBe(true);
         expect(body.error.details[0]?.field).toBe('trialDays');
         expect(body.error.details[0]?.messageKey).toBe(

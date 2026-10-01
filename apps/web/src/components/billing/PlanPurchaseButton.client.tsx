@@ -30,6 +30,7 @@ import type { PricingAudience } from '../../lib/billing-i18n';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl, buildUrlWithParams } from '../../lib/urls';
+import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
 import { TrialWarningDialog } from './TrialWarningDialog.client';
@@ -117,6 +118,20 @@ export interface PlanPurchaseButtonProps {
      * customer — see `payerEmailKnown` / `proceedPastPayerEmailStep`.
      */
     readonly ownPreapprovalEnabled?: boolean;
+    /**
+     * Whether an admin paused new self-service paid signups
+     * (`billing_settings.newPaidSignupsFrozen`), resolved SSR-side through
+     * `fetchCheckoutConfig()` like `ownPreapprovalEnabled`.
+     *
+     * When `true`, a card that would START a new paid subscription renders
+     * {@link PaidSignupsPausedNotice} instead of its checkout button. Cards
+     * that start nothing keep their usual state: the current plan, a plan
+     * CHANGE for someone already subscribed (plan-change is exempt from the
+     * freeze), a $0 plan and the tourist-VIP-already-held card. Defaults to
+     * `false`; the API refuses a frozen checkout with `NEW_PAID_SIGNUPS_FROZEN`
+     * either way, which `translateApiError` renders with the same copy.
+     */
+    readonly newPaidSignupsFrozen?: boolean;
     /**
      * The audience of the pricing surface this button was mounted on
      * (HOS-1233). Two independent decisions read it, and neither can be
@@ -410,7 +425,8 @@ export function PlanPurchaseButton({
     plansPath,
     audience,
     showPromo = true,
-    ownPreapprovalEnabled = false
+    ownPreapprovalEnabled = false,
+    newPaidSignupsFrozen = false
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
@@ -473,7 +489,13 @@ export function PlanPurchaseButton({
     // toggle without coupling the two components via a store. Initial value
     // is 'monthly' — the toggle defaults to monthly on first render.
     const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
-    const buttonRef = useRef<HTMLButtonElement | null>(null);
+    // Anchors the DOM lookups below (`closest('.pricing-card')`,
+    // `closest('[data-billing]')`). Held by the island's ROOT wrapper rather
+    // than the button, because the paused-signups branch renders no button —
+    // and the wrapper is the same <div> in both branches, so React keeps the
+    // node (and the observers attached through it) when the card switches
+    // between the notice and the button.
+    const rootRef = useRef<HTMLDivElement | null>(null);
 
     // ---------------------------------------------------------------------------
     // Promo code state
@@ -840,7 +862,7 @@ export function PlanPurchaseButton({
     // SSR default must stand.
     useEffect(() => {
         if (trialEligible !== false) return;
-        const card = buttonRef.current?.closest('.pricing-card');
+        const card = rootRef.current?.closest('.pricing-card');
         const trialEl = card?.querySelector<HTMLElement>('.pricing-card__trial');
         if (!trialEl) return;
 
@@ -861,7 +883,7 @@ export function PlanPurchaseButton({
     // toggle UI as pure HTML+JS in the Astro template (cheap, SSG-friendly)
     // while letting the island stay in sync.
     useEffect(() => {
-        const root = buttonRef.current?.closest('[data-billing]') as HTMLElement | null;
+        const root = rootRef.current?.closest('[data-billing]') as HTMLElement | null;
         if (!root) return;
         const readCurrent = (): 'monthly' | 'annual' =>
             root.dataset.billing === 'annual' ? 'annual' : 'monthly';
@@ -926,6 +948,18 @@ export function PlanPurchaseButton({
     // incl. HOS-222's cross-category classification) instead of start-paid.
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
+
+    // Admin-paused signups: only a card whose click would START a new paid
+    // subscription is replaced by the notice. A plan change, the current plan,
+    // a $0 plan and the VIP-already-held card start nothing new, so they keep
+    // rendering exactly as before.
+    const isNewSignupPaused =
+        newPaidSignupsFrozen &&
+        !isCurrentPlan &&
+        !isPlanChange &&
+        !isFreePlanUnpurchasable &&
+        !isFreePlanRegisterCta &&
+        !isTouristVipAlreadyHeld;
 
     // Show the promo section whenever there is a live checkout to apply it to
     // (never in the plan-change case — promo codes apply at checkout, not here).
@@ -1224,7 +1258,7 @@ export function PlanPurchaseButton({
     // `<style is:global>` block in PricingCardsGrid.astro (the injected nodes lack
     // Astro's scope attribute, so scoped CSS would not apply).
     useEffect(() => {
-        const card = buttonRef.current?.closest('.pricing-card');
+        const card = rootRef.current?.closest('.pricing-card');
         const preview = promo.status === 'valid' ? promo.preview : null;
         if (!card || !preview) return;
 
@@ -1693,10 +1727,26 @@ export function PlanPurchaseButton({
         isFreePlanUnpurchasable ||
         isTouristVipAlreadyHeld;
 
+    if (isNewSignupPaused) {
+        return (
+            <div
+                ref={rootRef}
+                className={styles.wrapper}
+            >
+                <PaidSignupsPausedNotice
+                    locale={locale}
+                    testId="plan-signups-paused-notice"
+                />
+            </div>
+        );
+    }
+
     return (
-        <div className={styles.wrapper}>
+        <div
+            ref={rootRef}
+            className={styles.wrapper}
+        >
             <button
-                ref={buttonRef}
                 type="button"
                 data-testid="plan-cta-button"
                 disabled={buttonDisabled}
