@@ -181,3 +181,6 @@ docs/marketing/placas/
 .smoke/
 # Local Pi runtime state
 .atl/
+
+# Local Claude/Pi notification logs
+tools/.claude/.log/
