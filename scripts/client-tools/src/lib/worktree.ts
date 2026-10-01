@@ -60,13 +60,23 @@ export interface RawState {
 
 /** Reads a worktree's state file, tolerating every way it can be absent. */
 function readState({ worktreePath }: { readonly worktreePath: string }): RawState {
-    const path = join(worktreePath, '.claude', 'worktree-state.local.json');
-    if (!existsSync(path)) return {};
-    try {
-        return JSON.parse(readFileSync(path, 'utf8')) as RawState;
-    } catch {
-        return {};
+    // Legacy Hospeda checkouts keep state under `.claude`; declarative qz
+    // adapters write it under `.qz`. Prefer the legacy file when it exists so
+    // a transition checkout cannot silently switch authorities, then fall back
+    // to the adapter location used by new worktrees.
+    const paths = [
+        join(worktreePath, '.claude', 'worktree-state.local.json'),
+        join(worktreePath, '.qz', 'worktree-state.local.json')
+    ];
+    for (const path of paths) {
+        if (!existsSync(path)) continue;
+        try {
+            return JSON.parse(readFileSync(path, 'utf8')) as RawState;
+        } catch {
+            // A malformed legacy file should not hide a valid qz state file.
+        }
     }
+    return {};
 }
 
 /** One worktree as git's porcelain describes it. */
