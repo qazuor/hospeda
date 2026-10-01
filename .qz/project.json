@@ -85,6 +85,7 @@
     "commands": {
         "genericPrefix": "qz-",
         "projectPrefix": "hops-",
-        "source": "scripts/client-tools"
+        "source": "scripts/client-tools",
+        "dispatch": "bun run scripts/client-tools/src/index.ts"
     }
 }
