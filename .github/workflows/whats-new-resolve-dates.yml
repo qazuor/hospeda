@@ -142,7 +142,10 @@ jobs:
           LIMIT=1000
           prs="$(gh pr list --base staging --state open --limit "${LIMIT}" \
             --json headRefName,isCrossRepository)"
-          if [[ "$(jq 'length' <<<"${prs}")" -ge "${LIMIT}" ]]; then
+          # Separate assignment: a failing substitution inside [[ ]] would
+          # dodge `set -e` and compare as an empty string.
+          count="$(jq 'length' <<<"${prs}")"
+          if [[ "${count}" -ge "${LIMIT}" ]]; then
             echo "::error::${LIMIT}+ open PRs against staging; the resolve-dates PR list may be truncated."
             exit 1
           fi
