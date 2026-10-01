@@ -102,12 +102,12 @@ const AccommodationPublicContactInfoSchema = AccommodationContactInfoReadSchema.
 
 /** Social read shape — plain strings (legacy variant URLs like `m.facebook.com`/mobile share links fail the platform regex). */
 const AccommodationSocialNetworksReadSchema = z.object({
-    facebook: z.string().optional(),
-    instagram: z.string().optional(),
-    twitter: z.string().optional(),
-    linkedIn: z.string().optional(),
-    tiktok: z.string().optional(),
-    youtube: z.string().optional()
+    facebook: z.string().nullish(),
+    instagram: z.string().nullish(),
+    twitter: z.string().nullish(),
+    linkedIn: z.string().nullish(),
+    tiktok: z.string().nullish(),
+    youtube: z.string().nullish()
 });
 
 /** Location read shape — postal string fields drop min/max (coordinates keep their numeric validation; they only ever come from the map picker). */

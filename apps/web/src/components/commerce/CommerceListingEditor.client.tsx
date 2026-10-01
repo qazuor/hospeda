@@ -186,33 +186,21 @@ function sameStringList(a: readonly string[], b: readonly string[]): boolean {
 }
 
 /**
- * Drop empty-string entries, mapping them to undefined for the payload.
- *
- * Only correct for a block the API REPLACES wholesale (`socialNetworks`): there,
- * an omitted key disappears from the stored object, which is exactly what
- * "the owner cleared this field" has to mean. For a MERGED block use
- * {@link nullWhenEmpty} instead — see its JSDoc.
- */
-function nonEmpty(value: string): string | undefined {
-    return value || undefined;
-}
-
-/**
  * Map an emptied field to an explicit `null` rather than to `undefined`.
  *
- * `contactInfo` is a MERGEABLE JSONB column on `GastronomyModel` and
- * `ExperienceModel` (HOS-1190, following the `users` precedent of HOS-375), so
+ * `contactInfo` (HOS-1190) and `socialNetworks` (HOS-1262) are MERGEABLE JSONB
+ * columns on `GastronomyModel` and `ExperienceModel` (following the `users`
+ * precedent of HOS-375), so
  * the PATCH is shallow-merged into the stored object with PostgreSQL `||`
  * instead of replacing it. Under merge semantics an OMITTED key means "leave
- * the stored value alone", so expressing a clear by omission — which is what
- * {@link nonEmpty} produces — would make an emptied contact field silently
- * un-saveable: the owner blanks their phone, the request succeeds, and the old
- * phone is still on the ficha.
+ * the stored value alone", so expressing a clear by omission would make an
+ * emptied field silently un-saveable: the owner blanks their phone (or their
+ * Instagram), the request succeeds, and the old value is still on the ficha.
  *
- * `null` is the clear. Every field of the shared `ContactInfoSchema` is
- * `.nullish()` for exactly this reason, so `null` validates while `''` does
- * NOT (`zodError.common.contact.mobilePhone.international`) — the empty string
- * is not an option here.
+ * `null` is the clear. Every field of the shared `ContactInfoSchema` and
+ * `SocialNetworkSchema` is `.nullish()` for exactly this reason, so `null`
+ * validates while `''` does NOT (`zodError.common.contact.mobilePhone.international`,
+ * `zodError.common.social.*.invalid`) — the empty string is not an option here.
  */
 function nullWhenEmpty(value: string): string | null {
     return value || null;
@@ -260,10 +248,8 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
  *
  *  - `contactInfo` / `socialNetworks` are JSONB blocks that ship WHOLE whenever
- *    any member changed, but for two different reasons since HOS-1190.
- *    `socialNetworks` is still REPLACED by the API, so sending only the changed
- *    leaf would wipe the others. `contactInfo` is now MERGED (`||`) at the DB
- *    layer, so the whole block is no longer strictly required — it is kept
+ *    any member changed. Both are MERGED (`||`) at the DB layer (HOS-1190,
+ *    HOS-1262), so the whole block is no longer strictly required — it is kept
  *    because it is what makes the clear explicit: every member is sent, and an
  *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
  *    omitted key means "keep the stored value".
@@ -365,12 +351,12 @@ function buildPatchPayload({
 
     if (SOCIAL_KEYS.some((key) => current.social[key] !== baseline.social[key])) {
         payload.socialNetworks = {
-            facebook: nonEmpty(current.social.facebook),
-            instagram: nonEmpty(current.social.instagram),
-            twitter: nonEmpty(current.social.twitter),
-            tiktok: nonEmpty(current.social.tiktok),
-            youtube: nonEmpty(current.social.youtube),
-            linkedIn: nonEmpty(current.social.linkedIn)
+            facebook: nullWhenEmpty(current.social.facebook),
+            instagram: nullWhenEmpty(current.social.instagram),
+            twitter: nullWhenEmpty(current.social.twitter),
+            tiktok: nullWhenEmpty(current.social.tiktok),
+            youtube: nullWhenEmpty(current.social.youtube),
+            linkedIn: nullWhenEmpty(current.social.linkedIn)
         };
     }
 

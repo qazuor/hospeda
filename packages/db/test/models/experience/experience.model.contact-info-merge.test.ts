@@ -312,14 +312,15 @@ describe('ExperienceModel — `contactInfo` is a mergeable JSONB column', () => 
         const withTransaction = vi.spyOn(clientModule, 'withTransaction');
         setDb(plainDb as unknown as DrizzleClient);
 
-        // Act — `socialNetworks` is NOT declared mergeable on this model.
+        // Act — `openingHours` is NOT declared mergeable on this model (HOS-1262 moved
+        // `socialNetworks` into the mergeable set, so it can no longer be the control).
         await new ExperienceModel().update({ id: 'experience-1' }, {
-            socialNetworks: { facebook: 'https://facebook.com/x' }
+            openingHours: { monday: [] }
         } as unknown as Parameters<ExperienceModel['update']>[1]);
 
         // Assert
         expect(withTransaction).not.toHaveBeenCalled();
         const setPayload = plainDb.set.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(setPayload?.socialNetworks).toStrictEqual({ facebook: 'https://facebook.com/x' });
+        expect(setPayload?.openingHours).toStrictEqual({ monday: [] });
     });
 });

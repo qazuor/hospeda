@@ -26,6 +26,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     collectModelFiles,
+    columnExpressionAfter,
     declaresContactInfoMergeable,
     findClassBodies,
     findClassBodyBrace,
@@ -36,6 +37,7 @@ import {
     findOwningModels,
     findStringRanges,
     findTableAliases,
+    isGuardedColumn,
     isInsideString,
     MIN_KNOWN_CONTACT_INFO_TABLES,
     REPO_ROOT,
@@ -106,7 +108,7 @@ function runQuiet(root: string): { code: number; output: string } {
 
 /** The declaration a healthy model carries. */
 const DECLARED =
-    "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";
+    "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
 
 /**
  * A tree holding the healthy, declared `gastronomies` table PLUS one extra
@@ -210,7 +212,9 @@ describe('stripComments', () => {
     });
 
     it('leaves the array items a declaration needs', () => {
-        expect(stripComments("= ['contactInfo'] as const;")).toBe("= ['contactInfo'] as const;");
+        expect(stripComments("= ['contactInfo', 'socialNetworks'] as const;")).toBe(
+            "= ['contactInfo', 'socialNetworks'] as const;"
+        );
     });
 });
 
@@ -288,7 +292,7 @@ describe('findOwningClassBody', () => {
     it('returns the class that assigns the table, not a sibling', () => {
         const src = `class Other {
     protected table = users;
-    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
 class GastronomyModel {
     protected table = gastronomies;
@@ -319,7 +323,7 @@ describe('resolveConstArrayLiteral', () => {
 describe('declaresContactInfoMergeable', () => {
     it('accepts the plain declaration', () => {
         const body = stripComments(
-            "protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
+            "protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;"
         );
         expect(declaresContactInfoMergeable(body)).toEqual({ kind: 'declared' });
     });
@@ -339,12 +343,13 @@ describe('declaresContactInfoMergeable', () => {
  * @example
  * protected override readonly mergeableJsonbColumns = ['media'] as const;
  */
-protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;`;
+protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;`;
         expect(declaresContactInfoMergeable(stripComments(source))).toEqual({ kind: 'declared' });
     });
 
     it('resolves a spread against a constant declared in the same module', () => {
-        const module = stripComments(`const SHARED_CONTACT_MERGE = ['contactInfo'] as const;
+        const module =
+            stripComments(`const SHARED_CONTACT_MERGE = ['contactInfo', 'socialNetworks'] as const;
 class M {
     protected override readonly mergeableJsonbColumns = [...SHARED_CONTACT_MERGE] as const;
 }`);
@@ -378,7 +383,7 @@ describe('run() — the healthy tree', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
             'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
-                "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
+                "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;"
             )
         });
 
@@ -396,7 +401,7 @@ describe('run() — the healthy tree', () => {
      * @example
      * protected override readonly mergeableJsonbColumns = ['media'] as const;
      */
-    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;`
+    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;`
             )
         });
 
@@ -408,7 +413,7 @@ describe('run() — the healthy tree', () => {
             [SCHEMA_PATH]: SCHEMA_SOURCE,
             'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
                 '    protected override readonly mergeableJsonbColumns = [...SHARED_CONTACT_MERGE] as const;',
-                "const SHARED_CONTACT_MERGE = ['contactInfo'] as const;"
+                "const SHARED_CONTACT_MERGE = ['contactInfo', 'socialNetworks'] as const;"
             )
         });
 
@@ -453,7 +458,7 @@ describe('run() — evasion (b): the declaration exists only inside a JSDoc bloc
             'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
                 `    /**
      * This model used to carry
-     * \`protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;\`
+     * \`protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;\`
      * but the declaration itself is gone.
      */
     protected override readonly validRelationKeys = ['faqs'] as const;`
@@ -470,7 +475,7 @@ describe('run() — evasion (b): the declaration exists only inside a JSDoc bloc
 describe('run() — evasion (c): two models over the same table', () => {
     it('fails when ANY of them is missing the declaration, whatever the filename order', () => {
         const declared =
-            "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";
+            "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
 
         for (const missingFile of ['aGastronomyPublic.model.ts', 'zGastronomyPublic.model.ts']) {
             const otherFile =
@@ -493,7 +498,7 @@ describe('run() — evasion (c): two models over the same table', () => {
 
     it('passes only when BOTH declare it', () => {
         const declared =
-            "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";
+            "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
             'packages/db/src/models/gastronomy/aGastronomy.model.ts': modelFile(declared),
@@ -525,7 +530,7 @@ describe('run() — the remaining failure modes', () => {
 
 export class UserModel extends BaseModelImpl<User> {
     protected table = users;
-    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
 
 export class GastronomyModel extends BaseModelImpl<Gastronomy> {
@@ -558,7 +563,7 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('found zero contact_info columns');
+        expect(output).toContain('found zero guarded JSONB columns');
     });
 
     it('does not discover a column that is itself commented out', () => {
@@ -658,11 +663,10 @@ export { venues };`,
 });
 export { venues };`);
 
-        expect(
-            findContactInfoTables(root)
-                .map((t) => t.tableVar)
-                .sort()
-        ).toEqual(['gastronomies', 'venues']);
+        expect([...new Set(findContactInfoTables(root).map((t) => t.tableVar))].sort()).toEqual([
+            'gastronomies',
+            'venues'
+        ]);
     });
 
     it('reports a column it cannot attribute to a table as a VIOLATION, not a skip', () => {
@@ -720,7 +724,7 @@ describe('run() — evasion (d): the declaration exists only inside a STRING lit
             [SCHEMA_PATH]: SCHEMA_SOURCE,
             'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
                 `    private readonly legacyNote =
-        "protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";`
+        "protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";`
             )
         });
 
@@ -994,7 +998,7 @@ describe('run() — the false positives round 2 left behind', () => {
 
 export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     protected table = gastronomies;
-    public override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+    public override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
 `
         });
@@ -1036,7 +1040,11 @@ describe('discovery is deduplicated per TABLE, not per file', () => {
             'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
         });
 
-        expect(findContactInfoTables(root).map((t) => t.tableVar)).toEqual(['gastronomies']);
+        // One entry per (table, property): `contactInfo` and `socialNetworks`, each ONCE.
+        expect(findContactInfoTables(root).map((t) => t.propertyName)).toEqual([
+            'contactInfo',
+            'socialNetworks'
+        ]);
         expect(runQuiet(root).code).toBe(0);
     });
 });
@@ -1050,20 +1058,32 @@ describe('the repository itself', () => {
         expect(runQuiet(REPO_ROOT).code).toBe(0);
     });
 
-    it('finds the seven known contact_info tables', () => {
+    it('finds the known guarded columns, by SHAPE as well as by name', () => {
         expect(
             findContactInfoTables(REPO_ROOT)
-                .map((t) => t.tableVar)
+                .map((t) => `${t.tableVar}.${t.propertyName}`)
                 .sort()
-        ).toEqual([
-            'accommodations',
-            'eventOrganizers',
-            'experiences',
-            'gastronomies',
-            'partners',
-            'postSponsors',
-            'users'
-        ]);
+        ).toEqual(
+            [
+                'accommodations.contactInfo',
+                'accommodations.socialNetworks',
+                // `jsonb('social')`: only the `$type<SocialNetwork>` anchor sees it.
+                'eventOrganizers.contactInfo',
+                'eventOrganizers.socialNetworks',
+                // `jsonb('contact')`: only the `$type<ContactInfo>` anchor sees it.
+                'events.contact',
+                'experiences.contactInfo',
+                'experiences.socialNetworks',
+                'gastronomies.contactInfo',
+                'gastronomies.socialNetworks',
+                'partners.contactInfo',
+                'partners.socialNetworks',
+                'postSponsors.contactInfo',
+                'postSponsors.socialNetworks',
+                'users.contactInfo',
+                'users.socialNetworks'
+            ].sort()
+        );
     });
 
     it('resolves exactly one owning model per table today', () => {
@@ -1071,5 +1091,146 @@ describe('the repository itself', () => {
         for (const table of findContactInfoTables(REPO_ROOT)) {
             expect(findOwningModels(REPO_ROOT, modelFiles, table.tableVar)).toHaveLength(1);
         }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1262: the guard is anchored on the SHAPE, not on one column name
+// ---------------------------------------------------------------------------
+
+describe('run() — socialNetworks is guarded exactly like contactInfo (HOS-1262)', () => {
+    it('fails when the model declares contactInfo but NOT socialNetworks', () => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+                "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
+            )
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain("does not declare 'socialNetworks'");
+        expect(output).not.toContain("does not declare 'contactInfo'");
+    });
+
+    it('sees a column by its `$type`, whatever its database name says', () => {
+        const root = treeWithExtraTable(`export const venues = pgTable('venues', {
+    socialNetworks: jsonb('social').$type<SocialNetwork>(),
+    contact: jsonb('contact').$type<ContactInfo | null>()
+});`);
+
+        const found = findContactInfoTables(root)
+            .filter((t) => t.tableVar === 'venues')
+            .map((t) => `${t.propertyName}:${t.dbColumn}`)
+            .sort();
+
+        expect(found).toEqual(['contact:contact', 'socialNetworks:social']);
+        expect(runQuiet(root).code).toBe(1);
+    });
+
+    it('does not guard a lenient READ type or an opaque bag that merely sits nearby', () => {
+        const root = treeWithExtraTable(`export const venues = pgTable('venues', {
+    a: jsonb('a').$type<SocialNetworkRead>(),
+    b: jsonb('b').$type<Record<string, unknown>>(),
+    c: jsonb('c').$type<Seo>()
+});`);
+
+        expect(findContactInfoTables(root).filter((t) => t.tableVar === 'venues')).toEqual([]);
+    });
+
+    it('reads a `$type` after a generic argument that contains a comma', () => {
+        expect(
+            isGuardedColumn(
+                'x',
+                columnExpressionAfter('.$type<Map<string, ContactInfo>>().notNull(),', 0)
+            )
+        ).toBe(false);
+        expect(
+            isGuardedColumn(
+                'x',
+                columnExpressionAfter('.$type<ContactInfo>().default({ a: 1 }), next: 2', 0)
+            )
+        ).toBe(true);
+    });
+});
+
+describe('run() — written exemptions', () => {
+    const EXEMPT = { 'gastronomies::socialNetworks': 'pending the writers sending null' };
+
+    /** A gastronomies model declaring only contactInfo. */
+    const undeclaredSocial = () =>
+        makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+                "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
+            )
+        });
+
+    const runWith = (root: string, exemptions: Record<string, string>) => {
+        const lines: string[] = [];
+        const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+            lines.push(args.map(String).join(' '));
+        });
+        try {
+            return { code: run(root, exemptions), output: lines.join('\n') };
+        } finally {
+            spy.mockRestore();
+        }
+    };
+
+    it('lets an exempt column through and prints the written reason', () => {
+        const { code, output } = runWith(undeclaredSocial(), EXEMPT);
+
+        expect(code).toBe(0);
+        expect(output).toContain('EXEMPT: gastronomies::socialNetworks');
+        expect(output).toContain('pending the writers sending null');
+    });
+
+    it('fails a STALE exemption: the model already declares the column', () => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+        });
+
+        const { code, output } = runWith(root, EXEMPT);
+
+        expect(code).toBe(1);
+        expect(output).toContain('the exemption is stale');
+    });
+
+    it('fails an exemption that matches no column the scan found', () => {
+        const { code, output } = runWith(undeclaredSocial(), {
+            ...EXEMPT,
+            'venues::contact': 'a table that does not exist'
+        });
+
+        expect(code).toBe(1);
+        expect(output).toContain("the exemption 'venues::contact' matches no guarded column");
+    });
+
+    it('fails an exemption with no written reason', () => {
+        const { code, output } = runWith(undeclaredSocial(), {
+            'gastronomies::socialNetworks': ' '
+        });
+
+        expect(code).toBe(1);
+        expect(output).toContain('has no written reason');
+    });
+
+    it('does not exempt a DIFFERENT property of the same table', () => {
+        const { code, output } = runWith(
+            makeTree({
+                [SCHEMA_PATH]: SCHEMA_SOURCE,
+                'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+                    "    protected override readonly mergeableJsonbColumns = ['socialNetworks'] as const;"
+                )
+            }),
+            EXEMPT
+        );
+
+        // socialNetworks is exempt AND declared -> stale; contactInfo is neither.
+        expect(code).toBe(1);
+        expect(output).toContain("does not declare 'contactInfo'");
     });
 });

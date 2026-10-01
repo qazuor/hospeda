@@ -15,8 +15,8 @@
  *    currently published stays live and unchanged in the meantime.
  * 3. **Contact** (`workEmail`, `workPhone`, `whatsapp`) — apply immediately,
  *    merged into the stored `contactInfo`.
- * 4. **Social** (all six links) — apply immediately, replacing
- *    `socialNetworks` wholesale.
+ * 4. **Social** (all six links) — apply immediately, merged into the stored
+ *    `socialNetworks` (a cleared link is sent as an explicit `null`).
  *
  * See `PartnerEditForm.helpers.ts` for the atom rule governing the content trio
  * and the reason the two JSONB groups are diffed differently.

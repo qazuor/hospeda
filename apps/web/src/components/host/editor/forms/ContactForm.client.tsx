@@ -20,6 +20,7 @@ import { AccommodationContactSchema } from '../accommodation-edit-form.schema';
 import { ContactInfoSection } from '../ContactInfoSection.client';
 import { SocialNetworksSection } from '../SocialNetworksSection.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
+import { nullifyClearedSocials } from './contact-payload';
 import styles from './SectionForm.module.css';
 
 /** The fields this page owns. Nothing else can reach the PATCH body. */
@@ -64,7 +65,10 @@ export function ContactForm({ locale, accommodationId, initialData }: ContactFor
         initialValues: initialData,
         ownFields: [...OWN_FIELDS],
         schema: AccommodationContactSchema,
-        fieldKeyMap: SOCIAL_KEY_MAP
+        fieldKeyMap: SOCIAL_KEY_MAP,
+        // A cleared network must travel as `null`: the column is merged, so
+        // omitting (or `''`) would leave the stored link in place (HOS-1262).
+        extendPayload: nullifyClearedSocials
     });
 
     // The schema reports social errors under the HTTP key; the section renders
