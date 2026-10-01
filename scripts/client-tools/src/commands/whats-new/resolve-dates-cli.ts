@@ -19,19 +19,27 @@
  *   this file with `working-directory: scripts/client-tools`, and the original
  *   cwd-relative default resolved to `scripts/client-tools/apps/api/...` and
  *   ENOENTed on the first real promotion (2026-09-11, run 34647242767).).
- * - `REFERENCE_FILES` — newline-separated paths to OTHER versions of the
- *   catalog (the workflow passes `staging`'s and every open resolve-dates
- *   PR's). When set, a marker is resolved only if it is still pending in
- *   every one of them; see "Why `main` alone is not enough" in
- *   `resolve-dates.ts`. Set but empty, or naming a missing file, is an error:
- *   silently resolving everything is exactly the bug this exists to stop.
- *   Unset (a local manual run) resolves every marker, as before.
+ * - `STAGING_CATALOG` — path to `staging`'s version of the catalog. When set,
+ *   only markers still pending there are resolved.
+ * - `IN_FLIGHT_CATALOGS` — newline-separated paths to the catalog of every
+ *   open resolve-dates PR; may be empty. Ids those PRs already DATE are
+ *   excluded. Requires `STAGING_CATALOG`.
+ *
+ *   See "Why `main` alone is not enough" in `resolve-dates.ts`. A blank
+ *   `STAGING_CATALOG`, `IN_FLIGHT_CATALOGS` without it, or a path that does
+ *   not exist is an error: silently resolving everything is exactly the bug
+ *   this exists to stop. Neither set (a local manual run) resolves every
+ *   marker, as before.
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ownRepoRoot } from '../../lib/repo.ts';
 import { CATALOG_FILE_PATH } from './catalog.ts';
-import { collectPendingMarkerIds, resolvePublishedAtMarkers } from './resolve-dates.ts';
+import {
+    collectDatedIds,
+    collectPendingMarkerIds,
+    resolvePublishedAtMarkers
+} from './resolve-dates.ts';
 
 /**
  * Resolves the catalog file path the CLI operates on.
@@ -50,63 +58,71 @@ export function resolveCatalogFilePath({ envFile }: { readonly envFile?: string 
 }
 
 /**
- * Intersects the still-pending marker ids of every reference catalog.
+ * Computes which marker ids may be resolved: those still pending on
+ * `staging`, minus those any open resolve-dates PR already dates.
  *
- * An id survives only if it is pending in ALL of them: dated on `staging`
- * means already resolved, and dated on an open resolve-dates PR means
- * already being resolved.
+ * Staging is the authority on what is pending (an entry it does not have, or
+ * has dated, is skipped). The in-flight PRs only SUBTRACT what they date —
+ * an entry absent from a PR is newer than its branch, not "being resolved".
  *
- * @param input.referenceContents - Sources of the reference catalogs; at
- *                                  least one.
+ * @param input.stagingContent   - `staging`'s catalog source.
+ * @param input.inFlightContents - Catalog source of each open resolve-dates PR.
  * @returns The ids that may be resolved.
- * @throws When `referenceContents` is empty — an empty intersection must
- *         never be mistaken for "no filter".
  */
-export function intersectPendingIds({
-    referenceContents
+export function computeResolvableIds({
+    stagingContent,
+    inFlightContents
 }: {
-    readonly referenceContents: readonly string[];
+    readonly stagingContent: string;
+    readonly inFlightContents: readonly string[];
 }): ReadonlySet<string> {
-    const [first, ...rest] = referenceContents;
-    if (first === undefined) {
-        throw new Error('intersectPendingIds: at least one reference catalog is required.');
-    }
-    const allowed = new Set(collectPendingMarkerIds({ content: first }));
-    for (const content of rest) {
-        const pending = collectPendingMarkerIds({ content });
-        for (const id of allowed) {
-            if (!pending.has(id)) {
-                allowed.delete(id);
-            }
+    const allowed = new Set(collectPendingMarkerIds({ content: stagingContent }));
+    for (const content of inFlightContents) {
+        for (const id of collectDatedIds({ content })) {
+            allowed.delete(id);
         }
     }
     return allowed;
 }
 
+/** Paths of the reference catalogs, as passed by the workflow. */
+export interface ReferenceCatalogPaths {
+    readonly stagingPath: string;
+    readonly inFlightPaths: readonly string[];
+}
+
 /**
- * Parses `REFERENCE_FILES` into a list of paths.
+ * Parses `STAGING_CATALOG` and `IN_FLIGHT_CATALOGS`.
  *
- * @param input.envValue - Raw value of `REFERENCE_FILES`, or `undefined`.
- * @returns `undefined` when the variable is unset (no filtering); otherwise
- *          the non-blank paths.
- * @throws When the variable is set but names no path.
+ * @param input.stagingEnv  - Raw `STAGING_CATALOG`, or `undefined`.
+ * @param input.inFlightEnv - Raw `IN_FLIGHT_CATALOGS`, or `undefined`.
+ * @returns `undefined` when neither is set (no filtering); otherwise the paths.
+ * @throws When `STAGING_CATALOG` is blank, or `IN_FLIGHT_CATALOGS` is set
+ *         without it — both mean a broken workflow step, which must fail
+ *         closed rather than resolve every marker.
  */
-export function parseReferenceFiles({
-    envValue
+export function parseReferenceCatalogs({
+    stagingEnv,
+    inFlightEnv
 }: {
-    readonly envValue: string | undefined;
-}): readonly string[] | undefined {
-    if (envValue === undefined) {
+    readonly stagingEnv: string | undefined;
+    readonly inFlightEnv: string | undefined;
+}): ReferenceCatalogPaths | undefined {
+    if (stagingEnv === undefined) {
+        if (inFlightEnv !== undefined) {
+            throw new Error('IN_FLIGHT_CATALOGS is set but STAGING_CATALOG is not.');
+        }
         return undefined;
     }
-    const paths = envValue
+    const stagingPath = stagingEnv.trim();
+    if (stagingPath.length === 0) {
+        throw new Error('STAGING_CATALOG is set but empty.');
+    }
+    const inFlightPaths = (inFlightEnv ?? '')
         .split('\n')
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
-    if (paths.length === 0) {
-        throw new Error('REFERENCE_FILES is set but names no file.');
-    }
-    return paths;
+    return { stagingPath, inFlightPaths };
 }
 
 /** Writes `key=value` to `$GITHUB_OUTPUT` when present, and always to stdout. */
@@ -129,13 +145,19 @@ function main(): void {
         process.exit(1);
     }
 
-    const referenceFiles = parseReferenceFiles({ envValue: process.env.REFERENCE_FILES });
+    const references = parseReferenceCatalogs({
+        stagingEnv: process.env.STAGING_CATALOG,
+        inFlightEnv: process.env.IN_FLIGHT_CATALOGS
+    });
     // readFileSync throws on a missing reference: fail loud, never fall open.
     const onlyIds =
-        referenceFiles === undefined
+        references === undefined
             ? undefined
-            : intersectPendingIds({
-                  referenceContents: referenceFiles.map((path) => readFileSync(path, 'utf8'))
+            : computeResolvableIds({
+                  stagingContent: readFileSync(references.stagingPath, 'utf8'),
+                  inFlightContents: references.inFlightPaths.map((path) =>
+                      readFileSync(path, 'utf8')
+                  )
               });
 
     const content = readFileSync(filePath, 'utf8');
@@ -143,7 +165,7 @@ function main(): void {
 
     if (result.skippedIds.length > 0) {
         console.log(
-            `Skipped ${result.skippedIds.length} marker(s) already dated or being dated elsewhere: ${result.skippedIds.join(', ')}`
+            `Skipped ${result.skippedIds.length} marker(s) not pending on staging or already dated by an open resolve PR: ${result.skippedIds.join(', ')}`
         );
     }
 

@@ -116,9 +116,11 @@ jobs:
       # promotion, and every push in between (Dependabot security merges,
       # hotfixes) used to re-date them — five redundant PRs in one night
       # (#3432..#3442). So the CLI only resolves a marker that is still
-      # pending on `staging` AND on every resolve-dates PR still open. Each of
-      # those versions of the catalog is written to a temp file here; a
-      # failure to read any of them fails the job rather than falling open.
+      # pending on `staging` and that no open resolve-dates PR already dates.
+      # (The PRs are subtracted, not intersected: an entry promoted after a PR
+      # branch was cut is absent there, which says nothing.) Each of those
+      # versions of the catalog is written to a temp file here; a failure to
+      # read any of them fails the job rather than falling open.
       # -----------------------------------------------------------------------
       - name: Collect reference catalogs (staging + open resolve-dates PRs)
         id: references
@@ -133,22 +135,33 @@ jobs:
 
           git fetch --no-tags origin "+refs/heads/staging:refs/remotes/origin/staging"
           git show "origin/staging:${FILE}" > "${DIR}/staging.ts"
-          PATHS="${DIR}/staging.ts"
+          IN_FLIGHT=""
 
-          branches="$(gh pr list --base staging --state open --limit 100 \
-            --json headRefName \
-            --jq '.[] | select(.headRefName | startswith("whats-new/resolve-dates-")) | .headRefName')"
+          # The prefix filter runs client-side, so a truncated list would drop
+          # a resolve PR silently and re-date its ids — refuse instead.
+          LIMIT=1000
+          prs="$(gh pr list --base staging --state open --limit "${LIMIT}" \
+            --json headRefName,isCrossRepository)"
+          if [[ "$(jq 'length' <<<"${prs}")" -ge "${LIMIT}" ]]; then
+            echo "::error::${LIMIT}+ open PRs against staging; the resolve-dates PR list may be truncated."
+            exit 1
+          fi
+          # Same-repo only: a fork's branch cannot be fetched from origin.
+          branches="$(jq -r '.[] | select(.isCrossRepository | not)
+            | select(.headRefName | startswith("whats-new/resolve-dates-"))
+            | .headRefName' <<<"${prs}")"
           for branch in ${branches}; do
             git fetch --no-tags origin "+refs/heads/${branch}:refs/remotes/origin/${branch}"
             out="${DIR}/${branch//\//_}.ts"
             git show "origin/${branch}:${FILE}" > "${out}"
-            PATHS="${PATHS}"$'\n'"${out}"
-            echo "Reference: open PR branch ${branch}"
+            IN_FLIGHT="${IN_FLIGHT}${out}"$'\n'
+            echo "In-flight reference: open PR branch ${branch}"
           done
 
+          echo "staging=${DIR}/staging.ts" >> "${GITHUB_OUTPUT}"
           {
-            echo "paths<<EOF"
-            echo "${PATHS}"
+            echo "in_flight<<EOF"
+            printf '%s' "${IN_FLIGHT}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
@@ -157,12 +170,13 @@ jobs:
         working-directory: scripts/client-tools
         env:
           MERGED_AT: ${{ steps.merged-at.outputs.merged_at }}
-          REFERENCE_FILES: ${{ steps.references.outputs.paths }}
+          STAGING_CATALOG: ${{ steps.references.outputs.staging }}
+          IN_FLIGHT_CATALOGS: ${{ steps.references.outputs.in_flight }}
         run: bun run src/commands/whats-new/resolve-dates-cli.ts
 
       - name: Report when there is nothing to resolve
         if: steps.resolve.outputs.resolved_count == '0'
-        run: echo "No marker still pending on main, staging and the open resolve-dates PRs. Nothing to resolve; not opening a PR."
+        run: echo "No marker on main is still pending on staging and undated by the open resolve-dates PRs. Nothing to resolve; not opening a PR."
 
       # -----------------------------------------------------------------------
       # Only reached when at least one marker was actually resolved (and the

@@ -43,10 +43,14 @@
  * promotion, and every push to `main` in between — a Dependabot security
  * merge, a hotfix — found them again and opened another PR re-dating entries
  * `staging` had already dated (#3432, #3435, #3439, #3441, #3442 in a single
- * night). The caller therefore intersects `main`'s pending ids with the ids
- * still pending on `staging` and on every resolve-dates PR still open
- * ({@link collectPendingMarkerIds}), and passes the result as `onlyIds`: a
- * marker is resolved only while it is unresolved EVERYWHERE.
+ * night). The caller therefore passes `onlyIds` = the ids still pending on
+ * `staging` ({@link collectPendingMarkerIds}) MINUS the ids any open
+ * resolve-dates PR already dates ({@link collectDatedIds}).
+ *
+ * The PRs are subtracted, never intersected: a PR branch is cut from an
+ * older `main`, so an entry promoted after it is simply absent there.
+ * Treating that absence as "already being resolved" would leave every later
+ * promotion undated for as long as one resolve PR stays open.
  */
 
 /** The literal unresolved-date marker written by the sign-off flow (D-1). */
@@ -140,7 +144,21 @@ function toCatalogIsoString({ ms }: { readonly ms: number }): string {
  * declared order, with the id of the entry it belongs to.
  */
 function findMarkers({ content }: { readonly content: string }): MarkerOccurrence[] {
-    const markers: MarkerOccurrence[] = [];
+    return findPublishedAtFields({ content })
+        .filter((field) => field.value === ON_PROMOTION_MARKER)
+        .map(({ value: _value, ...marker }) => marker);
+}
+
+/**
+ * Finds every `publishedAt` field in the live entries of `content`, marker or
+ * date, in declared order, with the id of the entry it belongs to.
+ */
+function findPublishedAtFields({
+    content
+}: {
+    readonly content: string;
+}): (MarkerOccurrence & { readonly value: string })[] {
+    const fields: (MarkerOccurrence & { readonly value: string })[] = [];
     let currentId: string | null = null;
     let match: RegExpExecArray | null;
 
@@ -164,16 +182,36 @@ function findMarkers({ content }: { readonly content: string }): MarkerOccurrenc
             continue;
         }
         // key === 'publishedAt'
-        if (value === ON_PROMOTION_MARKER) {
-            markers.push({
-                start: scanStart + match.index,
-                end: scanStart + match.index + full.length,
-                quote: quote ?? "'",
-                id: currentId
-            });
+        fields.push({
+            start: scanStart + match.index,
+            end: scanStart + match.index + full.length,
+            quote: quote ?? "'",
+            id: currentId,
+            value: value ?? ''
+        });
+    }
+    return fields;
+}
+
+/**
+ * Returns the ids of every entry whose `publishedAt` is already a real date
+ * (anything but the `'on-promotion'` marker) in `content`.
+ *
+ * This is how an open resolve-dates PR is read: what it DATES is being
+ * resolved; what it does not contain is simply newer than its branch, and
+ * says nothing either way.
+ *
+ * @param input.content - A version of the catalog source (e.g. an open PR's).
+ * @returns The set of already-dated entry ids.
+ */
+export function collectDatedIds({ content }: { readonly content: string }): ReadonlySet<string> {
+    const ids = new Set<string>();
+    for (const field of findPublishedAtFields({ content })) {
+        if (field.id !== null && field.value !== ON_PROMOTION_MARKER) {
+            ids.add(field.id);
         }
     }
-    return markers;
+    return ids;
 }
 
 /**
