@@ -814,7 +814,7 @@ del corte.
 | `S19` | `B7` | |
 | `S20` | `B9a` | AS |
 | `S21` | AV | AS |
-| `S22` | `B8b` | AR |
+| `S22` | `B8b` | queda en `B8b`, por AR |
 | `S23` | `B8a` | AR |
 | `S24` | `B8a` | AR |
 | `S29` | `B5` | |
