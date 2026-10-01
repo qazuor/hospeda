@@ -273,3 +273,21 @@ Además, `S21` sólo corre si su instancia llega a `CANCELLED`, y la orfandad qu
 *Juan* no lo ve: nadie tiene un addon al corte. Lo ve quien construye `B5`: con la 1 encuentra las
 tablas y escribe la rama de `S36` entera; con la 2, `B5` sale sin esa rama y `B4` se la agrega
 después.
+
+## 6. La aplicación de AV
+
+(Owner, 2026-10-01: la 1.) **Las tablas del modelo de addons pasan de `B4` a `B3`**; `payment` nace
+en `B5` con la columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`; **`S21` y la
+orfandad (`A5`) van a `B5`**, y **`S32` y `S33` a `B7`**. Quedó en `B/descomposicion.md` (§2, filas
+`B3`, `B4`, `B5`, `B7` y `B10`; §2.12, con la tabla de transiciones sin marcas abiertas; §3; §4,
+criterios de `B5`, `B7` y `B10`), en `D/16` §4.6 (piezas y esquema del corte) y en un 📌 sobre
+`DEC-ARCH-017`.
+
+- **Criterios trasladados**: a `B5`, las cláusulas de `R1-b` y del apagado del complemento por
+  `S21`; a `B7`, la de `V2-e` restringida a la suspensión. Las dos salen del criterio de `B10`
+  *(lo derivé y lo marqué en los dos criterios)*.
+- **`A5` no está en la tabla de transiciones de `B` §2.12**: es de la máquina de la instancia
+  (`B/16` §4.2–§4.3), no de la Suscripción, así que `contar.py` no la verifica. Agregar una tabla
+  de las transiciones de la instancia sólo para una fila duplicaría un censo que el inventario de
+  la consolidada ya hace.
+- **`contar.py`** trata ahora como falla una transición sin pieza (la marca `AV` ya no se acepta).
