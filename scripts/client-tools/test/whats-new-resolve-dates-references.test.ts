@@ -3,13 +3,13 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-    intersectPendingIds,
-    parseReferenceFiles
-} from '../src/commands/whats-new/resolve-dates-cli.ts';
-import {
     collectPendingMarkerIds,
     resolvePublishedAtMarkers
 } from '../src/commands/whats-new/resolve-dates.ts';
+import {
+    intersectPendingIds,
+    parseReferenceFiles
+} from '../src/commands/whats-new/resolve-dates-cli.ts';
 
 /**
  * Regression suite for the 2026-09-30/10-01 incident: every Dependabot
@@ -27,7 +27,10 @@ function catalog({
     readonly entries: readonly (readonly [id: string, publishedAt: string])[];
 }): string {
     const body = entries
-        .map(([id, publishedAt]) => `    {\n        id: '${id}',\n        publishedAt: '${publishedAt}'\n    }`)
+        .map(
+            ([id, publishedAt]) =>
+                `    {\n        id: '${id}',\n        publishedAt: '${publishedAt}'\n    }`
+        )
         .join(',\n');
     return `/** publishedAt: 'on-promotion' in prose is never an entry. */\nexport const whatsNewEntries = [\n${body}\n];\n`;
 }
@@ -56,7 +59,12 @@ describe('collectPendingMarkerIds', () => {
 describe('resolvePublishedAtMarkers with onlyIds', () => {
     it('resolves NOTHING on a hotfix push when staging already dated every marker main still has', () => {
         // Arrange — main lags staging: its markers were dated on staging by #3386.
-        const main = catalog({ entries: [['old-a', MARKER], ['old-b', MARKER]] });
+        const main = catalog({
+            entries: [
+                ['old-a', MARKER],
+                ['old-b', MARKER]
+            ]
+        });
         const staging = catalog({
             entries: [
                 ['old-a', '2026-09-23T15:25:19Z'],
@@ -98,9 +106,15 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
         // Assert
         expect(result.resolvedIds).toStrictEqual(['new-w', 'new-x']);
         expect(result.skippedIds).toStrictEqual(['old-a']);
-        expect(result.updatedContent).toContain("id: 'new-w',\n        publishedAt: '2026-10-01T05:00:00Z'");
-        expect(result.updatedContent).toContain("id: 'new-x',\n        publishedAt: '2026-10-01T04:00:00Z'");
-        expect(result.updatedContent).toContain("id: 'old-a',\n        publishedAt: 'on-promotion'");
+        expect(result.updatedContent).toContain(
+            "id: 'new-w',\n        publishedAt: '2026-10-01T05:00:00Z'"
+        );
+        expect(result.updatedContent).toContain(
+            "id: 'new-x',\n        publishedAt: '2026-10-01T04:00:00Z'"
+        );
+        expect(result.updatedContent).toContain(
+            "id: 'old-a',\n        publishedAt: 'on-promotion'"
+        );
     });
 
     it('skips a marker an open resolve-dates PR is already dating, even if staging still has it pending', () => {
@@ -134,7 +148,8 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
 
     it('skips a marker with no readable id when filtering, since it cannot be matched', () => {
         // Arrange
-        const content = "export const whatsNewEntries = [\n    { publishedAt: 'on-promotion' }\n];\n";
+        const content =
+            "export const whatsNewEntries = [\n    { publishedAt: 'on-promotion' }\n];\n";
 
         // Act
         const result = resolvePublishedAtMarkers({
@@ -150,7 +165,12 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
 
     it('resolves every marker and skips none when onlyIds is omitted (local manual run)', () => {
         // Arrange
-        const content = catalog({ entries: [['a', MARKER], ['b', MARKER]] });
+        const content = catalog({
+            entries: [
+                ['a', MARKER],
+                ['b', MARKER]
+            ]
+        });
 
         // Act
         const result = resolvePublishedAtMarkers({ content, mergedAt: MERGED_AT });
