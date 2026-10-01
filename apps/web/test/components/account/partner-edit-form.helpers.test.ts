@@ -7,8 +7,8 @@
  * - the CONTENT ATOM: any one of the trio dirty sends all three, or the
  *   service NULLs the two it did not receive;
  * - `contactInfo` sends only changed keys (merged column) and clears with null;
- * - `socialNetworks` sends the whole six-key object (replaced column) and
- *   clears by OMISSION.
+ * - `socialNetworks` is merged too (HOS-1262): only changed keys travel and a
+ *   cleared link is an explicit `null`; omission now PRESERVES a link.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -181,10 +181,10 @@ describe('buildPartnerOwnerPatch — contactInfo (merged column)', () => {
     });
 });
 
-describe('buildPartnerOwnerPatch — socialNetworks (replaced column)', () => {
-    it('sends the WHOLE object, including links that did not change', () => {
-        // Arrange — the column is replaced wholesale, so an unchanged link left
-        // out of the payload would be deleted.
+describe('buildPartnerOwnerPatch — socialNetworks (merged column, HOS-1262)', () => {
+    it('sends ONLY the changed link, so the merge keeps the untouched ones', () => {
+        // Arrange — the column is merged (`||`), so a link left out of the
+        // payload is PRESERVED. Sending the whole object would be redundant.
         const baseline = snapshotOf(
             makePartner({
                 socialNetworks: {
@@ -199,16 +199,12 @@ describe('buildPartnerOwnerPatch — socialNetworks (replaced column)', () => {
         const payload = buildPartnerOwnerPatch({ current, baseline });
 
         // Assert
-        expect(payload.socialNetworks).toEqual({
-            instagram: 'https://instagram.com/acme',
-            facebook: 'https://facebook.com/acme',
-            youtube: 'https://youtube.com/@acme'
-        });
+        expect(payload.socialNetworks).toStrictEqual({ youtube: 'https://youtube.com/@acme' });
     });
 
-    it('deletes a link by OMITTING it, never by nulling it', () => {
-        // Arrange — `SocialNetworkSchema` fields are `.optional()` but not
-        // `.nullable()`, so a null would be rejected outright.
+    it('deletes a link with an explicit null, never by omitting it', () => {
+        // Arrange — under a merge an omitted key means "keep the stored value",
+        // so only `null` (which `SocialNetworkSchema` accepts) can clear it.
         const baseline = snapshotOf(
             makePartner({ socialNetworks: { instagram: 'https://instagram.com/acme' } })
         );
@@ -218,8 +214,28 @@ describe('buildPartnerOwnerPatch — socialNetworks (replaced column)', () => {
         const payload = buildPartnerOwnerPatch({ current, baseline });
 
         // Assert
-        expect(payload.socialNetworks).toEqual({});
-        expect(payload.socialNetworks).not.toHaveProperty('instagram');
+        expect(payload.socialNetworks).toStrictEqual({ instagram: null });
+    });
+
+    it('clears one link and edits another in the same save', () => {
+        const baseline = snapshotOf(
+            makePartner({
+                socialNetworks: {
+                    instagram: 'https://instagram.com/acme',
+                    facebook: 'https://facebook.com/acme'
+                }
+            })
+        );
+        const current = withField(
+            withField(baseline, 'instagram', ''),
+            'facebook',
+            'https://facebook.com/acme2'
+        );
+
+        expect(buildPartnerOwnerPatch({ current, baseline }).socialNetworks).toStrictEqual({
+            instagram: null,
+            facebook: 'https://facebook.com/acme2'
+        });
     });
 
     it('leaves socialNetworks out entirely when no link changed', () => {

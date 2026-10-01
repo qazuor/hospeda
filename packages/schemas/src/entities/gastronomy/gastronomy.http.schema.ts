@@ -135,12 +135,12 @@ export const GastronomyCreateHttpSchema = z.object({
         .optional(),
     website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
     // Social media links (flat fields mapped to SocialNetworkSchema in converter)
-    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').optional(),
-    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').optional(),
-    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').optional(),
-    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').optional(),
-    tiktok: safeExternalUrl('zodError.common.social.tiktok.invalid').optional(),
-    youtube: safeExternalUrl('zodError.common.social.youtube.invalid').optional()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish(),
+    tiktok: safeExternalUrl('zodError.common.social.tiktok.invalid').nullish(),
+    youtube: safeExternalUrl('zodError.common.social.youtube.invalid').nullish()
 });
 
 export type GastronomyCreateHttp = z.infer<typeof GastronomyCreateHttpSchema>;

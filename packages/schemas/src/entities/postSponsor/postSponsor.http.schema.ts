@@ -69,10 +69,10 @@ export const PostSponsorCreateHttpSchema = z.object({
     website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
     // Social media links
-    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').optional(),
-    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').optional(),
-    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').optional(),
-    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').optional()
+    twitter: safeExternalUrl('zodError.common.social.twitter.invalid').nullish(),
+    facebook: safeExternalUrl('zodError.common.social.facebook.invalid').nullish(),
+    instagram: safeExternalUrl('zodError.common.social.instagram.invalid').nullish(),
+    linkedin: safeExternalUrl('zodError.common.social.linkedIn.invalid').nullish()
 });
 
 export type PostSponsorCreateHttp = z.infer<typeof PostSponsorCreateHttpSchema>;

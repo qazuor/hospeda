@@ -92,10 +92,11 @@ describe('PartnerOwnerUpdateSchema — server-side stripping', () => {
         }
     });
 
-    it('accepts null for a cleared contact field but NOT for a cleared social link', () => {
-        // Arrange — this asymmetry is why the form's payload builder omits an
-        // emptied social link instead of nulling it. Pinning it here means a
-        // future widening of either schema shows up as a failing test rather
+    it('accepts null for a cleared contact field AND for a cleared social link', () => {
+        // Arrange — both JSONB groups are shallow-merged by the model
+        // (HOS-1262), so an emptied input travels as an explicit `null`; an
+        // omitted key now PRESERVES the stored link. Pinning both here means a
+        // future narrowing of either schema shows up as a failing test rather
         // than as a form that 400s.
         const contact = PartnerOwnerUpdateSchema.safeParse({
             contactInfo: { workPhone: null }
@@ -106,7 +107,7 @@ describe('PartnerOwnerUpdateSchema — server-side stripping', () => {
 
         // Act + Assert
         expect(contact.success).toBe(true);
-        expect(social.success).toBe(false);
+        expect(social.success).toBe(true);
     });
 });
 
