@@ -36,7 +36,13 @@ const billingSettingsSchema = z.object({
     retryIntervalHours: z.number().int().min(1).max(168),
     sendTrialExpiryReminder: z.boolean(),
     sendPaymentFailedNotification: z.boolean(),
-    sendSubscriptionCancelledNotification: z.boolean()
+    sendSubscriptionCancelledNotification: z.boolean(),
+    /**
+     * Pause new self-service paid signups (start-paid, owner commerce
+     * checkout, add-on purchase) without a deploy. A plain `z.boolean()`, never
+     * `z.coerce.boolean()`: coercion would read the string "false" as `true`.
+     */
+    newPaidSignupsFrozen: z.boolean()
 });
 
 /**

@@ -116,6 +116,29 @@ describe('ServiceErrorCode → HTTP mapping', () => {
     });
 
     /**
+     * The admin-paused signup refusal. 409 and the domain code intact on the
+     * wire: the web branches on `NEW_PAID_SIGNUPS_FROZEN` to show "signups are
+     * paused" instead of the "already subscribed" copy a bare 409 would get.
+     */
+    it('NEW_PAID_SIGNUPS_FROZEN answers 409 and keeps its own code on the wire', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+
+        // Act
+        handleRouteError(
+            new ServiceError(ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN, 'guard probe'),
+            ctx
+        );
+
+        // Assert
+        expect(calls[0]?.status).toBe(409);
+        expect(calls[0]?.body).toMatchObject({
+            success: false,
+            error: { code: ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN }
+        });
+    });
+
+    /**
      * The three codes whose absence from `statusCodeMap` was the original gap.
      * Named explicitly so a regression reads as "the entitlement refusal became
      * a 500 again" rather than as one anonymous row in a parametrised list.

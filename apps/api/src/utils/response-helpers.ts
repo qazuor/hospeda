@@ -545,6 +545,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 break;
             case ServiceErrorCode.USAGE_PENDING_EXISTS:
             case ServiceErrorCode.REVIEW_ALREADY_EXISTS:
+            // Admin-paused self-service signups (newPaidSignupsFrozen)
+            case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.DECLARATION_BLOCKED:
@@ -754,7 +756,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
                 [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
-                [ServiceErrorCode.PROVIDER_REVOKED]: 422
+                [ServiceErrorCode.PROVIDER_REVOKED]: 422,
+                // Admin-paused self-service signups (newPaidSignupsFrozen)
+                [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

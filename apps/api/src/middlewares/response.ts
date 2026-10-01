@@ -57,7 +57,9 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
     [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
     [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
-    [ServiceErrorCode.PROVIDER_REVOKED]: 422
+    [ServiceErrorCode.PROVIDER_REVOKED]: 422,
+    // Admin-paused self-service signups (billing_settings.newPaidSignupsFrozen)
+    [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
 };
 
 /**

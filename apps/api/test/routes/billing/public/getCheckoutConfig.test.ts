@@ -8,6 +8,9 @@
  * hardcoded value. Covers: public (skipAuth), and both flag states pass
  * through byte-for-byte as `ownPreapprovalEnabled`.
  *
+ * Also covers `newPaidSignupsFrozen`, read from the admin-editable billing
+ * settings (not env), so the web can show a "signups are paused" notice.
+ *
  * @module test/routes/billing/public/getCheckoutConfig
  */
 
@@ -37,6 +40,20 @@ vi.mock('../../../../src/utils/env.js', () => ({
     }
 }));
 
+// The billing-settings read behind `readNewPaidSignupsFreeze`. Mocked at the
+// settings layer (not the freeze module) so the real strict `=== true` read runs.
+const { mockGetSettings } = vi.hoisted(() => ({
+    mockGetSettings: vi.fn()
+}));
+
+vi.mock('../../../../src/services/billing-settings.service', () => ({
+    getBillingSettingsService: () => ({ getSettings: mockGetSettings })
+}));
+
+vi.mock('../../../../src/utils/logger', () => ({
+    apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
@@ -48,11 +65,16 @@ import '../../../../src/routes/billing/public/getCheckoutConfig';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getHandler(): (ctx: unknown) => Promise<{ ownPreapprovalEnabled: boolean }> {
+type CheckoutConfigResult = {
+    ownPreapprovalEnabled: boolean;
+    newPaidSignupsFrozen: boolean;
+};
+
+function getHandler(): (ctx: unknown) => Promise<CheckoutConfigResult> {
     const call = mockCreateSimpleRoute.mock.calls[0];
     return (call?.[0] as Record<string, unknown>)?.handler as (
         ctx: unknown
-    ) => Promise<{ ownPreapprovalEnabled: boolean }>;
+    ) => Promise<CheckoutConfigResult>;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,6 +84,8 @@ function getHandler(): (ctx: unknown) => Promise<{ ownPreapprovalEnabled: boolea
 describe('publicGetCheckoutConfigRoute', () => {
     beforeEach(() => {
         mockEnv.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = false;
+        mockGetSettings.mockReset();
+        mockGetSettings.mockResolvedValue({ newPaidSignupsFrozen: false });
     });
 
     it('registers with skipAuth: true (public endpoint)', () => {
@@ -76,7 +100,7 @@ describe('publicGetCheckoutConfigRoute', () => {
 
         const result = await getHandler()(undefined);
 
-        expect(result).toEqual({ ownPreapprovalEnabled: false });
+        expect(result).toEqual({ ownPreapprovalEnabled: false, newPaidSignupsFrozen: false });
     });
 
     it('returns ownPreapprovalEnabled: true when the underlying env flag is on', async () => {
@@ -84,6 +108,28 @@ describe('publicGetCheckoutConfigRoute', () => {
 
         const result = await getHandler()(undefined);
 
-        expect(result).toEqual({ ownPreapprovalEnabled: true });
+        expect(result).toEqual({ ownPreapprovalEnabled: true, newPaidSignupsFrozen: false });
+    });
+
+    it('returns newPaidSignupsFrozen: true when an admin froze new paid signups', async () => {
+        // Arrange
+        mockGetSettings.mockResolvedValue({ newPaidSignupsFrozen: true });
+
+        // Act
+        const result = await getHandler()(undefined);
+
+        // Assert
+        expect(result.newPaidSignupsFrozen).toBe(true);
+    });
+
+    it('returns newPaidSignupsFrozen: false for anything that is not literally true', async () => {
+        // Arrange — a malformed stored value must not read as frozen
+        mockGetSettings.mockResolvedValue({ newPaidSignupsFrozen: 'true' });
+
+        // Act
+        const result = await getHandler()(undefined);
+
+        // Assert
+        expect(result.newPaidSignupsFrozen).toBe(false);
     });
 });

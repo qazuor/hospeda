@@ -19,7 +19,7 @@
  * @module test/routes/commerce/protected/start-subscription
  */
 import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Module mocks (declared BEFORE the import of the route under test).
@@ -179,6 +179,15 @@ vi.mock('../../../../src/services/billing-customer-sync', () => ({
         ensureCustomerExists = mockEnsureCustomerExists;
     }
 }));
+
+// New-paid-signups freeze: the settings read behind `assertNewPaidSignupsAllowed`.
+// Mocked at the settings-service layer so the REAL gate runs. Defaults to "not
+// frozen" so every pre-existing case keeps asserting what it always asserted.
+const { mockGetBillingSettings } = vi.hoisted(() => ({ mockGetBillingSettings: vi.fn() }));
+vi.mock('../../../../src/services/billing-settings.service', () => ({
+    getBillingSettingsService: () => ({ getSettings: mockGetBillingSettings })
+}));
+mockGetBillingSettings.mockResolvedValue({ newPaidSignupsFrozen: false });
 
 // ──────────────────────────────────────────────────────────────────────────
 // Imports (after mocks).
@@ -900,5 +909,106 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockFindOwnerVerticalSubscription).toHaveBeenCalledWith(
             expect.objectContaining({ vertical: CommerceEntityTypeEnum.EXPERIENCE })
         );
+    });
+});
+
+// ── New paid signups freeze (billing_settings.newPaidSignupsFrozen) ─────────
+//
+// The owner commerce checkout is one of the three self-service entry points
+// the freeze covers. Its trial and checkout branches open a NEW subscription
+// and must be refused before any write or MercadoPago call; the attach branch
+// joins a subscription the owner already pays for and must keep working.
+describe('handleCommerceStartSubscription — new paid signups freeze', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+        mockGetBillingSettings.mockResolvedValue({ newPaidSignupsFrozen: true });
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockStartCommerceListingTrial.mockResolvedValue(null);
+        mockCountAttachedListings.mockResolvedValue(0);
+        mockResolveCommerceVerticalCap.mockResolvedValue(2);
+        mockGetQZPayBilling.mockReturnValue(DEFAULT_BILLING);
+        mockGetCommerceListingSubscriptionStatus.mockResolvedValue(null);
+        mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OWNER_ID));
+        mockFindByGastronomies.mockResolvedValue(mediaMap([makeMediaRow()]));
+        mockEnsureCustomerExists.mockResolvedValue(CUSTOMER_ID);
+        mockInitiateCommerceSubscription.mockResolvedValue({
+            checkoutUrl: 'https://mp.test/checkout',
+            localSubscriptionId: 'sub-local-1',
+            expiresAt: new Date().toISOString()
+        });
+    });
+
+    afterAll(() => {
+        mockGetBillingSettings.mockResolvedValue({ newPaidSignupsFrozen: false });
+    });
+
+    it('refuses a new checkout with NEW_PAID_SIGNUPS_FROZEN and opens nothing at MercadoPago', async () => {
+        // Arrange
+        const ctx = createMockContext();
+
+        // Act
+        const result = handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // Assert
+        await expect(result).rejects.toMatchObject({ code: 'NEW_PAID_SIGNUPS_FROZEN' });
+        expect(mockStartCommerceListingTrial).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
+        expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
+    });
+
+    it('refuses before the billing-customer self-heal when the caller has no customer', async () => {
+        // Arrange — no customer means no subscription to join: a new signup
+        const ctx = createMockContext({ billingCustomerId: null });
+
+        // Act
+        const result = handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // Assert
+        await expect(result).rejects.toMatchObject({ code: 'NEW_PAID_SIGNUPS_FROZEN' });
+        expect(mockEnsureCustomerExists).not.toHaveBeenCalled();
+        expect(mockFindOwnerVerticalSubscription).not.toHaveBeenCalled();
+    });
+
+    it('refuses a new local trial too — a trial is a new signup', async () => {
+        // Arrange — the trial would have been granted had the freeze been off
+        mockStartCommerceListingTrial.mockResolvedValue({
+            localSubscriptionId: 'trial-sub-1',
+            trialEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        });
+        const ctx = createMockContext();
+
+        // Act
+        const result = handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // Assert
+        await expect(result).rejects.toMatchObject({ code: 'NEW_PAID_SIGNUPS_FROZEN' });
+        expect(mockStartCommerceListingTrial).not.toHaveBeenCalled();
+    });
+
+    it('still attaches a listing to the subscription the owner already pays for', async () => {
+        // Arrange — exempt: no new subscription, no new charge
+        mockFindOwnerVerticalSubscription.mockResolvedValue({ id: 'sub-1', status: 'active' });
+        const ctx = createMockContext();
+
+        // Act
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // Assert
+        expect(result).toMatchObject({ appliedEffect: 'attached', localSubscriptionId: 'sub-1' });
+        expect(mockAttachListingToSubscription).toHaveBeenCalledTimes(1);
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 });

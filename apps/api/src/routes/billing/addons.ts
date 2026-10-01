@@ -34,6 +34,7 @@ import {
     annotateRecurringCharging,
     annotateRecurringChargingAll
 } from '../../services/addon-recurring-charging';
+import { assertNewPaidSignupsAllowed } from '../../services/billing/new-paid-signups-freeze';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -161,6 +162,9 @@ export const getAddonRoute = createProtectedRoute({
  * Purchase add-on (authenticated)
  *
  * POST /api/v1/protected/billing/addons/:slug/purchase
+ *
+ * Answers 409 `NEW_PAID_SIGNUPS_FROZEN` while an admin has paused new
+ * self-service paid signups from the billing settings.
  */
 export const purchaseAddonRoute = createProtectedRoute({
     method: 'post',
@@ -187,6 +191,12 @@ export const purchaseAddonRoute = createProtectedRoute({
                 message: 'Billing customer not found. Please contact support.'
             });
         }
+
+        // Admin-paused signups (billing_settings.newPaidSignupsFrozen): an
+        // add-on purchase opens a new charge, so it is frozen with the other
+        // self-service entry points. Before `service.purchase`, which writes
+        // the purchase row and talks to MercadoPago.
+        await assertNewPaidSignupsAllowed({ entryPoint: 'addon-purchase' });
 
         apiLogger.info(
             {
