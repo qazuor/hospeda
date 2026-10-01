@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre el lote AF a AO (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO y AP a AU (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -48,6 +48,20 @@ script de 18 fuentes sobre un SHA congelado; anclas `<a id="...">` y `Origen: ar
 ítem; los ítems muertos en `90-retirados.md`; `trazar.py` en 0 en las dos direcciones; dos
 verificaciones ciegas opuestas (qué falta / qué se inventó) con canarios, hasta una vuelta sin
 `BLOQUEA`; lo anterior queda congelado como histórico.
+
+## Lote AP a AU (2026-10-01)
+
+Respuestas del owner, 2026-10-01, a las preguntas que dejó la pasada de dependencias ocultas de Z
+(`20-aplicacion.md` §2.2 y §3). Todas son la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| AP | qué pieza del corte crea el esquema de lo que va después | 1 | sí | cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural |
+| AQ | quién contesta la fuente `CORTESÍA` real al corte | 1 | sí | `B9a`, junto con la fuente `GRANT` |
+| AR | las bajas desde `GRACE_PERIOD` y `SUSPENDED` | 1 | sí | `B8a` es `S11`, `S12`, `S23` y `S24`; `S22` (desde una pausa) queda en `B8b` |
+| AS | las ramas del corte que tocan lo que sólo existe después | 1 | sí | se implementan enteras al corte sobre el esquema vacío; `S20`, `S21`, `S32` y `S33` pasan a la pieza del corte que las llama; se prueban con filas sembradas; la fase posterior sólo agrega lo que crea filas |
+| AT | el gate propio de una fase posterior | 1 | sí | el momento 2 aplicado a la rama de la fase, más el checklist de smoke extendido con lo de la fase: la parte de `staging` antes del merge y la de producción como un 5c propio |
+| AU | cómo se dice que todavía no se puede cambiar de plan | 1 | sí | `B13a` muestra en Mi Suscripción *«todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte»*, y `B8b` lo saca, como excepción declarada y acotada a ese texto |
 
 ## Resultado del corte
 

@@ -95,6 +95,9 @@ mismo. **Verificado** = leído en la fuente citada; **inferido** = lo derivo y l
 
 ## 3. Lo que vuelve al owner (AP a AU)
 
+> **Respondidas el 2026-10-01: las seis, la opción 1, la recomendada** (`10-decisiones-del-owner.md`,
+> lote AP a AU). El análisis de abajo queda como estaba; su aplicación está en el §5.
+
 En todas, **Juan** es un anfitrión con una cabaña en Colón que se suscribe al plan Básico de
 Alojamiento la semana siguiente al corte.
 
