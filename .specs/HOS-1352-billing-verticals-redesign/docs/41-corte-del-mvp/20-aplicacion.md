@@ -217,3 +217,56 @@ opción y no sabe si existe.
 - Linear: las diez mitades no tienen issue todavía (`DEC-ARCH-017`, implicación 3).
 - Siguen abiertos los puntos 1, 2, 4 y 5 de *«lo que la propuesta no pudo verificar»*
   (`10-decisiones-del-owner.md`); el 3 lo cubre §2 de este archivo, y el 6, el §2.1.
+
+## 5. La aplicación de AP a AU
+
+(Owner, 2026-10-01: las seis, la 1.) Dónde quedó cada una:
+
+- **AP**: `V6` lleva el esquema de `V7` y su migración estructural, con los lectores de `tier`
+  retirados; `B3`, la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`;
+  `B9a`, promos y cortesías; `B4`, el modelo de addons y la columna de la instancia en `payment`.
+  La lista, tabla por tabla, es la de `D/16` §4.6 (*«esquema del corte»*), y la mitigación —el
+  drift guard sobre la rama de cada fase— está ahí y en el gate de AT.
+- **AQ**: `B9a` contesta la fuente `CORTESÍA` real con la de `GRANT` (`B` §2, fila `B9a`, y §4).
+- **AR**: `B8a` es `S11`, `S12`, `S23` y `S24`; `S22`, en `B8b` (`B` §2, §2.12 y §4).
+- **AS**: las ramas se implementan enteras al corte y se prueban con filas sembradas (`B` §2.12);
+  `S20` pasa a `B9a`. **`S21`, `S32` y `S33` no se pudieron ubicar**: ver AV.
+- **AT**: el gate de cada fase posterior, en `D/16` §4.7 (*«Las fases posteriores»*).
+- **AU**: el aviso en `B13a` y su retiro en `B8b` (`B` §2 y §4), declarado en `D/16` §4.7 como la
+  única excepción a *«aditiva»*.
+- **El log**: un 📌 sobre `DEC-ARCH-017` con AP a AU; las precisadas pasan de 74 a 75, recontado
+  con script.
+- **Los scripts**: `contar.py` verifica además la tabla de transiciones de `B` §2.12 contra las
+  filas vivas de `B/docs/03` §3.2 y la tabla del esquema de `D/16` §4.6.
+
+### AV · Dónde viven al corte `S21`, `S32`, `S33` y la orfandad que dispara a `S21`
+
+AS manda cada transición a la pieza del corte que la llama. Las que llaman son: `S36`, de `B5`
+(revocar corre la orfandad, `A5`, y su instancia en `CANCELLED` corre `S21`, `R1-b`); `S6` y `S7`,
+de `B7` (`S32` y `S33` sobre la suspensión, `G2-2`, y `R18-b`); `S11`, de `B8a` (`R1-a`); y las
+órdenes `UNA_VEZ` de `B6` y `B11`. **Todas leen la instancia de addon, y AP puso el modelo en `B4`,
+que llega después de `B5` (`B5 → B4`, `F-8V1C1-005`) y no es dependencia de `B6`, `B7` ni `B11`.**
+Además, `S21` sólo corre si su instancia llega a `CANCELLED`, y la orfandad que la lleva ahí
+(`A5`, `B/16` §4.2 y §4.3) es de `B10`: AS no la nombra, pero sin ella `S21` no corre nunca
+(verificado en las filas `S21`, `S32` y `S33` de `B/docs/03` §3.2 y en la fila `payment` de
+`B/docs/02`).
+
+1. **Las tablas del modelo de addons pasan de `B4` a `B3`**, que va antes de `B5`, y `payment` nace
+   en `B5` con su columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`. `S21` y la
+   orfandad (`A5`) van a `B5`, su primer llamador; `S32` y `S33`, a `B7`. Sin flechas nuevas.
+   **Recomendada.**
+   - Costo: `B3` crece; cambia un renglón de AP (addons, de `B4` a `B3`), y la columna de
+     `payment` deja de ser un agregado posterior.
+   - Riesgo: bajo; el grafo no cambia y nadie modifica una transición ajena.
+2. **El modelo sigue en `B4`, y `B4` escribe `S21`, `S32`, `S33` y la orfandad**, enchufándolas en
+   `S36`, que `B5` ya mergeó; flechas nuevas `B4 → B6`, `B4 → B7` y `B4 → B11` (`B8a` hereda por
+   `B7`).
+   - Costo: `B7` pasa a esperar a `B4`, que espera a `V4` y a `U2`: el camino crítico del corte se
+     alarga.
+   - Riesgo: medio; una pieza modifica una transición de otra ya mergeada.
+3. **`B5` espera a `B4`.**
+   - No viable: `B4` lee `cobrada` sobre los pagos de `B5`, y sería un ciclo.
+
+*Juan* no lo ve: nadie tiene un addon al corte. Lo ve quien construye `B5`: con la 1 encuentra las
+tablas y escribe la rama de `S36` entera; con la 2, `B5` sale sin esa rama y `B4` se la agrega
+después.
