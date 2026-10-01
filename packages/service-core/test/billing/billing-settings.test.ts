@@ -31,8 +31,20 @@ const DEFAULT = {
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
     sendPaymentFailedNotification: true,
-    sendSubscriptionCancelledNotification: true
+    sendSubscriptionCancelledNotification: true,
+    newPaidSignupsFrozen: false
 };
+
+/** Builds a `getDb()` double whose settings read resolves to `rows`. */
+const dbReturningRows = (rows: unknown[]) => ({
+    select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue(rows)
+            })
+        })
+    })
+});
 
 describe('BillingSettingsService', () => {
     let service: BillingSettingsService;
@@ -129,6 +141,107 @@ describe('BillingSettingsService', () => {
 
             // Assert
             expect(result).toEqual(DEFAULT);
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // newPaidSignupsFrozen
+    // ──────────────────────────────────────────────────────────────────────────
+
+    describe('newPaidSignupsFrozen', () => {
+        it('defaults to false when no row exists, so the freeze ships switched off', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue(dbReturningRows([]));
+
+            // Act
+            const result = await service.getSettings();
+
+            // Assert
+            expect(result.newPaidSignupsFrozen).toBe(false);
+        });
+
+        it('reads as false from a row written before the key existed', async () => {
+            // Arrange — a live row persisted by an older release, without the key
+            mockGetDb.mockReturnValue(
+                dbReturningRows([{ key: 'global', value: { taxRate: 21, currency: 'ARS' } }])
+            );
+
+            // Act
+            const result = await service.getSettings();
+
+            // Assert
+            expect(result.newPaidSignupsFrozen).toBe(false);
+        });
+
+        it('returns true when the stored row has the freeze switched on', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue(
+                dbReturningRows([{ key: 'global', value: { newPaidSignupsFrozen: true } }])
+            );
+
+            // Act
+            const result = await service.getSettings();
+
+            // Assert
+            expect(result.newPaidSignupsFrozen).toBe(true);
+        });
+
+        it('persists the freeze through updateSettings', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue(dbReturningRows([]));
+            const valuesSpy = vi.fn().mockReturnValue({
+                onConflictDoUpdate: vi.fn().mockResolvedValue([])
+            });
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) });
+            });
+
+            // Act
+            const result = await service.updateSettings({ newPaidSignupsFrozen: true }, false);
+
+            // Assert
+            expect(result.newPaidSignupsFrozen).toBe(true);
+            const settingsInsert = valuesSpy.mock.calls
+                .map((c) => c[0] as { key?: string; value?: Record<string, unknown> })
+                .find((v) => v?.key === 'global');
+            expect(settingsInsert?.value?.newPaidSignupsFrozen).toBe(true);
+        });
+
+        it('rejects a non-boolean freeze value instead of storing it', async () => {
+            // Arrange — a string "true" would read as "not frozen" under `=== true`
+            mockGetDb.mockReturnValue(dbReturningRows([]));
+
+            // Act / Assert
+            await expect(
+                service.updateSettings(
+                    { newPaidSignupsFrozen: 'true' as unknown as boolean },
+                    false
+                )
+            ).rejects.toThrow('newPaidSignupsFrozen must be a boolean');
+            expect(mockWithTransaction).not.toHaveBeenCalled();
+        });
+
+        it('resetSettings switches the freeze back off', async () => {
+            // Arrange
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn({
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockReturnValue({
+                            onConflictDoUpdate: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                });
+            });
+
+            // Act
+            const result = await service.resetSettings(false);
+
+            // Assert
+            expect(result.newPaidSignupsFrozen).toBe(false);
         });
     });
 

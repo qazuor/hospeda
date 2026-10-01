@@ -26,6 +26,8 @@ export type ErrorLogLevel = 'error' | 'warn' | 'info';
  * - `ENTITLEMENT_REQUIRED` (403) and `LIMIT_REACHED` (403) are routine
  *   plan-gating denials (a free/lower-tier plan hitting a `gate*`/`require*`
  *   middleware) — same class and severity as `FORBIDDEN` → `warn`.
+ * - `NEW_PAID_SIGNUPS_FROZEN` (409) is the admin-paused signup refusal: routine
+ *   while the freeze is on, never a fault → `warn`.
  *
  * Every other code (INTERNAL_ERROR, DATABASE/PROVIDER failures, VALIDATION_ERROR,
  * etc.) keeps `error` — those are real faults worth a stack trace.
@@ -42,6 +44,9 @@ export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorL
         case ServiceErrorCode.FORBIDDEN:
         case ServiceErrorCode.ENTITLEMENT_REQUIRED:
         case ServiceErrorCode.LIMIT_REACHED:
+        // An admin-paused signup is an expected refusal, not a fault: while the
+        // freeze is on, every visitor who clicks "Contratar" produces one.
+        case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
             return 'warn';
         default:
             return 'error';
