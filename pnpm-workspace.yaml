@@ -169,7 +169,7 @@ overrides:
   # 4.1.2, forcing a semver major onto ajv@8.20.0 (the only consumer), which
   # declares the 3.x line. Fixing an advisory must not smuggle in a major.
   "fast-uri@>=3.0.0 <4": ">=3.1.5 <4"
-  devalue: ">=5.8.1"
+  devalue: ">=5.9.3 <6"
   seroval: ">=1.4.1"
   tar: ">=7.5.11"
   tar-fs: ">=3.1.1"
