@@ -92,6 +92,7 @@ jobs are OK; failed/cancelled are not).
   | `recharts` | `2.15.4 → 3.9.0` restructures Tooltip/Legend prop types, breaking typecheck in 5 apps/admin files. | HOS-77 |
   | `expo` / `expo-*` | Dependabot bumps individual `expo-*` leaf packages to SDK 57 without ever bumping the core `expo` package, which would leave apps/mobile in a split-SDK state that unit tests can't catch. | HOS-78 |
   | `better-auth` / `@better-auth/*` | `1.6.23 → 1.6.25` (a **patch**) makes the `@better-auth/expo` plugin stop satisfying `BetterAuthClientPlugin`, dropping its actions — and `getCookie` — from the inferred client type; apps/mobile fails typecheck. | HOS-429 |
+  | `react-native` | `0.86 → 0.87` (a **minor**, pre-1.0) ships syntax Metro cannot parse (`EventEmitter.js:44`), so `mobile#build` fails and sinks the whole production group. Gated on minor + major only, so `0.86.x` patches still flow. | HOS-78 (diagnosis HOS-945) |
   | `@hono/zod-openapi` | `1.4.0 → 1.5.x` (a **minor**) reshapes the `z` re-export: `z.ZodObject` stops working as the right-hand side of `instanceof` and callback params lose inference; 6 typecheck errors in apps/api. | HOS-430 |
 
   These are **fully ignored** (including patch) until their migration spec lands.
