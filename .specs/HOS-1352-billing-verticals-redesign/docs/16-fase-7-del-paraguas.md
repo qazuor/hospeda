@@ -642,6 +642,12 @@ promueve a producción sin ser el corte.** Un interruptor era la única forma de
    excepción de hotfix que la versión anterior evitaba. **Está versionado en `scripts/cutover/`**
    (revisión del owner, casos vecinos, 2026-09-29, caso 3), pero ninguna imagen lo lleva: se corre
    desde una copia del repositorio, y se borra en un commit posterior al corte.
+5. **La rama del paraguas se borra apenas se mergea a `staging`** (owner 2026-10-01, Q;
+   `40-congelamiento-y-ci/10-decisiones-del-owner.md`): el guard de destino
+   `check-umbrella-branch-target.sh` (`DEC-CI-001`/`DEC-ARCH-007`, condición corregida por P, §4.6)
+   falla la promoción `staging → main` del punto 2 mientras la rama siga existiendo en el remoto,
+   porque esa promoción trae los commits de la épica que `main` todavía no tiene. Borrarla al
+   mergear es lo que habilita el paso 3 del corte.
 
 **Con esto `rollout` queda cerrado en lo que hace a ramas** (revisión del owner, casos vecinos,
 2026-09-29, caso 4): las ramas son este §, y el orden de despliegue es el §4.2.
@@ -807,7 +813,19 @@ owner 2026-09-30, F; abajo).
   `check-umbrella-branch-target.sh` entran antes, en un PR propio a `staging` con el título
   `[NOSPEC:epic-ci]`, sin `HOS-1352`, para que la automatización de Linear no cierre el paraguas al
   mergearlo. Así el PR de `U1` es el primero que corre CI completo, y *«la rama sigue compilando»*
-  (abajo) lo comprueba el CI y no una persona.
+  (abajo) lo comprueba el CI y no una persona. ~~El predicado del guard de destino es «la punta del
+  paraguas es ancestro de HEAD»~~ **el predicado quedó corregido** (owner 2026-10-01, P;
+  `40-congelamiento-y-ci/10-decisiones-del-owner.md`): el snippet original (`15-fase-9/01-R6-resuelto.md`
+  §1) ponía en rojo todo PR a `staging` el día que nace la rama épica, bloqueaba el PR final del
+  propio paraguas y dejaba pasar una rama de unidad cortada de un commit viejo de la épica. La
+  condición aceptada **falla si HEAD trae algún commit de la rama épica que el destino todavía no
+  tiene**; el PR cuya head es la rama épica queda exento; si la rama épica no existe en el remoto,
+  sale 0; si no puede consultar el remoto, falla. Implementada en el PR #3436
+  (`scripts/check-umbrella-branch-target.sh`, con 12 tests), CI verde y sin mergear al 2026-10-01.
+- **La rama del paraguas se borra apenas se mergea a `staging`** (owner 2026-10-01, Q;
+  `40-congelamiento-y-ci/10-decisiones-del-owner.md`): si no se borra, el guard de destino bloquea
+  la promoción `staging → main` del paso 3 del corte (§4.2; §4.4 punto 2), porque esa promoción
+  trae los commits de la épica que `main` todavía no tiene.
 - **`U1` reapunta la regla de smoke del `CLAUDE.md` raíz** (B): la regla nombra los checklists de
   `.qtm/specs/SPEC-143-billing-testing-coverage/`, que `U1` borra con `.qtm/`, y en la rama pasa a
   nombrar el checklist del sistema nuevo que `B13` escribe en `docs/billing/` (§4.7, momentos 3 y
