@@ -16,10 +16,14 @@ on:
     branches:
       - main
       - staging
+      # Umbrella integration branches (DEC-CI-001). `push` covers the periodic
+      # staging -> umbrella merge, which is not a PR.
+      - 'epic/**'
   pull_request:
     branches:
       - main
       - staging
+      - 'epic/**'
     types:
       - opened
       - synchronize
@@ -254,6 +258,13 @@ jobs:
           PUSH_BEFORE: ${{ github.event.before }}
           BASELINE_REF: ${{ inputs.baseline_ref }}
         run: bash scripts/resolve-ci-baseline.sh
+      # Its own step, and in `pnpm check:guards` too (see the note further
+      # down). Right after the baseline step because it reads CI_BASELINE_SHA,
+      # and before setup because it only needs git. Only a PR to a protected
+      # branch can take the forbidden path, so only those run it.
+      - name: A branch cut from the umbrella may not target staging or main (DEC-ARCH-007)
+        if: github.base_ref == 'staging' || github.base_ref == 'main'
+        run: bash scripts/check-umbrella-branch-target.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
