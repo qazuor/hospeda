@@ -15,6 +15,7 @@ on:
     branches:
       - staging
       - main
+      - 'epic/**'
 
 concurrency:
   group: e2e-pr-${{ github.ref }}
