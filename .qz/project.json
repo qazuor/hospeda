@@ -94,7 +94,6 @@
         "genericPrefix": "qz-",
         "projectPrefix": "hops-",
         "source": "scripts/client-tools",
-<<<<<<< HEAD
         "dispatch": "node .qz/dispatch.mjs"
     },
     "knowledge": {
@@ -103,8 +102,5 @@
         "skillsDir": "skills",
         "agentsDir": "agents",
         "commandsDir": "commands"
-=======
-        "dispatch": "bun run scripts/client-tools/src/index.ts"
->>>>>>> e6efd1506a (fix(qz): connect Hospeda adapter dispatcher)
     }
 }
