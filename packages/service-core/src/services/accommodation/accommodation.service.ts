@@ -193,6 +193,7 @@ import type {
     StartLocalTrialResult
 } from './accommodation.types';
 import {
+    FIRST_PUBLISH_PAUSED_REASON,
     publishEligibilityAllowsPublish,
     publishEligibilityStartsLocalTrial
 } from './accommodation.types';
@@ -1818,14 +1819,39 @@ export class AccommodationService extends BaseCrudService<
                 const isBillingExempt = AccommodationService.holdsBillingExemptRole(
                     validatedActor.roles
                 );
+                const wouldStartTrial =
+                    !isBillingExempt && publishEligibilityStartsLocalTrial(eligibility);
+                // Mirrors publish()'s freeze gate: the owner is asking about
+                // their own publish, so a first publish (one that would start a
+                // trial) is refused while new signups are paused.
+                const firstPublishPaused = wouldStartTrial && (await this.isNewSignupsFrozen());
 
                 return {
                     eligibility,
-                    canPublish: isBillingExempt || publishEligibilityAllowsPublish(eligibility),
-                    startsTrial: !isBillingExempt && publishEligibilityStartsLocalTrial(eligibility)
+                    canPublish:
+                        !firstPublishPaused &&
+                        (isBillingExempt || publishEligibilityAllowsPublish(eligibility)),
+                    startsTrial: wouldStartTrial && !firstPublishPaused,
+                    firstPublishPaused
                 };
             }
         });
+    }
+
+    /**
+     * Whether an admin paused new signups, read through the optional
+     * {@link AccommodationPublishDeps.readNewSignupsFreeze} dep. Absent dep
+     * reads as "not frozen", so services wired without it keep today's flow.
+     *
+     * @returns `true` only while the freeze is on.
+     */
+    private async isNewSignupsFrozen(): Promise<boolean> {
+        const read = this._publishDeps?.readNewSignupsFreeze;
+        if (!read) {
+            return false;
+        }
+        const { frozen } = await read();
+        return frozen === true;
     }
 
     /**
@@ -1973,6 +1999,23 @@ export class AccommodationService extends BaseCrudService<
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
                     }
                     startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
+
+                    // Admin-paused signups (`billing_settings.newPaidSignupsFrozen`).
+                    // A first publish starts a trial, and a trial is a new
+                    // signup, so the OWNER's own first publish is refused here —
+                    // before the completeness guard (same H-99 reasoning as the
+                    // subscription refusal above: editing cannot resolve it) and
+                    // long before the trial insert and the lifecycle flip, so the
+                    // listing stays a draft. An admin publishing on the owner's
+                    // behalf (`!isOwner`) is exempt, like every admin action.
+                    if (startsLocalTrial && isOwner && (await this.isNewSignupsFrozen())) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
+                            'Publishing new listings is temporarily paused. The listing was kept as a draft.',
+                            undefined,
+                            FIRST_PUBLISH_PAUSED_REASON
+                        );
+                    }
                 }
 
                 // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).

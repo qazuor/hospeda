@@ -173,4 +173,55 @@ describe('AccommodationService.getPublishEligibility', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.CONFIGURATION_ERROR);
         });
     });
+
+    describe('new signups freeze', () => {
+        it('reports a paused first publish: no publish, no trial', async () => {
+            // Arrange
+            deps = {
+                ...createPublishDeps('first_publish'),
+                readNewSignupsFreeze: vi.fn().mockResolvedValue({ frozen: true })
+            };
+
+            // Act
+            const result = await buildService(deps).getPublishEligibility(createHostActor());
+
+            // Assert
+            expect(result.data).toEqual({
+                eligibility: 'first_publish',
+                canPublish: false,
+                startsTrial: false,
+                firstPublishPaused: true
+            });
+        });
+
+        it('leaves a paying owner untouched and never reads the freeze', async () => {
+            // Arrange
+            const readNewSignupsFreeze = vi.fn().mockResolvedValue({ frozen: true });
+            deps = { ...createPublishDeps('has_active_sub'), readNewSignupsFreeze };
+
+            // Act
+            const result = await buildService(deps).getPublishEligibility(createHostActor());
+
+            // Assert
+            expect(result.data?.canPublish).toBe(true);
+            expect(result.data?.firstPublishPaused).toBe(false);
+            expect(readNewSignupsFreeze).not.toHaveBeenCalled();
+        });
+
+        it('reports firstPublishPaused false when signups are open', async () => {
+            // Arrange
+            deps = {
+                ...createPublishDeps('first_publish'),
+                readNewSignupsFreeze: vi.fn().mockResolvedValue({ frozen: false })
+            };
+
+            // Act
+            const result = await buildService(deps).getPublishEligibility(createHostActor());
+
+            // Assert
+            expect(result.data?.canPublish).toBe(true);
+            expect(result.data?.startsTrial).toBe(true);
+            expect(result.data?.firstPublishPaused).toBe(false);
+        });
+    });
 });
