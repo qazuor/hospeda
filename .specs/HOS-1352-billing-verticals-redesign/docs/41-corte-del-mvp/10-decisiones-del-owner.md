@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU y AV (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV y AW a AY (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -72,6 +72,18 @@ Respuesta del owner, 2026-10-01, a la pregunta que dejó la aplicación de AP y 
 |---|---|---|---|---|
 | AV | dónde viven al corte `S21`, `S32`, `S33` y la orfandad que dispara a `S21` | 1 | sí | las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`; `S21` y la orfandad (`A5`) van a `B5`, su primer llamador; `S32` y `S33`, a `B7`. Sin flechas nuevas. Precisa AP en el renglón de addons |
 
+## Lote AW a AY (2026-10-01)
+
+Respuestas del owner, 2026-10-01, a las preguntas que dejó la etapa de inventario y adjudicación de
+la spec consolidada (`DEC-METH-019`; `spec-consolidada/_trabajo/`, inventario sobre `0dbe448276`).
+Todas son la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| AW | cómo se agrupan en fases las ocho piezas posteriores (AE fija una rama épica por fase, no cuántas ni cuáles) | 1 | sí | **cuatro fases posteriores, en este orden**: **Fase 1** = `V9b` sola (tiene que estar mergeada antes del primer aviso de retención, AC); **Fase 2** = `B8b` + `B9b`; **Fase 3** = `B10` + `B13b` + `B12`; **Fase 4** = `V7` + `V8b`. Respeta el grafo (`V9b` y `B9b` antes de `B10`; `B13b` antes de `B12`; `V7` antes de `V8b`). Las otras opciones eran una sola fase con las ocho (`V9b` atada a la rama más grande) y una fase por pieza (ocho congelamientos y ocho 5c) |
+| AX | qué es un ítem «normativo» para AL (*«todo ítem vivo cubierto por ≥1 AC»*) | 1 | sí | **exigen AC**: las decisiones (menos las de metodología, `DEC-METH-*`), los 📌, las filas de pieza, los *«Lista cuando»*, los guards, las invariantes, las transiciones, las acciones administrativas, los plazos, los motivos, los candados, `RP`, `M`, los pasos del corte, los gates y los traslados del corte (esquema, transición → pieza, instancia de addon → pieza); **sólo citables**: la matriz, las letras del owner y la lista de piezas |
+| AY | qué se hace con los restos que la adjudicación encontró en las fuentes y con la cifra de `MIXTO` | 1 | sí | **se corrigen los restos** (en `B/descomposicion.md`: el modelo de addons es de `B3` por AV; `S20` va a `B9a` por AS, y `S21` y `A5` a `B5` por AV) **y un 📌 sobre `DEC-METH-019`** asienta las 38 filas `MIXTO` (no 33) y AX como criterio de AL; AW, que precisa AE, va en un 📌 sobre `DEC-ARCH-017`, que es la decisión de AE |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
@@ -79,6 +91,8 @@ Respuesta del owner, 2026-10-01, a la pregunta que dejó la aplicación de AP y 
 - **Después, enteras (3)**: `V7` (salvo su migración estructural, por AB), `B10` (salvo su modelo
   y la fuente `ADDON`, por AA), `B12`.
 - **Guards al corte**: 34 de 35; queda afuera `G-R1-C` (cierre de la sucesión, `B8b`).
+- **Las fases posteriores (AW)**: cuatro, en orden: Fase 1 `V9b`; Fase 2 `B8b` y `B9b`; Fase 3 `B10`,
+  `B13b` y `B12`; Fase 4 `V7` y `V8b`. Cada una, una rama épica con su gate (AE, AT).
 
 ## Pendiente de aplicar
 
