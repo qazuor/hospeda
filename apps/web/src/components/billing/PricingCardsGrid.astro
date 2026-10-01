@@ -141,7 +141,9 @@ const hasPlans = plans.length > 0;
 // closed (`ownPreapprovalEnabled: false`) on any fetch error, which
 // renders the pre-HOS-937 checkout flow — the same behavior as the flag
 // being off.
-const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
+// `newPaidSignupsFrozen`: an admin paused new self-service paid signups
+// (billing settings) — the button renders a "paused" notice instead.
+const { ownPreapprovalEnabled, newPaidSignupsFrozen } = await fetchCheckoutConfig();
 
 // Annual toggle: only render the UI when at least one plan in the grid has
 // an annual price configured. If every plan is monthly-only, the toggle is
@@ -580,6 +582,7 @@ const selectGroupName = `pricing-select-${audience}`;
 								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
 								audience={audience}
 								ownPreapprovalEnabled={ownPreapprovalEnabled}
+								newPaidSignupsFrozen={newPaidSignupsFrozen}
 							/>
 						)}
 					</div>

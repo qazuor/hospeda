@@ -24,6 +24,7 @@ import { PackageIcon } from '@repo/icons';
 import type { PurchasableAddonResponse } from '@repo/schemas';
 import { useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { translateAddonDescription, translateAddonName } from '@/lib/addon-labels';
 import { billingApi } from '@/lib/api/endpoints-protected';
@@ -171,6 +172,16 @@ export interface AddonsPurchasePanelProps {
      * render — it never hides anything.
      */
     readonly focusSlug?: string | null;
+    /**
+     * Whether an admin paused new self-service paid signups
+     * (`billing_settings.newPaidSignupsFrozen`), resolved SSR-side via
+     * `fetchCheckoutConfig()`. When `true` the panel shows ONE
+     * {@link PaidSignupsPausedNotice} above the catalog and no card offers a
+     * buy button (or a target picker that only feeds one): an add-on purchase
+     * opens a new charge, which the API refuses with `NEW_PAID_SIGNUPS_FROZEN`.
+     * The catalog itself stays visible. Defaults to `false`.
+     */
+    readonly newPaidSignupsFrozen?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -183,7 +194,8 @@ export function AddonsPurchasePanel({
     addons,
     ownedAddonSlugs,
     targetListingsByDomain,
-    focusSlug
+    focusSlug,
+    newPaidSignupsFrozen = false
 }: AddonsPurchasePanelProps) {
     const { t, tPlural } = createTranslations(locale);
 
@@ -333,6 +345,8 @@ export function AddonsPurchasePanel({
         readonly isFocused?: boolean;
     }) {
         const isOwned = ownedSet.has(addon.slug);
+        // Admin-paused signups: the card stays readable, but offers nothing to buy.
+        const isPurchasePaused = newPaidSignupsFrozen && !isOwned;
         const isPurchasing = purchasingSlug === addon.slug;
         const needsSelect = addon.requiresAccommodationTarget;
         // HOS-1286: the options come from the add-on's OWN vertical. An add-on
@@ -431,7 +445,7 @@ export function AddonsPurchasePanel({
                     </p>
                 )}
 
-                {needsSelect && !isOwned && !hasNoAccommodations && (
+                {needsSelect && !isOwned && !isPurchasePaused && !hasNoAccommodations && (
                     <label className={styles.selectLabel}>
                         {t(
                             `account.addons.accommodationSelect.label.${targetNoun}`,
@@ -461,7 +475,7 @@ export function AddonsPurchasePanel({
                     </label>
                 )}
 
-                {needsSelect && !isOwned && hasNoAccommodations && (
+                {needsSelect && !isOwned && !isPurchasePaused && hasNoAccommodations && (
                     <p className={styles.noAccommodations}>
                         {t(
                             `account.addons.accommodationSelect.empty.${targetNoun}`,
@@ -470,7 +484,7 @@ export function AddonsPurchasePanel({
                     </p>
                 )}
 
-                {!isOwned && (
+                {!isOwned && !isPurchasePaused && (
                     <button
                         type="button"
                         className={styles.buyBtn}
@@ -514,6 +528,14 @@ export function AddonsPurchasePanel({
 
     // ── Ready state ────────────────────────────────────────────────────────────
 
+    // Admin-paused signups: one notice for the whole panel, not one per card.
+    const pausedNotice = newPaidSignupsFrozen ? (
+        <PaidSignupsPausedNotice
+            locale={locale}
+            testId="addons-signups-paused-notice"
+        />
+    ) : null;
+
     // With a card in focus the remaining catalog collapses into ONE block under
     // "Otros complementos" instead of its usual two: the page already carries a
     // problem-shaped heading at the top, and re-stating "Por alojamiento" /
@@ -527,6 +549,7 @@ export function AddonsPurchasePanel({
 
         return (
             <div className={styles.root}>
+                {pausedNotice}
                 <section
                     className={`${styles.group} ${styles.focusGroup}`}
                     data-testid="addon-focus-group"
@@ -558,6 +581,7 @@ export function AddonsPurchasePanel({
 
     return (
         <div className={styles.root}>
+            {pausedNotice}
             {perAccommodationAddons.length > 0 && (
                 <section className={styles.group}>
                     <h2 className={styles.groupTitle}>

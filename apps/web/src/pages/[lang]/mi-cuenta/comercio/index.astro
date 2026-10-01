@@ -93,7 +93,9 @@ const trialVerdictByVertical = await fetchCommerceTrialVerdictByVertical({
 // checkout. Same source and same fail-closed default the pricing pages use for
 // `PlanPurchaseButton` — on any fetch error this resolves `false`, which is
 // the flag being off, which is today's behavior.
-const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
+// `newPaidSignupsFrozen`: an admin paused new self-service paid signups — a
+// listing whose publish would START a subscription shows a "paused" notice.
+const { ownPreapprovalEnabled, newPaidSignupsFrozen } = await fetchCheckoutConfig();
 
 // ── HOS-1119: the tier catalogue, ONE fetch per vertical the owner actually
 // holds a listing in (never per listing) — feeds BOTH the checkout-time
@@ -281,6 +283,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                 trialVerdict={readTrialVerdict(trialVerdictByVertical, listing.vertical).verdict}
                                 trialDays={readTrialVerdict(trialVerdictByVertical, listing.vertical).trialDays}
                                 ownPreapprovalEnabled={ownPreapprovalEnabled}
+                                newPaidSignupsFrozen={newPaidSignupsFrozen}
                                 availablePlans={plansByVertical.get(listing.vertical) ?? []}
                             />
 
