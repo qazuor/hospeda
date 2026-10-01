@@ -3,12 +3,13 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+    collectDatedIds,
     collectPendingMarkerIds,
     resolvePublishedAtMarkers
 } from '../src/commands/whats-new/resolve-dates.ts';
 import {
-    intersectPendingIds,
-    parseReferenceFiles
+    computeResolvableIds,
+    parseReferenceCatalogs
 } from '../src/commands/whats-new/resolve-dates-cli.ts';
 
 /**
@@ -71,7 +72,7 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
                 ['old-b', '2026-09-23T14:25:19Z']
             ]
         });
-        const onlyIds = intersectPendingIds({ referenceContents: [staging] });
+        const onlyIds = computeResolvableIds({ stagingContent: staging, inFlightContents: [] });
 
         // Act
         const result = resolvePublishedAtMarkers({ content: main, mergedAt: MERGED_AT, onlyIds });
@@ -98,7 +99,7 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
                 ['new-x', MARKER]
             ]
         });
-        const onlyIds = intersectPendingIds({ referenceContents: [staging] });
+        const onlyIds = computeResolvableIds({ stagingContent: staging, inFlightContents: [] });
 
         // Act
         const result = resolvePublishedAtMarkers({ content: main, mergedAt: MERGED_AT, onlyIds });
@@ -122,7 +123,10 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
         const main = catalog({ entries: [['new-w', MARKER]] });
         const staging = catalog({ entries: [['new-w', MARKER]] });
         const openPr = catalog({ entries: [['new-w', '2026-09-30T17:31:18Z']] });
-        const onlyIds = intersectPendingIds({ referenceContents: [staging, openPr] });
+        const onlyIds = computeResolvableIds({
+            stagingContent: staging,
+            inFlightContents: [openPr]
+        });
 
         // Act
         const result = resolvePublishedAtMarkers({ content: main, mergedAt: MERGED_AT, onlyIds });
@@ -136,7 +140,7 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
         // Arrange — staging dropped the entry (like the 33 the owner rejected).
         const main = catalog({ entries: [['dropped', MARKER]] });
         const staging = catalog({ entries: [['other', '2026-09-01T00:00:00Z']] });
-        const onlyIds = intersectPendingIds({ referenceContents: [staging] });
+        const onlyIds = computeResolvableIds({ stagingContent: staging, inFlightContents: [] });
 
         // Act
         const result = resolvePublishedAtMarkers({ content: main, mergedAt: MERGED_AT, onlyIds });
@@ -181,30 +185,89 @@ describe('resolvePublishedAtMarkers with onlyIds', () => {
     });
 });
 
-describe('intersectPendingIds', () => {
-    it('throws on zero references instead of returning an empty allow-list', () => {
-        expect(() => intersectPendingIds({ referenceContents: [] })).toThrow();
+describe('collectDatedIds', () => {
+    it('returns only the ids that carry a real date', () => {
+        // Arrange
+        const content = catalog({
+            entries: [
+                ['pending', MARKER],
+                ['dated', '2026-09-30T17:31:18Z']
+            ]
+        });
+
+        // Act + Assert
+        expect([...collectDatedIds({ content })]).toStrictEqual(['dated']);
     });
 });
 
-describe('parseReferenceFiles', () => {
-    it('returns undefined when the variable is unset', () => {
-        expect(parseReferenceFiles({ envValue: undefined })).toBeUndefined();
+describe('computeResolvableIds', () => {
+    it('does NOT block an entry promoted after an open resolve PR branch was cut', () => {
+        // Arrange — P1 was cut from main before `new-b` was promoted, so P1
+        // simply lacks it. Absence must not read as "already being resolved".
+        const staging = catalog({
+            entries: [
+                ['new-b', MARKER],
+                ['old-a', MARKER]
+            ]
+        });
+        const openPr = catalog({ entries: [['old-a', '2026-09-30T17:31:18Z']] });
+
+        // Act
+        const ids = computeResolvableIds({ stagingContent: staging, inFlightContents: [openPr] });
+
+        // Assert
+        expect([...ids]).toStrictEqual(['new-b']);
     });
 
-    it('splits on newlines and drops blank lines', () => {
-        expect(parseReferenceFiles({ envValue: '/a/staging.ts\n\n  /b/pr.ts  \n' })).toStrictEqual([
-            '/a/staging.ts',
-            '/b/pr.ts'
-        ]);
-    });
+    it('lets every in-flight PR subtract what it dates', () => {
+        // Arrange
+        const staging = catalog({
+            entries: [
+                ['a', MARKER],
+                ['b', MARKER],
+                ['c', MARKER]
+            ]
+        });
+        const pr1 = catalog({ entries: [['a', '2026-09-30T17:31:18Z']] });
+        const pr2 = catalog({ entries: [['c', '2026-09-30T18:44:24Z']] });
 
-    it('throws when set but naming no file, so a broken workflow step fails closed', () => {
-        expect(() => parseReferenceFiles({ envValue: '  \n ' })).toThrow();
+        // Act
+        const ids = computeResolvableIds({ stagingContent: staging, inFlightContents: [pr1, pr2] });
+
+        // Assert
+        expect([...ids]).toStrictEqual(['b']);
     });
 });
 
-describe('resolve-dates CLI with REFERENCE_FILES', () => {
+describe('parseReferenceCatalogs', () => {
+    it('returns undefined when neither variable is set (local manual run)', () => {
+        expect(
+            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: undefined })
+        ).toBeUndefined();
+    });
+
+    it('accepts an empty in-flight list and splits a non-empty one on newlines', () => {
+        expect(parseReferenceCatalogs({ stagingEnv: '/s.ts', inFlightEnv: '' })).toStrictEqual({
+            stagingPath: '/s.ts',
+            inFlightPaths: []
+        });
+        expect(
+            parseReferenceCatalogs({ stagingEnv: '/s.ts', inFlightEnv: '/a.ts\n\n /b.ts \n' })
+        ).toStrictEqual({ stagingPath: '/s.ts', inFlightPaths: ['/a.ts', '/b.ts'] });
+    });
+
+    it('throws on a blank STAGING_CATALOG, so a broken workflow step fails closed', () => {
+        expect(() => parseReferenceCatalogs({ stagingEnv: '  ', inFlightEnv: '' })).toThrow();
+    });
+
+    it('throws on IN_FLIGHT_CATALOGS without STAGING_CATALOG', () => {
+        expect(() =>
+            parseReferenceCatalogs({ stagingEnv: undefined, inFlightEnv: '/a.ts' })
+        ).toThrow();
+    });
+});
+
+describe('resolve-dates CLI with reference catalogs', () => {
     const cli = join(import.meta.dir, '../src/commands/whats-new/resolve-dates-cli.ts');
 
     function run({ env }: { readonly env: Record<string, string> }) {
@@ -226,13 +289,47 @@ describe('resolve-dates CLI with REFERENCE_FILES', () => {
 
         // Act
         const result = run({
-            env: { MERGED_AT, WHATS_NEW_FILE: mainFile, REFERENCE_FILES: stagingFile }
+            env: { MERGED_AT, WHATS_NEW_FILE: mainFile, STAGING_CATALOG: stagingFile }
         });
 
         // Assert
         expect(result.exitCode).toBe(0);
         expect(result.stdout.toString()).toContain('resolved_count=0');
         expect(readFileSync(mainFile, 'utf8')).toBe(main);
+    });
+
+    it('dates a newly promoted entry even while an older resolve PR is still open', () => {
+        // Arrange
+        const dir = mkdtempSync(join(tmpdir(), 'whats-new-refs-'));
+        const mainFile = join(dir, 'main.ts');
+        const stagingFile = join(dir, 'staging.ts');
+        const prFile = join(dir, 'pr.ts');
+        const pending = catalog({
+            entries: [
+                ['new-b', MARKER],
+                ['old-a', MARKER]
+            ]
+        });
+        writeFileSync(mainFile, pending);
+        writeFileSync(stagingFile, pending);
+        writeFileSync(prFile, catalog({ entries: [['old-a', '2026-09-30T17:31:18Z']] }));
+
+        // Act
+        const result = run({
+            env: {
+                MERGED_AT,
+                WHATS_NEW_FILE: mainFile,
+                STAGING_CATALOG: stagingFile,
+                IN_FLIGHT_CATALOGS: `${prFile}\n`
+            }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout.toString()).toContain('resolved_ids=new-b');
+        const written = readFileSync(mainFile, 'utf8');
+        expect(written).toContain(`id: 'new-b',\n        publishedAt: '${MERGED_AT}'`);
+        expect(written).toContain("id: 'old-a',\n        publishedAt: 'on-promotion'");
     });
 
     it('fails, without touching the catalog, when a reference file is missing', () => {
@@ -244,7 +341,7 @@ describe('resolve-dates CLI with REFERENCE_FILES', () => {
 
         // Act
         const result = run({
-            env: { MERGED_AT, WHATS_NEW_FILE: mainFile, REFERENCE_FILES: join(dir, 'missing.ts') }
+            env: { MERGED_AT, WHATS_NEW_FILE: mainFile, STAGING_CATALOG: join(dir, 'missing.ts') }
         });
 
         // Assert
