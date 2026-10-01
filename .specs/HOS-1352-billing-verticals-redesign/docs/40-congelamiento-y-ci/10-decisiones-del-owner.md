@@ -22,6 +22,7 @@ no del diseño del sistema nuevo); **P** y **Q** son del guard de destino de `ep
 | Q | el fin de la rama `epic/HOS-1352-verticales-billing` | la recomendada | sí | se borra apenas se mergea a `staging`; si no, el guard de P bloquea la promoción `staging → main`, que trae los commits de la épica que `main` todavía no tiene |
 | R | el trial de alojamiento que nace al publicar por primera vez (HOS-1012), que `start-paid` no cubre | la recomendada | sí | se congela también: con el setting prendido, un anfitrión sin trial ni suscripción no puede hacer su primera publicación (la ficha queda en borrador con aviso), y `/trial/reactivate` y `/trial/reactivate-subscription` responden el mismo 409; quien ya tiene trial o suscripción publica normal; las acciones del admin quedan exentas. Motivo: el corte (`DEC-MIG-007`) borra las fichas de todas las cuentas salvo cinco |
 | S | agregar un comercio a un plan que el dueño ya paga | la recomendada | sí | queda libre: no crea suscripción ni cobro |
+| T | el guard de P bloquea toda promoción `staging → main` mientras exista la rama épica | la recomendada | sí | el guard cuenta sólo los commits propios de la épica (los que no están en `staging`): falla si HEAD trae un commit de la épica que no está ni en el destino ni en `staging`; la rama épica recién creada se borró para promover #3447 y se recrea después del arreglo |
 
 ## Estado de implementación
 

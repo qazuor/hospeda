@@ -2788,7 +2788,13 @@ Cada entrada lleva, según §3.4:
   tests), CI verde y sin mergear al 2026-10-01. Y **la rama `epic/HOS-1352-verticales-billing` se
   borra apenas se mergea a `staging`** (Q): si no se borra, el guard bloquea la promoción
   `staging → main`, porque esa promoción trae los commits de la épica que `main` todavía no tiene.
-  Dónde: `16-fase-7-del-paraguas.md` §4.4 y §4.7.
+  Dónde: `16-fase-7-del-paraguas.md` §4.4 y §4.7. **Y el mismo día, con OK del owner (T)**: la
+  condición de P también bloqueaba **toda** promoción `staging → main` mientras la rama épica
+  existe, no sólo la del final, porque la épica comparte con `staging` los commits que recibe de él
+  (medido al promover el PR #3447: hubo que borrar la rama épica recién creada). **El guard cuenta
+  sólo los commits propios de la épica**: falla si HEAD trae algún commit de la rama épica que no
+  está ni en el destino ni en `staging`. Q sigue valiendo para el PR final del paraguas. PR
+  `[NOSPEC:epic-guard-promotion]`.
 
 ---
 
