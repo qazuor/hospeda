@@ -2718,7 +2718,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-CI-001 — `epic/**` es un tipo de rama del proyecto, y no todos los workflows corren ahí
 
-- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASES 6 y 7, lote de la aplicación, M: su implicación 1 la contesta `DEC-ARCH-016`; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASES 6 y 7, lote de la aplicación, M: su implicación 1 la contesta `DEC-ARCH-016`; ver su 📌) — **y precisada otra vez el 2026-10-01, con OK del owner** (congelamiento y CI del paraguas, letra P: la condición de C-4 queda corregida; ver su último 📌) · **Decide**: owner
 - **Problema**: `DEC-ARCH-007` manda que las sub-épicas corten de `epic/HOS-1352-verticales-billing`
   y mergeen **a esa rama**, y que la revisión ocurra en esos PRs. Medido el 2026-09-19 sobre el
   worktree: de los **15** workflows del repo, **ninguno nombra `epic` ni un patrón `**`**, y
@@ -2776,6 +2776,19 @@ Cada entrada lleva, según §3.4:
   `epic/HOS-1352-verticales-billing`**, así que la rama nace con el CI encendido y el PR de `U1` es
   el primero que corre CI completo. El reparto de workflows no cambia. Dónde:
   `16-fase-7-del-paraguas.md` §4.6 y §4.7. Origen: (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, M).
+- 📌 **Precisada otra vez el 2026-10-01, con OK del owner (congelamiento y CI del paraguas, letras P
+  y Q; `40-congelamiento-y-ci/10-decisiones-del-owner.md`)**: el snippet original del guard de
+  destino `check-umbrella-branch-target.sh` (`15-fase-9/01-R6-resuelto.md` §1, «la punta del
+  paraguas es ancestro de HEAD») tenía tres fallas —ponía en rojo todos los PRs a `staging` el día
+  que nace la rama épica, bloqueaba el PR final del propio paraguas y dejaba pasar una rama de
+  unidad cortada de un commit viejo de la épica—, y **se acepta la condición corregida** (P): **falla
+  si HEAD trae algún commit de la rama épica que el destino todavía no tiene**; el PR cuya head es
+  la rama épica queda exento; si la rama épica no existe en el remoto, sale 0; si no puede consultar
+  el remoto, falla. Implementada en el PR #3436 (`scripts/check-umbrella-branch-target.sh`, con 12
+  tests), CI verde y sin mergear al 2026-10-01. Y **la rama `epic/HOS-1352-verticales-billing` se
+  borra apenas se mergea a `staging`** (Q): si no se borra, el guard bloquea la promoción
+  `staging → main`, porque esa promoción trae los commits de la épica que `main` todavía no tiene.
+  Dónde: `16-fase-7-del-paraguas.md` §4.4 y §4.7.
 
 ---
 
