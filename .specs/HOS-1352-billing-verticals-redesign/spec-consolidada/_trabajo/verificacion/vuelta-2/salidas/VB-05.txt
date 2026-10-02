@@ -1,0 +1,19 @@
+# VB-05 · spec → fuente · 10-corte/V2.md, 10-corte/V3.md, 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V3.md:466 · «Y una clave global que otorga un addon de alcance `LISTING` se conserva treinta días después de que el addon vence, para que la insignia no parpadee en una renovación tardía.» · sin soporte (la sección cita `V/15` §3.3, `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:265-279`, que termina en «El scope de la clave dice dónde vale; la fuente dice por cuánto tiempo» y no tiene ninguna gracia de treinta días; `rg --hidden` de «treinta días después», «parpade» y «renovación tardía» sobre `$V/fuentes` da cero). Es una regla inventada que contradice además la regla viva de la misma página («la capacidad vive mientras al menos una source exista»): quien la implemente sostiene treinta días una clave cuya única fuente ya venció · BLOQUEA
+
+10-corte/V4.md:535 · «Cada vertical declara un máximo de días de trial acumulados por `user`, sumando todas sus verticales» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:153 («Cada vertical declara un máximo de días de trial acumulados por `user + vertical`»). Ninguna decisión posterior lo cambia (`rg --hidden` de «sumando todas» sólo encuentra esta línea de la spec; PLAZO:7 en `02-nucleo.md:1585` y `NUCLEO/02` §1.5 fila 7 dicen «por vertical»). Un implementador sumaría los días de prueba de todas las verticales del `user` contra el techo de una, y rechazaría canjes válidos · BLOQUEA
+
+10-corte/V3.md:416 · «el reconciliador se dispara por el recálculo, que ya ocurre porque toda transición de la máquina de suscripción está en la lista de invalidación (abajo)» · contradice internamente la tabla de la misma pieza, 10-corte/V3.md:647, y su fuente .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:671, donde la fila «toda transición de la máquina de suscripción» está tachada y reemplazada por «llega el aviso de cobertura». La frase de la spec copia `V/15` §2.6 (15-entitlements-y-limits.md:198-200), que no se actualizó. No cambia lo que se construye (el aviso de cobertura dispara el mismo recálculo), pero «(abajo)» remite a una fila que ya no existe · MENOR
+
+10-corte/V4.md:413 · «el PR de `V4` a la rama, con `V3` y `B1` mergeadas» · incoherencia interna con 10-corte/V4.md:398 y :406-407 (AC:V4:16: «`V4` no se mergea antes que `U2`») y con 10-corte/V4.md:1146-1148 («Espera a: `V3`, `B1` … y **`U2`**»); fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:64 y :623 (BR, flecha `U2→V4`). La precondición de la salida omite `U2`. AC:V4:16 cubre el orden, así que no cambia lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–721 | 95 | 0 | 0 |
+| 10-corte/V3.md | 1–918 | 110 | 1 | 1 |
+| 10-corte/V4.md | 1–1198 | 150 | 1 | 1 |

@@ -1,0 +1,21 @@
+# VB-02 · spec → fuente · 02-nucleo.md, 02-nucleo-auditoria.md, 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo.md:1570 · «valor inicial: **10, 5, 3 y 0 días antes**» (PLAZO:5, la campaña previa al vencimiento de la prueba) · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:177 («10, 5, 2 y 0 días antes»); también contradice dentro de la spec 02-nucleo-outbox.md:283 («10, 5, 2 y 0 días antes»), el ejemplo de clave 02-nucleo-outbox.md:108 (`trial:<id>:pre:-2d:…`) y 10-corte/V4.md:256/400/668. Ninguna decisión posterior lo cambia: rg «10, 5, 3» sólo da esta línea · BLOQUEA
+
+02-nucleo-auditoria.md:42-44 · «tiene que quedar registrado igual, aunque **alcanza con un evento por sesión del administrador sobre esa cuenta**, no uno por pantalla que abre» · sin soporte: la fuente .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:45-46 dice sólo «un admin **mirando** datos de un cliente no cambia nada y tiene que quedar registrado igual». La granularidad «un evento por sesión» no aparece en ninguna fuente (rg «por sesión» sin resultados en fuentes/); debilita el criterio 3 de auditabilidad · BLOQUEA
+
+02-nucleo-outbox.md:151 · «Dos consecuencias operativas:» (se omite la primera de la fuente) · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:142-145 («Tres consecuencias operativas: 1. **«Tres días antes» significa un día del calendario, no 72 horas.** El límite del día es medianoche del huso del mercado.»). La regla, que no está tachada, falta en toda la spec (rg «medianoche|del calendario|no 72» sin aparición equivalente): un implementador puede computar las ventanas como 24·N horas · BLOQUEA
+
+02-nucleo.md:1237-1248 · ACC:19 «sobre una versión de plan **sin clientes** fija el precio; sobre una **con clientes se rechaza** …» (sin la cláusula del descenso encolado) · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:209 («**y cuenta como cliente de una versión la fila con un `S38` encolado hacia ella, un descenso ya pedido** (corte del MVP, owner 2026-10-02, CC; `B/12` §3.2)»). La definición de la acción en el núcleo omite el predicado CC. La pieza dueña (10-corte/B2.md:25, :48) y B3.md:68 sí lo llevan, así que no cambia lo que se construye · MENOR
+
+02-nucleo.md:1748-1749 · «(c) Los que fija Mercado Pago o la ley: la ventana de reintentos del proveedor, los 10 días corridos del arrepentimiento de la Resolución 424/2020 (`B/22`).» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:216-218 («los 10 días corridos del arrepentimiento **y las 24 horas** de la Resolución 424/2020»): se cae el segundo plazo legal no configurable. La lista de plazos es cerrada, así que no se agregaría como configurable · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1807 | 210 | 1 | 2 |
+| 02-nucleo-auditoria.md | 1–446 | 60 | 1 | 0 |
+| 02-nucleo-outbox.md | 1–413 | 115 | 1 | 0 |
