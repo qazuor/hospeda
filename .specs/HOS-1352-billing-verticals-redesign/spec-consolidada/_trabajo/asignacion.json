@@ -1,5 +1,5 @@
 {
-    "sha": "e291df0b5b1609bfca23a955d690841e75720f33",
+    "sha": "254684691f93c6db1396f09c57889c436589e7c6",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 658,
+        "01-decisiones-vigentes.md": 660,
         "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 13,
         "04-catalogos.md": 298,
@@ -2240,6 +2240,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-017#📌9": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-ARCH-017#📌10": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7517,6 +7523,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t13:CE": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -10331,31 +10343,31 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:874": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:877": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:929": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:932": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:975": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:978": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1073": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1104": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1107": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,

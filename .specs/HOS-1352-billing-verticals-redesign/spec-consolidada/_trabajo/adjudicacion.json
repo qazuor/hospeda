@@ -1,5 +1,5 @@
 {
-    "sha": "e291df0b5b1609bfca23a955d690841e75720f33",
+    "sha": "254684691f93c6db1396f09c57889c436589e7c6",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {
@@ -28,7 +28,7 @@
             "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 148,
-            "hash": "da2d0f336d81258ae60da5acfb4b464e041355d45fb44d9536bc79a01b8241cc",
+            "hash": "0988ccfddb6df3be6ef600746895fecd04c7aa6477ac3ee25201ad9918c2f16c",
             "cita": "su modelo, que va al corte en `B3` (corte del MVP, owner 2026-10-01, AV)",
             "efecto": null,
             "muerto": null,
@@ -188,7 +188,7 @@
             "clase": "MIXTO",
             "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-            "linea": 1053,
+            "linea": 1056,
             "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530",
             "cita": "reembolso sale sin su clave de idempotencia persistida antes",
             "efecto": null,
@@ -932,7 +932,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 148,
                     "cita": "~~catorce~~ once desde que salieron `S25`, `S27` y `S28` con C8",
-                    "hash": "da2d0f336d81258ae60da5acfb4b464e041355d45fb44d9536bc79a01b8241cc"
+                    "hash": "0988ccfddb6df3be6ef600746895fecd04c7aa6477ac3ee25201ad9918c2f16c"
                 }
             ],
             "base": "C8",
