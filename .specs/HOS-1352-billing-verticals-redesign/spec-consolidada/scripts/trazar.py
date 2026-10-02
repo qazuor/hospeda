@@ -56,7 +56,8 @@ RULES
   R15 every GUARD is covered by ≥1 `guard estático` test with `Mutación:`.
   R16 template (AO): every piece has its file in the right folder (cut -> 10-corte, later ->
       20-fase-<n> of its phase, AW), with every heading of the template, in order, and none empty.
-  R17 coverage net: every live section of the 38 design files has ≥1 line cited by an `Origen:`
+  R17 coverage net: every live section of the 38 design files (MIXTO sections, struck title over a
+      live body, and chapter preambles included: owner, 2026-10-02) has ≥1 line cited by an `Origen:`
       line of ANY spec file (anchored block or plain prose; fenced code, `_trabajo/` and
       `scripts/` excluded).
   R18 with --cobertura: every owned live item has, in its owner piece, tests covering an AC that
@@ -490,7 +491,8 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
     # R17 coverage net: every `Origen:` line of the spec counts, anchored or not ---------------
     citadas = origenes(spec_dir)
     for i in items:
-        if i['fuente'] == 'SEC' and i['estado'] in VIVOS:
+        # a MIXTO section (struck title, live body; H3-G2-10) is live text too (owner, 2026-10-02, option 1)
+        if i['fuente'] == 'SEC' and (i['estado'] in VIVOS or i['estado'] == 'MIXTO'):
             if not any(i['linea'] <= ln <= i['fin'] for ln in citadas.get(i['archivo'], ())):
                 err['R17 sección sin ninguna línea citada'].append(i['id'])
 

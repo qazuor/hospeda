@@ -396,20 +396,42 @@ for it in ITEMS:
             FAILS.append(f"later piece {it['local']} without a phase (AW)")
 
 # 25 · SEC (coverage net: every heading of the 38 design files, fenced code excluded) ---------
+def texto_vivo(path, a, b):
+    """The text of lines ``a``..``b`` that survives outside ~~…~~ (a strike may span lines), with
+    markup, rules and blanks dropped: empty when nothing of the body is alive."""
+    t = re.sub(r'~~.*?~~', '', '\n'.join(lines(path)[a - 1:b]), flags=re.S)
+    return re.sub(r'^\s*---\s*$|[\s*`>|:✚-]', '', t, flags=re.M)
+
+
+def estado_sec(path, n, fin):
+    """P-M (third blind-verification round, H3-G2-10): a section's state is not decided by its title
+    alone. A struck title over a body that keeps live text («~~título~~» + «**Sale entera** (…): …») is
+    MIXTO; MUERTO only when the body has nothing alive either."""
+    if not re.match(r'^#+\s+~~.*~~\s*$', lines(path)[n - 1]):
+        return 'VIVO'
+    return 'MIXTO' if texto_vivo(path, n + 1, fin) else 'MUERTO'
+
+
 for path in corpus_38():
     fence, heads2 = False, []
-    for n, l in enumerate(lines(path), 1):
+    L2 = lines(path)
+    # the YAML front matter is no text of the chapter (a «# comment» there is no heading either)
+    fm = next((j for j in range(1, len(L2)) if L2[j].strip() == '---'), 0) + 1 if L2[0].strip() == '---' else 0
+    for n, l in enumerate(L2, 1):
         if l.lstrip().startswith('```'):
             fence = not fence
-        if not fence and re.match(r'^#{1,6} ', l):
+        if not fence and n > fm and re.match(r'^#{1,6} ', l):
             heads2.append(n)
     for k, n in enumerate(heads2):
-        l = lines(path)[n - 1]
+        l = L2[n - 1]
+        fin = heads2[k + 1] - 1 if k + 1 < len(heads2) else len(L2)
         if not re.match(r'^#{2,6} ', l):
+            # H3-G2-12: the chapter's preamble (between its «#» title and its first «##») is a
+            # section too, or «the chapter, entire» silently loses it; only when it has live text
+            if texto_vivo(path, n + 1, fin):
+                add('SEC', f'SEC:{path}:{n}', '#', path, n, estado_sec(path, n, fin), fin=fin, preambulo=True)
             continue
-        fin = heads2[k + 1] - 1 if k + 1 < len(heads2) else len(lines(path))
-        st = 'MUERTO' if re.match(r'^#+\s+~~.*~~\s*$', l) else 'VIVO'
-        add('SEC', f'SEC:{path}:{n}', l.split(' ', 1)[0], path, n, st, fin=fin)
+        add('SEC', f'SEC:{path}:{n}', l.split(' ', 1)[0], path, n, estado_sec(path, n, fin), fin=fin)
 
 
 # --------------------------------------------------------------------------------------------

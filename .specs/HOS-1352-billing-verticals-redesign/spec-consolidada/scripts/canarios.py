@@ -7,11 +7,16 @@ must make it fail (exit 1) naming that rule. A canary that passes is a blind rul
 The fixture uses REAL inventory items (so R6 reads real source lines at the frozen SHA): one
 piece (B2) with its row, its exit criterion and its guard, a decision, an invariant, a
 transition, a forbidden transition, a MIXTO term (adjudicated), a dead row and one section.
+
+And four checks on the inventory itself (third blind-verification round, P-M, H3-G2-10 and H3-G2-12):
+a struck title over a live body is MIXTO, a struck title over nothing stays MUERTO, no MUERTO section
+keeps live text, and a chapter's preamble is a section.
 """
 import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -197,6 +202,32 @@ def run(files, mini, adj, cob, lista=None):
     return r.returncode, r.stdout + r.stderr
 
 
+def secciones_del_inventario(inv):
+    """Third blind-verification round, pattern P-M (H3-G2-10, H3-G2-12), on the inventory itself:
+    a section is not MUERTO by its title alone, and a chapter's preamble is a section. The inventory the
+    title-only rule wrote fails both; returns the number of failures."""
+    from comun import B, V, lines
+    secs = {i['id']: i for i in inv['items'] if i['fuente'] == 'SEC'}
+
+    def vivo(i):
+        t = re.sub(r'~~.*?~~', '', '\n'.join(lines(i['archivo'])[i['linea']:i['fin']]), flags=re.S)
+        return re.sub(r'^\s*---\s*$|[\s*`>|:✚-]', '', t, flags=re.M)
+
+    casos = [
+        ('mixta', 'título tachado y cuerpo vivo («Sale entera…», `V/03:365`) es MIXTO',
+         secs.get(f'SEC:{V}docs/03-maquinas-de-estado.md:365', {}).get('estado') == 'MIXTO'),
+        ('muerta', 'título tachado sin cuerpo (`B/03:942`) sigue MUERTO',
+         secs.get(f'SEC:{B}docs/03-maquinas-de-estado.md:942', {}).get('estado') == 'MUERTO'),
+        ('ninguna', 'ninguna sección MUERTO tiene texto vivo fuera de ~~…~~',
+         not [k for k, i in secs.items() if i['estado'] == 'MUERTO' and vivo(i)]),
+        ('preámbulo', 'el preámbulo de `B/14` (entre su «#» y su primer «##») es una sección',
+         secs.get(f'SEC:{B}docs/14-promos-cortesias-y-grants.md:17', {}).get('fin') == 31),
+    ]
+    for nombre, que, ok in casos:
+        print(f'{"✓" if ok else "✗ CIEGO"} SEC  {nombre:9} · {que}')
+    return sum(not ok for _, _, ok in casos)
+
+
 def sub(files, rel, old, new, count=1):
     f = dict(files)
     assert old in f[rel], f'canary text not found in {rel}: {old[:40]}'
@@ -358,6 +389,9 @@ def main():
     m = copy.deepcopy(mini)
     m['items'].append(dict(sec))
     c('R17', 'ese Origen sin cuerpo no cubre su sección', f21, m=m)
+    m = copy.deepcopy(mini)
+    m['items'].append(dict(sec, estado='MIXTO'))
+    c('R17', 'una sección MIXTO (título tachado, cuerpo vivo) sin cita también falla', f21, m=m)
     c(None, 'con un cuerpo entre el «:» y el Origen, la sección queda cubierta y pasa',
       sub(files, '02-nucleo.md', origen(item(inv, 'INV:17')) + '\n', origen(item(inv, 'INV:17')) + '\n'
           + vacia.replace('le asigna:\n\n', 'le asigna:\n\nEl texto de la sección, escrito.\n')), m=m)
@@ -375,7 +409,7 @@ def main():
 
     code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
-    fallas = 0 if code == 0 else 1
+    fallas = (0 if code == 0 else 1) + secciones_del_inventario(inv)
     for rule, name, f, m, a, k, li, aviso, sin in canarios:
         code, out = run(f, m, a, k, li)
         ok = (code == 0) if rule is None else (code == 1 and f'✗ {rule} ' in out)
@@ -384,7 +418,7 @@ def main():
         print(f'{"✓" if ok else "✗ CIEGO"} {rule or "pasa":4} exit {code} · {name}')
         if not ok:
             print('   ', out.strip().replace('\n', '\n    '))
-    print(f'\n{len(canarios)} canarios · {fallas} fallas')
+    print(f'\n{len(canarios) + 4} canarios (4 del inventario) · {fallas} fallas')
     return 1 if fallas else 0
 
 
