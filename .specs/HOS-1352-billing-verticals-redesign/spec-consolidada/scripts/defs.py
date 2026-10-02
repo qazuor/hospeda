@@ -63,9 +63,9 @@ MUERTOS = {'MUERTO', 'SUPERSEDED'}
 #     citable: owner AX (2026-10-01, the 1; DEC-METH-019, its 📌). AX names decisions (minus
 #     DEC-METH-*), 📌, piece rows, «Lista cuando», guards, invariants, transitions, actions, terms,
 #     reasons, locks, RP, M, steps, gates and the moves of the cut (ESQ, TPZ, APZ); citable only:
-#     the matrix, the owner letters and the list of pieces. PROH (the forbidden transitions, which
-#     AN tests), VAL (validations that kept a guard name) and DEP are not named by AX and are kept
-#     normative here (inferred; question AZ).
+#     the matrix, the owner letters and the list of pieces. Owner AZ (the 1) adds PROH (the
+#     forbidden transitions), VAL (validations that kept a guard name) and DEP (cross-epic
+#     dependencies) to the normative set.
 NORMATIVAS = {'DEC', 'PIN', 'FILA', 'LISTA', 'GUARD', 'VAL', 'DEP', 'INV', 'TRANS', 'PROH',
               'ACC', 'PLAZO', 'MOT', 'LOCK', 'RP', 'M', 'PASO', 'ESQ', 'TPZ', 'APZ', 'GATE'}
 CITABLES = NORMATIVAS | {'MATRIZ', 'OWN', 'PIEZA'}

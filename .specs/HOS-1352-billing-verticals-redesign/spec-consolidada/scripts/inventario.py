@@ -30,7 +30,7 @@ Sources, by name (the 18 of the method, then the ones the cut added, then the ne
   20 TPZ     Subscription transition -> piece (B §2.12)              TPZ:<S>
   21 GATE    acceptance gates (D/16 §4.7), and the later phases of AW   GATE:<slug>, GATE:FP.F<n>
   22 APZ     addon-instance transition -> piece (B/03 §8 + D/16 §4.6) APZ:<A>
-  -- added by this inventory (inferred, see report) --
+  -- added by this inventory; normative by owner AZ (2026-10-01) --
   23 PROH    transitions that do NOT exist (B/03 §3.3)    PROH:B:<n>
   24 VAL     panel validations that keep a guard name (V/20 §2)       VAL:<g>
   -- coverage net --
