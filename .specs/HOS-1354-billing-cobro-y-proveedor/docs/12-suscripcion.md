@@ -154,7 +154,7 @@ porque entró en el grace **durante** la ventana, por `S4`— — o sea la pobla
 **transición declarada** de la tabla del cap. 03 (§10.1), y por eso aparece en cuatro lugares que
 la enumeraban sin ella: es la séptima del dominio que el §3.2 recorre por el lado de la
 predecesora, un tercer camino por el que la predecesora **se muere sola** y `S18` cierra la
-sucesión sin `S17`, la sexta que dispara la re-evaluación del addon huérfano (`B/16` §4.3), y la
+sucesión sin `S17`, ~~la sexta que dispara~~ una de las once que disparan *(C8; residuo corregido el 2026-10-02, segunda vuelta del triage)* la re-evaluación del addon huérfano (`B/16` §4.3), y la
 **rama 5** del §5.3 de este capítulo.
 
 ### 1.5 Lo que falta medir, y qué lo dispara
@@ -784,7 +784,7 @@ que `DEC-RF-002` declara normal:
 > **Ya no** (revisión del owner, 2026-09-28, C8): `S26` y `S28` salieron, y la 2 vuelve a tener un
 > solo disparador.
 
-**Y la rama 6 tiene desde la FASE 9-bis-4 DOS filas y sigue siendo UNA rama, que es una
+**Y la rama 6 tiene desde la FASE 9-bis-4 ~~DOS filas~~ TRES filas, `S23`, `S24` y `S36`** *(inferido que `S36` entra en la rama 6, por `B/03` §3.2, `R1-b`; residuo corregido el 2026-10-02, segunda vuelta del triage)* **y sigue siendo UNA rama, que es una
 distinción que este § ya usa.** `S24` —la baja pedida en medio del grace, `DEC-SUB-014`— produce
 exactamente el mismo desenlace que `S23`: el cliente mata su propia fila, `S18` cierra sin `S17`
 y el pago que `S19` retenía queda en manos de una persona. **Las ramas enumeran cómo termina la
@@ -977,9 +977,9 @@ renovación **posterior** a la recomputación no existe, porque después de ella
 viva que renueve; una **anterior** está acreditada y la recomputación la ve. El otro final de la
 ventana —`S3`— no deja sucesora, así que tampoco deja crédito que corregir.
 
-> **La fila que lleva a `ACTIVE` a un pagador manual es una de las que el capítulo 13 todavía
+> **La fila que lleva a `ACTIVE` a un pagador manual ~~es una de las que el capítulo 13 todavía
 > debe** (`B/03` §7.1), así que esta corrección se apoya en una transición **declarada y no
-> construida**, igual que el resto de esa población. Va dicho acá porque es justo la clase que el
+> construida**, igual que el resto de esa población~~ es `S29`** (`B/03` §3.2), de `B5` (residuo corregido el 2026-10-02, segunda vuelta del triage). Va dicho acá porque es justo la clase que el
 > criterio de terminación de `DEC-TEST-002` mira al declarar lista la unidad.
 
 **Y no contradice la forma congelada del §5.2**, que es lo primero que hay que comprobar: *«el
