@@ -377,5 +377,5 @@ e2e en el mismo PR**, como parte de su gate, y **el PR final de la épica no se 
 momentos 1 y 2). El smoke manual del sistema nuevo no es de esta mitad: es el checklist que escribe
 `B13` (`B/20` §5.1, punto 4).
 
-7. **trial** completo: activación, campaña previa, vencimiento, campaña de recuperación y
+1. **trial** completo: activación, campaña previa, vencimiento, campaña de recuperación y
    conversión tardía;
