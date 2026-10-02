@@ -157,13 +157,17 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-
 **AC:V9b:4** — Lo que cuelga de la ficha, por dueño del dato.
 
 - **Dado** una ficha con una alerta de precio de un turista, una conversación entre ese turista y el
-  dueño, y datos del dueño que sólo sirven a esa ficha
+  dueño, un favorito de un turista, un pedido de arreglo abierto, y datos del dueño que sólo sirven a
+  esa ficha
 - **Cuando** `PB9` la borra
 - **Entonces** la alerta queda cerrada y el correo transaccional *«tu alerta de precio se cerró»*
   encolado; la conversación se lee y no admite mensajes, con su referencia a la ficha anulable; y lo
-  del dueño que sólo servía a la ficha no tiene filas de ella; la configuración de revalidación no se
+  del dueño que sólo servía a la ficha no tiene filas de ella; `PB9` no escribe `deleted_at`, así que
+  el favorito sigue (el trigger de extras no corre); el pedido de arreglo queda cerrado en el mismo acto,
+  sin correo, y su fila se conserva; la configuración de revalidación no se
   toca.
 Fuente: [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005), [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:787, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:801, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:802
 
 <a id="ac-v9b-5"></a>
 **AC:V9b:5** — `PB9` y `PB8` simultáneos, bajo el lock.
@@ -674,7 +678,8 @@ Fuente: [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)
 
 <a id="test-v9b-4"></a>
 **TEST:V9b:4** — Integración: alerta cerrada con su correo en el outbox, conversación legible y sin
-nuevos mensajes, filas del dueño de la ficha borradas.
+nuevos mensajes, filas del dueño de la ficha borradas; la ficha sin `deleted_at` y el favorito del
+turista en su lugar; el pedido de arreglo cerrado, conservado y sin correo en el outbox.
 Tipo: integración con DB
 Cubre: [AC:V9b:4](#ac-v9b-4)
 Fuente: [LISTA:V9b](#lista-v9b), [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)

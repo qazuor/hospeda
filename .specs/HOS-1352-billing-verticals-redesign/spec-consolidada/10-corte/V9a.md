@@ -308,4 +308,4 @@ N/A — el único abierto de la pieza, qué pieza crea `domain_event`, lo cerró
 - `NUCLEO/08` §1.1–§1.3; `NUCLEO/01` §1.2 (hecho 1); `NUCLEO/02` §2.6.
 - `01-decision-log.md`: `DEC-DATA-005` y su primer 📌; `DEC-ARCH-017`.
 - `41-corte-del-mvp/10-decisiones-del-owner.md`: AC y BW (l. 23 y 156).
-- `16-fase-7-del-paraguas.md` §4.6 (lista de piezas, l. 948) y §4.7 (momento 1).
+- `16-fase-7-del-paraguas.md` §4.6 (lista de piezas, l. 953) y §4.7 (momento 1).
