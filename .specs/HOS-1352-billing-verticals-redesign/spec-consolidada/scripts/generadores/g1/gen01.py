@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """Generator of 01-decisiones-vigentes.md (group g1-decisiones). Reads only frozen sources via comun.py.
 
-    python3 gen01.py [--salida=<dir>]     (default: writes 01-decisiones-vigentes.md into the spec)
+    python3 gen01.py [--salida=<dir>] [--omisiones=<json>]
+    (default: writes 01-decisiones-vigentes.md into the spec; --omisiones replaces omisiones.json,
+    for canarios_g1.py only)
 
 Inputs next to it: cabecera.md (the file's head) and omisiones.json (written by omisiones.py).
 
 A PARCIAL verdict (owner BK) is applied to whatever block the item renders as: a 📌 or a whole DEC
 (its title and body, not its pins). What died is replaced by «[…]» and a «Parte sin efecto» note
 follows. The run fails if a PARCIAL item renders with no span applied, if a span is not found exactly
-once, or if a dead quote of the verdict (R19 of trazar.py) is still in the block."""
+once, or if a dead quote of the verdict (R19 of trazar.py) is still in the block.
+
+And (first blind-verification round, 2026-10-02) it fails if an owner letter's cell ends in «\\» (a
+table split at an escaped pipe), if a letter that a caducity note of its own file names («> **Caducada…**»)
+renders without its «⚠️ Caducada» line (omisiones.json, `letras_muertas`), or if a PARCIAL note promises
+to show a span («la muestra bajo el 📌N») and that 📌 does not receive it (omisiones.json, `reubicar`)."""
 import json
 import os
 import re
@@ -26,7 +33,12 @@ asg = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))
 adj = json.load(open(C + '/_trabajo/adjudicacion.json', encoding='utf-8'))['veredictos']
 cob = json.load(open(C + '/_trabajo/cobertura.json', encoding='utf-8'))
 cobi, solo = cob['items'], cob['solo_citables']
-OMIT = json.load(open(os.path.join(HERE, 'omisiones.json'), encoding='utf-8'))
+OMIT = json.load(open(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--omisiones=')),
+                          os.path.join(HERE, 'omisiones.json')), encoding='utf-8'))
+MUERTAS = OMIT.pop('letras_muertas', {})
+REUBICAR = OMIT.pop('reubicar', {})
+REUBICADOS = {}  # destination 📌 -> the source 📌 whose glued text it received
+MUERTAS_RENDIDAS = set()
 
 items = inv['items']
 byid = {i['id']: i for i in items}
@@ -276,6 +288,28 @@ def render_dec(dec):
             out += cl + ['']
         out.append(txt)
         out += nota_parcial(p['id'])
+        out += reubicado_en(p['id'], dec)
+    return out
+
+
+def reubicado_en(pid, dec):
+    """The text another 📌 of the same decision carries but belongs to ``pid`` (omisiones.json,
+    `reubicar`): shown verbatim, with the line it comes from and a note."""
+    out = []
+    for src, r in REUBICAR.items():
+        if r['a'] != pid:
+            continue
+        sp = next((p for p in items if p['id'] == src), None)
+        if not sp or sp.get('dec') != dec['id']:
+            sys.exit(f'reubicar: {src} no es un 📌 de {dec["id"]}')
+        seg = '\n'.join(LL[sp['linea'] - 1:dec['fin']])
+        if not span_rx(r['texto']).search(seg):
+            sys.exit(f'reubicar: el texto de {src} no está tal cual en su 📌 ({LOG}:{sp["linea"]})')
+        n = next(k for k in range(sp['linea'], dec['fin'] + 1) if r['texto'][:40] in LL[k - 1])
+        out += ['', relink(r['texto'], LOG), '',
+                f'> **Texto reubicado**: la fuente lo pegó al {sp["local"]} ([{src}](#{slug(src)}), `{LOG}:{n}`); '
+                f'es de este 📌 (letra {r["letra"]}). Allá está omitido y marcado «[…]».']
+        REUBICADOS[pid] = src
     return out
 
 
@@ -288,12 +322,44 @@ def own_render(i):
     k = n - 1
     while not re.match(r'^\|\s*-', L[k - 1]):
         k -= 1
-    head = [c.strip() for c in L[k - 2].strip().strip('|').split('|')]
-    cells = [c.strip() for c in row.strip().strip('|').split('|')]
+    head = partir(L[k - 2])
+    cells = partir(row)
     cells = [relink(clean(unstrike(c)), path).strip() for c in cells]
     out = ['', f'<a id="{slug(i["id"])}"></a>', f'**{head[0]} {cells[0]}**', '', f'Origen: {path}:{n}', '']
     for h, c in zip(head[1:], cells[1:]):
         out.append(f'- **{h}**: {c if c else "—"}')
+    m = MUERTAS.get(i['id'])
+    if m:
+        out.append(f'- ⚠️ **Caducada {m["alcance"]}**: {m["por"]} (Origen: {m["origen"]})'
+                   + (' *(inferido: la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8)*' if m['inferido'] else '')
+                   + '. Sólo citable; no se implementa.')
+        MUERTAS_RENDIDAS.add(i['id'])
+    return out
+
+
+PIPE = re.compile(r'(?<!\\)\|')  # a cell separator: a «|» not escaped as «\|»
+
+
+def partir(row):
+    """The cells of a table row, split only at an unescaped «|» and unescaped after the split."""
+    cs = [c.strip() for c in PIPE.split(row.strip().strip('|'))]
+    if any(c.endswith('\\') for c in cs):
+        sys.exit(f'celda partida en un «\\|»: {row[:80]}')
+    return [c.replace('\\|', '|') for c in cs]
+
+
+def caducadas_por_nota(path):
+    """The letters a caducity note of an owner file names: the backticked ids of its own letters
+    inside a «> **Caducada…»» quote."""
+    locales = {i['local'] for i in items if i['fuente'] == 'OWN' and i['archivo'] == path}
+    out, dentro = set(), False
+    for l in lines(path):
+        if re.match(r'^>\s*\*\*Caducada', l):
+            dentro = True
+        elif not l.startswith('>'):
+            dentro = False
+        if dentro:
+            out |= {t for t in re.findall(r'`([^`]+)`', l) if t in locales}
     return out
 
 
@@ -316,7 +382,7 @@ def main():
             extra.append(a)
     areas = area_order + extra + ['METH']
     out = []
-    out += open(os.path.join(HERE, 'cabecera.md'), encoding='utf-8').read().rstrip('\n').split('\n')
+    out += open(os.path.join(HERE, 'cabecera.md'), encoding='utf-8').read().replace('{{SHA}}', SHA).rstrip('\n').split('\n')
     cnt = {'DEC': 0, 'PIN': 0, 'OWN': 0}
     for a in areas:
         ds = sorted((d for d in decs if d['id'].split('-')[1] == a), key=lambda d: int(d['id'].split('-')[2]))
@@ -335,7 +401,9 @@ def main():
     out += ['', '## Registro de las letras del owner', '',
             'Cada fila de las tablas `10-decisiones-del-owner.md` de las rondas de diseño, sin lo tachado. '
             'Son **sólo citables** (owner AX: «la matriz, las letras del owner y la lista de piezas son sólo citables»); '
-            'la decisión que cada letra produjo vive en su DEC o su 📌 de arriba.']
+            'la decisión que cada letra produjo vive en su DEC o su 📌 de arriba. '
+            'Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**; '
+            'lo que produjeron, si murió, está en [`90-retirados.md`](90-retirados.md).']
     owns = [i for i in items if i['fuente'] == 'OWN']
     files = []
     for i in owns:
@@ -358,6 +426,19 @@ def main():
                 cnt['OWN'] += 1
             else:
                 out += ['', f'**{i["local"]}** — retirada: [{i["id"]}](90-retirados.md#{slug(i["id"])}).']
+    for f in files:
+        for loc in caducadas_por_nota(f):
+            oid = next(i['id'] for i in owns if i['archivo'] == f and i['local'] == loc)
+            if oid in mine and oid not in MUERTAS_RENDIDAS:
+                sys.exit(f'{oid}: su archivo la da por caducada y se rinde sin ⚠️ (omisiones.py, LETRAS_MUERTAS)')
+    for k in MUERTAS:
+        if k in mine and k not in MUERTAS_RENDIDAS:
+            sys.exit(f'letra muerta sin renderizar: {k}')
+    for cid, v in adj.items():
+        for n in re.findall(r'(?:muestra|mostrar\w*)\s+bajo el 📌(\d+)', v.get('muerto') or ''):
+            dest = cid.split('#')[0] + f'#📌{n}'
+            if cid in mine and REUBICADOS.get(dest) != cid:
+                sys.exit(f'{cid}: su nota promete mostrar el texto bajo {dest} y ese 📌 no lo recibe (omisiones.py, REUBICAR)')
     parcial = {k for k, v in adj.items() if v['veredicto'] == 'PARCIAL' and k in mine}
     if parcial - set(APLICADAS):
         sys.exit(f'PARCIAL de 01 sin renderizar con sus omisiones: {sorted(parcial - set(APLICADAS))}')
@@ -367,4 +448,5 @@ def main():
     print(cnt, len(txt.split('\n')), 'PARCIAL', len(APLICADAS), 'tramos', sum(APLICADAS.values()))
 
 
-main()
+if __name__ == '__main__':
+    main()

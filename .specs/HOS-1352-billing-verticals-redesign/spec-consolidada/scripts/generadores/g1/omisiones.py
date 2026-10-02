@@ -15,6 +15,15 @@ makes the consolidated spec omit what died with «[…]» and keep a note. Three
 
 gen01.py fails if a PARCIAL item of 01 ends up with no span applied, if a {"de"} span is not found
 exactly once, or if a dead quote of `muerto` (R19's length) is still in the rendered block.
+
+Two more keys, from the first blind-verification round (2026-10-02):
+
+- `letras_muertas`: owner letters a later source left without effect. gen01.py renders them with a
+  «⚠️ Caducada» line, and fails if a letter named by a caducity note of its own file («> **Caducada…**»)
+  is rendered without it (H-VA-A8-r2-5, r2-6).
+- `reubicar`: text the source glued to the wrong 📌. The PARCIAL verdict of the 📌 that carries it says
+  «la consolidada la muestra bajo el 📌N»; gen01.py renders it under that 📌, and fails if a verdict
+  promises a 📌 that does not receive it (H-VA-A8-r2-7).
 """
 import json
 import os
@@ -25,6 +34,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.normpath(os.path.join(HERE, '..', '..', '..'))
 sys.path.insert(0, os.path.join(C, 'scripts'))
 from trazar import r19_citas, r19_norm, R19_MIN  # noqa: E402
+from comun import D, B, lines  # noqa: E402
 
 ADJ = json.load(open(C + '/_trabajo/adjudicacion.json', encoding='utf-8'))['veredictos']
 ASG = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))['items']
@@ -139,6 +149,52 @@ EXTRA = {
 }
 
 
+# Owner letters a later source left without effect: {OWN id: (alcance, por, (path, fragment of the line
+# that says so), inferred)}. `inferido` marks a letter the adjudication did not list and that follows
+# its criterion (a letter whose premise leaves with C8, C12 or S-40 to S-45).
+LOG = D + '01-decision-log.md'
+C8_S1 = (B + 'docs/03-maquinas-de-estado.md', '(La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.)')
+C8_ARCH011 = (LOG, '### DEC-ARCH-011 — Una vertical que deja de admitir altas')
+CAD_28 = (D + '28-fase-9-vuelta-1/10-decisiones-del-owner.md', '`G1-1` y R1, en lo que decían de la cartera: los reemplaza `DEC-MIG-006` (C12)')
+CAD_29 = (D + '29-fase-8-vuelta-2/10-decisiones-del-owner.md', '`R15`, entera: cae con `DEC-MIG-006` (C12, `L1-b`)')
+DISC = ('entera', 'la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)', C8_ARCH011)
+LETRAS_MUERTAS = {
+    'OWN:28-fase-9-vuelta-1:t1:G1-1': ('en parte', 'en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)', CAD_28, False),
+    'OWN:28-fase-9-vuelta-1:t1:G2-4': ('entera', '`T7` salió (N7, `DEC-TRIAL-003`)', CAD_28, False),
+    'OWN:29-fase-8-vuelta-2:t1:R15': ('entera', 'cae con `DEC-MIG-006` (C12, `L1-b`), y con ella `N-B-01`', CAD_29, False),
+    'OWN:29-fase-8-vuelta-2:t1:R5': DISC + (False,),
+    'OWN:29-fase-8-vuelta-2:t1:Q-ALTAS': DISC + (False,),
+    'OWN:29-fase-8-vuelta-2:t1:Q-ALTAS-b': DISC + (False,),
+    'OWN:29-fase-8-vuelta-2:t1:R24': DISC + (False,),
+    'OWN:29-fase-8-vuelta-2:t1:Q-FECHA': DISC + (False,),
+    'OWN:29-fase-8-vuelta-2:t1:Q-ANUNCIO': DISC + (True,),
+    'OWN:29-fase-8-vuelta-2:t1:Q-ACC16': ('entera', 'la acción 16 salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-rf-008-p2)',
+                                          (D + 'nucleo/08-auditoria-y-observabilidad.md', '**sale de la tabla** (revisión del owner, 2026-09-28, C8)'), False),
+    'OWN:29-fase-8-vuelta-2:t1:R2': ('entera', 'su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)',
+                                     (LOG, 'ni las va a haber antes del corte). Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`'), False),
+    'OWN:29-fase-8-vuelta-2:t1:R21': ('entera', 'su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)',
+                                      (LOG, 'ni las va a haber antes del corte). Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`'), False),
+    'OWN:29-fase-8-vuelta-2:t1:R21-b': ('entera', 'su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)',
+                                        (LOG, 'ni las va a haber antes del corte). Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`'), False),
+    'OWN:26-fase-9-completa:t1:6a': ('entera', '`admiteAltas` salió con C8', C8_S1, False),
+    'OWN:26-fase-9-completa:t1:6b': ('entera', '`admiteAltas` y `fin_de_servicio` salieron con C8', C8_S1, False),
+}
+
+# Text the source glued to the wrong 📌: {the 📌 that carries it: (the 📌 it belongs to, the verbatim
+# span, its letter)}. The span is the {"de"} of EXTRA, so it is omitted from the first and shown under
+# the second.
+REUBICAR = {
+    'DEC-ARCH-014#📌7': ('DEC-ARCH-014#📌6', EXTRA['DEC-ARCH-014#📌7'][0][0], 'F'),
+}
+
+
+def linea_de(path, frag):
+    hits = [n for n, l in enumerate(lines(path), 1) if frag in l]
+    if len(hits) != 1:
+        sys.exit(f'✗ {path}: {len(hits)} líneas contienen «{frag[:60]}»')
+    return hits[0]
+
+
 def main():
     parcial = {k for k, v in ADJ.items()
                if v['veredicto'] == 'PARCIAL' and (ASG.get(k, {}).get('destino') or '').startswith('01')}
@@ -152,11 +208,15 @@ def main():
             spans.append({'de': de, 'a': a})
         spans += [{'cita': c} for c in r19_citas(ADJ[cid]['muerto']) if len(r19_norm(c)) >= R19_MIN]
         out[cid] = spans
+    out['letras_muertas'] = {k: {'alcance': a, 'por': por, 'origen': f'{p}:{linea_de(p, frag)}', 'inferido': inf}
+                             for k, (a, por, (p, frag), inf) in LETRAS_MUERTAS.items()}
+    out['reubicar'] = {k: {'a': a, 'texto': txt, 'letra': letra} for k, (a, txt, letra) in REUBICAR.items()}
     # indent=4 plus a final newline is exactly what the pre-commit's biome format leaves
     with open(os.path.join(HERE, 'omisiones.json'), 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, indent=4)
         fh.write('\n')
-    print(len(out), sum(len(s) for s in out.values()))
+    print(len(out) - 2, sum(len(s) for k, s in out.items() if k not in ('letras_muertas', 'reubicar')),
+          'letras muertas', len(out['letras_muertas']), 'reubicados', len(out['reubicar']))
 
 
 if __name__ == '__main__':

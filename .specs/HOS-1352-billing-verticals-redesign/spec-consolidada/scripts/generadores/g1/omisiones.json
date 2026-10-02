@@ -396,6 +396,12 @@
         {
             "de": "una pausa o una cancelación hecha por el pagador",
             "a": "[…] una cancelación hecha por el pagador"
+        },
+        {
+            "cita": "Pendiente de medición"
+        },
+        {
+            "cita": "hasta medir,"
         }
     ],
     "DEC-RF-004#📌1": [
@@ -522,5 +528,104 @@
         {
             "cita": ", igual que `T7`"
         }
-    ]
+    ],
+    "letras_muertas": {
+        "OWN:28-fase-9-vuelta-1:t1:G1-1": {
+            "alcance": "en parte",
+            "por": "en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71",
+            "inferido": false
+        },
+        "OWN:28-fase-9-vuelta-1:t1:G2-4": {
+            "alcance": "entera",
+            "por": "`T7` salió (N7, `DEC-TRIAL-003`)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R15": {
+            "alcance": "entera",
+            "por": "cae con `DEC-MIG-006` (C12, `L1-b`), y con ella `N-B-01`",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:75",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R5": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS-b": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R24": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:Q-FECHA": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:Q-ANUNCIO": {
+            "alcance": "entera",
+            "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6751",
+            "inferido": true
+        },
+        "OWN:29-fase-8-vuelta-2:t1:Q-ACC16": {
+            "alcance": "entera",
+            "por": "la acción 16 salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-rf-008-p2)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:206",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R2": {
+            "alcance": "entera",
+            "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6494",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R21": {
+            "alcance": "entera",
+            "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6494",
+            "inferido": false
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R21-b": {
+            "alcance": "entera",
+            "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6494",
+            "inferido": false
+        },
+        "OWN:26-fase-9-completa:t1:6a": {
+            "alcance": "entera",
+            "por": "`admiteAltas` salió con C8",
+            "origen": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151",
+            "inferido": false
+        },
+        "OWN:26-fase-9-completa:t1:6b": {
+            "alcance": "entera",
+            "por": "`admiteAltas` y `fin_de_servicio` salieron con C8",
+            "origen": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151",
+            "inferido": false
+        }
+    },
+    "reubicar": {
+        "DEC-ARCH-014#📌7": {
+            "a": "DEC-ARCH-014#📌6",
+            "texto": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).",
+            "letra": "F"
+        }
+    }
 }

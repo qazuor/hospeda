@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `f80c0f27154ca023d97a016707d823ff826cf76a` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `{{SHA}}` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -21,9 +21,10 @@ retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI�
   lo anterior, el puntero lo dice. Un 📌 retirado deja sólo el puntero a `90-retirados.md`.
 - **Adjudicación `PARCIAL`**: la parte del 📌 que una fuente posterior superó sin tacharla está
   omitida y marcada «[…]»; debajo, una nota dice qué se omitió y qué línea lo supera.
-- **`SUPERSEDED EN PARTE`** (`DEC-MIG-001`, `DEC-MIG-002`, `DEC-DATA-002`, `DEC-MP-003`): no tienen
-  adjudicación; su propio campo *Estado* (o su «⚠️ Qué sobrevive») declara qué parte vale, y el
-  texto se conserva entero.
+- **`SUPERSEDED EN PARTE`** (`DEC-MIG-001`, `DEC-MIG-002`, `DEC-DATA-002`, `DEC-MP-003`): su propio
+  campo *Estado* (o su «⚠️ Qué sobrevive») declara qué parte vale, y llevan además adjudicación
+  `PARCIAL` (BK): la parte muerta está omitida y marcada «[…]», con su nota «Parte sin efecto» al
+  final del cuerpo, como cualquier otra `PARCIAL`.
 - **Sólo citables**: las decisiones de metodología (`DEC-METH-*`, owner AX) y la lista cerrada de
   BA y BB (`03-contrato-de-cobertura.md`) no llevan AC; su entrada lo dice.
 - Los vínculos relativos del log se reescribieron para que resuelvan desde esta carpeta
