@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ y BK a BV (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV y BW a BX (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -145,6 +145,16 @@ corrigen sin elección, 18 en la fuente y 4 por adjudicación.
 | BT | las mediciones de producción que nadie corrió (`partners` con `owner_user_id` repetido; las filas vivas del rol de dueño de comercio, sus permisos y su tabla de contactos) | 1 | sí | **la pieza que las necesita mide con `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el número antes del merge**. Una salida vacía de `hops psql` no es un cero: se repite. Las otras opciones eran confiar en las mediciones viejas o que la migración decida sola |
 | BU | dónde vive la ventana `N` del resumen de conciliación (`DEC-OBS-001`) | 1 | sí | **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9) |
 | BV | la fecha límite de la Fase 1 (`V9b`) | 1 | sí | **límite = instante del corte + plazo 1 − plazo 4, con la versión 1 de los plazos; la Fase 1 se mergea a producción antes de esa fecha, y el gate de la fase la verifica contra ese número**. Vale con BL, porque el aviso *«al archivar»* ya sale desde `V6`. Las otras opciones eran esa fecha menos un margen fijo, o decidirla a ojo |
+
+## Lote BW y BX (2026-10-02)
+
+Respuestas del owner, 2026-10-02, a las dos preguntas que dejó la aplicación del lote BK a BV. Las
+dos son la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| BW | qué pieza crea `domain_event`, que BN ponía en `V9a` con una premisa errónea: nucleo/08 §1.1 manda registrar toda transición y todo acto administrativo, así que la escriben antes `V2`, `V4` y `B3` | 1 | sí | **`U2`**, que es ancestro de todas las piezas que la escriben y ya lleva la correlación «al evento» (nucleo/08 §2); precisa la aplicación de BN. Las otras opciones eran la primera que la escribe (`V2` y `B3` no se ordenan en el grafo) o dejarla en `V9a` (inviable: se escribiría antes de existir) |
+| BX | cuándo se fija el valor del plazo 19 (BU), si la versión 1 de los plazos falla con una clave vacía desde el merge de la pieza que la escribe, anterior a `B11` | 1 | sí | **el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`: la regla de que la versión 1 falla con un plazo vacío se conserva sin excepciones. Precisa BU. Las otras opciones eran exceptuar la clave hasta `B11` o agregarla con una migración de datos de `B11` |
 
 ## Resultado del corte
 
