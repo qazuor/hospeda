@@ -1120,6 +1120,16 @@ divergencia sin explicar** (E). Esa observación retira la etiqueta `status-need
 sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la espera se revisa a los
 30 días** (E).
 
+**Los precios, congelados hasta este momento** (corte del MVP, owner 2026-10-02, BM, con su
+aclaración): **los precios del corte son los vigentes hoy**; los carga el paso 3a con el catálogo y
+no se cambian durante el corte. **Ningún precio cambia hasta que el momento 5 esté cumplido**: la
+épica mergeada, desplegada, smokeada y estable en producción. Es una **condición operativa**, no
+un control del código: la acción 19, *«fijar el precio de un ciclo»*, existe desde `B2` con su
+mecánica (sobre una versión sin clientes fija el precio; sobre una con clientes se publica una
+versión nueva que rige para las altas; menos de ARS 15 se rechaza), y el aviso y la mutación a los
+clientes ya anclados (`DEC-MP-002`, parte 2) llegan con `B12`; su uso queda vedado hasta este
+momento, y el checklist del corte lo dice.
+
 #### Las fases posteriores ✚
 
 (corte del MVP, owner 2026-10-01, Y y AE; `DEC-ARCH-017`.) Las ocho piezas que van después llegan en **fases posteriores,
