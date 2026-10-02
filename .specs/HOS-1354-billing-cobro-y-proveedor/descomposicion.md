@@ -574,10 +574,10 @@ una tabla que nadie había sembrado. **La fila faltaba en el reparto, no la resp
 de B3 igual—, pero la tabla sí necesita dueño»*, y el dueño es el mismo que el de la entidad. El
 §2.5 es **el catálogo de una columna que nace en el `02` §2.2**, y las dos únicas cosas que hay que
 saber para sembrarlo —qué motivos hay y quién abre cada uno— salen de `S14` y `S15`, que son de
-B3. **Con la parte que B3 no puede terminar sola, dicha**: ~~ocho de los quince~~ ~~**nueve de los dieciséis**~~ ~~**nueve de los diecinueve**~~ ~~**nueve
-de los veinte**~~ ~~**diez de los veintidós**~~ ~~**once de los veintitrés**~~ **once de los veinticuatro** motivos los abren actos de otras unidades —**el 23, `ORDEN_PAGADA_SIN_INSTANCIA`, lo abre la comprobación de órdenes pagadas del `09` §3, que va con B11** (FASE 9 vuelta 2, `R4`); **el 21, `COBRO_DEL_PERÍODO_SIN_RESOLVER`, lo abre la lectura del `09` §4 que sigue en *«todavía no se sabe»* a los 3 días (`09` §6.2), que va con B7** (FASE 9 completa, 3d; asignación de esta pasada, §2)—, `S18` (B8), `S21` (~~B10~~ B5, corte del MVP, owner 2026-10-01, AV), **que desde
+B3. **Con la parte que B3 no puede terminar sola, dicha**: ~~ocho de los quince~~ ~~**nueve de los dieciséis**~~ ~~**nueve de los diecinueve**~~ ~~**nueve de los veinte**~~
+~~**diez de los veintidós**~~ ~~**once de los veintitrés**~~ **once de los veinticuatro** motivos los abren actos de otras unidades —**el 23, `ORDEN_PAGADA_SIN_INSTANCIA`, lo abre la comprobación de órdenes pagadas del `09` §3, que va con B11** (FASE 9 vuelta 2, `R4`); **el 21, `COBRO_DEL_PERÍODO_SIN_RESOLVER`, lo abre la lectura del `09` §4 que sigue en *«todavía no se sabe»* a los 3 días (`09` §6.2), que va con B7** (FASE 9 completa, 3d; asignación de esta pasada, §2)—, `S18` (B8), `S21` (~~B10~~ B5, corte del MVP, owner 2026-10-01, AV), **que desde
 `DEC-RF-006` abre dos**, ~~las seis comprobaciones del `09` §3 (B12)~~ **las comprobaciones de cero
-llamadas del `09` §3 —la tercera y la cuarta en B10, las otras en B11, que tiene el `09` entero—**
+llamadas del `09` §3 —~~la tercera y la cuarta en B10~~ la tercera en `B9a` y la cuarta en `B5`, las otras en B11, que tiene el `09` entero—** *(la tercera y la cuarta, corte del MVP, owner 2026-10-01, AS y AV; inferido, como en la fila de `B10`)*
 y **el reintento del barrido sobre las salvedades 1 y 4 del `09` §3, que abre el 16** (FASE 8 completa, `F-8CB1-013`, owner
 2026-09-25; esas dos salvedades están en la columna de B10). *(Corregido en la FASE 8 completa
 contra la tabla de unidades: B12 es el catálogo que se retira y no tiene el `09` en su columna.)*—, así
