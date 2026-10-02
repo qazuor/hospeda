@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV y BW a BX (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV, BW a BX y BY a CB (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -155,6 +155,20 @@ dos son la recomendada (opción 1).
 |---|---|---|---|---|
 | BW | qué pieza crea `domain_event`, que BN ponía en `V9a` con una premisa errónea: nucleo/08 §1.1 manda registrar toda transición y todo acto administrativo, así que la escriben antes `V2`, `V4` y `B3` | 1 | sí | **`U2`**, que es ancestro de todas las piezas que la escriben y ya lleva la correlación «al evento» (nucleo/08 §2); precisa la aplicación de BN. Las otras opciones eran la primera que la escribe (`V2` y `B3` no se ordenan en el grafo) o dejarla en `V9a` (inviable: se escribiría antes de existir) |
 | BX | cuándo se fija el valor del plazo 19 (BU), si la versión 1 de los plazos falla con una clave vacía desde el merge de la pieza que la escribe, anterior a `B11` | 1 | sí | **el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`: la regla de que la versión 1 falla con un plazo vacío se conserva sin excepciones. Precisa BU. Las otras opciones eran exceptuar la clave hasta `B11` o agregarla con una migración de datos de `B11` |
+
+## Lote BY a CB (2026-10-02)
+
+Respuestas del owner, 2026-10-02, a las cuatro preguntas que dejó la segunda vuelta del triage de la
+spec consolidada (fuentes en `17f9702675`). Todas son la recomendada (opción 1). La misma vuelta
+encontró que el registro de BS no recogía los defaults de su opción 1; se asientan en un 📌 nuevo
+sobre `DEC-METH-019`.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| BY | qué hace una pieza anterior que LEE una tabla que nace después (la guarda de `S15` y el predicado (f) de `G-R1-F`, de `B3`, leen `reconciliation_mark_payment`, que nace en `B5` por BN) | 1 | sí | **BL vale también para leer**: `B3` escribe la guarda de `S15` y el predicado (f) de `G-R1-F` contra una interfaz interna; `B5` trae la implementación sobre su tabla y prueba el rechazo con filas sembradas, y ese criterio va al *«Lista cuando»* de `B5`. Precisa BL. Las otras opciones eran que la tabla naciera en `B3` sin su FK (contra BN) o pasar `S15` entera a `B5` |
+| BZ | por qué camino le llega un aumento de precio a un cliente ya anclado (`B12`, BM) | 1 | sí | **el aumento a un anclado es una migración a la versión nueva, por `S37` y `S38`, con el motivo *«aumento»***: la fecha y los contactos son los del plazo 11, sin la cohorte `PARA_RESOLVER` y sin las reglas propias de la migración que no aplican a un aumento (la promo viva se conserva). Precisa BM y `DEC-MP-002`. Las otras opciones eran una transición nueva que muta sólo el monto o que el aumento no alcance a los anclados |
+| CA | quién construye las superficies de la suspensión sobre el Turista VIP (`V/15` §6.3) y qué pasa al regularizar | 1 | sí | **`B7` construye el aviso de suspensión que nombra lo que se pierde como turista y suma a `S7` la cláusula espejo de BP**: si al regularizar el plan vuelve a heredar Turista VIP, cancela el VIP pago, sin reembolso y con el correo antes; **`B13a` construye la advertencia en la pantalla de compra de VIP**. Las otras opciones eran las dos superficies en `V3` o las superficies sin la cláusula en `S7` |
+| CB | dónde vive el caché del conjunto efectivo (`V/02` §3) | 1 | sí | **en el Redis que la API ya usa**, con la invalidación por `user`; si Redis no responde se lee la resolución en vivo; y un contador de entradas sospechosas en los logs estructurados. Las otras opciones eran memoria del proceso (no se invalida en todas las instancias) o sin caché |
 
 ## Resultado del corte
 
