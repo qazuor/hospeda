@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `e291df0b5b1609bfca23a955d690841e75720f33` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `b949031c701bc735edf6b6e01fc762b3b46747c6` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -6368,7 +6368,7 @@ Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [B4](10-corte/B4.md#pieza-b4) (implementa) · [V9a](10-corte/V9a.md#pieza-v9a) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa).
 Tests mínimos: migración desde cero; migración sobre datos; smoke manual · prod.
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -6442,6 +6442,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 - → ver [📌7](#dec-arch-017-p7).
 - → ver [📌8](#dec-arch-017-p8).
 - → ver [📌9](#dec-arch-017-p9).
+- → ver [📌10](#dec-arch-017-p10).
 
 <a id="dec-arch-017-p1"></a>
 
@@ -6673,6 +6674,23 @@ vuelta** (`H-VB-B2-15`): recontado con `41-corte-del-mvp/`: 30 piezas, 22 al cor
 34 al corte, 63 flechas —la de BC, `B5 → V7`— y cero violaciones. Dónde: `B/03` §8 (`A1-bis`);
 `B/16` §3.2; `B/descomposicion.md` §2, §2.6, §2.12 y §4 (`B10`); `41-corte-del-mvp/aristas.py`;
 `41-corte-del-mvp/10-decisiones-del-owner.md`, CD.
+
+<a id="dec-arch-017-p10"></a>
+
+#### 📌10 de DEC-ARCH-017
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8030
+
+Dueña del AC: [B10](20-fase-3/B10.md#pieza-b10).
+Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+
+📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CE, la 1)**, sobre `A1-bis`
+del 📌 anterior: **con scope `LISTING`, el objetivo del addon que nace por `A1-bis` pasa las mismas
+guardas que en `A1`**: la ficha es propia de la persona, de la vertical del producto, y
+`ficha(idDeFicha).admiteDestaque` del contrato §4.1 contesta sí —ni `PURGED` ni `MODERATED`—; si
+no, *«no existe»* y no nace ninguna instancia. Que el addon sea gratis no cambia qué ficha se puede
+destacar. La guarda y su test son de `B10`. Sin flechas nuevas. Dónde: `B/03` §8 (`A1-bis`);
+`B/descomposicion.md` §2, §2.12 y §4 (`B10`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CE.
 
 ## Área MIG
 
@@ -10761,7 +10779,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8033
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8040
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10832,7 +10850,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 #### 📌1 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8092
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8099
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10857,7 +10875,7 @@ de las fases posteriores (AW) precisa AE y va en el 📌 de `DEC-ARCH-017`
 
 #### 📌2 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8115
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10872,7 +10890,7 @@ sólo citable sigue siendo la matriz, las letras del owner y la lista de piezas
 
 #### 📌3 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8114
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8121
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10896,7 +10914,7 @@ las 30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE).
 
 #### 📌4 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8129
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8136
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10927,7 +10945,7 @@ BS y BT.
 
 #### 📌5 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8151
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8158
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -14008,3 +14026,15 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **una transición nueva, `A1-bis`**: *(sin fila)* → `ACTIVE`, con el evento *«la persona elige un addon compatible teniendo un ancla viva de un grant con `includesAddons: true`»*, sin preapproval ni orden, sin `payment` ni comprobante, y con el ancla como título de la instancia; **la construye `B10`**, con su AC y su test. `A5` ya apaga la instancia cuando se revoca el grant. Las otras opciones eran reusar `A1` y `A2` con una autorización vacía (un `PENDING_AUTHORIZATION` que no espera nada, y `A2` nombra preapproval u orden) o diferir el addon elegido gratis a una pieza posterior (`FILA:B10` e `INV:28` quedarían incumplidas)
+
+#### Lote CE (2026-10-02)
+
+<a id="own-41-corte-del-mvp-t13-ce"></a>
+**Letra CE**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:192
+
+- **Pregunta**: si el objetivo `LISTING` de un addon que nace por `A1-bis` (CD) exige las mismas guardas que `A1` (`B/03` §8): ficha propia, de la vertical del producto, y en un estado que acepte destacarla
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD. Las otras opciones eran sólo la autorización del capítulo 17 (se podría destacar una ficha moderada, que nadie ve) o dejarlo abierto hasta `B10` (`B10` no podría cerrar su *«Lista cuando»*)
