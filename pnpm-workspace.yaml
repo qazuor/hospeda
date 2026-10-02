@@ -328,6 +328,15 @@ auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
+    # GHSA-86w9-cpqp-85rv / CVE-2026-85393: node-forge <=1.4.0 accepts
+    # extra nested DigestAlgorithm elements during RSA PKCS#1 v1.5
+    # verification. The only production graph path is the Expo SDK 56 mobile
+    # toolchain (@expo/cli and its transitive packages); it is not bundled in
+    # the API, web, or admin runtimes. GitHub currently reports no patched
+    # node-forge release, and forcing an unpublished version is unsafe. Keep
+    # this explicit exception until Expo ships a compatible dependency update;
+    # remove it as soon as `pnpm audit --prod` confirms the path is gone.
+    - GHSA-86w9-cpqp-85rv
     # image-size DoS in its ICNS (GHSA-w3rx-r6r6-pgpr) and JXL/HEIF
     # (GHSA-5p2g-fcmc-qvqq) parsers, fixed in 2.0.3 (HOS-418).
     #
