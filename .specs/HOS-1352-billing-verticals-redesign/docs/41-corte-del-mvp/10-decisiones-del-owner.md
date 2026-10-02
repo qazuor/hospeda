@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV, BW a BX y BY a CB (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV, BW a BX, BY a CB y CC a CD (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -169,6 +169,18 @@ sobre `DEC-METH-019`.
 | BZ | por qué camino le llega un aumento de precio a un cliente ya anclado (`B12`, BM) | 1 | sí | **el aumento a un anclado es una migración a la versión nueva, por `S37` y `S38`, con el motivo *«aumento»***: la fecha y los contactos son los del plazo 11, sin la cohorte `PARA_RESOLVER` y sin las reglas propias de la migración que no aplican a un aumento (la promo viva se conserva). Precisa BM y `DEC-MP-002`. Las otras opciones eran una transición nueva que muta sólo el monto o que el aumento no alcance a los anclados |
 | CA | quién construye las superficies de la suspensión sobre el Turista VIP (`V/15` §6.3) y qué pasa al regularizar | 1 | sí | **`B7` construye el aviso de suspensión que nombra lo que se pierde como turista y suma a `S7` la cláusula espejo de BP**: si al regularizar el plan vuelve a heredar Turista VIP, cancela el VIP pago, sin reembolso y con el correo antes; **`B13a` construye la advertencia en la pantalla de compra de VIP**. Las otras opciones eran las dos superficies en `V3` o las superficies sin la cláusula en `S7` |
 | CB | dónde vive el caché del conjunto efectivo (`V/02` §3) | 1 | sí | **en el Redis que la API ya usa**, con la invalidación por `user`; si Redis no responde se lee la resolución en vivo; y un contador de entradas sospechosas en los logs estructurados. Las otras opciones eran memoria del proceso (no se invalida en todas las instancias) o sin caché |
+
+## Lote CC y CD (2026-10-02)
+
+Respuestas del owner, 2026-10-02, a las dos preguntas que dejó la adjudicación de la primera vuelta
+de verificación ciega de la spec consolidada (fuentes en `c7a3fac900`, spec en `296e6495b6`). Las
+dos son la recomendada (opción 1). Los residuos que la misma adjudicación encontró en las fuentes no
+son preguntas: se corrigen sin elección, con su autoridad.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CC | si un descenso encolado —monto ya mutado al precio del plan destino (`DEC-SUB-008`), y `S38` que aplica el cambio de versión al fin del ciclo— cuenta como cliente de la versión destino a los efectos de BM y BZ | 1 | sí | **un descenso encolado cuenta como cliente de la versión destino**: la acción 19 rechaza fijar el precio de una versión hacia la que hay un `S38` encolado (BM) y se publica una versión nueva; el cliente llega por `S38` a la versión cuyo precio vio y, si después hay aumento, le llega por BZ como a cualquier anclado. **El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`. Precisa BM y BZ, y `B/12` §3.2. Las otras opciones eran que no cuente (`S38` aplica el precio nuevo y una relectura muta el monto en el acto: un aumento sin los 60 días del §29) o que fijar el precio cancele los descensos encolados con un aviso (el cliente pierde un pedido que hizo) |
+| CD | por qué transición nace el addon que elige gratis el beneficiario de un grant con `includesAddons: true` (`B/16` §3.1-§3.2: sin `payment`, sin comprobante, con el ancla como título), si la máquina de la instancia (`B/03` §8, exhaustiva) sólo tiene `A1` → `PENDING_AUTHORIZATION` y `A2` con preapproval u orden | 1 | sí | **una transición nueva, `A1-bis`**: *(sin fila)* → `ACTIVE`, con el evento *«la persona elige un addon compatible teniendo un ancla viva de un grant con `includesAddons: true`»*, sin preapproval ni orden, sin `payment` ni comprobante, y con el ancla como título de la instancia; **la construye `B10`**, con su AC y su test. `A5` ya apaga la instancia cuando se revoca el grant. Las otras opciones eran reusar `A1` y `A2` con una autorización vacía (un `PENDING_AUTHORIZATION` que no espera nada, y `A2` nombra preapproval u orden) o diferir el addon elegido gratis a una pieza posterior (`FILA:B10` e `INV:28` quedarían incumplidas) |
 
 ## Resultado del corte
 
