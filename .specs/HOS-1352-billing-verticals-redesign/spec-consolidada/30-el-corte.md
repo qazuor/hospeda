@@ -235,12 +235,14 @@ anote en esta ventana no se conserva después del corte: owner 2026-09-25, FASE 
 escritura, salvo los avisos de Mercado Pago, hasta el paso 5.
 
 **Lo que la persona ve en la ventana** (declarado por `DEC-METH-015`, FASE 9 vuelta 1,
-`F-8V1C2-010`): al cancelar el 1b, el viejo recibe cada cancelación. **Causa**: tocar el código
-viejo para silenciarlo cuesta más que decirlo, y no mueve plata.
+`F-8V1C2-010`): al cancelar el 1b, el viejo recibe cada cancelación y manda su correo de baja; no
+se suprime: lo anticipa el aviso en persona del owner (revisión del owner, 2026-09-28, C12), y las
+fichas no las baja. **Causa**: tocar el código viejo para silenciarlo cuesta más que decirlo, y no
+mueve plata.
 
 Dueña del AC: [U3](10-corte/U3.md#pieza-u3).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:149, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:163, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:175, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:178, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:211, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:334, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:418
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:149, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:163, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:175, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:178, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:211, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:334, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:336, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:338, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:418
 
 <a id="paso-2"></a>
 
@@ -567,7 +569,7 @@ eso:
    la épica a `staging`, no falla la promoción `staging → main` del punto 2 (owner 2026-10-01,
    [T](01-decisiones-vigentes.md#own-40-congelamiento-y-ci-t1-t); residuo corregido el 2026-10-02). Q
    sigue valiendo para el PR final del paraguas: la rama se borra al mergear. (`D/16` §4.4 punto 5,
-   `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653`; `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830`)
+   `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653`; `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2838-2844`)
 
 **Con esto `rollout` queda cerrado en lo que hace a ramas** (revisión del owner, casos vecinos,
 2026-09-29, caso 4): las ramas son este apartado, y el orden de despliegue son los pasos.
@@ -1428,11 +1430,14 @@ sin una divergencia sin explicar** (E). Esa observación retira la etiqueta `sta
 de `HOS-1352` y dispara la tarea de cierre (sacar los informes del repositorio y reescribir el diseño
 sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la espera se revisa a los 30
 días** (E). El barrido diario es de [B11](10-corte/B11.md#pieza-b11) y el checklist, de
-[B13a](10-corte/B13a.md#pieza-b13a).
+[B13a](10-corte/B13a.md#pieza-b13a). **Los precios, congelados hasta este momento**
+([BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm)): los del corte son los vigentes hoy, los
+carga el paso 3a y **ningún precio cambia hasta que el momento 5 esté cumplido**; es una condición
+operativa, no un control del código: la acción 19 existe desde `B2` y su uso queda vedado hasta acá.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:13](#ac-corte-13)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1125
 
 <a id="gate-fp"></a>
 
@@ -1517,7 +1522,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 ### El smoke manual del cobro nuevo
 
 (B; `F-8cC2-005`, que estaba abierto desde la FASE 8-bis-2.) **Un checklist nuevo, del sistema
-nuevo, en dos partes**, que escribe `B13` en `docs/billing/` —no en `.specs/`, que sale al cierre—
+nuevo, en dos partes**, que escribe `B13a` en `docs/billing/` —no en `.specs/`, que sale al cierre—
 (el recorte del checklist viejo que hacía `B13` se retira por quedar sin sujeto: el viejo vive en
 `staging` y gobierna al sistema viejo hasta el corte, y el nuevo lo reemplaza con el corte; FASES 6 y
 7, lote de la aplicación, owner 2026-09-30, L): **la de `staging`**, que se ejecuta dentro del ensayo
@@ -1575,9 +1580,10 @@ Fuente: [PASO:0](#paso-0), [GATE:M3](#gate-m3)
 - **Cuando** se mide `EX-49` (la distribución de dominios de la tabla de usuarios, contando sólo
   dominios, y la prueba de unos 30 correos sobre cuentas receptoras nuevas del owner) y se lee el
   tope de purgas del plan del borde
-- **Entonces** la lista del seudónimo queda cerrada y medida antes del corte, y entra sólo lo que la
-  medición confirma; si no hay medición, el corte no avanza; y el tope de purgas admite las 22 purgas
-  por destino del 4c
+- **Entonces** la lista del seudónimo queda cerrada y medida antes del corte: lo que `V/02` §2.2 da
+  en su tabla como *«si la medición lo confirma»* entra sólo si lo confirma, y lo que la medición
+  muestre fuera de la tabla vuelve al owner y no se aplica mientras no conteste; si no hay medición,
+  el corte no avanza; y el tope de purgas admite las 22 purgas por destino del 4c
 
 Fuente: [PASO:0](#paso-0), [MP:EX-49](04-catalogos.md#mp-ex-49)
 
@@ -1872,7 +1878,7 @@ Fuente: [GATE:M2](#gate-m2), [GATE:M2.1](#gate-m2-1)
 **TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` con la condición de T: falla
 un PR cuyo HEAD trae un commit de la rama épica que no está ni en el destino ni en `staging`, y no
 falla la promoción `staging → main` cuando los commits de la épica ya están en `staging`
-(`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830`).
+(`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2838-2844`).
 Tipo: guard estático
 Mutación: volver a la condición de P (contar todo commit de la épica que el destino no tiene) y ver que la promoción `staging → main` con la épica mergeada falla.
 Cubre: [AC:CORTE:11](#ac-corte-11)

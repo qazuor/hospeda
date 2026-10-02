@@ -1,7 +1,7 @@
 # 03 · El contrato de cobertura
 
 Este archivo reúne la frontera entre las dos épicas: el contrato de cobertura entero, en su forma
-vigente (`docs/12-contrato-de-cobertura.md`, sin tachados), las doce dependencias vivas entre
+vigente (`docs/12-contrato-de-cobertura.md`, sin tachados), las trece dependencias vivas entre
 épicas (`DEP`, de `B/descomposicion.md` §2.6) y la lista cerrada de los ítems normativos que son
 sólo citables (owner BA y BB). Suma la misma interfaz vista desde la partición del programa (§8,
 `docs/11-particion-del-programa.md` §3) y dos secciones de programa de las descomposiciones de las
@@ -1775,12 +1775,14 @@ integra la implementación real (`16-fase-7…` §4.6; verificación corta, 2026
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:330, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:332, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:340, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:347, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:349, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:356, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:361, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:363
 
 Cada dependencia está medida contra el lector que la pide. **Con el corte del MVP siguen siendo
-doce** (corte del MVP, owner 2026-10-01, Z): cambian sus piezas, no su número. La 4 y la 5 pasan a
+doce** (corte del MVP, owner 2026-10-01, Z) **y BC suma la 15: son trece** (corte del MVP, owner
+2026-10-01, [BC](01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bc); residuo corregido el
+2026-10-02): cambian sus piezas, no su número. La 4 y la 5 pasan a
 `B8b`; la 10 a `B9b`; la 12 a `B9a`; y en la 11 el empuje de `PB9` es de `V9b`. **Ninguna pieza
 del corte lee a una posterior**: recontado con `41-corte-del-mvp/aristas.py`, que lee esta tabla
 por su encabezado.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:365, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:393
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:365, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:391, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:393
 
 <a id="dep-1"></a>
 **DEP:1** — **Lee `B2`**: `billing_option` cuelga de `plan_version`. No es la dirección inversa:

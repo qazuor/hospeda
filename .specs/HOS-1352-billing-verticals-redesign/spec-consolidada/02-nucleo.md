@@ -1236,7 +1236,10 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-ob
 - **De dónde sale**: revisión del owner, 2026-09-28, N1, `L1-f`.
 - **¿Destructiva o mueve dinero?** **Sí, mueve plata**: sobre una versión de plan **sin clientes** fija
   el precio; sobre una **con clientes se rechaza y se publica una versión nueva**, que rige para las
-  altas nuevas ([DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), parte 1). El aviso y la mutación a
+  altas nuevas ([DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), parte 1); **y cuenta como cliente de
+  una versión la fila con un `S38` encolado hacia ella, un descenso ya pedido** (corte del MVP, owner
+  2026-10-02, [CC](01-decisiones-vigentes.md#own-41-corte-del-mvp-t12-cc); `B/12` §3.2). El aviso y la
+  mutación a
   los clientes ya anclados (parte 2) llegan con [B12](20-fase-3/B12.md#pieza-b12): una migración a la
   versión nueva por `S37` y `S38` con el motivo *«aumento»*, con la fecha y los contactos del
   [PLAZO:11](#plazo-11) (corte del MVP, owner 2026-10-02,

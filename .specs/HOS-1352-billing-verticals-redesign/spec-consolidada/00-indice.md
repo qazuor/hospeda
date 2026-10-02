@@ -88,14 +88,20 @@ Cada fase posterior viaja en una rama épica nueva, con los mismos gates por uni
 las cinco unidades en mitades *a* y *b* es la de
 [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z).
 
-**El grafo, recontado después de las letras BL a BR**
+**El grafo, recontado después de las letras BL a BR, con CD y con CI**
 ([DEC-ARCH-017#📌6](01-decisiones-vigentes.md#dec-arch-017-p6)): **30 piezas, 22 al corte, 35 guards
-con 34 al corte, 62 flechas y cero violaciones**. Las dos flechas nuevas son las de
-[BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br), **`U2 → B3` y `U2 → V4`**: el outbox
+con 34 al corte, 64 flechas y cero violaciones**. La 63 es la fila 15 de `DEP`, `B5 → V7`, de
+[BC](01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bc), recontada con CD
+([DEC-ARCH-017#📌9](01-decisiones-vigentes.md#dec-arch-017-p9)); la 64 es **`B4 → B11`**, de
+[CI](01-decisiones-vigentes.md#own-41-corte-del-mvp-t15-ci): `B11` escribe y lee
+`provider_link.cancelado_visto_en`, la columna que crea `B4`
+([DEC-ARCH-017#📌12](01-decisiones-vigentes.md#dec-arch-017-p12)); no mueve el camino crítico del
+corte, donde `B11` no está. Las dos flechas de
+[BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br) son **`U2 → B3` y `U2 → V4`**: el outbox
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7987
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7987, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8027, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8056, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8059
 
 ## Reglas que valen para todas las piezas
 
@@ -1408,7 +1414,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:152, .specs/HOS-1354-b
 
 Tres textos suyos contradicen sus propios datos. **Regla para soporte, que sale directo de la
 medición: ante un reclamo, mirar el PAGO, nunca el correo.** La regla vive con las decisiones del
-proveedor en [01-decisiones-vigentes.md](01-decisiones-vigentes.md#dec-mp-006).
+proveedor en [DEC-MAIL-001](01-decisiones-vigentes.md#dec-mail-001), implicación 1.
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:161, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:163
 

@@ -12,24 +12,24 @@ abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
 ## 1. Lo que la propuesta del corte no pudo verificar
 
 `D/41-corte-del-mvp/10-decisiones-del-owner.md`, *«Lo que la propuesta no pudo verificar (sigue
-abierto)»* (línea 197), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
+abierto)»* (línea 240), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
 abierto:
 
 1. Si `partners` tiene filas en producción: decide si el `UNIQUE` parcial sobre `owner_user_id` de
-   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 199) **Cómo se
+   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 242) **Cómo se
    contesta lo cerró [BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt)**: la pieza que lo
    necesita mide con `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y
    deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el
    número antes del merge. Una salida vacía de `hops psql` no es un cero: se repite. Lo que sigue
    abierto es el número. (línea 145)
 2. La duración del trial y los plazos de retención, que fija el owner antes del merge de `V6`.
-   (línea 200; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
+   (línea 243; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
    sin valor escrito está vacío) **Y el plazo 19**, la ventana `N` del resumen de conciliación
    ([BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu)): **cerrado por
    [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) cuándo se fija**, antes del merge
    de `B2` y no de `B11`, porque la versión 1 de los plazos falla con una clave vacía sin
    excepciones; lo que sigue abierto es el valor. (líneas 146 y 157)
-3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 201) **Lo que se
+3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 244) **Lo que se
    hace cuando una pieza anterior llama a algo que construye una posterior lo cerró
    [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)** (la anterior escribe su rama
    entera y llama por interfaz; la posterior trae la implementación). (línea 137) **Y
@@ -37,9 +37,9 @@ abierto:
    guarda de `S15` y el predicado (f) de `G-R1-F`, de `B3`, leen `reconciliation_mark_payment`, que
    nace en `B5`; `B3` los escribe contra una interfaz interna y `B5` trae la implementación, con el
    criterio en su *«Lista cuando»*. (línea 168)
-4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 202)
-5. Si la baja self-service tiene una exigencia legal con fecha. (línea 203)
-6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 204)
+4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 245)
+5. Si la baja self-service tiene una exigencia legal con fecha. (línea 246)
+6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 247)
 
 ## 2. Las filas `UNKNOWN` de la matriz de Mercado Pago
 
