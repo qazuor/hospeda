@@ -1,0 +1,53 @@
+# VB-B6 · spec → fuente · zona B6
+
+Rutas de fuente relativas a `fuentes/`.
+
+## Hallazgos
+
+10-corte/V5.md:62 · «DEC-GRANT-002 (la exclusividad de SUPER_ADMIN sobre lo que regala servicio) la hace cumplir la lista cerrada "sólo SUPER_ADMIN"» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:245-247 (esa lista son las filas 17 a 22 y 26, sin cortesía ni grant; también 17-autorizacion.md:416-417) · MENOR
+10-corte/V5.md:188 · «Sobre una ficha ARCHIVED sin TÍTULO el dueño puede verla, exportarla y reactivarla, y cualquier otra operación se rechaza» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:96 (y :114-116: también puede borrarla por PB12, que el piso otorga) · BLOQUEA
+10-corte/V5.md:274 · «USER_IMPERSONATE sale de la base: se recrea el enum sin él y una migración de datos saca las filas de roles y overrides que lo daban, "por el principio del lote 1 I"» · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:762 (el lote 1 I saca sólo los permisos del cobro viejo; descomposicion.md:544 dice sólo que no existe en el enum) · BLOQUEA
+10-corte/V5.md:315 · «Título de AC:V5:14: lo que regala servicio también viene sólo con el rol, como la lista "sólo SUPER_ADMIN"» · sin soporte (el cuerpo del AC cubre sólo las filas 17-22 y 26) · MENOR
+10-corte/V5.md:375 · «Al terminar V5, el cargador ya no existe» · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:756-758 (se retira la parte que da el conjunto entero a cuatro roles, «se reutilice o no el resto del cargador») · MENOR
+10-corte/V5.md:708 · «Deducir la vertical del recurso sin comparar dejaba la defensa apoyada en que la vertical declarada fuera la verdadera» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:303 (la razón está invertida: el problema era tomar la vertical del pedido; la regla en sí coincide) · MENOR
+10-corte/V5.md:1202 · «V5 recrea el enum de permisos sin USER_IMPERSONATE y una migración de datos saca las filas de roles y overrides, en el PR que retira sus lectores» (repetido en l. 1508-1511) · sin soporte (decision-log 01-decision-log.md:6833-6835 y descomposicion.md:544 sólo retiran el permiso; la migración de datos sobre la base es de U1 y sólo para el cobro viejo, 17-autorizacion.md:762-767) · MENOR
+10-corte/V5.md:1239 · «Según descomposicion §3, sólo V6 y V9 esperan a U2» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:623 (desde BR también espera V4 y, por transitividad, de V5 a V9b; ver también :602) · MENOR
+10-corte/V5.md:1274 · «TEST:V5:2: sobre la ARCHIVED, toda operación distinta de ver, exportar y reactivar se rechaza» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:96 (PB12 también se acepta) · BLOQUEA
+10-corte/V5.md:1473 · «TEST:V5:29: las migraciones de V5 recrean el enum sin USER_IMPERSONATE y sacan sus filas de rol y override, sin tocar las demás» · sin soporte (mismo motivo que l. 1202) · MENOR
+10-corte/V6.md:637 · «El dueño no elige cuál ficha cae, tampoco en un downgrade programado» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1262 (DEC-SUB-008 punto 3: se le pide que elija qué conserva; el 📌 de :1300 dice que S38 «aplica la elección de qué conservar»; también HOS-1354/docs/12-suscripcion.md:199) · BLOQUEA
+10-corte/V6.md:1093 · «Sólo PB12 y la acción 23 borran fichas» · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:717 (la fuente habla de las rutas; PB9 también lleva fichas a PURGED) · MENOR
+10-corte/V6.md:1261 · «TEST:V6:23: aplicar migraciones y extras desde cero deja la base sin la tabla de paso» · sin soporte (16-fase-7-del-paraguas.md:159 y 01-decision-log.md:3166: la tabla vive en el SQL de la migración del paso 3 y la borra el 5b; nada dice qué deja una base armada desde cero) · BLOQUEA
+10-corte/V8a.md:335 · «La acción 24 lleva doble firma: la confirma un segundo admin distinto del que la pidió, y hasta esa confirmación la cuenta no se toca» · sin soporte (.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:214 pide motivo y confirmación, no un segundo admin; «doble firma|segundo admin» en el corpus: 0 resultados) · BLOQUEA
+10-corte/V9a.md:183 · «AC:V9a:6: el evento de un acto del dueño guarda además la IP y el agente de usuario de la sesión, append-only» · sin soporte (los campos mínimos son los de .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:53-63; ninguna fuente nombra IP ni user-agent para domain_event) · BLOQUEA
+10-corte/V9a.md:209 · «Un CHECK sobre domain_event rechaza todo evento con instante anterior al del corte» · sin soporte (descomposicion.md:72 y DEC-ARCH-017 punto 6 dicen sólo que lo anterior al corte no se reconstruye; ninguna fuente fija un CHECK) · BLOQUEA
+20-fase-1/V9b.md:113 · «US:V9b:4: que la Fase 1 entre a staging antes de la primera fecha en que podría salir un aviso» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1172 (la fuente dice que se mergea a producción antes de esa fecha) · MENOR
+20-fase-4/V7.md:269 · «AC:V7:11 parte de un admin con "el permiso de alta de Partner"» · sin soporte (NUCLEO/08 §3 no tiene una acción de alta directa) · MENOR
+20-fase-4/V7.md:315 · «V7 saca el formulario, la tabla y la ficha de Partner del panel que leían starts_at/ends_at» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:144 (desde AB y AP, la migración de V6 borra esas columnas «junto con sus lectores del panel») · BLOQUEA
+20-fase-4/V7.md:317 · «Ningún archivo del repositorio nombra starts_at, ends_at ni tier de partners» · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:718 (pide «ni la base ni ningún archivo del panel» para starts_at/ends_at; para tier sólo pide que la página pública y las rutas del socio lean la clave) · BLOQUEA
+20-fase-4/V7.md:338 · «La migración de datos del rol de socio no toca otras filas de role_permission» · sin soporte (criterio derivado que ninguna fuente escribe) · MENOR
+20-fase-4/V7.md:807 · «La página pública y el carrusel contestan 404 sin la clave o con la presencia moderada» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:120 (el carrusel lista sólo a quien tiene la clave; el 404 es de la página) · MENOR
+20-fase-4/V7.md:831 · «El aviso de reclamo sale al aprobar», sin condición · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:270 (sólo sale si el correo ya es de un usuario) · MENOR
+20-fase-4/V7.md:879 · «TEST:V7:4: PP2 en las dos ramas del correo, con el aviso de reclamo emitido» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:269 (si el correo no es de ningún usuario se crea el usuario y se manda la validación, no un aviso de reclamo) · MENOR
+20-fase-4/V7.md:958 · «TEST:V7:16: chequeo sobre todo el repositorio de que ningún archivo nombra starts_at, ends_at ni tier de partners» · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:718 (el mismo alcance agrandado, ahora en el test) · BLOQUEA
+20-fase-4/V7.md:1000 · «TEST:V7:22: un E2E que postula, aprueba desde el panel y reclama» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:70 (el panel de postulaciones es de V8b, que espera a V7) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1-1531 | 218 (76 + 142) | 3 | 7 |
+| 10-corte/V6.md | 1-1416 | 269 (84 + 185) | 2 | 1 |
+| 10-corte/V8a.md | 1-647 | ~60 | 1 | 0 |
+| 10-corte/V9a.md | 1-317 | ~28 | 2 | 0 |
+| 20-fase-1/V9b.md | 1-790 | ~70 | 0 | 1 |
+| 20-fase-4/V7.md | 1-1052 | ~155 | 3 | 6 |
+| 20-fase-4/V8b.md | 1-302 | ~35 | 0 | 0 |
+| **total** | | **~835** | **11** | **15** |
+
+Por categoría:
+- sin soporte: 9 (4 BLOQUEA, 5 MENOR)
+- contradice: 10 (4 BLOQUEA, 6 MENOR)
+- más fuerte: 5 (3 BLOQUEA, 2 MENOR)
+- más débil: 2 (0 BLOQUEA, 2 MENOR)
+
+Nota: V5.md:188 y V5.md:1274 son la misma regla, una en el AC y otra en su TEST. Lo mismo pasa con V5.md:274, 1202 y 1473 (USER_IMPERSONATE) y con V7.md:317 y 958.

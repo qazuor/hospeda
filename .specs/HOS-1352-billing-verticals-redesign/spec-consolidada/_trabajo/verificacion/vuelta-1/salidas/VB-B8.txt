@@ -1,0 +1,74 @@
+# VB-B8 · spec → fuente · zona B8
+
+Rutas de la spec relativas a `s/0a7552ba/`; rutas de fuente relativas a `fuentes/.specs/`.
+
+## Afirmaciones con problema
+
+10-corte/B9a.md:42 · «el piso de todo ancla se acepta sólo si `políticaDePlan(v).vigente` **y `políticaDePlan(v).vendible`**» · más fuerte que HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145 (sólo `vigente`); contradice además HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:781 («lee la vigente, vendible o no») y descomposicion.md:386 (dependencia 12: sólo `vigente`) · BLOQUEA
+
+10-corte/B11.md:55-56 · «la comparación de cobros abre la misma marca (motivo 24) si cobró de menos, para que soporte decida si reclama la diferencia» · contradice HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:187 («si cobró de menos, no se abre marca: va como una línea del resumen») y descomposicion.md:1057 (cláusula 14); la fila fuente descomposicion.md:149 sólo dice «abre el motivo 24 si cobró de más». Contradice además AC:B11:11 de la misma pieza · BLOQUEA
+
+10-corte/B11.md:532-533 · «`provider_link` con `cancelado_visto_en` … nace en `B3`» · contradice HOS-1354-billing-cobro-y-proveedor/descomposicion.md:728 y docs/09-conciliacion.md:283 («la construye `B4`, con la relectura que la escribe en `B11`») · BLOQUEA
+
+10-corte/B11.md:904 · «el barrido se prende con los crons en el paso 3 del corte» · contradice HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152 (paso 3: desplegar «con los crons apagados») y :158 (los crons se prenden en el paso 5) · BLOQUEA
+
+20-fase-3/B10.md:182-190 (AC:B10:12) y 554-559 (TEST:B10:4 lo cubre) · «el primer cobro de un addon recurrente es la parte proporcional de los días que faltan hasta la renovación del plan, y desde la siguiente cobra el precio entero en la misma fecha que el plan» · sin soporte (la fuente sólo dice que el ciclo del addon se alinea al del plan al crearlo: HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2142; ningún capítulo fija un prorrateo, y 06-proveedor.md:51 lo excluye del proveedor) · BLOQUEA
+
+20-fase-3/B12.md:41-42 · «retirar es irreversible: una versión retirada no vuelve a ponerse a la venta, y vender ese plan otra vez exige un plan nuevo (`10` §3.6)» · contradice HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:141 («se vuelve a vender publicando una versión vendible») y HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:208 (la acción 18 incluye «deshacer el retiro»); la fila fuente descomposicion.md:150 no lo dice · BLOQUEA
+
+20-fase-3/B12.md:235-237 (AC:B12:9, primer bloque) y 505-507 (TEST:B12:10) · «ningún monto cambia antes de la fecha del cliente; llegada la fecha el monto se muta; al mensual se le muta en el primer cobro posterior a los 60 días y el falso no recibe mutación antes» · contradice HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478 (📌 BZ de `DEC-MP-002`: el aumento va por `S37`, que muta siete días antes de la fecha) y HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187; el AC y el TEST piden a la vez «sin mutación antes de la fecha» y «mutación siete días antes». (La parte 3 original, decision-log:1412, y la lista descomposicion.md:1058 conservan la frase previa a BZ) · BLOQUEA
+
+10-corte/B8a.md:152-154 (AC:B8a:3) y 524-525 (TEST:B8a:3) · «el `USER` no entra si le queda una principal viva fuera de la exclusión; con la otra principal en `CANCEL_SCHEDULED` sí entra» · más débil que HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161 (la exclusión exige además que no quede «un ancla viva») · MENOR
+
+10-corte/B8a.md:426-427 · «tier: el dueño por `/api/v1/protected/*`, el admin (`S23`) por `/api/v1/admin/*`» · sin soporte (las fuentes no fijan rutas; HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:330-332 y BS lo dejan al PR) · MENOR
+
+10-corte/B9a.md:620-631 (TEST:B9a:15) · «migración sobre datos: filas sembradas antes de aplicar el `UNIQUE` parcial, la migración aplica sin error» · sin soporte (el esquema nace entero en las migraciones de la rama, AD: HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:24; no hay filas previas a la restricción) · MENOR
+
+10-corte/B9a.md:460-462 · «tier admin» de las tres escrituras del grant · sin soporte (rutas sin fijar en la fuente, BS) · MENOR
+
+10-corte/B11.md:347-353 (AC:B11:18) · «un pago retenido por `S19` que ninguna rama alcanzó abre `PAGO_PENDIENTE_SIN_RAMA`» · más fuerte que HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:510-516 (primero se resuelve por la rama que le corresponda; la marca sólo si la rama no es determinable) · MENOR
+
+10-corte/B13a.md:188-192 (AC:B13a:3) · «el aviso de suspensión cumple lo que el criterio de `B13` le pide: lo que pierde como turista, los días de addon de única vez, cómo volver según el método de pago y la promo» · más fuerte que HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1059 (el criterio de `B13` sólo pide «al volver se pierde la promo»; el resto es la fila 10 de 19-superficies.md:118, de `B7` por CA) · MENOR
+
+10-corte/B13a.md:261-262 (AC:B13a:9) · «cada marca muestra todos los pagos colgados con su cantidad, el total y la propuesta» · más fuerte que HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:216 (pagos, cantidad y total «en las que devuelven plata») · MENOR
+
+10-corte/B13a.md:440-441 · «tier `/api/v1/protected/*` para Mi Suscripción y la baja, `/api/v1/admin/*` para el panel» · sin soporte (rutas sin fijar, BS) · MENOR
+
+20-fase-2/B8b.md:219-220 (AC:B8b:8) · «la sucesora nace con fecha de primer cobro posterior al vencimiento de su ventana», sin excepción · más fuerte que HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:135 (excepción: la sucesora de una `SUSPENDED` con tarjeta y preapproval `cancelled` cobra al autorizar) · MENOR
+
+20-fase-2/B8b.md:335-336 (AC:B8b:16) · «arrepentirse es otra mutación más cancelar el descenso, que termina la promo de la fila (`cobros_restantes = 0`) en el mismo acto del pedido» · ambiguo frente a HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:262-266 (lo que escribe `cobros_restantes = 0` es el pedido del descenso, no el arrepentimiento) · MENOR
+
+20-fase-2/B8b.md:566-567 · tiers de las rutas de cambio de plan, pausa y reanudación · sin soporte (BS) · MENOR
+
+20-fase-2/B8b.md:1021-1022 · «lo manual de la fase: el checkout real de un upgrade y el correo del proveedor al cancelar la vieja» · sin soporte (la fuente sólo fija que cada pieza posterior escribe su sección: 16-fase-7-del-paraguas.md:1066-1067) · MENOR
+
+20-fase-2/B9b.md:345-347 · tiers del canje y de las acciones del panel · sin soporte (BS) · MENOR
+
+20-fase-2/B9b.md:620-622 · contenido de la sección manual de la Fase 2 (correo por mutar un monto, por pausar en cortesía, por reanudar al revocar) · sin soporte (ídem 16-fase-7:1066-1067) · MENOR
+
+20-fase-3/B10.md:263-273 (AC:B10:9) · «se cumplen las cláusulas que construye esta pieza», incluyendo las de `S20` (Free Forever) y `S32` (pausa) · contradice la propia nota de LISTA:B10 (B10.md:372-375) y HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1056 (esas cláusulas se ejercen desde el corte en `B9a` y `B7`) · MENOR
+
+20-fase-3/B10.md:450-451 · tiers de la compra y de la acción 20 · sin soporte (BS) · MENOR
+
+20-fase-3/B10.md:674-675 · contenido de la sección manual de la Fase 3 (checkout real de un addon recurrente y una orden real con su devolución) · sin soporte (ídem 16-fase-7:1066-1067) · MENOR
+
+20-fase-3/B12.md:317 · «tier `/api/v1/admin/*`» de la acción 17 · sin soporte (BS) · MENOR
+
+20-fase-3/B12.md:517-518 · contenido de la sección manual (correo del proveedor por la mutación de `S37`) · sin soporte (ídem 16-fase-7:1066-1067) · MENOR
+
+20-fase-3/B13b.md:105-106 (AC:B13b:3) · «la pantalla del editor de la acción 20 es una, compuesta en la app del panel» · sin soporte (la pantalla única compuesta la fija la fuente para los plazos: HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:219; para la acción 20 sólo dice que cada mitad escribe en la suya, nucleo/08-auditoria-y-observabilidad.md:210) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B8a.md | 1-697 | 52 (FILA×2, LISTA×2 con 9 cláusulas, 4 US, 14 AC, 14 TEST, 4 TPZ, secciones) | 0 | 2 |
+| 10-corte/B9a.md | 1-762 | 58 (FILA×2, LISTA×2 con 9 cláusulas, 4 US, 17 AC, 17 TEST, 2 TPZ, modelo/API) | 1 | 2 |
+| 10-corte/B11.md | 1-923 | 80 (FILA con 15 viñetas, LISTA con 20 cláusulas, 3 US, 22 AC, 22 TEST, secciones) | 3 | 1 |
+| 10-corte/B13a.md | 1-747 | 52 (FILA×2, LISTA×2, 5 US, 16 AC, 17 TEST, secciones) | 0 | 3 |
+| 20-fase-2/B8b.md | 1-1058 | 82 (FILA, LISTA, 4 US, 25 AC, 25 TEST, 8 TPZ, 11 filas de UI, secciones) | 0 | 4 |
+| 20-fase-2/B9b.md | 1-655 | 46 (FILA, LISTA, 3 US, 13 AC, 15 TEST, 3 TPZ, 3 filas de UI) | 0 | 2 |
+| 20-fase-3/B10.md | 1-707 | 72 (FILA con 13 viñetas, LISTA con 16 cláusulas, 3 US, 12 AC, 13 TEST, 6 APZ) | 1 | 3 |
+| 20-fase-3/B12.md | 1-551 | 38 (FILA con 6 viñetas, LISTA, 2 US, 9 AC, 10 TEST, 1 TPZ, UI) | 2 | 2 |
+| 20-fase-3/B13b.md | 1-258 | 15 (FILA, LISTA, 2 US, 4 AC, 3 TEST) | 0 | 1 |
+| **total** | | **~495** | **7** | **20** |
