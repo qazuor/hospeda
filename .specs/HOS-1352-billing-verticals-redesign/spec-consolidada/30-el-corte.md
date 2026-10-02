@@ -606,8 +606,8 @@ prueba del corte, que los lee, la escribe después de migrar la herramienta del 
 del sistema nuevo: FASE 5, lote de la aplicación, owner 2026-09-30, B; verificación, `VF5-01`; FASE
 9 vuelta 3, owner 2026-09-30, lote C: la prueba se escribía antes del catálogo que la define,
 `F-8V3A2-001`, `F-8V3A3-001`). **Y antes del 3b se verifican contra la base de producción** las
-condiciones de `G-R3` **y las demás validaciones del panel sobre el catálogo y los plazos**
-(`NUCLEO/02` §1.4 y §1.5; `G-R3` pasó a ser una de ellas, revisión del owner, 2026-09-28, N1;
+condiciones de [G-R3](04-catalogos.md#val-g-r3) **y las demás validaciones del panel sobre el catálogo y los plazos**
+(`NUCLEO/02` §1.4 y §1.5; [G-R3](04-catalogos.md#val-g-r3) pasó a ser una de ellas, revisión del owner, 2026-09-28, N1;
 [VAL:G-R3](04-catalogos.md#val-g-r3)) y el espejo del enum de verticales: si no dan, el corte no
 sigue (FASE 9 vuelta 1, `F-8V1A3-004`).
 
@@ -617,7 +617,7 @@ vuelta 3, lote C). La migración es de [V6](10-corte/V6.md#pieza-v6), el SQL del
 [B3](10-corte/B3.md#pieza-b3) (BG).
 
 **Por qué acá**: el grant del 3b ancla un plan que tiene que existir, y un catálogo que no cumple
-`G-R3` le deja al proceso nuevo una resolución sin fuente.
+[G-R3](04-catalogos.md#val-g-r3) le deja al proceso nuevo una resolución sin fuente.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:8](#ac-corte-8)).
 
@@ -1532,7 +1532,7 @@ PR**, como parte de su gate ([GATE:M1.5](#gate-m1-5)), y **el PR final de la ép
 `success` fechado después del último merge a la rama del paraguas** ([GATE:M2.3](#gate-m2-3)). El
 smoke manual del sistema nuevo no es de la mitad de verticales: es el checklist de arriba, que
 escribe `B13a` (`B/20` §5.1, punto 4). De la lista de lo que hoy se hace a mano, la fuente
-conserva un solo punto, el 7: el **trial** completo —activación, campaña previa, vencimiento,
+conserva un solo punto, el 1: el **trial** completo —activación, campaña previa, vencimiento,
 campaña de recuperación y conversión tardía—.
 
 Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:371, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:373, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:380
@@ -1635,7 +1635,7 @@ Fuente: [PASO:3](#paso-3)
 **AC:CORTE:8** — el catálogo cargado cumple las validaciones antes del 3b
 
 - **Dado** que la migración del paso 3 cargó el catálogo de producción y la versión 1 de los plazos
-- **Cuando** quien opera el corte verifica, contra la base de producción, las condiciones de `G-R3`,
+- **Cuando** quien opera el corte verifica, contra la base de producción, las condiciones de [G-R3](04-catalogos.md#val-g-r3),
   las demás validaciones del panel sobre el catálogo y los plazos, y el espejo del enum de verticales
 - **Entonces** si alguna no da, el corte no sigue al 3b
 
@@ -1835,7 +1835,7 @@ Fuente: [PASO:3](#paso-3), [GATE:M4](#gate-m4)
 
 <a id="test-corte-9"></a>
 **TEST:CORTE:9** — en el ensayo y el día del corte: la verificación del 3a contra la base (las
-validaciones del panel, `G-R3` entre ellas, y el espejo del enum de verticales).
+validaciones del panel, [G-R3](04-catalogos.md#val-g-r3) entre ellas, y el espejo del enum de verticales).
 Tipo: smoke manual
 Etiqueta: staging
 Cubre: [AC:CORTE:8](#ac-corte-8)
@@ -1906,9 +1906,7 @@ Fuente: [GATE:FP.F2](#gate-fp-f2), [GATE:FP.F3](#gate-fp-f3), [GATE:FP.F4](#gate
 
 <a id="test-corte-18"></a>
 **TEST:CORTE:18** — en la revisión previa al merge de cada pieza: ningún escritor declarado sin
-implementar y cada fila `UNKNOWN` en que se apoya con sus dos ramas y una prueba por rama. *(Inferido:
-`DEC-TEST-002` dice que no lo vigila un guard y el contrato de cobertura pide un test de migración
-desde cero, que `BE` no admite para `CORTE`; ver [80-abiertos.md](80-abiertos.md).)*
+implementar y cada fila `UNKNOWN` en que se apoya con sus dos ramas y una prueba por rama.
 Tipo: smoke manual
 Etiqueta: staging
 Cubre: [AC:CORTE:18](#ac-corte-18)

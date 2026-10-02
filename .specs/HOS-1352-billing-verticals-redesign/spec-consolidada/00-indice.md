@@ -23,8 +23,8 @@ la recomendada):
   dos verificaciones ciegas opuestas** —qué falta y qué se inventó—, con canarios, hasta una vuelta
   sin `BLOQUEA`.
 
-Todo sale de las fuentes congeladas en el commit `17f9702675528e00d0981312325bec38bb962113`
-(re-congeladas después de aplicar las letras BK a BX del owner): cada
+Todo sale de las fuentes congeladas en el commit `c7a3fac90070b154e3a811944d06e0de08cba5df`
+(re-congeladas después de aplicar las letras BK a CB del owner): cada
 `Origen:` cita `archivo:línea` en ese SHA, y las herramientas leen las fuentes desde ahí
 (`scripts/comun.py`), nunca del árbol de trabajo.
 
@@ -99,7 +99,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946,
 
 ## Reglas que valen para todas las piezas
 
-Cinco letras del owner del 2026-10-02 fijan cómo se reparte y cómo se cierra el trabajo entre
+Las letras del owner del 2026-10-02 fijan cómo se reparte y cómo se cierra el trabajo entre
 piezas. Se definen en [01-decisiones-vigentes.md](01-decisiones-vigentes.md); acá van en una línea
 cada una, para que quien abre una pieza las tenga a la vista.
 
@@ -107,7 +107,13 @@ cada una, para que quien abre una pieza las tenga a la vista.
   ([BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)): la anterior escribe su rama entera y
   la llamada contra una interfaz interna, y la posterior trae la implementación sin tocar código
   anterior; si lo llamado ya existe cuando llega la anterior, la anterior lo hace entero; un
-  criterio que necesita la implementación real va al *«Lista cuando»* de la posterior.
+  criterio que necesita la implementación real va al *«Lista cuando»* de la posterior. **Vale
+  también para una lectura** ([BY](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-by),
+  [DEC-ARCH-017#📌8](01-decisiones-vigentes.md#dec-arch-017-p8)): la guarda de `S15` (*«ningún pago
+  colgado sin resolver»*) y el predicado (f) de `G-R1-F`, de `B3`, leen
+  `reconciliation_mark_payment`, que nace en `B5`; `B3` los escribe contra una interfaz interna, y
+  `B5` trae la implementación sobre su tabla y prueba el rechazo con filas sembradas, con ese
+  criterio en su *«Lista cuando»*.
 - **Qué pieza crea una tabla que usan dos piezas del corte**
   ([BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn)): la primera pieza del grafo que la
   escribe o la referencia, con todas sus restricciones; si una `FK` suya apunta a una tabla que nace
@@ -130,7 +136,13 @@ cada una, para que quien abre una pieza las tenga a la vista.
   Linear, las credenciales—: **los propone el PR de la pieza dueña siguiendo lo escrito del repo, los
   aprueba la revisión de contexto fresco del momento 1** (y el owner en el PR cuando es texto al
   cliente o un permiso nuevo) **y quedan escritos en la sección de la pieza en esta spec al
-  mergear**. No entra lo que es regla comercial ni lo que cambia comportamiento.
+  mergear**. No entra lo que es regla comercial ni lo que cambia comportamiento. **Los defaults de
+  esa opción valen** ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): el monto del
+  pago chico del 4b lo aprueba el owner antes del ensayo, como el del 5c; las credenciales van en
+  variables de entorno de la sesión de quien opera, nunca versionadas; cada pieza posterior escribe
+  la sección de su fase en el checklist de smoke, con el formato de `B13a`; las listas que viven en
+  el código las saca el PR del código o del registro y las lista en su descripción; y los labels de
+  Linear son `kind-spec` más las `area-*` de cada fila.
 - **Las mediciones de producción que una pieza necesita**
   ([BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt)): las corre esa pieza con
   `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y deja el número en el
@@ -139,7 +151,31 @@ cada una, para que quien abre una pieza las tenga a la vista.
   `partners` con `owner_user_id` repetido, y `U1` las del rol de dueño de comercio, sus permisos y
   su tabla de contactos.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7977, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8100, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603
+Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrollan en ellas:
+
+- **El aumento de precio a un cliente ya anclado**
+  ([BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz),
+  [DEC-MP-002#📌3](01-decisiones-vigentes.md#dec-mp-002-p3)) es una migración a la versión nueva,
+  por `S37` y `S38`, con el motivo *«aumento»*: la fecha y los contactos son los del plazo 11 (no el
+  12), sin la cohorte `PARA_RESOLVER` y conservando la promo viva, porque el monto esperado ya la
+  descuenta. El cliente termina en la versión cuyo precio paga. Llega con
+  [B12](20-fase-3/B12.md#pieza-b12).
+- **La suspensión y el Turista VIP**
+  ([CA](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-ca),
+  [DEC-ARCH-017#📌8](01-decisiones-vigentes.md#dec-arch-017-p8)): [B7](10-corte/B7.md#pieza-b7)
+  construye el aviso de suspensión que nombra lo que la persona pierde como turista y suma a `S7` la
+  cláusula espejo de la de `S2` (BP): si al regularizar el plan vuelve a heredar Turista VIP, cancela
+  el VIP pago, sin reembolso y con el correo antes; [B13a](10-corte/B13a.md#pieza-b13a) construye la
+  advertencia en la pantalla de compra de Turista VIP de quien está suspendido. Sin flechas nuevas.
+- **El caché del conjunto efectivo**
+  ([CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb),
+  [DEC-AUTH-001#📌2](01-decisiones-vigentes.md#dec-auth-001-p2)) vive en el Redis que la API ya usa,
+  no en la memoria del proceso; si Redis no responde, se lee la resolución en vivo; y un contador de
+  entradas sospechosas va en los logs estructurados. Lo construye [V3](10-corte/V3.md#pieza-v3).
+
+Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7977, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8100, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7989, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8122, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6669
 
 ## Cómo leer un archivo de pieza
 
@@ -640,8 +676,8 @@ también el punto donde el contrato deja de ser una definición y pasa a tener u
 paso 5.
 
 *(La fuente conserva también el grafo anterior a la partición del MVP, con `V8` y `V9` enteras; el
-vigente es éste. Que `U2` entre en paralelo con `V1`–`V3` y no `V1`–`V5` sale de que `V4` la espera
-desde BR: inferido.)*
+vigente es éste. Que `U2` entre en paralelo con `V1`–`V3`, y antes de `V4`, lo dice la fuente desde
+BR, con el residuo corregido en la segunda vuelta del triage.)*
 
 Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:607, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:621, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:622, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:623, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:624, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:625, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:627, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:638, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:643, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:645
 
@@ -1118,8 +1154,8 @@ comentario con exit code 0. Qué hace fallar a cada uno está en su definición,
 **Once NO es el total**: el catálogo del capítulo `20` §2 lista **veintiuno** (con `G18`: FASE 5,
 lote de la aplicación, owner 2026-09-30, E; con `G19`: FASES 6 y 7, pase de la FASE 6, owner
 2026-09-30, H) (recontado el 2026-09-28 sobre la tabla: decía veinte sin
-[G-R9](04-catalogos.md#guard-g-r9); sale `G-R5` por C14 y entra `G14` por N6; **y `G-R3` y
-`G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
+[G-R9](04-catalogos.md#guard-g-r9); sale `G-R5` por C14 y entra `G14` por N6; **y
+[G-R3](04-catalogos.md#val-g-r3) y `G-R5-B` pasan a ser validaciones del panel**, por N1 y C9) —el decimonoveno es
 [G-R2-C](04-catalogos.md#guard-g-r2-c) (owner 2026-09-25; FASE 9 completa, 4e), y el vigésimo,
 `G13`, que vino de `B/20` §2—, y los **diez** que no están en esta lista son los `G-R*` —los racimos
 de la FASE 9 y sus **tres** referencias cruzadas con billing (sale `G-R5`, C14)—, que se numeran
@@ -1170,9 +1206,8 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:419, .spec
   y el reparto en el corte y en las cuatro fases de
   [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017).)*
 - **Cuáles son las claves de entitlement y de limit de cada vertical.** Es configuración: acá está
-  que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia y
-  `enforcementStrategy` — no cuál es. *(El capítulo 15 le suma un cuarto atributo, la clase; ver
-  [80-abiertos.md](80-abiertos.md), `V/docs/15-entitlements-y-limits.md`.)*
+  que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia de agregación,
+  `enforcementStrategy` y clase (`V/docs/15` §3.4) — no cuál es.
 - **Cerrado** (revisión del owner, 2026-09-28, C4): si el mes de una cuota corre por calendario o
   por aniversario, que seguía abierto desde [DEC-ENT-002](01-decisiones-vigentes.md#dec-ent-002),
   corre por la fecha del ciclo de cada persona, también en anual y en la prueba gratis (`15` §7).
@@ -1200,7 +1235,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:419, .spec
   ([DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006)), sobre Mercado Pago
   ([DEC-MP-005](01-decisiones-vigentes.md#dec-mp-005)).
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:448, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:450, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:451, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:455, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:457, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:460, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:468, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:473
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:448, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:450, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:451, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:452, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:455, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:457, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:460, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:468, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:473
 
 ## La épica de billing (`HOS-1354`): el diseño que reemplaza a su `spec.md`
 
@@ -1354,9 +1389,9 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:131, .specs/HOS-1354-b
 | **la pausa** | es la **nativa del proveedor**, en **meses enteros**, y los días no usados del ciclo en curso se pierden: con ciclos enteros el cliente vuelve el mismo día del mes, así que lo perdido se compensa con lo que gana al volver. **El reloj que la reanuda es nuestro** ([DEC-SUB-010](01-decisiones-vigentes.md#dec-sub-010)) |
 | **la cortesía temporal** | se implementa **pausando** en el proveedor y sosteniendo el servicio de nuestro lado. Es la única de las cuatro estrategias medidas que **no mueve un peso** ([DEC-GRANT-003](01-decisiones-vigentes.md#dec-grant-003)) |
 | **cada addon recurrente** | es **una autorización aparte**, no una línea del monto del plan. Subir el monto toca plata cada vez, en el punto exacto donde el proveedor acepta sin aplicar, y esa mutación **no emite aviso** ([DEC-ADDON-002](01-decisiones-vigentes.md#dec-addon-002)) |
-| **el cambio de precio** | se muta el monto de la autorización vigente; el aviso previo se cumple **de nuestro lado** ([DEC-MP-001](01-decisiones-vigentes.md#dec-mp-001)). **Ningún precio cambia hasta el momento 5** ([GATE:M5](30-el-corte.md#gate-m5)): los precios del corte son los vigentes hoy, los carga el [paso 3a](30-el-corte.md#paso-3a) y no se cambian durante el corte; desde ahí la acción 19 rige con la mecánica de [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), y el aviso y la mutación a los ya anclados llegan con `B12` ([BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm)) |
+| **el cambio de precio** | se muta el monto de la autorización vigente; el aviso previo se cumple **de nuestro lado** ([DEC-MP-001](01-decisiones-vigentes.md#dec-mp-001)). **Ningún precio cambia hasta el momento 5** ([GATE:M5](30-el-corte.md#gate-m5)): los precios del corte son los vigentes hoy, los carga el [paso 3a](30-el-corte.md#paso-3a) y no se cambian durante el corte; desde ahí la acción 19 rige con la mecánica de [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), y el aviso y la mutación a los ya anclados llegan con `B12` ([BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm)), como una migración a la versión nueva por `S37` y `S38` con el motivo *«aumento»* ([BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)) |
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:143, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:147, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:148, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:150
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:143, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:147, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:148, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:150, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478
 
 #### Nunca se le pide un trial al proveedor
 
@@ -1469,19 +1504,21 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:219, .specs/HOS-1354-b
 
 **Recontadas** con `contar-filas-de-la-matriz.py` (FASE 9 completa, salida 3 de `DEC-METH-004`;
 último recuento en los cruces de la aplicación de la FASE 5, 2026-09-30): **117 filas — 63
-`VERIFIED`, 16 `PARTIALLY_SUPPORTED`, 24 `NOT_SUPPORTED`, 14 `UNKNOWN`**. Las mediciones del 30/09
-cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a `PARTIALLY_SUPPORTED`; **`EX-49`**, la
-lista del seudónimo del correo, **es de verticales** (`V/02` §2.2;
-[MP:EX-49](04-catalogos.md#mp-ex-49)) y no va en esta tabla; `EX-52`, `EX-53` y `WH-6` salieron el
-29/09 (mediciones de los dos canales), y `EX-54` no tiene fila en ella (revisión del owner, casos
-vecinos, 2026-09-29, caso 34). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro
+`VERIFIED`, 16 `PARTIALLY_SUPPORTED`, 24 `NOT_SUPPORTED`, 14 `UNKNOWN`**. De las catorce,
+**`EX-49`**, la lista del seudónimo del correo, **es de verticales** (`V/02` §2.2;
+[MP:EX-49](04-catalogos.md#mp-ex-49)) y no va en esta tabla: **se listan las trece de billing**.
+Las mediciones del 30/09 cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a
+`PARTIALLY_SUPPORTED`, así que [MP:EX-57](04-catalogos.md#mp-ex-57) y
+[MP:EX-59](04-catalogos.md#mp-ex-59) salieron de la tabla; `EX-52`, `EX-53` y `WH-6` salieron el
+29/09 (mediciones de los dos canales). De las ocho de antes cerraron `RN-2` y `GR-3` (el 22/09: el cobro
 fallido **sí** se fabricó, en producción), `WH-5` (`VERIFIED`) y `EX-1` (`PARTIALLY_SUPPORTED`);
-`RN-3` ya no es `UNKNOWN` pero sigue condicionando el grace, y `GR-1` salió el 2026-09-26. Las filas
+`RN-3` pasó a `VERIFIED` y queda como nota de `GR-2`, porque sigue condicionando el grace, y `GR-1`
+salió el 2026-09-26. Las filas
 se definen en [04-catalogos.md](04-catalogos.md); acá, qué condiciona cada una:
 
 | fila | qué condiciona |
 |---|---|
-| [MP:RN-3](04-catalogos.md#mp-rn-3) · [MP:GR-2](04-catalogos.md#mp-gr-2) | la recuperación tras un cobro fallido y el pago tardío después de suspender (§22). Las lee el grace de `B7`; la cita de `RN-3` que usa [DEC-SUB-019](01-decisiones-vigentes.md#dec-sub-019) se lee *«observado, no registrado»* (su 📌 del 2026-09-25) |
+| [MP:GR-2](04-catalogos.md#mp-gr-2) *(con [MP:RN-3](04-catalogos.md#mp-rn-3) como nota: pasó a `VERIFIED`)* | la recuperación tras un cobro fallido y el pago tardío después de suspender (§22). Las lee el grace de `B7`; la cita de `RN-3` que usa [DEC-SUB-019](01-decisiones-vigentes.md#dec-sub-019) se lee *«observado, no registrado»* (su 📌 del 2026-09-25) |
 | [MP:GR-1](04-catalogos.md#mp-gr-1) | **`VERIFIED` el 2026-09-26** (sonda 49): un pago dentro de la ventana cierra el ciclo fallido, y cambiar el medio dispara un reintento en el momento que cobra con el nuevo. [DEC-SUB-021](01-decisiones-vigentes.md#dec-sub-021) deja de estar condicionada y la pantalla puede decir que al cambiar la tarjeta se reintenta el cobro |
 | [MP:PA-6](04-catalogos.md#mp-pa-6) | si el proveedor cancela el preapproval ante cualquier primer rechazo. **No decide** [DEC-SUB-022](01-decisiones-vigentes.md#dec-sub-022): decide **cuánto dura** el grace de la sucesora de quien venía pagando, y el barrido lo acota a un día (owner 2026-09-25, 3c) |
 | [MP:RC-8](04-catalogos.md#mp-rc-8) | qué estado lee el pago en un contracargo. **Fuente documental**: [DEC-SUB-020](01-decisiones-vigentes.md#dec-sub-020) fija qué hacemos al leerlo, no cómo se comporta el proveedor |
@@ -1494,20 +1531,13 @@ se definen en [04-catalogos.md](04-catalogos.md); acá, qué condiciona cada una
 | [MP:EX-47](04-catalogos.md#mp-ex-47) | si un registro de cobro ya creado cobra el monto viejo o el nuevo cuando la mutación del preapproval cae en medio. Condiciona la comparación del importe cobrado contra el esperado (`B/09` §3, `B/14` §2.4; `F-8V2B3-001`, `R20`), que es de **B11**. **No bloquea**: si cobra el viejo, lo ve el motivo 24 cuando la mutación bajó el monto, y la línea del resumen del cobro de menos cuando lo subió (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-f`). **Se mide en sandbox antes de `B11`, fuera del paso 0** (FASE 5, owner 2026-09-30, simplificación del corte; S-61) |
 | [MP:EX-48](04-catalogos.md#mp-ex-48) | qué campo del pago que aprobó un registro de cobro en un reintento, leído por id, trae el instante de esa aprobación, distinto del `date_created` del registro. **No se mide, por decisión** (FASE 5, owner 2026-09-30, simplificación del corte, lote C; S-57): su único sujeto era la ventana del corte, que salió. Sigue `UNKNOWN` |
 | [MP:EX-50](04-catalogos.md#mp-ex-50) | cuántas suscripciones anuales del sistema viejo siguen vivas el día del corte. **No se mide, por decisión** (FASE 5, owner 2026-09-30, simplificación del corte; S-58): la segunda corrida del detector salió, y el owner ya dio el hecho, cero anuales vivas. Sigue `UNKNOWN` |
-| [MP:EX-57](04-catalogos.md#mp-ex-57) | si una orden de `/v1/orders` se encuentra por su `external_reference` sin conocer su id. Condiciona la búsqueda por el identificador del pedido de la comprobación de órdenes pagadas (`B/09` §3) y el motivo 23 sin id (FASE 9 vuelta 3, lote E); si no se puede, esa población queda sin detector |
-| [MP:EX-59](04-catalogos.md#mp-ex-59) | si, con el `GET` del preapproval trayendo `payer_email` vacío, otra lectura trae el correo del pagador. **Sujeto retirado**: el detector del titular que sólo conoce el proveedor salió (FASE 5, owner 2026-09-30, simplificación del corte; S-38, S-62); la fila de la matriz no cambia de estado |
+| [MP:EX-54](04-catalogos.md#mp-ex-54) | el tercer correo de la migración de un plan retirado (`B/10` §3.7, [DEC-SUB-023](01-decisiones-vigentes.md#dec-sub-023)). **No se mide, por decisión** (`06-mp-validation-matrix.md`, `EX-54`) |
 
 **La pregunta del capítulo 13 se contestó con el reloj del proveedor**
 ([DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006)), así que las filas del cobro fallido **siguen
 gobernando el diseño del grace**, como `DEC-MP-006` dejó escrito.
 
-*(La fuente se contradice en el conteo: el encabezado dice «quince filas», el recuento da 14
-`UNKNOWN` en toda la matriz y el texto habla de «dieciséis» y de «las quince de billing»; además
-`EX-57` figura cerrada `VERIFIED` y en la tabla, y `EX-59` pasada a `PARTIALLY_SUPPORTED`. Se
-transcriben las filas que la tabla vigente lista; el estado de cada una es el de
-[04-catalogos.md](04-catalogos.md).)*
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:249, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:255, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:257, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:262, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:264, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:265, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:266, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:268, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:270, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:271, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:272, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:273, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:274, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:276, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:278, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:283
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:249, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:255, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:257, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:262, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:264, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:265, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:266, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:268, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:270, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:271, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:272, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:273, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:274, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:276, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:278, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:279, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:283
 
 #### El riesgo de plataforma
 

@@ -4,7 +4,7 @@ Lo que las fuentes **declaran no cerrado**, y las preguntas al owner que dejó l
 spec. **Un abierto no es un criterio**: acá no hay US, AC ni tests ([AL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-al));
 cuando el owner contesta, la respuesta se registra en el log y en el ítem que corresponde, y el
 abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
-`17f9702675528e00d0981312325bec38bb962113`. Abreviaturas de ruta: `D/` es
+`c7a3fac90070b154e3a811944d06e0de08cba5df`. Abreviaturas de ruta: `D/` es
 `.specs/HOS-1352-billing-verticals-redesign/docs/`, `NUCLEO/` es `D/nucleo/`, `V/` es
 `.specs/HOS-1353-verticales-capacidades-y-autorizacion/` y `B/` es
 `.specs/HOS-1354-billing-cobro-y-proveedor/`.
@@ -12,30 +12,34 @@ abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
 ## 1. Lo que la propuesta del corte no pudo verificar
 
 `D/41-corte-del-mvp/10-decisiones-del-owner.md`, *«Lo que la propuesta no pudo verificar (sigue
-abierto)»* (línea 183), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
+abierto)»* (línea 197), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
 abierto:
 
 1. Si `partners` tiene filas en producción: decide si el `UNIQUE` parcial sobre `owner_user_id` de
-   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 185) **Cómo se
+   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 199) **Cómo se
    contesta lo cerró [BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt)**: la pieza que lo
    necesita mide con `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y
    deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el
    número antes del merge. Una salida vacía de `hops psql` no es un cero: se repite. Lo que sigue
    abierto es el número. (línea 145)
 2. La duración del trial y los plazos de retención, que fija el owner antes del merge de `V6`.
-   (línea 186; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
+   (línea 200; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
    sin valor escrito está vacío) **Y el plazo 19**, la ventana `N` del resumen de conciliación
    ([BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu)): **cerrado por
    [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) cuándo se fija**, antes del merge
    de `B2` y no de `B11`, porque la versión 1 de los plazos falla con una clave vacía sin
    excepciones; lo que sigue abierto es el valor. (líneas 146 y 157)
-3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 187) **Lo que se
+3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 201) **Lo que se
    hace cuando una pieza anterior llama a algo que construye una posterior lo cerró
    [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)** (la anterior escribe su rama
-   entera y llama por interfaz; la posterior trae la implementación). (línea 137)
-4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 188)
-5. Si la baja self-service tiene una exigencia legal con fecha. (línea 189)
-6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 190)
+   entera y llama por interfaz; la posterior trae la implementación). (línea 137) **Y
+   [BY](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-by) la extendió a una lectura**: la
+   guarda de `S15` y el predicado (f) de `G-R1-F`, de `B3`, leen `reconciliation_mark_payment`, que
+   nace en `B5`; `B3` los escribe contra una interfaz interna y `B5` trae la implementación, con el
+   criterio en su *«Lista cuando»*. (línea 168)
+4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 202)
+5. Si la baja self-service tiene una exigencia legal con fecha. (línea 203)
+6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 204)
 
 ## 2. Las filas `UNKNOWN` de la matriz de Mercado Pago
 
@@ -536,13 +540,110 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
 
 ## 8. Abiertos de la redacción
 
-Las preguntas al owner que dejaron los redactores de esta spec (los archivos `_trabajo/abiertos/*.md`), con su letra cuando el orquestador la asigne.
+Las preguntas al owner que dejaron los redactores de esta spec (los archivos
+`_trabajo/abiertos/*.md`). **Hoy no queda ninguna pregunta de la redacción abierta**: las del triage de la primera
+pasada las contestaron las letras BK a BX, y las de la segunda, BY a CB
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md`, líneas 136 a 147, 156, 157 y 168 a 171). Lo
+único vivo son **tres datos operativos**, con su dueño y su momento, abajo. Lo demás se deja
+listado como cerrado, con quien lo cerró, para no reabrirlo.
 
 <!-- abiertos-redaccion -->
 
+### Los de la primera pasada
+
+Los 55 abiertos de `_trabajo/abiertos/g1-*.md` a `g9-*.md`, con la clasificación del triage
+(`_trabajo/triage/vuelta-1/triage.json`, sobre `f80c0f2715`, y la re-verificación de
+`_trabajo/triage/vuelta-2/triage.json`, sobre `17f9702675`, que manda cuando existe):
+
+| abierto | archivo | cómo se cerró, o si sigue vivo |
+|---|---|---|
+| AB-g1-1 · Las cuatro decisiones `SUPERSEDED EN PARTE` no tienen adjudicación de su parte muerta | `g1-decisiones.md`:6 | [BK](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bk) |
+| AB-g1-2 · `DEC-ARCH-017#📌1` sigue diciendo que promos y cortesías las crea `B9a` | `g1-decisiones.md`:36 | residuo de la fuente: corregido por adjudicación (triage, vuelta 1) |
+| AB-g1-3 · Las decisiones «precisadas por otra decisión» no tienen su parte superada marcada | `g1-decisiones.md`:53 | [BK](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bk) |
+| AB-g2-1 · La prosa sin ítem de inventario no cuenta para la red R17 | `g2-nucleo-contrato.md`:8 | no es pregunta al owner: herramienta (`trazar.py`) |
+| AB-g2-2 · Los valores de los cinco plazos sin valor escrito | `g2-nucleo-contrato.md`:42 | **vivo, dato operativo**: ver abajo, *«Los de la segunda pasada»* |
+| AB-g2-3 · No hay plantilla para los correos inmediatos a `SUPER_ADMIN` | `g2-nucleo-contrato.md`:74 | [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br) |
+| AB-g3-1 · `M8` dice que no tiene fila en la matriz, y la matriz ya la tiene (`EX-51`) | `g3-catalogos.md`:6 | residuo de la fuente: corregido en la fuente (triage, vuelta 1) |
+| AB-g4-1 · Los tipos de test mínimos de cuatro ítems del corte chocan con lo que admite `CORTE` | `g4-corte-indice.md`:5 | no es pregunta al owner: herramienta, arreglada en `cobertura.py` desde `17f9702675`; la nota *«Inferido»* de [TEST:CORTE:18](30-el-corte.md#test-corte-18) salió |
+| AB-g4-2 · El ensayo no dice si recorre la rama de aborto | `g4-corte-indice.md`:31 | [BQ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bq) |
+| AB-g4-3 · Con qué etiqueta va el smoke de la medición de `EX-49` | `g4-corte-indice.md`:52 | [BQ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bq) |
+| AB-g5-1 · Las etiquetas `kind-*`/`area-*` de las piezas en Linear | `g5-u-v1-v4.md`:9 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): `kind-spec` más las `area-*` de cada fila |
+| AB-g5-2 · El nombre de la tabla del outbox y el nombre neutro de la bitácora | `g5-u-v1-v4.md`:28 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g5-3 · El plazo de vencimiento de `processing` y la frecuencia del envío | `g5-u-v1-v4.md`:44 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g5-4 · A dónde se mueven las filas vivas del rol de dueño de comercio, sus permisos y la tabla de contactos | `g5-u-v1-v4.md`:59 | [BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt): lo mide `U1` antes de su merge y deja el número en el PR |
+| AB-g5-5 · La lista nominal de las diez variables que sólo usa el sistema viejo | `g5-u-v1-v4.md`:76 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g5-6 · Cuáles son *«las tres tablas»* de `is_featured` y `featured_by_entitlement` | `g5-u-v1-v4.md`:89 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g5-7 · Las credenciales del script del corte y el monto del pago chico | `g5-u-v1-v4.md`:101 | las credenciales, [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): variables de entorno de la sesión de quien opera, nunca versionadas; **el monto del pago chico sigue vivo como dato operativo**: ver abajo |
+| AB-g5-8 · Qué pieza arma con `db:migrate` las bases de desarrollo, de integración y del e2e nocturno | `g5-u-v1-v4.md`:118 | resuelto por las fuentes: `V1` arma con `db:migrate` las bases de desarrollo y de tests (triage, vuelta 2) |
+| AB-g5-9 · Dónde vive el script TypeScript que genera el SQL del catálogo y de la tabla de claves | `g5-u-v1-v4.md`:135 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs): lo propone el PR de `V1` |
+| AB-g5-10 · Las rutas, permisos y códigos de error de las acciones 18 y 11 | `g5-u-v1-v4.md`:147 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g5-11 · Dónde vive el caché del conjunto efectivo y cómo se observa una entrada sospechosa | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb): en el Redis que la API ya usa, lectura en vivo si Redis no responde, y un contador de entradas sospechosas en los logs estructurados |
+| AB-g5-12 · Los mínimos de tipos de test del mapa de cobertura que no tienen una lectura en la pieza | `g5-u-v1-v4.md`:175 | no es pregunta al owner: herramienta (`cobertura.py` deduce tipos de migración del texto de `DEC-ARCH-006`, `DEC-ENT-006` y `DEC-TEST-001#📌1`; sólo avisa, R18 ⚠) |
+| AB-g6-1 · V5 · El carril del retiro de `USER_IMPERSONATE` | `g6-v5-v9.md`:7 | resuelto por las fuentes: `V5` lo saca de la base, con el principio del lote 1 I (`F5-AUT-023`; triage, vuelta 2) |
+| AB-g6-2 · V8a · El código de error del rechazo de la acción 24 por precondición | `g6-v5-v9.md`:31 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g6-3 · V7 · ¿El aviso de reclamo y la comunicación del rechazo van por el outbox común de `U2`? | `g6-v5-v9.md`:57 | [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br), por transitividad: `U2 → V4 → V5 → V7` |
+| AB-g6-4 · V9a · Qué pieza crea `domain_event`, el registro donde `V9a` escribe los actos del dueño | `g6-v5-v9.md`:69 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |
+| AB-g6-5 · V9b · Quién engancha el aviso «al archivar», que sale con el acto de `PB4`/`PB5` (de `V6`, al corte) | `g6-v5-v9.md`:88 | [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) |
+| AB-g6-6 · V9b · Cómo se calcula «la primera fecha en que un aviso de retención podría salir» (gate de la Fase 1) | `g6-v5-v9.md`:108 | [BV](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv) |
+| AB-g6-7 · V6 · Los valores de los cinco plazos de verticales sin valor escrito | `g6-v5-v9.md`:128 | **vivo, dato operativo**: ver abajo, *«Los de la segunda pasada»* |
+| AB-g6-8 · V6 · Si `partners` tiene filas en producción (seguridad del `UNIQUE` parcial) | `g6-v5-v9.md`:150 | [BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt): lo mide `V6` antes de su merge y deja el número en el PR (§1, punto 1) |
+| AB-g6-9 · V6 · El código de error al rechazar un plazo que contradice a otro | `g6-v5-v9.md`:168 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g7-1 · El código de error del rechazo de Turista VIP heredado (`B3`, `S1`) | `g7-b1-b3.md`:8 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g7-2 · Cuándo y por qué transición se cancela el Turista VIP heredado (`B3`, `DEC-ENT-004`) | `g7-b1-b3.md`:26 | [BP](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bp) |
+| AB-g7-3 · Tablas de `B5` que `B3` escribe o referencia antes de que `B5` exista | `g7-b1-b3.md`:47 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |
+| AB-g7-4 · Si el cuerpo de la rama de sucesión de `S1` se escribe en `B3` | `g7-b1-b3.md`:71 | [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) |
+| AB-g7-5 · Qué rama de `S14` lee el esquema de promos y cortesías | `g7-b1-b3.md`:87 | resuelto por las fuentes: `S14` lee la cortesía diferida (motivo 12) y las promos vivas por el monto esperado (motivo 24) (triage, vuelta 2) |
+| AB-g7-6 · *«Compra»* en el modelo de addons: ¿tabla o identidad? | `g7-b1-b3.md`:101 | resuelto por las fuentes: la *«compra»* es la identidad sobre `addon_instance` (triage, vuelta 2) |
+| AB-g7-7 · Rutas concretas y cadencia del job de la ventana (`B2`, `B3`) | `g7-b1-b3.md`:113 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g7-8 · *«Fijar el precio de un ciclo»*: ¿edita la versión o publica otra? (`B2`) | `g7-b1-b3.md`:128 | [BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm) |
+| AB-g7-9 · Quién aplica al corte el aumento en su fecha efectiva (`B2`) | `g7-b1-b3.md`:144 | [BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm) |
+| AB-g7-10 · Un precio por debajo del piso del proveedor (`B2`) | `g7-b1-b3.md`:159 | [BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm) |
+| AB-g7-11 · El *«Lista cuando»* de `B1` necesita el grace de `B7` (`B1`) | `g7-b1-b3.md`:169 | [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) |
+| AB-g7-12 · AC:B1:12 compara contra una tabla que crea `B3` (`B1`) | `g7-b1-b3.md`:182 | no es pregunta al owner: herramienta (`cobertura.py`, tipos de test) |
+| AB-g7-13 · Qué variables de entorno de Mercado Pago son (`B1`) | `g7-b1-b3.md`:195 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g8-1 · Las llamadas de `B5` y `B7` a transiciones de `B8b` (`S18`, `S31`, `S38`) en el corte | `g8-b4-b7.md`:8 | [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) |
+| AB-g8-2 · Qué pieza escribe la migración del índice parcial de `refund` sobre la orden | `g8-b4-b7.md`:53 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |
+| AB-g8-3 · La mitad `fichaPurgada` de la cuarta comprobación del barrido | `g8-b4-b7.md`:79 | [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) |
+| AB-g8-4 · La ruta, el permiso y los códigos de error de las acciones 3, 4, 8, 13 y 14 | `g8-b4-b7.md`:107 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g8-5 · Dónde se persiste `coberturaPerdidaEn` | `g8-b4-b7.md`:134 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g9-1 · Rutas y códigos de error | `g9-b8-b13.md`:9 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+| AB-g9-2 · Las filas del `B/19` §4 que avisan actos de piezas posteriores | `g9-b8-b13.md`:37 | residuo de la fuente: corregido en la fuente (triage, vuelta 1; el mapeo por fila, inferido) |
+| AB-g9-3 · Quién escribe la extensión del checklist de smoke de cada fase | `g9-b8-b13.md`:61 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): cada pieza posterior escribe la sección de su fase en el checklist de smoke, con el formato de `B13a` |
+| AB-g9-4 · Cómo se revoca una cortesía temporal | `g9-b8-b13.md`:80 | [BO](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bo) |
+| AB-g9-5 · La forma de la ventana `N` del correo agregado | `g9-b8-b13.md`:100 | [BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu) |
+| AB-g9-6 · El texto de los avisos que la fuente no fija literal | `g9-b8-b13.md`:116 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
+
 ### Los de la segunda pasada
 
-Los abiertos que dejó la segunda pasada de redacción (`_trabajo/abiertos/pasada2-*.md`), fundidos por el
-orquestador cuando existan.
+Los abiertos que dejó la segunda pasada de redacción (`_trabajo/abiertos/pasada2-*.md`).
 
 <!-- abiertos-pasada2 -->
+
+**Vivos: tres datos operativos, con su dueño y su momento** (triage, vuelta 2, *«Datos operativos
+con dueño y momento»*). No son preguntas de diseño: la regla de cada uno ya está escrita, y falta el
+número.
+
+| dato | dueño | antes de | dónde está la regla |
+|---|---|---|---|
+| los valores de [PLAZO:3](02-nucleo.md#plazo-3), [PLAZO:4](02-nucleo.md#plazo-4), [PLAZO:7](02-nucleo.md#plazo-7), [PLAZO:8](02-nucleo.md#plazo-8) y [PLAZO:9](02-nucleo.md#plazo-9), de verticales | el owner | el merge de [V6](10-corte/V6.md#pieza-v6) | `02-nucleo.md` §4.2: la migración estructural del corte falla si alguno está vacío; §1, punto 2 |
+| el valor de [PLAZO:19](02-nucleo.md#plazo-19), la ventana `N` del resumen de conciliación, de billing | el owner | el merge de [B2](10-corte/B2.md#pieza-b2) | [BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu), [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx): la versión 1 de los plazos falla con una clave vacía, sin excepciones |
+| el monto del pago chico del [paso 4b](30-el-corte.md#paso-4b) | el owner | el ensayo del corte | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)), como el del 5c |
+
+**Cerrados por el lote BY a CB, o por las fuentes**:
+
+| abierto | archivo | cómo se cerró |
+|---|---|---|
+| AB2-g7-1 · la guarda de `S15` (`B3`) lee `reconciliation_mark_payment`, que nace en `B5` | `pasada2-g7.md` §1 | [BY](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-by): `B3` la escribe, con el predicado (f) de `G-R1-F`, contra una interfaz interna; `B5` trae la implementación y prueba el rechazo con filas sembradas, en su *«Lista cuando»* |
+| AB2-g9-1 · por qué camino llega el aumento a los anclados en `B12` | `pasada2-g9.md` | [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz): una migración a la versión nueva por `S37` y `S38`, con el motivo *«aumento»* y el plazo 11, sin la cohorte `PARA_RESOLVER` y conservando la promo viva |
+| AB2-g5-1 · qué pieza construye las dos superficies de la suspensión de `V/15` §6.3 | `pasada2-g5-u-v1-v4.md` §1 | [CA](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-ca): el aviso de suspensión y la cláusula espejo de `S7`, `B7`; la advertencia en la compra de Turista VIP, `B13a` |
+| AB-g5-11 · dónde vive el caché del conjunto efectivo (seguía abierto en `pasada2-g5-u-v1-v4.md`) | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb) |
+| los tipos de test de `CORTE` (seguía abierto en `pasada2-g4-corte-indice.md`) | `g4-corte-indice.md`:5 | herramienta, arreglada en `cobertura.py` desde `17f9702675` |
+| el carril de `USER_IMPERSONATE` y los correos de `V7` (seguían abiertos en `pasada2-g6.md`) | `g6-v5-v9.md`:7, :57 | resueltos por las fuentes y por [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br), como en la tabla de arriba |
+| los puntos 8, 9 y 12 de `g5` (seguían abiertos en `pasada2-g5-u-v1-v4.md`) | `g5-u-v1-v4.md`:118, :135, :175 | como en la tabla de arriba |
+
+### Los de la tercera pasada
+
+Los abiertos que deje la tercera pasada de redacción (`_trabajo/abiertos/pasada3-*.md`), fundidos
+cuando existan. Al cerrar la pasada de este archivo no había ninguno.
+
+<!-- abiertos-pasada3 -->

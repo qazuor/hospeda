@@ -11,7 +11,9 @@ orquestador las tenga al fundir `80-abiertos.md` §8:
    `D/16-fase-7-del-paraguas.md:455`, `:1103`; `D/01-decision-log.md:7790`). `TEST:CORTE:6` ya no es
    inferido y cubre el nuevo `AC:CORTE:19`. No hay que fundirlo como abierto.
 2. **«Los tipos de test mínimos de cuatro ítems del corte chocan con lo que admite `CORTE`» sigue
-   abierto**: ninguna letra de BK a BX lo toca.
+   abierto**: ninguna letra de BK a BX lo toca. *(Pasada 3: **cerrado**. Lo arregló `cobertura.py` en
+   `17f9702675` (triage, vuelta 2, AB-g4-1), y la nota «Inferido» de `TEST:CORTE:18` salió de
+   `30-el-corte.md`.)*
 
 Una observación que no es pregunta (no la anoto como abierto porque el botón está fuera de alcance
 hasta la consulta legal y su unidad la decide el owner cuando lo meta adentro): `B/descomposicion.md:1129`

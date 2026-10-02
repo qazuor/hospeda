@@ -1685,8 +1685,10 @@ del MVP, owner 2026-10-02, BU: **su valor lo fija el owner antes del merge de
 que la versión 1 falla con un plazo vacío vale sin excepciones) (FASE 9 vuelta 3: el 16 por el lote
 K, owner 2026-09-30; el 17 y el 18 por `F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla
 ni unidad; recontados sobre la tabla). **Los cinco sin valor
-escrito —[PLAZO:3](#plazo-3), [PLAZO:4](#plazo-4), [PLAZO:7](#plazo-7), [PLAZO:8](#plazo-8) y
-[PLAZO:9](#plazo-9)— los fija el owner antes del merge de [V6](10-corte/V6.md#pieza-v6)** (FASE 5,
+escrito de verticales —[PLAZO:3](#plazo-3), [PLAZO:4](#plazo-4), [PLAZO:7](#plazo-7),
+[PLAZO:8](#plazo-8) y [PLAZO:9](#plazo-9)— los fija el owner antes del merge de
+[V6](10-corte/V6.md#pieza-v6)**, y el [PLAZO:19](#plazo-19), de billing, también sin valor escrito,
+**antes del merge de [B2](10-corte/B2.md#pieza-b2)** (BU, BX) (FASE 5,
 owner 2026-09-30, lote 3 D; [DEC-DATA-008#📌5](01-decisiones-vigentes.md#dec-data-008-p5): la
 migración que los necesita corre en el e2e de cada PR desde que se mergea, no desde el ensayo), **y la
 migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos,
@@ -1695,8 +1697,7 @@ fijó el owner (FASE 9 vuelta 3, owner 2026-09-30, lote R;
 [DEC-DATA-008#📌4](01-decisiones-vigentes.md#dec-data-008-p4)), y ninguno de los tres está medido: son
 los valores iniciales, y los cambia [ACC:22](#acc-22) como a cualquier plazo.
 
-**La versión 1 de los plazos de cada mitad, con los dieciocho valores (así lo dice la fuente, que
-no recontó con el [PLAZO:19](#plazo-19); anotado como error de fuente), nace en la migración
+**La versión 1 de los plazos de cada mitad, con los diecinueve valores, nace en la migración
 estructural del paso 3 del corte** (`16-fase-7…` §4.2; [30-el-corte.md](30-el-corte.md)), antes que la
 escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica (la prueba la escribe
 después la herramienta del corte de `V6`: FASE 5, owner 2026-09-30, lote 2 D; FASE 5, lote de la
