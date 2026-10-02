@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV y AW a AY (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY y AZ (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -83,6 +83,15 @@ Todas son la recomendada (opción 1).
 | AW | cómo se agrupan en fases las ocho piezas posteriores (AE fija una rama épica por fase, no cuántas ni cuáles) | 1 | sí | **cuatro fases posteriores, en este orden**: **Fase 1** = `V9b` sola (tiene que estar mergeada antes del primer aviso de retención, AC); **Fase 2** = `B8b` + `B9b`; **Fase 3** = `B10` + `B13b` + `B12`; **Fase 4** = `V7` + `V8b`. Respeta el grafo (`V9b` y `B9b` antes de `B10`; `B13b` antes de `B12`; `V7` antes de `V8b`). Las otras opciones eran una sola fase con las ocho (`V9b` atada a la rama más grande) y una fase por pieza (ocho congelamientos y ocho 5c) |
 | AX | qué es un ítem «normativo» para AL (*«todo ítem vivo cubierto por ≥1 AC»*) | 1 | sí | **exigen AC**: las decisiones (menos las de metodología, `DEC-METH-*`), los 📌, las filas de pieza, los *«Lista cuando»*, los guards, las invariantes, las transiciones, las acciones administrativas, los plazos, los motivos, los candados, `RP`, `M`, los pasos del corte, los gates y los traslados del corte (esquema, transición → pieza, instancia de addon → pieza); **sólo citables**: la matriz, las letras del owner y la lista de piezas |
 | AY | qué se hace con los restos que la adjudicación encontró en las fuentes y con la cifra de `MIXTO` | 1 | sí | **se corrigen los restos** (en `B/descomposicion.md`: el modelo de addons es de `B3` por AV; `S20` va a `B9a` por AS, y `S21` y `A5` a `B5` por AV) **y un 📌 sobre `DEC-METH-019`** asienta las 38 filas `MIXTO` (no 33) y AX como criterio de AL; AW, que precisa AE, va en un 📌 sobre `DEC-ARCH-017`, que es la decisión de AE |
+
+## Lote AZ (2026-10-01)
+
+Respuesta del owner, 2026-10-01, a la pregunta que dejó la aplicación de AX en las herramientas de la
+spec consolidada (tres familias del inventario que AX no nombraba). Es la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| AZ | si las transiciones que no existen (`PROH`), las validaciones del panel que conservan nombre de guard (`VAL`: `G-R3` y `G-R5-B`) y las dependencias entre épicas (`DEP`) son normativas para AL | 1 | sí | **las tres exigen AC**: se suman al criterio de «normativo» de AX. Las otras opciones eran que sólo `PROH` lo exigiera (una validación del panel o una lectura entre épicas quedaba sin criterio verificable) o ninguna (chocaba con AN, que pide un test por cada transición prohibida) |
 
 ## Resultado del corte
 
