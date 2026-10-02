@@ -247,10 +247,10 @@ migración ya anunciada movería una fecha que el cliente ya recibió.
 abierto en `V/03` §9, ⚠️ punto 7): el archivado escribe la fecha de borrado que anuncia, y `PB9` no
 borra antes de esa fecha (`V/02` §2.5, `V/03` §9).
 
-**Quién lo construye**: la tabla de plazos de cada mitad y la operación de cambiarlos, `V9` en
-verticales y `B2` en billing; cada reloj guarda su versión en la unidad que lo construye; ~~la
+**Quién lo construye**: la tabla de plazos de cada mitad y la operación de cambiarlos, ~~`V9`~~ **`V6`** en
+verticales (corte del MVP, owner 2026-10-01, BD) y `B2` en billing; cada reloj guarda su versión en la unidad que lo construye; ~~la
 pantalla, `V8` y `B13`~~ **una sola pantalla de plazos, compuesta en la app del panel**
-(revisión del owner, casos vecinos, 2026-09-29, caso 47), que lee las dos mitades por la API sin importar ninguna (revisión del owner, casos vecinos, 2026-09-29, caso H-F): `V8` y `B13` construyen cada uno la parte de su mitad, y cada
+(revisión del owner, casos vecinos, 2026-09-29, caso 47), que lee las dos mitades por la API sin importar ninguna (revisión del owner, casos vecinos, 2026-09-29, caso H-F): ~~`V8` y `B13`~~ **`V8a` y `B13a`** construyen cada uno la parte de su mitad *(corte del MVP, owner 2026-10-01, Z; inferido que la pantalla es de las mitades *a*, lo marco; residuo corregido el 2026-10-02)*, y cada
 cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
 ---
