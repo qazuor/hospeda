@@ -3,7 +3,7 @@ title: "Corte del MVP · decisiones del owner"
 linear: HOS-1352
 statusSource: linear
 created: 2026-10-01
-updated: 2026-10-01
+updated: 2026-10-02
 status: CURRENT
 fase: 10
 ---
@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH y BI a BJ (abajo). Todas son la recomendada; BI quedó reemplazada por BJ. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ y BK a BV (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM está pendiente de una aclaración. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -122,6 +122,29 @@ rechaza»*. BI se presentó con una premisa errónea y la reemplaza BJ, que es l
 |---|---|---|---|---|
 | ~~BI~~ | quién rechaza la compra de Turista VIP mientras el plan vigente lo hereda | ~~1~~ | — | **reemplazada por BJ: la premisa era errónea, el checkout no es de `B5`**. BI ponía la dueña en `B5`, pero comprar Turista VIP es elegir un plan de la vertical Turista, es decir `S1` (`B/03` §3.2), y `S1` es de `B3` (`B/descomposicion.md` §2.12); `B5` es el registro del dinero y no tiene checkout |
 | BJ | qué pieza rechaza la compra de Turista VIP mientras el plan vigente lo hereda | 1 | sí | **`B3`**: `S1` suma la guarda *«el `user` no tiene un plan vigente que herede Turista VIP»*; en «también», **`B13a`** (la pricing no lo ofrece, `B/19` §4) y **`V3`** (la resolución de capacidades contesta si el plan vigente lo hereda, `V/15` §6.3). **El código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija. Las otras opciones eran `B5`, que no tiene el alta, y una guarda doble en `S1` y en el asiento del pago |
+
+## Lote BK a BV (2026-10-02)
+
+Respuestas del owner, 2026-10-02, a las preguntas que dejó el triage de los abiertos de la spec
+consolidada (55 `AB` de `spec-consolidada/_trabajo/abiertos/` y 37 `EF` de los informes de los
+redactores, leídos sobre `f80c0f2715`). Todas son la recomendada (opción 1), salvo BM, que queda
+pendiente de una aclaración. Los 22 residuos que el mismo triage verificó no son preguntas: se
+corrigen sin elección, 18 en la fuente y 4 por adjudicación.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| BK | qué se hace con el texto superado que ningún 📌 tacha fuera de lo que AI nombró: las cuatro decisiones `SUPERSEDED EN PARTE`, las precisadas *«por otra decisión»* (siete pares, con el *«cinco consumidores»* de `DEC-DATA-004`) y la fila `EX-46` de la matriz | 1 | sí | **se amplía el punto 7 de `DEC-METH-019` a esas tres familias**: un veredicto `PARCIAL` con cita y hash, la consolidada omite lo muerto con «[…]» y su nota, y el owner revisa sólo lo que cambie el sentido de una regla (como en AI). Precisa AI. Las otras opciones eran dejar el texto entero con el *Estado* arriba (quien implementa lee lo que ya no va) o reescribir esas decisiones en la consolidada (redactar diseño, que el punto 8 prohíbe) |
+| BL | qué hace una pieza anterior que llama a algo que construye una posterior (`S18`/`S31`/`S38` desde `B5` y `B7`, la sucesión de `S1`, `A6` desde la cuarta comprobación, el aviso *«al archivar»*, el grace del punto 8 de `B1`) | 1 | sí | **la pieza anterior escribe su rama entera y la llamada contra una interfaz interna, y la posterior trae la implementación sin tocar código anterior; si lo llamado ya existe cuando llega la anterior, la anterior lo hace entero; un criterio que necesita la implementación real va al *«Lista cuando»* de la posterior**. Aplicada: `B5` y `B7` llaman a `S18`/`S31`/`S38` por interfaz y `B8b` la implementa; `B3` escribe la rama de sucesión de `S1` sin ruta y `B8b` agrega la ruta; `B5` escribe la cuarta comprobación y llama a `A6` por interfaz, y `B10` la implementa; `V6` encola el aviso *«al archivar»* con su plantilla en `PB4`/`PB5` y `V9b` suma los dos avisos previos y el job; el punto 8 de `B1` pasa al *«Lista cuando»* de `B7`. Sin flechas nuevas. Las otras opciones eran que la posterior agregue la llamada (rompe *«aditiva»*) o mover al corte lo llamado (contradice Z y AA) |
+| BM | el cambio de precio al corte (acción 19) | **pendiente** | — | **pendiente de una aclaración**: el owner contestó *«no vamos a cambiar precios en el corte»*, que no elige entre las opciones; no se aplica hasta aclararlo |
+| BN | qué pieza crea una tabla que usan dos piezas del corte (`manual_payment`, `idempotency_key`, `reconciliation_mark_payment`, el índice parcial de `refund`, `domain_event`) | 1 | sí | **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV) |
+| BO | cómo se revoca una cortesía temporal (acción 1) | 1 | sí | **revocar es reanudar antes del fin por un acto del `SUPER_ADMIN`: un tercer evento de `S10`, con `fin_real` y la relectura, sin reembolso y con el aviso a la persona; lo agrega `B9b`, con su fila en `B/19` §4**. Sin flechas nuevas. Las otras opciones eran una transición propia (duplica `S10`) o sacar *«revocar»* de la acción 1 |
+| BP | cuándo se corta el Turista VIP que el plan nuevo hereda (`DEC-ENT-004`) | 1 | sí | **en `S2`, cuando el plan comercial pasa a `ACTIVE`, con una cláusula nueva que cancela la suscripción de Turista VIP, con el correo antes**: es la única que cumple *«el servicio no se interrumpe»*. Precisa BC. Las otras opciones eran `S1` (si la ventana vence queda sin VIP y sin plan) o el primer pago acreditado (un evento de `B5`, contra BC) |
+| BQ | qué cubre el ensayo del corte: Q1, si recorre la rama de aborto; Q2, con qué etiqueta se registra la medición de `EX-49` | Q1: 1 · Q2: 1 | sí | **Q1: el ensayo recorre la rama de aborto una vez, en `staging`, sobre la misma copia**: una falla provocada después del 1b, y se verifica restaurar el 2b, la imagen vieja, los inversos (b) y (c) y la regla del 0b puesta hasta el reintento. **Q2: la medición de `EX-49` lleva la etiqueta `prod`**: lee datos de producción, no muta nada y es gate del corte real. Las otras opciones eran que la rama corra por primera vez el día del corte, y la etiqueta `staging` |
+| BR | los correos: la flecha de `U2` y las filas que faltan en el catálogo | 1 | sí | **dos flechas, `U2→B3` y `U2→V4`, que por transitividad cubren a las demás piezas que encolan; y dos filas en el catálogo de correos: *«reembolso de revocación fallido»* y *«cobro duplicado detectado»*, transaccionales, no suprimibles, a `SUPER_ADMIN` y al producirse el evento, con `B11` como dueña** (`DEC-OBS-001`). Las otras opciones eran una sola fila genérica o ninguna flecha |
+| BS | regla para los detalles que las fuentes dejan a la implementación (rutas, permisos, `error.code`, nombres de tablas auxiliares, cadencias, listas que viven en el código, textos de aviso, labels, credenciales) | 1 | sí | **lo propone el PR de la pieza dueña siguiendo lo escrito del repo, lo aprueba la revisión de contexto fresco del momento 1 (y el owner en el PR cuando es texto al cliente o un permiso nuevo), y queda escrito en la sección de la pieza en la consolidada al mergear**. No entra lo que es regla comercial ni lo que cambia comportamiento. Precisa `DEC-METH-019`. Las otras opciones eran una tabla única antes de la primera pieza o una convención sin registro |
+| BT | las mediciones de producción que nadie corrió (`partners` con `owner_user_id` repetido; las filas vivas del rol de dueño de comercio, sus permisos y su tabla de contactos) | 1 | sí | **la pieza que las necesita mide con `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el número antes del merge**. Una salida vacía de `hops psql` no es un cero: se repite. Las otras opciones eran confiar en las mediciones viejas o que la migración decida sola |
+| BU | dónde vive la ventana `N` del resumen de conciliación (`DEC-OBS-001`) | 1 | sí | **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9) |
+| BV | la fecha límite de la Fase 1 (`V9b`) | 1 | sí | **límite = instante del corte + plazo 1 − plazo 4, con la versión 1 de los plazos; la Fase 1 se mergea a producción antes de esa fecha, y el gate de la fase la verifica contra ese número**. Vale con BL, porque el aviso *«al archivar»* ya sale desde `V6`. Las otras opciones eran esa fecha menos un margen fijo, o decidirla a ojo |
 
 ## Resultado del corte
 
