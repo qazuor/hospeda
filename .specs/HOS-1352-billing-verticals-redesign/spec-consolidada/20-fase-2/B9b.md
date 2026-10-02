@@ -282,7 +282,7 @@ rechaza el canje siguiente y no toca los ya canjeados** (§2.10; corte del MVP, 
 relectura, sin reembolso, la suscripción vuelve a `ACTIVE` y el aviso dice qué día se le cobra**
 (corte del MVP, owner 2026-10-02, BO).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1067
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1072
 
 ## Reglas
 
@@ -320,17 +320,17 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1067
 <a id="tpz-s30"></a>
 **TPZ:S30** — `S30` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:869
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:874
 
 <a id="tpz-s34"></a>
 **TPZ:S34** — `S34` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:873
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:878
 
 <a id="tpz-s35"></a>
 **TPZ:S35** — `S35` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:874
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:879
 
 ## Modelo de datos y migraciones
 

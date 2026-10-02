@@ -1969,4 +1969,4 @@ su pieza dueña.
 dispositivo no se guardan) **no está en la lista**: se cubre con **un AC negativo en `V4`** (owner,
 BB). La lista es cerrada: agregarle o sacarle un ítem es una decisión del owner, no una edición.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8131
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146

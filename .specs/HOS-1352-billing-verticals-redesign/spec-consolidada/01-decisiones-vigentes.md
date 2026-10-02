@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `69cbe793607a797e861f240f550c8be39e1d11a0` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `591034c665b56336d49eab894a4e4ce3c38d5abe` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -6368,7 +6368,7 @@ Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [B4](10-corte/B4.md#pieza-b4) (implementa) · [V9a](10-corte/V9a.md#pieza-v9a) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa).
 Tests mínimos: migración desde cero; migración sobre datos; smoke manual · prod.
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌; **y otra vez el mismo día**, CH y CI: `provider_link.cancelado_visto_en` la escribe toda relectura que ve `cancelled`, por una interfaz que llama `B3` e implementa `B4`, y `B11` espera a `B4`; ver su duodécimo 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -6444,6 +6444,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 - → ver [📌9](#dec-arch-017-p9).
 - → ver [📌10](#dec-arch-017-p10).
 - → ver [📌11](#dec-arch-017-p11).
+- → ver [📌12](#dec-arch-017-p12).
 
 <a id="dec-arch-017-p1"></a>
 
@@ -6713,6 +6714,32 @@ de `B2`. **CG**: la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *�
 de la baja; `B8a` conserva sus pruebas de integración. Sin flechas nuevas: `B3` ya sigue a `B2` y
 `B13a` a `B8a`. Dónde: `B/descomposicion.md` §2, §2.12 y §4 (`B2`, `B3`, `B8a`, `B13a`);
 `B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG.
+
+<a id="dec-arch-017-p12"></a>
+
+#### 📌12 de DEC-ARCH-017
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8047
+
+Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
+También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [B11](10-corte/B11.md#pieza-b11) (implementa).
+Tests mínimos: migración desde cero.
+
+📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CH y CI, las dos la 1)**:
+quién escribe `provider_link.cancelado_visto_en`, y cuándo puede llegar la pieza que la lee.
+**CH**: `B/09` §3 decía *«toda relectura que ve `cancelled`, sea del barrido, del handler o de una
+transición»* y el reparto de `B/descomposicion.md` §2.11, de la misma letra Z, se la daba sólo al
+barrido de `B11`; el handler y `S16` son de `B3`, que va antes que `B4`, la pieza que crea la
+columna. **Vale el capítulo**: `B3` (el handler y `S16`) llama a una interfaz interna, *«anotar la
+cancelación vista»*; **`B4` la implementa al crear la columna**, con su caso sobre filas
+sembradas, y **el barrido de `B11` la usa también**. Es BL aplicada, y el reparto suma a `B3` como
+pieza que llama. **CI**: el grafo de §3 hacía esperar a `B11` sólo a `B5`, y `B11` escribe y lee
+esa columna; **flecha nueva `B4 → B11`**. Las otras eran BL para `B11` con interfaces de escritura
+y de lectura (antes de `B4` la exención leería *«no vista»* y abriría marcas falsas) o mover la
+columna a `B3` (reabre AP y AV). No mueve el camino crítico del corte, donde `B11` no está.
+Recontado con `41-corte-del-mvp/`: 30 piezas, 22 al corte, 64 flechas —la de CI, `B4 → B11`— y
+cero violaciones. Dónde: `B/descomposicion.md` §2, §2.11, §2.12, §3 y §4 (`B3`, `B4`, `B11`);
+`41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CH y CI.
 
 ## Área MIG
 
@@ -10801,7 +10828,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8050
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8065
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10872,7 +10899,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 #### 📌1 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8109
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8124
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10897,7 +10924,7 @@ de las fases posteriores (AW) precisa AE y va en el 📌 de `DEC-ARCH-017`
 
 #### 📌2 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8125
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8140
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10912,7 +10939,7 @@ sólo citable sigue siendo la matriz, las letras del owner y la lista de piezas
 
 #### 📌3 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8131
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10936,7 +10963,7 @@ las 30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE).
 
 #### 📌4 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8161
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10967,7 +10994,7 @@ BS y BT.
 
 #### 📌5 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8168
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8183
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -14082,3 +14109,25 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **en `B13a`**, la primera pieza del corte con la API, la web y la pantalla de la baja juntas; **`B8a` conserva sus pruebas de integración**. Precisa el punto 3 de `B/20` §5.1, escrito antes de partir `B8` y `B13` (Z). Las otras opciones eran la prueba en `B8a` contra la API sin pantalla (no ejercita la pantalla que el e2e reemplaza del smoke manual) o las dos (dos pruebas del mismo flujo)
+
+#### Lote CH y CI (2026-10-02)
+
+<a id="own-41-corte-del-mvp-t15-ch"></a>
+**Letra CH**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:213
+
+- **Pregunta**: quién escribe `provider_link.cancelado_visto_en`, si `B/09` §3 dice *«la primera relectura que ve `cancelled`, sea del barrido, del handler o de una transición»* y el reparto de `B/descomposicion.md` §2.11, de la misma letra Z, le da la escritura sólo al barrido de `B11`; el handler y `S16` son de `B3`, que se mergea antes de que `B4` cree la columna
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **la escribe toda relectura por id que ve `cancelled`, como dice el capítulo**: `B3` (el handler y `S16`) llama a una interfaz interna, *«anotar la cancelación vista»*; **`B4` la implementa al crear la columna**, con su caso sobre filas sembradas, y **el barrido de `B11` la usa también**. Es BL aplicada; el reparto de §2.11 suma a `B3` como pieza que llama. El instante queda exacto. Las otras opciones eran que la escribiera sólo el barrido, tachando la regla de `B/09` §3 (hasta un día `puedeCobrarle` contesta `sí` sobre un preapproval ya cancelado y el plazo 16 arranca tarde) o que `B11` metiera la escritura en el handler y en `S16` al llegar (toca código de `B3`: contradice BL y el punto 2 de `DEC-ARCH-017`)
+
+<a id="own-41-corte-del-mvp-t15-ci"></a>
+**Letra CI**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:214
+
+- **Pregunta**: si `B11` espera a `B4`, si el grafo de `B/descomposicion.md` §3 hace depender a `B11` sólo de `B5` y `B11` escribe y lee `provider_link.cancelado_visto_en`, la columna que crea `B4` (hueco que ya traía el reparto de Z y que CH dejó a la vista)
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **flecha nueva `B4 → B11`: `B11` espera a `B4`**, en los dos grafos de §3, en la tabla de paralelos y en las flechas que se escriben explícitas. Costo nulo en el camino crítico: `B11` no está en el del corte. Las otras opciones eran aplicar BL a `B11` con interfaces de escritura y de lectura (si `B11` corre antes que `B4`, la exención lee *«no vista»* y abre marcas falsas) o mover la columna a `B3` (reabre AP y AV)

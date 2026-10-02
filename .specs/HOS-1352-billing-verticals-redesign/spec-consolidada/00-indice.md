@@ -175,7 +175,7 @@ Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrolla
 
 Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8004, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8168, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6684
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8161, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8004, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8183, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6684
 
 ## Cómo leer un archivo de pieza
 
@@ -712,7 +712,7 @@ están listas: una unidad lo está cuando todas sus dependencias están hechas.
 [la épica de billing](https://claude.ai/artifact/Bp6dJstfwqoMzFTLP11BPZ) ·
 [el contrato de cobertura](https://claude.ai/artifact/KgHuCs8uTVEtNeuYfuLLJQ).
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1077, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1079, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1087, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1103
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1082, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1084, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1092, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1108
 
 ## La épica de verticales (`HOS-1353`): el diseño que reemplaza a su `spec.md`
 

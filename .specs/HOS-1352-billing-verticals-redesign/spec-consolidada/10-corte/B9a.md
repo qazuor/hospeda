@@ -1023,7 +1023,7 @@ Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
 Las cláusulas 4 (la mitad del grant) y 7 son de `B9a`; las demás, de
 [B9b](../20-fase-2/B9b.md#lista-b9b).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1065
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070
 
 <a id="lista-b9a"></a>
 
@@ -1039,7 +1039,7 @@ del MVP, owner 2026-10-01, AQ). *(Lo sembrado, con el mismo precedente que la fu
 la rama 4 de `12` §5.3 por la interfaz que escribió `B7`, sin cambiar su código** (era del criterio
 de `B7`, que llega antes: corte del MVP, owner 2026-10-02, BL).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1066
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1071
 
 ## Reglas
 
@@ -1078,12 +1078,12 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1066
 <a id="tpz-s13"></a>
 **TPZ:S13** — `S13` → `B9a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861
 
 <a id="tpz-s20"></a>
 **TPZ:S20** — `S20` → `B9a` (AS).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:863
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:868
 
 ## Modelo de datos y migraciones
 
