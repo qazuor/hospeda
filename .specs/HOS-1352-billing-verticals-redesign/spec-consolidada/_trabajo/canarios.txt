@@ -51,5 +51,13 @@
 ✓ R19  exit 1 · un PARCIAL cuyo texto muerto sigue en el cuerpo de su bloque
 ✓ pasa exit 0 · el mismo PARCIAL omitido con «[…]» y citado sólo en su nota pasa
 ✓ pasa exit 0 · un tramo que el veredicto da por vivo («…» sigue) pasa
+✓ R20  exit 1 · un tramo tachado de una fuente, vivo en la spec
+✓ pasa exit 0 · el mismo tramo en 90-retirados pasa
+✓ pasa exit 0 · el mismo tramo tachado en la spec pasa
+✓ R21  exit 1 · un «:» seguido directo de Origen: (sección sin cuerpo)
+✓ R17  exit 1 · ese Origen sin cuerpo no cubre su sección
+✓ pasa exit 0 · con un cuerpo entre el «:» y el Origen, la sección queda cubierta y pasa
+✓ pasa exit 0 · un AC que remite a `B/12` §3.2 sin enunciar la regla pasa, con aviso
+✓ pasa exit 0 · el mismo AC con la regla enunciada pasa sin aviso (la regla no es ciega)
 
-52 canarios · 0 fallas
+60 canarios · 0 fallas
