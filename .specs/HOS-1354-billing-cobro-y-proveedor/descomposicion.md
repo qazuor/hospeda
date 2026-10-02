@@ -164,7 +164,7 @@ que comparte con B8) · `S20`, `S21`, **`S32`** y **`S33`** → **B10** · ~~**`
 **`S29`** → **B5**. **Hasta esta pasada `S25` y `S29` no figuraban en ninguna fila** —`S25` sólo se
 nombraba de paso en el §2.8, y `S29` llegó con el reparto del 13 el 2026-09-24—, y `S32`–`S35` no
 existían. Las cuatro nuevas van con la unidad donde vive lo que tocan: `S32`/`S33` pausan filas de
-complemento, cuyo modelo es de B10 (la misma razón que `S20`/`S21`); `S34`/`S35` parten de
+complemento, cuyo modelo ~~es de B10~~ lo crea `B3` (corte del MVP, owner 2026-10-01, AV) (la misma razón que `S20`/`S21`); `S34`/`S35` parten de
 `PAUSED · COURTESY`, que no existe antes de que B9 emita cortesías. **Es asignación propuesta en
 esta pasada, no decisión del owner.**
 **Con el corte del MVP** (corte del MVP, owner 2026-10-01, Z): `S11` y `S12` → **`B8a`**; el resto de las de `B8` → **`B8b`**
