@@ -1,5 +1,5 @@
 {
-    "sha": "fed4c735baeba90ade87fc6715fd4ef8adbd1241",
+    "sha": "f80c0f27154ca023d97a016707d823ff826cf76a",
     "items": [
         {
             "fuente": "DEC",
@@ -4102,8 +4102,8 @@
             "hash": "686b20f6afc6782da89da0617512dc23dead5778bbae3b802d5d4720ef55c0f7",
             "estado": "ACCEPTED",
             "precisada": true,
-            "pins": 4,
-            "fin": 7884
+            "pins": 5,
+            "fin": 7895
         },
         {
             "fuente": "PIN",
@@ -4154,23 +4154,35 @@
             "motivo": null
         },
         {
+            "fuente": "PIN",
+            "id": "DEC-ARCH-017#📌5",
+            "local": "📌5",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7882,
+            "hash": "ce0e12bb6186dfbc867ae4176665d9d14089700ba1ede1fb7ad2e8d2f6e9f4bf",
+            "estado": "VIGENTE",
+            "dec": "DEC-ARCH-017",
+            "forma": "bullet",
+            "motivo": null
+        },
+        {
             "fuente": "DEC",
             "id": "DEC-METH-019",
             "local": "DEC-METH-019",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7885,
+            "linea": 7896,
             "hash": "dae2218345cf87d0e2736503f74d4752e886a2775fadcff4a6b250bd329719d4",
             "estado": "ACCEPTED",
             "precisada": true,
             "pins": 3,
-            "fin": 7983
+            "fin": 7994
         },
         {
             "fuente": "PIN",
             "id": "DEC-METH-019#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7944,
+            "linea": 7955,
             "hash": "ae56f02ddd5496a5046f16b6bd1fb39f25e4c1278efd6e89fe25970733cd0a3f",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -4182,7 +4194,7 @@
             "id": "DEC-METH-019#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7960,
+            "linea": 7971,
             "hash": "3b1746c037f0dff5a2dea3d56ed9efd30975f7c414e114af27f1340de45a8f56",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -4194,7 +4206,7 @@
             "id": "DEC-METH-019#📌3",
             "local": "📌3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7966,
+            "linea": 7977,
             "hash": "38e8f47df4951f8867b9bb1b73a1190f22ef48aeb68751cb8bf6ac6c471a7928",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -5803,7 +5815,7 @@
             "local": "B3",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 137,
-            "hash": "2dec9f8a2c041dedf98ffe265423ad39f248525e06b05499ec4530373c3ec66f",
+            "hash": "0e50e682faca7fac2ad2e28753c5b71d3b2997fcbb1abed26149ac56361a1a92",
             "estado": "VIVO",
             "origen": false,
             "mitades": []
@@ -6863,7 +6875,7 @@
             "local": "B3",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 1016,
-            "hash": "743cd6d143e83d6395aa0e07fb52e1f82873c27c281af73c87c68da655742e0f",
+            "hash": "471f1ef42bcd81b5b7b82f96a5d83494851a289181e8bb479ef030ae398df030",
             "estado": "VIVO",
             "estado_fila": "VIVO"
         },
@@ -12230,6 +12242,24 @@
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
             "linea": 112,
             "hash": "5ca733bcb437d6db7cd19c8d151bc5c530e6ef255986b7039f5d518e1bd4148b",
+            "estado": "VIVO"
+        },
+        {
+            "fuente": "OWN",
+            "id": "OWN:41-corte-del-mvp:t8:BI",
+            "local": "BI",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+            "linea": 123,
+            "hash": "8d8840d5df66f3119908d6e8e540d6915bc0aa8b2c0ab61de3a69815763e6c1e",
+            "estado": "MUERTO"
+        },
+        {
+            "fuente": "OWN",
+            "id": "OWN:41-corte-del-mvp:t8:BJ",
+            "local": "BJ",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+            "linea": 124,
+            "hash": "fb1e000e20723668f853350b48172ba901c33c22701ec6194b41eb289b08d492",
             "estado": "VIVO"
         },
         {

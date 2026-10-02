@@ -1,5 +1,5 @@
 {
-    "sha": "fed4c735baeba90ade87fc6715fd4ef8adbd1241",
+    "sha": "f80c0f27154ca023d97a016707d823ff826cf76a",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {

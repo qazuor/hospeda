@@ -1,5 +1,5 @@
 {
-    "sha": "fed4c735baeba90ade87fc6715fd4ef8adbd1241",
+    "sha": "f80c0f27154ca023d97a016707d823ff826cf76a",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 623,
+        "01-decisiones-vigentes.md": 625,
         "02-nucleo.md": 95,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -70,7 +70,7 @@
         "20-fase-4/V7.md": 3,
         "20-fase-4/V8b.md": 3,
         "30-el-corte.md": 38,
-        "90-retirados.md": 39,
+        "90-retirados.md": 40,
         "red (SEC)": 676
     },
     "archivos_pendientes": [],
@@ -2166,6 +2166,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-017#📌4": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-ARCH-017#📌5": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7274,6 +7280,18 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "OWN:41-corte-del-mvp:t7:BH": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t8:BI": {
+            "fuente": "OWN",
+            "estado": "MUERTO",
+            "veredicto": null,
+            "destino": "90-retirados.md"
+        },
+        "OWN:41-corte-del-mvp:t8:BJ": {
             "fuente": "OWN",
             "estado": "VIVO",
             "veredicto": null,
