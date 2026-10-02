@@ -33,6 +33,7 @@ B02 = B + 'docs/02-modelo-de-datos.md'
 N08 = D + 'nucleo/08-auditoria-y-observabilidad.md'
 D06 = D + '06-mp-validation-matrix.md'
 OWN41 = D + '41-corte-del-mvp/10-decisiones-del-owner.md'
+OWN40 = D + '40-congelamiento-y-ci/10-decisiones-del-owner.md'
 
 C8 = (B03, None, '(La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.)')
 AV = (OWN41, None, 'las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia')
@@ -42,6 +43,7 @@ DOCE = (LOG, 7556, 'son **doce**, no once como dicen los 📌 de O-A y P-C de es
 ACC25 = (N08, None, '**Es la vigesimosexta**')
 MERGE_V6 = (LOG, 7390, 'fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como')
 SIMPL = 'simplificación del corte (FASE 5, owner 2026-09-30)'
+VENTANA = 60  # lines: how far a re-freeze may move a cited line before the quote must be unique
 
 # (id, verdict, cita in the item's own line or None = the item's text after its marker,
 #  efecto, muerto, [evidence (path, line|None, cita)], base, razon)
@@ -90,6 +92,8 @@ MIXTO = [
     ('ACC:1', V_, '**uno no mensual —trimestral, semestral o anual—**', None, None, [], None, 'reemplazo explícito'),
     ('ACC:5', V_, '**el alta directa de un Partner por el admin no fija dueño', None, None, [], None,
      'tachado y reemplazo explícitos (lotes F y N)'),
+    ('ACC:12', V_, '**Y sobre la presencia de un Partner, con el mismo permiso y sin los dos niveles, que son sólo de la ficha**',
+     None, None, [], 'G', 'tachado y reemplazo explícitos (residuo de la primera vuelta de verificación ciega, `H-VB-B2-3`)'),
     ('ACC:24', V_, '**dar de baja una cuenta a pedido de su dueño**', None, None, [], None,
      'cada ⚠️ tachado quedó decidido en la misma celda; «la unidad, `V8`» se lee `V8a` (V §2, fila `V8a`)'),
     ('ACC:26', V_, 'asignar o quitar el rol `SUPER_ADMIN` a una cuenta', None, None, [], None, 'lote AC, explícito'),
@@ -196,8 +200,15 @@ PINES = [
      [(LOG, 5183, 'Con C8 el disparador 2')], 'C8', ''),
     ('DEC-RF-006#📌2', P_, None, AG, 'el `USER`/`GLOBAL` de `S26` y la vertical con fila en `vertical_discontinuation` (C8)',
      [(LOG, 5481, 'Con C8 el disparador 2'), (B02, None, '(las causas de la discontinuación salieron con la revisión del owner, 2026-09-28, C8)')], 'C8', ''),
-    ('DEC-MP-008#📌2', P_, None, AG, 'la pausa hecha por el pagador deja de estar pendiente (`EX-53`); la cancelación desde su cuenta sigue pendiente',
-     [(LOG, 5909, 'la pausa deja de estar pendiente en el 📌 anterior (N8)')], None, ''),
+    # first blind-verification round, H-VA-A8-pista-6: the cancellation was measured (EX-52) and decided
+    # (lote L-A, DEC-SUB-009), so «Pendiente de medición» and «hasta medir,» are dead too; the conduct stays
+    ('DEC-MP-008#📌2', P_, None, AG,
+     '«Pendiente de medición» y «hasta medir,»: la pausa hecha por el pagador deja de estar pendiente (`EX-53`), '
+     'y la cancelación desde su cuenta también: medida (`EX-52`, `VERIFIED`) y decidida en `DEC-SUB-009` (mediciones '
+     'del 2026-09-29, lote L-A): se espeja como baja del proveedor, la misma conducta que este 📌 fijaba hasta medir',
+     [(LOG, None, 'la pausa deja de estar pendiente en el 📌 anterior (N8)'),
+      (LOG, None, 'Medido el 2026-09-29 (`EX-52`, `EX-56`): el pagador puede darse de baja desde su cuenta de Mercado')],
+     'EX-52, lote L-A', 'H-VA-A8-pista-6'),
     ('DEC-SUB-021#📌1', P_, None, AG, 'la condición de su punto 1 (`GR-1` pasó a `VERIFIED`)',
      [(LOG, 6011, 'Levanta la condición del')], None, ''),
     ('DEC-MIG-005#📌1', M_, None, AG, 'entero', [(LOG, 6479, 'Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`')], 'S-37, S-41, S-42', ''),
@@ -268,10 +279,14 @@ BK = [
      [(LOG, None, '**Lo que se cae es el destino**: ya no se transcribe'),
       (LOG, None, 'Se los contacta, se los da de alta en el motor nuevo y se cancela el')], 'DEC-MIG-003', SUP),
     ('DEC-MIG-002', P_, None, None,
-     '«y se transcriben a mano cuando el rediseño esté listo» (la decisión) y el riesgo de que *«la cohorte a transcribir crece»*: no se migra nada (`DEC-MIG-003`) y lo que entre hasta el corte no se conserva (`DEC-MIG-005`); sobrevive *«se siguen tomando altas en el sistema actual»*',
+     '«y se transcriben a mano cuando el rediseño esté listo» (la decisión) y el riesgo de que *«la cohorte a transcribir crece»*: no se migra nada (`DEC-MIG-003`) y lo que entre hasta el corte no se conserva (`DEC-MIG-005`); sobrevive *«se siguen tomando altas en el sistema actual»* '
+     'sólo para las que no son self-service: desde el 2026-10-01 las altas pagas self-service del viejo (start-paid con sus trials, el self-checkout de comercio, la compra de addons y la primera publicación que arranca trial) están congeladas por un setting de `billing_settings` (letras N, O y R; transitorio, del sistema viejo)',
      [(LOG, None, 'se cae *«se transcriben a mano cuando el rediseño esté listo»*'),
       (LOG, None, 'Se siguen tomando altas en el sistema actual, y **se transcriben a mano'),
-      (LOG, None, '**la cohorte a transcribir crece mientras dure el rediseño.**')], 'DEC-MIG-003', SUP),
+      (LOG, None, '**la cohorte a transcribir crece mientras dure el rediseño.**'),
+      # first blind-verification round, H-VA-A8-pista-4: letters N, O and R froze the self-service sign-ups
+      (OWN40, None, '| N | el mecanismo del congelamiento de las altas pagas nuevas del sistema viejo'),
+      (OWN40, None, '| O | el alcance del congelamiento')], 'DEC-MIG-003; N, O y R', SUP),
     ('DEC-DATA-002', P_, None, None,
      'que el reloj corre durante la pausa (*«el reloj SÍ corre durante la pausa, y se reinicia al reanudar»*) y la desigualdad que lo protegía (`D16`, con `G-R5`): la pausa del dueño detiene la retención (`DEC-DATA-006`); sobrevive el resto',
      [(LOG, 3717, 'se cae que el reloj corre durante la pausa y la desigualdad que la protegía'),
@@ -328,8 +343,11 @@ def at(path, line, cita):
             sys.exit(f'✗ cita en {path}: {len(hits)} líneas contienen «{cita[:60]}»')
         line = hits[0]
     if line > len(L) or cita not in L[line - 1]:
-        # the line moved when the sources were re-frozen: relocate it only if the quote is unique
+        # the line moved when the sources were re-frozen: relocate it only if the quote is unique in
+        # the file, or unique within a window of the old line (a re-freeze shifts by a few lines)
         hits = [n for n, l in enumerate(L, 1) if cita in l]
+        if len(hits) > 1:
+            hits = [n for n in hits if abs(n - line) <= VENTANA]
         if len(hits) != 1:
             sys.exit(f'✗ cita ausente en {path}:{line}: «{cita[:60]}» ({len(hits)} líneas la contienen)')
         line = hits[0]

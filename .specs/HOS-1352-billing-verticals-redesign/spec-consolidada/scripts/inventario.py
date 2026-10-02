@@ -228,7 +228,7 @@ for path, tag, fams in ((V + 'docs/03-maquinas-de-estado.md', 'V', ('T', 'PB', '
         if not l.lstrip().startswith('|'):
             continue
         c = cells(l)
-        m = re.match(r'^[\s*`~]*((?:' + '|'.join(fams) + r')\d+[a-z]?)\b', c[0])
+        m = re.match(r'^[\s*`~]*((?:' + '|'.join(fams) + r')\d+[a-z]?(?:-bis)?)\b', c[0])
         if not m:
             continue
         t, st = m.group(1), row_state(c)
@@ -426,8 +426,8 @@ def checks():
         'piezas al corte (22)': (len(corte), 22),
         'guards (35)': (len(by['GUARD']), 35),
         'guards al corte (34)': (sum(1 for i in by['GUARD'] if i['cuando'] == 'corte'), 34),
-        'dependencias vivas (12)': (sum(1 for i in by['DEP'] if i['estado'] != 'MUERTO'), 12),
-        'flechas entre épicas (14)': (len(ARROWS), 14),
+        'dependencias vivas (13)': (sum(1 for i in by['DEP'] if i['estado'] != 'MUERTO'), 13),
+        'flechas entre épicas (15)': (len(ARROWS), 15),
         'transiciones con pieza (34)': (sum(1 for i in by['TPZ'] if i['piezas']), 34),
         'esquema del corte (9)': (len(by['ESQ']), 9),
     }

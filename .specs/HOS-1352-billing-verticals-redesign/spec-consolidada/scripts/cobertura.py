@@ -5,6 +5,8 @@ why that piece implements it, the other pieces that also exercise it, and the mi
 
     python3 cobertura.py <inventario.json> <adjudicacion.json> <cobertura-lectura.json> <salida.json>
            [--sellar]            write the sha256 of every cited line into the lectura file
+           [--reanclar=<sha>]    move every lectura citation from <sha> (the previous freeze) to the SHA
+                                 before validating, and write the lectura file (see reanclar_lectura)
            [--fragmento]         validate the lectura file alone (partial: no completeness rule)
            [--candidatos ID]     print the partition lines that name ID together with a piece
            [--lista-solo-citables=<json>]  replace defs.SOLO_CITABLES (for the canaries only)
@@ -88,7 +90,7 @@ def grafo():
     return anc
 
 
-TOKEN = re.compile(r'`((?:PB|PP|MP|RF|[STPA])\d+[a-z]?|G-R\d+(?:-[A-F])?|G\d+)`')
+TOKEN = re.compile(r'`((?:PB|PP|MP|RF|[STPA])\d+[a-z]?(?:-bis)?|G-R\d+(?:-[A-F])?|G\d+)`')
 
 
 def cuando_de_fuente():
@@ -480,6 +482,43 @@ def validar(rec, items_by, piezas, anc, cf, err):
                     f"{k}: {own} ({piezas[own]['cuando'] if own in piezas else CORTE}) vs {esperado} ({por_que})")
 
 
+RE_VENTANA = 60  # lines: how far a re-freeze may move a cited line before its fragment must be unique
+
+
+def reanclar_lectura(lect, desde):
+    """Move every lectura citation from the freeze ``desde`` to the SHA: keep it when its fragment is
+    still in its line; else follow the line through the diff of the file (reanclar.Mapa); else take
+    the one line of the file at the SHA that holds the fragment, or the one within RE_VENTANA lines
+    of where it was. A citation none of these places is left as it was, and C5 reports it."""
+    from reanclar import Mapa, git_show
+    mapas, n, fallan = {}, collections.Counter(), []
+    for k, e in list(lect.get('entradas', {}).items()):
+        for c in e.get('citas', []) + [x for t in e.get('tambien', []) for x in t.get('citas', [])]:
+            path, ln, frag = c.get('archivo'), c.get('linea'), c.get('cita')
+            try:
+                L = lines(path)
+            except SystemExit:
+                continue
+            if isinstance(ln, int) and 1 <= ln <= len(L) and frag in L[ln - 1]:
+                n['igual'] += 1
+                continue
+            if path not in mapas:
+                mapas[path] = Mapa(git_show(desde, path) or [], list(L))
+            nn, _, cand = mapas[path](ln)
+            nuevo = next((x for x in (nn, cand) if x and frag in L[x - 1]), None)
+            if nuevo is None:
+                hits = [j for j, l in enumerate(L, 1) if frag in l]
+                cerca = [j for j in hits if abs(j - (nn or cand or ln)) <= RE_VENTANA]
+                nuevo = hits[0] if len(hits) == 1 else (cerca[0] if len(cerca) == 1 else None)
+            if nuevo is None:
+                fallan.append(f'{k}: {path}:{ln}')
+                continue
+            c['linea'] = nuevo
+            n['movida'] += 1
+    lect['sha'] = SHA
+    return n, fallan
+
+
 def sellar(lect):
     n = 0
     for e in list(lect.get('entradas', {}).values()):
@@ -540,6 +579,11 @@ def main(argv):
     script, pend = por_script(norm, todos, piezas, anc)
     lect = json.load(open(lect_p, encoding='utf-8')) if os.path.exists(lect_p) else {}
     entradas, sin = lect.get('entradas', {}), lect.get('sin_pieza', {})
+    re_desde = next((a.split('=', 1)[1] for a in flags if a.startswith('--reanclar=')), None)
+    if re_desde:
+        n, fallan = reanclar_lectura(lect, re_desde)
+        json.dump(lect, open(lect_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+        print(f'reanclado desde {re_desde[:10]}: {dict(n)} · sin lugar: {len(fallan)} {fallan[:5]}')
     if '--sellar' in flags:
         n = sellar(lect)
         json.dump(lect, open(lect_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
