@@ -377,16 +377,6 @@ def titulo_trans(cid):
 
 TEST_TRANS = (f'- **Test mínimo** ({own("AN")}): integración con DB, en la pieza dueña.')
 
-# A guard an owner letter added to a row its source table never received (first blind-verification
-# round, H-VA-A2-2): shown after the verbatim cells, never merged into them, with the letter's line.
-_OWN41 = Dp + '41-corte-del-mvp/10-decisiones-del-owner.md'
-assert 'tiene un plan vigente que herede Turista VIP' in lines(_OWN41)[123], (_OWN41, 124)
-GUARDA_POSTERIOR = {
-    'TRANS:B:S1': ([f'- **Guarda que suma el corte del MVP** ({own("BJ")}), que la fila de la fuente no '
-                    'recibió: **y el `user` no tiene un plan vigente que herede Turista VIP** cuando compra '
-                    'Turista VIP (el código de error del rechazo queda abierto).'], [f'{_OWN41}:124']),
-}
-
 
 def seccion_trans(titulo, prefix, intro=(), con_tpz=False, con_apz=False):
     ids = ids_de(prefix)
@@ -412,8 +402,7 @@ def seccion_trans(titulo, prefix, intro=(), con_tpz=False, con_apz=False):
                            f"[APZ:{i['local']}]({ '10-corte' if PIEZAS[pz]['cuando']=='corte' else FASE[pz]}/{pz}.md#{slug(t['id'])})"
                            f" → {pieza_link(pz)}")
         pre.append(TEST_TRANS)
-        post, locs = GUARDA_POSTERIOR.get(cid, ((), ()))
-        out.append(item_row(cid, titulo_trans(cid), pre=pre, post=post, extra_locs=locs))
+        out.append(item_row(cid, titulo_trans(cid), pre=pre))
     return out
 
 

@@ -150,6 +150,7 @@ def parse_origen(line):
 def main():
     salida = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--salida=')), C)
     fuentes = json.load(open(FUENTES, encoding='utf-8')) if os.path.exists(FUENTES) else {}
+    nuevas = False
     for rel in PIEZAS:
         L = open(os.path.join(C, rel), encoding='utf-8').read().split('\n')
         anuncios = [k for k, l in enumerate(L) if ANUNCIO.match(l)]
@@ -166,6 +167,7 @@ def main():
             fin = j
             citas = parse_origen(L[j])
             fuentes[rel] = citas
+            nuevas = True
         else:
             sys.exit(f'✗ {rel}:{j + 1}: después del anuncio no hay ni Origen: ni bloque generado')
         nuevo = L[:k + 1] + [''] + bloque(citas, nivel_previo(L, k) + 1) + L[fin + 1:]
@@ -173,8 +175,9 @@ def main():
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         open(dst, 'w', encoding='utf-8').write('\n'.join(nuevo))
         print(rel, len(citas), 'citas,', len(nuevo), 'líneas')
-    if salida == C:
-        json.dump(fuentes, open(FUENTES, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    # Written only when a bare `Origen:` was read, so a plain regeneration leaves the file alone.
+    if salida == C and nuevas:
+        json.dump(fuentes, open(FUENTES, 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
