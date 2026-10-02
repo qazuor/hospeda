@@ -201,15 +201,17 @@ redacción de la spec consolidada (fuentes en `b949031c70`). Las dos son la reco
 | CF | en qué PR entra el predicado de CC (la acción 19 de `B2` cuenta como cliente de una versión la fila con un `S38` encolado hacia ella), si lee la cola de cambios programados (`ESQ:3`), que crea `B3` (AP), y `B2` se mergea antes que `B3` | 1 | sí | **el predicado y su test van en el PR de `B3`**, como una cláusula más sobre el rechazo de la acción 19, que ya existe; **el AC sigue siendo de `B2`** en la spec, y el criterio de salida que lo demuestra es de `B3`. Precisa CC. Las otras opciones eran que `B2` creara la cola (reabre AP) o escribir el predicado en `B2` contra una interfaz y probarlo en `B3` (BL habla de piezas posteriores que implementan una interfaz, no de una tabla) |
 | CG | dónde vive la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *«la cancelación `B8`»*), si la pantalla de la baja la construye `B13a` y `B13a` espera a `B8a` (BH) | 1 | sí | **en `B13a`**, la primera pieza del corte con la API, la web y la pantalla de la baja juntas; **`B8a` conserva sus pruebas de integración**. Precisa el punto 3 de `B/20` §5.1, escrito antes de partir `B8` y `B13` (Z). Las otras opciones eran la prueba en `B8a` contra la API sin pantalla (no ejercita la pantalla que el e2e reemplaza del smoke manual) o las dos (dos pruebas del mismo flujo) |
 
-## Lote CH (2026-10-02)
+## Lote CH y CI (2026-10-02)
 
 Respuesta del owner, 2026-10-02, a la única pregunta que dejó la adjudicación de la vuelta 2 de
 verificación ciega (fuentes en `69cbe79360`, spec en `200317c484`; hallazgo `H2-VA8-7`). Es la
-recomendada (opción 1).
+recomendada (opción 1). **Y a CI**, el mismo día, el hueco de orden que dejó a la vista la
+aplicación de CH: también la opción 1.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
 |---|---|---|---|---|
 | CH | quién escribe `provider_link.cancelado_visto_en`, si `B/09` §3 dice *«la primera relectura que ve `cancelled`, sea del barrido, del handler o de una transición»* y el reparto de `B/descomposicion.md` §2.11, de la misma letra Z, le da la escritura sólo al barrido de `B11`; el handler y `S16` son de `B3`, que se mergea antes de que `B4` cree la columna | 1 | sí | **la escribe toda relectura por id que ve `cancelled`, como dice el capítulo**: `B3` (el handler y `S16`) llama a una interfaz interna, *«anotar la cancelación vista»*; **`B4` la implementa al crear la columna**, con su caso sobre filas sembradas, y **el barrido de `B11` la usa también**. Es BL aplicada; el reparto de §2.11 suma a `B3` como pieza que llama. El instante queda exacto. Las otras opciones eran que la escribiera sólo el barrido, tachando la regla de `B/09` §3 (hasta un día `puedeCobrarle` contesta `sí` sobre un preapproval ya cancelado y el plazo 16 arranca tarde) o que `B11` metiera la escritura en el handler y en `S16` al llegar (toca código de `B3`: contradice BL y el punto 2 de `DEC-ARCH-017`) |
+| CI | si `B11` espera a `B4`, si el grafo de `B/descomposicion.md` §3 hace depender a `B11` sólo de `B5` y `B11` escribe y lee `provider_link.cancelado_visto_en`, la columna que crea `B4` (hueco que ya traía el reparto de Z y que CH dejó a la vista) | 1 | sí | **flecha nueva `B4 → B11`: `B11` espera a `B4`**, en los dos grafos de §3, en la tabla de paralelos y en las flechas que se escriben explícitas. Costo nulo en el camino crítico: `B11` no está en el del corte. Las otras opciones eran aplicar BL a `B11` con interfaces de escritura y de lectura (si `B11` corre antes que `B4`, la exención lee *«no vista»* y abre marcas falsas) o mover la columna a `B3` (reabre AP y AV) |
 
 ## Resultado del corte
 
