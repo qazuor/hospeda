@@ -1501,7 +1501,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-CONC-001 — El candado contra el doble cobro es nuestro, durable, y el duplicado se cancela solo pero se reembolsa con confirmación
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (mediciones del 2026-09-29, lote L-C; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote N-B; ver su último 📌); **y precisada el 2026-09-30, con OK del owner** (FASE 9 vuelta 3, lotes E e Y: `A3` sólo confirma y la identidad de la compra; ver su último 📌) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (mediciones del 2026-09-29, lote L-C; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote N-B; ver su último 📌); **y precisada el 2026-09-30, con OK del owner** (FASE 9 vuelta 3, lotes E e Y: `A3` sólo confirma y la identidad de la compra; ver su último 📌); **y precisada el 2026-10-02** (verificación ciega de la spec consolidada, vuelta 3, `H3-VA8-2`: la recuperación tras un timeout filtra en el proveedor sólo por `payer_email`, como corrigió la FASE 8 completa; ver su 📌 del 2026-10-02) · **Decide**: owner
 - **Problema**: el §51 y el §52 piden diseñar explícitamente para el doble clic, los reintentos,
   los webhooks duplicados, el desorden, los jobs duplicados y los fallos de red. La medición dejó
   ese pedido sin red de contención del lado del proveedor.
@@ -1577,6 +1577,15 @@ Cada entrada lleva, según §3.4:
   compra (dueño, producto, objetivo), única entre las pendientes, frena la segunda compra en una
   pantalla nueva y es el candado del addon recurrente, que frena también si ya hay un addon
   recurrente vivo igual sobre el mismo objetivo.
+- 📌 **Precisada el 2026-10-02 (verificación ciega de la spec consolidada, vuelta 3, `H3-VA8-2`;
+  residuo de la FASE 8 completa, sin decisión nueva)**: la pregunta de la parte 2, *«¿este pagador
+  tiene alguna suscripción autorizada que yo no tenga registrada?»*, ya no se hace por
+  `payer_email` + `status`: **se filtra en el proveedor sólo por `payer_email`, y el estado se mira
+  de nuestro lado**, sobre lo que queda después de descartar lo que ya tenemos registrado por id
+  (FASE 8 completa, `F-8CB3-011`, `F-8CB2-014` y `F-8CB1-014`; `B/05` §1.2; `B/09` §7). `RC-1`
+  midió en producción que el filtro por `status` devuelve un subconjunto sin ninguna señal
+  (`cancelled` trajo 15 de 69). La línea de `RC-1` del *Contexto medido* (el buscador filtra por
+  `payer_email` y por `status`, y los compone) queda: es un hecho medido, no la regla.
 
 ### DEC-CONC-002 — La conciliación se apoya en NUESTRO inventario, detecta huérfanas por webhook, y sólo repara el vínculo
 
@@ -7829,7 +7838,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-017 — El MVP: el corte lleva 22 piezas y ocho llegan después, en fases aditivas sobre el sistema nuevo
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌; **y otra vez el mismo día**, CH y CI: `provider_link.cancelado_visto_en` la escribe toda relectura que ve `cancelled`, por una interfaz que llama `B3` e implementa `B4`, y `B11` espera a `B4`; ver su duodécimo 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌; **y otra vez el mismo día**, CH y CI: `provider_link.cancelado_visto_en` la escribe toda relectura que ve `cancelled`, por una interfaz que llama `B3` e implementa `B4`, y `B11` espera a `B4`; ver su duodécimo 📌; **y otra vez el mismo día**, CJ: la ruta que borra cuentas de verdad la retira `V6`; ver su decimotercer 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -8059,6 +8068,18 @@ Cada entrada lleva, según §3.4:
   Recontado con `41-corte-del-mvp/`: 30 piezas, 22 al corte, 64 flechas —la de CI, `B4 → B11`— y
   cero violaciones. Dónde: `B/descomposicion.md` §2, §2.11, §2.12, §3 y §4 (`B3`, `B4`, `B11`);
   `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CH y CI.
+- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CJ, la 1)**: qué pieza
+  retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`). La fila de `V6` de
+  `V/descomposicion.md` §2 decía que con `V6` *«desaparecen el borrado físico de fichas y de
+  cuentas»*, y la tabla de puertas del §2.13 (lote 3 C), de antes de Z, le daba la de cuentas a
+  `V8` y Z la renombró `V8a`. **La retira `V6`**, en el mismo cambio que las puertas de fichas y
+  antes del corte; la acción 24, que la reemplaza, sigue en `V8a`. Queda una sola pieza dueña de
+  todas las puertas de borrado físico. Las otras eran que la retirara `V8a` (entre el merge de `V6`
+  y el de `V8a` la ruta seguiría viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6`
+  deshabilitándola y `V8a` borrando el archivo (un solo acto en dos piezas). Sin flechas nuevas:
+  `V6 → V8a` ya existe. Recontado con `41-corte-del-mvp/`: 30 piezas, 22 al corte, 64 flechas y
+  cero violaciones. Dónde: `V/descomposicion.md` §2.13; `41-corte-del-mvp/10-decisiones-del-owner.md`,
+  CJ.
 
 ---
 
