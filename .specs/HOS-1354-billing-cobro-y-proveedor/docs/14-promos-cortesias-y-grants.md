@@ -295,8 +295,8 @@ quién abrió la divergencia** (orquestador, FASE 8 completa, pendiente 8, deriv
 punto 4):
 
 - **si la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)—, **reintenta
-  la mutación durante 3 días, contados desde esa transición** —**en un aumento, desde su fecha
-  efectiva** (FASE 8 completa, owner 2026-09-25); por tiempo, no por corridas, como el
+  la mutación durante 3 días, contados desde esa transición** —~~**en un aumento, desde su fecha
+  efectiva** (FASE 8 completa, owner 2026-09-25)~~ (un aumento a un anclado es `S37` desde BZ, corte del MVP, owner 2026-10-02; residuo corregido el 2026-10-02); por tiempo, no por corridas, como el
   reintento de una cancelación nuestra (`B/09` §3)— y después abre la marca con motivo
   **`DIVERGENCIA_DE_MONTO`**. Es el mismo argumento del 📌 del punto 4: terminar un acto nuestro ya
   decidido no es reparar una divergencia;
@@ -354,10 +354,10 @@ razón de arriba no la alcanza.
 El §32 es terminante —*«Sólo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe
 rechazar.»*— y no dice qué pasa el mismo día, mientras corre el proceso de expiración.
 
-### 3.2 Gana el estado escrito, nunca la hora
+### 3.2 ~~Gana el estado escrito, nunca la hora~~ Gana el estado escrito, y la fecha de fin sin pasar
 
-**El canje vale si y sólo si la fila del trial sigue en `TRIAL_ACTIVE` en el instante de
-escribir**, verificado con la concurrencia optimista del capítulo 05. **Y quien escribe es
+**El canje vale si y sólo si la fila del trial sigue en `TRIAL_ACTIVE` y su fecha de fin no pasó, en el instante de
+escribir** (FASE 9 vuelta 2, `F-8V2A2-003`; `V/03` §2, `T4`; residuo corregido el 2026-10-02), verificado con la concurrencia optimista del capítulo 05. **Y quien escribe es
 verticales**: la fila de `trial` es suya, así que billing no la toca; el canje llama a
 `extenderTrial(user, vertical, días, claveDeCanje)` (`12-contrato…` §4.1), verticales corre `T4`
 dentro del lock de la máquina de trial con el techo ya aplicado (`V/11` §3) y contesta `ACEPTADA`
@@ -365,11 +365,11 @@ o `RECHAZADA(motivo)`, y **billing gasta el código sólo con `ACEPTADA`**; la c
 idempotente el reintento (owner 2026-09-26, `G4-2`; FASE 9 vuelta 1, `F-8V1C1-009`), y verticales
 la guarda en `canje_de_trial`, `V/02` §2.2 (FASE 9 vuelta 3, `F-8V3C1-003`).
 
-- Un canje a las 23:59:59 del día del vencimiento, con el job todavía sin correr, **es válido**.
+- ~~Un canje a las 23:59:59 del día del vencimiento, con el job todavía sin correr, **es válido**.~~ Un canje antes de la fecha de fin, con el job todavía sin correr, **es válido**; **con la fecha de fin ya pasada se rechaza, haya corrido o no el job**: con el job de `T3` atrasado, `extenderTrial` contesta `RECHAZADA` y el código no se consume (§3.4; FASE 9 vuelta 2, `F-8V2A2-003`; residuo corregido el 2026-10-02).
 - Un canje después de que el job escribió `TRIAL_EXPIRED` **se rechaza**, aunque sea el mismo día.
 
-**«Después» del §32 significa después del estado, no después de una hora.** Es la única lectura
-que se puede verificar: la hora depende de cuándo corrió un job, y eso no es un hecho del dominio.
+~~**«Después» del §32 significa después del estado, no después de una hora.** Es la única lectura
+que se puede verificar: la hora depende de cuándo corrió un job, y eso no es un hecho del dominio.~~ (Sin efecto desde `F-8V2A2-003`, FASE 9 vuelta 2: `T4` exige además la fecha de fin sin pasar; residuo corregido el 2026-10-02.)
 
 ### 3.3 Y el job tiene la mitad que se olvida
 
@@ -731,11 +731,11 @@ meses (`B/02` §2.4), por ~~los dos escritores de §4.4 y §4.6~~ el escritor de
      monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4) —**y sin
      promos**: el mismo pedido escribe `cobros_restantes = 0` (FASE 9 completa, contradicción 1 de
      `03` §R6.5; el §2.4 decía *«plan vigente»*, que en esa ventana es el viejo).
-- **Si el cobro que agota una promo es el que saca a la fila del grace** (`S5`), el orden entre
+- ~~**Si el cobro que agota una promo es el que saca a la fila del grace** (`S5`), el orden entre
   `P1` y `S30` no está escrito: `S30` sale sólo de `ACTIVE` (FASE 9 completa, borde e4 de `03`
   §R6.4; declarado por `DEC-METH-015`). Si `P1` corre antes, la mutación no ocurre y el barrido
   abre `DIVERGENCIA_DE_MONTO` en el acto. **Causa**: `S30` se escribió sobre el cobro ordinario.
-  No mueve plata sin que una persona lo vea: la marca la pone delante.
+  No mueve plata sin que una persona lo vea: la marca la pone delante.~~ **Cerrado** (FASE 9 vuelta 1, `F-8V1B1-006`): `S30` sale de `ACTIVE` o `GRACE_PERIOD`; con la fila en grace, `S5` y `S30` corren en el mismo acto y la mutación se aplica (`B/03` §3.2, fila `S30`; residuo corregido el 2026-10-02).
   2. ~~**El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
      `B/03` §3.2, así que *«desde esa transición»* no tiene todavía un instante registrado que el
      barrido pueda leer para él; para `S30` y `S10` sí lo hay.~~ **Cerrado**: los 3 días del
