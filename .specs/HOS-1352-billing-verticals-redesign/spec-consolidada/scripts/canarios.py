@@ -211,8 +211,8 @@ def main():
     B2 = '10-corte/B2.md'
     canarios = []
 
-    def c(rule, name, f=None, m=None, a=None, k=None, li=None, aviso=None):
-        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob, li, aviso))
+    def c(rule, name, f=None, m=None, a=None, k=None, li=None, aviso=None, sin=None):
+        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob, li, aviso, sin))
 
     c('R1', 'un ítem vivo definido dos veces', sub(files, '04-catalogos.md', '<a id="guard-g7"></a>',
       '<a id="guard-g7"></a>\nx\nOrigen: x.md:1\n\n<a id="guard-g7"></a>'))
@@ -341,13 +341,45 @@ def main():
     a19b['veredictos']['DEC-SUB-008'] = dict(veredicto='PARCIAL', hash=h8, muerto='otra parte; «el downgrade muta el monto ya» sigue')
     c(None, 'un tramo que el veredicto da por vivo («…» sigue) pasa', a=a19b)
 
+    # R20: a struck span of a frozen source alive in the spec (first blind-verification round)
+    from trazar import r20_tramos
+    t20 = sorted(r20_tramos())[0]  # deterministic: the first span in order, whatever the freeze
+    c('R20', 'un tramo tachado de una fuente, vivo en la spec', sub(files, '02-nucleo.md', 'invariante uno.', f'invariante uno, {t20}.'))
+    c(None, 'el mismo tramo en 90-retirados pasa', sub(files, '90-retirados.md', 'tabla de traducción, retirada.',
+      f'tabla de traducción, retirada: {t20}.'))
+    c(None, 'el mismo tramo tachado en la spec pasa', sub(files, '02-nucleo.md', 'invariante uno.', f'invariante uno, ~~{t20}~~.'))
+
+    # R21 and R17: a section announced with «:» and only its Origen
+    sec = item(inv, SEC51)
+    vacia = (f"\n## Secciones asignadas\n\nLas secciones del capítulo que la fila le asigna:\n\n"
+             f"Origen: {sec['archivo']}:{sec['linea'] + 1}\n")
+    f21 = sub(files, '02-nucleo.md', origen(item(inv, 'INV:17')) + '\n', origen(item(inv, 'INV:17')) + '\n' + vacia)
+    c('R21', 'un «:» seguido directo de Origen: (sección sin cuerpo)', f21)
+    m = copy.deepcopy(mini)
+    m['items'].append(dict(sec))
+    c('R17', 'ese Origen sin cuerpo no cubre su sección', f21, m=m)
+    c(None, 'con un cuerpo entre el «:» y el Origen, la sección queda cubierta y pasa',
+      sub(files, '02-nucleo.md', origen(item(inv, 'INV:17')) + '\n', origen(item(inv, 'INV:17')) + '\n'
+          + vacia.replace('le asigna:\n\n', 'le asigna:\n\nEl texto de la sección, escrito.\n')), m=m)
+
+    # R22 (warning): an AC whose «Entonces» remits to a chapter section
+    ac22 = ('<a id="ac-b2-9"></a>\n**AC:B2:9**\n- Dado un plan\n- Cuando cambia el precio\n- Entonces {e}\n'
+            'Fuente: [dec-sub-008](../01-decisiones-vigentes.md#dec-sub-008)\n\n<a id="test-b2-1"></a>')
+    f22 = lambda e: sub(sub(files, B2, '<a id="test-b2-1"></a>', ac22.format(e=e)), B2,  # noqa: E731
+                        'Cubre: [AC:B2:1](B2.md#ac-b2-1)\nFuente: [trans', 'Cubre: [AC:B2:1](B2.md#ac-b2-1) [AC:B2:9](B2.md#ac-b2-9)\nFuente: [trans')
+    c(None, 'un AC que remite a `B/12` §3.2 sin enunciar la regla pasa, con aviso',
+      f22('se aplica según `B/12` §3.2'), aviso='⚠ R22 ')
+    c(None, 'el mismo AC con la regla enunciada pasa sin aviso (la regla no es ciega)',
+      f22('el monto que se mutó al pedir el descenso se conserva hasta el fin del ciclo y ningún aumento entra por esa puerta (`B/12` §3.2)'),
+      sin='⚠ R22 ')
+
     code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
-    for rule, name, f, m, a, k, li, aviso in canarios:
+    for rule, name, f, m, a, k, li, aviso, sin in canarios:
         code, out = run(f, m, a, k, li)
         ok = (code == 0) if rule is None else (code == 1 and f'✗ {rule} ' in out)
-        ok = ok and (aviso is None or aviso in out)
+        ok = ok and (aviso is None or aviso in out) and (sin is None or sin not in out)
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule or "pasa":4} exit {code} · {name}')
         if not ok:

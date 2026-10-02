@@ -69,6 +69,18 @@ RULES
       quotes the dead text on purpose and does not count; a span the verdict marks as alive
       («…» sigue, sobrevive «…») or quotes as what replaced the dead one (reemplazó X (… «…»))
       does not count either.
+  R20 struck text alive in the spec (first blind-verification round, 2026-10-02): no struck span
+      `~~X~~` of a frozen source (the 38 design files, the log and the matrix) with X of at least six
+      words, once normalized like R19, appears in a spec file outside 90-retirados.md (struck spans of
+      the spec itself, fenced code and the verdict notes of R19 do not count). A span whose words are
+      also LIVE somewhere in those sources or in an owner-letter file (01 renders their rows) is not
+      reported: the spec may be quoting the live one.
+  R21 a section without body: a heading or a line ending in «:» whose next non-blank line is an
+      `Origen:` line announces content and cites it without writing it. And R17 does not count such
+      an `Origen:` line as coverage.
+  R22 (warning, never fails) an AC whose «Entonces» remits to «`B/NN` §N» or «`V/NN` §N» without
+      stating the rule: a remission phrase («según», «como dice», «la regla de», «delegando … en»…)
+      before the citation, or fewer than R22_MIN words once citations and asides are taken out.
 """
 import collections
 import glob
@@ -78,7 +90,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from comun import worktree_line_hash, lines, slug  # noqa: E402
+from comun import D, SHA, corpus_38, ls, worktree_line_hash, lines, slug  # noqa: E402
 from defs import (ACTORES, CHEQUEO_LOCAL, CITABLES, ETIQUETAS_SMOKE, MUERTOS, NORMATIVAS,  # noqa: E402
                   NO_NORMATIVAS_PREFIJOS, PLANTILLA, SOLO_CITABLES, TIPOS_TEST, VIVOS,
                   solo_citables_fallas)
@@ -118,22 +130,119 @@ def bloques(spec_dir):
     return defs, refs
 
 
+def sin_cuerpo(L):
+    """Indexes of the `Origen:` lines of ``L`` (a file's lines) that follow, as the next non-blank
+    line, a heading or a line ending in «:» (R21: a section announced and cited, never written)."""
+    out, prev, fence = set(), None, False
+    for k, l in enumerate(L):
+        if l.lstrip().startswith('```'):
+            fence = not fence
+            prev = None
+            continue
+        if fence or not l.strip():
+            continue
+        if ORIGEN.match(l) and prev is not None and (L[prev].rstrip().endswith(':')):
+            out.add(k)
+        prev = k
+    return out
+
+
 def origenes(spec_dir):
     """Every line cited by an `Origen:` line of any spec file, outside fenced code: {path: {line}}.
     Prose without an item covers its section too (an `SEC` is never anchored, R5). The working
-    notes (`_trabajo/`) are not the spec and cover nothing."""
+    notes (`_trabajo/`) are not the spec and cover nothing, and an `Origen:` without body (R21)
+    covers nothing either."""
     out = collections.defaultdict(set)
     for f in archivos(spec_dir, sin=('scripts', '_trabajo')):
         fence = False
-        for l in open(f, encoding='utf-8').read().split('\n'):
+        L = open(f, encoding='utf-8').read().split('\n')
+        vacios = sin_cuerpo(L)
+        for k, l in enumerate(L):
             if l.lstrip().startswith('```'):
                 fence = not fence
                 continue
-            m = None if fence else ORIGEN.match(l)
+            m = None if fence or k in vacios else ORIGEN.match(l)
             if m:
                 for p, ln in LOC.findall(m.group(1)):
                     out[p].add(int(ln))
     return out
+
+
+# --- R20: struck source text alive in the spec ----------------------------------------------
+R20_MIN = 6
+TACHADO = re.compile(r'~~(.+?)~~', re.S)
+
+
+def r20_fuentes():
+    return sorted(set(corpus_38()) | {D + '01-decision-log.md', D + '06-mp-validation-matrix.md'})
+
+
+def r20_cartas():
+    """The owner-letter files: 01 renders their rows, so their live text is live spec text too."""
+    return sorted(f for f in ls(D) if f.endswith('/10-decisiones-del-owner.md'))
+
+
+def r20_tramos():
+    """{normalized struck span: 'file:line'} of the frozen sources, with at least R20_MIN words and
+    whose words are not live anywhere in those sources or in the owner-letter files. The sources are
+    frozen, so the result is cached per SHA and per version of this script (the canaries run it
+    once per mutation)."""
+    import hashlib
+    import tempfile
+    clave = hashlib.sha256((SHA + open(os.path.abspath(__file__), encoding='utf-8').read()).encode()).hexdigest()[:16]
+    cache = os.path.join(tempfile.gettempdir(), f'trazar-r20-{clave}.json')
+    try:
+        return json.load(open(cache, encoding='utf-8'))
+    except (OSError, ValueError):
+        pass
+    out = r20_tramos_calc()
+    json.dump(out, open(cache, 'w', encoding='utf-8'), ensure_ascii=False)
+    return out
+
+
+def r20_tramos_calc():
+    tramos, vivo = {}, [r19_norm('\n'.join(lines(p))) for p in r20_cartas()]
+    for path in r20_fuentes():
+        txt = '\n'.join(lines(path))
+        vivo.append(r19_norm(txt))
+        for m in TACHADO.finditer(txt):
+            if re.search(r'\n\s*\n', m.group(1)):
+                continue  # an unpaired «~~» would pair across paragraphs
+            t = r19_norm(m.group(1))
+            if len(t.split()) >= R20_MIN and t not in tramos:
+                tramos[t] = f"{path}:{txt.count(chr(10), 0, m.start()) + 1}"
+    vivo = '\n'.join(vivo)
+    return {t: w for t, w in tramos.items() if t not in vivo}
+
+
+def r20_texto(f):
+    """The text of a spec file R20 reads: no fenced code, no R19 notes, own struck spans out."""
+    out, fence = [], False
+    for l in open(f, encoding='utf-8').read().split('\n'):
+        if l.lstrip().startswith('```'):
+            fence = not fence
+            continue
+        if not fence and not R19_NOTA.match(l):
+            out.append(l)
+    return r19_norm('\n'.join(out))
+
+
+# --- R22: an AC that remits to a chapter instead of stating the rule --------------------------
+R22_MIN = 12
+R22_CITA = re.compile(r'`?[BV]/\d{2}`?\s*§\s*\d')
+R22_FRASE = re.compile(r'(?:según|como (?:dice|manda|fija|define|lo dice)|la (?:regla|lectura|tabla) de|lo que (?:dice|manda|fija)'
+                       r'|delega\w*[^.;]{0,30}?\ben)'
+                       r'\s+[^.;]{0,30}?`?[BV]/\d{2}', re.I)
+
+
+def r22_remite(body):
+    """Whether the «Entonces» of an AC remits to a chapter section without stating the rule."""
+    m = re.search(r'^\s*(?:[-*]\s*)?\**Entonces\b(.*?)(?=^\s*(?:Fuente|Origen):|\Z)', body, re.M | re.S)
+    if not m or not R22_CITA.search(m.group(1)):
+        return False
+    ent = m.group(1)
+    resto = re.sub(r'\([^()]*\)|\[[^\]]*\]\([^)]*\)|`[^`]*`|§\s*[\d.]+', ' ', ent)
+    return bool(R22_FRASE.search(ent)) or len(re.findall(r'\w+', resto)) < R22_MIN
 
 
 def tipo_cumplido(req, tests):
@@ -411,6 +520,30 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
             vivos = [t for t in r19_tramos(v.get('muerto')) if t in txt]
             if vivos:
                 err['R19 texto muerto de un PARCIAL en el cuerpo de su bloque'].append(f'{cid} ({f}:{n}): «{vivos[0][:60]}»')
+
+    # R20 struck source text alive in the spec ---------------------------------------------------
+    tramos = r20_tramos()
+    for f in archivos(spec_dir, sin=('scripts', '_trabajo')):
+        rel = os.path.relpath(f, spec_dir)
+        if rel.startswith('90-'):
+            continue
+        txt = r20_texto(f)
+        for t, w in tramos.items():
+            if t in txt:
+                err['R20 tachado de una fuente vivo en la spec'].append(f'{rel}: «{t[:60]}» (tachado en {w})')
+
+    # R21 a section without body ------------------------------------------------------------
+    for f in archivos(spec_dir, sin=('scripts', '_trabajo')):
+        rel = os.path.relpath(f, spec_dir)
+        L = open(f, encoding='utf-8').read().split('\n')
+        for k in sorted(sin_cuerpo(L)):
+            err['R21 sección sin cuerpo (un «:» seguido directo de Origen:)'].append(f'{rel}:{k + 1}')
+
+    # R22 (warning) an AC that remits instead of stating the rule ---------------------------
+    for s, r in ac.items():
+        if r22_remite(r['body']):
+            f, n, _ = defs[s][0]
+            avisos['R22 aviso: AC que remite a un capítulo sin enunciar la regla (no falla)'].append(f'{s} ({f}:{n})')
 
     for k in sorted(err, key=lambda k: (int(re.match(r'R(\d+)', k).group(1)), k)):
         print(f'✗ {k}: {len(err[k])}  ej: {err[k][:3]}')
