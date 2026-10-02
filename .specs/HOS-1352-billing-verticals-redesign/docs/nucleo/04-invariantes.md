@@ -201,13 +201,15 @@ parece válido y no lo es— en tres momentos distintos.
 
 ## 4. Lo que ningún invariante cubre todavía
 
-Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se completan acá**
+Tres cosas que el §64 no nombra, que ~~ninguna decisión resolvió~~ ninguna decisión había resuelto al escribirse (la primera la cerró después `B/16` §4), y que **no se completan acá**
 (§67):
 
-1. **Qué pasa cuando una suscripción principal muere y quedan complementos vivos.** El §41 dice
+1. ~~**Qué pasa cuando una suscripción principal muere y quedan complementos vivos.** El §41 dice
    que un addon se cancela *«solo cuando queda efectivamente huérfano»*, y con `DEC-ADDON-002`
    cada addon recurrente es una suscripción aparte que **no se cancela sola**. Es `E-ADDON-04`,
-   capítulo 16.
+   capítulo 16.~~ **Cerrado por `B/16` §4** (*«Cuando un addon se apaga · cierra `E-ADDON-04`»*),
+   con `DEC-ADDON-004` y `DEC-ADDON-007` (`04-open-decisions.md`, `E-ADDON-04` tachado; residuo
+   corregido el 2026-10-02).
 2. ~~**Qué hace el sistema con una vertical discontinuada.**~~ ~~**Cerrado por el capítulo 10 §4**,
    y dejó los invariantes `D14` y `D13` arriba.~~ **Fuera de esta versión** (revisión del owner,
    2026-09-28, C8): las verticales no se discontinúan; si algún día hace falta, se diseña entonces.
