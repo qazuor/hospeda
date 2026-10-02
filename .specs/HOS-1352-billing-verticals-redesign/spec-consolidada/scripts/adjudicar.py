@@ -38,7 +38,7 @@ C8 = (B03, None, '(La guarda `admiteAltas` salió con la revisión del owner, 20
 AV = (OWN41, None, 'las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia')
 AB_AP = (D16, None, '| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice')
 G35 = (D16, None, '~~34~~ 35: entra `G19`, de `V5`')
-DOCE = (LOG, 7536, 'son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`')
+DOCE = (LOG, 7542, 'son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`')
 ACC25 = (N08, None, '**Es la vigesimosexta**')
 MERGE_V6 = (LOG, 7376, 'fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como')
 SIMPL = 'simplificación del corte (FASE 5, owner 2026-09-30)'
@@ -225,9 +225,9 @@ PINES = [
      [(LOG, 7312, '**los escribe la herramienta del corte de `V6`**')], 'lote B', ''),
     ('DEC-ARCH-013#📌4', P_, None, AG, 'la cifra «de 33 a 34» (hoy 35)', [G35], None, 'cifra'),
     ('DEC-ARCH-014#📌1', P_, None, AG, 'O-B: el cierre de la ruta hasta las lápidas del paso 4; las cifras «23 unidades», «33» y «once»',
-     [(LOG, 7541, 'lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de'), DOCE, G35], 'S-40, S-45', ''),
+     [(LOG, 7547, 'lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de'), DOCE, G35], 'S-40, S-45', ''),
     ('DEC-ARCH-014#📌2', P_, None, AG, 'P-A (el Worker) y P-B (el detector); las cifras «once» y «33»; P-C sigue',
-     [(LOG, 7541, 'lote P pierde el Worker del borde (P-A)'), DOCE], 'S-42, S-45', ''),
+     [(LOG, 7547, 'lote P pierde el Worker del borde (P-A)'), DOCE], 'S-42, S-45', ''),
     ('DEC-ARCH-014#📌5', P_, None, AG, '«`starts_at` y `ends_at` quedan hasta la unidad de socios» (los borra `V6` al corte) y la cifra «34»',
      [AB_AP, G35], 'AB y AP', ''),
     ('DEC-DATA-008#📌1', P_, None, AG, '«antes del ensayo del corte en staging» (antes del merge de `V6`)', [MERGE_V6], 'lote 3 D', ''),
@@ -253,6 +253,8 @@ PINES = [
      [(LOG, None, 'Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina'),
       (N08, None, '**(también una `CANCEL_SCHEDULED` o una terminal cuya cancelación nuestra ninguna relectura confirmó todavía')],
      'lote D (FASE 9 vuelta 3, owner 2026-09-30; F-8V3C1-001)', 'EF-g6-1'),
+    ('DEC-ARCH-017#📌6', P_, None, AG, 'en BN, «`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)»: la crea `U2` (BW)',
+     [(LOG, None, '**`domain_event` la crea `U2`**, y no `V9a`.')], 'BW', 'el 📌 siguiente corrige la aplicación inferida de BN'),
 ]
 
 # --- owner BK (2026-10-02, the 1): overtaken text outside a 📌, in the log and the matrix, which are
