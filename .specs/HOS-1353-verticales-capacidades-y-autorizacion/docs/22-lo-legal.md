@@ -58,7 +58,7 @@ cubre.)*
 
 ### 3.1 El defecto
 
-Tres piezas que por separado están bien y juntas se anulan:
+Tres piezas (la 2 ya no aplica desde `DEC-DATA-005`; residuo corregido el 2026-10-02, segunda vuelta del triage) que por separado están bien y juntas se anulan:
 
 1. **`DEC-TRIAL-004`**: lo único que bloquea un trial nuevo es **el correo normalizado**.
 2. ~~**Capítulo 02 §4.1**: al día 180 se **anonimizan** los datos personales —nombre, **correo**,
