@@ -574,8 +574,8 @@ las dos sin que ninguna de las dos deje de ser cerrada**. La lista de los ~~cinc
 mueve por esto**: sigue siendo la de `DEC-DATA-004`, con los dos avisos de schedule y la superficie
 del archivado contados por separado — **y contados así son seis, no cinco** (`F-8CD1-009`). El
 recuento no agrega ni saca ningún lector: corrige la cifra que `G-R6-B` mitad *(c)* necesita
-exacta, que es la que el cap. 20 §2 y `B/20` §2 citan. *(`DEC-DATA-004` `H1` los llama *«la lista de los cinco consumidores»*; esa
-cifra del log queda por corregir en el log.)*
+exacta, que es la que el cap. 20 §2 y `B/20` §2 citan. *(`DEC-DATA-004` `H1` los llama *«la lista de los cinco consumidores»*; ~~esa
+cifra del log queda por corregir en el log~~ esa cifra del log la omite la adjudicación de `DEC-DATA-004` (corte del MVP, owner 2026-10-02, BK; residuo corregido el 2026-10-02, segunda vuelta del triage).)*
 
 **Y el hecho 5 no le agrega un lector**: `PB2` **escribe** la columna en su primera rama y no la
 lee (FASE 8 completa, `F-8CA2-001`, owner 2026-09-25), **y el recálculo que lo escribe en las no
