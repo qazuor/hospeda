@@ -35,6 +35,11 @@
             "por": "la baja: sus cuatro filas son S11, S22, S23 y S24, y la primera es S11",
             "hereda": true
         },
+        "B/03-maquinas-de-estado.md:944": {
+            "a": "TRANS:B:S10",
+            "por": "sección de título tachado con cuerpo vivo: «`S10` vuelve a ser la única salida de `PAUSED` por su evento»",
+            "hereda": true
+        },
         "B/03-maquinas-de-estado.md:1484": {
             "a": "PROH:B:1",
             "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo (el cambio de plan que no se ofrece no es ninguna de las seis prohibidas)",

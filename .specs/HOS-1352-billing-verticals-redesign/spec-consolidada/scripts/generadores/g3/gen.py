@@ -5,9 +5,13 @@ Every item is copied VERBATIM from its source line at the SHA, with only the str
 removed and markdown links neutralized; nothing is paraphrased. Metadata (owner piece, también)
 comes from cobertura.json and its citations; the TPZ/APZ notes from the inventory.
 
-    python3 gen.py [--salida=<dir>] [--omisiones=<json>]
-    (default: writes 04-catalogos.md into the spec; --omisiones replaces omisiones.json, for
-    canarios_g3.py only)
+    python3 gen.py [--salida=<dir>] [--omisiones=<json>] [--inventario=<json>]
+    (default: writes 04-catalogos.md into the spec; --omisiones replaces omisiones.json and
+    --inventario replaces _trabajo/inventario.json, for canarios_g3.py only)
+
+A section whose title is struck entire and whose body keeps live text is MIXTO in the inventory and is
+attached like a live one, without its struck title; the run fails if a MUERTO section has live text
+outside ~~…~~ (third blind-verification round, H3-G2-10, pattern P-M).
 
 A prose section of the source is attached to the item its title names, to its «adjuntar» entry in
 omisiones.json, or to the item of its nearest ancestor; with none of the three the run fails instead
@@ -24,7 +28,8 @@ C = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.
 sys.path.insert(0, os.path.join(C, 'scripts'))
 from comun import SHA, lines, slug  # noqa: E402
 
-INV = json.load(open(C + '/_trabajo/inventario.json', encoding='utf-8'))['items']
+INV = json.load(open(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--inventario=')),
+                          C + '/_trabajo/inventario.json'), encoding='utf-8'))['items']
 ASG = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))
 ADJ = json.load(open(C + '/_trabajo/adjudicacion.json', encoding='utf-8'))['veredictos']
 COB = json.load(open(C + '/_trabajo/cobertura.json', encoding='utf-8'))['items']
@@ -211,7 +216,9 @@ def bloque(cid, titulo, cuerpo, extra_locs=()):
         # plain prose, not an italic paragraph: markdownlint reads that as a heading (MD036)
         t = t.split('\n', 4)[4] if t else 'La sección no tiene texto vigente fuera de su título.'
         assert not re.search(r'^Origen:|<a id=', t, re.M), (f, a)
-        adj += ['', f'**Texto de la fuente — «{head}»** (`{corto(f)}:{a}–{b}`, sin lo tachado):', '', t]
+        # a MIXTO section (H3-G2-10): its title is struck entire, so only its live body goes
+        rotulo = f'«{head}»' if head else 'sección de título retirado, lo que sigue vivo de su cuerpo'
+        adj += ['', f'**Texto de la fuente — {rotulo}** (`{corto(f)}:{a}–{b}`, sin lo tachado):', '', t]
         L = lines(f)
         citar = [x for x in range(a, b + 1) if L[x - 1].strip()] if (f, a) in TODAS_LAS_LINEAS else [a]
         for x in citar:
@@ -322,11 +329,26 @@ _V20 = Vp + 'docs/20-testing.md'
 _B02 = Bp + 'docs/02-modelo-de-datos.md'
 
 
+def _vivo_fuera_de_tachado(path, a, b):
+    """The text of lines ``a``..``b`` outside ~~…~~ (a strike may span lines), markup and blanks dropped."""
+    t = re.sub(r'~~.*?~~', '', '\n'.join(lines(path)[a - 1:b]), flags=re.S)
+    return re.sub(r'^\s*---\s*$|[\s*`>|:✚-]', '', t, flags=re.M)
+
+
+# P-M (third blind-verification round, H3-G2-10): a section with a struck title and a live body is MIXTO
+# and goes attached like a live one; a MUERTO section must have nothing alive in its body, or its live
+# text would be lost without a word (six of the seven MUERTO sections of the second freeze were so).
+_muertas_vivas = [f"{corto(i['archivo'])}:{i['linea']}" for i in SECS if i['estado'] == 'MUERTO'
+                  and _vivo_fuera_de_tachado(i['archivo'], i['linea'] + 1, i['fin'])]
+if _muertas_vivas:
+    sys.exit(f'✗ g3: sección MUERTO con texto vivo fuera de ~~…~~ (el inventario la tiene que dar por MIXTO): {_muertas_vivas}')
+
+
 def _secs(f, a, b):
     rows = {BYID[k]['linea'] for k in MINE if BYID[k]['archivo'] == f}
     out = []
     for i in SECS:
-        if i['archivo'] == f and a <= i['linea'] <= b and i['estado'] == 'VIVO':
+        if i['archivo'] == f and a <= i['linea'] <= b and i['estado'] in ('VIVO', 'MIXTO'):
             if any(i['linea'] <= r <= i['fin'] for r in rows):
                 continue  # its rows are items: the notes of that section go before the items
             out.append(i)

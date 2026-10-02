@@ -38,6 +38,10 @@ ADJUNTAR = {
     f'{_B03}:285': ('TRANS:B:S1', GENERAL + ' (una condición de toda fila que cancela en el proveedor)'),
     f'{_B03}:377': ('TRANS:B:S1', GENERAL + ' (el dominio de la sucesión, recorrido por la predecesora)'),
     f'{_B03}:886': ('TRANS:B:S11', 'la baja: sus cuatro filas son S11, S22, S23 y S24, y la primera es S11'),
+    # third blind-verification round (H3-G2-10): a MIXTO section, struck title and live body; what is
+    # alive is that S25-S28 left and «`S10` vuelve a ser la única salida de `PAUSED` por su evento»
+    f'{_B03}:944': ('TRANS:B:S10', 'sección de título tachado con cuerpo vivo: «`S10` vuelve a ser la única salida '
+                                   'de `PAUSED` por su evento»'),
     f'{_B03}:1484': ('PROH:B:1', GENERAL + ' (el cambio de plan que no se ofrece no es ninguna de las seis prohibidas)'),
     f'{_B03}:1520': ('TRANS:B:S1', 'las precisiones sobre `PENDING_AUTHORIZATION`, el estado al que entra S1'),
     f'{_B03}:1589': ('TRANS:B:S4', '«Entra por `S4`»: el grace nace de S4'),
