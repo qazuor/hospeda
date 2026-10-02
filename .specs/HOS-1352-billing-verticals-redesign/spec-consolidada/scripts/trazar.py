@@ -56,7 +56,12 @@ RULES
   R15 every GUARD is covered by ≥1 `guard estático` test with `Mutación:`.
   R16 template (AO): every piece has its file in the right folder (cut -> 10-corte, later ->
       20-fase-<n> of its phase, AW), with every heading of the template, in order, and none empty.
-  R17 coverage net: every live section of the 38 design files has ≥1 line cited by an `Origen:`.
+  R17 coverage net: every live section of the 38 design files has ≥1 line cited by an `Origen:`
+      line of ANY spec file (anchored block or plain prose; fenced code, `_trabajo/` and
+      `scripts/` excluded).
+  R18 with --cobertura: every owned live item has, in its owner piece, tests covering an AC that
+      cites it, of every type AN demands for its family (`tipos_exigidos_por_familia`). The types
+      read only in its text or by lectura (`tipos_solo_del_texto`) are reported as ⚠, never fail.
 """
 import collections
 import glob
@@ -80,10 +85,18 @@ ORIGEN = re.compile(r'^Origen:\s*(.+)$', re.M)
 LOC = re.compile(r'([\w./\-]+\.md):(\d+)')
 
 
+def archivos(spec_dir, sin=('scripts',)):
+    """The spec's markdown files. `scripts/` is tooling (the generators' templates carry anchors
+    and `Origen:` lines of their own), never part of the spec."""
+    for f in sorted(glob.glob(os.path.join(spec_dir, '**', '*.md'), recursive=True)):
+        if os.path.relpath(f, spec_dir).split(os.sep)[0] not in sin:
+            yield f
+
+
 def bloques(spec_dir):
     """Every anchor with its block: {slug: [(file, line, text)]}, plus all references."""
     defs, refs = collections.defaultdict(list), []
-    for f in sorted(glob.glob(os.path.join(spec_dir, '**', '*.md'), recursive=True)):
+    for f in archivos(spec_dir):
         rel = os.path.relpath(f, spec_dir)
         L = open(f, encoding='utf-8').read().split('\n')
         for n, l in enumerate(L, 1):
@@ -96,6 +109,33 @@ def bloques(spec_dir):
                 defs[a].append((rel, n, '\n'.join(body)))
             refs += [(rel, n, s) for _, s in REF.findall(l)]
     return defs, refs
+
+
+def origenes(spec_dir):
+    """Every line cited by an `Origen:` line of any spec file, outside fenced code: {path: {line}}.
+    Prose without an item covers its section too (an `SEC` is never anchored, R5). The working
+    notes (`_trabajo/`) are not the spec and cover nothing."""
+    out = collections.defaultdict(set)
+    for f in archivos(spec_dir, sin=('scripts', '_trabajo')):
+        fence = False
+        for l in open(f, encoding='utf-8').read().split('\n'):
+            if l.lstrip().startswith('```'):
+                fence = not fence
+                continue
+            m = None if fence else ORIGEN.match(l)
+            if m:
+                for p, ln in LOC.findall(m.group(1)):
+                    out[p].add(int(ln))
+    return out
+
+
+def tipo_cumplido(req, tests):
+    """Whether ``tests`` satisfy one minimum of cobertura.json: «≥1 de cualquier tipo…» asks for
+    any test; «<tipo> · <etiqueta>» asks for that type with that smoke label; «<tipo>» for the type."""
+    if req.startswith('≥1'):
+        return bool(tests)
+    tipo, _, et = (x.strip() for x in req.partition(' · '))
+    return any(t['tipo'] == tipo and (not et or t.get('etiqueta') == et) for t in tests)
 
 
 def citas(text):
@@ -150,13 +190,7 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
         if len(defs[s]) > 1 and KIND.match(s):
             err['R5 US/AC/TEST definido dos veces'].append(s)
 
-    # R6 + collect every cited line for R17 ------------------------------------------------
-    citadas = collections.defaultdict(set)
-    for s, ds in defs.items():
-        for f, n, body in ds:
-            for m in ORIGEN.finditer(body):
-                for p, ln in LOC.findall(m.group(1)):
-                    citadas[p].add(int(ln))
+    # R6 (the first `Origen:` of an item's block) ---------------------------------------------
     for s, ds in defs.items():
         i = by_slug.get(s)
         if not i:
@@ -213,6 +247,8 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
         else:
             t = re.search(r'^Tipo:\s*(.+?)\s*$', body, re.M)
             rec['tipo'] = t.group(1) if t else None
+            e = re.search(r'^Etiqueta:\s*(\w+)', body, re.M)
+            rec['etiqueta'] = e.group(1) if e else None
             if rec['tipo'] not in TIPOS_TEST:
                 err['R12 tipo de test fuera de la lista cerrada'].append(s)
             elif P == CORTE and rec['tipo'] not in TIPOS_CORTE:
@@ -303,14 +339,34 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
             if h in PLANTILLA and (not cuerpo or re.fullmatch(r'N/A\s*[—-]?\s*', cuerpo)):
                 err['R16 sección vacía o N/A sin razón'].append(f'{p}: {h}')
 
-    # R17 coverage net --------------------------------------------------------------------------
+    # R17 coverage net: every `Origen:` line of the spec counts, anchored or not ---------------
+    citadas = origenes(spec_dir)
     for i in items:
         if i['fuente'] == 'SEC' and i['estado'] in VIVOS:
             if not any(i['linea'] <= ln <= i['fin'] for ln in citadas.get(i['archivo'], ())):
                 err['R17 sección sin ninguna línea citada'].append(i['id'])
 
+    # R18 minimum test types (AN) of each owned item, in its owner piece --------------------
+    avisos = collections.defaultdict(list)
+    if cobertura:
+        for cid, c in cob.items():
+            if estado.get(cid) not in VIVOS:
+                continue
+            acs = {a for a, r in ac.items() if r['pieza'] == c['pieza'] and slug(cid) in r['fuente']}
+            alc = [t for t in test.values() if t['pieza'] == c['pieza'] and acs & set(t['cubre'])]
+            fam = c.get('tipos_exigidos_por_familia', c.get('tipos_de_test_minimos', []))
+            txt = c.get('tipos_solo_del_texto', [])
+            for req in fam:
+                if not tipo_cumplido(req, alc):
+                    err['R18 falta un tipo de test que AN exige por familia'].append(f"{cid} -> {c['pieza']}: {req}")
+            for req in txt:
+                if not tipo_cumplido(req, alc):
+                    avisos['R18 aviso: falta un tipo derivado del texto (no falla)'].append(f"{cid} -> {c['pieza']}: {req}")
+
     for k in sorted(err, key=lambda k: (int(re.match(r'R(\d+)', k).group(1)), k)):
         print(f'✗ {k}: {len(err[k])}  ej: {err[k][:3]}')
+    for k in sorted(avisos):
+        print(f'⚠ {k}: {len(avisos[k])}  ej: {avisos[k][:3]}')
     total = sum(len(v) for v in err.values())
     print('RESULTADO:', 'APROBADO (0)' if total == 0 else f'RECHAZADO ({total})')
     return 0 if total == 0 else 1

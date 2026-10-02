@@ -21,8 +21,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 INV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', '_trabajo', 'inventario.json')
 
 IDS = ['DEC-SUB-008', 'INV:1', 'TRANS:B:S2', 'PROH:B:1', 'GUARD:G7', 'LISTA:B2', 'PIEZA:B2',
-       'FILA:B2', 'PLAZO:16', 'L:L1', 'INV:17', 'PASO:0',
+       'FILA:B2', 'PLAZO:16', 'L:L1', 'INV:17', 'PASO:0', 'OWN:28-fase-9-vuelta-1:t1:📌A',
        'SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:40']
+SEC51 = 'SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:51'
 PLANTILLA_TXT = None
 
 
@@ -43,6 +44,10 @@ def fixture(inv):
 <a id="dec-sub-008"></a>
 **DEC-SUB-008** — el downgrade muta el monto ya.
 {origen(I['DEC-SUB-008'])}
+
+<a id="own-28-fase-9-vuelta-1-t1-pa"></a>
+**📌 A** — letra del owner cuyo id local lleva un blanco.
+{origen(I['OWN:28-fase-9-vuelta-1:t1:📌A'])}
 """
     files['02-nucleo.md'] = f"""# Núcleo
 
@@ -160,7 +165,12 @@ Fuente: [dec-sub-008](../01-decisiones-vigentes.md#dec-sub-008)
     mini = dict(sha=inv['sha'], items=[copy.deepcopy(I[c]) for c in IDS])
     adj = {'veredictos': {'PLAZO:16': dict(veredicto='VIVO', hash=I['PLAZO:16']['hash'])}}
     # the coverage map (cobertura.py): every normative item of the fixture is owned by B2
-    cob = {'items': {c: {'pieza': 'B2'} for c in IDS if not c.startswith(('PIEZA:', 'L:', 'SEC:', 'INV:17', 'PASO:'))}}
+    cob = {'items': {c: {'pieza': 'B2', 'tipos_exigidos_por_familia': ['≥1 de cualquier tipo de la lista cerrada'],
+                         'tipos_solo_del_texto': []}
+                     for c in IDS if not c.startswith(('PIEZA:', 'L:', 'SEC:', 'INV:17', 'PASO:', 'OWN:'))}}
+    cob['items']['TRANS:B:S2']['tipos_exigidos_por_familia'] = ['integración con DB']
+    cob['items']['GUARD:G7']['tipos_exigidos_por_familia'] = ['guard estático']
+    cob['items']['DEC-SUB-008']['tipos_solo_del_texto'] = ['smoke manual · staging']
     cob['items']['PASO:0'] = {'pieza': 'CORTE'}
     return files, mini, adj, cob
 
@@ -201,8 +211,8 @@ def main():
     B2 = '10-corte/B2.md'
     canarios = []
 
-    def c(rule, name, f=None, m=None, a=None, k=None, li=None):
-        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob, li))
+    def c(rule, name, f=None, m=None, a=None, k=None, li=None, aviso=None):
+        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob, li, aviso))
 
     c('R1', 'un ítem vivo definido dos veces', sub(files, '04-catalogos.md', '<a id="guard-g7"></a>',
       '<a id="guard-g7"></a>\nx\nOrigen: x.md:1\n\n<a id="guard-g7"></a>'))
@@ -232,6 +242,9 @@ def main():
     m = copy.deepcopy(mini)
     next(i for i in m['items'] if i['id'] == 'DEC-SUB-008')['local'] = 'DEC-SUB-009'
     c('R6', 'la línea citada no contiene el id local', m=m)
+    m = copy.deepcopy(mini)
+    next(i for i in m['items'] if i['id'] == 'OWN:28-fase-9-vuelta-1:t1:📌A')['local'] = '📌A'
+    c('R6', 'una letra del owner guardada sin su blanco («📌A» por «📌 A»)', m=m)
     c('R7', 'un ítem normativo vivo sin AC', sub(files, B2, "[inv-1](../02-nucleo.md#inv-1)", ''))
     k = copy.deepcopy(cob)
     k['items']['INV:1']['pieza'] = 'B3'
@@ -297,13 +310,32 @@ def main():
     m['items'].append(dict(next(i for i in inv['items'] if i['id'] ==
                                 'SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:51')))
     c('R17', 'una sección del diseño sin ninguna línea citada', m=m)
+    prosa = f"\n## Prosa del núcleo\n\nTexto sin ítem.\nOrigen: {item(inv, SEC51)['archivo']}:{item(inv, SEC51)['linea'] + 1}\n"
+    c(None, 'esa sección, citada por un Origen de prosa fuera de todo bloque, pasa',
+      sub(files, '02-nucleo.md', origen(item(inv, 'INV:17')) + '\n', origen(item(inv, 'INV:17')) + '\n' + prosa), m=m)
+    c('R17', 'el mismo Origen dentro de un bloque de código no cuenta',
+      sub(files, '02-nucleo.md', origen(item(inv, 'INV:17')) + '\n',
+          origen(item(inv, 'INV:17')) + '\n' + prosa.replace('Origen:', '```\nOrigen:') + '```\n'), m=m)
+    f = dict(files)
+    f['scripts/generadores/g8/src/B2.md'] = files[B2]
+    c(None, 'la plantilla de un generador en scripts/ (anclas y Origen repetidos) no es la spec: pasa', f)
+    k = copy.deepcopy(cob)
+    k['items']['INV:1']['tipos_exigidos_por_familia'] = ['migración desde cero']
+    c('R18', 'un ítem sin el tipo de test que AN exige por su familia', k=k)
+    k = copy.deepcopy(cob)
+    k['items']['INV:1']['tipos_solo_del_texto'] = ['e2e web']
+    c(None, 'un tipo derivado sólo del texto que falta pasa, con aviso', k=k, aviso='⚠ R18 ')
+    k = copy.deepcopy(cob)
+    k['items']['DEC-SUB-008']['tipos_exigidos_por_familia'] = ['smoke manual · prod']
+    c('R18', 'un smoke con la etiqueta equivocada no cumple el tipo «smoke manual · prod»', k=k)
 
     code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
-    for rule, name, f, m, a, k, li in canarios:
+    for rule, name, f, m, a, k, li, aviso in canarios:
         code, out = run(f, m, a, k, li)
         ok = (code == 0) if rule is None else (code == 1 and f'✗ {rule} ' in out)
+        ok = ok and (aviso is None or aviso in out)
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule or "pasa":4} exit {code} · {name}')
         if not ok:
