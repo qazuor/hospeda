@@ -1,5 +1,5 @@
 {
-    "sha": "f80c0f27154ca023d97a016707d823ff826cf76a",
+    "sha": "4278aa1adcd01bf5d19e78dcc21646cc6a787e3d",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,8 +35,8 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 625,
-        "02-nucleo.md": 95,
+        "01-decisiones-vigentes.md": 642,
+        "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
         "10-corte/B1.md": 3,
@@ -164,7 +164,7 @@
         "DEC-MIG-001": {
             "fuente": "DEC",
             "estado": "SUPERSEDED_PARCIAL",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MIG-001#📌1": {
@@ -462,6 +462,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-002#📌1": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-MP-002#📌2": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -812,7 +818,7 @@
         "DEC-MIG-002": {
             "fuente": "DEC",
             "estado": "SUPERSEDED_PARCIAL",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MIG-002#📌1": {
@@ -950,7 +956,7 @@
         "DEC-METH-006": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-007": {
@@ -1034,7 +1040,7 @@
         "DEC-DATA-002": {
             "fuente": "DEC",
             "estado": "SUPERSEDED_PARCIAL",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-DATA-002#📌1": {
@@ -1052,13 +1058,13 @@
         "DEC-ADDON-003": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ADDON-004": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "VIVO",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ADDON-004#📌1": {
@@ -1220,7 +1226,7 @@
         "DEC-MP-003": {
             "fuente": "DEC",
             "estado": "SUPERSEDED_PARCIAL",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-003#📌1": {
@@ -1256,7 +1262,7 @@
         "DEC-DATA-004": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ENT-005": {
@@ -1406,7 +1412,7 @@
         "DEC-RF-007": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "VIVO",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-007": {
@@ -1418,7 +1424,7 @@
         "DEC-SUB-019": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-SUB-019#📌1": {
@@ -1442,7 +1448,7 @@
         "DEC-MP-008": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
-            "veredicto": null,
+            "veredicto": "VIVO",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-008#📌1": {
@@ -1532,7 +1538,7 @@
         "DEC-DATA-005#📌6": {
             "fuente": "PIN",
             "estado": "VIGENTE",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-DATA-005#📌7": {
@@ -1568,7 +1574,7 @@
         "DEC-TRIAL-010#📌1": {
             "fuente": "PIN",
             "estado": "VIGENTE",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-014": {
@@ -2045,6 +2051,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-DATA-008#📌7": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-MP-009": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2114,7 +2126,7 @@
         "DEC-ARCH-014#📌7": {
             "fuente": "PIN",
             "estado": "VIGENTE",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-015": {
@@ -2136,6 +2148,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-016#📌1": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-ARCH-016#📌2": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -2177,6 +2195,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-ARCH-017#📌6": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-METH-019": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2196,6 +2220,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-019#📌3": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-METH-019#📌4": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -2816,7 +2846,7 @@
         "MP:EX-46": {
             "fuente": "MATRIZ",
             "estado": "UNKNOWN",
-            "veredicto": null,
+            "veredicto": "PARCIAL",
             "destino": "04-catalogos.md"
         },
         "MP:EX-47": {
@@ -3116,8 +3146,8 @@
         },
         "FILA:B13a": {
             "fuente": "FILA",
-            "estado": "VIVO",
-            "veredicto": null,
+            "estado": "MIXTO",
+            "veredicto": "VIVO",
             "destino": "10-corte/B13a.md"
         },
         "FILA:B13b": {
@@ -5051,6 +5081,12 @@
             "fuente": "PLAZO",
             "estado": "MIXTO",
             "veredicto": "VIVO",
+            "destino": "02-nucleo.md"
+        },
+        "PLAZO:19": {
+            "fuente": "PLAZO",
+            "estado": "VIVO",
+            "veredicto": null,
             "destino": "02-nucleo.md"
         },
         "MOT:1": {
@@ -7297,6 +7333,78 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t9:BK": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BL": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BM": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BN": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BO": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BP": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BQ": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BR": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BS": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BT": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BU": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t9:BV": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -8046,7 +8154,7 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1522": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1525": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8088,79 +8196,79 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:505": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:510": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:620": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:625": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:661": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:666": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:675": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:680": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1000": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1020": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1009": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1029": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1034": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1078": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1047": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1091": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1061": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1105": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1069": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1113": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1079": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1133": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1176": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1130": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1191": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8328,73 +8436,73 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:720": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:722": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:758": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:760": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:794": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:796": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:815": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:817": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:874": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:876": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:878": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:880": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:889": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:891": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:904": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:906": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:924": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:926": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:937": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:939": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:949": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:951": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:973": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:975": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8436,13 +8544,13 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:258": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:259": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:271": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:272": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8514,7 +8622,7 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:221": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:223": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8622,7 +8730,7 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:370": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:372": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8832,25 +8940,25 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:600": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:607": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:644": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:651": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:721": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -10098,31 +10206,31 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:840": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:864": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:895": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:919": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:941": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:965": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1036": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1060": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1094": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11430,31 +11538,31 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:160": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:161": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:170": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:171": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:203": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:204": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:300": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:301": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:326": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:327": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11502,61 +11610,61 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:521": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:522": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:553": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:554": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:565": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:566": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:571": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:572": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:617": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:618": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:627": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:628": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:650": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:651": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:705": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:706": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:737": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:738": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:796": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:797": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
