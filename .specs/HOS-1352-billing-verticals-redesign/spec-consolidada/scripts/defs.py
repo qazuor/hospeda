@@ -122,6 +122,45 @@ def solo_citables_fallas(items_by_id, lista=None):
             out.append(f'{cid}: la fila {letra} cambió desde que se escribió la lista (hash)')
     return out
 
+
+# --- AN, the minimum test types of cobertura.py: the pieces whose partition text says they CREATE
+#     schema (triage of the consolidated spec's open items: AB-g4-1, AB-g5-12, AB-g7-12). A migration
+#     type read only in an item's words binds its owner only if the owner is here; if not, it moves
+#     to a «tambien» piece that is here, or it is dropped (cobertura.tipos). Each entry is
+#     piece -> (file, fragment): the fragment is in exactly ONE line at the SHA, and that line names
+#     the piece. The list is derived from the sources (inferred, and marked so): it only moves types
+#     that trazar.py R18 reports as warnings, never the ones AN demands per family. ----------------
+_VD, _BD, _D16 = V + 'descomposicion.md', B + 'descomposicion.md', D + '16-fase-7-del-paraguas.md'
+CREA_ESQUEMA = {
+    'U1': (_VD, 'borra las columnas de pago de `partners`, sus FK y los tres crons de partner'),
+    'V1': (_VD, '**y la tabla de claves de la base, que viaja en la migración como SQL generado'),
+    'V2': (_D16, '`addon_version` es de verticales y la construye `V2`'),
+    'V4': (_VD, 'ninguna tabla del trial tiene esas columnas'),
+    'V6': (_D16, '| la postulación de Partner, el rol de socio y el bit de moderación de la presencia | `V7` | `V6` |'),
+    'V9a': (_D16, '- `domain_event` (`NUCLEO/02` §2.6): la crea **`V9a`**'),
+    'B2': (_BD, '`billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan'),
+    'B3': (_D16, '| la cola de cambios programados | `B8b` | `B3` |'),
+    'B5': (_D16, '| la columna de `payment` que apunta a la instancia de addon, con la que `payment` nace | `B10` | `B5` |'),
+}
+
+
+def crea_esquema_fallas(crea=None):
+    """Errors of CREA_ESQUEMA: a fragment that is not in exactly one line of its file at the SHA, or
+    a line that does not name its piece."""
+    crea = CREA_ESQUEMA if crea is None else crea
+    out = []
+    for p, (path, frag) in sorted(crea.items()):
+        try:
+            hits = [l for l in lines(path) if frag in l]
+        except SystemExit:
+            out.append(f'{p}: {path} no existe en el SHA')
+            continue
+        if len(hits) != 1:
+            out.append(f'{p}: el fragmento está en {len(hits)} líneas de {path} («{frag[:50]}»)')
+        elif not re.search(r'(?<![\w-])' + re.escape(p) + r'(?![\w])', hits[0]):
+            out.append(f'{p}: la línea del fragmento no nombra la pieza')
+    return out
+
 # --- R6: what the cited Origen line must contain. 'id' = the local id; 'pin' = 📌; 'pos' = an
 #     ordinal without text in the line, so only the exact position is checked. -------------
 CHEQUEO_LOCAL = collections.defaultdict(lambda: 'id', {

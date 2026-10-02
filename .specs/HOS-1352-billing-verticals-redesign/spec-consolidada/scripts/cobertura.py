@@ -8,6 +8,7 @@ why that piece implements it, the other pieces that also exercise it, and the mi
            [--fragmento]         validate the lectura file alone (partial: no completeness rule)
            [--candidatos ID]     print the partition lines that name ID together with a piece
            [--lista-solo-citables=<json>]  replace defs.SOLO_CITABLES (for the canaries only)
+           [--crea-esquema=<json>]         replace defs.CREA_ESQUEMA (for the canaries only)
 
 Two methods. `script`: derived from a table that maps the item to its piece (the piece's own row,
 the guards column, B §2.12, the schema table and the phases of D/16 §4.6-§4.7, the dependency
@@ -29,6 +30,16 @@ RULES (exit 1 when any fails)
   C7  an item is derived once: never by script and by lectura, never a dead or citable-only item.
   C8  the closed list of citable-only items (defs.SOLO_CITABLES, owner BA and BB) is valid: every id
       in the inventory, named by its owner row, row hash unchanged. Those items need no owner.
+  C9  the closed list of pieces that create schema (defs.CREA_ESQUEMA) is valid: each fragment is in
+      exactly one line at the SHA, and that line names its piece.
+
+TYPES (AN; not a rule, they never fail here: trazar.py R18 reads them). The types AN demands per
+family always bind the owner. A type read only in the item's words binds it with three limits
+(triage of the open items, 2026-10-02): a migration type binds the owner only if the owner creates
+schema (CREA_ESQUEMA); otherwise it moves to the first «tambien» piece that does
+(`tipos_trasladados`) or is dropped (`tipos_descartados`); the pseudo-piece CORTE only takes
+`smoke manual` or `guard estático` (owner BE), and anything else follows the same move; and a gate
+whose conditions are CI and merge conditions takes no smoke from the word (SIN_SMOKE_DEL_TEXTO).
 """
 import collections
 import json
@@ -38,8 +49,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from comun import B, D, SHA, V, cells, line_hash, lines, section, table_after, unstrike  # noqa: E402
-from defs import (MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, SOLO_CITABLES, TIPOS_TEST, VIVOS,  # noqa: E402
-                  solo_citables_fallas)
+from defs import (CREA_ESQUEMA, MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, SOLO_CITABLES, TIPOS_TEST,  # noqa: E402
+                  VIVOS, crea_esquema_fallas, solo_citables_fallas)
 
 D16 = D + '16-fase-7-del-paraguas.md'
 VD, BD = V + 'descomposicion.md', B + 'descomposicion.md'
@@ -267,7 +278,8 @@ def por_script(items, todos, piezas, anc):
 
 
 # --- minimum test types (AN) --------------------------------------------------------------------
-SMOKE_RX = re.compile(r'\bsmoke\b|checklist de smoke|\bensayo\b|\b5c\b')
+# «smoke» between hyphens is a label name (`status-needs-smoke-*`), not a smoke test
+SMOKE_RX = re.compile(r'(?<![-\w])smoke(?![-\w])|\bensayo\b|\b5c\b')
 MIG_RX = re.compile(r'migraci[oó]n (?:estructural|de datos)|\btablas?\b|\bcolumnas?\b|`UNIQUE`|`CHECK`|\benums?\b|\besquema\b')
 DATOS_RX = re.compile(r'migraci[oó]n de datos|sobre datos|preexistente|filas? (?:vivas|existentes|de producción)|`partners`')
 
@@ -277,12 +289,23 @@ TIPOS_FAMILIA = {'TRANS': ['integración con DB'], 'TPZ': ['integración con DB'
                  'PROH': ['integración con DB'], 'GUARD': ['guard estático'], 'ESQ': ['migración desde cero']}
 
 
-def tipos(i, rec):
+# gates whose conditions are CI and merge conditions (D-2, D-3): «smoke» in their text names a label
+# or a checklist another piece writes (owner BS), never a smoke run of the gate itself
+SIN_SMOKE_DEL_TEXTO = {'GATE:M1': 'momento 1: sus condiciones son de CI, de guards y de merge (D-2)',
+                       'GATE:M2': 'momento 2: sus condiciones son de CI y de merge (D-3)'}
+ROL_ORDEN = {'provee': 0, 'implementa': 1, 'usa': 2, 'lee': 3}
+SOLO_CORTE = ('smoke manual', 'guard estático')
+
+
+def tipos(i, rec, crea=None):
     """AN, per family, plus what the item's own text asks for (marked as derived from text).
 
-    Returns (all, why, by_family, by_text): ``all`` is the full minimum (as before); ``by_family``
-    is what AN demands for the item's source (R18 fails without it); ``by_text`` is what was only
-    read in the item's words or adjudicated by reading (R18 warns, never fails)."""
+    Returns (all, why, by_family, by_text, moved, dropped): ``all`` is the full minimum of the owner;
+    ``by_family`` is what AN demands for the item's source (R18 fails without it); ``by_text`` is
+    what was only read in the item's words or adjudicated by reading (R18 warns, never fails);
+    ``moved`` are the text types that go to a «tambien» piece and ``dropped`` the ones no piece takes
+    (see TYPES in the module doc)."""
+    crea = CREA_ESQUEMA if crea is None else crea
     f = i['fuente']
     fam = list(TIPOS_FAMILIA.get(f, [CUALQUIERA]))
     ts, por_que = list(fam), []
@@ -295,7 +318,7 @@ def tipos(i, rec):
         if DATOS_RX.search(txt):
             ts.append('migración sobre datos')
             por_que.append(f'datos: «{DATOS_RX.search(txt).group(0)}»')
-    if SMOKE_RX.search(txt):
+    if SMOKE_RX.search(txt) and i['id'] not in SIN_SMOKE_DEL_TEXTO:
         et = 'prod' if re.search(r'\b5c\b|producción', txt) else 'staging'
         ts.append(f'smoke manual · {et}')
         por_que.append(f'smoke: «{SMOKE_RX.search(txt).group(0)}»')
@@ -303,9 +326,31 @@ def tipos(i, rec):
         if t not in ts:
             ts.append(t)
             por_que.append(f'lectura: «{t}»')
+    # the limits on the types read only in the text (never on the family's)
+    own = rec.get('pieza')
+    destinos = [t['pieza'] for t in sorted(rec.get('tambien', []), key=lambda t: ROL_ORDEN.get(t.get('rol'), 9))
+                if t.get('pieza') in crea]
+    moved, dropped = [], []
+    for t in [t for t in ts if t not in fam]:
+        if own == CORTE:
+            if t.startswith(SOLO_CORTE):
+                continue
+            why = 'CORTE sólo lleva smoke manual o guard estático (BE)'
+        elif t.startswith('migración') and own not in crea:
+            why = f'{own} no crea esquema (defs.CREA_ESQUEMA)'
+        else:
+            continue
+        ts.remove(t)
+        if t.startswith('migración') and destinos:
+            moved.append(dict(tipo=t, pieza=destinos[0], por_que=f'{why}; lo crea {destinos[0]}, que también lo ejerce'))
+        else:
+            dropped.append(dict(tipo=t, por_que=why + ('' if t.startswith('migración') else '; no es un tipo de migración')
+                                + ('' if destinos or not t.startswith('migración') else '; ningún «tambien» crea esquema')))
+    if not ts:
+        ts.append(CUALQUIERA)
     if len(ts) > 1 and CUALQUIERA in ts:
         ts.remove(CUALQUIERA)
-    return ts, por_que, fam, [t for t in ts if t not in fam]
+    return ts, por_que, fam, [t for t in ts if t not in fam], moved, dropped
 
 
 # --- validation ---------------------------------------------------------------------------------
@@ -457,6 +502,8 @@ def main(argv):
     args = [a for a in argv if not a.startswith('--')]
     lst = next((a.split('=', 1)[1] for a in flags if a.startswith('--lista-solo-citables=')), None)
     lista = ({k: tuple(v) for k, v in json.load(open(lst, encoding='utf-8')).items()} if lst else SOLO_CITABLES)
+    cre = next((a.split('=', 1)[1] for a in flags if a.startswith('--crea-esquema=')), None)
+    crea = ({k: tuple(v) for k, v in json.load(open(cre, encoding='utf-8')).items()} if cre else CREA_ESQUEMA)
     if '--candidatos' in flags:
         cid = args.pop()
     if len(args) != 4:
@@ -492,6 +539,8 @@ def main(argv):
             err['C7 ítem con pieza y en «sin_pieza»'].append(k)
     for f in solo_citables_fallas(by, lista):
         err['C8 lista cerrada de sólo citables inválida'].append(f)
+    for f in crea_esquema_fallas(crea):
+        err['C9 lista cerrada de piezas que crean esquema inválida'].append(f)
     rec = dict(script)
     for k, e in entradas.items():
         if k in norm_ids and k not in script:
@@ -509,12 +558,12 @@ def main(argv):
     items_out, cuenta = {}, collections.defaultdict(collections.Counter)
     for k in sorted(rec, key=lambda x: (by[x]['fuente'], x)):
         r, i = rec[k], by[k]
-        ts, por_que, fam, txt = tipos(i, r)
+        ts, por_que, fam, txt, moved, dropped = tipos(i, r, crea)
         items_out[k] = dict(fuente=i['fuente'], pieza=r['pieza'], metodo=r['metodo'],
                             fuente_de_la_asignacion=r['citas'], razon=r.get('razon'),
                             tambien_lo_ejercen=r.get('tambien', []), tipos_de_test_minimos=ts,
                             tipos_derivados_del_texto=por_que, tipos_exigidos_por_familia=fam,
-                            tipos_solo_del_texto=txt)
+                            tipos_solo_del_texto=txt, tipos_trasladados=moved, tipos_descartados=dropped)
         cuenta[r['pieza']][r['metodo']] += 1
         for t in r.get('tambien', []):
             cuenta[t['pieza']]['tambien'] += 1
@@ -529,6 +578,7 @@ def main(argv):
                    por_pieza=resumen, sin_pieza=sin, preguntas=lect.get('preguntas', {}),
                    solo_citables={k: dict(letra=v[0], cita=v[1], destino='03-contrato-de-cobertura.md')
                                   for k, v in sorted(lista.items())},
+                   crea_esquema={k: dict(archivo=v[0], cita=v[1]) for k, v in sorted(crea.items())},
                    script_pendiente_de_lectura=pend, fallas={k: v for k, v in sorted(err.items())}, items=items_out)
         json.dump(doc, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
         print(f'SHA {SHA[:10]} · {len(norm)} normativos · {len(rec)} con pieza · {doc["por_metodo"]} · sin pieza {len(sin)}')
