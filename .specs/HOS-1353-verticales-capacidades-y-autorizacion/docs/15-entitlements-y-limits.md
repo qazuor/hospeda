@@ -422,8 +422,8 @@ antes»* y *«dejar elegir»* sobre lo que se **quita**, y restituir no quita na
 **después** y dice qué volvió y con qué criterio (`V/19` §4, fila 19). El único caso en que el
 dueño podría no querer lo que le devolvimos —una ficha que prefería no tener pública— lo resuelve
 él en un acto con **`PB6`**, *«el dueño despublica»* (cap. 03 §9), y el riesgo está aceptado por
-escrito en `DEC-DATA-003`. (Esa decisión nombra `PB1` para ese acto; `PB1` es la que **publica**,
-y la que despublica es `PB6`. Acá va la fila que ejecuta lo que la decisión describe.)
+escrito en `DEC-DATA-003`. ~~(Esa decisión nombra `PB1` para ese acto; `PB1` es la que **publica**,
+y la que despublica es `PB6`. Acá va la fila que ejecuta lo que la decisión describe.)~~ (La decisión decía `PB1` hasta la FASE 9-bis-4; hoy dice `PB6`: residuo corregido el 2026-10-02, segunda vuelta del triage.)
 
 ---
 
