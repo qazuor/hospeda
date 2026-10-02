@@ -191,6 +191,16 @@ Respuesta del owner, 2026-10-02, a la pregunta que quedó abierta después de CD
 |---|---|---|---|---|
 | CE | si el objetivo `LISTING` de un addon que nace por `A1-bis` (CD) exige las mismas guardas que `A1` (`B/03` §8): ficha propia, de la vertical del producto, y en un estado que acepte destacarla | 1 | sí | **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD. Las otras opciones eran sólo la autorización del capítulo 17 (se podría destacar una ficha moderada, que nadie ve) o dejarlo abierto hasta `B10` (`B10` no podría cerrar su *«Lista cuando»*) |
 
+## Lote CF y CG (2026-10-02)
+
+Respuestas del owner, 2026-10-02, a las dos preguntas de orden de merge que dejó la pasada 4 de
+redacción de la spec consolidada (fuentes en `b949031c70`). Las dos son la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CF | en qué PR entra el predicado de CC (la acción 19 de `B2` cuenta como cliente de una versión la fila con un `S38` encolado hacia ella), si lee la cola de cambios programados (`ESQ:3`), que crea `B3` (AP), y `B2` se mergea antes que `B3` | 1 | sí | **el predicado y su test van en el PR de `B3`**, como una cláusula más sobre el rechazo de la acción 19, que ya existe; **el AC sigue siendo de `B2`** en la spec, y el criterio de salida que lo demuestra es de `B3`. Precisa CC. Las otras opciones eran que `B2` creara la cola (reabre AP) o escribir el predicado en `B2` contra una interfaz y probarlo en `B3` (BL habla de piezas posteriores que implementan una interfaz, no de una tabla) |
+| CG | dónde vive la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *«la cancelación `B8`»*), si la pantalla de la baja la construye `B13a` y `B13a` espera a `B8a` (BH) | 1 | sí | **en `B13a`**, la primera pieza del corte con la API, la web y la pantalla de la baja juntas; **`B8a` conserva sus pruebas de integración**. Precisa el punto 3 de `B/20` §5.1, escrito antes de partir `B8` y `B13` (Z). Las otras opciones eran la prueba en `B8a` contra la API sin pantalla (no ejercita la pantalla que el e2e reemplaza del smoke manual) o las dos (dos pruebas del mismo flujo) |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
