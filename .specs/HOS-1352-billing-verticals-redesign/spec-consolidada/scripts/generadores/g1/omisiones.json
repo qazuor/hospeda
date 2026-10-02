@@ -1,16 +1,4 @@
 {
-    "DEC-CONC-002#📌1": [
-        {
-            "de": "Once filas de\n`B/03`",
-            "a": "[…] Filas de\n`B/03`"
-        }
-    ],
-    "DEC-CONC-002#📌3": [
-        {
-            "de": " —que desde\nentonces cuenta las dos lápidas, la del corte y la de recepción—",
-            "a": " […]"
-        }
-    ],
     "DEC-ADDON-002#📌2": [
         {
             "de": "`S26` la\naplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa. ",
@@ -19,78 +7,21 @@
         {
             "de": "una de las\ncatorce transiciones",
             "a": "una de las\n[…] transiciones"
-        }
-    ],
-    "DEC-MIG-002#📌1": [
-        {
-            "de": ": una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el\nproveedor.",
-            "a": ": […]."
-        }
-    ],
-    "DEC-MIG-003#📌1": [
-        {
-            "de": " si el despliegue falla: el costo, aceptado, es que los\nclientes cancelados se re-suscriben sin trial, y **qué se hace con esa diferencia no está\ndecidido**.",
-            "a": " si el despliegue falla […]."
-        }
-    ],
-    "DEC-MIG-003#📌2": [
-        {
-            "de": "escribe sigue siendo: las lápidas (paso 4), los dos",
-            "a": "escribe sigue siendo: […] los dos"
-        }
-    ],
-    "DEC-MIG-003#📌3": [
-        {
-            "de": "- La rama de aborto devuelve la URL de notificación a la ruta del viejo y la verifica con\n  una entrega real.\n",
-            "a": "- […]\n"
         },
         {
-            "de": "- El borrado del contenido de las `L1` pasa al paso 5b, después de abrir altas, porque el\n  backup no restaura fotos ni tokens.\n",
-            "a": "- […]\n"
+            "cita": "`S26` la aplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa"
         },
         {
-            "de": "- El apuntado de la URL es el paso 4b, después de las lápidas. El paso 3",
-            "a": "- […] El paso 3"
-        },
-        {
-            "de": "- El recuento de fichas de Gastronomía y de Experiencia se hace antes del 1a, y el corte no\n  arranca si da una fila; el gate del paso 2 lo repite como segundo control, y si ahí da una\n  fila el corte entra en la rama de aborto (`V/21` §2.4).\n",
-            "a": "- […]\n"
-        },
-        {
-            "de": "- El paso 4c, después del 4b y fuera de la rama, revalida las páginas públicas de las fichas\n  que nacieron despublicadas.",
-            "a": "- […]"
+            "cita": "catorce transiciones"
         }
     ],
-    "DEC-MIG-003#📌5": [
+    "DEC-ADDON-003": [
         {
-            "de": "; el borde la cierra antes de apagar el\ncontenedor viejo en el paso 3 y la abre al final del paso 4, con las lápidas verificadas;\nmientras está cerrada, el proveedor recibe error y reintenta a la misma URL.",
-            "a": "; […]."
+            "de": "**La condición de huérfano no se toca: sigue con tres mitades.**",
+            "a": "[…]"
         },
         {
-            "de": "vuelve\na cerrar la ruta si hace falta, redespliega",
-            "a": "[…] redespliega"
-        }
-    ],
-    "DEC-DATA-002#📌1": [
-        {
-            "de": "**tiene seis hechos**",
-            "a": "**tiene […] hechos**"
-        }
-    ],
-    "DEC-TEST-001#📌1": [
-        {
-            "de": "el total de 31 guards no\ncambia",
-            "a": "el total de […] guards no\ncambia"
-        }
-    ],
-    "DEC-RF-008#📌1": [
-        {
-            "de": "**quince**\nacciones",
-            "a": "**[…]**\nacciones"
-        },
-        {
-            "de": "dicen quince.",
-            "a": "dicen […]."
+            "cita": "La condición de huérfano no se toca: sigue con tres mitades"
         }
     ],
     "DEC-ADDON-004#📌1": [
@@ -107,144 +38,21 @@
         {
             "de": "y siguen siendo once.",
             "a": "y […]."
+        },
+        {
+            "cita": "las filas vivas sin `CANCEL_SCHEDULED`"
+        },
+        {
+            "cita": "siguen siendo once"
         }
     ],
     "DEC-ARCH-006#📌9": [
         {
             "de": "siguen en once.",
             "a": "siguen en […]."
-        }
-    ],
-    "DEC-SUB-013#📌1": [
-        {
-            "de": "`S24`, `S26`)",
-            "a": "`S24`, […])"
         },
         {
-            "de": "`S21`, `S28`)",
-            "a": "`S21`, […])"
-        }
-    ],
-    "DEC-TEST-001#📌2": [
-        {
-            "de": "pasa a 32 guards",
-            "a": "pasa a […] guards"
-        }
-    ],
-    "DEC-TEST-001#📌3": [
-        {
-            "de": "queda en 33 guards",
-            "a": "queda en […] guards"
-        }
-    ],
-    "DEC-TEST-001#📌4": [
-        {
-            "de": "sigue en 33\nguards",
-            "a": "sigue en […]\nguards"
-        }
-    ],
-    "DEC-TEST-001#📌5": [
-        {
-            "de": "pasa de 33 a **34 guards distintos**",
-            "a": "pasa de 33 a **[…] guards distintos**"
-        },
-        {
-            "de": "; queda para el owner.",
-            "a": "; […]."
-        }
-    ],
-    "DEC-TEST-001#📌6": [
-        {
-            "de": "**18 de verticales, 15\nde billing y 1 de `U1`**",
-            "a": "**[…]**"
-        }
-    ],
-    "DEC-RF-004#📌1": [
-        {
-            "de": "`S12`-vía-`S26` ya no depende de transportar la causa:\n`S21` la lee en la fecha de fin en la fila de `vertical_discontinuation` de la vertical de la\nprincipal, y abre el 15. ",
-            "a": "[…] "
-        },
-        {
-            "de": " La lectura es por la vertical y no\npor la fila, así que también alcanza a la baja que la persona pidió antes del anuncio y termina\ndespués.",
-            "a": " […]"
-        }
-    ],
-    "DEC-RF-006#📌2": [
-        {
-            "de": "el `USER`/`GLOBAL` que `S26`\ncanceló y todo complemento cuya principal mató `S12` sobre una vertical con fila en\n`vertical_discontinuation`.",
-            "a": "[…]."
-        }
-    ],
-    "DEC-MP-008#📌2": [
-        {
-            "de": "una pausa o una cancelación hecha por el pagador",
-            "a": "[…] una cancelación hecha por el pagador"
-        }
-    ],
-    "DEC-SUB-021#📌1": [
-        {
-            "de": "1. **La frase *«los reintentos del proveedor cobran con ella»* queda CONDICIONADA a `GR-1`**, como\n   `DEC-SUB-010` lo está a su segunda lectura. El *Contexto medido* no la mide: `EX-36` mide que la\n   tarjeta **se puede** cambiar, no que el reintento de un cobro ya abierto use la nueva; y `GR-3`",
-            "a": "1. […] `GR-3`"
-        },
-        {
-            "de": " **Se mide con el próximo rechazo mensual real.** Mientras tanto, **la\n   pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva**. La\n   decisión no cambia; cambia lo que se le promete al cliente.",
-            "a": " […]"
-        }
-    ],
-    "DEC-MIG-005#📌5": [
-        {
-            "de": " El titular que sólo conoce el proveedor tiene detector sólo si alguna lectura medida en\nsandbox trae su pagador (`EX-59`); si ninguna, queda declarado sin detector.",
-            "a": " […]"
-        }
-    ],
-    "DEC-RF-008#📌3": [
-        {
-            "de": "de dieciséis a veintiuna vivas",
-            "a": "de dieciséis a […] vivas"
-        }
-    ],
-    "DEC-RF-008#📌4": [
-        {
-            "de": "de veintiuna a veintitrés vivas",
-            "a": "de […] a […] vivas"
-        },
-        {
-            "de": "las dos las construye `V8`",
-            "a": "las dos las construye […]"
-        }
-    ],
-    "DEC-ENT-006#📌1": [
-        {
-            "de": ", que se asigna al aprobar la postulación,",
-            "a": ", […],"
-        }
-    ],
-    "DEC-ENT-006#📌2": [
-        {
-            "de": " o\nel alta directa del admin con dueño.",
-            "a": "\n[…]."
-        },
-        {
-            "de": "; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el\n📌 de `DEC-ARCH-014`)",
-            "a": "; […] (H; ver el\n📌 de `DEC-ARCH-014`)"
-        }
-    ],
-    "DEC-ENT-006#📌3": [
-        {
-            "de": "**los borra `V7` con su migración, junto con sus lectores del panel**",
-            "a": "**los borra […], junto con sus lectores del panel**"
-        }
-    ],
-    "DEC-ENT-006#📌4": [
-        {
-            "de": "sale en la misma migración de `V7` que `starts_at` y `ends_at`",
-            "a": "sale en […] que `starts_at` y `ends_at`"
-        }
-    ],
-    "DEC-MIG-006#📌2": [
-        {
-            "de": "la escribe\ndespués el script del corte, con la función",
-            "a": "la escribe\n[…], con la función"
+            "cita": "siguen en once"
         }
     ],
     "DEC-ARCH-013#📌1": [
@@ -255,12 +63,18 @@
         {
             "de": "antes del ensayo del\ncorte en staging.",
             "a": "[…]."
+        },
+        {
+            "cita": "antes del ensayo del corte"
         }
     ],
     "DEC-ARCH-013#📌3": [
         {
             "de": "los escribe\ndespués el script del corte, con la función",
             "a": "los escribe\n[…], con la función"
+        },
+        {
+            "cita": "las escribe después el script del corte"
         }
     ],
     "DEC-ARCH-013#📌4": [
@@ -301,12 +115,103 @@
         {
             "de": "33, pasan a **34**:",
             "a": "33, pasan a **[…]**:"
+        },
+        {
+            "cita": "`starts_at` y `ends_at` quedan hasta la unidad de socios"
+        }
+    ],
+    "DEC-ARCH-014#📌7": [
+        {
+            "de": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).",
+            "a": "[…]"
+        },
+        {
+            "cita": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke "
+        },
+        {
+            "cita": " Origen: (FASES 6 y 7, owner 2026-09-30, F)"
+        }
+    ],
+    "DEC-ARCH-017#📌1": [
+        {
+            "de": "\naddons, `B4`, que le agrega a `payment` la columna de la instancia—",
+            "a": "\n[…]—"
+        },
+        {
+            "de": "promos y cortesías, `B9a`; […]",
+            "a": "[…]"
+        },
+        {
+            "cita": "addons, `B4`, que le agrega a `payment` la columna"
+        },
+        {
+            "cita": "promos y cortesías, `B9a`"
+        }
+    ],
+    "DEC-ARCH-017#📌6": [
+        {
+            "cita": "`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)"
+        }
+    ],
+    "DEC-CONC-002#📌1": [
+        {
+            "de": "Once filas de\n`B/03`",
+            "a": "[…] Filas de\n`B/03`"
+        }
+    ],
+    "DEC-CONC-002#📌3": [
+        {
+            "de": " —que desde\nentonces cuenta las dos lápidas, la del corte y la de recepción—",
+            "a": " […]"
+        },
+        {
+            "cita": "cuenta las dos lápidas, la del corte y la de recepción"
+        }
+    ],
+    "DEC-DATA-002": [
+        {
+            "de": "**Lo que se implementó es equivalente en el resultado, y conviene decir que no es idéntico: el reloj SÍ corre durante la pausa, y se reinicia al reanudar.** El daño residual es **cero**, y por una razón aritmética: el tope de una pausa son **4 pausas-mes ≈ 120 días** contra los **180** del hard delete, y cada reanudación reinicia — así que las pausas encadenadas tampoco acumulan. La ficha se archiva, sí, pero **vuelve sola por `PB7`** y **nunca se borra**.",
+            "a": "[…]"
+        },
+        {
+            "de": "**`D16`, y es la pieza que evita que todo esto sea una premisa que envejece sola**: *«el tope de una pausa, en días, es menor que el día del hard delete»*, con guard `G-R5` que compara las dos cifras y falla si la primera alcanza a la segunda. **Las dos son configuración**, así que el invariante es **la relación** y nunca los números. Sin `D16`, todo el arreglo descansa en una desigualdad entre dos valores que nadie vuelve a mirar — que es exactamente el quinto modo de falla que `DEC-METH-010` declara **no cubierto** por ninguna búsqueda.",
+            "a": "[…]"
+        },
+        {
+            "cita": "el reloj SÍ corre durante la pausa, y se reinicia al reanudar"
+        }
+    ],
+    "DEC-DATA-002#📌1": [
+        {
+            "de": "**tiene seis hechos**",
+            "a": "**tiene […] hechos**"
+        }
+    ],
+    "DEC-DATA-004": [
+        {
+            "de": "y la lista de los cinco",
+            "a": "y la lista de los […]"
+        },
+        {
+            "de": "la lista de los cinco consumidores",
+            "a": "la lista de los […] consumidores"
+        },
+        {
+            "cita": "la lista de los cinco consumidores de `inactiva_desde`"
+        }
+    ],
+    "DEC-DATA-005#📌6": [
+        {
+            "cita": "Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina sola por `S12`, sobre la cuenta ya dada de baja"
         }
     ],
     "DEC-DATA-008#📌1": [
         {
             "de": "los fija el owner antes del ensayo del corte en staging, y",
             "a": "los fija el owner […], y"
+        },
+        {
+            "cita": "antes del ensayo del corte en staging"
         }
     ],
     "DEC-DATA-008#📌3": [
@@ -317,18 +222,305 @@
         {
             "de": "los cinco sin valor escrito\nantes del ensayo del corte en `staging`.",
             "a": "los cinco sin valor escrito\n[…]."
+        },
+        {
+            "cita": "antes del ensayo"
+        },
+        {
+            "cita": "quince valores"
         }
     ],
     "DEC-DATA-008#📌4": [
         {
             "de": "los sigue fijando el owner antes\ndel ensayo del corte en `staging`.",
             "a": "los sigue fijando el owner […]."
+        },
+        {
+            "cita": "antes del ensayo del corte en `staging`"
         }
     ],
-    "DEC-ARCH-017#📌1": [
+    "DEC-ENT-006#📌1": [
         {
-            "de": "\naddons, `B4`, que le agrega a `payment` la columna de la instancia—",
-            "a": "\n[…]—"
+            "de": ", que se asigna al aprobar la postulación,",
+            "a": ", […],"
+        },
+        {
+            "cita": "se asigna al aprobar la postulación"
+        }
+    ],
+    "DEC-ENT-006#📌2": [
+        {
+            "de": " o\nel alta directa del admin con dueño.",
+            "a": "\n[…]."
+        },
+        {
+            "de": "; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el\n📌 de `DEC-ARCH-014`)",
+            "a": "; […] (H; ver el\n📌 de `DEC-ARCH-014`)"
+        },
+        {
+            "cita": "o el alta directa del admin con dueño"
+        },
+        {
+            "cita": "`starts_at` y `ends_at` quedan hasta la unidad de socios"
+        }
+    ],
+    "DEC-ENT-006#📌3": [
+        {
+            "de": "**los borra `V7` con su migración, junto con sus lectores del panel**",
+            "a": "**los borra […], junto con sus lectores del panel**"
+        },
+        {
+            "cita": "los borra `V7` con su migración"
+        }
+    ],
+    "DEC-ENT-006#📌4": [
+        {
+            "de": "sale en la misma migración de `V7` que `starts_at` y `ends_at`",
+            "a": "sale en […] que `starts_at` y `ends_at`"
+        },
+        {
+            "cita": "en la misma migración de `V7`"
+        }
+    ],
+    "DEC-METH-006": [
+        {
+            "de": "**se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**",
+            "a": "[…]"
+        },
+        {
+            "cita": "se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo"
+        }
+    ],
+    "DEC-MIG-001": [
+        {
+            "cita": "se los da de alta en el motor nuevo"
+        }
+    ],
+    "DEC-MIG-002": [
+        {
+            "de": "y **se transcriben a mano cuando el rediseño esté listo**, con el mismo procedimiento del §2.3 que `DEC-MIG-001` fijó para las cinco relaciones vivas",
+            "a": "[…]"
+        },
+        {
+            "de": "**la cohorte a transcribir crece mientras dure el rediseño.** Hoy son 5; cada alta nueva suma una. **Si el ritmo de altas se acelera hay que volver a mirar esto** — no porque la decisión haya sido mala, sino porque habría cambiado la condición que la hacía barata. Queda anotado en [`04-open-decisions.md`](../docs/04-open-decisions.md) § *«Para revisar más adelante»*.",
+            "a": "[…]"
+        },
+        {
+            "cita": "y se transcriben a mano cuando el rediseño esté listo"
+        },
+        {
+            "cita": "la cohorte a transcribir crece"
+        }
+    ],
+    "DEC-MIG-002#📌1": [
+        {
+            "de": ": una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el\nproveedor.",
+            "a": ": […]."
+        },
+        {
+            "cita": "una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el proveedor"
+        }
+    ],
+    "DEC-MIG-003#📌1": [
+        {
+            "de": " si el despliegue falla: el costo, aceptado, es que los\nclientes cancelados se re-suscriben sin trial, y **qué se hace con esa diferencia no está\ndecidido**.",
+            "a": " si el despliegue falla […]."
+        },
+        {
+            "cita": "qué se hace con esa diferencia no está decidido"
+        }
+    ],
+    "DEC-MIG-003#📌2": [
+        {
+            "de": "escribe sigue siendo: las lápidas (paso 4), los dos",
+            "a": "escribe sigue siendo: […] los dos"
+        }
+    ],
+    "DEC-MIG-003#📌3": [
+        {
+            "de": "- La rama de aborto devuelve la URL de notificación a la ruta del viejo y la verifica con\n  una entrega real.\n",
+            "a": "- […]\n"
+        },
+        {
+            "de": "- El borrado del contenido de las `L1` pasa al paso 5b, después de abrir altas, porque el\n  backup no restaura fotos ni tokens.\n",
+            "a": "- […]\n"
+        },
+        {
+            "de": "- El apuntado de la URL es el paso 4b, después de las lápidas. El paso 3",
+            "a": "- […] El paso 3"
+        },
+        {
+            "de": "- El recuento de fichas de Gastronomía y de Experiencia se hace antes del 1a, y el corte no\n  arranca si da una fila; el gate del paso 2 lo repite como segundo control, y si ahí da una\n  fila el corte entra en la rama de aborto (`V/21` §2.4).\n",
+            "a": "- […]\n"
+        },
+        {
+            "de": "- El paso 4c, después del 4b y fuera de la rama, revalida las páginas públicas de las fichas\n  que nacieron despublicadas.",
+            "a": "- […]"
+        }
+    ],
+    "DEC-MIG-003#📌5": [
+        {
+            "de": "; el borde la cierra antes de apagar el\ncontenedor viejo en el paso 3 y la abre al final del paso 4, con las lápidas verificadas;\nmientras está cerrada, el proveedor recibe error y reintenta a la misma URL.",
+            "a": "; […]."
+        },
+        {
+            "de": "vuelve\na cerrar la ruta si hace falta, redespliega",
+            "a": "[…] redespliega"
+        }
+    ],
+    "DEC-MIG-005#📌5": [
+        {
+            "de": " El titular que sólo conoce el proveedor tiene detector sólo si alguna lectura medida en\nsandbox trae su pagador (`EX-59`); si ninguna, queda declarado sin detector.",
+            "a": " […]"
+        }
+    ],
+    "DEC-MIG-006#📌2": [
+        {
+            "de": "la escribe\ndespués el script del corte, con la función",
+            "a": "la escribe\n[…], con la función"
+        },
+        {
+            "cita": "la escribe después el script del corte"
+        }
+    ],
+    "DEC-MP-003": [
+        {
+            "de": "**un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de `CUSTOMER_REQUEST`. Los motivos pasan de **dos a tres**, y **todo lo que lee el motivo de pausa hay que recorrerlo** — empezando por `puedePausar()`, los topes del §26 y las salidas `S10`, `S22` y `PB*`.",
+            "a": "[…]"
+        },
+        {
+            "cita": "un motivo nuevo de pausa"
+        }
+    ],
+    "DEC-MP-008#📌2": [
+        {
+            "de": "una pausa o una cancelación hecha por el pagador",
+            "a": "[…] una cancelación hecha por el pagador"
+        }
+    ],
+    "DEC-RF-004#📌1": [
+        {
+            "de": "`S12`-vía-`S26` ya no depende de transportar la causa:\n`S21` la lee en la fecha de fin en la fila de `vertical_discontinuation` de la vertical de la\nprincipal, y abre el 15. ",
+            "a": "[…] "
+        },
+        {
+            "de": " La lectura es por la vertical y no\npor la fila, así que también alcanza a la baja que la persona pidió antes del anuncio y termina\ndespués.",
+            "a": " […]"
+        }
+    ],
+    "DEC-RF-006#📌2": [
+        {
+            "de": "el `USER`/`GLOBAL` que `S26`\ncanceló y todo complemento cuya principal mató `S12` sobre una vertical con fila en\n`vertical_discontinuation`.",
+            "a": "[…]."
+        }
+    ],
+    "DEC-RF-008#📌1": [
+        {
+            "de": "**quince**\nacciones",
+            "a": "**[…]**\nacciones"
+        },
+        {
+            "de": "dicen quince.",
+            "a": "dicen […]."
+        }
+    ],
+    "DEC-RF-008#📌3": [
+        {
+            "de": "de dieciséis a veintiuna vivas",
+            "a": "de dieciséis a […] vivas"
+        }
+    ],
+    "DEC-RF-008#📌4": [
+        {
+            "de": "de veintiuna a veintitrés vivas",
+            "a": "de […] a […] vivas"
+        },
+        {
+            "de": "las dos las construye `V8`",
+            "a": "las dos las construye […]"
+        },
+        {
+            "cita": "las construye `V8`"
+        }
+    ],
+    "DEC-SUB-013#📌1": [
+        {
+            "de": "`S24`, `S26`)",
+            "a": "`S24`, […])"
+        },
+        {
+            "de": "`S21`, `S28`)",
+            "a": "`S21`, […])"
+        }
+    ],
+    "DEC-SUB-019": [
+        {
+            "de": "La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra** —el espejo tiene que saber leerla si ocurre, por ejemplo si alguien reactiva un preapproval a mano—, pero deja de ser un camino que haya que diseñar.",
+            "a": "[…]"
+        },
+        {
+            "cita": "La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**"
+        }
+    ],
+    "DEC-SUB-021#📌1": [
+        {
+            "de": "1. **La frase *«los reintentos del proveedor cobran con ella»* queda CONDICIONADA a `GR-1`**, como\n   `DEC-SUB-010` lo está a su segunda lectura. El *Contexto medido* no la mide: `EX-36` mide que la\n   tarjeta **se puede** cambiar, no que el reintento de un cobro ya abierto use la nueva; y `GR-3`",
+            "a": "1. […] `GR-3`"
+        },
+        {
+            "de": " **Se mide con el próximo rechazo mensual real.** Mientras tanto, **la\n   pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva**. La\n   decisión no cambia; cambia lo que se le promete al cliente.",
+            "a": " […]"
+        }
+    ],
+    "DEC-TEST-001#📌1": [
+        {
+            "de": "el total de 31 guards no\ncambia",
+            "a": "el total de […] guards no\ncambia"
+        }
+    ],
+    "DEC-TEST-001#📌2": [
+        {
+            "de": "pasa a 32 guards",
+            "a": "pasa a […] guards"
+        }
+    ],
+    "DEC-TEST-001#📌3": [
+        {
+            "de": "queda en 33 guards",
+            "a": "queda en […] guards"
+        }
+    ],
+    "DEC-TEST-001#📌4": [
+        {
+            "de": "sigue en 33\nguards",
+            "a": "sigue en […]\nguards"
+        }
+    ],
+    "DEC-TEST-001#📌5": [
+        {
+            "de": "pasa de 33 a **34 guards distintos**",
+            "a": "pasa de 33 a **[…] guards distintos**"
+        },
+        {
+            "de": "; queda para el owner.",
+            "a": "; […]."
+        },
+        {
+            "cita": "queda para el owner"
+        }
+    ],
+    "DEC-TEST-001#📌6": [
+        {
+            "de": "**18 de verticales, 15\nde billing y 1 de `U1`**",
+            "a": "**[…]**"
+        },
+        {
+            "cita": "18 de verticales, 15 de billing y 1 de `U1`"
+        }
+    ],
+    "DEC-TRIAL-010#📌1": [
+        {
+            "cita": ", igual que `T7`"
         }
     ]
 }

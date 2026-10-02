@@ -3,7 +3,12 @@
 
     python3 gen01.py [--salida=<dir>]     (default: writes 01-decisiones-vigentes.md into the spec)
 
-Inputs next to it: cabecera.md (the file's head) and omisiones.json (written by omisiones.py)."""
+Inputs next to it: cabecera.md (the file's head) and omisiones.json (written by omisiones.py).
+
+A PARCIAL verdict (owner BK) is applied to whatever block the item renders as: a 📌 or a whole DEC
+(its title and body, not its pins). What died is replaced by «[…]» and a «Parte sin efecto» note
+follows. The run fails if a PARCIAL item renders with no span applied, if a span is not found exactly
+once, or if a dead quote of the verdict (R19 of trazar.py) is still in the block."""
 import json
 import os
 import re
@@ -13,6 +18,7 @@ import sys
 C = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 sys.path.insert(0, os.path.join(C, 'scripts'))
 from comun import ROOT as W, lines, slug, D, SHA  # noqa: E402
+from trazar import r19_norm, r19_tramos  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 inv = json.load(open(C + '/_trabajo/inventario.json', encoding='utf-8'))
@@ -103,6 +109,60 @@ def cobertura_lines(cid):
     return out
 
 
+# --- PARCIAL verdicts: omissions and note ----------------------------------------------------
+APLICADAS = {}
+
+
+def span_rx(span):
+    """Verbatim match of ``span`` where any run of blanks INSIDE it (a line break and its indent
+    included) matches any run of blanks; the blanks at its ends match literally, so a span that
+    starts or ends with a blank or a line break keeps doing exactly that."""
+    m = re.match(r'^(\s*)(.*?)(\s*)$', span, re.S)
+    core = r'\s+'.join(re.escape(p) for p in re.split(r'\s+', m.group(2)))
+    return re.compile(re.escape(m.group(1)) + core + re.escape(m.group(3)))
+
+
+def omitir(cid, txt):
+    """Apply the omissions of ``cid`` to ``txt`` (owner BK); fail as the module docstring says."""
+    v = adj.get(cid)
+    if not v or v['veredicto'] != 'PARCIAL':
+        if cid in OMIT:
+            sys.exit(f'omisiones para {cid}, que no es PARCIAL')
+        return txt
+    n = 0
+    for o in OMIT.get(cid, []):
+        if 'de' in o:
+            hits = list(span_rx(o['de']).finditer(txt))
+            if len(hits) != 1:
+                sys.exit(f'omisión de {cid} encontrada {len(hits)} veces (se exige 1): {o["de"]!r}')
+            txt = txt[:hits[0].start()] + o['a'] + txt[hits[0].end():]
+            n += 1
+            continue
+        if r19_norm(o['cita']) not in r19_norm(txt):
+            continue  # an earlier span already removed it
+        hits = list(span_rx(o['cita']).finditer(txt))
+        if len(hits) != 1:
+            sys.exit(f'cita muerta de {cid} encontrada {len(hits)} veces tal cual (va un tramo en EXTRA): {o["cita"]!r}')
+        txt = txt[:hits[0].start()] + '[…]' + txt[hits[0].end():]
+        n += 1
+    if n == 0:
+        sys.exit(f'{cid} es PARCIAL y quedó sin ninguna omisión aplicada (completá omisiones.py)')
+    vivos = [t for t in r19_tramos(v['muerto']) if t in r19_norm(txt)]
+    if vivos:
+        sys.exit(f'{cid}: texto muerto todavía en el bloque: {vivos[0]!r}')
+    APLICADAS[cid] = n
+    return txt
+
+
+def nota_parcial(cid):
+    v = adj.get(cid)
+    if not v or v['veredicto'] != 'PARCIAL':
+        return []
+    ev = '; '.join(f'`{e["archivo"]}:{e["linea"]}` («{re.sub(r"~~(.*?)~~", r"[tachado: \1]", e["cita"])}»)' for e in v['evidencia'])
+    return ['', f'> **Parte sin efecto** (adjudicación `PARCIAL`): {v["muerto"]}.' + (f' Lo supera: {ev}.' if ev else '')
+            + ' Lo omitido del texto de arriba está marcado «[…]».']
+
+
 # --- pins: segment extraction --------------------------------------------------------------
 LIST = re.compile(r'^\s*(?:[-*]|\d+\.)\s')
 
@@ -189,33 +249,33 @@ def render_dec(dec):
         body.pop()
     title = unstrike(LL[dec['linea'] - 1]).replace('### ', '', 1)
     title = re.sub(r'\s{2,}', ' ', title).strip()
-    out = ['', f'<a id="{slug(cid)}"></a>', f'### {title}', '',
-           f'Origen: {LOG}:{dec["linea"]}', '']
+    title_body = omitir(cid, '### ' + title + '\n\n' + clean(unstrike('\n'.join(body))).strip('\n'))
+    title, body_txt = title_body.split('\n\n', 1)
+    out = ['', f'<a id="{slug(cid)}"></a>', title, '', f'Origen: {LOG}:{dec["linea"]}', '']
     if dec['estado'] == 'SUPERSEDED_PARCIAL':
-        out += [f'Estado en el inventario: `SUPERSEDED_PARCIAL` (sigue viva en lo que su propio campo *Estado* declara que sobrevive; sin adjudicación en `adjudicacion.json`).', '']
+        v = adj.get(cid, {}).get('veredicto')
+        out += [f'Estado en el inventario: `SUPERSEDED_PARCIAL`; adjudicación `{v}` en `adjudicacion.json`: sigue viva salvo '
+                'lo que dice su nota «Parte sin efecto», al final del cuerpo.' if v == 'PARCIAL' else
+                f'Estado en el inventario: `SUPERSEDED_PARCIAL` (sigue viva en lo que su propio campo *Estado* declara que sobrevive; '
+                + (f'adjudicación `{v}` en `adjudicacion.json`).' if v else 'sin adjudicación en `adjudicacion.json`).'), '']
     cl = cobertura_lines(cid)
     if cl:
         out += cl + ['']
-    out.append(clean(unstrike('\n'.join(body))).strip('\n'))
+    out.append(body_txt)
+    out += nota_parcial(cid)
     for p, seg in pins_out:
         first, rest = seg[0].lstrip(), list(seg[1:])
         if re.match(r'^\s*>', LL[p['linea'] - 1][:pin_start_col(LL[p['linea'] - 1])]):
             rest = [re.sub(r'^\s*>\s?', '', x) for x in rest]
         txt = '\n'.join([first] + dedent(rest))
         txt = clean(unstrike(txt)).strip('\n')
-        v = adj.get(p['id'])
-        for o in OMIT.get(p['id'], []):
-            if o['de'] not in txt:
-                sys.exit(f'omisión no encontrada en {p["id"]}: {o["de"]!r}')
-            txt = txt.replace(o['de'], o['a'])
+        txt = omitir(p['id'], txt)
         out += ['', f'<a id="{slug(p["id"])}"></a>', f'#### {p["local"]} de {cid}', '', f'Origen: {LOG}:{p["linea"]}', '']
         cl = cobertura_lines(p['id'])
         if cl:
             out += cl + ['']
         out.append(txt)
-        if v and v['veredicto'] == 'PARCIAL':
-            ev = '; '.join(f'`{e["archivo"]}:{e["linea"]}` («{re.sub(r"~~(.*?)~~", r"[tachado: \1]", e["cita"])}»)' for e in v['evidencia'])
-            out += ['', f'> **Parte sin efecto** (adjudicación `PARCIAL`): {v["muerto"]}.' + (f' Lo supera: {ev}.' if ev else '') + (' Lo omitido del texto de arriba está marcado «[…]».' if OMIT.get(p['id']) else '')]
+        out += nota_parcial(p['id'])
     return out
 
 
@@ -298,10 +358,13 @@ def main():
                 cnt['OWN'] += 1
             else:
                 out += ['', f'**{i["local"]}** — retirada: [{i["id"]}](90-retirados.md#{slug(i["id"])}).']
+    parcial = {k for k, v in adj.items() if v['veredicto'] == 'PARCIAL' and k in mine}
+    if parcial - set(APLICADAS):
+        sys.exit(f'PARCIAL de 01 sin renderizar con sus omisiones: {sorted(parcial - set(APLICADAS))}')
     txt = '\n'.join(out).rstrip('\n') + '\n'
     txt = re.sub(r'\n{3,}', '\n\n', txt)
     open(destino_de_salida('01-decisiones-vigentes.md'), 'w', encoding='utf-8').write(txt)
-    print(cnt, len(txt.split('\n')))
+    print(cnt, len(txt.split('\n')), 'PARCIAL', len(APLICADAS), 'tramos', sum(APLICADAS.values()))
 
 
 main()

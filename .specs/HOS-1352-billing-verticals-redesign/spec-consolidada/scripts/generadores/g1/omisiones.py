@@ -1,7 +1,36 @@
-"""Writes omisiones.json next to it: per pin, the verbatim spans gen01.py replaces by «[…]»."""
+"""Writes omisiones.json next to it: per PARCIAL item of 01 (a 📌 or a whole DEC), what gen01.py
+replaces by «[…]».
+
+Owner letter BK (point 7 of DEC-METH-019 widened), same policy as g3/omisiones.py: a PARCIAL verdict
+makes the consolidated spec omit what died with «[…]» and keep a note. Three sources, in this order:
+
+- LEGADO: the spans written by hand before the policy existed (g1, first and second pass). Kept as
+  they are; each was reviewed against its verdict when it was written.
+- EXTRA: dead parts that `muerto` names without quoting them, or quotes in a form that cannot be
+  omitted verbatim without breaking the markdown around it. Each carries the words of `muerto` that
+  justify it, and this script fails if those words are not in `muerto`.
+- Derived: every «quoted» span of `muerto` (trazar.r19_citas: split at «[…]», minus the ones the
+  verdict marks alive) is written as {"cita": …}; gen01.py omits it verbatim, line breaks aside,
+  unless an earlier span already removed it.
+
+gen01.py fails if a PARCIAL item of 01 ends up with no span applied, if a {"de"} span is not found
+exactly once, or if a dead quote of `muerto` (R19's length) is still in the rendered block.
+"""
 import json
 import os
-O = {
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+C = os.path.normpath(os.path.join(HERE, '..', '..', '..'))
+sys.path.insert(0, os.path.join(C, 'scripts'))
+from trazar import r19_citas, r19_norm, R19_MIN  # noqa: E402
+
+ADJ = json.load(open(C + '/_trabajo/adjudicacion.json', encoding='utf-8'))['veredictos']
+ASG = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))['items']
+
+# Hand-written spans that predate the policy: {item: [(span, replacement)]}.
+LEGADO = {
  "DEC-CONC-002#📌1": [("Once filas de\n`B/03`", "[…] Filas de\n`B/03`")],
  "DEC-CONC-002#📌3": [(" —que desde\nentonces cuenta las dos lápidas, la del corte y la de recepción—", " […]")],
  "DEC-ADDON-002#📌2": [("`S26` la\naplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa. ", "[…] "),
@@ -56,8 +85,79 @@ O = {
  "DEC-DATA-008#📌4": [("los sigue fijando el owner antes\ndel ensayo del corte en `staging`.", "los sigue fijando el owner […].")],
  "DEC-ARCH-017#📌1": [("\naddons, `B4`, que le agrega a `payment` la columna de la instancia—", "\n[…]—")],
 }
-# indent=4 plus a final newline is exactly what the pre-commit's biome format leaves
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omisiones.json'), 'w', encoding='utf-8') as fh:
-    json.dump({k: [{"de": a, "a": b} for a, b in v] for k, v in O.items()}, fh, ensure_ascii=False, indent=4)
-    fh.write('\n')
-print(len(O))
+
+# Dead parts named but not quoted by `muerto` (or not omissible verbatim): {item: [(span, replacement,
+# words of `muerto`)]}. Spans match with any run of blanks for a blank, so line breaks do not matter.
+EXTRA = {
+    'DEC-ARCH-017#📌1': [('promos y cortesías, `B9a`; […]', '[…]', '«promos y cortesías, `B9a`»')],
+    'DEC-ARCH-014#📌7': [('Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b '
+                         'y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al '
+                         'checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: '
+                         '`16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; '
+                         '`spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).', '[…]',
+                         'la cola «Ninguna unidad depende de ella')],
+    'DEC-MIG-002': [('y **se transcriben a mano cuando el rediseño esté listo**, con el mismo procedimiento '
+                     'del §2.3 que `DEC-MIG-001` fijó para las cinco relaciones vivas', '[…]',
+                     '«y se transcriben a mano cuando el rediseño esté listo» (la decisión)'),
+                    ('**la cohorte a transcribir crece mientras dure el rediseño.** Hoy son 5; cada alta '
+                     'nueva suma una. **Si el ritmo de altas se acelera hay que volver a mirar esto** — no '
+                     'porque la decisión haya sido mala, sino porque habría cambiado la condición que la '
+                     'hacía barata. Queda anotado en [`04-open-decisions.md`](../docs/04-open-decisions.md) '
+                     '§ *«Para revisar más adelante»*.', '[…]',
+                     'el riesgo de que *«la cohorte a transcribir crece»*')],
+    'DEC-DATA-002': [('**Lo que se implementó es equivalente en el resultado, y conviene decir que no es '
+                      'idéntico: el reloj SÍ corre durante la pausa, y se reinicia al reanudar.** El daño '
+                      'residual es **cero**, y por una razón aritmética: el tope de una pausa son **4 '
+                      'pausas-mes ≈ 120 días** contra los **180** del hard delete, y cada reanudación '
+                      'reinicia — así que las pausas encadenadas tampoco acumulan. La ficha se archiva, sí, '
+                      'pero **vuelve sola por `PB7`** y **nunca se borra**.', '[…]',
+                      'que el reloj corre durante la pausa'),
+                     ('**`D16`, y es la pieza que evita que todo esto sea una premisa que envejece sola**: '
+                      '*«el tope de una pausa, en días, es menor que el día del hard delete»*, con guard '
+                      '`G-R5` que compara las dos cifras y falla si la primera alcanza a la segunda. **Las '
+                      'dos son configuración**, así que el invariante es **la relación** y nunca los '
+                      'números. Sin `D16`, todo el arreglo descansa en una desigualdad entre dos valores '
+                      'que nadie vuelve a mirar — que es exactamente el quinto modo de falla que '
+                      '`DEC-METH-010` declara **no cubierto** por ninguna búsqueda.',
+                      '[…]', 'la desigualdad que lo protegía (`D16`, con `G-R5`)')],
+    'DEC-MP-003': [('**un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de '
+                    '`CUSTOMER_REQUEST`. Los motivos pasan de **dos a tres**, y **todo lo que lee el motivo '
+                    'de pausa hay que recorrerlo** — empezando por `puedePausar()`, los topes del §26 y las '
+                    'salidas `S10`, `S22` y `PB*`.', '[…]',
+                    'la decisión, *«un motivo nuevo de pausa»*, y lo que manda recorrer')],
+    'DEC-SUB-019': [('La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra** —el espejo tiene '
+                     'que saber leerla si ocurre, por ejemplo si alguien reactiva un preapproval a mano—, pero '
+                     'deja de ser un camino que haya que diseñar.', '[…]',
+                     '«La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**»')],
+    'DEC-METH-006': [('**se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**', '[…]',
+                      '*«se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo»*')],
+    'DEC-ADDON-003': [('**La condición de huérfano no se toca: sigue con tres mitades.**', '[…]',
+                       '«La condición de huérfano no se toca: sigue con tres mitades»')],
+    'DEC-DATA-004': [('y la lista de los cinco', 'y la lista de los […]', 'la cifra «cinco» del título'),
+                     ('la lista de los cinco consumidores', 'la lista de los […] consumidores',
+                      'y de `H1` (*«la lista de los cinco consumidores')],
+}
+
+
+def main():
+    parcial = {k for k, v in ADJ.items()
+               if v['veredicto'] == 'PARCIAL' and (ASG.get(k, {}).get('destino') or '').startswith('01')}
+    assert set(LEGADO) <= parcial, set(LEGADO) - parcial
+    assert set(EXTRA) <= parcial, set(EXTRA) - parcial
+    out = {}
+    for cid in sorted(parcial):
+        spans = [{'de': a, 'a': b} for a, b in LEGADO.get(cid, [])]
+        for de, a, por in EXTRA.get(cid, []):
+            assert por in ADJ[cid]['muerto'], (cid, por)
+            spans.append({'de': de, 'a': a})
+        spans += [{'cita': c} for c in r19_citas(ADJ[cid]['muerto']) if len(r19_norm(c)) >= R19_MIN]
+        out[cid] = spans
+    # indent=4 plus a final newline is exactly what the pre-commit's biome format leaves
+    with open(os.path.join(HERE, 'omisiones.json'), 'w', encoding='utf-8') as fh:
+        json.dump(out, fh, ensure_ascii=False, indent=4)
+        fh.write('\n')
+    print(len(out), sum(len(s) for s in out.values()))
+
+
+if __name__ == '__main__':
+    main()
