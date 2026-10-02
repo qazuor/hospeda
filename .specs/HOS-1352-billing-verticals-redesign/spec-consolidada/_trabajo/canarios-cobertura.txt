@@ -1,0 +1,26 @@
+✓ base: exit 0
+✓ C1  exit 1 · un ítem normativo sin entrada
+✓ C1  exit 1 · un ítem en «sin_pieza», aun con su pregunta (no es una respuesta)
+✓ C1  exit 1 · un «sin_pieza» sin motivo ni pregunta
+✓ C2  exit 1 · una pieza inexistente
+✓ C2  exit 1 · un «tambien» con una pieza inexistente
+✓ C2  exit 1 · un «tambien» con un rol fuera de la lista
+✓ C3  exit 1 · una pieza del corte cubre un ítem que la fuente pone después (PB9 en V6)
+✓ C3  exit 1 · una pieza posterior cubre un ítem que la fuente pone al corte (S21 en B10)
+✓ C3  exit 1 · un gate de la fase 1 en una pieza del corte
+✓ C3  exit 1 · un guard (por script) cuya fuente lo pone en otro momento que su pieza
+✓ C4  exit 1 · ninguna cita es el ítem ni nombra su id
+✓ C4  exit 1 · la pieza sólo la nombra una línea fuera de la partición (el log)
+✓ C4  exit 1 · un «tambien» sin cita que nombre su pieza
+✓ C5  exit 1 · una cita que no está en su línea
+✓ C5  exit 1 · una cita con el hash de otra línea
+✓ C5  exit 1 · una cita sin sellar
+✓ C5  exit 1 · una cita en un archivo que no existe en el SHA
+✓ C6  exit 1 · un «tambien» que implementa y es ancestro de la dueña (V2 antes de V6)
+✓ C6  exit 1 · una pieza posterior dueña con una del corte, no ancestro, que también lo implementa (V9b con B3)
+✓ C7  exit 1 · un ítem derivado por script y también por lectura
+✓ C7  exit 1 · una entrada de un ítem muerto
+✓ C7  exit 1 · una entrada de un ítem sólo citable (la lista de piezas)
+✓ C7  exit 1 · una entrada de un ítem que no existe
+
+23 canarios · 0 fallas
