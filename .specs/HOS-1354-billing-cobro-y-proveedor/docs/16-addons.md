@@ -245,7 +245,7 @@ modelo ya necesita, no uno nuevo.
 ### 3.2 «No activarlos automáticamente» significa que los elige la persona
 
 El grant **habilita**; no enciende. La persona elige cuáles de los addons compatibles quiere, uno
-por uno, y esa elección es un acto suyo con su registro.
+por uno, y esa elección es un acto suyo con su registro. **Ese acto es la transición `A1-bis` de `03` §8**: la instancia nace `ACTIVE`, sin preapproval ni orden, con el ancla como título (corte del MVP, owner 2026-10-02, CD; la construye `B10`).
 
 Es coherente con `DEC-GRANT-001`, que ya separó conceder de ejecutar, y evita el desenlace
 absurdo de que revocar un grant tenga que apagar quince cosas que el beneficiario nunca pidió.
