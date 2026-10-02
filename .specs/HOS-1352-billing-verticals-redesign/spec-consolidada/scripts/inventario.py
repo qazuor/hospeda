@@ -300,6 +300,15 @@ for n, c in table_after(D16, section(D16, r'^### 4\.2 '), r'^\| # \| paso \|'):
         add('PASO', f'PASO:{m.group(2)}', m.group(2), D16, n, row_state(c))
 
 # 18 · OWN (every row of every table of */10-decisiones-del-owner.md; letters are reused) ------
+def local_own(cell):
+    """The letter as the source writes it (R6 looks it up in the line): only the cell's own
+    markup goes (bold, strike, ✚, and backticks when they wrap the WHOLE cell); inner blanks and
+    inner backticks stay, so «📌 A» and «cláusula de `Y-2`» are found verbatim."""
+    t = re.sub(r'\*\*|~~|✚', '', cell).strip()
+    m = re.fullmatch(r'`([^`]*)`', t)
+    return m.group(1) if m else t
+
+
 for path in sorted(f for f in ls(D) if f.endswith('/10-decisiones-del-owner.md')):
     carpeta = path.split('/')[-2]
     t, prev = 0, False
@@ -313,9 +322,10 @@ for path in sorted(f for f in ls(D) if f.endswith('/10-decisiones-del-owner.md')
         if not es or n <= head + 1:
             continue
         c = cells(l)
+        # canonical id: the letter without markup or blanks (stable key, normalized slug)
         letra = re.sub(r'[*`~✚\s]', '', c[0])
         st = 'MUERTO' if re.match(r'^\s*~~', c[0]) else 'VIVO'
-        add('OWN', f'OWN:{carpeta}:t{t}:{letra}', letra, path, n, st)
+        add('OWN', f'OWN:{carpeta}:t{t}:{letra}', local_own(c[0]), path, n, st)
 
 # 19 · ESQ (D/16 §4.6, `| esquema | de | lo crea | fuente |`) ---------------------------------------
 for k, (n, c) in enumerate(table_after(D16, S46, r'^\| esquema \| de \| lo crea \|'), 1):

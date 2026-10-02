@@ -10186,7 +10186,7 @@
         {
             "fuente": "OWN",
             "id": "OWN:28-fase-9-vuelta-1:t1:📌A",
-            "local": "📌A",
+            "local": "📌 A",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
             "linea": 38,
             "hash": "a9159970b0c5d9eb2f16a7a23cc85e558c120276d0926567966d43497d937721",
@@ -10195,7 +10195,7 @@
         {
             "fuente": "OWN",
             "id": "OWN:28-fase-9-vuelta-1:t1:📌B",
-            "local": "📌B",
+            "local": "📌 B",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
             "linea": 39,
             "hash": "bbc64cbdbc74128e3ce6c985a596422abf62047163284868697fcd716fb6e48b",
@@ -10330,7 +10330,7 @@
         {
             "fuente": "OWN",
             "id": "OWN:28-fase-9-vuelta-1:t3:cláusuladeY-2",
-            "local": "cláusuladeY-2",
+            "local": "cláusula de `Y-2`",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
             "linea": 66,
             "hash": "63f23f6ddf54e19fdb1743dc595f594b3b8742dd14e0c3acd64f7068fadeca65",
@@ -10339,7 +10339,7 @@
         {
             "fuente": "OWN",
             "id": "OWN:28-fase-9-vuelta-1:t3:📌DEC-CONC-002",
-            "local": "📌DEC-CONC-002",
+            "local": "📌 `DEC-CONC-002`",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
             "linea": 67,
             "hash": "54c4db664d7753200fb99d64f6c61033acf7ef1be811d3311f254bd28cfca393",
