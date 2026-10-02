@@ -1,10 +1,10 @@
 {
-  "sha": "69cbe793607a797e861f240f550c8be39e1d11a0",
+  "sha": "591034c665b56336d49eab894a4e4ce3c38d5abe",
   "criterio": "(exit 1 when any fails)\n  C1  every live normative item has an owner piece (a lectura entry in `sin_pieza` still fails: it\n      is a question for the owner, not an answer).\n  C2  the owner piece and every `tambien` piece exist (or the owner is the pseudo-piece CORTE, BE).\n  C3  timing: an item the sources put at the cut is owned by a cut piece (or CORTE), an\n      item they put later by a later piece, and a phase gate by a piece of that phase.\n  C4  one citation is the item itself (inside its own block) or names its local id; one citation\n      names the owner piece and lives in the partition (V/B descomposicion, D/16) or is the item.\n  C5  every citation is verbatim in its line at the SHA, and its stored hash is that line's hash.\n  C6  a `tambien` piece with role `implementa` is not an ancestor of the owner in the graph of\n      41-corte-del-mvp/aristas.py, nor a cut piece when the owner is a later one (the owner is the\n      one that implements it first).\n  C7  an item is derived once: never by script and by lectura, never a dead or citable-only item.\n  C8  the closed list of citable-only items (defs.SOLO_CITABLES, owner BA and BB) is valid: every id\n      in the inventory, named by its owner row, row hash unchanged. Those items need no owner.\n  C9  the closed list of pieces that create schema (defs.CREA_ESQUEMA) is valid: each fragment is in\n      exactly one line at the SHA, and that line names its piece.\n  C10 the closed lists of exemptions (defs.SIN_MIGRACION_DEL_TEXTO) and of extra «tambien» of a\n      script derivation (defs.TAMBIEN_SCRIPT) are valid: each fragment is in exactly one line at\n      the SHA (and a «tambien» line names its piece).\n\nTYPES (AN; not a rule, they never fail here: trazar.py R18 reads them). The types AN demands per\nfamily always bind the owner. A type read only in the item's words binds it with three limits\n(triage of the open items, 2026-10-02): a migration type binds the owner only if the owner creates\nschema (CREA_ESQUEMA); otherwise it moves to the first «tambien» piece that does\n(`tipos_trasladados`) or is dropped (`tipos_descartados`); the pseudo-piece CORTE only takes\n`smoke manual` or `guard estático` (owner BE), and anything else follows the same move; and a gate\nwhose conditions are CI and merge conditions takes no smoke from the word (SIN_SMOKE_DEL_TEXTO).",
-  "normativos": 747,
+  "normativos": 748,
   "por_metodo": {
     "script": 209,
-    "lectura": 538
+    "lectura": 539
   },
   "por_pieza": {
     "U1": {
@@ -121,15 +121,15 @@
     },
     "B3": {
       "script": 25,
-      "lectura": 45,
-      "dueña": 70,
+      "lectura": 46,
+      "dueña": 71,
       "tambien": 52,
       "cuando": "corte"
     },
     "B4": {
       "script": 4,
-      "lectura": 1,
-      "dueña": 5,
+      "lectura": 2,
+      "dueña": 6,
       "tambien": 24,
       "cuando": "corte"
     },
@@ -191,9 +191,9 @@
     },
     "B11": {
       "script": 2,
-      "lectura": 34,
-      "dueña": 36,
-      "tambien": 31,
+      "lectura": 33,
+      "dueña": 35,
+      "tambien": 33,
       "cuando": "corte"
     },
     "B12": {
@@ -424,13 +424,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "Crea al corte el esquema de cortesías (`courtesy_grant`), BG."
@@ -796,13 +796,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "y las dos tablas de la migración de un plan retirado, de `B12`**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "B3 crea al corte las dos tablas de la migración."
@@ -1070,13 +1070,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "Crea al corte el esquema de promos (códigos y redenciones), BG."
@@ -1255,13 +1255,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la de `puedeCobrarle`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "| **B4** | **El contrato de cobertura, de verdad**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "La precondición `puedeCobrarle` real la contesta B4."
@@ -1561,7 +1561,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 858,
+          "linea": 863,
           "cita": "| `S15` | `B3` |",
           "hash": "b564d73dc43a92aaca5f90f8b4203f7d4605aef2443e4aa2fcb95548e345e673"
         },
@@ -1618,7 +1618,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 875,
+          "linea": 880,
           "cita": "| `S36` | `B5` |",
           "hash": "b7258f669957a8a58b0cfef7ab09018e559c2c1bfc1444a042013a56547d17c0"
         }
@@ -1669,7 +1669,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 851,
+          "linea": 856,
           "cita": "| `S8` | `B8b` |",
           "hash": "65c11e68b9c85657e5ad372b562c7054f4be913bb8d5c88334189abe771dbd51"
         }
@@ -2052,7 +2052,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y las tablas del modelo de addons —productos, instancias y compra—",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "las tablas del modelo de addons (AV)"
@@ -2082,7 +2082,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 863,
+          "linea": 868,
           "cita": "| `S20` | `B9a` | AS |",
           "hash": "a61665a263060432564509b2b250d454b6f8b9fc7f0479ee3309d14dc0459809"
         }
@@ -2141,7 +2141,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -2176,7 +2176,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 863,
+          "linea": 868,
           "cita": "| `S20` | `B9a` | AS |",
           "hash": "a61665a263060432564509b2b250d454b6f8b9fc7f0479ee3309d14dc0459809"
         }
@@ -2291,13 +2291,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "la fuente `ADDON` real, que contesta leyendo la tabla vacía hasta que `B10` venda",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1058,
+              "linea": 1063,
               "cita": "su caso de `G-R2-C` —un `USER`/`GLOBAL` no aparece como fuente en una vertical que su producto no declara compatible (4e)",
-              "hash": "30f13c9979bb85b8357330ea9a6fc5cc262442d5afc87d6aab83482c7c31277b"
+              "hash": "493c0bd251624023915bac0c8adaff3c66e7955534f677940f9768b3a56eac50"
             }
           ],
           "razon": "Punto 4 (se emite sólo en verticales compatibles, guard gemelo `G-R2-C`): la fuente `ADDON` y `G-R2-C` van a `B4` (AA)."
@@ -2486,7 +2486,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1055,
+          "linea": 1060,
           "cita": "importar el SDK afuera **falla**",
           "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
         }
@@ -2556,9 +2556,9 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1058,
+              "linea": 1063,
               "cita": "el juego de casos corre contra las dos implementaciones",
-              "hash": "30f13c9979bb85b8357330ea9a6fc5cc262442d5afc87d6aab83482c7c31277b"
+              "hash": "493c0bd251624023915bac0c8adaff3c66e7955534f677940f9768b3a56eac50"
             }
           ],
           "razon": "la implementación real, con el juego de casos contra las dos"
@@ -2732,7 +2732,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**`01` §2.4, §2.5 y §2.6 (núcleo)**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La columna de capítulos de `B3` lista los tres inventarios.",
@@ -3139,7 +3139,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y hasta `B8b` la rama de sucesión de `S1` no tiene ruta",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La DEC precisa la partición, y cada parte la implementa su pieza: la sucesión sin ruta (Z) y el modelo de addons (AA con AV), `B3`, la primera del grafo de las que la tocan; AB, `V6`; AC, `V4` y `V9a`; AA, `B4`; `G-R1-C`, `B8b`. Las fases (AE) son proceso. (inferido)",
@@ -3178,7 +3178,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "la fuente `ADDON` real, que contesta leyendo la tabla vacía hasta que `B10` venda",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "AA: la fuente `ADDON` sobre la tabla vacía."
@@ -3202,7 +3202,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1064,
+              "linea": 1069,
               "cita": "**y `G-R1-C` escrito y roto a propósito**, y desde su merge `S1` declara sucesiones",
               "hash": "f9e6c0fb95e4bbfa96763add5b69d7fbb0035801ff76590916a7533dfcaaf6a8"
             }
@@ -3487,7 +3487,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -3506,7 +3506,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "El barrido de creaciones sin respuesta y suscripciones sin contraparte (implicación 3) (inferido)."
@@ -3538,7 +3538,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La conciliación es B11 (`09` entero).",
@@ -3574,13 +3574,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 857,
+          "linea": 862,
           "cita": "| `S14` | `B3` |",
           "hash": "a5057b23bda73be90d4264f30a4a953caaa02f394ee0498d7d62d4e22491069e"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 858,
+          "linea": 863,
           "cita": "| `S15` | `B3` |",
           "hash": "b564d73dc43a92aaca5f90f8b4203f7d4605aef2443e4aa2fcb95548e345e673"
         }
@@ -3880,7 +3880,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la respuesta real de `retenciónDetenida`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "La respuesta real: `sí` sólo con una `PAUSED` por `CUSTOMER_REQUEST`."
@@ -4232,13 +4232,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y `S1` no admite la compra de Turista VIP mientras el plan vigente del `user` lo herede",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1057,
+          "linea": 1062,
           "cita": "**y quien tiene un plan vigente que hereda Turista VIP no puede comprarlo",
-          "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+          "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
         }
       ],
       "razon": "BJ (📌 5 de DEC-ARCH-017): comprar Turista VIP es S1, de B3, que suma la guarda; el código de error queda abierto. La herencia de entitlements y limits la resuelve V3 (también). Tipos: «la API lo rechaza» pide ruta API (contrato de errores, AN) y «la UI no lo ofrece» pide e2e web.",
@@ -4251,7 +4251,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "la pricing de `B13a` no lo ofrece",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -4270,7 +4270,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "la resolución de capacidades de `V3` dice si el plan lo hereda",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
@@ -4334,19 +4334,19 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el Turista VIP pago de quien contrata un plan que lo hereda se cancela en el acto, sin reembolso**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1057,
+          "linea": 1062,
           "cita": "**y quien paga el Turista VIP y contrata un plan que lo hereda queda con el VIP cancelado en el acto y sin reembolso",
-          "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+          "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
         }
       ],
       "razon": "BC: la cancelación en el acto, sin reembolso, del Turista VIP pago es de B3 (su fila y su criterio).",
@@ -4635,13 +4635,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "El esquema de cortesías nace al corte en B3 (BG)."
@@ -4690,13 +4690,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 873,
+          "linea": 878,
           "cita": "| `S34` | `B9b` |",
           "hash": "745556c9784a7968b688da6adaead752de40d5e8aa552f97304643958ce21981"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 874,
+          "linea": 879,
           "cita": "| `S35` | `B9b` |",
           "hash": "9d74c63f8e59daaf7387e2f2bcfda4e60c0c68891cd9bd39152403a161f9584c"
         }
@@ -4794,13 +4794,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Retirar `scope` es del esquema de cortesías, que crea B3 al corte (BG; D/16 §4.6, tabla del esquema). Una fuente por suscripción la contesta B9a y otorgar una cortesía por suscripción es de B9b.",
@@ -4872,13 +4872,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 852,
+          "linea": 857,
           "cita": "| `S9` | `B8b` `B9b` | compartida |",
           "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
         }
@@ -4891,7 +4891,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 852,
+              "linea": 857,
               "cita": "| `S9` | `B8b` `B9b` | compartida |",
               "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
             }
@@ -5115,13 +5115,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1057,
+          "linea": 1062,
           "cita": "le escribe `saldo_cerrado_en` y `motivo_cierre = VENTANA_DE_AUTORIZACIÓN_VENCIDA`",
-          "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+          "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
         }
       ],
       "razon": "`motivo_cierre` es columna de la cortesía, cuyo esquema crea B3 al corte (BG); `S3` (B3) escribe uno de sus valores; `S20` (B9a) cierra el saldo con otro.",
@@ -5213,13 +5213,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| `03` §3.1–§3.4, §10 · `05` §1, C6 ·",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La condición del correo va en cada fila de `B/03` que cancela; la primera en el grafo es `S3` (§3.2, capítulo de B3), y le siguen `S6` (B7) y `S11` (B8a) (inferido).",
@@ -5717,7 +5717,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 859,
+              "linea": 864,
               "cita": "| `S16` | `B3` |",
               "hash": "19349d31ae7ea8fcd8b6dde2a14b277ada73450b51413e27ad88dc715f803787"
             }
@@ -5749,7 +5749,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 891,
+          "linea": 896,
           "cita": "B1 ──┐   ✅ la pasarela se decidió (DEC-MP-005, 24/09): esto ya no espera",
           "hash": "76749aafbe099a8da3f6dbde95f592c7476ac65c42740a59328b6bbd61ee3caf"
         },
@@ -5806,7 +5806,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1060,
+              "linea": 1065,
               "cita": "**nunca hay dos relojes sobre la misma autorización** —**el único es el del proveedor** (`DEC-MP-006`)—",
               "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530"
             }
@@ -5840,7 +5840,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "cada preapproval nace **suelto, sin plan del proveedor** (`DEC-MP-007`)",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La fila de `B3` nombra la decisión.",
@@ -5900,7 +5900,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1055,
+          "linea": 1060,
           "cita": "`provider_notification` desde cualquier código que no sea",
           "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
         }
@@ -5915,7 +5915,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "`provider_notification`, sin actuar, y la borra a los 180 días**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "El receptor guarda cada entrega de IPN sin actuar."
@@ -5961,7 +5961,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El aviso de una marca es el listado accionable más un resumen agregado; el resumen es el del barrido de B11 (fila B11), y el listado accionable del 19 §6 es de B13 (B §2.9), cuya mitad al corte es B13a. (inferido)",
@@ -6019,13 +6019,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "Crea al corte el esquema de promos con sus columnas (BG)."
@@ -6151,21 +6151,21 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 956,
+          "linea": 961,
           "cita": "abrir la marca al cerrar la sucesión (`S18`, efecto 5)",
           "hash": "30315344aaf077d73e1e22c87d329e2e2130687ad3aa493ab0157d169a8b7c1a"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1069,
+          "linea": 1074,
           "cita": "porque es lo único que hace que el reloj de la marca escale sobre el reembolso que `DEC-RF-002` volvió manual",
-          "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+          "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
         }
       ],
       "razon": "B11 (corte) lo implementa primero en el grafo: es la dueña por la regla 1 (DEC-METH-019, «la primera en el grafo»); B8b lo completa después. la terminal con marca sigue en el barrido para que escale || Al cerrar la sucesión el sistema pone la marca y no reembolsa: es el efecto 5 de S18 (B §3.1) y S18 es de B8b (B §2.12); la marca que escala sobre ese reembolso manual la sigue el barrido de B11.",
@@ -6182,13 +6182,13 @@
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 956,
+              "linea": 961,
               "cita": "abrir la marca al cerrar la sucesión (`S18`, efecto 5)",
               "hash": "30315344aaf077d73e1e22c87d329e2e2130687ad3aa493ab0157d169a8b7c1a"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 861,
+              "linea": 866,
               "cita": "| `S18` | `B8b` |",
               "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
             }
@@ -6227,13 +6227,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 956,
+          "linea": 961,
           "cita": "abrir la marca al cerrar la sucesión (`S18`, efecto 5)",
           "hash": "30315344aaf077d73e1e22c87d329e2e2130687ad3aa493ab0157d169a8b7c1a"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         }
@@ -6271,7 +6271,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -6358,7 +6358,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**`G-R1-F`**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Los motivos viven en `02` §2.5 y la cláusula nueva es de `G-R1-F`, los dos de `B3`; los abre `S21`, de `B5`.",
@@ -6369,7 +6369,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 864,
+              "linea": 869,
               "cita": "| `S21` | `B5` | AS |",
               "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
             }
@@ -6698,7 +6698,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 854,
+          "linea": 859,
           "cita": "| `S11` | `B8a` |",
           "hash": "cd24d6c597fdfd990fcecc2da98dccf6dd2f8ab5c93fcc9851a01e77a2aef797"
         }
@@ -6762,13 +6762,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "la cola de cambios programados, las columnas de la sucesión (`sucede_a`, `sucedida_por`)",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**`G-R1-A`** **`G-R1-B`**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "sucede_a, los dos índices parciales y G-R1-A/G-R1-B: B3 crea al corte las columnas de la sucesión y lleva los dos guards.",
@@ -6888,13 +6888,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 867,
+          "linea": 872,
           "cita": "| `S24` | `B8a` | AR |",
           "hash": "4277c72af2db7f28d89b340681d6549b0e8806f20d5daafd90b05277e73175b0"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1063,
+          "linea": 1068,
           "cita": "**y darse de baja desde `GRACE_PERIOD` corta el servicio en el acto (`S24`, `DEC-SUB-014`)",
           "hash": "59eebb08255c32842960accaacb8304af76a8423fddb22174f3fb204442e0169"
         }
@@ -6932,7 +6932,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 846,
+          "linea": 851,
           "cita": "| `S3` | `B3` |",
           "hash": "8b28afae17ad09004169bcd25189939e40f778a27b5b3fb23bf493575d28e26e"
         }
@@ -7091,13 +7091,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1062,
+          "linea": 1067,
           "cita": "**en `GRACE_PERIOD` el cambio de plan no se ofrece ni se puede declarar**",
           "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1064,
+          "linea": 1069,
           "cita": "| **B8b** | el criterio de `B8` sin la cláusula de `R1-a`",
           "hash": "f9e6c0fb95e4bbfa96763add5b69d7fbb0035801ff76590916a7533dfcaaf6a8"
         }
@@ -7174,7 +7174,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "y las dos tablas de la migración de un plan retirado, de `B12`",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "Las dos tablas nacen al corte en `B3` (AP)."
@@ -8784,7 +8784,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo q",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "la fila de la pieza B11",
@@ -8979,7 +8979,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cob",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "la fila de la pieza B3",
@@ -9008,7 +9008,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 138,
           "cita": "| **B4** | **El contrato de cobertura, de verdad** | — | `cobertur",
-          "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+          "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
         }
       ],
       "razon": "la fila de la pieza B4",
@@ -13138,7 +13138,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "El barrido diario cuya corrida de siete días sin divergencia acepta el programa es de B11 (inferido)."
@@ -13225,7 +13225,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cob",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "columna «guards» de la fila de la pieza",
@@ -13250,7 +13250,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cob",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "columna «guards» de la fila de la pieza",
@@ -13325,7 +13325,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cob",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "columna «guards» de la fila de la pieza",
@@ -13350,7 +13350,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cob",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "columna «guards» de la fila de la pieza",
@@ -13425,7 +13425,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 138,
           "cita": "| **B4** | **El contrato de cobertura, de verdad** | — | `cobertur",
-          "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+          "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
         }
       ],
       "razon": "columna «guards» de la fila de la pieza",
@@ -14432,7 +14432,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Su forma operable es la regla de no-retroceso del cap. 03 §10, que lista la fila de B3 (inferido).",
@@ -14463,13 +14463,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "el receptor guarda cada entrega del canal IPN",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El UNIQUE(proveedor, id_del_hecho) es el cruce C6 del cap. 05; B3 lista `05` §1, C6 y construye el receptor.",
@@ -14543,13 +14543,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| `09` entero ·",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El capítulo 09 entero es de B11.",
@@ -14578,7 +14578,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 857,
+          "linea": 862,
           "cita": "| `S14` | `B3` |",
           "hash": "a5057b23bda73be90d4264f30a4a953caaa02f394ee0498d7d62d4e22491069e"
         },
@@ -14586,7 +14586,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "S14 abre la marca con su motivo; B §2.12 asigna S14 a B3, que lista `02` §2.5 (las marcas).",
@@ -14615,13 +14615,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 854,
+          "linea": 859,
           "cita": "| `S11` | `B8a` |",
           "hash": "cd24d6c597fdfd990fcecc2da98dccf6dd2f8ab5c93fcc9851a01e77a2aef797"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 855,
+          "linea": 860,
           "cita": "| `S12` | `B8a` |",
           "hash": "70bf201c06cb65fb9bb1a741cf300d1f6167da0c74b5a473cfef0a9ea84eafa9"
         }
@@ -14634,7 +14634,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 865,
+              "linea": 870,
               "cita": "| `S22` | `B8b` | queda en `B8b`, por AR |",
               "hash": "395f461138d1f1eb86e2d1f9f4181f6d214a11e6373e08f75b408f595e7e9417"
             }
@@ -14711,7 +14711,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 853,
+          "linea": 858,
           "cita": "| `S10` | `B8b` |",
           "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
         }
@@ -14726,7 +14726,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "el detector de DEC-OBS-001 en el resumen del barrido"
@@ -14795,7 +14795,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "las tablas del modelo de addons —productos, instancias y compra—",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
@@ -15281,13 +15281,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "las columnas de la sucesión (`sucede_a`, `sucedida_por`)",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Los dos UNIQUE parciales viven en B/02 §2.2 sobre `subscription`, partidos por `sucede_a`; B3 lista `02` §2.2 y crea al corte las columnas de la sucesión (AP).",
@@ -15331,7 +15331,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y del lado del cobro, verticales simultáneas en estados distintos: cada fila de suscripción es de un `user + vertical`** (`NUCLEO/04` invariante 9, con `V3`; BC)",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "Cada fila de suscripción es de un `user + vertical` (BC)."
@@ -15572,13 +15572,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "las columnas de la sucesión (`sucede_a`, `sucedida_por`)",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La base (dos índices parciales y dos columnas anulables, B/02 §2.2) la crea B3 al corte (AP); el guard G-R1-C es de B8b.",
@@ -15717,7 +15717,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "`sí` sólo con una `PAUSED` por `CUSTOMER_REQUEST` en esa vertical",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "retenciónDetenida lee el motivo"
@@ -15749,7 +15749,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El alta (primera llamada al proveedor) es B3, que lista `05` §1; RF2 de B6 aplica la misma regla (inferido).",
@@ -15825,13 +15825,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| `09` entero ·",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El inventario a conciliar sale de nuestra base: es la conciliación (cap. 09, DEC-CONC-002), de B11 (inferido).",
@@ -15860,7 +15860,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 860,
+          "linea": 865,
           "cita": "| `S17` | `B8b` |",
           "hash": "99374e830a98545fe14c27ba1be48cb786de34dc700fc20ada68db89fe2f9920"
         },
@@ -15899,7 +15899,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**`G-R1-A`** **`G-R1-B`** **`G-R1-E`** **`G-R1-F`**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
@@ -15979,7 +15979,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1055,
+          "linea": 1060,
           "cita": "| **B1** | el adaptador falso implementa la interfaz entera **sin ",
           "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
         }
@@ -16004,7 +16004,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1068,
+          "linea": 1073,
           "cita": "| **B10** | *(después; el caso de `G-R2-C` (4e) se ejerce desde el ",
           "hash": "e33ffb37b9f54283b5b5ac78542fcd8ab4e982e59391b5e10fdf47435a786a2c"
         }
@@ -16029,9 +16029,9 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1069,
+          "linea": 1074,
           "cita": "| **B11** | un barrido que liste desde el buscador del proveedor **",
-          "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+          "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
         }
       ],
       "razon": "la fila de la pieza B11",
@@ -16054,7 +16054,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1070,
+          "linea": 1075,
           "cita": "| **B12** | retirar un plan **no mueve a nadie** —ni un monto, ni u",
           "hash": "55f70f3b25bc7ac29cf277bbe8ee269076b8b920bf14d18f00a0c0bb1cc22465"
         }
@@ -16079,7 +16079,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1071,
+          "linea": 1076,
           "cita": "| **B13** | *(partida: ver `B13a` y `B13b`, abajo; corte del MVP, owner 2026-10-01, Z)* canc",
           "hash": "83249c58d35e2d19e60d0c9ba9af36da4968ab04fb4a3dcdcaa59600aedf6f3a"
         }
@@ -16092,7 +16092,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1071,
+              "linea": 1076,
               "cita": "| **B13** | *(partida: ver `B13a` y `B13b`, abajo; corte del MVP, owner 2026-10-01, Z)* cancelar cues",
               "hash": "83249c58d35e2d19e60d0c9ba9af36da4968ab04fb4a3dcdcaa59600aedf6f3a"
             }
@@ -16121,7 +16121,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1072,
+          "linea": 1077,
           "cita": "| **B13a** | el criterio de `B13` entero, que no tiene ninguna cláus",
           "hash": "93489b4f106f533b54b4fe118c2403c65f1eb81c6a0229a71fc68ca3745ef5f3"
         }
@@ -16146,7 +16146,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1073,
+          "linea": 1078,
           "cita": "| **B13b** | *(sin cláusula propia en las fuentes: el criterio de `B",
           "hash": "7d0cefd2db9360eec002f13081b84117f8d6a7398b5357c4892cf5389f25df05"
         }
@@ -16171,7 +16171,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1056,
+          "linea": 1061,
           "cita": "| **B2** | un monto escrito en código **falla**; un precio con dec",
           "hash": "231bd91da12ce5f1e5d61ea5119312e818e0d94586a1d1f56fb7daade7d35b6c"
         }
@@ -16200,9 +16200,9 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1057,
+          "linea": 1062,
           "cita": "| **B3** | diez altas simultáneas del mismo `user + vertical` deja",
-          "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+          "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
         }
       ],
       "razon": "la fila de la pieza B3",
@@ -16229,9 +16229,9 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1058,
+          "linea": 1063,
           "cita": "| **B4** | el juego de casos corre contra las dos implementaciones",
-          "hash": "30f13c9979bb85b8357330ea9a6fc5cc262442d5afc87d6aab83482c7c31277b"
+          "hash": "493c0bd251624023915bac0c8adaff3c66e7955534f677940f9768b3a56eac50"
         }
       ],
       "razon": "la fila de la pieza B4",
@@ -16261,7 +16261,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1059,
+          "linea": 1064,
           "cita": "| **B5** | un reembolso que emite **tres notificaciones en dos for",
           "hash": "444acfec2e67918acb5c0dcd74c8d495340d563c170a55ce8a6159ffcff50c5d"
         }
@@ -16286,7 +16286,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1060,
+          "linea": 1065,
           "cita": "| **B6** | ~~🔒 **no se puede redactar todavía**: qué hay que demos",
           "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530"
         }
@@ -16311,7 +16311,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1061,
+          "linea": 1066,
           "cita": "| **B7** | un **primer** cobro rechazado **no da grace** — **salvo",
           "hash": "54902022e4d5eae6988c8217454f9f54a42018d5a70e85818b6d1eb0bbb5fa57"
         }
@@ -16336,7 +16336,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1062,
+          "linea": 1067,
           "cita": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un ",
           "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
         }
@@ -16349,7 +16349,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1062,
+              "linea": 1067,
               "cita": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un cambio h",
               "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
             }
@@ -16374,7 +16374,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1063,
+          "linea": 1068,
           "cita": "| **B8a** | de las cláusulas de `B8`, la de la baja desde `ACTIVE`:",
           "hash": "59eebb08255c32842960accaacb8304af76a8423fddb22174f3fb204442e0169"
         }
@@ -16399,7 +16399,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1064,
+          "linea": 1069,
           "cita": "| **B8b** | el criterio de `B8` sin la cláusula de `R1-a`, que fue ",
           "hash": "f9e6c0fb95e4bbfa96763add5b69d7fbb0035801ff76590916a7533dfcaaf6a8"
         }
@@ -16424,7 +16424,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1065,
+          "linea": 1070,
           "cita": "| **B9** | *(partida: ver `B9a` y `B9b`, abajo; corte del MVP, owner 2026-10-01, Z)* un 20",
           "hash": "4593794894440c726b50eee34f9b10516696370fbbedf4da2ab8716ae4027603"
         }
@@ -16437,7 +16437,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1065,
+              "linea": 1070,
               "cita": "| **B9** | *(partida: ver `B9a` y `B9b`, abajo; corte del MVP, owner 2026-10-01, Z)* un 20 % y ARS",
               "hash": "4593794894440c726b50eee34f9b10516696370fbbedf4da2ab8716ae4027603"
             }
@@ -16462,7 +16462,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1066,
+          "linea": 1071,
           "cita": "| **B9a** | de las cláusulas de `B9`, las de los grants: **agregar ",
           "hash": "662ac348e25497cd48ab7646ffb8e5a74a5ec0a046a204422b08a5c319cb4c5d"
         }
@@ -16494,7 +16494,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1067,
+          "linea": 1072,
           "cita": "| **B9b** | el criterio de `B9` sin las dos cláusulas de los grants",
           "hash": "cfd925232c25ef24051b3015bd98ec4f7ec30645ddf92518906f58b439c41af5"
         }
@@ -16993,7 +16993,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 849,
+          "linea": 854,
           "cita": "| `S6` | `B7` |",
           "hash": "c3ca82a5293e19680fab073c2af1434c57c02ee00fb6a6c982c934d6db7c83f1"
         }
@@ -17190,7 +17190,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "B3 lista `05` §1, C6 (el receptor con UNIQUE(proveedor, id_del_hecho)); P1 sobre la fila existente es de B5.",
@@ -17326,15 +17326,15 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1057,
+              "linea": 1062,
               "cita": "una ventana que vence **cancela en el proveedor** y no sólo marca la fila",
-              "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+              "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "La defensa (`S3`, vencemos nosotros los enlaces) es de B3."
@@ -17383,7 +17383,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 853,
+              "linea": 858,
               "cita": "| `S10` | `B8b` |",
               "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
             }
@@ -17434,7 +17434,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1060,
+              "linea": 1065,
               "cita": "**un `2084` no lo marca como no reembolsable**",
               "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530"
             },
@@ -17528,9 +17528,9 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1057,
+              "linea": 1062,
               "cita": "| **B3** | diez altas simultáneas del mismo `user + vertical` dejan **una** fila y **un** id en el proveedor",
-              "hash": "12bba5a7f57f35ae80fe6741c9c918e31b0c7c2af987bf82118145c108c5438e"
+              "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
             }
           ],
           "razon": "La defensa, el candado contra duplicados, la demuestra B3."
@@ -17579,9 +17579,9 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1069,
+              "linea": 1074,
               "cita": "| **B11** | un barrido que liste desde el buscador del proveedor **no existe**",
-              "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+              "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
             }
           ],
           "razon": "La defensa (el buscador nunca como lista) la demuestra B11."
@@ -17630,15 +17630,15 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1069,
+              "linea": 1074,
               "cita": "un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook",
-              "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+              "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "La defensa (comparar el monto releído) es de B11."
@@ -17687,7 +17687,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1059,
+              "linea": 1064,
               "cita": "| **B5** | un reembolso que emite **tres notificaciones en dos formatos** produce **una** fila",
               "hash": "444acfec2e67918acb5c0dcd74c8d495340d563c170a55ce8a6159ffcff50c5d"
             }
@@ -17740,7 +17740,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "La defensa vive en el `09` §4, que B11 tiene entero (inferido)."
@@ -17844,7 +17844,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         }
@@ -18009,7 +18009,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 852,
+          "linea": 857,
           "cita": "| `S9` | `B8b` `B9b` | compartida |",
           "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
         }
@@ -18022,7 +18022,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 852,
+              "linea": 857,
               "cita": "| `S9` | `B8b` `B9b` | compartida |",
               "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
             }
@@ -18124,7 +18124,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -18194,7 +18194,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         },
@@ -18259,7 +18259,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -18278,13 +18278,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "| **B4** | **El contrato de cobertura, de verdad**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "`puedeCobrarle` lee la marca abierta."
@@ -18367,7 +18367,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "La comprobación de pagos acreditados."
@@ -18416,9 +18416,9 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1069,
+          "linea": 1074,
           "cita": "termina en `EXECUTED` por el barrido y no en el motivo 18**",
-          "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+          "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -18500,7 +18500,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "Lo abre la comparación de cobros del período del `09` §3 (B11; B §2.8); el camino de `P1` pasó al 20.",
@@ -18595,7 +18595,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "La comparación de cobros del `09` §3, de B11, también lo abre."
@@ -18771,7 +18771,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 871,
+          "linea": 876,
           "cita": "| `S32` | `B7` | AS |",
           "hash": "5bd767aa3cb76cfacde5997b77b3b958fa376a939ebc32114ff6ed539b4db08e"
         }
@@ -18784,7 +18784,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 851,
+              "linea": 856,
               "cita": "| `S8` | `B8b` |",
               "hash": "65c11e68b9c85657e5ad372b562c7054f4be913bb8d5c88334189abe771dbd51"
             }
@@ -18888,13 +18888,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "y abre el motivo 24 si cobró de más**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La fila de B11 lo nombra.",
@@ -18945,7 +18945,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -19064,15 +19064,15 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1069,
+          "linea": 1074,
           "cita": "un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook",
-          "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+          "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1069,
+          "linea": 1074,
           "cita": "| **B11** | un barrido que liste desde el buscador del proveedor **no existe**",
-          "hash": "894fe55aeb5bfe08c187ccf7b207abcd602228f2798cd42579a11f3a11513f54"
+          "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
         }
       ],
       "razon": "La comparación de monto del `09` §3 la construye B11, cuyo criterio dice que el monto no aplicado aparece; B9b la toma después para la comparación con promos.",
@@ -19142,13 +19142,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "Lo abren la comparación de estado y la re-vinculación rechazada del `09` §2.4, las dos de B11 (inferido para la comparación: `09` entero).",
@@ -19199,13 +19199,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "entra por la lápida de recepción como cualquier desconocido y abre `PAGO_TARDÍO_RECHAZADO`",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La fila de B11 lo nombra (lápida de recepción y comparación de cobros); el camino del `05` §3 es de B7.",
@@ -19273,7 +19273,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 872,
+          "linea": 877,
           "cita": "| `S33` | `B7` | AS |",
           "hash": "31f72ceaffdc0bda3b4c648e13a70ad6c436b2924cc5e62de2a9ee7780345735"
         }
@@ -19299,7 +19299,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 853,
+              "linea": 858,
               "cita": "| `S10` | `B8b` |",
               "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
             }
@@ -20045,7 +20045,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -20109,7 +20109,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 871,
+          "linea": 876,
           "cita": "| `S32` | `B7` | AS |",
           "hash": "5bd767aa3cb76cfacde5997b77b3b958fa376a939ebc32114ff6ed539b4db08e"
         }
@@ -20154,7 +20154,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -20269,7 +20269,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1055,
+              "linea": 1060,
               "cita": "cualquier `package.json` del repo pone `G16` en rojo",
               "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
             },
@@ -20361,7 +20361,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1055,
+              "linea": 1060,
               "cita": "cualquier `package.json` del repo pone `G16` en rojo",
               "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
             }
@@ -20521,11 +20521,11 @@
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 729,
-              "cita": "**B11** *(la relectura que la escribe y la exención que la lee)*",
-              "hash": "4103ba924e670ea3389fb032d580a0adff085d99d5334c35f349d2bb58d0e5b9"
+              "cita": "**B11** *(~~la relectura que la escribe~~ **el barrido, que la escribe por la misma interfaz** (CH), y la exención que la lee)*",
+              "hash": "c6ac18cda508f9a36811f93eae53e4c4031be66f758e17b7bb8b91b9f0b8d715"
             }
           ],
-          "razon": "la relectura que escribe cancelado_visto_en"
+          "razon": "el barrido, que escribe por la interfaz de B4 (CH), cancelado_visto_en"
         },
         {
           "pieza": "V9b",
@@ -20579,11 +20579,11 @@
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 729,
-              "cita": "**B11** *(la relectura que la escribe y la exención que la lee)*",
-              "hash": "4103ba924e670ea3389fb032d580a0adff085d99d5334c35f349d2bb58d0e5b9"
+              "cita": "**B11** *(~~la relectura que la escribe~~ **el barrido, que la escribe por la misma interfaz** (CH), y la exención que la lee)*",
+              "hash": "c6ac18cda508f9a36811f93eae53e4c4031be66f758e17b7bb8b91b9f0b8d715"
             }
           ],
-          "razon": "la relectura que escribe la columna desde la que cuenta el plazo 16"
+          "razon": "el barrido, que escribe por la interfaz de B4 (CH), la columna desde la que cuenta el plazo 16"
         }
       ],
       "tipos_de_test_minimos": [
@@ -20683,7 +20683,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**con los ~~siete~~ ocho campos de la fuente**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "la fuente de billing con sus ocho campos"
@@ -20777,7 +20777,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la respuesta real de `retenciónDetenida`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "retenciónDetenida real y desde"
@@ -20859,7 +20859,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la de `puedeCobrarle`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "la respuesta real"
@@ -22070,7 +22070,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el predicado de CC sobre la acción 19 de `B2`",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "CF: el predicado de CC y su test van en el PR de B3; CG: la prueba de punta a punta de la baja es de B13a.",
@@ -22097,6 +22097,68 @@
         "≥1 de cualquier tipo de la lista cerrada"
       ],
       "tipos_solo_del_texto": [],
+      "tipos_trasladados": [],
+      "tipos_descartados": []
+    },
+    "DEC-ARCH-017#📌12": {
+      "fuente": "PIN",
+      "pieza": "B3",
+      "metodo": "lectura",
+      "fuente_de_la_asignacion": [
+        {
+          "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+          "linea": 8047,
+          "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CH y CI, las dos la 1)**:",
+          "hash": "d4c85e2b9b87d66a92aed53a99495e5c14f77e2d450fa556d86090e53f9214bf"
+        },
+        {
+          "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+          "linea": 1062,
+          "cita": "**y el handler de avisos y `S16`, cuando su relectura ve el preapproval `cancelled`, llaman a *«anotar la cancelación vista»*",
+          "hash": "786a29c9708971a0c671e49c7341d7c6615b2dd80e2bc8531eda3ea97ee7a191"
+        }
+      ],
+      "razon": "CH: el handler y S16 de B3 llaman a la interfaz «anotar la cancelación vista»; B4 la implementa al crear la columna y el barrido de B11 la usa. Dueña la primera del grafo: B3. CI (la flecha B4 → B11) la transcribe aristas.py.",
+      "tambien_lo_ejercen": [
+        {
+          "pieza": "B4",
+          "rol": "implementa",
+          "citas": [
+            {
+              "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+              "linea": 1063,
+              "cita": "**y *«anotar la cancelación vista»*, ejercida con filas sembradas, escribe `provider_link.cancelado_visto_en` la primera vez",
+              "hash": "493c0bd251624023915bac0c8adaff3c66e7955534f677940f9768b3a56eac50"
+            }
+          ],
+          "razon": "CH: la implementación de la interfaz, en el PR que crea la columna"
+        },
+        {
+          "pieza": "B11",
+          "rol": "implementa",
+          "citas": [
+            {
+              "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+              "linea": 1074,
+              "cita": "**y el barrido que relee por id un preapproval `cancelled` escribe `provider_link.cancelado_visto_en` por la interfaz de `B4`",
+              "hash": "8c7ff386b6811f767823a08dafa5f097830b516b3d5572a286e844fc1a7234cb"
+            }
+          ],
+          "razon": "CH: el barrido escribe la columna por la misma interfaz"
+        }
+      ],
+      "tipos_de_test_minimos": [
+        "migración desde cero"
+      ],
+      "tipos_derivados_del_texto": [
+        "esquema: «columna»"
+      ],
+      "tipos_exigidos_por_familia": [
+        "≥1 de cualquier tipo de la lista cerrada"
+      ],
+      "tipos_solo_del_texto": [
+        "migración desde cero"
+      ],
       "tipos_trasladados": [],
       "tipos_descartados": []
     },
@@ -22196,19 +22258,19 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el esquema de promos y cortesías —códigos, redenciones y `courtesy_grant`—, que pasa de `B9a` a esta pieza",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el Turista VIP pago de quien contrata un plan que lo hereda se cancela en el acto, sin reembolso**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El 📌 reparte BC, BF, BG y BH. B3 recibe `DEC-ENT-004`, el lado del cobro del invariante 9 y el esquema de promos y cortesías (fila de B3); las demás piezas van en también. Ninguna de ellas es ancestro de B3; dueña B3 por llevar la mayor parte (inferido el orden: U3 y V3 son incomparables con B3 en el grafo).",
@@ -22368,7 +22430,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y `S1` no admite la compra de Turista VIP mientras el plan vigente del `user` lo herede",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El 📌 lleva a B3 la guarda de S1 sobre la compra de Turista VIP (BJ), escrita en la fila de B3. Tipos: «la API lo rechaza» pide ruta API (contrato de errores, AN) y «la UI no lo ofrece» pide e2e web.",
@@ -22381,7 +22443,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "la pricing de `B13a` no lo ofrece",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "la pricing no lo ofrece"
@@ -22394,7 +22456,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "la resolución de capacidades de `V3` dice si el plan lo hereda",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "la resolución de capacidades"
@@ -22433,7 +22495,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**la rama de sucesión de `S1` escrita entera y probada con filas sembradas, sin ruta: la ruta la agrega `B8b` sin tocar este código**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El 📌 reparte BL, BN, BO, BP y BR. B3 recibe la rama de sucesión de S1 sin ruta (BL), manual_payment e idempotency_key (BN), el VIP heredado en S2 (BP) y la flecha de U2 (BR), en su fila; las demás piezas van en también. Ninguna que implementa es ancestro de B3; U2 provee el outbox (inferido el orden, como en el cuarto 📌).",
@@ -22511,7 +22573,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "**y los dos correos inmediatos a `SUPER_ADMIN`, *«reembolso de revocación fallido»* y *«cobro duplicado detectado»*, con su plantilla**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "BR"
@@ -22561,7 +22623,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 889,
+              "linea": 894,
               "cita": "U1 ──► U2 (del paraguas: el outbox común, FASE 5, lote 2 A) ──► B3 (BR), B4 y B12",
               "hash": "1516bc1ae8424823f158205dc7cce1953ee2ff945b9ed826a0ef7818a3b5c4fe"
             }
@@ -22610,7 +22672,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1061,
+              "linea": 1066,
               "cita": "en la rama 4, la bandera se apaga por la interfaz interna que llama `S13`",
               "hash": "54902022e4d5eae6988c8217454f9f54a42018d5a70e85818b6d1eb0bbb5fa57"
             }
@@ -22623,7 +22685,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1066,
+              "linea": 1071,
               "cita": "y `S13` sobre una sucesión con un pago retenido apaga la bandera de la rama 4",
               "hash": "662ac348e25497cd48ab7646ffb8e5a74a5ec0a046a204422b08a5c319cb4c5d"
             }
@@ -22674,7 +22736,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y la guarda de `S15` y el predicado (f) de `G-R1-F`, que leen `reconciliation_mark_payment`, escritos contra una interfaz interna que implementa `B5`**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "BY: B3 escribe la guarda de S15 y el predicado (f) por interfaz (fila de B3) y B5 los implementa; CA: B7 el aviso y la cláusula de S7, B13a la advertencia. Dueña B3 por ir primero en el grafo.",
@@ -23334,7 +23396,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El barrido que reintenta la cancelación ya decidida es la salvedad 4 de `09` §3, de B11 (inferido); la cifra «once» es lo muerto.",
@@ -23365,7 +23427,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**y un preapproval desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "2b (la precondición de la re-vinculación) es de B11; 3d (la marca 21 a los 3 días) es de B7.",
@@ -23416,13 +23478,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**el cobro de un preapproval desconocido que no nombra ninguna fila vive en una lápida de recepción**, con la forma de fila de R6 y el `payment` y la marca colgados",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**que el handler cancela al escribirla y el barrido reintenta** por la salvedad 4",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La lápida de recepción que cancela su preapproval y el reintento del barrido son de B11; lo muerto es la lápida del corte.",
@@ -23460,7 +23522,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido y abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo, que decide el owner",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La fila de B11 dice que el cobro tardío entra por la lápida de recepción y abre `PAGO_TARDÍO_RECHAZADO`.",
@@ -23498,7 +23560,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**el cobro de un preapproval desconocido que no nombra ninguna fila vive en una lápida de recepción**, con la forma de fila de R6 y el `payment` y la marca colgados",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "La lápida de recepción, que B11 escribe, se reconoce por `clase = LÁPIDA`; la fila de la suscripción la crea B3 (`02` §2.2) (inferido).",
@@ -23511,13 +23573,13 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             },
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "`02` §2.2 **y §2.5**",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "El esquema de la fila con su `clase`."
@@ -23911,7 +23973,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1059,
+              "linea": 1064,
               "cita": "**y un cobro que llega sobre una cuenta que la acción 24 ya dio de baja deja el comprobante sin nombre ni correo y sin enviar**",
               "hash": "444acfec2e67918acb5c0dcd74c8d495340d563c170a55ce8a6159ffcff50c5d"
             }
@@ -23926,7 +23988,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la de `puedeCobrarle`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "La respuesta real de `puedeCobrarle`."
@@ -24037,7 +24099,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la respuesta real de `retenciónDetenida`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "La real devuelve el fin de la última pausa."
@@ -24265,7 +24327,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "y la borra a los 180 días",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Los 180 días de `provider_notification` son del receptor de `B3` (B §2, fila `B3`).",
@@ -24530,7 +24592,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "lee N"
@@ -24592,7 +24654,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "lee N"
@@ -24695,7 +24757,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**`desde` en todas**, el alta de la fila o el arranque de la fuente",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "`desde` en las fuentes de billing."
@@ -25072,7 +25134,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 873,
+          "linea": 878,
           "cita": "| `S34` | `B9b` |",
           "hash": "745556c9784a7968b688da6adaead752de40d5e8aa552f97304643958ce21981"
         }
@@ -25103,7 +25165,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 852,
+          "linea": 857,
           "cita": "| `S9` | `B8b` `B9b` | compartida |",
           "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
         }
@@ -25116,7 +25178,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 852,
+              "linea": 857,
               "cita": "| `S9` | `B8b` `B9b` | compartida |",
               "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
             }
@@ -25150,13 +25212,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**y el asiento de un cobro sobre una lápida es `P1` sin `covered_period`, sin promo y sin aviso de cobertura**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El asiento sobre una lápida (hoy sólo la de recepción) es de B11; el comprobante lo emite el registro de B5 (inferido).",
@@ -25207,13 +25269,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| `03` §3.1–§3.4, §10 · `05` §1, C6 ·",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Misma condición en las filas que cancelan; la supresión y el escalado los provee U2 (inferido).",
@@ -25264,13 +25326,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| `03` §3.1–§3.4, §10 · `05` §1, C6 ·",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Misma condición en las filas que cancelan; el `failed` definitivo escalado lo provee U2 (inferido).",
@@ -25333,7 +25395,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "B11 (corte) lo implementa primero en el grafo: es la dueña por la regla 1 (DEC-METH-019, «la primera en el grafo»); B10 lo completa después. El barrido reintenta la cancelación por la salvedad 1 de `09` §3 (inferido). || `A3` es de la máquina de la instancia (B10); su reintento por la salvedad 1 lo hace el barrido de B11.",
@@ -25599,7 +25661,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "**y un preapproval desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "la re-vinculación por external_reference"
@@ -25750,7 +25812,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el receptor guarda cada entrega del canal IPN en",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "el receptor de avisos de los dos canales (inferido: la fila no nombra la ruta)"
@@ -25832,7 +25894,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "el cobro tardío por la lápida de recepción"
@@ -25930,7 +25992,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "El cobro tardío de un débito viejo lo trata `B11`; el acotamiento a las cinco cuentas (borrar las demás fichas) es de la migración de `V6`.",
@@ -26121,7 +26183,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 876,
+              "linea": 881,
               "cita": "| `S37` | `B12` |",
               "hash": "155a38344d68d7b2bf3f013dde14b2d157d27bc44f4b96a7e9f1d16520216271"
             }
@@ -26211,7 +26273,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 877,
+              "linea": 882,
               "cita": "| `S38` | `B8b` | también con el motivo *«aumento»*, que usa `B12` (BZ) |",
               "hash": "2539ac0380e1cbcb44b206900df88d495f105930ff1bad325afc27d2886720a3"
             }
@@ -26256,7 +26318,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 877,
+              "linea": 882,
               "cita": "| `S38` | `B8b` | también con el motivo *«aumento»*, que usa `B12` (BZ) |",
               "hash": "2539ac0380e1cbcb44b206900df88d495f105930ff1bad325afc27d2886720a3"
             }
@@ -26271,7 +26333,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "**y el predicado de CC sobre la acción 19 de `B2`",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "CF: el predicado y su test los escribe el PR de B3, que crea la cola (ESQ:3); el AC sigue de B2"
@@ -26400,7 +26462,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1055,
+          "linea": 1060,
           "cita": "y que el receptor tampoco la lea para procesar una entrega de Webhooks, lote L-B",
           "hash": "7a59088aff69f5ccb7de9a7c060b539b47f4f8810e8f83a0138195f6e467798f"
         }
@@ -26415,7 +26477,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "y en la misma tabla, con su canal, cada entrega de Webhooks que procesa",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "El receptor guarda cada entrega de Webhooks con su canal."
@@ -26492,7 +26554,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y el receptor guarda cada entrega del canal IPN en",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
@@ -26737,7 +26799,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 875,
+          "linea": 880,
           "cita": "| `S36` | `B5` |",
           "hash": "b7258f669957a8a58b0cfef7ab09018e559c2c1bfc1444a042013a56547d17c0"
         }
@@ -26857,7 +26919,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 861,
+              "linea": 866,
               "cita": "| `S18` | `B8b` |",
               "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
             }
@@ -26889,7 +26951,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -26933,7 +26995,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 864,
+              "linea": 869,
               "cita": "| `S21` | `B5` | AS |",
               "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
             }
@@ -27025,7 +27087,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "**el handler no manda cancelar un id del manifiesto de sondas**",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "Lo vivo: la marca 7 de una sonda del manifiesto. El cobro de una sonda entra por la lápida de recepción de `B11`. Muerto lo de `S26` y `vertical_discontinuation`.",
@@ -27067,7 +27129,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 864,
+              "linea": 869,
               "cita": "| `S21` | `B5` | AS |",
               "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
             }
@@ -27320,7 +27382,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1060,
+          "linea": 1065,
           "cita": "una llamada sin respuesta deja la orden esperando hasta que el barrido la reenvía",
           "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530"
         }
@@ -27410,7 +27472,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "**y hasta `B8b` la rama de sucesión de `S1` no tiene ruta: `S1` sólo nace como alta nueva, y los predicados de la sucesión (`G-R1-A`, `G-R1-B`) corren sobre columnas que nadie escribe todavía**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "`D8` lo hace verificable `G-R1-B`, de B3, que corre al corte sobre la rama de sucesión de `S1` sin ruta; la ruta la abre B8b (inferido).",
@@ -27533,7 +27595,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 877,
+          "linea": 882,
           "cita": "| `S38` | `B8b` |",
           "hash": "2539ac0380e1cbcb44b206900df88d495f105930ff1bad325afc27d2886720a3"
         },
@@ -27601,7 +27663,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 865,
+          "linea": 870,
           "cita": "| `S22` | `B8b` | queda en `B8b`, por AR |",
           "hash": "395f461138d1f1eb86e2d1f9f4181f6d214a11e6373e08f75b408f595e7e9417"
         }
@@ -27634,13 +27696,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| `03` §3.1–§3.4, §10 · `05` §1, C6 ·",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "Tratarla como baja o mora del proveedor es el espejo de `B/03` §10, capítulo de B3 (inferido).",
@@ -27671,13 +27733,13 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "| `03` §3.1–§3.4, §10 · `05` §1, C6 ·",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "El espejo de `B/03` §10.1 es capítulo de B3 (`03` §10) (inferido).",
@@ -27714,7 +27776,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "B11 (corte) lo implementa primero en el grafo: es la dueña por la regla 1 (DEC-METH-019, «la primera en el grafo»); B8b lo completa después. El barrido lista las pausas con regalo. || La vuelta anticipada libre es de la pausa (B8b); el detector en el resumen del barrido es de B11.",
@@ -27839,7 +27901,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 862,
+          "linea": 867,
           "cita": "| `S19` | `B7` |",
           "hash": "75e98c492b93d1393c3fdb976bbc89472cd15768fec0fe8d9ed09c19c95d40fa"
         }
@@ -27901,7 +27963,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 850,
+          "linea": 855,
           "cita": "| `S7` | `B7` |",
           "hash": "4c02699024c013f3db69e4908cb05d5d63ac5ca9b79595d1fac372281ec2ab94"
         }
@@ -28051,7 +28113,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1061,
+          "linea": 1066,
           "cita": "(declarada desde `ACTIVE` o `CANCEL_SCHEDULED`, con al menos un pago acreditado)",
           "hash": "54902022e4d5eae6988c8217454f9f54a42018d5a70e85818b6d1eb0bbb5fa57"
         }
@@ -28133,7 +28195,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 1070,
+          "linea": 1075,
           "cita": "y le cambia la versión en esa renovación",
           "hash": "55f70f3b25bc7ac29cf277bbe8ee269076b8b920bf14d18f00a0c0bb1cc22465"
         }
@@ -28148,7 +28210,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "y las dos tablas de la migración de un plan retirado, de `B12`",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "La tabla de la fila de alcance."
@@ -28800,7 +28862,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 138,
               "cita": "**y la respuesta real de `retenciónDetenida`**",
-              "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d"
+              "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
             }
           ],
           "razon": "retenciónDetenida real"
@@ -29214,7 +29276,7 @@
     },
     "PLAZO:16": {
       "fuente": "PLAZO",
-      "pieza": "B11",
+      "pieza": "B4",
       "metodo": "lectura",
       "fuente_de_la_asignacion": [
         {
@@ -29225,12 +29287,12 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 713,
-          "cita": "**B11** *(la lectura)*",
-          "hash": "8d12fc604a8638f7a1a76a8dca3a55f6b9c26f18e819a2873b2492ee475bae6e"
+          "linea": 722,
+          "cita": "y `no` pasado el plazo 16 con el preapproval todavía `cancelled`",
+          "hash": "26778d5f4e9483f5f7ce86bd51ac6ebdf7a6299accd77e8ed4b09f8643ec7a21"
         }
       ],
-      "razon": "La lectura (criterio de exención del barrido) es B11; B2 pone la clave; B4 contesta `puedeCobrarle` con el plazo 16.",
+      "razon": "Con CI (`B4 → B11`) la primera del grafo que lo implementa es B4: `puedeCobrarle` lee el plazo 16; B2 pone la clave; la lectura en el criterio de exención del barrido es B11 (también).",
       "tambien_lo_ejercen": [
         {
           "pieza": "B2",
@@ -29246,17 +29308,17 @@
           "razon": "la clave"
         },
         {
-          "pieza": "B4",
+          "pieza": "B11",
           "rol": "implementa",
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 722,
-              "cita": "y `no` pasado el plazo 16 con el preapproval todavía `cancelled`",
-              "hash": "26778d5f4e9483f5f7ce86bd51ac6ebdf7a6299accd77e8ed4b09f8643ec7a21"
+              "linea": 713,
+              "cita": "**B11** *(la lectura)*",
+              "hash": "8d12fc604a8638f7a1a76a8dca3a55f6b9c26f18e819a2873b2492ee475bae6e"
             }
           ],
-          "razon": "puedeCobrarle lee el plazo 16"
+          "razon": "la lectura: el criterio de exención del barrido"
         }
       ],
       "tipos_de_test_minimos": [
@@ -29375,7 +29437,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 149,
           "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
-          "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+          "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
         }
       ],
       "razon": "BU: el resumen de conciliación cada N minutos lo construye B11 (fila de B11); B2 pone la clave en su tabla de plazos.",
@@ -29745,7 +29807,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 854,
+          "linea": 859,
           "cita": "| `S11` | `B8a` |",
           "hash": "cd24d6c597fdfd990fcecc2da98dccf6dd2f8ab5c93fcc9851a01e77a2aef797"
         }
@@ -29776,13 +29838,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 855,
+          "linea": 860,
           "cita": "| `S12` | `B8a` |",
           "hash": "70bf201c06cb65fb9bb1a741cf300d1f6167da0c74b5a473cfef0a9ea84eafa9"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 866,
+          "linea": 871,
           "cita": "| `S23` | `B8a` | AR |",
           "hash": "495371b61d02a9d170b0e3ae07181f4b7167efb7451ca5288857d62271bc76fb"
         }
@@ -29844,13 +29906,13 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 853,
+          "linea": 858,
           "cita": "| `S10` | `B8b` |",
           "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 865,
+          "linea": 870,
           "cita": "| `S22` | `B8b` | queda en `B8b`, por AR |",
           "hash": "395f461138d1f1eb86e2d1f9f4181f6d214a11e6373e08f75b408f595e7e9417"
         }
@@ -29881,7 +29943,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 846,
+          "linea": 851,
           "cita": "| `S3` | `B3` |",
           "hash": "8b28afae17ad09004169bcd25189939e40f778a27b5b3fb23bf493575d28e26e"
         }
@@ -29912,7 +29974,7 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 844,
+          "linea": 849,
           "cita": "| `S1` | `B3` |",
           "hash": "a2f8f41044f3f6a384a9fc8f37e8c81f106595f2b166f94be92fbce103a68f83"
         },
@@ -29920,7 +29982,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 137,
           "cita": "`03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 **y §2.5**",
-          "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+          "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
         }
       ],
       "razon": "La condición está en S1 y los dos índices parciales de B/02 §2.2: B3.",
@@ -30044,7 +30106,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "La lectura de «¿cobró?» del `09` §4 es de B11 (inferido)."
@@ -30150,7 +30212,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 1060,
+              "linea": 1065,
               "cita": "**ningún ~~cobro~~ reembolso sale sin su clave de idempotencia persistida antes**",
               "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530"
             },
@@ -30424,7 +30486,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "| **B11** | **Conciliación**",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "El barrido que lee `expire_date` es de B11."
@@ -30542,7 +30604,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 844,
+          "linea": 849,
           "cita": "| `S1` | `B3` | la rama de sucesión, sin ruta hasta `B8b` (Z): `B",
           "hash": "a2f8f41044f3f6a384a9fc8f37e8c81f106595f2b166f94be92fbce103a68f83"
         }
@@ -30567,7 +30629,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 853,
+          "linea": 858,
           "cita": "| `S10` | `B8b` | el tercer evento, revocar una cortesía temporal,",
           "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
         }
@@ -30592,7 +30654,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 854,
+          "linea": 859,
           "cita": "| `S11` | `B8a` | |",
           "hash": "cd24d6c597fdfd990fcecc2da98dccf6dd2f8ab5c93fcc9851a01e77a2aef797"
         }
@@ -30617,7 +30679,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 855,
+          "linea": 860,
           "cita": "| `S12` | `B8a` | |",
           "hash": "70bf201c06cb65fb9bb1a741cf300d1f6167da0c74b5a473cfef0a9ea84eafa9"
         }
@@ -30642,7 +30704,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 856,
+          "linea": 861,
           "cita": "| `S13` | `B9a` | |",
           "hash": "0e92b26e4f9ee3e8c75cb8a0238bab4672049846d7e9ce15b028bba11ef24669"
         }
@@ -30667,7 +30729,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 857,
+          "linea": 862,
           "cita": "| `S14` | `B3` | |",
           "hash": "a5057b23bda73be90d4264f30a4a953caaa02f394ee0498d7d62d4e22491069e"
         }
@@ -30692,7 +30754,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 858,
+          "linea": 863,
           "cita": "| `S15` | `B3` | la guarda contra una interfaz que implementa `B5`",
           "hash": "b564d73dc43a92aaca5f90f8b4203f7d4605aef2443e4aa2fcb95548e345e673"
         }
@@ -30717,7 +30779,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 859,
+          "linea": 864,
           "cita": "| `S16` | `B3` | |",
           "hash": "19349d31ae7ea8fcd8b6dde2a14b277ada73450b51413e27ad88dc715f803787"
         }
@@ -30742,7 +30804,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 860,
+          "linea": 865,
           "cita": "| `S17` | `B8b` | |",
           "hash": "99374e830a98545fe14c27ba1be48cb786de34dc700fc20ada68db89fe2f9920"
         }
@@ -30767,7 +30829,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` | |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         }
@@ -30792,7 +30854,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 862,
+          "linea": 867,
           "cita": "| `S19` | `B7` | |",
           "hash": "75e98c492b93d1393c3fdb976bbc89472cd15768fec0fe8d9ed09c19c95d40fa"
         }
@@ -30817,7 +30879,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 845,
+          "linea": 850,
           "cita": "| `S2` | `B3` | con la cláusula que cancela el Turista VIP hereda",
           "hash": "27c1eeb710cdb0857d4cefbadf5b4d735b2b54a63ad95797ad6a258138d0c8f2"
         }
@@ -30842,7 +30904,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 863,
+          "linea": 868,
           "cita": "| `S20` | `B9a` | AS |",
           "hash": "a61665a263060432564509b2b250d454b6f8b9fc7f0479ee3309d14dc0459809"
         }
@@ -30867,7 +30929,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -30892,7 +30954,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 865,
+          "linea": 870,
           "cita": "| `S22` | `B8b` | queda en `B8b`, por AR |",
           "hash": "395f461138d1f1eb86e2d1f9f4181f6d214a11e6373e08f75b408f595e7e9417"
         }
@@ -30917,7 +30979,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 866,
+          "linea": 871,
           "cita": "| `S23` | `B8a` | AR |",
           "hash": "495371b61d02a9d170b0e3ae07181f4b7167efb7451ca5288857d62271bc76fb"
         }
@@ -30942,7 +31004,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 867,
+          "linea": 872,
           "cita": "| `S24` | `B8a` | AR |",
           "hash": "4277c72af2db7f28d89b340681d6549b0e8806f20d5daafd90b05277e73175b0"
         }
@@ -30967,7 +31029,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 868,
+          "linea": 873,
           "cita": "| `S29` | `B5` | |",
           "hash": "c678b19de85b99f213975a14b09c4e31649fd1ea6bd17a787aa95400a9d8e980"
         }
@@ -30992,7 +31054,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 846,
+          "linea": 851,
           "cita": "| `S3` | `B3` | |",
           "hash": "8b28afae17ad09004169bcd25189939e40f778a27b5b3fb23bf493575d28e26e"
         }
@@ -31017,7 +31079,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 869,
+          "linea": 874,
           "cita": "| `S30` | `B9b` | |",
           "hash": "ea83f967585e4b0383eb11918f8261591db872c66eaa192f3407440557ef578c"
         }
@@ -31042,7 +31104,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 870,
+          "linea": 875,
           "cita": "| `S31` | `B8b` | |",
           "hash": "39f01b1d38755e41c1623c7d0ee58d6f52c7d2027855851f8ec677fcc1cafbc7"
         }
@@ -31067,7 +31129,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 871,
+          "linea": 876,
           "cita": "| `S32` | `B7` | AS |",
           "hash": "5bd767aa3cb76cfacde5997b77b3b958fa376a939ebc32114ff6ed539b4db08e"
         }
@@ -31092,7 +31154,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 872,
+          "linea": 877,
           "cita": "| `S33` | `B7` | AS |",
           "hash": "31f72ceaffdc0bda3b4c648e13a70ad6c436b2924cc5e62de2a9ee7780345735"
         }
@@ -31117,7 +31179,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 873,
+          "linea": 878,
           "cita": "| `S34` | `B9b` | |",
           "hash": "745556c9784a7968b688da6adaead752de40d5e8aa552f97304643958ce21981"
         }
@@ -31142,7 +31204,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 874,
+          "linea": 879,
           "cita": "| `S35` | `B9b` | |",
           "hash": "9d74c63f8e59daaf7387e2f2bcfda4e60c0c68891cd9bd39152403a161f9584c"
         }
@@ -31167,7 +31229,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 875,
+          "linea": 880,
           "cita": "| `S36` | `B5` | |",
           "hash": "b7258f669957a8a58b0cfef7ab09018e559c2c1bfc1444a042013a56547d17c0"
         }
@@ -31192,7 +31254,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 876,
+          "linea": 881,
           "cita": "| `S37` | `B12` | también con el motivo *«aumento»* (BZ) |",
           "hash": "155a38344d68d7b2bf3f013dde14b2d157d27bc44f4b96a7e9f1d16520216271"
         }
@@ -31217,7 +31279,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 877,
+          "linea": 882,
           "cita": "| `S38` | `B8b` | también con el motivo *«aumento»*, que usa `B12`",
           "hash": "2539ac0380e1cbcb44b206900df88d495f105930ff1bad325afc27d2886720a3"
         }
@@ -31242,7 +31304,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 847,
+          "linea": 852,
           "cita": "| `S4` | `B7` | |",
           "hash": "c2e79bebe083bedb52ab0ab3a2b1f93d900598b0ad80ba4fc406abe247c97865"
         }
@@ -31267,7 +31329,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 848,
+          "linea": 853,
           "cita": "| `S5` | `B7` | |",
           "hash": "52cc756bd3a660b45d565e4b468f4ff01aaf146288a5ec57d49b62f7762a3f5c"
         }
@@ -31292,7 +31354,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 849,
+          "linea": 854,
           "cita": "| `S6` | `B7` | |",
           "hash": "c3ca82a5293e19680fab073c2af1434c57c02ee00fb6a6c982c934d6db7c83f1"
         }
@@ -31317,7 +31379,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 850,
+          "linea": 855,
           "cita": "| `S7` | `B7` | con la cláusula del Turista VIP al regularizar (C",
           "hash": "4c02699024c013f3db69e4908cb05d5d63ac5ca9b79595d1fac372281ec2ab94"
         }
@@ -31342,7 +31404,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 851,
+          "linea": 856,
           "cita": "| `S8` | `B8b` | |",
           "hash": "65c11e68b9c85657e5ad372b562c7054f4be913bb8d5c88334189abe771dbd51"
         }
@@ -31367,7 +31429,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 852,
+          "linea": 857,
           "cita": "| `S9` | `B8b` `B9b` | compartida |",
           "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
         }
@@ -31380,7 +31442,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 852,
+              "linea": 857,
               "cita": "| `S9` | `B8b` `B9b` | compartida |",
               "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
             }
@@ -31987,9 +32049,9 @@
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 903,
+          "linea": 908,
           "cita": "el aviso del primer pago lo emite `P1`, que también es de B5",
-          "hash": "af09540d3b0b640dee972ab79930e876978401edf86f6041f7015ac1cbd12b0e"
+          "hash": "867b9f00ee11c3c3fca84943ef495cb0119e558340868df06e60a578c8cbcd5c"
         }
       ],
       "razon": "La fila de B5 («qué se cobró, qué se reembolsó…») lista `03` §6, la máquina de `payment`; P1 es una fila de esa tabla.",
@@ -32015,7 +32077,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 137,
               "cita": "lo leen antes `S3` y `S14` (esta pieza), `P1` (`B5`)",
-              "hash": "1132b7192e3e92d9139f0bb9ae5e8b7098cd686e006857741e14665bcbc42daf"
+              "hash": "717633bf90ec96aa8fe910b2f75eb9ed35a50c8943dc20c1b7ef91cfb84c05db"
             }
           ],
           "razon": "El esquema de promos que la rama de `P1` lee lo crea `B3` (BG)."
@@ -32507,7 +32569,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 149,
               "cita": "la relectura de todo `refund` en `CONFIRMED`",
-              "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+              "hash": "abece0e214b8cb54e5b79470bbe8dbf1a38f778aab5d2714b17c71803d79bd58"
             }
           ],
           "razon": "El barrido de B11 reenvía la devolución sin respuesta con la misma clave y relee los `refund` en `CONFIRMED`."
@@ -32617,7 +32679,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 844,
+          "linea": 849,
           "cita": "| `S1` | `B3` | la rama de sucesión, sin ruta hasta `B8b` (Z): `B",
           "hash": "a2f8f41044f3f6a384a9fc8f37e8c81f106595f2b166f94be92fbce103a68f83"
         }
@@ -32642,7 +32704,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 853,
+          "linea": 858,
           "cita": "| `S10` | `B8b` | el tercer evento, revocar una cortesía temporal,",
           "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
         }
@@ -32655,7 +32717,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 853,
+              "linea": 858,
               "cita": "el tercer evento, revocar una cortesía temporal, lo agrega `B9b` (BO)",
               "hash": "f5cc7adea2f1df659cfb232d9f57af42c2852a8335a56fa7c3d4db0ed7d73427"
             }
@@ -32680,7 +32742,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 854,
+          "linea": 859,
           "cita": "| `S11` | `B8a` | |",
           "hash": "cd24d6c597fdfd990fcecc2da98dccf6dd2f8ab5c93fcc9851a01e77a2aef797"
         }
@@ -32705,7 +32767,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 855,
+          "linea": 860,
           "cita": "| `S12` | `B8a` | |",
           "hash": "70bf201c06cb65fb9bb1a741cf300d1f6167da0c74b5a473cfef0a9ea84eafa9"
         }
@@ -32730,7 +32792,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 856,
+          "linea": 861,
           "cita": "| `S13` | `B9a` | |",
           "hash": "0e92b26e4f9ee3e8c75cb8a0238bab4672049846d7e9ce15b028bba11ef24669"
         }
@@ -32755,7 +32817,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 857,
+          "linea": 862,
           "cita": "| `S14` | `B3` | |",
           "hash": "a5057b23bda73be90d4264f30a4a953caaa02f394ee0498d7d62d4e22491069e"
         }
@@ -32780,7 +32842,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 858,
+          "linea": 863,
           "cita": "| `S15` | `B3` | la guarda contra una interfaz que implementa `B5`",
           "hash": "b564d73dc43a92aaca5f90f8b4203f7d4605aef2443e4aa2fcb95548e345e673"
         }
@@ -32805,7 +32867,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 859,
+          "linea": 864,
           "cita": "| `S16` | `B3` | |",
           "hash": "19349d31ae7ea8fcd8b6dde2a14b277ada73450b51413e27ad88dc715f803787"
         }
@@ -32830,7 +32892,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 860,
+          "linea": 865,
           "cita": "| `S17` | `B8b` | |",
           "hash": "99374e830a98545fe14c27ba1be48cb786de34dc700fc20ada68db89fe2f9920"
         }
@@ -32855,7 +32917,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 861,
+          "linea": 866,
           "cita": "| `S18` | `B8b` | |",
           "hash": "ed42a9a250673990ea4c1f57eb196f7466b1771f7555edb5965b6475c176896c"
         }
@@ -32880,7 +32942,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 862,
+          "linea": 867,
           "cita": "| `S19` | `B7` | |",
           "hash": "75e98c492b93d1393c3fdb976bbc89472cd15768fec0fe8d9ed09c19c95d40fa"
         }
@@ -32905,7 +32967,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 845,
+          "linea": 850,
           "cita": "| `S2` | `B3` | con la cláusula que cancela el Turista VIP hereda",
           "hash": "27c1eeb710cdb0857d4cefbadf5b4d735b2b54a63ad95797ad6a258138d0c8f2"
         }
@@ -32930,7 +32992,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 863,
+          "linea": 868,
           "cita": "| `S20` | `B9a` | AS |",
           "hash": "a61665a263060432564509b2b250d454b6f8b9fc7f0479ee3309d14dc0459809"
         }
@@ -32955,7 +33017,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 864,
+          "linea": 869,
           "cita": "| `S21` | `B5` | AS |",
           "hash": "45c9a78aec79f3e565dc800846628d81796b811bb505299fdf9c5566eaefd8ed"
         }
@@ -32980,7 +33042,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 865,
+          "linea": 870,
           "cita": "| `S22` | `B8b` | queda en `B8b`, por AR |",
           "hash": "395f461138d1f1eb86e2d1f9f4181f6d214a11e6373e08f75b408f595e7e9417"
         }
@@ -33005,7 +33067,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 866,
+          "linea": 871,
           "cita": "| `S23` | `B8a` | AR |",
           "hash": "495371b61d02a9d170b0e3ae07181f4b7167efb7451ca5288857d62271bc76fb"
         }
@@ -33030,7 +33092,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 867,
+          "linea": 872,
           "cita": "| `S24` | `B8a` | AR |",
           "hash": "4277c72af2db7f28d89b340681d6549b0e8806f20d5daafd90b05277e73175b0"
         }
@@ -33055,7 +33117,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 868,
+          "linea": 873,
           "cita": "| `S29` | `B5` | |",
           "hash": "c678b19de85b99f213975a14b09c4e31649fd1ea6bd17a787aa95400a9d8e980"
         }
@@ -33080,7 +33142,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 846,
+          "linea": 851,
           "cita": "| `S3` | `B3` | |",
           "hash": "8b28afae17ad09004169bcd25189939e40f778a27b5b3fb23bf493575d28e26e"
         }
@@ -33105,7 +33167,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 869,
+          "linea": 874,
           "cita": "| `S30` | `B9b` | |",
           "hash": "ea83f967585e4b0383eb11918f8261591db872c66eaa192f3407440557ef578c"
         }
@@ -33130,7 +33192,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 870,
+          "linea": 875,
           "cita": "| `S31` | `B8b` | |",
           "hash": "39f01b1d38755e41c1623c7d0ee58d6f52c7d2027855851f8ec677fcc1cafbc7"
         }
@@ -33155,7 +33217,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 871,
+          "linea": 876,
           "cita": "| `S32` | `B7` | AS |",
           "hash": "5bd767aa3cb76cfacde5997b77b3b958fa376a939ebc32114ff6ed539b4db08e"
         }
@@ -33180,7 +33242,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 872,
+          "linea": 877,
           "cita": "| `S33` | `B7` | AS |",
           "hash": "31f72ceaffdc0bda3b4c648e13a70ad6c436b2924cc5e62de2a9ee7780345735"
         }
@@ -33205,7 +33267,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 873,
+          "linea": 878,
           "cita": "| `S34` | `B9b` | |",
           "hash": "745556c9784a7968b688da6adaead752de40d5e8aa552f97304643958ce21981"
         }
@@ -33230,7 +33292,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 874,
+          "linea": 879,
           "cita": "| `S35` | `B9b` | |",
           "hash": "9d74c63f8e59daaf7387e2f2bcfda4e60c0c68891cd9bd39152403a161f9584c"
         }
@@ -33255,7 +33317,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 875,
+          "linea": 880,
           "cita": "| `S36` | `B5` | |",
           "hash": "b7258f669957a8a58b0cfef7ab09018e559c2c1bfc1444a042013a56547d17c0"
         }
@@ -33280,7 +33342,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 876,
+          "linea": 881,
           "cita": "| `S37` | `B12` | también con el motivo *«aumento»* (BZ) |",
           "hash": "155a38344d68d7b2bf3f013dde14b2d157d27bc44f4b96a7e9f1d16520216271"
         }
@@ -33305,7 +33367,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 877,
+          "linea": 882,
           "cita": "| `S38` | `B8b` | también con el motivo *«aumento»*, que usa `B12`",
           "hash": "2539ac0380e1cbcb44b206900df88d495f105930ff1bad325afc27d2886720a3"
         }
@@ -33330,7 +33392,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 847,
+          "linea": 852,
           "cita": "| `S4` | `B7` | |",
           "hash": "c2e79bebe083bedb52ab0ab3a2b1f93d900598b0ad80ba4fc406abe247c97865"
         }
@@ -33355,7 +33417,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 848,
+          "linea": 853,
           "cita": "| `S5` | `B7` | |",
           "hash": "52cc756bd3a660b45d565e4b468f4ff01aaf146288a5ec57d49b62f7762a3f5c"
         }
@@ -33380,7 +33442,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 849,
+          "linea": 854,
           "cita": "| `S6` | `B7` | |",
           "hash": "c3ca82a5293e19680fab073c2af1434c57c02ee00fb6a6c982c934d6db7c83f1"
         }
@@ -33405,7 +33467,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 850,
+          "linea": 855,
           "cita": "| `S7` | `B7` | con la cláusula del Turista VIP al regularizar (C",
           "hash": "4c02699024c013f3db69e4908cb05d5d63ac5ca9b79595d1fac372281ec2ab94"
         }
@@ -33430,7 +33492,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 851,
+          "linea": 856,
           "cita": "| `S8` | `B8b` | |",
           "hash": "65c11e68b9c85657e5ad372b562c7054f4be913bb8d5c88334189abe771dbd51"
         }
@@ -33455,7 +33517,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-          "linea": 852,
+          "linea": 857,
           "cita": "| `S9` | `B8b` `B9b` | compartida |",
           "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
         }
@@ -33468,7 +33530,7 @@
           "citas": [
             {
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-              "linea": 852,
+              "linea": 857,
               "cita": "| `S9` | `B8b` `B9b` | compartida |",
               "hash": "32114de386d144985d6c414b0ee4f2ba1755869b357f189e82cdb8c2ccc56d02"
             }

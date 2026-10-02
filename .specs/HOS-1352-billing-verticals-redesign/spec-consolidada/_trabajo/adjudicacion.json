@@ -1,5 +1,5 @@
 {
-    "sha": "69cbe793607a797e861f240f550c8be39e1d11a0",
+    "sha": "591034c665b56336d49eab894a4e4ce3c38d5abe",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {
@@ -49,7 +49,7 @@
             "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 138,
-            "hash": "4352e7e754184e2dfe3254e620cab09b7bed220302a1f438af013af1195edd1d",
+            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9",
             "cita": "la fuente `ADDON` real, que contesta leyendo la tabla vacía hasta que `B10` venda",
             "efecto": null,
             "muerto": null,
@@ -188,7 +188,7 @@
             "clase": "MIXTO",
             "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
-            "linea": 1060,
+            "linea": 1065,
             "hash": "bea0e764f3066fb206656a39895ac0dbcfa0fe80d261c32014d190b5234d7530",
             "cita": "reembolso sale sin su clave de idempotencia persistida antes",
             "efecto": null,
