@@ -1,5 +1,5 @@
 {
-    "sha": "0dbe4482764a237535e16a08e263b314086bd6cf",
+    "sha": "f46a76c394622106fa543d2efd74d7f91d278ead",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -28,9 +28,14 @@
         "GATE": "30-el-corte.md",
         "SEC": "red de cobertura: sin destino propio (trazar.py R17)"
     },
-    "pendiente_AW": "la agrupación de las 8 piezas posteriores en fases no está en las fuentes: `20-fase-?` hasta que el owner conteste AW",
+    "fases": {
+        "20-fase-1": ["V9b"],
+        "20-fase-2": ["B8b", "B9b"],
+        "20-fase-3": ["B10", "B12", "B13b"],
+        "20-fase-4": ["V7", "V8b"]
+    },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 605,
+        "01-decisiones-vigentes.md": 610,
         "02-nucleo.md": 95,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -56,28 +61,19 @@
         "10-corte/V6.md": 5,
         "10-corte/V8a.md": 5,
         "10-corte/V9a.md": 5,
-        "20-fase-?/B10.md": 9,
-        "20-fase-?/B12.md": 4,
-        "20-fase-?/B13b.md": 3,
-        "20-fase-?/B8b.md": 11,
-        "20-fase-?/B9b.md": 6,
-        "20-fase-?/V7.md": 3,
-        "20-fase-?/V8b.md": 3,
-        "20-fase-?/V9b.md": 3,
-        "30-el-corte.md": 34,
+        "20-fase-1/V9b.md": 3,
+        "20-fase-2/B8b.md": 11,
+        "20-fase-2/B9b.md": 6,
+        "20-fase-3/B10.md": 9,
+        "20-fase-3/B12.md": 4,
+        "20-fase-3/B13b.md": 3,
+        "20-fase-4/V7.md": 3,
+        "20-fase-4/V8b.md": 3,
+        "30-el-corte.md": 38,
         "90-retirados.md": 39,
         "red (SEC)": 676
     },
-    "archivos_pendientes": [
-        "20-fase-?/B10.md",
-        "20-fase-?/B12.md",
-        "20-fase-?/B13b.md",
-        "20-fase-?/B8b.md",
-        "20-fase-?/B9b.md",
-        "20-fase-?/V7.md",
-        "20-fase-?/V8b.md",
-        "20-fase-?/V9b.md"
-    ],
+    "archivos_pendientes": [],
     "inferidos": [
         "APZ:A1",
         "APZ:A2",
@@ -2157,9 +2153,21 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-ARCH-017#📌3": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-METH-019": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-METH-019#📌1": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
@@ -2923,8 +2931,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V7.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V7.md"
         },
         "PIEZA:V8a": {
             "fuente": "PIEZA",
@@ -2936,8 +2943,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V8b.md"
         },
         "PIEZA:V9a": {
             "fuente": "PIEZA",
@@ -2949,8 +2955,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-1/V9b.md"
         },
         "PIEZA:B1": {
             "fuente": "PIEZA",
@@ -3004,8 +3009,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "PIEZA:B9a": {
             "fuente": "PIEZA",
@@ -3017,15 +3021,13 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "PIEZA:B10": {
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md"
         },
         "PIEZA:B11": {
             "fuente": "PIEZA",
@@ -3037,8 +3039,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B12.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B12.md"
         },
         "PIEZA:B13a": {
             "fuente": "PIEZA",
@@ -3050,8 +3051,7 @@
             "fuente": "PIEZA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B13b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B13b.md"
         },
         "FILA:B1": {
             "fuente": "FILA",
@@ -3062,9 +3062,8 @@
         "FILA:B10": {
             "fuente": "FILA",
             "estado": "MIXTO",
-            "veredicto": "PARCIAL",
-            "destino": "20-fase-?/B10.md",
-            "pendiente": "AW"
+            "veredicto": "VIVO",
+            "destino": "20-fase-3/B10.md"
         },
         "FILA:B11": {
             "fuente": "FILA",
@@ -3076,15 +3075,14 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B12.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B12.md"
         },
         "FILA:B13": {
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B13a.md",
-            "tambien": ["20-fase-?/B13b.md"]
+            "tambien": ["20-fase-3/B13b.md"]
         },
         "FILA:B13a": {
             "fuente": "FILA",
@@ -3096,8 +3094,7 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B13b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B13b.md"
         },
         "FILA:B2": {
             "fuente": "FILA",
@@ -3126,7 +3123,7 @@
         "FILA:B6": {
             "fuente": "FILA",
             "estado": "MIXTO",
-            "veredicto": "PARCIAL",
+            "veredicto": "VIVO",
             "destino": "10-corte/B6.md"
         },
         "FILA:B7": {
@@ -3138,9 +3135,9 @@
         "FILA:B8": {
             "fuente": "FILA",
             "estado": "MIXTO",
-            "veredicto": "PARCIAL",
+            "veredicto": "VIVO",
             "destino": "10-corte/B8a.md",
-            "tambien": ["20-fase-?/B8b.md"]
+            "tambien": ["20-fase-2/B8b.md"]
         },
         "FILA:B8a": {
             "fuente": "FILA",
@@ -3152,15 +3149,14 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "FILA:B9": {
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B9a.md",
-            "tambien": ["20-fase-?/B9b.md"]
+            "tambien": ["20-fase-2/B9b.md"]
         },
         "FILA:B9a": {
             "fuente": "FILA",
@@ -3172,8 +3168,7 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "FILA:U1": {
             "fuente": "FILA",
@@ -3233,15 +3228,14 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V7.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V7.md"
         },
         "FILA:V8": {
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/V8a.md",
-            "tambien": ["20-fase-?/V8b.md"]
+            "tambien": ["20-fase-4/V8b.md"]
         },
         "FILA:V8a": {
             "fuente": "FILA",
@@ -3253,15 +3247,14 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V8b.md"
         },
         "FILA:V9": {
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/V9a.md",
-            "tambien": ["20-fase-?/V9b.md"]
+            "tambien": ["20-fase-1/V9b.md"]
         },
         "FILA:V9a": {
             "fuente": "FILA",
@@ -3273,8 +3266,7 @@
             "fuente": "FILA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-1/V9b.md"
         },
         "GUARD:G-R1-A": {
             "fuente": "GUARD",
@@ -3669,15 +3661,14 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V7.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V7.md"
         },
         "LISTA:V8": {
             "fuente": "LISTA",
             "estado": "ORIGEN",
             "veredicto": null,
             "destino": "10-corte/V8a.md",
-            "tambien": ["20-fase-?/V8b.md"]
+            "tambien": ["20-fase-4/V8b.md"]
         },
         "LISTA:V8a": {
             "fuente": "LISTA",
@@ -3689,15 +3680,14 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-4/V8b.md"
         },
         "LISTA:V9": {
             "fuente": "LISTA",
             "estado": "ORIGEN",
             "veredicto": null,
             "destino": "10-corte/V9a.md",
-            "tambien": ["20-fase-?/V9b.md"]
+            "tambien": ["20-fase-1/V9b.md"]
         },
         "LISTA:V9a": {
             "fuente": "LISTA",
@@ -3709,8 +3699,7 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/V9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-1/V9b.md"
         },
         "LISTA:B1": {
             "fuente": "LISTA",
@@ -3759,7 +3748,7 @@
             "estado": "ORIGEN",
             "veredicto": null,
             "destino": "10-corte/B8a.md",
-            "tambien": ["20-fase-?/B8b.md"]
+            "tambien": ["20-fase-2/B8b.md"]
         },
         "LISTA:B8a": {
             "fuente": "LISTA",
@@ -3771,15 +3760,14 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "LISTA:B9": {
             "fuente": "LISTA",
             "estado": "ORIGEN",
             "veredicto": null,
             "destino": "10-corte/B9a.md",
-            "tambien": ["20-fase-?/B9b.md"]
+            "tambien": ["20-fase-2/B9b.md"]
         },
         "LISTA:B9a": {
             "fuente": "LISTA",
@@ -3791,15 +3779,13 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "LISTA:B10": {
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md"
         },
         "LISTA:B11": {
             "fuente": "LISTA",
@@ -3811,15 +3797,14 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B12.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B12.md"
         },
         "LISTA:B13": {
             "fuente": "LISTA",
             "estado": "ORIGEN",
             "veredicto": null,
             "destino": "10-corte/B13a.md",
-            "tambien": ["20-fase-?/B13b.md"]
+            "tambien": ["20-fase-3/B13b.md"]
         },
         "LISTA:B13a": {
             "fuente": "LISTA",
@@ -3831,8 +3816,7 @@
             "fuente": "LISTA",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B13b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B13b.md"
         },
         "LISTA:U1": {
             "fuente": "LISTA",
@@ -7199,68 +7183,86 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t5:AW": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t5:AX": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t5:AY": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/V6.md",
-            "tambien": ["20-fase-?/V7.md"]
+            "tambien": ["20-fase-4/V7.md"]
         },
         "ESQ:2": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/V6.md",
-            "tambien": ["20-fase-?/V7.md"]
+            "tambien": ["20-fase-4/V7.md"]
         },
         "ESQ:3": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B3.md",
-            "tambien": ["20-fase-?/B8b.md"]
+            "tambien": ["20-fase-2/B8b.md"]
         },
         "ESQ:4": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B3.md",
-            "tambien": ["20-fase-?/B8b.md"]
+            "tambien": ["20-fase-2/B8b.md"]
         },
         "ESQ:5": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B3.md",
-            "tambien": ["20-fase-?/B12.md"]
+            "tambien": ["20-fase-3/B12.md"]
         },
         "ESQ:6": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B9a.md",
-            "tambien": ["20-fase-?/B9b.md"]
+            "tambien": ["20-fase-2/B9b.md"]
         },
         "ESQ:7": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B9a.md",
-            "tambien": ["20-fase-?/B9b.md"]
+            "tambien": ["20-fase-2/B9b.md"]
         },
         "ESQ:8": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B3.md",
-            "tambien": ["20-fase-?/B10.md"]
+            "tambien": ["20-fase-3/B10.md"]
         },
         "ESQ:9": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
             "destino": "10-corte/B5.md",
-            "tambien": ["20-fase-?/B10.md"]
+            "tambien": ["20-fase-3/B10.md"]
         },
         "TPZ:S1": {
             "fuente": "TPZ",
@@ -7308,23 +7310,20 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S9": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "tambien": ["20-fase-?/B9b.md"],
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md",
+            "tambien": ["20-fase-2/B9b.md"]
         },
         "TPZ:S10": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S11": {
             "fuente": "TPZ",
@@ -7366,15 +7365,13 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S18": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S19": {
             "fuente": "TPZ",
@@ -7398,8 +7395,7 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S23": {
             "fuente": "TPZ",
@@ -7423,15 +7419,13 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "TPZ:S31": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "TPZ:S32": {
             "fuente": "TPZ",
@@ -7449,15 +7443,13 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "TPZ:S35": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B9b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B9b.md"
         },
         "TPZ:S36": {
             "fuente": "TPZ",
@@ -7469,47 +7461,41 @@
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B12.md",
-            "pendiente": "AW"
+            "destino": "20-fase-3/B12.md"
         },
         "TPZ:S38": {
             "fuente": "TPZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B8b.md",
-            "pendiente": "AW"
+            "destino": "20-fase-2/B8b.md"
         },
         "APZ:A1": {
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "APZ:A2": {
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "APZ:A3": {
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "APZ:A4": {
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "APZ:A5": {
             "fuente": "APZ",
@@ -7522,17 +7508,15 @@
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "APZ:A7": {
             "fuente": "APZ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "20-fase-?/B10.md",
-            "inferido": true,
-            "pendiente": "AW"
+            "destino": "20-fase-3/B10.md",
+            "inferido": true
         },
         "GATE:M1": {
             "fuente": "GATE",
@@ -7637,6 +7621,30 @@
             "destino": "30-el-corte.md"
         },
         "GATE:FP.3": {
+            "fuente": "GATE",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "30-el-corte.md"
+        },
+        "GATE:FP.F1": {
+            "fuente": "GATE",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "30-el-corte.md"
+        },
+        "GATE:FP.F2": {
+            "fuente": "GATE",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "30-el-corte.md"
+        },
+        "GATE:FP.F3": {
+            "fuente": "GATE",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "30-el-corte.md"
+        },
+        "GATE:FP.F4": {
             "fuente": "GATE",
             "estado": "VIVO",
             "veredicto": null,
@@ -8050,13 +8058,13 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1103": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1118": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1130": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,

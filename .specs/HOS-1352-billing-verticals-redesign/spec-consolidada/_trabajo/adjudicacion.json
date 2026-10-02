@@ -1,10 +1,9 @@
 {
-    "sha": "0dbe4482764a237535e16a08e263b314086bd6cf",
+    "sha": "f46a76c394622106fa543d2efd74d7f91d278ead",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {
-            "PARCIAL": 3,
-            "VIVO": 35
+            "VIVO": 38
         },
         "PIN": {
             "VIVO": 27,
@@ -16,29 +15,23 @@
     "veredictos": {
         "FILA:B10": {
             "clase": "MIXTO",
-            "veredicto": "PARCIAL",
+            "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 148,
-            "hash": "749c71e0ef84c01050984f0672d1839e00a19239c43b4f29e90cd111a7200a69",
-            "cita": "que van al corte en `B4`: corte del MVP, owner 2026-10-01, AA",
+            "hash": "468a8a019af8cf0df186adb373a3cc12af9abee165233a9c63a7fc62262c28af",
+            "cita": "su modelo, que va al corte en `B3` (corte del MVP, owner 2026-10-01, AV)",
             "efecto": null,
-            "muerto": "«salvo su modelo y la fuente `ADDON`, que van al corte en `B4`»: el modelo (tablas) lo crea `B3`; en `B4` queda sólo la fuente `ADDON`",
+            "muerto": null,
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
                     "linea": 73,
                     "cita": "las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia",
                     "hash": "033a86283eb219c2cbbb5dd02c793ca9ff8c800914473589e164a8945243b114"
-                },
-                {
-                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 961,
-                    "cita": "entera, salvo su modelo, que va a `B3` (AV)",
-                    "hash": "a7007a46bc7bba3a3c96a685ebbd04884479d1fb20c4ab5c59e7b0b51b22f2a1"
                 }
             ],
             "base": "AV",
-            "razon": "la cabecera de la fila quedó con la letra AA; AV movió el modelo a `B3` y la lista única (D/16 §4.6) ya lo dice",
+            "razon": "el resto de AA quedó tachado y reemplazado en la fuente (AY)",
             "cambia_sentido": false
         },
         "FILA:B4": {
@@ -57,40 +50,34 @@
         },
         "FILA:B6": {
             "clase": "MIXTO",
-            "veredicto": "PARCIAL",
+            "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 140,
-            "hash": "ca0342a66488f0fd9f28e2ef8a4d6da5842841cf7a19ba3cef08d81dbb124b93",
-            "cita": "el modelo de la instancia es de B10",
+            "hash": "10c393daffe3b03dae6d505a09058e2b2bba2dbad25f13863b050b47004f7e6c",
+            "cita": "las tablas del modelo de la instancia las crea `B3` y la venta es de `B10`",
             "efecto": null,
-            "muerto": "«el modelo de la instancia es de B10»: las tablas las crea `B3` al corte; la lógica de la venta sigue en `B10`",
+            "muerto": null,
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
                     "linea": 73,
                     "cita": "las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia",
                     "hash": "033a86283eb219c2cbbb5dd02c793ca9ff8c800914473589e164a8945243b114"
-                },
-                {
-                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 961,
-                    "cita": "entera, salvo su modelo, que va a `B3` (AV)",
-                    "hash": "a7007a46bc7bba3a3c96a685ebbd04884479d1fb20c4ab5c59e7b0b51b22f2a1"
                 }
             ],
-            "base": "AA y AV",
-            "razon": "residuo anterior al corte del MVP",
+            "base": "AV",
+            "razon": "el resto quedó tachado y reemplazado en la fuente (AY)",
             "cambia_sentido": false
         },
         "FILA:B8": {
             "clase": "MIXTO",
-            "veredicto": "PARCIAL",
+            "veredicto": "VIVO",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 142,
-            "hash": "3585c5ec092768afd23ffd1820636b7771221d29f3d43358b2fee2b5bab07cf6",
-            "cita": "el modelo del complemento es de B10",
+            "hash": "c74a3462d96c45374fb6b59dc487243657f2e71b4c26e41399f9a65d71875bc3",
+            "cita": "las tablas del modelo del complemento las crea `B3`",
             "efecto": null,
-            "muerto": "«el modelo del complemento es de B10» (dos veces): las tablas las crea `B3` al corte (AA, AV)",
+            "muerto": null,
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
@@ -99,8 +86,8 @@
                     "hash": "033a86283eb219c2cbbb5dd02c793ca9ff8c800914473589e164a8945243b114"
                 }
             ],
-            "base": "AA y AV",
-            "razon": "fila de origen de `B8a` y `B8b`; residuo anterior al corte del MVP",
+            "base": "AV",
+            "razon": "fila de origen de `B8a` y `B8b`; el resto quedó tachado y reemplazado en la fuente (AY)",
             "cambia_sentido": false
         },
         "FILA:U1": {
@@ -893,7 +880,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 148,
                     "cita": "~~catorce~~ once desde que salieron `S25`, `S27` y `S28` con C8",
-                    "hash": "749c71e0ef84c01050984f0672d1839e00a19239c43b4f29e90cd111a7200a69"
+                    "hash": "468a8a019af8cf0df186adb373a3cc12af9abee165233a9c63a7fc62262c28af"
                 }
             ],
             "base": "C8",
