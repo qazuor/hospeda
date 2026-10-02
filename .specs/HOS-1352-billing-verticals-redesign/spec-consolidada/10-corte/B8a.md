@@ -140,11 +140,14 @@ Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TPZ:S11](#tpz-s11) · 
 - **Dado** una baja por `S11`, `S23` o `S24` cuyo preapproval sigue vivo
 - **Cuando** se va a mandar la cancelación al proveedor
 - **Entonces** **antes de la llamada sale nuestro correo**; si el correo falla de forma transitoria,
-  la cancelación **no se ejecuta en esta corrida** y se reintenta; si no hay destinatario, se cancela
-  igual y el no-entregable se escala. En `S11` la regla vale también para la llamada de cada
+  la cancelación **no se ejecuta en esta corrida** y se reintenta; **si agota sus reintentos —el
+  `failed` definitivo de `NUCLEO/07` §1—, se cancela igual y se escala como no-entregable** (`B/03`
+  §3.2); si no hay destinatario, se cancela igual y el no-entregable se escala. En `S11` la regla vale también para la llamada de cada
   complemento.
 
-Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [DEC-SUB-009](../01-decisiones-vigentes.md#dec-sub-009)
+Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [DEC-SUB-009](../01-decisiones-vigentes.md#dec-sub-009) · [DEC-MAIL-001](../01-decisiones-vigentes.md#dec-mail-001)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:315
 
 <a id="ac-b8a-3"></a>
 **AC:B8a:3** — la rama de los complementos de `S11` (`R1-a`), sobre filas sembradas
@@ -214,11 +217,15 @@ Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12) · [TRANS:B:S11](../04-cat
 - **Cuando** ese pago, **releído por id**, se lee `charged_back`
 - **Entonces** la fila pasa a `CANCELLED` **ya, sin esperar su fecha de fin**; `S14` abre la marca con
   motivo `CONTRACARGO` con el pago colgado; y **al proveedor no se manda nada nuevo** —el preapproval
-  ya lo canceló `S11`, y si esa cancelación no se confirmó la sigue el reintento del barrido—. Si la
-  fila es predecesora de una sucesión en curso, la rama de `S31` es de
-  [B8b](../20-fase-2/B8b.md#tpz-s31): al corte no hay sucesiones declaradas.
+  ya lo canceló `S11`, y si esa cancelación no se confirmó la sigue el reintento del barrido—; y el
+  aviso a la persona es el correo de contracargo (fila 10-ter). Si la fila es predecesora de una
+  sucesión en curso, **`B8a` escribe la rama entera y llama a `S31` por la interfaz interna**, que
+  implementa [B8b](../20-fase-2/B8b.md#tpz-s31) (BL): al corte no hay sucesiones declaradas, y la
+  rama se ejerce con filas sembradas.
 
-Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12)
+Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:162
 
 <a id="ac-b8a-8"></a>
 **AC:B8a:8** — la baja desde `SUSPENDED` (`S23`)
@@ -228,10 +235,11 @@ Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12)
 - **Entonces** la fila pasa a `CANCELLED` con la fecha de fin de servicio en **el día de la
   cancelación** (no hay servicio ni cobertura que retirar); **si el preapproval sigue vivo se
   cancela**, con la relectura de `S17` y el correo antes; **sobre un pagador manual no se manda
-  nada**; **se libera el candado `A`**, así que la persona puede dar un alta nueva; y el acto es
-  **idempotente**.
+  nada**; **se libera el candado `A`**, así que la persona puede dar un alta nueva; si la fila es
+  predecesora de una sucesión en curso, llama a `S18` por la interfaz interna que implementa `B8b`
+  (BL; rama 6); y el acto es **idempotente**.
 
-Fuente: [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TPZ:S23](#tpz-s23) · [LISTA:B8a](#lista-b8a) · [INV:22](../02-nucleo.md#inv-22)
+Fuente: [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TPZ:S23](#tpz-s23) · [LISTA:B8a](#lista-b8a) · [INV:22](../02-nucleo.md#inv-22) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
 
 <a id="ac-b8a-9"></a>
 **AC:B8a:9** — la baja desde `GRACE_PERIOD` (`S24`) corta en el acto
@@ -243,9 +251,10 @@ Fuente: [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TPZ:S23](#tpz-s23) · 
   la relectura de `S17` y el correo antes; sobre un pagador manual no se manda nada; y **el reloj del
   grace se apaga**: la fila no llega a `SUSPENDED` después, y el intento no cae en la regla 1 del
   núcleo. Es la única de las bajas directas que corta servicio de verdad siempre, porque
-  `GRACE_PERIOD` sí emite fuente. Idempotente.
+  `GRACE_PERIOD` sí emite fuente. Si la fila es predecesora de una sucesión en curso, llama a `S18` por
+  la interfaz interna que implementa `B8b` (BL; rama 6). Idempotente.
 
-Fuente: [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [TPZ:S24](#tpz-s24) · [DEC-SUB-014](../01-decisiones-vigentes.md#dec-sub-014) · [LISTA:B8a](#lista-b8a)
+Fuente: [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [TPZ:S24](#tpz-s24) · [DEC-SUB-014](../01-decisiones-vigentes.md#dec-sub-014) · [LISTA:B8a](#lista-b8a) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
 
 <a id="ac-b8a-10"></a>
 **AC:B8a:10** — un cobro anterior a la baja que se acredita después (`05` C2, primera fila)
@@ -512,7 +521,8 @@ Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S23](../04-cat
 
 Con el envío del correo fallando de forma transitoria, el falso no registra ninguna cancelación en
 esa corrida y la siguiente la manda; sin destinatario, la cancelación sale y queda escalado el
-no-entregable. Para `S11`, `S23` y `S24`.
+no-entregable; con el correo en `failed` definitivo (agotó sus reintentos), la cancelación sale y
+queda escalado como no-entregable. Para `S11`, `S23` y `S24`.
 
 <a id="test-b8a-3"></a>
 **TEST:B8a:3** — la selección de complementos de `S11`, sembrada
@@ -574,7 +584,9 @@ Cubre: [AC:B8a:7](#ac-b8a-7)
 Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12)
 
 Con el falso dando `charged_back` al releer el pago, la fila pasa a `CANCELLED` antes de su fecha, la
-marca `CONTRACARGO` queda abierta con el pago, y el falso no registra ninguna llamada nueva.
+marca `CONTRACARGO` queda abierta con el pago, sale el correo de contracargo, y el falso no registra
+ninguna llamada nueva; sobre una predecesora sembrada de una sucesión en curso, la rama llama a `S31`
+por un doble de la interfaz interna, y la prueba ve que la llamada ocurre.
 
 <a id="test-b8a-8"></a>
 **TEST:B8a:8** — `S23` por la persona y por un admin
@@ -587,7 +599,8 @@ Fuente: [TRANS:B:S23](../04-catalogos.md#trans-b-s23)
 
 Con tarjeta y preapproval vivo: cancelación en el falso y fecha de fin hoy; con pagador manual: cero
 llamadas; en los dos, un alta nueva sobre el mismo `user + vertical` pasa el candado `A`; repetir el
-acto no escribe nada.
+acto no escribe nada; sobre una predecesora sembrada de una sucesión en curso, la baja llama a `S18`
+por un doble de la interfaz interna.
 
 <a id="test-b8a-9"></a>
 **TEST:B8a:9** — `S24` corta en el acto y apaga el reloj del grace
@@ -600,7 +613,8 @@ Fuente: [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [DEC-SUB-014](../01-dec
 
 La fila va de `GRACE_PERIOD` a `CANCELLED` sin `CANCEL_SCHEDULED`, la fuente de cobertura deja de
 emitirse ese día, y con el reloj adelantado más allá del grace la fila no pasa a `SUSPENDED` ni se
-abre `TRANSICIÓN_NO_DECLARADA`.
+abre `TRANSICIÓN_NO_DECLARADA`; sobre una predecesora sembrada de una sucesión en curso, la baja llama
+a `S18` por un doble de la interfaz interna.
 
 <a id="test-b8a-10"></a>
 **TEST:B8a:10** — `C2`, cobro anterior acreditado tarde

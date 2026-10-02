@@ -537,10 +537,14 @@ Fuente: [TRANS:B:S17](../04-catalogos.md#trans-b-s17) · [TPZ:S17](#tpz-s17) · 
   plan; la cortesía vigente de la predecesora **se cierra** sobre ella con su `saldo_meses` (la
   fracción redondeada para arriba), o con `motivo_cierre = DESTINO_DE_PLAN_NO_MENSUAL` si la sucesora
   no es mensual; y si la predecesora retiene un pago por `S19`, le abre a ella la marca
-  `REEMBOLSO_POR_CONFIRMAR` con el pago colgado —salvo si murió por `S36`, cuyo `RF1` ya lo devuelve—.
-  La sucesora pasa a ser el origen.
+  `REEMBOLSO_POR_CONFIRMAR` con el pago colgado —salvo si murió por `S36`, cuyo `RF1` ya lo devuelve, y
+  salvo el pagador manual cuyo pago retenido ya entró al crédito de la sucesora: ahí no abre la marca y
+  el pago queda como crédito ([DEC-SUB-017#📌1](../01-decisiones-vigentes.md#dec-sub-017-p1); `B/12`
+  §5.3)—. La sucesora pasa a ser el origen.
 
-Fuente: [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [TPZ:S18](#tpz-s18) · [MOT:1](../04-catalogos.md#mot-1) · [DEC-GRANT-007](../01-decisiones-vigentes.md#dec-grant-007)
+Fuente: [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [TPZ:S18](#tpz-s18) · [MOT:1](../04-catalogos.md#mot-1) · [DEC-GRANT-007](../01-decisiones-vigentes.md#dec-grant-007) · [DEC-SUB-017#📌1](../01-decisiones-vigentes.md#dec-sub-017-p1)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:714
 
 <a id="ac-b8b-11"></a>
 **AC:B8b:11** — la predecesora que se muere sola, y el upgrade que no le saca nada
@@ -662,7 +666,7 @@ Fuente: [LOCK:C4](../04-catalogos.md#lock-c4)
 <a id="ac-b8b-20"></a>
 **AC:B8b:20** — la rama 6 entra al listado con el default en devolver
 
-- **Dado** una predecesora en `SUSPENDED` que retiene un pago por `S19` y se da de baja ella misma
+- **Dado** una predecesora en `SUSPENDED` o en `GRACE_PERIOD` que retiene un pago por `S19` y se da de baja ella misma (`S23` o `S24`)
 - **Cuando** `S18` cierra la sucesión
 - **Entonces** abre `REEMBOLSO_POR_CONFIRMAR` con el pago colgado y la propuesta **devolver**, que una
   persona confirma o rechaza; ningún reembolso se dispara solo; y tras `S36` la rama no abre marca.
@@ -709,12 +713,14 @@ Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [GATE:FP.F2](../30-e
 
 - **Dado** `B5` y `B7` mergeadas al corte, con sus ramas escritas enteras y sus llamadas a `S18`,
   `S31` y `S38` contra una interfaz interna, ejercidas allá con filas sembradas, y `B3` con el cuerpo
-  de la rama de sucesión de `S1` escrito sin ruta
+  de la rama de sucesión de `S1` escrito sin ruta; y `B8a`, que llama por la misma interfaz a `S31`
+  desde `S12` y a `S18` desde `S23` y `S24` *(derivado: por BL la rama y la llamada las escribe la
+  pieza dueña de la transición que dispara, y `S12`, `S23` y `S24` son de `B8a`; lo marco)*
 - **Cuando** `B8b` trae la implementación detrás de esas interfaces
 - **Entonces** en las ramas 1, 5 y 6 de `12` §5.3, **`S18` apaga la bandera con la marca
   `REEMBOLSO_POR_CONFIRMAR`**; **`S6` por su tercer evento corta la sucesora por `S31`**; **`S7` y
   `MP5` aplican `S38`**; desde su merge **una ruta declara la sucesión de `S1` sobre el cuerpo que
-  escribió `B3`**; y **el diff de `B8b` no cambia el código de `B3`, `B5` ni `B7`**: si lo hiciera,
+  escribió `B3`**; y **el diff de `B8b` no cambia el código de `B3`, `B5`, `B7` ni `B8a`**: si lo hiciera,
   rompería *«aditiva»*, que sólo tiene la excepción de AU.
 
 Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [TRANS:B:S31](../04-catalogos.md#trans-b-s31) · [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [OWN:41-corte-del-mvp:t9:BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
@@ -738,13 +744,13 @@ Fuente: [PIEZA:B8b](#pieza-b8b) · [FILA:B13a](../10-corte/B13a.md#fila-b13a) ·
 
 - **Dado** el arnés de punta a punta de `B/20` §5.1 —los builds, el falso como servidor, el reloj
   adelantable y el correo capturado—
-- **Cuando** se corren los cambios de plan y la pausa, que son el flujo que le toca escribir a esta
+- **Cuando** se corren el cambio de plan, el cambio de ciclo (otro mecanismo), y la pausa con sus dos reanudaciones, al vencer y anticipada, que son el flujo que le toca escribir a esta
   pieza (*«cada unidad escribe la de su flujo»*: los cambios, la pausa y la cancelación son de `B8`)
 - **Entonces** se cumplen las mismas aserciones que en la de `B3` ([AC:B3:33](../10-corte/B3.md#ac-b3-33)):
   sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
 
 Fuente: [FILA:B8b](#fila-b8b) · [LISTA:B8b](#lista-b8b)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:720, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:722
 
 ### El criterio de terminación
 
@@ -1140,7 +1146,9 @@ Fuente: [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [MOT:1](../04-catalogos
 
 Con un complemento, una redención, una cortesía vigente y un pago retenido colgando de la
 predecesora: el complemento re-apuntado, la redención quieta, la cortesía cerrada con su saldo, la
-marca 1 con el pago; con la sucesora anual, la cortesía cerrada con `DESTINO_DE_PLAN_NO_MENSUAL`.
+marca 1 con el pago; con la sucesora anual, la cortesía cerrada con `DESTINO_DE_PLAN_NO_MENSUAL`; con
+un pagador manual cuyo pago retenido ya entró al crédito de la sucesora, ninguna marca y el pago como
+crédito.
 
 <a id="test-b8b-11"></a>
 **TEST:B8b:11** — la predecesora que se muere sola
@@ -1264,8 +1272,8 @@ Cubre: [AC:B8b:20](#ac-b8b-20)
 
 Fuente: [DEC-RF-003](../01-decisiones-vigentes.md#dec-rf-003)
 
-La baja de una predecesora `SUSPENDED` con pago retenido abre la marca 1 con propuesta devolver y
-ningún `refund`; tras `S36`, ninguna marca.
+La baja de una predecesora `SUSPENDED` (`S23`) y la de una en `GRACE_PERIOD` (`S24`), cada una con pago
+retenido, abren la marca 1 con propuesta devolver y ningún `refund`; tras `S36`, ninguna marca.
 
 <a id="test-b8b-21"></a>
 **TEST:B8b:21** — `G-R1-C`, roto a propósito
@@ -1347,8 +1355,8 @@ Cubre: [AC:B8b:26](#ac-b8b-26)
 Fuente: [FILA:B8b](#fila-b8b)
 
 Contra los builds, con el falso como servidor, el reloj adelantable y el correo capturado: un
-upgrade por el checkout del proveedor, un downgrade con su descenso en la fecha, y una pausa con su
-reanudación; las aserciones son sobre el contenido de `B/19` §4 y sobre que cada correo capturado
+upgrade por el checkout del proveedor, un downgrade con su descenso en la fecha, un cambio de ciclo, y
+una pausa con sus dos reanudaciones —al vencer y anticipada—; las aserciones son sobre el contenido de `B/19` §4 y sobre que cada correo capturado
 llega antes que cualquier cancelación en el proveedor.
 
 ## Smoke y etiquetas

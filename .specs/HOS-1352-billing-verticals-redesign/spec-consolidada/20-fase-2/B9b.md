@@ -53,7 +53,7 @@ La fila de origen, [FILA:B9](../10-corte/B9a.md#fila-b9), y su criterio,
 
 **Fuera de alcance** (y dónde vive): los grants, su fuente, su piso, `S13`, `S20`, la fuente
 `CORTESÍA` real y la herramienta del 3b, en [B9a](../10-corte/B9a.md#pieza-b9a); el segundo
-disparador de `S9` (la re-emisión sobre la sucesora), en [B8b](B8b.md#tpz-s9); el esquema de promos
+disparador de `S9` (la re-emisión sobre la sucesora), en [B8b](B8b.md#tpz-s9), que lo llama por interfaz desde el cierre de la sucesión *(derivado: la fuente da `S9` como compartida, `B/descomposicion.md:857`, y el reparto sale de BL; la cláusula 6 la prueba esta pieza; lo marco)*; el esquema de promos
 y cortesías, en [B3](../10-corte/B3.md#pieza-b3) ([ESQ:6](../10-corte/B3.md#esq-6),
 [ESQ:7](../10-corte/B3.md#esq-7)); `T4`, la extensión del trial de verticales, en
 [V4](../10-corte/V4.md#pieza-v4).
@@ -180,9 +180,13 @@ Fuente: [DEP:10](../03-contrato-de-cobertura.md#dep-10) · [LISTA:B9](../10-cort
   cliente, no depende de que el plan permita pausar y alcanza al pagador manual; se implementa
   **pausando en el proveedor** (`PAUSED · COURTESY`) y **el servicio lo sostenemos nosotros**; el
   `PUT paused` se confirma por relectura, y si no se aplicó la cortesía no ocurre, se pone
-  `PAUSA_NO_APLICADA` y el aviso a `SUPER_ADMIN` lo dice. N meses saltean exactamente N cobros.
+  `PAUSA_NO_APLICADA` y el aviso a `SUPER_ADMIN` lo dice. N meses saltean exactamente N cobros. Y
+  sobre una vertical con un ancla viva de grant no se otorga cortesía: el predicado es el ancla viva,
+  no que el beneficiario haya tenido un grant alguna vez (`B/14` §3.4).
 
-Fuente: [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003) · [DEC-GRANT-003#📌1](../01-decisiones-vigentes.md#dec-grant-003-p1) · [ACC:1](../02-nucleo.md#acc-1) · [TRANS:B:S9](../04-catalogos.md#trans-b-s9)
+Fuente: [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003) · [DEC-GRANT-003#📌1](../01-decisiones-vigentes.md#dec-grant-003-p1) · [ACC:1](../02-nucleo.md#acc-1) · [TRANS:B:S9](../04-catalogos.md#trans-b-s9) · [DEC-GRANT-006](../01-decisiones-vigentes.md#dec-grant-006)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:422, .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:431
 
 <a id="ac-b9b-8"></a>
 **AC:B9b:8** — los tres cruces cortesía × pausa
@@ -515,7 +519,8 @@ Fuente: [DEC-GRANT-003#📌1](../01-decisiones-vigentes.md#dec-grant-003-p1) · 
 
 Sobre un mensual la fila queda `PAUSED · COURTESY` y la fuente `CORTESÍA` emite; sobre un anual se
 rechaza con su motivo; sobre un pagador manual se otorga sin `PUT`; con el falso sin aplicar la
-pausa, la fila sigue `ACTIVE` con la marca 22.
+pausa, la fila sigue `ACTIVE` con la marca 22; con un ancla viva de grant en esa vertical, se rechaza;
+con un grant revocado, o vivo pero anclado en otra vertical, se otorga.
 
 <a id="test-b9b-8"></a>
 **TEST:B9b:8** — `S34`, `S35` y el bloqueo

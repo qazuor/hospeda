@@ -1020,7 +1020,7 @@ Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
 9. **una promo de «primer cobro» canjeada después de creado el registro del ciclo, que cobra el
    precio entero, sigue con `cobros_restantes = 1`** (`14` §2.4; FASE 9 vuelta 2, `R20`).
 
-Las cláusulas 4 (la mitad del grant) y 7 son de `B9a`; las demás, de
+Las cláusulas 4 (entera: la fuente `GRANT` y, por AQ, la `CORTESÍA` real sobre la tabla vacía) y 7 son de `B9a`; las demás, de
 [B9b](../20-fase-2/B9b.md#lista-b9b).
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070
@@ -1097,7 +1097,10 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:868
   `plan(id, vertical)` y el piso no anulable con FK compuesta sobre `plan_version(id, plan_id)`.
   Carril: migración estructural de la rama, antes del corte (AD).
 - **Lee, sin crearlas**: cortesías (`courtesy_grant`, con `saldo_meses`, `saldo_cerrado_en` y
-  `motivo_cierre`), creadas por `B3` (BG); y el título de `addon_instance`, de `B3` (AV).
+  `motivo_cierre`), creadas por `B3` (BG).
+- **Crea, por BN**: la columna del ancla del título de `addon_instance` (anulable) con su FK a
+  `permanent_grant_vertical`, que nace acá (`B/02` §2.4; [BN](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn)).
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575
 
 ## API
 
@@ -1259,7 +1262,8 @@ Cubre: [AC:B9a:8](#ac-b9a-8), [AC:B9a:16](#ac-b9a-16)
 Fuente: [DEC-GRANT-009](../01-decisiones-vigentes.md#dec-grant-009) · [DEC-GRANT-008](../01-decisiones-vigentes.md#dec-grant-008) · [FILA:B9a](#fila-b9a)
 
 Sobre una base vacía migrada con la rama: existen las dos tablas con sus `UNIQUE`, sus FK compuestas
-y las tres columnas de la revocación; un segundo grant vivo para el mismo beneficiario falla, y un
+y las tres columnas de la revocación; `addon_instance` tiene la columna anulable del ancla del título,
+con su FK a `permanent_grant_vertical` (BN); un segundo grant vivo para el mismo beneficiario falla, y un
 grant sin ningún ancla no se escribe.
 
 <a id="test-b9a-9"></a>
