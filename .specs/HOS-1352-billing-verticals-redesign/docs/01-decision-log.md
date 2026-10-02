@@ -7829,7 +7829,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-017 — El MVP: el corte lleva 22 piezas y ocho llegan después, en fases aditivas sobre el sistema nuevo
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -8034,6 +8034,16 @@ Cada entrada lleva, según §3.4:
   no, *«no existe»* y no nace ninguna instancia. Que el addon sea gratis no cambia qué ficha se puede
   destacar. La guarda y su test son de `B10`. Sin flechas nuevas. Dónde: `B/03` §8 (`A1-bis`);
   `B/descomposicion.md` §2, §2.12 y §4 (`B10`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CE.
+- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CF y CG, las dos la 1)**:
+  dos cosas que una fuente le pedía a una pieza que se mergea antes de la que crea lo que necesita.
+  **CF**: el predicado de CC —la acción 19 de `B2` cuenta como cliente de una versión la fila con un
+  `S38` encolado hacia ella— lee la cola de cambios programados (`ESQ:3`), que por AP crea `B3`, y
+  `B2` va antes que `B3`: **el predicado y su test los escribe el PR de `B3`**, y el AC sigue siendo
+  de `B2`. **CG**: la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *«la cancelación
+  `B8`»*, escrito antes de que Z partiera `B8` y `B13`) **vive en `B13a`**, que construye la pantalla
+  de la baja; `B8a` conserva sus pruebas de integración. Sin flechas nuevas: `B3` ya sigue a `B2` y
+  `B13a` a `B8a`. Dónde: `B/descomposicion.md` §2, §2.12 y §4 (`B2`, `B3`, `B8a`, `B13a`);
+  `B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG.
 
 ---
 
