@@ -2,7 +2,7 @@
 
 Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah)).
 
-**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`f80c0f2715`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
+**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`17f9702675`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
 
 Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas.
 
@@ -7833,7 +7833,22 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:53, .specs/
 - **qué falla si se rompe**: se importa el **SDK de la pasarela fuera del adaptador**
 - **de dónde sale**: `DEC-ARCH-004`, condición A. Lo construye `B1` (`B/descomposicion.md` §2)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:54, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:32, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135
+**Texto de la fuente — «2.1 Los dos guards que nacieron acá y ya están en el catálogo»** (`B/descomposicion.md:176–190`, sin lo tachado):
+
+Se numeraron en esta descomposición **porque el `20` §2 no los nombraba**, y ahí quedó escrito
+*«si el `20` se reescribe, los absorbe»*. **Los absorbió**: desde la FASE 9-bis-4 las dos filas
+están en `20` §2 (`DEC-TEST-001`, *«y el catálogo estaba incompleto»*), así que **ya no viven
+fuera del catálogo que CI leería**. La tabla queda acá porque **es esta tabla la que les asigna
+unidad** —`G12` a `B1`, — y el catálogo cataloga, no reparte trabajo. **`G13` ya no es
+de esta épica**: lo construye `V4`, como dice el contrato §6.3, y su fila está en `V/20` §2 (owner
+2026-09-26, `G5-5`; la asignación la escribe `V/descomposicion.md` §2.3):
+
+| # | qué falla si se rompe | de dónde sale |
+|---|---|---|
+| **`G12`** | se importa el SDK de la pasarela **fuera del adaptador** | `DEC-ARCH-004`, condición A |
+| | | → `V4` (`G5-5`) |
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:54, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:32, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:176, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:178, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:179, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:180, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:181, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:182, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:183, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:184, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:186, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:188, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:189
 
 <a id="guard-g-r1-a"></a>
 
@@ -9479,14 +9494,14 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.
 
 ### `MP:EX-46`
 
-- **Adjudicación** (`adjudicacion.json`): PARCIAL — ; lo tachado de la fila se omite y lo vigente va entero.
+- **Adjudicación** (`adjudicacion.json`, [BK](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bk)): PARCIAL — lo muerto: «el borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas están escritas» y los pasos 3 y 4 que nombra: el cierre del borde y las lápidas salieron (S-40, S-45); la pregunta sigue `UNKNOWN`, sin sujeto; lo muerto, aunque la fila no lo tache, se omite del texto de abajo y queda marcado «[…]»; lo tachado de la fila también se omite, y lo vigente va entero.
 - **Comportamiento**: ¿A qué URL va el **reintento** de una notificación emitida antes de cambiar la URL de notificación de la aplicación: a la de entonces o a la vigente?
 - **Para qué**: el paso 4b del corte (FASE 9 vuelta 2, `F-8V2C2-002`)
 - **Estado**: `UNKNOWN`
 - **Fecha**: —
 - **Entorno**: —
 - **Evidencia**: —
-- **Conclusión**: `WH-4` midió los reintentos, no su destino. Si va a la vieja, el evento se pierde **y su cobro lo ve el barrido de B11 como el de cualquier desconocido** (la lápida del corte salió: FASE 5, simplificación del corte, S-40 y S-70; verificación, `VF5-06`) 🔎 **Indicio, no medición** (2026-09-29, anexo del 29/09 (`./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana`)): mientras el owner cambiaba la URL de Webhooks de `/` a `/webhooks`, dos avisos fechados `14:34:27Z` en su propio cuerpo llegaron a la URL **nueva** a las 14:40:10Z, y no quedó ningún intento a la vieja (el receptor contestaba `200` a todo). Compatible con «sale a la URL vigente al momento de entregar», pero no es esta pregunta, que es sobre un **reintento** tras un `500`, y la ventana estaba contaminada (también cambió la selección de eventos) 🚫 **No se mide, por decisión del owner** (2026-09-29, decisiones sobre las mediciones (`./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md`), M-4): si el día del corte se pierde un reintento, el barrido diario lo relee (`B/21`, «NO cierra», punto (3)). Queda `UNKNOWN`, sin bloquear nada 📌 **Sin sujeto desde el 2026-09-29, con OK del owner** (decisiones sobre la verificación (`./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md`), lote O-B): la URL de notificación ya no cambia en el corte. El receptor nuevo sirve la misma ruta que el viejo, `/api/v1/webhooks/mercadopago`, el borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas están escritas, y el reintento vuelve a la misma URL (`16-fase-7-del-paraguas.md` §4.2, pasos 3, 4 y 4b). El estado no cambia: la pregunta sigue sin medir, y ya no condiciona ningún paso
+- **Conclusión**: `WH-4` midió los reintentos, no su destino. Si va a la vieja, el evento se pierde **y su cobro lo ve el barrido de B11 como el de cualquier desconocido** (la lápida del corte salió: FASE 5, simplificación del corte, S-40 y S-70; verificación, `VF5-06`) 🔎 **Indicio, no medición** (2026-09-29, anexo del 29/09 (`./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana`)): mientras el owner cambiaba la URL de Webhooks de `/` a `/webhooks`, dos avisos fechados `14:34:27Z` en su propio cuerpo llegaron a la URL **nueva** a las 14:40:10Z, y no quedó ningún intento a la vieja (el receptor contestaba `200` a todo). Compatible con «sale a la URL vigente al momento de entregar», pero no es esta pregunta, que es sobre un **reintento** tras un `500`, y la ventana estaba contaminada (también cambió la selección de eventos) 🚫 **No se mide, por decisión del owner** (2026-09-29, decisiones sobre las mediciones (`./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md`), M-4): si el día del corte se pierde un reintento, el barrido diario lo relee (`B/21`, «NO cierra», punto (3)). Queda `UNKNOWN`, sin bloquear nada 📌 **Sin sujeto desde el 2026-09-29, con OK del owner** (decisiones sobre la verificación (`./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md`), lote O-B): la URL de notificación ya no cambia en el corte. El receptor nuevo sirve la misma ruta que el viejo, `/api/v1/webhooks/mercadopago`, […], y el reintento vuelve a la misma URL (`16-fase-7-del-paraguas.md` §4.2, pasos […] y 4b). El estado no cambia: la pregunta sigue sin medir, y ya no condiciona ningún paso
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:403
 

@@ -16,7 +16,7 @@ import sys
 # Paths are relative to this file: generadores/<grupo>/ -> scripts/ -> spec-consolidada/.
 C = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 sys.path.insert(0, os.path.join(C, 'scripts'))
-from comun import lines, slug  # noqa: E402
+from comun import SHA, lines, slug  # noqa: E402
 
 INV = json.load(open(C + '/_trabajo/inventario.json', encoding='utf-8'))['items']
 ASG = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))
@@ -25,6 +25,10 @@ COB = json.load(open(C + '/_trabajo/cobertura.json', encoding='utf-8'))['items']
 BYID = {i['id']: i for i in INV}
 MINE = [k for k, v in ASG['items'].items() if (v['destino'] or '').startswith('04')]
 SECS = [i for i in INV if i['fuente'] == 'SEC']
+# BK: what a PARCIAL verdict declares dead is omitted with «[…]» (spans written by omisiones.py)
+OMIT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omisiones.json'), encoding='utf-8'))
+_sin_omision = [k for k in MINE if ADJ.get(k, {}).get('veredicto') == 'PARCIAL' and not OMIT.get(k)]
+assert not _sin_omision, f'PARCIAL sin omisiones (correr omisiones.py): {_sin_omision}'
 
 Bp = '.specs/HOS-1354-billing-cobro-y-proveedor/'
 Vp = '.specs/HOS-1353-verticales-capacidades-y-autorizacion/'
@@ -172,8 +176,16 @@ def meta(cid):
             out.append('- **Fuente de la asignación**: ' + '; '.join(cits))
     v = ADJ.get(cid)
     if v:
-        out.append(f"- **Adjudicación** (`adjudicacion.json`): {v['veredicto']} — {v['razon']}; lo tachado "
-                   'de la fila se omite y lo vigente va entero.')
+        # the BK family leaves `razon` empty and states what died in `muerto`
+        motivo = v['razon'] or (f"lo muerto: {v['muerto']}" if v.get('muerto') else '')
+        assert motivo, cid
+        if OMIT.get(cid):
+            out.append(f"- **Adjudicación** (`adjudicacion.json`, {own('BK')}): {v['veredicto']} — {motivo}; "
+                       'lo muerto, aunque la fila no lo tache, se omite del texto de abajo y queda marcado «[…]»; '
+                       'lo tachado de la fila también se omite, y lo vigente va entero.')
+        else:
+            out.append(f"- **Adjudicación** (`adjudicacion.json`): {v['veredicto']} — {motivo}; lo tachado "
+                       'de la fila se omite y lo vigente va entero.')
     return out, locs
 
 
@@ -193,8 +205,11 @@ def bloque(cid, titulo, cuerpo, extra_locs=()):
         t = t.split('\n', 4)[4] if t else 'La sección no tiene texto vigente fuera de su título.'
         assert not re.search(r'^Origen:|<a id=', t, re.M), (f, a)
         adj += ['', f'**Texto de la fuente — «{head}»** (`{corto(f)}:{a}–{b}`, sin lo tachado):', '', t]
-        if f'{f}:{a}' not in seen:
-            seen.append(f'{f}:{a}')
+        L = lines(f)
+        citar = [x for x in range(a, b + 1) if L[x - 1].strip()] if (f, a) in TODAS_LAS_LINEAS else [a]
+        for x in citar:
+            if f'{f}:{x}' not in seen:
+                seen.append(f'{f}:{x}')
     return '\n'.join([f'<a id="{slug(cid)}"></a>', '', f'### {titulo}', ''] + m + cuerpo + adj
                       + ['', 'Origen: ' + ', '.join(seen), ''])
 
@@ -219,7 +234,12 @@ def campos(h, c, saltar=('#',)):
 def item_row(cid, titulo, pre=(), post=(), extra_locs=()):
     i = BYID[cid]
     h, c = row_cells(i['archivo'], i['linea'])
-    return bloque(cid, titulo, list(pre) + campos(h, c) + list(post), extra_locs)
+    cuerpo = campos(h, c)
+    for o in OMIT.get(cid, []):
+        n = sum(x.count(o['de']) for x in cuerpo)
+        assert n == 1, f"omisión de {cid} encontrada {n} veces: {o['de']!r}"
+        cuerpo = [x.replace(o['de'], o['a']) for x in cuerpo]
+    return bloque(cid, titulo, list(pre) + cuerpo + list(post), extra_locs)
 
 
 # --- notes: the source text around a table, minus the item rows ------------------------------
@@ -333,6 +353,11 @@ _adjuntar(_B20, 627, 704, 'RP:', 'RP:RP1')
 _adjuntar(_B02, 972, 1007, 'MOT:', 'MOT:1')
 ADJUNTOS['MOT:7'].append((_B02, 1125, 1154))
 ADJUNTOS['MOT:1'].append((_B02, 1155, 1178))
+# R17: `B/descomposicion.md` §2.1 assigns `G12` to `B1` and sends `G13` to `V4`; the guards themselves
+# live in the catalog (`B/20` §2), so the section goes with `G12` and its `Origen:` cites every line.
+_BDESC = Bp + 'descomposicion.md'
+ADJUNTOS['GUARD:G12'].append((_BDESC, 176, 190))
+TODAS_LAS_LINEAS = {(_BDESC, 176)}
 
 
 # --- titles -----------------------------------------------------------------------------------
@@ -391,7 +416,7 @@ def main():
             '[DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra '
             f'{own("AH")}).', '',
             '**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** '
-            '(`f80c0f2715`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. '
+            f'(`{SHA[:10]}`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. '
             'Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la '
             'transición corresponde (estado origen, disparador, estado destino, guardas, efectos). '
             'La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita '
