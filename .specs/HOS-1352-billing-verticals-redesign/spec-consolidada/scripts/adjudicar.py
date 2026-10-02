@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Adjudication of the ambiguous items (DEC-METH-019 point 7; owner AI): every MIXTO row and
 every 📌 that falls in prose over another 📌 or over its decision gets a verdict, with a
-verbatim citation and the sha256 of its source line at the frozen SHA.
+verbatim citation and the sha256 of its source line at the frozen SHA. Owner BK (2026-10-02, the
+1; 📌 on DEC-METH-019) widens it to three more families of overtaken text that no 📌 strikes: the
+four decisions SUPERSEDED EN PARTE, the decisions precised «por otra decisión» (seven pairs, plus
+the «cinco consumidores» of DEC-DATA-004's body) and the matrix row EX-46 (class BK, `familia`).
 
     python3 adjudicar.py <inventario.json> <salida adjudicacion.json>
 
@@ -28,15 +31,16 @@ VD = V + 'descomposicion.md'
 B03 = B + 'docs/03-maquinas-de-estado.md'
 B02 = B + 'docs/02-modelo-de-datos.md'
 N08 = D + 'nucleo/08-auditoria-y-observabilidad.md'
+D06 = D + '06-mp-validation-matrix.md'
 OWN41 = D + '41-corte-del-mvp/10-decisiones-del-owner.md'
 
 C8 = (B03, None, '(La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.)')
 AV = (OWN41, None, 'las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia')
 AB_AP = (D16, None, '| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice')
 G35 = (D16, None, '~~34~~ 35: entra `G19`, de `V5`')
-DOCE = (LOG, 7511, 'son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`')
+DOCE = (LOG, 7536, 'son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`')
 ACC25 = (N08, None, '**Es la vigesimosexta**')
-MERGE_V6 = (LOG, 7361, 'fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como')
+MERGE_V6 = (LOG, 7376, 'fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como')
 SIMPL = 'simplificación del corte (FASE 5, owner 2026-09-30)'
 
 # (id, verdict, cita in the item's own line or None = the item's text after its marker,
@@ -55,6 +59,9 @@ MIXTO = [
      'fila de origen de `B8a` y `B8b`; el resto quedó tachado y reemplazado en la fuente (AY)'),
     ('FILA:B13b', V_, '*(pasan a `B13a`: corte del MVP, owner 2026-10-01, BH)*', None, None, [], 'BH',
      'tachado y reemplazo explícitos: las filas 13 y 13-bis van a `B13a` (BH)'),
+    ('FILA:B13a', V_, '**lo de `B13` cuyo acto es del corte: cada superficie va con la fase del acto que confirma o edita (BH)**',
+     None, None, [], 'BH',
+     'tachado y reemplazo explícitos (residuo del triage AB-g9-2, 2026-10-02; el reparto por fila está marcado como inferido)'),
     ('FILA:U1', V_, 'la limpieza del principio y, al terminarla, el package del contrato vacío; nada más', None, None, [], None,
      'tachado y reemplazo explícitos (lote P-C)'),
     ('FILA:V2', V_, 'con que billing lee de una `addon_version` su `addon`', None, None, [], None,
@@ -142,21 +149,21 @@ PINES = [
     ('DEC-ARCH-006#📌2', V_, None, AG, None, [], None, ''),
     ('DEC-MIG-002#📌1', P_, None, AG,
      '«una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el proveedor»: es una sola regla que bloquea toda escritura',
-     [(LOG, 2710, 'Y el 📌 `G4-1` queda precisado por el lote B: no')], 'lote B (simplificación del corte)', ''),
+     [(LOG, 2725, 'Y el 📌 `G4-1` queda precisado por el lote B: no')], 'lote B (simplificación del corte)', ''),
     ('DEC-MIG-003#📌1', P_, None, AG,
      'la rama de aborto (ahora: restaurar el backup y volver a la imagen vieja, con la escritura bloqueada hasta el reintento) y «qué se hace con esa diferencia no está decidido»',
-     [(LOG, 3129, 'La rama de aborto del 📌 del')], 'lotes D y A', ''),
+     [(LOG, 3144, 'La rama de aborto del 📌 del')], 'lotes D y A', ''),
     ('DEC-MIG-003#📌2', P_, None, AG, 'su punto 5: las lápidas del paso 4 (el corte ya no escribe lápidas)',
-     [(LOG, 3123, 'del paso 4 que nombran el 📌 del 2026-09-25 (punto 5) y el de O-B: el corte ya no escribe')], 'S-40', ''),
+     [(LOG, 3138, 'del paso 4 que nombran el 📌 del 2026-09-25 (punto 5) y el de O-B: el corte ya no escribe')], 'S-40', ''),
     ('DEC-MIG-003#📌3', P_, None, AG,
      'la URL que devuelve la rama de aborto y el apuntado del 4b (la URL no cambia), el recuento de fichas de Gastronomía y Experiencia, el 5b como contenido de las `L1` y el 4c sobre fichas que nacieron despublicadas',
-     [(LOG, 3128, 'fichas de Gastronomía y de Experiencia del 📌 del 2026-09-27 (S-07)'),
-      (LOG, 3132, 'Y el borrado del 5b del 📌 del 2026-09-27 ya no es el contenido de las `L1`')], 'S-07, S-28, S-40, lote O-B', ''),
+     [(LOG, 3143, 'fichas de Gastronomía y de Experiencia del 📌 del 2026-09-27 (S-07)'),
+      (LOG, 3147, 'Y el borrado del 5b del 📌 del 2026-09-27 ya no es el contenido de las `L1`')], 'S-07, S-28, S-40, lote O-B', ''),
     ('DEC-MIG-003#📌4', V_, None, AG, None, [], None, 'coincide con el paso 4c vivo (D/16 §4.2)'),
     ('DEC-MIG-003#📌5', P_, None, AG, 'el cierre y la apertura de la ruta por el borde y las lápidas del paso 4',
-     [(LOG, 3125, 'el 📌 del 2026-09-29, lote P-A (el Worker), y con')], 'S-40, S-45', '«la URL no cambia» sigue'),
+     [(LOG, 3140, 'el 📌 del 2026-09-29, lote P-A (el Worker), y con')], 'S-40, S-45', '«la URL no cambia» sigue'),
     ('DEC-MIG-003#📌6', M_, None, AG, 'entero: el Worker del borde salió',
-     [(LOG, 3125, 'el 📌 del 2026-09-29, lote P-A (el Worker), y con')], 'S-45', ''),
+     [(LOG, 3140, 'el 📌 del 2026-09-29, lote P-A (el Worker), y con')], 'S-45', ''),
     ('DEC-MIG-003#📌7', V_, None, AG, None, [], None, ''),
     ('DEC-MIG-003#📌8', V_, None, RP, None, [], None, 'es el que retira lo de los anteriores'),
     ('DEC-MIG-003#📌9', V_, None, RP, None, [], None, ''),
@@ -169,67 +176,146 @@ PINES = [
     ('DEC-MP-006#📌1', V_, None, RP, None, [], None, 'cierra la cláusula 1 y conserva la 2'),
     ('DEC-RF-008#📌1', P_, None, AG, 'la cifra «quince» (hoy 25 vivas); la acción 15 sigue', [ACC25], None, 'cifra'),
     ('DEC-RF-008#📌2', M_, None, AG, 'entero: la acción 16, discontinuar una vertical, salió con C8',
-     [(LOG, 6523, 'sale la 16, discontinuar')], 'C8', ''),
+     [(LOG, 6538, 'sale la 16, discontinuar')], 'C8', ''),
     # --- 📌 sobre otro 📌: el destino de una referencia que lo retira o lo cambia ----------
-    ('DEC-ADDON-004#📌1', P_, None, AG, '«o por `S26`» (C8)', [(LOG, 3878, '`S25` a `S28` salieron')], 'C8', ''),
+    ('DEC-ADDON-004#📌1', P_, None, AG, '«o por `S26`» (C8)', [(LOG, 3893, '`S25` a `S28` salieron')], 'C8', ''),
     ('DEC-ARCH-006#📌4', M_, None, AG, 'entero: `finDeServicio`, `vertical_discontinuation` y el hecho 4 salieron con C8', [C8], 'C8', ''),
     ('DEC-ARCH-006#📌5', M_, None, AG, 'entero: `finDeServicio` y el hecho 4 salieron con C8', [C8], 'C8', ''),
     ('DEC-ARCH-006#📌8', P_, None, AG,
      '«las filas vivas sin `CANCEL_SCHEDULED`» (contesta sobre la cancelación confirmada, lote D) y «siguen siendo once» (doce)',
-     [(LOG, 2564, 'contesta sobre la cancelación confirmada por Mercado Pago'), DOCE], 'lote D', ''),
+     [(LOG, 2579, 'contesta sobre la cancelación confirmada por Mercado Pago'), DOCE], 'lote D', ''),
     ('DEC-ARCH-006#📌9', P_, None, AG, '«siguen en once» (doce)', [DOCE], None, 'cifra'),
-    ('DEC-SUB-013#📌1', P_, None, AG, '`S26` y `S28` entre las diez salidas (C8)', [(LOG, 4078, '`S25` a `S28` salieron')], 'C8', ''),
+    ('DEC-SUB-013#📌1', P_, None, AG, '`S26` y `S28` entre las diez salidas (C8)', [(LOG, 4093, '`S25` a `S28` salieron')], 'C8', ''),
     ('DEC-TEST-001#📌2', P_, None, AG, 'la cifra «32 guards» (hoy 35)', [G35], None, 'cifra'),
     ('DEC-TEST-001#📌3', P_, None, AG, 'la cifra «33 guards» (hoy 35)', [G35], None, 'cifra'),
     ('DEC-TEST-001#📌4', P_, None, AG, 'la cifra «33 guards» (hoy 35)', [G35], None, 'cifra'),
     ('DEC-TEST-001#📌5', P_, None, AG, 'la cifra «34» y «queda para el owner» (lo cerró el 📌 siguiente: `G18` en `V1`)',
-     [(LOG, 4621, 'Cierra lo que el 📌 anterior dejaba para el owner.'), G35], None, ''),
+     [(LOG, 4636, 'Cierra lo que el 📌 anterior dejaba para el owner.'), G35], None, ''),
     ('DEC-TEST-001#📌6', P_, None, AG, 'el reparto «18 de verticales, 15 de billing y 1 de `U1`» (hoy 19, 15 y 1: `G19`)', [G35], None, 'cifra'),
     ('DEC-RF-004#📌1', P_, None, AG, '`S12`-vía-`S26` y la lectura de `vertical_discontinuation` (C8); «queda del lado de la regla sólo `S17`» sigue',
-     [(LOG, 5160, 'Con C8 el disparador 2')], 'C8', ''),
+     [(LOG, 5175, 'Con C8 el disparador 2')], 'C8', ''),
     ('DEC-RF-006#📌2', P_, None, AG, 'el `USER`/`GLOBAL` de `S26` y la vertical con fila en `vertical_discontinuation` (C8)',
-     [(LOG, 5458, 'Con C8 el disparador 2'), (B02, None, '(las causas de la discontinuación salieron con la revisión del owner, 2026-09-28, C8)')], 'C8', ''),
+     [(LOG, 5473, 'Con C8 el disparador 2'), (B02, None, '(las causas de la discontinuación salieron con la revisión del owner, 2026-09-28, C8)')], 'C8', ''),
     ('DEC-MP-008#📌2', P_, None, AG, 'la pausa hecha por el pagador deja de estar pendiente (`EX-53`); la cancelación desde su cuenta sigue pendiente',
-     [(LOG, 5886, 'la pausa deja de estar pendiente en el 📌 anterior (N8)')], None, ''),
+     [(LOG, 5901, 'la pausa deja de estar pendiente en el 📌 anterior (N8)')], None, ''),
     ('DEC-SUB-021#📌1', P_, None, AG, 'la condición de su punto 1 (`GR-1` pasó a `VERIFIED`)',
-     [(LOG, 5988, 'Levanta la condición del')], None, ''),
-    ('DEC-MIG-005#📌1', M_, None, AG, 'entero', [(LOG, 6456, 'Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`')], 'S-37, S-41, S-42', ''),
-    ('DEC-MIG-005#📌2', M_, None, AG, 'entero (`EX-48` y `EX-50` no se miden)', [(LOG, 6456, 'Quedan **`SUPERSEDED`**')], 'S-57, S-58', ''),
-    ('DEC-MIG-005#📌4', M_, None, AG, 'entero (el detector del día siguiente)', [(LOG, 6456, 'Quedan **`SUPERSEDED`**')], 'S-42', ''),
+     [(LOG, 6003, 'Levanta la condición del')], None, ''),
+    ('DEC-MIG-005#📌1', M_, None, AG, 'entero', [(LOG, 6471, 'Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`')], 'S-37, S-41, S-42', ''),
+    ('DEC-MIG-005#📌2', M_, None, AG, 'entero (`EX-48` y `EX-50` no se miden)', [(LOG, 6471, 'Quedan **`SUPERSEDED`**')], 'S-57, S-58', ''),
+    ('DEC-MIG-005#📌4', M_, None, AG, 'entero (el detector del día siguiente)', [(LOG, 6471, 'Quedan **`SUPERSEDED`**')], 'S-42', ''),
     ('DEC-MIG-005#📌5', P_, None, AG, 'la parte del lote G (el detector del titular que sólo conoce el proveedor); lo del lote F sigue',
-     [(LOG, 6461, '📌 del 2026-09-30, la parte del lote G')], 'S-38', ''),
-    ('DEC-RF-008#📌3', P_, None, AG, 'la cifra «veintiuna» (hoy 25 vivas)', [(LOG, 6527, 'pasan de veintiuna a veintitrés vivas'), ACC25], None, 'cifra'),
+     [(LOG, 6476, '📌 del 2026-09-30, la parte del lote G')], 'S-38', ''),
+    ('DEC-RF-008#📌3', P_, None, AG, 'la cifra «veintiuna» (hoy 25 vivas)', [(LOG, 6542, 'pasan de veintiuna a veintitrés vivas'), ACC25], None, 'cifra'),
     ('DEC-RF-008#📌4', P_, None, AG, 'la cifra «veintitrés» (hoy 25) y «las construye `V8`», que es `V8a`',
      [ACC25, (VD, None, 'y las acciones administrativas 15, 23 y 24')], 'Z', ''),
     ('DEC-ENT-006#📌1', P_, None, AG, '«se asigna al aprobar la postulación»: el rol llega con el reclamo',
-     [(LOG, 6682, 'El rol de socio del')], 'lotes F y N', ''),
+     [(LOG, 6697, 'El rol de socio del')], 'lotes F y N', ''),
     ('DEC-ENT-006#📌2', P_, None, AG, '«o el alta directa del admin con dueño» y «`starts_at` y `ends_at` quedan hasta la unidad de socios»',
-     [(LOG, 6693, 'del 📌 anterior se lee *«cuando queda con dueño»*'), AB_AP], 'lotes N y O; AB y AP', ''),
+     [(LOG, 6708, 'del 📌 anterior se lee *«cuando queda con dueño»*'), AB_AP], 'lotes N y O; AB y AP', ''),
     ('DEC-ENT-006#📌3', P_, None, AG, '«los borra `V7` con su migración»: la migración estructural de `V7` la lleva `V6` al corte',
      [AB_AP], 'AB y AP', ''),
     ('DEC-ENT-006#📌4', P_, None, AG, '«en la misma migración de `V7`»: la lleva `V6` al corte', [AB_AP], 'AB y AP', ''),
-    ('DEC-MIG-006#📌1', M_, None, AG, 'entero', [(LOG, 6937, 'Su 📌 del 2026-09-29 sale entero:')], 'S-28', ''),
+    ('DEC-MIG-006#📌1', M_, None, AG, 'entero', [(LOG, 6952, 'Su 📌 del 2026-09-29 sale entero:')], 'S-28', ''),
     ('DEC-MIG-006#📌2', P_, None, AG, '«la escribe después el script del corte»: la escribe la herramienta del corte de `V6`',
-     [(LOG, 6943, '**los escribe la herramienta del corte')], 'lote B', ''),
+     [(LOG, 6958, '**los escribe la herramienta del corte')], 'lote B', ''),
     ('DEC-ARCH-013#📌1', P_, None, AG,
      'las 11 migraciones «se congelan» (las saca `U1`) y «antes del ensayo del corte» (antes del merge de `V6`)',
-     [(LOG, 7284, 'ya no se congelan hasta el paso 6: las saca de la rama'), MERGE_V6], 'lote 1 C, lote 3 D', ''),
+     [(LOG, 7299, 'ya no se congelan hasta el paso 6: las saca de la rama'), MERGE_V6], 'lote 1 C, lote 3 D', ''),
     ('DEC-ARCH-013#📌3', P_, None, AG, '«las escribe después el script del corte»: la herramienta del corte de `V6`',
-     [(LOG, 7297, '**los escribe la herramienta del corte de `V6`**')], 'lote B', ''),
+     [(LOG, 7312, '**los escribe la herramienta del corte de `V6`**')], 'lote B', ''),
     ('DEC-ARCH-013#📌4', P_, None, AG, 'la cifra «de 33 a 34» (hoy 35)', [G35], None, 'cifra'),
     ('DEC-ARCH-014#📌1', P_, None, AG, 'O-B: el cierre de la ruta hasta las lápidas del paso 4; las cifras «23 unidades», «33» y «once»',
-     [(LOG, 7516, 'lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de'), DOCE, G35], 'S-40, S-45', ''),
+     [(LOG, 7541, 'lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de'), DOCE, G35], 'S-40, S-45', ''),
     ('DEC-ARCH-014#📌2', P_, None, AG, 'P-A (el Worker) y P-B (el detector); las cifras «once» y «33»; P-C sigue',
-     [(LOG, 7516, 'lote P pierde el Worker del borde (P-A)'), DOCE], 'S-42, S-45', ''),
+     [(LOG, 7541, 'lote P pierde el Worker del borde (P-A)'), DOCE], 'S-42, S-45', ''),
     ('DEC-ARCH-014#📌5', P_, None, AG, '«`starts_at` y `ends_at` quedan hasta la unidad de socios» (los borra `V6` al corte) y la cifra «34»',
      [AB_AP, G35], 'AB y AP', ''),
     ('DEC-DATA-008#📌1', P_, None, AG, '«antes del ensayo del corte en staging» (antes del merge de `V6`)', [MERGE_V6], 'lote 3 D', ''),
     ('DEC-DATA-008#📌3', P_, None, AG, '«antes del ensayo» y la cifra «quince valores» (dieciocho)',
-     [MERGE_V6, (LOG, 7353, 'pasa de quince a dieciocho plazos')], 'lote 3 D; lotes K y R', ''),
+     [MERGE_V6, (LOG, 7368, 'pasa de quince a dieciocho plazos')], 'lote 3 D; lotes K y R', ''),
     ('DEC-DATA-008#📌4', P_, None, AG, '«antes del ensayo del corte en `staging`» (antes del merge de `V6`)', [MERGE_V6], 'lote 3 D', ''),
-    ('DEC-ARCH-017#📌1', P_, None, AG, 'el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5`',
-     [(LOG, 7839, '**las tablas del modelo de addons'), AV], 'AV', ''),
+    ('DEC-ARCH-017#📌1', P_, None, AG, 'el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5` (AV); '
+     'y «promos y cortesías, `B9a`»: el esquema de promos y cortesías es de `B3` (BG; residuo del triage AB-g1-2, 2026-10-02)',
+     [(LOG, None, '**las tablas del modelo de addons'), AV,
+      (LOG, None, '**BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`')], 'AV y BG', ''),
+    # --- residues of the triage of the consolidated spec's open items (2026-10-02): 📌 with a dead
+    #     part that no later 📌 strikes (AB-g1-2 above; EF-g5-1, EF-g5-3, EF-g6-1 here) -------------
+    ('DEC-ARCH-014#📌7', P_, None, AG,
+     'la cola «Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke … '
+     'Origen: (FASES 6 y 7, owner 2026-09-30, F)»: es texto del 📌6 (`U3`, letra F) que quedó pegado a éste; la consolidada la muestra bajo el 📌6, con su nota, y no bajo el 📌7',
+     [(LOG, None, 'Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`'),
+      (LOG, None, '**el programa pasa de 24 a 25 unidades**. Una')], 'su propio Origen (letra F)', 'EF-g5-1'),
+    ('DEC-TRIAL-010#📌1', P_, None, AG, '«, igual que `T7`»: `T7` salió (N7); la conducta —escribe la fila consumida— está dicha en la misma frase',
+     [(LOG, None, 'escribe la fila consumida, igual que `T7`.'), (VD, None, '| **sale `T7`**, y el panel rechaza')], 'N7', 'EF-g5-3'),
+    ('DEC-DATA-005#📌6', P_, None, AG,
+     '«Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina sola por `S12`, sobre la cuenta ya dada de baja»: '
+     'una `CANCEL_SCHEDULED` cuya cancelación ninguna relectura confirmó todavía SÍ traba la acción 24',
+     [(LOG, None, 'Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina'),
+      (N08, None, '**(también una `CANCEL_SCHEDULED` o una terminal cuya cancelación nuestra ninguna relectura confirmó todavía')],
+     'lote D (FASE 9 vuelta 3, owner 2026-09-30; F-8V3C1-001)', 'EF-g6-1'),
 ]
+
+# --- owner BK (2026-10-02, the 1): overtaken text outside a 📌, in the log and the matrix, which are
+#     never edited (DEC-METH-019, implications 1 and 4). cita=None: the item's own line (a decision's
+#     heading, the matrix row). Every dead part is named by the item's own Estado or by the decision
+#     that precises it, so none of these picks a reading no later source states. ------------------
+SUP, OTRA, MAT = 'SUPERSEDED EN PARTE', 'precisada por otra decisión', 'matriz'
+BK = [
+    ('DEC-MIG-001', P_, None, None,
+     '«se los da de alta en el motor nuevo» (la decisión, (1)): lo que se cae es el destino, ya no se transcribe ninguna fila al sistema nuevo (`DEC-MIG-003`)',
+     [(LOG, None, '**Lo que se cae es el destino**: ya no se transcribe'),
+      (LOG, None, 'Se los contacta, se los da de alta en el motor nuevo y se cancela el')], 'DEC-MIG-003', SUP),
+    ('DEC-MIG-002', P_, None, None,
+     '«y se transcriben a mano cuando el rediseño esté listo» (la decisión) y el riesgo de que *«la cohorte a transcribir crece»*: no se migra nada (`DEC-MIG-003`) y lo que entre hasta el corte no se conserva (`DEC-MIG-005`); sobrevive *«se siguen tomando altas en el sistema actual»*',
+     [(LOG, None, 'se cae *«se transcriben a mano cuando el rediseño esté listo»*'),
+      (LOG, None, 'Se siguen tomando altas en el sistema actual, y **se transcriben a mano'),
+      (LOG, None, '**la cohorte a transcribir crece mientras dure el rediseño.**')], 'DEC-MIG-003', SUP),
+    ('DEC-DATA-002', P_, None, None,
+     'que el reloj corre durante la pausa (*«el reloj SÍ corre durante la pausa, y se reinicia al reanudar»*) y la desigualdad que lo protegía (`D16`, con `G-R5`): la pausa del dueño detiene la retención (`DEC-DATA-006`); sobrevive el resto',
+     [(LOG, 3709, 'se cae que el reloj corre durante la pausa y la desigualdad que la protegía'),
+      (LOG, None, 'reloj SÍ corre durante la pausa, y se reinicia al reanudar.**')], 'DEC-DATA-006', SUP),
+    ('DEC-MP-003', P_, None, None,
+     'el motivo `PROVIDER_DUNNING` (la decisión, *«un motivo nuevo de pausa»*, y lo que manda recorrer): la pausa del proveedor por mora se espeja con `S6` (`DEC-MP-008`); sobreviven el diagnóstico y que esa pausa no entra por `S8`',
+     [(LOG, None, 'el motivo `PROVIDER_DUNNING`, y la pausa del proveedor por mora se espeja con `S6`. Sobrevive el'),
+      (LOG, None, '- **Decisión**: **un motivo nuevo de pausa, `PROVIDER_DUNNING`.**')], 'DEC-MP-008', SUP),
+    ('DEC-SUB-019', P_, None, None,
+     '«La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**»: sí se borra, y el espejo la lee como `S6` (`DEC-MP-008`)',
+     [(LOG, None, '`PROVIDER_DUNNING` que acá *«no se borra»* sí se borra, y el espejo la lee como `S6`'),
+      (LOG, None, '`PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**')], 'DEC-MP-008', OTRA),
+    ('DEC-METH-006', P_, None, None,
+     'la condición de corte del punto 2, *«se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo»*: la reemplazó `DEC-METH-008` el mismo día (*«hasta que ningún `CRITICA` quede abierto sin causa declarada»*) y la precisó `DEC-METH-013` (metodología: no exige AC)',
+     [(LOG, None, 'ENMENDADA por `DEC-METH-008`** el mismo 2026-09-19 y **PRECISADA por `DEC-METH-013`** el'),
+      (LOG, None, '**se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**')], 'DEC-METH-008 y DEC-METH-013', OTRA),
+    ('DEC-MP-008', V_, None, None, None,
+     [(LOG, None, '**precisada el 2026-09-25 por `DEC-SUB-022`**: sobre la sucesora que entra en grace')], 'DEC-SUB-022', OTRA),
+    ('DEC-RF-007', V_, None, None, None,
+     [(LOG, None, '**precisada el 2026-09-25 por `DEC-RF-008`**: la reparación manual se asienta con la acción administrativa 14')],
+     'DEC-RF-008', OTRA),
+    ('DEC-ADDON-003', P_, None, None,
+     '«La condición de huérfano no se toca: sigue con tres mitades» (punto 4): la orfandad de `LISTING` y de `USER`/`GLOBAL` se lee como dice `DEC-ADDON-007`',
+     [(LOG, None, '*«la condición de huérfano no se toca»* (punto 4) dejó de valer'),
+      (LOG, None, '**La condición de huérfano')], 'DEC-ADDON-007', OTRA),
+    ('DEC-ADDON-004', V_, None, None, None,
+     [(LOG, None, '**precisada el 2026-09-25 por `DEC-ADDON-007`**: la condición de huérfano se lee sobre el conjunto')],
+     'DEC-ADDON-007', OTRA),
+    ('DEC-DATA-004', P_, None, None,
+     'la cifra «cinco» del título y de `H1` (*«la lista de los cinco consumidores de `inactiva_desde`»*): son seis; la forma de la lista sigue',
+     [(LOG, None, 'los consumidores de `inactiva_desde` son **seis**, no cinco'),
+      (LOG, None, '**`H1` — la lista de los cinco consumidores de `inactiva_desde` queda como está**')], 'su propio Estado', OTRA),
+    ('MP:EX-46', P_, None, None,
+     '«el borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas están escritas» y los pasos 3 y 4 que nombra: el cierre del borde y las lápidas salieron (S-40, S-45); la pregunta sigue `UNKNOWN`, sin sujeto',
+     [(D06, None, 'el borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas están escritas'),
+      (D16, None, 'el cierre del borde y las lápidas salieron: FASE 5, simplificación del corte, S-40, S-45')], 'S-40 y S-45', MAT),
+]
+# the reason of each BK verdict that is VIVO (nothing dead: the later decision only adds)
+RAZON_BK = {
+    'DEC-MP-008': 'la precisión agrega a la sucesora el `cancelled` leído; el cuerpo no dice que sólo `paused` termine el grace',
+    'DEC-RF-007': 'la precisión dice con qué acto se asienta la reparación manual; el cuerpo dice «manual y queda registrada», sin contradicción',
+    'DEC-ADDON-004': 'la precisión dice sobre qué se lee la orfandad y que el complemento de una pausa del cliente gana `PAUSED`; lo que el cuerpo decide —`CANCELLED` en el acto, sin gracia— sigue',
+}
+# the BK verdicts whose dead part changes the sense of a rule against what the item's text says
+# (a later source states it, so none picks a new reading; listed for the owner's review, AI)
+INVIERTEN_UNA_REGLA = ('DEC-DATA-002', 'DEC-MP-003', 'DEC-SUB-019', 'DEC-DATA-005#📌6')
 
 
 def at(path, line, cita):
@@ -251,25 +337,33 @@ def at(path, line, cita):
 def main(inv_p, out_p):
     inv = {i['id']: i for i in json.load(open(inv_p, encoding='utf-8'))['items']}
     out, vistos = {}, set()
-    for kind, rows in (('MIXTO', MIXTO), ('PIN', PINES)):
-        for cid, ver, cita, efecto, muerto, evid, base, razon in rows:
-            it = inv.get(cid)
-            if not it:
-                sys.exit(f'✗ {cid} no está en el inventario')
-            if cid in vistos:
-                sys.exit(f'✗ {cid} adjudicado dos veces')
-            vistos.add(cid)
-            texto = lines(it['archivo'])[it['linea'] - 1]
-            if cita is None:  # a pin: its own text after the marker, verbatim
-                cita = re.sub(r'^[\s>\-\d.]*', '', texto).strip()[:140]
-            if cita not in texto:
-                sys.exit(f'✗ {cid}: la cita no está en su línea ({it["archivo"]}:{it["linea"]})')
-            if ver != 'VIVO' and not muerto:
-                sys.exit(f'✗ {cid}: {ver} sin «muerto»')
-            out[cid] = dict(clase=kind, veredicto=ver, archivo=it['archivo'], linea=it['linea'], hash=it['hash'],
-                            cita=cita, efecto=efecto, muerto=muerto,
-                            evidencia=[at(*e) for e in evid], base=base, razon=razon,
-                            cambia_sentido=False)
+    filas = [('MIXTO', r) for r in MIXTO] + [('PIN', r) for r in PINES] + \
+            [('BK', b[:7] + (RAZON_BK.get(b[0], ''),) + (b[7],)) for b in BK]
+    for kind, row in filas:
+        familia = row[8] if kind == 'BK' else None
+        cid, ver, cita, efecto, muerto, evid, base, razon = row[:8]
+        it = inv.get(cid)
+        if not it:
+            sys.exit(f'✗ {cid} no está en el inventario')
+        if cid in vistos:
+            sys.exit(f'✗ {cid} adjudicado dos veces')
+        vistos.add(cid)
+        texto = lines(it['archivo'])[it['linea'] - 1]
+        if cita is None:  # a pin: its own text after the marker, verbatim
+            cita = re.sub(r'^[\s>\-\d.]*', '', texto).strip()[:140]
+        if cita not in texto:
+            sys.exit(f'✗ {cid}: la cita no está en su línea ({it["archivo"]}:{it["linea"]})')
+        if ver != 'VIVO' and not muerto:
+            sys.exit(f'✗ {cid}: {ver} sin «muerto»')
+        out[cid] = dict(clase=kind, veredicto=ver, archivo=it['archivo'], linea=it['linea'], hash=it['hash'],
+                        cita=cita, efecto=efecto, muerto=muerto,
+                        evidencia=[at(*e) for e in evid], base=base, razon=razon,
+                        cambia_sentido=False)
+        if familia:
+            out[cid]['familia'] = familia
+            out[cid]['invierte_una_regla_con_fuente'] = cid in INVIERTEN_UNA_REGLA
+        elif cid in INVIERTEN_UNA_REGLA:
+            out[cid]['invierte_una_regla_con_fuente'] = True
     faltan = sorted(i for i, it in inv.items() if it['estado'] == 'MIXTO' and i not in out)
     prosa = sorted(i for i, it in inv.items() if it['fuente'] == 'PIN' and it['forma'] == 'prosa' and i not in out)
     if faltan or prosa:
@@ -278,10 +372,16 @@ def main(inv_p, out_p):
     for v in out.values():
         resumen.setdefault(v['clase'], {}).setdefault(v['veredicto'], 0)
         resumen[v['clase']][v['veredicto']] += 1
+    bk = sorted(i for i, it in inv.items() if it['fuente'] == 'DEC' and it['estado'] == 'SUPERSEDED_PARCIAL' and i not in out)
+    if bk:
+        sys.exit(f'✗ sin adjudicar (BK): SUPERSEDED EN PARTE {bk}')
     doc = dict(sha=SHA, criterio=__doc__.split('Verdicts:')[1].strip(), resumen=resumen,
-               cambian_el_sentido=[k for k, v in out.items() if v['cambia_sentido']], veredictos=out)
+               cambian_el_sentido=[k for k, v in out.items() if v['cambia_sentido']],
+               invierten_una_regla_con_fuente=[k for k, v in out.items() if v.get('invierte_una_regla_con_fuente')],
+               veredictos=out)
     json.dump(doc, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
-    print(f'SHA {SHA} · {len(out)} veredictos · {resumen} · cambian el sentido: {doc["cambian_el_sentido"]}')
+    print(f'SHA {SHA} · {len(out)} veredictos · {resumen} · cambian el sentido: {doc["cambian_el_sentido"]}'
+          f' · invierten una regla con fuente: {doc["invierten_una_regla_con_fuente"]}')
 
 
 if __name__ == '__main__':
