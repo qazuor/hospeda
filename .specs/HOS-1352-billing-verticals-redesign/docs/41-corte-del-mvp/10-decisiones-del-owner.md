@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY y AZ (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ y BA a BH (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -92,6 +92,24 @@ spec consolidada (tres familias del inventario que AX no nombraba). Es la recome
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
 |---|---|---|---|---|
 | AZ | si las transiciones que no existen (`PROH`), las validaciones del panel que conservan nombre de guard (`VAL`: `G-R3` y `G-R5-B`) y las dependencias entre épicas (`DEP`) son normativas para AL | 1 | sí | **las tres exigen AC**: se suman al criterio de «normativo» de AX. Las otras opciones eran que sólo `PROH` lo exigiera (una validación del panel o una lectura entre épicas quedaba sin criterio verificable) o ninguna (chocaba con AN, que pide un test por cada transición prohibida) |
+
+## Lote BA a BH (2026-10-01)
+
+Respuestas del owner, 2026-10-01, a las preguntas que dejaron el mapa de cobertura de la spec
+consolidada (BA a BE, `spec-consolidada/_trabajo/cobertura-lectura.json`, sobre `dab68c3ded`) y el
+análisis de nueve posibles errores de las fuentes que ese mapa reportó (BF a BH). Todas son la
+recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| BA | qué se hace con los ítems normativos que no construye ninguna pieza (reglas de método, de CI, de organización, de alcance) | 1 | sí | **pasan a sólo citables con una lista CERRADA por script**, que vive en `03-contrato-de-cobertura.md` de la consolidada: `INV:17`, `INV:33`–`INV:37`, `DEC-CI-001` con sus 📌1 y 📌2, `DEC-CI-002`, `DEC-ARCH-005` con su 📌1, `DEC-ARCH-017#📌3`, `DEC-MIG-002`, `DEC-MIG-005#📌5`, `DEC-AUTH-003#📌2`, `DEC-DATA-005#📌4` y `DEC-MP-008#📌2` (18). Precisa AX: 📌 sobre `DEC-METH-019` |
+| BB | si exigen AC los 📌 que sólo retiran algo o son notas de registro | 1 | sí | **pasan a la misma lista cerrada**: `DEC-OBS-001#📌2`, `DEC-ADDON-004#📌2`, `DEC-SUB-013#📌2`, `DEC-MP-003#📌1` y `DEC-SUB-019#📌1`; **`DEC-TRIAL-004#📌3`** (teléfono, CUIT y dispositivo no se guardan) **se cubre con un AC negativo en `V4`** |
+| BC | qué pieza construye tres comportamientos que ninguna fila asignaba | 1 | sí | **`DEC-ENT-004`** (cancelar en el acto, sin reembolso, el Turista VIP pago que el plan hereda) → **`B3`**, al corte; **`ACC:6`** (configurar el plan y el método de pago de un Partner) → **`V7`**, con `B5` que lo provee; **`INV:9`** (verticales simultáneas en estados distintos) → **`V3`**, con `B3` en «también». Se escribe en las filas de la partición, con un 📌 |
+| BD | qué pieza construye la tabla de plazos de verticales y la acción 22 (mitad verticales), que seguían en `V9` | 1 | sí | **`V6`, al corte**: crea la tabla versionada de plazos de verticales y su versión 1 en la misma migración que la escritura `C`, y la acción 22 sobre sus claves; `V9b` sólo las lee. 📌 sobre `DEC-DATA-008` |
+| BE | cómo llevan AC los ítems cuya dueña es el corte (pasos, gates, DEC que sólo el corte ejecuta) | 1 | sí | **la pseudo-pieza `CORTE`**: `AC:CORTE:n` y `TEST:CORTE:n` en `30-el-corte.md` de la consolidada, con tipo smoke manual (ensayo en `staging`, 5c en producción) o guard estático; `trazar.py` lo acepta. 📌 sobre `DEC-METH-019` (AM) |
+| BF | quién construye la herramienta del paso 4b (la sonda de Webhooks, el pago chico, su devolución y la verificación en `provider_notification`) | 1 | sí | **`U3`**: el script suelto de `scripts/cutover/` suma la sonda (alta, cancelación y relectura), el pago chico por la API de pagos con su devolución releída por id, la consulta de sólo lectura a `provider_notification`, los ids al manifiesto y los inversos (b) y (c) de la rama de aborto. Su *«Lista cuando»* corre contra la cuenta de pruebas; la entrega real al receptor de `B3` se prueba en el ensayo, que ya incluye el 4b (D-4). Sin flechas nuevas; respeta K. Las otras opciones eran `B3` (el pago por fuera del adaptador) y `U3` detrás de `B3` (reabría K) |
+| BG | quién crea el esquema de promos y cortesías, que AP puso en `B9a` y que leen antes `B3` (`S3`, `S14`), `B5` (`P1`), `B11` (la sexta comprobación) y `B13a` (Mi Suscripción) | 1 | sí | **`B3`**, como AV hizo con addons, y por el criterio de AP: cortesías y redenciones cuelgan de `subscription`. `B9a` conserva las fuentes `CORTESÍA` y `GRANT`, `S13`, `S20` y la herramienta del 3b. Sin flechas nuevas. Precisa AP. Las otras opciones eran dejar el esquema en `B9a` con tres transiciones compartidas y dos flechas, o diferir las ramas (chocaba con Y y AS) |
+| BH | dónde van las superficies de `B13` que confirman o editan actos de otra fase: las filas 13 y 13-bis del `19` §4 (confirmaciones de la acción 2, de `B9a`) y el editor de códigos promocionales (acción 21, de `B9b`) | 1 | sí | **cada superficie va con la fase de su acto**: las filas 13 y 13-bis a **`B13a`**, con la parte de addons leyendo el esquema vacío (AS), y **la flecha nueva `B9a → B13a`**; el editor de códigos a **`B9b`**, con su operación; **`B13b`** queda con el aviso del destaque y el editor de versiones de complemento. Precisa Z. Las otras opciones eran llevarlas a la pieza del acto o dejar Z literal con la acción 2 sin confirmación hasta la Fase 3 |
 
 ## Resultado del corte
 
