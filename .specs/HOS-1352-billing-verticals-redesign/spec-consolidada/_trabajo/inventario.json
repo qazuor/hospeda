@@ -1,5 +1,5 @@
 {
-    "sha": "f46a76c394622106fa543d2efd74d7f91d278ead",
+    "sha": "dab68c3ded010857516224ff215a3117b5a32575",
     "items": [
         {
             "fuente": "DEC",
@@ -4138,8 +4138,8 @@
             "hash": "dae2218345cf87d0e2736503f74d4752e886a2775fadcff4a6b250bd329719d4",
             "estado": "ACCEPTED",
             "precisada": true,
-            "pins": 1,
-            "fin": 7932
+            "pins": 2,
+            "fin": 7938
         },
         {
             "fuente": "PIN",
@@ -4148,6 +4148,18 @@
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
             "linea": 7914,
             "hash": "ae56f02ddd5496a5046f16b6bd1fb39f25e4c1278efd6e89fe25970733cd0a3f",
+            "estado": "VIGENTE",
+            "dec": "DEC-METH-019",
+            "forma": "bullet",
+            "motivo": null
+        },
+        {
+            "fuente": "PIN",
+            "id": "DEC-METH-019#📌2",
+            "local": "📌2",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7930,
+            "hash": "3b1746c037f0dff5a2dea3d56ed9efd30975f7c414e114af27f1340de45a8f56",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
             "forma": "bullet",
@@ -12101,6 +12113,15 @@
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
             "linea": 85,
             "hash": "780e82e10733401b7d08ba2b2ea90258bc48e25b4a91d7190643f77efff847ca",
+            "estado": "VIVO"
+        },
+        {
+            "fuente": "OWN",
+            "id": "OWN:41-corte-del-mvp:t6:AZ",
+            "local": "AZ",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+            "linea": 94,
+            "hash": "d055dd27cf907f0c4589db4a6c65ad9387a8a0ebec778169e51b556313735a78",
             "estado": "VIVO"
         },
         {

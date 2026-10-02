@@ -1,5 +1,5 @@
 {
-    "sha": "f46a76c394622106fa543d2efd74d7f91d278ead",
+    "sha": "dab68c3ded010857516224ff215a3117b5a32575",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 610,
+        "01-decisiones-vigentes.md": 612,
         "02-nucleo.md": 95,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -2166,6 +2166,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-019#📌1": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-METH-019#📌2": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7196,6 +7202,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "OWN:41-corte-del-mvp:t5:AY": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t6:AZ": {
             "fuente": "OWN",
             "estado": "VIVO",
             "veredicto": null,
