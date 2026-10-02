@@ -272,12 +272,20 @@ MIG_RX = re.compile(r'migraci[oó]n (?:estructural|de datos)|\btablas?\b|\bcolum
 DATOS_RX = re.compile(r'migraci[oó]n de datos|sobre datos|preexistente|filas? (?:vivas|existentes|de producción)|`partners`')
 
 
+# AN, per family: the only minimum trazar.py R18 enforces
+TIPOS_FAMILIA = {'TRANS': ['integración con DB'], 'TPZ': ['integración con DB'], 'APZ': ['integración con DB'],
+                 'PROH': ['integración con DB'], 'GUARD': ['guard estático'], 'ESQ': ['migración desde cero']}
+
+
 def tipos(i, rec):
-    """AN, per family, plus what the item's own text asks for (marked as derived from text)."""
+    """AN, per family, plus what the item's own text asks for (marked as derived from text).
+
+    Returns (all, why, by_family, by_text): ``all`` is the full minimum (as before); ``by_family``
+    is what AN demands for the item's source (R18 fails without it); ``by_text`` is what was only
+    read in the item's words or adjudicated by reading (R18 warns, never fails)."""
     f = i['fuente']
-    base = {'TRANS': ['integración con DB'], 'TPZ': ['integración con DB'], 'APZ': ['integración con DB'],
-            'PROH': ['integración con DB'], 'GUARD': ['guard estático'], 'ESQ': ['migración desde cero']}
-    ts, por_que = list(base.get(f, [CUALQUIERA])), []
+    fam = list(TIPOS_FAMILIA.get(f, [CUALQUIERA]))
+    ts, por_que = list(fam), []
     a, b = bloque(i)
     txt = unstrike(' '.join(lines(i['archivo'])[a - 1:b]))
     if f in ('FILA', 'LISTA', 'ESQ', 'DEC', 'PIN', 'PASO') and MIG_RX.search(txt):
@@ -294,9 +302,10 @@ def tipos(i, rec):
     for t in rec.get('tipos') or []:
         if t not in ts:
             ts.append(t)
+            por_que.append(f'lectura: «{t}»')
     if len(ts) > 1 and CUALQUIERA in ts:
         ts.remove(CUALQUIERA)
-    return ts, por_que
+    return ts, por_que, fam, [t for t in ts if t not in fam]
 
 
 # --- validation ---------------------------------------------------------------------------------
@@ -500,11 +509,12 @@ def main(argv):
     items_out, cuenta = {}, collections.defaultdict(collections.Counter)
     for k in sorted(rec, key=lambda x: (by[x]['fuente'], x)):
         r, i = rec[k], by[k]
-        ts, por_que = tipos(i, r)
+        ts, por_que, fam, txt = tipos(i, r)
         items_out[k] = dict(fuente=i['fuente'], pieza=r['pieza'], metodo=r['metodo'],
                             fuente_de_la_asignacion=r['citas'], razon=r.get('razon'),
                             tambien_lo_ejercen=r.get('tambien', []), tipos_de_test_minimos=ts,
-                            tipos_derivados_del_texto=por_que)
+                            tipos_derivados_del_texto=por_que, tipos_exigidos_por_familia=fam,
+                            tipos_solo_del_texto=txt)
         cuenta[r['pieza']][r['metodo']] += 1
         for t in r.get('tambien', []):
             cuenta[t['pieza']]['tambien'] += 1
