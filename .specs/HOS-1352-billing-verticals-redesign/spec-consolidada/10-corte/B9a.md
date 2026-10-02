@@ -14,7 +14,7 @@ del MVP (Z): los grants, su fuente con su `piso`, el piso del ancla, `S13`, `S20
 |---|---|---|---|
 | `B9a` | `B9` | corte | Z; la fuente `CORTESÍA` (AQ) y `S20` (AS); el esquema de promos y cortesías pasa a `B3` (BG) |
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:959, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:742
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:964, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:742
 
 <a id="fila-b9"></a>
 
@@ -367,7 +367,7 @@ Fuente: [LISTA:B9a](#lista-b9a) · [LISTA:B9](#lista-b9) · [FILA:B9a](#fila-b9a
 Las cláusulas 4 (la mitad del grant) y 7 son de `B9a`; las demás, de
 [B9b](../20-fase-2/B9b.md#lista-b9b).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1024
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1048
 
 <a id="lista-b9a"></a>
 
@@ -420,12 +420,12 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1025
 <a id="tpz-s13"></a>
 **TPZ:S13** — `S13` → `B9a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:815
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:839
 
 <a id="tpz-s20"></a>
 **TPZ:S20** — `S20` → `B9a` (AS).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:822
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:846
 
 ## Modelo de datos y migraciones
 

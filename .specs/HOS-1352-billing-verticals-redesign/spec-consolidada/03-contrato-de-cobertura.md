@@ -1555,7 +1555,7 @@ consume **desde que `V1` lo escribe, cada unidad cuando lee la dirección invers
 primera vez** (FASE 9 vuelta 3, F-8V3C1-008: `B1` corre en paralelo con `V1`) con el simulador de
 la dirección inversa (`V/descomposicion.md`, `B/descomposicion.md` §2).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1522, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1524, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1582
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1525, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1527, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1585
 
 ## Las dependencias entre épicas (`B/descomposicion.md` §2.6)
 
@@ -1784,4 +1784,4 @@ su pieza dueña.
 dispositivo no se guardan) **no está en la lista**: se cubre con **un AC negativo en `V4`** (owner,
 BB). La lista es cerrada: agregarle o sacarle un ítem es una decisión del owner, no una edición.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7977
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8059

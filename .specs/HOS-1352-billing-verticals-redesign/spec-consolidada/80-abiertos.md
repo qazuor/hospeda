@@ -56,7 +56,7 @@ de ellas no termina sin sus dos ramas escritas y una prueba por rama contra el p
 comprar Turista VIP mientras el plan vigente lo hereda (la mitad de
 [DEC-ENT-003](01-decisiones-vigentes.md#dec-ent-003) que ninguna pieza construía), y dejan dicho:
 **el código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija.
-(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7889`.)
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7928`.)
 
 ## 4. Lo que el corte declara y no resuelve
 
@@ -66,7 +66,7 @@ pasado el paso 3 se arregla bajo presión; una autorización viva que el recorri
 devuelve sobrevive al corte; un aviso de Mercado Pago entre el apagado del viejo y el levantamiento
 de la imagen nueva puede perderse; y las dos situaciones que una restauración no deshace, que se
 releen antes del ensayo. Y en el §4.7: **que la fase 4 pueda adelantarse a la 2 o a la 3 no lo dice
-AW** (la fuente lo marca; `D/16-fase-7-del-paraguas.md:1113`;
+AW** (la fuente lo marca; `D/16-fase-7-del-paraguas.md:1169`;
 [GATE:FP](30-el-corte.md#gate-fp)).
 
 ## 5. Lo que cada capítulo declara que NO cierra
@@ -79,17 +79,17 @@ en el [momento 2](30-el-corte.md#gate-m2).
 
 ### `NUCLEO/01-glosario.md` — Lo que este capítulo NO cierra
 
-Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:973`–`980`.
+Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:975`–`980`.
 
-- `NUCLEO/01-glosario.md:975` — **`M-ARCH-02`** (caché e invalidación) es del capítulo 02: depende del modelo de datos.
-- `NUCLEO/01-glosario.md:976` — **Las transiciones** entre los estados nombrados en §2.2 son del capítulo 03. Acá están los nombres, no las reglas de movimiento.
-- `NUCLEO/01-glosario.md:978` — **Qué pasa cuando una suscripción principal se va y quedan complementos vivos** es del capítulo 16 (`E-ADDON-04`).
+- `NUCLEO/01-glosario.md:977` — **`M-ARCH-02`** (caché e invalidación) es del capítulo 02: depende del modelo de datos.
+- `NUCLEO/01-glosario.md:978` — **Las transiciones** entre los estados nombrados en §2.2 son del capítulo 03. Acá están los nombres, no las reglas de movimiento.
+- `NUCLEO/01-glosario.md:980` — **Qué pasa cuando una suscripción principal se va y quedan complementos vivos** es del capítulo 16 (`E-ADDON-04`).
 
 ### `NUCLEO/02-modelo-de-datos.md` — Lo que esta mitad NO cierra
 
-Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:271`–`274`.
+Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:272`–`274`.
 
-- `NUCLEO/02-modelo-de-datos.md:273` — **Los tipos, los índices y el plan de migración** son de FASE 4 y FASE 7.
+- `NUCLEO/02-modelo-de-datos.md:274` — **Los tipos, los índices y el plan de migración** son de FASE 4 y FASE 7.
 
 ### `NUCLEO/03-maquinas-de-estado.md` — Lo que esta mitad NO cierra
 
@@ -101,11 +101,11 @@ Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-e
 
 ### `NUCLEO/07-outbox-y-notificaciones.md` — Lo que este capítulo NO cierra
 
-Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:370`–`382`.
+Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:372`–`382`.
 
-- `NUCLEO/07-outbox-y-notificaciones.md:372` — **El texto de cada correo** no es parte de esta spec.
-- `NUCLEO/07-outbox-y-notificaciones.md:373` — **Qué pasa si un cliente responde un correo** — no hay canal de entrada modelado, y el §5.2 mide que el proveedor manda todo a nuestra puerta. Queda anotado como superficie de soporte del capítulo 19, no como hueco de notificaciones.
-- `NUCLEO/07-outbox-y-notificaciones.md:376` — **El envío es al menos una vez, no exactamente una** (FASE 8 completa, `F-8CB2-011`; declarado por `DEC-METH-015`, FASE 9 completa). La clave del §2 impide encolar dos veces, no mandar dos: un proceso que manda y muere antes de marcar `sent` pierde el `processing` por vencimiento (§1.2) y la fila sale de nuevo. El daño es un correo repetido —también el que sale antes de cancelar (cap. 03 (billing) §3.2, precisión 3)—, nunca una acción de dominio. **Causa**: el proveedor de correo no está elegido y no se sabe si acepta una clave de idempotencia.
+- `NUCLEO/07-outbox-y-notificaciones.md:374` — **El texto de cada correo** no es parte de esta spec.
+- `NUCLEO/07-outbox-y-notificaciones.md:375` — **Qué pasa si un cliente responde un correo** — no hay canal de entrada modelado, y el §5.2 mide que el proveedor manda todo a nuestra puerta. Queda anotado como superficie de soporte del capítulo 19, no como hueco de notificaciones.
+- `NUCLEO/07-outbox-y-notificaciones.md:378` — **El envío es al menos una vez, no exactamente una** (FASE 8 completa, `F-8CB2-011`; declarado por `DEC-METH-015`, FASE 9 completa). La clave del §2 impide encolar dos veces, no mandar dos: un proceso que manda y muere antes de marcar `sent` pierde el `processing` por vencimiento (§1.2) y la fila sale de nuevo. El daño es un correo repetido —también el que sale antes de cancelar (cap. 03 (billing) §3.2, precisión 3)—, nunca una acción de dominio. **Causa**: el proveedor de correo no está elegido y no se sabe si acepta una clave de idempotencia.
 
 ### `NUCLEO/08-auditoria-y-observabilidad.md` — Lo que este capítulo NO cierra
 
@@ -338,12 +338,12 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:1036`–`11
 
 ### `B/docs/19-superficies.md` — Lo que este capítulo NO cierra
 
-Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:326`–`346`.
+Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:327`–`346`.
 
-- `B/docs/19-superficies.md:328` — **El diseño visual**, que no es materia de esta spec.
-- `B/docs/19-superficies.md:329` — **Qué endpoints expone la API**, uno por uno: lo que este capítulo fija es **qué lee cada superficie**, y de ahí sale la API. Enumerarla antes de FASE 3 sería anticipar el trabajo de las épicas.
-- `B/docs/19-superficies.md:332` — **Cerrado**: lo dice la fila 22 del §4, que el owner escribió para el espejo de `R18` con `S7` como precedente, y que cubre los dos caminos a `CANCEL_SCHEDULED` con el mismo texto (owner 2026-09-27, FASE 9 vuelta 2, `R18`).
-- `B/docs/19-superficies.md:339` — **La vuelta del suspendido con tarjeta pierde su promo** (owner 2026-09-25; FASE 9 completa, 3b). Se aceptó y se dice en el aviso de suspensión (§4 fila 10), porque la vuelta es una sucesión y `S18` no re-apunta la redención (cap. 14 §2.2). **Anotado por el owner para mejorar en el futuro**: la regla de perder la promo se escribió para el cambio de plan que la persona elige, y quien vuelve al mismo plan tras un rechazo de tarjeta no cambia de plan. Las alternativas —re-apuntar la redención cuando la sucesora ancla la misma versión, o siempre desde `SUSPENDED`— están en `26-fase-9-completa/01-…` §2.5, pendiente 2.
+- `B/docs/19-superficies.md:329` — **El diseño visual**, que no es materia de esta spec.
+- `B/docs/19-superficies.md:330` — **Qué endpoints expone la API**, uno por uno: lo que este capítulo fija es **qué lee cada superficie**, y de ahí sale la API. Enumerarla antes de FASE 3 sería anticipar el trabajo de las épicas.
+- `B/docs/19-superficies.md:333` — **Cerrado**: lo dice la fila 22 del §4, que el owner escribió para el espejo de `R18` con `S7` como precedente, y que cubre los dos caminos a `CANCEL_SCHEDULED` con el mismo texto (owner 2026-09-27, FASE 9 vuelta 2, `R18`).
+- `B/docs/19-superficies.md:340` — **La vuelta del suspendido con tarjeta pierde su promo** (owner 2026-09-25; FASE 9 completa, 3b). Se aceptó y se dice en el aviso de suspensión (§4 fila 10), porque la vuelta es una sucesión y `S18` no re-apunta la redención (cap. 14 §2.2). **Anotado por el owner para mejorar en el futuro**: la regla de perder la promo se escribió para el cambio de plan que la persona elige, y quien vuelve al mismo plan tras un rechazo de tarjeta no cambia de plan. Las alternativas —re-apuntar la redención cuando la sucesora ancla la misma versión, o siempre desde `SUSPENDED`— están en `26-fase-9-completa/01-…` §2.5, pendiente 2.
 
 ### `B/docs/21-migracion.md` — Lo que este capítulo NO cierra
 

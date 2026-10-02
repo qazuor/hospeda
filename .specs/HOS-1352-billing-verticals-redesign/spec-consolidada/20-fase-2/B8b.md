@@ -23,7 +23,7 @@ con lo de la fase —`staging` antes del merge y un 5c propio en producción—
 |---|---|---|---|
 | `B8b` | `B8` | después | Z |
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:958, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:741
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:963, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:741
 
 <a id="fila-b8b"></a>
 
@@ -463,13 +463,13 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1023
 <a id="tpz-s8"></a>
 **TPZ:S8** — `S8` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:810
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:834
 
 <a id="tpz-s9"></a>
 **TPZ:S9** — `S9` → `B8b` y `B9b`, compartida (esta pieza construye su segundo disparador, la
 re-emisión sobre la sucesora; el primero, el otorgamiento, es de `B9b`).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:811
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:835
 
 <a id="tpz-s10"></a>
 **TPZ:S10** — `S10` → `B8b`.
@@ -479,27 +479,27 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:812
 <a id="tpz-s17"></a>
 **TPZ:S17** — `S17` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:819
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:843
 
 <a id="tpz-s18"></a>
 **TPZ:S18** — `S18` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:820
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:844
 
 <a id="tpz-s22"></a>
 **TPZ:S22** — `S22` → `B8b` (queda en `B8b`, por AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:824
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848
 
 <a id="tpz-s31"></a>
 **TPZ:S31** — `S31` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:829
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
 
 <a id="tpz-s38"></a>
 **TPZ:S38** — `S38` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:836
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:860
 
 *(Que `TPZ:S9` se construya repartida —el segundo disparador acá, el primero en `B9b`— lo leo de las
 filas: `B8b` es el cierre de la sucesión y `B9b` las cortesías; la tabla de la fuente sólo dice

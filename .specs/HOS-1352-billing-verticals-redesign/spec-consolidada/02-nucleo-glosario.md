@@ -724,7 +724,7 @@ y **el motivo con su nombre** para el caso. La diferencia ya costó un crítico:
 [`S18`](04-catalogos.md#trans-b-s18) escribía un motivo que la columna no admitía y **las tres ramas
 que mueven dinero se apoyaban en él**.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:720, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:722, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:727, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:731, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:732, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:733, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:734, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:736, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:740, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:741, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:742, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:743, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:744, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:745, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:746, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:747, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:749
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:722, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:724, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:729, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:733, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:734, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:735, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:736, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:738, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:742, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:743, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:744, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:745, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:746, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:747, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:748, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:749, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:751
 
 ### 2.6 «Cortesía diferida»: la que espera a que la sucesora autorice
 
@@ -763,7 +763,7 @@ guard, y los tres preguntan lo mismo.
 > aviso que se le manda al beneficiario los nombra (cap. 19 (billing) §4, fila 18, y en el otro
 > cierre la confirmación del §3.1 del capítulo de billing).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:758, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:760, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:766, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:767, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:769, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:774, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:780, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:781, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:790
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:760, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:762, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:768, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:769, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:771, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:776, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:782, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:783, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:792
 
 #### El inventario de consumidores de «cortesía diferida»
 
@@ -785,7 +785,7 @@ agrega su fila acá en el mismo acto.
 | 10 | la **superficie de «Mi Suscripción»** | cap. 19 (billing) §3 | es el único consumidor que **no** decide nada con el término: lo **muestra** — *«te quedan N meses, que empiezan a correr cuando completes el pago»* ([`DEC-GRANT-012`](01-decisiones-vigentes.md#dec-grant-012); en meses desde `F-8CB1-001`) |
 | 11 ✚ | el **cierre del saldo en [`S31`](04-catalogos.md#trans-b-s31)** | cap. 03 (billing) §3.2 | **saca una fila del término**, como el 9: la sucesora que esperaba el saldo se corta porque un contracargo cortó a su predecesora, y el saldo se cierra con `motivo_cierre = CONTRACARGO_DE_LA_PREDECESORA` (cap. 02 (billing) §2.4; FASE 8 completa, pendiente 8, owner 2026-09-25) |
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:794, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:796, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:801, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:802, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:803, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:804, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:805, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:806, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:807, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:808, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:809, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:810, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:811
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:796, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:798, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:803, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:804, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:805, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:806, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:807, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:808, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:809, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:810, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:811, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:812, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:813
 
 ## 3. Dónde vive la pausa
 
@@ -837,14 +837,14 @@ Cinco precisiones, cada una con su fundamento (la quinta, FASE 8 completa, `F-8C
    nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan
    permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:815, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:817, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:823, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:826, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:835, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:837, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:840, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:844, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:856, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:863, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:866
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:817, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:819, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:825, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:828, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:837, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:839, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:842, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:846, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:858, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:865, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:868
 
 ## 4. El criterio Eje 1 / Eje 2
 
 Cierra `O-ARCH-01` y `S-ARCH-02`. Éste es el hueco que hace verificable al §7, y el de
 consecuencias más largas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:874, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:876
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:876, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:878
 
 ### 4.1 El problema, exactamente
 
@@ -857,7 +857,7 @@ divergencia futura se justifica a sí misma como Eje 2** — que es literalmente
 lo que pasó: *«En vez de reutilizar correctamente Alojamientos, aparecieron caminos separados»*. Una
 regla que no puede ser violada no es una regla.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:878, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:880, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:884
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:880, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:882, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:886
 
 ### 4.2 El criterio
 
@@ -874,7 +874,7 @@ más. Es el mismo mecanismo con que [`DEC-TRIAL-001`](01-decisiones-vigentes.md#
 los overrides del plan de trial, y por el mismo motivo: una lista que crece sin control vuelve
 decorativo al principio que la contiene.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:889, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:891, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:894, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:899
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:891, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:893, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:896, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:901
 
 ### 4.3 La lista, completa
 
@@ -896,7 +896,7 @@ de una suscripción, el cambio de plan y de ciclo, la pausa, el grace, la cancel
 reembolso, los promo codes, las cortesías, los grants, la resolución de entitlements y limits, la
 conciliación, la auditoría, el outbox y la retención.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:904, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:906, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:910, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:917, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:919
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:906, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:908, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:912, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:919, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:921
 
 ### 4.4 Cómo se verifica
 
@@ -911,7 +911,7 @@ alguien se acuerde no sobrevive a eso.
 El capítulo 20 (testing) lo detalla junto con el resto de la estrategia de testing. Lo que queda
 fijado acá es la regla: **la lista tiene ocho ítems, y crece sólo por decisión registrada.**
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:924, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:929, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:934
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:926, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:931, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:936
 
 ### 4.5 La trampa que este criterio evita a propósito
 
@@ -923,7 +923,7 @@ comportamiento específico de vertical.
 Por eso el criterio no es *«no nombrar una vertical»* sino *«nombrarla sólo para uno de los ocho»*.
 La diferencia es lo que lo hace aplicable en vez de vacuo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:937, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:939, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:944
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:939, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:941, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:946
 
 ## 5. El mapa conceptual, en una figura
 
@@ -947,7 +947,7 @@ Entitlements y limits efectivos = agregación de:
     (§36: mientras al menos una fuente lo otorgue, sigue activo)
 ```
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:949, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:951, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:966
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:951, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:953, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:968
 
 ## Lo que este glosario NO cierra
 
@@ -957,4 +957,4 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:94
 - **Qué pasa cuando una suscripción principal se va y quedan complementos vivos** es del capítulo 16
   de billing (`E-ADDON-04`).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:973, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:975, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:978
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:975, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:977, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:980

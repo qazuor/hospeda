@@ -265,7 +265,7 @@ el paso 3** (§4.3).
 
 Dueña del AC: [U3](10-corte/U3.md#pieza-u3).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:150, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:197, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:508
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:150, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:197, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:513
 
 <a id="paso-2b"></a>
 
@@ -407,7 +407,7 @@ de acá es el del **programa**, y es de otro tamaño.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:4](#ac-corte-4), [AC:CORTE:5](#ac-corte-5)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:151, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:432, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:440, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:446, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:462, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:480, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:482, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:487, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:95, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:101, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:110, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:114, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:507, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:511, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:519, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:544, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:549, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:559, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:568, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:584, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:617
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:151, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:432, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:440, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:446, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:467, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:485, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:487, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:492, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:95, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:101, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:110, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:114, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:512, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:516, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:524, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:549, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:554, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:564, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:573, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:589, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:608, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:622
 
 <a id="paso-3"></a>
 
@@ -575,7 +575,7 @@ mira todo el repo (`B/20` §2).
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:6](#ac-corte-6), [AC:CORTE:7](#ac-corte-7)), con
 [V6](10-corte/V6.md#pieza-v6) y [V2](10-corte/V2.md#pieza-v2) como proveedoras.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:188, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:233, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:236, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:291, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:622, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:628, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:630, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:633, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:642, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:648, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:655, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:658, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:663, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:669
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:188, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:233, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:236, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:291, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:627, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:633, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:635, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:638, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:647, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:660, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:663, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:668, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:674
 
 <a id="paso-3a"></a>
 
@@ -930,25 +930,25 @@ una decisión y pasa a ser una descripción de lo que ya se hizo.
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1); el momento 1 se cumple pieza por pieza y las otras 29
 lo implementan.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1009, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1011, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1028, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1004, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:72, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:74, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:81, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:84, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:87
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1033, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1050, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1026, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:72, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:74, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:81, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:84, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:87
 
 <a id="gate-m1-1"></a>
 **Momento 1, condición 1**: cumple el criterio de su fila en el §4 de su descomposición
 (`V/descomposicion.md`, `B/descomposicion.md`) o, para `U1`, `U2` y `U3`, el de su fila del §4.6.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1013
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1035
 
 <a id="gate-m1-2"></a>
 **Momento 1, condición 2**: sus guards están escritos, enchufados en `pnpm check:guards` y en el job
 `guards` de `ci.yml` (`C-5`, `15-fase-9/01-R6-resuelto.md`), y rotos a propósito contra el job.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1015
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1037
 
 <a id="gate-m1-3"></a>
 **Momento 1, condición 3**: no deja ningún escritor declarado sin implementar
 ([DEC-TEST-002](01-decisiones-vigentes.md#dec-test-002)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1017
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1039
 
 <a id="gate-m1-4"></a>
 **Momento 1, condición 4**: **cada fila `UNKNOWN` de la matriz en la que se apoya tiene sus dos ramas
@@ -959,19 +959,19 @@ capability crítica con su fila `UNKNOWN`, y esto no lo cambia: dice qué hace f
 la unidad que se apoya en una. Las filas `UNKNOWN` están listadas en
 [80-abiertos.md](80-abiertos.md).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1018
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1040
 
 <a id="gate-m1-5"></a>
 **Momento 1, condición 5**: sus e2e están adaptados en el mismo PR (`15-fase-9/01-R6-resuelto.md`).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1023
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1045
 
 <a id="gate-m1-6"></a>
 **Momento 1, condición 6**: su PR hacia la rama tiene `CI Pass` concluido en `SUCCESS` sobre el
 rollup completo, **con el CI de la rama encendido antes de que la rama nazca** (A; §4.6), y pasó una
 revisión de contexto fresco antes del merge.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1024
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1046
 
 <a id="gate-m2"></a>
 
@@ -1002,27 +1002,27 @@ es lo que produjo el hueco; **dos mitades que no despliegan no suman una estrate
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:10](#ac-corte-10)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1034, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1036, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1044, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1137, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1143, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1146, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:39, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:64
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1080, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1082, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1090, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1200, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1206, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1209, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:39, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:64
 
 <a id="gate-m2-1"></a>
 **Momento 2, condición 1**: **las 22 piezas del corte están en `Done`** (corte del MVP, owner
 2026-10-01, Y; [DEC-ARCH-016#📌1](01-decisiones-vigentes.md#dec-arch-016-p1); la lista, en el §4.6 y
 en [00-indice.md](00-indice.md)); las ocho posteriores no lo frenan.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1038
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1084
 
 <a id="gate-m2-2"></a>
 **Momento 2, condición 2**: `staging` está mergeado hacia la rama y la rama está verde en su último
 `push`.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1040
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1086
 
 <a id="gate-m2-3"></a>
 **Momento 2, condición 3**: `e2e-pr`, `codeql`, y `lighthouse` y `a11y-sweep` por
 `workflow_dispatch`, tienen conclusión `success` fechada después del último merge a la rama
 (`15-fase-9/01-R6-resuelto.md`, chequeo 7).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1041
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1087
 
 <a id="gate-m3"></a>
 
@@ -1043,7 +1043,7 @@ el ensayo, la copia se borra (C).
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:1](#ac-corte-1)), con
 [U3](10-corte/U3.md#pieza-u3) que la usa.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1047, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1049, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1055
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1093, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1095, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1101
 
 <a id="gate-m4"></a>
 
@@ -1057,7 +1057,7 @@ definido como en el momento 3 y el smoke de `staging` adentro** (B, C).
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:12](#ac-corte-12)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1061, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1063
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1107, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1109
 
 <a id="gate-m5"></a>
 
@@ -1074,7 +1074,7 @@ días** (E). El barrido diario es de [B11](10-corte/B11.md#pieza-b11) y el check
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:13](#ac-corte-13)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1069, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1071
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117
 
 <a id="gate-fp"></a>
 
@@ -1099,7 +1099,7 @@ lo dice *(la fuente lo marca; ver [80-abiertos.md](80-abiertos.md))*.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:14](#ac-corte-14)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1079, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1081, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1099, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1103, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1113
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1135, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1137, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1155, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1159, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1169
 
 <a id="gate-fp-1"></a>
 **Gate de fase, condición 1**: **el momento 2 aplicado a la rama de la fase**: sus piezas en `Done`;
@@ -1107,7 +1107,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 `a11y-sweep` con conclusión `success` fechada después del último merge a la rama; y el merge lo decide
 el owner.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1089
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1145
 
 <a id="gate-fp-2"></a>
 **Gate de fase, condición 2**: **el checklist de smoke del sistema nuevo, extendido con lo de la
@@ -1116,40 +1116,40 @@ como **un 5c propio** de la fase, con la tarjeta del owner y un monto aprobado d
 que la fase llegue a producción. El checklist que se extiende es de
 [B13a](10-corte/B13a.md#pieza-b13a) ([GATE:SMOKE](#gate-smoke)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1092
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1148
 
 <a id="gate-fp-3"></a>
 **Gate de fase, condición 3**: **el drift guard sobre la rama de la fase, en verde**: ninguna
 migración estructural (AP, §4.6). *(Que el drift guard entre como condición del gate lo derivó la
 fuente de la mitigación de AP; lo marca.)*
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1096
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1152
 
 <a id="gate-fp-f1"></a>
 **Fase 1**: [V9b](20-fase-1/V9b.md#pieza-v9b). **Por qué en ese lugar**: tiene que estar mergeada
 antes de la primera fecha en que un aviso de retención podría salir (AC), y `B10` la espera
 (`V9b → B10`). Dueña del AC: [V9b](20-fase-1/V9b.md#pieza-v9b).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1164
 
 <a id="gate-fp-f2"></a>
 **Fase 2**: [B8b](20-fase-2/B8b.md#pieza-b8b) y [B9b](20-fase-2/B9b.md#pieza-b9b). **Por qué en ese
 lugar**: `B9b` espera a `B8b` (la sucesión), y `B10` espera a `B9b`.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1109
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1165
 
 <a id="gate-fp-f3"></a>
 **Fase 3**: [B10](20-fase-3/B10.md#pieza-b10), [B13b](20-fase-3/B13b.md#pieza-b13b) y
 [B12](20-fase-3/B12.md#pieza-b12). **Por qué en ese lugar**: `B10` espera a `V9b` y a `B9b`; `B13b`,
 a `B10`; `B12`, a `B13b`.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1110
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1166
 
 <a id="gate-fp-f4"></a>
 **Fase 4**: [V7](20-fase-4/V7.md#pieza-v7) y [V8b](20-fase-4/V8b.md#pieza-v8b). **Por qué en ese
 lugar**: `V8b` espera a `V7`; ninguna otra pieza posterior espera a `V7`.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1111
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1167
 
 <a id="gate-smoke"></a>
 
@@ -1169,7 +1169,7 @@ etiquetas `status-needs-smoke-*` van sólo en `HOS-1352` ([GATE:M1](#gate-m1)).
 
 Dueña del AC: [B13a](10-corte/B13a.md#pieza-b13a), que se lleva el checklist al corte.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1180
 
 ## La pseudo-pieza `CORTE`: criterios de aceptación y tests
 

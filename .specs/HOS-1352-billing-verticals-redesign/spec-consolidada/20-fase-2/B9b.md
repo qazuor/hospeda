@@ -22,7 +22,7 @@ del MVP (Z): promos con su piso del proveedor y su redondeo, cortesías, `S9` (q
 |---|---|---|---|
 | `B9b` | `B9` | después | Z; el editor de códigos promocionales, con la acción 21 (BH) |
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:960, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:743
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:965, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:743
 
 <a id="fila-b9b"></a>
 
@@ -274,17 +274,17 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1026
 <a id="tpz-s30"></a>
 **TPZ:S30** — `S30` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:828
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852
 
 <a id="tpz-s34"></a>
 **TPZ:S34** — `S34` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:832
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856
 
 <a id="tpz-s35"></a>
 **TPZ:S35** — `S35` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:833
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857
 
 ## Modelo de datos y migraciones
 

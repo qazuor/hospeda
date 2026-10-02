@@ -4,7 +4,7 @@
 **[PIEZA:V8b](#pieza-v8b)** — pieza `V8b`, la mitad *b* de la unidad `V8`; **cuándo**: después, en
 la **Fase 4** (con `V7`, a la que espera); **fuente**: Z (lista de piezas,
 `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 3).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:947
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:952
 
 ## Objetivo, alcance y fuera de alcance
 
@@ -64,7 +64,7 @@ la regla de `DEC-METH-019` (AL); corte del MVP, owner 2026-10-01, Z.)* La pieza 
 6. **con un Partner, la 25 deja su presencia sin fotos, logo, secciones ni enlaces, en la base y en
    el almacenamiento externo, y su página responde 404** (§2.11, lote N-G) (corte del MVP, owner
    2026-10-01, Z: las cuatro últimas pasan de `V8a` a `V8b` por ser de Partner).
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:714
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:721
 
 ### Historias de usuario
 

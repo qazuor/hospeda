@@ -4,7 +4,7 @@
 **[PIEZA:V8a](#pieza-v8a)** — pieza `V8a`, mitad *a* de la unidad `V8`; **cuándo**: al corte;
 **fuente**: Z (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos
 1 y 3). Su otra mitad es [PIEZA:V8b](../20-fase-4/V8b.md#pieza-v8b), de la Fase 4.
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:946
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:951
 
 ## Objetivo, alcance y fuera de alcance
 
@@ -108,14 +108,14 @@ MVP, owner 2026-10-01, Z)*, en su forma vigente:
 5. **la acción 24 deja la cuenta sin filas en `accounts` y sin favoritos, y sus pruebas lo afirman**
    (`AUT-015`, y `BD-013`: el trigger que borra los favoritos al escribir `deleted_at` no tenía test;
    FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, G).
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:712
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:719
 
 <a id="lista-v8a"></a>
 **LISTA:V8a — «Lista cuando» (la pieza está lista cuando…)**: **el criterio de `V8` entero**
 ([LISTA:V8](#lista-v8), las cinco cláusulas), **que no tiene ninguna cláusula de Partner** (corte del MVP,
 owner 2026-10-01, Z). *(La fuente marca como inferido que ninguna cláusula del criterio de `V8`
 nombra la fila 22 ni el panel de postulaciones.)*
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:713
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:720
 
 ### Historias de usuario
 

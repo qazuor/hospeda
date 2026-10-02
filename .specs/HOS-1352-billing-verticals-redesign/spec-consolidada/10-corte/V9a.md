@@ -3,7 +3,7 @@
 <a id="pieza-v9a"></a>
 **PIEZA:V9a** — pieza `V9a`, de la unidad `V9` (partida); **cuándo**: al corte; **fuente**: Z y AC
 (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 3 y 6).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:948
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:953
 
 ## Objetivo, alcance y fuera de alcance
 
@@ -99,7 +99,7 @@ en `V4`; corte del MVP, owner 2026-10-01, Z y AC)*, en su forma vigente:
 *(La cláusula del fin de servicio salió con el hecho 4: revisión del owner, 2026-09-28, C8.)*
 **El reparto**: las cláusulas 1, la última de 4 y la 5 son de `V4` ([LISTA:V4](V4.md#lista-v4)); la segunda mitad
 de la 2 se sostiene en el registro de `V9a`; el resto es de `V9b` ([LISTA:V9b](../20-fase-1/V9b.md#lista-v9b)).
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:715
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:722
 
 <a id="lista-v9a"></a>
 **LISTA:V9a — «Lista cuando»**: **un acto del dueño sobre su ficha —crearla, editarla, exportarla—

@@ -165,14 +165,14 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 **`domain_event` guarda referencias y deltas, no copias del contenido**, y ésa es una decisión de
 modelo con consecuencia directa en la retención: se explica en `V/02` §4, la retención.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:258, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:262, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:263, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:265
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:259, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:262, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:264, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:266
 
 ### 1.6 Lo que esta mitad NO cierra
 
 - **Los tipos, los índices y el plan de migración** son de FASE 4 y FASE 7 (hoy: de cada pieza, en su
   sección «Modelo de datos y migraciones», y del corte, [30-el-corte.md](30-el-corte.md)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:271, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:273
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:272, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:274
 
 ---
 

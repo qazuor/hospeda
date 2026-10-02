@@ -4,7 +4,7 @@
 **PIEZA:V9b** — pieza `V9b`, de la unidad `V9` (partida); **cuándo**: después, en la **Fase 1**,
 sola; **fuente**: Z y AC (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6;
 [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 3 y 6 y su 📌 de AW).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:949
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:954
 
 ## Objetivo, alcance y fuera de alcance
 

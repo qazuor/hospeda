@@ -200,7 +200,7 @@ cumplir cada una**, **separa las que no son invariantes del sistema** y **nombra
 cubre todavía**. Lo que una invariante necesita para existir de verdad es un lugar donde no se pueda
 esquivar: una invariante enunciada y no impuesta es una intención.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:14, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:18, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:241
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:14, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:18, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:243
 
 ### 2.1 Los cuatro lugares donde se hace cumplir algo
 
@@ -610,7 +610,7 @@ De dónde sale: [DEC-GRANT-004](01-decisiones-vigentes.md#dec-grant-004). Dónde
 **base** (dominio cerrado) **+ servicio**. Tiene dos apoyos: necesita que la base restrinja el dominio
 del motivo **y** que el servicio lo lea en vez de leer al proveedor.
 Pieza dueña del AC: [B8b](20-fase-2/B8b.md#pieza-b8b) · también: [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa), [B4](10-corte/B4.md#pieza-b4) (lee).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:130, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:233
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:130, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:235
 
 <a id="inv-d4"></a>
 **INV:D4** — **El candado de idempotencia se persiste ANTES de la primera llamada al proveedor.**
@@ -695,7 +695,7 @@ De dónde sale: [DEC-TRIAL-002](01-decisiones-vigentes.md#dec-trial-002), `B/03`
 cumplir: **guard + servicio**: necesita un guard que impida pedirle un trial al proveedor **y** un
 servicio que lleve el reloj.
 Pieza dueña del AC: [B1](10-corte/B1.md#pieza-b1) · también: [V4](10-corte/V4.md#pieza-v4) (implementa).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:139, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:236
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:139, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:238
 
 <a id="inv-d13"></a>
 **INV:D13** — **Retirar un plan del catálogo no mueve ninguna suscripción.**
@@ -796,7 +796,7 @@ Dónde se hace cumplir: **servicio + guard** (`G17`, revisión del owner, 2026-0
 que el servicio relea en el acto **y** el guard que impide decidir con un estado que no salió de una
 lectura por id.
 Pieza dueña del AC: [B1](10-corte/B1.md#pieza-b1).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:144, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:238
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:144, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:240
 
 ### 2.8 La pausa que vence sin reanudar
 
@@ -830,7 +830,7 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
    necesita aceptación activa y a quien no responda no se lo puede aumentar. `B/22`, y pide revisión
    profesional.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:207, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:211, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:215
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:207, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:213, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:217
 
 ### 2.10 El resumen del reparto
 
@@ -853,7 +853,7 @@ un único lugar donde se evalúen, que es, en una línea, de qué se trata el §
 
 **Los conteos se recorren enteros con un script, o no se tocan.**
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:221, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:223, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:232, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:241, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:250, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:311
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:223, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:225, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:234, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:243, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:252, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:313
 
 ---
 
@@ -1584,7 +1584,7 @@ El valor cubre con margen las *«horas después»* que registra el código actua
 ([ACC:24](#acc-24)) sobre una suscripción cancelada por el proveedor tras un rechazo.
 Adjudicación: fila `MIXTO`, veredicto **VIVO** (el valor reemplaza al «sin valor»).
 Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee), [B4](10-corte/B4.md#pieza-b4) (implementa).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:188, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:200
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:188, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:201
 
 <a id="plazo-17"></a>
 **PLAZO:17** — **El escalamiento de una marca abierta.**
@@ -1595,7 +1595,7 @@ versión: la marca, al abrirse (`puesta_en`). **Qué hace concretamente *«escal
 lista: lo escribe `B/09` §3. No está medido: es el valor inicial.
 Adjudicación: fila `MIXTO`, veredicto **VIVO** (el valor reemplaza al «sin valor»).
 Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:189, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:203
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:189, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:204
 
 <a id="plazo-18"></a>
 **PLAZO:18** — **La ventana de las comprobaciones de pagos acreditados y de órdenes pagadas.**
@@ -1609,7 +1609,7 @@ F-8V3B3-003) · qué reloj guarda la versión: el pago, o la instancia, que la c
 medido: es el valor inicial.
 Adjudicación: fila `MIXTO`, veredicto **VIVO** (el valor reemplaza al «sin valor»).
 Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:190, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:203
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:190, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:204
 
 ### 4.2 Los valores, cuándo se fijan y dónde nacen
 
@@ -1631,7 +1631,7 @@ escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verif
 después la herramienta del corte de `V6`: FASE 5, owner 2026-09-30, lote 2 D; FASE 5, lote de la
 aplicación, owner 2026-09-30, B). Un plazo vacío dejaría un reloj sin fecha.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:192, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:194, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:197, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:200
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:192, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:195, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:198, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:201
 
 ### 4.3 Lo que no está en la lista, cómo cambia un plazo y lo que el panel rechaza
 
@@ -1687,7 +1687,7 @@ versión nueva de los plazos de su mitad**, inmutable, con quién, cuándo, el v
 abierto en `V/03` §9, ⚠️ punto 7): el archivado escribe la fecha de borrado que anuncia, y `PB9` no
 borra antes de esa fecha (`V/02` §2.5, `V/03` §9).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:208, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:210, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:215, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:219, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:225, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:229, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:233, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:246
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:209, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:211, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:216, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:220, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:226, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:230, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:234, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:247
 
 ### 4.4 Quién lo construye
 
@@ -1706,4 +1706,4 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
   [ACC:22](#acc-22)—, y cada cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la
   clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:250, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:252, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7365, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:250, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7380, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
