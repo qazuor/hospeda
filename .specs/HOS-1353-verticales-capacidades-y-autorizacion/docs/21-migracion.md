@@ -689,13 +689,13 @@ aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir e
   casos vecinos, 2026-09-29, casos H-A y H-B).
   **Y entran en esta limpieza las specs de fuera del programa y `.qtm/`** (revisión del owner, casos
   vecinos, 2026-09-29, caso I-D): la tercera entrada de `G8` es sólo para las carpetas del programa
-  (`HOS-1352`, `HOS-1353` y `HOS-1354`), así que el resto falla desde que `V1` construye el guard y
+  (`HOS-1352`, `HOS-1353` y `HOS-1354`), así que el resto falla desde que ~~`V1`~~ `U1` construye el guard (lote O-A; residuo corregido el 2026-10-02, segunda vuelta del triage) y
   se limpia en el mismo cambio. Medido en el worktree del programa el 2026-09-29 (`f6f074963d`):
   **50 archivos versionados, 46 de otras 37 specs de `.specs/` y 4 de `.qtm/`**. La regla es del
   owner: *«specs viejas e implementadas, las borramos directamente»*. **Se borra la carpeta entera
   de una spec implementada**, no sólo el archivo que la nombra; **una spec que sigue en curso no se
   borra: se reescribe sin la palabra**. **Cómo se distingue**: por el estado del issue que la
-  carpeta nombra en su `linear:`, leído en Linear el día que `V1` hace la limpieza, no antes,
+  carpeta nombra en su `linear:`, leído en Linear el día que ~~`V1`~~ `U1` hace la limpieza, no antes,
   porque cambia. `Done` es implementada y se borra; `In Progress` y `Backlog` siguen en curso y se
   reescriben. ~~Una carpeta de `.qtm/` es del sistema retirado y se juzga igual, por el
   issue `HOS-` al que migró o, si no migró, por los commits de su spec (el `.qtm/` no es fuente de
