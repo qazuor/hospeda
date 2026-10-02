@@ -828,9 +828,13 @@ owner 2026-09-30, F; abajo).
   sale 0; si no puede consultar el remoto, falla. Implementada en el PR #3436
   (`scripts/check-umbrella-branch-target.sh`, con 12 tests), CI verde y sin mergear al 2026-10-01.
 - **La rama del paraguas se borra apenas se mergea a `staging`** (owner 2026-10-01, Q;
-  `40-congelamiento-y-ci/10-decisiones-del-owner.md`): si no se borra, el guard de destino bloquea
+  `40-congelamiento-y-ci/10-decisiones-del-owner.md`): ~~si no se borra, el guard de destino bloquea
   la promoción `staging → main` del paso 3 del corte (§4.2; §4.4 punto 2), porque esa promoción
-  trae los commits de la épica que `main` todavía no tiene.
+  trae los commits de la épica que `main` todavía no tiene.~~ **el guard de destino cuenta sólo los
+  commits propios de la épica, los que no están en `staging`: una vez mergeada la épica a `staging`,
+  no bloquea la promoción `staging → main` del paso 3 del corte (§4.2; §4.4 punto 2); Q sigue
+  valiendo para el PR final del paraguas** (owner 2026-10-01, T;
+  `40-congelamiento-y-ci/10-decisiones-del-owner.md`; residuo corregido el 2026-10-02).
 - **`U1` reapunta la regla de smoke del `CLAUDE.md` raíz** (B): la regla nombra los checklists de
   `.qtm/specs/SPEC-143-billing-testing-coverage/`, que `U1` borra con `.qtm/`, y en la rama pasa a
   nombrar el checklist del sistema nuevo que `B13` escribe en `docs/billing/` (§4.7, momentos 3 y
