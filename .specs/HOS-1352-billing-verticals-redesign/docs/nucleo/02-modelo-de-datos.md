@@ -260,7 +260,7 @@ cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la cla
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** — no una copia del contenido; **de los campos de contenido de una ficha, sólo el nombre** (cap. 08 §1.2; owner 2026-09-25, FASE 9 completa, decisión 8e) | append-only, **y sin `deleted_at`** (FASE 5, owner 2026-09-30, lote 4 E) |
+| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** — no una copia del contenido; **de los campos de contenido de una ficha, sólo el nombre** (cap. 08 §1.2; owner 2026-09-25, FASE 9 completa, decisión 8e) | append-only, **y sin `deleted_at`** (FASE 5, owner 2026-09-30, lote 4 E). **La crea `U2`** (corte del MVP, owner 2026-10-02, BW) |
 | **`outbox`** | destinatario, plantilla, estado (`pending`, `processing`, `sent`, `failed`, `retry`), id del proveedor, intentos (§44). **Lo construye `U2`, que absorbe la bitácora de correos renombrada desde `billing_notification_log`** (`NUCLEO/07` §1.4; FASE 5, owner 2026-09-30, lotes 1 B y 2 A) | |
 
 **`domain_event` guarda referencias y deltas, no copias del contenido**, y ésa es una decisión de
