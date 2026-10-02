@@ -1,5 +1,5 @@
 {
-    "sha": "17f9702675528e00d0981312325bec38bb962113",
+    "sha": "c7a3fac90070b154e3a811944d06e0de08cba5df",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 646,
+        "01-decisiones-vigentes.md": 654,
         "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -71,7 +71,7 @@
         "20-fase-4/V8b.md": 3,
         "30-el-corte.md": 38,
         "90-retirados.md": 40,
-        "red (SEC)": 676
+        "red (SEC)": 677
     },
     "archivos_pendientes": [],
     "inferidos": [
@@ -468,6 +468,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-002#📌2": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-MP-002#📌3": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -1733,6 +1739,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-AUTH-001#📌2": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-ENT-006": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2213,6 +2225,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-ARCH-017#📌8": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-METH-019": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2238,6 +2256,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-019#📌4": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-METH-019#📌5": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7429,6 +7453,30 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t11:BY": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t11:BZ": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t11:CA": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t11:CB": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -9042,31 +9090,37 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:738": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:736": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:750": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:747": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:899": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:759": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:979": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:908": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1014": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:988": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1023": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -10230,31 +10284,31 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:864": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:869": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:919": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:924": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:965": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:970": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1060": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1065": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1094": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1099": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11916,25 +11970,25 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:286": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:287": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:295": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:296": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:308": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:309": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:334": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:335": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
