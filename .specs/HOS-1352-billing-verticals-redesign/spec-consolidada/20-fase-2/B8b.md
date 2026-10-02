@@ -504,11 +504,12 @@ Fuente: [DEP:5](../03-contrato-de-cobertura.md#dep-5) · [DEC-SUB-006](../01-dec
 - **Cuando** `S1` recibe un alta que declara una sucesión (`sucede_a`)
 - **Entonces** la declara —antes de `B8b` esa ruta no existía: `B3` escribió el cuerpo de la rama de
   sucesión de `S1` sin ruta, y `B8b` agrega la ruta sin tocar ese cuerpo (BL)—; la sucesora nace con fecha de primer
-  cobro posterior al vencimiento de su ventana; y **la vieja se cancela sólo al recibir el webhook de
+  cobro posterior al vencimiento de su ventana —salvo la de una `SUSPENDED` de pagador con tarjeta cuyo
+  preapproval se releyó `cancelled`, que cobra al autorizar ([INV:D8](../02-nucleo.md#inv-d8))—; y **la vieja se cancela sólo al recibir el webhook de
   que la nueva quedó autorizada**: si la persona abandona el checkout, la vieja sigue viva y no pasó
   nada; si para entonces el preapproval viejo ya está cancelado, no se lo vuelve a cancelar.
 
-Fuente: [INV:D7](../02-nucleo.md#inv-d7) · [DEC-SUB-006](../01-decisiones-vigentes.md#dec-sub-006) · [LISTA:B8b](#lista-b8b)
+Fuente: [INV:D7](../02-nucleo.md#inv-d7) · [INV:D8](../02-nucleo.md#inv-d8) · [DEC-SUB-006](../01-decisiones-vigentes.md#dec-sub-006) · [LISTA:B8b](#lista-b8b)
 
 <a id="ac-b8b-9"></a>
 **AC:B8b:9** — `S17`: la predecesora se cancela al autorizar la sucesora
@@ -619,8 +620,9 @@ Fuente: [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [TPZ:S38](#tpz-s38) · 
 - **Cuando** llega encima otro downgrade, un upgrade, una cancelación o una pausa
 - **Entonces** otro downgrade **lo reemplaza y vuelve a preguntar** qué conservar; un upgrade lo hace
   morir con la suscripción vieja; una cancelación lo absorbe; una pausa lo hace esperar a la
-  reanudación; y arrepentirse es otra mutación del monto más cancelar el descenso, que termina la
-  promo de la fila (`cobros_restantes = 0`) en el mismo acto del pedido.
+  reanudación; el pedido del descenso termina la promo de la fila (`cobros_restantes = 0`) en el mismo
+  acto en que muta el monto; y arrepentirse es otra mutación del monto más cancelar el descenso
+  (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:258-266).
 
 Fuente: [LISTA:B8](../10-corte/B8a.md#lista-b8) · [TRANS:B:S38](../04-catalogos.md#trans-b-s38)
 
@@ -720,14 +722,29 @@ Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [TRANS:B:S18](../04-
 <a id="ac-b8b-25"></a>
 **AC:B8b:25** — lo que hay que decir en los actos de esta pieza (filas del `19` §4)
 
-- **Dado** las filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `B/19` §4,
+- **Dado** las filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `B/19` §4, y la rama
+  desde `PAUSED` (`S22`) de la fila 8 (BH con AR: `S22` queda en `B8b`),
   que van con su acto a esta pieza (BH; reparto por fila inferido en la fuente)
-- **Cuando** la persona pausa, reanuda o cambia de plan —o el cambio no se le ofrece—
+- **Cuando** la persona pausa, reanuda, cambia de plan —o el cambio no se le ofrece— o pide la baja
+  estando pausada
 - **Entonces** cada superficie dice lo que su fila exige, con la fecha de ese cliente y sin
   preguntar *«¿estás seguro?»* (fila por fila, en la sección *UI web y admin, e i18n*); y una
   operación que no se ofrece lo dice con su motivo en vez de fallar sin explicación.
 
 Fuente: [PIEZA:B8b](#pieza-b8b) · [FILA:B13a](../10-corte/B13a.md#fila-b13a) · [OWN:41-corte-del-mvp:t7:BH](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bh) · [DEC-SUB-010](../01-decisiones-vigentes.md#dec-sub-010) · [DEC-SUB-021](../01-decisiones-vigentes.md#dec-sub-021) · [DEC-GRANT-004](../01-decisiones-vigentes.md#dec-grant-004)
+
+<a id="ac-b8b-26"></a>
+**AC:B8b:26** — los cambios de plan y la pausa, de punta a punta
+
+- **Dado** el arnés de punta a punta de `B/20` §5.1 —los builds, el falso como servidor, el reloj
+  adelantable y el correo capturado—
+- **Cuando** se corren los cambios de plan y la pausa, que son el flujo que le toca escribir a esta
+  pieza (*«cada unidad escribe la de su flujo»*: los cambios, la pausa y la cancelación son de `B8`)
+- **Entonces** se cumplen las mismas aserciones que en la de `B3` ([AC:B3:33](../10-corte/B3.md#ac-b3-33)):
+  sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
+
+Fuente: [FILA:B8b](#fila-b8b) · [LISTA:B8b](#lista-b8b)
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762
 
 ### El criterio de terminación
 
@@ -790,7 +807,15 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1060
   [DEC-SUB-023#📌1](../01-decisiones-vigentes.md#dec-sub-023-p1) y
   [DEC-SUB-023#📌2](../01-decisiones-vigentes.md#dec-sub-023-p2); las escrituras del cierre y la
   fecha de primer cobro, [INV:D15](../02-nucleo.md#inv-d15) y [INV:D8](../02-nucleo.md#inv-d8); y el
-  reloj propio de fin de pausa, [M:M12](../04-catalogos.md#m-m12).
+  reloj propio de fin de pausa, [M:M12](../04-catalogos.md#m-m12);
+- **la ventana de 60 días de `DEC-MP-002` no aplica a un cambio de plan que el cliente elige**: esa
+  ventana protege a quien no eligió el precio nuevo; el que elige un plan lo acepta en el acto, con su
+  precio a la vista (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:123);
+- **en un downgrade rige el precio vigente al pedirlo**, que es el que se muta en el acto
+  (`DEC-SUB-008`, parte 1); **`S38` no lleva precio**: si el precio del plan destino sube entre el
+  pedido y el fin del ciclo, la suscripción conserva el monto mutado y el aumento la alcanza como a
+  cualquier otro anclado, por su camino y con su fecha (`DEC-MP-002`, con BZ), **nunca por la puerta
+  del downgrade** (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:286, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:290).
 
 ### Las transiciones de la Suscripción que construye esta pieza
 
@@ -866,6 +891,14 @@ plan. **Y construye las superficies de sus actos**, las filas del `B/19` §4 que
 esta pieza y por eso van con él (BH; el reparto por fila lo infiere la fuente y lo marca;
 [AC:B8b:25](#ac-b8b-25)):
 
+- **8, la rama desde `PAUSED` (`S22`) — al pedir la baja estando pausado, antes de confirmar**: **que
+  el servicio termina hoy y no al fin de un período** (la frase *«seguís hasta el …»* no aplica); **si
+  la pausa era una cortesía, que pierde los meses que le quedaban**, con el número dicho; **salvo la
+  pausada que vive del crédito sin consumir** (la sucesora con cortesía re-emitida): ahí el servicio
+  sigue hasta el fin del crédito y la pantalla dice esa fecha, como la baja desde `ACTIVE`, y los
+  meses de cortesía se pierden igual (`V2-b`). Las ramas desde `SUSPENDED` y `GRACE_PERIOD` son de
+  `B13a` ([AC:B13a:1](../10-corte/B13a.md#ac-b13a-1)). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:116 y §5;
+  BH, `D/41-corte-del-mvp/10-decisiones-del-owner.md:112`; AR, :61)
 - **5 — al pausar estando en cortesía**: que **la pierde**, y dejarlo elegir (`DEC-GRANT-004`; lo
   ejecuta `S35`, de `B9b`).
 - **5-bis — al pausar, antes de confirmar**: **qué le pasa a la ficha mientras dure la pausa**: sale
@@ -981,6 +1014,7 @@ UI no lo ofrezca ([AC:B8b:17](#ac-b8b-17)): *«Autorización backend jamás depe
 | [AC:B8b:23](#ac-b8b-23) | [TEST:B8b:23](#test-b8b-23), [TEST:B8b:21](#test-b8b-21), [TEST:B8b:24](#test-b8b-24) | migración desde cero, guard estático, integración con DB |
 | [AC:B8b:24](#ac-b8b-24) | [TEST:B8b:24](#test-b8b-24) | integración con DB |
 | [AC:B8b:25](#ac-b8b-25) | [TEST:B8b:25](#test-b8b-25) | e2e web |
+| [AC:B8b:26](#ac-b8b-26) | [TEST:B8b:26](#test-b8b-26) | e2e web |
 
 <a id="test-b8b-1"></a>
 **TEST:B8b:1** — `S8` y su rama de fallo
@@ -1303,6 +1337,20 @@ ficha y a sus addons; reanudar muestra sólo el día del cobro; el cambio de pla
 pierde; y en pausa, en grace, con un checkout abierto o con el preapproval releído no `authorized`, el
 cambio no se ofrece y la pantalla dice por qué y qué hacer.
 
+<a id="test-b8b-26"></a>
+**TEST:B8b:26** — los cambios de plan y la pausa, de punta a punta
+
+Tipo: e2e web
+
+Cubre: [AC:B8b:26](#ac-b8b-26)
+
+Fuente: [FILA:B8b](#fila-b8b)
+
+Contra los builds, con el falso como servidor, el reloj adelantable y el correo capturado: un
+upgrade por el checkout del proveedor, un downgrade con su descenso en la fecha, y una pausa con su
+reanudación; las aserciones son sobre el contenido de `B/19` §4 y sobre que cada correo capturado
+llega antes que cualquier cancelación en el proveedor.
+
 ## Smoke y etiquetas
 
 Sin etiquetas en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)). Lo manual de la fase —el checkout
@@ -1327,6 +1375,10 @@ y la de producción—, porque cada pieza posterior escribe la sección de su fa
 Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-smoke-*`
 ([GATE:M1](../30-el-corte.md#gate-m1)).
 
+Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+[BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+[DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)).
+
 ## Abiertos
 
 - Ninguno. «Quién escribe la extensión del checklist de cada fase» lo cerró BS con los defaults de su
@@ -1338,7 +1390,7 @@ Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-sm
 ## Origen
 
 `B/descomposicion.md` §2 (fila `B8b`), §2.6 (filas 4 y 5), §2.8 (`G-R1-C`), §2.12 y §4 (fila
-`B8b`); `D/16` §4.6 y §4.7 (*«Las fases posteriores»*); `B/03` §3.2 y §3.3; `B/12` §2, §5 y §6;
-`B/05` C4; `B/19` §4 (filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter) y §4.1;
-`B/20` §2; `NUCLEO/04`; `NUCLEO/02` §1.5 (plazo 15); `NUCLEO/08` §3; `01-decision-log.md`;
+`B8b`); `D/16` §4.6 y §4.7 (*«Las fases posteriores»*); `B/03` §3.2 y §3.3; `B/12` §2, §3, §5 y §6;
+`B/05` C4; `B/19` §4 (filas 5, 5-bis, 6, 7, 8 —la rama desde `PAUSED`—, 13-quater, 15, 16, 16-bis, 17,
+17-bis y 17-ter) y §4.1; `B/10` §3.5; `B/20` §2 y §5.1 punto 3; `NUCLEO/04`; `NUCLEO/02` §1.5 (plazo 15); `NUCLEO/08` §3; `01-decision-log.md`;
 `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AR, AS, AT, AU, AW, BH, BL, BO, BS).

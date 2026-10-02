@@ -352,7 +352,11 @@ en el PR cuando es un permiso nuevo), y quedan escritos en esta sección al merg
 
 ## UI web y admin, e i18n
 
-- **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH).
+- **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH). **`stackable` y
+  `usableWhileAnotherPromoActive` rigen SÓLO entre promos**: el editor no ofrece configurar cómo se
+  combina una promo con una cortesía o un grant, porque esas combinaciones las fija el mecanismo de
+  cada instrumento y volverlas configurables permitiría configurar un estado que el proveedor
+  rechaza. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:395, .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:397)
 - **Web**: el rechazo del canje bajo el piso con su texto literal ([AC:B9b:2](#ac-b9b-2)) y el aviso
   de pausar en cortesía ([AC:B9b:8](#ac-b9b-8); la fila 5, que va con el acto de pausar a
   [B8b](B8b.md#ac-b8b-25)).
@@ -636,6 +640,10 @@ producción—, porque cada pieza posterior escribe la sección de su fase (BS, 
 
 Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-smoke-*`
 ([GATE:M1](../30-el-corte.md#gate-m1)).
+
+Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+[BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+[DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)).
 
 ## Abiertos
 
