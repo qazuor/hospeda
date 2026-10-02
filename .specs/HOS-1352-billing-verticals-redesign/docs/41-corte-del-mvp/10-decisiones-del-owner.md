@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ y BA a BH (abajo). Todas son la recomendada. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH y BI a BJ (abajo). Todas son la recomendada; BI quedó reemplazada por BJ. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -110,6 +110,18 @@ recomendada (opción 1).
 | BF | quién construye la herramienta del paso 4b (la sonda de Webhooks, el pago chico, su devolución y la verificación en `provider_notification`) | 1 | sí | **`U3`**: el script suelto de `scripts/cutover/` suma la sonda (alta, cancelación y relectura), el pago chico por la API de pagos con su devolución releída por id, la consulta de sólo lectura a `provider_notification`, los ids al manifiesto y los inversos (b) y (c) de la rama de aborto. Su *«Lista cuando»* corre contra la cuenta de pruebas; la entrega real al receptor de `B3` se prueba en el ensayo, que ya incluye el 4b (D-4). Sin flechas nuevas; respeta K. Las otras opciones eran `B3` (el pago por fuera del adaptador) y `U3` detrás de `B3` (reabría K) |
 | BG | quién crea el esquema de promos y cortesías, que AP puso en `B9a` y que leen antes `B3` (`S3`, `S14`), `B5` (`P1`), `B11` (la sexta comprobación) y `B13a` (Mi Suscripción) | 1 | sí | **`B3`**, como AV hizo con addons, y por el criterio de AP: cortesías y redenciones cuelgan de `subscription`. `B9a` conserva las fuentes `CORTESÍA` y `GRANT`, `S13`, `S20` y la herramienta del 3b. Sin flechas nuevas. Precisa AP. Las otras opciones eran dejar el esquema en `B9a` con tres transiciones compartidas y dos flechas, o diferir las ramas (chocaba con Y y AS) |
 | BH | dónde van las superficies de `B13` que confirman o editan actos de otra fase: las filas 13 y 13-bis del `19` §4 (confirmaciones de la acción 2, de `B9a`) y el editor de códigos promocionales (acción 21, de `B9b`) | 1 | sí | **cada superficie va con la fase de su acto**: las filas 13 y 13-bis a **`B13a`**, con la parte de addons leyendo el esquema vacío (AS), y **la flecha nueva `B9a → B13a`**; el editor de códigos a **`B9b`**, con su operación; **`B13b`** queda con el aviso del destaque y el editor de versiones de complemento. Precisa Z. Las otras opciones eran llevarlas a la pieza del acto o dejar Z literal con la acción 2 sin confirmación hasta la Fase 3 |
+
+## Lote BI y BJ (2026-10-01)
+
+Respuestas del owner, 2026-10-01, sobre la mitad de `DEC-ENT-003` que el mapa de cobertura de la spec
+consolidada dejó sin pieza (`spec-consolidada/_trabajo/cobertura-lectura.json`, sobre `fed4c735ba`):
+*«mientras su plan comercial se lo dé, no puede comprar Turista VIP: la UI no lo ofrece y la API lo
+rechaza»*. BI se presentó con una premisa errónea y la reemplaza BJ, que es la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| ~~BI~~ | quién rechaza la compra de Turista VIP mientras el plan vigente lo hereda | ~~1~~ | — | **reemplazada por BJ: la premisa era errónea, el checkout no es de `B5`**. BI ponía la dueña en `B5`, pero comprar Turista VIP es elegir un plan de la vertical Turista, es decir `S1` (`B/03` §3.2), y `S1` es de `B3` (`B/descomposicion.md` §2.12); `B5` es el registro del dinero y no tiene checkout |
+| BJ | qué pieza rechaza la compra de Turista VIP mientras el plan vigente lo hereda | 1 | sí | **`B3`**: `S1` suma la guarda *«el `user` no tiene un plan vigente que herede Turista VIP»*; en «también», **`B13a`** (la pricing no lo ofrece, `B/19` §4) y **`V3`** (la resolución de capacidades contesta si el plan vigente lo hereda, `V/15` §6.3). **El código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija. Las otras opciones eran `B5`, que no tiene el alta, y una guarda doble en `S1` y en el asiento del pago |
 
 ## Resultado del corte
 
