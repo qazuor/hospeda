@@ -15,9 +15,9 @@ import sys
 # The commit the whole consolidation is anchored to (owner method, DEC-METH-019 point 1). Re-frozen
 # after the owner's BY-CB and the 19 residues of the second triage round were applied to the sources
 # (it was 0dbe4482764a…, then f46a76c394…, then dab68c3ded…, then fed4c735ba…, then f80c0f2715…,
-# then 4278aa1adc…, then 17f9702675…, then c7a3fac900…; re-frozen again after the owner's CC and CD and
-# the residues of the first blind-verification round).
-SHA = 'e291df0b5b1609bfca23a955d690841e75720f33'
+# then 4278aa1adc…, then 17f9702675…, then c7a3fac900…, then e291df0b5b… after the owner's CC and CD
+# and the residues of the first blind-verification round; re-frozen again after the owner's CE).
+SHA = '254684691f93c6db1396f09c57889c436589e7c6'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
