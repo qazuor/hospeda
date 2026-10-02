@@ -16,8 +16,9 @@ import sys
 # after the owner's BY-CB and the 19 residues of the second triage round were applied to the sources
 # (it was 0dbe4482764a…, then f46a76c394…, then dab68c3ded…, then fed4c735ba…, then f80c0f2715…,
 # then 4278aa1adc…, then 17f9702675…, then c7a3fac900…, then e291df0b5b… after the owner's CC and CD
-# and the residues of the first blind-verification round; re-frozen again after the owner's CE).
-SHA = '254684691f93c6db1396f09c57889c436589e7c6'
+# and the residues of the first blind-verification round, then 254684691f… after the owner's CE;
+# re-frozen again once the CE row named the options it discarded).
+SHA = 'b949031c701bc735edf6b6e01fc762b3b46747c6'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
