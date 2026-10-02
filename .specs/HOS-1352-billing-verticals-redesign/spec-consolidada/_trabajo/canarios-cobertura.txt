@@ -2,6 +2,11 @@
 ✓ C1  exit 1 · un ítem normativo sin entrada
 ✓ C1  exit 1 · un ítem en «sin_pieza», aun con su pregunta (no es una respuesta)
 ✓ C1  exit 1 · un «sin_pieza» sin motivo ni pregunta
+✓ C1  exit 1 · el ítem sólo citable fuera de la lista y sin entrada falla
+✓ C8  exit 1 · una lista cerrada con un ítem que no existe
+✓ C8  exit 1 · una lista cerrada cuyo fragmento no está en la fila de su letra
+✓ C7  exit 1 · una entrada para un ítem de la lista cerrada
+✓ C2  exit 1 · la dueña con el nombre viejo de la pseudo-pieza (30-el-corte en vez de CORTE)
 ✓ C2  exit 1 · una pieza inexistente
 ✓ C2  exit 1 · un «tambien» con una pieza inexistente
 ✓ C2  exit 1 · un «tambien» con un rol fuera de la lista
@@ -23,4 +28,4 @@
 ✓ C7  exit 1 · una entrada de un ítem sólo citable (la lista de piezas)
 ✓ C7  exit 1 · una entrada de un ítem que no existe
 
-23 canarios · 0 fallas
+28 canarios · 0 fallas

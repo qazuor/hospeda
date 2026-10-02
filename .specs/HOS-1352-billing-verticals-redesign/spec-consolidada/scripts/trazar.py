@@ -3,7 +3,8 @@
 8-11; owner AL-AO). Exit 0 only when every rule gives 0.
 
     python3 trazar.py <inventario.json> <adjudicacion.json> <dir-de-la-spec> [--sin-deriva]
-                      [--cobertura=<cobertura.json>]
+                      [--cobertura=<cobertura.json>] [--lista-solo-citables=<json>]
+    (--lista-solo-citables replaces defs.SOLO_CITABLES; it exists for the canaries only)
 
 FORMAT the spec is written in (the contract this script enforces)
   item definition   <a id="<slug>"></a> on its own line, then the block (up to the next anchor
@@ -33,18 +34,24 @@ RULES
   R5  every anchor is an inventory item or an US/AC/TEST (nothing invented).
   R6  every definition has `Origen:`, cites the item's own position, and the cited line contains
       the item's local id (defs.CHEQUEO_LOCAL says how, per source).
-  R7  every live NORMATIVE item is cited by ≥1 AC (AL); methodology decisions are citable only.
+  R7  every live NORMATIVE item is cited by ≥1 AC (AL); methodology decisions and the closed list of
+      defs.SOLO_CITABLES (owner BA, BB) are citable only.
   R7b with --cobertura: that AC is in the item's OWNER piece of cobertura.json (one owner per item,
-      so parallel writers neither leave it uncovered nor duplicate it); an item owned by
-      `30-el-corte` has no piece file, so only R7 applies to it.
+      so parallel writers neither leave it uncovered nor duplicate it); the owner may be the
+      pseudo-piece CORTE (owner BE), whose AC live in 30-el-corte.md.
+  R7c the closed list is valid (every id in the inventory, named by its owner row, row hash
+      unchanged) and declared: 03-contrato-de-cobertura.md references every listed item.
   R8  every AC is covered by ≥1 TEST (AL).
   R9  every US/AC/TEST cites ≥1 existing citable item in `Fuente:` (AL).
   R10 no US/AC/TEST lives in 80-abiertos: what has no source is a question there, not a criterion.
   R11 shape (AM): US/AC/TEST ids are `<KIND>:<pieza>:<n>` of an existing piece, defined in that
+      piece's file — or `AC:CORTE:n` / `TEST:CORTE:n` (owner BE: no US), defined in 30-el-corte.md;
       piece's file, slug matching; an AC has Dado/Cuando/Entonces; a US has an actor of the closed
       list; each piece has an exit AC citing its LISTA item (the «Lista cuando»).
-  R12 test types (AN): `Tipo:` in the closed list; a smoke carries `Etiqueta:`.
-  R13 every live INV is covered by ≥1 test (directly, or through an AC the test covers).
+  R12 test types (AN): `Tipo:` in the closed list; a smoke carries `Etiqueta:`; a TEST:CORTE is a
+      `smoke manual` or a `guard estático` (owner BE).
+  R13 every live INV is covered by ≥1 test (directly, or through an AC the test covers), except the
+      closed list of citable-only items (owner BA: «no verificables»).
   R14 every live TRANS and PROH is covered by ≥1 `integración con DB` test.
   R15 every GUARD is covered by ≥1 `guard estático` test with `Mutación:`.
   R16 template (AO): every piece has its file in the right folder (cut -> 10-corte, later ->
@@ -61,11 +68,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from comun import worktree_line_hash, lines, slug  # noqa: E402
 from defs import (ACTORES, CHEQUEO_LOCAL, CITABLES, ETIQUETAS_SMOKE, MUERTOS, NORMATIVAS,  # noqa: E402
-                  NO_NORMATIVAS_PREFIJOS, PLANTILLA, TIPOS_TEST, VIVOS)
+                  NO_NORMATIVAS_PREFIJOS, PLANTILLA, SOLO_CITABLES, TIPOS_TEST, VIVOS,
+                  solo_citables_fallas)
 
 ANCHOR = re.compile(r'<a id="([^"]+)"></a>')
 REF = re.compile(r'\]\(([^)#\s]*)#([^)\s]+)\)')
-KIND = re.compile(r'^(us|ac|test)-([uvb]\d+[ab]?)-(\d+)$')
+KIND = re.compile(r'^(us|ac|test)-([uvb]\d+[ab]?|corte)-(\d+)$')
+CORTE = 'CORTE'  # the pseudo-piece of owner BE: AC and TEST of what only the cut does
+TIPOS_CORTE = ('smoke manual', 'guard estático')
 ORIGEN = re.compile(r'^Origen:\s*(.+)$', re.M)
 LOC = re.compile(r'([\w./\-]+\.md):(\d+)')
 
@@ -92,7 +102,7 @@ def citas(text):
     return [m.group(2) for m in REF.finditer(text)]
 
 
-def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
+def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
     inv = json.load(open(inv_p, encoding='utf-8'))
     items = inv['items']
     adj = json.load(open(adj_p, encoding='utf-8')) if os.path.exists(adj_p) else {}
@@ -175,13 +185,15 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
         f, n, body = ds[0]
         if f.startswith('80-'):
             err['R10 US/AC/TEST dentro de 80-abiertos'].append(s)
-        P = next((p for p in piezas if p.lower() == pz), None)
+        P = CORTE if pz == 'corte' else next((p for p in piezas if p.lower() == pz), None)
         tag = f'{kind.upper()}:{P}:{k}' if P else None
         if not P:
             err['R11 pieza inexistente'].append(s)
+        elif P == CORTE and kind == 'us':
+            err['R11 US de CORTE (sólo AC y TEST, owner BE)'].append(s)
         elif tag not in body:
             err['R11 id visible ≠ ancla'].append(s)
-        elif os.path.basename(f) != f'{P}.md':
+        elif os.path.basename(f) != (f'{P}.md' if P != CORTE else '30-el-corte.md'):
             err['R11 definido fuera del archivo de su pieza'].append(s)
         fuente = re.search(r'^Fuente:(.*)$', body, re.M)
         cit = [c for c in citas(fuente.group(1))] if fuente else []
@@ -203,6 +215,8 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
             rec['tipo'] = t.group(1) if t else None
             if rec['tipo'] not in TIPOS_TEST:
                 err['R12 tipo de test fuera de la lista cerrada'].append(s)
+            elif P == CORTE and rec['tipo'] not in TIPOS_CORTE:
+                err['R12 TEST:CORTE que no es smoke manual ni guard estático'].append(s)
             if rec['tipo'] == 'smoke manual':
                 e = re.search(r'^Etiqueta:\s*(\w+)', body, re.M)
                 if not e or e.group(1) not in ETIQUETAS_SMOKE:
@@ -214,15 +228,24 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
 
     # R7, R8, R13-R15 ----------------------------------------------------------------------
     citado_por_ac = {c for a in ac.values() for c in a['fuente']}
+    lista = SOLO_CITABLES if lista is None else lista
     for i in items:
         if (i['fuente'] in NORMATIVAS and not i['id'].startswith(NO_NORMATIVAS_PREFIJOS)
+                and i['id'] not in lista
                 and estado.get(i['id']) in VIVOS and slug(i['id']) not in citado_por_ac):
             err['R7 ítem normativo vivo sin AC'].append(i['id'])
+    for f in solo_citables_fallas({i['id']: i for i in items}, lista):
+        err['R7c lista de sólo citables inválida'].append(f)
+    p03 = os.path.join(spec_dir, '03-contrato-de-cobertura.md')
+    en03 = {x for _, x in REF.findall(open(p03, encoding='utf-8').read())} if os.path.exists(p03) else set()
+    for cid in lista:
+        if slug(cid) not in en03:
+            err['R7c sólo citable sin declarar en 03-contrato-de-cobertura.md'].append(cid)
     if cobertura:
         cob = json.load(open(cobertura, encoding='utf-8'))['items']
         for cid, c in cob.items():
             i = next((x for x in items if x['id'] == cid), None)
-            if i is None or estado.get(cid) not in VIVOS or c.get('pieza') == '30-el-corte':
+            if i is None or estado.get(cid) not in VIVOS:
                 continue
             if not any(a['pieza'] == c['pieza'] and slug(cid) in a['fuente'] for a in ac.values()):
                 err['R7b el AC del ítem no está en su pieza dueña'].append(f"{cid} -> {c['pieza']}")
@@ -252,7 +275,7 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
         s, st = slug(i['id']), estado.get(i['id'])
         if st not in VIVOS:
             continue
-        if i['fuente'] == 'INV' and s not in alc_todos:
+        if i['fuente'] == 'INV' and s not in alc_todos and i['id'] not in lista:
             err['R13 invariante sin test'].append(i['id'])
         if i['fuente'] in ('TRANS', 'PROH') and s not in alc_int:
             err['R14 transición sin test de integración con DB'].append(i['id'])
@@ -297,5 +320,7 @@ if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     if len(args) != 3:
         sys.exit(__doc__)
-    cob = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--cobertura=')), None)
-    sys.exit(main(*args, deriva='--sin-deriva' not in sys.argv, cobertura=cob))
+    opt = lambda k: next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith(f'--{k}=')), None)  # noqa: E731
+    lst = opt('lista-solo-citables')
+    lst = {k: tuple(v) for k, v in json.load(open(lst, encoding='utf-8')).items()} if lst else None
+    sys.exit(main(*args, deriva='--sin-deriva' not in sys.argv, cobertura=opt('cobertura'), lista=lst))

@@ -21,7 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 INV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', '_trabajo', 'inventario.json')
 
 IDS = ['DEC-SUB-008', 'INV:1', 'TRANS:B:S2', 'PROH:B:1', 'GUARD:G7', 'LISTA:B2', 'PIEZA:B2',
-       'FILA:B2', 'PLAZO:16', 'L:L1',
+       'FILA:B2', 'PLAZO:16', 'L:L1', 'INV:17', 'PASO:0',
        'SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:40']
 PLANTILLA_TXT = None
 
@@ -53,6 +53,34 @@ def fixture(inv):
 <a id="plazo-16"></a>
 **PLAZO:16** — plazo dieciséis (adjudicado VIVO).
 {origen(I['PLAZO:16'])}
+
+<a id="inv-17"></a>
+**INV:17** — sólo citable (owner BA).
+{origen(I['INV:17'])}
+"""
+    files['03-contrato-de-cobertura.md'] = """# Contrato de cobertura
+
+Sólo citables (owner BA y BB): [INV:17](02-nucleo.md#inv-17)
+"""
+    files['30-el-corte.md'] = f"""# El corte
+
+<a id="paso-0"></a>
+**Paso 0** — el ensayo.
+{origen(I['PASO:0'])}
+
+<a id="ac-corte-1"></a>
+**AC:CORTE:1**
+- Dado el ensayo en staging
+- Cuando corre el paso 0
+- Entonces termina verde
+Fuente: [paso-0](30-el-corte.md#paso-0)
+
+<a id="test-corte-1"></a>
+**TEST:CORTE:1**
+Tipo: smoke manual
+Etiqueta: staging
+Cubre: [AC:CORTE:1](30-el-corte.md#ac-corte-1)
+Fuente: [paso-0](30-el-corte.md#paso-0)
 """
     files['04-catalogos.md'] = f"""# Catálogos
 
@@ -132,11 +160,15 @@ Fuente: [dec-sub-008](../01-decisiones-vigentes.md#dec-sub-008)
     mini = dict(sha=inv['sha'], items=[copy.deepcopy(I[c]) for c in IDS])
     adj = {'veredictos': {'PLAZO:16': dict(veredicto='VIVO', hash=I['PLAZO:16']['hash'])}}
     # the coverage map (cobertura.py): every normative item of the fixture is owned by B2
-    cob = {'items': {c: {'pieza': 'B2'} for c in IDS if not c.startswith(('PIEZA:', 'L:', 'SEC:'))}}
+    cob = {'items': {c: {'pieza': 'B2'} for c in IDS if not c.startswith(('PIEZA:', 'L:', 'SEC:', 'INV:17', 'PASO:'))}}
+    cob['items']['PASO:0'] = {'pieza': 'CORTE'}
     return files, mini, adj, cob
 
 
-def run(files, mini, adj, cob):
+LISTA = {'INV:17': ['BA', '`INV:17`']}  # the closed list of the fixture (replaces defs.SOLO_CITABLES)
+
+
+def run(files, mini, adj, cob, lista=None):
     d = tempfile.mkdtemp(prefix='canario-')
     spec = os.path.join(d, 'spec')
     for rel, txt in files.items():
@@ -146,8 +178,10 @@ def run(files, mini, adj, cob):
     json.dump(mini, open(os.path.join(d, 'inv.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     json.dump(adj, open(os.path.join(d, 'adj.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     json.dump(cob, open(os.path.join(d, 'cob.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    json.dump(lista or LISTA, open(os.path.join(d, 'lista.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     r = subprocess.run([sys.executable, os.path.join(HERE, 'trazar.py'), os.path.join(d, 'inv.json'),
-                        os.path.join(d, 'adj.json'), spec, '--cobertura=' + os.path.join(d, 'cob.json')],
+                        os.path.join(d, 'adj.json'), spec, '--cobertura=' + os.path.join(d, 'cob.json'),
+                        '--lista-solo-citables=' + os.path.join(d, 'lista.json')],
                        capture_output=True, text=True)
     shutil.rmtree(d)
     return r.returncode, r.stdout + r.stderr
@@ -167,8 +201,8 @@ def main():
     B2 = '10-corte/B2.md'
     canarios = []
 
-    def c(rule, name, f=None, m=None, a=None, k=None):
-        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob))
+    def c(rule, name, f=None, m=None, a=None, k=None, li=None):
+        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob, li))
 
     c('R1', 'un ítem vivo definido dos veces', sub(files, '04-catalogos.md', '<a id="guard-g7"></a>',
       '<a id="guard-g7"></a>\nx\nOrigen: x.md:1\n\n<a id="guard-g7"></a>'))
@@ -205,6 +239,25 @@ def main():
     k = copy.deepcopy(cob)
     k['items']['GUARD:G7']['pieza'] = 'B99'
     c('R7b', 'cobertura.json le da al ítem una pieza sin ningún AC', k=k)
+    c(None, 'un ítem de la lista cerrada que igual recibe un AC pasa', sub(files, B2,
+      "{ref}".format(ref="[fila-b2](B2.md#fila-b2)"), "[fila-b2](B2.md#fila-b2) [inv-17](../02-nucleo.md#inv-17)"))
+    c('R7', 'el mismo ítem fuera de la lista cerrada y sin AC falla', li={'INV:1': ['BA', '`INV:17`']})
+    c('R7c', 'una lista cerrada con un ítem que no existe', li={'INV:17': ['BA', '`INV:17`'], 'INV:999': ['BA', '`INV:17`']})
+    c('R7c', 'una lista cerrada cuyo fragmento no está en la fila de su letra', li={'INV:17': ['BA', '`INV:18`']})
+    c('R7c', 'un ítem de la lista sin declarar en 03-contrato-de-cobertura.md',
+      sub(files, '03-contrato-de-cobertura.md', '[INV:17](02-nucleo.md#inv-17)', ''))
+    c('R11', 'un AC:CORTE definido fuera de 30-el-corte.md', sub(sub(files, '30-el-corte.md',
+      '<a id="ac-corte-1"></a>\n**AC:CORTE:1**\n- Dado el ensayo en staging\n- Cuando corre el paso 0\n- Entonces termina verde\n'
+      'Fuente: [paso-0](30-el-corte.md#paso-0)\n', ''), B2, '<a id="us-b2-1"></a>',
+      '<a id="ac-corte-1"></a>\n**AC:CORTE:1**\n- Dado x\n- Cuando y\n- Entonces z\nFuente: [paso-0](../30-el-corte.md#paso-0)\n\n'
+      '<a id="us-b2-1"></a>'))
+    c('R11', 'una US de CORTE', sub(files, '30-el-corte.md', '<a id="ac-corte-1"></a>',
+      '<a id="us-corte-1"></a>\n**US:CORTE:1**\nActor: admin\nFuente: [paso-0](30-el-corte.md#paso-0)\n\n<a id="ac-corte-1"></a>'))
+    c('R12', 'un TEST:CORTE que no es smoke manual ni guard estático', sub(files, '30-el-corte.md',
+      'Tipo: smoke manual\nEtiqueta: staging', 'Tipo: unitario'))
+    k = copy.deepcopy(cob)
+    k['items']['PASO:0']['pieza'] = 'B2'
+    c('R7b', 'un ítem del corte cuyo AC está en CORTE pero cobertura.json lo da a B2', k=k)
     c('R8', 'un AC sin test', sub(sub(sub(files, B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'),
       B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'), B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'))
     f = sub(files, B2, '<a id="test-b2-1"></a>',
@@ -248,11 +301,11 @@ def main():
     code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
-    for rule, name, f, m, a, k in canarios:
-        code, out = run(f, m, a, k)
-        ok = code == 1 and f'✗ {rule} ' in out
+    for rule, name, f, m, a, k, li in canarios:
+        code, out = run(f, m, a, k, li)
+        ok = (code == 0) if rule is None else (code == 1 and f'✗ {rule} ' in out)
         fallas += not ok
-        print(f'{"✓" if ok else "✗ CIEGO"} {rule:4} exit {code} · {name}')
+        print(f'{"✓" if ok else "✗ CIEGO"} {rule or "pasa":4} exit {code} · {name}')
         if not ok:
             print('   ', out.strip().replace('\n', '\n    '))
     print(f'\n{len(canarios)} canarios · {fallas} fallas')

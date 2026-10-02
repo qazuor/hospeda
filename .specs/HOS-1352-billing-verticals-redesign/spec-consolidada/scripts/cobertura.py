@@ -7,6 +7,7 @@ why that piece implements it, the other pieces that also exercise it, and the mi
            [--sellar]            write the sha256 of every cited line into the lectura file
            [--fragmento]         validate the lectura file alone (partial: no completeness rule)
            [--candidatos ID]     print the partition lines that name ID together with a piece
+           [--lista-solo-citables=<json>]  replace defs.SOLO_CITABLES (for the canaries only)
 
 Two methods. `script`: derived from a table that maps the item to its piece (the piece's own row,
 the guards column, B §2.12, the schema table and the phases of D/16 §4.6-§4.7, the dependency
@@ -16,8 +17,8 @@ from a versioned file whose every citation carries the sha256 of its line at the
 RULES (exit 1 when any fails)
   C1  every live normative item has an owner piece (a lectura entry in `sin_pieza` still fails: it
       is a question for the owner, not an answer).
-  C2  the owner piece and every `tambien` piece exist (or the owner is `30-el-corte`).
-  C3  timing: an item the sources put at the cut is owned by a cut piece (or `30-el-corte`), an
+  C2  the owner piece and every `tambien` piece exist (or the owner is the pseudo-piece CORTE, BE).
+  C3  timing: an item the sources put at the cut is owned by a cut piece (or CORTE), an
       item they put later by a later piece, and a phase gate by a piece of that phase.
   C4  one citation is the item itself (inside its own block) or names its local id; one citation
       names the owner piece and lives in the partition (V/B descomposicion, D/16) or is the item.
@@ -26,6 +27,8 @@ RULES (exit 1 when any fails)
       41-corte-del-mvp/aristas.py, nor a cut piece when the owner is a later one (the owner is the
       one that implements it first).
   C7  an item is derived once: never by script and by lectura, never a dead or citable-only item.
+  C8  the closed list of citable-only items (defs.SOLO_CITABLES, owner BA and BB) is valid: every id
+      in the inventory, named by its owner row, row hash unchanged. Those items need no owner.
 """
 import collections
 import json
@@ -35,12 +38,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from comun import B, D, SHA, V, cells, line_hash, lines, section, table_after, unstrike  # noqa: E402
-from defs import MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, TIPOS_TEST, VIVOS  # noqa: E402
+from defs import (MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, SOLO_CITABLES, TIPOS_TEST, VIVOS,  # noqa: E402
+                  solo_citables_fallas)
 
 D16 = D + '16-fase-7-del-paraguas.md'
 VD, BD = V + 'descomposicion.md', B + 'descomposicion.md'
 ARISTAS = D + '41-corte-del-mvp/aristas.py'
-CORTE = '30-el-corte'
+CORTE = 'CORTE'  # the pseudo-piece of owner BE: what only the cut does; its AC live in 30-el-corte.md
 ROLES = ('implementa', 'usa', 'provee', 'lee')
 PARTICION = (VD, BD, D16)
 CUALQUIERA = '≥1 de cualquier tipo de la lista cerrada'
@@ -307,9 +311,10 @@ def estados(items, adj):
     return out
 
 
-def normativo(i, st):
+def normativo(i, st, lista):
+    """Requires ≥1 AC: AX + AZ, minus methodology decisions and the closed list of BA and BB."""
     return (i['fuente'] in NORMATIVAS and not i['id'].startswith(NO_NORMATIVAS_PREFIJOS)
-            and st.get(i['id']) in VIVOS)
+            and i['id'] not in lista and st.get(i['id']) in VIVOS)
 
 
 def fuente_cuando(i, piezas, cf):
@@ -441,6 +446,8 @@ def candidatos(cid, items_by, piezas):
 def main(argv):
     flags = {a for a in argv if a.startswith('--')}
     args = [a for a in argv if not a.startswith('--')]
+    lst = next((a.split('=', 1)[1] for a in flags if a.startswith('--lista-solo-citables=')), None)
+    lista = ({k: tuple(v) for k, v in json.load(open(lst, encoding='utf-8')).items()} if lst else SOLO_CITABLES)
     if '--candidatos' in flags:
         cid = args.pop()
     if len(args) != 4:
@@ -455,7 +462,7 @@ def main(argv):
     if '--candidatos' in flags:
         return candidatos(cid, by, piezas) or 0
     anc, cf = grafo(), cuando_de_fuente()
-    norm = [i for i in todos if normativo(i, st)]
+    norm = [i for i in todos if normativo(i, st, lista)]
     norm_ids = {i['id'] for i in norm}
     script, pend = por_script(norm, todos, piezas, anc)
     lect = json.load(open(lect_p, encoding='utf-8')) if os.path.exists(lect_p) else {}
@@ -474,6 +481,8 @@ def main(argv):
             err['C7 ítem derivado dos veces (script y lectura)'].append(k)
         elif k in entradas and k in sin:
             err['C7 ítem con pieza y en «sin_pieza»'].append(k)
+    for f in solo_citables_fallas(by, lista):
+        err['C8 lista cerrada de sólo citables inválida'].append(f)
     rec = dict(script)
     for k, e in entradas.items():
         if k in norm_ids and k not in script:
@@ -508,6 +517,8 @@ def main(argv):
         doc = dict(sha=SHA, criterio=__doc__.split('RULES')[1].strip(), normativos=len(norm),
                    por_metodo=dict(collections.Counter(r['metodo'] for r in rec.values())),
                    por_pieza=resumen, sin_pieza=sin, preguntas=lect.get('preguntas', {}),
+                   solo_citables={k: dict(letra=v[0], cita=v[1], destino='03-contrato-de-cobertura.md')
+                                  for k, v in sorted(lista.items())},
                    script_pendiente_de_lectura=pend, fallas={k: v for k, v in sorted(err.items())}, items=items_out)
         json.dump(doc, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
         print(f'SHA {SHA[:10]} · {len(norm)} normativos · {len(rec)} con pieza · {doc["por_metodo"]} · sin pieza {len(sin)}')

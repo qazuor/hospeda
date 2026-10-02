@@ -14,6 +14,15 @@
 ✓ R7   exit 1 · un ítem normativo vivo sin AC
 ✓ R7b  exit 1 · el AC que cita el ítem está en otra pieza que la dueña de cobertura.json
 ✓ R7b  exit 1 · cobertura.json le da al ítem una pieza sin ningún AC
+✓ pasa exit 0 · un ítem de la lista cerrada que igual recibe un AC pasa
+✓ R7   exit 1 · el mismo ítem fuera de la lista cerrada y sin AC falla
+✓ R7c  exit 1 · una lista cerrada con un ítem que no existe
+✓ R7c  exit 1 · una lista cerrada cuyo fragmento no está en la fila de su letra
+✓ R7c  exit 1 · un ítem de la lista sin declarar en 03-contrato-de-cobertura.md
+✓ R11  exit 1 · un AC:CORTE definido fuera de 30-el-corte.md
+✓ R11  exit 1 · una US de CORTE
+✓ R12  exit 1 · un TEST:CORTE que no es smoke manual ni guard estático
+✓ R7b  exit 1 · un ítem del corte cuyo AC está en CORTE pero cobertura.json lo da a B2
 ✓ R8   exit 1 · un AC sin test
 ✓ R9   exit 1 · un AC inventado, sin fuente (y con test, para que sólo falte la fuente)
 ✓ R9   exit 1 · un test que cita sólo un ancla de US (no un ítem fuente)
@@ -33,4 +42,4 @@
 ✓ R16  exit 1 · una pieza del corte en la carpeta de una fase posterior
 ✓ R17  exit 1 · una sección del diseño sin ninguna línea citada
 
-33 canarios · 0 fallas
+42 canarios · 0 fallas

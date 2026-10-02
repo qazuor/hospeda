@@ -12,6 +12,7 @@ families that NO inventory source covers. A family listed there is either a know
 (finding ids, letters of other rounds…) or a source the inventory is missing.
 """
 import collections
+import hashlib
 import json
 import re
 import sys
@@ -72,6 +73,54 @@ CITABLES = NORMATIVAS | {'MATRIZ', 'OWN', 'PIEZA'}
 # methodology decisions (and their 📌) govern how the program is run, not what is built: citable,
 # never required to be covered by an AC (owner AX)
 NO_NORMATIVAS_PREFIJOS = ('DEC-METH-',)
+
+# --- owner BA and BB (2026-10-01, the 1; 📌 on DEC-METH-019): normative items that no piece builds
+#     are CITABLE ONLY, in this CLOSED list, which lives in 03-contrato-de-cobertura.md of the
+#     consolidated spec. Each id carries its letter and the verbatim fragment of that letter's row in
+#     41-corte-del-mvp/10-decisiones-del-owner.md that names it (a range or «con sus 📌» names
+#     several). trazar.py R7 and cobertura.py C1 except them; `solo_citables_fallas` checks the list.
+OWN41 = D + '41-corte-del-mvp/10-decisiones-del-owner.md'
+_BA_RANGO = '`INV:33`–`INV:37`'
+SOLO_CITABLES = {
+    'INV:17': ('BA', '`INV:17`'), 'INV:33': ('BA', _BA_RANGO), 'INV:34': ('BA', _BA_RANGO),
+    'INV:35': ('BA', _BA_RANGO), 'INV:36': ('BA', _BA_RANGO), 'INV:37': ('BA', _BA_RANGO),
+    'DEC-CI-001': ('BA', '`DEC-CI-001` con sus 📌1 y 📌2'), 'DEC-CI-001#📌1': ('BA', '`DEC-CI-001` con sus 📌1 y 📌2'),
+    'DEC-CI-001#📌2': ('BA', '`DEC-CI-001` con sus 📌1 y 📌2'), 'DEC-CI-002': ('BA', '`DEC-CI-002`'),
+    'DEC-ARCH-005': ('BA', '`DEC-ARCH-005` con su 📌1'), 'DEC-ARCH-005#📌1': ('BA', '`DEC-ARCH-005` con su 📌1'),
+    'DEC-ARCH-017#📌3': ('BA', '`DEC-ARCH-017#📌3`'), 'DEC-MIG-002': ('BA', '`DEC-MIG-002`'),
+    'DEC-MIG-005#📌5': ('BA', '`DEC-MIG-005#📌5`'), 'DEC-AUTH-003#📌2': ('BA', '`DEC-AUTH-003#📌2`'),
+    'DEC-DATA-005#📌4': ('BA', '`DEC-DATA-005#📌4`'), 'DEC-MP-008#📌2': ('BA', '`DEC-MP-008#📌2`'),
+    'DEC-OBS-001#📌2': ('BB', '`DEC-OBS-001#📌2`'), 'DEC-ADDON-004#📌2': ('BB', '`DEC-ADDON-004#📌2`'),
+    'DEC-SUB-013#📌2': ('BB', '`DEC-SUB-013#📌2`'), 'DEC-MP-003#📌1': ('BB', '`DEC-MP-003#📌1`'),
+    'DEC-SUB-019#📌1': ('BB', '`DEC-SUB-019#📌1`'),
+}
+# sha256 of the BA and BB rows at the frozen SHA: a re-freeze that rewrites them voids the list
+SOLO_CITABLES_HASH = {
+    'BA': '4350775b538e7ffd6e5bdc5c4762af6757b9b418d9b3bcf54b74b546b5fa9036',
+    'BB': 'dc27c55c0c2d4dd75e7f9efebe6f0e34898aab057167de9cec4a7f16769d2aa3',
+}
+
+
+def fila_de_letra(letra):
+    """(line, text) of the owner row `| <letra> |` in OWN41 at the SHA, located by its letter."""
+    hits = [(n, l) for n, l in enumerate(lines(OWN41), 1) if l.startswith(f'| {letra} |')]
+    return hits[0] if len(hits) == 1 else (None, None)
+
+
+def solo_citables_fallas(items_by_id, lista=None):
+    """Errors of the closed list: an id that is not in the inventory, a fragment that is not in its
+    letter's row, or a row whose hash changed since the list was written."""
+    lista = SOLO_CITABLES if lista is None else lista
+    out = []
+    for cid, (letra, frag) in sorted(lista.items()):
+        n, row = fila_de_letra(letra)
+        if cid not in items_by_id:
+            out.append(f'{cid}: no está en el inventario')
+        elif row is None or frag not in row:
+            out.append(f'{cid}: la fila {letra} no lo nombra («{frag}»)')
+        elif hashlib.sha256(row.encode('utf-8')).hexdigest() != SOLO_CITABLES_HASH.get(letra):
+            out.append(f'{cid}: la fila {letra} cambió desde que se escribió la lista (hash)')
+    return out
 
 # --- R6: what the cited Origen line must contain. 'id' = the local id; 'pin' = 📌; 'pos' = an
 #     ordinal without text in the line, so only the exact position is checked. -------------

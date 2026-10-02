@@ -26,7 +26,8 @@ INV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', '_trabajo',
 ADJ = os.path.join(HERE, '..', '_trabajo', 'adjudicacion.json')
 VD, BD, D16, LOG = V + 'descomposicion.md', B + 'descomposicion.md', D + '16-fase-7-del-paraguas.md', D + '01-decision-log.md'
 IDS = ['GUARD:G7', 'TPZ:S2', 'TRANS:B:S2', 'FILA:B2', 'LISTA:B2', 'ESQ:1', 'DEC-TRIAL-010', 'TRANS:V:PB4',
-       'TRANS:V:PB9', 'TRANS:B:S21', 'GATE:FP.F1', 'L:L1']
+       'TRANS:V:PB9', 'TRANS:B:S21', 'GATE:FP.F1', 'L:L1', 'INV:17']
+LISTA = {'INV:17': ['BA', '`INV:17`']}  # the closed list of the fixture (replaces defs.SOLO_CITABLES)
 
 
 def c(path, n, *tokens):
@@ -50,18 +51,19 @@ def fixture(inv):
                             razon='V §2.14: PB9 va con V9b'),
         'TRANS:B:S21': dict(pieza='B5', citas=[own(by['TRANS:B:S21'], 'S21'), c(D16, 954, '`S21`')],
                             razon='D/16 §4.6: B5 suma S21 (AV)'),
-        'GATE:FP.F1': dict(pieza='30-el-corte', citas=[own(by['GATE:FP.F1'], 'V9b')],
+        'GATE:FP.F1': dict(pieza='CORTE', citas=[own(by['GATE:FP.F1'], 'V9b')],
                            razon='gate de proceso de la fase 1'),
     }
     return mini, {'entradas': E, 'sin_pieza': {}}
 
 
-def run(mini, lect):
+def run(mini, lect, lista=None):
     d = tempfile.mkdtemp(prefix='canario-cob-')
-    for name, obj in (('inv.json', mini), ('lect.json', lect)):
+    for name, obj in (('inv.json', mini), ('lect.json', lect), ('lista.json', lista or LISTA)):
         json.dump(obj, open(os.path.join(d, name), 'w', encoding='utf-8'), ensure_ascii=False)
     r = subprocess.run([sys.executable, os.path.join(HERE, 'cobertura.py'), os.path.join(d, 'inv.json'), ADJ,
-                        os.path.join(d, 'lect.json'), os.path.join(d, 'out.json')], capture_output=True, text=True)
+                        os.path.join(d, 'lect.json'), os.path.join(d, 'out.json'),
+                        '--lista-solo-citables=' + os.path.join(d, 'lista.json')], capture_output=True, text=True)
     shutil.rmtree(d)
     return r.returncode, r.stdout + r.stderr
 
@@ -72,8 +74,8 @@ def main():
     by = {i['id']: i for i in inv['items']}
     canarios = []
 
-    def can(rule, name, m=None, f=None):
-        canarios.append((rule, name, m or mini, f or lect))
+    def can(rule, name, m=None, f=None, li=None):
+        canarios.append((rule, name, m or mini, f or lect, li))
 
     def mut(fn):
         x = copy.deepcopy(lect)
@@ -87,6 +89,13 @@ def main():
     x = mut(lambda e: e.pop('DEC-TRIAL-010'))
     x['sin_pieza'] = {'DEC-TRIAL-010': dict(motivo='')}
     can('C1', 'un «sin_pieza» sin motivo ni pregunta', f=x)
+    can('C1', 'el ítem sólo citable fuera de la lista y sin entrada falla', li={'INV:1': ['BA', '`INV:17`']})
+    can('C8', 'una lista cerrada con un ítem que no existe', li={'INV:17': ['BA', '`INV:17`'], 'INV:999': ['BA', '`INV:17`']})
+    can('C8', 'una lista cerrada cuyo fragmento no está en la fila de su letra', li={'INV:17': ['BA', '`INV:18`']})
+    can('C7', 'una entrada para un ítem de la lista cerrada', f=mut(lambda e: e.update(
+        {'INV:17': dict(pieza='V1', citas=[own(by['INV:17'], '17'), c(VD, 61, rx_pieza('V1'))], razon='x')})))
+    can('C2', 'la dueña con el nombre viejo de la pseudo-pieza (30-el-corte en vez de CORTE)',
+        f=mut(lambda e: e['GATE:FP.F1'].update(pieza='30-el-corte')))
     can('C2', 'una pieza inexistente', f=mut(lambda e: e['DEC-TRIAL-010'].update(pieza='V99')))
     can('C2', 'un «tambien» con una pieza inexistente', f=mut(lambda e: e['TRANS:V:PB4'].update(
         tambien=[dict(pieza='V99', rol='usa', citas=[c(VD, 66, '`PB4`')])])))
@@ -128,8 +137,8 @@ def main():
     code, out = run(mini, lect)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
-    for rule, name, m, f in canarios:
-        code, out = run(m, f)
+    for rule, name, m, f, li in canarios:
+        code, out = run(m, f, li)
         ok = code == 1 and f'✗ {rule} ' in out
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule:3} exit {code} · {name}')
