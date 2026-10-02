@@ -189,7 +189,7 @@ Respuesta del owner, 2026-10-02, a la pregunta que quedó abierta después de CD
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
 |---|---|---|---|---|
-| CE | si el objetivo `LISTING` de un addon que nace por `A1-bis` (CD) exige las mismas guardas que `A1` (`B/03` §8): ficha propia, de la vertical del producto, y en un estado que acepte destacarla | 1 | sí | **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD |
+| CE | si el objetivo `LISTING` de un addon que nace por `A1-bis` (CD) exige las mismas guardas que `A1` (`B/03` §8): ficha propia, de la vertical del producto, y en un estado que acepte destacarla | 1 | sí | **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD. Las otras opciones eran sólo la autorización del capítulo 17 (se podría destacar una ficha moderada, que nadie ve) o dejarlo abierto hasta `B10` (`B10` no podría cerrar su *«Lista cuando»*) |
 
 ## Resultado del corte
 
