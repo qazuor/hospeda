@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `b949031c701bc735edf6b6e01fc762b3b46747c6` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `69cbe793607a797e861f240f550c8be39e1d11a0` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -2147,7 +2147,7 @@ monto esperado ya la descuenta (`B/09` §3). El cliente termina en la versión c
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1486
 
 Dueña del AC: [B2](10-corte/B2.md#pieza-b2).
-También: [B8b](20-fase-2/B8b.md#pieza-b8b) (provee).
+También: [B8b](20-fase-2/B8b.md#pieza-b8b) (provee) · [B3](10-corte/B3.md#pieza-b3) (implementa).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CC, la 1)**, sobre el 📌 de BM
@@ -6368,7 +6368,7 @@ Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [B4](10-corte/B4.md#pieza-b4) (implementa) · [V9a](10-corte/V9a.md#pieza-v9a) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa).
 Tests mínimos: migración desde cero; migración sobre datos; smoke manual · prod.
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -6443,6 +6443,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 - → ver [📌8](#dec-arch-017-p8).
 - → ver [📌9](#dec-arch-017-p9).
 - → ver [📌10](#dec-arch-017-p10).
+- → ver [📌11](#dec-arch-017-p11).
 
 <a id="dec-arch-017-p1"></a>
 
@@ -6691,6 +6692,27 @@ guardas que en `A1`**: la ficha es propia de la persona, de la vertical del prod
 no, *«no existe»* y no nace ninguna instancia. Que el addon sea gratis no cambia qué ficha se puede
 destacar. La guarda y su test son de `B10`. Sin flechas nuevas. Dónde: `B/03` §8 (`A1-bis`);
 `B/descomposicion.md` §2, §2.12 y §4 (`B10`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CE.
+
+<a id="dec-arch-017-p11"></a>
+
+#### 📌11 de DEC-ARCH-017
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8037
+
+Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
+También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
+Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+
+📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CF y CG, las dos la 1)**:
+dos cosas que una fuente le pedía a una pieza que se mergea antes de la que crea lo que necesita.
+**CF**: el predicado de CC —la acción 19 de `B2` cuenta como cliente de una versión la fila con un
+`S38` encolado hacia ella— lee la cola de cambios programados (`ESQ:3`), que por AP crea `B3`, y
+`B2` va antes que `B3`: **el predicado y su test los escribe el PR de `B3`**, y el AC sigue siendo
+de `B2`. **CG**: la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *«la cancelación
+`B8`»*, escrito antes de que Z partiera `B8` y `B13`) **vive en `B13a`**, que construye la pantalla
+de la baja; `B8a` conserva sus pruebas de integración. Sin flechas nuevas: `B3` ya sigue a `B2` y
+`B13a` a `B8a`. Dónde: `B/descomposicion.md` §2, §2.12 y §4 (`B2`, `B3`, `B8a`, `B13a`);
+`B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG.
 
 ## Área MIG
 
@@ -10779,7 +10801,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8040
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8050
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10850,7 +10872,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 #### 📌1 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8099
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8109
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10875,7 +10897,7 @@ de las fases posteriores (AW) precisa AE y va en el 📌 de `DEC-ARCH-017`
 
 #### 📌2 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8115
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8125
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10890,7 +10912,7 @@ sólo citable sigue siendo la matriz, las letras del owner y la lista de piezas
 
 #### 📌3 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8121
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8131
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10914,7 +10936,7 @@ las 30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE).
 
 #### 📌4 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8136
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10945,7 +10967,7 @@ BS y BT.
 
 #### 📌5 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8158
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8168
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -14038,3 +14060,25 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD. Las otras opciones eran sólo la autorización del capítulo 17 (se podría destacar una ficha moderada, que nadie ve) o dejarlo abierto hasta `B10` (`B10` no podría cerrar su *«Lista cuando»*)
+
+#### Lote CF y CG (2026-10-02)
+
+<a id="own-41-corte-del-mvp-t14-cf"></a>
+**Letra CF**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201
+
+- **Pregunta**: en qué PR entra el predicado de CC (la acción 19 de `B2` cuenta como cliente de una versión la fila con un `S38` encolado hacia ella), si lee la cola de cambios programados (`ESQ:3`), que crea `B3` (AP), y `B2` se mergea antes que `B3`
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **el predicado y su test van en el PR de `B3`**, como una cláusula más sobre el rechazo de la acción 19, que ya existe; **el AC sigue siendo de `B2`** en la spec, y el criterio de salida que lo demuestra es de `B3`. Precisa CC. Las otras opciones eran que `B2` creara la cola (reabre AP) o escribir el predicado en `B2` contra una interfaz y probarlo en `B3` (BL habla de piezas posteriores que implementan una interfaz, no de una tabla)
+
+<a id="own-41-corte-del-mvp-t14-cg"></a>
+**Letra CG**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:202
+
+- **Pregunta**: dónde vive la prueba de punta a punta de la baja (`B/20` §5.1 punto 3, *«la cancelación `B8`»*), si la pantalla de la baja la construye `B13a` y `B13a` espera a `B8a` (BH)
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **en `B13a`**, la primera pieza del corte con la API, la web y la pantalla de la baja juntas; **`B8a` conserva sus pruebas de integración**. Precisa el punto 3 de `B/20` §5.1, escrito antes de partir `B8` y `B13` (Z). Las otras opciones eran la prueba en `B8a` contra la API sin pantalla (no ejercita la pantalla que el e2e reemplaza del smoke manual) o las dos (dos pruebas del mismo flujo)
