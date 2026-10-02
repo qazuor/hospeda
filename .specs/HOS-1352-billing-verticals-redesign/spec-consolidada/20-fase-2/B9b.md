@@ -22,6 +22,10 @@ del MVP (Z): promos con su piso del proveedor y su redondeo, cortesías, `S9` (q
 |---|---|---|---|
 | `B9b` | `B9` | después | Z; el editor de códigos promocionales, con la acción 21 (BH) |
 
+De `B9`: promos, cortesías, `S9`, `S34`, `S35` y el canje con `extenderTrial` (Z); el editor de
+códigos promocionales (BH); **y las filas 7-bis y 13-ter del `19` §4** (BH; el reparto por fila lo
+infiere la fuente y lo marca).
+
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:965, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:743
 
 <a id="fila-b9b"></a>
@@ -33,7 +37,10 @@ redondeo, cortesías, `S9` (que comparte con `B8b`), `S30`, `S34`, `S35`, y el c
 `extenderTrial`** (corte del MVP, owner 2026-10-01, Z); **sin migración estructural: el esquema lo
 creó `B3`** (AP; corte del MVP, owner 2026-10-01, BG); **y la acción administrativa 21, *«crear o
 cerrar un código promocional»*, con su editor del panel, que deja de ser de `B13`** (corte del MVP,
-owner 2026-10-01, BH), **y sólo agrega lo que crea filas** (AS).
+owner 2026-10-01, BH), **y sólo agrega lo que crea filas** (AS); **y revocar una cortesía temporal
+(acción 1) como un tercer evento de `S10`, reanudar antes del fin por un acto del `SUPER_ADMIN`: con
+`fin_real` y la relectura, sin reembolso y con el aviso a la persona, y su fila en el `19` §4**
+(corte del MVP, owner 2026-10-02, [BO](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bo)).
 
 Capítulos: `14` (promos y cortesías) · `03` S9, **S30**, **S34**, **S35** · **`09` §3** (la
 comparación de monto) · **`NUCLEO/08` §3** (la acción 21 y su editor, BH). `05` C3 pasa a `B9a`, con
@@ -70,8 +77,10 @@ Fuente: [DEC-PROMO-001](../01-decisiones-vigentes.md#dec-promo-001) · [DEC-PROM
 
 Actor: admin
 
-Como `SUPER_ADMIN`, quiero otorgar una cortesía temporal en meses a un cliente mensual, y crear o
-cerrar códigos desde el panel, para hacer concesiones que no cobren de más ni regalen de más.
+Como `SUPER_ADMIN`, quiero otorgar una cortesía temporal en meses a un cliente mensual —y poder
+revocarla antes de su fin—, y crear o cerrar códigos desde el panel, para hacer concesiones que no
+cobren de más ni regalen de más. *Ejemplo*: Juan está en una cortesía temporal; si `SUPER_ADMIN` la
+revoca, su suscripción vuelve a `ACTIVE`, no se le devuelve nada y se le dice qué día se le cobra.
 
 Fuente: [ACC:1](../02-nucleo.md#acc-1) · [ACC:21](../02-nucleo.md#acc-21) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003)
 
@@ -222,9 +231,43 @@ Fuente: [ACC:1](../02-nucleo.md#acc-1)
   ([LISTA:B9](../10-corte/B9a.md#lista-b9), cláusulas 1, 2, 3, 5, 6, 8 y 9) —incluida **una cortesía
   de N meses re-emitida sobre una sucesora con crédito que saltea N cobros contados desde el fin del
   crédito**—; **y crear o cerrar un código desde el editor del panel funciona: cerrar un código
-  rechaza el canje siguiente y no toca los ya canjeados**; y la rama no trae migración estructural.
+  rechaza el canje siguiente y no toca los ya canjeados**; **y revocar una cortesía temporal la
+  termina en el acto por `S10`, con `fin_real` escrito y la relectura, sin reembolso, la suscripción
+  vuelve a `ACTIVE` y el aviso dice qué día se le cobra** ([AC:B9b:13](#ac-b9b-13)); y la rama no
+  trae migración estructural.
 
 Fuente: [LISTA:B9b](#lista-b9b) · [FILA:B9b](#fila-b9b) · [GATE:FP.F2](../30-el-corte.md#gate-fp-f2)
+
+<a id="ac-b9b-12"></a>
+**AC:B9b:12** — lo que hay que decir en los actos de esta pieza (filas 7-bis, 13-ter y 13-quinquies)
+
+- **Dado** las filas 7-bis y 13-ter del `B/19` §4, que van con su acto a esta pieza (BH; reparto por
+  fila inferido en la fuente), y la 13-quinquies, que construye esta pieza (BO)
+- **Cuando** la persona canjea una promo de «primer cobro» o de «N cobros», o `SUPER_ADMIN` otorga o
+  revoca una cortesía temporal
+- **Entonces** cada superficie dice lo que su fila exige (fila por fila, en la sección *UI web y
+  admin, e i18n*): el canje dice cuántos cobros lleva el descuento, qué monto paga después y que va a
+  recibir un correo del proveedor; otorgar dice que es en meses enteros y sólo sobre un plan mensual
+  y, si ya hay una vigente, que se suman meses con la fecha de fin nueva; y la confirmación de revocar
+  dice que pierde la cortesía que le quedaba, sin reembolso, que vuelve a `ACTIVE` y qué día se le va
+  a cobrar.
+
+Fuente: [PIEZA:B9b](#pieza-b9b) · [FILA:B9b](#fila-b9b) · [ACC:1](../02-nucleo.md#acc-1) · [OWN:41-corte-del-mvp:t7:BH](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bh) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003)
+
+<a id="ac-b9b-13"></a>
+**AC:B9b:13** — revocar una cortesía temporal es el tercer evento de `S10`
+
+- **Dado** una suscripción mensual en `PAUSED · COURTESY` por una cortesía temporal vigente
+- **Cuando** `SUPER_ADMIN` la revoca (acción 1) y confirma
+- **Entonces** corre **`S10` por su tercer evento** —reanudar antes del fin por un acto suyo, y no una
+  transición propia—: se manda `PUT status=authorized`, y **confirmado por relectura** la fila vuelve
+  a `ACTIVE`, con **`fin_real` escrito en el acto** en la `subscription_pause`, con los efectos de
+  `S10` ([AC:B8b:3](B8b.md#ac-b8b-3)); **sin reembolso**; y **el mismo día va el aviso a la persona que dice
+  qué día se le cobra** (fila 13-quinquies). **Si la relectura sigue viendo `paused`, `S10` no ocurre**:
+  la fila se queda en `PAUSED` con la marca `REANUDACIÓN_NO_APLICADA`. El acto exige su permiso, deja
+  su auditoría y pide confirmación explícita, porque mueve plata.
+
+Fuente: [ACC:1](../02-nucleo.md#acc-1) · [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [TPZ:S10](B8b.md#tpz-s10) · [OWN:41-corte-del-mvp:t9:BO](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bo) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6) · [LISTA:B9b](#lista-b9b)
 
 ### El criterio de terminación
 
@@ -234,9 +277,12 @@ Fuente: [LISTA:B9b](#lista-b9b) · [FILA:B9b](#fila-b9b) · [GATE:FP.F2](../30-e
 
 **El criterio de `B9` sin las dos cláusulas de los grants, que fueron a `B9a`** (corte del MVP,
 owner 2026-10-01, Z); **y crear o cerrar un código desde el editor del panel: cerrar un código
-rechaza el canje siguiente y no toca los ya canjeados** (§2.10; corte del MVP, owner 2026-10-01, BH).
+rechaza el canje siguiente y no toca los ya canjeados** (§2.10; corte del MVP, owner 2026-10-01, BH);
+**y revocar una cortesía temporal la termina en el acto por `S10`, con `fin_real` escrito y la
+relectura, sin reembolso, la suscripción vuelve a `ACTIVE` y el aviso dice qué día se le cobra**
+(corte del MVP, owner 2026-10-02, BO).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1026
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1050
 
 ## Reglas
 
@@ -296,19 +342,49 @@ las pausas de cortesía.
 
 ## API
 
-El canje es una operación del dueño (tier `/api/v1/protected/*`); otorgar una cortesía temporal y
-crear o cerrar un código son acciones del panel, sólo `SUPER_ADMIN` (tier `/api/v1/admin/*`). El
-canje de extensión llama a `extenderTrial` del contrato. **Las rutas una por una y sus códigos de
-error no los cierra la fuente** (`B/19`): ver [abiertos](../_trabajo/abiertos/g9-b8-b13.md).
+El canje es una operación del dueño (tier `/api/v1/protected/*`); otorgar o revocar una cortesía
+temporal y crear o cerrar un código son acciones del panel, sólo `SUPER_ADMIN` (tier
+`/api/v1/admin/*`). El canje de extensión llama a `extenderTrial` del contrato. **Las rutas una por
+una y sus códigos de error no los cierra la fuente** (`B/19`): los propone el PR de esta pieza
+siguiendo lo escrito del repo, los aprueba la revisión de contexto fresco del momento 1 (y el owner
+en el PR cuando es un permiso nuevo), y quedan escritos en esta sección al mergear
+([BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
 
 ## UI web y admin, e i18n
 
-- **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH) y la confirmación de
-  la cortesía temporal, que dice que es en meses y sólo sobre mensuales (fila 13-ter del `B/19` §4).
+- **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH).
 - **Web**: el rechazo del canje bajo el piso con su texto literal ([AC:B9b:2](#ac-b9b-2)) y el aviso
-  de pausar en cortesía ([AC:B9b:8](#ac-b9b-8)).
-- Las demás filas del `B/19` §4 sobre promos (7, 7-bis) no las asigna ninguna fila con nombre: ver
-  [abiertos](../_trabajo/abiertos/g9-b8-b13.md). Copy por `@repo/i18n`.
+  de pausar en cortesía ([AC:B9b:8](#ac-b9b-8); la fila 5, que va con el acto de pausar a
+  [B8b](B8b.md#ac-b8b-25)).
+- **Las filas del `B/19` §4 que avisan los actos de esta pieza** (BH; el reparto por fila lo infiere
+  la fuente y lo marca), más la 13-quinquies, que construye esta pieza (BO) ([AC:B9b:12](#ac-b9b-12)):
+  - **7-bis — al canjear una promo de «primer cobro» o de «N cobros»** (web): **cuántos cobros lleva
+    el descuento, qué monto paga después**, y que cuando termine **va a recibir un correo del
+    proveedor** diciendo que el vendedor cambió el monto. **En una promo de «primer cobro» este aviso
+    es también el de *«tu promo termina»***: los dos se unifican, porque el último cobro con descuento
+    es el primero; en una de «N cobros» ese correo sale aparte, 7 días antes del último cobro con
+    descuento, configurable (plazo 14). **Al pagador manual el canje no se le ofrece**: no hay promos
+    de monto para él; **la extensión de trial sí**. **Y si el canje —o el apilado con otra promo viva—
+    deja el monto por debajo del piso del proveedor (ARS 15), se rechaza con el motivo en pantalla**:
+    *«este código deja el importe por debajo del mínimo que Mercado Pago permite cobrar»* —el texto
+    dice que ese mínimo lo pone Mercado Pago, no nosotros—, y el código **no se consume**
+    ([AC:B9b:2](#ac-b9b-2)).
+  - **13-ter — al otorgar una cortesía temporal** (admin): **que es en meses enteros y sólo sobre un
+    plan mensual** —sobre una suscripción de plan no mensual (trimestral, semestral o anual) la
+    operación **no está disponible**, y la pantalla lo dice con su motivo: en pausa el proveedor se
+    saltea fechas de cobro enteras y al reanudar no corre la fecha, así que treinta días que cruzan la
+    renovación de un anual regalan un año (y de un trimestral, tres meses)—. **Y qué le queda** al
+    admin: la cortesía permanente o una promo sobre la renovación. **Si ya hay una cortesía vigente,
+    que se suman meses**, con la **fecha de fin nueva** dicha (`S34`).
+  - **13-quinquies — la confirmación de revocar una cortesía temporal** (acción 1, admin): que la
+    persona **pierde la cortesía que le quedaba**, sin reembolso, que su suscripción vuelve a `ACTIVE`,
+    y **qué día se le va a cobrar**; el mismo día va el aviso a la persona con esa fecha
+    ([AC:B9b:13](#ac-b9b-13)).
+- La confirmación dice qué va a pasar y no pregunta si estás seguro, y cada aviso lleva la fecha de
+  ese cliente (`B/19` §4.1). El texto lo propone el PR de esta pieza y lo aprueba el owner en el PR,
+  por ser texto al cliente (BS). Copy por `@repo/i18n`.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:115, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:126, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:128
 
 ## Cron y outbox
 
@@ -326,7 +402,8 @@ N/A — los 7 días del aviso son el plazo 14 de la tabla versionada, no una var
 
 Otorgar o revocar una cortesía temporal y crear o cerrar un código son acciones del catálogo con su
 auditoría ([ACC:1](../02-nucleo.md#acc-1), [ACC:21](../02-nucleo.md#acc-21)); la cortesía se audita
-por grant.
+por grant. Revocar es destructiva: deja al cliente sin la cortesía que le quedaba, y por eso pide
+confirmación explícita ([AC:B9b:13](#ac-b9b-13)).
 
 ## Seguridad
 
@@ -347,7 +424,9 @@ aunque la UI oculte la operación (`B/19` §1).
 | [AC:B9b:8](#ac-b9b-8) | [TEST:B9b:8](#test-b9b-8) | integración con DB |
 | [AC:B9b:9](#ac-b9b-9) | [TEST:B9b:9](#test-b9b-9) | e2e admin |
 | [AC:B9b:10](#ac-b9b-10) | [TEST:B9b:10](#test-b9b-10) | ruta API |
-| [AC:B9b:11](#ac-b9b-11) | [TEST:B9b:11](#test-b9b-11) | migración desde cero |
+| [AC:B9b:11](#ac-b9b-11) | [TEST:B9b:11](#test-b9b-11), [TEST:B9b:14](#test-b9b-14) | migración desde cero, integración con DB |
+| [AC:B9b:12](#ac-b9b-12) | [TEST:B9b:12](#test-b9b-12), [TEST:B9b:13](#test-b9b-13) | e2e web, e2e admin |
+| [AC:B9b:13](#ac-b9b-13) | [TEST:B9b:14](#test-b9b-14), [TEST:B9b:15](#test-b9b-15) | integración con DB, ruta API |
 
 <a id="test-b9b-1"></a>
 **TEST:B9b:1** — la composición determinista
@@ -483,11 +562,65 @@ Fuente: [FILA:B9b](#fila-b9b)
 Sobre una base migrada sólo con las migraciones del corte, las tablas de promos y cortesías existen y
 la suite de la pieza corre completa; la rama de la fase no agrega migración estructural.
 
+<a id="test-b9b-12"></a>
+**TEST:B9b:12** — el aviso del canje (fila 7-bis)
+
+Tipo: e2e web
+
+Cubre: [AC:B9b:12](#ac-b9b-12)
+
+Fuente: [PIEZA:B9b](#pieza-b9b) · [DEC-PROMO-001](../01-decisiones-vigentes.md#dec-promo-001)
+
+Canjear una promo de «N cobros» muestra cuántos cobros lleva el descuento, el monto de después y el
+correo del proveedor que va a llegar; en una de «primer cobro» el mismo aviso dice que la promo
+termina; a un pagador manual el canje de monto no se le ofrece.
+
+<a id="test-b9b-13"></a>
+**TEST:B9b:13** — las confirmaciones de otorgar y revocar una cortesía (filas 13-ter y 13-quinquies)
+
+Tipo: e2e admin
+
+Cubre: [AC:B9b:12](#ac-b9b-12)
+
+Fuente: [ACC:1](../02-nucleo.md#acc-1) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003)
+
+Sobre un anual la operación de otorgar aparece no disponible con su motivo y las dos alternativas;
+sobre un mensual con una cortesía vigente la confirmación dice la fecha de fin nueva; y la
+confirmación de revocar dice que pierde lo que le quedaba, sin reembolso, que vuelve a `ACTIVE` y el
+día del cobro.
+
+<a id="test-b9b-14"></a>
+**TEST:B9b:14** — revocar corre `S10` por su tercer evento
+
+Tipo: integración con DB
+
+Cubre: [AC:B9b:13](#ac-b9b-13), [AC:B9b:11](#ac-b9b-11)
+
+Fuente: [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [ACC:1](../02-nucleo.md#acc-1)
+
+Sobre una `PAUSED · COURTESY`, revocar deja la fila `ACTIVE` con `fin_real` del día, ningún `refund`,
+el aviso con la fecha del cobro encolado el mismo día y el falso con un `PUT status=authorized`; con el
+falso devolviendo `paused` en la relectura, la fila sigue `PAUSED` con `REANUDACIÓN_NO_APLICADA`; y
+no existe una transición distinta de `S10` para la revocación.
+
+<a id="test-b9b-15"></a>
+**TEST:B9b:15** — revocar exige su permiso
+
+Tipo: ruta API
+
+Cubre: [AC:B9b:13](#ac-b9b-13)
+
+Fuente: [ACC:1](../02-nucleo.md#acc-1)
+
+Sin `SUPER_ADMIN`, revocar una cortesía recibe el rechazo de permiso y la fila queda igual; con
+permiso, el acto deja su registro de auditoría.
+
 ## Smoke y etiquetas
 
 Sin etiquetas en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)). Lo manual de la fase —el correo
-del proveedor al mutar un monto (`CT-3`) y al pausar por una cortesía— entra en la extensión del
-checklist de la Fase 2 ([GATE:FP.2](../30-el-corte.md#gate-fp-2)); quién la escribe, ver
+del proveedor al mutar un monto (`CT-3`), al pausar por una cortesía y al reanudar por una
+revocación— entra en la extensión del checklist de la Fase 2
+([GATE:FP.2](../30-el-corte.md#gate-fp-2)); quién la escribe, ver
 [abiertos](../_trabajo/abiertos/g9-b8-b13.md).
 
 ## Dependencias, rollback y despliegue
@@ -505,13 +638,15 @@ Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-sm
 
 ## Abiertos
 
-- «Cómo se revoca una cortesía temporal», «Las filas del `B/19` §4 que avisan actos de piezas
-  posteriores», «Quién escribe la extensión del checklist de cada fase» y «Rutas y códigos de error»,
-  en [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md).
+- «Quién escribe la extensión del checklist de cada fase», en
+  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md). La revocación de una cortesía la cerró BO; las
+  filas del `B/19` §4, BH (el reparto por fila, inferido en la fuente); las rutas, los códigos y los
+  textos, BS.
 
 ## Origen
 
 `B/descomposicion.md` §2 (fila `B9b`), §2.6 (fila 10), §2.10, §2.12 y §4 (fila `B9b`); `B/14` §1 a
-§4; `B/03` §3.2 (`S9`, `S30`, `S34`, `S35`); `NUCLEO/08` §3 (acciones 1 y 21); `NUCLEO/02` §1.5
-(plazo 14); `01-decision-log.md`; `D/16` §4.7; `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AS,
-BG, BH).
+§4; `B/03` §3.2 (`S9`, `S10` por su tercer evento, `S30`, `S34`, `S35`); `B/19` §4 (filas 7-bis,
+13-ter y 13-quinquies) y §4.1; `NUCLEO/08` §3 (acciones 1 y 21); `NUCLEO/02` §1.5 (plazo 14);
+`01-decision-log.md`; `D/16` §4.7; `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AS, BG, BH, BO,
+BS).

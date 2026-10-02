@@ -23,6 +23,10 @@ con lo de la fase —`staging` antes del merge y un 5c propio en producción—
 |---|---|---|---|
 | `B8b` | `B8` | después | Z |
 
+De `B8`: cambio de plan y de ciclo, pausa, cierre de la sucesión, `S38`, con `G-R1-C` (Z); **y las
+filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `19` §4** (BH; el reparto
+por fila lo infiere la fuente y lo marca).
+
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:963, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:741
 
 <a id="fila-b8b"></a>
@@ -33,7 +37,10 @@ Llama a la pasarela (⛔). Deja funcionando **el resto de `B8`: cambio de plan y
 cierre de la sucesión con sus cinco escrituras y `S38`, con la dirección de `direcciónDeCambio`**;
 **y abre la ruta de la sucesión de `S1`** (corte del MVP, owner 2026-10-01, Z); **y saca de Mi
 Suscripción el aviso de `B13a`** *«todavía no se puede cambiar de plan…»*, **la única línea del corte
-que una fase posterior cambia, por excepción declarada** (corte del MVP, owner 2026-10-01, AU).
+que una fase posterior cambia, por excepción declarada** (corte del MVP, owner 2026-10-01, AU); **y la
+implementación de `S18`, `S31` y `S38` detrás de la interfaz a la que ya llaman `B5` y `B7`, sin tocar
+su código, y la ruta de la sucesión de `S1`, cuyo cuerpo escribió `B3`** (corte del MVP, owner
+2026-10-02, [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)).
 
 Capítulos: `03` §5, S8–S10, **S17–S18**, **S22**, **S31**, **S38** · `12` §2, §3, §6, §7 · `02` §2.6
 · `05` C2 (sobre `S22`; sobre `S11`, `S23` y `S24` es de `B8a`: corte del MVP, owner 2026-10-01,
@@ -142,7 +149,11 @@ Fuente: [INV:D3](../02-nucleo.md#inv-d3)
   muestra **una sola cosa: qué día se le cobra**; en un pagador manual la fecha del próximo cobro
   avanza tantos ciclos como vencieron durante la pausa, sin abrir cuota; **si la relectura sigue
   viendo `paused`, `S10` no ocurre** y se pone `REANUDACIÓN_NO_APLICADA`. La vuelta anticipada es
-  libre: el regalo de días que eso puede dar se acepta y lo detecta el resumen del barrido.
+  libre: el regalo de días que eso puede dar se acepta y lo detecta el resumen del barrido. `S10`
+  tiene además **un tercer evento, la revocación de una cortesía temporal por el `SUPER_ADMIN`**
+  (acción 1): reanudar antes del fin por un acto suyo, con `fin_real` escrito en el acto y la misma
+  relectura, sin reembolso y con el aviso que dice qué día se le cobra; **lo agrega `B9b`** (BO), sobre
+  esta misma transición y sin una transición propia ([AC:B9b:13](B9b.md#ac-b9b-13)).
 
 Fuente: [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [TPZ:S10](#tpz-s10) · [INV:24](../02-nucleo.md#inv-24) · [DEC-SUB-010](../01-decisiones-vigentes.md#dec-sub-010)
 
@@ -204,7 +215,8 @@ Fuente: [DEP:5](../03-contrato-de-cobertura.md#dep-5) · [DEC-SUB-006](../01-dec
 
 - **Dado** `B8b` mergeada
 - **Cuando** `S1` recibe un alta que declara una sucesión (`sucede_a`)
-- **Entonces** la declara —antes de `B8b` esa ruta no existía—; la sucesora nace con fecha de primer
+- **Entonces** la declara —antes de `B8b` esa ruta no existía: `B3` escribió el cuerpo de la rama de
+  sucesión de `S1` sin ruta, y `B8b` agrega la ruta sin tocar ese cuerpo (BL)—; la sucesora nace con fecha de primer
   cobro posterior al vencimiento de su ventana; y **la vieja se cancela sólo al recibir el webhook de
   que la nueva quedó autorizada**: si la persona abandona el checkout, la vieja sigue viva y no pasó
   nada; si para entonces el preapproval viejo ya está cancelado, no se lo vuelve a cancelar.
@@ -395,9 +407,37 @@ Fuente: [ACC:9](../02-nucleo.md#acc-9) · [ACC:10](../02-nucleo.md#acc-10)
 - **Entonces** se cumple **el criterio de `B8` sin la cláusula de `R1-a`**
   ([LISTA:B8](../10-corte/B8a.md#lista-b8), cláusulas 1 a 7 y 9); **`G-R1-C` está escrito y roto a
   propósito**, y desde su merge `S1` declara sucesiones; **y Mi Suscripción ya no dice *«todavía no
-  se puede cambiar de plan»***.
+  se puede cambiar de plan»***; **y, con la implementación real detrás de las interfaces que ya
+  llaman `B5` y `B7`, sin cambiar su código, se cumple [AC:B8b:24](#ac-b8b-24)**.
 
 Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [GATE:FP.F2](../30-el-corte.md#gate-fp-f2)
+
+<a id="ac-b8b-24"></a>
+**AC:B8b:24** — la implementación real detrás de las interfaces que ya llaman `B5` y `B7`
+
+- **Dado** `B5` y `B7` mergeadas al corte, con sus ramas escritas enteras y sus llamadas a `S18`,
+  `S31` y `S38` contra una interfaz interna, ejercidas allá con filas sembradas, y `B3` con el cuerpo
+  de la rama de sucesión de `S1` escrito sin ruta
+- **Cuando** `B8b` trae la implementación detrás de esas interfaces
+- **Entonces** en las ramas 1, 5 y 6 de `12` §5.3, **`S18` apaga la bandera con la marca
+  `REEMBOLSO_POR_CONFIRMAR`**; **`S6` por su tercer evento corta la sucesora por `S31`**; **`S7` y
+  `MP5` aplican `S38`**; desde su merge **una ruta declara la sucesión de `S1` sobre el cuerpo que
+  escribió `B3`**; y **el diff de `B8b` no cambia el código de `B3`, `B5` ni `B7`**: si lo hiciera,
+  rompería *«aditiva»*, que sólo tiene la excepción de AU.
+
+Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [TRANS:B:S31](../04-catalogos.md#trans-b-s31) · [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [OWN:41-corte-del-mvp:t9:BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
+
+<a id="ac-b8b-25"></a>
+**AC:B8b:25** — lo que hay que decir en los actos de esta pieza (filas del `19` §4)
+
+- **Dado** las filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `B/19` §4,
+  que van con su acto a esta pieza (BH; reparto por fila inferido en la fuente)
+- **Cuando** la persona pausa, reanuda o cambia de plan —o el cambio no se le ofrece—
+- **Entonces** cada superficie dice lo que su fila exige, con la fecha de ese cliente y sin
+  preguntar *«¿estás seguro?»* (fila por fila, en la sección *UI web y admin, e i18n*); y una
+  operación que no se ofrece lo dice con su motivo en vez de fallar sin explicación.
+
+Fuente: [PIEZA:B8b](#pieza-b8b) · [FILA:B13a](../10-corte/B13a.md#fila-b13a) · [OWN:41-corte-del-mvp:t7:BH](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bh) · [DEC-SUB-010](../01-decisiones-vigentes.md#dec-sub-010) · [DEC-SUB-021](../01-decisiones-vigentes.md#dec-sub-021) · [DEC-GRANT-004](../01-decisiones-vigentes.md#dec-grant-004)
 
 ### El criterio de terminación
 
@@ -408,9 +448,13 @@ Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b) · [GATE:FP.F2](../30-e
 **El criterio de `B8` sin la cláusula de `R1-a`, que fue a `B8a`** (corte del MVP, owner 2026-10-01,
 Z); **y `G-R1-C` escrito y roto a propósito**, y desde su merge `S1` declara sucesiones; **y Mi
 Suscripción ya no dice *«todavía no se puede cambiar de plan»*** (corte del MVP, owner 2026-10-01,
-AU).
+AU); **y, con la implementación real detrás de las interfaces que ya llaman `B5` y `B7`, sin cambiar
+su código: en las ramas 1, 5 y 6 de `12` §5.3, `S18` apaga la bandera con la marca
+`REEMBOLSO_POR_CONFIRMAR`; `S6` por su tercer evento corta la sucesora por `S31`; y `S7` y `MP5`
+aplican `S38`; y desde su merge una ruta declara la sucesión de `S1` sobre el cuerpo que escribió
+`B3`** (corte del MVP, owner 2026-10-02, BL).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1023
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1047
 
 ## Reglas
 
@@ -472,9 +516,9 @@ re-emisión sobre la sucesora; el primero, el otorgamiento, es de `B9b`).
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:835
 
 <a id="tpz-s10"></a>
-**TPZ:S10** — `S10` → `B8b`.
+**TPZ:S10** — `S10` → `B8b`; el tercer evento, revocar una cortesía temporal, lo agrega `B9b` (BO).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:812
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:836
 
 <a id="tpz-s17"></a>
 **TPZ:S17** — `S17` → `B8b`.
@@ -518,16 +562,79 @@ la sucesión, `sucede_a` y `sucedida_por` ([ESQ:4](../10-corte/B3.md#esq-4)), ad
 El cambio de plan y de ciclo, la pausa y la reanudación son operaciones self-service del dueño desde
 Mi Suscripción (tier `/api/v1/protected/*`) y acciones del panel para el admin
 ([ACC:9](../02-nucleo.md#acc-9), [ACC:10](../02-nucleo.md#acc-10); tier `/api/v1/admin/*`). El
-upgrade y el cambio de ciclo pasan por el checkout del proveedor, como el alta. **Las rutas una por
-una y sus códigos de error no los cierra la fuente** (`B/19`): ver
-[abiertos](../_trabajo/abiertos/g9-b8-b13.md).
+upgrade y el cambio de ciclo pasan por el checkout del proveedor, como el alta; la ruta de la
+sucesión de `S1` la agrega esta pieza sobre el cuerpo que escribió `B3` (BL). **Las rutas una por
+una y sus códigos de error no los cierra la fuente** (`B/19`): los propone el PR de esta pieza
+siguiendo lo escrito del repo, los aprueba la revisión de contexto fresco del momento 1 (y el owner
+en el PR cuando es un permiso nuevo), y quedan escritos en esta sección al mergear
+([BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
 
 ## UI web y admin, e i18n
 
 Esta pieza **saca** el aviso de AU de Mi Suscripción ([AC:B8b:14](#ac-b8b-14)) y ofrece el cambio de
-plan. Las demás superficies de sus actos —los avisos de pausar, reanudar, cambiar de plan con promo,
-con un checkout abierto, en grace— son filas del `B/19` §4 que ninguna fila de la partición asigna
-con nombre: ver [abiertos](../_trabajo/abiertos/g9-b8-b13.md). Toda copy por `@repo/i18n`.
+plan. **Y construye las superficies de sus actos**, las filas del `B/19` §4 que avisan un acto de
+esta pieza y por eso van con él (BH; el reparto por fila lo infiere la fuente y lo marca;
+[AC:B8b:25](#ac-b8b-25)):
+
+- **5 — al pausar estando en cortesía**: que **la pierde**, y dejarlo elegir (`DEC-GRANT-004`; lo
+  ejecuta `S35`, de `B9b`).
+- **5-bis — al pausar, antes de confirmar**: **qué le pasa a la ficha mientras dure la pausa**: sale
+  del sitio público el mismo día, **vuelve sola al reanudar** si el cupo del plan le alcanza, **y
+  mientras dure la pausa no se archiva, no se borra ni recibe avisos de retención: el reloj queda
+  detenido y arranca de cero al volver** (C14). Es el acto que parece que sólo suspende el cobro, y el
+  cliente no tiene otra forma de enterarse. **Y qué les pasa a sus addons recurrentes**: los de esa
+  vertical se pausan con el plan, por los mismos meses, y vuelven con él; los de cuenta
+  (`USER`/`GLOBAL`), sólo si no les queda otra vertical compatible sin pausar (4a).
+- **6 — al reanudar una pausa**: **una sola cosa: qué día se le va a cobrar** —nada de días perdidos
+  ni compensaciones— (`DEC-SUB-010`).
+- **7 — al cambiar de plan —upgrade, downgrade o de ciclo— teniendo una promo, antes de confirmar**:
+  ***«si cambiás de plan, perdés tu promo»***, y que **el importe nuevo ya no lleva el descuento**; la
+  promo no sobrevive a ningún cambio de plan, y el mismo código **no se puede volver a canjear** en el
+  plan nuevo (un uso por user, `B/14` §2.2).
+- **13-quater — al elegir un plan no mensual (trimestral, semestral o anual) en el cambio de plan,
+  teniendo una cortesía vigente o un saldo diferido en esa vertical**: **que pierde los N meses de
+  cortesía que le quedan**, porque sobre un plan que no es mensual no hay cortesía temporal, y que
+  decide él: puede seguir en mensual y conservarlos (`DESTINO_DE_PLAN_NO_MENSUAL`). El alta nueva con
+  saldo diferido salió con `S25` (C8).
+- **15 — el cambio de plan con una cuota impaga viva** (la que el proveedor reintenta mientras la
+  predecesora sigue en `GRACE_PERIOD`, o la que el pagador manual puede pagar a mano: una puerta por
+  método de pago): **que el cobro de esa cuota puede entrar igual**, antes de confirmar, y **qué pasa
+  con esa plata**: si termina el checkout **se le devuelve**, si lo abandona **le queda** y le paga el
+  período que está usando; nunca reactiva la suscripción vieja mientras el cambio esté en curso; y
+  **la devolución no es instantánea**: la confirma una persona (`DEC-RF-002`), así que lleva unas
+  horas. Si la predecesora con tarjeta ya está `SUSPENDED`, `S6` cerró su puerta y el aviso no
+  aplica; y desde `DEC-SUB-021` la fila no tiene población al confirmar (en el grace el cambio no se
+  ofrece): si la cuota aparece **después**, porque la predecesora entra en el grace durante la
+  ventana (`S4`), recibe los correos normales del grace **más una línea que dice que el cambio de plan
+  sigue pendiente** (`NUCLEO/07` §6).
+- **16 — el cambio de plan con un checkout abierto**: que **no se ofrece**: *«terminá o cancelá el
+  checkout que tenés abierto»* —**y, si la suscripción que tenía ya murió, que perdió la cobertura y
+  que sus fichas vuelven cuando autorice**— (`B/03` §3.3.1; C-8).
+- **16-bis — el alta nueva tras un primer cobro rechazado, teniendo un cambio de plan en curso**: lo
+  mismo que la 16, porque la sucesora sigue viva y **puede autorizar**: un alta nueva serían **dos
+  preapprovals cobrando**, así que no se ofrece *«empezar de nuevo»*; **y le dice que perdió la
+  cobertura y que sus fichas vuelven cuando autorice**.
+- **17 — el cambio de plan estando pausado**: que **no se ofrece**: *«reanudá tu suscripción para
+  cambiar de plan»*.
+- **17-bis — el cambio de plan estando en el grace**: que **no se ofrece**, y **qué hacer para
+  poder**, según el método de pago: con tarjeta, *«cambiá tu tarjeta»* **y que al cambiarla se
+  reintenta el cobro en el momento** —la frase de la fila 9, `GR-1` `VERIFIED`—; con pago manual,
+  *«pagá tu cuota»*; y que **con la suscripción al día** puede cambiar de plan (`DEC-SUB-021`).
+- **17-ter — el cambio de plan de un pagador con tarjeta cuya suscripción figura `ACTIVE` y cuyo
+  preapproval, releído por id antes de aceptar el cambio, no está `authorized`** (p. ej. `paused` por
+  una mora cuyo aviso no nos llegó): que **no se ofrece**: *«tu último cobro no entró, actualizá tu
+  tarjeta»*, el camino de la 17-bis; la relectura corre además la transición que corresponda (sobre
+  `paused`, `S6` por su segundo evento), y si esa transición suspende, el aviso que sigue es el de la
+  fila 10.
+
+Los cinco que van del 16 al 17-ter son avisos de una operación que **no se ofrece**: la persona no
+queda bloqueada —puede terminar o abandonar el checkout, reanudar o regularizar—, así que lo único
+que se agrega es decir el no en voz alta, con su motivo. Las dos reglas de cómo se dicen valen para
+todas: **la confirmación dice qué va a pasar, no pregunta si estás seguro**, y **cada aviso lleva la
+fecha de ese cliente**. El texto de cada aviso lo propone el PR de esta pieza y lo aprueba el owner en
+el PR, por ser texto al cliente (BS). Toda copy por `@repo/i18n`.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:111, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:112, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:113, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:114, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:127, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:131, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:132, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:133, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:134, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:135, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:136, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:155, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:165
 
 ## Cron y outbox
 
@@ -581,7 +688,9 @@ UI no lo ofrezca ([AC:B8b:17](#ac-b8b-17)): *«Autorización backend jamás depe
 | [AC:B8b:20](#ac-b8b-20) | [TEST:B8b:20](#test-b8b-20) | integración con DB |
 | [AC:B8b:21](#ac-b8b-21) | [TEST:B8b:21](#test-b8b-21) | guard estático |
 | [AC:B8b:22](#ac-b8b-22) | [TEST:B8b:22](#test-b8b-22) | ruta API |
-| [AC:B8b:23](#ac-b8b-23) | [TEST:B8b:23](#test-b8b-23), [TEST:B8b:21](#test-b8b-21) | migración desde cero, guard estático |
+| [AC:B8b:23](#ac-b8b-23) | [TEST:B8b:23](#test-b8b-23), [TEST:B8b:21](#test-b8b-21), [TEST:B8b:24](#test-b8b-24) | migración desde cero, guard estático, integración con DB |
+| [AC:B8b:24](#ac-b8b-24) | [TEST:B8b:24](#test-b8b-24) | integración con DB |
+| [AC:B8b:25](#ac-b8b-25) | [TEST:B8b:25](#test-b8b-25) | e2e web |
 
 <a id="test-b8b-1"></a>
 **TEST:B8b:1** — `S8` y su rama de fallo
@@ -872,6 +981,36 @@ Sobre una base vacía migrada con las migraciones del corte, las columnas de la 
 marca con su motivo ya existen; la rama de la fase no agrega ninguna migración estructural y la suite
 de la pieza corre completa.
 
+<a id="test-b8b-24"></a>
+**TEST:B8b:24** — las interfaces de `B5` y `B7`, con la implementación real
+
+Tipo: integración con DB
+
+Cubre: [AC:B8b:24](#ac-b8b-24), [AC:B8b:23](#ac-b8b-23)
+
+Fuente: [LISTA:B8b](#lista-b8b) · [TRANS:B:S18](../04-catalogos.md#trans-b-s18) · [TRANS:B:S31](../04-catalogos.md#trans-b-s31) · [TRANS:B:S38](../04-catalogos.md#trans-b-s38)
+
+Las pruebas de `B5` y `B7` que antes corrían con filas sembradas corren ahora contra la
+implementación real: en las ramas 1, 5 y 6 la bandera se apaga y queda la marca 1 con el pago
+colgado; un contracargo sobre la predecesora deja la sucesora cortada por `S31`; `S7` y `MP5` dejan la
+fila en la versión destino; la ruta declara una sucesión sobre el cuerpo de `B3`; y el diff de la
+pieza no toca archivos de `B3`, `B5` ni `B7`.
+
+<a id="test-b8b-25"></a>
+**TEST:B8b:25** — las superficies de los actos de la pieza
+
+Tipo: e2e web
+
+Cubre: [AC:B8b:25](#ac-b8b-25)
+
+Fuente: [PIEZA:B8b](#pieza-b8b) · [DEC-SUB-021](../01-decisiones-vigentes.md#dec-sub-021)
+
+Con un anfitrión en cortesía, uno pausado, uno en grace, uno con un checkout abierto y uno con promo,
+cada pantalla muestra el texto de su fila: pausar avisa la pérdida de la cortesía y qué le pasa a la
+ficha y a sus addons; reanudar muestra sólo el día del cobro; el cambio de plan con promo avisa que la
+pierde; y en pausa, en grace, con un checkout abierto o con el preapproval releído no `authorized`, el
+cambio no se ofrece y la pantalla dice por qué y qué hacer.
+
 ## Smoke y etiquetas
 
 Sin etiquetas en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)). Lo manual de la fase —el checkout
@@ -897,13 +1036,14 @@ Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-sm
 
 ## Abiertos
 
-- «Las filas del `B/19` §4 que avisan actos de piezas posteriores», «Quién escribe la extensión del
-  checklist de cada fase» y «Rutas y códigos de error», en
-  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md).
+- «Quién escribe la extensión del checklist de cada fase», en
+  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md). Las filas del `B/19` §4 las repartió BH (el
+  reparto por fila, inferido en la fuente); las rutas, los códigos y los textos, BS.
 
 ## Origen
 
 `B/descomposicion.md` §2 (fila `B8b`), §2.6 (filas 4 y 5), §2.8 (`G-R1-C`), §2.12 y §4 (fila
 `B8b`); `D/16` §4.6 y §4.7 (*«Las fases posteriores»*); `B/03` §3.2 y §3.3; `B/12` §2, §5 y §6;
-`B/05` C4; `B/20` §2; `NUCLEO/04`; `NUCLEO/02` §1.5 (plazo 15); `NUCLEO/08` §3;
-`01-decision-log.md`; `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AR, AS, AT, AU, AW).
+`B/05` C4; `B/19` §4 (filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter) y §4.1;
+`B/20` §2; `NUCLEO/04`; `NUCLEO/02` §1.5 (plazo 15); `NUCLEO/08` §3; `01-decision-log.md`;
+`41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AR, AS, AT, AU, AW, BH, BL, BO, BS).

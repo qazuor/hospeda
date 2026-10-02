@@ -424,8 +424,10 @@ operación self-service del dueño desde Mi Suscripción, cuya pantalla es de
 [B13a](B13a.md#pieza-b13a). **Qué endpoints expone la API, uno por uno, la fuente no lo cierra**
 (`B/19`, *«Lo que este capítulo NO cierra»*); lo que se fija acá es el comportamiento del acto. Tier:
 el dueño, por `/api/v1/protected/*`; el admin (`S23`), por `/api/v1/admin/*`, según la arquitectura
-de rutas del repo. Las rutas exactas y sus códigos de error: ver
-[abiertos](../_trabajo/abiertos/g9-b8-b13.md) (entrada «Rutas y códigos de error»).
+de rutas del repo. Las rutas exactas y sus códigos de error los propone el PR de esta pieza siguiendo
+lo escrito del repo, los aprueba la revisión de contexto fresco del momento 1 (y el owner en el PR
+cuando es un permiso nuevo), y quedan escritos en esta sección al mergear
+([BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
 
 ## UI web y admin, e i18n
 
@@ -684,12 +686,11 @@ La pieza es un issue de la épica de billing; pasa a `Done` al mergearse en la r
 
 ## Abiertos
 
-- «Rutas y códigos de error de los actos de las piezas `B8`–`B13`», en
-  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md).
+- Ninguno propio: las rutas y los códigos de error los cerró BS (los propone el PR de esta pieza).
 
 ## Origen
 
 `B/descomposicion.md` §2 (filas `B8` y `B8a`), §2.12 y §4 (filas `B8` y `B8a`); `D/16` §4.6;
 `B/03` §3.2 (`S11`, `S12`, `S23`, `S24`) y §3.3; `B/05` C2; `NUCLEO/04` (invariante 22);
 `01-decision-log.md` (`DEC-SUB-009`, `DEC-SUB-014`, `DEC-ARCH-017`);
-`41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AR, AS, AV).
+`41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AR, AS, AV, BS).

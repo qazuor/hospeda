@@ -24,11 +24,9 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 Llama a la pasarela (⛔). Lo que deja funcionando, entre las dos mitades:
 
 - promos, cortesías y grants componen de forma determinista y se enchufan como fuentes;
-- **`S20` no es de acá**: el grant cancela la principal (`S13`) y el complemento lo apaga **B10**,
-  que llega después en el camino crítico y es donde vive el modelo del addon. *(Esta frase de la
-  fuente no está tachada, pero la superaron AS —`S20` pasa a `B9a`— y AV —el modelo del addon lo
-  crea `B3`—, que la fila de [B9a](#fila-b9a) y la de `B10` ya recogen; se conserva por ser la letra
-  de la fila y se reporta como resto de fuente.)*
+- **`S20` va a `B9a`, en el mismo acto que `S13`, sobre el esquema vacío** (AS); el modelo de
+  addons es de `B3` (AV) (residuo corregido en la fuente el 2026-10-02: la frase que ponía `S20` en
+  `B10` quedó tachada);
 - **desde la FASE 9 completa**: un canje o un apilado que deja el monto **bajo el piso del proveedor
   se rechaza al canjear**, con el motivo en pantalla (owner 2026-09-25, 4b y 9g);
 - **los dos cruces cortesía × pausa tienen fila**, `S34` (cortesía sobre cortesía) y `S35` (la
@@ -332,10 +330,24 @@ Fuente: [PASO:3b](../30-el-corte.md#paso-3b) · [FILA:B9a](#fila-b9a) · [FILA:B
   sale con su `piso`** (9h); **otorgar o anclar un grant con una versión de piso que `políticaDePlan`
   no da por vigente se rechaza y no escribe ninguna fila** (`F-8V2C1-004`); **y la fuente `CORTESÍA`
   real contesta desde los datos sobre la tabla vacía, con su caso en el juego de la real sobre una
-  fila sembrada** (AQ). Las cláusulas de `B9` que no son de los grants se demuestran en
+  fila sembrada** (AQ); **y `S13` sobre una sucesión con un pago retenido apaga la bandera de la
+  rama 4 de `12` §5.3 por la interfaz que escribió `B7`, sin cambiar su código** (BL,
+  [AC:B9a:17](#ac-b9a-17)). Las cláusulas de `B9` que no son de los grants se demuestran en
   [B9b](../20-fase-2/B9b.md#lista-b9b).
 
 Fuente: [LISTA:B9a](#lista-b9a) · [LISTA:B9](#lista-b9) · [FILA:B9a](#fila-b9a) · [FILA:B9](#fila-b9)
+
+<a id="ac-b9a-17"></a>
+**AC:B9a:17** — `S13` apaga la bandera de la rama 4 por la interfaz de `B7`
+
+- **Dado** `B7` mergeada, con la rama 4 de `12` §5.3 escrita entera y su llamada contra la interfaz
+  interna que llama `S13`, y una sucesión sembrada cuya predecesora retiene un pago por `S19`
+- **Cuando** `SUPER_ADMIN` otorga un grant con un ancla en esa vertical y corre `S13`
+- **Entonces** **`S13` apaga la bandera de verdad**, sin reembolso, por esa interfaz; y **el diff de
+  `B9a` no cambia el código de `B7`**: la implementación real llega detrás de la interfaz que `B7`
+  ya llama (era del criterio de `B7`, que llega antes, y pasa al de `B9a`).
+
+Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13) · [OWN:41-corte-del-mvp:t9:BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
 
 ### Los criterios de terminación de origen
 
@@ -379,9 +391,11 @@ versión de piso que `políticaDePlan` no da por vigente se rechaza y no escribe
 (`F-8V2C1-004`) (corte del MVP, owner 2026-10-01, Z); **y la fuente `CORTESÍA` real contesta desde
 los datos sobre la tabla vacía, con su caso en el juego de la real sobre una fila sembrada** (corte
 del MVP, owner 2026-10-01, AQ). *(Lo sembrado, con el mismo precedente que la fuente `ADDON` en
-`B4`; la fuente lo marca.)*
+`B4`; la fuente lo marca.)*; **y `S13` sobre una sucesión con un pago retenido apaga la bandera de
+la rama 4 de `12` §5.3 por la interfaz que escribió `B7`, sin cambiar su código** (era del criterio
+de `B7`, que llega antes: corte del MVP, owner 2026-10-02, BL).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1025
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1049
 
 ## Reglas
 
@@ -447,8 +461,10 @@ Las tres escrituras sobre el instrumento —otorgar, anclar una vertical nueva y
 del grant permanente del catálogo administrativo ([ACC:2](../02-nucleo.md#acc-2)): tier admin, sólo
 `SUPER_ADMIN` ([INV:30](../02-nucleo.md#inv-30)), confirmación explícita. El rechazo por piso no
 vigente no escribe nada ([AC:B9a:11](#ac-b9a-11)). **Las rutas una por una y los códigos de error no
-los cierra la fuente** (`B/19`, *«Lo que este capítulo NO cierra»*): ver
-[abiertos](../_trabajo/abiertos/g9-b8-b13.md).
+los cierra la fuente** (`B/19`, *«Lo que este capítulo NO cierra»*): los propone el PR de esta pieza
+siguiendo lo escrito del repo, los aprueba la revisión de contexto fresco del momento 1 (y el owner
+en el PR si es un permiso nuevo), y quedan escritos en esta sección al mergear
+([BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
 
 ## UI web y admin, e i18n
 
@@ -499,7 +515,8 @@ rechazo se prueba por ruta ([TEST:B9a:9](#test-b9a-9)).
 | [AC:B9a:13](#ac-b9a-13) | [TEST:B9a:13](#test-b9a-13) | integración con DB |
 | [AC:B9a:14](#ac-b9a-14) | [TEST:B9a:14](#test-b9a-14) | integración con DB |
 | [AC:B9a:15](#ac-b9a-15) | [TEST:B9a:16](#test-b9a-16) | integración con DB |
-| [AC:B9a:16](#ac-b9a-16) | [TEST:B9a:8](#test-b9a-8), [TEST:B9a:11](#test-b9a-11), [TEST:B9a:12](#test-b9a-12) | migración desde cero, integración con DB, unitario |
+| [AC:B9a:16](#ac-b9a-16) | [TEST:B9a:8](#test-b9a-8), [TEST:B9a:11](#test-b9a-11), [TEST:B9a:12](#test-b9a-12), [TEST:B9a:17](#test-b9a-17) | migración desde cero, integración con DB, unitario |
+| [AC:B9a:17](#ac-b9a-17) | [TEST:B9a:17](#test-b9a-17) | integración con DB |
 
 <a id="test-b9a-1"></a>
 **TEST:B9a:1** — `S13` sobre los seis estados
@@ -698,6 +715,18 @@ Sobre una base con las cinco pruebas escritas, la herramienta escribe dos grants
 Alojamiento con la versión dada; la segunda corrida no escribe nada; con una versión no vigente no
 escribe ninguno.
 
+<a id="test-b9a-17"></a>
+**TEST:B9a:17** — la bandera de la rama 4, apagada por `S13` real
+
+Tipo: integración con DB
+
+Cubre: [AC:B9a:17](#ac-b9a-17), [AC:B9a:16](#ac-b9a-16)
+
+Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
+
+Sobre una sucesión sembrada con un pago retenido por `S19`, otorgar el grant deja la bandera apagada,
+ningún `refund` y la predecesora `CANCELLED`; el diff de `B9a` no toca archivos de `B7`.
+
 ## Smoke y etiquetas
 
 N/A — sin etiquetas `status-needs-smoke-*` en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)); la
@@ -722,12 +751,11 @@ Pasa a `Done` al mergearse en la rama del paraguas; sin etiquetas `status-needs-
 
 ## Abiertos
 
-- «Rutas y códigos de error de los actos de las piezas `B8`–`B13`», en
-  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md).
+- Ninguno propio: las rutas y los códigos de error los cerró BS (los propone el PR de esta pieza).
 
 ## Origen
 
 `B/descomposicion.md` §2 (filas `B9` y `B9a`), §2.6 (fila 12), §2.12 y §4 (filas `B9` y `B9a`);
 `D/16` §4.2 (paso 3b, *«las herramientas del corte»*) y §4.6; `B/03` §3.2 (`S13`, `S20`); `B/05` C3;
 `B/02` §2.4 y §2.5 (motivo 10); `NUCLEO/04` (27 a 30); `NUCLEO/08` §3 (la fila del grant);
-`01-decision-log.md`; `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AQ, AS, BG, BH).
+`01-decision-log.md`; `41-corte-del-mvp/10-decisiones-del-owner.md` (Z, AQ, AS, BG, BH, BL, BS).
