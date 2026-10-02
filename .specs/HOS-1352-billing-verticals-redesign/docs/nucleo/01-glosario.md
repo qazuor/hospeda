@@ -711,8 +711,10 @@ definía**.
 > **El plural es el punto, y por eso el término es *«abierta»* y no *«puesta»*.** El corpus escribe
 > ~~**quince**~~ ~~**dieciséis**~~ ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintidós**~~ ~~**veintitrés**~~ **veinticuatro** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5; el 23 y el 24 desde la FASE 9 vuelta 2, `R4` y `R20`; el 16
 > desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE
-> 8 completa, owner 2026-09-25; el 20, `COBRO_DUPLICADO`, desde la pendiente 6 —el 21 y el 22 desde la FASE 9 completa (`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y `PAUSA_NO_APLICADA`, `F-8CB2-003`)—) y **~~seis~~ ~~siete~~ ocho de ellos
-> significan *«hay plata del cliente que devolver»***. Con un booleano, dos casos simultáneos eran
+> 8 completa, owner 2026-09-25; el 20, `COBRO_DUPLICADO`, desde la pendiente 6 —el 21 y el 22 desde la FASE 9 completa (`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y `PAUSA_NO_APLICADA`, `F-8CB2-003`)—) y **~~seis~~ ~~siete~~ ~~ocho~~ nueve de ellos
+> significan *«hay plata del cliente que devolver»***
+> *(el octavo y el noveno desde la FASE 9 vuelta 2, `R4` y `R20`, como dice la fila 6 de abajo; residuo
+> corregido el 2026-10-02)*. Con un booleano, dos casos simultáneos eran
 > uno solo y `S15` los apagaba juntos; el que se perdía era el del dinero, porque es el que ninguna
 > superficie nombraba. *«Puesta»* describe una casilla; *«abierta»* describe **un caso**, que es lo
 > que una persona levanta de a uno.
