@@ -213,6 +213,16 @@ aplicación de CH: también la opción 1.
 | CH | quién escribe `provider_link.cancelado_visto_en`, si `B/09` §3 dice *«la primera relectura que ve `cancelled`, sea del barrido, del handler o de una transición»* y el reparto de `B/descomposicion.md` §2.11, de la misma letra Z, le da la escritura sólo al barrido de `B11`; el handler y `S16` son de `B3`, que se mergea antes de que `B4` cree la columna | 1 | sí | **la escribe toda relectura por id que ve `cancelled`, como dice el capítulo**: `B3` (el handler y `S16`) llama a una interfaz interna, *«anotar la cancelación vista»*; **`B4` la implementa al crear la columna**, con su caso sobre filas sembradas, y **el barrido de `B11` la usa también**. Es BL aplicada; el reparto de §2.11 suma a `B3` como pieza que llama. El instante queda exacto. Las otras opciones eran que la escribiera sólo el barrido, tachando la regla de `B/09` §3 (hasta un día `puedeCobrarle` contesta `sí` sobre un preapproval ya cancelado y el plazo 16 arranca tarde) o que `B11` metiera la escritura en el handler y en `S16` al llegar (toca código de `B3`: contradice BL y el punto 2 de `DEC-ARCH-017`) |
 | CI | si `B11` espera a `B4`, si el grafo de `B/descomposicion.md` §3 hace depender a `B11` sólo de `B5` y `B11` escribe y lee `provider_link.cancelado_visto_en`, la columna que crea `B4` (hueco que ya traía el reparto de Z y que CH dejó a la vista) | 1 | sí | **flecha nueva `B4 → B11`: `B11` espera a `B4`**, en los dos grafos de §3, en la tabla de paralelos y en las flechas que se escriben explícitas. Costo nulo en el camino crítico: `B11` no está en el del corte. Las otras opciones eran aplicar BL a `B11` con interfaces de escritura y de lectura (si `B11` corre antes que `B4`, la exención lee *«no vista»* y abre marcas falsas) o mover la columna a `B3` (reabre AP y AV) |
 
+## Lote CJ (2026-10-02)
+
+Respuesta del owner, 2026-10-02, a la única pregunta que dejó la adjudicación de la vuelta 3 de
+verificación ciega (fuentes en `591034c665`, spec en `a10f010e78`; hallazgo `H3-VB07-7`). Es la
+recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CJ | quién retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`), si la fila de `V6` de `V/descomposicion.md` §2 dice que con `V6` *«desaparecen el borrado físico de fichas y de cuentas»* y la tabla de puertas de la misma descomposición (§2.13, lote 3 C) le da la de cuentas a `V8a` (Z sólo renombró `V8` a `V8a`; el reparto es de antes) | 1 | sí | **la retira `V6`**, en el mismo cambio que las puertas de fichas y antes del corte: se corrige la tabla de puertas para que diga `V6`, y el mapa de cobertura de la spec consolidada también. `AC:V6:25` ya lo exige, y queda una sola pieza dueña de todas las puertas de borrado físico; la acción 24, que la reemplaza, sigue en `V8a`. Las otras opciones eran que la retirara `V8a` (cuatro lugares que cambiar, y entre el merge de `V6` y el de `V8a` la ruta sigue viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6` deshabilitándola y `V8a` borrando el archivo (reparte un solo acto en dos piezas, contra cómo la fuente reparte las puertas) |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
