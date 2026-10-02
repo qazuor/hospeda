@@ -1777,7 +1777,7 @@ doce** (corte del MVP, owner 2026-10-01, Z): cambian sus piezas, no su número. 
 del corte lee a una posterior**: recontado con `41-corte-del-mvp/aristas.py`, que lee esta tabla
 por su encabezado.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:365, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:392
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:365, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:393
 
 <a id="dep-1"></a>
 **DEP:1** — **Lee `B2`**: `billing_option` cuelga de `plan_version`. No es la dirección inversa:
@@ -1797,7 +1797,7 @@ dependencia de construcción: verticales se construye contra la respuesta de arr
 2026-09-29, lotes M-F y M-G).
 
 Pieza dueña del AC: [B4](10-corte/B4.md#pieza-b4) · también: [V4](10-corte/V4.md#pieza-v4) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:376, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:421
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:376, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:422
 
 <a id="dep-3"></a>
 **DEP:3** — **Lee `B7`**, el reloj del grace: `díasDeGrace` de `políticaDePlan` (§4.1). *«El §20
@@ -1843,7 +1843,7 @@ versión retirada (`N-G4V-07`; `B/03` §3.2); `admiteAltas` salió con la revisi
 declarado»*, y no mueve el grafo: `V2` llega antes que `B3`. **Contra `V2`.**
 
 Pieza dueña del AC: [B3](10-corte/B3.md#pieza-b3) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:395
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:396
 
 <a id="dep-9"></a>
 **DEP:9** — **Lee `B10`**, [`A1`](04-catalogos.md#trans-b-a1), la venta de un addon: `ficha`
@@ -1855,7 +1855,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/
 [`DEC-ARCH-017`](01-decisiones-vigentes.md#dec-arch-017)).
 
 Pieza dueña del AC: [B10](20-fase-3/B10.md#pieza-b10) · también: [V6](10-corte/V6.md#pieza-v6) (provee), [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:383, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:402, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:405
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:383, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:403, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:406
 
 <a id="dep-10"></a>
 **DEP:10** — **Lee `B9b`**, el canje de una extensión de trial (era `B9`: corte del MVP, owner
@@ -1864,7 +1864,7 @@ canje sólo con `ACEPTADA` (owner 2026-09-26, `G4-2`; `F-8V1C1-009`). **Contra `
 gate de `B4`.
 
 Pieza dueña del AC: [B9b](20-fase-2/B9b.md#pieza-b9b) · también: [V4](10-corte/V4.md#pieza-v4) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:384, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:405
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:384, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:406
 
 <a id="dep-11"></a>
 **DEP:11** — **Lee `B10`**, [`A6`](04-catalogos.md#trans-b-a6), el addon `LISTING` cuya ficha llegó a
@@ -1874,7 +1874,7 @@ empuje lo consume `B10`, dueña de `A6`** (con OK del owner, 2026-09-26, FASE 9 
 2026-10-01, Z). Como en la 9, `V6` (corte) y `V9b` (Fase 1) llegan antes que `B10` (Fase 3).
 
 Pieza dueña del AC: [B10](20-fase-3/B10.md#pieza-b10) · también: [V6](10-corte/V6.md#pieza-v6) (provee), [V9b](20-fase-1/V9b.md#pieza-v9b) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:385, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:402
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:385, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:403
 
 <a id="dep-12"></a>
 **DEP:12** — **Lee `B9a`**, el piso de un grant, al otorgar, al anclar y en el corte (era `B9`:
@@ -1884,7 +1884,7 @@ FASE 9 vuelta 2, `F-8V2C1-004`). Es un consumidor más de un campo ya declarado,
 grafo: `V2` llega antes. **Contra `V2`.**
 
 Pieza dueña del AC: [B9a](10-corte/B9a.md#pieza-b9a) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:386, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:408
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:386, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:409
 
 <a id="dep-14"></a>
 **DEP:14** — **La hora del trial, en la otra dirección: la pieza de verticales espera a la de
@@ -1895,7 +1895,7 @@ inversa ni la de ida: es el package mismo, como la 1 es la tabla. **`V4` espera 
 el grafo: `B1` es la primera pieza de billing, y `V4` llega después de `V3`.
 
 Pieza dueña del AC: [V4](10-corte/V4.md#pieza-v4) · también: [B1](10-corte/B1.md#pieza-b1) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:388, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:416
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:388, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:417
 
 **El conteo se recorre entero, no se suma.** Se recorrieron los campos del §4.1 uno por uno
 buscando su lector, y cada campo que queda tiene un lector en estas filas; los que no aparecen es
@@ -1912,7 +1912,7 @@ lado de la frontera, y por eso salió de la firma: FASE 9 vuelta 1, `F-8V1C1-015
 resueltas mucho antes que `B7`, `B8b` y `B12`. Lo que cambia no es el orden: es que dejan de ser
 invisibles.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:423, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:430, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:439
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:424, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:431, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:440
 
 ## La lista cerrada de ítems sólo citables (owner BA y BB)
 
@@ -1955,4 +1955,4 @@ su pieza dueña.
 dispositivo no se guardan) **no está en la lista**: se cubre con **un AC negativo en `V4`** (owner,
 BB). La lista es cerrada: agregarle o sacarle un ítem es una decisión del owner, no una edición.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8085
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8121

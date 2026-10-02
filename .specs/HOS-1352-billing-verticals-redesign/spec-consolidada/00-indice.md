@@ -95,7 +95,7 @@ con 34 al corte, 62 flechas y cero violaciones**. Las dos flechas nuevas son las
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7972
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7987
 
 ## Reglas que valen para todas las piezas
 
@@ -175,7 +175,7 @@ Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrolla
 
 Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7977, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8100, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7989, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8122, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6669
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8136, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8004, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8158, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6684
 
 ## Cómo leer un archivo de pieza
 
@@ -712,7 +712,7 @@ están listas: una unidad lo está cuando todas sus dependencias están hechas.
 [la épica de billing](https://claude.ai/artifact/Bp6dJstfwqoMzFTLP11BPZ) ·
 [el contrato de cobertura](https://claude.ai/artifact/KgHuCs8uTVEtNeuYfuLLJQ).
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1065, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1067, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1075, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1091
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1073, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1075, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1083, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1099
 
 ## La épica de verticales (`HOS-1353`): el diseño que reemplaza a su `spec.md`
 

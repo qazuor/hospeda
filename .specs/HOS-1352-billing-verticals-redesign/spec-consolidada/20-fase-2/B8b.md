@@ -27,7 +27,7 @@ De `B8`: cambio de plan y de ciclo, pausa, cierre de la sucesión, `S38`, con `G
 filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `19` §4** (BH; el reparto
 por fila lo infiere la fuente y lo marca).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:963, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:741
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:963, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:742
 
 <a id="fila-b8b"></a>
 
@@ -50,7 +50,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:144
 
 Las secciones de `12` §2, §3, §6 y §7, y `02` §2.6, que la columna de capítulos de la fila le asigna:
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:216, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:288, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1004, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1006, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1013, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1022, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1032, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1041, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1043, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1052, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1081, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1179
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:216, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:288, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1014, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1021, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1030, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1040, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1049, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1051, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1060, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1089, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1179
 
 La fila de origen, [FILA:B8](../10-corte/B8a.md#fila-b8), y su criterio,
 [LISTA:B8](../10-corte/B8a.md#lista-b8), están definidos en la mitad *a*; esta pieza los implementa
@@ -457,7 +457,7 @@ su código: en las ramas 1, 5 y 6 de `12` §5.3, `S18` apaga la bandera con la m
 aplican `S38`; y desde su merge una ruta declara la sucesión de `S1` sobre el cuerpo que escribió
 `B3`** (corte del MVP, owner 2026-10-02, BL).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1052
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1060
 
 ## Reglas
 
@@ -510,43 +510,43 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1052
 <a id="tpz-s8"></a>
 **TPZ:S8** — `S8` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:839
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:847
 
 <a id="tpz-s9"></a>
 **TPZ:S9** — `S9` → `B8b` y `B9b`, compartida (esta pieza construye su segundo disparador, la
 re-emisión sobre la sucesora; el primero, el otorgamiento, es de `B9b`).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:840
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848
 
 <a id="tpz-s10"></a>
 **TPZ:S10** — `S10` → `B8b`; el tercer evento, revocar una cortesía temporal, lo agrega `B9b` (BO).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:841
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849
 
 <a id="tpz-s17"></a>
 **TPZ:S17** — `S17` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856
 
 <a id="tpz-s18"></a>
 **TPZ:S18** — `S18` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857
 
 <a id="tpz-s22"></a>
 **TPZ:S22** — `S22` → `B8b` (queda en `B8b`, por AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861
 
 <a id="tpz-s31"></a>
 **TPZ:S31** — `S31` → `B8b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:858
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:866
 
 <a id="tpz-s38"></a>
 **TPZ:S38** — `S38` → `B8b`, **también con el motivo *«aumento»*, que usa `B12`** (BZ).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:865
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:873
 
 *(Que `TPZ:S9` se construya repartida —el segundo disparador acá, el primero en `B9b`— lo leo de las
 filas: `B8b` es el cierre de la sucesión y `B9b` las cortesías; la tabla de la fuente sólo dice
