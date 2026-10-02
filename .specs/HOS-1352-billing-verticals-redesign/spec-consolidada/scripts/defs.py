@@ -60,13 +60,17 @@ VIVOS = {'VIVO', 'ACCEPTED', 'VIGENTE', 'ORIGEN', 'SUPERSEDED_PARCIAL', 'PARCIAL
 MUERTOS = {'MUERTO', 'SUPERSEDED'}
 
 # --- which sources are NORMATIVE (every live item needs ≥1 AC, AL) and which are only
-#     citable. MATRIZ is evidence about the provider, OWN letters are the origin of DEC/📌 and
-#     of the files they shaped, SEC is the coverage net. Inferred: see the report (question AX).
+#     citable: owner AX (2026-10-01, the 1; DEC-METH-019, its 📌). AX names decisions (minus
+#     DEC-METH-*), 📌, piece rows, «Lista cuando», guards, invariants, transitions, actions, terms,
+#     reasons, locks, RP, M, steps, gates and the moves of the cut (ESQ, TPZ, APZ); citable only:
+#     the matrix, the owner letters and the list of pieces. PROH (the forbidden transitions, which
+#     AN tests), VAL (validations that kept a guard name) and DEP are not named by AX and are kept
+#     normative here (inferred; question AZ).
 NORMATIVAS = {'DEC', 'PIN', 'FILA', 'LISTA', 'GUARD', 'VAL', 'DEP', 'INV', 'TRANS', 'PROH',
               'ACC', 'PLAZO', 'MOT', 'LOCK', 'RP', 'M', 'PASO', 'ESQ', 'TPZ', 'APZ', 'GATE'}
 CITABLES = NORMATIVAS | {'MATRIZ', 'OWN', 'PIEZA'}
 # methodology decisions (and their 📌) govern how the program is run, not what is built: citable,
-# never required to be covered by an AC (inferred, question AX)
+# never required to be covered by an AC (owner AX)
 NO_NORMATIVAS_PREFIJOS = ('DEC-METH-',)
 
 # --- R6: what the cited Origen line must contain. 'id' = the local id; 'pin' = 📌; 'pos' = an

@@ -5,10 +5,8 @@
     python3 asignar.py <inventario.json> <adjudicacion.json> <salida asignacion.json>
 
 One rule per source (REGLAS below). A dead item (MUERTO/SUPERSEDED, or adjudicated MUERTO) goes to
-90-retirados.md whatever its source. The eight later pieces go to `20-fase-?/<pieza>.md`: which
-phase each one travels in is not decided in the sources (AE says one epic branch per later phase,
-not how many phases nor which piece goes in which), so the folder stays open until the owner
-answers (question AW). An item marked `inferido` follows a rule the sources do not state
+90-retirados.md whatever its source. The eight later pieces go to `20-fase-<n>/<pieza>.md`, with
+the phase the owner fixed in AW (D/16 §4.7, «Las fases posteriores»; read by inventario.py). An item marked `inferido` follows a rule the sources do not state
 literally; the report lists them.
 """
 import collections
@@ -46,8 +44,10 @@ def main(inv_p, adj_p, out_p):
     tpz = {i['local']: i['piezas'] for i in inv if i['fuente'] == 'TPZ'}
     apz = {i['local']: i['pieza'] for i in inv if i['fuente'] == 'APZ'}
 
+    fases = {i['local']: i.get('fase') for i in inv if i['fuente'] == 'PIEZA'}
+
     def archivo_de(p):
-        return f'10-corte/{p}.md' if piezas[p] == 'corte' else f'20-fase-?/{p}.md'
+        return f'10-corte/{p}.md' if piezas[p] == 'corte' else f'20-fase-{fases[p]}/{p}.md'
 
     out = {}
     for i in inv:
@@ -95,22 +95,21 @@ def main(inv_p, adj_p, out_p):
             rec['inferido'] = bool(i['derivado'])
         else:
             sys.exit(f'✗ fuente sin regla: {f}')
-        if rec.get('destino', '') and rec['destino'].startswith('20-fase-?'):
-            rec['pendiente'] = 'AW'
         out[i['id']] = rec
     cuenta = collections.Counter(r['destino'] or 'red (SEC)' for r in out.values())
     por_archivo = dict(sorted(cuenta.items()))
-    pendientes = sorted({r['destino'] for r in out.values() if r.get('pendiente')})
+    pendientes = sorted({r['destino'] for r in out.values() if r['destino'] and '?' in r['destino']})
+    if pendientes:
+        sys.exit(f'✗ destinos sin resolver: {pendientes}')
     doc = dict(sha=SHA, reglas=REGLAS,
-               pendiente_AW='la agrupación de las 8 piezas posteriores en fases no está en las fuentes: '
-                            '`20-fase-?` hasta que el owner conteste AW',
+               fases={f'20-fase-{n}': sorted(p for p, f in fases.items() if f == n) for n in (1, 2, 3, 4)},
                por_archivo=por_archivo, archivos_pendientes=pendientes,
                inferidos=sorted(k for k, r in out.items() if r.get('inferido')), items=out)
     json.dump(doc, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
     print(f'SHA {SHA} · {len(out)} ítems')
     for k, n in por_archivo.items():
         print(f'  {n:5}  {k}')
-    print(f'  inferidos: {len(doc["inferidos"])} · archivos pendientes de AW: {len(pendientes)}')
+    print(f'  inferidos: {len(doc["inferidos"])} · destinos pendientes: {len(pendientes)} · fases: {doc["fases"]}')
 
 
 if __name__ == '__main__':

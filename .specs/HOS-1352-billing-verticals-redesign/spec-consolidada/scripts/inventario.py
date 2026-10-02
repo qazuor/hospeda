@@ -28,7 +28,7 @@ Sources, by name (the 18 of the method, then the ones the cut added, then the ne
   -- added by the cut (owner 2026-10-01, AP-AV) --
   19 ESQ     schema of later pieces created at the cut (D/16 §4.6)   ESQ:<n>
   20 TPZ     Subscription transition -> piece (B §2.12)              TPZ:<S>
-  21 GATE    acceptance gates (D/16 §4.7)                            GATE:<slug>
+  21 GATE    acceptance gates (D/16 §4.7), and the later phases of AW   GATE:<slug>, GATE:FP.F<n>
   22 APZ     addon-instance transition -> piece (B/03 §8 + D/16 §4.6) APZ:<A>
   -- added by this inventory (inferred, see report) --
   23 PROH    transitions that do NOT exist (B/03 §3.3)    PROH:B:<n>
@@ -370,6 +370,20 @@ for n in range(a, b + 1):
     if cur and m:
         st = 'MUERTO' if re.match(r'^\d+\. ~~.*~~\s*$', l) else 'VIVO'
         add('GATE', f'GATE:{cur}.{m.group(1)}', f'{m.group(1)}', D16, n, st)
+    # AW: the later phases, one row per phase (`| fase | piezas | …`), inside «Las fases posteriores»
+    m = re.match(r'^\| (\d) \| ((?:`[UVB]\d+[ab]?`,? ?)+) \|', l)
+    if cur == 'FP' and m:
+        ps = re.findall(r'`(' + PIEZA_RX + r')`', m.group(2))
+        add('GATE', f'GATE:FP.F{m.group(1)}', m.group(1), D16, n, 'VIVO', piezas=ps)
+        for p in ps:
+            if PIEZAS.get(p, {}).get('cuando') != 'después':
+                FAILS.append(f'phase {m.group(1)} names {p}, which is not a later piece')
+            PIEZAS.setdefault(p, {})['fase'] = int(m.group(1))
+for it in ITEMS:
+    if it['fuente'] == 'PIEZA' and it['cuando'] == 'después':
+        it['fase'] = PIEZAS[it['local']].get('fase')
+        if it['fase'] is None:
+            FAILS.append(f"later piece {it['local']} without a phase (AW)")
 
 # 25 · SEC (coverage net: every heading of the 38 design files, fenced code excluded) ---------
 for path in corpus_38():
@@ -396,7 +410,7 @@ def checks():
     corte = [p for p, x in PIEZAS.items() if x['cuando'] == 'corte']
     exp = {
         'decisiones (146)': (len(by['DEC']), 146),
-        'precisadas sin SUPERSEDED (75)': (sum(1 for i in by['DEC'] if i['precisada']), 75),
+        'precisadas sin SUPERSEDED (76)': (sum(1 for i in by['DEC'] if i['precisada']), 76),
         'filas de la matriz (117)': (len(by['MATRIZ']), 117),
         'piezas (30)': (len(PIEZAS), 30),
         'piezas al corte (22)': (len(corte), 22),

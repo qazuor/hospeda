@@ -44,7 +44,7 @@ RULES
   R14 every live TRANS and PROH is covered by ≥1 `integración con DB` test.
   R15 every GUARD is covered by ≥1 `guard estático` test with `Mutación:`.
   R16 template (AO): every piece has its file in the right folder (cut -> 10-corte, later ->
-      20-fase-*), with every heading of the template, in order, and none empty.
+      20-fase-<n> of its phase, AW), with every heading of the template, in order, and none empty.
   R17 coverage net: every live section of the 38 design files has ≥1 line cited by an `Origen:`.
 """
 import collections
@@ -252,7 +252,7 @@ def main(inv_p, adj_p, spec_dir, deriva=True):
         lista = slug(f'LISTA:{p}')
         if not any(a['pieza'] == p and lista in a['fuente'] for a in ac.values()):
             err['R11 pieza sin AC de salida (Lista cuando)'].append(p)
-        carpeta = '10-corte' if it['cuando'] == 'corte' else '20-fase-*'
+        carpeta = '10-corte' if it['cuando'] == 'corte' else f"20-fase-{it.get('fase')}"
         fs = glob.glob(os.path.join(spec_dir, carpeta, f'{p}.md'))
         if len(fs) != 1:
             err['R16 pieza sin su archivo (o en la carpeta equivocada)'].append(p)
