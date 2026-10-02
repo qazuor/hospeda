@@ -756,7 +756,7 @@ regla 1 del §1.3. Recontado con `41-corte-del-mvp/contar.py`.
 **Las flechas que cambian** (§3, *«Con el corte del MVP»*): `B8 → B9` pasa a `B8a → B9a` y
 `B8b → B9b`, porque la atadura real es la sucesión (`S9` y la cortesía re-emitida sobre una
 sucesora); `B10 → B13` pasa a `B10 → B13b`; `B9 → B10` y `B13 → B12` pasan a `B9b → B10` y
-`B13b → B12`; y se escriben explícitas `B4 → B9a`, `B8a → B13a`, `B7 → B13a` y `B5 → B13a`, **y `B9a → B13a`, porque las filas 13 y 13-bis confirman la acción 2 de `B9a`** (corte del MVP, owner 2026-10-01, BH)
+`B13b → B12`; y se escriben explícitas `B4 → B9a`, `B8a → B13a`, `B7 → B13a` y `B5 → B13a`, **y `B9a → B13a`, porque las filas 13 y 13-bis confirman la acción 2 de `B9a`** (corte del MVP, owner 2026-10-01, BH), **y `B4 → B11`, porque `B11` escribe y lee `provider_link.cancelado_visto_en`, que crea `B4`** (corte del MVP, owner 2026-10-02, CI)
 (`41-corte-del-mvp/00-propuesta.md` §3.2). Ninguna pieza del corte espera a una posterior,
 recontado con `41-corte-del-mvp/aristas.py`.
 
@@ -836,6 +836,8 @@ pone al corte (AP); y cómo se dice en pantalla que todavía no se puede cambiar
 - **CH** (corte del MVP, owner 2026-10-02): `provider_link.cancelado_visto_en` la escribe toda
   relectura por id que ve `cancelled`; `B3` (el handler y `S16`) llama a la interfaz *«anotar la
   cancelación vista»*, `B4` la implementa al crear la columna y el barrido de `B11` la usa también.
+- **CI** (corte del MVP, owner 2026-10-02): flecha nueva `B4 → B11`: `B11` escribe y lee
+  `provider_link.cancelado_visto_en`, que crea `B4`. No mueve el camino crítico del corte.
 
 **Las transiciones de la Suscripción, pieza por pieza** (corte del MVP, owner 2026-10-01, Z, AR y AS). Esta tabla la lee
 `41-corte-del-mvp/contar.py` por su encabezado y la compara con las filas vivas de `03` §3.2: cada
@@ -896,14 +898,14 @@ B1 ──┐   ✅ la pasarela se decidió (DEC-MP-005, 24/09): esto ya no esper
 B2 ──┘   ✅    │              │
                └──► B5 ──┬────┘
                          ├──► B7 ──► B8 ──► B9 ──► B10 ──► B13 ──► B12
-                         ├──► B11
+                         ├──► B11 ◄── B4 (CI)
                          └──► B6  ····  ✅ con diseño desde el 24/09 (el 13 se repartió)
 ```
 
 | | |
 |---|---|
 | **camino crítico** | ~~`B1 → B3 → B5 → B7 → B8 → B9 → B10 → B13 → B12`~~ `U1 → B1 → B3 → B5 → B7 → B8 → B9 → B10 → B13 → B12` (verificación corta, 2026-09-29, lote O-A) |
-| **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · ~~**B4** una vez que estén B3 y `V4`~~ **B4** una vez que estén B3, **B5**, `V4` **y `U2`** (FASE 5, lote 2 A) —`cobrada` se lee sobre pagos acreditados, que registra B5, y el aviso del primer pago lo emite `P1`, que también es de B5 (FASE 9 vuelta 1, `F-8V1C1-005`); no mueve el camino crítico: `B4` sigue en paralelo, ahora con `B7`— · **B11** una vez que esté B5 · **B6** una vez que esté B5 (y B1, porque el reembolso sale por el adaptador) |
+| **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · ~~**B4** una vez que estén B3 y `V4`~~ **B4** una vez que estén B3, **B5**, `V4` **y `U2`** (FASE 5, lote 2 A) —`cobrada` se lee sobre pagos acreditados, que registra B5, y el aviso del primer pago lo emite `P1`, que también es de B5 (FASE 9 vuelta 1, `F-8V1C1-005`); no mueve el camino crítico: `B4` sigue en paralelo, ahora con `B7`— · ~~**B11** una vez que esté B5~~ **B11** una vez que estén B5 **y B4**, porque escribe y lee `provider_link.cancelado_visto_en`, que crea B4 (corte del MVP, owner 2026-10-02, CI); no mueve el camino crítico · **B6** una vez que esté B5 (y B1, porque el reembolso sale por el adaptador) |
 | ~~**sin diseño**~~ **B6** | ~~**B6**, y~~ **desde la FASE 9-bis-3 detiene la EJECUCIÓN de un desenlace de B7** — ver §3.1. ~~Sin diseño~~ Con diseño desde el 2026-09-24 (FASE 9 completa, salida 3) |
 | **`U3`, fuera del grafo** | el script del corte, del paraguas (FASES 6 y 7, owner 2026-09-30, F; `16-fase-7…` §4.6): los pasos 1a, 1b y 2 del corte, sin dependencias de código. ~~No depende de ninguna unidad ni la espera ninguna de esta épica; la espera el ensayo del corte.~~ **entra después de `U1`, en paralelo con `V1`, `B1` y `U2`, y sólo tiene que estar mergeada antes del ensayo del corte; no la espera ninguna unidad de esta épica** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, K). **No es una dependencia entre épicas** —no le suma ninguna a las doce del §2.6— y no toca el camino crítico |
 | ~~**lo único que arranca hoy**~~ | ~~**B2**, y la interfaz de B1. **El resto del grafo espera a la pasarela** (§2.3)~~ **Nada espera a la pasarela desde el 2026-09-24**: el grafo se recorre en el orden de las flechas |
@@ -918,7 +920,7 @@ B2 ──┘         │              │
                          ├──► B7 ──► B8a ──► B9a ◄── B4
                          │            │  └──► [B8b] ──► [B9b] ──► [B10] ──► [B13b] ──► [B12]
                          │            └──► B13a ◄── B5, B7, B9a (BH)
-                         ├──► B11
+                         ├──► B11 ◄── B4 (CI)
                          └──► B6
 ```
 
