@@ -70,6 +70,47 @@ async function createVerifyTmp(cwd: string): Promise<string | undefined> {
     }
 }
 
+export interface DependencyGap {
+    readonly directory: string;
+    readonly install: string;
+}
+
+/**
+ * Finds CI working directories whose package dependencies are not installed.
+ * This is deliberately read-only: verify reports the exact install command but
+ * never runs it as part of a verification.
+ */
+export function dependencyGaps({
+    repoRoot,
+    steps
+}: {
+    readonly repoRoot: string;
+    readonly steps: readonly Pick<CiStep, 'workingDirectory'>[];
+}): readonly DependencyGap[] {
+    const directories = new Set(steps.map((step) => step.workingDirectory ?? '.'));
+    const gaps: DependencyGap[] = [];
+    for (const directory of directories) {
+        const absolute = resolve(repoRoot, directory);
+        if (
+            !existsSync(join(absolute, 'package.json')) ||
+            existsSync(join(absolute, 'node_modules'))
+        )
+            continue;
+        const install =
+            existsSync(join(absolute, 'bun.lockb')) || existsSync(join(absolute, 'bun.lock'))
+                ? 'bun install --frozen-lockfile'
+                : existsSync(join(absolute, 'pnpm-lock.yaml'))
+                  ? 'pnpm install --frozen-lockfile'
+                  : existsSync(join(absolute, 'package-lock.json'))
+                    ? 'npm ci'
+                    : existsSync(join(absolute, 'yarn.lock'))
+                      ? 'yarn install --immutable'
+                      : 'instalar las dependencias del proyecto';
+        gaps.push({ directory, install });
+    }
+    return gaps;
+}
+
 /** The help page. */
 function renderHelp(): string {
     return `
@@ -330,6 +371,31 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         return only === undefined ? 1 : 1;
     }
 
+    const gaps = dependencyGaps({
+        repoRoot: cwd,
+        steps: [...plan.steps, ...(tests === null ? [] : [tests])]
+    });
+    if (gaps.length > 0) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({
+                    readOnly: true,
+                    status: 'blocked',
+                    reason: 'dependencies_missing',
+                    dependencies: gaps,
+                    mutations: 'none'
+                })}\n`
+            );
+        } else {
+            process.stderr.write(`${pc.yellow('verify bloqueado: faltan dependencias locales')}\n`);
+            for (const gap of gaps) process.stderr.write(`  - ${gap.directory}: ${gap.install}\n`);
+            process.stderr.write(
+                `${pc.dim('Instalalas y repetí verify; este comando no instala automáticamente.')}\n`
+            );
+        }
+        return 2;
+    }
+
     process.stderr.write(
         `${pc.dim(`${total} pasos, leídos de ${WORKFLOW}`)}` +
             `${plan.skipped.length > 0 ? pc.dim(`  ·  ${plan.skipped.length} no aplican acá`) : ''}\n`
@@ -349,14 +415,17 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
             const job = {
                 command: 'bash',
                 args: ['-c', step.run],
-                cwd: step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
+                cwd:
+                    step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
                 // CI injects BASE_SHA for guards that inspect the diff. Local
                 // verify has the same contract: use the configured local base so
                 // those guards do not fail closed merely because they are outside
                 // GitHub Actions.
                 env: {
                     BASE_SHA: process.env.BASE_SHA ?? baseRef,
-                    ...(sandboxTmp === undefined ? {} : { TMPDIR: sandboxTmp, TMP: sandboxTmp, TEMP: sandboxTmp })
+                    ...(sandboxTmp === undefined
+                        ? {}
+                        : { TMPDIR: sandboxTmp, TMP: sandboxTmp, TEMP: sandboxTmp })
                 }
             } as const;
             let captured: Awaited<ReturnType<typeof runner.execCapture>> | null = null;
