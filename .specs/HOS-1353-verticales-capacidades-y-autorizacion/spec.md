@@ -449,8 +449,8 @@ filas existentes; salida 3 de la FASE 9 completa.)*
 
 - **El orden de implementación.** Sale de las dependencias entre capítulos, no de acá.
 - **Cuáles son las claves de entitlement y de limit de cada vertical.** Es configuración: acá está
-  que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia y
-  `enforcementStrategy` — no cuál es.
+  que el subconjunto se declara por vertical y que cada clave lleva ~~scope, estrategia y
+  `enforcementStrategy`~~ scope, estrategia de agregación, `enforcementStrategy` y clase (`docs/15` §3.4; residuo corregido el 2026-10-02, segunda vuelta del triage) — no cuál es.
 - ~~**Si el mes de una cuota corre por calendario o por aniversario.** Sigue abierto desde
   `DEC-ENT-002`.~~ **Cerrado** (revisión del owner, 2026-09-28, C4): por la fecha del ciclo de
   cada persona, también en anual y en la prueba gratis (`15` §7).
