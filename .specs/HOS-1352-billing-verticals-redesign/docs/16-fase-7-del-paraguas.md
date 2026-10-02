@@ -1100,6 +1100,18 @@ Y una excepción declarada a *«aditiva»*, la única: **`B8b` saca de Mi Suscri
 *«todavía no se puede cambiar de plan…»* que `B13a` muestra al corte** (AU), y nada más que ese
 texto.
 
+**Las fases posteriores son cuatro, en este orden** (corte del MVP, owner 2026-10-01, AW, la 1;
+`41-corte-del-mvp/10-decisiones-del-owner.md`), cada una en su rama épica y con el gate de arriba:
+
+| fase | piezas | por qué en ese lugar |
+|---|---|---|
+| 1 | `V9b` | tiene que estar mergeada antes de la primera fecha en que un aviso de retención podría salir (AC), y `B10` la espera (`V9b → B10`) |
+| 2 | `B8b`, `B9b` | `B9b` espera a `B8b` (la sucesión), y `B10` espera a `B9b` |
+| 3 | `B10`, `B13b`, `B12` | `B10` espera a `V9b` y a `B9b`; `B13b`, a `B10`; `B12`, a `B13b` |
+| 4 | `V7`, `V8b` | `V8b` espera a `V7`; ninguna otra pieza posterior espera a `V7` |
+
+El orden lo fija AW; que la fase 4 pueda adelantarse a la 2 o a la 3 no lo dice *(lo marco)*.
+
 #### El smoke manual del cobro nuevo
 
 (B; `F-8cC2-005`, que estaba abierto desde la FASE 8-bis-2.) **Un checklist nuevo, del sistema
