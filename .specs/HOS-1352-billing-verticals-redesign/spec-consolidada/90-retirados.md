@@ -313,6 +313,36 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:143
 
+**La historia del reparto de `G-R5`** (`V/descomposicion.md` §2.7, *«`G-R5` se va a `B8`, porque
+la celda de `V9` estaba en la épica equivocada»*). `G-R5` salió con la revisión del owner,
+2026-09-28, C14: la pausa pedida por el dueño detiene el reloj de retención y el guard se quedó sin
+sujeto; la sección queda como historia de su reparto, y `B8` ya no lo construye. Lo que decía:
+
+- `F-8eC2-004` lo reportó y se confirmó recorriendo los dos grafos del §3 de las descomposiciones.
+  La celda de `V9` decía *«el de `D16`»* —o sea `G-R5`, nombrado por su invariante y no por su id—,
+  y el guard comparaba **dos cifras de configuración**: el **tope de una pausa**, que declara
+  `B/03` §5 (*«4 pausas-mes por pausa»*), y el **día del hard delete**, que declara `V/02` §4.1. De
+  las dos, la que `V9` construye es la segunda: sus capítulos son `02` §4, `22` §3 y `01` §1.2
+  (núcleo), y `B/03` §5 no está entre ellos. El catálogo de billing ya lo había advertido: *«el
+  número que puede romperlo es de esta épica: si alguien sube el tope de pausa y el guard sólo vive
+  en el catálogo de la otra, el cambio se hace sin verlo»* (`B/20` §2).
+- **El orden no lo dejaba mal ubicado: lo dejaba inejecutable.** `V9` corría *«una vez que estén
+  V4 y V6»*, temprano y sin esperar a billing; el tope lo construía `B8`, después de la bisagra
+  —`B1 → B3 → B5 → B7 → B8`— y de todo lo que esperaba a la pasarela. El guard se habría construido
+  **antes que el número que compara**, sin contra qué fallar: *«un comentario con exit code 0»*, la
+  regla 1 de la descomposición leída al revés.
+- **Iba a `B8`, la unidad que construía el tope**, con la razón entera en `B/descomposicion.md`
+  §2.8. Era la misma forma de [GUARD:G-R6-B](04-catalogos.md#guard-g-r6-b) (§2.5) con el eje
+  cambiado (`G13` dejó de serlo: nace en `V4`, owner 2026-09-26, `G5-5`): **dónde se construye un
+  guard y qué documento declara sus números son dos preguntas distintas.** `V9` conservaba lo suyo:
+  el día 180 es de su capítulo, y si alguien movía ese número el cambio era de `V9` y el rojo lo
+  daba el guard de `B8`.
+
+El guard y su invariante, `INV:D16`, están retirados; la unidad `V9` es hoy `V9a` y `V9b`, y `B8`
+es `B8a` y `B8b` ([Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z)).
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:264, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:266, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:270, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:280, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:287
+
 <a id="trans-v-t7"></a>
 
 ### TRANS:V:T7 — `PRE_TRIAL` → `TRIAL_CONVERTED`, por el encendido de la prueba de una vertical
@@ -445,3 +475,59 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.
   ahora el [paso 3](30-el-corte.md#paso-3).
 
 Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:295, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:283
+
+## El rastro de `B/descomposicion.md` §2.3 (no son ítems del inventario)
+
+El §2.3 de la descomposición de billing, *«Qué se puede hacer ya, y qué esperaba a la pasarela»*,
+**se declara a sí mismo rastro**: describe el estado anterior al 2026-09-24, y desde
+[DEC-MP-005](01-decisiones-vigentes.md#dec-mp-005) y [DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006)
+las trece unidades tienen diseño y ninguna espera a un tercero (FASE 9 completa, salida 3 de
+`DEC-METH-004`). Lo vigente del §2.3 —la tabla *«Política y forma»*, con la columna de la forma
+contestada por Mercado Pago— está en
+[03-contrato-de-cobertura.md](03-contrato-de-cobertura.md). Acá queda lo que murió. No son ítems
+del inventario, así que no llevan ancla.
+
+### El conteo previo a la pasarela
+
+- **Qué era**: la tabla de tres filas —*«sin diseño: 1, B6»*, *«con diseño, esperando la pasarela:
+  11»*, *«se puede hacer entera hoy: 1, B2»*— y la frase *«Doce de trece tienen el diseño escrito.
+  Doce de trece no se pueden construir todavía»*.
+- **Por qué murió**: por [DEC-MP-005](01-decisiones-vigentes.md#dec-mp-005) (la pasarela es Mercado
+  Pago) y [DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006) (el 13 se repartió y su política está
+  decidida, 2026-09-24): la fuente deja las dos primeras filas en 0 y la tercera en *«se puede
+  construir: 13, en el orden del §3»*, y tacha la frase.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:215, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:217, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:218, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:219, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:221, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206
+
+### Por qué el alcance era tan ancho
+
+- **Qué era**: la explicación de por qué la pasarela decidía la forma de casi todo el sistema —quién
+  tiene el reloj de cobro, si la pausa es nativa, si un addon es una autorización aparte, si se
+  puede mutar el ciclo, si el inventario se puede listar, qué miente el falso, el piso y la
+  moneda—, con la cita de `DEC-ARCH-004`: *«las pasarelas no son intercambiables»*, y que eso no se
+  podía declarar contra un proveedor sin elegir.
+- **Por qué murió**: es parte del rastro que el §2.3 declara (línea 206): el proveedor está elegido.
+  Lo vigente de cada línea ya está en [DEC-MP-005](01-decisiones-vigentes.md#dec-mp-005),
+  [DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006) y
+  [DEC-ARCH-004](01-decisiones-vigentes.md#dec-arch-004), y en los capítulos de cada pieza.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:225, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:227, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:231, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:241, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206
+
+### La fila `B12` de *«Política y forma»*
+
+- **Qué era**: *«se deja de cobrar antes de dejar de prestar»* (política) y *«cómo se corta el cobro
+  el día 0»* (forma).
+- **Por qué murió**: está tachada entera en la fuente: era de la discontinuación de una vertical,
+  que salió con la revisión del owner, 2026-09-28, C8; tachada en los casos vecinos, 2026-09-29,
+  caso 38.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:257
+
+### Lo que sí convenía hacer mientras tanto
+
+- **Qué era**: la lista de tres tareas mientras la pasarela no estuviera decidida: atomizar las
+  once que tenían diseño, construir `B2` entera, y escribir la interfaz del adaptador y `G12`.
+- **Por qué murió**: la fuente la declara *«sin objeto desde el 2026-09-24»*: la lista era para
+  mientras la pasarela no estuviera decidida, y queda como rastro.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:272

@@ -26,10 +26,13 @@ verifica quien opera el corte.
 
 ### Paso 0 · el ensayo, `EX-49` y el tope de purgas
 
-**Qué**: desde la simplificación del corte, **tres cosas y ninguna en producción: el despliegue
-ensayado entero en `staging` y verde, la medición de la lista de proveedores del seudónimo
-(`EX-49`) y la verificación del tope de purgas del borde** (FASE 5, owner 2026-09-30,
-simplificación del corte, D y E; S-16, S-33, S-34, S-35).
+**Qué**: desde la simplificación del corte, **tres cosas, y una sola lee producción, sin mutar
+nada: el despliegue ensayado entero en `staging` y verde, la medición de la lista de proveedores
+del seudónimo (`EX-49`) y la verificación del tope de purgas del borde** (FASE 5, owner
+2026-09-30, simplificación del corte, D y E; S-16, S-33, S-34, S-35). **La medición de `EX-49` se
+registra con la etiqueta `prod`**, porque lee la tabla de usuarios de producción y es gate del
+corte real (corte del MVP, owner 2026-10-02, BQ Q2;
+[DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2)).
 
 - **El ensayo** (FASES 6 y 7, owner 2026-09-30, C y B; *«verde»*, lo derivado D-5, también
   aprobado): corre sobre **una copia de la base de producción restaurada en `staging`, con los
@@ -37,7 +40,9 @@ simplificación del corte, D y E; S-16, S-33, S-34, S-35).
   se borra al terminar el ensayo; **arranca con la imagen vieja desplegada en `staging`**, porque si
   no, no se ensaya el apagado del viejo ni el acto de migrar; **lleva adentro la parte de `staging`
   del checklist de smoke del sistema nuevo**, que escribe `B13a` en `docs/billing/` (B; corte del
-  MVP, owner 2026-10-01, Z); corre el script del corte de `U3`, ya mergeado (F); y **es verde cuando
+  MVP, owner 2026-10-01, Z); corre el script del corte de `U3`, ya mergeado (F); **recorre la rama
+  de aborto una vez, sobre la misma copia** (corte del MVP, owner 2026-10-02, BQ Q1; abajo, *«La
+  rama de aborto»*, en el [paso 2b](#paso-2b)); y **es verde cuando
   cada verificación que el §4.2 nombra pasó, en su orden, sin tocar nada a mano fuera de lo que el
   paso dice**: cualquier intervención no escrita lo vuelve rojo y se escribe antes del reintento
   ([GATE:M3](#gate-m3)). **El despliegue, ensayado en `staging` y verde.**
@@ -81,7 +86,8 @@ final, porque eso reabre la razón del [paso 1a](#paso-1a): **un cobro entre el 
 cancelación no deja asiento** (§4.1). El remedio es el **paso 0** y una rama de aborto declarada
 ([paso 2b](#paso-2b)).
 
-Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:1](#ac-corte-1), [AC:CORTE:2](#ac-corte-2)).
+Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:1](#ac-corte-1), [AC:CORTE:2](#ac-corte-2),
+[AC:CORTE:19](#ac-corte-19)).
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:425, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:430
 
@@ -303,6 +309,12 @@ del viejo, para no dejar el sitio en sólo lectura por un plazo que nadie fijó
 (`38-fase-5/21-cruces.md` §5 A). El costo queda declarado y aceptado: si el reintento tarda días, la
 plataforma entera queda en sólo lectura esos días.
 
+**Y el ensayo del paso 0 la recorre una vez** (corte del MVP, owner 2026-10-02, BQ Q1;
+[DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2)): en `staging`, sobre la misma copia,
+con una falla provocada después del 1b, y verifica restaurar el 2b, redesplegar la imagen vieja, los
+inversos (b) y (c) de abajo y la regla del 0b puesta hasta el reintento. Es la única red que ve esta
+rama antes del día del corte.
+
 El sistema viejo **sigue corriendo**: si el paso 3 alcanzó a escribir algo, **se restaura el backup
 del paso 2b**. **Lo que el backup no puede pisar es lo que el corte cambió afuera de la base, y
 hasta el 4b son dos cosas, cada una con su inverso** (FASE 9 vuelta 2, `F-8V2A3-002`,
@@ -407,7 +419,7 @@ de acá es el del **programa**, y es de otro tamaño.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:4](#ac-corte-4), [AC:CORTE:5](#ac-corte-5)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:151, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:432, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:440, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:446, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:467, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:485, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:487, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:492, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:95, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:101, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:110, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:114, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:512, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:516, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:524, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:549, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:554, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:564, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:573, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:589, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:608, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:622
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:151, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:432, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:440, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:446, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:467, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:485, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:487, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:492, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:95, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:101, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:110, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:114, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:512, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:516, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:524, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:549, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:554, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:564, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:573, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:589, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:608, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:622, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:455
 
 <a id="paso-3"></a>
 
@@ -895,6 +907,344 @@ puntos 3 y 4, que se define en `01-decisiones-vigentes.md`.
 *(Fuente de este apartado: `D/16` §4.2, líneas 250 a 332; sin ancla, porque no es un ítem del
 inventario.)*
 
+## La cartera vieja y el trial: qué se migra y qué no
+
+Los §1 a §3 de la mitad de billing del capítulo 21 (`B/21`) y el §2 de la de verticales (`V/21`),
+en su forma vigente. Ninguna pieza los construye como tales: lo que piden lo ejecuta el corte (los
+pasos 1a, 1b, 2b, 3 y 3b de arriba) y lo que queda vivo como mecanismo lo construyen
+[B9a](10-corte/B9a.md#pieza-b9a) (los dos `permanent_grant` del [paso 3b](#paso-3b)) y
+[B11](10-corte/B11.md#pieza-b11) (la regla de re-vinculación y la lápida de recepción). Cómo
+amanecen las cinco cuentas de la lista (`V/21` §2.4) es de [V6](10-corte/V6.md#pieza-v6).
+
+### El trial ya consumido (`V/21` §2, cierra `M-MIG-01`)
+
+**La pregunta ya no tiene sujeto: NO SE MIGRA.** `M-MIG-01` preguntaba si alguien que consumió un
+trial bajo reglas distintas —otro alcance, otra duración, otro disparador— arrastra el consumo al
+modelo nuevo. **La pregunta se disuelve porque no se transcribe ninguna fila.**
+
+> **El sistema nuevo no hereda una sola fila. Las ocho suscripciones vivas se cancelan, y quien
+> tenga algo vivo se suscribe de nuevo.**
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:27, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:29, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:31, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:35
+
+**Qué hizo posible la decisión, y no fue un criterio técnico.** Hasta que el owner aportó el dato,
+nadie sabía **de quién eran las ocho**. Con eso:
+
+| las ocho | quiénes son |
+|---|---|
+| **2 `comp`** | **del propio owner.** No hay un cliente real detrás de ninguna |
+| **3 `abandoned`** | no tienen **nada vivo** que migrar: abandonaron el checkout. **Verificado también del lado del proveedor** el 2026-09-24 (`B/21` §2.4) |
+| **3 `trialing`** | clientes reales, **y contactables** — el owner puede hablarles para que se resuscriban |
+
+Las tres `trialing` son las **únicas** con preapproval vivo (medido: 3 de 3, y ninguna de las otras
+cinco), y sobre ellas se apoyaba **todo lo pesado** de la migración: el punto de no retorno, el
+orden forzado y la ausencia de rollback. **Con las ocho recuperables por teléfono, esa carga no
+tiene sujeto.**
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:38, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:40, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:42, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:48
+
+**Qué cuesta cada camino, y qué se pierde exactamente.**
+
+| camino | costo |
+|---|---|
+| **migrar** | escribir una unidad de trabajo nueva, el orden forzado, el punto de no retorno **por fila**, y aceptar que el rollback no existe pasado cierto paso |
+| **no migrar** | **tres llamadas** y dos cuentas propias |
+
+**Qué se pierde, medido:**
+
+- **La plata del sistema viejo**: hasta el 2026-09-17 no había un solo pago; desde el 2026-09-26
+  los hay (`B/21` §1.3), y **no se conservan** — ni se transcriben ni se congelan las tablas viejas
+  (owner 2026-09-25; FASE 9 completa, `CT-6` y `2a`; `B/21` §4).
+- **El trial ya consumido de todo cliente actual se pierde, y a propósito**: el corte no siembra
+  trials consumidos, así que quien tenía ficha o suscripción en el sistema viejo **puede estrenar el
+  trial en el sistema nuevo** (owner 2026-09-25; FASE 9 completa, `2g`): *«A los clientes ya
+  suscriptos les regalamos el trial de nuevo: los tomamos como clientes nuevos. Sólo les respetamos
+  la ficha para que no la tengan que cargar de nuevo; la suscripción es como si recién
+  arrancaran.»* Revierte la regla del 2026-09-25 de la FASE 8 completa, que sembraba una fila de
+  `trial` ya consumida por cada dueño existente (*«el rastro de que ya fue cliente»*, retirado).
+
+**El argumento de fondo no es de pereza**: se estaba construyendo una migración para **ocho filas
+sin un solo pago, todas de gente a la que se puede llamar**. Diseñarla, revisarla, ejecutarla y
+garantizar su rollback es desproporcionado frente a un mensaje. Y el beneficio extra es real: **el
+sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin estados viejos, sin
+dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
+disponible ahora**, mientras son ocho.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:53, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:55, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:60, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:63, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:71, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:79
+
+**Sin condición de caducidad** (`V/21` §2.5). La condición que vigilaba el tamaño de la cartera
+**sale entera** (FASE 5, simplificación del corte, S-56): la migración carga una lista cerrada de
+cinco cuentas que fija el owner, así que el tamaño de la cartera ya no decide nada
+([DEC-MIG-007](01-decisiones-vigentes.md#dec-mig-007), punto 3; lote A). El umbral de unas veinte
+personas a llamar y el aviso que obligaba a volver a discutir la decisión si entraban registros
+nuevos salen con ella.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:629, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:631
+
+### La premisa del §56, medida (`B/21` §1, cierra `O-MIG-01`)
+
+**La objeción.** El §56 razona: *«Como hay pocos customers actuales: si migrar automáticamente
+agrega mucha complejidad/riesgo: preferir coordinación manual y nueva subscription»*. **La premisa
+—*«hay pocos customers»*— es una afirmación sobre el estado real del sistema y el PDR no da el
+número.** Toda la preferencia por la coordinación manual descansa ahí, y también el tamaño del
+riesgo de `R-MIG-01`. `O-MIG-01` pedía **medirla, no heredarla**. Es el §61 aplicado al propio PDR.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:27, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:29, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:31, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:37
+
+**Está medida, y la premisa es cierta por mucho.** Medición de producción del **2026-09-15**, sólo
+lectura (`D/07-facts-inventory.md`), **re-verificada el 2026-09-17 a las 12:52 `-03`** con la
+consulta 2 de ese documento, **sin un solo cambio**:
+
+| dato | valor |
+|---|---|
+| **pagos registrados en toda la historia** | **0** |
+| suscripciones vivas | 8, **todas mensuales** |
+| con compromiso de cobro vivo | **3** (`trialing`, alojamiento) |
+| cortesías sin vínculo con el proveedor | **2** (`comp`) |
+| gastronomías · experiencias · partners | **0 · 0 · 0** |
+
+**«Pocos customers» son tres compromisos de cobro y cero pagos cobrados en la historia del
+sistema.** No hay historial de pagos que preservar, y tres de las cinco verticales no tienen un
+solo dato: su rediseño no arrastra deuda de datos, sólo de código.
+**[DEC-MIG-001](01-decisiones-vigentes.md#dec-mig-001) queda apoyada en una premisa verificada**, no
+en una heredada. La objeción se cerró midiendo, que es la única forma en que se cierra una objeción
+de este tipo.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:39, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:41, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:45, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:53, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:57
+
+**Y caduca.** `S-METH-01`: esta medición vale mientras el hecho no cambie, y **este hecho cambia
+solo** — el 2026-09-26 (`B/21` §3). **No se re-verifica: el tamaño de la cartera ya no decide
+nada** (FASE 5, simplificación del corte, S-30). El corte conserva una lista cerrada de cuentas que
+fija el owner cuando esté listo para el corte, cada una con su única ficha, y a esas cuentas les
+avisa él por privado ([DEC-MIG-007](01-decisiones-vigentes.md#dec-mig-007); FASE 5, owner
+2026-09-30, simplificación del corte, lote A).
+
+**Y lo que seguía en este § sale entero** (FASE 5, owner 2026-09-30, simplificación del corte,
+lotes A, C y E): la re-verificación de la cartera y la lista de a quién llamar (S-29), el recuento
+de fichas de Gastronomía y Experiencia que detenía el corte (S-07), la población a avisar (S-51),
+la lista de fichas `REJECTED` (S-06), la pasada de sólo lectura sobre el proveedor (S-37), el
+titular que sólo conoce el proveedor (S-38) y la población y la segunda corrida del detector del
+cobro sobre la lápida del corte (S-74), que ya no existe. Las cuentas que importan las conoce el
+owner ([DEC-MIG-007](01-decisiones-vigentes.md#dec-mig-007), punto 3), y un cobro tardío de un
+débito viejo entra por la lápida de recepción como cualquier desconocido (abajo).
+
+> **Caducó el 2026-09-26** (FASE 9 completa, `CT-6`): ese día el sistema actual cobra el primer
+> pago de su historia (la suscripción `ed00a8fd…`, compromiso 1 de la tabla de abajo). Desde
+> entonces *«cero pagos»* y *«no hay débitos corriendo»* describen la medición del 2026-09-17, no
+> el estado del sistema. Los pagos del sistema viejo no pasan al nuevo ni se conservan (`B/21` §4).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:60, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:62, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:69, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:137
+
+### La cartera actual: no se migra, y lo que se conserva (`B/21` §2)
+
+Los §2.1 a §2.3 de la mitad de billing se retiraron con la decisión de no migrar; los números §2.4
+y §2.5 se conservan porque todo el diseño los cita así.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:144, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:146
+
+**No se migra: se cancelan las ocho y quien tenga algo vivo se suscribe de nuevo** (`B/21` §2.4).
+
+> **El sistema nuevo no hereda una sola fila.**
+
+La opción no existía hasta que el owner dijo de quién eran las ocho: **dos son suyas** —sin
+cliente real detrás, regenerables de cero— y **las tres `trialing` son clientes contactables**. Las
+tres `abandoned` no tienen nada vivo — **verificado del lado del proveedor el 2026-09-24**,
+recorriendo los 108 preapprovals de la cuenta: ninguna de esas tres altas llegó a crear uno (una de
+esas personas volvió a suscribirse y es una de las tres `trialing`). La migración estaba bien
+resuelta; lo que cambió es que **dejó de hacer falta**. El detalle del costo de cada camino y de qué
+se pierde está arriba, en *«El trial ya consumido»*.
+
+**Las dos cortesías se escriben como `permanent_grant`, exactamente como el *Free Forever* del
+diseño nuevo**, sin nada especial — y se pueden **regenerar de cero** si conviene. Es el
+instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefinidamente»*, y
+converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
+cortesías heredadas, son el caso normal**.
+
+**Qué plan anclan** (owner 2026-09-26, `G1-3`): **el vendible de `rank` más alto de Alojamiento
+vigente el día del corte, en la vertical en que tenían `comp`** —a la letra de `G1-3`: las dos
+`comp` que existen son del owner y de Alojamiento, y no va a otorgar otra hasta terminar el
+programa (owner 2026-09-27, FASE 9 vuelta 2, `R11-3b`)—, **con la versión que elige quien opera el
+corte, aceptada sólo si `políticaDePlan(v).vigente`** (`12-contrato…` §2.8; FASE 9 vuelta 2,
+`F-8V2C1-004`, `F-8V2B3-009`). Son cuentas propias de demostración, y el grant lee la versión
+vigente (`12-contrato…` §2.8), así que un cambio de catálogo posterior les llega solo. Si el owner
+algún día quiere esas cuentas para probar un plan intermedio, se revoca el grant y se escribe otro:
+no se diseña para eso. El plan tiene que existir antes del 3b, y por eso el catálogo de producción
+**se carga en la migración estructural del [paso 3](#paso-3), antes de la prueba del corte, como
+los plazos, y el [3a](#paso-3a) sólo lo verifica** (FASE 9 vuelta 3, owner 2026-09-30, lote C),
+**como SQL generado por un script TypeScript que un guard regenera y compara** (FASE 5, owner
+2026-09-30, lote 2 D).
+
+**Y esas dos filas cruzan la frontera, así que la mitad de verticales las tiene que ver.** Un
+`GRANT` con `hasta: NO_VENCE` es de clase `TÍTULO` (`12-contrato…` §2.4), de modo que las dos
+cuentas amanecen con `cubierto` **verdadero**: no las alcanza `PB2` y, el día que publiquen algo, la
+transición que dispara es `T6` y no `T1`. La verificación completa está en la mitad de verticales,
+cap. 21 §2.4; **el orden quedó fijado en el procedimiento**: los grants son el
+[paso 3b](#paso-3b) (FASE 9 completa, `DB-7`). Se dice acá porque **el efecto lo produce esta
+escritura y se observa allá**.
+
+**Con una precisión que no es de forma: un ANCLA por cada vertical de su scope, sobre UNA sola
+fila de grant.** Un grant ancla **un plan por vertical** (`12-contrato…` §2.8, `B/02` §2.4), porque
+un plan pertenece a una sola. Las dos formas equivocadas quedaron descartadas por escrito y conviene
+nombrar las dos: escribir **un grant con un plan** para un scope de dos verticales es el defecto que
+el contrato cerró —*«la segunda vertical resolvería sus capacidades leyendo el plan de la
+primera»*—; y escribir **dos grants** de una vertical cada uno es el otro extremo, porque revocar
+pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
+`permanent_grant_vertical`, **nunca la concesión**. La escritura la construye
+[B9a](10-corte/B9a.md#pieza-b9a).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:148, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:150, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:152, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:160, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:166, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:181, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:189
+
+**Un cobro tardío de un débito viejo entra como cualquier desconocido** (`B/21` §2.5). **El corte
+no escribe ninguna fila de rastro** (FASE 5, owner 2026-09-30, simplificación del corte, lote C;
+S-40, S-41, S-42, S-76): no hay lápida del corte, ni su paso 4, ni su herramienta, ni ventana del
+día del corte, ni detector posterior al corte (lo retirado está en [90-retirados.md](90-retirados.md));
+y `clase = LÁPIDA` alcanza para reconocer una lápida, sin columna de origen (FASE 5, lote de la
+aplicación, owner 2026-09-30, I). **Un cobro tardío de un preapproval del sistema viejo** —porque
+la cancelación del 1b se aceptó y no se aplicó, o porque ya estaba en vuelo— **entra por la lápida
+de recepción, como cualquier desconocido** (cap. 09 §2.4; owner 2026-09-26, `G3-2`): el handler la
+escribe, manda cancelar el preapproval, cuelga el `payment` y abre `PAGO_TARDÍO_RECHAZADO`
+([MOT:7](04-catalogos.md#mot-7)) con la propuesta de devolverlo, **y le aparece al owner marcado
+para que decida la devolución**. Las únicas filas nuevas de billing que escribe el corte son los dos
+`permanent_grant` del §2.4, que son cortesías vigentes y no rastro. La regla de re-vinculación
+sigue (S-49).
+
+**Por qué hace falta la regla de re-vinculación** (FASE 5, simplificación del corte, S-40 y S-49).
+Los preapprovals vivos se cancelan en el proveedor y no queda rastro. **Cuáles son los saca el
+recorrido sin filtro del proveedor, no nuestra base**, y antes se cancelan los `preapproval_plan`
+viejos para cerrar sus links ([paso 1a](#paso-1a) y [paso 1b](#paso-1b)): el 2026-09-24 ese
+recorrido encontró una autorización viva que la base no conocía, y los cinco planes viejos seguían
+vendiendo. Si alguna emite un cobro después del corte —porque la cancelación se aceptó y no se
+aplicó, o porque el cobro ya estaba en vuelo— **ese webhook llega como un preapproval
+desconocido**, y el sistema nuevo tiene **un solo camino automático** para un desconocido:
+re-vincularlo. Sin regla, el candidato más plausible del emparejamiento era **la suscripción nueva
+de esa misma persona**, que acaba de contratar, y el cobro viejo se imputaba como pago del ciclo
+nuevo: pagó dos veces y el sistema registraba una.
+
+> **La regla de re-vinculación** (owner 2026-09-25; FASE 9 completa, `2b`; cierra `F-8CB3-008`):
+> **un desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra que no
+> tenga otro `provider_link` vivo. Todo otro desconocido abre la marca `requiere_conciliación`**
+> —con motivo `TRANSICIÓN_NO_DECLARADA` ([MOT:6](04-catalogos.md#mot-6)), el mismo que escribe el
+> cap. 09 §2.4—, y lo mira una persona. **Si lo que llega es un cobro aprobado, el motivo es
+> `PAGO_TARDÍO_RECHAZADO`; y si el desconocido no nombra ninguna fila, la marca cuelga de una
+> lápida de recepción** (`clase = LÁPIDA`; FASE 5, lote de la aplicación, owner 2026-09-30, I) que
+> el handler escribe al recibirlo (cap. 09 §2.4; FASE 9 vuelta 1, `F-8V1B3-001`; owner 2026-09-26,
+> `G3-2`). *«Otro `provider_link` vivo»* se lee *«la fila ya tiene su `provider_link`»* (`B/02`
+> §2.2, `UNIQUE(subscription_id)`; FASE 9 vuelta 1, R12).
+
+Cada preapproval del sistema nuevo nace con **el `id` de su fila de `subscription`** como
+`external_reference` ([MP:PA-2](04-catalogos.md#mp-pa-2), `B/02` §2.2; FASE 9 vuelta 1, R12), así
+que una huérfana legítima siempre nombra su fila; lo que venga del sistema viejo —**un cobro tardío
+de un débito viejo o una sonda que siguió viva** (FASE 5, simplificación del corte, S-40)— no la
+nombra y termina en una persona. **Ya no hay candidato plausible**: la suscripción nueva de la misma
+persona tiene su propio `provider_link` vivo, así que no puede recibir el cobro viejo. La
+precondición **está escrita en** el cap. 09 §2.4, que es donde vive la re-vinculación, con las
+mismas palabras (FASE 9 completa; verificado contra ese § en la misma pasada). La construye
+[B11](10-corte/B11.md#pieza-b11).
+
+**La lápida de recepción no compite por el candado del §11**, porque `CANCELLED` no está entre los
+estados vivos (cap. 02 §2.2; FASE 5, simplificación del corte, S-40). **La de recepción es la única
+fila `CANCELLED` de todo el sistema que ninguna transición produce** (FASE 5, simplificación del
+corte, S-40 y S-70; `clase = LÁPIDA` alcanza, FASE 5, lote de la aplicación, owner 2026-09-30, I),
+y eso no es exclusivo del corte: cualquier escritura manual futura hereda el mismo agujero. Por eso
+la exención del cap. 09 §3 quedó escrita como **criterio** —quién dejó al preapproval sin poder
+cobrar— y no como enumeración de transiciones: una fila que no nace de ninguna transición no
+aparece en ninguna enumeración de transiciones.
+
+**La lápida de recepción no puede cancelar primero y escribir después** —cuando llega su
+desconocido no hay nada cancelado, y el `payment` y la marca necesitan la fila en ese acto—, así
+que **el handler la escribe y manda cancelar su preapproval en el mismo acto**, y lo que la hace
+verdad es la salvedad 4 del cap. 09 §3: el barrido la relee, reintenta la cancelación y marca a los
+3 días (cap. 09 §2.4; owner 2026-09-26, `X-1`; FASE 9 vuelta 1, `N-G1-02`, que señalaba justamente
+eso: una lápida `CANCELLED` sobre un preapproval vivo que nadie cancelaba).
+
+Lo que el § decía del cobro sobre la lápida del corte sale entero: el asiento sin marca del cobro
+en vuelo (`G3-1`), la ventana del día del corte (`R2`) con `EX-48`, que ya no se mide, la posición
+que la extendía y la advertencia que los acompañaba. Desde la FASE 5 ese cobro entra por la lápida
+de recepción, como dice el principio de este apartado (FASE 5, simplificación del corte, lote C;
+S-40, S-41, S-76).
+
+**Qué deja de existir con esto, y no es que se resuelva: se elimina.** La migración dejaba afuera
+las relaciones con trial, transcribía un trial y dejaba los compromisos sin vínculo, tenía un punto
+de no retorno sin lado elegido, describía dos operaciones distintas en dos lugares, y **nadie la
+ejecutaba**. Los cinco problemas **pierden sujeto**, y la unidad de trabajo que iba a escribirla no
+se crea.
+
+**Lo único que sobrevive es de otro tamaño**: el **rollback del PROGRAMA** —qué se hace si hay que
+volver atrás el reemplazo entero del sistema de cobro—, que no es el rollback de ocho filas. **Y ya
+está decidido: pasado el paso 3 del corte, sólo hacia adelante**; antes, la rama de aborto restaura
+el backup (ver el [paso 2b](#paso-2b); owner 2026-09-25, FASE 9 completa, `2c` y `2e`). **Y tras un
+aborto, la regla que bloquea toda escritura queda puesta hasta el reintento**: la plataforma
+entera, las cinco cuentas incluidas, queda en sólo lectura mientras tanto, sin lista de rutas, así
+que el sistema viejo no vuelve a vender (FASE 5, lote de la aplicación, owner 2026-09-30, A,
+elegida contra la recomendación de levantar la regla general y bloquear sólo las rutas de venta del
+viejo; [DEC-MIG-002#📌3](01-decisiones-vigentes.md#dec-mig-002-p3)).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:198, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:200, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:248, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:262, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:274, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:290, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:313, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:324, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:332, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:396
+
+### El cobro durante el rediseño (`B/21` §3, cierra `R-MIG-01`)
+
+**El hueco cambia de forma cuando se lo mide.** `R-MIG-01` lo planteaba así: *«si hay débitos
+automáticos activos, siguen corriendo durante todo el programa»*, y lo llamaba **el riesgo
+operativo más grande del programa**. **No hay débitos corriendo.** Cero pagos en la historia del
+sistema *(medido el 2026-09-17; caduca el 2026-09-26 con el compromiso 1, ver arriba — FASE 9
+completa, `CT-6`)*. Lo que hay son **tres compromisos que todavía no cobraron**, con fecha:
+
+| compromiso | primer cobro |
+|---|---|
+| 1 | **2026-09-26** |
+| 2 | 2026-11-25 |
+| 3 | 2026-11-30 |
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:408, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:410, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:412, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:415, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:419
+
+**Y entonces son tres problemas distintos, no uno.**
+
+- **(a) Las ocho relaciones vivas.** No hay nada que parar ni que coexistir, y **tampoco nada que
+  transcribir**: **no se migra ninguna** (`B/21` §2.4, arriba). Las tres `abandoned` no tienen nada
+  vivo, las dos `comp` son del owner, y las tres `trialing` son clientes contactables que se
+  resuscriben. Ninguna de las tres opciones que el hueco planteaba —coexistencia de dos motores,
+  corte con migración asistida, congelamiento— hace falta para éstas.
+- **(b) El 2026-09-26.** Esa fecha llega **durante FASE 2 o 3**, y la implementación está en FASE
+  10 (§65). O sea que **ese primer cobro de la historia del sistema ocurre bajo el sistema ACTUAL,
+  no bajo éste.** No es una pregunta de migración: es una operación que necesita a alguien
+  mirándola el día que pase. El capítulo la registra con fecha para que no llegue por sorpresa.
+- **(c) Las altas nuevas.** **Cerrado por el log**: se siguen tomando
+  ([DEC-MIG-002](01-decisiones-vigentes.md#dec-mig-002)) y se resuelven como la cartera, sin
+  transcribir ([DEC-MIG-003](01-decisiones-vigentes.md#dec-mig-003),
+  [DEC-MIG-007](01-decisiones-vigentes.md#dec-mig-007), que superó a `DEC-MIG-004`: FASE 5,
+  simplificación del corte, lote E) — abajo (FASE 9 completa, `C-9`).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:425, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:427, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:433, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:438
+
+**Las altas nuevas se siguen tomando
+([DEC-MIG-002](01-decisiones-vigentes.md#dec-mig-002)) y se resuelven como la cartera
+([DEC-MIG-003](01-decisiones-vigentes.md#dec-mig-003),
+[DEC-MIG-007](01-decisiones-vigentes.md#dec-mig-007)).** Qué pasa con quien se suscriba **mientras
+dura el rediseño** es una decisión comercial, no técnica: congelar altas tiene costo de negocio, y
+no congelarlas agranda la cohorte que después hay que transcribir a mano —que es precisamente lo
+que hoy hace barata a la opción (a)—. Las tres opciones del hueco, con lo que cuesta cada una
+**dado el número medido**:
+
+| # | opción | costo | riesgo |
+|---|---|---|---|
+| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | **quien entra no se conserva, salvo que el owner lo sume a la lista cerrada del corte** (FASE 5, simplificación del corte, S-03 y S-56) |
+| 2 | **congelar altas nuevas** hasta FASE 10 | comercial, y no es chico: tres verticales todavía no vendieron nada | cero cohorte nueva |
+| 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
+
+**No se completa en silencio** (§67). **Y ya no está abierta**: el owner eligió la opción 1
+(`DEC-MIG-002`, se siguen tomando altas en el sistema actual), y `DEC-MIG-003` le sacó la mitad
+cara —*«se transcriben a mano»*—: las altas nuevas **no se transcriben**, se cancelan en el corte
+(FASE 9 completa, `C-9`).
+
+**Y lo que entre al sistema viejo hasta el corte no se conserva, salvo que el owner lo sume a la
+lista cerrada de cuentas**, que fija cuando esté listo para el corte, cada una con su única ficha;
+si trae más de una, vuelve al owner. La ficha de quien no esté en la lista se borra en el corte
+(`DEC-MIG-002`, precisada; `DEC-MIG-007`; FASE 5, owner 2026-09-30, lote 1 J y simplificación del
+corte, lote A; S-03). **Sale el umbral de unas veinte personas con su condición de caducidad**
+(S-56): el tamaño de la cartera ya no decide nada.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:443, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:448, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:452, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:454, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:460, .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:468
+
 ## Los gates de aceptación
 
 (FASES 6 y 7, owner 2026-09-30, A a E, con lo derivado D-1 a D-5; `DEC-ARCH-016`;
@@ -1036,7 +1386,9 @@ correos reescritos a una casilla que no entrega y la lista real de las cinco (C)
 
 **Qué es un ensayo verde** (D-5): arranca con la imagen vieja desplegada en `staging` y es verde
 cuando **cada verificación de los pasos pasó, en su orden, sin tocar nada a mano fuera de lo que el
-paso dice**; cualquier intervención no escrita lo vuelve rojo y se escribe antes del reintento. **La
+paso dice** —**incluida la rama de aborto, recorrida una vez sobre la misma copia** (corte del MVP,
+owner 2026-10-02, BQ Q1; [DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2))—; cualquier
+intervención no escrita lo vuelve rojo y se escribe antes del reintento. **La
 parte de `staging` del checklist de smoke del sistema nuevo va adentro del ensayo** (B). Terminado
 el ensayo, la copia se borra (C).
 
@@ -1171,12 +1523,26 @@ Dueña del AC: [B13a](10-corte/B13a.md#pieza-b13a), que se lleva el checklist al
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1180
 
+#### E2E: lo que hoy se hace a mano (`V/20` §5)
+
+(FASES 6 y 7, owner 2026-09-30; lo derivado, D-2 y D-3;
+[DEC-ARCH-016](01-decisiones-vigentes.md#dec-arch-016).) **Cada unidad adapta sus e2e en el mismo
+PR**, como parte de su gate ([GATE:M1.5](#gate-m1-5)), y **el PR final de la épica no se abre sin
+`e2e-pr`, `codeql` (FASES 6 y 7, verificación, 2026-09-30, F9), `lighthouse` y `a11y-sweep` con
+`success` fechado después del último merge a la rama del paraguas** ([GATE:M2.3](#gate-m2-3)). El
+smoke manual del sistema nuevo no es de la mitad de verticales: es el checklist de arriba, que
+escribe `B13a` (`B/20` §5.1, punto 4). De la lista de lo que hoy se hace a mano, la fuente
+conserva un solo punto, el 7: el **trial** completo —activación, campaña previa, vencimiento,
+campaña de recuperación y conversión tardía—.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:371, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:373, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:380
+
 ## La pseudo-pieza `CORTE`: criterios de aceptación y tests
 
 Por [BE](01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-be): los ítems cuya dueña en el contrato
 de cobertura es el corte —pasos, gates de los momentos y de las fases, y las decisiones que sólo el
 corte ejecuta— llevan su AC acá, sin US, y sus tests son smoke manual (el ensayo en `staging`, el 5c
-en producción) o guard estático. Son 33 ítems; cada AC cita los suyos en `Fuente:`.
+en producción) o guard estático. Son 34 ítems; cada AC cita los suyos en `Fuente:`.
 
 <a id="ac-corte-1"></a>
 **AC:CORTE:1** — el ensayo del corte es verde
@@ -1386,6 +1752,21 @@ una fila `UNKNOWN` sin sus dos ramas
 
 Fuente: [DEC-TEST-002](01-decisiones-vigentes.md#dec-test-002), [DEC-TEST-002#📌1](01-decisiones-vigentes.md#dec-test-002-p1), [GATE:M1.3](#gate-m1-3), [GATE:M1.4](#gate-m1-4)
 
+<a id="ac-corte-19"></a>
+**AC:CORTE:19** — el ensayo recorre la rama de aborto una vez, y `EX-49` se registra como `prod`
+
+- **Dado** el ensayo del paso 0 en `staging`, sobre la copia de la base de producción restaurada con
+  los correos reescritos y la lista real de las cinco cuentas, y la medición de `EX-49` antes del
+  corte real
+- **Cuando** en el ensayo se provoca una falla después del 1b, y se registra la medición de `EX-49`
+- **Entonces** el ensayo recorre la rama de aborto una vez, sobre la misma copia, y verifica
+  restaurar el 2b, redesplegar la imagen vieja, los inversos (b) y (c) y la regla del 0b puesta
+  hasta el reintento; sin ese recorrido el ensayo no es verde; y la medición de `EX-49` se registra
+  con la etiqueta `prod`, porque lee la tabla de usuarios de producción sin mutar nada y es gate del
+  corte real
+
+Fuente: [DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2), [PASO:0](#paso-0), [PASO:2b](#paso-2b), [GATE:M3](#gate-m3), [MP:EX-49](04-catalogos.md#mp-ex-49)
+
 ### Los tests de la pseudo-pieza `CORTE`
 
 <a id="test-corte-1"></a>
@@ -1400,8 +1781,8 @@ Fuente: [PASO:0](#paso-0), [GATE:M3](#gate-m3)
 real.
 Tipo: smoke manual
 Etiqueta: prod
-Cubre: [AC:CORTE:2](#ac-corte-2)
-Fuente: [PASO:0](#paso-0), [MP:EX-49](04-catalogos.md#mp-ex-49)
+Cubre: [AC:CORTE:2](#ac-corte-2), [AC:CORTE:19](#ac-corte-19)
+Fuente: [PASO:0](#paso-0), [MP:EX-49](04-catalogos.md#mp-ex-49), [DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2)
 
 <a id="test-corte-3"></a>
 **TEST:CORTE:3** — en el ensayo: con la regla del 0b puesta, una petición de escritura desde afuera
@@ -1426,14 +1807,14 @@ Cubre: [AC:CORTE:4](#ac-corte-4)
 Fuente: [PASO:2b](#paso-2b)
 
 <a id="test-corte-6"></a>
-**TEST:CORTE:6** — la rama de aborto, recorrida en `staging` con la secuencia escrita: inversos (b) y
-(c), restauración del 2b, redespliegue de la imagen vieja con webhook y crons verificados, y la regla
-del 0b todavía puesta. *(Inferido: las fuentes no dicen que el ensayo recorra la rama de aborto;
-ver [80-abiertos.md](80-abiertos.md).)*
+**TEST:CORTE:6** — en el ensayo, una vez y sobre la misma copia: una falla provocada después del 1b,
+y la rama de aborto recorrida con la secuencia escrita: inversos (b) y (c), restauración del 2b,
+redespliegue de la imagen vieja con webhook y crons verificados, y la regla del 0b todavía puesta
+hasta el reintento (BQ Q1).
 Tipo: smoke manual
 Etiqueta: staging
-Cubre: [AC:CORTE:5](#ac-corte-5)
-Fuente: [PASO:2b](#paso-2b), [DEC-MIG-005#📌7](01-decisiones-vigentes.md#dec-mig-005-p7)
+Cubre: [AC:CORTE:5](#ac-corte-5), [AC:CORTE:19](#ac-corte-19)
+Fuente: [PASO:2b](#paso-2b), [DEC-MIG-005#📌7](01-decisiones-vigentes.md#dec-mig-005-p7), [DEC-ARCH-016#📌2](01-decisiones-vigentes.md#dec-arch-016-p2)
 
 <a id="test-corte-7"></a>
 **TEST:CORTE:7** — en el ensayo: los tres actos del paso 3 (apagado del viejo verificado, igualdad

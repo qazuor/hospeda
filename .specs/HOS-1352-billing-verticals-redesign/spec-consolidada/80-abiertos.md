@@ -4,7 +4,7 @@ Lo que las fuentes **declaran no cerrado**, y las preguntas al owner que dejó l
 spec. **Un abierto no es un criterio**: acá no hay US, AC ni tests ([AL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-al));
 cuando el owner contesta, la respuesta se registra en el log y en el ítem que corresponde, y el
 abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
-`f80c0f27154ca023d97a016707d823ff826cf76a`. Abreviaturas de ruta: `D/` es
+`17f9702675528e00d0981312325bec38bb962113`. Abreviaturas de ruta: `D/` es
 `.specs/HOS-1352-billing-verticals-redesign/docs/`, `NUCLEO/` es `D/nucleo/`, `V/` es
 `.specs/HOS-1353-verticales-capacidades-y-autorizacion/` y `B/` es
 `.specs/HOS-1354-billing-cobro-y-proveedor/`.
@@ -12,18 +12,30 @@ abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
 ## 1. Lo que la propuesta del corte no pudo verificar
 
 `D/41-corte-del-mvp/10-decisiones-del-owner.md`, *«Lo que la propuesta no pudo verificar (sigue
-abierto)»* (línea 150), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
+abierto)»* (línea 183), que [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017), implicación 4, deja
 abierto:
 
 1. Si `partners` tiene filas en producción: decide si el `UNIQUE` parcial sobre `owner_user_id` de
-   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 152)
+   [AB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ab) es seguro. (línea 185) **Cómo se
+   contesta lo cerró [BT](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bt)**: la pieza que lo
+   necesita mide con `hops psql --target=prod`, en sólo lectura y contando, antes de su merge, y
+   deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el
+   número antes del merge. Una salida vacía de `hops psql` no es un cero: se repite. Lo que sigue
+   abierto es el número. (línea 145)
 2. La duración del trial y los plazos de retención, que fija el owner antes del merge de `V6`.
-   (línea 153; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
-   sin valor escrito está vacío)
-3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 154)
-4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 155)
-5. Si la baja self-service tiene una exigencia legal con fecha. (línea 156)
-6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 157)
+   (línea 186; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
+   sin valor escrito está vacío) **Y el plazo 19**, la ventana `N` del resumen de conciliación
+   ([BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu)): **cerrado por
+   [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) cuándo se fija**, antes del merge
+   de `B2` y no de `B11`, porque la versión 1 de los plazos falla con una clave vacía sin
+   excepciones; lo que sigue abierto es el valor. (líneas 146 y 157)
+3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 187) **Lo que se
+   hace cuando una pieza anterior llama a algo que construye una posterior lo cerró
+   [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)** (la anterior escribe su rama
+   entera y llama por interfaz; la posterior trae la implementación). (línea 137)
+4. El tamaño de cada pieza: el diseño no tiene estimaciones. (línea 188)
+5. Si la baja self-service tiene una exigencia legal con fecha. (línea 189)
+6. Si `retenciónDetenida` real sobre cero pausas cumple el juego de casos de la real. (línea 190)
 
 ## 2. Las filas `UNKNOWN` de la matriz de Mercado Pago
 
@@ -56,7 +68,13 @@ de ellas no termina sin sus dos ramas escritas y una prueba por rama contra el p
 comprar Turista VIP mientras el plan vigente lo hereda (la mitad de
 [DEC-ENT-003](01-decisiones-vigentes.md#dec-ent-003) que ninguna pieza construía), y dejan dicho:
 **el código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija.
-(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7928`.)
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7928`.) **Cómo se fija
+lo cerró [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)**, la regla de los detalles
+que las fuentes dejan a la implementación (`error.code` entre ellos): lo propone el PR de la pieza
+dueña, `B3`, siguiendo lo escrito del repo; lo aprueba la revisión de contexto fresco del momento 1
+(y el owner en el PR cuando es texto al cliente o un permiso nuevo); y queda escrito en la sección
+de `B3` en esta spec al mergear. Lo que sigue abierto es el valor, hasta ese PR.
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md:144`.)
 
 ## 4. Lo que el corte declara y no resuelve
 
@@ -119,12 +137,16 @@ Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-o
 
 Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1014`–`1024`.
 
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1014
+
 - `V/docs/02-modelo-de-datos.md:1016` — **`OD-ARCH-01`** (retiro de un plan del catálogo) lo cerró el capítulo 10: acá está el flag de vendible y el de vigente, que son el mecanismo; **la política es de la épica de billing**.
 - `V/docs/02-modelo-de-datos.md:1018` — **Discontinuar una vertical** (`M-SUB-03`; revisión del owner, 2026-09-28, C8): **fuera de esta versión; si algún día hace falta, se diseña entonces** (`B/10` §4). La fila de `vertical` sigue sin borrarse nunca, por su espejo del enum de código. Retirar todos los planes de una vertical sigue siendo posible y la deja en operación (`B/10` §3.6).
 
 ### `V/docs/10-verticales-planes-billing-options.md` — Lo que este capítulo NO cierra
 
 Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:149`–`154`.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:149
 
 - `V/docs/10-verticales-planes-billing-options.md:151` — **Qué claves de entitlement y de limit tiene cada vertical** (el ítem 4 de la tabla) es del capítulo 15 (épica de verticales): acá está que el subconjunto es por vertical, no cuál es.
 - `V/docs/10-verticales-planes-billing-options.md:153` — **La pricing como superficie** es del capítulo 19. Acá está qué lee, no cómo se ve.
@@ -182,6 +204,8 @@ Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superfici
 
 Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:722`–`778`.
 
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:722
+
 - `V/docs/21-migracion.md:724` — **Cómo se le avisa a las cinco cuentas de la lista** lo decide el owner, que les avisa por privado y sin nada programado (`DEC-MIG-007`, punto 4; FASE 5, simplificación del corte, S-51 y S-53); **cuándo se cancelan sus suscripciones** es FASE 7: acá está que no se migra, no el procedimiento de la conversación.
 - `V/docs/21-migracion.md:729` — **La clasificación del código legacy** en reusar o reescribir tiene su propio gate (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
 - `V/docs/21-migracion.md:731` — **Sale**: no hay agenda de llamados (FASE 5, simplificación del corte, S-77).
@@ -194,6 +218,8 @@ Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion
 ### `V/docs/22-lo-legal.md` — Lo que este capítulo NO cierra
 
 Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:137`–`142`.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:137
 
 - `V/docs/22-lo-legal.md:139` — **La pregunta 5, la única que queda** (FASE 9 vuelta 3, `F-8V3A3-009`), por definición. Lo que sí queda cerrado es **qué depende de cada una**, que es lo que permite implementar el resto sin esperarlas.
 
@@ -279,6 +305,8 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1160`
 
 Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:248`–`271`.
 
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:248
+
 - `B/docs/10-verticales-planes-billing-options.md:250` — **El detalle del cambio de plan** —cómo se ejecuta contra el proveedor, qué se compensa— es del capítulo 12 (épica de billing). Acá está sólo qué hace billing con el veredicto de dirección —que rige todo cambio de plan y lo emite verticales (`12-contrato…` §4.1, `DEC-ARCH-008`)—, escrita junto al caso del plan retirado.
 - `B/docs/10-verticales-planes-billing-options.md:254` — **Qué pasa si la fecha de un aumento cae sobre una suscripción en mora** sigue abierto: lo dejó anotado `DEC-MP-002` y no lo cierra este capítulo.
 - `B/docs/10-verticales-planes-billing-options.md:256` — **La migración de un plan retirado** (§3.7) deja una cosa sin cerrar, declarada: **qué pasa si la fecha de aplicación cae sobre una suscripción en mora**, que es el mismo hueco que `DEC-MP-002` dejó para el aumento (arriba): el §3.7 la hace esperar a que se ponga al día. **Eso vale para el día de `S37`**: con el monto ya mutado, la fecha la aplica `S38` igual en `GRACE_PERIOD`, y al volver por `S7` en `SUSPENDED` (revisión del owner, casos vecinos, 2026-09-29, caso G-A), vuelva a `ACTIVE` o a `CANCEL_SCHEDULED` (caso I-A); y con un pagador con tarjeta que vuelve como sucesora, muere con la fila vieja (caso I-B). **Un cliente con una cortesía temporal vigente el día de su migración espera, como está**: está `PAUSED · COURTESY`, espera a volver, y su fecha se corre tantos meses como le queden de cortesía (revisión del owner, casos vecinos, 2026-09-29, caso 27).
@@ -287,6 +315,8 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-bil
 ### `B/docs/12-suscripcion.md` — Lo que este capítulo NO cierra
 
 Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1096`–`1191`.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1096
 
 - `B/docs/12-suscripcion.md:1098` — **La vuelta anticipada de una pausa regala hasta un ciclo, y se acepta** (owner 2026-09-26, `G5-3`, contra la recomendación; FASE 9 vuelta 1, `F-8V1B1-001`). `S10` deja volver el día que la persona quiera —*«volver cuando quiera»*, §26.2 del PDR a la letra—, y con `PS-2`, `PS-5` y `PS-6` medidos el día de arranque y el de vuelta deciden cuánto se paga: quien cobra el 1, pausa el 30 y vuelve el 2 tiene el mes siguiente gratis, porque el proveedor salteó el cobro mientras estaba `paused` y al volver cobra en el ciclo siguiente. **Y no depende de cuánto dure la pausa**: pausar tres meses y volver el segundo día de un ciclo regala 29 días (FASE 9 vuelta 1, `N-2`). Son **hasta tres ciclos gratis por año por cliente**, y **el sobrecobro inverso** —pausar el 5 y volver el 25— **sigue existiendo**: la persona paga el ciclo entero en el que casi no tuvo servicio. **Causa**: la premisa de `DEC-SUB-010` —*«vuelve el mismo día del mes en que pausó»*, así que la pausa dura ciclos enteros y la aritmética se compensa sola— no se sostiene con la vuelta libre, y el owner prefirió la libertad del §26.2 a acotarla al aniversario mensual. **Nada lo impide y nada lo compara** —nuestro estado y el del proveedor coinciden en cada paso—, así que lo que queda es **medirlo**: el barrido lista esas pausas en el resumen de `DEC-OBS-001` (`NUCLEO/08` §4.1; `B/09` §2.3). La misma entrada está en `B/03`, *«lo que esta mitad NO cierra»*.
 - `B/docs/12-suscripcion.md:1113` — **Cerrado**: `GR-3` está `VERIFIED` y la ventana es el ciclo (§1.5). Queda sin medir la ventana mensual y anual, que (tachado 2026-09-26) **ya no condiciona esa salida: `GR-1` quedó `VERIFIED` el 2026-09-26 y el cambio de tarjeta dispara su propio reintento** (§1.5).
@@ -349,6 +379,8 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:327`�
 
 Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:581`–`697`.
 
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:581
+
 - `B/docs/21-migracion.md:583` — Cerrado: §3.3 (FASE 9 completa, `C-9`).
 - `B/docs/21-migracion.md:585` — **Un contracargo o un reclamo sobre un pago del sistema viejo no tiene comprobante del lado de Hospeda después del corte** (declarado por `DEC-METH-015`, FASE 9 completa; `F-8CB3-014`, `F-8CA3-007`). **Causa**: el owner decidió no conservar nada del sistema viejo (`2a`); la población son los pocos pagos que el sistema actual cobre entre el 2026-09-26 y el corte, de clientes que el owner llama uno por uno. El comprobante sigue existiendo del lado de MercadoPago.
 - `B/docs/21-migracion.md:590` — **Lo pagado en el sistema viejo por un período que el corte corta, o por un addon vigente, se pierde y no se devuelve** (declarado por `DEC-METH-015`; owner 2026-09-26, `G1-4`, elegida contra la recomendación de devolver completo antes del corte; `F-8V1C2-002`). El cliente que pagó un ciclo el 25/11 y ve el corte el 05/12 pierde los días que le quedaban, y el addon que compró deja de existir con las tablas viejas (§4). **No se devuelve, para nadie, y el trial no se presenta como compensación**: al publicar su ficha estrena el trial de un cliente nuevo (`V/21` §2.4), que no es una equivalencia de lo perdido (FASE 9 vuelta 3, owner 2026-09-30, lote F). El owner aporta el hecho que acota la población: **no hay anuales vivas en el sistema viejo ni las va a haber antes del corte**. **Qué les dice lo decide el owner, que les avisa por privado** (`DEC-MIG-007`, punto 4; el guion del aviso salió: FASE 5, simplificación del corte, S-50). **Causa**: es la posición coherente con `2a` (no se conserva nada del sistema viejo) y con `2d` (la diferencia de un corte abortado no se devuelve); el owner prefiere un trial nuevo a unos pocos reembolsos a mano. **Mueve plata, y su población son las cuentas de la lista cerrada, que el owner conoce** (`DEC-MIG-007`, punto 3; la re-verificación del §1.3 salió: FASE 5, simplificación del corte, S-29); un reclamo que llegue después del corte se atiende contra el comprobante del proveedor (punto anterior), no contra nada nuestro. *(Lo de la constancia sale: lo cubre `DEC-MIG-007`; FASE 5, simplificación del corte, S-53.)* **Y un cobro tardío de un débito viejo después del corte le aparece al owner**, marcado para decidir la devolución (§2.5; FASE 5, simplificación del corte, lote C). **Salvo el aviso que llegue entre apagar lo viejo y levantar lo nuevo**: en esos minutos no hay servidor que lo atienda ni Worker del borde que conteste `500`, así que puede no reintentarse y no aparecer; se declara y se acepta, porque son minutos y tres cuentas con débito que el owner conoce, y si pasa lo ve en su cuenta de Mercado Pago o se lo dice la persona (`DEC-MIG-007`, puntos 3 y 4; FASE 5, lote de la aplicación, owner 2026-09-30, C).
@@ -361,11 +393,156 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:581`–`
 
 Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:182`–`197`.
 
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:182
+
 - `B/docs/22-lo-legal.md:184` — **Las cinco preguntas de esta épica** (FASE 9 completa, C-11), por definición. Lo que sí queda cerrado es **qué depende de cada una**, que es lo que permite implementar el resto sin esperarlas.
 - `B/docs/22-lo-legal.md:186` — **El comprobante no fiscal** ya lo decidió `DEC-LEGAL-001` y no se reabre: se emite por cada cobro, **nunca se lo llama factura fiscal**, y no tiene fecha ni disparador de revisión hasta ARCA. **Quién lo emite ya está escrito** (FASE 8 completa, `F-8CB3-006`): `P1` para el cobro del proveedor y `MP1`/`MP4` para el manual (cap. 03 §6 y §7), colgando de un `payment` **o** de un `manual_payment` (cap. 02 §2.3), y numerado sin huecos por un contador en fila incrementado en la misma transacción que emite. **Cerrado el 2026-09-25 (owner)**: **el contador serializado se mantiene** para la numeración correlativa sin huecos, **por decisión del owner aunque no sea requisito legal**, y **no se lleva al pliego legal**: no es una de las preguntas del §4 (FASE 8 completa, pendiente 6, owner 2026-09-25; `B/02` §2.3).
 
-## 6. Abiertos de la redacción
+## 6. Consulta legal pendiente
+
+El pliego de la consulta legal tiene **seis preguntas**: cinco de la épica de billing (`B/22` §4) y
+una de la de verticales, la 5 (`V/22` §4). **Ninguna la contesta el diseño**: no se resuelven por
+analogía ni con una búsqueda web, y piden revisión profesional. Lo que sí está cerrado es **qué
+parte del diseño depende de cada respuesta** y qué cambia si la respuesta no es la que se asumió,
+que es lo que permite implementar el resto sin esperarlas.
+
+### 6.1 La pregunta que queda de verticales: el seudónimo del correo
+
+`V/22` §2 (*«La pregunta legal que queda»*), §2.3 (*«Las señales de identidad: finalidad, plazo, y
+un conflicto concreto»*):
+
+- **Teléfono, identificador fiscal y dispositivo NO se guardan** (revisión del owner, 2026-09-28,
+  N7, `g2`): sólo observaban y nunca bloqueaban, y guardarlos pedía finalidad y plazo legal para un
+  abuso que hoy no está medido. **La consulta legal de verticales queda sólo por el seudónimo del
+  correo** (`V/22` §3.3, pregunta 5). Si algún día hace falta observarlas, el seguimiento es
+  [HOS-1394](https://linear.app/hospeda-beta/issue/HOS-1394).
+- [DEC-TRIAL-004](01-decisiones-vigentes.md#dec-trial-004) decidió que **sólo el correo
+  normalizado** bloquea un trial nuevo. Su implicación 2 dejaba `M-LEGAL-02` abierto como
+  prerequisito de la parte de observación de las otras tres señales; esa parte salió con ellas
+  (N7), así que lo que la decisión todavía necesita de la consulta es la pregunta 5.
+- Las tres preguntas del §2.3 eran **finalidad declarada**, **plazo de conservación** y **cómo se
+  responde a un pedido de acceso o supresión**. Desde
+  [DEC-DATA-005](01-decisiones-vigentes.md#dec-data-005) los 180 días de retención sólo alcanzan el
+  contenido de las fichas, nunca los datos de la persona, así que la tercera ya no es de plazo contra
+  la retención: es cómo se responde al pedido, que la retención no cubre. Con las señales afuera,
+  las tres se reducen a la pregunta 5 sobre el seudónimo.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:33, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:35, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:37, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:43, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:48
+
+*(Que las tres preguntas del §2.3 se reducen a la 5 lo dice la fuente para la consulta —*«La
+consulta legal queda sólo por el seudónimo del correo»*—; que la implicación 2 de `DEC-TRIAL-004`
+quedó sin sujeto con N7 es inferido.)*
+
+### 6.2 La pregunta más pesada de billing: el silencio ante un aumento
+
+`B/22` §2 (*«Las tres preguntas legales»*), §2.1 (*«¿El silencio del cliente vale como aceptación
+de un aumento?»*). **Es la más pesada, y es estructural.**
+
+| | |
+|---|---|
+| **qué se asumió** | que sí. [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002) parte 3: llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes |
+| **en qué se apoya** | es el modelo estándar de la industria, y [MP:PC-3](04-catalogos.md#mp-pc-3) **`VERIFIED`** midió que el proveedor **no pide un consentimiento nuevo** para mutar el monto |
+| **qué NO está verificado** | que eso sea válido en Argentina, que es justo el terreno donde la normativa de consumo suele ser restrictiva |
+| **qué cambia si la respuesta es no** | **`DEC-MP-002` cambia de forma, no de redacción.** Haría falta **aceptación activa**, y a quien no responda **no se lo podría aumentar**: la cartera quedaría partida en dos precios por tiempo indefinido, y todo el diseño de la ventana de 60 días con tres contactos pasaría a ser otra cosa |
+
+**Riesgo declarado y aceptado por el owner (2026-09-16): avanzar así y corregir si la consulta dice
+otra cosa.** Con una condición práctica: **conviene resolverla antes de implementar**, porque
+corregirla después no es editar un texto. Por
+[BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm), ningún precio cambia hasta el momento 5,
+y el aviso y la mutación a los ya anclados (la parte 2 de `DEC-MP-002`) llegan con
+[B12](20-fase-3/B12.md#pieza-b12).
+
+Las otras dos preguntas del §2 (la ventana de revocación y el botón de arrepentimiento, `B/22`
+§2.2) son las filas 2, 3 y 4 de la tabla del §6.3.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:79, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:81, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:83, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:85, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92
+
+### 6.3 El resumen, para llevar a la consulta
+
+Las seis preguntas del pliego, con su número de pliego (`V/22` §4 y `B/22` §4):
+
+| # | pregunta | qué depende | qué pasa si la respuesta es la contraria |
+|---|---|---|---|
+| 1 | ¿el **silencio** vale como aceptación de un aumento? | [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002) parte 3 | **cambia el diseño**: aceptación activa, y a quien no responda no se lo aumenta |
+| 2 | ¿cada renovación abre una **ventana de revocación** nueva? | el diseño de la revocación | **cambia el diseño**: cada cobro arrastra su ventana |
+| 3 | ¿cuál es el **plazo** de revocación? (la búsqueda propia dice 10 días corridos) | un número | sólo un número |
+| 4 | ¿hace falta el **botón de arrepentimiento**? | está fuera de alcance por decisión del owner | **es un incumplimiento, no una feature faltante** |
+| 5 | ¿se puede conservar un **seudónimo determinístico del correo** tras un borrado, para no regalar un segundo trial? | [DEC-TRIAL-004](01-decisiones-vigentes.md#dec-trial-004) y el cap. 02 §4 de verticales | **cambia un mecanismo** —un escritor nuevo que borra el seudónimo y una columna anulable— **y lo que se promete** (`V/22` §3.3; FASE 9 completa, `C-1`) |
+| 6 | ¿hay **plazo de preaviso** obligatorio para un aumento? | los 60 días son **decisión comercial**, no normativa | sólo un número, **si es menor a 60** |
+
+**Las cinco de billing (1, 2, 3, 4 y 6) y la 5 de verticales piden revisión profesional, no una
+búsqueda web.** Las tres en negrita de billing —1, 2 y 4— cambian diseño o crean incumplimiento; las
+otras dos de billing —3 y 6— cambian un número (FASE 9 completa, C-11, `F-8CB3-017`: la tabla de
+billing tiene cinco filas); la 5 cambia un mecanismo y lo que se promete.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:129, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:133, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:165, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:175
+
+## 7. Lo que las descomposiciones NO deciden
+
+`V/descomposicion.md` §6 y `B/descomposicion.md` §6, en su forma vigente. Lo que una decisión o una
+letra posterior ya cerró va con quien lo cerró; no es un abierto.
+
+### 7.1 Lo que sigue sin decidir
+
+- **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del
+  código de ese momento a la vista. (Las dos descomposiciones.)
+- **Fechas y esfuerzo.** No hay estimaciones a propósito: salen del atomizado. (Las dos; es también
+  el punto 4 del §1.)
+- **Las cinco preguntas legales de billing** (`B/22` §4; la sexta del pliego, la 5, es de `V/22`:
+  FASE 9 completa, C-11), que no las contesta el diseño. Lo que sí está cerrado es qué depende de
+  cada una, y eso permite implementar el resto sin esperarlas. Están en el §6.
+- **El botón de arrepentimiento (`RF1` por revocación, `B/22` §2.2) no tiene unidad todavía, porque
+  está fuera de alcance hasta la consulta legal** (`B/22` §2.2, punto 3). La máquina de reembolso en
+  sí es de [B5](10-corte/B5.md#pieza-b5) (`RF1`/`RF4`, owner 2026-09-25, decisión 10d); si el owner
+  mete el botón adentro, su unidad natural es `B13`, la única que tiene capítulo `22` (su §1)
+  (declarado por `DEC-METH-015`, FASE 9 completa). *(La fuente es anterior a la partición de
+  [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z) y no dice si sería `B13a` o `B13b`.)*
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:766, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1094, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1106, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1116, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1117, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1129
+
+### 7.2 Lo que ya cerró una decisión o una letra posterior
+
+- **Cuál es la pasarela: cerrado por [DEC-MP-005](01-decisiones-vigentes.md#dec-mp-005)**
+  (2026-09-24): **Mercado Pago**. La evaluación no se completó —se cerró en el paso 4 de 6, porque la
+  PRUEBA 0 y el KYC de Mobbex nunca recibieron respuesta, y MP tampoco contestó la consulta de
+  `R-MP-01`—. Con la decisión entró la directriz de que **lo que el proveedor no hace lo suple el
+  diseño**, y con ella se destrabaron el capítulo 13 y la construcción.
+- **El modelo canónico de cobro: cerrado por [DEC-MP-006](01-decisiones-vigentes.md#dec-mp-006)**
+  (2026-09-24): el reloj de cobro es del proveedor y el mandato es el modelo canónico, **sin destino
+  pendiente desde el 2026-09-26** (su 📌).
+- **Qué se reescribe y qué se reutiliza: cerrado por
+  [DEC-METH-017](01-decisiones-vigentes.md#dec-meth-017)** (la FASE 5), **y lo que dejó sin
+  veredicto —las piezas de autorización y de base que se conservan y tres guards del repo sin
+  destino— lo contesta el pase de la FASE 6, que corre en paralelo a `U1`**
+  ([DEC-METH-018](01-decisiones-vigentes.md#dec-meth-018); FASES 6 y 7, owner 2026-09-30, G). Salvo
+  `qzpay`, que [DEC-ARCH-004](01-decisiones-vigentes.md#dec-arch-004) ya resolvió: **se saca y queda
+  sólo como referencia de lectura** (revisión del owner, 2026-09-28, N2). Las descomposiciones dicen
+  **qué hay que tener funcionando**, no de dónde sale.
+- **Si cada unidad es un issue de Linear: cerrado por el momento 1** ([GATE:M1](30-el-corte.md#gate-m1);
+  FASES 6 y 7, D-2): cada unidad pasa a `Done` en Linear al mergearse en la rama del paraguas, y las
+  etiquetas de smoke van sólo en `HOS-1352`, *«si no, 25 issues quedan meses en In Review»*. El
+  árbol de Linear sale de esta spec (`D/41-corte-del-mvp/10-decisiones-del-owner.md:173`). *(Que el
+  momento 1 cierre esta pregunta es inferido de su texto.)*
+- **De qué unidad es `B/21`** (declarado por `DEC-METH-015`, FASE 9 completa): **de una, y sólo por
+  una escritura del corte** —la lápida del corte salió (FASE 5, simplificación del corte, S-40)—: los
+  dos `permanent_grant` del §2.4, que construye [B9a](10-corte/B9a.md#pieza-b9a) (FASE 9 vuelta 1, R6
+  y `F-8V1C2-004`; la mitad *a* por Z). Lo que billing construye desde ahí —la re-vinculación de un
+  preapproval desconocido, owner 2026-09-25, `2b`— vive en `B/09` §2.4 y es de
+  [B11](10-corte/B11.md#pieza-b11); el resto, el corte del paraguas, es de `D/16` §4.2, en
+  [30-el-corte.md](30-el-corte.md), que reparte sus herramientas: los dos `permanent_grant` del
+  [paso 3b](30-el-corte.md#paso-3b) a `B9a`.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1096, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1101, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1108, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1120, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031
+
+## 8. Abiertos de la redacción
 
 Las preguntas al owner que dejaron los redactores de esta spec (los archivos `_trabajo/abiertos/*.md`), con su letra cuando el orquestador la asigne.
 
 <!-- abiertos-redaccion -->
+
+### Los de la segunda pasada
+
+Los abiertos que dejó la segunda pasada de redacción (`_trabajo/abiertos/pasada2-*.md`), fundidos por el
+orquestador cuando existan.
+
+<!-- abiertos-pasada2 -->
