@@ -1,5 +1,5 @@
 {
-    "sha": "4278aa1adcd01bf5d19e78dcc21646cc6a787e3d",
+    "sha": "17f9702675528e00d0981312325bec38bb962113",
     "entradas": {
         "DEC-ARCH-001": {
             "pieza": "V2",
@@ -27,7 +27,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 136,
                             "cita": "| **B2** | **El precio** | ✅ | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del p",
-                            "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                            "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                         }
                     ],
                     "razon": "El precio, que la decisión versiona con la versión de plan, vive en `billing_option` colgando de la versión (B2)."
@@ -1377,13 +1377,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**y el asiento de un cobro sobre una lápida es `P1` sin `covered_period`, sin promo y sin aviso de cobertura**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El asiento sobre una lápida (hoy sólo la de recepción) es de B11; el comprobante lo emite el registro de B5 (inferido).",
@@ -1931,7 +1931,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "El barrido de creaciones sin respuesta y suscripciones sin contraparte (implicación 3) (inferido)."
@@ -2104,7 +2104,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La conciliación es B11 (`09` entero).",
@@ -2125,7 +2125,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El barrido que reintenta la cancelación ya decidida es la salvedad 4 de `09` §3, de B11 (inferido); la cifra «once» es lo muerto.",
@@ -2146,7 +2146,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**y un preapproval desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "2b (la precondición de la re-vinculación) es de B11; 3d (la marca 21 a los 3 días) es de B7.",
@@ -2187,13 +2187,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**el cobro de un preapproval desconocido que no nombra ninguna fila vive en una lápida de recepción**, con la forma de fila de R6 y el `payment` y la marca colgados",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**que el handler cancela al escribirla y el barrido reintenta** por la salvedad 4",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La lápida de recepción que cancela su preapproval y el reintento del barrido son de B11; lo muerto es la lápida del corte.",
@@ -2214,7 +2214,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido y abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo, que decide el owner",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La fila de B11 dice que el cobro tardío entra por la lápida de recepción y abre `PAGO_TARDÍO_RECHAZADO`.",
@@ -2235,7 +2235,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**el cobro de un preapproval desconocido que no nombra ninguna fila vive en una lápida de recepción**, con la forma de fila de R6 y el `payment` y la marca colgados",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La lápida de recepción, que B11 escribe, se reconoce por `clase = LÁPIDA`; la fila de la suscripción la crea B3 (`02` §2.2) (inferido).",
@@ -2321,7 +2321,7 @@
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "| **U2** ✚ | **el outbox común** (FASE 5, owner 2026-09-30, lote 2 A y B; `NUCLEO/07` §1.4, `NUCLEO/08` §2.4)",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         }
                     ],
                     "razon": "El outbox con que sale el correo."
@@ -2362,13 +2362,13 @@
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "| **U2** ✚ | **el outbox común** (FASE 5, owner 2026-09-30, lote 2 A y B; `NUCLEO/07` §1.4, `NUCLEO/08` §2.4)",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         },
                         {
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "la supresión corta antes de mandar (§4)",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         }
                     ],
                     "razon": "La supresión para siempre del rebote duro."
@@ -2409,13 +2409,13 @@
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "| **U2** ✚ | **el outbox común** (FASE 5, owner 2026-09-30, lote 2 A y B; `NUCLEO/07` §1.4, `NUCLEO/08` §2.4)",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         },
                         {
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "un `failed` definitivo que era obligatorio se escala (§1.3)",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         }
                     ],
                     "razon": "El estado `failed` y su escalado."
@@ -2449,7 +2449,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "B11 (corte) lo implementa primero en el grafo: es la dueña por la regla 1 (DEC-METH-019, «la primera en el grafo»); B10 lo completa después. El barrido reintenta la cancelación por la salvedad 1 de `09` §3 (inferido). || `A3` es de la máquina de la instancia (B10); su reintento por la salvedad 1 lo hace el barrido de B11.",
@@ -2716,7 +2716,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "B11 (corte) lo implementa primero en el grafo: es la dueña por la regla 1 (DEC-METH-019, «la primera en el grafo»); B8b lo completa después. El barrido lista las pausas con regalo. || La vuelta anticipada libre es de la pausa (B8b); el detector en el resumen del barrido es de B11.",
@@ -3101,7 +3101,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El aviso de una marca es el listado accionable más un resumen agregado; el resumen es el del barrido de B11 (fila B11), y el listado accionable del 19 §6 es de B13 (B §2.9), cuya mitad al corte es B13a. (inferido)",
@@ -3833,13 +3833,13 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1082,
+                    "linea": 1084,
                     "cita": "**las 22 piezas del corte están en `Done`**",
                     "hash": "0eeaf731206294918c2537ce3851a8d7ad13584c833fafbe827adc4d117fd1ab"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1026,
+                    "linea": 1028,
                     "cita": "**«la rama» es `epic/HOS-1352-verticales-billing`**",
                     "hash": "5de95537d6fbf0833bd90520674553bd45d89e272e0bd4e0a037b149d5d7fe74"
                 }
@@ -3860,7 +3860,7 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1089,
+                    "linea": 1091,
                     "cita": "`main` hasta el corte (§4.4).",
                     "hash": "9a9b08b58139744d9027c8760f1b83ac38262f99c2ec94799d2208d20eac6f3c"
                 }
@@ -3902,13 +3902,13 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1082,
+                    "linea": 1084,
                     "cita": "**las 22 piezas del corte están en `Done`**",
                     "hash": "0eeaf731206294918c2537ce3851a8d7ad13584c833fafbe827adc4d117fd1ab"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1135,
+                    "linea": 1137,
                     "cita": "Las ocho piezas que van después llegan en **fases posteriores,",
                     "hash": "4b5f0a39deb6178f835dfa5b9d63b621fd659f6f27cc9e6a85df4b8aa42975c5"
                 }
@@ -4158,7 +4158,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "**y un preapproval desconocido se re-vincula sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "la re-vinculación por external_reference"
@@ -4341,7 +4341,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "el cobro tardío por la lápida de recepción"
@@ -5879,19 +5879,19 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1031,
+                    "linea": 1033,
                     "cita": "se da por terminada cuando (D-2):",
                     "hash": "0d570ee38fc9277da6018c7d13f05dcad8cf3f266cfac346a21c2ca3f0a8e742"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1031,
+                    "linea": 1033,
                     "cita": "**30 piezas** (corte del MVP, owner 2026-10-01, Z: una mitad *a* o *b* se da por terminada como cualquier unidad)",
                     "hash": "0d570ee38fc9277da6018c7d13f05dcad8cf3f266cfac346a21c2ca3f0a8e742"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1037,
+                    "linea": 1039,
                     "cita": "3. no deja ningún escritor declarado sin implementar (`DEC-TEST-002`);",
                     "hash": "dc64550243dd7c220c98c26fc6b18edd921243ffa7ee3bb6769724fe8de75ac9"
                 }
@@ -5912,13 +5912,13 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1031,
+                    "linea": 1033,
                     "cita": "**30 piezas** (corte del MVP, owner 2026-10-01, Z: una mitad *a* o *b* se da por terminada como cualquier unidad)",
                     "hash": "0d570ee38fc9277da6018c7d13f05dcad8cf3f266cfac346a21c2ca3f0a8e742"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1038,
+                    "linea": 1040,
                     "cita": "4. **cada fila `UNKNOWN` de la matriz en la que se apoya tiene sus dos ramas escritas y una prueba",
                     "hash": "10fd58e1b62f12d10f3e8f35c01488fde10d1a6bbeacfc1bd83bac9e408ab53a"
                 }
@@ -6051,7 +6051,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**el handler no manda cancelar un id del manifiesto de sondas**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "Lo vivo: la marca 7 de una sonda del manifiesto. El cobro de una sonda entra por la lápida de recepción de `B11`. Muerto lo de `S26` y `vertical_discontinuation`.",
@@ -6570,7 +6570,7 @@
                     "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
                     "linea": 72,
                     "cita": "| **V9a** | **El registro de los actos del dueño** |",
-                    "hash": "eacadd130eae6a33aa0a284a7f6f7d5a2771895ef0c63caf114309f7837a77bc"
+                    "hash": "dd516ac5125a23118fbeb86d643af86c9684ee8685fbc3ebd52518afdaf873c4"
                 }
             ],
             "razon": "El registro de los actos del dueño, con sólo el nombre de los campos de contenido, es `V9a`.",
@@ -6923,7 +6923,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 1044,
                     "cita": "(declarada desde `ACTIVE` o `CANCEL_SCHEDULED`, con al menos un pago acreditado)",
-                    "hash": "989b025e9d5bc942c8cf0acee0eff65dc85436a939e7989c7d4de32ce6c493f3"
+                    "hash": "ad0e4779ea739bdca10278eac4c0bc990760f11dbdde38181aaeee71b42df800"
                 }
             ],
             "razon": "El criterio de `B7` lleva la definición.",
@@ -7006,7 +7006,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "**y un cobro tardío de un preapproval del sistema viejo entra por la lápida de recepción como cualquier desconocido",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El cobro tardío de un débito viejo lo trata `B11`; el acotamiento a las cinco cuentas (borrar las demás fichas) es de la migración de `V6`.",
@@ -9499,7 +9499,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7415,
+                    "linea": 7421,
                     "cita": "El receptor nuevo guarda cada entrega de IPN entera en",
                     "hash": "5802817e4574cab3da5681999e941063524688d12fabeb4babc47f83fbee9157"
                 },
@@ -9534,7 +9534,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7435,
+                    "linea": 7441,
                     "cita": "guarda también cada entrega de Webhooks, en la misma tabla",
                     "hash": "4846ce6aa4a77717b8e5c0b55499c45c632e5e959f9df4738533774dbc606fec"
                 },
@@ -9569,7 +9569,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7442,
+                    "linea": 7448,
                     "cita": "verifica el apuntado de la URL de IPN con una entrega real de `payment`",
                     "hash": "e39861e52b754d537e934bf60be80edf54d5a6f85300128e3929ca10f5b1c86e"
                 },
@@ -9596,7 +9596,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7449,
+                    "linea": 7455,
                     "cita": "El receptor nuevo sirve la misma ruta que el viejo",
                     "hash": "fca28bfef091a14e584463a89c2e18b1698d24487794993623c000f05bae9c3c"
                 },
@@ -9623,7 +9623,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7470,
+                    "linea": 7476,
                     "cita": "tenemos que estar 100 % seguros de eliminarlo por",
                     "hash": "ab46a7fa2426f8a9ec7ce6013cebdd5a0d0b09d1178ddd9aafab2004b3d03ea5"
                 },
@@ -9644,7 +9644,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7495,
+                    "linea": 7501,
                     "cita": "que hace sólo la limpieza y construye `G8` en el",
                     "hash": "dd2d7c555428b586074d9e160a756dc8f3c86a6238274e95a78708e23d4a7481"
                 },
@@ -9679,7 +9679,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7515,
+                    "linea": 7521,
                     "cita": "crea vacío el package del contrato",
                     "hash": "05dc0bbfa263f0c45b5ca6609474ddc574809156bccaf458a2c0b096bb46bc3b"
                 },
@@ -9727,7 +9727,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7520,
+                    "linea": 7526,
                     "cita": "**`U1` crece**, sin código nuevo del diseño salvo el",
                     "hash": "ca6428e72e028dee7882d43eed5e5958664f8ad8152f133d071e1e30270ecdba"
                 },
@@ -9748,7 +9748,7 @@
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                             "linea": 851,
                             "cita": "| **U2** ✚ | **el outbox común**",
-                            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                         }
                     ],
                     "razon": "El outbox común."
@@ -9775,7 +9775,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7551,
+                    "linea": 7557,
                     "cita": "y la ruta de avisos queda abierta durante todo el corte",
                     "hash": "4d2767db5c2808c62a734104b43aacd74436d61ccfc9c6eaa5bf81a37383af08"
                 },
@@ -9802,7 +9802,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7555,
+                    "linea": 7561,
                     "cita": "En la lista de `U1`, *«borra las columnas de pago de",
                     "hash": "b8c9fbab6246160bab8ac7ebddb7d44110dd9f279904c3796826cf3aa68ff42c"
                 },
@@ -9843,7 +9843,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7565,
+                    "linea": 7571,
                     "cita": "**`U3`, el script del corte**",
                     "hash": "edbcc59d56a6522e2d3c15ef5d6b8d63f85be2cee4f906e56db0257a858e6c25"
                 },
@@ -9864,7 +9864,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7578,
+                    "linea": 7584,
                     "cita": "borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`",
                     "hash": "e15ec8043e631e49aeedd05f78ac992a080bee60f8a51e5ae7fc381b4c85673b"
                 },
@@ -9911,7 +9911,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7608,
+                    "linea": 7614,
                     "cita": "**`@repo/billing-verticals-contract`**, en `packages/billing-verticals-contract`.",
                     "hash": "0ac3d05dfc9512bd12611be38045620271eb6601c37237aed3fa277db27c9393"
                 },
@@ -9946,7 +9946,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7715,
+                    "linea": 7721,
                     "cita": "se da por bueno y el trabajo siguiente puede apoyarse en él",
                     "hash": "6753a2a213795b6d365f807ceb7d957a4ed73c7c4f0cce35f52b7894fa285d58"
                 },
@@ -9981,13 +9981,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7779,
+                    "linea": 7785,
                     "cita": "*«las 22 piezas del corte",
                     "hash": "77b150dbe4cf591ffc702b5767030b3595243acf130a0d09f96aa8764bfe67af"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1082,
+                    "linea": 1084,
                     "cita": "**las 22 piezas del corte están en `Done`**",
                     "hash": "0eeaf731206294918c2537ce3851a8d7ad13584c833fafbe827adc4d117fd1ab"
                 }
@@ -10002,7 +10002,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7813,
+                    "linea": 7819,
                     "cita": "**30 piezas**, **22 al corte y 8 después**",
                     "hash": "3e3e259d8f3bd25517fa22359810b2dcadfa236730db8a9e39c81251ffcf21cf"
                 },
@@ -10062,7 +10062,7 @@
                             "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
                             "linea": 72,
                             "cita": "**escribe desde el día del corte**",
-                            "hash": "eacadd130eae6a33aa0a284a7f6f7d5a2771895ef0c63caf114309f7837a77bc"
+                            "hash": "dd516ac5125a23118fbeb86d643af86c9684ee8685fbc3ebd52518afdaf873c4"
                         }
                     ],
                     "razon": "AC: el registro de los actos del dueño al corte."
@@ -10089,7 +10089,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7864,
+                    "linea": 7870,
                     "cita": "(AP) **el esquema de lo posterior lo crea al corte la pieza dueña de la tabla de la que cuelga**",
                     "hash": "2228eeb4195283a218a8af5adf1afb71bf6ec28f8f8d0fbb8e04870dcf2130d4"
                 },
@@ -10202,7 +10202,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7881,
+                    "linea": 7887,
                     "cita": "pasan de `B4` a `B3`**",
                     "hash": "92cf5a5d784e0d0c2edc2d344569c0175ac7090a77814c0c7a3d7e8c91825d1f"
                 },
@@ -10651,13 +10651,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| `09` entero ·",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El capítulo 09 entero es de B11.",
@@ -10794,7 +10794,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "las pausas con regalo neto positivo** (owner 2026-09-26, `G5-3`",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "el detector de DEC-OBS-001 en el resumen del barrido"
@@ -10931,7 +10931,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 136,
                             "cita": "| `G7` |",
-                            "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                            "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                         }
                     ],
                     "razon": "G7: un valor comercial vive en código (invariantes §64.15 y §64.16)"
@@ -10966,7 +10966,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 136,
                             "cita": "| `G7` |",
-                            "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                            "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                         }
                     ],
                     "razon": "G7 vigila los dos invariantes"
@@ -11044,13 +11044,13 @@
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                     "linea": 851,
                     "cita": "un correo se encola dentro de la transacción de dominio y se manda afuera (`NUCLEO/07` §1.1)",
-                    "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                    "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
                     "linea": 851,
                     "cita": "un `failed` definitivo que era obligatorio se escala (§1.3)",
-                    "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5"
+                    "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
                 }
             ],
             "razon": "El outbox común (U2) encola dentro de la transacción y manda afuera; las dos salidas de la excepción (sin destinatario, §4.2; failed, §1.3) son de U2. La excepción de DEC-MAIL-001 la usa cada baja (inferido).",
@@ -11183,7 +11183,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 136,
                     "cita": "`billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan",
-                    "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                    "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                 }
             ],
             "razon": "La configuración comercial de billing cuelga de la versión y no del plan desde B2; V2 provee `plan_version` (inferido).",
@@ -11343,13 +11343,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| `09` entero ·",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "El inventario a conciliar sale de nuestra base: es la conciliación (cap. 09, DEC-CONC-002), de B11 (inferido).",
@@ -13658,7 +13658,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "La comparación de cobros del `09` §3, de B11, también lo abre."
@@ -13712,7 +13712,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -13878,13 +13878,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "sólo si su `external_reference` nombra una fila nuestra sin otro vínculo vivo; todo otro abre marca**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "Lo abren la comparación de estado y la re-vinculación rechazada del `09` §2.4, las dos de B11 (inferido para la comparación: `09` entero).",
@@ -13924,13 +13924,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "entra por la lápida de recepción como cualquier desconocido y abre `PAGO_TARDÍO_RECHAZADO`",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La fila de B11 lo nombra (lápida de recepción y comparación de cobros); el camino del `05` §3 es de B7.",
@@ -14393,7 +14393,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -14490,7 +14490,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "La comprobación de pagos acreditados."
@@ -14601,7 +14601,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "Lo abre la comparación de cobros del período del `09` §3 (B11; B §2.8); el camino de `P1` pasó al 20.",
@@ -14846,13 +14846,13 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "y abre el motivo 24 si cobró de más**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
                     "cita": "| **B11** | **Conciliación**",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "La fila de B11 lo nombra.",
@@ -15049,7 +15049,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "La defensa (comparar el monto releído) es de B11."
@@ -15129,7 +15129,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "La defensa vive en el `09` §4, que B11 tiene entero (inferido)."
@@ -15624,7 +15624,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "El barrido que lee `expire_date` es de B11."
@@ -15762,7 +15762,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "La lectura de «¿cobró?» del `09` §4 es de B11 (inferido)."
@@ -17163,7 +17163,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "la relectura de todo `refund` en `CONFIRMED`",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "El barrido de B11 reenvía la devolución sin respuesta con la misma clave y relee los `refund` en `CONFIRMED`."
@@ -18039,7 +18039,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1031,
+                    "linea": 1033,
                     "cita": "**30 piezas** (corte del MVP, owner 2026-10-01, Z",
                     "hash": "0d570ee38fc9277da6018c7d13f05dcad8cf3f266cfac346a21c2ca3f0a8e742"
                 },
@@ -18444,7 +18444,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1033,
+                    "linea": 1035,
                     "cita": "1. cumple el criterio de su fila",
                     "hash": "f538020ec4be530b6b67b95db7e7169bde570772620c239cd98cb76346fc65af"
                 },
@@ -18849,7 +18849,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1035,
+                    "linea": 1037,
                     "cita": "2. sus guards están escritos",
                     "hash": "946ec8c85b474476a07de0beaad946e98bca6e67928c9a6061c92eb765cbc0f3"
                 },
@@ -19254,7 +19254,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1037,
+                    "linea": 1039,
                     "cita": "3. no deja ningún escritor declarado sin implementar",
                     "hash": "dc64550243dd7c220c98c26fc6b18edd921243ffa7ee3bb6769724fe8de75ac9"
                 },
@@ -19659,7 +19659,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1038,
+                    "linea": 1040,
                     "cita": "4. **cada fila `UNKNOWN` de la matriz",
                     "hash": "10fd58e1b62f12d10f3e8f35c01488fde10d1a6bbeacfc1bd83bac9e408ab53a"
                 },
@@ -20064,7 +20064,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1043,
+                    "linea": 1045,
                     "cita": "5. sus e2e están adaptados en el mismo PR",
                     "hash": "38a31876e017619e3ebe7943d5b314fe5e6137cc720212ebb1ff9da891aa557f"
                 },
@@ -20469,7 +20469,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1044,
+                    "linea": 1046,
                     "cita": "6. su PR hacia la rama tiene `CI Pass` concluido",
                     "hash": "df556fbd2f3910c3626d4440724954bdea95db33add8063f58b586c88b85b267"
                 },
@@ -20874,7 +20874,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1080,
+                    "linea": 1082,
                     "cita": "El PR final del paraguas a `staging` no se abre hasta que (D-3):",
                     "hash": "4028e26bebf31812f5a9a46d7b3d2658ffdaf3d25c8b50def17e946dd733c769"
                 }
@@ -20889,7 +20889,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1082,
+                    "linea": 1084,
                     "cita": "**las 22 piezas del corte están en `Done`**",
                     "hash": "0eeaf731206294918c2537ce3851a8d7ad13584c833fafbe827adc4d117fd1ab"
                 }
@@ -20904,7 +20904,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1084,
+                    "linea": 1086,
                     "cita": "2. `staging` está mergeado hacia la rama y la rama está verde en su último `push`;",
                     "hash": "4a995d9ba722d27d7f3d57b7312bd4e1c40d431f496cb34432437a867b217007"
                 }
@@ -20919,7 +20919,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1085,
+                    "linea": 1087,
                     "cita": "3. `e2e-pr`, `codeql`, y `lighthouse` y `a11y-sweep` por `workflow_dispatch`",
                     "hash": "738bca93f156f8da0ff7d5eca715ba67f78c686cffb9e655b2157a21d62674dc"
                 }
@@ -20934,7 +20934,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1093,
+                    "linea": 1095,
                     "cita": "El ensayo es el paso 0 del §4.2 y corre en `staging`",
                     "hash": "460f9c17f9f8cf44997f99f557aa815cbb5c2ba797c825fcab26663086bf3aa4"
                 }
@@ -20947,7 +20947,7 @@
                     "citas": [
                         {
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                            "linea": 1094,
+                            "linea": 1096,
                             "cita": "`U3` está mergeada (F)",
                             "hash": "8343aa4c2ec741334f7c6148308fb377f45327a9502141d1f161ddd2019ef4c3"
                         }
@@ -20963,7 +20963,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1107,
+                    "linea": 1109,
                     "cita": "El paso 1 en producción es irreversible",
                     "hash": "ff82e6b84d94a482c838f3c31c3e63003b37ca7ebca88bbd82aca05e746bcd12"
                 }
@@ -20978,7 +20978,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1115,
+                    "linea": 1117,
                     "cita": "Después del paso 5, **el owner corre el smoke de producción del checklist nuevo**",
                     "hash": "849269da12ed36bff79b35f91d42d4464d510d2c6ab52471d4195897fa80723c"
                 }
@@ -20993,7 +20993,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "El barrido diario cuya corrida de siete días sin divergencia acepta el programa es de B11 (inferido)."
@@ -21020,7 +21020,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1137,
+                    "linea": 1139,
                     "cita": "**Cada fase posterior viaja en una rama épica nueva**",
                     "hash": "692d78dfc61f69d93758137fda91ee31dec1c9362103b65072fb9462f33ff2a4"
                 }
@@ -21035,7 +21035,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1143,
+                    "linea": 1145,
                     "cita": "1. **el momento 2 aplicado a la rama de la fase**",
                     "hash": "c6fca024160e275b191585f59d91edbf8e11da6d97509a6a4ecaca3faf5b6d0c"
                 }
@@ -21050,7 +21050,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1146,
+                    "linea": 1148,
                     "cita": "2. **el checklist de smoke del sistema nuevo, extendido con lo de la fase**",
                     "hash": "dabe6aef2def5282aea347c264a96aa3e562e6c72b201ae58f7ac0eddae1562f"
                 }
@@ -21079,7 +21079,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1150,
+                    "linea": 1152,
                     "cita": "3. **el drift guard sobre la rama de la fase, en verde**",
                     "hash": "0e84ef2df501424ad57391ae41220a0018bf1ecf0c1333c608dbe3581d30088c"
                 }
@@ -21094,7 +21094,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1162,
+                    "linea": 1164,
                     "cita": "| 1 | `V9b` |",
                     "hash": "dd7983e39d7d4280fe87d3849ca79cacd61913a3fd6e48bf8da3ad86e26c53d9"
                 },
@@ -21115,7 +21115,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1163,
+                    "linea": 1165,
                     "cita": "| 2 | `B8b`, `B9b` |",
                     "hash": "042c9311cda1eb83415f623c8e69a83f3175016214ab1c8479398b51a58be0e9"
                 }
@@ -21130,7 +21130,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1164,
+                    "linea": 1166,
                     "cita": "| 3 | `B10`, `B13b`, `B12` |",
                     "hash": "a7f64ef9131e06752b469d8b30495c549dad434ce7a914407046dcd974f7c1da"
                 }
@@ -21145,7 +21145,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1165,
+                    "linea": 1167,
                     "cita": "| 4 | `V7`, `V8b` |",
                     "hash": "08134b00fee08a6f3fc610546aab373257a3db8054ac4335f8b8257f01bbe077"
                 }
@@ -21160,13 +21160,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1178,
+                    "linea": 1180,
                     "cita": "**Un checklist nuevo, del sistema",
                     "hash": "a1db8a8ce03b325d02e31823bb4a12db387e9951a46941918e39f0fd8443ffae"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                    "linea": 1179,
+                    "linea": 1181,
                     "cita": "nuevo, en dos partes**, que escribe `B13` en `docs/billing/`",
                     "hash": "f2e77e7a005844e080866e8fb5c63a607a4e771ecf5c3bf382f2d7804c7b6177"
                 },
@@ -21234,13 +21234,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7903,
+                    "linea": 7909,
                     "cita": "`U2`. **BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`",
                     "hash": "44ba773d5d155fde763e237f9d24bc7d2707af47ce982d532fb014f8d9364dac"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7897,
+                    "linea": 7903,
                     "cita": "es de `B3`; la acción 6 (el plan y el método de pago de un Partner) es de `V7`",
                     "hash": "772f6204f7c039ac01497458a650116f64ec424ba93e6dfae1c1287d67c1fd7a"
                 },
@@ -21537,7 +21537,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7915,
+                    "linea": 7921,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-01, con OK del owner (corte del MVP, BJ, la 1, que reemplaza a",
                     "hash": "ce0e12bb6186dfbc867ae4176665d9d14089700ba1ede1fb7ad2e8d2f6e9f4bf"
                 },
@@ -21587,13 +21587,13 @@
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md",
                     "linea": 191,
                     "cita": "| 19 ✚ | la **ventana `N` del resumen de conciliación** |",
-                    "hash": "4018159bef4f0bbe721c97df0ec326a77f41878d511d22d5784a7d852f21e334"
+                    "hash": "234c1787c1912e1246a17487a12a74fcc7c9b5ada492dc6deb007981bcf6afd0"
                 },
                 {
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 149,
-                    "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`, cuyo valor fija el owner antes del merge de esta pieza",
-                    "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                    "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
+                    "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                 }
             ],
             "razon": "BU: el resumen de conciliación cada N minutos lo construye B11 (fila de B11); B2 pone la clave en su tabla de plazos.",
@@ -21606,7 +21606,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 136,
                             "cita": "**y en la tabla versionada de plazos de billing, la clave 19, la ventana `N` del resumen de conciliación (`DEC-OBS-001`)",
-                            "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                            "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                         }
                     ],
                     "razon": "la clave 19"
@@ -21628,7 +21628,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 136,
                     "cita": "**y en la tabla versionada de plazos de billing, la clave 19, la ventana `N` del resumen de conciliación (`DEC-OBS-001`)",
-                    "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                    "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                 }
             ],
             "razon": "BU pone la clave 19 en la tabla de plazos de B2 (fila de B2); BV es la fecha límite de la Fase 1, que verifica el gate de esa fase (V9b). Dueña B2 por ir primero en el grafo.",
@@ -21640,8 +21640,8 @@
                         {
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
-                            "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`, cuyo valor fija el owner antes del merge de esta pieza",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "lee N"
@@ -21652,7 +21652,7 @@
                     "citas": [
                         {
                             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-                            "linea": 1172,
+                            "linea": 1174,
                             "cita": "el primer aviso de `V9b` es",
                             "hash": "378af51c03360eed6cf70585b78fd5bbd01299d504953aa3da120edaa87b0842"
                         }
@@ -21668,7 +21668,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7784,
+                    "linea": 7790,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BQ, Q1 y Q2, las dos la",
                     "hash": "ea7cf081e2fa305419bae814a212d23926094848be6af839ca5b83509deda887"
                 },
@@ -21697,7 +21697,7 @@
                     "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                     "linea": 136,
                     "cita": "**y la acción 19, *«fijar el precio de un ciclo»*, con la mecánica de BM",
-                    "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28"
+                    "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
                 }
             ],
             "razon": "BM: la acción 19 con su mecánica es de B2 (fila de B2); el aviso y la mutación a los ya anclados, de B12; su uso, vedado hasta el momento 5 (regla de operación, D/16 §4.7).",
@@ -21724,7 +21724,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7926,
+                    "linea": 7932,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BL, BN, BO, BP y BR, todas",
                     "hash": "de2d395a07a2ae50a5135d10d19774993a5ec758743be13f7c66c9a1a00e763e"
                 },
@@ -21810,7 +21810,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 149,
                             "cita": "**y los dos correos inmediatos a `SUPER_ADMIN`, *«reembolso de revocación fallido»* y *«cobro duplicado detectado»*, con su plantilla**",
-                            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00"
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
                         }
                     ],
                     "razon": "BR"
@@ -21842,19 +21842,6 @@
                     "razon": "BL"
                 },
                 {
-                    "pieza": "V9a",
-                    "rol": "implementa",
-                    "citas": [
-                        {
-                            "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
-                            "linea": 72,
-                            "cita": "**y crea `domain_event` (`NUCLEO/02` §2.6), con todas sus restricciones",
-                            "hash": "eacadd130eae6a33aa0a284a7f6f7d5a2771895ef0c63caf114309f7837a77bc"
-                        }
-                    ],
-                    "razon": "BN (inferido)"
-                },
-                {
                     "pieza": "V9b",
                     "rol": "implementa",
                     "citas": [
@@ -21883,6 +21870,102 @@
             ],
             "tipos": [],
             "lote": "BK-BV"
+        },
+        "DEC-ARCH-017#📌7": {
+            "pieza": "U2",
+            "citas": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 7963,
+                    "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la",
+                    "hash": "06b7ca88ff9234ff04966c8c158e08b8d8d2e0d988cb9d8125f6eb13130ceb30"
+                },
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
+                    "linea": 851,
+                    "cita": "**y crea `domain_event` (`NUCLEO/02` §2.6), el registro de auditoría de `NUCLEO/08` §1",
+                    "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981"
+                }
+            ],
+            "razon": "BW: domain_event la crea U2 (fila de U2, D/16 §4.6), ancestro de todas las que la escriben; la rama 4 de S13 (BL) es de B7 por interfaz y su implementación real de B9a.",
+            "tambien": [
+                {
+                    "pieza": "B7",
+                    "rol": "implementa",
+                    "citas": [
+                        {
+                            "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                            "linea": 1044,
+                            "cita": "en la rama 4, la bandera se apaga por la interfaz interna que llama `S13`",
+                            "hash": "ad0e4779ea739bdca10278eac4c0bc990760f11dbdde38181aaeee71b42df800"
+                        }
+                    ],
+                    "razon": "BL: la rama por interfaz"
+                },
+                {
+                    "pieza": "B9a",
+                    "rol": "implementa",
+                    "citas": [
+                        {
+                            "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                            "linea": 1049,
+                            "cita": "y `S13` sobre una sucesión con un pago retenido apaga la bandera de la rama 4",
+                            "hash": "662ac348e25497cd48ab7646ffb8e5a74a5ec0a046a204422b08a5c319cb4c5d"
+                        }
+                    ],
+                    "razon": "BL: S13 real"
+                },
+                {
+                    "pieza": "V9a",
+                    "rol": "usa",
+                    "citas": [
+                        {
+                            "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                            "linea": 72,
+                            "cita": "esta pieza escribe en ella desde el día del corte",
+                            "hash": "dd516ac5125a23118fbeb86d643af86c9684ee8685fbc3ebd52518afdaf873c4"
+                        }
+                    ],
+                    "razon": "escribe en domain_event"
+                }
+            ],
+            "tipos": [],
+            "lote": "BW-BX"
+        },
+        "DEC-DATA-008#📌8": {
+            "pieza": "B2",
+            "citas": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 7398,
+                    "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌",
+                    "hash": "a8f39f2e230e226cca91907dc768a5643e90cf133e2fabfeb39344768c399fc4"
+                },
+                {
+                    "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                    "linea": 136,
+                    "cita": "su valor lo fija el owner antes del merge de ~~`B11`~~ esta pieza",
+                    "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322"
+                }
+            ],
+            "razon": "BX: el valor del plazo 19 se fija antes del merge de B2 (fila de B2).",
+            "tambien": [
+                {
+                    "pieza": "B11",
+                    "rol": "usa",
+                    "citas": [
+                        {
+                            "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                            "linea": 149,
+                            "cita": "con `N` la clave 19 de la tabla de plazos de billing de `B2`",
+                            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6"
+                        }
+                    ],
+                    "razon": "lee N"
+                }
+            ],
+            "tipos": [],
+            "lote": "BW-BX"
         }
     },
     "sin_pieza": {},
