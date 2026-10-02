@@ -790,11 +790,11 @@ distintos** y los tres se disparan del mismo lugar:
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
 —`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son ~~**las doce**~~ ~~**las trece**~~ ~~**las catorce**~~ **las once** (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`) que en
-`B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31` es la decimotercera**, la
+`B/03` §3.2 sacan a una fila principal de las filas vivas —~~**`S31` es la decimotercera**~~ **`S31`**, la
 sucesora que un contracargo sobre su predecesora corta a `ABANDONED` o `CANCELLED` (FASE 9
-completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista), **y `S36` la decimocuarta**, la
+completa, contradicción 2 de `03` §R6.5; recontadas sobre la lista), **y ~~`S36` la decimocuarta~~ `S36`**, la
 revocación del derecho de arrepentimiento, que saca a la principal de las filas vivas desde la FASE 9
-vuelta 1 y no se había recontado acá (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`, `F-8V2D1-001`)—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
+vuelta 1 y no se había recontado acá (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`, `F-8V2D1-001`) *(sin ordinales desde C8, que sacó tres; residuo corregido el 2026-10-02)*—: `S3`, `S12`, `S13`, `S16`, `S17`, **el
 espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
 transición de la misma tabla); desde la FASE 9-bis-4, **`S22`, `S23` y `S24`** —la baja pedida
 estando pausado, suspendido o en el grace; `S22` cuando va a `CANCELLED`, porque sobre una fila
