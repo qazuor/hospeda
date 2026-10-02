@@ -53,6 +53,8 @@ MIXTO = [
      'el resto quedó tachado y reemplazado en la fuente (AY)'),
     ('FILA:B8', V_, 'las tablas del modelo del complemento las crea `B3`', None, None, [AV], 'AV',
      'fila de origen de `B8a` y `B8b`; el resto quedó tachado y reemplazado en la fuente (AY)'),
+    ('FILA:B13b', V_, '*(pasan a `B13a`: corte del MVP, owner 2026-10-01, BH)*', None, None, [], 'BH',
+     'tachado y reemplazo explícitos: las filas 13 y 13-bis van a `B13a` (BH)'),
     ('FILA:U1', V_, 'la limpieza del principio y, al terminarla, el package del contrato vacío; nada más', None, None, [], None,
      'tachado y reemplazo explícitos (lote P-C)'),
     ('FILA:V2', V_, 'con que billing lee de una `addon_version` su `addon`', None, None, [], None,
@@ -237,8 +239,12 @@ def at(path, line, cita):
         if len(hits) != 1:
             sys.exit(f'✗ cita en {path}: {len(hits)} líneas contienen «{cita[:60]}»')
         line = hits[0]
-    if cita not in L[line - 1]:
-        sys.exit(f'✗ cita ausente en {path}:{line}: «{cita[:60]}»')
+    if line > len(L) or cita not in L[line - 1]:
+        # the line moved when the sources were re-frozen: relocate it only if the quote is unique
+        hits = [n for n, l in enumerate(L, 1) if cita in l]
+        if len(hits) != 1:
+            sys.exit(f'✗ cita ausente en {path}:{line}: «{cita[:60]}» ({len(hits)} líneas la contienen)')
+        line = hits[0]
     return dict(archivo=path, linea=line, cita=cita, hash=line_hash(path, line))
 
 

@@ -1,5 +1,5 @@
 {
-    "sha": "dab68c3ded010857516224ff215a3117b5a32575",
+    "sha": "fed4c735baeba90ade87fc6715fd4ef8adbd1241",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 612,
+        "01-decisiones-vigentes.md": 623,
         "02-nucleo.md": 95,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -43,13 +43,13 @@
         "10-corte/B11.md": 3,
         "10-corte/B13a.md": 5,
         "10-corte/B2.md": 3,
-        "10-corte/B3.md": 13,
+        "10-corte/B3.md": 15,
         "10-corte/B4.md": 3,
         "10-corte/B5.md": 8,
         "10-corte/B6.md": 3,
         "10-corte/B7.md": 10,
         "10-corte/B8a.md": 9,
-        "10-corte/B9a.md": 9,
+        "10-corte/B9a.md": 7,
         "10-corte/U1.md": 3,
         "10-corte/U2.md": 3,
         "10-corte/U3.md": 3,
@@ -2039,6 +2039,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-DATA-008#📌6": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-MP-009": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2159,6 +2165,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-ARCH-017#📌4": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-METH-019": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2172,6 +2184,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-METH-019#📌2": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-METH-019#📌3": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -3098,8 +3116,8 @@
         },
         "FILA:B13b": {
             "fuente": "FILA",
-            "estado": "VIVO",
-            "veredicto": null,
+            "estado": "MIXTO",
+            "veredicto": "VIVO",
             "destino": "20-fase-3/B13b.md"
         },
         "FILA:B2": {
@@ -7213,6 +7231,54 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t7:BA": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BB": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BC": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BD": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BE": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BF": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BG": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t7:BH": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -7252,14 +7318,14 @@
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "10-corte/B9a.md",
+            "destino": "10-corte/B3.md",
             "tambien": ["20-fase-2/B9b.md"]
         },
         "ESQ:7": {
             "fuente": "ESQ",
             "estado": "VIVO",
             "veredicto": null,
-            "destino": "10-corte/B9a.md",
+            "destino": "10-corte/B3.md",
             "tambien": ["20-fase-2/B9b.md"]
         },
         "ESQ:8": {
@@ -8748,25 +8814,25 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:593": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:600": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:637": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:644": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:714": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:721": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:742": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,

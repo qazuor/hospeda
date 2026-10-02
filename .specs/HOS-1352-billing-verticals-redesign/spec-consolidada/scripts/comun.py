@@ -13,8 +13,9 @@ import subprocess
 import sys
 
 # The commit the whole consolidation is anchored to (owner method, DEC-METH-019 point 1). Re-frozen
-# after the owner's AW-AZ were applied to the sources (it was 0dbe4482764a…, then f46a76c394…).
-SHA = 'dab68c3ded010857516224ff215a3117b5a32575'
+# after the owner's BA-BH were applied to the sources (it was 0dbe4482764a…, then f46a76c394…,
+# then dab68c3ded…).
+SHA = 'fed4c735baeba90ade87fc6715fd4ef8adbd1241'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
