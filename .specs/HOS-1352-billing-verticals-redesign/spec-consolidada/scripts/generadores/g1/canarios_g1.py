@@ -17,6 +17,12 @@ message. A canary that passes is a blind check.
             `letras_vivas_revisadas`.
   parentes  the inline 📌1 of DEC-GRANT-004 cut by line again (cierre_en_linea disabled): its tail
             stays in the 📌 and the body keeps an open «(» (H2-G1-9).
+
+Third round (H3-G1-3, P-H over the content):
+  cinco     the base run marks «⚠️ Caducada en parte» the five letters the adjudication listed (B, F
+            and H of 38-fase-5; G5-3 and G2-1 of 28-fase-9-vuelta-1).
+  nombra    F of 38-fase-5 out of `letras_muertas`: N, a later letter of its file, says «F se lee».
+  contenido L3-a out of `letras_muertas`: what it decides is struck in 16-fase-7 and live nowhere.
 """
 import json
 import os
@@ -27,7 +33,13 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEN = os.path.join(HERE, 'gen01.py')
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, '..', '..')))  # scripts/, for comun
 OMIT = json.load(open(os.path.join(HERE, 'omisiones.json'), encoding='utf-8'))
+
+
+CINCO = ('OWN:38-fase-5:t4:B', 'OWN:38-fase-5:t6:F', 'OWN:38-fase-5:t6:H',
+         'OWN:28-fase-9-vuelta-1:t1:G5-3', 'OWN:28-fase-9-vuelta-1:t1:G2-1')
+SALIDA = {}
 
 
 def run(omit):
@@ -35,7 +47,19 @@ def run(omit):
     p = os.path.join(d, 'omisiones.json')
     json.dump(omit, open(p, 'w', encoding='utf-8'), ensure_ascii=False)
     r = subprocess.run([sys.executable, GEN, '--salida=' + d, '--omisiones=' + p], capture_output=True, text=True)
+    s = os.path.join(d, '01-decisiones-vigentes.md')
+    SALIDA['txt'] = open(s, encoding='utf-8').read() if os.path.exists(s) else ''
     return r.returncode, r.stdout + r.stderr
+
+
+def marcada(txt, cid):
+    """Whether the block of ``cid`` (its anchor up to the next anchor) carries «⚠️ Caducada en parte»."""
+    from comun import slug  # noqa: E402
+    a = txt.find(f'<a id="{slug(cid)}"></a>')
+    if a < 0:
+        return False
+    b = txt.find('<a id=', a + 1)
+    return '⚠️ **Caducada en parte**' in txt[a:b if b > 0 else len(txt)]
 
 
 def pipe():
@@ -69,6 +93,18 @@ def main():
     code, out = run(OMIT)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas += code != 0
+    sin = [c for c in CINCO if not marcada(SALIDA['txt'], c)]
+    print(f'{"✓" if not sin else "✗ CIEGO"} cinco    las cinco letras de la adjudicación llevan su ⚠️'
+          + (f' (faltan: {", ".join(sin)})' if sin else ''))
+    fallas += bool(sin)
+    for clave, letra, que in (('nombra', 'OWN:38-fase-5:t6:F', 'F se lee'),
+                              ('contenido', 'OWN:30-revision-del-owner:t5:L3-a', 'arma la lista')):
+        m = json.loads(json.dumps(OMIT))
+        m['letras_muertas'].pop(letra, None)
+        code, out = run(m)
+        good = code == 1 and 'letra corregida por una letra posterior o por un tachado' in out and que in out
+        print(f'{"✓" if good else "✗ CIEGO"} {clave:9} exit {code} · {letra} fuera de `letras_muertas`')
+        fallas += not good
     ok, code, out = pipe()
     good = ok and code == 1 and 'celda partida' in out
     print(f'{"✓" if good else "✗ CIEGO"} pipe     exit {code} · la fila 5a se lee entera, y partida en cada «|» falla')
@@ -101,7 +137,7 @@ def main():
     good = code == 1 and 'DEC-GRANT-004' in out and 'paréntesis desbalanceados' in out
     print(f'{"✓" if good else "✗ CIEGO"} parentes exit {code} · el 📌1 de DEC-GRANT-004 cortado por línea')
     fallas += not good
-    print(f'\n7 canarios · {fallas} fallas')
+    print(f'\n10 canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 

@@ -20,7 +20,12 @@ to show a span («la muestra bajo el 📌N») and that 📌 does not receive it 
 And (second round, pattern P-H) it fails if a letter of a round in RONDAS_CITADAS is cited by a later
 source only inside ~~…~~ and is in neither `letras_muertas` nor `letras_vivas_revisadas` (H2-G1-10), or
 if a DEC body or a 📌 has unbalanced parentheses after segmenting: a 📌 that opens with «(**📌» ends at
-the «)» that balances it, not at the end of the line (H2-G1-9, DEC-GRANT-004)."""
+the «)» that balances it, not at the end of the line (H2-G1-9, DEC-GRANT-004).
+
+And (third round, H3-G1-3, P-H over the content, every round 38-fase-5 included) it fails if a later
+letter of the same file names a letter with a correcting word («F se lee», «corrige B») or strikes eight
+words of what it decides, or if eight words in a row of what it decides are struck in a later source
+and live in none, unless the letter is in `letras_muertas` or `letras_vivas_revisadas`."""
 import json
 import os
 import re
@@ -469,6 +474,88 @@ def letras_tachadas_sin_marca():
     return malas
 
 
+# P-H, third blind-verification round (H3-G1-3): a letter corrected by a LATER letter of its own file, or
+# whose decision a later source struck. Neither cites the letter in a form RONDAS_CITADAS knows (F of
+# 38-fase-5 is corrected by N, «F se lee…»; G5-3's predicate died struck in the log), so these two
+# sweeps read the content and run over every round, 38-fase-5 included.
+COLUMNA_DECIDE = ('qué decide', 'en una línea', 'decisión', 'decide', 'respuesta', 'elige', 'elegida')
+# «precisa X» is not here on purpose: 41-corte-del-mvp writes «Precisa X» eleven times for a letter that
+# keeps X alive and adds to it (BY: «BL vale también para leer. Precisa BL»); a precision is no correction
+CORRIGE = r'(?i:corrige|reemplaza|supera|enmienda|deja sin efecto)'
+N_TACHADO = 8  # words in a row, as R20 of trazar.py: shorter runs are common wording, not a decision
+
+
+def palabras(t):
+    """The words of ``t`` outside ~~…~~ (a strike may span lines), lowercased, markup dropped."""
+    t = re.sub(r'~~.*?~~', '', t, flags=re.S)
+    return re.findall(r'[\wáéíóúñü/.-]+', re.sub(r'[*`«»"()\[\]]', ' ', t).lower())
+
+
+def celda_que_decide(i):
+    """The cell of an owner letter that says what it decides (its table's header names the column)."""
+    L = lines(i['archivo'])
+    k = i['linea'] - 1
+    while not re.match(r'^\|\s*-', L[k - 1]):
+        k -= 1
+    head = [h.lower() for h in partir(L[k - 2])]
+    cs = partir(L[i['linea'] - 1])
+    col = next((head.index(h) for h in COLUMNA_DECIDE if h in head), len(cs) - 1)
+    return cs[col] if col < len(cs) else cs[-1]
+
+
+def tramos(ws, n=N_TACHADO):
+    return [' '.join(ws[x:x + n]) for x in range(len(ws) - n + 1)]
+
+
+def letras_corregidas_sin_marca():
+    """(a) a later letter of the same file names the letter with a correcting word («F se lee», «corrige
+    B») or strikes N_TACHADO words of what it decides; (b) N_TACHADO words in a row of what it decides
+    are inside ~~…~~ in a later source and live in none of them (the R20 criterion: a phrase struck and
+    rewritten the same is no correction). Either fails unless the letter is in `letras_muertas` or
+    `letras_vivas_revisadas`."""
+    owns = sorted((i for i in items if i['fuente'] == 'OWN'), key=lambda i: (i['archivo'], i['linea']))
+    posteriores = fuentes_posteriores()
+    tachado, vivo = [], []
+    for f in posteriores:
+        t = '\n'.join(lines(f))
+        tachado += [' '.join(palabras(m.group(1))) for m in re.finditer(r'~~(.*?)~~', t, re.S)]
+        vivo.append(' '.join(palabras(t)))
+    vivo = ' | '.join(vivo)
+    malas = []
+    for i in owns:
+        if i['id'] not in mine or i['id'] in MUERTAS or i['id'] in VIVAS_REVISADAS:
+            continue
+        ws = palabras(celda_que_decide(i))
+        propia = ' '.join(ws) if i['archivo'] in posteriores else ''
+        L, loc, por = lines(i['archivo']), re.escape(i['local']), None
+        nombra = re.compile(rf'(?<![\w`-])`?{loc}`? se lee\b|\b{CORRIGE} (?:la |a )?(?:letra )?`?{loc}`?(?![\w-])')
+        for j in owns:
+            if j['archivo'] != i['archivo'] or j['linea'] <= i['linea']:
+                continue
+            # a reused letter («F» in two tables) names the nearest one above it
+            if max((x for x in owns if x['archivo'] == i['archivo'] and x['local'] == i['local']
+                    and x['linea'] < j['linea']), key=lambda x: x['linea'])['id'] != i['id']:
+                continue
+            fila = L[j['linea'] - 1]
+            m = nombra.search(re.sub(r'~~.*?~~', '', fila))
+            if m:
+                por = f'(a) la letra {j["local"]} la nombra: «{m.group(0)}»'
+                break
+            sp = ' '.join(' '.join(palabras(x)) for x in re.findall(r'~~(.*?)~~', fila))
+            hit = next((t for t in tramos(ws) if t in sp), None)
+            if hit:
+                por = f'(a) la letra {j["local"]} tacha «{hit}»'
+                break
+        if not por:
+            hit = next((t for t in tramos(ws) if any(t in s for s in tachado)
+                        and vivo.count(t) <= propia.count(t)), None)
+            if hit:
+                por = f'(b) una fuente posterior tacha «{hit}» y ninguna lo dice vivo'
+        if por:
+            malas.append(f'{i["id"]} {por}')
+    return malas
+
+
 def own_section_heading(path, n):
     L = lines(path)
     for k in range(n - 1, 0, -1):
@@ -544,6 +631,10 @@ def main():
     if malas:
         sys.exit('letra tachada en una fuente posterior y sin ⚠️ (omisiones.py, LETRAS_MUERTAS o '
                  f'LETRAS_VIVAS_REVISADAS): {", ".join(malas)}')
+    malas = letras_corregidas_sin_marca()
+    if malas:
+        sys.exit('letra corregida por una letra posterior o por un tachado y sin ⚠️ (omisiones.py, LETRAS_MUERTAS '
+                 f'o LETRAS_VIVAS_REVISADAS): {"; ".join(malas)}')
     for cid, v in adj.items():
         for n in re.findall(r'(?:muestra|mostrar\w*)\s+bajo el 📌(\d+)', v.get('muerto') or ''):
             dest = cid.split('#')[0] + f'#📌{n}'

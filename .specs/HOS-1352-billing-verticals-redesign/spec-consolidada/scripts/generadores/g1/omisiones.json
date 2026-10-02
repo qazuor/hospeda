@@ -661,6 +661,48 @@
             "por": "sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3 (S-07)",
             "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:148",
             "inferido": "la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada"
+        },
+        "OWN:38-fase-5:t4:B": {
+            "alcance": "en parte",
+            "por": "el rol de socio se da en el acto que fija al dueño de la presencia, no al aprobar la postulación (F)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:133",
+            "inferido": false
+        },
+        "OWN:38-fase-5:t6:F": {
+            "alcance": "en parte",
+            "por": "el alta directa de un Partner por el admin no fija dueño; F se lee *«cuando queda con dueño»* (N)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:153",
+            "inferido": false
+        },
+        "OWN:38-fase-5:t6:H": {
+            "alcance": "en parte",
+            "por": "`starts_at` y `ends_at` no quedan hasta la unidad de socios: los borra la migración estructural de `partners`, que es de `V7` y la lleva `V6` al corte (O, AB)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:984",
+            "inferido": false
+        },
+        "OWN:38-fase-5:t7:O": {
+            "alcance": "en parte",
+            "por": "la migración que borra `starts_at` y `ends_at` es la estructural de `partners`, que es de `V7` pero la lleva `V6` al corte (AB)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:984",
+            "inferido": false
+        },
+        "OWN:28-fase-9-vuelta-1:t1:G5-3": {
+            "alcance": "en parte",
+            "por": "el barrido lista las pausas con regalo neto positivo, dure lo que dure, no las de menos de un ciclo (L3)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1926",
+            "inferido": false
+        },
+        "OWN:28-fase-9-vuelta-1:t1:G2-1": {
+            "alcance": "en parte",
+            "por": "el hecho lo emite el mismo acto de `PB9`/`PB12` después de su commit, no en el mismo acto (L1)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2524",
+            "inferido": false
+        },
+        "OWN:30-revision-del-owner:t5:L3-a": {
+            "alcance": "en parte",
+            "por": "la herramienta del corte ya no arma la lista de a quién avisa el owner (S-51)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:367",
+            "inferido": "la adjudicación no la listaba; la encontró el barrido de contenido de P-H: lo que decide está tachado en una fuente posterior y no está vivo en ninguna"
         }
     },
     "reubicar": {

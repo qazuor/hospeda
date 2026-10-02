@@ -210,6 +210,39 @@ LETRAS_MUERTAS = {
                                        (D + '16-fase-7-del-paraguas.md',
                                         '(Sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3; S-07.)'),
                                        DETECTOR),
+    # Third blind-verification round (H3-G1-3, pattern P-H): letters corrected by a later letter of their own
+    # file (38-fase-5) or whose decision died struck in the log (28-fase-9-vuelta-1). From the adjudication,
+    # except the reason of H: the adjudication cites O (`V7` borra…), which is itself overtaken by AB (the
+    # structural migration of `V7` is carried by `V6` at the cut), so H points at the row that says so.
+    'OWN:38-fase-5:t4:B': ('en parte', 'el rol de socio se da en el acto que fija al dueño de la presencia, no al aprobar la postulación (F)',
+                           (D + '38-fase-5/10-decisiones-del-owner.md', 'el rol de socio se da en el acto que fija al dueño de la presencia'),
+                           False),
+    'OWN:38-fase-5:t6:F': ('en parte', 'el alta directa de un Partner por el admin no fija dueño; F se lee *«cuando queda con dueño»* (N)',
+                           (D + '38-fase-5/10-decisiones-del-owner.md', 'el alta directa de un Partner por el admin **no fija dueño**'),
+                           False),
+    'OWN:38-fase-5:t6:H': ('en parte', '`starts_at` y `ends_at` no quedan hasta la unidad de socios: los borra la migración estructural '
+                           'de `partners`, que es de `V7` y la lleva `V6` al corte (O, AB)',
+                           (D + '16-fase-7-del-paraguas.md',
+                            '| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice'),
+                           False),
+    # Owner, 2026-10-02 (third round, tanda A): O falls «en parte» by AB, with the criterion of the PARCIAL
+    # 📌 of DEC-ARCH-014 that carries it («los borra `V7` con su migración»: la lleva `V6` al corte).
+    'OWN:38-fase-5:t7:O': ('en parte', 'la migración que borra `starts_at` y `ends_at` es la estructural de `partners`, '
+                           'que es de `V7` pero la lleva `V6` al corte (AB)',
+                           (D + '16-fase-7-del-paraguas.md',
+                            '| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice'),
+                           False),
+    'OWN:28-fase-9-vuelta-1:t1:G5-3': ('en parte', 'el barrido lista las pausas con regalo neto positivo, dure lo que dure, '
+                                       'no las de menos de un ciclo (L3)', (LOG, '**las pausas con regalo neto positivo**'), False),
+    'OWN:28-fase-9-vuelta-1:t1:G2-1': ('en parte', 'el hecho lo emite el mismo acto de `PB9`/`PB12` después de su commit, no en el '
+                                       'mismo acto (L1)',
+                                       (LOG, '**por el mismo acto** de `PB9` y de `PB12`, **después de su commit**'), False),
+    # Found by the content sweep of P-H (b): «arma la lista de a quién avisa el owner» is struck in 16-fase-7
+    # and live in no later source.
+    'OWN:30-revision-del-owner:t5:L3-a': ('en parte', 'la herramienta del corte ya no arma la lista de a quién avisa el owner (S-51)',
+                                          (D + '16-fase-7-del-paraguas.md', '(sale la lista: S-51)'),
+                                          'la adjudicación no la listaba; la encontró el barrido de contenido de P-H: lo que '
+                                          'decide está tachado en una fuente posterior y no está vivo en ninguna'),
 }
 
 # Letters the P-H detector flags (every cite in a later source is struck) that are alive anyway: the
