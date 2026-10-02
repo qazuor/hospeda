@@ -342,7 +342,7 @@ El criterio de la unidad de origen (corte del MVP, owner 2026-10-01, Z):
 
 La cláusula 8 es de `B8a`; las demás, de [B8b](../20-fase-2/B8b.md#lista-b8b).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1045
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1050
 
 <a id="lista-b8a"></a>
 
@@ -358,7 +358,7 @@ de baja desde `GRACE_PERIOD` corta el servicio en el acto (`S24`, `DEC-SUB-014`)
 últimas cláusulas las derivó la fuente de las filas `S23` y `S24` de `03` §3.2, porque el criterio
 de `B8` no las nombraba; la fuente lo marca.)*
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1046
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1051
 
 ## Reglas
 
@@ -390,22 +390,22 @@ Las reglas de esta pieza viven en los catálogos y se referencian, no se repiten
 <a id="tpz-s11"></a>
 **TPZ:S11** — `S11` → `B8a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:837
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:842
 
 <a id="tpz-s12"></a>
 **TPZ:S12** — `S12` → `B8a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:838
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:843
 
 <a id="tpz-s23"></a>
 **TPZ:S23** — `S23` → `B8a` (AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854
 
 <a id="tpz-s24"></a>
 **TPZ:S24** — `S24` → `B8a` (AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:850
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:855
 
 ## Modelo de datos y migraciones
 

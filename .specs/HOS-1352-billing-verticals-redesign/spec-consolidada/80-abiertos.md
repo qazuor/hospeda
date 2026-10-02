@@ -68,7 +68,7 @@ de ellas no termina sin sus dos ramas escritas y una prueba por rama contra el p
 comprar Turista VIP mientras el plan vigente lo hereda (la mitad de
 [DEC-ENT-003](01-decisiones-vigentes.md#dec-ent-003) que ninguna pieza construía), y dejan dicho:
 **el código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija.
-(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7928`.) **Cómo se fija
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7942`.) **Cómo se fija
 lo cerró [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)**, la regla de los detalles
 que las fuentes dejan a la implementación (`error.code` entre ellos): lo propone el PR de la pieza
 dueña, `B3`, siguiendo lo escrito del repo; lo aprueba la revisión de contexto fresco del momento 1
@@ -135,12 +135,12 @@ Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-o
 
 ### `V/docs/02-modelo-de-datos.md` — Lo que esta mitad NO cierra
 
-Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1014`–`1024`.
+Fuente: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1023`–`1024`.
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1014
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1023
 
-- `V/docs/02-modelo-de-datos.md:1016` — **`OD-ARCH-01`** (retiro de un plan del catálogo) lo cerró el capítulo 10: acá está el flag de vendible y el de vigente, que son el mecanismo; **la política es de la épica de billing**.
-- `V/docs/02-modelo-de-datos.md:1018` — **Discontinuar una vertical** (`M-SUB-03`; revisión del owner, 2026-09-28, C8): **fuera de esta versión; si algún día hace falta, se diseña entonces** (`B/10` §4). La fila de `vertical` sigue sin borrarse nunca, por su espejo del enum de código. Retirar todos los planes de una vertical sigue siendo posible y la deja en operación (`B/10` §3.6).
+- `V/docs/02-modelo-de-datos.md:1025` — **`OD-ARCH-01`** (retiro de un plan del catálogo) lo cerró el capítulo 10: acá está el flag de vendible y el de vigente, que son el mecanismo; **la política es de la épica de billing**.
+- `V/docs/02-modelo-de-datos.md:1027` — **Discontinuar una vertical** (`M-SUB-03`; revisión del owner, 2026-09-28, C8): **fuera de esta versión; si algún día hace falta, se diseña entonces** (`B/10` §4). La fila de `vertical` sigue sin borrarse nunca, por su espejo del enum de código. Retirar todos los planes de una vertical sigue siendo posible y la deja en operación (`B/10` §3.6).
 
 ### `V/docs/10-verticales-planes-billing-options.md` — Lo que este capítulo NO cierra
 
@@ -498,7 +498,7 @@ letra posterior ya cerró va con quien lo cerró; no es un abierto.
   (declarado por `DEC-METH-015`, FASE 9 completa). *(La fuente es anterior a la partición de
   [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z) y no dice si sería `B13a` o `B13b`.)*
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:766, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1094, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1106, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1116, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1117, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1129
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:766, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1099, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1111, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1121, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1122, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1134
 
 ### 7.2 Lo que ya cerró una decisión o una letra posterior
 
@@ -521,7 +521,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
 - **Si cada unidad es un issue de Linear: cerrado por el momento 1** ([GATE:M1](30-el-corte.md#gate-m1);
   FASES 6 y 7, D-2): cada unidad pasa a `Done` en Linear al mergearse en la rama del paraguas, y las
   etiquetas de smoke van sólo en `HOS-1352`, *«si no, 25 issues quedan meses en In Review»*. El
-  árbol de Linear sale de esta spec (`D/41-corte-del-mvp/10-decisiones-del-owner.md:173`). *(Que el
+  árbol de Linear sale de esta spec (`D/41-corte-del-mvp/10-decisiones-del-owner.md:187`). *(Que el
   momento 1 cierre esta pregunta es inferido de su texto.)*
 - **De qué unidad es `B/21`** (declarado por `DEC-METH-015`, FASE 9 completa): **de una, y sólo por
   una escritura del corte** —la lápida del corte salió (FASE 5, simplificación del corte, S-40)—: los
@@ -532,7 +532,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
   [30-el-corte.md](30-el-corte.md), que reparte sus herramientas: los dos `permanent_grant` del
   [paso 3b](30-el-corte.md#paso-3b) a `B9a`.
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1096, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1101, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1108, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1120, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1101, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1106, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1113, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1125, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031
 
 ## 8. Abiertos de la redacción
 

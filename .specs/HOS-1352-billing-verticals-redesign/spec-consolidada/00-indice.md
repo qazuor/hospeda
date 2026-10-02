@@ -95,7 +95,7 @@ con 34 al corte, 62 flechas y cero violaciones**. Las dos flechas nuevas son las
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7932, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7958
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7972
 
 ## Reglas que valen para todas las piezas
 
@@ -139,7 +139,7 @@ cada una, para que quien abre una pieza las tenga a la vista.
   `partners` con `owner_user_id` repetido, y `U1` las del rol de dueño de comercio, sus permisos y
   su tabla de contactos.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7932, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7963, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8074, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7977, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8100, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603
 
 ## Cómo leer un archivo de pieza
 
@@ -676,7 +676,7 @@ están listas: una unidad lo está cuando todas sus dependencias están hechas.
 [la épica de billing](https://claude.ai/artifact/Bp6dJstfwqoMzFTLP11BPZ) ·
 [el contrato de cobertura](https://claude.ai/artifact/KgHuCs8uTVEtNeuYfuLLJQ).
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1060, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1086
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1065, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1067, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1075, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1091
 
 ## La épica de verticales (`HOS-1353`): el diseño que reemplaza a su `spec.md`
 
@@ -1507,7 +1507,7 @@ gobernando el diseño del grace**, como `DEC-MP-006` dejó escrito.
 transcriben las filas que la tabla vigente lista; el estado de cada una es el de
 [04-catalogos.md](04-catalogos.md).)*
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:249, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:255, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:257, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:262, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:264, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:265, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:266, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:268, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:270, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:271, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:272, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:273, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:274, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:276, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:278, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:282
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:249, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:255, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:257, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:262, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:264, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:265, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:266, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:268, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:270, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:271, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:272, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:273, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:274, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:276, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:278, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:283
 
 #### El riesgo de plataforma
 
@@ -1516,7 +1516,7 @@ reembolsar**, y es justamente la que el derecho de revocación necesita. La guí
 proveedor **excluye explícitamente a las suscripciones**. Su interfaz no puede filtrar el nombre de
 ningún endpoint hacia el dominio.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:286, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:288
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:287, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:289
 
 ### Cómo se integra, y cómo se libera
 
@@ -1531,7 +1531,7 @@ paraguas, con las dos épicas adentro ([GATE:M2](30-el-corte.md#gate-m2)).
 Y la obligación que hace viable todo lo anterior: **`staging` se mergea periódicamente hacia la
 rama del paraguas**, nunca al revés hasta el final.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:295, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:297, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:301, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:303
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:296, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:298, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:302, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:304
 
 ### Lo que necesita del owner
 
@@ -1549,7 +1549,7 @@ la cuenta de Mobbex, y `DEC-MP-006` contestó la pregunta.
    [MP:GR-1](04-catalogos.md#mp-gr-1) `VERIFIED` con la sonda 49; la salida *«cambiá la tarjeta»*
    de [DEC-SUB-021](01-decisiones-vigentes.md#dec-sub-021) se le puede decir al cliente.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:308, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:310, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:322, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:326, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:330
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:309, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:311, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:323, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:327, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:331
 
 ### Lo que esta épica NO decide
 
@@ -1570,4 +1570,4 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:308, .specs/HOS-1354-b
 - **Nada de la épica de verticales.** Su diseño se sostiene solo, y en esta spec está en las piezas
   `V*` y en la sección de la épica de verticales de este índice.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:334, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:336, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:339, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:341, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:342, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:346
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:335, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:337, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:340, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:342, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:343, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:347
