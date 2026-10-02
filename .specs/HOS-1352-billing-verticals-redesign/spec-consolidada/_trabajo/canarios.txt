@@ -48,5 +48,8 @@
 ✓ R18  exit 1 · un ítem sin el tipo de test que AN exige por su familia
 ✓ pasa exit 0 · un tipo derivado sólo del texto que falta pasa, con aviso
 ✓ R18  exit 1 · un smoke con la etiqueta equivocada no cumple el tipo «smoke manual · prod»
+✓ R19  exit 1 · un PARCIAL cuyo texto muerto sigue en el cuerpo de su bloque
+✓ pasa exit 0 · el mismo PARCIAL omitido con «[…]» y citado sólo en su nota pasa
+✓ pasa exit 0 · un tramo que el veredicto da por vivo («…» sigue) pasa
 
-49 canarios · 0 fallas
+52 canarios · 0 fallas

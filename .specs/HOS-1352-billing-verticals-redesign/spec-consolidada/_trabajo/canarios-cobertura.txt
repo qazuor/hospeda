@@ -29,11 +29,15 @@
 ✓ C7  exit 1 · una entrada de un ítem que no existe
 ✓ C9  exit 1 · una pieza que crea esquema con un fragmento que no está en su archivo
 ✓ C9  exit 1 · una pieza que crea esquema citada con la línea de otra pieza
+✓ C10 exit 1 · una exención con un fragmento que no está en su archivo
 ✓ T1  tipos · dueña que no crea esquema: la migración pasa a B3, que la crea (DEC-MP-009)
 ✓ T1b tipos · sin B3 en la lista, la misma migración se descarta (la regla no es ciega)
 ✓ T2  tipos · dueña que crea esquema: la migración se queda (FILA:B2)
 ✓ T2b tipos · sin B2 en la lista, la migración deja de obligar a B2 (la regla no es ciega)
 ✓ T3  tipos · CORTE sólo lleva smoke o guard: la migración del paso 3 pasa a V6
 ✓ T4  tipos · el momento 1 no toma smoke por la palabra, aunque su texto la tenga
+✓ T5  tipos · un ítem exento, con su cita, pierde la migración leída en su texto (DEC-ARCH-006)
+✓ T5b tipos · sin la exención, la misma migración vuelve (la regla no es ciega)
+✓ T6  tipos · S10, derivada por script, lleva a B9b en «también» (BO)
 
-36 canarios · 0 fallas
+40 canarios · 0 fallas
