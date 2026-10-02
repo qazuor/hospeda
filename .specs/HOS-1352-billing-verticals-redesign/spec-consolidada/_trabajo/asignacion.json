@@ -1,5 +1,5 @@
 {
-    "sha": "4278aa1adcd01bf5d19e78dcc21646cc6a787e3d",
+    "sha": "17f9702675528e00d0981312325bec38bb962113",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 642,
+        "01-decisiones-vigentes.md": 646,
         "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 12,
         "04-catalogos.md": 297,
@@ -2057,6 +2057,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "DEC-DATA-008#📌8": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "DEC-MP-009": {
             "fuente": "DEC",
             "estado": "ACCEPTED",
@@ -2196,6 +2202,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-017#📌6": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": "PARCIAL",
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-ARCH-017#📌7": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7405,6 +7417,18 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t10:BW": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "OWN:41-corte-del-mvp:t10:BX": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -8220,55 +8244,55 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1020": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1022": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1029": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1078": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1080": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1091": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1093": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1105": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1107": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1113": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1133": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1135": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1176": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1191": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1193": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,

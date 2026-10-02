@@ -13,10 +13,10 @@ import subprocess
 import sys
 
 # The commit the whole consolidation is anchored to (owner method, DEC-METH-019 point 1). Re-frozen
-# after the owner's BK-BV (BM with its clarification) and the 18 source residues of the triage were applied to the
+# after the owner's BK-BV (BM with its clarification), BW-BX and the 18 source residues of the triage were applied to the
 # sources (it was 0dbe4482764a…, then f46a76c394…, then dab68c3ded…, then fed4c735ba…, then
-# f80c0f2715…).
-SHA = '4278aa1adcd01bf5d19e78dcc21646cc6a787e3d'
+# f80c0f2715…, then 4278aa1adc…).
+SHA = '17f9702675528e00d0981312325bec38bb962113'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))

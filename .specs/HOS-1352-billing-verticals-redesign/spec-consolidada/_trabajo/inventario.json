@@ -1,5 +1,5 @@
 {
-    "sha": "4278aa1adcd01bf5d19e78dcc21646cc6a787e3d",
+    "sha": "17f9702675528e00d0981312325bec38bb962113",
     "items": [
         {
             "fuente": "DEC",
@@ -3838,8 +3838,8 @@
             "hash": "696d4db9019c2b8e088d9f4a3f4935e296242764c440cd36d09cd287af8bf90c",
             "estado": "ACCEPTED",
             "precisada": true,
-            "pins": 7,
-            "fin": 7400
+            "pins": 8,
+            "fin": 7406
         },
         {
             "fuente": "PIN",
@@ -3926,23 +3926,35 @@
             "motivo": null
         },
         {
+            "fuente": "PIN",
+            "id": "DEC-DATA-008#📌8",
+            "local": "📌8",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7398,
+            "hash": "a8f39f2e230e226cca91907dc768a5643e90cf133e2fabfeb39344768c399fc4",
+            "estado": "VIGENTE",
+            "dec": "DEC-DATA-008",
+            "forma": "bullet",
+            "motivo": null
+        },
+        {
             "fuente": "DEC",
             "id": "DEC-MP-009",
             "local": "DEC-MP-009",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7401,
+            "linea": 7407,
             "hash": "d46a42439e6a2c065b31556ecd81f1cedd61b0f0e01f7ad93a2cbf01b3c40f3d",
             "estado": "ACCEPTED",
             "precisada": true,
             "pins": 3,
-            "fin": 7455
+            "fin": 7461
         },
         {
             "fuente": "PIN",
             "id": "DEC-MP-009#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7434,
+            "linea": 7440,
             "hash": "5be68bc34651a407aca56df98af0a78593c3ecdd1a0686b08ca21d807d92a7a6",
             "estado": "VIGENTE",
             "dec": "DEC-MP-009",
@@ -3954,7 +3966,7 @@
             "id": "DEC-MP-009#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7441,
+            "linea": 7447,
             "hash": "95c70c9b7cb17396d6c875df1f1e8b2a77c4b100ec15569b53b062e4bfbbb765",
             "estado": "VIGENTE",
             "dec": "DEC-MP-009",
@@ -3966,7 +3978,7 @@
             "id": "DEC-MP-009#📌3",
             "local": "📌3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7448,
+            "linea": 7454,
             "hash": "30f252fd0d4041d2d14caabe421f680317cf392f82242f527c067e91e8c31166",
             "estado": "VIGENTE",
             "dec": "DEC-MP-009",
@@ -3978,19 +3990,19 @@
             "id": "DEC-ARCH-014",
             "local": "DEC-ARCH-014",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7456,
+            "linea": 7462,
             "hash": "ff38267dfe2806e35c9c950fc5d7c4551517735ca64727f586303fbcd4204878",
             "estado": "ACCEPTED",
             "precisada": true,
             "pins": 7,
-            "fin": 7592
+            "fin": 7598
         },
         {
             "fuente": "PIN",
             "id": "DEC-ARCH-014#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7493,
+            "linea": 7499,
             "hash": "c4598855a010c66d5b978188cd2348c437a73a59960f354c94330bb121b504d4",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4002,7 +4014,7 @@
             "id": "DEC-ARCH-014#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7507,
+            "linea": 7513,
             "hash": "b9199b8c9e9a5b87ba1ac3ef7fa9bfbdcd310cdc3a52224c990b515ec6dd9407",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4014,7 +4026,7 @@
             "id": "DEC-ARCH-014#📌3",
             "local": "📌3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7519,
+            "linea": 7525,
             "hash": "1e433c3df908d7656fc2225e3483fc7574cb096257f50ac2448e1bcb9c58d3cd",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4026,7 +4038,7 @@
             "id": "DEC-ARCH-014#📌4",
             "local": "📌4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7547,
+            "linea": 7553,
             "hash": "42148015c1073713d650797836194a16b096dde44d81643ad3a5b565ad11b863",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4038,7 +4050,7 @@
             "id": "DEC-ARCH-014#📌5",
             "local": "📌5",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7554,
+            "linea": 7560,
             "hash": "589a368ea5a44022306732ad029829ffd1c6e1ce1d55bf13227aa9655b7940dc",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4050,7 +4062,7 @@
             "id": "DEC-ARCH-014#📌6",
             "local": "📌6",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7563,
+            "linea": 7569,
             "hash": "6c82bbd41b7c6d021224d03fd61dc61e610a9fe53aadcd3e6a24f127f5553c0d",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4062,7 +4074,7 @@
             "id": "DEC-ARCH-014#📌7",
             "local": "📌7",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7576,
+            "linea": 7582,
             "hash": "681db34d12106961d51fbfa7bb0b584b7f0b13b75dad9b014fb2dc6455125988",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-014",
@@ -4074,43 +4086,43 @@
             "id": "DEC-ARCH-015",
             "local": "DEC-ARCH-015",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7593,
+            "linea": 7599,
             "hash": "0c0e9157a7ef70ca929ce52db1f009d06d70058a41523f013723289df7dc6c18",
             "estado": "ACCEPTED",
             "precisada": false,
             "pins": 0,
-            "fin": 7616
+            "fin": 7622
         },
         {
             "fuente": "DEC",
             "id": "DEC-METH-018",
             "local": "DEC-METH-018",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7617,
+            "linea": 7623,
             "hash": "fa8d6498704720e71dea6dabe46b1109f4730c6725539a0cba2edabf776074dc",
             "estado": "ACCEPTED",
             "precisada": false,
             "pins": 0,
-            "fin": 7688
+            "fin": 7694
         },
         {
             "fuente": "DEC",
             "id": "DEC-ARCH-016",
             "local": "DEC-ARCH-016",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7689,
+            "linea": 7695,
             "hash": "bbd73230d6f7dff7cf46f0a9c1f3854aee04060fe06bcd7c627075ffbdf884fd",
             "estado": "ACCEPTED",
             "precisada": true,
             "pins": 2,
-            "fin": 7794
+            "fin": 7800
         },
         {
             "fuente": "PIN",
             "id": "DEC-ARCH-016#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7778,
+            "linea": 7784,
             "hash": "fc4b17805322d067835af3dc5aca6ed7ca76cdbb28fbaa54bd2785bf0c6cd3a1",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-016",
@@ -4122,7 +4134,7 @@
             "id": "DEC-ARCH-016#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7784,
+            "linea": 7790,
             "hash": "ea7cf081e2fa305419bae814a212d23926094848be6af839ca5b83509deda887",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-016",
@@ -4134,19 +4146,19 @@
             "id": "DEC-ARCH-017",
             "local": "DEC-ARCH-017",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7795,
+            "linea": 7801,
             "hash": "686b20f6afc6782da89da0617512dc23dead5778bbae3b802d5d4720ef55c0f7",
             "estado": "ACCEPTED",
             "precisada": true,
-            "pins": 6,
-            "fin": 7959
+            "pins": 7,
+            "fin": 7977
         },
         {
             "fuente": "PIN",
             "id": "DEC-ARCH-017#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7862,
+            "linea": 7868,
             "hash": "5a3dc1b4ad75627e6da5bb99e58b939133c425bbf4a678d560ff49a8f746e7a9",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
@@ -4158,7 +4170,7 @@
             "id": "DEC-ARCH-017#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7879,
+            "linea": 7885,
             "hash": "dadfdde83820d459a4ff266986cc6a19def78d240c2ea9aa53249ba7152933af",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
@@ -4170,7 +4182,7 @@
             "id": "DEC-ARCH-017#📌3",
             "local": "📌3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7885,
+            "linea": 7891,
             "hash": "5d95ea16a20a2c3eaecfc1dd48629744d5f028d75309c31979656e6bf459cc96",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
@@ -4182,7 +4194,7 @@
             "id": "DEC-ARCH-017#📌4",
             "local": "📌4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7893,
+            "linea": 7899,
             "hash": "7057bbf252bc9bd90c0de41788e1258c1b6bd6f8f2a9f372092fb155775f0af7",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
@@ -4194,7 +4206,7 @@
             "id": "DEC-ARCH-017#📌5",
             "local": "📌5",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7915,
+            "linea": 7921,
             "hash": "ce0e12bb6186dfbc867ae4176665d9d14089700ba1ede1fb7ad2e8d2f6e9f4bf",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
@@ -4206,8 +4218,20 @@
             "id": "DEC-ARCH-017#📌6",
             "local": "📌6",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7926,
+            "linea": 7932,
             "hash": "de2d395a07a2ae50a5135d10d19774993a5ec758743be13f7c66c9a1a00e763e",
+            "estado": "VIGENTE",
+            "dec": "DEC-ARCH-017",
+            "forma": "bullet",
+            "motivo": null
+        },
+        {
+            "fuente": "PIN",
+            "id": "DEC-ARCH-017#📌7",
+            "local": "📌7",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7963,
+            "hash": "06b7ca88ff9234ff04966c8c158e08b8d8d2e0d988cb9d8125f6eb13130ceb30",
             "estado": "VIGENTE",
             "dec": "DEC-ARCH-017",
             "forma": "bullet",
@@ -4218,19 +4242,19 @@
             "id": "DEC-METH-019",
             "local": "DEC-METH-019",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7960,
+            "linea": 7978,
             "hash": "dae2218345cf87d0e2736503f74d4752e886a2775fadcff4a6b250bd329719d4",
             "estado": "ACCEPTED",
             "precisada": true,
             "pins": 4,
-            "fin": 8080
+            "fin": 8098
         },
         {
             "fuente": "PIN",
             "id": "DEC-METH-019#📌1",
             "local": "📌1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 8019,
+            "linea": 8037,
             "hash": "ae56f02ddd5496a5046f16b6bd1fb39f25e4c1278efd6e89fe25970733cd0a3f",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -4242,7 +4266,7 @@
             "id": "DEC-METH-019#📌2",
             "local": "📌2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 8035,
+            "linea": 8053,
             "hash": "3b1746c037f0dff5a2dea3d56ed9efd30975f7c414e114af27f1340de45a8f56",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -4254,7 +4278,7 @@
             "id": "DEC-METH-019#📌3",
             "local": "📌3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 8041,
+            "linea": 8059,
             "hash": "38e8f47df4951f8867b9bb1b73a1190f22ef48aeb68751cb8bf6ac6c471a7928",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -4266,7 +4290,7 @@
             "id": "DEC-METH-019#📌4",
             "local": "📌4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 8056,
+            "linea": 8074,
             "hash": "d56939c294b8d83eda7767fd627769ca84874eb3d23fa6ca63911c9e595f5615",
             "estado": "VIGENTE",
             "dec": "DEC-METH-019",
@@ -5809,7 +5833,7 @@
             "local": "B11",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 149,
-            "hash": "a643d587acb80f7299a84128e8435badacdaf449b3472d1b1acfeb79327d6b00",
+            "hash": "23dd4d477b0e71fec2f7a79c016dc290007bf001ec2ee1c595236f3a5302a6b6",
             "estado": "VIVO",
             "origen": false,
             "mitades": []
@@ -5864,7 +5888,7 @@
             "local": "B2",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 136,
-            "hash": "973fc8b75b33b43e58514bdf89032c6c282bce5e956028dc815ab94a9ef85d28",
+            "hash": "01a1b45a79db805a20b815c3a5774ab0578cd6d3fa9832b5dda35d7b2197f322",
             "estado": "VIVO",
             "origen": false,
             "mitades": []
@@ -6007,7 +6031,7 @@
             "local": "U2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
             "linea": 851,
-            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5",
+            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981",
             "estado": "VIVO",
             "origen": false,
             "mitades": []
@@ -6150,7 +6174,7 @@
             "local": "V9a",
             "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
             "linea": 72,
-            "hash": "eacadd130eae6a33aa0a284a7f6f7d5a2771895ef0c63caf114309f7837a77bc",
+            "hash": "dd516ac5125a23118fbeb86d643af86c9684ee8685fbc3ebd52518afdaf873c4",
             "estado": "VIVO",
             "origen": false,
             "mitades": []
@@ -6895,7 +6919,7 @@
             "local": "V9a",
             "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
             "linea": 723,
-            "hash": "fb9ca73ff71a1ab5c3aa1631a7a3e96a84c6f07019119496c535766c0b6dbb86",
+            "hash": "b274c4cc45142456fd0b5c2501ff212bd9e5f43c2b439e607d097906ea9f5278",
             "estado": "VIVO",
             "estado_fila": "VIVO"
         },
@@ -6975,7 +6999,7 @@
             "local": "B7",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 1044,
-            "hash": "989b025e9d5bc942c8cf0acee0eff65dc85436a939e7989c7d4de32ce6c493f3",
+            "hash": "ad0e4779ea739bdca10278eac4c0bc990760f11dbdde38181aaeee71b42df800",
             "estado": "VIVO",
             "estado_fila": "VIVO"
         },
@@ -7025,7 +7049,7 @@
             "local": "B9a",
             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
             "linea": 1049,
-            "hash": "73f5f1460c765a8c8314f2831743d04002df4c37b3841c5200756bf41cbba5c0",
+            "hash": "662ac348e25497cd48ab7646ffb8e5a74a5ec0a046a204422b08a5c319cb4c5d",
             "estado": "VIVO",
             "estado_fila": "VIVO"
         },
@@ -7114,7 +7138,7 @@
             "local": "U2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
             "linea": 851,
-            "hash": "9f644137efc680a5f47304a1d1b9212e3f18be4828249377563f1c8ef072d0f5",
+            "hash": "e909b5fbcdc4109bd5110d60eadaaf392e55d6667935475cd309dff34fe60981",
             "estado": "VIVO"
         },
         {
@@ -8938,7 +8962,7 @@
             "local": "19",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md",
             "linea": 191,
-            "hash": "4018159bef4f0bbe721c97df0ec326a77f41878d511d22d5784a7d852f21e334",
+            "hash": "234c1787c1912e1246a17487a12a74fcc7c9b5ada492dc6deb007981bcf6afd0",
             "estado": "VIVO"
         },
         {
@@ -12440,6 +12464,24 @@
             "estado": "VIVO"
         },
         {
+            "fuente": "OWN",
+            "id": "OWN:41-corte-del-mvp:t10:BW",
+            "local": "BW",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+            "linea": 156,
+            "hash": "1affce121c1b0dc4932208c6efb576104a884fa868a1b65a992b881414d3d03d",
+            "estado": "VIVO"
+        },
+        {
+            "fuente": "OWN",
+            "id": "OWN:41-corte-del-mvp:t10:BX",
+            "local": "BX",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+            "linea": 157,
+            "hash": "10f3ae40ec487609d6d67364c24b297a8b1d0d6a062f0fcec0064105c598036e",
+            "estado": "VIVO"
+        },
+        {
             "fuente": "ESQ",
             "id": "ESQ:1",
             "local": "1",
@@ -13001,7 +13043,7 @@
             "id": "GATE:M1",
             "local": "M1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1029,
+            "linea": 1031,
             "hash": "01475aa25d43fccbd78d124e5a8cbc7fb4bc53648540458d8b0d5d8cefe07b8c",
             "estado": "VIVO"
         },
@@ -13010,7 +13052,7 @@
             "id": "GATE:M1.1",
             "local": "1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1033,
+            "linea": 1035,
             "hash": "f538020ec4be530b6b67b95db7e7169bde570772620c239cd98cb76346fc65af",
             "estado": "VIVO"
         },
@@ -13019,7 +13061,7 @@
             "id": "GATE:M1.2",
             "local": "2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1035,
+            "linea": 1037,
             "hash": "946ec8c85b474476a07de0beaad946e98bca6e67928c9a6061c92eb765cbc0f3",
             "estado": "VIVO"
         },
@@ -13028,7 +13070,7 @@
             "id": "GATE:M1.3",
             "local": "3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1037,
+            "linea": 1039,
             "hash": "dc64550243dd7c220c98c26fc6b18edd921243ffa7ee3bb6769724fe8de75ac9",
             "estado": "VIVO"
         },
@@ -13037,7 +13079,7 @@
             "id": "GATE:M1.4",
             "local": "4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1038,
+            "linea": 1040,
             "hash": "10fd58e1b62f12d10f3e8f35c01488fde10d1a6bbeacfc1bd83bac9e408ab53a",
             "estado": "VIVO"
         },
@@ -13046,7 +13088,7 @@
             "id": "GATE:M1.5",
             "local": "5",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1043,
+            "linea": 1045,
             "hash": "38a31876e017619e3ebe7943d5b314fe5e6137cc720212ebb1ff9da891aa557f",
             "estado": "VIVO"
         },
@@ -13055,7 +13097,7 @@
             "id": "GATE:M1.6",
             "local": "6",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1044,
+            "linea": 1046,
             "hash": "df556fbd2f3910c3626d4440724954bdea95db33add8063f58b586c88b85b267",
             "estado": "VIVO"
         },
@@ -13064,7 +13106,7 @@
             "id": "GATE:M2",
             "local": "M2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1078,
+            "linea": 1080,
             "hash": "f94f5ff24e2091f2b338a943aa457075777930b1551fc58354a3091ce7ab5925",
             "estado": "VIVO"
         },
@@ -13073,7 +13115,7 @@
             "id": "GATE:M2.1",
             "local": "1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1082,
+            "linea": 1084,
             "hash": "0eeaf731206294918c2537ce3851a8d7ad13584c833fafbe827adc4d117fd1ab",
             "estado": "VIVO"
         },
@@ -13082,7 +13124,7 @@
             "id": "GATE:M2.2",
             "local": "2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1084,
+            "linea": 1086,
             "hash": "4a995d9ba722d27d7f3d57b7312bd4e1c40d431f496cb34432437a867b217007",
             "estado": "VIVO"
         },
@@ -13091,7 +13133,7 @@
             "id": "GATE:M2.3",
             "local": "3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1085,
+            "linea": 1087,
             "hash": "738bca93f156f8da0ff7d5eca715ba67f78c686cffb9e655b2157a21d62674dc",
             "estado": "VIVO"
         },
@@ -13100,7 +13142,7 @@
             "id": "GATE:M3",
             "local": "M3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1091,
+            "linea": 1093,
             "hash": "278c8a1e5187b39967d5089ddc96705459240a8adce7d325bd194e3adfd1c4b4",
             "estado": "VIVO"
         },
@@ -13109,7 +13151,7 @@
             "id": "GATE:M4",
             "local": "M4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1105,
+            "linea": 1107,
             "hash": "2d815577ff97d9650de329e43ab8f66ce964ba8d0ba01ce7098b740e7bb41ec5",
             "estado": "VIVO"
         },
@@ -13118,7 +13160,7 @@
             "id": "GATE:M5",
             "local": "M5",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1113,
+            "linea": 1115,
             "hash": "0d149f91fd1190e36408a7a525c3b2546070fd839de32921cd7e4cebf4785ed0",
             "estado": "VIVO"
         },
@@ -13127,7 +13169,7 @@
             "id": "GATE:FP",
             "local": "FP",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1133,
+            "linea": 1135,
             "hash": "60cb1b87fd85a0167e61440126760f65c526b05ccab72f1cd7d06fc72243ec8e",
             "estado": "VIVO"
         },
@@ -13136,7 +13178,7 @@
             "id": "GATE:FP.1",
             "local": "1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1143,
+            "linea": 1145,
             "hash": "c6fca024160e275b191585f59d91edbf8e11da6d97509a6a4ecaca3faf5b6d0c",
             "estado": "VIVO"
         },
@@ -13145,7 +13187,7 @@
             "id": "GATE:FP.2",
             "local": "2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1146,
+            "linea": 1148,
             "hash": "dabe6aef2def5282aea347c264a96aa3e562e6c72b201ae58f7ac0eddae1562f",
             "estado": "VIVO"
         },
@@ -13154,7 +13196,7 @@
             "id": "GATE:FP.3",
             "local": "3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1150,
+            "linea": 1152,
             "hash": "0e84ef2df501424ad57391ae41220a0018bf1ecf0c1333c608dbe3581d30088c",
             "estado": "VIVO"
         },
@@ -13163,7 +13205,7 @@
             "id": "GATE:FP.F1",
             "local": "1",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1162,
+            "linea": 1164,
             "hash": "dd7983e39d7d4280fe87d3849ca79cacd61913a3fd6e48bf8da3ad86e26c53d9",
             "estado": "VIVO",
             "piezas": ["V9b"]
@@ -13173,7 +13215,7 @@
             "id": "GATE:FP.F2",
             "local": "2",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1163,
+            "linea": 1165,
             "hash": "042c9311cda1eb83415f623c8e69a83f3175016214ab1c8479398b51a58be0e9",
             "estado": "VIVO",
             "piezas": ["B8b", "B9b"]
@@ -13183,7 +13225,7 @@
             "id": "GATE:FP.F3",
             "local": "3",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1164,
+            "linea": 1166,
             "hash": "a7f64ef9131e06752b469d8b30495c549dad434ce7a914407046dcd974f7c1da",
             "estado": "VIVO",
             "piezas": ["B10", "B13b", "B12"]
@@ -13193,7 +13235,7 @@
             "id": "GATE:FP.F4",
             "local": "4",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1165,
+            "linea": 1167,
             "hash": "08134b00fee08a6f3fc610546aab373257a3db8054ac4335f8b8257f01bbe077",
             "estado": "VIVO",
             "piezas": ["V7", "V8b"]
@@ -13203,7 +13245,7 @@
             "id": "GATE:SMOKE",
             "local": "SMOKE",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1176,
+            "linea": 1178,
             "hash": "eba560c32a4d0a4c95e6015653d212dba23ac742669475d6a21c25c442f0cd8b",
             "estado": "VIVO"
         },
@@ -13805,97 +13847,97 @@
             "linea": 680,
             "hash": "3cff309a149648a9724fcee90a73c3c35a1b480f96541bed7bc260972737fece",
             "estado": "VIVO",
-            "fin": 1019
+            "fin": 1021
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1020",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1022",
             "local": "###",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1020,
+            "linea": 1022,
             "hash": "af2ae9f3dc8362174a3a925896ae0593bf75eb6e8904828197764b83b0fa15d5",
             "estado": "VIVO",
-            "fin": 1028
+            "fin": 1030
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1029",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1029,
+            "linea": 1031,
             "hash": "01475aa25d43fccbd78d124e5a8cbc7fb4bc53648540458d8b0d5d8cefe07b8c",
             "estado": "VIVO",
-            "fin": 1077
+            "fin": 1079
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1078",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1080",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1078,
+            "linea": 1080,
             "hash": "f94f5ff24e2091f2b338a943aa457075777930b1551fc58354a3091ce7ab5925",
             "estado": "VIVO",
-            "fin": 1090
+            "fin": 1092
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1091",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1093",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1091,
+            "linea": 1093,
             "hash": "278c8a1e5187b39967d5089ddc96705459240a8adce7d325bd194e3adfd1c4b4",
             "estado": "VIVO",
-            "fin": 1104
+            "fin": 1106
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1105",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1107",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1105,
+            "linea": 1107,
             "hash": "2d815577ff97d9650de329e43ab8f66ce964ba8d0ba01ce7098b740e7bb41ec5",
             "estado": "VIVO",
-            "fin": 1112
+            "fin": 1114
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1113",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1113,
+            "linea": 1115,
             "hash": "0d149f91fd1190e36408a7a525c3b2546070fd839de32921cd7e4cebf4785ed0",
             "estado": "VIVO",
-            "fin": 1132
+            "fin": 1134
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1133",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1135",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1133,
+            "linea": 1135,
             "hash": "60cb1b87fd85a0167e61440126760f65c526b05ccab72f1cd7d06fc72243ec8e",
             "estado": "VIVO",
-            "fin": 1175
+            "fin": 1177
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1176",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178",
             "local": "####",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1176,
+            "linea": 1178,
             "hash": "eba560c32a4d0a4c95e6015653d212dba23ac742669475d6a21c25c442f0cd8b",
             "estado": "VIVO",
-            "fin": 1190
+            "fin": 1192
         },
         {
             "fuente": "SEC",
-            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1191",
+            "id": "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1193",
             "local": "##",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md",
-            "linea": 1191,
+            "linea": 1193,
             "hash": "ab783ece0a0223ff1abbec930e0a59a6959ae563e406fc231481d3ffc548b6ab",
             "estado": "VIVO",
-            "fin": 1211
+            "fin": 1213
         },
         {
             "fuente": "SEC",

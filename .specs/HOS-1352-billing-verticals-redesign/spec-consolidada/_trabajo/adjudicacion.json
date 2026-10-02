@@ -1,5 +1,5 @@
 {
-    "sha": "4278aa1adcd01bf5d19e78dcc21646cc6a787e3d",
+    "sha": "17f9702675528e00d0981312325bec38bb962113",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {
@@ -7,7 +7,7 @@
         },
         "PIN": {
             "VIVO": 27,
-            "PARCIAL": 45,
+            "PARCIAL": 46,
             "MUERTO": 9
         },
         "BK": {
@@ -1376,7 +1376,7 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7544,
+                    "linea": 7550,
                     "cita": "son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`",
                     "hash": "297ec2b1211768bcde58a4147ba08ee6dd17bb52931284f823e7ab1768d63e50"
                 }
@@ -1397,7 +1397,7 @@
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7544,
+                    "linea": 7550,
                     "cita": "son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`",
                     "hash": "297ec2b1211768bcde58a4147ba08ee6dd17bb52931284f823e7ab1768d63e50"
                 }
@@ -1971,7 +1971,7 @@
             "clase": "PIN",
             "veredicto": "PARCIAL",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7493,
+            "linea": 7499,
             "hash": "c4598855a010c66d5b978188cd2348c437a73a59960f354c94330bb121b504d4",
             "cita": "📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lotes O-A y O-B)**: Las dos",
             "efecto": "agrega",
@@ -1979,13 +1979,13 @@
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7549,
+                    "linea": 7555,
                     "cita": "lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de",
                     "hash": "c969fb2a8620b36c5c81423b077b1d9be7d78de400a0cd2cf43cef93dae6160b"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7544,
+                    "linea": 7550,
                     "cita": "son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`",
                     "hash": "297ec2b1211768bcde58a4147ba08ee6dd17bb52931284f823e7ab1768d63e50"
                 },
@@ -2004,7 +2004,7 @@
             "clase": "PIN",
             "veredicto": "PARCIAL",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7507,
+            "linea": 7513,
             "hash": "b9199b8c9e9a5b87ba1ac3ef7fa9bfbdcd310cdc3a52224c990b515ec6dd9407",
             "cita": "📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lotes P-A, P-B y P-C)**: Las",
             "efecto": "agrega",
@@ -2012,13 +2012,13 @@
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7549,
+                    "linea": 7555,
                     "cita": "lote P pierde el Worker del borde (P-A)",
                     "hash": "c969fb2a8620b36c5c81423b077b1d9be7d78de400a0cd2cf43cef93dae6160b"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7544,
+                    "linea": 7550,
                     "cita": "son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`",
                     "hash": "297ec2b1211768bcde58a4147ba08ee6dd17bb52931284f823e7ab1768d63e50"
                 }
@@ -2031,7 +2031,7 @@
             "clase": "PIN",
             "veredicto": "PARCIAL",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7554,
+            "linea": 7560,
             "hash": "589a368ea5a44022306732ad029829ffd1c6e1ce1d55bf13227aa9655b7940dc",
             "cita": "📌 **Precisada una vez más el 2026-09-30, con OK del owner (FASE 5, lote de la aplicación, letras",
             "efecto": "agrega",
@@ -2127,7 +2127,7 @@
             "clase": "PIN",
             "veredicto": "PARCIAL",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7862,
+            "linea": 7868,
             "hash": "5a3dc1b4ad75627e6da5bb99e58b939133c425bbf4a678d560ff49a8f746e7a9",
             "cita": "📌 **Precisada el 2026-10-01, con OK del owner (corte del MVP, AP a AU, todas la 1)**, sobre lo",
             "efecto": "agrega",
@@ -2135,7 +2135,7 @@
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7880,
+                    "linea": 7886,
                     "cita": "**las tablas del modelo de addons",
                     "hash": "1a83f2136080716af2cb774092588b8d6d4315855c24acf04db6b5bd888c7d98"
                 },
@@ -2147,7 +2147,7 @@
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7903,
+                    "linea": 7909,
                     "cita": "**BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`",
                     "hash": "44ba773d5d155fde763e237f9d24bc7d2707af47ce982d532fb014f8d9364dac"
                 }
@@ -2160,7 +2160,7 @@
             "clase": "PIN",
             "veredicto": "PARCIAL",
             "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-            "linea": 7576,
+            "linea": 7582,
             "hash": "681db34d12106961d51fbfa7bb0b584b7f0b13b75dad9b014fb2dc6455125988",
             "cita": "📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;",
             "efecto": "agrega",
@@ -2168,13 +2168,13 @@
             "evidencia": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7586,
+                    "linea": 7592,
                     "cita": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`",
                     "hash": "cac917cb6834d7a39896222ccbc099899d3c5b9883d6a2a74ba9cfd11fab1fd9"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7564,
+                    "linea": 7570,
                     "cita": "**el programa pasa de 24 a 25 unidades**. Una",
                     "hash": "30d23932aa9621a15a2760bbe75d588b975e98e8d3b651ab683b7befeab88ffb"
                 }
@@ -2237,6 +2237,27 @@
             "razon": "EF-g6-1",
             "cambia_sentido": false,
             "invierte_una_regla_con_fuente": true
+        },
+        "DEC-ARCH-017#📌6": {
+            "clase": "PIN",
+            "veredicto": "PARCIAL",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7932,
+            "hash": "de2d395a07a2ae50a5135d10d19774993a5ec758743be13f7c66c9a1a00e763e",
+            "cita": "📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BL, BN, BO, BP y BR, todas",
+            "efecto": "agrega",
+            "muerto": "en BN, «`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)»: la crea `U2` (BW)",
+            "evidencia": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 7964,
+                    "cita": "**`domain_event` la crea `U2`**, y no `V9a`.",
+                    "hash": "abe2ebdd9fa9d206419ec15de63121ffa87cf09da806e7e8752ee79f8a35a43f"
+                }
+            ],
+            "base": "BW",
+            "razon": "el 📌 siguiente corrige la aplicación inferida de BN",
+            "cambia_sentido": false
         },
         "DEC-MIG-001": {
             "clase": "BK",
