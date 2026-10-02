@@ -14,6 +14,11 @@ spec file of the group:
      justifies the route and whether their content is already in the spec under another citation
      ("ya cubierto, falta sólo la cita") or not ("contenido ausente").
 Sections with no deducible destination go to preguntas.md. Nothing here edits the spec.
+
+Later passes reuse it (pasada3.py): they replace GRUPOS, TITULO and SCRIPT, and append sections
+through EXTRA, a list of callables ``f(ctx)`` run after the four sections above; ``ctx`` carries
+``add(file, section, line)``, ``archivo_de``, ``err`` and the inventories, and ``f`` returns the
+names of the sections it filled, in the order they must be written.
 """
 import collections
 import difflib
@@ -45,6 +50,9 @@ GRUPOS = collections.OrderedDict([
     ('g8-b4-b7', ['B4', 'B5', 'B6', 'B7']),
     ('g9-b8-b13', ['B8a', 'B9a', 'B11', 'B13a', 'B8b', 'B9b', 'B10', 'B12', 'B13b']),
 ])
+TITULO = 'Pasada 2'
+SCRIPT = 'scripts/pasada2.py'
+EXTRA = []
 GENERADOS = {'01-decisiones-vigentes.md': 'g1/gen01.py', '04-catalogos.md': 'g3/gen.py',
              '10-corte/B4.md': 'g8/src/B4.md', '10-corte/B5.md': 'g8/src/B5.md',
              '10-corte/B6.md': 'g8/src/B6.md', '10-corte/B7.md': 'g8/src/B7.md'}
@@ -284,7 +292,7 @@ def main():
     for g, fs in GRUPOS.items():
         for f in fs:
             grupo_de[archivo_de(f)] = g
-    grupo_de['02-nucleo.md'] = 'g2-nucleo-contrato'
+    grupo_de.setdefault('02-nucleo.md', 'g2-nucleo-contrato')  # a later pass may route it elsewhere
 
     def g_of(f):
         return grupo_de.get(f.split(' ')[0], '??')
@@ -402,13 +410,19 @@ def main():
         resumen17['ausente' if 'ausente' in estado else 'parcial' if 'parcial' in estado else 'cubierto'] += 1
         cuenta[g_of(archivo_de(dest[0]))]['R17 ' + ('ausente' if 'ausente' in estado else 'parcial' if 'parcial' in estado else 'cubierto')] += 1
 
-    # write ------------------------------------------------------------------------------------
+    # extra sections of a later pass ----------------------------------------------------------
     orden = [S1, S2, S3, S4, S5]
-    cab = (f'> Generado por `scripts/pasada2.py` sobre el HEAD `{subprocess.run(["git", "-C", ROOT, "rev-parse", "--short=10", "HEAD"], capture_output=True, text=True).stdout.strip()}`; '
+    ctx = types.SimpleNamespace(add=add, archivo_de=archivo_de, err=err, by_new=by_new, by_old=by_old,
+                                old_sha=old_sha, new_sha=new_sha, asg=asg, cob=cob)
+    for f in EXTRA:
+        orden += [x for x in f(ctx) if x not in orden]
+
+    # write ------------------------------------------------------------------------------------
+    cab = (f'> Generado por `{SCRIPT}` sobre el HEAD `{subprocess.run(["git", "-C", ROOT, "rev-parse", "--short=10", "HEAD"], capture_output=True, text=True).stdout.strip()}`; '
            f'fuentes `{old_sha[:10]}` → `{new_sha[:10]}`. Los archivos generados (01, 04, B4–B7) no se editan a mano: '
            'lo que les toca se arregla en su generador (`scripts/generadores/`).\n')
     for g in GRUPOS:
-        txt = [f'# Pasada 2 · {g}', '', cab]
+        txt = [f'# {TITULO} · {g}', '', cab]
         c = cuenta[g]
         txt.append('| qué | cuántos |')
         txt.append('|---|---|')
@@ -429,7 +443,7 @@ def main():
         if not E[g]:
             txt.append('Nada para este grupo.\n')
         open(os.path.join(out_dir, g + '.md'), 'w', encoding='utf-8').write('\n'.join(txt).rstrip() + '\n')
-    pq = ['# Pasada 2 · secciones R17 sin destino deducible', '', cab,
+    pq = [f'# {TITULO} · secciones R17 sin destino deducible', '', cab,
           'Cada una es una pregunta para el orquestador: a qué archivo de la spec va su contenido.', ''] + preguntas
     open(os.path.join(out_dir, 'preguntas.md'), 'w', encoding='utf-8').write('\n'.join(pq).rstrip() + '\n')
     res = {'trazar': {k: len(v) for k, v in err.items()}, 'por_grupo': {g: dict(cuenta[g]) for g in GRUPOS},
