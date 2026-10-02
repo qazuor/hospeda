@@ -55,8 +55,11 @@ del dueño sobre la ficha que no son transiciones —crearla, editarla, exportar
 del hecho 1 del reloj, guardando sólo el nombre de los campos de contenido y nunca su texto**;
 **escribe desde el día del corte**, porque lo que pase antes de que exista no se reconstruye (corte
 del MVP, owner 2026-10-01, AC; `41-corte-del-mvp/00-propuesta.md` §1 y §4.1). La función del
-seudónimo, que la propuesta ponía acá, es de `V4` (AC). **Capítulos**: `08` §1.1–§1.2 (núcleo).
-**Guards**: ninguno.
+seudónimo, que la propuesta ponía acá, es de `V4` (AC). **`domain_event` lo crea `U2`**
+([FILA:U2](U2.md#fila-u2)), ancestro de todas las piezas que la escriben; **esta pieza escribe en ella desde el
+día del corte** (corte del MVP, owner 2026-10-02, [BW](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw), que reemplaza la aplicación de BN que se la daba a
+`V9a`). **Capítulos**: `08` §1.1–§1.2 (núcleo) (el `02` §2.6 del núcleo, `domain_event`, pasa a `U2`,
+BW). **Guards**: ninguno.
 Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:72
 
 **Alcance.** El punto 5 de [FILA:V9](#fila-v9), completo, y el 📌 de la decisión que lo funda,
@@ -105,8 +108,10 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
 **LISTA:V9a — «Lista cuando»**: **un acto del dueño sobre su ficha —crearla, editarla, exportarla—
 deja su registro con el nombre de los campos de contenido y nunca su texto, desde el día del corte**
 (corte del MVP, owner 2026-10-01, AC). *(La fuente marca esta cláusula como derivada de la fila de
-`V9` del §2, `NUCLEO/08` §1.1–§1.2, 8e.)*
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:716
+`V9` del §2, `NUCLEO/08` §1.1–§1.2, 8e.)* La cláusula *«`domain_event` existe desde esta pieza»*
+salió: la tabla la crea `U2` (corte del MVP, owner 2026-10-02, [BW](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw); su criterio es
+[AC:U2:11](U2.md#ac-u2-11)).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:723
 
 ### Historias de usuario
 
@@ -198,9 +203,9 @@ Fuente: [LISTA:V9a](#lista-v9a)
 - El registro es `domain_event` (`NUCLEO/02` §2.6): qué pasó, sobre qué entidad, quién lo causó,
   cuándo, qué campos cambiaron —de los campos de contenido de una ficha, sólo el nombre—;
   append-only y sin `deleted_at`.
-- **Sin migración propia en la fila**; el esquema de las 25 unidades nace en las migraciones de la
-  rama antes del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7). Qué pieza crea la tabla, si no existe, no lo dice
-  la fila: ver *Abiertos*.
+- **Sin migración propia**: `domain_event` la crea `U2`, con todas sus restricciones, y `V9a` sólo
+  escribe en ella y la lee ([FILA:U2](U2.md#fila-u2); corte del MVP, owner 2026-10-02, [BW](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw)); el esquema de
+  las 25 unidades nace en las migraciones de la rama antes del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7).
 - **Sin migración de datos**: no se reconstruyen actos anteriores al corte ([FILA:V9a](#fila-v9a)).
 
 ## API
@@ -275,7 +280,8 @@ en las piezas ([GATE:M1](../30-el-corte.md#gate-m1)).
 ## Dependencias, rollback y despliegue
 
 - **Espera a**: `V4`, `V6` y `U2` (heredado de `V9`; la flecha de `V6` se escribe explícita;
-  `V/descomposicion.md` §3). **La espera**: `V9b`, que lee su registro.
+  `V/descomposicion.md` §3); de `U2` usa además la tabla `domain_event`, que `U2` crea (BW). **La
+  espera**: `V9b`, que lee su registro.
 - **Despliegue**: al corte, en la rama `epic/HOS-1352-verticales-billing` ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017)); se da
   por terminada con el momento 1 ([GATE:M1](../30-el-corte.md#gate-m1)).
 - **Rollback**: el del corte (`16-fase-7-del-paraguas.md` §3); la pieza no tiene rollback propio.
@@ -288,12 +294,13 @@ en las piezas ([GATE:M1](../30-el-corte.md#gate-m1)).
 
 ## Abiertos
 
-- Qué pieza crea `domain_event` si la tabla no existe en la rama (ninguna fila de pieza la nombra).
-  Anotado en `_trabajo/abiertos/g6-v5-v9.md`.
+N/A — el único abierto de la pieza, qué pieza crea `domain_event`, lo cerró el owner: la crea `U2`
+(corte del MVP, owner 2026-10-02, [BW](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw)).
 
 ## Origen
 
-- `V/descomposicion.md` §2, filas `V9` y `V9a` (l. 71–72); §3; §4, filas `V9` y `V9a` (l. 715–716).
+- `V/descomposicion.md` §2, filas `V9` y `V9a` (l. 71–72); §3; §4, filas `V9` y `V9a` (l. 722–723).
 - `NUCLEO/08` §1.1–§1.3; `NUCLEO/01` §1.2 (hecho 1); `NUCLEO/02` §2.6.
 - `01-decision-log.md`: `DEC-DATA-005` y su primer 📌; `DEC-ARCH-017`.
+- `41-corte-del-mvp/10-decisiones-del-owner.md`: AC y BW (l. 23 y 156).
 - `16-fase-7-del-paraguas.md` §4.6 (lista de piezas, l. 948) y §4.7 (momento 1).

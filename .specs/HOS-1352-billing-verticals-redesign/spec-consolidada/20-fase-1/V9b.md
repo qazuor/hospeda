@@ -20,6 +20,15 @@ Su gate propio es el de toda fase posterior: el momento 2 aplicado a la rama de 
 sobre la rama en verde, sin ninguna migración estructural ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Es **aditiva**: no
 reescribe filas ni código del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7).
 
+**La fecha límite de la Fase 1** (corte del MVP, owner 2026-10-02, [BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)): **límite = el instante del
+corte + el plazo 1 − el plazo 4 de `NUCLEO/02` §1.5, con la versión 1 de los plazos**
+([PLAZO:1](../02-nucleo.md#plazo-1), [PLAZO:4](../02-nucleo.md#plazo-4)). La Fase 1 se mergea a producción antes de esa fecha, y su gate
+([GATE:FP.F1](../30-el-corte.md#gate-fp-f1)) la verifica contra ese número. Las fichas del corte nacen con `inactiva_desde` en el
+instante del corte (`NUCLEO/01`, fila `C`) y el primer aviso de `V9b` es el previo al archivado; el
+aviso *«al archivar»* ya sale desde `V6` ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)). Cada reloj guarda la versión con que arrancó, así que
+un cambio de plazo posterior no adelanta la fecha.
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1171, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1172, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1173, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1174, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1175, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1176
+
 <a id="fila-v9b"></a>
 **FILA:V9b — Retención** *(después)*. Qué deja funcionando, en su forma vigente: **el resto de
 `V9`**:
@@ -28,7 +37,8 @@ reescribe filas ni código del corte ([DEC-ARCH-017](../01-decisiones-vigentes.m
    `V9a`—;
 2. **`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija**: la desconexión del calendario,
    el lock, la lista cerrada de lo que cuelga de `listing` y el empuje a billing después del commit;
-3. **los tres avisos, que encola en `U2`**;
+3. **los tres avisos, que encola en `U2`**: **de los tres, suma los dos previos y su job; el *«al
+   archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl));
 4. **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los
    plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC);
 5. **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin
@@ -71,8 +81,10 @@ ficha), [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9), los plazos [PLAZO:2](../0
 4. **el reloj cuenta el hecho 1 desde el registro de `V9a`, también los actos anteriores a su propio
    merge** *(la fuente marca esta cláusula como derivada de AC)*;
 5. **un archivado que corrió tarde anuncia una fecha más tarde y `PB9` no borra antes** (la cláusula
-   de `PB9` del §2.11; corte del MVP, owner 2026-10-01, BD: la tabla y la acción son de `V6`).
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:717
+   de `PB9` del §2.11; corte del MVP, owner 2026-10-01, BD: la tabla y la acción son de `V6`);
+6. **los dos avisos previos salen por su job, sin tocar el código de `PB4` y `PB5`, que ya encola el
+   *«al archivar»*** (corte del MVP, owner 2026-10-02, [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:724
 
 ### Historias de usuario
 
@@ -212,12 +224,25 @@ Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b), [FILA:V9](../10-corte/V9
 - **Dado** una ficha con la versión de plazos que guarda, el plazo 4 con su valor y el reloj corriendo
 - **Cuando** llega cada fecha objetivo
 - **Entonces** salen tres correos transaccionales no suprimibles, encolados en el outbox de `U2`:
-  uno antes del archivado, uno al archivar y uno antes del borrado; los dos previos cuentan desde el
+  uno antes del archivado y uno antes del borrado, que encola el job de `V9b`, y el de *«al
+  archivar»*, que encola `PB4`/`PB5` de `V6` en el mismo acto ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)); los dos previos cuentan desde el
   más tardío de `inactiva_desde` y el `pausaTerminadaEn` de `retenciónDetenida`, releen la cobertura
   y no salen si el dueño está cubierto; el previo al borrado nunca antes de la fecha que anunció el
   archivado; cada ocurrencia lleva en su clave la fecha objetivo (`listing:<id>:ret:…`), así que un
   reloj reiniciado puede volver a mandarlos sin duplicarlos.
-Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b), [FILA:V9](../10-corte/V9a.md#fila-v9)
+Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b), [FILA:V9](../10-corte/V9a.md#fila-v9), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
+
+<a id="ac-v9b-14"></a>
+**AC:V9b:14** — Los dos avisos previos los suma el job, sin tocar `PB4` ni `PB5`.
+
+- **Dado** la rama de la Fase 1 sobre el código del corte, donde `PB4` y `PB5` (de `V6`) ya encolan
+  el aviso *«al archivar»* con su plantilla
+- **Cuando** se compara el diff de `V9b` contra la rama del corte, y corre el job de `V9b` sobre una
+  ficha que llega al día del aviso previo al archivado y, después de archivada, al previo al borrado
+- **Entonces** el diff no toca el código de `PB4` ni de `PB5`; los dos avisos previos salen por el
+  job, encolados en el outbox de `U2`; y el archivado de esa ficha encola el *«al archivar»* una sola
+  vez, el de `V6`, sin que el job lo duplique.
+Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b), [PLAZO:4](../02-nucleo.md#plazo-4), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
 
 <a id="ac-v9b-11"></a>
 **AC:V9b:11** — Sólo lee los plazos, y no trae migración estructural.
@@ -233,19 +258,21 @@ Fuente: [FILA:V9b](#fila-v9b), [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-dec
 <a id="ac-v9b-12"></a>
 **AC:V9b:12** — La Fase 1 llega antes del primer aviso posible.
 
-- **Dado** los plazos fijados por el owner antes del merge de `V6` y el instante del corte
-- **Cuando** se decide el merge de la rama de la Fase 1 a `staging`
-- **Entonces** la fecha del merge es anterior a la primera fecha en que un aviso de retención podría
-  salir, `V9b` está en `Done` y la rama cumple el gate de fase (momento 2 sobre la rama, smoke de
-  `staging` extendido antes del merge y drift guard en verde); `B10` no arranca antes de ella.
-Fuente: [GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [FILA:V9b](#fila-v9b)
+- **Dado** los plazos de la versión 1, fijados por el owner antes del merge de `V6`, y el instante
+  del corte
+- **Cuando** se calcula la fecha límite como el instante del corte + el plazo 1 − el plazo 4, con la
+  versión 1 de los plazos, y se decide el merge de la rama de la Fase 1
+- **Entonces** el gate de la fase verifica contra ese número que el merge a producción es anterior a
+  la fecha límite; `V9b` está en `Done` y la rama cumple el gate de fase (momento 2 sobre la rama,
+  smoke de `staging` extendido antes del merge y drift guard en verde); `B10` no arranca antes de ella.
+Fuente: [GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [FILA:V9b](#fila-v9b), [PLAZO:1](../02-nucleo.md#plazo-1), [PLAZO:4](../02-nucleo.md#plazo-4), [BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)
 
 <a id="ac-v9b-13"></a>
 **AC:V9b:13** — Salida: la pieza está lista.
 
 - **Dado** la rama de la Fase 1 con `V9b` mergeada
-- **Cuando** se corren los casos de [AC:V9b:1](#ac-v9b-1) a [AC:V9b:11](#ac-v9b-11)
-- **Entonces** se cumplen las cinco cláusulas de su *«Lista cuando»* y la pieza cumple el momento 1
+- **Cuando** se corren los casos de [AC:V9b:1](#ac-v9b-1) a [AC:V9b:11](#ac-v9b-11) y [AC:V9b:14](#ac-v9b-14)
+- **Entonces** se cumplen las seis cláusulas de su *«Lista cuando»* y la pieza cumple el momento 1
   ([GATE:M1](../30-el-corte.md#gate-m1)).
 Fuente: [LISTA:V9b](#lista-v9b)
 
@@ -263,8 +290,310 @@ Fuente: [LISTA:V9b](#lista-v9b)
   *(d)* de [GUARD:G-R6-B](../04-catalogos.md#guard-g-r6-b), de `V6`; la lista cerrada de `PURGED`, [GUARD:G-R9](../04-catalogos.md#guard-g-r9), de `V6`.
 - **Los plazos** ([PLAZO:2](../02-nucleo.md#plazo-2), [PLAZO:4](../02-nucleo.md#plazo-4)): valores de la versión que guarda la ficha; un cambio de
   plazo nunca adelanta una fecha ya anunciada (la acción 22 es de `V6`).
-- **Los avisos** (`NUCLEO/07` §4.1 y §6): transaccionales, no suprimibles, tres.
+- **Los avisos** (`NUCLEO/07` §4.1 y §6): transaccionales, no suprimibles, tres; `V9b` suma los dos
+  previos y su job, y el *«al archivar»* lo encola `V6` en el acto de `PB4`/`PB5`, con su plantilla
+  ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl): la pieza anterior escribe su rama entera y la posterior trae lo suyo sin tocar código
+  anterior).
 - **Aditiva** ([GATE:FP](../30-el-corte.md#gate-fp)): ninguna migración estructural, ningún cambio de filas del corte.
+
+## Diseño de origen: retención y la corrección legal (`V/02` §4, `V/22` §3)
+
+*(Contenido vigente de los capítulos que la fila de `V9b` nombra —`02` §4 y `22` §3—, sin lo
+tachado y con las decisiones del owner aplicadas. Lo que se construye en otra pieza va referenciado.)*
+
+### Retención: qué se borra, qué se anonimiza, qué se conserva (`V/02` §4, cierra `M-DATA-01`)
+
+El §25 del PDR ordena soft delete a los 90 días y hard delete a los 180 de *«datos operativos
+eliminables»*, y manda conservar auditoría, pagos, registros obligatorios, información legal e
+historial necesario. Nunca define qué es eliminable. **Lo define [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)** (owner
+2026-09-25): el contenido de una ficha y sus borradores, y **nunca** nada de la persona.
+
+**El riesgo concreto que esto cierra**: si la auditoría del §49 guardara eventos de dominio
+*completos* con su contenido, el hard delete no eliminaría nada y la promesa del §25 sería
+decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, no copias**
+(`NUCLEO/02` §2.6: el registro vive en esa mitad; FASE 9 vuelta 1). Es una decisión de modelo tomada
+para que la retención sea posible; el registro de los actos del dueño que lo cumple es de `V9a`
+([FILA:V9a](../10-corte/V9a.md#fila-v9a)).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:738, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:740, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:741, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:742, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:743, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:745, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:746, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:747, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:748
+
+### La lista (`V/02` §4.1)
+
+**Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una frase
+de esta tabla: `NUCLEO/01` §1.2 la define y enumera **los cinco hechos que la reinician** (el
+quinto, *«el dueño pierde la cobertura en la vertical»*, escrito en todas sus fichas en ella: FASE 8
+completa, `F-8CA2-001`, owner 2026-09-25; **el sexto, *«se levanta la moderación»*, `PB11`**: FASE
+9 completa, decisión 5b; el cuarto salió con la revisión del owner, 2026-09-28, C8). El que más
+importa acá es el segundo —**la cobertura comprobada verdadera**, un estado leído y no un cambio
+detectado (`NUCLEO/01` §1.2)—, porque es el que impide que el día 180 alcance a alguien que volvió.
+
+**Y se cuentan sobre una columna, no sobre una derivación: `listing.inactiva_desde`** (`V/02`
+§2.5). El día 90 es `inactiva_desde` + el plazo 1 y el 180 es `inactiva_desde` + el plazo 2, con la
+versión de plazos que guarda la ficha ([PLAZO:1](../02-nucleo.md#plazo-1), [PLAZO:2](../02-nucleo.md#plazo-2)); **el trabajo que hace el reloj es de la
+columna, y las transiciones sólo la leen**. El hecho 2 se resuelve **preguntándole al contrato**,
+nunca leyendo el aviso que lo empuja (`12-contrato…` §3), y `PB4` y `PB5` vuelven a preguntar en el
+momento de archivar (`V/03` §9).
+
+| | qué | por qué |
+|---|---|---|
+| **Se borra** al día 180 | **el contenido de ESA ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)). **Sólo sobre una ficha en `ARCHIVED`**, y la ficha pasa a **`PURGED`** ([TRANS:V:PB9](../04-catalogos.md#trans-v-pb9); FASE 8 completa, `F-8CA2-008`, `F-8CA2-014`, owner 2026-09-25). **Y el mismo contenido se borra en el acto cuando el dueño borra su ficha** ([TRANS:V:PB12](../04-catalogos.md#trans-v-pb12)), que también la lleva a `PURGED` y no es retención: es un acto suyo (FASE 8 completa, `F-8CA2-004`). **«Fotos» incluye su copia en el almacenamiento externo.** **Y `PURGED` conserva la fila**: el borrado es del contenido, no un `DELETE` de `listing`, así que ningún `ON DELETE CASCADE` corre y lo que cuelga de la ficha se trata uno por uno, en la lista cerrada de abajo (FASE 9 vuelta 2, `R9`) —nadie lea *«hard delete»* como borrar la fila— (FASE 9 vuelta 1, `F-8V1A3-010`). **Las reseñas de terceros se conservan, sin mostrarse**: son de quien las escribió ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005) protege a las personas). **La conexión de calendario se desconecta, y su token se revoca en el proveedor y se borra**: un token vivo sobre una ficha que no existe es riesgo sin servicio (owner 2026-09-26, `G1-5`) | es lo que el §25 llama operativo: sirve para prestar el servicio **de esa ficha** y ese servicio terminó |
+| **No se anonimiza nada** | el proceso de archivar y purgar **no anonimiza nada** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)): el renglón *«se anonimiza al día 180»* salió de la retención | la retención es de fichas, y *«el usuario no es un dato operativo»* ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)) |
+| **Se conserva íntegro, siempre** | **la fila de `trial`** —que guarda **un seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`); **tras la baja de la cuenta, el seudónimo se conserva hasta que conteste el abogado, y si contesta en contra lo borra soporte con una tarea puntual** (`V/02` §2.2; FASE 9 vuelta 3, owner 2026-09-30, lote H)—, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad ([DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004)) y sus datos personales, **también dentro de eventos de dominio y del outbox** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)) | la fila de `trial` es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
+
+**Lo que cuelga de `listing`, y qué le pasa en `PURGED`: la lista cerrada** (owner 2026-09-27, FASE
+9 vuelta 2, `R9`; `F-8V2A2-006`). La tabla de arriba promete tratar *«uno por uno»* lo que cuelga de
+la ficha, y el esquema actual cuelga bastante más que las reseñas y el calendario; sin `DELETE` de
+la fila, nada cae por arrastre. **La regla es la de `G1-5` generalizada por el dueño del dato**: lo
+de un tercero se conserva, y lo del dueño que sólo sirve a esa ficha se borra con el contenido. La
+alerta de precio es la excepción, y la decidió el owner. Vale igual para `PB9` y para `PB12`. La
+columna de tablas es del código actual (`packages/db/src/schemas/`), medida sobre las tres tablas de
+`listing` (`V/02` §2.5), incluidas las referencias polimórficas por `entity_type` + `entity_id`, que
+no tienen FK. **Sobre el código actual son 29 tablas con FK a `accommodations`, `gastronomies` o
+`experiences` y 11 con `entity_type`**, recontadas con un script que cruza los saltos de línea
+(FASE 9 vuelta 2, verificación, `N-B-02`: la primera medición contó 28, porque el `references(` de
+`posts` está partido en dos líneas). **La vigila [GUARD:G-R9](../04-catalogos.md#guard-g-r9)** (`V/20` §2; owner 2026-09-27, FASE 9
+vuelta 2, verificación, `V2-k`):
+
+| qué cuelga | de quién es | en `PURGED` | tablas (código actual) |
+|---|---|---|---|
+| **el contenido de la ficha**: textos, fotos, FAQ, horarios, amenities y features, etiquetas, y en gastronomía la carta, los especiales y los eventos, y en experiencia los certificados | del dueño | **se borra**: es el renglón de arriba ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)), y las fotos incluyen su copia en el almacenamiento externo | `accommodation_media`, `accommodation_faqs`, `r_accommodation_amenity`, `r_accommodation_feature`; `gastronomy_media`, `gastronomy_faqs`, `r_gastronomy_amenity`, `r_gastronomy_feature`, `gastronomy_menu_sections`, `gastronomy_menu_items`, `gastronomy_daily_specials`, `gastronomy_events`; `experience_media`, `experience_faqs`, `r_experience_amenity`, `r_experience_feature`, `experience_certificates`; `r_entity_tag` |
+| **las reseñas** | del tercero que las escribió | **se conservan, sin mostrarse** (arriba) | `accommodation_reviews`, `gastronomy_reviews`, `experience_reviews` |
+| **los comentarios** sobre la ficha | del tercero que los escribió | **se conservan, sin mostrarse**, como las reseñas | `entity_comments` |
+| **las conversaciones** entre un turista y el dueño | de los dos, y el turista es un tercero | **se conservan en sólo lectura**, con *«esta ficha ya no existe»* (`V/19` §4 fila 28). **La referencia a la ficha admite una ficha ausente**: es anulable, y leer la conversación no la exige. Hoy es `onDelete: restrict` y no anulable | `conversations` |
+| **los favoritos** de un turista | del turista | **se conservan**: para él la ficha no existe (`V/17` §1.2, precisión 7), y la superficie la trata así. **Y llegar a `PURGED` no escribe `deleted_at`** (FASE 9 vuelta 3, `F-8V3A3-004`): el carril de extras del código actual tiene un trigger que borra de `user_bookmarks` los favoritos de un alojamiento cuando su `deleted_at` pasa de nulo a no nulo, y `PURGED` es un estado, no un soft delete. Ninguna transición del modelo nuevo escribe esa columna, y la tabla de traducción del corte, que la leía, salió (FASE 5, simplificación del corte, S-01). **Tampoco la escribe el borrado del dueño de hoy**, que sale (abajo, *«las puertas de borrado de hoy»*) | `user_bookmarks` |
+| **el pedido de arreglo** de una ficha moderada | de la moderación: el motivo es del admin y el aviso de que corrigió, del dueño | **se cierra en el mismo acto, sin correo, y la fila se conserva como registro de la moderación** (FASE 9 vuelta 3, `F-8V3A2-004`, `F-8V3A3-007`): sin ficha no hay arreglo que pedir, y el correo de *«moderación levantada»* le diría al dueño a dónde volvió una ficha que borró. Cerrado, sale del listado de arreglos pendientes (`V/02` §2.5) | `pedido_de_arreglo` |
+| **las alertas de precio** de un turista | del turista | **se cierran, con un aviso al turista** (`V/19` §4 fila 27; el correo, `NUCLEO/07` §6): sin ficha no hay precio que vigilar, y el job de alertas dejaría de evaluar una ficha vacía | `tourist_price_alerts` |
+| **la conexión de calendario** | del dueño | **se desconecta: su token se revoca en el proveedor y se borra** (arriba, `G1-5`) | `accommodation_calendar_sync` |
+| **las promociones del dueño sobre esa ficha, sus listados y su reputación externos, su ocupación, sus datos de IA, los QR que apuntan a ella y sus estadísticas agregadas** | del dueño, y sólo sirven a esa ficha | **se borran con el contenido** | `owner_promotions` (las de esa ficha), `accommodation_external_listings`, `accommodation_external_reputation`, `accommodation_occupancy`, `accommodation_ia_data`, `qr_codes` (los de esa ficha), `entity_view_monthly_rollups` |
+| **lo que no es de la ficha aunque la nombre** | de otro registro | **no lo toca `PURGED`**: la telemetría de vistas tiene su propia retención; la auditoría y el registro de revalidaciones se conservan (§25); **la instancia de un addon de alcance `LISTING` es de billing, y la trata `A6`** (`B/03` §8); el vínculo de addon y el caché de suscripción del cobro viejo salen de la rama con la limpieza del principio y de la base en el paso 3 del corte (`B/21` §4; FASE 9 vuelta 3, `F-8V3A3-007`). **La nota del blog que nombra la ficha como alojamiento relacionado es contenido editorial de Hospeda**: la referencia queda, y la superficie trata la ficha como inexistente (`V/17` §1.2, precisión 7), como en un favorito (FASE 9 vuelta 2, verificación, `N-B-02`). **La configuración de revalidación es por tipo** y no nombra ninguna ficha: tiene `entity_type` sin `entity_id` | `entity_views`, `social_audit_log`, `revalidation_log`, `addon_instance`, `posts`, `revalidation_config` |
+
+**La lista es cerrada**: una tabla nueva que cuelgue de `listing` entra acá en el mismo acto, con su
+fila, **y si no entra, [GUARD:G-R9](../04-catalogos.md#guard-g-r9) falla**. La columna de tablas nombra las 40, una por una (FASE 9
+vuelta 2, verificación, owner 2026-09-27, `V2-k`): **38 del código actual que sobreviven a la
+limpieza del principio —29 con FK y 9 con `entity_type`— y 2 del modelo nuevo, `pedido_de_arreglo`
+y `addon_instance`**; las dos del cobro viejo salieron (FASE 9 vuelta 3, `F-8V3A3-007`) y estaban
+las dos entre las de `entity_type`, así que las 29 con FK quedan y las 11 con `entity_type` bajan a
+9; el total de 38 no cambia (FASE 5, owner 2026-09-30, lote 6 G, `F5-BD-011`). **Lo construyen las
+dos transiciones que llegan a `PURGED`: `PB9` (esta pieza) y `PB12` (`V6`)**.
+
+**Las puertas de borrado de hoy, fuera de `PB9` y `PB12`, se retiran todas** (FASE 5, owner
+2026-09-30, lote 3 C, `F5-BD-012`, `F5-SUP-017`). Hoy el dueño de un alojamiento borra su ficha
+escribiendo `deleted_at` —el trigger les borra los favoritos a los turistas, que esta lista
+conserva—, y el panel tiene, en las tres verticales, un borrado, un borrado físico y una
+restauración; el borrado físico hace `DELETE` de la fila y arrastra por `CASCADE` las reseñas de
+terceros. **El borrado del dueño pasa a ser `PB12`, el del equipo es la acción 23 —a pedido del
+dueño y con motivo, que corre `PB12`— ([ACC:23](../02-nucleo.md#acc-23)) y el borrado físico de fichas desaparece** (el de
+cuentas, `V/02` §2.2). Sin eso, una ficha se borra sin llegar a `PURGED`, por una puerta que no corre
+`A6` ni esta lista. El retiro es de `V6` ([FILA:V6](../10-corte/V6.md#fila-v6)).
+
+**Los dos borrados remotos van después del commit, y la fila los recuerda hasta que se confirman**
+(FASE 9 vuelta 3, `F-8V3A2-005`). Las fotos en el almacenamiento externo y la revocación del token
+de calendario no entran en la transacción de `PB9` o `PB12` (`NUCLEO/03`, regla 3), y van
+**después de su commit**: antes, una transacción que no confirma dejaba una ficha viva sin fotos.
+**La transacción no borra la fila de cada foto ni la de la conexión de calendario: las marca
+pendientes de borrado remoto**, y cada una se borra recién cuando el almacenamiento o el proveedor
+confirman. **Lo pendiente lo reintenta una corrida diaria**, con el vigía de cron externo del
+reconciliador diario de cobertura (`V/03` §9; [DEC-ARCH-009](../01-decisiones-vigentes.md#dec-arch-009)), **y una pendiente que sobrevive a una
+corrida se reporta como error en cada corrida**: lo colgado conserva una fila que lo nombra y alguien
+que lo ve. Una fila marcada no se muestra en ninguna superficie, porque su ficha está en `PURGED`. Lo
+construye `V6`, con `PB12`, que llega antes que `PB9`; `PB9` lo usa.
+
+**Las dos preguntas que la FASE 8 completa dejó sobre esta tabla, cerradas el 2026-09-25** (owner):
+
+1. **El día 180 es de UNA ficha y dos renglones alcanzaban a la PERSONA** (`F-8CA3-009`): las
+   preferencias de la cuenta, las señales de identidad y los datos personales dentro de un evento o
+   del outbox. **La cierra [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)**: la retención sólo toca fichas, y lo de la persona no se
+   borra ni se anonimiza nunca, así que ya no hay renglón que alcance a una ficha viva —ni a la
+   suscripción viva— a través de su dueño.
+2. **El hard delete y `PB5` no tenían orden entre sí** (`F-8CA2-014`). **La cierran las dos salidas
+   juntas**, como reglas de capítulo: **el borrado exige `ARCHIVED`** —el aviso del archivado salió
+   siempre antes; **el espacio entre los dos no está garantizado** (FASE 9 completa, `K-5`; `V/03`
+   §9, ⚠️ de la moderación, punto 7)— **y el `N` de `PB5` se valida contra el plazo de borrado**: hoy
+   es la validación [VAL:G-R5-B](../04-catalogos.md#val-g-r5-b) de *«cambiar un plazo»*, que construye `V6` (revisión del owner,
+   2026-09-28, C9: dejó de ser guard). La consecuencia queda aceptada: la ficha publicada sin
+   cobertura que `PB4` no alcanzó **no se borra** hasta que se archive; y cuando se archive, el día
+   180 puede estar ya vencido, así que `PB9` borra en la corrida siguiente, sin el espacio que el
+   aviso del archivado supone (FASE 9 completa, `B-3`; declarado por `DEC-METH-015`). **Causa**:
+   `PB9` cuenta sobre `inactiva_desde`, no sobre el instante del archivado; pasa sólo si el job del
+   archivado estuvo caído más que su plazo. *(Con la tabla de plazos de BD, `PB9` además no borra
+   antes de la fecha que el archivado anunció, `borrado_anunciado`: [AC:V9b:7](#ac-v9b-7).)*
+
+**Qué son «sus borradores»**: el corpus usa *«borrador»* **sólo** para una ficha en `DRAFT` (`PB5`,
+[DEC-TRIAL-007](../01-decisiones-vigentes.md#dec-trial-007)), y el modelo no tiene ediciones sin publicar de una ficha —`listing` guarda un
+contenido (`V/02` §2.5)—. Con la precondición, una ficha en `DRAFT` se borra **sólo después de que
+`PB5` la archivó**, igual que cualquier otra. El *«sus borradores»* de [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005) es de **esa**
+ficha, así que si el modelo llegara a tener ediciones sin publicar caerían con su contenido; **hoy
+no las declara**, y queda anotado.
+
+**El seudónimo existe porque el correo es a la vez el único bloqueo y un dato que el borrado de la
+cuenta anonimiza.** [DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004) decidió que sólo el correo normalizado niega un trial nuevo. **La
+retención ya no anonimiza el correo** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)), pero el corpus declara otro camino que sí:
+**el borrado de la cuenta**, en el que la fila de `trial` sobrevive y *«lo personal se anonimiza con
+el resto»* (`V/02` §4.2, regla 2), y el pedido de supresión que `V/22` §3 y el pliego legal
+(pregunta 5) ponen junto a él. Por ese camino la fila sobreviviría **sin poder reconocer a nadie**,
+que es exactamente el desenlace que conservarla viene a evitar. El seudónimo sirve para lo único que
+hace falta —«¿este correo ya consumió?», nunca «¿cuál era?»—. **No es irreversible en el sentido que
+importa: es un seudónimo determinístico**, y **reconoce a quien vuelve con el mismo correo** —es para
+eso que existe, y su `UNIQUE` lo exige determinístico— (FASE 9 completa, `C-1`). Cualquiera con un
+correo candidato calcula el seudónimo y confirma si esa persona tuvo trial, y así lo tiene que leer
+la consulta legal (`V/22` §3, abajo). ⚠️ **Lo que queda pendiente**: ese camino —la baja de la
+cuenta pedida por el propio usuario— es justo lo que [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005) declara que **no decide**
+(*«es otro proceso»*); **para la baja manual lo diseña la acción administrativa 24**
+([ACC:24](../02-nucleo.md#acc-24); revisión del owner, casos vecinos, 2026-09-29, caso H-C), que seudonimiza la fila de
+`user` sin borrarla (caso I-C) y conserva tal cual los datos de facturación que la ley obliga a
+guardar (caso J-C; `V/02` §2.2: FASE 9 vuelta 3, `F-8V3D1-007`), en la copia que guarda cada
+comprobante (caso K-A); la razón del seudónimo descansa sobre un proceso que el corpus nombra y no
+escribe (FASE 8 completa, `F-8CA3-009`, owner 2026-09-25). **La baja desde Mi Cuenta queda fuera de
+esta épica, a mano por soporte con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393)** (revisión del owner,
+2026-09-28, N7, `g1`). La función del seudónimo y sus casos son de `V4` ([FILA:V4](../10-corte/V4.md#fila-v4); corte del MVP,
+owner 2026-10-01, AC).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:750, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:752, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:753, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:754, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:755, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:757, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:761, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:762, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:763, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:764, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:766, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:767, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:768, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:769, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:770, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:772, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:773, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:774, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:775, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:776, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:777, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:778, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:779, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:780, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:781, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:782, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:783, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:784, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:786, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:787, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:788, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:789, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:790, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:791, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:792, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:793, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:794, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:795, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:796, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:799, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:800, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:801, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:802, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:803, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:804, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:807, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:809, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:810, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:811, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:812, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:813, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:814, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:815, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:816, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:817, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:819, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:820, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:821, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:822, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:823, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:824, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:825, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:826, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:827, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:828, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:829, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:831, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:832, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:833, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:834, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:835, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:836, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:837, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:838, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:839, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:840, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:841, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:842, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:843, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:844, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:845, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:846, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:847, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:848, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:849, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:850, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:851, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:852, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:853, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:854, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:855, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:856, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:857, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:858, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:859, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:860, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:861, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:862, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:863, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:864, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:865, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:866, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:867, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:868, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:869, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:870, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:871, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:872, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:873, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:875, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:876, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:877, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:878, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:879, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:880, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:881, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:882, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:883, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:884, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:885, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:886, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:887, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:888, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:889, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:890, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:891, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:892, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:893, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:894, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:895, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:896, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:897
+
+### Cuatro reglas que la lista necesita (`V/02` §4.2)
+
+1. **Anonimizar no es borrar la fila.** El evento conserva su tipo, su fecha, su entidad y su causa;
+   lo que se reemplaza es el dato personal. **Desde [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005) la retención no anonimiza
+   nada**, así que esta regla no tiene sujeto en el día 180; se conserva para el borrado de la cuenta
+   (regla 2), cuyo proceso esa decisión no cubre y queda pendiente (FASE 8 completa, `F-8CA3-009`,
+   owner 2026-09-25; fuera de esta épica, a mano por soporte con una lista de pasos,
+   [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393): revisión del owner, 2026-09-28, N7, `g1`).
+2. **La fila de `trial` sobrevive al borrado de la cuenta.** Es la única entidad de este modelo que
+   lo hace, y la razón está en el §10.2. Conserva el `user + vertical`, las fechas y **el seudónimo
+   del correo normalizado**; lo personal se anonimiza con el resto. El seudónimo **no** se anonimiza
+   —es lo que hace que sobrevivir sirva de algo— (hasta la respuesta del abogado: arriba y `V/22` §3).
+3. **El día 90 no borra nada.** La ficha sale del sitio público, **el dueño la sigue viendo** y puede
+   **exportarla o reactivarla a borrador sin pagar nada** ([DEC-DATA-001](../01-decisiones-vigentes.md#dec-data-001), [TRANS:V:PB8](../04-catalogos.md#trans-v-pb8)). Poder exportar
+   antes es lo que hace defendible el hard delete del día 180, y los avisos son correos
+   transaccionales no suprimibles: **tres**, uno antes del día 90, uno **al archivar** y uno antes del
+   día 180 (`NUCLEO/07` §6); el *«al archivar»* lo encola `V6` con `PB4`/`PB5`, y los dos previos,
+   esta pieza (corte del MVP, owner 2026-10-02, BL).
+
+   **La salida NO es «suscribiéndose»**: ésa era la redacción de [DEC-DATA-001](../01-decisiones-vigentes.md#dec-data-001), escrita cuando la
+   única vuelta imaginable era volver a contratar, y describía una salida más angosta que la que el
+   diseño tiene; la población declarada de `PB8` es literalmente la contraria —*«el que quiere su
+   ficha de vuelta sin pagar todavía»* (`V/03` §9)—.
+
+   **Las dos salidas que esta regla ofrece son ejecutables**: reactivar la ejecutan **`PB7`** —sola,
+   cuando la cobertura vuelve **o cuando el cupo vuelve a alcanzar**— ([TRANS:V:PB7](../04-catalogos.md#trans-v-pb7)) y **`PB8`** —a
+   pedido del dueño, hacia `DRAFT`— (`V/03` §9); y el dueño tiene con qué ejecutar `PB8`: la versión
+   de piso otorga *«recuperar lo suyo»* (`V/02` §2.1), sin lo cual el paso 6 de la autorización
+   rechazaría a la única población para la que esta salida existe. **El hard delete del día 180 se
+   defiende con las dos salidas, y para el sujeto del borrado las dos tienen que ser alcanzables, no
+   sólo estar escritas.**
+4. **La vuelta reinicia el reloj, y el reinicio cuelga del hecho, no de la transición.** Lo que
+   reinicia la inactividad es **la cobertura comprobada verdadera** (`NUCLEO/01` §1.2, hecho 2) —un
+   estado leído, no un cambio detectado—, aunque `PB7` no llegue a disparar porque el cupo no
+   alcanza. Sin esta regla, el que reanuda con un plan más chico se queda con la ficha archivada **y
+   con el reloj del día 180 corriendo**, que es el mismo desenlace que la regla 3 viene a evitar.
+
+   **El reinicio es una escritura en `inactiva_desde` (`V/02` §2.5) y se ejecuta en CUATRO momentos,
+   no en uno**: cuando el recálculo que el aviso despierta vuelve a preguntar y trae `cubierto`
+   verdadero; **—sin aviso— cuando el reconciliador diario de cobertura encuentra la vuelta y corre
+   `PB3`/`PB7`** (`V/03` §9; [DEC-ARCH-009](../01-decisiones-vigentes.md#dec-arch-009), owner 2026-09-25); —como red— cuando `PB4` o `PB5`
+   releen antes de archivar (`V/03` §9); y —como última red— **cuando el hard delete del día 180
+   relee antes de borrar** (`NUCLEO/01` §1.2). Los cuatro preguntan; **ninguno le cree al aviso**
+   (`12-contrato…` §3).
+
+   **El último es el que no puede faltar.** Las dos relecturas son la misma red aplicada a los tres
+   actos que el reloj gobierna —`PB4`, `PB5` y el día 180; el reconciliador no es uno de esos actos:
+   no avanza sobre el reloj, restituye—, y **el único irreversible es el del día 180**: si el aviso
+   se pierde y el recálculo no corre, el día 90 archiva —recuperable con `PB8`— pero el día 180
+   **borra el contenido publicable de un cliente que está pagando**, y no hay `PB8` que traiga de
+   vuelta lo que ya no está. La línea del núcleo que nombra a los tres ejecutores —*«`PB4`, `PB5` y
+   el hard delete del día 180 releen la cobertura … y, si está cubierta, reinician el reloj en vez de
+   avanzar»*— es la que lo dice.
+
+   **Su caso testigo es la pausa.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—,
+   `PB2` le baja la ficha el primer día **y en ese mismo acto escribe `inactiva_desde`** (`NUCLEO/01`
+   §1.2, hecho 5; FASE 8 completa, `F-8CA2-001`, owner 2026-09-25) —**y el recálculo escribe ese
+   mismo instante en sus fichas que no estaban publicadas**, borrador y excedente incluidos (owner
+   2026-09-25)—. *(Sin esa escritura la columna guardaba el último reinicio, de hasta 90 días de
+   antigüedad, y el 90 y el 180 caían hasta 90 días antes de lo que esta cuenta dice.)* **Y durante
+   una pausa pedida por el dueño el reloj queda detenido** (revisión del owner, 2026-09-28, C14,
+   `L1-c`): `PB4`, `PB5` y `PB9`, y los avisos de retención, releen la pregunta `retenciónDetenida`
+   del contrato (§4.1) y con `sí` no hacen nada; al volver, el hecho 2 reinicia el reloj, **y todo fin
+   de la pausa, por cualquier camino, lo reinicia también** (revisión del owner, casos vecinos,
+   2026-09-29, caso 12; `12-contrato…` §4.1), **sin escribir nada: `retenciónDetenida` devuelve
+   también cuándo terminó la última pausa, y los lectores cuentan desde el más tardío entre
+   `listing.inactiva_desde` y ese instante** (caso F-A) (**y `PB9`, además, desde
+   `coberturaPerdidaEn`, el más tardío de los tres**: FASE 9 vuelta 3, owner 2026-09-30, lote Q),
+   **con la versión de plazos que guarda la ficha, `listing.plazos_version`** (caso H-E). El
+   invariante `D16` y su guard salieron.
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:899, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:901, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:902, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:903, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:904, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:905, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:906, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:907, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:908, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:909, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:910, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:911, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:912, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:913, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:914, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:916, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:917, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:918, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:919, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:920, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:921, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:923, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:924, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:925, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:926, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:927, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:928, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:929, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:930, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:931, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:932, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:933, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:934, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:935, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:936, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:937, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:938, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:939, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:941, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:942, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:943, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:944, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:945, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:946, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:948, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:949, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:950, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:951, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:952, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:953, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:954, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:955, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:956, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:957, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:959, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:960, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:961, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:962, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:963, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:964, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:965, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:966, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:967, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:968, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:969, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:970, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:971, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:972, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:973, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:974, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:975, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:977
+
+### El conflicto legal y la corrección que pide al núcleo (`V/22` §3)
+
+#### El defecto (`V/22` §3.1)
+
+Dos piezas que por separado están bien y juntas se anulan:
+
+1. **[DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004)**: lo único que bloquea un trial nuevo es **el correo normalizado**.
+2. **`V/02` §4.2, regla 2**: la fila de `trial` **sobrevive** al borrado de la cuenta, *«conserva el
+   `user + vertical` y las fechas; lo personal se anonimiza con el resto»*.
+
+*(La tercera pieza que el capítulo nombraba —que el día 180 anonimizara el correo— ya no existe:
+desde [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005), owner 2026-09-25, la retención sólo toca fichas y no anonimiza nada de la
+persona, `V/02` §4.1.)*
+
+**El correo es a la vez el único bloqueo y un dato que el borrado de la cuenta anonimiza.** Al
+borrarse la cuenta, o si llega un pedido de supresión, la fila de `trial` sigue ahí y **ya no puede
+reconocer a nadie**: la persona se registra de nuevo con la misma dirección y obtiene un trial nuevo.
+**El defecto sigue en pie sin la anonimización del día 180**: la regla 2 alcanza sola (FASE 8
+completa, `F-8CA3-009`). ⚠️ Esa baja pedida por el usuario es el proceso que [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005) declara
+que no decide, y ningún capítulo la diseña: queda pendiente, fuera de esta épica, a mano por soporte
+con una lista de pasos, [HOS-1393](https://linear.app/hospeda-beta/issue/HOS-1393) (revisión del owner, 2026-09-28, N7, `g1`).
+
+**Y el pedido de supresión de quien postuló un Partner sin cuenta** (FASE 9 vuelta 3, owner
+2026-09-30, lote AI; verificación, VC3-VT-08): su correo queda en `postulacion` (`V/02` §2.7) y no
+hay cuenta que dar de baja. Lo borra la acción 24 de `NUCLEO/08` §3 ([ACC:24](../02-nucleo.md#acc-24)), que alcanza también
+a esa postulación: soporte reemplaza el correo a pedido de quien la escribió, con motivo y registro.
+
+**Y `V/02` lo dice de frente**: la fila se conserva *«porque el trial no se devuelve, así que la
+evidencia de que se consumió tiene que sobrevivir al borrado o el borrado se convierte en la forma
+de conseguir otro»*. Eso es exactamente lo que pasaría —no por lo que se borra, sino por lo que se
+anonimiza—.
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:57, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:59, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:61, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:63, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:64, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:65, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:67, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:68, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:70, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:71, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:72, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:73, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:74, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:75, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:76, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:78, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:79, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:80, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:81, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:83, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:84, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:85, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:86
+
+#### La corrección (`V/22` §3.2)
+
+**Se guarda un seudónimo determinístico del correo normalizado, no el correo**: no permite leer el
+correo, pero **reconoce a quien vuelve con el mismo correo** (FASE 9 completa, `C-1`). *(Decía «hash
+irreversible», y la palabra le vendía al abogado una premisa falsa: cualquiera con un correo
+candidato calcula el hash y confirma si esa persona tuvo trial —es la función del hash, y su
+`UNIQUE` lo exige determinístico—. Tiene que corregirse **antes de mandar el pliego**.)*
+
+| | |
+|---|---|
+| **sirve para lo único que tiene que servir** | comparar un candidato contra lo consumido. [DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004) sólo necesita *«¿este correo ya consumió?»*, nunca *«¿cuál era?»* |
+| **sobrevive a la anonimización** | **no se puede leer de vuelta, pero sigue reconociendo a quien trae el mismo correo**: eso es lo que la anonimización del borrado de la cuenta no le saca, y lo que la consulta legal tiene que evaluar. La anonimización es la del borrado de la cuenta; la retención ya no anonimiza ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)) |
+| **no cambia la decisión** | el bloqueo sigue siendo el correo normalizado, con la normalización de `V/02` §2.2, que quita los puntos y el `+alias` según la lista cerrada de proveedores (owner 2026-09-27, FASE 9 vuelta 2, `R23`; la lista por proveedor, owner 2026-09-28, verificación, `V2-j1` a `V2-j3`) |
+
+**`V/02` §4 queda corregido en el mismo acto**: lo que la fila de `trial` conserva es el
+`user + vertical`, las fechas y **el seudónimo**, no el correo (arriba, regla 2).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:88, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:90, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:91, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:92, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:93, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:94, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:96, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:97, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:98, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:99, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:100, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:102, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:103
+
+#### La pregunta al abogado, en esta forma (`V/22` §3.3)
+
+No *«¿cómo declaramos la finalidad?»*, que es una pregunta sin filo, sino:
+
+> **¿Podemos conservar un seudónimo determinístico del correo —que no permite leerlo pero reconoce a
+> quien vuelve con el mismo—, después de borrada la cuenta y después de un pedido de supresión, con
+> la única finalidad de no otorgar un segundo trial gratuito?**
+
+Es la formulación útil porque tiene dos respuestas y las dos tienen consecuencia escrita:
+
+- **si se puede** — se implementa como la corrección de arriba y `M-LEGAL-02` se cierra declarando
+  finalidad y plazo;
+- **si no se puede** — **el trial de por vida deja de ser sostenible tras un borrado**, y eso hay que
+  aceptarlo explícitamente. [DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004) ya aceptó la mitad de esto en su implicación 1 —*«se
+  esquiva con una segunda dirección de correo; el trial de por vida del §10.2 queda como intención,
+  no como garantía»*—; sería la otra mitad, y **cambia un mecanismo**: hay que poder borrar el
+  seudónimo de una fila que hoy se declara íntegra (`V/02` §4.1), con un escritor nuevo y una columna
+  anulable, y el `UNIQUE` deja de bloquear a esa persona (FASE 9 completa, `C-1`). **El escritor
+  nuevo es una tarea puntual de soporte que los borra todos, y se anota quién la corrió y cuándo;
+  hasta la respuesta, la baja de cuenta conserva el seudónimo** (`V/02` §2.2; FASE 9 vuelta 3, owner
+  2026-09-30, lote H; `F-8V3A3-006`). Esa tarea no es una fila del catálogo ni se construye ahora
+  ([DEC-DATA-005#📌7](../01-decisiones-vigentes.md#dec-data-005-p7)).
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:105, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:107, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:109, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:110, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:111, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:113, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:115, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:116, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:117, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:118, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:119, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:120, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:121, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:122, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:123, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:124, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:125, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:127
 
 ## Modelo de datos y migraciones
 
@@ -285,19 +614,19 @@ con `PB12` ([FILA:V6](../10-corte/V6.md#fila-v6)); `V9b` emite el empuje de `PB9
 
 ## UI web y admin, e i18n
 
-- Los textos de los tres avisos y el del cierre de la alerta van en el catálogo de correos
-  (`NUCLEO/07` §6) y en `@repo/i18n`. El aviso al archivar dice que no se borró nada, que vuelve sola
-  si recupera cobertura o cupo (`PB7`) o a mano y sin pagar (`PB8`), y desde cuándo se cuentan los
-  180 (`NUCLEO/07` §6).
+- Los textos de los dos avisos previos y el del cierre de la alerta van en el catálogo de correos
+  (`NUCLEO/07` §6) y en `@repo/i18n`. La plantilla del aviso *«al archivar»* es de `V6`, que la
+  encola ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl); [FILA:V6](../10-corte/V6.md#fila-v6)).
 - Las filas 20, 27 y 28 del `19` §4 son de `V8a` ([FILA:V8a](../10-corte/V8a.md#fila-v8a)).
 
 ## Cron y outbox
 
-- El job diario que corre `PB9` y los avisos, con la correlación de su corrida y la de cada ficha
+- El job diario que corre `PB9` y los dos avisos previos, con la correlación de su corrida y la de cada ficha
   (`NUCLEO/08` §2.3), y con un actor de sistema de la fábrica de `V5` ([FILA:V5](../10-corte/V5.md#fila-v5)).
 - La corrida diaria que reintenta los borrados remotos pendientes ([TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)).
-- Los tres avisos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la clave de
-  schedule que lleva la fecha objetivo (`NUCLEO/07` §2).
+- Los dos avisos previos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la
+  clave de schedule que lleva la fecha objetivo (`NUCLEO/07` §2); el *«al archivar»* lo encola `V6`
+  en el acto de `PB4`/`PB5` ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)).
 
 ## Variables de entorno
 
@@ -381,8 +710,9 @@ Cubre: [AC:V9b:9](#ac-v9b-9)
 Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b)
 
 <a id="test-v9b-10"></a>
-**TEST:V9b:10** — Integración: los tres avisos en sus fechas objetivo, con relectura de cobertura y
-sin duplicado tras un reinicio.
+**TEST:V9b:10** — Integración: los dos avisos previos en sus fechas objetivo por el job, y el
+*«al archivar»* encolado por `PB4`/`PB5`, con relectura de cobertura y sin duplicado tras un
+reinicio.
 Tipo: integración con DB
 Cubre: [AC:V9b:10](#ac-v9b-10)
 Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b)
@@ -397,12 +727,28 @@ Fuente: [FILA:V9b](#fila-v9b), [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-dec
 
 <a id="test-v9b-12"></a>
 **TEST:V9b:12** — Smoke de la fase (parte de `staging` del checklist extendido, antes del merge de la
-rama): la primera fecha posible de un aviso de retención es posterior a la fecha del merge, y un
-aviso de una ficha con la fecha forzada sale una vez.
+rama): la fecha límite, calculada como el instante del corte + el plazo 1 − el plazo 4 con la
+versión 1 de los plazos, es posterior a la fecha prevista del merge a producción, y un aviso de una
+ficha con la fecha forzada sale una vez.
 Tipo: smoke manual
 Etiqueta: staging
 Cubre: [AC:V9b:12](#ac-v9b-12)
-Fuente: [GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [FILA:V9b](#fila-v9b)
+Fuente: [GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [FILA:V9b](#fila-v9b), [BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)
+
+<a id="test-v9b-13"></a>
+**TEST:V9b:13** — Integración: el job de `V9b` encola los dos avisos previos de una ficha; al
+archivarla, el outbox tiene un solo *«al archivar»*, el de `PB4`/`PB5`, y el job no lo repite.
+Tipo: integración con DB
+Cubre: [AC:V9b:14](#ac-v9b-14)
+Fuente: [LISTA:V9b](#lista-v9b), [PLAZO:4](../02-nucleo.md#plazo-4), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
+
+<a id="test-v9b-14"></a>
+**TEST:V9b:14** — Chequeo estático sobre el diff de la rama de la Fase 1 contra la rama del corte:
+ningún archivo de `PB4` ni de `PB5` cambia.
+Tipo: guard estático
+Cubre: [AC:V9b:14](#ac-v9b-14), [AC:V9b:13](#ac-v9b-13)
+Fuente: [LISTA:V9b](#lista-v9b), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
+Mutación: agregar en la rama de la fase una línea al servicio de `PB4`; el chequeo falla y lo nombra.
 
 ## Smoke y etiquetas
 
@@ -429,16 +775,16 @@ Fuente: [GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [FILA:V9b](#fila-v9b)
 
 ## Abiertos
 
-- Quién engancha el aviso *«al archivar»*, que sale con el acto de archivar (`PB4`/`PB5`, de `V6`, al
-  corte) pero es uno de los tres avisos de `V9b` (Fase 1, aditiva).
-- Cómo se calcula *«la primera fecha en que un aviso de retención podría salir»* para el gate de la
-  Fase 1.
-- Anotados en `_trabajo/abiertos/g6-v5-v9.md`.
+N/A — los dos abiertos de la pieza los cerró el owner: el aviso *«al archivar»* lo encola `V6` y
+`V9b` suma los dos previos y su job ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)), y la fecha límite de la Fase 1 es el instante del corte +
+el plazo 1 − el plazo 4, con la versión 1 de los plazos ([BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)).
 
 ## Origen
 
-- `V/descomposicion.md` §2, fila `V9b` (l. 73); §3; §4, fila `V9b` (l. 717); §2.10, §2.11 y §2.14.
+- `V/descomposicion.md` §2, fila `V9b` (l. 73); §3; §4, fila `V9b` (l. 724); §2.10, §2.11 y §2.14.
 - `V/docs/03-maquinas-de-estado.md` §9 (`PB9`, l. 496); `V/docs/02-modelo-de-datos.md` §4.1–§4.2.
 - `NUCLEO/01` §1.2; `NUCLEO/02` §1.5 (plazos 2 y 4); `NUCLEO/07` §2, §4.1 y §6; `NUCLEO/08` §1.1 y §2.3.
 - `01-decision-log.md`: `DEC-DATA-005`, `DEC-DATA-001`, `DEC-ARCH-017`.
-- `16-fase-7-del-paraguas.md` §4.6 (l. 949) y §4.7 (*«Las fases posteriores»*, l. 1079–1111).
+- `16-fase-7-del-paraguas.md` §4.6 (l. 954) y §4.7 (*«Las fases posteriores»* y la fecha límite de
+  la Fase 1, l. 1171–1176).
+- `41-corte-del-mvp/10-decisiones-del-owner.md`: AC, BD, BL y BV (l. 23, 108, 137 y 147).
