@@ -238,7 +238,7 @@ que se lleva a la base:
 **`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL` sobre `covered_period`.**
 
 Un período de una suscripción admite **un solo pago acreditado**, y la base lo impide. El
-registro manual que llega segundo **falla**, no compite.
+registro manual que llega segundo ~~**falla**~~ **no escribe cobertura**, no compite: lo asienta `MP6` y abre `COBRO_DUPLICADO` (`03` §7; FASE 9 vuelta 3, owner 2026-09-30, lote W; residuo corregido el 2026-10-02).
 
 > ❌ **Reformulado el 2026-09-24, porque como estaba escrito NO era implementable.** Este § decía
 > *«`UNIQUE(subscription_id, período) WHERE el pago está acreditado`»* **sin decir sobre qué tabla**,
