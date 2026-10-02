@@ -132,12 +132,12 @@ def solo_citables_fallas(items_by_id, lista=None):
 #     that trazar.py R18 reports as warnings, never the ones AN demands per family. ----------------
 _VD, _BD, _D16 = V + 'descomposicion.md', B + 'descomposicion.md', D + '16-fase-7-del-paraguas.md'
 CREA_ESQUEMA = {
+    'U2': (_D16, '**y crea `domain_event` (`NUCLEO/02` §2.6), el registro de auditoría de `NUCLEO/08` §1'),
     'U1': (_VD, 'borra las columnas de pago de `partners`, sus FK y los tres crons de partner'),
     'V1': (_VD, '**y la tabla de claves de la base, que viaja en la migración como SQL generado'),
     'V2': (_D16, '`addon_version` es de verticales y la construye `V2`'),
     'V4': (_VD, 'ninguna tabla del trial tiene esas columnas'),
     'V6': (_D16, '| la postulación de Partner, el rol de socio y el bit de moderación de la presencia | `V7` | `V6` |'),
-    'V9a': (_D16, '- `domain_event` (`NUCLEO/02` §2.6): la crea **`V9a`**'),
     'B2': (_BD, '`billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan'),
     'B3': (_D16, '| la cola de cambios programados | `B8b` | `B3` |'),
     'B5': (_D16, '| la columna de `payment` que apunta a la instancia de addon, con la que `payment` nace | `B10` | `B5` |'),
