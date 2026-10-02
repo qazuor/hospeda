@@ -179,7 +179,7 @@ Se numeraron en esta descomposición **porque el `20` §2 no los nombraba**, y a
 *«si el `20` se reescribe, los absorbe»*. **Los absorbió**: desde la FASE 9-bis-4 las dos filas
 están en `20` §2 (`DEC-TEST-001`, *«y el catálogo estaba incompleto»*), así que **ya no viven
 fuera del catálogo que CI leería**. La tabla queda acá porque **es esta tabla la que les asigna
-unidad** —`G12` a `B1`, ~~`G13` a `B4`~~— y el catálogo cataloga, no reparte trabajo. **`G13` ya no es
+unidad** —`G12` a `B1`~~, `G13` a `B4`~~— y el catálogo cataloga, no reparte trabajo. **`G13` ya no es
 de esta épica**: lo construye `V4`, como dice el contrato §6.3, y su fila está en `V/20` §2 (owner
 2026-09-26, `G5-5`; la asignación la escribe `V/descomposicion.md` §2.3):
 
