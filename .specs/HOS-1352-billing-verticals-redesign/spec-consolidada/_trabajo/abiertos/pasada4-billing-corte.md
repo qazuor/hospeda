@@ -1,5 +1,9 @@
 # Abiertos de la pasada 4 · grupo billing-corte
 
+> **Resueltos el 2026-10-02 por el owner**: el 1 con **CF** (opción 1: el predicado y su test en el PR
+> de `B3`) y el 2 con **CG** (opción 1: la prueba de punta a punta de la baja en `B13a`). Ver
+> `41-corte-del-mvp/10-decisiones-del-owner.md`, lote CF y CG, y el undécimo 📌 de `DEC-ARCH-017`.
+
 Dos entradas. Las dos son de **orden de merge**: lo que la fuente manda construir en una pieza depende
 de algo que otra pieza, que se mergea después, crea. Las fuentes congeladas en `b949031c70` y las
 letras no dicen en qué PR entra.

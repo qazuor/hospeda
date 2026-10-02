@@ -54,7 +54,9 @@ Llama a la pasarela (⛔). Deja funcionando **la baja: `S11`, `S12`, `S23` y `S2
 cuyo estado de origen existe al corte**; la de una pausa, `S22`, queda en `B8b` (corte del MVP,
 owner 2026-10-01, Z y AR; `41-corte-del-mvp/00-propuesta.md` §1: *«la baja self-service es criterio
 de `B13`»*); **con sus ramas enteras sobre el esquema vacío**: la de los complementos (`R1-a`) y la
-de la sucesora que vive del crédito (`R17`), probadas con filas sembradas (AS).
+de la sucesora que vive del crédito (`R17`), probadas con filas sembradas (AS); **la prueba de punta a punta
+de la baja (`20` §5.1 punto 3) no es de esta pieza sino de [`B13a`](B13a.md#fila-b13a), que construye la pantalla;
+acá quedan sus pruebas de integración** (corte del MVP, owner 2026-10-02, CG).
 
 Capítulos: `03` §5, **S11–S12**, **S23–S24** · **`05` C2** (sobre `S11`, `S23` y `S24`: corte del
 MVP, owner 2026-10-01, AR y AS). Guards: ninguno.
@@ -307,28 +309,6 @@ Fuente: [PROH:B:2](../04-catalogos.md#proh-b-2) · [MOT:6](../04-catalogos.md#mo
 
 Fuente: [LISTA:B8a](#lista-b8a) · [LISTA:B8](#lista-b8) · [FILA:B8a](#fila-b8a) · [FILA:B8](#fila-b8) · [DEC-SUB-014](../01-decisiones-vigentes.md#dec-sub-014)
 
-<a id="ac-b8a-15"></a>
-**AC:B8a:15** — la cancelación (la baja), de punta a punta
-
-- **Dado** los builds de la API y la web contra el Mercado Pago falso como servidor, con el reloj
-  adelantable y el correo capturado
-- **Cuando** corre el flujo de la cancelación del `B/20` §5 en la parte de `B8` que es del corte: la baja
-  desde `ACTIVE` (`S11`) y, con el reloj adelantado hasta la fecha de fin, su `S12`; y las bajas directas
-  desde `GRACE_PERIOD` (`S24`) y desde `SUSPENDED` (`S23`)
-- **Entonces** se cumplen las aserciones sobre el contenido de las filas del `B/19` §4 que ese flujo
-  muestra y sobre el orden *«nuestro correo antes que el del proveedor»*: el correo capturado de cada
-  baja llega antes que la cancelación que registra el falso. Las bajas desde una pausa o desde una
-  sucesora son de [B8b](../20-fase-2/B8b.md#lista-b8b).
-
-Fuente: [DEC-TEST-003](../01-decisiones-vigentes.md#dec-test-003) · [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S12](../04-catalogos.md#trans-b-s12) · [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [FILA:B8a](#fila-b8a)
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762
-
-Derivado: la parte de `B8` que es del corte sale del reparto de [LISTA:B8a](#lista-b8a) (Z, AR); las
-pantallas de la baja son de [B13a](B13a.md#pieza-b13a), que espera a esta pieza (`B8a → B13a`), así que
-con qué superficie corre esta prueba al merge de `B8a` es un abierto
-(`_trabajo/abiertos/pasada4-billing-corte.md`).
-
 ### Los criterios de terminación de origen
 
 <a id="lista-b8"></a>
@@ -366,7 +346,7 @@ El criterio de la unidad de origen (corte del MVP, owner 2026-10-01, Z):
 
 La cláusula 8 es de `B8a`; las demás, de [B8b](../20-fase-2/B8b.md#lista-b8b).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1058
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062
 
 <a id="lista-b8a"></a>
 
@@ -382,7 +362,7 @@ de baja desde `GRACE_PERIOD` corta el servicio en el acto (`S24`, `DEC-SUB-014`)
 últimas cláusulas las derivó la fuente de las filas `S23` y `S24` de `03` §3.2, porque el criterio
 de `B8` no las nombraba; la fuente lo marca.)*
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1059
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063
 
 ## Reglas
 
@@ -414,22 +394,22 @@ Las reglas de esta pieza viven en los catálogos y se referencian, no se repiten
 <a id="tpz-s11"></a>
 **TPZ:S11** — `S11` → `B8a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:850
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854
 
 <a id="tpz-s12"></a>
 **TPZ:S12** — `S12` → `B8a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:851
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:855
 
 <a id="tpz-s23"></a>
 **TPZ:S23** — `S23` → `B8a` (AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:862
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:866
 
 <a id="tpz-s24"></a>
 **TPZ:S24** — `S24` → `B8a` (AR).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:863
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:867
 
 ## Modelo de datos y migraciones
 
@@ -507,7 +487,6 @@ UI»*, `B/19` §1). El acto administrativo lleva su permiso y su auditoría
 | [AC:B8a:12](#ac-b8a-12) | [TEST:B8a:12](#test-b8a-12) | integración con DB |
 | [AC:B8a:13](#ac-b8a-13) | [TEST:B8a:13](#test-b8a-13) | integración con DB |
 | [AC:B8a:14](#ac-b8a-14) | [TEST:B8a:14](#test-b8a-14), [TEST:B8a:3](#test-b8a-3), [TEST:B8a:8](#test-b8a-8), [TEST:B8a:9](#test-b8a-9) | migración desde cero, integración con DB |
-| [AC:B8a:15](#ac-b8a-15) | [TEST:B8a:15](#test-b8a-15) | e2e web |
 
 <a id="test-b8a-1"></a>
 **TEST:B8a:1** — `S11` con la fórmula de los cobros acreditados
@@ -684,20 +663,6 @@ Fuente: [FILA:B8a](#fila-b8a) · [FILA:B8](#fila-b8) · [DEC-SUB-014](../01-deci
 Sobre una base vacía migrada con las migraciones de la rama, las tablas que `B8a` escribe y las del
 modelo del complemento existen sin ninguna migración de `B8a`, y la suite de esta pieza corre
 completa sobre las filas sembradas.
-
-<a id="test-b8a-15"></a>
-**TEST:B8a:15** — la baja de punta a punta, contra los builds
-
-Tipo: e2e web
-
-Cubre: [AC:B8a:15](#ac-b8a-15)
-
-Fuente: [DEC-TEST-003](../01-decisiones-vigentes.md#dec-test-003) · [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24)
-
-Con el falso como servidor, el reloj adelantable y el correo capturado: una baja desde `ACTIVE` que
-llega a `CANCELLED` al adelantar el reloj hasta su fecha de fin, una desde `GRACE_PERIOD` y una desde
-`SUSPENDED`; en cada una el correo capturado llega antes que la cancelación que registra el falso, y lo
-que el flujo muestra coincide con las filas del `B/19` §4.
 
 ## Smoke y etiquetas
 

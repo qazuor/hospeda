@@ -506,7 +506,7 @@ letra posterior ya cerró va con quien lo cerró; no es un abierto.
   (declarado por `DEC-METH-015`, FASE 9 completa). *(La fuente es anterior a la partición de
   [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z) y no dice si sería `B13a` o `B13b`.)*
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:766, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1107, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1119, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1129, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1130, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1142
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:756, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:758, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:766, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1111, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1123, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1133, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1134, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1146
 
 ### 7.2 Lo que ya cerró una decisión o una letra posterior
 
@@ -529,7 +529,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
 - **Si cada unidad es un issue de Linear: cerrado por el momento 1** ([GATE:M1](30-el-corte.md#gate-m1);
   FASES 6 y 7, D-2): cada unidad pasa a `Done` en Linear al mergearse en la rama del paraguas, y las
   etiquetas de smoke van sólo en `HOS-1352`, *«si no, 25 issues quedan meses en In Review»*. El
-  árbol de Linear sale de esta spec (`D/41-corte-del-mvp/10-decisiones-del-owner.md:208`). *(Que el
+  árbol de Linear sale de esta spec (`D/41-corte-del-mvp/10-decisiones-del-owner.md:218`). *(Que el
   momento 1 cierre esta pregunta es inferido de su texto.)*
 - **De qué unidad es `B/21`** (declarado por `DEC-METH-015`, FASE 9 completa): **de una, y sólo por
   una escritura del corte** —la lápida del corte salió (FASE 5, simplificación del corte, S-40)—: los
@@ -540,7 +540,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:
   [30-el-corte.md](30-el-corte.md), que reparte sus herramientas: los dos `permanent_grant` del
   [paso 3b](30-el-corte.md#paso-3b) a `B9a`.
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1109, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1114, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1121, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1133, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:760, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1113, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1118, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1125, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1137, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031
 
 ## 8. Abiertos de la redacción
 
