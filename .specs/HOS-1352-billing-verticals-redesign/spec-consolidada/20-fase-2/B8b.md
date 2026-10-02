@@ -318,9 +318,12 @@ Fuente: [LISTA:B8b](#lista-b8b) · [FILA:B8b](#fila-b8b)
   conservar del excedente, **vacía la cola** y emite el aviso de cobertura después del commit; no
   toca al proveedor; si la fecha coincide con la apertura de una cuota manual (`MP5`), `S38` corre
   antes; una fila pausada o suspendida espera; y en un pagador con tarjeta suspendido que vuelve como
-  sucesora el cambio muere con la fila vieja.
+  sucesora el cambio muere con la fila vieja. **Y con el motivo *«aumento»*** —el cambio de versión que
+  encola `S37` para un aumento de precio a un cliente anclado, que usa
+  [B12](../20-fase-3/B12.md#ac-b12-9)— **cambia la versión en la fecha de aplicación del plazo 11, sin
+  la cohorte `PARA_RESOLVER` y con la promo viva conservada** (corte del MVP, owner 2026-10-02, BZ).
 
-Fuente: [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [TPZ:S38](#tpz-s38) · [DEC-SUB-008#📌2](../01-decisiones-vigentes.md#dec-sub-008-p2)
+Fuente: [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [TPZ:S38](#tpz-s38) · [DEC-SUB-008#📌2](../01-decisiones-vigentes.md#dec-sub-008-p2) · [DEC-MP-002#📌3](../01-decisiones-vigentes.md#dec-mp-002-p3)
 
 <a id="ac-b8b-16"></a>
 **AC:B8b:16** — a lo sumo un cambio programado, y las cuatro colisiones
@@ -541,9 +544,9 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:858
 
 <a id="tpz-s38"></a>
-**TPZ:S38** — `S38` → `B8b`.
+**TPZ:S38** — `S38` → `B8b`, **también con el motivo *«aumento»*, que usa `B12`** (BZ).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:860
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:865
 
 *(Que `TPZ:S9` se construya repartida —el segundo disparador acá, el primero en `B9b`— lo leo de las
 filas: `B8b` es el cierre de la sucesión y `B9b` las cortesías; la tabla de la fuente sólo dice
@@ -878,7 +881,9 @@ Fuente: [TRANS:B:S38](../04-catalogos.md#trans-b-s38) · [DEC-SUB-008#📌2](../
 
 En `ACTIVE` y `GRACE_PERIOD` se aplica en la fecha; en `PAUSED` y `SUSPENDED` espera; vuelta por `S7`
 a `CANCEL_SCHEDULED` se aplica; con una cuota manual del mismo día, la cuota nace con la versión
-destino.
+destino. Con un cambio sembrado con el motivo *«aumento»* y una promo viva en la fila, en su fecha
+del plazo 11 la fila pasa a la versión nueva, sigue sin cohorte `PARA_RESOLVER` y la promo sigue con
+sus `cobros_restantes`.
 
 <a id="test-b8b-16"></a>
 **TEST:B8b:16** — las colisiones
@@ -1014,10 +1019,11 @@ cambio no se ofrece y la pantalla dice por qué y qué hacer.
 ## Smoke y etiquetas
 
 Sin etiquetas en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)). Lo manual de la fase —el checkout
-real de un upgrade, el correo del proveedor al cancelar la vieja— entra en **la extensión del
-checklist de smoke de la Fase 2**: la parte de `staging` antes del merge y un 5c propio en
-producción ([GATE:FP.2](../30-el-corte.md#gate-fp-2)). Quién escribe esa extensión no lo dice la
-fuente: ver [abiertos](../_trabajo/abiertos/g9-b8-b13.md).
+real de un upgrade, el correo del proveedor al cancelar la vieja— entra en **la sección de la Fase 2
+del checklist de smoke**: la parte de `staging` antes del merge y un 5c propio en producción
+([GATE:FP.2](../30-el-corte.md#gate-fp-2)). **Esa sección la escribe esta pieza, con lo suyo y con el
+formato de [B13a](../10-corte/B13a.md#ac-b13a-14)** —en `docs/billing/`, en dos partes, la de `staging`
+y la de producción—, porque cada pieza posterior escribe la sección de su fase (BS, [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)).
 
 ## Dependencias, rollback y despliegue
 
@@ -1036,9 +1042,11 @@ Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-sm
 
 ## Abiertos
 
-- «Quién escribe la extensión del checklist de cada fase», en
-  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md). Las filas del `B/19` §4 las repartió BH (el
-  reparto por fila, inferido en la fuente); las rutas, los códigos y los textos, BS.
+- Ninguno. «Quién escribe la extensión del checklist de cada fase» lo cerró BS con los defaults de su
+  opción 1 ([DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)): cada pieza posterior escribe la sección de su fase, con el formato de `B13a` (ver
+  *Smoke y etiquetas*). El motivo *«aumento»* de `S38` lo fijó BZ
+  ([DEC-MP-002#📌3](../01-decisiones-vigentes.md#dec-mp-002-p3)). Las filas del `B/19` §4 las
+  repartió BH (el reparto por fila, inferido en la fuente); las rutas, los códigos y los textos, BS.
 
 ## Origen
 

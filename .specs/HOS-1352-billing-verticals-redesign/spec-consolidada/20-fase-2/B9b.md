@@ -619,9 +619,10 @@ permiso, el acto deja su registro de auditoría.
 
 Sin etiquetas en la pieza ([GATE:M1](../30-el-corte.md#gate-m1)). Lo manual de la fase —el correo
 del proveedor al mutar un monto (`CT-3`), al pausar por una cortesía y al reanudar por una
-revocación— entra en la extensión del checklist de la Fase 2
-([GATE:FP.2](../30-el-corte.md#gate-fp-2)); quién la escribe, ver
-[abiertos](../_trabajo/abiertos/g9-b8-b13.md).
+revocación— entra en la sección de la Fase 2 del checklist de smoke
+([GATE:FP.2](../30-el-corte.md#gate-fp-2)). **Esta pieza escribe en esa sección lo suyo, con el
+formato de [B13a](../10-corte/B13a.md#ac-b13a-14)** —en `docs/billing/`, la parte de `staging` y la de
+producción—, porque cada pieza posterior escribe la sección de su fase (BS, [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)).
 
 ## Dependencias, rollback y despliegue
 
@@ -638,8 +639,9 @@ Pasa a `Done` al mergearse en la rama de su fase; sin etiquetas `status-needs-sm
 
 ## Abiertos
 
-- «Quién escribe la extensión del checklist de cada fase», en
-  [abiertos de g9](../_trabajo/abiertos/g9-b8-b13.md). La revocación de una cortesía la cerró BO; las
+- Ninguno. «Quién escribe la extensión del checklist de cada fase» lo cerró BS con los defaults de su
+  opción 1 ([DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5)): cada pieza posterior escribe la sección de su fase, con el formato de `B13a` (ver
+  *Smoke y etiquetas*). La revocación de una cortesía la cerró BO; las
   filas del `B/19` §4, BH (el reparto por fila, inferido en la fuente); las rutas, los códigos y los
   textos, BS.
 
