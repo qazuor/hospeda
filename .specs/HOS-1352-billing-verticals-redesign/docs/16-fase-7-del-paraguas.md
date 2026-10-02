@@ -1123,8 +1123,10 @@ sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la e
 30 días** (E).
 
 **Los precios, congelados hasta este momento** (corte del MVP, owner 2026-10-02, BM, con su
-aclaración): **los precios del corte son los vigentes hoy**; los carga el paso 3a con el catálogo y
-no se cambian durante el corte. **Ningún precio cambia hasta que el momento 5 esté cumplido**: la
+aclaración): **los precios del corte son los vigentes hoy**; los carga ~~el paso 3a~~ **la migración estructural del
+paso 3** con el catálogo **y los verifica el 3a**, como dice la tabla de pasos (residuo de la
+aplicación de BM frente a la fila del 3a; verificación ciega, vuelta 3, `H3-VB14-5`; corregido el
+2026-10-02), y no se cambian durante el corte. **Ningún precio cambia hasta que el momento 5 esté cumplido**: la
 épica mergeada, desplegada, smokeada y estable en producción. Es una **condición operativa**, no
 un control del código: la acción 19, *«fijar el precio de un ciclo»*, existe desde `B2` con su
 mecánica (sobre una versión sin clientes fija el precio; sobre una con clientes se publica una
