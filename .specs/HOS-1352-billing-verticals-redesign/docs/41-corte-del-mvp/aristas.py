@@ -64,7 +64,9 @@ despues = {p for p, c in piezas.items() if c == 'después'}
 CRUZADAS = [('V2', 'B2', '1'), ('V4', 'B4', '2'), ('V2', 'B7', '3'), ('V2', 'B8b', '4'),
             ('V2', 'B8b', '5'), ('V2', 'B12', '6'), ('V2', 'B3', '7'), ('V6', 'B10', '9'),
             ('V2', 'B10', '9'), ('V4', 'B9b', '10'), ('V6', 'B10', '11'), ('V9b', 'B10', '11'),
-            ('V2', 'B9a', '12'), ('B1', 'V4', '14')]
+            ('V2', 'B9a', '12'), ('B1', 'V4', '14'),
+            # BC (owner 2026-10-01): action 6 of V7 runs on B5's manual payment; row 15, residue 2026-10-02
+            ('B5', 'V7', '15')]
 filas = tabla(seccion(B, r'^### 2\.6 '), r'^\| # \| quién lee \|')
 vivas, tachadas = {}, []
 for f in filas:
