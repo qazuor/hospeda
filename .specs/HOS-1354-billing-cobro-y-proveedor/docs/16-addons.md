@@ -124,8 +124,11 @@ exactamente una de las dos es no nula.
 >   reenviar (`B/03` §8);
 > - **la orden que se paga después de que `A3` abandonó la ve la comprobación de órdenes pagadas**
 >   del barrido, que la busca por el id guardado y, sin id, por el identificador del pedido que
->   la orden lleva como referencia (`B/09` §3), si el proveedor permite esa búsqueda (~~propuesto a
->   la matriz~~ `EX-57`); si no la permite, ese caso queda sin detector y declarado (*«lo que este capítulo
+>   la orden lleva como referencia (`B/09` §3), ~~si el proveedor permite esa búsqueda~~ **que el
+>   proveedor permite** (~~propuesto a
+>   la matriz~~ `EX-57`, **`VERIFIED` el 2026-09-30, en sandbox y con ventana**; residuo corregido el
+>   2026-10-02); ~~si no la permite, ese caso queda sin detector y declarado~~ **lo que la medición
+>   no cubrió queda declarado** (*«lo que este capítulo
 >   NO cierra»*).
 >
 > **El costo, dicho**: quien perdió la respuesta no puede volver a comprar ese producto para ese
@@ -1083,8 +1086,12 @@ colgando de una instancia terminal. (Las comprobaciones son **seis** desde `DEC-
   está medido sólo en sandbox** (`EX-30`).
 - **La orden pagada cuya instancia `A3` abandonó sin id sólo se ve si el proveedor deja buscar una
   orden por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E). La medición
-  ~~está propuesta a la matriz~~ es `EX-57`, `UNKNOWN`; **si da que no se puede, ese caso queda sin detector**: la persona
-  pagó, no recibió el addon y ninguna marca propone devolverle, hasta que reclame. Exige una
+  ~~está propuesta a la matriz~~ es `EX-57`, ~~`UNKNOWN`; **si da que no se puede, ese caso queda sin detector**: la persona
+  pagó, no recibió el addon y ninguna marca propone devolverle, hasta que reclame.~~ **`VERIFIED`
+  desde el 2026-09-30, en sandbox y con ventana: la compra sin id de orden tiene detector** (`B/09`
+  §3; residuo corregido el 2026-10-02). **Lo que queda abierto** es lo que la medición no cubrió:
+  producción, que se lee sin mutar con la referencia de la primera orden real, y un pedido de más
+  de 30 días, el rango máximo de la búsqueda (matriz, `EX-57`). Exige una
   respuesta perdida y un proveedor que igual creó y cobró la orden.
 - ~~**Dos instancias `ACTIVE` del mismo addon recurrente sobre el mismo objetivo, compradas una
   después de que la otra se resolvió**, no las frena la identidad de la compra, que mira sólo las
