@@ -2,7 +2,7 @@
 
 Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah)).
 
-**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`c7a3fac900`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
+**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`e291df0b5b`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
 
 Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas.
 
@@ -1505,14 +1505,14 @@ empezar.
 ### `TRANS:B:S1` · `S1` — *(sin fila)* → `PENDING_AUTHORIZATION`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:832`
+- **Fuente de la asignación**: `B/descomposicion.md:837`
 - **Adjudicación** (`adjudicacion.json`): VIVO — la guarda `admiteAltas` está tachada y anotada; lo tachado de la fila se omite y lo vigente va entero.
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S1](10-corte/B3.md#tpz-s1) → [B3](10-corte/B3.md#pieza-b3) — nota de la fuente: «la rama de sucesión, sin ruta hasta `B8b` (Z): `B3` la escribe entera y `B8b` agrega la ruta (BL)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): *(sin fila)*
 - **evento** (disparador): la persona elige un plan
 - **hacia** (estado destino): `PENDING_AUTHORIZATION`
-- **condición** (guardas): (La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.) **La versión elegida es vigente y vendible** —`políticaDePlan(versión).vigente` y `.vendible`, contrato §4.1—, para el alta nueva Y para la sucesión: la pricing sólo muestra lo vendible (`B/19` §2), pero un link guardado al checkout de un plan retirado llegaba igual, y la persona ve *«este plan ya no está a la venta»* con los vigentes al lado (FASE 9 vuelta 1, `N-G4V-07`: la gemela de `admiteAltas`, que tenía superficie y guarda; ésta tenía sólo superficie; `admiteAltas` salió, ésta queda). **Y** no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`). **Y si declara una sucesión sobre una predecesora `ACTIVE` de pagador con tarjeta, el preapproval de la predecesora se relee por id antes de aceptar el cambio y tiene que estar `authorized`**: si no lo está —p. ej. `paused` por una mora cuyo webhook no nos llegó—, **el cambio no se ofrece** (*«tu último cobro no entró, actualizá tu tarjeta»*, el camino de `DEC-SUB-021`; `B/19` §4 fila 17-ter) **y la relectura corre la transición que corresponda por la tabla del §10.1** —sobre `paused`, `S6` por su segundo evento— (FASE 8 completa, owner 2026-09-25). **Las otras dos predecesoras admitidas no pasan por esta relectura**: la `CANCEL_SCHEDULED` tiene el preapproval ya cancelado por `S11`, y la `SUSPENDED` de tarjeta tiene su propia relectura, que exige `cancelled` (`G-R1-A`, `B/20` §2). **Y no hay, para ese `user + vertical`, una fila `CHARGE_DECLINED` cuyo preapproval no se haya releído `cancelled`.** Si la hay, `S1` lo relee por id en el acto: si lo ve `cancelled`, sigue; si no, corre la cancelación con la regla de relectura de `S17` y el correo antes, y **el alta no se admite en esta llamada** (*«estamos cerrando tu intento anterior; probá de nuevo en unos minutos»*). Sin esto el alta nueva convivía con un preapproval que el proveedor podía seguir reciclando, y `GR-1` midió que actualizar el medio de pago lo cobra en minutos (FASE 9 vuelta 1, `F-8V1B1-003`)
+- **condición** (guardas): (La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.) **La versión elegida es vigente y vendible** —`políticaDePlan(versión).vigente` y `.vendible`, contrato §4.1—, para el alta nueva Y para la sucesión: la pricing sólo muestra lo vendible (`B/19` §2), pero un link guardado al checkout de un plan retirado llegaba igual, y la persona ve *«este plan ya no está a la venta»* con los vigentes al lado (FASE 9 vuelta 1, `N-G4V-07`: la gemela de `admiteAltas`, que tenía superficie y guarda; ésta tenía sólo superficie; `admiteAltas` salió, ésta queda). **Y** no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`). **Y si declara una sucesión sobre una predecesora `ACTIVE` de pagador con tarjeta, el preapproval de la predecesora se relee por id antes de aceptar el cambio y tiene que estar `authorized`**: si no lo está —p. ej. `paused` por una mora cuyo webhook no nos llegó—, **el cambio no se ofrece** (*«tu último cobro no entró, actualizá tu tarjeta»*, el camino de `DEC-SUB-021`; `B/19` §4 fila 17-ter) **y la relectura corre la transición que corresponda por la tabla del §10.1** —sobre `paused`, `S6` por su segundo evento— (FASE 8 completa, owner 2026-09-25). **Las otras dos predecesoras admitidas no pasan por esta relectura**: la `CANCEL_SCHEDULED` tiene el preapproval ya cancelado por `S11`, y la `SUSPENDED` de tarjeta tiene su propia relectura, que exige `cancelled` (`G-R1-A`, `B/20` §2). **Y no hay, para ese `user + vertical`, una fila `CHARGE_DECLINED` cuyo preapproval no se haya releído `cancelled`.** Si la hay, `S1` lo relee por id en el acto: si lo ve `cancelled`, sigue; si no, corre la cancelación con la regla de relectura de `S17` y el correo antes, y **el alta no se admite en esta llamada** (*«estamos cerrando tu intento anterior; probá de nuevo en unos minutos»*). Sin esto el alta nueva convivía con un preapproval que el proveedor podía seguir reciclando, y `GR-1` midió que actualizar el medio de pago lo cobra en minutos (FASE 9 vuelta 1, `F-8V1B1-003`). **Y, si compra Turista VIP, el `user` no tiene un plan vigente que lo herede** (`DEC-ENT-003`; corte del MVP, owner 2026-10-01, BJ: el código de error del rechazo queda abierto; residuo corregido el 2026-10-02)
 - **efectos** (efectos): se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización** (`B/12` §5.2). **Y si es de pagador manual, acá se abre su PRIMERA cuota** —la cláusula *(b)* de `MP5` (§7)—, que es el espejo del primer cobro que en un pagador con tarjeta ocurre antes de `S2`: tiene que estar registrada para que la fila llegue a `ACTIVE`, así que abrirla es parte del alta y no del reloj
 
 **Texto de la fuente — «3. Suscripción»** (`B/03-maquinas-de-estado.md:21–45`, sin lo tachado):
@@ -2162,7 +2162,7 @@ tercero no los ejecutaba nadie (contradicciones 4 y 5 de `03` §R4.5; `S34` y `S
 no les queda título sin pausar en otra vertical compatible, por los mismos meses (`S32`), y se
 reanudan con ella (`S33`). Una pausa por cortesía no los toca, porque la cortesía emite título.
 
-**Texto de la fuente — «10. La regla de no-retroceso · cierra `M-CONC-02`»** (`B/03-maquinas-de-estado.md:2688–2712`, sin lo tachado):
+**Texto de la fuente — «10. La regla de no-retroceso · cierra `M-CONC-02`»** (`B/03-maquinas-de-estado.md:2689–2713`, sin lo tachado):
 
 El §51 nombra *«out-of-order»* entre los escenarios a cubrir y el §64.18 dice que *«MP gobierna
 hechos ocurridos en MP»*.
@@ -2185,7 +2185,7 @@ relectura trae es **`last_modified`**, y eso es lo que el barrido compara (`B/09
 completa, `F-8CB3-010`). Que mutar el monto salte el contador sigue medido (`EX-15`), pero **ese
 salto sólo se ve en un webhook, y la mutación no emite ninguno**.
 
-**Texto de la fuente — «10.1 Un webhook no es un estado: es un aviso»** (`B/03-maquinas-de-estado.md:2713–2746`, sin lo tachado):
+**Texto de la fuente — «10.1 Un webhook no es un estado: es un aviso»** (`B/03-maquinas-de-estado.md:2714–2747`, sin lo tachado):
 
 **Nunca se escribe el estado que trae el evento.** Al recibirlo, si su `version` no es mayor que
 la última aplicada para ese recurso se descarta ahí mismo; si lo es, se **relee el recurso por su
@@ -2219,7 +2219,7 @@ devuelve un subconjunto plausible.
 Con esto, dos webhooks que lleguen al revés producen **el mismo resultado**: los dos releen y los
 dos escriben el estado actual. No hay retroceso posible porque el evento nunca es la fuente.
 
-**Texto de la fuente — «Qué se escribe, par por par — espejar es una transición declarada»** (`B/03-maquinas-de-estado.md:2747–2799`, sin lo tachado):
+**Texto de la fuente — «Qué se escribe, par por par — espejar es una transición declarada»** (`B/03-maquinas-de-estado.md:2748–2800`, sin lo tachado):
 
 *«Se escribe lo leído»* y *«lo que la tabla no declara no se escribe, se marca»* (`NUCLEO/03` §1,
 regla 1) **gobiernan el mismo acto y daban resultados opuestos**. Como la tabla del §3.2 sólo
@@ -2272,7 +2272,7 @@ proveedor canceló tras un rechazo y revivió dentro de la ventana (FASE 9 vuelt
 2026-09-30, lote U, recontadas sobre la tabla)— y deja
 escrito **por qué cada caso cayó donde cayó**.
 
-**Texto de la fuente — «10.2 Los hechos puntuales sí necesitan orden, y lo toman del hecho»** (`B/03-maquinas-de-estado.md:2800–2831`, sin lo tachado):
+**Texto de la fuente — «10.2 Los hechos puntuales sí necesitan orden, y lo toman del hecho»** (`B/03-maquinas-de-estado.md:2801–2832`, sin lo tachado):
 
 Un cobro no es un estado: es algo que pasó en un instante, y la relectura del preapproval no lo
 refleja campo a campo. Para esos:
@@ -2304,13 +2304,13 @@ comprobación de pagos acreditados del barrido (`B/09` §3), **que relee tambié
 `CHARGED_BACK` hasta que su `status_detail` se resuelva** —`settled` o `reimbursed`— (FASE 8
 completa, owner 2026-09-25).
 
-**Texto de la fuente — «10.3 La escritura local usa concurrencia optimista»** (`B/03-maquinas-de-estado.md:2832–2837`, sin lo tachado):
+**Texto de la fuente — «10.3 La escritura local usa concurrencia optimista»** (`B/03-maquinas-de-estado.md:2833–2838`, sin lo tachado):
 
 Entre la relectura y la escritura puede entrar otra. Cada fila con estado lleva una **versión**,
 y una escritura que no coincide **no reintenta a ciegas**: vuelve a leer y reevalúa la
 transición contra la tabla. Si la transición ya no corresponde, no se ejecuta.
 
-**Texto de la fuente — «10.4 Lo que esta regla NO cubre»** (`B/03-maquinas-de-estado.md:2838–2847`, sin lo tachado):
+**Texto de la fuente — «10.4 Lo que esta regla NO cubre»** (`B/03-maquinas-de-estado.md:2839–2848`, sin lo tachado):
 
 **Un cambio que el proveedor acepta y no aplica.** Está medido nueve veces, y el caso más caro es
 la mutación de monto: **no emite webhook** (`EX-15`), así que no hay nada que releer porque nada
@@ -2318,7 +2318,7 @@ avisa. La defensa no es esta regla sino la del capítulo 06: **toda mutación se
 releyendo y comparando campo por campo cada campo que se mandó**, porque está medido que un
 `PUT` con varios campos **se aplica a medias con un solo `200`** (`EX-20`).
 
-**Texto de la fuente — «Lo que esta mitad NO cierra»** (`B/03-maquinas-de-estado.md:2848–3062`, sin lo tachado):
+**Texto de la fuente — «Lo que esta mitad NO cierra»** (`B/03-maquinas-de-estado.md:2849–3063`, sin lo tachado):
 
 - **`S10` deja volver antes cuando la persona quiera, y eso regala hasta un ciclo: se acepta y se
   declara** (owner 2026-09-26, `G5-3`, contra la recomendación de volver en el aniversario mensual;
@@ -2480,14 +2480,14 @@ releyendo y comparando campo por campo cada campo que se mandó**, porque está 
   cuota**: `MP6` no tiene período con qué chocar y no corre, así que también se devuelve por fuera.
   Exige una transferencia a una suscripción que nunca llegó a cobrar.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:832, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:21, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:46, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:285, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:377, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:886, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1016, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1520, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1589, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1656, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2688, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2713, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2747, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2800, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2832, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2838, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2848
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:837, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:21, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:46, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:285, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:377, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:886, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1016, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1520, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1589, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1656, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2689, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2714, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2748, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2801, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2833, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2839, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2849
 
 <a id="trans-b-s2"></a>
 
 ### `TRANS:B:S2` · `S2` — `PENDING_AUTHORIZATION` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:833`
+- **Fuente de la asignación**: `B/descomposicion.md:838`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S2](10-corte/B3.md#tpz-s2) → [B3](10-corte/B3.md#pieza-b3) — nota de la fuente: «con la cláusula que cancela el Turista VIP heredado (BP)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PENDING_AUTHORIZATION`
@@ -2496,14 +2496,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): arranca el período; la fila **pasa a emitir fuente** (`12-contrato…` §2.6) **con `cobrada: no`, así que todavía no mueve el trial: lo mueve el primer pago acreditado de la fila, que pasa `cobrada` a `sí` y lleva su propio aviso** (`12-contrato…` §2.1 y §3; `V/03` §2, `T2`; `DEC-TRIAL-010`, owner 2026-09-25) — esta tabla **no dispara** una transición de la otra épica (sale con `S25`: revisión del owner, 2026-09-28, C8): sobre un plan que no es mensual no hay cortesía temporal (la regla es *«sólo mensual»*, `B/14` §4.7; FASE 9 completa, contradicción 1 de `03` §R4.5: el cierre decía *«anual»* y dejaba pasar el trimestral y el semestral), y la persona lo supo en el checkout (`B/19` §4 fila 13-quater) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25); **y si el `user` paga una suscripción de Turista VIP y el plan que pasa a `ACTIVE` lo hereda, la cancela en el mismo acto, sin reembolso, con el correo antes**: es acá y no en `S1`, porque recién ahora el plan da el beneficio y el servicio no se interrumpe; si la ventana vence (`S3`), el VIP sigue (`DEC-ENT-004`; corte del MVP, owner 2026-10-02, BP; construye `B3`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:152, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:833
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:152, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:838
 
 <a id="trans-b-s3"></a>
 
 ### `TRANS:B:S3` · `S3` — `PENDING_AUTHORIZATION` → `ABANDONED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:834`
+- **Fuente de la asignación**: `B/descomposicion.md:839`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S3](10-corte/B3.md#tpz-s3) → [B3](10-corte/B3.md#pieza-b3)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PENDING_AUTHORIZATION`
@@ -2626,14 +2626,14 @@ cancelación fallida. `PA-5` mide que re-cancelar da `400`, así que mandarlo ot
 camino normal en un incidente garantizado. `D7` pide que la vieja **no se cancele antes**; sobre
 una ya cancelada por decisión de la persona, `D7` está cumplido y no hay nada que mandar.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:153, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:834, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:568
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:153, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:839, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:568
 
 <a id="trans-b-s4"></a>
 
 ### `TRANS:B:S4` · `S4` — `ACTIVE` → `GRACE_PERIOD`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:835`
+- **Fuente de la asignación**: `B/descomposicion.md:840`
 - **Adjudicación** (`adjudicacion.json`): VIVO — reemplazo explícito; lo tachado de la fila se omite y lo vigente va entero.
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S4](10-corte/B7.md#tpz-s4) → [B7](10-corte/B7.md#pieza-b7)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
@@ -2643,14 +2643,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **la fila tiene al menos un pago acreditado** (`B/09` §4; en un pagador manual lo cumple toda fila `ACTIVE`, porque `S29` sólo llega ahí con la primera cuota registrada) — **o es la sucesora de una predecesora que venía pagando** —la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, no desde `SUSPENDED`, y la predecesora tiene al menos un pago acreditado; se lee por el `sucede_a` de esta fila o, cerrada ya la sucesión por `S18`, por el `sucedida_por` de la predecesora—, **y éste es su primer cobro** (owner 2026-09-25; FASE 9 completa, 3c, **contra la recomendación**: que quien venía pagando no quede sin nada por el primer cobro fallido del plan nuevo). **Sobre una autorización sin ningún pago acreditado y sin esa predecesora manda `S16`**, no esta fila (abajo, *«el primer rechazo lo reclamaban tres filas»*; FASE 8 completa, `F-8CB2-006`, `F-8CB1-010`)
 - **efectos** (efectos): arranca el reloj del §4; el servicio **sigue entero** (§20). **Y si entró por la rama de la sucesora**, el barrido relee su preapproval por id en cada corrida diaria (`D17`, `B/09` §3): si el proveedor lo **canceló** o lo **pausó**, el grace termina en el acto por `S6` (su segundo evento sobre `paused`, o el quinto sobre `cancelled`) —un grace sobre una autorización que ya no puede cobrar es el que `PA-6` teme—, **con la misma forma que `DEC-MP-008`**. Así el riesgo de `PA-6` queda acotado a un día
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:154, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:835
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:154, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:840
 
 <a id="trans-b-s5"></a>
 
 ### `TRANS:B:S5` · `S5` — `GRACE_PERIOD` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:836`
+- **Fuente de la asignación**: `B/descomposicion.md:841`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S5](10-corte/B7.md#tpz-s5) → [B7](10-corte/B7.md#pieza-b7)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `GRACE_PERIOD`
@@ -2880,14 +2880,14 @@ predecesora sigue en `GRACE_PERIOD`, que **emite fuente** con `hasta: SIN_FECHA_
 consumarse, el pago pendiente se reevalúa y **entonces sí** reactiva, por `S5` o `S7`, con la
 condición 3 ya cumplida — el camino entero está en `B/12` §5.3.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:155, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:836, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:306
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:155, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:841, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:306
 
 <a id="trans-b-s6"></a>
 
 ### `TRANS:B:S6` · `S6`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:837`
+- **Fuente de la asignación**: `B/descomposicion.md:842`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S6](10-corte/B7.md#tpz-s6) → [B7](10-corte/B7.md#pieza-b7)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `GRACE_PERIOD` — **o `ACTIVE`, sólo por el segundo o el tercer evento** — **o `PAUSED` con motivo `COURTESY`, sólo por el tercer evento**: la cortesía da servicio, así que un contracargo la corta (FASE 8 completa, pendiente 8, owner 2026-09-25). **La `PAUSED` con motivo `CUSTOMER_REQUEST` no entra**: sigue con sólo la marca (§6, `P6`)
@@ -2896,14 +2896,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **no hay un pago acreditado del período pendiente de resolución** por `S19` — **y, en un pagador con tarjeta, la relectura en el proveedor no muestra un cobro acreditado del período** (un pagador manual no tiene preapproval: su cobro es la cuota, y `MP2` ya lo resuelve un admin), hecha **con la lectura del `B/09` §4 y ninguna otra**. Si lo muestra, el webhook se perdió o llegó tarde: **`S6` no ocurre** y lo que corre es `S5`, con sus condiciones **—sobre una fila `ACTIVE`, que no tiene grace que apagar, lo que corre es `P1` sobre ese cobro, creando la fila de `payment` si no existe, con la misma regla de asiento de `S5`** (FASE 9 vuelta 1, `F-8V1B2-009`)—, **y `S5` asienta ese cobro en el mismo acto** (ver `S5`; FASE 8 completa, pendiente 6, owner 2026-09-25). **Si la lectura falla —o contesta *«todavía no se sabe»*, que es lo que el §4 del `B/09` devuelve cuando el inventario de intentos no está completo—, `S6` no ocurre en esta corrida** y se reintenta en la siguiente, como `S17` (`B/09` §3); **si en la corrida siguiente sigue sin saberse, se avisa** por el canal de `DEC-OBS-001`, (`B/09` §6, punto 2, owner 2026-09-24), **y a los 3 días del `date_created` del registro de cobro el barrido abre la marca con motivo `COBRO_DEL_PERÍODO_SIN_RESOLVER`** (`B/02` §2.5, motivo 21), que entra al listado accionable y escala por `puesta_en`; `S6` sigue sin correr hasta que una persona resuelva por `S15` (owner 2026-09-25; FASE 9 completa, 3d, `F-8CB3-004`). **El cuarto evento no pasa por esta lectura** (un pagador manual no tiene preapproval). **Y por cualquiera de los dos primeros eventos —y por el cuarto y el quinto; no por el tercero, abajo—, `S6` no ocurre mientras la fila sea la predecesora de una sucesión en curso** —una sucesora viva apuntándola— (owner, 2026-09-24): si la sucesión se consuma, `S17` la cancela como siempre, y si la sucesora muere, `S6` corre en la corrida siguiente; por el segundo evento, además, el preapproval pausado ya no cobra. **La protección dura una sola ventana por construcción, y ya no hace falta un límite que lo diga**: la redeclaración que ese límite frenaba salía de una fila en `GRACE_PERIOD`, y desde `GRACE_PERIOD` ya no se declara una sucesión (`DEC-SUB-021`, owner 2026-09-25; `G-R1-A`). **Lo que sigue vigente** es la protección misma, para la sucesión declarada en `ACTIVE` cuya predecesora entra en el grace **durante** la ventana (`S4`, fila 11 del recorrido de abajo): `S6` no la suspende mientras la sucesión siga en curso, y si la sucesora muere, corre en la corrida siguiente — y como la fila ya está en `GRACE_PERIOD`, no hay una segunda sucesión que la vuelva a frenar (§4). **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: **por el segundo evento sobre una fila todavía `ACTIVE` la declaración nueva ya no se acepta**: `S1` relee por id el preapproval de una predecesora `ACTIVE` de tarjeta y exige `authorized`; sobre `paused` el cambio no se ofrece y la relectura corre este `S6` por su segundo evento (§3.2, `S1`). **Por el tercer evento no corren las guardas del impago** —*«¿cobró el período?»* y el pago retenido por `S19`—: el cobro existió y lo que se lee es que el banco lo revirtió, y `DEC-SUB-020` lo decidió *«en el acto, sin grace»*. **Cerrado el 2026-09-25 (owner)**: **por el tercer evento tampoco corre la guarda de la sucesión en curso**: si la fila es la predecesora de una sucesión en curso, **`S6` ocurre igual** —un contracargo es una disputa, no una mora que el cambio de plan resuelva— **y la sucesora también se corta** (`DEC-SUB-020`, su 📌; FASE 8 completa, pendiente 6, owner 2026-09-25). **Cerrado el 2026-09-25 (owner)**: **la sucesora la corta `S31`** (§3.2), una transición propia (FASE 8 completa, pendiente 8, owner 2026-09-25)
 - **efectos** (efectos): §21: sin listado público, sin edición, sin creación, sin entitlements comerciales; datos conservados y billing accesible. **Y en un pagador con tarjeta, se cancela el preapproval en el proveedor en el mismo acto**, con la regla de relectura de `S17` (`DEC-SUB-019`): la suspensión corta **el cobro**, no sólo el servicio, así que ningún reintento del proveedor cobra después un mes entero sobre una fila suspendida. **Si la cancelación falla, `S6` no ocurre en esta corrida** y la fila sigue donde estaba — `GRACE_PERIOD`, o `ACTIVE` por el segundo evento, **o `PAUSED` por el tercero sobre una cortesía** (pendiente 8). **Desde `PAUSED` con motivo `COURTESY` la cancelación sí se puede**: el proveedor rechaza toda modificación sobre una pausada **y sí deja cancelar** (`EX-11`). **Y ahí la cortesía se cierra con la fila**: termina hoy, como en `S22`, y se escribe `fin_real` en la `subscription_pause` con ese día (`B/02` §2.2), por la misma razón que en `S22` (FASE 8 completa, pendiente 8, owner 2026-09-25). **Y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, **entra por esta misma puerta** —la cancelación no se ejecuta, `S6` no ocurre en esta corrida y se reintenta en la siguiente—; si no hay destinatario, se cancela igual y el no-entregable se escala; **y si el correo agota sus reintentos (`failed` definitivo del outbox), tampoco bloquea: se cancela igual y se escala como no-entregable, igual que sin destinatario** (owner 2026-09-25; FASE 9 completa, decisión 1; precisa `DEC-MAIL-001`) — sin eso, un moroso cuyo correo quedaba `failed` se quedaba en `GRACE_PERIOD` con servicio entero sin límite. **Por el quinto evento —y por el segundo sobre una sucesora de la rama de `S4`— se cancela de nuestro lado lo que quede vivo** (si la relectura ya ve `cancelled`, no se manda nada) **y el aviso es el de suspensión con *«volvé a suscribirte»*** (`B/19` §4 fila 10; owner 2026-09-25, FASE 9 completa, 3c). Volver es re-autorizar por el checkout: una sucesión, y `S17` encuentra el preapproval ya `cancelled` (`D7`). **Y por el tercer evento, además, `S14` abre la marca con motivo `CONTRACARGO`** (`B/02` §2.5) **con el pago colgado**, para que una persona siga la disputa (`DEC-SUB-020`); el aviso a la persona es el de `B/19` §4 fila 10-ter, no el de la 10, que habla de mora (FASE 8 completa, `F-8CB3-009`, owner 2026-09-25), **y su correo es el de *«suspendido por contracargo»*** del catálogo de `NUCLEO/07` §6 (FASE 8 completa, pendiente 6, owner 2026-09-25)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:156, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:837
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:156, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:842
 
 <a id="trans-b-s7"></a>
 
 ### `TRANS:B:S7` · `S7`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:838`
+- **Fuente de la asignación**: `B/descomposicion.md:843`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S7](10-corte/B7.md#tpz-s7) → [B7](10-corte/B7.md#pieza-b7) — nota de la fuente: «con la cláusula del Turista VIP al regularizar (CA)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `SUSPENDED`
@@ -2912,14 +2912,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): el cobro entró de verdad **y** las cuatro condiciones del cap. 05 §3 — y la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso**
 - **efectos** (efectos): la fila **vuelve a emitir fuente** (`12-contrato…` §2.6), y ese cambio de cobertura es lo que restituye la publicación **por `PB3`/`PB7`, si el cupo alcanza** —el cupo cuenta sólo las fichas en `PUBLISHED`— (`V/03` §9); esta tabla **no dispara** una transición de la otra épica, igual que `S2` y `S29` (FASE 8 completa, `F-8CA2-016`, owner 2026-09-25). **Y si la fila tiene en la cola un cambio programado cuya fecha pasó mientras estaba suspendida, al volver lo aplica `S38`** (revisión del owner, casos vecinos, 2026-09-29, caso G-A)**, vuelva a `ACTIVE` o a `CANCEL_SCHEDULED`** (revisión del owner, casos vecinos, 2026-09-29, caso I-A); **y si al volver el plan comercial vuelve a heredar Turista VIP y el `user` paga una suscripción de Turista VIP, la cancela en el mismo acto, sin reembolso, con el correo antes** —el espejo de la cláusula de `S2`— (corte del MVP, owner 2026-10-02, CA; `DEC-ENT-004`, `V/15` §6.3; construye `B7`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:157, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:838
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:157, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:843
 
 <a id="trans-b-s8"></a>
 
 ### `TRANS:B:S8` · `S8` — `ACTIVE` → `PAUSED` *(motivo `CUSTOMER_REQUEST`)*
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:839`
+- **Fuente de la asignación**: `B/descomposicion.md:844`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S8](20-fase-2/B8b.md#tpz-s8) → [B8b](20-fase-2/B8b.md#pieza-b8b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE`
@@ -2928,14 +2928,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): `puedePausar()` (capítulo 01 (núcleo) §3) — **y el `PUT paused` se aplicó, confirmado por relectura**, la misma regla que `S10` y `S17` (FASE 9 completa, `F-8CB2-003`)
 - **efectos** (efectos): se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`). **Si la relectura sigue viendo `authorized`, `S8` NO ocurre**: la fila se queda en `ACTIVE`, no se abre la `subscription_pause`, y **`S14` pone la marca con motivo `PAUSA_NO_APLICADA`** (`B/02` §2.5, motivo 22) — sin esto la fila quedaba `PAUSED` de nuestro lado con el proveedor cobrando, y el espejo leía ese `authorized` como una reanudación (§10.1). En un pagador manual no hay `PUT` y esta parte no corre. **Y si `S8` ocurre, sus complementos recurrentes de esa vertical se pausan con ella, por `S32`** (owner 2026-09-25; FASE 9 completa, 4a, `F-8CC1-004`): sin eso el addon cobraba todos los meses de la pausa sin dar nada, porque sin título el pliegue lo descarta
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:158, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:839
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:158, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:844
 
 <a id="trans-b-s9"></a>
 
 ### `TRANS:B:S9` · `S9` — `ACTIVE` → `PAUSED` *(motivo `COURTESY`)*
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b) · **también**: [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa)
-- **Fuente de la asignación**: `B/descomposicion.md:840`
+- **Fuente de la asignación**: `B/descomposicion.md:845`
 - **Adjudicación** (`adjudicacion.json`): VIVO — el tercer disparador salió con C8; lo tachado de la fila se omite y lo vigente va entero.
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S9](20-fase-2/B8b.md#tpz-s9) → [B8b](20-fase-2/B8b.md#pieza-b8b), [B9b](20-fase-2/B9b.md#pieza-b9b) — nota de la fuente: «compartida»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
@@ -2945,14 +2945,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): no hay pausa vigente (`DEC-GRANT-004`) — **y una sucesora recién autorizada no tiene ninguna**, así que el segundo disparador corre sin tocar la condición. **Y, por el primer disparador, la fila es de un plan MENSUAL y la cortesía se firma en MESES ENTEROS** (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; `DEC-GRANT-003` impl. 6): es la validación de la pausa de `DEC-SUB-010` —el término `billingOption.ciclo == mensual` de `puedePausar()`, `NUCLEO/01` §3—, porque en pausa el proveedor se saltea las fechas de cobro enteras que caen adentro (`PS-6`) y al reanudar no corre la fecha (`PS-5`): una cortesía vale los cobros que cruza, no los días, y N meses saltean exactamente N cobros. **Sobre una fila de plan no mensual `S9` no ocurre**, y el admin recibe el motivo: la cortesía temporal no está disponible ahí, y le quedan la cortesía permanente o una promo sobre la renovación. **En el segundo disparador este término no se evalúa porque no hace falta**: un saldo que iba a caer sobre una fila de plan **no mensual —trimestral, semestral o anual—** ya se cerró antes —en `S18` — con `motivo_cierre = DESTINO_DE_PLAN_NO_MENSUAL` (`B/02` §2.4, `B/14` §4.7; owner 2026-09-25; FASE 9 completa, contradicción 1 de `03` §R4.5: con *«anual»* el trimestral y el semestral recibían el saldo y `PS-6` lo convertía en cero o en un ciclo entero)
 - **efectos** (efectos): se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`). **Y el `PUT paused` se confirma por relectura**, como en `S8` (FASE 9 completa, `F-8CB2-003`): **si la relectura sigue viendo `authorized`, `S9` NO ocurre** —la fila se queda en `ACTIVE`, no se abre la `subscription_pause` ni se re-emite nada—, **`S14` pone la marca con motivo `PAUSA_NO_APLICADA`** (`B/02` §2.5, motivo 22), y **el aviso a `SUPER_ADMIN` dice que la cortesía no se aplicó**. En un pagador manual no hay `PUT` y esta parte no corre. **Por el segundo disparador se re-emite la cortesía diferida**: `subscription_id` pasa a esta fila, `inicio` es hoy **—o, sobre una sucesora que vive del crédito de `DEC-SUB-006`, el fin de ese crédito: la cortesía arranca cuando se agota lo que la persona ya pagó, no encima de eso** (owner 2026-09-27, FASE 9 vuelta 2, `R17`, `F-8V2B1-004`)—, `fin` es `inicio` + `saldo_meses`, y **`saldo_meses` vuelve a nulo**. **La pausa se abre igual en el acto de autorizar**, con `fin_previsto` en ese `fin`: así cruza exactamente los `saldo_meses` cobros que caen desde el fin del crédito, y el primer cobro corrido por el crédito queda adentro sin que haga falta otro momento para pausar (el saldo pasó a meses: FASE 8 completa, `F-8CB1-001`, owner 2026-09-25, `B/02` §2.4). Es la misma fila de `courtesy_grant`, entera, con la firma de `SUPER_ADMIN` original — no una cortesía nueva, así que el §35.4 sigue auditando **por grant**. **Riesgo aceptado y declarado por `DEC-GRANT-007`**: entre `S2` y este acto el proveedor **puede cobrar** el primer pago, y ese cobro se devuelve **por el camino que ya existe** —la marca con motivo `COBRO_DURANTE_CORTESÍA` y la confirmación de una persona, `B/02` §2.5 y `DEC-RF-002`—, sin inventar un mecanismo para evitarlo
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:159, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:840
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:159, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:845
 
 <a id="trans-b-s10"></a>
 
 ### `TRANS:B:S10` · `S10` — `PAUSED` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b) · **también**: [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa)
-- **Fuente de la asignación**: `B/descomposicion.md:841`
+- **Fuente de la asignación**: `B/descomposicion.md:846`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S10](20-fase-2/B8b.md#tpz-s10) → [B8b](20-fase-2/B8b.md#pieza-b8b) — nota de la fuente: «el tercer evento, revocar una cortesía temporal, lo agrega `B9b` (BO)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PAUSED`
@@ -3041,14 +3041,14 @@ llega (FASE 9 vuelta 1, `N-G3V-05`: la gemela de `F-8V1B3-007`). En
 `S13` cortar la obligación de pago *«pase lo que pase»* es lo que el §35.3 ordena y el acceso ya
 lo da el grant; acá no hay ninguna otra fuente que sostenga nada.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:160, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:841, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:799
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:160, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:846, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:799
 
 <a id="trans-b-s11"></a>
 
 ### `TRANS:B:S11` · `S11`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a)
-- **Fuente de la asignación**: `B/descomposicion.md:842`
+- **Fuente de la asignación**: `B/descomposicion.md:847`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S11](10-corte/B8a.md#tpz-s11) → [B8a](10-corte/B8a.md#pieza-b8a)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE` — **y, en el mismo acto, las filas DE COMPLEMENTO en `ACTIVE` que dependen de ella** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`)
@@ -3057,14 +3057,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`). **La fecha sale de los cobros acreditados, nunca de la fecha del próximo cobro** (FASE 8 completa, `F-8CB1-012`): **`fin_de_servicio = inicio(P) + un ciclo de la billing option anclada`**, donde **`P` es el `covered_period` más reciente de la fila con `liberado_en` nulo** (`B/02` §2.3) — el período que el último cobro acreditado pagó, **sea `payment` o `manual_payment`**. La copia de la fecha del próximo cobro **no entra**: sobre una fila con un cobro en reintento esa fecha ya corrió un ciclo sin pago (**observado el 2026-09-24, no registrado en la matriz**; FASE 9 completa, C2), y usarla regalaba ese ciclo. **Si un cobro anterior a la baja se acredita después** (`B/05` C2, primera fila), escribe su `covered_period` y la extensión que ese § manda es **`max(fin_de_servicio vigente, la fórmula recalculada)`**: una extensión nunca acorta (FASE 9 vuelta 1, R4, `F-8V1B2-002`). **Precisado el 2026-09-27 (owner, FASE 9 vuelta 2, `R17`, `F-8V2B1-002`): el crédito de `DEC-SUB-006` cuenta como período pagado.** Sobre una sucesora que vive de ese crédito —lo pagado sin usar de la predecesora, convertido en días que corren su primer cobro (`B/12` §5.2)—, **`fin_de_servicio = max(fórmula, fin del crédito)`**, donde **el fin del crédito es la fecha de primer cobro que `DEC-SUB-006` le corrió al crearla**, con la corrección de `B/12` §5.4 si la hubo. **Una fila sin ningún `covered_period`** no tiene entrada para la fórmula, y su fin de servicio es el fin del crédito; **sólo si tampoco tiene crédito** el fin de servicio es el instante de la baja, como en `S24`: como `CANCEL_SCHEDULED` emite fuente sólo hasta esa fecha (`12-contrato…` §2.6), el servicio se corta ahí mismo y `S12` encuentra su fecha ya cumplida. Lo cerrado el 2026-09-25 pensaba sólo en la ventana de 72 h de `B/12` §5.2, y el crédito dura semanas —un cambio de anual a mensual, un arrepentimiento—: la baja cortaba en el acto lo que la persona ya había pagado. **Antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala. **Y en el mismo acto cancela en el proveedor los complementos recurrentes que dependen de ella** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`, `F-8V2B1-001`). **La selección es la de `S32`**: las filas DE COMPLEMENTO en `ACTIVE`, con su instancia viva, que complementan a esta principal —la `VERTICAL_SUBSCRIPTION` que cuelga de ella, el `LISTING` sobre una ficha de su vertical, y el `USER`/`GLOBAL` cuyo producto declara compatible esa vertical sólo si en ninguna otra vertical compatible queda una principal viva que no esté `PAUSED`, `SUSPENDED` **ni `CANCEL_SCHEDULED`**, ni un ancla viva— (**`CANCEL_SCHEDULED` en la exclusión es la lectura del grupo A de la FASE 9 vuelta 2, confirmada por el owner**: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`; sin ella, un `USER` compatible con dos verticales que se da de baja en las dos cobra un ciclo después de la segunda baja). **La regla es la de la principal**: el correo antes de cada llamada, la relectura de `S17`, y la fila de complemento a `CANCEL_SCHEDULED` **con el mismo `fin_de_servicio` de la principal** —para un `USER`/`GLOBAL`, el más tardío entre las principales compatibles en `CANCEL_SCHEDULED`—. **El complemento sigue dando servicio hasta esa fecha**, la instancia no cambia de estado, y **en esa fecha los cierra `S21`, antes que su propio `S12`**: el `S12` de la principal dispara la orfandad (`A5`), y `S21` toma la fila de complemento y abre el motivo 14 si su último cobro pagó días posteriores (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`; el orden, en la fila de `S12`). (Sale: `S26` y `vertical_discontinuation` se retiraron con la revisión del owner, 2026-09-28, C8, y el motivo que abre `S21` es el de su tabla de disparadores; FASE 9 vuelta 3, `F-8V3B1-007`.) Es lo que `DEC-SUB-009` hace con la principal y lo que `S32` hizo con la pausa y la suspensión (`G2-2`): sin esto el preapproval del complemento, con su propio aniversario, cobraba un ciclo entero después de la baja, y `S21` lo ponía en el motivo 14 con propuesta *no devolver*. **Una fila de complemento que no está en `ACTIVE` no entra**, igual que en `S32`: la alcanza la orfandad cuando `S12` saca a la principal de las filas vivas (`B/16` §4.3)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:842
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:847
 
 <a id="trans-b-s12"></a>
 
 ### `TRANS:B:S12` · `S12` — `CANCEL_SCHEDULED` → `CANCELLED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a)
-- **Fuente de la asignación**: `B/descomposicion.md:843`
+- **Fuente de la asignación**: `B/descomposicion.md:848`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S12](10-corte/B8a.md#tpz-s12) → [B8a](10-corte/B8a.md#pieza-b8a)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `CANCEL_SCHEDULED`
@@ -3073,14 +3073,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): se corta el servicio; proceso **idempotente**. **Sobre una fila DE COMPLEMENTO, por el primer evento, corre después de su principal y de la orfandad que ella dispara** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): en la fecha de fin corre primero el `S12` de las principales, la orfandad corre `A5` → `S21` sobre sus complementos —que los lleva a `CANCELLED` y abre el motivo 14 cuando el último cobro pagó días posteriores a esa fecha (`B/02` §2.5) (sale con C8: la tabla ya no existe; FASE 9 vuelta 3, `F-8V3B1-007`)—, y recién después este `S12` sobre las filas de complemento que sigan en `CANCEL_SCHEDULED`, que son las que la orfandad no alcanzó —un `USER`/`GLOBAL` con otra principal compatible viva—. **Y sobre ese `USER`/`GLOBAL` este `S12` apaga también su instancia** por `A5` (primera cláusula: la baja que la persona pidió la alcanzó por la regla de `S11`), porque su preapproval ya está cancelado y no hay cobro que reanudar (`PA-5`): sin eso la instancia quedaba `ACTIVE` sin ninguna fila que la cobre ni la emita, y la persona la veía viva al volver de la pausa de la otra principal (FASE 9 vuelta 2, verificación, `N-A-02`, arreglo de texto). Vale para la `CANCEL_SCHEDULED` que puso `S11` (`S26` salió con la revisión del owner, 2026-09-28, C8) —y para la que puso la regla de `S11` desde el espejo de `R18` o desde `S7` (owner 2026-09-27, FASE 9 vuelta 2, `R18-b`), **o desde `S22` sobre una fila que vive del crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`)—. Sin ese orden, el `S12` del complemento llegaba primero, `S21` lo encontraba `CANCELLED` y no escribía nada, y el residuo quedaba sin que ninguna persona lo viera. **Por el segundo evento, además, `S14` abre la marca con motivo `CONTRACARGO`** (`B/02` §2.5) con el pago colgado, y **al proveedor no se manda nada nuevo**: el preapproval ya lo canceló `S11`, y si esa cancelación no se confirmó la sigue el reintento del `B/09` §3. **Cerrado el 2026-09-25 (owner)**: **si la fila es la predecesora de una sucesión en curso, por el segundo evento corre `S31` sobre su sucesora**, igual que tras `S6` por el tercero (FASE 8 completa, pendiente 8, owner 2026-09-25). `S31` encuentra a la sucesora por su `sucede_a`, que `S18` limpia, así que corre antes de que `S18` evalúe; si la deja `ABANDONED`, `S18` no corre —su `desde` es una sucesora viva— y la sucesión se cae, como en `S3`. **Y el aviso a la persona es el mismo correo de contracargo** (`NUCLEO/07` §6, `B/19` §4 fila 10-ter; orquestador, FASE 8 completa, pendiente 8)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:162, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:843
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:162, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848
 
 <a id="trans-b-s13"></a>
 
 ### `TRANS:B:S13` · `S13`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B9a](10-corte/B9a.md#pieza-b9a)
-- **Fuente de la asignación**: `B/descomposicion.md:844`
+- **Fuente de la asignación**: `B/descomposicion.md:849`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S13](10-corte/B9a.md#tpz-s13) → [B9a](10-corte/B9a.md#pieza-b9a)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): **toda fila viva PRINCIPAL** del beneficiario en **cada vertical que el acto ancla** (`B/02` §2.4, `permanent_grant_vertical`) — los seis estados, `PENDING_AUTHORIZATION` y `CANCEL_SCHEDULED` incluidos. **Las de complemento no entran** (ver abajo, *«y no alcanza a los complementos»*)
@@ -3186,14 +3186,14 @@ corresponde además un cambio de estado, ése se ejecuta **con la transición de
 lo permita** — y eso es justamente lo que se ganó, porque antes `S15` tenía que adivinar a dónde
 volver.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:844, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:957, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1082
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:957, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1082
 
 <a id="trans-b-s14"></a>
 
 ### `TRANS:B:S14` · `S14` — cualquiera → **el mismo estado**
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:845`
+- **Fuente de la asignación**: `B/descomposicion.md:850`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S14](10-corte/B3.md#tpz-s14) → [B3](10-corte/B3.md#pieza-b3)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): cualquiera
@@ -3202,14 +3202,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **se abre una marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas**. **`S14` es el ACTO y no el motivo**: el motivo lo trae el caso que lo disparó —son **trece** de los **veinticuatro** de `B/02` §2.5 —el 23 lo abre el barrido, no `S14` (FASE 9 vuelta 2, `R4`); el 24 sí, desde la comparación de cobros del `B/09` §3 (FASE 9 vuelta 2, `R20`)— (FASE 8 completa, `F-8CB1-013`; y el 17, el 18 y el 19 con `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`; y el 20 con la pendiente 6, owner 2026-09-25; y el 22 con `F-8CB2-003`, FASE 9 completa —el 21 lo abre el barrido, no `S14`—; recontados sobre esa tabla)— exactamente como el motivo de una pausa lo traen `S8` o `S9`. Una marca sin motivo declarado no es escribible: `G-R1-F` (`B/20` §2) la rechaza. **Y abrir es ACUMULATIVO**: si la fila ya tiene una marca abierta con ese motivo, `S14` **no abre una segunda y tampoco descarta el hecho** — le cuelga a la abierta el pago que el caso trae (`reconciliation_mark_payment`, `B/02` §2.2) y vuelve a emitir el §22.1. Sin eso el `UNIQUE` rechazaba el `INSERT` y **la plata del segundo cobro en adelante quedaba sin ninguna fila que la nombrara**. **Colgar un pago escribe la marca** (FASE 9 vuelta 1, `F-8V1B2-001`): en la misma transacción que inserta en `reconciliation_mark_payment`, `S14` le sube la versión a la `reconciliation_mark` con la condición `levantada_en IS NULL` (§10.3). Si esa escritura no encuentra la marca abierta porque `S15` la levantó en el medio, `S14` abre una nueva: el `UNIQUE` parcial la admite
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:164, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:845
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:164, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:850
 
 <a id="trans-b-s15"></a>
 
 ### `TRANS:B:S15` · `S15` — cualquiera **con una marca abierta** → **el mismo estado**
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:846`
+- **Fuente de la asignación**: `B/descomposicion.md:851`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S15](10-corte/B3.md#tpz-s15) → [B3](10-corte/B3.md#pieza-b3) — nota de la fuente: «la guarda contra una interfaz que implementa `B5` (BY)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): cualquiera **con una marca abierta**
@@ -3218,14 +3218,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): intervención humana registrada, **y ningún pago colgado de esa marca sin resolver**
 - **efectos** (efectos): **se levanta UNA marca —la del motivo que esa persona resolvió—, no la fila**: se le escriben `levantada_en` y quién la levantó (`B/02` §2.2), y **las demás marcas abiertas siguen abiertas**. Con un booleano, resolver una divergencia de monto apagaba en el mismo gesto un `REEMBOLSO_POR_CONFIRMAR` que nadie había mirado. **Y la guarda es la mitad que faltaba**: una marca puede llevar **N** pagos colgados (`B/02` §2.2) y levantarla con alguno sin `resuelto_en` cierra el caso **con esa plata adentro**, que es exactamente lo que hacía la persona que resolvía bien el único pago que el listado le nombraba. Si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita**. **Y escribe `levantada_en` contra la versión de la marca que leyó** (§10.3; FASE 9 vuelta 1, `F-8V1B2-001`): si un `S14` le colgó un pago en el medio, la escritura falla, se relee y la guarda ya no se cumple. No agrega mecanismo: es la concurrencia optimista del §10.3 aplicada a la marca, que es una fila con estado —abierta o levantada—; **la guarda *«ningún pago colgado de esa marca sin resolver»* lee `reconciliation_mark_payment`, que nace en `B5` (BN): `B3` la escribe contra una interfaz interna, y `B5` trae su implementación y prueba el rechazo con filas sembradas** (corte del MVP, owner 2026-10-02, BY)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:165, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:846
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:165, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:851
 
 <a id="trans-b-s16"></a>
 
 ### `TRANS:B:S16` · `S16` — `ACTIVE` → `CHARGE_DECLINED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:847`
+- **Fuente de la asignación**: `B/descomposicion.md:852`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S16](10-corte/B3.md#tpz-s16) → [B3](10-corte/B3.md#pieza-b3)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE`
@@ -3294,14 +3294,14 @@ que cambió de plan el mismo día, `B/12` §4.4 punto 1— cae ahora en la fila 
 >    la fila `cancelled` del espejo, que era la que el hallazgo nombraba. No mueve plata, porque
 >    `S6` cancela el preapproval, y no toca el trial, porque `SUSPENDED` no emite.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:847, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:214
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:214
 
 <a id="trans-b-s17"></a>
 
 ### `TRANS:B:S17` · `S17`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:848`
+- **Fuente de la asignación**: `B/descomposicion.md:853`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S17](20-fase-2/B8b.md#tpz-s17) → [B8b](20-fase-2/B8b.md#pieza-b8b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED`
@@ -3310,14 +3310,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): la fila tiene una **sucesora viva** con `sucede_a` apuntándola
 - **efectos** (efectos): **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada**. **Y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta y **`S17` no ocurre en esta corrida** —la misma puerta que la llamada fallida (`B/09` §3)— y su condición, que es sobre un estado, se vuelve a evaluar; si no hay destinatario, se cancela igual y el no-entregable se escala: es el caso por el que se precisó la regla, porque sin eso la predecesora no se cancelaba nunca y **cobraban las dos**; **y si el correo agota sus reintentos (`failed` definitivo del outbox), tampoco bloquea: se cancela igual y se escala como no-entregable**, por la misma razón —un `failed` es una falla que no pasó, y esperarlo dejaba a `S17` sin ocurrir nunca y a las dos cobrando— (owner 2026-09-25; FASE 9 completa, decisión 1; precisa `DEC-MAIL-001`). **Y si la fila estaba `PAUSED`, cierra la pausa escribiéndole `fin_real`**, como `S22` (FASE 8 completa, `F-8CD1-007`; `S25` salió con la revisión del owner, 2026-09-28, C8)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:167, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:167, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
 
 <a id="trans-b-s18"></a>
 
 ### `TRANS:B:S18` · `S18`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:849`
+- **Fuente de la asignación**: `B/descomposicion.md:854`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S18](20-fase-2/B8b.md#tpz-s18) → [B8b](20-fase-2/B8b.md#pieza-b8b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): la **sucesora viva**: en `ACTIVE`, **o en `PENDING_AUTHORIZATION` cuando la predecesora se murió sola** (revisión del owner, 2026-09-28, C8)
@@ -3360,14 +3360,14 @@ excepción y es la de abajo**: si la predecesora tenía una cortesía, declarar 
 **diferida**, y el abandono la **cierra** (`DEC-GRANT-011`). Para todo lo demás —el candado, el
 alta nueva, lo que puede comprar— la sucesión abandonada no deja rastro.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:168, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:534
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:168, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:534
 
 <a id="trans-b-s19"></a>
 
 ### `TRANS:B:S19` · `S19`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:850`
+- **Fuente de la asignación**: `B/descomposicion.md:855`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S19](10-corte/B7.md#tpz-s19) → [B7](10-corte/B7.md#pieza-b7)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED`
@@ -3480,14 +3480,14 @@ porque `S18` cubre tres de ellas:
 backstop de `B/09` §3 sigue haciendo falta igual**, porque cubre el
 caso en que alguno de los cuatro actos no se ejecutó.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:169, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:850, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:694
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:169, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:855, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:694
 
 <a id="trans-b-s20"></a>
 
 ### `TRANS:B:S20` · `S20`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B9a](10-corte/B9a.md#pieza-b9a)
-- **Fuente de la asignación**: `B/descomposicion.md:851`
+- **Fuente de la asignación**: `B/descomposicion.md:856`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S20](10-corte/B9a.md#tpz-s20) → [B9a](10-corte/B9a.md#pieza-b9a) — nota de la fuente: «AS»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): **toda fila viva DE COMPLEMENTO** del beneficiario —los **seis** estados de la suscripción, no los dos de la instancia— cuya instancia esté en uno de sus **dos** estados vivos y cuyo `addon_product` declare compatible **la vertical que el acto ancla**; para los scopes con vertical propia —`VERTICAL_SUBSCRIPTION` y `LISTING`— **además su objetivo tiene que ser de esa vertical** (`B/16` §3.4). **Las principales no entran**: ésas son de `S13`
@@ -3564,14 +3564,14 @@ vuelve a resolver **el mismo** disparador, así que vuelve a escribir **el mismo
 `UNIQUE` la rechaza igual que antes (`B/02` §2.2, donde está el argumento de por qué los dos no
 pueden convivir).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:170, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:851, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1120
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:170, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1120
 
 <a id="trans-b-s21"></a>
 
 ### `TRANS:B:S21` · `S21`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:852`
+- **Fuente de la asignación**: `B/descomposicion.md:857`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S21](10-corte/B5.md#tpz-s21) → [B5](10-corte/B5.md#pieza-b5) — nota de la fuente: «AS»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): **toda fila viva DE COMPLEMENTO** —los **seis** estados de la suscripción— **de la que cuelga una instancia de addon**. **Las principales no entran, y acá no hace falta acotarlo**: de una principal no cuelga ninguna instancia, así que el conjunto ya es disjunto por el sujeto y no por un adjetivo
@@ -3816,14 +3816,14 @@ ninguno de los dos. **Y tampoco se pueden satisfacer a la vez**: `S20` declara e
 **la instancia no cambia de estado**, así que en ese acto no hay ninguna instancia llegando a
 `CANCELLED`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:171, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1188, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1277
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:171, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1188, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1277
 
 <a id="trans-b-s22"></a>
 
 ### `TRANS:B:S22` · `S22`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:853`
+- **Fuente de la asignación**: `B/descomposicion.md:858`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S22](20-fase-2/B8b.md#tpz-s22) → [B8b](20-fase-2/B8b.md#pieza-b8b) — nota de la fuente: «queda en `B8b`, por AR»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PAUSED` — **con cualquiera de los dos motivos**
@@ -3832,14 +3832,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **es el mismo acto de `S11`, no uno nuevo**: el catálogo de `NUCLEO/08` §3 lo nombra una sola vez y `B/19` §5 lo deja self-service. Lo que cambia es el desenlace: **no pasa por `CANCEL_SCHEDULED` y termina el servicio en el acto** (`B/12` §7.2). `DEC-SUB-010` ya se llevó los días no usados del ciclo **al pausar**, así que **no queda período pagado que sostener**, y la fecha de fin de servicio —*«un dato nuestro»*, `DEC-SUB-009`— **es el día de la cancelación**. El §3.3 ya lo imponía: de `PAUSED` no sale nada que no sea `ACTIVE` o `CANCELLED` (salvo `S6` por un contracargo sobre una cortesía, que va a `SUSPENDED`: pendiente 8, owner 2026-09-25). **Se cancela en el proveedor de inmediato**, con la regla de relectura de `S17` — está medido que sobre una pausada el proveedor **rechaza toda modificación y sí deja cancelar** (`EX-11`). **Antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala. **Se escribe `fin_real` en la `subscription_pause`** (`B/02` §2.2) con ese mismo día: los topes del §26.3 **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`), así que una pausa que se corta sin registrar su fin real le come al cliente meses que no usó. **Y si el motivo era `COURTESY` la cortesía termina con ella**: esa fila **sí emite fuente** (`12-contrato…` §2.6) y deja de emitirla hoy, así que la confirmación lo dice antes (`B/19` §4, fila 8). **Idempotente**, como `S12`. **Salvo sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`; caso 1 de `11-` §5): es la sucesora con una cortesía re-emitida por `S9`, pausada desde que autoriza y con la cortesía arrancando al fin del crédito (`R17`). **El crédito cuenta como período pagado** (`R17`), así que *«no queda período pagado que sostener»* es falso ahí, y la fila va a **`CANCEL_SCHEDULED` con `fin_de_servicio` en el fin del crédito**, como `S11` desde `R17`; `S12` la termina en esa fecha. **Es la regla de `S11` entera y no sólo su fecha**: cancela el preapproval con el correo antes y la relectura, **y en el mismo acto cancela sus complementos recurrentes con la selección de `S11`** (`R1-a`, con `CANCEL_SCHEDULED` en la exclusión, `V2-c`), porque la fila sigue viva y la orfandad no llega hasta `S12`; esos complementos son una `CANCEL_SCHEDULED` de `S11` en todo lo que el diseño dice de ella. Escribe `fin_real` en la `subscription_pause` con el día de la baja, porque la fila sale de `PAUSED`, y los meses de cortesía se pierden como en el resto de esta fila. Sin crédito, o con el crédito ya consumido, sigue siendo lo de arriba
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:172, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:172, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:858
 
 <a id="trans-b-s23"></a>
 
 ### `TRANS:B:S23` · `S23` — `SUSPENDED` → `CANCELLED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a)
-- **Fuente de la asignación**: `B/descomposicion.md:854`
+- **Fuente de la asignación**: `B/descomposicion.md:859`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S23](10-corte/B8a.md#tpz-s23) → [B8a](10-corte/B8a.md#pieza-b8a) — nota de la fuente: «AR»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `SUSPENDED`
@@ -3848,14 +3848,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): el mismo acto otra vez, y acá **no hay servicio ni cobertura que retirar**: el §21 ya cortó el servicio y `SUSPENDED` **no emite ninguna fuente** (`12-contrato…` §2.6), así que tampoco hay período pagado que sostener y la fecha de fin de servicio **es el día de la cancelación**. **En el proveedor: si el preapproval sigue vivo se cancela**, con la regla de relectura de `S17` y **con nuestro correo antes de la llamada** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*: si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala); **sobre un pagador manual no hay nada que mandar**, porque no hay débito que detener (`B/06` §7). **Libera el candado `A`** (`B/02` §2.2), y ésa es la mitad que el §7.1 necesitaba: desde `CANCELLED` la condición 1 del `B/05` §3 rechaza la reapertura, así que este acto **cierra la ventana de `MP4`** y de paso le devuelve a la persona el alta nueva que el candado le bloqueaba. **Idempotente**, como `S12`
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:173, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:173, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859
 
 <a id="trans-b-s24"></a>
 
 ### `TRANS:B:S24` · `S24` — `GRACE_PERIOD` → `CANCELLED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a)
-- **Fuente de la asignación**: `B/descomposicion.md:855`
+- **Fuente de la asignación**: `B/descomposicion.md:860`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S24](10-corte/B8a.md#tpz-s24) → [B8a](10-corte/B8a.md#pieza-b8a) — nota de la fuente: «AR»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `GRACE_PERIOD`
@@ -3864,14 +3864,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **el mismo acto de nuevo**, y su desenlace lo fija `DEC-SUB-014`: **corta en el acto**, con la fecha de fin de servicio en **el día de la cancelación** y **sin pasar por `CANCEL_SCHEDULED`**, por la misma razón que `S22` y `S23`. Acá esa razón es la más literal de las cuatro: **el grace existe porque el cobro del período en curso falló**, así que no hay período pagado que sostener — el último que se pagó ya se consumió, que es precisamente por lo que la fila está en este estado. **Y es la única de las tres bajas directas que corta servicio de verdad siempre** —`S22` lo corta sólo si la pausa era por `COURTESY`, que emite fuente (FASE 8 completa, `F-8CD1-016`), y no en el acto si la fila vive del crédito (`V2-b`)—: `GRACE_PERIOD` **sí emite fuente** (`12-contrato…` §2.6, *«el §20 da servicio entero»*), a diferencia de `PAUSED` por `CUSTOMER_REQUEST` y de `SUSPENDED`, así que la pantalla lo dice antes de confirmar (`B/19` §4, fila 8). **Se cancela en el proveedor de inmediato**, con la regla de relectura de `S17` y **con nuestro correo antes de la llamada** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*: si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala); **sobre un pagador manual no se manda nada**, como en `S23`, porque no hay débito que detener (`B/06` §7). **Apaga el reloj del §4**: sin esta fila el intento caía en la regla 1 del núcleo —marca con motivo `TRANSICIÓN_NO_DECLARADA`— mientras el reloj del grace seguía corriendo hacia `SUSPENDED` con una persona mirando el caso. **Y si la fila es la predecesora de una sucesión en curso, dispara `S18`**, igual que `S23`: `S19` retiene pagos desde `GRACE_PERIOD` y desde `SUSPENDED`, así que es la **misma** rama 6 de `B/12` §5.3 y no una séptima. **Idempotente**, como `S12`
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:174, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:855
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:174, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:860
 
 <a id="trans-b-s29"></a>
 
 ### `TRANS:B:S29` · `S29` — `PENDING_AUTHORIZATION` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:856`
+- **Fuente de la asignación**: `B/descomposicion.md:861`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S29](10-corte/B5.md#tpz-s29) → [B5](10-corte/B5.md#pieza-b5)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PENDING_AUTHORIZATION`
@@ -3880,14 +3880,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): la cuota que se registra es la **primera** de esta fila. Si no lo es, `MP1` sigue su camino normal y esta transición **no corre**
 - **efectos** (efectos): **Es la puerta a `ACTIVE` de un pagador manual, y existe porque `S2` no le sirve**: el evento de `S2` es *«webhook de autorizada, **confirmado por relectura**»* y acá **no hay preapproval que releer** — el pagador manual nunca pasó por el proveedor. **Cumple por construcción la condición que el §7.2 ató por adelantado** —*«esa fila no puede llegar a `ACTIVE` sin la primera cuota registrada»*— porque su evento **es** ese registro. **Hereda de `S2` los tres efectos del alta**: arranca el período, la fila **pasa a emitir fuente** (`12-contrato…` §2.6) —**ya con `cobrada: sí`**, porque su evento es el registro de la primera cuota (`DEC-TRIAL-010`); a diferencia de `S2`, acá no hay cobro que esperar—, y ese cambio de cobertura es lo que mueve el trial si había uno (`V/03` §2, `T2`) — esta tabla **no dispara** la transición de la otra épica. ⚠️ **Lo que NO hace, y hay que decirlo porque es un doble avance**: **no mueve la fecha del próximo cobro.** Eso ya lo hace `MP1` —*«avanza un ciclo la fecha del próximo cobro»*— y el acto es **uno solo**: si esta fila lo repitiera, el pagador manual arrancaría con **dos ciclos** de crédito. **Tampoco cierra ningún grace, porque no lo hubo**: `MP5`(b) abre la primera cuota en `PENDING_AUTHORIZATION` y **no dispara `S4`** (§7.2, *«cómo entra el grace»*), así que no hay reloj que apagar. **Y `G-R4` no gana ningún par duplicado**: comparte el `desde` con `S2` y con `S3`, pero *«compartir el `desde` no es compartir el par»* (`NUCLEO/03` §1 regla 7) — **ninguna otra fila de esta tabla declara este evento**, y no puede satisfacerse a la vez que `S2`, porque una fila de pagador manual **no tiene preapproval que emita ese webhook**. **El que cuenta es el pago acreditado y nunca la fecha** (§4.5 punto 2)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:179, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:179, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861
 
 <a id="trans-b-s30"></a>
 
 ### `TRANS:B:S30` · `S30` — `ACTIVE` **o `GRACE_PERIOD`** (FASE 9 vuelta 1, `F-8V1B1-006`) → el mismo estado
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B9b](20-fase-2/B9b.md#pieza-b9b)
-- **Fuente de la asignación**: `B/descomposicion.md:857`
+- **Fuente de la asignación**: `B/descomposicion.md:862`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S30](20-fase-2/B9b.md#tpz-s30) → [B9b](20-fase-2/B9b.md#pieza-b9b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE` **o `GRACE_PERIOD`** (FASE 9 vuelta 1, `F-8V1B1-006`)
@@ -3896,14 +3896,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **se muta `transaction_amount` al monto sin esa promo, recalculado con las que siguen vivas** —el monto esperado de `B/14` §2.4: precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador, con la regla de orden del §1.2— (`PC-1`) y se verifica releyendo (`D5`), porque la mutación no emite webhook (`EX-15`). **Si la mutación no se aplica, la retoma el barrido**: reintenta 3 días, contados desde esta transición, y después abre la marca con motivo `DIVERGENCIA_DE_MONTO` (`B/09` §3). **Y si el contador llega a 0 con la fila ya `PAUSED`**, esta fila no ocurre —su `desde` es `ACTIVE` **o `GRACE_PERIOD`**, nunca `PAUSED`— y la mutación tampoco se podría aplicar: sobre una pausada el proveedor rechaza toda modificación (`EX-11`). **Se acepta que ese mes salga con descuento: se declara, no se encola nada** (FASE 8 completa, pendiente 7, owner 2026-09-25). **Y si llega a 0 con la fila en `GRACE_PERIOD`** —el último cobro con descuento entró como reintento del proveedor—, `S5` y esta fila corren en el mismo acto y la mutación se aplica igual: el preapproval está `authorized` y no hay `EX-11` que la rechace (FASE 9 vuelta 1, `F-8V1B1-006`). **Y el barrido no compara el monto de una fila `PAUSED`**; al reanudar, **`S10` es la transición desde la que corren los 3 días** del reintento (`B/09` §3; orquestador, FASE 8 completa, pendiente 8). Nuestro correo no bloquea: no es una cancelación (`DEC-MAIL-001` punto 1); el del proveedor (`CT-3`) ya se anticipó al canjear (punto 2, `B/19` §4 fila 7-bis) **y otra vez antes del último cobro con descuento, con *«tu promo termina»***, **7 días antes por default y configurable** (`NUCLEO/07` §6; pendiente 7; el plazo, pendiente 8, owner 2026-09-25). Lo que queda abierto está en `B/14` §2.4 y en *«lo que este capítulo NO cierra»* de `B/14` (corrección de diseño, FASE 8 completa, `F-8CB1-007`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:862
 
 <a id="trans-b-s31"></a>
 
 ### `TRANS:B:S31` · `S31`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:858`
+- **Fuente de la asignación**: `B/descomposicion.md:863`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S31](20-fase-2/B8b.md#tpz-s31) → [B8b](20-fase-2/B8b.md#pieza-b8b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): la **sucesora viva** de una sucesión en curso —con `sucede_a` apuntando a la predecesora que un contracargo acaba de cortar—: en `PENDING_AUTHORIZATION`, **o en `ACTIVE`** si ya autorizó y `S17` todavía no se confirmó
@@ -3912,14 +3912,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **Es la transición que el 📌 de `DEC-SUB-020` pedía y ninguna fila hacía** (FASE 8 completa, pendiente 8, owner 2026-09-25): un contracargo es una disputa, no una mora que el cambio de plan resuelva, así que **la sucesora también se corta**. **Por los dos destinos la sucesora deja de ser fila viva y la sucesión se cae como en `S3`, sin `S18`** (FASE 8 completa, owner 2026-09-25) —desde `ACTIVE` iba a `SUSPENDED`, que es fila viva, y la sucesión quedaba en curso sin nadie que la cerrara—. **La persona vuelve por la predecesora**: si quedó `SUSPENDED` por `S6`, por una sucesión desde `SUSPENDED` de tarjeta (`G-R1-A`, `B/20` §2). **Se cancela su preapproval en el proveedor con la regla de relectura de `S17`** —si la relectura ya lo ve `cancelled`, no se manda nada—, **y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): **si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y la reintenta el barrido** —`S31` llega a su destino pase lo que pase con la llamada, y es una de las filas de la salvedad 4 de `B/09` §3 (FASE 8 completa, owner 2026-09-25)—; si no hay destinatario, se cancela igual y el no-entregable se escala; un pagador manual no tiene preapproval, y esta parte no le corre (`B/06` §7). **Y si la sucesora era de un pagador manual en `PENDING_AUTHORIZATION`, su primera cuota —abierta en `S1` y nunca registrada— se cierra en el mismo acto** por la segunda cláusula de `MP3` (§7), como en `S3`. **Y si hay un saldo de cortesía diferido esperando a esta sucesora** (`NUCLEO/01` §2.6), **se cierra acá**: `saldo_cerrado_en` y `motivo_cierre = CONTRACARGO_DE_LA_PREDECESORA` (`B/02` §2.4) — ninguno de los tres valores que ya había describe este desenlace. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto por la rama 2 de `B/12` §5.3**, como en `S3`. **No es `S3`**, aunque comparta con ella el destino desde `PENDING_AUTHORIZATION`: `S3` avisa *«venció tu plazo»* y cierra el saldo con `VENTANA_DE_AUTORIZACIÓN_VENCIDA`; acá no venció nada (`S28` salió con la revisión del owner, 2026-09-28, C8). **`S31` se escribe en la misma transacción que la escritura de `S6` —o de `S12`— que la dispara** (FASE 9 vuelta 1, `F-8V1B2-006`). Su llamada de cancelación sale después y, como en `S3`, la fila llega a su destino pase lo que pase con ella: la reintenta la salvedad 4. Entre las dos escrituras no hay ventana donde `S17` pueda cancelar a la predecesora y `S18` limpiar el puntero. ⚠️ **Lo que esta fila deja abierto** está en *«lo que esta mitad NO cierra»*: qué aviso recibe la persona por la sucesora (los otros dos, cerrados: FASE 8 completa, owner 2026-09-25)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:181, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:858
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:181, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:863
 
 <a id="trans-b-s32"></a>
 
 ### `TRANS:B:S32` · `S32`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:859`
+- **Fuente de la asignación**: `B/descomposicion.md:864`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S32](10-corte/B7.md#tpz-s32) → [B7](10-corte/B7.md#pieza-b7) — nota de la fuente: «AS»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): **toda fila viva DE COMPLEMENTO en `ACTIVE`** del mismo `user`, con su instancia viva, que complementa a **la principal que se acaba de pausar**: `VERTICAL_SUBSCRIPTION` que cuelga de ella; `LISTING` sobre una ficha de su vertical; y `USER`/`GLOBAL` cuyo producto declara compatible esa vertical **sólo si en ninguna otra vertical compatible queda una principal viva que no esté `PAUSED` ni `SUSPENDED` (FASE 9 vuelta 1, `G2-2`) ni un ancla viva**. **Las principales no entran**; **y, por el tercer evento, sólo el `USER`/`GLOBAL`** en `ACTIVE` que complementaba a la principal que acaba de salir de las filas vivas (`V2-e`, abajo)
@@ -3928,14 +3928,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **el `PUT paused` se aplicó, confirmado por relectura**, la misma regla que `S8`
 - **efectos** (efectos): **Es la decisión del owner del 2026-09-25 (FASE 9 completa, 4a, `F-8CC1-004`)**: durante una pausa pedida por el cliente la principal no emite fuente (`12-contrato…` §2.6) y el pliegue descarta todo `COMPLEMENTO` sin título, así que el addon cobraba cada mes sin dar nada. **Se pausa en el proveedor por los mismos meses**: se abre la `subscription_pause` de la fila de complemento con el mismo `fin_previsto` que la de la principal. **No consume cupo de `DEC-SUB-004`**: la pausa que la persona pidió es una sola y se contó en la principal. **Si la relectura sigue viendo `authorized`, `S32` no ocurre sobre esa fila**: se queda `ACTIVE`, no se abre su `subscription_pause` y `S14` pone la marca con motivo `PAUSA_NO_APLICADA` (`B/02` §2.5, motivo 22); la principal queda pausada igual. **El complemento pausado no tiene reloj propio**: no lo alcanza `S10` (su condición exige principal); sale de `PAUSED` por `S33`, o termina por `S20` o `S21` —que le escriben `fin_real`—, y si su pausa queda colgada la ve la quinta comprobación de `B/09` §3 como la de cualquier fila. La instancia no cambia de estado. **Las pausas por `COURTESY` no pausan complementos**: la cortesía emite título (`12-contrato…` §2.6), así que el complemento se cobra y se recibe. El aviso de la pausa lo dice antes de confirmar (`B/19` §4, fila 5-bis). **Por `S6` la pausa no tiene `fin_previsto`** (owner 2026-09-26, `G2-2`): la suspensión no tiene fin, así que la quinta comprobación de `B/09` §3 no la selecciona; y el aviso es el de la suspensión (`B/19` §4, fila 10). **El motivo queda `CUSTOMER_REQUEST` aunque la causa sea la mora**, porque ninguna fila lo lee en una fila de complemento: `S10` exige principal, y `S6` no toma una `PAUSED · CUSTOMER_REQUEST`. **Por el tercer evento** (`V2-e`) corre en el mismo acto de la transición que sacó a la principal de las filas vivas: sin él, el `USER`/`GLOBAL` cuyo último título sin pausar moría por otra vía (una baja, una revocación, un grant) seguía cobrando sin título hasta que la otra principal volviera, y sin tope si estaba `SUSPENDED`, porque `S32` ya había pasado y la orfandad no se cumplía. **La pausa toma el `fin_previsto` más tardío entre las pausas de esas principales compatibles, y ninguno si alguna está `SUSPENDED`**, como por `S6`; y vuelve por `S33` cuando una de ellas pasa a `ACTIVE`, que es su evento para `USER`/`GLOBAL`
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:182, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:182, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:864
 
 <a id="trans-b-s33"></a>
 
 ### `TRANS:B:S33` · `S33` — **toda fila DE COMPLEMENTO en `PAUSED` que pausó `S32`** → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7)
-- **Fuente de la asignación**: `B/descomposicion.md:860`
+- **Fuente de la asignación**: `B/descomposicion.md:865`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S33](10-corte/B7.md#tpz-s33) → [B7](10-corte/B7.md#pieza-b7) — nota de la fuente: «AS»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): **toda fila DE COMPLEMENTO en `PAUSED` que pausó `S32`**
@@ -3944,14 +3944,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **el `PUT status=authorized` se aplicó, confirmado por relectura**, la misma regla que `S10`
 - **efectos** (efectos): se escribe `fin_real` en su `subscription_pause` con el día de la reanudación confirmada (FASE 9 completa, 4a). **Si la relectura sigue viendo `paused`, `S33` no ocurre**: la fila se queda `PAUSED` y `S14` pone la marca con motivo `REANUDACIÓN_NO_APLICADA` (`B/02` §2.5), como en `S10`. **Si la principal no se reanuda sino que termina** —`S22`, **`S36` desde `PAUSED`** (owner 2026-09-26, `X-2`), `S13`, el espejo del §10.1, o `S17` sin sucesora que la releve, **y, desde una `SUSPENDED`, `S23`** (`S25` y `S27` salieron con la revisión del owner, 2026-09-28, C8)— (FASE 9 vuelta 1, `G2-2`: `S6` salió de esta lista porque `SUSPENDED` es fila viva y no termina nada; desde el 2026-09-26 pausa los complementos por `S32`), **esta fila no corre**: la condición de `B/16` §4.2 se cumple, `A5` apaga la instancia y `S21` lleva la fila de complemento a `CANCELLED` desde `PAUSED`, escribiéndole `fin_real`
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:183, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:860
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:183, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:865
 
 <a id="trans-b-s34"></a>
 
 ### `TRANS:B:S34` · `S34` — `PAUSED` *(motivo `COURTESY`)* → **el mismo estado**
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B9b](20-fase-2/B9b.md#pieza-b9b)
-- **Fuente de la asignación**: `B/descomposicion.md:861`
+- **Fuente de la asignación**: `B/descomposicion.md:866`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S34](20-fase-2/B9b.md#tpz-s34) → [B9b](20-fase-2/B9b.md#pieza-b9b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PAUSED` *(motivo `COURTESY`)*
@@ -3960,14 +3960,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **los términos del primer disparador de `S9`**: la fila es de un plan mensual y la cortesía se firma en meses enteros (`B/14` §4.7)
 - **efectos** (efectos): **Cortesía sobre cortesía: se suman meses, no se reemplazan** (`DEC-GRANT-004` punto 3, `B/14` §4.7): se suman los meses a `courtesy_grant.fin` y a `subscription_pause.fin_previsto`; **al proveedor no se manda nada**, porque sigue `paused`; el aviso dice la fecha de fin nueva (`B/19` §4, fila 13-ter). **Existe porque la regla no tenía transición** (FASE 9 completa, contradicción 4 de `03` §R4.5): `S9` sale sólo de `ACTIVE` y exige *«no hay pausa vigente»*, así que la única fila que otorga cortesía bloqueaba la segunda
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:184, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:184, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:866
 
 <a id="trans-b-s35"></a>
 
 ### `TRANS:B:S35` · `S35` — `PAUSED` *(motivo `COURTESY`)* → `PAUSED` *(motivo `CUSTOMER_REQUEST`)*
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B9b](20-fase-2/B9b.md#pieza-b9b)
-- **Fuente de la asignación**: `B/descomposicion.md:862`
+- **Fuente de la asignación**: `B/descomposicion.md:867`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S35](20-fase-2/B9b.md#tpz-s35) → [B9b](20-fase-2/B9b.md#pieza-b9b)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PAUSED` *(motivo `COURTESY`)*
@@ -3976,14 +3976,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **confirmó el aviso de que pierde la cortesía que le quedaba** (`DEC-GRANT-004`), **y los términos de `puedePausar()` salvo el de estado** —cupo y ciclo mensual—: esta fila decide lo que `puedePausar()` no puede, porque su término `estado == ACTIVE` (`NUCLEO/01` §3) la excluye
 - **efectos** (efectos): **cierra la `subscription_pause` de la cortesía con `fin_real` hoy** —la cortesía termina—, **abre una nueva de la persona** por los meses que pidió, que sí cuenta contra `DEC-SUB-004`, y **al proveedor no se manda nada**: sigue `paused`. **Y desde acá sus complementos se pausan por `S32`**: durante la cortesía se cobraban y se recibían. **Existe porque el cruce estaba decidido y no ejecutado** (FASE 9 completa, contradicción 5 de `03` §R4.5): §5 dice *«en cortesía pide pausar → se permite»*, pero `S8` sale sólo de `ACTIVE`
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:862
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:867
 
 <a id="trans-b-s36"></a>
 
 ### `TRANS:B:S36` · `S36`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:863`
+- **Fuente de la asignación**: `B/descomposicion.md:868`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S36](10-corte/B5.md#tpz-s36) → [B5](10-corte/B5.md#pieza-b5)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` **o `PAUSED`, con cualquiera de los dos motivos** (owner 2026-09-26, `X-2`; FASE 9 vuelta 1, `N-3` de `25-verificado-G5`: la condición legal es el plazo, no el estado)
@@ -3992,14 +3992,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **dentro de los 10 días corridos del cobro que se revoca** (Resolución 424/2020, `DEC-RF-001`)
 - **efectos** (efectos): **en un solo acto, que es la parte 1 de `DEC-RF-001`** —*«no dos cosas que alguien tenga que acordarse de hacer juntas»*—: **cancela el preapproval** con la regla de relectura de `S17` y **nuestro correo antes de la llamada** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*) —sobre un pagador manual no se manda nada, como en `S23`, y desde `CANCEL_SCHEDULED` la relectura ya lo ve `cancelled` por `S11` y `D7` está cumplido; **desde `PAUSED` cancela el preapproval pausado, que el proveedor deja cancelar aunque rechace toda otra modificación (`EX-11`), como `S22`**—. **De la regla de `S17` toma la relectura y no el *«si falla, no ocurre»***: como `S22`–`S24`, la fila llega a `CANCELLED` pase lo que pase con la llamada, y si la llamada no se aplicó la reintenta el barrido por la salvedad 4 de `B/09` §3, que ya la cuenta; leída con la rama de fallo de `S17`, una llamada fallida dejaba la revocación sin ocurrir y, con un evento humano que nadie reevalúa, perdida sin marca (FASE 9 vuelta 1, `N-4` de `25-verificado-G5`); **corta el servicio en el acto**: `fin_de_servicio` es el instante del registro y no pasa por `CANCEL_SCHEDULED`, como `S24`, y desde `GRACE_PERIOD` **apaga el reloj del §4**; **desde `PAUSED` corta el servicio como `S22` y escribe `fin_real` en su `subscription_pause`** con el día del registro (owner 2026-09-26, `X-2`); y **crea `RF1` por el total del último pago acreditado**, que espera la confirmación humana de `RF2` (`DEC-RF-002`; §6.1) — **sobre una sucesora que todavía no tiene ningún pago acreditado** porque vive del crédito de `DEC-SUB-006`, **el último pago acreditado es el de su predecesora**, que encuentra por `sucedida_por` —la fila cuya `sucedida_por` es ésta, y así hacia atrás hasta la primera con un pago—, y los 10 días corridos se cuentan desde ese cobro (FASE 9 vuelta 2, owner 2026-09-27, `R17`, `F-8V2B1-005`): el crédito salió de ese pago, así que devolverlo entero devuelve también el crédito que se corta. **El botón de arrepentimiento sigue fuera de alcance** (`DEC-RF-001` parte 4): esta fila es lo que el botón va a llamar cuando entre. Sin ella la revocación era la baja de siempre más un reembolso, dos acciones en el orden que alguien recordara, y desde `ACTIVE` ninguna fila cortaba el servicio en el acto —`S11` deja el período entero— (owner 2026-09-26, `G5-4`; FASE 9 vuelta 1, `F-8V1B1-004`). **Y si la fila es la predecesora de una sucesión en curso, dispara `S18`**, igual que `S23` y `S24`: la predecesora se muere sola, sin `S17`, y sin `S18` el candado `A` quedaría vacío; si además retenía un pago por `S19` —desde `GRACE_PERIOD`—, es la **misma** rama 6 de `B/12` §5.3 y no una séptima (owner 2026-09-26, FASE 9 vuelta 1, M), **y ese pago retenido es el último pago acreditado que devuelve el `RF1` de esta fila**: los 10 días corridos se cuentan desde él, y la rama 6 no abre marca sobre ese pago, porque dos caminos de reembolso sobre el mismo pago proponían devolverlo dos veces (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-o`). **Y saca a la principal de las filas vivas, así que dispara la orfandad de sus complementos**: es una de las once transiciones de `B/16` §4.3 *(revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`; sin ordinales; residuo corregido el 2026-10-02)* (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`, `F-8V2D1-001`). `A5` y `S21` corren en este mismo acto, y el último cobro de cada complemento **se devuelve por `RF1` si cae dentro de sus propios 10 días corridos**; si no, `S21` abre el motivo 14 (ver abajo, *«cuál de los dos motivos abre `S21`»*). **Y la misma orfandad alcanza al addon de única vez, que no tiene fila de complemento y `S21` no toma** (FASE 9 vuelta 3, owner 2026-09-30, lote L, `F-8V3B1-006`): por cada instancia `UNA_VEZ` que `A5` apaga en este mismo acto y cuyo pago se acreditó dentro de los mismos 10 días corridos, **esta fila crea `RF1` por el total de ese pago**, colgado del `payment` de la instancia (`B/02` §2.3); se devuelve por el camino de las órdenes de `RF2` (§6.1). Fuera de ese plazo no se abre nada, porque la regla de `DEC-ADDON-001` ya dice que un `UNA_VEZ` se consume
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:186, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:863
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:186, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:868
 
 <a id="trans-b-s37"></a>
 
 ### `TRANS:B:S37` · `S37` — `ACTIVE` → el mismo estado
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B12](20-fase-3/B12.md#pieza-b12)
-- **Fuente de la asignación**: `B/descomposicion.md:864`
+- **Fuente de la asignación**: `B/descomposicion.md:869`
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S37](20-fase-3/B12.md#tpz-s37) → [B12](20-fase-3/B12.md#pieza-b12) — nota de la fuente: «también con el motivo *«aumento»* (BZ)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `ACTIVE`
@@ -4008,14 +4008,14 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **la fila es principal y tiene su fila de alcance de la migración en `PENDIENTE`** (`B/02` §2.2); **la versión destino ofrece su ciclo**; **no es predecesora ni sucesora de una sucesión en curso** y **no tiene un cambio programado en la cola** de `B/12` §2. **Sobre un pagador con tarjeta, relee el preapproval por id antes de actuar** (`D17`): si no lo lee `authorized`, `S37` no ocurre y la fila espera como una pausada o una en grace. **Sobre un pagador manual no relee ni muta** (verificación corta, 2026-09-29, lote M-B): no tiene preapproval, y su cuota no guarda monto, sale de la versión anclada (`B/02` §2.3), así que para él la migración entera es el cambio de versión
 - **efectos** (efectos): **se muta `transaction_amount` al precio de lista de la versión destino para su ciclo, sin promos** (la promo se pierde en todo cambio de plan, `B/14` §2.2, y el pedido escribe `cobros_restantes = 0` como el de un downgrade, `B/12` §2.3) **sobre la misma autorización, sin re-autorizar**, como un aumento (`DEC-MP-001`, `DW-1`), **y se verifica releyendo** (`D5`), porque la mutación no emite aviso (`EX-15`). **Encola el cambio de versión para la fecha de aplicación** en la cola de `B/12` §2, que es la que aplica el descenso de un downgrade, y es ahí, y no acá, donde la fila cambia de versión y emite el aviso de cobertura, **por `S38`** (revisión del owner, casos vecinos, 2026-09-29, caso 37); si la migración baja algo, **el excedente es de esa misma fecha**, avisado antes (`V/15` §4.2). **Con la mutación confirmada, la fila de alcance pasa a `APLICADA`.** **Sobre un pagador manual, `S37` sólo encola el cambio de versión para la fecha de aplicación, manda el tercer correo y pasa la fila de alcance a `APLICADA`, en el mismo acto**; `S38` le cambia la versión antes de que `MP5` abra la cuota de ese período, así que la cuota ya sale con el precio destino (verificación corta, 2026-09-29, lote M-B). **Si la mutación no se aplica, la retoma el barrido**, que en esa ventana espera el precio de la versión destino (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C): reintenta 3 días contados desde esta transición (caben antes del cobro: para eso `S37` corre siete días antes) y después abre `DIVERGENCIA_DE_MONTO` (`B/09` §3) sin encolar el cambio de versión. **Nuestro correo sale antes que el del proveedor**: el tercero de la migración, a 7 días, se manda en el mismo acto y antes de mutar (`DEC-MAIL-001`; `B/19` §4). **Pausadas y en grace no corren acá**: su `desde` no es `ACTIVE`, y la fecha de aplicación se recalcula a la primera renovación después de volver o de ponerse al día (`B/10` §3.7). Construye **B12**; **y la usa también un aumento de precio a un cliente anclado, con el motivo *«aumento»*: es una migración a la versión nueva, con la fecha y los contactos del plazo 11 (no el 12), sin la cohorte `PARA_RESOLVER` —el ciclo es el mismo— y conservando la promo viva, porque el monto esperado ya la descuenta (`B/09` §3)** (corte del MVP, owner 2026-10-02, BZ; `DEC-MP-002`, parte 2)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:864
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:869
 
 <a id="trans-b-s38"></a>
 
 ### `TRANS:B:S38` · `S38`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:865`
+- **Fuente de la asignación**: `B/descomposicion.md:870`
 - **Adjudicación** (`adjudicacion.json`): VIVO — los ⚠️ tachados quedaron decididos en la misma fila (G-A, I-A, I-B); «Construye **B8**» se lee `B8b` (B §2.12); lo tachado de la fila se omite y lo vigente va entero.
 - **Traslado a pieza** (`B/descomposicion.md` §2.12): [TPZ:S38](20-fase-2/B8b.md#tpz-s38) → [B8b](20-fase-2/B8b.md#pieza-b8b) — nota de la fuente: «también con el motivo *«aumento»*, que usa `B12` (BZ)»
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
@@ -4025,7 +4025,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **la fila tiene un cambio programado en la cola** (a lo sumo uno, `B/12` §2.2) **y no está pausada** **ni suspendida**: una pausada espera a la reanudación (colisión 4 del `B/12` §2.2, `EX-11`); **una suspendida espera a volver por `S7`, porque no tiene servicio que bajar; y en `GRACE_PERIOD` se aplica igual, porque el servicio sigue y el monto ya se mutó, así que esperar la dejaba con capacidades que ya no paga** (revisión del owner, casos vecinos, 2026-09-29, caso G-A). **Si `S7` la devuelve a `CANCEL_SCHEDULED`, se aplica igual: el período que se sostiene hasta `S12` se pagó con el monto ya mutado, y descartarlo le dejaba hasta el final las capacidades que ya no paga** (revisión del owner, casos vecinos, 2026-09-29, caso I-A). **Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora (`DEC-SUB-019`), y el cambio muere con la fila vieja, como en la colisión 2 del `B/12` §2.2: la sucesora eligió su plan en el checkout y nace sin cola** (revisión del owner, casos vecinos, 2026-09-29, caso I-B). **No depende del estado del proveedor ni lo toca**: el monto ya se mutó al pedir el downgrade (`DEC-SUB-008`) o en `S37`
 - **efectos** (efectos): **la fila pasa a la versión y a la billing option destino** del cambio encolado, **aplica la elección de qué conservar** del excedente (`V/15` §4.2) y **vacía la cola**. **Cuando la fecha coincide con la apertura de la cuota de un pagador manual (`MP5`, §7), `S38` corre antes**: la cuota de ese período se abre con la versión destino (verificación corta, 2026-09-29, lote M-B). Como le cambia la `referencia` a la fuente `SUSCRIPCIÓN` sin cambiar el estado, **emite el aviso de cobertura** después del commit (`12-contrato…` §3, *«quién emite»*). **Es el nombre del acto que la cola ya describía y no tenía fila**: el descenso de un downgrade, y desde C15 el cambio de versión de una migración. **Decidido: en `GRACE_PERIOD` se aplica igual, y en `SUSPENDED` espera y se aplica al volver por `S7`** (revisión del owner, casos vecinos, 2026-09-29, caso G-A). **Decididos los dos bordes: con `CANCEL_SCHEDULED` por `S7` se aplica, y con el pagador con tarjeta que vuelve como sucesora el cambio muere con la fila vieja** (revisión del owner, casos vecinos, 2026-09-29, casos I-A e I-B). Construye **B8**; **B12** la usa para la migración; **y con el motivo *«aumento»* cambia la versión en la fecha de aplicación del plazo 11, sin la cohorte `PARA_RESOLVER` y con la promo viva conservada; la usa `B12` para el aumento como para la migración** (corte del MVP, owner 2026-10-02, BZ)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:188, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:865
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:188, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:870
 
 ## Transiciones que no existen (`B/03` §3.3)
 
@@ -4065,7 +4065,7 @@ escribió un doble cobro.
 ### `PROH:B:1` · `CANCEL_SCHEDULED` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a) *(asignación inferida en `cobertura.json`)*
-- **Fuente de la asignación**: `B/descomposicion.md:842`
+- **Fuente de la asignación**: `B/descomposicion.md:847`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an), [AZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t6-az)): integración con DB que intenta la transición y comprueba que no ocurre, en la pieza dueña.
 - **lo que no existe**: `CANCEL_SCHEDULED` → `ACTIVE`
 - **por qué**: arrepentirse **no es una transición: es una sucesión**. `DEC-SUB-009` cancela en el proveedor de inmediato y cancelar allá es irreversible (`PA-5`), así que volver exige recrear y volver a autorizar — y eso entra por el candado `B` igual que un upgrade, **no** por un `INSERT` que el §11 rechace. No hay riesgo de doble cobro: `S11` ya canceló el preapproval de la predecesora *«de inmediato»*, así que la única autorización que puede cobrar es la de la sucesora. **Y por eso mismo `S17` no manda nada acá**: su relectura encuentra el preapproval ya `cancelled`, `D7` está cumplido, y la sucesión la cierra `S18` (§3.2)
@@ -4104,19 +4104,19 @@ regulariza —cambia la tarjeta o paga la cuota—, vuelve a `ACTIVE` por `S5`, 
 **Lo único que faltaba era decir el no en voz alta**, en vez de que alguien lo descubra
 implementando.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1454, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:842, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1484
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1454, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:847, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1484
 
 <a id="proh-b-2"></a>
 
 ### `PROH:B:2` · `CANCELLED` → cualquier cosa
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8a](10-corte/B8a.md#pieza-b8a) *(asignación inferida en `cobertura.json`)*
-- **Fuente de la asignación**: `B/descomposicion.md:843`; `B/descomposicion.md:854`
+- **Fuente de la asignación**: `B/descomposicion.md:848`; `B/descomposicion.md:859`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an), [AZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t6-az)): integración con DB que intenta la transición y comprueba que no ocurre, en la pieza dueña.
 - **lo que no existe**: `CANCELLED` → cualquier cosa
 - **por qué**: ídem. Una suscripción terminada no revive
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1455, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:843, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1455, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:848, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859
 
 <a id="proh-b-3"></a>
 
@@ -4135,36 +4135,36 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 ### `PROH:B:4` · `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` **—salvo `SUSPENDED` por `S6` desde una cortesía (abajo)—** **y salvo `CANCEL_SCHEDULED` por `S22` sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`: tampoco choca con la razón de esta fila, porque `S22` cancela el preapproval pausado, que `EX-11` mide que se puede)
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b)
-- **Fuente de la asignación**: `B/descomposicion.md:841`; `B/descomposicion.md:853`
+- **Fuente de la asignación**: `B/descomposicion.md:846`; `B/descomposicion.md:858`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an), [AZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t6-az)): integración con DB que intenta la transición y comprueba que no ocurre, en la pieza dueña.
 - **lo que no existe**: `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` **—salvo `SUSPENDED` por `S6` desde una cortesía (abajo)—** **y salvo `CANCEL_SCHEDULED` por `S22` sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`: tampoco choca con la razón de esta fila, porque `S22` cancela el preapproval pausado, que `EX-11` mide que se puede)
 - **por qué**: **La excepción, del owner** (FASE 8 completa, pendiente 8, owner 2026-09-25): **`PAUSED` con motivo `COURTESY` → `SUSPENDED` por `S6`, sólo por su tercer evento —el contracargo—**, porque la cortesía da servicio y un contracargo corta a toda fila que da servicio (`DEC-SUB-020`, su 📌). **No choca con la razón de esta fila**: `S6` no modifica el preapproval pausado, **lo cancela**, que es justo lo que `EX-11` mide que sí se puede. Lo demás de la celda sigue igual: está medido que **estando pausada el proveedor rechaza toda modificación** (`EX-11`), y que **sí deja cancelar**. **Las dos que quedan afuera de la prohibición tienen fila**: `ACTIVE` es `S10`, y `CANCELLED` es **`S22`** —la baja— y `S13` —el grant—. Esta celda decía qué no pasa y, hasta `S22`, una de las dos que sí pasan no estaba escrita. (`S25` salió con la revisión del owner, 2026-09-28, C8)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1457, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:841, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:853
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1457, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:846, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:858
 
 <a id="proh-b-5"></a>
 
 ### `PROH:B:5` · `ABANDONED` → `ACTIVE`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:834`
+- **Fuente de la asignación**: `B/descomposicion.md:839`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an), [AZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t6-az)): integración con DB que intenta la transición y comprueba que no ocurre, en la pieza dueña.
 - **lo que no existe**: `ABANDONED` → `ACTIVE`
 - **por qué**: la ventana venció y el preapproval se canceló. Volver a intentar crea una fila nueva, con clave de idempotencia nueva
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1458, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:834
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1458, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:839
 
 <a id="proh-b-6"></a>
 
 ### `PROH:B:6` · dos vivas para el mismo `user + vertical`, **salvo una sucesión declarada**
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B3](10-corte/B3.md#pieza-b3)
-- **Fuente de la asignación**: `B/descomposicion.md:832`; `B/descomposicion.md:137`
+- **Fuente de la asignación**: `B/descomposicion.md:837`; `B/descomposicion.md:137`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an), [AZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t6-az)): integración con DB que intenta la transición y comprueba que no ocurre, en la pieza dueña.
 - **lo que no existe**: dos vivas para el mismo `user + vertical`, **salvo una sucesión declarada**
 - **por qué**: es el §11, y su excepción está acotada por la base, no por una convención: **un origen y su única sucesora**, impuesto por los dos índices parciales de `B/02` §2.2. La condición está en `S1` y el capítulo 05 la hace cumplir con restricciones de unicidad, no con un chequeo. El invariante cuenta **compromisos, no filas**
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1459, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:832, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:137
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1459, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:837, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:137
 
 ## Pago (`B/03` §6)
 
@@ -4257,14 +4257,14 @@ que lo confirmara, que es lo que `DEC-RF-002` prohíbe.
 ### `TRANS:B:P1` · `P1` — `PENDING` → `SUCCEEDED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B9b](20-fase-2/B9b.md#pieza-b9b) (provee), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:891`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:896`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PENDING`
 - **evento** (disparador): el proveedor acredita
 - **hacia** (estado destino): `SUCCEEDED`
 - **nota** (guardas y efectos): si el pago es de una suscripción con una redención de promo cuyo `cobros_restantes` es mayor que 0, **lo decrementa en uno en el mismo acto** (`B/02` §2.4) —**sólo si el cobro salió con el descuento**: su importe no pasa del monto esperado con esa promo aplicada (`B/14` §2.4); si salió sin él, el contador no se mueve y lo cobrado de más lo marca el barrido con el motivo 24 (owner 2026-09-27, FASE 9 vuelta 2, `R20`, `F-8V2B3-001`)—, y si llega a 0 corre `S30`; si cuelga de una instancia de addon, no escribe `covered_period` (`B/02` §2.3) (corrección de diseño, FASE 8 completa, `F-8CB1-007`, `F-8CB1-008`). **Corre también sobre una fila de `payment` que ya existe**: un reintento que se aprueba **dentro del mismo registro de cobro** llega con el mismo id del hecho, y `C6` ya no lo descarta — relee la fila existente y, si está `PENDING` y la lectura por id dice `approved`, corre este `P1` sobre ella (`B/05` C6, §10.2; FASE 8 completa, `F-8CB3-003`). **El período que escribe en `covered_period` sale de la fecha del propio registro de cobro**, no de la fecha del próximo cobro (`B/02` §2.3; FASE 8 completa, `F-8CB3-005`, `F-8CB1-011`). **Si esa escritura choca con el `UNIQUE`** —el período ya tiene un cobro acreditado—, **el pago pasa igual a `SUCCEEDED`**: la plata entró y el hecho se registra, porque rechazarlo dejaba plata sin fila; **no se escribe la cobertura**, y `S14` abre la marca con motivo **`COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20; FASE 8 completa, pendiente 6, owner 2026-09-25) **con el pago colgado**: un período con dos cobros lo mira una persona, con el default de devolver (`B/19` §6) (`DEC-CONC-002` punto 4). **Y emite el comprobante** —el `receipt` de este cobro, `B/02` §2.3, `DEC-LEGAL-001`—, también sobre el pago de un addon de única vez (FASE 8 completa, `F-8CB3-006`), **con la copia del nombre y el correo de quien paga, leídos de la fila de `user` dueña del cobro en esta misma transacción** (revisión del owner, casos vecinos, 2026-09-29, caso K-A; `B/02` §2.3). **Salvo sobre una cuenta que la acción 24 ya dio de baja** (`NUCLEO/08` §3; verificación corta, 2026-09-29, lote N-C), que la misma fila de `user` dice: su nombre y su correo ya son el seudónimo, así que `P1` **deja las dos columnas nulas y el comprobante sin enviar**, como sobre una lápida; el resto de lo que hace no cambia. Es la red de la precondición de la 24, que no alcanza a un cobro en vuelo. **Y si es el primer pago acreditado de una suscripción, emite el aviso de cobertura** (`12-contrato…` §3) **después de su commit, nunca dentro de su transacción** —adentro, la máquina de trial relee `cobrada: no` y `T2` no dispara— (FASE 9 vuelta 2, `F-8V2C1-002`): su `cobrada` pasa de `no` a `sí`, que es lo que convierte el trial (`V/03` §2, `T2`; `DEC-TRIAL-010`, owner 2026-09-25). **Sobre una lápida —la de recepción, la única que queda (FASE 5, simplificación del corte, S-40 y S-70)— el asiento es este `P1`, con menos efectos** (FASE 9 vuelta 2, `F-8V2B3-005`): el `payment` nace `PENDING` colgado de la lápida y pasa a `SUCCEEDED` en la misma transacción que lo escribe, porque la plata entró y la devolución que proponga su marca (`B/09` §2.4) sale de un pago acreditado. **No escribe `covered_period`** (la lápida no da servicio y no se extiende nada), **no toca ninguna promo** (no tiene redención) **y no emite el aviso de cobertura**: la lápida no tiene usuario ni vertical y no es una fila que emita fuente, así que no hay `cobrada` que pase a `sí`. **Sí emite el comprobante**, que `DEC-LEGAL-001` pone por cada cobro; no tiene destinatario, así que queda en su fila sin enviarse, **y sin nombre ni correo del pagador, porque no hay `user` del que copiarlos** (revisión del owner, casos vecinos, 2026-09-29, caso K-A; `B/02` §2.3). La marca, cuando la hay, se escribe en la misma transacción que el `payment`, y nada de lo que corre después del commit la revierte
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:891
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1767, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:896
 
 <a id="trans-b-p2"></a>
 
@@ -4328,28 +4328,28 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 ### `TRANS:B:P6` · `P6`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B7](10-corte/B7.md#pieza-b7) (implementa), [B11](10-corte/B11.md#pieza-b11) (implementa)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:458`; `B/descomposicion.md:561`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:459`; `B/descomposicion.md:562`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `SUCCEEDED` — **o `PARTIALLY_REFUNDED`**, con el mismo tratamiento (FASE 8 completa, pendiente 6, owner 2026-09-25)
 - **evento** (disparador): **se lee `charged_back` en el pago, releído por id** (`D17`) — por el aviso de contracargo del proveedor o por la comprobación de pagos acreditados del barrido (`B/09` §3)
 - **hacia** (estado destino): `CHARGED_BACK`
 - **nota** (guardas y efectos): **un contracargo**: el cliente desconoció el cargo ante su banco (`DEC-SUB-020`; FASE 8 completa, `F-8CB3-009`, owner 2026-09-25). **Si la suscripción del pago está en `ACTIVE` o `GRACE_PERIOD` —o en `PAUSED` con motivo `COURTESY` (pendiente 8, owner 2026-09-25)—, corre `S6` por su tercer evento** (§3.2): suspende sin grace y cancela el preapproval. **Esté en el estado que esté la fila, `S14` abre la marca con motivo `CONTRACARGO`** (`B/02` §2.5) con este pago colgado, para que una persona siga la disputa; **Cerrado el 2026-09-25 (owner)**: **la regla es una: si la fila da servicio, se corta en el acto; si no, sólo la marca** (`DEC-SUB-020`, su 📌; FASE 8 completa, pendiente 6, owner 2026-09-25). **Una `CANCEL_SCHEDULED` pasa a `CANCELLED` ya**, sin esperar su fecha de fin: es `S12` por su segundo evento (§3.2). **Una `PAUSED` con motivo `CUSTOMER_REQUEST`, una `SUSPENDED` o una fila terminal sólo abren la marca.** **Y si la fila es la predecesora de una sucesión en curso, `S6` corre igual y la sucesora también se corta** (§3.2, `S6`) **—por `S31`, y también cuando la predecesora es la `CANCEL_SCHEDULED` que `S12` corta** (pendiente 8, owner 2026-09-25). **Cerrado el 2026-09-25 (owner)**: **una `PAUSED` con motivo `COURTESY` da servicio, así que se corta**: `S6` la toma por su tercer evento, la cortesía se cierra y la fila pasa a `SUSPENDED` (FASE 8 completa, pendiente 8, owner 2026-09-25). **No toca `covered_period`**: la fila queda cortada o marcada, la vuelta es por una sucesora con su propia cobertura, y si la disputa se gana el pago vuelve por `P7` con su período bien escrito. ⚠️ **Documental, no medido** (`RC-8`, `UNKNOWN`): qué campo muestra `charged_back` al releer —el pago embebido del registro de cobro o `/v1/payments/{id}`— no está medido
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1772, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:458, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:561
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1772, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:459, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:562
 
 <a id="trans-b-p7"></a>
 
 ### `TRANS:B:P7` · `P7` — `CHARGED_BACK` → `SUCCEEDED` — **o `PARTIALLY_REFUNDED`**
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B7](10-corte/B7.md#pieza-b7) (implementa)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:458`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:459`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `CHARGED_BACK`
 - **evento** (disparador): **se lee `reimbursed`**, releído por id: la disputa se resolvió a nuestro favor
 - **hacia** (estado destino): `SUCCEEDED` — **o `PARTIALLY_REFUNDED`**
 - **nota** (guardas y efectos): **la plata volvió y el cobro vuelve a valer**. **A cuál de los dos vuelve lo dice el pago mismo**: `PARTIALLY_REFUNDED` si su monto reembolsado acumulado es mayor que cero, `SUCCEEDED` si no —la columna ya está en `payment` (`B/02` §2.3), así que no hace falta guardar de qué estado salió `P6`— (FASE 8 completa, pendiente 6, owner 2026-09-25). **No reactiva la suscripción**: la fila sigue donde la dejó `P6` —`SUSPENDED`, `CANCELLED` o el estado que tenía— y, si la persona quiere, vuelve por el checkout como cualquier suspendido con tarjeta —la sucesión desde `SUSPENDED` que `G-R1-A` admite (`B/20` §2)— (`DEC-SUB-020`). **La marca `CONTRACARGO` se cierra por `S15`**, levantada por la persona que sigue el caso: no se levanta sola, porque `S15` exige una intervención humana registrada. **No emite un comprobante nuevo**: el del cobro ya existe
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1773, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:458
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1773, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:459
 
 ## Reembolso (`B/03` §6.1)
 
@@ -4493,7 +4493,7 @@ la devolución no es automática en ninguno de los dos casos: la confirma una pe
 ### `TRANS:B:MP1` · `MP1` — `AWAITING` → `REGISTERED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:591`; `B/descomposicion.md:299`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:592`; `B/descomposicion.md:299`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `AWAITING`
 - **evento** (disparador): el admin registra el pago
@@ -5027,7 +5027,7 @@ La obligación 2 de `DEC-METH-008`, contestada por escrito:
 | *«el ciclo que vence estando pausada avanza la fecha +1 ciclo sin cobrar»* (`PS-6`) | la matriz, citada por `DEC-SUB-010` y `B/12` §7.1 | **sigue verdadera y gana un consumidor**: es la medición que fija qué hace `S10` sobre un pagador manual, donde nadie la ejecuta por nosotros | arriba, punto 3 |
 | *«la fecha del próximo cobro se registra»* del barrido | `B/09` §3 | **sigue verdadera y sin tocar**: es la escritura del régimen **con** proveedor, y sobre un pagador manual el barrido no tiene preapproval que leer | sin tocar |
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1871, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:591, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:299, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1906, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1931, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1990, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2047, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2068, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2095, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2111, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2142, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2179, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2257, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2410, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2439, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2462, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2505
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1871, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:299, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1906, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1931, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1990, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2047, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2068, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2095, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2111, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2142, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2179, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2257, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2410, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2439, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2462, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2505
 
 <a id="trans-b-mp2"></a>
 
@@ -5062,7 +5062,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 ### `TRANS:B:MP4` · `MP4` — `DECLARED_UNPAID` → `REGISTERED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:591`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:592`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `DECLARED_UNPAID`
 - **evento** (disparador): el admin registra el pago, que llegó **después**
@@ -5156,7 +5156,7 @@ que ahí no hay cuota de `manual_payment` que mover. Sobre un pagador manual la 
 terminó. El **avance**, en cambio, no es sólo de `MP4` —la vuelta de una cortesía lo necesita
 igual—, y por eso está escrito arriba como la tercera escritura y no adentro de esta puerta.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1874, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:591, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2323
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1874, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2323
 
 <a id="trans-b-mp5"></a>
 
@@ -5177,20 +5177,20 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 ### `TRANS:B:MP6` · `MP6` — *(sin fila)* → `REGISTERED`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:725`
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:726`
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): *(sin fila)*
 - **evento** (disparador): **el admin registra una transferencia que no cae en ninguna cuota abierta**: una segunda del mismo período, o una sobre una fila que ya no abre cuotas, como una `CANCELLED` (FASE 9 vuelta 3, owner 2026-09-30, lote W; `F-8V3B1-005`; la plantilla sin llenar, verificación, VC3-cobro-06)
 - **hacia** (estado destino): `REGISTERED`
 - **efectos** (efectos): **es la misma acción, *«registrar un pago manual»* (§30), ejecutada sin cuota abierta**, como `MP4` lo es desde otro estado de origen: mismo permiso, misma auditoría y misma confirmación, que acá dice además que el pago es un segundo pago del período y que se propone devolverlo. **Crea la fila de `manual_payment` ya `REGISTERED`**, con el período de la última cuota de la suscripción, quién, cuándo y el comprobante de la transferencia (`B/02` §2.3). **Intenta escribir la cobertura y choca con el `UNIQUE` de `covered_period`**, porque ese período ya tenía un cobro acreditado: la cobertura no se escribe y **`S14` abre la marca `COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20) con este `manual_payment` colgado, igual que `P1` sobre un cobro de tarjeta. Es la simetría con la tarjeta, y el default es devolver (`B/19` §6): la devolución se asienta por **`RF4`**, con el comprobante de la transferencia de vuelta (§6.1). **No mueve la suscripción, no avanza la fecha del próximo cobro y no emite comprobante**: no cubre ningún período nuevo. Si la fila no tiene ninguna cuota, porque nunca fue de pagador manual, el período es el del último cobro acreditado. Si no tiene ninguno, no hay período con qué chocar y `MP6` no corre: queda declarado en *«lo que este capítulo NO cierra»*. **Sobre una `CANCELLED` cuya última cuota quedó `DECLARED_UNPAID`** (la baja desde `GRACE_PERIOD` o desde `SUSPENDED`, que `MP3` o `MP2` cierran sin pago), **ese período no tiene cobertura y no hay nada con qué chocar: `MP6` no escribe cobertura y `S14` abre la marca `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5, motivo 2) con este `manual_payment` colgado, que ya propone devolver, lo mismo que la tabla de desempate del `B/05` §3 le da a un cobro sobre una terminal. La confirmación dice que es un pago posterior a la baja, no un segundo pago del período. La devolución se asienta igual por `RF4` (FASE 9 vuelta 3, owner 2026-09-30, lote AF; verificación, VC3-cobro-03). **Lo mismo sobre una `ABANDONED` de pagador manual cuya primera cuota quedó `DECLARED_UNPAID`** (la ventana de autorización vencida, que `S3` y `MP3` cierran sin pago): el período de esa cuota no tiene cobertura, `MP6` no la escribe y `S14` abre el motivo 2 con el `manual_payment` colgado y la propuesta de devolver (FASE 9 vuelta 3, owner 2026-09-30, lote AM)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1876, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:725
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1876, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:726
 
 ## Instancia de addon, A1–A7 (`B/03` §8)
 
 ### Instancia de addon, A1–A7 (`B/03` §8) — «8. Addon (instancia)»
 
-Texto de `B/03-maquinas-de-estado.md:2530–2548`, sin lo tachado:
+Texto de `B/03-maquinas-de-estado.md:2530–2549`, sin lo tachado:
 
 **Cancelar el plan no cancela los addons**: como cada addon recurrente es una suscripción aparte,
 esa orquestación es nuestra (`DEC-ADDON-002`), y es justamente lo que el §41 pide poder hacer al
@@ -5212,9 +5212,24 @@ la orfandad cuando `S12` saca a la principal de las filas vivas.
 - **desde** (estado origen): *(sin fila)*
 - **evento** (disparador): se contrata
 - **hacia** (estado destino): `PENDING_AUTHORIZATION`
-- **nota** (guardas y efectos): exige una suscripción principal válida y compatible (§38) —**válida es `ACTIVE` y pagando** (`NUCLEO/01` §2; FASE 9 vuelta 1, `F-8V1D1-002`)**: con al menos un pago acreditado, o sucesora de una predecesora que venía pagando** (la lectura de `S4`, §3.2; `B/16` §2.2; owner 2026-09-25, FASE 9 completa, 4d, que absorbe `R12-OWNER-2`): un addon comprado en los minutos que siguen a un alta cuyo primer cobro después se rechaza quedaba cobrando sin título—. **Nunca durante un trial** (§10.5) — **leído como `V/11` §5.1–§5.2**: se prohíbe comprar teniendo **sólo** trials; y **con scope `LISTING`, el objetivo no puede ser una ficha de una vertical cuyo único título es un trial** —en `cobertura(user, vertical del objetivo)`, ninguna fuente de clase `TÍTULO` que no sea de `tipo: TRIAL`—, porque la ficha en trial **no es objetivo elegible** (FASE 8 completa, `F-8CA1-004`). **Un addon `USER` o `GLOBAL` se puede comprar igual**: lo que no hace es aportar en la vertical en trial, y eso lo corta el pliegue (`V/15` §2.6, `G-R2`), no esta fila. **Y con scope `LISTING`, la ficha objetivo es el recurso del paso 4 del cap. 17** (épica de verticales): propia del comprador, de la vertical del producto, y en un estado que acepte destacarla —ni `PURGED` ni `MODERATED`— **—leído por `ficha(idDeFicha).admiteDestaque` del contrato §4.1, que contesta sí o no y define verticales; billing no lee el estado de la ficha** (FASE 9 vuelta 1, `N-G4V-06`)—. Si no, *«no existe»* (FASE 9 vuelta 1, `F-8V1A1-009`). **Y el addon `UNA_VEZ` nace con el identificador del pedido del cliente** (FASE 9 vuelta 2, owner 2026-09-27, `R4`, `F-8V2B2-003`): la pantalla de compra lo acuña al abrirse y viaja con el pedido; `A1` lo persiste en la instancia (`B/02` §2.4), **y la clave de `/v1/orders` sale de él y no de la llamada** (`B/16` §1.4). Un segundo pedido con el mismo identificador —el doble clic, el reintento del navegador— **no crea otra instancia**: devuelve la que ya existe, y su orden es la misma. Una recompra es otro pedido, con otro identificador. **Y una compra sin resolver del mismo producto sobre el mismo objetivo no deja abrir otra** (FASE 9 vuelta 3, owner 2026-09-30, lote E, `F-8V3B2-001`, `F-8V3B1-003`): **la identidad de la compra es `(dueño, producto, objetivo)`**, y mientras haya una instancia con esa identidad en `PENDING_AUTHORIZATION`, un pedido con otro identificador no crea otra (el `UNIQUE` parcial de `B/02` §2.4): la pantalla muestra la compra pendiente y dice que se está procesando. **Vale para las dos clases**: en el `UNA_VEZ` es la pantalla recargada después de una respuesta perdida, que acuñaba otro pedido y cobraba otra orden; **en el recurrente es el candado contra el doble clic**, que no tenía ninguno, porque los candados `A` y `B` son de la principal (`B/02` §2.2) y el proveedor no deduplica la creación (`EX-17`). **No impide una recompra legítima**: resuelta la instancia, en el estado que sea, la identidad queda libre, **salvo en el recurrente mientras la instancia siga `ACTIVE`: un addon recurrente igual sobre el mismo objetivo, con uno vivo, no es recompra y el mismo `UNIQUE` lo frena** (FASE 9 vuelta 3, owner 2026-09-30, lote Y; `B/02` §2.4). El costo, dicho: quien perdió la respuesta de una compra no puede volver a comprar ese producto para ese objetivo hasta que la instancia se resuelva, como mucho la ventana de `A3`; en el recurrente, mientras tanto, tiene el enlace para retomar el checkout (§3.4)
+- **nota** (guardas y efectos): exige una suscripción principal válida y compatible (§38) **—o, en su lugar, un ancla viva de un grant permanente en esa vertical, que vale como título (`B/16` §2.4, la excepción del §35.3; residuo corregido el 2026-10-02)—** —**válida es `ACTIVE` y pagando** (`NUCLEO/01` §2; FASE 9 vuelta 1, `F-8V1D1-002`)**: con al menos un pago acreditado, o sucesora de una predecesora que venía pagando** (la lectura de `S4`, §3.2; `B/16` §2.2; owner 2026-09-25, FASE 9 completa, 4d, que absorbe `R12-OWNER-2`): un addon comprado en los minutos que siguen a un alta cuyo primer cobro después se rechaza quedaba cobrando sin título—. **Nunca durante un trial** (§10.5) — **leído como `V/11` §5.1–§5.2**: se prohíbe comprar teniendo **sólo** trials; y **con scope `LISTING`, el objetivo no puede ser una ficha de una vertical cuyo único título es un trial** —en `cobertura(user, vertical del objetivo)`, ninguna fuente de clase `TÍTULO` que no sea de `tipo: TRIAL`—, porque la ficha en trial **no es objetivo elegible** (FASE 8 completa, `F-8CA1-004`). **Un addon `USER` o `GLOBAL` se puede comprar igual**: lo que no hace es aportar en la vertical en trial, y eso lo corta el pliegue (`V/15` §2.6, `G-R2`), no esta fila. **Y con scope `LISTING`, la ficha objetivo es el recurso del paso 4 del cap. 17** (épica de verticales): propia del comprador, de la vertical del producto, y en un estado que acepte destacarla —ni `PURGED` ni `MODERATED`— **—leído por `ficha(idDeFicha).admiteDestaque` del contrato §4.1, que contesta sí o no y define verticales; billing no lee el estado de la ficha** (FASE 9 vuelta 1, `N-G4V-06`)—. Si no, *«no existe»* (FASE 9 vuelta 1, `F-8V1A1-009`). **Y el addon `UNA_VEZ` nace con el identificador del pedido del cliente** (FASE 9 vuelta 2, owner 2026-09-27, `R4`, `F-8V2B2-003`): la pantalla de compra lo acuña al abrirse y viaja con el pedido; `A1` lo persiste en la instancia (`B/02` §2.4), **y la clave de `/v1/orders` sale de él y no de la llamada** (`B/16` §1.4). Un segundo pedido con el mismo identificador —el doble clic, el reintento del navegador— **no crea otra instancia**: devuelve la que ya existe, y su orden es la misma. Una recompra es otro pedido, con otro identificador. **Y una compra sin resolver del mismo producto sobre el mismo objetivo no deja abrir otra** (FASE 9 vuelta 3, owner 2026-09-30, lote E, `F-8V3B2-001`, `F-8V3B1-003`): **la identidad de la compra es `(dueño, producto, objetivo)`**, y mientras haya una instancia con esa identidad en `PENDING_AUTHORIZATION`, un pedido con otro identificador no crea otra (el `UNIQUE` parcial de `B/02` §2.4): la pantalla muestra la compra pendiente y dice que se está procesando. **Vale para las dos clases**: en el `UNA_VEZ` es la pantalla recargada después de una respuesta perdida, que acuñaba otro pedido y cobraba otra orden; **en el recurrente es el candado contra el doble clic**, que no tenía ninguno, porque los candados `A` y `B` son de la principal (`B/02` §2.2) y el proveedor no deduplica la creación (`EX-17`). **No impide una recompra legítima**: resuelta la instancia, en el estado que sea, la identidad queda libre, **salvo en el recurrente mientras la instancia siga `ACTIVE`: un addon recurrente igual sobre el mismo objetivo, con uno vivo, no es recompra y el mismo `UNIQUE` lo frena** (FASE 9 vuelta 3, owner 2026-09-30, lote Y; `B/02` §2.4). El costo, dicho: quien perdió la respuesta de una compra no puede volver a comprar ese producto para ese objetivo hasta que la instancia se resuelva, como mucho la ventana de `A3`; en el recurrente, mientras tanto, tiene el enlace para retomar el checkout (§3.4)
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2534, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
+
+<a id="trans-b-a1-bis"></a>
+
+### `TRANS:B:A1-bis` · `A1-bis` — *(sin fila)* → `ACTIVE`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B10](20-fase-3/B10.md#pieza-b10)
+- **Fuente de la asignación**: `B/descomposicion.md:148`
+- **Traslado a pieza** (instancia de addon → pieza, `D/16` §4.6, [AV](01-decisiones-vigentes.md#own-41-corte-del-mvp-t4-av)): [APZ:A1-bis](20-fase-3/B10.md#apz-a1-bis) → [B10](20-fase-3/B10.md#pieza-b10)
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): *(sin fila)*
+- **evento** (disparador): **la persona elige un addon compatible teniendo un ancla viva de un grant con `includesAddons: true`** —lo elige uno por uno, y esa elección es un acto suyo con su registro (`B/16` §3.2)—
+- **hacia** (estado destino): `ACTIVE`
+- **nota** (guardas y efectos): (corte del MVP, owner 2026-10-02, CD.) **Sin preapproval ni orden, sin `payment` y sin comprobante**: no hay pago de cero ni comprobante de cero (`B/16` §3.1). **La instancia registra como su título el ancla**, no *«el grant»*, como en `S20` (`B/16` §3.1; `DEC-ADDON-003`, mecánica 3). **Compatible** es lo que el producto declara para la vertical donde el grant ancló: el grant es título sólo ahí (`B/16` §2.4). No pasa por `PENDING_AUTHORIZATION` porque no hay nada que autorizar, así que `A2`, `A3` y `A7` no tienen sujeto; **la apaga `A5`** por su tercer evento cuando se revoca el grant del que cuelga el ancla. **La construye `B10`**
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
 
 <a id="trans-b-a2"></a>
 
@@ -5229,7 +5244,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `ACTIVE`
 - **nota** (guardas y efectos): recurrente: su propio preapproval (`DEC-ADDON-002`). De única vez: su propio cobro **por `/v1/orders`, sin preapproval** (`EX-30`, medido sólo en sandbox; `B/16` §1.4, `B/06` §3.2); su `payment` cuelga de la instancia (`B/02` §2.3). **`/v1/orders` es idempotente por la clave (`EX-41`, sonda 51): un reintento con la misma clave no cobra dos veces** (corrección de diseño, FASE 8 completa, `F-8CB1-008`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:966
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2536, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:966
 
 <a id="trans-b-a3"></a>
 
@@ -5244,7 +5259,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `ABANDONED`
 - **nota** (guardas y efectos): **la misma ventana que `S3`**, con sus **dos** plazos según el método de pago (§3.4 punto 1). **Y el efecto de `S3`** (FASE 9 completa, C-R5-2): si es recurrente, **relee su preapproval por id** —si lo ve `authorized`, `A3` no ocurre y corre `A2`: nuestro reloj no decide solo sobre un estado del proveedor— y **lo cancela en el proveedor, con la regla de relectura de `S17` y con nuestro correo antes** (§3.2, *«el correo antes de cancelar»*); si la cancelación falla, la reintenta el barrido por la salvedad 1 de `B/09` §3. Un preapproval `pending` no vence (`EX-1`), así que sin esto el enlace viejo se podía autorizar más tarde. **De única vez no hay preapproval, y lo que corre es su gemelo sobre la orden** (FASE 9 vuelta 2, owner 2026-09-27, `R4`, `F-8V2B1-003`, `F-8V2B2-004`): **`A3` sólo confirma, nunca crea** (FASE 9 vuelta 3, owner 2026-09-30, lote E, `F-8V3B1-001`, `F-8V3B1-002`, `F-8V3B2-001`). El reenvío de la ventana se apoyaba en `EX-41`, que midió el reenvío inmediato; el de horas después, con el token de la tarjeta vencido, es `EX-43`, `UNKNOWN`, y si la orden nunca había existido el reenvío la creaba y la cobraba tres días después, sobre una compra que la persona ya había rehecho. **Con el id de la orden guardado**, `A3` la relee por id: con un pago aprobado no ocurre y corre `A2`; sin él, ocurre; si la relectura no responde, no ocurre en esa corrida y la condición se vuelve a evaluar en la siguiente. **Sin id de orden, `A3` ocurre sin reenviar nada**: la instancia pasa a `ABANDONED` sin id, y si la orden llegó a existir y se pagó, la busca la comprobación de órdenes pagadas del barrido por el identificador del pedido (`B/09` §3), **condicionado a que el proveedor permita encontrar una orden por esa referencia** (`EX-57`, `UNKNOWN`); si no lo permite, ese caso queda sin detector, declarado en *«lo que este capítulo NO cierra»* de `B/09`. La orden que se aprueba después de que `A3` abandonó la ve el barrido (`B/09` §3, la comprobación de órdenes pagadas)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2536, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2537, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
 
 <a id="trans-b-a4"></a>
 
@@ -5259,7 +5274,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `EXPIRED`
 - **nota** (guardas y efectos): **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2537, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:966
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2538, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:966
 
 <a id="trans-b-a5"></a>
 
@@ -5274,7 +5289,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `CANCELLED`
 - **nota** (guardas y efectos): **Son tres eventos y el tercero es nuevo** (ver abajo, *«el addon cuyo título era el ancla»*). **El tercero nombra la REVOCACIÓN y no *«el retiro del ancla»***, porque *«desanclar no está declarado»* (`12-contrato…` §2.8, `B/02` §2.4) y una transición no puede esperar un acto que ningún catálogo produce: revocar es el acto declarado —fila del grant permanente del `NUCLEO/08` §3— y **retira todas las anclas del instrumento de una vez**, que es lo que el ancla-título de esta instancia necesita. §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**; **y para `LISTING`, esa misma condición leída sobre **el conjunto de las principales** de la vertical de la ficha** —ninguna viva y ningún ancla viva— (`B/16` §4.2; FASE 8 completa, `F-8CA2-003`, owner 2026-09-25; **el conjunto**, owner 2026-09-25, FASE 9 completa, 4c); **y para `USER`/`GLOBAL`, que en ninguna vertical compatible de su producto haya una principal viva y pagando ni un ancla viva** (4d; *«pagando»*, `NUCLEO/01` §2, FASE 9 vuelta 1, `F-8V1D1-002`)—. **El borrado de la ficha ya no es orfandad: es sólo el evento de `A6`** (FASE 9 completa, `K-9` de `05`: las dos filas compartían el par `(ACTIVE, llegada a PURGED)` sin guardas disjuntas, y por la regla 7 del `NUCLEO/03` §1 ninguna corría; las dos iban al mismo `CANCELLED` con el mismo motivo 14, así que la plata no cambia). **Nunca un estado de llegada concreto**: la pueden cumplir **las transiciones que sacan a una principal de las filas vivas, enumeradas en `B/16` §4.3 y no copiadas acá** —eran *«seis»* acá y *«doce»* allá, y las dos omitían `S31`; eran **trece** desde la FASE 9 completa (contradicción 2 de `03` §R6.5), y fueron **catorce**, con `S36` (FASE 9 vuelta 2, `R1-b`, `F-8V2D1-001`), y hoy son **once**, sin `S25`, `S27` y `S28` (residuo visto al publicar, 2026-09-30; vale `B/16` §4.3; salieron con la revisión del owner, 2026-09-28, C8)—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3); **y, si esa fila es principal, sobre las instancias `LISTING` cuyas fichas son del mismo `user + vertical`** (`B/16` §4.3 punto 3; `F-8CA2-003`) **y sobre las `USER`/`GLOBAL` del mismo `user` cuyo producto declara compatible esa vertical** (`B/16` §4.3 punto 4; FASE 9 completa, 4d). **Y la suscripción de complemento de la instancia que se apaga queda `CANCELLED` en el mismo acto, por `S21`** (§3.2): **el preapproval que este efecto cancela es el de esa fila**, así que la llamada es **una sola** y no se manda dos veces. **Y antes de esa llamada sale nuestro correo** (`DEC-MAIL-001`; §3.2, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala
 
-**Texto de la fuente — «La instancia que autoriza después de que su título murió: por qué `A5` no sale sólo de `ACTIVE`»** (`B/03-maquinas-de-estado.md:2549–2603`, sin lo tachado):
+**Texto de la fuente — «La instancia que autoriza después de que su título murió: por qué `A5` no sale sólo de `ACTIVE`»** (`B/03-maquinas-de-estado.md:2550–2604`, sin lo tachado):
 
 **El `desde` de `A5` decía `ACTIVE` y nada más, y eso dejaba entera la ventana de autorización del
 checkout del addon.** El camino, con todos sus pasos declarados: alguien `ACTIVE` —el único
@@ -5329,7 +5344,7 @@ evaluar cuando la instancia llega a `ACTIVE` por `A2`**: es uno de los momentos 
 enumera, y sin esa enumeración *«se re-evalúa»* era una promesa sin transición, que es lo que la
 regla 1 de este capítulo no admite.
 
-**Texto de la fuente — «El addon cuyo título era el ancla: por qué `A5` gana un tercer evento»** (`B/03-maquinas-de-estado.md:2604–2687`, sin lo tachado):
+**Texto de la fuente — «El addon cuyo título era el ancla: por qué `A5` gana un tercer evento»** (`B/03-maquinas-de-estado.md:2605–2688`, sin lo tachado):
 
 `B/16` §3.3 decide desde hace tiempo que **al revocar un grant el addon se corta** —*«la fuente
 era el grant y el grant se fue»*—, y **ninguna fila de esta tabla lo ejecutaba**. La orfandad no
@@ -5411,7 +5426,7 @@ que el orden de `S20` está declarado. **Y en ese addon la fila de complemento l
 (§3.2), que es la que le pone estado terminal al cobro: en el convertido su población es vacía,
 porque `S20` ya la sacó de las filas vivas.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2538, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:959, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2549, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2604
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2539, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:959, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2550, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2605
 
 <a id="trans-b-a6"></a>
 
@@ -5426,7 +5441,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `CANCELLED`
 - **nota** (guardas y efectos): **es la ÚNICA fila que ejecuta el borrado de la ficha** (FASE 9 completa, `K-9` de `05`): compartía el par con la segunda cláusula de `A5` y, sin guardas disjuntas, la regla 7 del `NUCLEO/03` §1 dejaba sin correr a las dos. **Se consume**: no se libera ni se reasigna (`DEC-ADDON-001`), y el borrado **tiene que advertir qué addons se pierden y por cuánto**. **Su suscripción de complemento también queda `CANCELLED` en el acto, por `S21`** (§3.2) — misma regla y misma razón que en `A5`: el addon complementa algo que ya no está. **La cancelación de ese preapproval la manda este acto** (`S21` no manda nada), así que lleva la misma condición que `A5`: **antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; §3.2, *«el correo antes de cancelar»*)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2539, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2540, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
 
 <a id="trans-b-a7"></a>
 
@@ -5441,7 +5456,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **hacia** (estado destino): `ABANDONED`
 - **nota** (guardas y efectos): (mediciones del 2026-09-29, lote L-C.) **Un rechazo cierra la compra en el acto**, sin esperar la ventana de `A3`: el id de la orden `failed` queda guardado en la instancia (`B/16` §1.4). **El segundo intento es otro pedido**: la pantalla de compra acuña un identificador nuevo y `A1` crea otra instancia, con otra clave, porque reusar la del pedido rechazado devuelve la orden `failed` y otra tarjeta con la misma clave es otro cuerpo, que el proveedor contesta `409` (`EX-41`). **Y si el `402` no llegó**, el segundo pedido reenvía la misma orden y el rechazo llega por ahí (`B/16` §1.4; verificación corta, 2026-09-29, lote N-B). **No manda nada al proveedor**: no hay preapproval que cancelar ni orden que reenviar. **Sólo `UNA_VEZ`**: el complemento recurrente se autoriza en el checkout del proveedor, donde el rechazo no llega como una orden, y sigue con `A2` o `A3`. **Su par, `(PENDING_AUTHORIZATION, la orden vuelve rechazada)`, tiene una sola fila**: comparte el `desde` con `A2`, `A3`, `A5` y `A6`, no el evento, así que no suma a la tabla de la regla 7 del `NUCLEO/03` §1
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2540, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2541, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
 
 ## Motivos de la marca de conciliación (`B/02` §2.5)
 
@@ -5544,7 +5559,7 @@ nadie enruta el caso»*. **Los dos son quienes lo enrutan**, cada uno con su pro
 ### `MOT:1` · `REEMBOLSO_POR_CONFIRMAR`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:849`
+- **Fuente de la asignación**: `B/descomposicion.md:854`
 - **Valor del enum**: `reconciliation_mark.motivo` = `REEMBOLSO_POR_CONFIRMAR`
 - **`motivo`**: `REEMBOLSO_POR_CONFIRMAR`
 - **quién abre la marca**: **`S18`** al cerrar la sucesión, ramas 1, 5 y 6 de `B/12` §5.3; en la 6, no tras `S36`, cuyo `RF1` devuelve el pago retenido (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-o`)
@@ -5611,63 +5626,63 @@ misma forma y le faltaba la misma columna.**
    **con qué motivo**. El predicado se define en `NUCLEO/01` §2.5 y su inventario de consumidores
    está ahí.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1023, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:972, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1155
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1023, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:854, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:972, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1155
 
 <a id="mot-2"></a>
 
 ### `MOT:2` · `COBRO_POSTERIOR_A_LA_BAJA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B11](10-corte/B11.md#pieza-b11) (implementa), [B8a](10-corte/B8a.md#pieza-b8a) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:725`; `B/descomposicion.md:139`
+- **Fuente de la asignación**: `B/descomposicion.md:726`; `B/descomposicion.md:139`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_POSTERIOR_A_LA_BAJA`
 - **`motivo`**: `COBRO_POSTERIOR_A_LA_BAJA`
 - **quién abre la marca**: `S14`, desde `C2` del `B/05` §2 **y desde la comparación de cobros del `B/09` §3, sobre las filas de la primera fila del desempate del `B/05` §3** (FASE 9 vuelta 1, R4) **y desde `MP6`, cuando la transferencia llega sobre una `CANCELLED` cuya última cuota quedó `DECLARED_UNPAID`** **o sobre una `ABANDONED` de pagador manual con la primera cuota `DECLARED_UNPAID`** (lote AM): no hay cobertura con qué chocar y el `manual_payment` se cuelga acá (`B/03` §7; FASE 9 vuelta 3, owner 2026-09-30, lote AF)
 - **qué tiene que hacer la persona**: confirmar el reembolso de un cobro que llegó después de cancelar
 - **¿hay plata del cliente que devolver?**: **SÍ**
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1024, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:725, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1024, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:726, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
 
 <a id="mot-3"></a>
 
 ### `MOT:3` · `COBRO_POSTERIOR_AL_GRANT`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) *(asignación inferida en `cobertura.json`)* · **también**: [B9a](10-corte/B9a.md#pieza-b9a) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:149`; `B/descomposicion.md:580`
+- **Fuente de la asignación**: `B/descomposicion.md:149`; `B/descomposicion.md:581`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_POSTERIOR_AL_GRANT`
 - **`motivo`**: `COBRO_POSTERIOR_AL_GRANT`
 - **quién abre la marca**: `S14`, desde `C3` del `B/05` §2 **y desde la comparación de cobros del `B/09` §3, sobre las filas de la segunda fila del desempate del `B/05` §3** (FASE 9 vuelta 1, R4)
 - **qué tiene que hacer la persona**: ídem, sobre un cobro posterior a un *Free Forever*
 - **¿hay plata del cliente que devolver?**: **SÍ**
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1025, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:580
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1025, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:581
 
 <a id="mot-4"></a>
 
 ### `MOT:4` · `PAGO_PENDIENTE_SIN_RAMA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:580`
+- **Fuente de la asignación**: `B/descomposicion.md:581`
 - **Valor del enum**: `reconciliation_mark.motivo` = `PAGO_PENDIENTE_SIN_RAMA`
 - **`motivo`**: `PAGO_PENDIENTE_SIN_RAMA`
 - **quién abre la marca**: la **segunda** comprobación del `B/09` §3, cuando la rama no es determinable
 - **qué tiene que hacer la persona**: decidir el destino de un pago retenido por `S19` que ninguna de las seis ramas alcanzó
 - **¿hay plata del cliente que devolver?**: **puede**, y es la persona quien lo decide
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1026, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:580
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1026, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:581
 
 <a id="mot-5"></a>
 
 ### `MOT:5` · `DIVERGENCIA_DE_MONTO`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:1057`
+- **Fuente de la asignación**: `B/descomposicion.md:1062`
 - **Valor del enum**: `reconciliation_mark.motivo` = `DIVERGENCIA_DE_MONTO`
 - **`motivo`**: `DIVERGENCIA_DE_MONTO`
-- **quién abre la marca**: `S14`, desde la comparación de monto del `B/09` §3 —el monto esperado, derivado, contra `transaction_amount`, **después de 3 días de reintentar la mutación** (FASE 8 completa, pendiente 7, owner 2026-09-25)—
+- **quién abre la marca**: `S14`, desde la comparación de monto del `B/09` §3 —el monto esperado, derivado, contra `transaction_amount`, **después de 3 días de reintentar la mutación si la abrió una mutación nuestra** (`S30`, un aumento de `DEC-MP-002` o `S37`; FASE 8 completa, pendiente 7, owner 2026-09-25), **o en el acto si no** (pendiente 8, `B/09` §3 y `B/14` §2.4; residuo corregido el 2026-10-02)—
 - **qué tiene que hacer la persona**: decidir qué monto vale y mutarlo o aceptarlo
 - **¿hay plata del cliente que devolver?**: no, **y el cobro equivocado sigue saliendo todos los meses**
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1027, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1057
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1027, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062
 
 <a id="mot-6"></a>
 
@@ -5732,28 +5747,28 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:102
 ### `MOT:8` · `REANUDACIÓN_NO_APLICADA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7) *(asignación inferida en `cobertura.json`)* · **también**: [B11](10-corte/B11.md#pieza-b11) (implementa), [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:860`
+- **Fuente de la asignación**: `B/descomposicion.md:865`
 - **Valor del enum**: `reconciliation_mark.motivo` = `REANUDACIÓN_NO_APLICADA`
 - **`motivo`**: `REANUDACIÓN_NO_APLICADA`
 - **quién abre la marca**: `S14`, desde la rama de fallo de `S10` **o de `S33`** (FASE 9 vuelta 1, `F-8V1B2-010`); **y la quinta comprobación** del `B/09` §3
 - **qué tiene que hacer la persona**: reanudar a mano o reclamarle al proveedor — el cliente está **sin servicio y sin cobro**
 - **¿hay plata del cliente que devolver?**: no
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1030, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:860
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1030, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:865
 
 <a id="mot-9"></a>
 
 ### `MOT:9` · `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:580`
+- **Fuente de la asignación**: `B/descomposicion.md:581`
 - **Valor del enum**: `reconciliation_mark.motivo` = `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`
 - **`motivo`**: `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`
 - **quién abre la marca**: la **primera** comprobación del `B/09` §3
 - **qué tiene que hacer la persona**: cerrar la sucesión que `S18` no cerró, antes de que el candado `A` vacío deje entrar un alta nueva
 - **¿hay plata del cliente que devolver?**: no
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1031, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:580
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1031, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:581
 
 <a id="mot-10"></a>
 
@@ -5788,49 +5803,49 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:103
 ### `MOT:12` · `COBRO_DURANTE_CORTESÍA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B8b](20-fase-2/B8b.md#pieza-b8b) *(asignación inferida en `cobertura.json`)* · **también**: [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:840`
+- **Fuente de la asignación**: `B/descomposicion.md:845`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_DURANTE_CORTESÍA`
 - **`motivo`**: `COBRO_DURANTE_CORTESÍA`
 - **quién abre la marca**: `S14`, cuando el proveedor cobra **entre `S2` y la re-emisión de una cortesía diferida** (`S9`, `DEC-GRANT-007`)
 - **qué tiene que hacer la persona**: confirmar el reembolso de un cobro sobre meses que `SUPER_ADMIN` había regalado (en meses desde la FASE 8 completa, `F-8CB1-001`)
 - **¿hay plata del cliente que devolver?**: **SÍ** — es el riesgo que `DEC-GRANT-007` aceptó por escrito, y devolverlo es el camino que esa decisión eligió
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1034, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:840
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1034, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:845
 
 <a id="mot-13"></a>
 
 ### `MOT:13` · `CORTESÍA_SIN_RE_EMITIR`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:580`
+- **Fuente de la asignación**: `B/descomposicion.md:581`
 - **Valor del enum**: `reconciliation_mark.motivo` = `CORTESÍA_SIN_RE_EMITIR`
 - **`motivo`**: `CORTESÍA_SIN_RE_EMITIR`
 - **quién abre la marca**: la **sexta** comprobación del `B/09` §3
 - **qué tiene que hacer la persona**: pausar la sucesora y re-emitir la cortesía diferida que `S9` no re-emitió
 - **¿hay plata del cliente que devolver?**: **puede**: si ya cobró, sí; si todavía no, alcanza con re-emitirla
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1035, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:580
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1035, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:581
 
 <a id="mot-14"></a>
 
 ### `MOT:14` · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B10](20-fase-3/B10.md#pieza-b10) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:852`
+- **Fuente de la asignación**: `B/descomposicion.md:857`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`
 - **`motivo`**: `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`
 - **quién abre la marca**: **`S21`**, cuando mata una suscripción de complemento **cuyo último cobro paga un período que todavía no terminó** y la instancia **no** llegó a `CANCELLED` por la causa del **15** (revisión del owner, 2026-09-28, C8) —**ni la orfandad la causó `S36` con ese cobro dentro de sus propios 10 días corridos**, que no abre marca y crea `RF1` (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`)— (`B/03` §3.2, `B/16` §4.4)
 - **qué tiene que hacer la persona**: decidir si se devuelve lo que queda del período — el addon se apagó el mismo día y esos días **no los va a usar nadie**
 - **¿hay plata del cliente que devolver?**: **puede**: `B/16` §4.4 decidió que *«el período ya pagado no se reembolsa»* y dejó por escrito *«si en un caso concreto corresponde devolver, entra por esa vía y la confirma una persona»* — **es esa persona, y este motivo es lo que la trae**. **Y uno de los caminos que caen acá es NUESTRO, y está acá por MECANISMO y no por criterio** —`S17` (residuo visto al publicar, 2026-09-30; vale `B/03` §3.2: `S26` se retiró con la revisión del owner, 2026-09-28, C8, y el 15 es sólo la revocación)—: la transición que mata al título **no nombra su causa**, así que `S21` no tiene qué escribir (`DEC-RF-004`, la condición obligatoria; `B/03` §3.2, `B/19` §6)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1036, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1036, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857
 
 <a id="mot-15"></a>
 
 ### `MOT:15` · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:852`; `B/descomposicion.md:139`
+- **Fuente de la asignación**: `B/descomposicion.md:857`; `B/descomposicion.md:139`
 - **Adjudicación** (`adjudicacion.json`): VIVO — C8, explícito; lo tachado de la fila se omite y lo vigente va entero.
 - **Valor del enum**: `reconciliation_mark.motivo` = `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`
 - **`motivo`**: `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN` (el nombre, revisión del owner, 2026-09-28, C8)
@@ -5838,56 +5853,56 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:103
 - **qué tiene que hacer la persona**: confirmar el reembolso de lo que queda del período
 - **¿hay plata del cliente que devolver?**: **SÍ**: **el cliente no hizo nada** y pierde días que pagó, y **la causa la conoce el acto mismo** —`S21` conoce la cláusula de `A5` que disparó—, así que `S21` escribe este motivo **sin trazar nada hacia atrás** (`DEC-RF-006`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1037, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1037, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:857, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
 
 <a id="mot-16"></a>
 
 ### `MOT:16` · `CANCELACIÓN_SIN_CONFIRMAR`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B4](10-corte/B4.md#pieza-b4) (lee), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:723`; `B/descomposicion.md:149`; `B/descomposicion.md:582`
+- **Fuente de la asignación**: `B/descomposicion.md:724`; `B/descomposicion.md:149`; `B/descomposicion.md:583`
 - **Valor del enum**: `reconciliation_mark.motivo` = `CANCELACIÓN_SIN_CONFIRMAR`
 - **`motivo`**: `CANCELACIÓN_SIN_CONFIRMAR`
 - **quién abre la marca**: el **barrido** (`B/09` §3, salvedades 1 y 4), **cuando pasaron 3 días desde la transición que decidió la cancelación** sin lograr confirmar la cancelación que una transición nuestra ya mandó —la fila está terminal, **o en `CANCEL_SCHEDULED` por `S11`** (owner 2026-09-25; `S26` salió con la revisión del owner, 2026-09-28, C8), y la relectura sigue viendo el preapproval `authorized`, `paused` o `pending` (`B/03` §10.1)—. **Antes de los 3 días no abre nada** (FASE 9 completa, C-R5-5: la regla es de tiempo, no de corridas): reintenta; **abierta la marca, deja de reintentar** (owner 2026-09-25) (FASE 8 completa, `F-8CB1-013`, owner 2026-09-25; `DEC-CONC-002` punto 4, su 📌)
 - **qué tiene que hacer la persona**: cancelar a mano en el proveedor y **verificar releyendo por id** que quedó `cancelled`
 - **¿hay plata del cliente que devolver?**: no, **pero el preapproval vivo puede cobrar**
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1038, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:723, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:582
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1038, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:724, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:583
 
 <a id="mot-17"></a>
 
 ### `MOT:17` · `CONTRACARGO`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B7](10-corte/B7.md#pieza-b7) (implementa), [B11](10-corte/B11.md#pieza-b11) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:561`
+- **Fuente de la asignación**: `B/descomposicion.md:562`
 - **Valor del enum**: `reconciliation_mark.motivo` = `CONTRACARGO`
 - **`motivo`**: `CONTRACARGO`
 - **quién abre la marca**: **`S14`**, en el mismo acto que `P6` —y que `S6` por su tercer evento si la fila está en `ACTIVE` o `GRACE_PERIOD` **o en `PAUSED` con motivo `COURTESY`** (pendiente 8, owner 2026-09-25), **o que `S12` por su segundo evento si está en `CANCEL_SCHEDULED`** (FASE 8 completa, pendiente 6, owner 2026-09-25)—: se leyó `charged_back` en un pago acreditado, releído por id, por el aviso de contracargo o por la comprobación de pagos acreditados del `B/09` §3 (`B/03` §3.2 y §6; `DEC-SUB-020`; FASE 8 completa, `F-8CB3-009`, owner 2026-09-25)
 - **qué tiene que hacer la persona**: **seguir la disputa**: si se gana (`reimbursed`, `P7`) o se pierde (`settled`), levantar la marca por `S15`; la vuelta de la persona, si la quiere, es por el checkout
 - **¿hay plata del cliente que devolver?**: **no**: la plata ya volvió al cliente por su banco. **Y por eso una devolución nuestra sobre ese mismo pago no sale**: `RF2` relee el pago antes de mandarla y, contracargado, la fila va a `FAILED` (`B/03` §6.1; FASE 9 vuelta 3, `F-8V3B2-002`). ⚠️ **Documental, no medido** (`RC-8`)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1039, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:561
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1039, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:562
 
 <a id="mot-18"></a>
 
 ### `MOT:18` · `REEMBOLSO_FUERA_DEL_FLUJO`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B5](10-corte/B5.md#pieza-b5) (provee), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:1057`; `B/descomposicion.md:562`
+- **Fuente de la asignación**: `B/descomposicion.md:1062`; `B/descomposicion.md:563`
 - **Valor del enum**: `reconciliation_mark.motivo` = `REEMBOLSO_FUERA_DEL_FLUJO`
 - **`motivo`**: `REEMBOLSO_FUERA_DEL_FLUJO`
 - **quién abre la marca**: **`S14`**, desde la comprobación de pagos acreditados del `B/09` §3: un pago nuestro `SUCCEEDED` que el proveedor da reembolsado —o con más reembolsado que nuestros `refund`— sin que haya pasado por nuestro flujo. **No suspende**: fue un acto nuestro, no del cliente (`DEC-SUB-020`, *«lo que NO decide»*; `DEC-RF-007`)
 - **qué tiene que hacer la persona**: **asentar el `refund` que falta**, con quién lo confirmó, y recién ahí corre `P3` o `P4` (`B/03` §6) — **con la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»*** (`NUCLEO/08` §3, la decimocuarta), que crea la fila de `refund` directamente en `EXECUTED` por `RF4` (`B/03` §6.1) (owner 2026-09-25; FASE 9 completa, 5a y C-R7-1)
 - **¿hay plata del cliente que devolver?**: **no**: la plata ya se devolvió; lo que falta es el asiento
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1040, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1057, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:562
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1040, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:563
 
 <a id="mot-19"></a>
 
 ### `MOT:19` · `COBRO_SIN_REGISTRAR`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B5](10-corte/B5.md#pieza-b5) (provee), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:562`; `B/descomposicion.md:149`
+- **Fuente de la asignación**: `B/descomposicion.md:563`; `B/descomposicion.md:149`
 - **Adjudicación** (`adjudicacion.json`): VIVO — reemplazos explícitos; lo tachado de la fila se omite y lo vigente va entero.
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_SIN_REGISTRAR`
 - **`motivo`**: `COBRO_SIN_REGISTRAR`
@@ -5895,63 +5910,63 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:104
 - **qué tiene que hacer la persona**: **asentar el cobro**: registrarlo y decidir a qué período corresponde. **Precisado: asentarlo es crear la fila de `payment` en `PENDING` con el id del registro y correr la regla con la que esa fila recibe el cobro** —la que nombra la lista del `B/05` §3 para su estado: `S2` tras releer el preapproval (`PENDING_AUTHORIZATION`), `P1` (`ACTIVE`, `PAUSED` con el cobro anterior), `P1` con la extensión con `max` de `C2` primera fila (`CANCEL_SCHEDULED` con el cobro anterior), la retención de `S19` (predecesora en curso), o `S5`/`S7` (`GRACE_PERIOD`/`SUSPENDED` con las cuatro condiciones); `P1` a secas perdía la extensión y la retención (FASE 9 vuelta 1, `N-G3V-02`)—, y el registro del pago es el de `P1`, que emite el comprobante, escribe `covered_period` con la fecha del registro (§2.3) y avisa la cobertura (`B/03` §6), **con la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»*** (`NUCLEO/08` §3, la decimocuarta; owner 2026-09-25; FASE 9 completa, 5a y C-R7-1)
 - **¿hay plata del cliente que devolver?**: **no**. **Cerrado el 2026-09-25 (owner)**: el motivo se partió y el segundo camino es el 20. **Re-decidida el 2026-09-25 (orquestador, FASE 8 completa, pendiente 8)**: **la plata entró bien; lo que falta es asentarla**, así que no hay nada que devolver
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1041, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:562, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1041, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:563, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149
 
 <a id="mot-20"></a>
 
 ### `MOT:20` · `COBRO_DUPLICADO`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:563`; `B/descomposicion.md:725`
+- **Fuente de la asignación**: `B/descomposicion.md:564`; `B/descomposicion.md:726`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_DUPLICADO`
 - **`motivo`**: `COBRO_DUPLICADO`
 - **quién abre la marca**: **`S14`**, desde **`P1`** **o desde `MP6`** (la transferencia que no cae en ninguna cuota abierta, `B/03` §7; FASE 9 vuelta 3, owner 2026-09-30, lote W), cuando la cobertura del cobro choca con el `UNIQUE` de `covered_period` (§2.3): **el período ya tenía un cobro acreditado** (FASE 8 completa, `F-8CB1-011`; partido del 19 en la pendiente 6, owner 2026-09-25)
 - **qué tiene que hacer la persona**: confirmar el reembolso del cobro que llegó sobre un período ya pagado
 - **¿hay plata del cliente que devolver?**: **SÍ**: es un período con dos cobros acreditados, y uno de ellos no compró nada; el default es **devolver** (`B/19` §6)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1042, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:563, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:725
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1042, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:564, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:726
 
 <a id="mot-21"></a>
 
 ### `MOT:21` · `COBRO_DEL_PERÍODO_SIN_RESOLVER`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:578`; `B/descomposicion.md:141`
+- **Fuente de la asignación**: `B/descomposicion.md:579`; `B/descomposicion.md:141`
 - **Valor del enum**: `reconciliation_mark.motivo` = `COBRO_DEL_PERÍODO_SIN_RESOLVER`
 - **`motivo`**: `COBRO_DEL_PERÍODO_SIN_RESOLVER`
 - **quién abre la marca**: el **barrido** (`B/09` **§6, punto 2** — referencia corregida en FASE 9 vuelta 1, `F-8V1D1-007`), **cuando pasaron 3 días** desde el `date_created` del registro de cobro y la lectura del `B/09` §4 sigue contestando *«todavía no se sabe»* —el contador de intentos del proveedor va adelante de su listado— sobre una fila cuyo `S6` está esperando esa respuesta (`B/03` §3.2). El mismo plazo que el 16, y por la misma forma: reintentar y, a los 3 días, marcar (owner 2026-09-25; FASE 9 completa, 3d, `F-8CB3-004`)
 - **qué tiene que hacer la persona**: leer el registro de cobro a mano en el proveedor y decidir si el período cobró —`S5`, asentando el cobro— o no —`S6`— por `S15`
 - **¿hay plata del cliente que devolver?**: no, **pero la fila da servicio sin haber cobrado** mientras dure
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1043, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:578, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1043, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:579, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141
 
 <a id="mot-22"></a>
 
 ### `MOT:22` · `PAUSA_NO_APLICADA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7) · **también**: [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa), [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:859`
+- **Fuente de la asignación**: `B/descomposicion.md:864`
 - **Valor del enum**: `reconciliation_mark.motivo` = `PAUSA_NO_APLICADA`
 - **`motivo`**: `PAUSA_NO_APLICADA`
 - **quién abre la marca**: **`S14`**, desde la rama de fallo de **`S8`, `S9` y `S32`** (owner 2026-09-25, 4a): el `PUT paused` se aceptó y la relectura sigue viendo `authorized`, así que la transición no ocurre y la fila se queda en `ACTIVE` (`B/03` §3.2; y el par `authorized` × `PAUSED` del §10.1 sin pausa confirmada) (FASE 9 completa, `F-8CB2-003`)
 - **qué tiene que hacer la persona**: pausar a mano o reclamarle al proveedor; **en `S9`, avisarle a `SUPER_ADMIN` que la cortesía no se aplicó**; **y si después `S7` canceló el complemento por la regla de `S11`, la cancelación no la resuelve: la levanta una persona después de ver que el complemento ya no cobra** (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-q`)
 - **¿hay plata del cliente que devolver?**: no, **pero el proveedor sigue cobrando** a quien pidió pausar o recibió una cortesía
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1044, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1044, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:864
 
 <a id="mot-23"></a>
 
 ### `MOT:23` · `ORDEN_PAGADA_SIN_INSTANCIA`
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B11](10-corte/B11.md#pieza-b11) · **también**: [B3](10-corte/B3.md#pieza-b3) (provee)
-- **Fuente de la asignación**: `B/descomposicion.md:711`
+- **Fuente de la asignación**: `B/descomposicion.md:712`
 - **Valor del enum**: `reconciliation_mark.motivo` = `ORDEN_PAGADA_SIN_INSTANCIA`
 - **`motivo`**: `ORDEN_PAGADA_SIN_INSTANCIA`
 - **quién abre la marca**: **la comprobación de órdenes pagadas del `B/09` §3** (FASE 9 vuelta 2, owner 2026-09-27, `R4`): una instancia de addon `UNA_VEZ` en `ABANDONED` cuya orden, releída por id, tiene un pago aprobado —la orden se pagó y la instancia nunca llegó a `ACTIVE`—, **o, sin id de orden guardado, la que la búsqueda por el identificador del pedido encuentra pagada, si el proveedor la permite** (FASE 9 vuelta 3, owner 2026-09-30, lote E). **Es la única marca que cuelga de una instancia y no de una suscripción** (`reconciliation_mark`, §2.2): el addon de única vez no tiene suscripción (§2.3)
 - **qué tiene que hacer la persona**: **asentar el cobro y devolverlo**: devolver desde el panel del proveedor y asentar las dos cosas con la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»* (`NUCLEO/08` §3, la decimocuarta), que crea el `payment` colgado de la instancia y la fila de `refund` en `EXECUTED` por `RF4` (`B/03` §6.1)
 - **¿hay plata del cliente que devolver?**: **SÍ**: la persona pagó y no recibió el addon, y la instancia `ABANDONED` no vuelve —ninguna transición sale de ahí—; el default es **devolver** (`B/19` §6)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1045, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:711
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1045, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:57, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:712
 
 <a id="mot-24"></a>
 
@@ -5976,7 +5991,7 @@ Cada candado es la sección entera de la fuente, sin lo tachado.
 ### `LOCK:C1` · C1 · Entra el pago mientras corre el proceso que suspende
 
 - **Pieza dueña** (su AC vive en el archivo de la pieza): [B7](10-corte/B7.md#pieza-b7) *(asignación inferida en `cobertura.json`)*
-- **Fuente de la asignación**: `B/descomposicion.md:141`; `B/descomposicion.md:837`
+- **Fuente de la asignación**: `B/descomposicion.md:141`; `B/descomposicion.md:842`
 
 **Los dos
 órdenes ya no terminan en el mismo estado, y está decidido qué pasa en cada uno** (FASE 8 completa,
@@ -6082,7 +6097,7 @@ esperando su id (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30
   del proveedor no se implementa** (`DEC-RF-007`; `RF-3` sigue `UNKNOWN`): si hay que devolverlo,
   se hace por fuera y se asienta por `RF4` (`B/03` §6.1) (FASE 9 completa, C-R7-5).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:106, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:104, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:837, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:27, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:39, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:50, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:544
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:106, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:104, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:842, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:27, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:39, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:50, .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:544
 
 <a id="lock-c2"></a>
 
@@ -6221,7 +6236,7 @@ que se lleva a la base:
 **`UNIQUE(subscription_id, período) WHERE liberado_en IS NULL` sobre `covered_period`.**
 
 Un período de una suscripción admite **un solo pago acreditado**, y la base lo impide. El
-registro manual que llega segundo **falla**, no compite.
+registro manual que llega segundo **no escribe cobertura**, no compite: lo asienta `MP6` y abre `COBRO_DUPLICADO` (`03` §7; FASE 9 vuelta 3, owner 2026-09-30, lote W; residuo corregido el 2026-10-02).
 
 > ❌ **Reformulado el 2026-09-24, porque como estaba escrito NO era implementable.** Este § decía
 > *«`UNIQUE(subscription_id, período) WHERE el pago está acreditado`»* **sin decir sobre qué tabla**,
