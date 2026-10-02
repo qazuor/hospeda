@@ -200,8 +200,11 @@ sólo rigiera en el primero, el suspendido conservaría sus addons de ficha.
 **Y el descarte NO necesita un disparador nuevo para el reconciliador de excedentes**, que es lo
 primero que parece faltar: cuando muere el último título, **el conjunto efectivo baja sin que
 ninguna fuente se haya apagado** —el addon sigue vivo—, y el §4.2 se dispara por el recálculo, no
-por el apagado. El recálculo ya ocurre: *«toda transición de la máquina de suscripción»* está en
-la lista de invalidación (cap. 02 §3.2) y la suspensión es una. Lo que baja lo reconcilia el §4.3
+por el apagado. El recálculo ya ocurre: ~~*«toda transición de la máquina de suscripción»* está en
+la lista de invalidación (cap. 02 §3.2) y la suspensión es una~~ ***«llega el aviso de cobertura»***
+**está en la lista de invalidación (cap. 02 §3.2), y billing lo emite en la suspensión, que es una
+transición que deja de emitir** (la fila vieja de la lista se fundió en ésa: FASE 9 vuelta 1,
+`F-8V1A3-009`; residuo corregido el 2026-10-02). Lo que baja lo reconcilia el §4.3
 como cualquier otra baja.
 
 > ⚠️ **Lo que el pliegue NO distingue, declarado por `DEC-METH-015`: el trial y la suscripción que
