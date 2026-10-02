@@ -67,7 +67,8 @@ RULES
       characters once struck spans, markdown marks and blanks are normalized) appears in the body
       of its block. The verdict's own note (`> **Parte sin efecto**…`, `- **Adjudicación**…`)
       quotes the dead text on purpose and does not count; a span the verdict marks as alive
-      («…» sigue) does not count either.
+      («…» sigue, sobrevive «…») or quotes as what replaced the dead one (reemplazó X (… «…»))
+      does not count either.
 """
 import collections
 import glob
@@ -154,17 +155,26 @@ def r19_norm(t):
     return re.sub(r'\s+', ' ', t).strip().lower()
 
 
+# A quote the verdict itself says is alive: «…» sigue, sobrevive «…», or the text that replaced the
+# dead one, quoted after «reemplazó X (». Matched on what precedes the «.
+R19_VIVA_ANTES = re.compile(r'(?:\bsobreviven?|\breemplaz\w*\b[^«»;:]*\()\s*\*?\s*$')
+
+
+def r19_citas(muerto):
+    """The raw dead spans a PARCIAL verdict quotes: every «…» not marked alive, split at «[…]»/«…»
+    (the generators omit these verbatim; R19 normalizes them)."""
+    out = []
+    muerto = muerto or ''
+    for m in re.finditer(r'«(.*?)»(\s*sigue\b)?', muerto):
+        if m.group(2) or R19_VIVA_ANTES.search(muerto[:m.start()]):
+            continue
+        out += [p for p in re.split(r'\[…\]|…|\.\.\.', m.group(1)) if p.strip()]
+    return out
+
+
 def r19_tramos(muerto):
     """The verbatim dead spans a PARCIAL verdict quotes, normalized (R19)."""
-    out = []
-    for m in re.finditer(r'«(.*?)»(\s*sigue\b)?', muerto or ''):
-        if m.group(2):
-            continue
-        for piece in re.split(r'\[…\]|…|\.\.\.', m.group(1)):
-            p = r19_norm(piece)
-            if len(p) >= R19_MIN:
-                out.append(p)
-    return out
+    return [p for p in (r19_norm(c) for c in r19_citas(muerto)) if len(p) >= R19_MIN]
 
 
 def citas(text):
