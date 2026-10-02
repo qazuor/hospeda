@@ -182,6 +182,15 @@ son preguntas: se corrigen sin elección, con su autoridad.
 | CC | si un descenso encolado —monto ya mutado al precio del plan destino (`DEC-SUB-008`), y `S38` que aplica el cambio de versión al fin del ciclo— cuenta como cliente de la versión destino a los efectos de BM y BZ | 1 | sí | **un descenso encolado cuenta como cliente de la versión destino**: la acción 19 rechaza fijar el precio de una versión hacia la que hay un `S38` encolado (BM) y se publica una versión nueva; el cliente llega por `S38` a la versión cuyo precio vio y, si después hay aumento, le llega por BZ como a cualquier anclado. **El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`. Precisa BM y BZ, y `B/12` §3.2. Las otras opciones eran que no cuente (`S38` aplica el precio nuevo y una relectura muta el monto en el acto: un aumento sin los 60 días del §29) o que fijar el precio cancele los descensos encolados con un aviso (el cliente pierde un pedido que hizo) |
 | CD | por qué transición nace el addon que elige gratis el beneficiario de un grant con `includesAddons: true` (`B/16` §3.1-§3.2: sin `payment`, sin comprobante, con el ancla como título), si la máquina de la instancia (`B/03` §8, exhaustiva) sólo tiene `A1` → `PENDING_AUTHORIZATION` y `A2` con preapproval u orden | 1 | sí | **una transición nueva, `A1-bis`**: *(sin fila)* → `ACTIVE`, con el evento *«la persona elige un addon compatible teniendo un ancla viva de un grant con `includesAddons: true`»*, sin preapproval ni orden, sin `payment` ni comprobante, y con el ancla como título de la instancia; **la construye `B10`**, con su AC y su test. `A5` ya apaga la instancia cuando se revoca el grant. Las otras opciones eran reusar `A1` y `A2` con una autorización vacía (un `PENDING_AUTHORIZATION` que no espera nada, y `A2` nombra preapproval u orden) o diferir el addon elegido gratis a una pieza posterior (`FILA:B10` e `INV:28` quedarían incumplidas) |
 
+## Lote CE (2026-10-02)
+
+Respuesta del owner, 2026-10-02, a la pregunta que quedó abierta después de CD (fuentes en
+`e291df0b5b`). Es la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CE | si el objetivo `LISTING` de un addon que nace por `A1-bis` (CD) exige las mismas guardas que `A1` (`B/03` §8): ficha propia, de la vertical del producto, y en un estado que acepte destacarla | 1 | sí | **sí: `A1-bis` exige sobre el objetivo `LISTING` las mismas guardas que `A1`**: la ficha es propia de la persona, de la vertical del producto, y `ficha(idDeFicha).admiteDestaque` contesta sí —ni `PURGED` ni `MODERATED`—; si no, *«no existe»*, como en `A1`. Que el addon sea gratis no cambia qué ficha puede destacarse. **Una guarda más en `A1-bis` y su test, en `B10`**. Precisa CD |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
