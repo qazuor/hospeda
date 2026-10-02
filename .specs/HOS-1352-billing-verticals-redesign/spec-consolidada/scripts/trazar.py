@@ -62,6 +62,12 @@ RULES
   R18 with --cobertura: every owned live item has, in its owner piece, tests covering an AC that
       cites it, of every type AN demands for its family (`tipos_exigidos_por_familia`). The types
       read only in its text or by lectura (`tipos_solo_del_texto`) are reported as ⚠, never fail.
+  R19 the dead part of a PARCIAL verdict is not rendered: for every PARCIAL item defined in the
+      spec, no verbatim span the verdict quotes in `muerto` («…», split at «…»/«[…]», at least 12
+      characters once struck spans, markdown marks and blanks are normalized) appears in the body
+      of its block. The verdict's own note (`> **Parte sin efecto**…`, `- **Adjudicación**…`)
+      quotes the dead text on purpose and does not count; a span the verdict marks as alive
+      («…» sigue) does not count either.
 """
 import collections
 import glob
@@ -136,6 +142,29 @@ def tipo_cumplido(req, tests):
         return bool(tests)
     tipo, _, et = (x.strip() for x in req.partition(' · '))
     return any(t['tipo'] == tipo and (not et or t.get('etiqueta') == et) for t in tests)
+
+
+R19_NOTA = re.compile(r'^\s*(>\s*\*\*Parte sin efecto\*\*|-\s*\*\*Adjudicación\*\*)')
+R19_MIN = 12
+
+
+def r19_norm(t):
+    t = re.sub(r'~~.*?~~', '', t, flags=re.S)
+    t = re.sub(r'[*`_]', '', t).replace('«', '').replace('»', '')
+    return re.sub(r'\s+', ' ', t).strip().lower()
+
+
+def r19_tramos(muerto):
+    """The verbatim dead spans a PARCIAL verdict quotes, normalized (R19)."""
+    out = []
+    for m in re.finditer(r'«(.*?)»(\s*sigue\b)?', muerto or ''):
+        if m.group(2):
+            continue
+        for piece in re.split(r'\[…\]|…|\.\.\.', m.group(1)):
+            p = r19_norm(piece)
+            if len(p) >= R19_MIN:
+                out.append(p)
+    return out
 
 
 def citas(text):
@@ -362,6 +391,16 @@ def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None, lista=None):
             for req in txt:
                 if not tipo_cumplido(req, alc):
                     avisos['R18 aviso: falta un tipo derivado del texto (no falla)'].append(f"{cid} -> {c['pieza']}: {req}")
+
+    # R19 the dead part of a PARCIAL verdict is not rendered ------------------------------
+    for cid, v in adj.items():
+        if v.get('veredicto') != 'PARCIAL':
+            continue
+        for f, n, body in [x for x in defs.get(slug(cid), []) if not x[0].startswith('90-')]:
+            txt = r19_norm('\n'.join(l for l in body.split('\n') if not R19_NOTA.match(l)))
+            vivos = [t for t in r19_tramos(v.get('muerto')) if t in txt]
+            if vivos:
+                err['R19 texto muerto de un PARCIAL en el cuerpo de su bloque'].append(f'{cid} ({f}:{n}): «{vivos[0][:60]}»')
 
     for k in sorted(err, key=lambda k: (int(re.match(r'R(\d+)', k).group(1)), k)):
         print(f'✗ {k}: {len(err[k])}  ej: {err[k][:3]}')

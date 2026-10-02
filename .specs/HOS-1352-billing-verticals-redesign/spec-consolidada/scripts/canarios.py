@@ -329,6 +329,18 @@ def main():
     k['items']['DEC-SUB-008']['tipos_exigidos_por_familia'] = ['smoke manual · prod']
     c('R18', 'un smoke con la etiqueta equivocada no cumple el tipo «smoke manual · prod»', k=k)
 
+    # R19: a PARCIAL verdict whose dead span is still in its block
+    h8 = item(inv, 'DEC-SUB-008')['hash']
+    a19 = copy.deepcopy(adj)
+    a19['veredictos']['DEC-SUB-008'] = dict(veredicto='PARCIAL', hash=h8, muerto='«el downgrade muta el monto ya»: lo supera otra')
+    c('R19', 'un PARCIAL cuyo texto muerto sigue en el cuerpo de su bloque', a=a19)
+    f19 = sub(files, '01-decisiones-vigentes.md', '**DEC-SUB-008** — el downgrade muta el monto ya.',
+              '**DEC-SUB-008** — […]\n\n> **Parte sin efecto** (adjudicación `PARCIAL`): «el downgrade muta el monto ya».')
+    c(None, 'el mismo PARCIAL omitido con «[…]» y citado sólo en su nota pasa', f19, a=a19)
+    a19b = copy.deepcopy(adj)
+    a19b['veredictos']['DEC-SUB-008'] = dict(veredicto='PARCIAL', hash=h8, muerto='otra parte; «el downgrade muta el monto ya» sigue')
+    c(None, 'un tramo que el veredicto da por vivo («…» sigue) pasa', a=a19b)
+
     code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
