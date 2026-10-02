@@ -15,6 +15,13 @@ the union of all the `Origen:` lines is exactly the original citation list.
 The citation list of each block is kept in `fuentes.json` next to this file the first time the
 generator runs, so later runs replace the generated block between its markers instead of
 re-reading a bare `Origen:` line that no longer exists.
+
+Third blind-verification round: a dead row goes without a word only when every non-empty cell is
+struck entire; the live «**sale** …» of a row retired by its id cell goes as a note under its table,
+and any other live text stops the run (H3-G2-13). When the row assigns «el capítulo `NN`, entero», the
+citations must reach every section of that chapter that is not MUERTO, its preamble and its MIXTO
+sections included (H3-G2-12); a preamble goes at the level of the chapter's first «##», and a MIXTO
+section without its struck title.
 """
 import json
 import os
@@ -76,16 +83,20 @@ def _tachada_entera(c):
 
 
 def sin_texto_vivo(path, n, cs):
-    """P-K (second blind-verification round, H2-VA8-3): a row dropped as dead carries no live text. It is
-    dead by its id cell struck entire, by every non-empty cell after it struck entire, or by a «**Sale**»
-    second cell; checked here with a predicate of its own, so a ``dead_row`` that drops a row only
+    """P-K (second blind-verification round, H2-VA8-3, and third, H3-G2-13): a row dropped as dead loses
+    no live text. It goes without a word only when EVERY non-empty cell is struck entire; a row struck
+    only by its id cell used to go silently with a live «**sale** (…): <the rule that replaces it>» in
+    another cell. Each live cell that starts with «**sale**» (any case) is returned, cleaned, to go as a
+    note under the table; any other live text stops the run, so a ``dead_row`` that drops a row only
     because its first cell STARTS with ~~ («~~monto vigente~~ **monto esperado, derivado**») fails."""
-    body = [c for c in cs[1:] if c.strip() and c.strip() not in ('—', '-')]
-    if _tachada_entera(cs[0]) or (body and all(_tachada_entera(c) for c in body)):
-        return
-    if len(cs) > 1 and re.search(r'\*\*Sale\*\*', cs[1]):
-        return
-    sys.exit(f'✗ {path}:{n}: fila descartada como muerta con texto vivo fuera de ~~…~~: {cs[0].strip()[:80]}')
+    vivas = [c for c in cs if c.strip() and c.strip() not in ('—', '-') and not _tachada_entera(c)]
+    notas = []
+    for c in vivas:
+        t = re.sub(r'\s+', ' ', limpiar(c)).strip()
+        if not re.match(r'^\*\*sale\*\*', t, re.I):
+            sys.exit(f'✗ {path}:{n}: fila descartada como muerta con texto vivo fuera de ~~…~~: {t[:80]}')
+        notas.append(t)
+    return notas
 
 
 def sec_de(path, n):
@@ -103,17 +114,26 @@ def cuerpo(sec, base, nivel_fuente):
     m = re.match(r'^(#+)\s+(.*)$', head)
     if not m:
         sys.exit(f"✗ {sec['id']} no empieza con un encabezado")
-    nivel = min(6, base + len(m.group(1)) - nivel_fuente)
-    titulo = limpiar(m.group(2)).strip()
-    out = []
+    # a chapter's preamble (H3-G2-12) goes at the level of the chapter's first «##», not above it: as a
+    # «#» it would push every other section one level down and fold the deepest ones together at six
+    nivel = base if sec.get('preambulo') else min(6, base + len(m.group(1)) - nivel_fuente)
+    # a MIXTO section (H3-G2-10) has its title struck entire: only its live body goes
+    titulo = limpiar(m.group(2)).strip() or 'sección de título retirado, lo que sigue vivo de su cuerpo'
+    out, notas = [], []
     for k in range(sec['linea'] + 1, sec['fin'] + 1):
         l = L[k - 1]
+        if notas and not l.startswith('|'):
+            # the table ended: the live «**sale** …» of its retired rows goes under it (H3-G2-13)
+            out += [''] + [x for t in dict.fromkeys(notas) for x in (f'*(fila retirada: {t})*', '')]
+            notas = []
         if l.startswith('|') and not re.match(r'^\|[\s:|-]+\|?\s*$', l) and dead_row(cells(l)):
-            sin_texto_vivo(sec['archivo'], k, cells(l))
+            notas += sin_texto_vivo(sec['archivo'], k, cells(l))
             continue
         if re.match(r'^---\s*$', l):
             continue
         out.append(l)
+    if notas:
+        out += [''] + [x for t in dict.fromkeys(notas) for x in (f'*(fila retirada: {t})*', '')]
     txt = limpiar('\n'.join(out))
     txt = '\n'.join(x.rstrip() for x in txt.split('\n'))
     txt = re.sub(r'\n{3,}', '\n\n', txt).strip()
@@ -144,8 +164,8 @@ def bloque(citas, base):
             por_sec[s['id']] = (s, [])
             orden.append(s['id'])
         por_sec[s['id']][1].append(f'{path}:{n}')
-    nivel_fuente = min(len(re.match(r'^(#+)', lines(por_sec[i][0]['archivo'])[por_sec[i][0]['linea'] - 1]).group(1))
-                       for i in orden)
+    nivel_fuente = min((len(re.match(r'^(#+)', lines(por_sec[i][0]['archivo'])[por_sec[i][0]['linea'] - 1]).group(1))
+                        for i in orden if not por_sec[i][0].get('preambulo')), default=1)
     partes, pendientes = [INICIO, ''], []
     for sid in orden:
         s, cit = por_sec[sid]
@@ -161,6 +181,21 @@ def bloque(citas, base):
         sys.exit(f'✗ citas sin sección con texto que las lleve: {pendientes}')
     partes.append(FIN)
     return partes
+
+
+def entero(rel, anuncio, citas):
+    """P-M (third blind-verification round, H3-G2-12): when the row assigns «el capítulo `NN`, entero», the
+    citation list of fuentes.json is checked against EVERY section of that chapter that is not MUERTO
+    (its preamble and its MIXTO sections included); a section none of the citations falls in fails."""
+    for cap in re.findall(r'el capítulo `(\d+)`, entero', anuncio):
+        fs = sorted({p for p, _ in citas if os.path.basename(p).startswith(cap + '-')})
+        if len(fs) != 1:
+            sys.exit(f'✗ {rel}: «el capítulo `{cap}`, entero» y las citas nombran {len(fs)} archivos de ese capítulo')
+        faltan = [f"{s['linea']}" for s in SECS if s['archivo'] == fs[0] and s['estado'] != 'MUERTO'
+                  and not any(p == fs[0] and s['linea'] <= n <= s['fin'] for p, n in citas)]
+        if faltan:
+            sys.exit(f'✗ {rel}: dice «el capítulo `{cap}`, entero» y fuentes.json no cita las secciones de '
+                     f'{corto(fs[0])} que empiezan en las líneas {", ".join(faltan)}')
 
 
 def parse_origen(line):
@@ -194,6 +229,7 @@ def main():
             nuevas = True
         else:
             sys.exit(f'✗ {rel}:{j + 1}: después del anuncio no hay ni Origen: ni bloque generado')
+        entero(rel, L[k], citas)
         nuevo = L[:k + 1] + [''] + bloque(citas, nivel_previo(L, k) + 1) + L[fin + 1:]
         dst = os.path.join(salida, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)

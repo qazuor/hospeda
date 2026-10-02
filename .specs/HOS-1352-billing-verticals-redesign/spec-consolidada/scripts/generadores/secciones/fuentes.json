@@ -1,5 +1,6 @@
 {
     "10-corte/B11.md": [
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", 12],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", 23],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", 44],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", 46],
@@ -15,6 +16,7 @@
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", 1160]
     ],
     "10-corte/B13a.md": [
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", 12],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", 23],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", 40],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", 54],
@@ -31,6 +33,7 @@
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", 72]
     ],
     "10-corte/B9a.md": [
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 17],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 32],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 34],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 46],
@@ -54,6 +57,7 @@
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 502],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 545],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 613],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 634],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 645],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md", 685]
     ],
@@ -77,6 +81,7 @@
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", 1179]
     ],
     "20-fase-3/B10.md": [
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", 17],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", 25],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", 27],
         [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", 38],
