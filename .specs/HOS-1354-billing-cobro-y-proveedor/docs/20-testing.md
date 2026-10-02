@@ -763,7 +763,8 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
    builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones
    sobre el contenido de `B/19` §4 y sobre el orden *«nuestro correo antes que el del proveedor»*.
    **Cada unidad escribe la de su flujo**: el alta `B3`, la mora `B7`, los cambios, la pausa y la
-   cancelación `B8`, la revocación `B5`, el addon `B10` y la migración `B12`.
+   cancelación `B8`, la revocación `B5`, el addon `B10` y la migración `B12`. **La de la baja la
+   escribe `B13a`, que construye su pantalla, y no `B8a`** (corte del MVP, owner 2026-10-02, CG).
 4. ~~**El recorte del checklist de smoke manual, sección por sección**: cada sección del checklist
    de staging que tenga su prueba de punta a punta **sale del manual**, con el nombre de la prueba
    que la reemplaza al lado. El ahorro llega de a poco y cada recorte tiene evidencia. **Lo lleva
