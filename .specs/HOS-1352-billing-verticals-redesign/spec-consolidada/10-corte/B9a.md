@@ -877,9 +877,12 @@ Fuente: [DEC-GRANT-008](../01-decisiones-vigentes.md#dec-grant-008) · [DEC-GRAN
 - **Dado** un beneficiario con un grant vivo y otros dos revocados
 - **Cuando** se intenta escribir un segundo grant vivo para el mismo beneficiario
 - **Entonces** **la base lo rechaza** por el `UNIQUE(beneficiario) WHERE revocado_en IS NULL`; los
-  revocados no cuentan; y un grant sin ningún ancla no otorga nada.
+  revocados no cuentan; y un grant sin ningún ancla no se escribe: el grant lleva al menos un ancla, o
+  no otorga nada.
 
 Fuente: [DEC-GRANT-009](../01-decisiones-vigentes.md#dec-grant-009)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579
 
 <a id="ac-b9a-9"></a>
 **AC:B9a:9** — sólo `SUPER_ADMIN`, en las tres escrituras
@@ -1148,7 +1151,7 @@ rechazo se prueba por ruta ([TEST:B9a:9](#test-b9a-9)).
 | [AC:B9a:5](#ac-b9a-5) | [TEST:B9a:5](#test-b9a-5) | integración con DB |
 | [AC:B9a:6](#ac-b9a-6) | [TEST:B9a:6](#test-b9a-6) | integración con DB |
 | [AC:B9a:7](#ac-b9a-7) | [TEST:B9a:7](#test-b9a-7) | integración con DB |
-| [AC:B9a:8](#ac-b9a-8) | [TEST:B9a:8](#test-b9a-8), [TEST:B9a:15](#test-b9a-15) | migración desde cero, migración sobre datos |
+| [AC:B9a:8](#ac-b9a-8) | [TEST:B9a:8](#test-b9a-8) | migración desde cero |
 | [AC:B9a:9](#ac-b9a-9) | [TEST:B9a:9](#test-b9a-9) | ruta API |
 | [AC:B9a:10](#ac-b9a-10) | [TEST:B9a:10](#test-b9a-10) | integración con DB |
 | [AC:B9a:11](#ac-b9a-11) | [TEST:B9a:11](#test-b9a-11) | integración con DB |
@@ -1256,20 +1259,8 @@ Cubre: [AC:B9a:8](#ac-b9a-8), [AC:B9a:16](#ac-b9a-16)
 Fuente: [DEC-GRANT-009](../01-decisiones-vigentes.md#dec-grant-009) · [DEC-GRANT-008](../01-decisiones-vigentes.md#dec-grant-008) · [FILA:B9a](#fila-b9a)
 
 Sobre una base vacía migrada con la rama: existen las dos tablas con sus `UNIQUE`, sus FK compuestas
-y las tres columnas de la revocación; un segundo grant vivo para el mismo beneficiario falla.
-
-<a id="test-b9a-15"></a>
-**TEST:B9a:15** — el `UNIQUE` parcial sobre filas ya escritas
-
-Tipo: migración sobre datos
-
-Cubre: [AC:B9a:8](#ac-b9a-8)
-
-Fuente: [DEC-GRANT-009](../01-decisiones-vigentes.md#dec-grant-009) · [DEC-ADDON-003](../01-decisiones-vigentes.md#dec-addon-003)
-
-Con filas sembradas antes de aplicar la restricción —un beneficiario con dos grants revocados y uno
-vivo, y una instancia colgando de un ancla—, la migración aplica sin error, las filas siguen iguales
-y un segundo vivo se rechaza.
+y las tres columnas de la revocación; un segundo grant vivo para el mismo beneficiario falla, y un
+grant sin ningún ancla no se escribe.
 
 <a id="test-b9a-9"></a>
 **TEST:B9a:9** — sólo `SUPER_ADMIN`, por ruta
@@ -1389,6 +1380,11 @@ herramienta del 3b se ejecuta en el ensayo del corte y en el corte real, que son
 
 Pasa a `Done` al mergearse en la rama del paraguas; sin etiquetas `status-needs-smoke-*`
 ([GATE:M1](../30-el-corte.md#gate-m1)).
+
+- Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+  [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+  [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5); `16-fase-7-del-paraguas.md` §4.7,
+  momento 1); el PR de la pieza propone las `area-*` siguiendo lo escrito del repo.
 
 ## Abiertos
 

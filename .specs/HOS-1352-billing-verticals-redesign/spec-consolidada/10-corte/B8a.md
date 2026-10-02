@@ -158,11 +158,13 @@ Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S23](../04-cat
   esas dos filas de complemento pasan a `CANCEL_SCHEDULED` **con el mismo `fin_de_servicio` de la
   principal**; la instancia **no cambia de estado** y el complemento **sigue dando servicio hasta esa
   fecha**; el `USER` **no entra** en la selección, porque le queda una principal viva fuera de la
-  exclusión (la selección es la de `S32`, con `CANCEL_SCHEDULED` en la exclusión, `V2-c`); y la fila
+  exclusión —y tampoco entraría con un ancla viva— (la selección es la de `S32`, con `CANCEL_SCHEDULED` en la exclusión, `V2-c`); y la fila
   de complemento que no estaba en `ACTIVE` **no entra**. Para un `USER`/`GLOBAL` que sí entra, la
   fecha es la más tardía entre las principales compatibles en `CANCEL_SCHEDULED`.
 
 Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [FILA:B8a](#fila-b8a) · [FILA:B8](#fila-b8) · [LISTA:B8a](#lista-b8a)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161
 
 <a id="ac-b8a-4"></a>
 **AC:B8a:4** — la rama de la sucesora que vive del crédito (`R17`), sobre filas sembradas
@@ -304,6 +306,28 @@ Fuente: [PROH:B:2](../04-catalogos.md#proh-b-2) · [MOT:6](../04-catalogos.md#mo
   [B8b](../20-fase-2/B8b.md#lista-b8b).
 
 Fuente: [LISTA:B8a](#lista-b8a) · [LISTA:B8](#lista-b8) · [FILA:B8a](#fila-b8a) · [FILA:B8](#fila-b8) · [DEC-SUB-014](../01-decisiones-vigentes.md#dec-sub-014)
+
+<a id="ac-b8a-15"></a>
+**AC:B8a:15** — la cancelación (la baja), de punta a punta
+
+- **Dado** los builds de la API y la web contra el Mercado Pago falso como servidor, con el reloj
+  adelantable y el correo capturado
+- **Cuando** corre el flujo de la cancelación del `B/20` §5 en la parte de `B8` que es del corte: la baja
+  desde `ACTIVE` (`S11`) y, con el reloj adelantado hasta la fecha de fin, su `S12`; y las bajas directas
+  desde `GRACE_PERIOD` (`S24`) y desde `SUSPENDED` (`S23`)
+- **Entonces** se cumplen las aserciones sobre el contenido de las filas del `B/19` §4 que ese flujo
+  muestra y sobre el orden *«nuestro correo antes que el del proveedor»*: el correo capturado de cada
+  baja llega antes que la cancelación que registra el falso. Las bajas desde una pausa o desde una
+  sucesora son de [B8b](../20-fase-2/B8b.md#lista-b8b).
+
+Fuente: [DEC-TEST-003](../01-decisiones-vigentes.md#dec-test-003) · [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S12](../04-catalogos.md#trans-b-s12) · [TRANS:B:S23](../04-catalogos.md#trans-b-s23) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24) · [FILA:B8a](#fila-b8a)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762
+
+Derivado: la parte de `B8` que es del corte sale del reparto de [LISTA:B8a](#lista-b8a) (Z, AR); las
+pantallas de la baja son de [B13a](B13a.md#pieza-b13a), que espera a esta pieza (`B8a → B13a`), así que
+con qué superficie corre esta prueba al merge de `B8a` es un abierto
+(`_trabajo/abiertos/pasada4-billing-corte.md`).
 
 ### Los criterios de terminación de origen
 
@@ -483,6 +507,7 @@ UI»*, `B/19` §1). El acto administrativo lleva su permiso y su auditoría
 | [AC:B8a:12](#ac-b8a-12) | [TEST:B8a:12](#test-b8a-12) | integración con DB |
 | [AC:B8a:13](#ac-b8a-13) | [TEST:B8a:13](#test-b8a-13) | integración con DB |
 | [AC:B8a:14](#ac-b8a-14) | [TEST:B8a:14](#test-b8a-14), [TEST:B8a:3](#test-b8a-3), [TEST:B8a:8](#test-b8a-8), [TEST:B8a:9](#test-b8a-9) | migración desde cero, integración con DB |
+| [AC:B8a:15](#ac-b8a-15) | [TEST:B8a:15](#test-b8a-15) | e2e web |
 
 <a id="test-b8a-1"></a>
 **TEST:B8a:1** — `S11` con la fórmula de los cobros acreditados
@@ -521,8 +546,8 @@ Fuente: [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [LISTA:B8a](#lista-b8a)
 
 Con las filas sembradas del AC: dos cancelaciones de complemento en el falso además de la principal,
 las dos filas en `CANCEL_SCHEDULED` con la fecha de la principal, la instancia sin cambio, el `USER`
-intacto y la fila no `ACTIVE` intacta. Con la otra principal del `USER` en `CANCEL_SCHEDULED`, el
-`USER` sí entra (`V2-c`).
+intacto y la fila no `ACTIVE` intacta. Con la otra principal del `USER` en `CANCEL_SCHEDULED` y sin
+ancla viva, el `USER` sí entra (`V2-c`); con un ancla viva, no entra.
 
 <a id="test-b8a-4"></a>
 **TEST:B8a:4** — la sucesora que vive del crédito, sembrada
@@ -660,6 +685,20 @@ Sobre una base vacía migrada con las migraciones de la rama, las tablas que `B8
 modelo del complemento existen sin ninguna migración de `B8a`, y la suite de esta pieza corre
 completa sobre las filas sembradas.
 
+<a id="test-b8a-15"></a>
+**TEST:B8a:15** — la baja de punta a punta, contra los builds
+
+Tipo: e2e web
+
+Cubre: [AC:B8a:15](#ac-b8a-15)
+
+Fuente: [DEC-TEST-003](../01-decisiones-vigentes.md#dec-test-003) · [TRANS:B:S11](../04-catalogos.md#trans-b-s11) · [TRANS:B:S24](../04-catalogos.md#trans-b-s24)
+
+Con el falso como servidor, el reloj adelantable y el correo capturado: una baja desde `ACTIVE` que
+llega a `CANCELLED` al adelantar el reloj hasta su fecha de fin, una desde `GRACE_PERIOD` y una desde
+`SUSPENDED`; en cada una el correo capturado llega antes que la cancelación que registra el falso, y lo
+que el flujo muestra coincide con las filas del `B/19` §4.
+
 ## Smoke y etiquetas
 
 N/A — las etiquetas `status-needs-smoke-*` van sólo en `HOS-1352`, nunca en las piezas, y la pieza
@@ -683,6 +722,11 @@ sistema nuevo, que escribe [B13a](B13a.md#pieza-b13a).
 La pieza es un issue de la épica de billing; pasa a `Done` al mergearse en la rama del paraguas, y
 **no lleva etiquetas `status-needs-smoke-*`**, que van sólo en `HOS-1352`
 ([GATE:M1](../30-el-corte.md#gate-m1)).
+
+- Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+  [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+  [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5); `16-fase-7-del-paraguas.md` §4.7,
+  momento 1); el PR de la pieza propone las `area-*` siguiendo lo escrito del repo.
 
 ## Abiertos
 
