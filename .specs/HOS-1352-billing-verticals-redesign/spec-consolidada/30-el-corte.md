@@ -315,8 +315,11 @@ con una falla provocada después del 1b, y verifica restaurar el 2b, redesplegar
 inversos (b) y (c) de abajo y la regla del 0b puesta hasta el reintento. Es la única red que ve esta
 rama antes del día del corte.
 
-El sistema viejo **sigue corriendo**: si el paso 3 alcanzó a escribir algo, **se restaura el backup
-del paso 2b**. **Lo que el backup no puede pisar es lo que el corte cambió afuera de la base, y
+El sistema viejo **sigue corriendo**: si el paso 3 —que termina con el despliegue sano, las cinco
+pruebas escritas, el 3b verificado y la sonda del 4b cancelada (FASE 9 vuelta 2)— alcanzó a escribir
+algo —la migración estructural, `inactiva_desde` y el estado de nacimiento, el borrado de las demás
+fichas, las cinco pruebas, los dos grants (FASE 5: lote 1 J, lote 2 D, S-40)—, **se restaura el
+backup del paso 2b**. **Lo que el backup no puede pisar es lo que el corte cambió afuera de la base, y
 hasta el 4b son dos cosas, cada una con su inverso** (FASE 9 vuelta 2, `F-8V2A3-002`,
 `F-8V2C2-001`; la de la ruta en el borde salió con el Worker: FASE 5, owner 2026-09-30,
 simplificación del corte, C; S-24, S-45):
@@ -558,10 +561,13 @@ eso:
    lo lleva: se corre desde una copia del repositorio, y se borra en un commit posterior al corte.
 5. **La rama del paraguas se borra apenas se mergea a `staging`** (owner 2026-10-01, Q;
    `40-congelamiento-y-ci/10-decisiones-del-owner.md`): el guard de destino
-   `check-umbrella-branch-target.sh` (`DEC-CI-001`/`DEC-ARCH-007`, condición corregida por P, §4.6)
-   falla la promoción `staging → main` del punto 2 mientras la rama siga existiendo en el remoto,
-   porque esa promoción trae los commits de la épica que `main` todavía no tiene. Borrarla al mergear
-   es lo que habilita el paso 3 del corte.
+   `check-umbrella-branch-target.sh` (`DEC-CI-001`/`DEC-ARCH-007`, condición corregida por P y por T,
+   §4.6) cuenta sólo los commits propios de la épica, los que no están en `staging`: falla si HEAD
+   trae un commit de la épica que no está ni en el destino ni en `staging`, así que, una vez mergeada
+   la épica a `staging`, no falla la promoción `staging → main` del punto 2 (owner 2026-10-01,
+   [T](01-decisiones-vigentes.md#own-40-congelamiento-y-ci-t1-t); residuo corregido el 2026-10-02). Q
+   sigue valiendo para el PR final del paraguas: la rama se borra al mergear. (`D/16` §4.4 punto 5,
+   `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653`; `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830`)
 
 **Con esto `rollout` queda cerrado en lo que hace a ramas** (revisión del owner, casos vecinos,
 2026-09-29, caso 4): las ramas son este apartado, y el orden de despliegue son los pasos.
@@ -1473,7 +1479,10 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 <a id="gate-fp-3"></a>
 **Gate de fase, condición 3**: **el drift guard sobre la rama de la fase, en verde**: ninguna
 migración estructural (AP, §4.6). *(Que el drift guard entre como condición del gate lo derivó la
-fuente de la mitigación de AP; lo marca.)*
+fuente de la mitigación de AP; lo marca.)* *(Cómo se enciende sobre la rama de la fase lo fija
+[DEC-CI-001](01-decisiones-vigentes.md#dec-ci-001); la fuente lo marca como lo que falta escribir al
+abrir la primera fase: `D/16-fase-7-del-paraguas.md:1019`, y va en [80-abiertos.md](80-abiertos.md)
+§4.)*
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1152
 
@@ -1667,10 +1676,10 @@ Fuente: [GATE:M2](#gate-m2), [GATE:M2.1](#gate-m2-1), [GATE:M2.2](#gate-m2-2), [
 **AC:CORTE:11** — desde que la épica entra, `staging` queda congelado para `main` hasta el corte
 
 - **Dado** que la épica entró a `staging`
-- **Cuando** alguien intenta promover `staging → main` antes del paso 3, mientras la rama del paraguas
-  sigue en el remoto
-- **Entonces** la promoción no sale (el guard de destino `check-umbrella-branch-target.sh` falla
-  mientras la rama siga existiendo); los hotfix siguen yendo a `main` con su back-merge a `staging`
+- **Cuando** alguien intenta promover `staging → main` antes del paso 3
+- **Entonces** la promoción no se hace ([DEC-ARCH-007#📌1](01-decisiones-vigentes.md#dec-arch-007-p1));
+  los hotfix siguen yendo a `main` con su back-merge a `staging`. (El guard de destino no la frena
+  desde T: los commits de la épica ya están en `staging`.)
 
 Fuente: [DEC-ARCH-007#📌1](01-decisiones-vigentes.md#dec-arch-007-p1), [GATE:M2](#gate-m2)
 
@@ -1800,9 +1809,10 @@ Cubre: [AC:CORTE:3](#ac-corte-3), [AC:CORTE:12](#ac-corte-12)
 Fuente: [PASO:0b](#paso-0b), [GATE:M4](#gate-m4)
 
 <a id="test-corte-5"></a>
-**TEST:CORTE:5** — en el ensayo y el día del corte: el backup del 2b existe antes del paso 3.
+**TEST:CORTE:5** — en el ensayo y el día del corte: el backup del 2b existe antes del paso 3 (AN: el
+día del corte es producción, `D/16-fase-7-del-paraguas.md:151`).
 Tipo: smoke manual
-Etiqueta: staging
+Etiqueta: staging, prod
 Cubre: [AC:CORTE:4](#ac-corte-4)
 Fuente: [PASO:2b](#paso-2b)
 
@@ -1835,9 +1845,10 @@ Fuente: [PASO:3](#paso-3), [GATE:M4](#gate-m4)
 
 <a id="test-corte-9"></a>
 **TEST:CORTE:9** — en el ensayo y el día del corte: la verificación del 3a contra la base (las
-validaciones del panel, [G-R3](04-catalogos.md#val-g-r3) entre ellas, y el espejo del enum de verticales).
+validaciones del panel, [G-R3](04-catalogos.md#val-g-r3) entre ellas, y el espejo del enum de verticales)
+(AN: el 3a del corte real corre contra producción, `D/16-fase-7-del-paraguas.md:153`).
 Tipo: smoke manual
-Etiqueta: staging
+Etiqueta: staging, prod
 Cubre: [AC:CORTE:8](#ac-corte-8)
 Fuente: [PASO:3a](#paso-3a)
 
@@ -1858,10 +1869,12 @@ Cubre: [AC:CORTE:10](#ac-corte-10)
 Fuente: [GATE:M2](#gate-m2), [GATE:M2.1](#gate-m2-1)
 
 <a id="test-corte-12"></a>
-**TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` falla la promoción
-`staging → main` mientras la rama del paraguas exista en el remoto.
+**TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` con la condición de T: falla
+un PR cuyo HEAD trae un commit de la rama épica que no está ni en el destino ni en `staging`, y no
+falla la promoción `staging → main` cuando los commits de la épica ya están en `staging`
+(`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830`).
 Tipo: guard estático
-Mutación: con la rama del paraguas todavía en el remoto, abrir la promoción `staging → main` y ver que el guard falla; con la rama borrada, ver que pasa.
+Mutación: volver a la condición de P (contar todo commit de la épica que el destino no tiene) y ver que la promoción `staging → main` con la épica mergeada falla.
 Cubre: [AC:CORTE:11](#ac-corte-11)
 Fuente: [DEC-ARCH-007#📌1](01-decisiones-vigentes.md#dec-arch-007-p1)
 
@@ -1897,8 +1910,10 @@ Cubre: [AC:CORTE:16](#ac-corte-16)
 Fuente: [GATE:FP.3](#gate-fp-3), [AP](01-decisiones-vigentes.md#own-41-corte-del-mvp-t3-ap)
 
 <a id="test-corte-17"></a>
-**TEST:CORTE:17** — antes de abrir la rama de cada fase: la fase anterior ya entró a `staging` y la
-fase lleva exactamente sus piezas.
+**TEST:CORTE:17** — al mergear la rama de cada fase a `staging`: la fase lleva exactamente sus piezas
+(AW) y las piezas de las que dependen en el grafo ya entraron a `staging`. Cuándo se abre la rama no
+lo fija la fuente, y si la fase 4 puede adelantarse a la 2 o a la 3 sigue abierto
+([80-abiertos.md](80-abiertos.md) §4; `D/16-fase-7-del-paraguas.md:1162-1169`).
 Tipo: smoke manual
 Etiqueta: staging
 Cubre: [AC:CORTE:17](#ac-corte-17)

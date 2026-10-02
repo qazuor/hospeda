@@ -381,7 +381,7 @@ necesitan igual y no se puede partir sin duplicarlo).
 | 19 | superficies | **PARTIDO** — Mi Cuenta, los mensajes de trial y de excedente y las postulaciones a verticales; la pricing, Mi Suscripción y la baja a billing |
 | 20 | testing | **PARTIDO** — los guards de verticales y los de billing, el proveedor falso y la suite de sandbox a billing; los guards de cada pieza, en el [catálogo](04-catalogos.md) |
 | 21 | migración | **PARTIDO** — el trial ya consumido a verticales; el conteo de pagos y el riesgo de cobro durante el rediseño a billing |
-| 22 | lo legal | **PARTIDO** — las señales de identidad y el seudónimo del correo a verticales; el aumento, la revocación y el botón de arrepentimiento a billing ([80-abiertos.md](80-abiertos.md), *«Consulta legal pendiente»*) |
+| 22 | lo legal | **PARTIDO** — el seudónimo determinístico del correo a verticales (las señales que sólo observaban no se guardan); el aumento, la revocación y el botón de arrepentimiento a billing ([80-abiertos.md](80-abiertos.md), *«Consulta legal pendiente»*) |
 
 **Cinco capítulos son billing sin una sola fisura**: 05, 06, 09, 12 y 14. Ninguna de sus secciones
 sobrevive sin la pasarela. **Tres son verticales enteros**: 11, 17 y 18.
@@ -391,7 +391,7 @@ sobrevive sin la pasarela. **Tres son verticales enteros**: 11, 17 y 18.
 salió con C8; las piezas que esperan a `U2` son las de `V/descomposicion.md` §3 con la partición de
 [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z) y BR; la fila 20 ya no nombra los
 guards uno por uno porque se movieron de pieza después de la partición —`G8`, por ejemplo, es de
-`U1`—, y el censo vivo es el catálogo.)*
+`U1`—, y el censo vivo es el catálogo; la fila 22 dice «seudónimo determinístico» y no «hash», y sin las señales de identidad, por `C-1` y N7 —`V/spec.md:68`—.)*
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:169, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:171, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:174, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:200, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:203, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:19, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:602, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:623
 

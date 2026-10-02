@@ -743,7 +743,8 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md
 
 <a id="inv-d12"></a>
 **INV:D12** — **El trial no se le pide al proveedor: el reloj del trial es nuestro.**
-De dónde sale: [DEC-TRIAL-002](01-decisiones-vigentes.md#dec-trial-002), `B/03` §2. Dónde se hace
+De dónde sale: [DEC-TRIAL-002](01-decisiones-vigentes.md#dec-trial-002), `V/03` §2 (el «cap. 03 §2» de
+la fuente es el de verticales). Dónde se hace
 cumplir: **guard + servicio**: necesita un guard que impida pedirle un trial al proveedor **y** un
 servicio que lleve el reloj.
 Pieza dueña del AC: [B1](10-corte/B1.md#pieza-b1) · también: [V4](10-corte/V4.md#pieza-v4) (implementa).
@@ -822,8 +823,23 @@ su confirmación), no el de la corrida: un proceso nocturno que leyó 500 a las 
 las 3:40 lo tiene que releer.
 
 **Límite declarado**: entre releer y actuar queda una ventana de milisegundos, porque Mercado Pago no
-ofrece compare-and-swap, y la cubre el barrido (`B/09`). *«¿Cobró o no?»* se contesta **sólo** con la
-lectura de `B/09` §4.
+ofrece compare-and-swap, y la cubre el barrido (`B/09`). *«¿Cobró o no?»* se contesta **sólo** con
+esta lectura, cobro por cobro: **«cobró» sólo si hay un registro del período con `payment.status` =
+`approved`, leído por id** con `GET /authorized_payments/{id}`; **nunca** del `status` del registro
+(`scheduled`, `recycling`, `processed` dicen la etapa, no el resultado: [RC-6](04-catalogos.md#mp-rc-6)),
+ni del `status_detail` leído temprano (es el del último intento y cambia entre reintentos), ni de
+`charged_quantity` (cuenta intentos: [RC-5](04-catalogos.md#mp-rc-5)), ni de `last_charged_date` (se
+mueve con un cobro rechazado). **«No cobró» sólo si el inventario está completo** —`charged_quantity`
+igual a los registros listados— **y ninguno está aprobado**. **Cualquier otra cosa es «todavía no se
+sabe»**: no es divergencia, se relee en la corrida siguiente, y quien necesita actuar (`S6`) la trata
+como lectura fallida y no actúa en esa corrida. `charged_amount` no decide; sirve para verificar a
+mano. **Un registro que el listado devuelve y cuya lectura por id da `404`**
+([EX-55](04-catalogos.md#mp-ex-55): el alta que el proveedor canceló al rechazar el primer cobro) **se
+contesta con el pago que el listado nombra, leído por id** con `GET /v1/payments/{id}`: `approved` es
+*«cobró»*, cualquier otro estado es *«intentó y se rechazó»*, y esa lectura es la que dispara
+[S16](04-catalogos.md#trans-b-s16). **No es una lectura fallida de la corrida**; si el listado no
+nombra pago, o esa lectura también falla, sí lo es. (Origen: `B/09` §4,
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:983, :996, :1000, :1001, :1003)
 
 **Excepciones declaradas**:
 
@@ -1105,8 +1121,11 @@ permiso es `AUT-113`)**; `ACC:13` no tiene número en las fuentes, y desde la 14
   `V/02` §2.5), **bajarla** (`PB10`), **cambiar de nivel** (de pedido a baja por `PB10`, o de baja a
   sólo pedido por `PB11`/[PB13](04-catalogos.md#trans-v-pb13)) **o levantar** (`PB11`/`PB13`, y cerrar
   el pedido); **sigue siendo una acción con un permiso**.
-- **Y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner
-  2026-09-25, FASE 9 completa, decisión 7c).
+- **Y sobre la presencia de un Partner, con el mismo permiso y sin los dos niveles, que son sólo de la
+  ficha** (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30,
+  [G](01-decisiones-vigentes.md#own-39-fases-6-y-7-t1-g); `V/descomposicion.md` §2, fila `V6`; residuo
+  corregido el 2026-10-02): escribe su bit de moderación (`V/18` §1.6; owner 2026-09-25, FASE 9
+  completa, decisión 7c).
 - **De dónde sale**: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25.
 - **¿Destructiva o mueve dinero?** **No mueve dinero ni borra**: la ficha pasa a `MODERATED` y su
   contenido se conserva, **y levantar la moderación reinicia el reloj de inactividad** (el hecho 6 de la
@@ -1215,12 +1234,19 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-ob
 (`B/02` §2.1). **Sólo `SUPER_ADMIN`.**
 
 - **De dónde sale**: revisión del owner, 2026-09-28, N1, `L1-f`.
-- **¿Destructiva o mueve dinero?** **Sí, mueve plata**: sobre una versión con clientes, un precio
-  nuevo es un aumento o una baja para ellos y va por
-  [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), con su aviso ([PLAZO:11](#plazo-11)) y la fecha
-  de cada cliente. Su confirmación dice **el precio anterior y el nuevo, el ciclo, a cuántos clientes
-  alcanza y desde cuándo**. Rechaza un ciclo que no sea mayor que la gracia de la versión (modelo
-  §1.4). **Es la decimonovena.**
+- **¿Destructiva o mueve dinero?** **Sí, mueve plata**: sobre una versión de plan **sin clientes** fija
+  el precio; sobre una **con clientes se rechaza y se publica una versión nueva**, que rige para las
+  altas nuevas ([DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), parte 1). El aviso y la mutación a
+  los clientes ya anclados (parte 2) llegan con [B12](20-fase-3/B12.md#pieza-b12): una migración a la
+  versión nueva por `S37` y `S38` con el motivo *«aumento»*, con la fecha y los contactos del
+  [PLAZO:11](#plazo-11) (corte del MVP, owner 2026-10-02,
+  [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)). Su confirmación dice **el precio
+  anterior y el nuevo, el ciclo, a cuántos clientes alcanza y desde cuándo**. Rechaza un monto menor
+  que ARS 15 (`DEC-MP-001`, implicación 4) y un ciclo que no sea mayor que la gracia de la versión
+  (modelo §1.4). **Su uso queda vedado hasta el momento 5 del corte**: es una regla de operación, no un
+  control del código (corte del MVP, owner 2026-10-02,
+  [BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm)). **Es la decimonovena.** (Origen: 📌 BM y
+  📌 BZ de `DEC-MP-002`, `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463-1479`)
 Pieza dueña del AC: [B2](10-corte/B2.md#pieza-b2) · también: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:209
 
@@ -1739,12 +1765,12 @@ versión nueva de los plazos de su mitad**, inmutable, con quién, cuándo, el v
   vecinos, 2026-09-29, caso 45): cada reloj cuenta con su versión aunque la nueva sea más larga, porque
   alargar, por ejemplo, una migración ya anunciada movería una fecha que el cliente ya recibió.
 
-**Lo que el panel rechaza, porque se contradice** (es lo que era `G-R5-B`, hoy la validación
-[VAL:G-R5-B](04-catalogos.md#val-g-r5-b) de *«cambiar un plazo»*):
+**Lo que el panel rechaza, porque se contradice**:
 
 1. **archivar antes que borrar**: el [PLAZO:1](#plazo-1) menor que el [PLAZO:2](#plazo-2);
 2. **el `N` de `PB5` ([PLAZO:3](#plazo-3)), en su peor caso en días (meses de 31), menor que el
-   PLAZO:2**: con la cota atada al plazo de borrado y no a 6 meses literales (`V/20` §2; confirmado por
+   PLAZO:2**: es lo que era `G-R5-B`, hoy la validación [VAL:G-R5-B](04-catalogos.md#val-g-r5-b) de
+   *«cambiar un plazo»*, con la cota atada al plazo de borrado y no a 6 meses literales (`V/20` §2; confirmado por
    el owner: revisión del owner, casos vecinos, 2026-09-29, caso 50);
 3. **cada aviso antes del hecho que anuncia**: los avisos previos del [PLAZO:4](#plazo-4) menores que
    el PLAZO:1 y que la distancia entre el PLAZO:1 y el PLAZO:2; los contactos del

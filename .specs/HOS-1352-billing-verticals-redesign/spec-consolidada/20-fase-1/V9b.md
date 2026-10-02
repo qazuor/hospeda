@@ -110,7 +110,7 @@ Actor: sistema/cron
 Fuente: [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9), [PLAZO:2](../02-nucleo.md#plazo-2), [LISTA:V9b](#lista-v9b)
 
 <a id="us-v9b-4"></a>
-**US:V9b:4** — Como admin, quiero que la Fase 1 entre a `staging` antes de la primera fecha en que
+**US:V9b:4** — Como admin, quiero que la Fase 1 se mergee a producción antes de la primera fecha en que
 un aviso de retención podría salir y con su gate de fase, para que ningún reloj llegue a su aviso sin
 código que lo mande.
 Actor: admin
@@ -772,6 +772,10 @@ Mutación: agregar en la rama de la fase una línea al servicio de `PB4`; el che
 - `V9b` todavía no tiene issue: entra al árbol de Linear desde esta spec (`V/descomposicion.md` §5;
   [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) implicación 3). Pasa a `Done` al mergearse en la rama de su fase ([GATE:M1](../30-el-corte.md#gate-m1)).
 - **Sin** etiqueta `status-needs-smoke-*` ([GATE:M1](../30-el-corte.md#gate-m1)).
+- Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+  [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+  [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5); `16-fase-7-del-paraguas.md` §4.7,
+  momento 1); el PR de la pieza propone las `area-*` siguiendo lo escrito del repo.
 
 ## Abiertos
 

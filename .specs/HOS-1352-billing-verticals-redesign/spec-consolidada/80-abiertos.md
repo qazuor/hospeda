@@ -89,7 +89,10 @@ devuelve sobrevive al corte; un aviso de Mercado Pago entre el apagado del viejo
 de la imagen nueva puede perderse; y las dos situaciones que una restauración no deshace, que se
 releen antes del ensayo. Y en el §4.7: **que la fase 4 pueda adelantarse a la 2 o a la 3 no lo dice
 AW** (la fuente lo marca; `D/16-fase-7-del-paraguas.md:1169`;
-[GATE:FP](30-el-corte.md#gate-fp)).
+[GATE:FP](30-el-corte.md#gate-fp)). Y en el §4.2: **qué pieza escribe el encendido del drift guard sobre la rama de la primera fase
+posterior** (*«cómo se enciende sobre una rama `epic/**` lo fija `DEC-CI-001`»*): la fuente lo marca
+como lo que falta escribir al abrir la primera fase (`D/16-fase-7-del-paraguas.md:1019`;
+[GATE:FP.3](30-el-corte.md#gate-fp-3)).
 
 ## 5. Lo que cada capítulo declara que NO cierra
 
@@ -135,7 +138,7 @@ Fuente: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-o
 
 - `NUCLEO/08-auditoria-y-observabilidad.md:511` — **Qué hace el reconciliador para detectar**, y con qué frecuencia, es el capítulo 09.
 - `NUCLEO/08-auditoria-y-observabilidad.md:512` — **Las superficies del Admin** —cómo se ven estas acciones y este listado— son del capítulo 19.
-- `NUCLEO/08-auditoria-y-observabilidad.md:513` — **Cerrado por la decisión 5a** (FASE 8 completa, `F-8CB3-016`; FASE 9 completa, `DB-4`). La excepción del §4.1 lo nombraba y ninguna comprobación lo producía —**causa**: `DEC-RF-001` declaró el acto, no su falla—. Desde la máquina del reembolso su productor es **`RF5`**, la llegada de un `refund` de una revocación a `FAILED` (cap. 03 (billing) §6.1), que la fila declara como *«su productor»*. Lo que este capítulo no dice es con qué plantilla sale ese correo inmediato: es del catálogo del cap. 07 §6, que no tiene fila para él.
+- `NUCLEO/08-auditoria-y-observabilidad.md:513` — **Cerrado por la decisión 5a** (FASE 8 completa, `F-8CB3-016`; FASE 9 completa, `DB-4`). La excepción del §4.1 lo nombraba y ninguna comprobación lo producía —**causa**: `DEC-RF-001` declaró el acto, no su falla—. Desde la máquina del reembolso su productor es **`RF5`**, la llegada de un `refund` de una revocación a `FAILED` (cap. 03 (billing) §6.1), que la fila declara como *«su productor»*. Lo que este capítulo no dice es con qué plantilla sale ese correo inmediato: es del catálogo del cap. 07 §6 ([02-nucleo-outbox.md](02-nucleo-outbox.md) §6), que desde BR tiene su fila, *«reembolso de revocación fallido»*, como el `COBRO_DUPLICADO`, *«cobro duplicado detectado»*; los dos los construye [B11](10-corte/B11.md#pieza-b11) (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br); `NUCLEO/08-auditoria-y-observabilidad.md:519`).
 
 ### `V/docs/02-modelo-de-datos.md` — Lo que esta mitad NO cierra
 
@@ -348,8 +351,8 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-gr
 - `B/docs/14-promos-cortesias-y-grants.md:723` — **Cerrado**: no la alcanza; la regla es sólo para las promos de monto (§2.5).
 - `B/docs/14-promos-cortesias-y-grants.md:726` — **Lo que la pendiente 8 dejaba abierto quedó cerrado** (FASE 8 completa, owner 2026-09-25):
 - `B/docs/14-promos-cortesias-y-grants.md:727` — **Cerrado**: en esa ventana el monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4) —**y sin promos**: el mismo pedido escribe `cobros_restantes = 0` (FASE 9 completa, contradicción 1 de `03` §R6.5; el §2.4 decía *«plan vigente»*, que en esa ventana es el viejo).
-- `B/docs/14-promos-cortesias-y-grants.md:734` — **Si el cobro que agota una promo es el que saca a la fila del grace** (`S5`), el orden entre `P1` y `S30` no está escrito: `S30` sale sólo de `ACTIVE` (FASE 9 completa, borde e4 de `03` §R6.4; declarado por `DEC-METH-015`). Si `P1` corre antes, la mutación no ocurre y el barrido abre `DIVERGENCIA_DE_MONTO` en el acto. **Causa**: `S30` se escribió sobre el cobro ordinario. No mueve plata sin que una persona lo vea: la marca la pone delante.
-- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**: los 3 días del reintento de monto de un aumento corren desde su fecha efectiva (§2.4).
+- `B/docs/14-promos-cortesias-y-grants.md:734` — **Cerrado** (residuo de la fuente): desde la FASE 9 vuelta 1 `S30` sale de `ACTIVE` **o `GRACE_PERIOD`**, y con la fila en grace `S5` y `S30` corren en el mismo acto y la mutación se aplica ([TRANS:B:S30](04-catalogos.md#trans-b-s30); [AC:B9b:5](20-fase-2/B9b.md#ac-b9b-5)). (`B/03` §3.2, fila `S30`: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180`, `F-8V1B1-006`)
+- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento corren desde `S37`, como los de toda mutación nuestra (corte del MVP, owner 2026-10-02, [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)).
 
 ### `B/docs/16-addons.md` — Lo que este capítulo NO cierra
 
@@ -378,6 +381,7 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:327`�
 - `B/docs/19-superficies.md:330` — **Qué endpoints expone la API**, uno por uno: lo que este capítulo fija es **qué lee cada superficie**, y de ahí sale la API. Enumerarla antes de FASE 3 sería anticipar el trabajo de las épicas.
 - `B/docs/19-superficies.md:333` — **Cerrado**: lo dice la fila 22 del §4, que el owner escribió para el espejo de `R18` con `S7` como precedente, y que cubre los dos caminos a `CANCEL_SCHEDULED` con el mismo texto (owner 2026-09-27, FASE 9 vuelta 2, `R18`).
 - `B/docs/19-superficies.md:340` — **La vuelta del suspendido con tarjeta pierde su promo** (owner 2026-09-25; FASE 9 completa, 3b). Se aceptó y se dice en el aviso de suspensión (§4 fila 10), porque la vuelta es una sucesión y `S18` no re-apunta la redención (cap. 14 §2.2). **Anotado por el owner para mejorar en el futuro**: la regla de perder la promo se escribió para el cambio de plan que la persona elige, y quien vuelve al mismo plan tras un rechazo de tarjeta no cambia de plan. Las alternativas —re-apuntar la redención cuando la sucesora ancla la misma versión, o siempre desde `SUSPENDED`— están en `26-fase-9-completa/01-…` §2.5, pendiente 2.
+- `B/docs/19-superficies.md:120` — si el texto final del aviso de contracargo lleva *«ya no se le va a cobrar»* y *«una persona sigue el caso»* no está decidido; lo cierra el PR de `B7` por BS (texto al cliente: lo aprueba el owner en el PR; [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
 
 ### `B/docs/21-migracion.md` — Lo que este capítulo NO cierra
 
@@ -574,12 +578,12 @@ Los 55 abiertos de `_trabajo/abiertos/g1-*.md` a `g9-*.md`, con la clasificació
 | AB-g5-5 · La lista nominal de las diez variables que sólo usa el sistema viejo | `g5-u-v1-v4.md`:76 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-6 · Cuáles son *«las tres tablas»* de `is_featured` y `featured_by_entitlement` | `g5-u-v1-v4.md`:89 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-7 · Las credenciales del script del corte y el monto del pago chico | `g5-u-v1-v4.md`:101 | las credenciales, [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): variables de entorno de la sesión de quien opera, nunca versionadas; **el monto del pago chico sigue vivo como dato operativo**: ver abajo |
-| AB-g5-8 · Qué pieza arma con `db:migrate` las bases de desarrollo, de integración y del e2e nocturno | `g5-u-v1-v4.md`:118 | resuelto por las fuentes: `V1` arma con `db:migrate` las bases de desarrollo y de tests (triage, vuelta 2) |
+| AB-g5-8 · Qué pieza arma con `db:migrate` las bases de desarrollo, de integración y del e2e nocturno | `g5-u-v1-v4.md`:118 | derivado, no de las fuentes: `V1`, dueña de [DEC-ARCH-013#📌3](01-decisiones-vigentes.md#dec-arch-013-p3) en el mapa de cobertura porque construye `G18`, lleva la cláusula (d) de [AC:V1:4](10-corte/V1.md#ac-v1-4); ninguna fuente nombra la pieza (`D/01-decision-log.md:7311`, `D/38-fase-5/10-decisiones-del-owner.md:57`) *(lo marco)* |
 | AB-g5-9 · Dónde vive el script TypeScript que genera el SQL del catálogo y de la tabla de claves | `g5-u-v1-v4.md`:135 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs): lo propone el PR de `V1` |
 | AB-g5-10 · Las rutas, permisos y códigos de error de las acciones 18 y 11 | `g5-u-v1-v4.md`:147 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-11 · Dónde vive el caché del conjunto efectivo y cómo se observa una entrada sospechosa | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb): en el Redis que la API ya usa, lectura en vivo si Redis no responde, y un contador de entradas sospechosas en los logs estructurados |
 | AB-g5-12 · Los mínimos de tipos de test del mapa de cobertura que no tienen una lectura en la pieza | `g5-u-v1-v4.md`:175 | no es pregunta al owner: herramienta (`cobertura.py` deduce tipos de migración del texto de `DEC-ARCH-006`, `DEC-ENT-006` y `DEC-TEST-001#📌1`; sólo avisa, R18 ⚠) |
-| AB-g6-1 · V5 · El carril del retiro de `USER_IMPERSONATE` | `g6-v5-v9.md`:7 | resuelto por las fuentes: `V5` lo saca de la base, con el principio del lote 1 I (`F5-AUT-023`; triage, vuelta 2) |
+| AB-g6-1 · V5 · El carril del retiro de `USER_IMPERSONATE` | `g6-v5-v9.md`:7 | `V5` lo saca (`V/descomposicion.md:544`: *«el permiso no existe en el enum»*); que salga **de la base** con el carril del lote 1 I (recrear el enum y borrar sus filas de roles y overrides) es derivación del principio que `F5-AUT-023` fija para `U1` y los permisos del cobro viejo (`V/17-autorizacion.md:762`) *(lo marco)* |
 | AB-g6-2 · V8a · El código de error del rechazo de la acción 24 por precondición | `g6-v5-v9.md`:31 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g6-3 · V7 · ¿El aviso de reclamo y la comunicación del rechazo van por el outbox común de `U2`? | `g6-v5-v9.md`:57 | [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br), por transitividad: `U2 → V4 → V5 → V7` |
 | AB-g6-4 · V9a · Qué pieza crea `domain_event`, el registro donde `V9a` escribe los actos del dueño | `g6-v5-v9.md`:69 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |

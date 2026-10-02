@@ -437,7 +437,9 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-ob
   máquina del reembolso su productor es **[RF5](04-catalogos.md#trans-b-rf5)**, la llegada de un
   `refund` de una revocación a `FAILED` (cap. 03 (billing) §6.1), que la fila declara como *«su
   productor»*. Lo que este capítulo no dice es con qué plantilla sale ese correo inmediato:
-  es del catálogo de correos ([`02-nucleo-outbox.md`](02-nucleo-outbox.md), §6), que no tiene fila
-  para él.
+  es del catálogo de correos ([`02-nucleo-outbox.md`](02-nucleo-outbox.md), §6), que desde BR tiene su
+  fila, *«reembolso de revocación fallido»*, como el `COBRO_DUPLICADO`, *«cobro duplicado detectado»*;
+  los dos los construye [B11](10-corte/B11.md#pieza-b11) (corte del MVP, owner 2026-10-02,
+  [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:509, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:511, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:512, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:513, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:515, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:518
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:509, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:511, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:512, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:513, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:515, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:518, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:519

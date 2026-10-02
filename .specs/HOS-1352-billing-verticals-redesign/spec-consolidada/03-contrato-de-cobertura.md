@@ -1111,7 +1111,7 @@ respuesta sigue siendo `detenida: sí`, pero el barrido diario de billing la mar
 mano con `REANUDACIÓN_NO_APLICADA` (`B/09` §3, la quinta comprobación; `B/02` §2.5, motivo 8), que
 ya existía y no es un motivo nuevo. Como los lectores preguntan al ejecutar, no hay aviso que perder. **La construye [`B4`](10-corte/B4.md#pieza-b4)**
 en la real (lee `subscription_pause`, `B/02`) y **[`V4`](10-corte/V4.md#pieza-v4)** en la de arranque, que contesta `no`
-(§5.1); la consumen [`V9b`](20-fase-1/V9b.md#pieza-v9b) (archivar, borrar) y los avisos de retención. Reemplaza la desigualdad
+(§5.1); la consumen [`V6`](10-corte/V6.md#pieza-v6) y [`V9b`](20-fase-1/V9b.md#pieza-v9b) (archivar, borrar) y los avisos de retención *(corte del MVP, owner 2026-10-01, Z, AC y BD; inferido el reparto: `PB4`/`PB5` en `V6` y `PB9` en `V9b`, marcado por la fuente; residuo corregido el 2026-10-02: `.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1127`)*. Reemplaza la desigualdad
 que antes sostenía la pausa contra el borrado ([`D16`](90-retirados.md#inv-d16), `G-R5`), que sale.
 
 **`coberturaPerdidaEn` es el dato que impide que el borrado se adelante a un aviso atrasado** (FASE 9 vuelta 3, owner 2026-09-30, lote Q; `F-8V3A2-006`). Es el instante en que `cubierto` pasó por última vez de `sí` a `no` para esa persona en esa vertical, o `NINGUNO` si nunca pasó. **La implementación real lo guarda en la misma transacción que encola el aviso de esa caída** (§3), así que la pregunta lo contesta aunque el aviso todavía no haya llegado: es lo que el aviso atrasado no puede dar. **Su único lector es `PB9`** (`V/03` §9), que cuenta el plazo de borrado desde el más tardío de tres instantes, `listing.inactiva_desde`, `pausaTerminadaEn` y éste. Sobre una ficha no publicada cuyo hecho 5 todavía no escribió el recálculo, el reloj viejo pierde contra este instante y `PB9` no borra. **`PB4`, `PB5` y los avisos de retención no lo leen**: la decisión es sobre el borrado, que es lo único irreversible. **Con `NINGUNO`, `PB9` no borra en la misma pasada en que ve por primera vez la ficha vencida y sin cobertura** (`V/03` §9): es la regla mientras el dato no exista, y también la de la implementación de arranque, que contesta `NINGUNO` (§5.1). La construye `B4` en la real y `V4` en la de arranque; la consume `V9b`.
@@ -1655,7 +1655,7 @@ de `V/descomposicion.md` §2 con la misma pregunta que su §2.11. Lo que la FASE
 
 | qué | de dónde | unidad | qué la demuestra |
 |---|---|---|---|
-| **`U2`, el outbox común**: sobre el precedente del newsletter, con la supresión, la bitácora de correos que `U1` renombró desde `billing_notification_log`, la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs (el reloj sigue en `B1`) | lote 2 A y B | **[`U2`](10-corte/U2.md#pieza-u2)**, del paraguas como `U1`: depende de `U1` y va antes de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12`, las primeras que encolan. Su fila y su criterio viven en `16-fase-7…` §4.6 | **`V6`, `V9a` y `V9b` (AC) dependen de `U2`** (`V/descomposicion.md` §3) |
+| **`U2`, el outbox común**: sobre el precedente del newsletter, con la supresión, la bitácora de correos que `U1` renombró desde `billing_notification_log`, la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs (el reloj sigue en `B1`) | lote 2 A y B | **[`U2`](10-corte/U2.md#pieza-u2)**, del paraguas como `U1`: depende de `U1` y va antes de `V4` y `B3`, las primeras que encolan, y por transitividad de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br); `V/descomposicion.md:602`, `B/descomposicion.md:814`). Su fila y su criterio viven en `16-fase-7…` §4.6 | **`V6`, `V9a` y `V9b` (AC) dependen de `U2`** (`V/descomposicion.md` §3) |
 | **el paso de cobertura en toda ruta de escritura de vertical**, que `U1` deja con permiso y propiedad solos | lote 1 A | **[`V5`](10-corte/V5.md#pieza-v5)** | **criterio de salida: ninguna ruta de escritura de vertical sin el paso de cobertura** |
 | **la ficha ajena `RESTRICTED` contesta `404`**: sale la excepción VIP de `apps/api/docs/error-contract.md` | lote 4 D | **`V5`** | una ficha ajena `RESTRICTED` contesta lo mismo que una inexistente, y el test que fijaba el `403` afirma el `404` |
 | **salen la impersonación y `set-role`**: `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón del panel y `USER_IMPERSONATE`; **y `fullAdminRole` queda sin ninguna acción: el plugin sigue sólo como guardia del baneo en el inicio de sesión** (FASE 5, lote de la aplicación, owner 2026-09-30, L; `apps/api/src/lib/auth.ts:76-89` en `origin/staging`) | lote 4 C; lote de la aplicación, L | **`V5`** (el plugin y el permiso) · el botón sale en el mismo cambio | ningún rol del plugin lleva `impersonate` ni `set-role`, el permiso no existe en el enum y el panel no muestra el botón; **`fullAdminRole` no lista ninguna acción sobre `user` ni sobre `session`, y un baneado sigue sin poder iniciar sesión** (L) |
@@ -1731,8 +1731,11 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206, .specs/
 
 ## Las dependencias entre épicas (`B/descomposicion.md` §2.6)
 
-Son **doce**, sobre cuatro piezas de verticales (`V2`, `V4`, `V6` y `V9b`) y una de billing
-(`B1`, en la fila 14), y las de `V6` y `V9b` no son tempranas. Las filas 8 y 13 de la fuente
+Son **trece**: con el corte del MVP las filas siguen siendo doce (Z) **y BC suma la 15**, la de
+`V7` sobre el pago manual de `B5` para la acción 6 (corte del MVP, owner 2026-10-01, BC; residuo
+corregido en la fuente el 2026-10-02: `B/descomposicion.md:389`, `:391`). Van contra cuatro piezas
+de verticales (`V2`, `V4`, `V6` y `V9b`) y dos de billing (`B1`, en la fila 14, y `B5`, en la 15),
+y las de `V6` y `V9b` no son tempranas. Las filas 8 y 13 de la fuente
 están retiradas (la 8 en la FASE 9 vuelta 2, `R5`: la fecha la calculaba billing; la 13 con la
 revisión del owner, 2026-09-28, C8) y viven en `90-retirados.md`; sus números no se reusan.
 
@@ -1897,6 +1900,17 @@ el grafo: `B1` es la primera pieza de billing, y `V4` llega después de `V3`.
 Pieza dueña del AC: [V4](10-corte/V4.md#pieza-v4) · también: [B1](10-corte/B1.md#pieza-b1) (provee)
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:388, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:417
 
+<a id="dep-15"></a>
+**DEP:15** — **La acción 6, el plan y el método de pago de un Partner, en la otra dirección: la
+pieza de verticales espera a la de billing.** **`V7` lee** el pago manual de `B5`, que la acción 6
+configura como método de pago del Partner (corte del MVP, owner 2026-10-01,
+[BC](01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bc): *«la acción 6 […] es de `V7`, sobre el
+pago manual de `B5`»*). **`V7` espera a `B5`.** No hay violación del grafo: `V7` es posterior y
+`B5` es del corte.
+
+Pieza dueña del AC: [V7](20-fase-4/V7.md#pieza-v7) · también: [B5](10-corte/B5.md#pieza-b5) (provee)
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:389, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:391
+
 **El conteo se recorre entero, no se suma.** Se recorrieron los campos del §4.1 uno por uno
 buscando su lector, y cada campo que queda tiene un lector en estas filas; los que no aparecen es
 porque ningún capítulo de billing los lee (`díasDeTrial` lo consumía la máquina de trial, del otro
@@ -1909,7 +1923,7 @@ lado de la frontera, y por eso salió de la firma: FASE 9 vuelta 1, `F-8V1C1-015
 > dependencias es su consecuencia y se recuenta desde ahí.
 
 **Y las contra `V2` no mueven el orden.** `V2` **ya era gate de `B2`** y es la **segunda** de la otra épica: esas dependencias llegan
-resueltas mucho antes que `B7`, `B8b` y `B12`. Lo que cambia no es el orden: es que dejan de ser
+resueltas mucho antes que `B7`, `B8a`, `B8b` y `B12`. Lo que cambia no es el orden: es que dejan de ser
 invisibles.
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:424, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:431, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:440

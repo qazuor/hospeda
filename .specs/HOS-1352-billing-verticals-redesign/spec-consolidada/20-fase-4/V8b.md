@@ -288,6 +288,10 @@ extendido de la Fase 4 ([GATE:FP.2](../30-el-corte.md#gate-fp-2)), condición de
 - Issue: todavía no tiene; entra al árbol de Linear desde esta spec (`V/descomposicion.md` §5;
   [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017), implicación 3).
 - **Sin** etiqueta `status-needs-smoke-*` ([GATE:M1](../30-el-corte.md#gate-m1)).
+- Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner
+  [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs), con sus defaults en
+  [DEC-METH-019#📌5](../01-decisiones-vigentes.md#dec-meth-019-p5); `16-fase-7-del-paraguas.md` §4.7,
+  momento 1); el PR de la pieza propone las `area-*` siguiendo lo escrito del repo.
 
 ## Abiertos
 

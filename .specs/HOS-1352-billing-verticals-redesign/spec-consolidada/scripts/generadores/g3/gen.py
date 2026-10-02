@@ -377,6 +377,16 @@ def titulo_trans(cid):
 
 TEST_TRANS = (f'- **Test mínimo** ({own("AN")}): integración con DB, en la pieza dueña.')
 
+# A guard an owner letter added to a row its source table never received (first blind-verification
+# round, H-VA-A2-2): shown after the verbatim cells, never merged into them, with the letter's line.
+_OWN41 = Dp + '41-corte-del-mvp/10-decisiones-del-owner.md'
+assert 'tiene un plan vigente que herede Turista VIP' in lines(_OWN41)[123], (_OWN41, 124)
+GUARDA_POSTERIOR = {
+    'TRANS:B:S1': ([f'- **Guarda que suma el corte del MVP** ({own("BJ")}), que la fila de la fuente no '
+                    'recibió: **y el `user` no tiene un plan vigente que herede Turista VIP** cuando compra '
+                    'Turista VIP (el código de error del rechazo queda abierto).'], [f'{_OWN41}:124']),
+}
+
 
 def seccion_trans(titulo, prefix, intro=(), con_tpz=False, con_apz=False):
     ids = ids_de(prefix)
@@ -402,7 +412,8 @@ def seccion_trans(titulo, prefix, intro=(), con_tpz=False, con_apz=False):
                            f"[APZ:{i['local']}]({ '10-corte' if PIEZAS[pz]['cuando']=='corte' else FASE[pz]}/{pz}.md#{slug(t['id'])})"
                            f" → {pieza_link(pz)}")
         pre.append(TEST_TRANS)
-        out.append(item_row(cid, titulo_trans(cid), pre=pre))
+        post, locs = GUARDA_POSTERIOR.get(cid, ((), ()))
+        out.append(item_row(cid, titulo_trans(cid), pre=pre, post=post, extra_locs=locs))
     return out
 
 
@@ -518,8 +529,14 @@ def main():
         f = i['archivo']
         pre, extra = [], []
         if cid.startswith('GUARD:'):
-            pre.append(f'- **Dónde corre**: en CI, sobre el árbol de fuentes — la capa *guards* de `{corto(f)}` §1: '
-                       'qué cubre: *«propiedades del **código**, no de una ejecución»*; contra qué corre: *«el árbol de fuentes, en CI»*.')
+            if cid == 'GUARD:G13':
+                # first blind-verification round (H-VB-B3-1): G13 fails on a build bound for
+                # production, not on the branch; its own row (the item's Origen line) says so
+                pre.append(f'- **Dónde corre**: en CI, **sobre un build destinado a producción, no sobre la rama**: '
+                           f'calla hasta que un build apunte a producción (`{corto(f)}` §2, fila `G13`).')
+            else:
+                pre.append(f'- **Dónde corre**: en CI, sobre el árbol de fuentes — la capa *guards* de `{corto(f)}` §1: '
+                           'qué cubre: *«propiedades del **código**, no de una ejecución»*; contra qué corre: *«el árbol de fuentes, en CI»*.')
             pre.append(f'- **Test mínimo** ({own("AN")}): guard estático con su prueba de mutación (romperlo a '
                        f'propósito y ver que falla, `{corto(f)}` §2.1), en la pieza dueña.')
             extra.append(f'{f}:32')
@@ -541,9 +558,27 @@ def main():
     MAT = Dp + '06-mp-validation-matrix.md'
     ids = ids_de('MP:')
     t = 'Matriz de validación de Mercado Pago (`D/06`)'
+    B06 = Bp + 'docs/06-proveedor.md'
+    LM = lines(MAT)
+    # first blind-verification round (H-VA-A8-r2-1, H-VA-A8-pista-9): rules 4 and 6 and the four
+    # states of the matrix, verbatim, with B/06 §8 rule 2 for when a verified row expires
+    for n, frag in ((122, 'Cada fila lleva'), (128, 'Un `PARTIALLY_SUPPORTED`'), (135, '`VERIFIED`'),
+                    (136, '`NOT_SUPPORTED`'), (137, '`PARTIALLY_SUPPORTED`'), (138, '`UNKNOWN`')):
+        assert frag in LM[n - 1], (MAT, n, frag)
+    assert 'Una fila caduca cuando cambia lo que la sostiene' in lines(B06)[377], (B06, 378)
     out += [f'## {t}', '',
             f'Las filas de la matriz son **sólo citables** ({own("AX")}): no exigen AC propio; las citan los '
             'ítems y las piezas que se apoyan en ellas. Cada fila va con todas sus columnas.', '',
+            '**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6): cada fila lleva **fecha y entorno**, y una '
+            'fila sin fecha se lee como `UNKNOWN` (`S-MP-02`); un `PARTIALLY_SUPPORTED` **tiene que nombrar '
+            'qué parte**. Cuándo caduca una fila verificada: [B1](10-corte/B1.md#pieza-b1) (`B/06` §8, que '
+            'cierra `S-MP-02`).', '',
+            '**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con '
+            'evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; '
+            '`PARTIALLY_SUPPORTED`, funciona con una restricción **nombrada**; `UNKNOWN`, no se probó, o la '
+            'fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2: '
+            '*«una fila caduca cuando cambia lo que la sostiene, no por antigüedad»*)—.', '',
+            f'Origen: {MAT}:122, {MAT}:128, {MAT}:131, {MAT}:135, {MAT}:136, {MAT}:137, {MAT}:138, {B06}:378', '',
             ]
     L = lines(MAT)
     heads = [n for n in range(1, len(L) + 1) if re.match(r'^## ', L[n - 1])]
