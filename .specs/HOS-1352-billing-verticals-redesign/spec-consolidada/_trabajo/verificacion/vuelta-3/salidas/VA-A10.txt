@@ -1,0 +1,26 @@
+# VA-A10 · fuente → spec · B/docs/14-promos-cortesias-y-grants.md, B/docs/16-addons.md, B/docs/19-superficies.md, B/docs/20-testing.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:721 · «El addon sigue su curso y **su reloj no se congela** (`DEC-ADDON-001`)» (y `B/03` §8 fila A4: «el reloj no se congela aunque la ficha esté despublicada»; DEC-ADDON-001: «el addon vence cuando vence, esté la ficha publicada o no», alternativa (2) «el reloj se congela mientras la ficha no se vea» DESCARTADA) · distinta en s/a10f010e/20-fase-3/B10.md:1316 (AC:B10:5: «pasa a `EXPIRED` contando sólo los días en que la ficha se vio: **el reloj se congela** mientras la ficha está despublicada») — contradice además a 04-catalogos.md:5269 (TRANS:B:A4) y a B13a.md:590 (AC:B13a:4); el AC de la pieza dueña de A4 manda construir la alternativa que el owner rechazó · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:401 · «Mismo criterio que `S13` sobre la principal [...] `DEC-GRANT-001` dice *«se corta el cobro en el acto y no se devuelve lo pagado»*» (y 14:26, el grant cancela la obligación; DEC-GRANT-001 decisión (1) «sin reembolso», alternativa (3) «con reembolso proporcional» descartada) · distinta en s/a10f010e/10-corte/B9a.md:787 (AC:B9a:1, `S13`: «**con reembolso proporcional** del período ya cobrado») — contradice internamente a TEST:B9a:1 (B9a.md:1178, «ningún `refund`»), a 04-catalogos.md:3018 (TRANS:B:S13, «sin reembolso») y a US:B9a:1 («sin reembolso») · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:139 · fila 19-bis: «al **suscribirse estando en trial** en esa vertical [...] antes de confirmar | **las dos mitades de la regla**: que al acreditarse el primer cobro el trial termina y los días que le quedaban se pierden, y que si ese cobro se rechaza sigue en su trial» · ausente (busqué «19-bis», «sigue en su trial», «días que le quedaban» en toda la spec: sólo vive en la transcripción de contexto B13a.md:172 y en la prosa V4.md:755-757 y :773, que dice «la superficie es de `B13a`»; B13a no tiene AC ni TEST para ella —sus AC cubren las filas 3, 3-bis, 8, 9, 10, 10-bis, 11, 13, 13-bis, 19, 21, 22—, su sección *UI web y admin* (B13a.md:904-917) no la nombra, y el reparto por fila de B13a.md:434-435 no la manda a otra pieza; el outbox no la cubre porque es pantalla del checkout) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:40 · «Los dos ejes se declaran por separado, y en dos lugares: **el cobro lo declara el producto (`addon_product`, billing)**; la vigencia, la versión (`addon_version`, verticales)» · ausente como modelo/AC (la mitad de la vigencia está en V2.md:182/355 vía `políticaDeAddon`; la del cobro `UNA_VEZ`/`PERIÓDICO` en `addon_product` no está en ESQ:8, B3.md:969-981, que enumera sólo `version_id` y la identidad de la compra, ni en ningún AC/TEST; sólo en la transcripción B10.md:110 y, implícita, en 04-catalogos.md:3608 y LISTA:B10 cl. 7) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:60 · «**cada cosa que se muestra dice en qué vertical vale** [...] Y **lo global se muestra como global**» (y §7, 19:303-305: «una pricing por vertical, Turista incluida», con las tres situaciones del §47) · ausente de AC/TEST (sólo en la sección *UI web y admin* de B13a.md:906-908; AC:B13a:11 cubre sólo «lee lo vendible» y ningún AC/TEST de B13a verifica el scope por vertical ni las tres situaciones de la pricing) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:476 · «**Entonces el grant CIERRA el saldo, y el cierre se declara.** Se escriben `saldo_cerrado_en` y `motivo_cierre = GRANT_PERMANENTE_OTORGADO`» (DEC-GRANT-013, posterior a DEC-GRANT-011) · distinta en s/a10f010e/04-catalogos.md:7934 (GUARD:G-R1-F: «o lo cierra desde un acto que esa enumeración no nombra: es la mitad que hace cumplir que **otorgar un grant no cierre un saldo diferido** (cap. 14 §4.3, `DEC-GRANT-011`)») — la glosa la copia la spec de 20-testing.md:61, que quedó vieja frente a 14 §4.3 y DEC-GRANT-013; contradice a AC:B9a:3 (B9a.md:806-813). El predicado en sí (motivo de la enumeración cerrada) admite `S13`; la glosa no · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:422 · «el predicado es *«un ANCLA VIVA en esa vertical»*, no *«el beneficiario tuvo un grant alguna vez»*» · distinta (cita) en s/a10f010e/20-fase-2/B9b.md:185 (AC:B9b:7: «(`B/14` §3.4)»; la regla está en §4.3, y §3.4 es *«un canje rechazado no se consume»*); misma cita equivocada en s/a10f010e/10-corte/B13a.md:616 (AC:B13a:6, «(`B/14` §3.4)» para que otorgar termina la cortesía vigente, que es 14:436, §4.3) · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/14-promos-cortesias-y-grants.md | ~55 | 1–742 | 0 | 2 (MENOR: glosa de G-R1-F; citas §3.4) |
+| B/docs/16-addons.md | ~60 | 1–1153 | 1 (MENOR: eje del cobro en `addon_product`) | 2 (BLOQUEA: A4 reloj congelado; S13 con reembolso proporcional) |
+| B/docs/19-superficies.md | ~45 | 1–346 | 2 (BLOQUEA: fila 19-bis; MENOR: scope por vertical y pricing) | 0 |
+| B/docs/20-testing.md | ~40 | 1–808 | 0 | 0 (la glosa de G-R1-F se reporta contra 14:476) |

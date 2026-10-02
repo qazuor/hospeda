@@ -1,0 +1,34 @@
+# VB-07 · spec → fuente · 20-fase-4/V7.md 10-corte/V8a.md 20-fase-4/V8b.md 10-corte/V9a.md
+
+## Hallazgos
+
+20-fase-4/V8b.md:175 · «La atrasada no espera para siempre: una postulación `PENDIENTE` que cumple sesenta días sin respuesta pasa a `RECHAZADA` sola, con el aviso de rechazo al postulante.» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:252 («Nada rechaza una postulación por el paso del tiempo. Un vencimiento automático es un rechazo silencioso») y .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1363 («Ninguna transición la dispara el tiempo. Una `PENDIENTE` que nadie resuelve no vence»); ninguna decisión del owner ni 📌 introduce un plazo de 60 días ni un auto-rechazo. También es contradicción interna con V8b.md:116 («ninguna se resuelve sola»), V8b.md:201 («la marca de atrasada es una lectura del panel, no un job») y V7.md:218-224 (AC:V7:6) · BLOQUEA
+
+10-corte/V9a.md:157 · «y para el otro campo (estado, plan, monto o fecha) sólo el valor nuevo» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:62 («los campos que cambiaron, con su valor anterior y el nuevo […] el valor anterior y el nuevo quedan para los campos que no son contenido»); también contradicción interna con V9a.md:68 («los demás campos (estado, plan, monto, fechas) siguen con el valor anterior y el nuevo») y TEST:V9a:2 en V9a.md:255-256 («el anterior/nuevo del estado») · BLOQUEA
+
+10-corte/V8a.md:375 · tabla «Lo que hay que decir» (`V/19` §4) transcripta sin la fila 2, y la lista de UI de V8a.md:439 («las filas 1, 4, 8, 9, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31 y 35») y AC:V8a:6 (V8a.md:211-215) tampoco la nombran · sin soporte la omisión: la fila está viva en .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:61 («| 2 | al **despublicar** una ficha en trial | que **el reloj del trial no se detiene** | cap. 11 §1.2») y la regla del aviso en el acto en .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:67 («Y se dice en el momento de despublicar, no en los términos»); V8a es la pieza de «los mensajes que hay que decir» salvo Partner, y ninguna otra pieza de la spec la recoge (V4.md:472-491 transcribe el §1.2 sin la frase del aviso) · BLOQUEA
+
+20-fase-4/V7.md:202 · «la fila de `partner` nace con `owner_user_id` nulo y ninguna cuenta recibe el rol de socio; […] y en la otra rama se crea el usuario y se le manda la validación (§17.3)» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:641 («`owner_user_id` es nulo hasta el reclamo y lo escribe sólo el acto de reclamar: en la rama del correo sin usuario, la validación de ese correo; en la del correo que ya es de un usuario, el reclamo desde esa casilla, con sesión»): ningún AC, TEST ni regla de V7 dice que en la rama sin usuario la validación del correo escribe `owner_user_id` (y con él el rol de socio, que llega con el acto que fija al dueño); siguiendo la spec, el Partner aprobado de esa rama queda sin dueño y sin camino para obtenerlo · BLOQUEA
+
+20-fase-4/V7.md:319 · «ningún archivo del repositorio nombra `starts_at`, `ends_at` ni `tier` de `partners`» (y TEST:V7:16, V7.md:964) · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:718 («ni la base ni ningún archivo del panel las nombra»; para `tier`: «la página pública y las rutas del socio leen la clave», sin cláusula de «ningún archivo») · MENOR
+
+20-fase-4/V7.md:223 · «la `PENDIENTE` aparece marcada como atrasada en el panel» (AC:V7:6, y TEST:V7:6 en V7.md:899) · contradicción interna con V7.md:827-828 («el panel de postulaciones es de `V8b`») y V8b.md:43 («la marca de atrasada la decide el PLAZO:8 (dueña `V7`) y el panel la muestra»): V7, que se mergea antes que V8b, no tiene panel donde comprobar la marca · MENOR
+
+10-corte/V8a.md:74 · «Fuera de alcance» / alcance sin el retiro de la puerta de borrado físico de cuentas (`user/admin/hardDelete.ts`) · contradicción interna: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547 y 03-contrato-de-cobertura.md:1664 se la asignan a `V8a` («la de cuentas, que reemplaza la acción 24»), mientras V4.md:918 dice «El retiro de esa ruta es de `V6`» y V6 la ejerce (AC:V6:25); V8a no la menciona. Se construye igual (por V6), pero el mapa de cobertura apunta a una pieza que no la lleva · MENOR
+
+20-fase-4/V7.md:1061 · «§4.6 (lista de piezas, l. 945; esquema del corte, l. 979–980) y §4.7 (las fases posteriores, l. 1079–1111)» · cita mal apuntada: en .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md la fila `V7` es la l. 950, las del esquema de `V7` son l. 984–985 y «Las fases posteriores» es l. 1135–1177 · MENOR
+
+10-corte/V8a.md:643 · «§4, filas `V8` y `V8a` (l. 712 y 713)» y V8a.md:647 «§4.6 (l. 946)» · cita mal apuntada: las filas están en .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:719-720 y la fila `V8a` del §4.6 en 16-fase-7-del-paraguas.md:951 · MENOR
+
+20-fase-4/V8b.md:304 · «§4, fila `V8b` (l. 714)» y V8b.md:308 «§4.6 (l. 947, nota del esquema l. 989–992)» · cita mal apuntada: la fila está en descomposicion.md:721; la de `V8b` en 16-fase-7-del-paraguas.md:952 y la nota del esquema en l. 994-995 · MENOR
+
+10-corte/V9a.md:311 · «`16-fase-7-del-paraguas.md` §4.6 (lista de piezas, l. 948)» · cita mal apuntada: la fila `V9a` está en 16-fase-7-del-paraguas.md:953 · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-4/V7.md | 1–1062 | 150 | 1 | 3 |
+| 10-corte/V8a.md | 1–648 | 110 | 1 | 2 |
+| 20-fase-4/V8b.md | 1–308 | 55 | 1 | 1 |
+| 10-corte/V9a.md | 1–311 | 45 | 1 | 1 |
