@@ -595,7 +595,7 @@ recontado con `41-corte-del-mvp/aristas.py`.
 - **BB**: `V4` lleva el criterio negativo de que el trial no guarda teléfono, identificador fiscal ni dispositivo;
 - **y un residuo de Z corregido**, sin decisión nueva: las filas 32, 33 y 34 del `19` §4 y la acción 25 son de Partner y van a **`V8b`**, como dice la fila de `V8a` (*«salvo lo de Partner»*).
 
-**Y lo que el owner fijó con el lote BK a BV** (corte del MVP, owner 2026-10-02, todas la 1, BM pendiente; `41-corte-del-mvp/10-decisiones-del-owner.md`):
+**Y lo que el owner fijó con el lote BK a BV** (corte del MVP, owner 2026-10-02, todas la 1; BM, que es de billing, con su aclaración; `41-corte-del-mvp/10-decisiones-del-owner.md`):
 
 - **BL**: **`V6` encola el aviso *«al archivar»* con su plantilla en `PB4` y `PB5`**, porque el outbox ya existe (`U2 → V6`), y **`V9b` suma los dos avisos previos y el job** sin tocar el código de `V6`: una pieza anterior escribe su rama entera, y la posterior sólo agrega;
 - **BN**: **`V9a` crea `domain_event`**, la primera pieza del grafo que la escribe *(inferido; lo marco)*;
