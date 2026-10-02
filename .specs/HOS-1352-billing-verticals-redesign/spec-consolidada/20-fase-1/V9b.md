@@ -18,7 +18,7 @@ Su gate propio es el de toda fase posterior: el momento 2 aplicado a la rama de 
 ([GATE:FP.1](../30-el-corte.md#gate-fp-1)), el checklist de smoke del sistema nuevo extendido con lo de la fase —la parte de
 `staging` antes del merge y la de producción como un 5c propio— ([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard
 sobre la rama en verde, sin ninguna migración estructural ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Es **aditiva**: no
-reescribe filas ni código del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7).
+reescribe filas ni código del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 2 y 7).
 
 **La fecha límite de la Fase 1** (corte del MVP, owner 2026-10-02, [BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)): **límite = el instante del
 corte + el plazo 1 − el plazo 4 de `NUCLEO/02` §1.5, con la versión 1 de los plazos**
@@ -147,9 +147,11 @@ Fuente: [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-decisiones-vigentes.md#dec
 - **Cuando** corre `PB9`, y cuando el almacenamiento o el proveedor fallan en el primer intento
 - **Entonces** el token queda revocado en el proveedor y no existe en la base; los dos borrados
   remotos (fotos y token) corren después del commit, con las filas marcadas pendientes hasta que se
-  confirman, y la corrida diaria los reintenta hasta confirmarlos; las reseñas de terceros se
+  confirman, y la corrida diaria de `V6` los reintenta hasta confirmarlos ([V6](../10-corte/V6.md#pieza-v6)
+  la construye con `PB12`); las reseñas de terceros se
   conservan sin mostrarse.
 Fuente: [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9), [LISTA:V9b](#lista-v9b)
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:838, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:519
 
 <a id="ac-v9b-4"></a>
 **AC:V9b:4** — Lo que cuelga de la ficha, por dueño del dato.
@@ -227,10 +229,13 @@ Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b), [FILA:V9](../10-corte/V9
   uno antes del archivado y uno antes del borrado, que encola el job de `V9b`, y el de *«al
   archivar»*, que encola `PB4`/`PB5` de `V6` en el mismo acto ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)); los dos previos cuentan desde el
   más tardío de `inactiva_desde` y el `pausaTerminadaEn` de `retenciónDetenida`, releen la cobertura
-  y no salen si el dueño está cubierto; el previo al borrado nunca antes de la fecha que anunció el
+  y no salen si el dueño está cubierto; **releen además el estado de la ficha y la pausa: no salen
+  sobre una ficha `MODERATED` ni `PURGED`, ni mientras `retenciónDetenida` conteste `sí`**
+  (`NUCLEO/07` §6; N7, C14); el previo al borrado nunca antes de la fecha que anunció el
   archivado; cada ocurrencia lleva en su clave la fecha objetivo (`listing:<id>:ret:…`), así que un
   reloj reiniciado puede volver a mandarlos sin duplicarlos.
 Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b), [FILA:V9](../10-corte/V9a.md#fila-v9), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:274
 
 <a id="ac-v9b-14"></a>
 **AC:V9b:14** — Los dos avisos previos los suma el job, sin tocar `PB4` ni `PB5`.
@@ -623,7 +628,8 @@ con `PB12` ([FILA:V6](../10-corte/V6.md#fila-v6)); `V9b` emite el empuje de `PB9
 
 - El job diario que corre `PB9` y los dos avisos previos, con la correlación de su corrida y la de cada ficha
   (`NUCLEO/08` §2.3), y con un actor de sistema de la fábrica de `V5` ([FILA:V5](../10-corte/V5.md#fila-v5)).
-- La corrida diaria que reintenta los borrados remotos pendientes ([TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)).
+- `PB9` usa la corrida diaria que reintenta los borrados remotos pendientes, que construye `V6` con
+  `PB12` ([V6](../10-corte/V6.md#pieza-v6); [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)).
 - Los dos avisos previos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la
   clave de schedule que lleva la fecha objetivo (`NUCLEO/07` §2); el *«al archivar»* lo encola `V6`
   en el acto de `PB4`/`PB5` ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)).
@@ -712,7 +718,8 @@ Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b)
 <a id="test-v9b-10"></a>
 **TEST:V9b:10** — Integración: los dos avisos previos en sus fechas objetivo por el job, y el
 *«al archivar»* encolado por `PB4`/`PB5`, con relectura de cobertura y sin duplicado tras un
-reinicio.
+reinicio; y los dos previos no salen sobre una ficha `MODERATED` ni `PURGED`, ni con
+`retenciónDetenida` en `sí`.
 Tipo: integración con DB
 Cubre: [AC:V9b:10](#ac-v9b-10)
 Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b)

@@ -44,10 +44,11 @@ fila y el *«Lista cuando»* de la unidad se definen acá, en su forma vigente, 
 8. **y `V9` depende de `U2`, el outbox común, porque encola los avisos de retención** (FASE 5, owner
    2026-09-30, lote 2 A).
 
-**El reparto** (Z y AC): el punto 5 es de `V9a`; el 3, de `V4`; el resto (1, 2, 4, 6, 7 y 8), de
+**El reparto** (Z, AC y BL): el punto 5 es de `V9a`; el 3, de `V4`; del 4, el aviso *«al archivar»*
+lo encola `V6` con `PB4` y `PB5` (BL); el resto (1, 2, los dos avisos previos del 4, 6, 7 y 8), de
 `V9b`. **Capítulos**: `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) · `08` §1.1–§1.2
 (núcleo). **Guards**: ninguno (decía *«el de `D16`»*, que era `G-R5`; se va a `B8`, §2.7).
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:71
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:71, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73
 
 <a id="fila-v9a"></a>
 **FILA:V9a — El registro de los actos del dueño.** Qué deja funcionando: **el registro de los actos
