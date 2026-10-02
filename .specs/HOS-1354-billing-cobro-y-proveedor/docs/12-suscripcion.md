@@ -295,6 +295,14 @@ Ese cliente queda alcanzado por el aumento **como cualquier otro**: por la venta
 tres contactos, con **su** fecha efectiva. No hay un camino especial, y eso es lo que hay que
 preservar — un aumento que entrara por la puerta del downgrade se saltearía el aviso del §29.
 
+**Y desde BM y BZ el aumento no entra cambiando el precio de la versión destino** (corte del MVP,
+owner 2026-10-02, CC): **un descenso encolado —el monto ya mutado por `DEC-SUB-008` y el `S38` que
+aplica el cambio de versión al fin del ciclo— cuenta como cliente de la versión destino**, así que
+la acción 19 rechaza fijar su precio (BM) y se publica una versión nueva. El cliente llega por `S38`
+a la versión cuyo precio vio, y un aumento posterior le llega por BZ —una migración por `S37` y `S38`
+con el motivo *«aumento»*— como a cualquier anclado. **El rechazo de la acción 19 cuenta también las
+filas con un `S38` encolado hacia esa versión**, con su test en `B2`.
+
 ---
 
 ## 4. Que el ciclo del grace cierre · cierra `R-SUB-01`
