@@ -12,6 +12,8 @@
 ✓ R6   exit 1 · un Origen que no cita la posición del ítem
 ✓ R6   exit 1 · la línea citada no contiene el id local
 ✓ R7   exit 1 · un ítem normativo vivo sin AC
+✓ R7b  exit 1 · el AC que cita el ítem está en otra pieza que la dueña de cobertura.json
+✓ R7b  exit 1 · cobertura.json le da al ítem una pieza sin ningún AC
 ✓ R8   exit 1 · un AC sin test
 ✓ R9   exit 1 · un AC inventado, sin fuente (y con test, para que sólo falte la fuente)
 ✓ R9   exit 1 · un test que cita sólo un ancla de US (no un ítem fuente)
@@ -31,4 +33,4 @@
 ✓ R16  exit 1 · una pieza del corte en la carpeta de una fase posterior
 ✓ R17  exit 1 · una sección del diseño sin ninguna línea citada
 
-31 canarios · 0 fallas
+33 canarios · 0 fallas

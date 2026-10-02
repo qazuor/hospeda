@@ -3,6 +3,7 @@
 8-11; owner AL-AO). Exit 0 only when every rule gives 0.
 
     python3 trazar.py <inventario.json> <adjudicacion.json> <dir-de-la-spec> [--sin-deriva]
+                      [--cobertura=<cobertura.json>]
 
 FORMAT the spec is written in (the contract this script enforces)
   item definition   <a id="<slug>"></a> on its own line, then the block (up to the next anchor
@@ -33,6 +34,9 @@ RULES
   R6  every definition has `Origen:`, cites the item's own position, and the cited line contains
       the item's local id (defs.CHEQUEO_LOCAL says how, per source).
   R7  every live NORMATIVE item is cited by ≥1 AC (AL); methodology decisions are citable only.
+  R7b with --cobertura: that AC is in the item's OWNER piece of cobertura.json (one owner per item,
+      so parallel writers neither leave it uncovered nor duplicate it); an item owned by
+      `30-el-corte` has no piece file, so only R7 applies to it.
   R8  every AC is covered by ≥1 TEST (AL).
   R9  every US/AC/TEST cites ≥1 existing citable item in `Fuente:` (AL).
   R10 no US/AC/TEST lives in 80-abiertos: what has no source is a question there, not a criterion.
@@ -88,7 +92,7 @@ def citas(text):
     return [m.group(2) for m in REF.finditer(text)]
 
 
-def main(inv_p, adj_p, spec_dir, deriva=True):
+def main(inv_p, adj_p, spec_dir, deriva=True, cobertura=None):
     inv = json.load(open(inv_p, encoding='utf-8'))
     items = inv['items']
     adj = json.load(open(adj_p, encoding='utf-8')) if os.path.exists(adj_p) else {}
@@ -214,6 +218,14 @@ def main(inv_p, adj_p, spec_dir, deriva=True):
         if (i['fuente'] in NORMATIVAS and not i['id'].startswith(NO_NORMATIVAS_PREFIJOS)
                 and estado.get(i['id']) in VIVOS and slug(i['id']) not in citado_por_ac):
             err['R7 ítem normativo vivo sin AC'].append(i['id'])
+    if cobertura:
+        cob = json.load(open(cobertura, encoding='utf-8'))['items']
+        for cid, c in cob.items():
+            i = next((x for x in items if x['id'] == cid), None)
+            if i is None or estado.get(cid) not in VIVOS or c.get('pieza') == '30-el-corte':
+                continue
+            if not any(a['pieza'] == c['pieza'] and slug(cid) in a['fuente'] for a in ac.values()):
+                err['R7b el AC del ítem no está en su pieza dueña'].append(f"{cid} -> {c['pieza']}")
     cubiertos = {a for t in test.values() for a in t['cubre']}
     for a in ac:
         if a not in cubiertos:
@@ -274,7 +286,7 @@ def main(inv_p, adj_p, spec_dir, deriva=True):
             if not any(i['linea'] <= ln <= i['fin'] for ln in citadas.get(i['archivo'], ())):
                 err['R17 sección sin ninguna línea citada'].append(i['id'])
 
-    for k in sorted(err, key=lambda k: int(re.match(r'R(\d+)', k).group(1))):
+    for k in sorted(err, key=lambda k: (int(re.match(r'R(\d+)', k).group(1)), k)):
         print(f'✗ {k}: {len(err[k])}  ej: {err[k][:3]}')
     total = sum(len(v) for v in err.values())
     print('RESULTADO:', 'APROBADO (0)' if total == 0 else f'RECHAZADO ({total})')
@@ -285,4 +297,5 @@ if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     if len(args) != 3:
         sys.exit(__doc__)
-    sys.exit(main(*args, deriva='--sin-deriva' not in sys.argv))
+    cob = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--cobertura=')), None)
+    sys.exit(main(*args, deriva='--sin-deriva' not in sys.argv, cobertura=cob))

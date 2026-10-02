@@ -131,10 +131,12 @@ Fuente: [dec-sub-008](../01-decisiones-vigentes.md#dec-sub-008)
     files['10-corte/B2.md'] = '# B2\n\n' + '\n'.join(secciones)
     mini = dict(sha=inv['sha'], items=[copy.deepcopy(I[c]) for c in IDS])
     adj = {'veredictos': {'PLAZO:16': dict(veredicto='VIVO', hash=I['PLAZO:16']['hash'])}}
-    return files, mini, adj
+    # the coverage map (cobertura.py): every normative item of the fixture is owned by B2
+    cob = {'items': {c: {'pieza': 'B2'} for c in IDS if not c.startswith(('PIEZA:', 'L:', 'SEC:'))}}
+    return files, mini, adj, cob
 
 
-def run(files, mini, adj):
+def run(files, mini, adj, cob):
     d = tempfile.mkdtemp(prefix='canario-')
     spec = os.path.join(d, 'spec')
     for rel, txt in files.items():
@@ -143,8 +145,10 @@ def run(files, mini, adj):
         open(p, 'w', encoding='utf-8').write(txt)
     json.dump(mini, open(os.path.join(d, 'inv.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     json.dump(adj, open(os.path.join(d, 'adj.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    json.dump(cob, open(os.path.join(d, 'cob.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     r = subprocess.run([sys.executable, os.path.join(HERE, 'trazar.py'), os.path.join(d, 'inv.json'),
-                        os.path.join(d, 'adj.json'), spec], capture_output=True, text=True)
+                        os.path.join(d, 'adj.json'), spec, '--cobertura=' + os.path.join(d, 'cob.json')],
+                       capture_output=True, text=True)
     shutil.rmtree(d)
     return r.returncode, r.stdout + r.stderr
 
@@ -159,12 +163,12 @@ def sub(files, rel, old, new, count=1):
 def main():
     sys.path.insert(0, HERE)
     inv = json.load(open(INV, encoding='utf-8'))
-    files, mini, adj = fixture(inv)
+    files, mini, adj, cob = fixture(inv)
     B2 = '10-corte/B2.md'
     canarios = []
 
-    def c(rule, name, f=None, m=None, a=None):
-        canarios.append((rule, name, f or files, m or mini, a or adj))
+    def c(rule, name, f=None, m=None, a=None, k=None):
+        canarios.append((rule, name, f or files, m or mini, a or adj, k or cob))
 
     c('R1', 'un ítem vivo definido dos veces', sub(files, '04-catalogos.md', '<a id="guard-g7"></a>',
       '<a id="guard-g7"></a>\nx\nOrigen: x.md:1\n\n<a id="guard-g7"></a>'))
@@ -195,6 +199,12 @@ def main():
     next(i for i in m['items'] if i['id'] == 'DEC-SUB-008')['local'] = 'DEC-SUB-009'
     c('R6', 'la línea citada no contiene el id local', m=m)
     c('R7', 'un ítem normativo vivo sin AC', sub(files, B2, "[inv-1](../02-nucleo.md#inv-1)", ''))
+    k = copy.deepcopy(cob)
+    k['items']['INV:1']['pieza'] = 'B3'
+    c('R7b', 'el AC que cita el ítem está en otra pieza que la dueña de cobertura.json', k=k)
+    k = copy.deepcopy(cob)
+    k['items']['GUARD:G7']['pieza'] = 'B99'
+    c('R7b', 'cobertura.json le da al ítem una pieza sin ningún AC', k=k)
     c('R8', 'un AC sin test', sub(sub(sub(files, B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'),
       B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'), B2, 'Cubre: [AC:B2:1](B2.md#ac-b2-1)', 'Cubre:'))
     f = sub(files, B2, '<a id="test-b2-1"></a>',
@@ -235,11 +245,11 @@ def main():
                                 'SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:51')))
     c('R17', 'una sección del diseño sin ninguna línea citada', m=m)
 
-    code, out = run(files, mini, adj)
+    code, out = run(files, mini, adj, cob)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
     fallas = 0 if code == 0 else 1
-    for rule, name, f, m, a in canarios:
-        code, out = run(f, m, a)
+    for rule, name, f, m, a, k in canarios:
+        code, out = run(f, m, a, k)
         ok = code == 1 and f'✗ {rule} ' in out
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule:4} exit {code} · {name}')
