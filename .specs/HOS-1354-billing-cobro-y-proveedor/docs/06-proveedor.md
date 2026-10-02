@@ -263,7 +263,7 @@ Lo que el dominio decide con eso —cuándo se reembolsa y quién lo confirma—
 6. **Un reembolso emite TRES entregas en DOS formatos** (`RF-7`): una de Webhooks
    (`data.id=<pago>&type=payment`) y dos de IPN (`topic=payment` y `topic=merchant_order`).
    **Deduplicar por tipo de evento no alcanza** — y esto se cruza con `WH-1` y `EX-2`: la clave es
-   la `version`, que hoy **nuestra capa no guarda** (ver el inventario de compensación).
+   la `version`, que hoy **nuestra capa no guarda** (ver el inventario de compensación) *(el cobro viejo; el receptor nuevo guarda cada entrega entera en `provider_notification`, `DEC-MP-009`, y ningún aviso cambia un estado por sí solo, `D17`; inferido el alcance, residuo corregido el 2026-10-02, segunda vuelta del triage)*.
 
 **Y una que no es del proveedor sino nuestra**: el **histórico de reembolsos es nuestro o no
 existe**, porque **el buscador del proveedor cubre sólo doce meses**.
