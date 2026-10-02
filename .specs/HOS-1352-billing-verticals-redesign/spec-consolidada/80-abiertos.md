@@ -4,7 +4,7 @@ Lo que las fuentes **declaran no cerrado**, y las preguntas al owner que dejó l
 spec. **Un abierto no es un criterio**: acá no hay US, AC ni tests ([AL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-al));
 cuando el owner contesta, la respuesta se registra en el log y en el ítem que corresponde, y el
 abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
-`c7a3fac90070b154e3a811944d06e0de08cba5df`. Abreviaturas de ruta: `D/` es
+`591034c665b56336d49eab894a4e4ce3c38d5abe`. Abreviaturas de ruta: `D/` es
 `.specs/HOS-1352-billing-verticals-redesign/docs/`, `NUCLEO/` es `D/nucleo/`, `V/` es
 `.specs/HOS-1353-verticales-capacidades-y-autorizacion/` y `B/` es
 `.specs/HOS-1354-billing-cobro-y-proveedor/`.
@@ -352,7 +352,7 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-gr
 - `B/docs/14-promos-cortesias-y-grants.md:726` — **Lo que la pendiente 8 dejaba abierto quedó cerrado** (FASE 8 completa, owner 2026-09-25):
 - `B/docs/14-promos-cortesias-y-grants.md:727` — **Cerrado**: en esa ventana el monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4) —**y sin promos**: el mismo pedido escribe `cobros_restantes = 0` (FASE 9 completa, contradicción 1 de `03` §R6.5; el §2.4 decía *«plan vigente»*, que en esa ventana es el viejo).
 - `B/docs/14-promos-cortesias-y-grants.md:734` — **Cerrado** (residuo de la fuente): desde la FASE 9 vuelta 1 `S30` sale de `ACTIVE` **o `GRACE_PERIOD`**, y con la fila en grace `S5` y `S30` corren en el mismo acto y la mutación se aplica ([TRANS:B:S30](04-catalogos.md#trans-b-s30); [AC:B9b:5](20-fase-2/B9b.md#ac-b9b-5)). (`B/03` §3.2, fila `S30`: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180`, `F-8V1B1-006`)
-- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento corren desde `S37`, como los de toda mutación nuestra (corte del MVP, owner 2026-10-02, [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)).
+- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento de monto corren desde su fecha efectiva (`B/14` §2.4), como dice la fuente (corte del MVP, owner 2026-10-02, [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)).
 
 ### `B/docs/16-addons.md` — Lo que este capítulo NO cierra
 

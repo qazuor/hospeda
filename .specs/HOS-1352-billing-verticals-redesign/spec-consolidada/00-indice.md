@@ -23,8 +23,8 @@ la recomendada):
   dos verificaciones ciegas opuestas** —qué falta y qué se inventó—, con canarios, hasta una vuelta
   sin `BLOQUEA`.
 
-Todo sale de las fuentes congeladas en el commit `c7a3fac90070b154e3a811944d06e0de08cba5df`
-(re-congeladas después de aplicar las letras BK a CB del owner): cada
+Todo sale de las fuentes congeladas en el commit `591034c665b56336d49eab894a4e4ce3c38d5abe`
+(re-congeladas después de aplicar las letras BK a CI del owner): cada
 `Origen:` cita `archivo:línea` en ese SHA, y las herramientas leen las fuentes desde ahí
 (`scripts/comun.py`), nunca del árbol de trabajo.
 
@@ -372,7 +372,7 @@ necesitan igual y no se puede partir sin duplicarlo).
 | 04 | invariantes | **PARTIDO** — los de acceso, trial y roles a verticales; los de dinero y proveedor a billing; los de método, compartidos |
 | 05 | idempotencia y concurrencia | **BILLING** |
 | 06 | abstracción de proveedor | **BILLING** |
-| 07 | outbox y notificaciones | **PARTIDO** — el mecanismo es compartido, **y lo construye [U2](10-corte/U2.md#pieza-u2), una unidad del paraguas y no de ninguna de las dos épicas, que depende de `U1` y va antes de las piezas que encolan**: `V6`, `V9a`, `V9b`, `B4` y `B12` (FASE 5, owner 2026-09-30, lote 2 A; `NUCLEO/07` §1.4), **y desde [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br) también `V4` y `B3`**, que encolan antes y cubren por transitividad al resto; del catálogo de correos, los dos del trial a verticales y el resto a billing |
+| 07 | outbox y notificaciones | **PARTIDO** — el mecanismo es compartido, **y lo construye [U2](10-corte/U2.md#pieza-u2), una unidad del paraguas y no de ninguna de las dos épicas, que depende de `U1` y va antes de las piezas que encolan**: `V6`, `V9b`, `B4` y `B12` (FASE 5, owner 2026-09-30, lote 2 A; `NUCLEO/07` §1.4; `V9a` no encola: la espera por la flecha que heredó de `V9`), **y desde [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br) también `V4` y `B3`**, que encolan antes y cubren por transitividad al resto; del catálogo de correos, los dos del trial a verticales y el resto a billing |
 | 08 | auditoría y observabilidad | **PARTIDO** — el criterio y la correlación son compartidos, **y la correlación la construye `U2`, con el outbox** (FASE 5, owner 2026-09-30, lote 2 B; `NUCLEO/08` §2.4), **que crea también `domain_event`, el registro de auditoría** ([BW](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw)); del catálogo de acciones admin, la postulación de Partner y la extensión de trial a verticales |
 | 09 | conciliación | **BILLING** |
 | 10 | verticales, planes y billing options | **PARTIDO** — el Eje 2 y la lectura del catálogo a verticales; el retiro de un plan a billing (la vertical discontinuada salió: revisión del owner, 2026-09-28, C8) |

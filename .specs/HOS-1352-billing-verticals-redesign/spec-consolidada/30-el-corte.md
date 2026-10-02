@@ -1432,12 +1432,12 @@ sin tachados; `spec.md`, *«Al cerrar HOS-1352»*). **Si nadie se suscribe, la e
 días** (E). El barrido diario es de [B11](10-corte/B11.md#pieza-b11) y el checklist, de
 [B13a](10-corte/B13a.md#pieza-b13a). **Los precios, congelados hasta este momento**
 ([BM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bm)): los del corte son los vigentes hoy, los
-carga el paso 3a y **ningún precio cambia hasta que el momento 5 esté cumplido**; es una condición
+carga la migración estructural del [paso 3](#paso-3) y los verifica el 3a, y **ningún precio cambia hasta que el momento 5 esté cumplido**; es una condición
 operativa, no un control del código: la acción 19 existe desde `B2` y su uso queda vedado hasta acá.
 
 Dueña del AC: la pseudo-pieza `CORTE` ([AC:CORTE:13](#ac-corte-13)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1125
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1117, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1125, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:153
 
 <a id="gate-fp"></a>
 
@@ -1561,7 +1561,8 @@ en producción) o guard estático. Son 34 ítems; cada AC cita los suyos en `Fue
 <a id="ac-corte-1"></a>
 **AC:CORTE:1** — el ensayo del corte es verde
 
-- **Dado** que [U3](10-corte/U3.md#pieza-u3) está mergeada, los plazos sin valor tienen el suyo desde
+- **Dado** que [U3](10-corte/U3.md#pieza-u3) está mergeada, se releyeron las dos situaciones que una restauración
+  no deshace ([paso 2b](#paso-2b), §4.3), los plazos sin valor tienen el suyo desde
   el merge de `V6`, y hay en `staging` una copia de la base de producción restaurada con los correos
   reescritos a una casilla que no entrega y la lista real de las cinco cuentas, con la imagen vieja
   desplegada
@@ -1572,6 +1573,8 @@ en producción) o guard estático. Son 34 ítems; cada AC cita los suyos en `Fue
   y se escribe antes del reintento; terminado el ensayo, la copia se borra
 
 Fuente: [PASO:0](#paso-0), [GATE:M3](#gate-m3)
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1096
 
 <a id="ac-corte-2"></a>
 **AC:CORTE:2** — sin la lista del seudónimo medida y el tope de purgas verificado, el corte no avanza

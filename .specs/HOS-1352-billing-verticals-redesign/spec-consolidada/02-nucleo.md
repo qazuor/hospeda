@@ -1322,8 +1322,10 @@ manual (auditoría §1.3).
   cuenta le quede una suscripción, principal o de complemento, que todavía puede cobrar:
   1. **también una `CANCEL_SCHEDULED` o una terminal cuya cancelación nuestra ninguna relectura
      confirmó todavía**: `puedeCobrarle` contesta sobre la cancelación confirmada por Mercado Pago, y
-     mientras no lo esté esta acción espera, hasta que el barrido la confirme o abra la marca (FASE 9
-     vuelta 3, owner 2026-09-30, lote D; la razón vieja suponía confirmada una cancelación que el
+     mientras no lo esté esta acción espera, hasta que una relectura por id la vea `cancelled` —la del
+     barrido, la del handler o la de una transición, que escriben `provider_link.cancelado_visto_en`
+     (`B/09` §3; corte del MVP, owner 2026-10-02, CH; residuo corregido el 2026-10-02)— o el barrido
+     abra la marca (FASE 9 vuelta 3, owner 2026-09-30, lote D; la razón vieja suponía confirmada una cancelación que el
      barrido puede estar reintentando, F-8V3C1-001);
   2. **y una terminal cuyo preapproval canceló el proveedor tras un cobro rechazado, hasta que pase el
      [PLAZO:16](#plazo-16) desde la primera relectura que lo vio `cancelled`** (FASE 9 vuelta 3, owner
