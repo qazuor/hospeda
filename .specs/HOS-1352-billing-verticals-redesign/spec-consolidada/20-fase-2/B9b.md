@@ -182,7 +182,7 @@ Fuente: [DEP:10](../03-contrato-de-cobertura.md#dep-10) · [LISTA:B9](../10-cort
   `PUT paused` se confirma por relectura, y si no se aplicó la cortesía no ocurre, se pone
   `PAUSA_NO_APLICADA` y el aviso a `SUPER_ADMIN` lo dice. N meses saltean exactamente N cobros. Y
   sobre una vertical con un ancla viva de grant no se otorga cortesía: el predicado es el ancla viva,
-  no que el beneficiario haya tenido un grant alguna vez (`B/14` §3.4).
+  no que el beneficiario haya tenido un grant alguna vez (`B/14` §4.3).
 
 Fuente: [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003) · [DEC-GRANT-003#📌1](../01-decisiones-vigentes.md#dec-grant-003-p1) · [ACC:1](../02-nucleo.md#acc-1) · [TRANS:B:S9](../04-catalogos.md#trans-b-s9) · [DEC-GRANT-006](../01-decisiones-vigentes.md#dec-grant-006)
 

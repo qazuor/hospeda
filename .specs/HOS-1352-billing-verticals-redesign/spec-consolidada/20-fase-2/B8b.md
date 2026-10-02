@@ -1309,7 +1309,7 @@ Tipo: migración desde cero
 
 Cubre: [AC:B8b:23](#ac-b8b-23)
 
-Fuente: [FILA:B8b](#fila-b8b) · [DEC-RF-003](../01-decisiones-vigentes.md#dec-rf-003) · [GATE:FP.3](../30-el-corte.md#gate-fp-3)
+Fuente: [FILA:B8b](#fila-b8b) · [GATE:FP.3](../30-el-corte.md#gate-fp-3)
 
 Sobre una base vacía migrada con las migraciones del corte, las columnas de la sucesión, la cola y la
 marca con su motivo ya existen; la rama de la fase no agrega ninguna migración estructural y la suite
@@ -1328,7 +1328,7 @@ Las pruebas de `B5` y `B7` que antes corrían con filas sembradas corren ahora c
 implementación real: en las ramas 1, 5 y 6 la bandera se apaga y queda la marca 1 con el pago
 colgado; un contracargo sobre la predecesora deja la sucesora cortada por `S31`; `S7` y `MP5` dejan la
 fila en la versión destino; la ruta declara una sucesión sobre el cuerpo de `B3`; y el diff de la
-pieza no toca archivos de `B3`, `B5` ni `B7`.
+pieza no toca archivos de `B3`, `B5`, `B7` ni `B8a`.
 
 <a id="test-b8b-25"></a>
 **TEST:B8b:25** — las superficies de los actos de la pieza
