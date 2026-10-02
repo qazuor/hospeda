@@ -623,9 +623,9 @@ pago y sus FK a tablas del cobro viejo** —~~entre ellas `subscription_status`,
 `plan_id`, `subscription_id`, `unpaid_notice_sent_at`, `payment_review_state` y
 `payment_confirmed_through`**; `plan_id` y `subscription_id` son las que llevan las FK—
 (FASE 5, owner 2026-09-30, lote 1 D; `18` §1.6; la lista, FASE 5, lote de la aplicación, owner
-2026-09-30, H). **`starts_at` y `ends_at` quedan hasta `V7`**, la unidad de socios: entre `U1` y
-`V7` nadie las escribe, y hoy Partner tiene cero filas (H); **y `V7` las borra con su migración,
-junto con sus lectores del panel** (el formulario, la tabla y la ficha de Partner del admin), porque
+2026-09-30, H). ~~**`starts_at` y `ends_at` quedan hasta `V7`**, la unidad de socios: entre `U1` y
+`V7`~~ **`starts_at` y `ends_at` quedan hasta el corte**: entre `U1` y el corte nadie las escribe, y hoy Partner tiene cero filas (H); ~~**y `V7` las borra con su migración,
+junto con sus lectores del panel**~~ **y la migración de `V6` las borra al corte, junto con sus lectores del panel** (el formulario, la tabla y la ficha de Partner del admin) (corte del MVP, owner 2026-10-01, AB y AP; residuo corregido el 2026-10-02, como en `18` §1.6), porque
 el diseño no usa ninguna de las dos (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, O).
 
 **El rol de socio se da en el acto que fija al dueño de la presencia** —~~el reclamo, o el alta
