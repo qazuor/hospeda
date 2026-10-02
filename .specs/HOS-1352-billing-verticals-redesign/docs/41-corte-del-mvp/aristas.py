@@ -104,6 +104,8 @@ INTRA = [
     ('B8a', 'B13a'), ('B7', 'B13a'), ('B5', 'B13a'), ('B13a', 'B13b'), ('B13b', 'B12'),
     # BH (owner 2026-10-01): las filas 13 y 13-bis del 19 §4 pasan a B13a y confirman la acción 2 de B9a
     ('B9a', 'B13a'),
+    # CI (owner 2026-10-02): B11 writes and reads provider_link.cancelado_visto_en, created by B4
+    ('B4', 'B11'),
 ]
 E = sorted(set(INTRA + [(a, b) for a, b, _ in CRUZADAS]))
 nodos = {x for e in E for x in e}
