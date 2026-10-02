@@ -87,6 +87,8 @@ INTRA = [
     # paraguas (D/16 §4.6)
     ('U1', 'U2'), ('U1', 'U3'), ('U1', 'V1'), ('U1', 'B1'),
     ('U2', 'V6'), ('U2', 'V9a'), ('U2', 'V9b'), ('U2', 'B4'), ('U2', 'B12'),
+    # BR (owner 2026-10-02): encolan antes que las de arriba, el trial (V4) y el alta (B3)
+    ('U2', 'V4'), ('U2', 'B3'),
     # verticales (V §3 y §2.14)
     ('V1', 'V2'), ('V2', 'V3'), ('V3', 'V4'), ('V4', 'V5'), ('V5', 'V6'), ('V5', 'V7'),
     ('V6', 'V8a'), ('V6', 'V8b'), ('V7', 'V8b'), ('V8a', 'V8b'),
