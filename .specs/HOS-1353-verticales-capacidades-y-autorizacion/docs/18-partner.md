@@ -140,8 +140,8 @@ moderar—, que es lo que el código de hoy evita a propósito al revocar sin to
   `subscription_status`, y `plan_id` y `subscription_id`, que llevan las FK~~ **las seis:
   `subscription_status`, `plan_id`, `subscription_id`, `unpaid_notice_sent_at`,
   `payment_review_state` y `payment_confirmed_through`**; `plan_id` y `subscription_id` llevan las
-  FK; **`starts_at` y `ends_at` quedan hasta `V7`**: FASE 5, lote de la aplicación, owner
-  2026-09-30, H; **y `V7` las borra con su migración, junto con sus lectores del panel**: FASE 5,
+  FK; ~~**`starts_at` y `ends_at` quedan hasta `V7`**~~ **`starts_at` y `ends_at` quedan hasta el corte**: FASE 5, lote de la aplicación, owner
+  2026-09-30, H; ~~**y `V7` las borra con su migración, junto con sus lectores del panel**~~ **y la migración de `V6` las borra al corte, junto con sus lectores del panel** (corte del MVP, owner 2026-10-01, AB y AP; residuo corregido el 2026-10-02, segunda vuelta del triage): FASE 5,
   lote de la aplicación, segunda tanda, owner 2026-09-30, O; **y en la misma migración, `tier` con
   su índice, y sus lectores —la página pública y las tres rutas del socio— pasan a leer la
   clave**: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, J; FASES 6 y 7, verificación, 2026-09-30, F7), sus FK a tablas del cobro viejo, y los tres crons de partner
@@ -219,7 +219,7 @@ el mismo dato con distinto signo.
 **Es una entidad propia, no la lista de postulaciones de hoy** (FASE 5, owner 2026-09-30, lote 4
 A, `F5-SUP-006`, `F5-AUT-018`). El código ya tiene una, `alliance_leads`, con un formulario
 público, cuatro estados y un campo que mezcla a Partner con otros tipos (patrocinadores, editores,
-proveedores). **`V7` crea `postulacion` (cap. 02 §2.7) sólo para Partner**, con la restricción de
+proveedores). ~~**`V7` crea `postulacion` (cap. 02 §2.7) sólo para Partner**~~ **`V6` crea `postulacion` (cap. 02 §2.7) al corte, sólo para Partner, y `V7` la escribe** (corte del MVP, owner 2026-10-01, AP; residuo corregido el 2026-10-02, segunda vuelta del triage), con la restricción de
 la base, el captcha y la excepción de la cadena de `PP1`, y **`alliance_leads` queda para los otros
 tipos, fuera de este programa**. Hoy hay cero partners, así que nada migra de una a la otra.
 
