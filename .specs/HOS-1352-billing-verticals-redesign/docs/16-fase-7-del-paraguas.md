@@ -1128,7 +1128,7 @@ un control del código: la acción 19, *«fijar el precio de un ciclo»*, existe
 mecánica (sobre una versión sin clientes fija el precio; sobre una con clientes se publica una
 versión nueva que rige para las altas; menos de ARS 15 se rechaza), y el aviso y la mutación a los
 clientes ya anclados (`DEC-MP-002`, parte 2) llegan con `B12`; su uso queda vedado hasta este
-momento, y el checklist del corte lo dice.
+momento.
 
 #### Las fases posteriores ✚
 
