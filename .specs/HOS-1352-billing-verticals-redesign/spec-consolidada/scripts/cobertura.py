@@ -9,6 +9,7 @@ why that piece implements it, the other pieces that also exercise it, and the mi
            [--candidatos ID]     print the partition lines that name ID together with a piece
            [--lista-solo-citables=<json>]  replace defs.SOLO_CITABLES (for the canaries only)
            [--crea-esquema=<json>]         replace defs.CREA_ESQUEMA (for the canaries only)
+           [--sin-migracion=<json>]        replace defs.SIN_MIGRACION_DEL_TEXTO (for the canaries only)
 
 Two methods. `script`: derived from a table that maps the item to its piece (the piece's own row,
 the guards column, B §2.12, the schema table and the phases of D/16 §4.6-§4.7, the dependency
@@ -32,6 +33,9 @@ RULES (exit 1 when any fails)
       in the inventory, named by its owner row, row hash unchanged. Those items need no owner.
   C9  the closed list of pieces that create schema (defs.CREA_ESQUEMA) is valid: each fragment is in
       exactly one line at the SHA, and that line names its piece.
+  C10 the closed lists of exemptions (defs.SIN_MIGRACION_DEL_TEXTO) and of extra «tambien» of a
+      script derivation (defs.TAMBIEN_SCRIPT) are valid: each fragment is in exactly one line at
+      the SHA (and a «tambien» line names its piece).
 
 TYPES (AN; not a rule, they never fail here: trazar.py R18 reads them). The types AN demands per
 family always bind the owner. A type read only in the item's words binds it with three limits
@@ -49,8 +53,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from comun import B, D, SHA, V, cells, line_hash, lines, section, table_after, unstrike  # noqa: E402
-from defs import (CREA_ESQUEMA, MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, SOLO_CITABLES, TIPOS_TEST,  # noqa: E402
-                  VIVOS, crea_esquema_fallas, solo_citables_fallas)
+from defs import (CREA_ESQUEMA, MUERTOS, NORMATIVAS, NO_NORMATIVAS_PREFIJOS, SIN_MIGRACION_DEL_TEXTO,  # noqa: E402
+                  SOLO_CITABLES, TAMBIEN_SCRIPT, TIPOS_TEST, VIVOS, crea_esquema_fallas, exencion_fallas,
+                  solo_citables_fallas)
 
 D16 = D + '16-fase-7-del-paraguas.md'
 VD, BD = V + 'descomposicion.md', B + 'descomposicion.md'
@@ -271,6 +276,11 @@ def por_script(items, todos, piezas, anc):
                            + [dict(pieza=p, rol='provee', citas=[mk(p)]) for p in contra if p not in lee])
             else:
                 pend.append(i['id'])
+        if rec and i['id'] in TAMBIEN_SCRIPT:
+            p, rol, path, frag = TAMBIEN_SCRIPT[i['id']]
+            n = next((k for k, l in enumerate(lines(path), 1) if frag in l), None)
+            if n:
+                rec['tambien'].append(dict(pieza=p, rol=rol, citas=[cita(path, n, frag)]))
         if rec:
             rec['metodo'] = 'script'
             out[i['id']] = rec
@@ -297,7 +307,7 @@ ROL_ORDEN = {'provee': 0, 'implementa': 1, 'usa': 2, 'lee': 3}
 SOLO_CORTE = ('smoke manual', 'guard estático')
 
 
-def tipos(i, rec, crea=None):
+def tipos(i, rec, crea=None, sin=None):
     """AN, per family, plus what the item's own text asks for (marked as derived from text).
 
     Returns (all, why, by_family, by_text, moved, dropped): ``all`` is the full minimum of the owner;
@@ -306,6 +316,7 @@ def tipos(i, rec, crea=None):
     ``moved`` are the text types that go to a «tambien» piece and ``dropped`` the ones no piece takes
     (see TYPES in the module doc)."""
     crea = CREA_ESQUEMA if crea is None else crea
+    sin = SIN_MIGRACION_DEL_TEXTO if sin is None else sin
     f = i['fuente']
     fam = list(TIPOS_FAMILIA.get(f, [CUALQUIERA]))
     ts, por_que = list(fam), []
@@ -332,6 +343,10 @@ def tipos(i, rec, crea=None):
                 if t.get('pieza') in crea]
     moved, dropped = [], []
     for t in [t for t in ts if t not in fam]:
+        if t.startswith('migración') and i['id'] in sin:
+            ts.remove(t)
+            dropped.append(dict(tipo=t, por_que='exento (defs.SIN_MIGRACION_DEL_TEXTO): ' + sin[i['id']][2]))
+            continue
         if own == CORTE:
             if t.startswith(SOLO_CORTE):
                 continue
@@ -504,6 +519,8 @@ def main(argv):
     lista = ({k: tuple(v) for k, v in json.load(open(lst, encoding='utf-8')).items()} if lst else SOLO_CITABLES)
     cre = next((a.split('=', 1)[1] for a in flags if a.startswith('--crea-esquema=')), None)
     crea = ({k: tuple(v) for k, v in json.load(open(cre, encoding='utf-8')).items()} if cre else CREA_ESQUEMA)
+    sm = next((a.split('=', 1)[1] for a in flags if a.startswith('--sin-migracion=')), None)
+    sinmig = ({k: tuple(v) for k, v in json.load(open(sm, encoding='utf-8')).items()} if sm else SIN_MIGRACION_DEL_TEXTO)
     if '--candidatos' in flags:
         cid = args.pop()
     if len(args) != 4:
@@ -541,6 +558,8 @@ def main(argv):
         err['C8 lista cerrada de sólo citables inválida'].append(f)
     for f in crea_esquema_fallas(crea):
         err['C9 lista cerrada de piezas que crean esquema inválida'].append(f)
+    for f in exencion_fallas(sinmig):
+        err['C10 lista cerrada de exenciones o de «tambien» inválida'].append(f)
     rec = dict(script)
     for k, e in entradas.items():
         if k in norm_ids and k not in script:
@@ -558,7 +577,7 @@ def main(argv):
     items_out, cuenta = {}, collections.defaultdict(collections.Counter)
     for k in sorted(rec, key=lambda x: (by[x]['fuente'], x)):
         r, i = rec[k], by[k]
-        ts, por_que, fam, txt, moved, dropped = tipos(i, r, crea)
+        ts, por_que, fam, txt, moved, dropped = tipos(i, r, crea, sinmig)
         items_out[k] = dict(fuente=i['fuente'], pieza=r['pieza'], metodo=r['metodo'],
                             fuente_de_la_asignacion=r['citas'], razon=r.get('razon'),
                             tambien_lo_ejercen=r.get('tambien', []), tipos_de_test_minimos=ts,

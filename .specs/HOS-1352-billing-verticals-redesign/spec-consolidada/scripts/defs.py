@@ -144,6 +144,44 @@ CREA_ESQUEMA = {
 }
 
 
+_LOG = D + '01-decision-log.md'
+# --- the text-derived migration types that do NOT bind an item, each with the line that matched and
+#     why (triage of the open items, second round, AB-g5-12): the matched word names something that
+#     is not schema its owner creates. cobertura.tipos drops them, with the reason. -----------------
+SIN_MIGRACION_DEL_TEXTO = {
+    'DEC-ARCH-006': (_LOG, '(`permanent_grant`, `B/02`): leerlo de la tabla de',
+                     '«tabla» dice DE DÓNDE se lee un dato de billing (`permanent_grant`, de `B9a`), y «filas vivas» es el estado de una suscripción: '
+                     'ninguna de las dos es esquema que cree `V1`, su dueña, ni datos que mueva una migración'),
+    'DEC-ENT-006': (_LOG, 'racimos `R5-04` y `R5-24`)**: `U1` borra las columnas de',
+                    'las columnas y `partners` son de la limpieza de `U1` y de la migración de `V6` (AB y AP), que tienen sus propios tests de migración; '
+                    '`V1`, su dueña, no crea ese esquema, y la «migración de datos» del rol de socio es de `V7`'),
+    'DEC-TEST-001#📌1': (_LOG, 'cambia (18 en verticales y 13 en billing por columna de unidad).',
+                         '«columna» es la columna «unidad» de la tabla de guards de un documento, no una columna de la base'),
+}
+# --- a «tambien» a script derivation cannot see (its table names one piece): item -> (piece, role,
+#     file, fragment of the line that names it). ------------------------------------------------
+TAMBIEN_SCRIPT = {
+    'TRANS:B:S10': ('B9b', 'implementa', _BD, 'el tercer evento, revocar una cortesía temporal, lo agrega `B9b` (BO)'),
+}
+
+
+def exencion_fallas(sin=None, tam=None):
+    """Errors of SIN_MIGRACION_DEL_TEXTO and TAMBIEN_SCRIPT: a fragment not in exactly one line at the
+    SHA (and, for TAMBIEN_SCRIPT, a line that does not name its piece)."""
+    sin = SIN_MIGRACION_DEL_TEXTO if sin is None else sin
+    tam = TAMBIEN_SCRIPT if tam is None else tam
+    out = []
+    for k, (path, frag, _) in sorted(sin.items()):
+        n = sum(frag in l for l in lines(path))
+        if n != 1:
+            out.append(f'{k}: el fragmento de la exención está en {n} líneas de {path}')
+    for k, (p, _, path, frag) in sorted(tam.items()):
+        hits = [l for l in lines(path) if frag in l]
+        if len(hits) != 1 or not re.search(r'(?<![\w-])' + re.escape(p) + r'(?![\w])', hits[0]):
+            out.append(f'{k}: el fragmento de «tambien» no está en una sola línea que nombre {p}')
+    return out
+
+
 def crea_esquema_fallas(crea=None):
     """Errors of CREA_ESQUEMA: a fragment that is not in exactly one line of its file at the SHA, or
     a line that does not name its piece."""

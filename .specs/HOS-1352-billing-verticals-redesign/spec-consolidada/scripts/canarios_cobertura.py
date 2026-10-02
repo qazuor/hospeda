@@ -31,8 +31,9 @@ INV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', '_trabajo',
 ADJ = os.path.join(HERE, '..', '_trabajo', 'adjudicacion.json')
 VD, BD, D16, LOG = V + 'descomposicion.md', B + 'descomposicion.md', D + '16-fase-7-del-paraguas.md', D + '01-decision-log.md'
 IDS = ['GUARD:G7', 'TPZ:S2', 'TRANS:B:S2', 'FILA:B2', 'LISTA:B2', 'ESQ:1', 'DEC-TRIAL-010', 'TRANS:V:PB4',
-       'TRANS:V:PB9', 'TRANS:B:S21', 'GATE:FP.F1', 'L:L1', 'INV:17', 'DEC-MP-009', 'PASO:3', 'GATE:M1']
-REALES = ('DEC-MP-009', 'PASO:3', 'GATE:M1')  # entries copied from the real lectura file
+       'TRANS:V:PB9', 'TRANS:B:S21', 'GATE:FP.F1', 'L:L1', 'INV:17', 'DEC-MP-009', 'PASO:3', 'GATE:M1',
+       'DEC-ARCH-006', 'TRANS:B:S10', 'TPZ:S10']
+REALES = ('DEC-MP-009', 'PASO:3', 'GATE:M1', 'DEC-ARCH-006')  # entries copied from the real lectura file
 LECT = os.path.join(HERE, '..', '_trabajo', 'cobertura-lectura.json')
 LISTA = {'INV:17': ['BA', '`INV:17`']}  # the closed list of the fixture (replaces defs.SOLO_CITABLES)
 
@@ -78,7 +79,7 @@ def fixture(inv):
     return mini, {'entradas': E, 'sin_pieza': {}}
 
 
-def run(mini, lect, lista=None, crea=None, salida=False):
+def run(mini, lect, lista=None, crea=None, salida=False, sinmig=None):
     d = tempfile.mkdtemp(prefix='canario-cob-')
     for name, obj in (('inv.json', mini), ('lect.json', lect), ('lista.json', lista or LISTA)):
         json.dump(obj, open(os.path.join(d, name), 'w', encoding='utf-8'), ensure_ascii=False)
@@ -86,6 +87,9 @@ def run(mini, lect, lista=None, crea=None, salida=False):
     if crea is not None:
         json.dump(crea, open(os.path.join(d, 'crea.json'), 'w', encoding='utf-8'), ensure_ascii=False)
         extra = ['--crea-esquema=' + os.path.join(d, 'crea.json')]
+    if sinmig is not None:
+        json.dump(sinmig, open(os.path.join(d, 'sin.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+        extra += ['--sin-migracion=' + os.path.join(d, 'sin.json')]
     r = subprocess.run([sys.executable, os.path.join(HERE, 'cobertura.py'), os.path.join(d, 'inv.json'), ADJ,
                         os.path.join(d, 'lect.json'), os.path.join(d, 'out.json'),
                         '--lista-solo-citables=' + os.path.join(d, 'lista.json')] + extra, capture_output=True, text=True)
@@ -133,6 +137,18 @@ def tipos_canarios(mini, lect):
     tiene = bool(SMOKE_RX.search(unstrike(' '.join(lines(i['archivo'])[a - 1:b]))))
     okm = tiene and not any(t.startswith('smoke') for t in m1['tipos_de_test_minimos'])
     res.append(('T4', 'el momento 1 no toma smoke por la palabra, aunque su texto la tenga', okm, m1['tipos_de_test_minimos']))
+    # 5. an item exempted with its cited reason loses the text-derived migration (DEC-ARCH-006)
+    a6 = it['DEC-ARCH-006']
+    ok5 = not any(t.startswith('migración') for t in a6['tipos_de_test_minimos']) and \
+        any(x['por_que'].startswith('exento') for x in a6['tipos_descartados'])
+    _, _, out5 = run(mini, lect, crea=base, salida=True, sinmig={})
+    ok5b = any(t.startswith('migración') for t in out5['items']['DEC-ARCH-006']['tipos_de_test_minimos'])
+    res.append(('T5', 'un ítem exento, con su cita, pierde la migración leída en su texto (DEC-ARCH-006)', ok5, a6['tipos_descartados']))
+    res.append(('T5b', 'sin la exención, la misma migración vuelve (la regla no es ciega)', ok5b, out5['items']['DEC-ARCH-006']['tipos_de_test_minimos']))
+    # 6. TRANS:B:S10, derived by script, carries B9b in «tambien» (BO)
+    s10 = it['TRANS:B:S10']
+    ok6 = s10['pieza'] == 'B8b' and ('B9b', 'implementa') in [(t['pieza'], t['rol']) for t in s10['tambien_lo_ejercen']]
+    res.append(('T6', 'S10, derivada por script, lleva a B9b en «también» (BO)', ok6, s10['tambien_lo_ejercen']))
     return res
 
 
@@ -207,6 +223,9 @@ def main():
         ('C9', 'una pieza que crea esquema con un fragmento que no está en su archivo', dict(crea, B2=[crea['B2'][0], 'texto inventado'])),
         ('C9', 'una pieza que crea esquema citada con la línea de otra pieza', dict(crea, V4=list(crea['B2']))),
     ]
+    from defs import SIN_MIGRACION_DEL_TEXTO
+    sinmal = {k: list(v) for k, v in SIN_MIGRACION_DEL_TEXTO.items()}
+    sinmal['DEC-ARCH-006'] = [sinmal['DEC-ARCH-006'][0], 'fragmento inventado', 'x']
 
     code, out = run(mini, lect)
     print(f'{"✓" if code == 0 else "✗"} base: exit {code}' + ('' if code == 0 else '\n' + out))
@@ -223,11 +242,15 @@ def main():
         ok = code == 1 and f'✗ {rule} ' in out
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule:3} exit {code} · {name}')
+    code, out = run(mini, lect, sinmig=sinmal)
+    ok = code == 1 and '✗ C10 ' in out
+    fallas += not ok
+    print(f'{"✓" if ok else "✗ CIEGO"} C10 exit {code} · una exención con un fragmento que no está en su archivo')
     tc = tipos_canarios(mini, lect)
     for rule, name, ok, det in tc:
         fallas += not ok
         print(f'{"✓" if ok else "✗ CIEGO"} {rule:3} tipos · {name}' + ('' if ok else f'\n    {det}'))
-    print(f'\n{len(canarios) + len(canarios_c9) + len(tc)} canarios · {fallas} fallas')
+    print(f'\n{len(canarios) + len(canarios_c9) + 1 + len(tc)} canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 
