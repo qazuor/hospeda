@@ -27,5 +27,13 @@
 ✓ C7  exit 1 · una entrada de un ítem muerto
 ✓ C7  exit 1 · una entrada de un ítem sólo citable (la lista de piezas)
 ✓ C7  exit 1 · una entrada de un ítem que no existe
+✓ C9  exit 1 · una pieza que crea esquema con un fragmento que no está en su archivo
+✓ C9  exit 1 · una pieza que crea esquema citada con la línea de otra pieza
+✓ T1  tipos · dueña que no crea esquema: la migración pasa a B3, que la crea (DEC-MP-009)
+✓ T1b tipos · sin B3 en la lista, la misma migración se descarta (la regla no es ciega)
+✓ T2  tipos · dueña que crea esquema: la migración se queda (FILA:B2)
+✓ T2b tipos · sin B2 en la lista, la migración deja de obligar a B2 (la regla no es ciega)
+✓ T3  tipos · CORTE sólo lleva smoke o guard: la migración del paso 3 pasa a V6
+✓ T4  tipos · el momento 1 no toma smoke por la palabra, aunque su texto la tenga
 
-28 canarios · 0 fallas
+36 canarios · 0 fallas
