@@ -11,6 +11,12 @@ message. A canary that passes is a blind check.
             `letras_muertas`).
   promesa   a PARCIAL note that promises «la muestra bajo el 📌6» with nothing relocated there
             (`reubicar` emptied).
+  tachada   (second round, P-H) the letter T of 37-fase-8-vuelta-3, which 16-fase-7 strikes (S-27),
+            out of `letras_muertas` (H2-G1-10).
+  revisada  the letter F, cited only struck but kept alive by «lo del lote F sigue», out of
+            `letras_vivas_revisadas`.
+  parentes  the inline 📌1 of DEC-GRANT-004 cut by line again (cierre_en_linea disabled): its tail
+            stays in the 📌 and the body keeps an open «(» (H2-G1-9).
 """
 import json
 import os
@@ -49,6 +55,15 @@ def pipe():
         return ok, 1, str(e)
 
 
+def parentesis():
+    """gen01 in a fresh process with cierre_en_linea() disabled: the old line-wise cut of an inline 📌."""
+    d = tempfile.mkdtemp(prefix='canario-g1-')
+    code = (f'import sys; sys.argv = [{GEN!r}, "--salida={d}"]; sys.path.insert(0, {HERE!r}); import gen01; '
+            'gen01.cierre_en_linea = lambda a, fin: None; gen01.main()')
+    r = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
 def main():
     fallas = 0
     code, out = run(OMIT)
@@ -70,7 +85,23 @@ def main():
     good = code == 1 and 'promete mostrar' in out
     print(f'{"✓" if good else "✗ CIEGO"} promesa  exit {code} · la nota del 📌7 promete el 📌6 y nada se reubica')
     fallas += not good
-    print(f'\n4 canarios · {fallas} fallas')
+    m = json.loads(json.dumps(OMIT))
+    m['letras_muertas'].pop('OWN:37-fase-8-vuelta-3:t1:T')
+    code, out = run(m)
+    good = code == 1 and 'letra tachada en una fuente posterior' in out and ':T' in out
+    print(f'{"✓" if good else "✗ CIEGO"} tachada  exit {code} · T sin su ⚠️, con su única cita tachada en 16-fase-7 (S-27)')
+    fallas += not good
+    m = json.loads(json.dumps(OMIT))
+    m['letras_vivas_revisadas'].pop('OWN:37-fase-8-vuelta-3:t1:F')
+    code, out = run(m)
+    good = code == 1 and 'letra tachada en una fuente posterior' in out and ':F' in out
+    print(f'{"✓" if good else "✗ CIEGO"} revisada exit {code} · F fuera de las vivas revisadas')
+    fallas += not good
+    code, out = parentesis()
+    good = code == 1 and 'DEC-GRANT-004' in out and 'paréntesis desbalanceados' in out
+    print(f'{"✓" if good else "✗ CIEGO"} parentes exit {code} · el 📌1 de DEC-GRANT-004 cortado por línea')
+    fallas += not good
+    print(f'\n7 canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 

@@ -114,6 +114,91 @@ estaba, en la segunda máquina que lo necesitaba.
 | `T3` | *«no hay suscripción autorizada»* | sin condición | `TRIAL_ACTIVE` **siempre** tiene salida: el reloj vence y punto |
 | `T6` | *«ya hay una suscripción viva»* | `cubierto` **verdadero** **por un título que convierte** (FASE 9 completa, 6c) | deja de quemar el trial de quien no está cubierto por nada — **y, desde 6c, el de quien está cubierto sólo por una suscripción que todavía no cobró**: lo consume `T8` al primer pago |
 
+**Texto de la fuente — «`T1` y `T6` comparten el par, y sus guardas son complementarias»** (`V/03-maquinas-de-estado.md:281–327`, sin lo tachado):
+
+`T1` y `T6` comparten `desde` y `evento`, y es **uno de los dos pares `(desde, evento)` con dos destinos distintos de
+esta épica** (el otro es `PB11`/`PB13`, §9; revisión del owner, 2026-09-28, C10), y uno de los **cuatro** que el diseño declara hoy — los otros dos de billing son `S5`/`S19` y
+`S7`/`S19` (FASE 9 completa, `C-12`; `S10`/`S25` salió con la revisión del owner, 2026-09-28, C8), en la tabla de suscripción de la épica de billing, separados también por
+un booleano (`B/03` §3.2; la lista está en el cap. 03 (núcleo) §1 regla 7). Lo cuenta `G-R4` sobre
+las **diez** tablas (la décima, la del reembolso: FASE 9 completa, 5a), no una lectura a mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
+disjuntas, y acá lo son **por construcción y no por acuerdo**: las dos piden la mitad de catálogo —la vertical declara evento y su
+plan de trial tiene días > 0—, (la condición de que la vertical admita altas salió con la
+revisión del owner, 2026-09-28, C8: FASE 9 vuelta 3, `F-8V3A2-008`), y **lo que las separa es un booleano**, `cubierto`. No hay una regla de precedencia que alguien pueda olvidar leer,
+porque no hace falta ninguna.
+
+**Las consecuencias del par, recorridas** (FASE 9 vuelta 1, `F-8V1A2-010`: las filas se nombran por su contenido, no por su ordinal) — la mitad de catálogo × los dos valores de
+`cubierto`:
+
+| catálogo | `cubierto` | qué pasa |
+|---|---|---|
+| declara evento y días > 0 | **falso** | `T1`: arranca el trial |
+| declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
+| declara evento y días > 0 | **verdadero, pero sólo por una `SUSCRIPCIÓN` con `cobrada: no`** | **ninguna de las dos**: `T6` exige un título que convierte. `PB1` publica igual —el dueño está cubierto— y la fila la escribe **`T8`** al primer pago acreditado; si ese cobro se rechaza, la persona sigue en `PRE_TRIAL` (FASE 9 completa, decisión 6c) |
+| no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **y es final**: el panel no deja encender la prueba de una vertical (revisión del owner, 2026-09-28, N7; `11` §8) |
+| | — | **sale** (revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. El caso que queda es el de la fila de abajo |
+| declara evento y días > 0, **pero la vertical no tiene ninguna versión de plan vigente y vendible** ✚ | **falso** | **ninguna de las dos**: `T1` exige una versión vigente y vendible y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` **y no publica**, y la pantalla le dice que **la vertical no tiene planes disponibles**, sin ofrecerle suscribirse (cap. 19 §4 fila 29). La vertical **no** queda cerrada a altas: sigue en operación (`B/10` §3.6; owner 2026-09-27, FASE 9 vuelta 2, `R24`) |
+| declara evento y días > 0, **pero ya hay una fila de `trial` con el hash de su correo en esa vertical** | cualquiera | **ninguna de las dos**, y tampoco `T8`: las tres exigen que el hash no tenga fila. La persona se queda en `PRE_TRIAL` y **la publicación sigue** **sólo si está cubierta**: sin cobertura `PB1` no publica, porque no arranca ningún trial (FASE 8 completa, `F-8CA3-003`; condición de `PB1`, owner 2026-09-25; abajo) |
+
+**La fila de *«no declara evento, o días = 0»* es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
+vertical que declarara evento con los días en cero le escribía a un cliente la fila consumida de
+un trial **que la vertical todavía no ofrece** — y el día que lo encendiera, esa persona ya no lo
+tenía. `DEC-TRIAL-003` contempla exactamente ese día para Partner. Consumir un beneficio que no
+existe no es consumirlo: es destruirlo antes de que nazca.
+
+**Sale**
+(revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. **El par sigue disjunto por
+construcción**, por el mismo booleano: `T1` pide `cubierto` falso y `T6` verdadero. Con todos los
+planes de la vertical retirados y `cubierto` falso tampoco dispara ninguna, y lo dice la fila de
+*«la vertical no tiene ninguna versión de plan vigente y vendible»* de la tabla de arriba. **Y
+`PB1` publica sólo si el dueño está cubierto o si esa publicación dispara `T1`** (§9; owner
+2026-09-25), así que ahí quien no está cubierto no publica.
+
+**Texto de la fuente — «El hash que ya consumió: la rama que la base rechazaba sin que ninguna fila la declarara»** (`V/03-maquinas-de-estado.md:328–364`, sin lo tachado):
+
+(FASE 8 completa, `F-8CA3-003`.) El `UNIQUE(hash_del_correo_normalizado, vertical)` del cap. 02
+§2.2 se escribió para **negar** un trial, y alcanzaba también a la escritura que **registra** uno
+consumido. Quien borró su cuenta y vuelve con el mismo correo tiene `user_id` nuevo y ninguna fila
+propia, pero su hash ya tiene la suya (cap. 02 §4.2 regla 2): si contrataba antes de publicar,
+`T6` intentaba escribir la fila consumida, **chocaba con el `UNIQUE`**, y ninguna máquina declaraba
+qué pasaba después — con `PB1` y `T6` en la misma transacción, **la persona pagaba y no podía
+publicar**.
+
+> **`T1`, `T6`, y `T8` (desde la FASE 9 completa, 6c; `T7` salió: revisión del owner, 2026-09-28, N7) exigen que el hash del correo no tenga fila en esa vertical.** Si la tiene,
+> ninguna dispara: el trial ya está consumido por esa fila, **la publicación sigue** **si la persona está cubierta** —sin cobertura `PB1` no publica, porque
+> no arranca ningún trial (§9; owner 2026-09-25)— y la persona se queda en `PRE_TRIAL`.
+>
+> **El mismo `UNIQUE` resuelve la carrera entre dos escrituras de la fila** —`T8` al acreditarse
+> el pago y `T6` en un `PB1` simultáneo, o `T1` contra `T8`—: la que choca **no es un error**, es
+> la guarda de hash leída tarde. No dispara, y la transacción que la contenía sigue con esa
+> lectura: en `PB1`, publica sólo si la persona está cubierta (FASE 9 vuelta 1, `F-8V1A2-009`).
+
+Es la lectura literal de `DEC-TRIAL-004` —*«el email normalizado niega el trial»*— escrita como
+guarda en vez de como error de la base. **El par `T1`/`T6` sigue disjunto por `cubierto`**: la
+guarda nueva es la misma en las dos, así que no las separa ni las solapa.
+
+> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **esa persona se queda en
+> `PRE_TRIAL` para siempre**, porque su `user_id` no tiene fila y ninguna transición la va a
+> escribir. Mientras esté cubierta no cambia nada. **Sin cobertura no publica** —`PB1` exige
+> cobertura o un `T1` que dispare, y acá `T1` no dispara— y la pantalla le dice *«suscribite para
+> publicar»* (§9, cap. 19 §4 fila 21; FASE 8 completa, owner 2026-09-25): la ficha publicada sin
+> título y el borrador repetible dejan de existir. Que su fila de `trial` quede asociada a la
+> cuenta nueva no está escrito; **ya no tiene consecuencia sobre la publicación**.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:52, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:64, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:91, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:281, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:328
+
+<a id="trans-v-t2"></a>
+
+### `TRANS:V:T2` · `T2` — `TRIAL_ACTIVE` → `TRIAL_CONVERTED`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [V4](10-corte/V4.md#pieza-v4)
+- **Fuente de la asignación**: `V/descomposicion.md:64`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `TRIAL_ACTIVE`
+- **evento** (disparador): **aparece un título que convierte**: una fuente viva de clase `TÍTULO` que no es la del trial **y que, si es de `tipo: SUSCRIPCIÓN`, trae `cobrada: sí`** —sea porque aparece así o porque una ya presente pasa a `sí` con su primer pago acreditado— (`12-contrato…` §2.1; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`)
+- **hacia** (estado destino): `TRIAL_CONVERTED`
+- **condición** (guardas): —
+- **efectos** (efectos): se cancela la campaña previa; el acceso pasa a depender de esa fuente
+
 **Texto de la fuente — «El trial se convierte con el primer pago acreditado, no con la autorización»** (`V/03-maquinas-de-estado.md:123–150`, sin lo tachado):
 
 (`DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, racimo `R12`: `F-8CA2-006`, `F-8CC1-002`.)
@@ -213,92 +298,7 @@ es el lock que el contrato nombra cuando dice que `T3` y el canje no se pisan (`
 §4.1). La carrera entre dos personas con el mismo correo no la ordena este lock, sino el `UNIQUE`
 del hash (abajo).
 
-**Texto de la fuente — «`T1` y `T6` comparten el par, y sus guardas son complementarias»** (`V/03-maquinas-de-estado.md:281–327`, sin lo tachado):
-
-`T1` y `T6` comparten `desde` y `evento`, y es **uno de los dos pares `(desde, evento)` con dos destinos distintos de
-esta épica** (el otro es `PB11`/`PB13`, §9; revisión del owner, 2026-09-28, C10), y uno de los **cuatro** que el diseño declara hoy — los otros dos de billing son `S5`/`S19` y
-`S7`/`S19` (FASE 9 completa, `C-12`; `S10`/`S25` salió con la revisión del owner, 2026-09-28, C8), en la tabla de suscripción de la épica de billing, separados también por
-un booleano (`B/03` §3.2; la lista está en el cap. 03 (núcleo) §1 regla 7). Lo cuenta `G-R4` sobre
-las **diez** tablas (la décima, la del reembolso: FASE 9 completa, 5a), no una lectura a mano. La regla 7 del cap. 03 (núcleo) exige que sus guardas sean
-disjuntas, y acá lo son **por construcción y no por acuerdo**: las dos piden la mitad de catálogo —la vertical declara evento y su
-plan de trial tiene días > 0—, (la condición de que la vertical admita altas salió con la
-revisión del owner, 2026-09-28, C8: FASE 9 vuelta 3, `F-8V3A2-008`), y **lo que las separa es un booleano**, `cubierto`. No hay una regla de precedencia que alguien pueda olvidar leer,
-porque no hace falta ninguna.
-
-**Las consecuencias del par, recorridas** (FASE 9 vuelta 1, `F-8V1A2-010`: las filas se nombran por su contenido, no por su ordinal) — la mitad de catálogo × los dos valores de
-`cubierto`:
-
-| catálogo | `cubierto` | qué pasa |
-|---|---|---|
-| declara evento y días > 0 | **falso** | `T1`: arranca el trial |
-| declara evento y días > 0 | **verdadero** | `T6`: la fila nace consumida, y el título es la fuente que ya tiene |
-| declara evento y días > 0 | **verdadero, pero sólo por una `SUSCRIPCIÓN` con `cobrada: no`** | **ninguna de las dos**: `T6` exige un título que convierte. `PB1` publica igual —el dueño está cubierto— y la fila la escribe **`T8`** al primer pago acreditado; si ese cobro se rechaza, la persona sigue en `PRE_TRIAL` (FASE 9 completa, decisión 6c) |
-| no declara evento, **o** días = 0 | cualquiera | **ninguna de las dos dispara en ese momento**, y la persona se queda en `PRE_TRIAL` — **y es final**: el panel no deja encender la prueba de una vertical (revisión del owner, 2026-09-28, N7; `11` §8) |
-| | — | **sale** (revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. El caso que queda es el de la fila de abajo |
-| declara evento y días > 0, **pero la vertical no tiene ninguna versión de plan vigente y vendible** ✚ | **falso** | **ninguna de las dos**: `T1` exige una versión vigente y vendible y `T6` exige `cubierto`. La persona se queda en `PRE_TRIAL` **y no publica**, y la pantalla le dice que **la vertical no tiene planes disponibles**, sin ofrecerle suscribirse (cap. 19 §4 fila 29). La vertical **no** queda cerrada a altas: sigue en operación (`B/10` §3.6; owner 2026-09-27, FASE 9 vuelta 2, `R24`) |
-| declara evento y días > 0, **pero ya hay una fila de `trial` con el hash de su correo en esa vertical** | cualquiera | **ninguna de las dos**, y tampoco `T8`: las tres exigen que el hash no tenga fila. La persona se queda en `PRE_TRIAL` y **la publicación sigue** **sólo si está cubierta**: sin cobertura `PB1` no publica, porque no arranca ningún trial (FASE 8 completa, `F-8CA3-003`; condición de `PB1`, owner 2026-09-25; abajo) |
-
-**La fila de *«no declara evento, o días = 0»* es nueva y es deliberada.** `T6` no repetía la mitad de catálogo, así que en una
-vertical que declarara evento con los días en cero le escribía a un cliente la fila consumida de
-un trial **que la vertical todavía no ofrece** — y el día que lo encendiera, esa persona ya no lo
-tenía. `DEC-TRIAL-003` contempla exactamente ese día para Partner. Consumir un beneficio que no
-existe no es consumirlo: es destruirlo antes de que nazca.
-
-**Sale**
-(revisión del owner, 2026-09-28, C8): `admite_altas` ya no existe. **El par sigue disjunto por
-construcción**, por el mismo booleano: `T1` pide `cubierto` falso y `T6` verdadero. Con todos los
-planes de la vertical retirados y `cubierto` falso tampoco dispara ninguna, y lo dice la fila de
-*«la vertical no tiene ninguna versión de plan vigente y vendible»* de la tabla de arriba. **Y
-`PB1` publica sólo si el dueño está cubierto o si esa publicación dispara `T1`** (§9; owner
-2026-09-25), así que ahí quien no está cubierto no publica.
-
-**Texto de la fuente — «El hash que ya consumió: la rama que la base rechazaba sin que ninguna fila la declarara»** (`V/03-maquinas-de-estado.md:328–364`, sin lo tachado):
-
-(FASE 8 completa, `F-8CA3-003`.) El `UNIQUE(hash_del_correo_normalizado, vertical)` del cap. 02
-§2.2 se escribió para **negar** un trial, y alcanzaba también a la escritura que **registra** uno
-consumido. Quien borró su cuenta y vuelve con el mismo correo tiene `user_id` nuevo y ninguna fila
-propia, pero su hash ya tiene la suya (cap. 02 §4.2 regla 2): si contrataba antes de publicar,
-`T6` intentaba escribir la fila consumida, **chocaba con el `UNIQUE`**, y ninguna máquina declaraba
-qué pasaba después — con `PB1` y `T6` en la misma transacción, **la persona pagaba y no podía
-publicar**.
-
-> **`T1`, `T6`, y `T8` (desde la FASE 9 completa, 6c; `T7` salió: revisión del owner, 2026-09-28, N7) exigen que el hash del correo no tenga fila en esa vertical.** Si la tiene,
-> ninguna dispara: el trial ya está consumido por esa fila, **la publicación sigue** **si la persona está cubierta** —sin cobertura `PB1` no publica, porque
-> no arranca ningún trial (§9; owner 2026-09-25)— y la persona se queda en `PRE_TRIAL`.
->
-> **El mismo `UNIQUE` resuelve la carrera entre dos escrituras de la fila** —`T8` al acreditarse
-> el pago y `T6` en un `PB1` simultáneo, o `T1` contra `T8`—: la que choca **no es un error**, es
-> la guarda de hash leída tarde. No dispara, y la transacción que la contenía sigue con esa
-> lectura: en `PB1`, publica sólo si la persona está cubierta (FASE 9 vuelta 1, `F-8V1A2-009`).
-
-Es la lectura literal de `DEC-TRIAL-004` —*«el email normalizado niega el trial»*— escrita como
-guarda en vez de como error de la base. **El par `T1`/`T6` sigue disjunto por `cubierto`**: la
-guarda nueva es la misma en las dos, así que no las separa ni las solapa.
-
-> ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`**: **esa persona se queda en
-> `PRE_TRIAL` para siempre**, porque su `user_id` no tiene fila y ninguna transición la va a
-> escribir. Mientras esté cubierta no cambia nada. **Sin cobertura no publica** —`PB1` exige
-> cobertura o un `T1` que dispare, y acá `T1` no dispara— y la pantalla le dice *«suscribite para
-> publicar»* (§9, cap. 19 §4 fila 21; FASE 8 completa, owner 2026-09-25): la ficha publicada sin
-> título y el borrador repetible dejan de existir. Que su fila de `trial` quede asociada a la
-> cuenta nueva no está escrito; **ya no tiene consecuencia sobre la publicación**.
-
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:52, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:64, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:91, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:123, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:164, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:243, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:281, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:328
-
-<a id="trans-v-t2"></a>
-
-### `TRANS:V:T2` · `T2` — `TRIAL_ACTIVE` → `TRIAL_CONVERTED`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [V4](10-corte/V4.md#pieza-v4)
-- **Fuente de la asignación**: `V/descomposicion.md:64`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `TRIAL_ACTIVE`
-- **evento** (disparador): **aparece un título que convierte**: una fuente viva de clase `TÍTULO` que no es la del trial **y que, si es de `tipo: SUSCRIPCIÓN`, trae `cobrada: sí`** —sea porque aparece así o porque una ya presente pasa a `sí` con su primer pago acreditado— (`12-contrato…` §2.1; `DEC-TRIAL-010`, owner 2026-09-25; FASE 8 completa, `F-8CA2-006`, `F-8CC1-002`)
-- **hacia** (estado destino): `TRIAL_CONVERTED`
-- **condición** (guardas): —
-- **efectos** (efectos): se cancela la campaña previa; el acceso pasa a depender de esa fuente
-
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:53, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:64
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:53, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:64, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:123, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:164, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:243
 
 <a id="trans-v-t3"></a>
 
@@ -591,174 +591,6 @@ se eligió (`DEC-SUB-008`).
 - **hacia** (estado destino): `PUBLISHED`
 - **nota** (guardas y efectos): **sólo si el dueño está cubierto** —`cubierto` verdadero en esa vertical— **o si esta publicación dispara `T1`**, o sea si arranca un trial: la persona está en `PRE_TRIAL` y se cumplen las condiciones de `T1` (§2). **Si no, no publica**, y la pantalla le dice *«suscribite para publicar»* (cap. 19 §4 fila 21) (FASE 8 completa, owner 2026-09-25). Es **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha. **Toma el lock del `user + vertical` y cuenta el cupo adentro** (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 8 completa, `F-8CA1-006`, `F-8CA2-010`, owner 2026-09-25). **Desde `UNPUBLISHED_BY_BILLING` sale sólo por la segunda rama**: si esta publicación dispara `T1`. Es el camino del dueño que perdió la ficha por billing y todavía no estrenó su trial — quien quedó en `PRE_TRIAL` por un primer cobro rechazado (§2, `T8`)— (la cartera del corte ya no: nace con su ficha publicada y su prueba activa; revisión del owner, 2026-09-28, C12, `L1-b`; *«o en `DRAFT`»* salió con la simplificación del corte, S-02: las fichas que no son de las cinco se borran). **Con cobertura no sale por acá**: la ficha vuelve por `PB3`, con el criterio de *«cuáles vuelven»*, y no a mano (FASE 9 vuelta 1, R1; owner 2026-09-26, `G1-1`). **Revalida: sí**, llega a `PUBLISHED` (FASE 5, lote 3 A)
 
-**Texto de la fuente — «La moderación y el borrado del dueño»** (`V/03-maquinas-de-estado.md:655–679`, sin lo tachado):
-
-FASE 8 completa, `F-8CA2-004`, owner 2026-09-25.
-
-**Desde `DEC-TRIAL-005` toda moderación es reactiva, y hasta acá ninguna fila bajaba una ficha por
-decisión nuestra ni la borraba.** Por la regla 1 del cap. 03 §1 (núcleo) esos actos no se
-ejecutaban, y llevarlos a un estado existente los deshacía la propia máquina: desde `DRAFT` el
-dueño la republica con `PB1`, y desde `UNPUBLISHED_BY_BILLING` la republica `PB3` en el próximo
-cambio de cobertura o de cupo. **`MODERATED` es un estado propio por la misma razón que
-`UNPUBLISHED_BY_BILLING` es distinto de `DRAFT`**: el estado es lo que dice quién puede sacarla de
-ahí.
-
-- **Entra desde cualquier estado no final** (`PB10`): `DRAFT`, `PUBLISHED`,
-  `UNPUBLISHED_BY_BILLING` o `ARCHIVED`. `PURGED` es final.
-- **No la republica nadie más que un admin**: ni el dueño con `PB1`, ni el sistema con `PB3` o
-  `PB7`. **Sólo un admin la saca, y la devuelve a donde estaba** (revisión del owner, 2026-09-28, C10, `L2-i`): a
-  `DRAFT` si era borrador (`PB11`), y si estaba publicada o bajada por billing, a
-  `UNPUBLISHED_BY_BILLING`, donde `PB3` la sube en el mismo acto si hay cobertura y cupo (`PB13`).
-  El dueño **sí** la puede borrar (`PB12`, `g3`).
-- **No cuenta para el cupo** ni compite por él (abajo, *«qué cuenta para el cupo»*).
-- **No devuelve el trial** (§10.2). `V/11` §2.2 ya separa la baja justificada, que no repara nada,
-  del error de moderación, que se repara con los instrumentos de `V/11` §2.3 y no con una
-  transición de vuelta.
-
-**Texto de la fuente — «La moderación en dos niveles»** (`V/03-maquinas-de-estado.md:680–841`, sin lo tachado):
-
-(revisión del owner, 2026-09-28, C10, `L2-i`, `g3`.)
-
-**Vale sólo para fichas**: el bit de moderación de la presencia de Partner no tiene niveles
-(`V/18` §1.6; revisión del owner, casos vecinos, 2026-09-29, caso 14).
-
-**El admin elige entre dos niveles, y puede cambiar su elección en las dos direcciones:**
-
-1. **Pedir un arreglo sin bajar la ficha.** Es una **marca al costado, no un estado**: el
-   *«pedido de arreglo»* (`V/02` §2.5), con su motivo, una fecha sugerida si la hay, quién y
-   cuándo, y si el dueño avisó que ya lo corrigió. La ficha sigue donde está (publicada, si lo
-   estaba), sigue cubierta y sigue ocupando cupo; **no toca el reloj de retención** y **no cambia
-   `admiteDestaque`** (`12-contrato…` §4.1: lo que lo apaga es `MODERATED`, no la marca). Es la
-   misma forma que la marca de conciliación de billing (`DEC-CONC-003`): se abre y se cierra sin
-   mover el estado.
-2. **Bajarla hasta que se arregle.** Es `MODERATED`, por `PB10`, como hasta ahora.
-
-**Cambiar de nivel**: de pedido a baja es `PB10` con el pedido abierto; de baja a sólo pedido es
-`PB11` o `PB13` con el pedido abierto, **y sigue la misma regla que levantar**: la ficha vuelve a
-donde estaba. **Levantar del todo** es `PB11` o `PB13` con el pedido cerrado, o, si la ficha no
-estaba bajada, cerrar el pedido. Todo es la misma acción administrativa (`NUCLEO/08` §3), con su
-motivo y su aviso (`NUCLEO/07` §6: pedido de arreglo, cambio de nivel, moderación levantada).
-
-**El dueño avisa que corrigió** con una operación propia sobre su ficha, que pasa por los siete
-pasos como cualquier escritura sobre lo propio y **no** cierra el pedido: lo cierra el admin.
-**Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con su
-antigüedad, la fecha sugerida vencida y los que el dueño ya avisó.
-
-**Qué puede hacer el dueño sobre una ficha `MODERATED`** (`g3`): **verla, exportarla, editarla y
-borrarla; no publicarla**, porque la levanta el admin. Editar es el hecho 1 y reinicia el reloj;
-borrar es `PB12`, con correo de confirmación. **Ningún proceso automático baja ni sube una ficha por
-moderación**: lo cubre la regla de que los procesos automáticos no ejecutan acciones administrativas.
-
-**El reloj de inactividad corre en `MODERATED`, por la regla general del cap. 01 §1.2 (núcleo)**:
-la inactividad es *«el tiempo que lleva sin estar a la vez publicada y cubierta»*, y una ficha
-moderada no está publicada. **`PB10` no escribe `listing.inactiva_desde`**: la
-ejecuta un admin, y el hecho 1 es *«un acto del dueño»*. Lo que no pasa mientras dura es que alguien actúe
-sobre ese reloj: `PB4`, `PB5` y `PB9` no tienen `MODERATED` en su `desde`, así que **una ficha
-moderada no se archiva ni se borra por inactividad**. **`PB11` sí lo escribe: levantar la moderación es el hecho 6** (owner 2026-09-25; FASE 9
-completa, decisión 5b, `OW-1`). Leída la versión anterior —*«al volver a `DRAFT` la ficha trae la
-inactividad acumulada»*—, una moderación larga sobre un dueño sin cobertura terminaba en
-`PB11` → `PB5` → `PB9`: el archivado con un aviso que imprimía una fecha de borrado ya pasada y el
-borrado en la corrida siguiente, días después de que un admin decidiera que la ficha estaba bien.
-Con el hecho 6 la ficha vuelve a `DRAFT` con el reloj en cero, y lo que le toca es lo de
-cualquier borrador recién tocado. Y el hecho 5 —*«el dueño pierde la cobertura en la vertical»*— se escribe también sobre
-ella, porque alcanza a toda ficha del dueño en la vertical, publicada o no.
-
-**`PB12` lleva al mismo estado final que `PB9`, y por eso no hace falta uno nuevo.** `PURGED` ya
-dice *«la fila queda, el contenido no, y no vuelve»*; lo que cambia es quién lo pide y cuándo:
-**el dueño, y el borrado es en el acto**. No relee la cobertura, porque la relectura de `PB4`,
-`PB5` y `PB9` existe para no borrarle nada a alguien que volvió, y acá el que borra es el dueño.
-Es el evento que `A6` (`B/03` §8) llama *«se borra la ficha destino»*, y desde
-`K-9` es la única fila que lo ejecuta: la orfandad de `A5` (`B/16` §4.2) ya no mira el borrado.
-**No es el único**: `PB9` llega al mismo `PURGED`, así que también dispara `A6` (FASE 9 vuelta 1,
-`F-8V1A2-002`, `F-8V1C1-013`) (orquestador, FASE 8 completa, 2026-09-25). **Billing se entera por
-dos caminos** (owner 2026-09-26, `G2-1`, contra la recomendación: no se acepta ni un cobro de más):
-`PB9` y `PB12` le **empujan en el mismo acto, después de su commit** (FASE 9
-vuelta 1, `N-G2V-01`/`N-G4V-05`) el hecho *«la ficha llegó a `PURGED`»*
-(`12-contrato…` §3.1), y como ese empuje no tiene transporte durable, **la red es la consulta
-`fichaPurgada` del contrato §4.1, que billing lee en su barrido diario** (`B/09` §3). Las construye
-V6, dueña de `PB12`: la consulta y el empuje de `PB12`; el de `PB9` va con V9, que tiene esa fila
-(`descomposicion.md` §2).
-
-**`PB10` y `PB12` no agregan pares a `G-R4`;
-`PB11` y `PB13` sí agregan uno** (revisión del owner, 2026-09-28, C10). `PB10` y `PB12` comparten `desde` con casi toda la
-tabla, pero sus eventos —el acto del admin y el del dueño— no los declara ninguna otra fila, así
-que cada par tiene **una sola** fila; **`PB11` y `PB13` comparten el par `(MODERATED, un admin levanta la baja)` con
-dos destinos, `DRAFT` y `UNPUBLISHED_BY_BILLING`**, y sus guardas son disjuntas por construcción:
-las separa el estado de origen que el evento de `PB10` guardó, un valor y no una combinación (cap.
-03 §1 regla 7, núcleo; lo cuenta `G-R4`). `PB12` sale también de `MODERATED`, con otro evento. **Ninguna es de la clase del reloj** (cap. 17 §3.4), así que `G-R3-B` no ve
-nada nuevo; **ninguna condición lee una columna**, así que `G-R6` tampoco; **`PB11` escribe
-`listing.inactiva_desde` desde la FASE 9 completa** —el hecho 6, decisión 5b—, y `G-R6-B` mitad
-*(a)* la admite **por la lista**, como a los otros cuatro hechos (cap. 20 §2; el 4 salió con la revisión del owner, 2026-09-28, C8).
-
-> ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
-> el camino principal, da acceso indebido ni borra datos):
->
-> 1. **Cerrado** (revisión del owner, 2026-09-28, `g3`): `PB12` sale de `MODERATED`, con
->    correo de confirmación.
-> 2. **Cerrado** (`g3`): verla,
->    exportarla, editarla y borrarla, no publicarla (arriba, *«la moderación en dos niveles»*;
->    `V/17` §1.2 paso 4). Editar es el hecho 1 y reinicia el reloj.
-> 3. **Los avisos al dueño** al moderar, al levantar la moderación y al borrar no tienen fila en
->    `V/19` §4, y la fila 20 de ahí dice *«se borró por inactividad»*, que no es la causa de una
->    ficha que llegó a `PURGED` por `PB12`. **Cerrado en parte** (FASE 9 vuelta 1; owner
->    2026-09-26, `G2-3`; precisado 2026-09-26), y por partes:
->    - **Al moderar (`PB10`): cerrado.** Tiene la fila 24 de `V/19` §4 y su correo en
->      `NUCLEO/07` §6, porque el dueño no está presente cuando un admin modera y la fila sola no
->      le llegaba. La fila nombra el motivo y los destaques recurrentes sobre esa ficha, que se
->      siguen cobrando hasta que el dueño los dé de baja.
->    - **Al levantar
->      (`PB11`, `PB13`) y al cambiar de nivel: cerrado** (revisión del owner, 2026-09-28, C10): los
->      correos *«cambio de nivel»* y *«moderación levantada»* de `NUCLEO/07` §6.
->    - **Al borrar (`PB12`): abierto, y con dos huecos**; **cerrado sobre una ficha `MODERATED`**,
->      con el correo de confirmación (`g3`), y sobre las demás sigue abierto. **El correo, cerrado
->      en todo `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso 15): sale sobre cualquier
->      ficha que su dueño borra. Lo que sigue abierto es la fila de Mi Cuenta: no tiene fila, y la fila 20 sigue
->      nombrando sólo `PB9` y la causa *«por inactividad»*, así que una ficha borrada por su dueño
->      no tiene texto propio en Mi Cuenta.
-> 4. **El contenido de una ficha moderada no tiene fin**: ningún reloj actúa en `MODERATED`, así
->    que se conserva mientras dure la moderación.
-> 5. **CERRADO por el owner el 2026-09-25** (FASE 8
->    completa): **borrar lo propio es parte del piso**. La fila 3 de la lista cerrada de la versión de
->    piso (cap. 02 §2.1) otorga ahora verla, exportarla, reactivarla **y borrarla**, así que el paso 6
->    autoriza `PB12` siempre, con o sin plan (cap. 17 §1.2 precisión 1). La lista sigue teniendo tres
->    filas y `G-R3` no cambia: es la misma clave, *«recuperar lo suyo»*, de clase `DE_ACCESO`.
-> 6. **Cerrado**
->    (revisión del owner, 2026-09-28, N7): releen el estado de la ficha y la pausa, y no salen sobre
->    una `MODERATED`, una `PURGED` ni con el reloj detenido (`NUCLEO/07` §6). Lo que decía: (FASE 9 completa,
->    `B-4`; declarado por `DEC-METH-015`, FASE 9 completa). El reloj se escribe en `MODERATED` —el
->    hecho 5 alcanza a toda ficha del dueño— y, por la letra de los hechos 2 y 5 (el 4 salió con la revisión del owner, 2026-09-28, C8) (*«toda
->    ficha»*), también en `PURGED`. Sobre una ficha moderada, el aviso anuncia un archivado o un
->    borrado que `PB4`, `PB5` y `PB9` no van a ejecutar; sobre una purgada, algo que ya pasó.
->    **Causa**: los avisos leen la columna (`V/02` §2.5, lectores 4 y 5) y no el estado.
-> 7. **Cerrado** (revisión
->    del owner, 2026-09-28, C9 y N7): el archivado (`PB4` o `PB5`) escribe la fecha de borrado que
->    anuncia (el instante del archivado más la distancia, sobre el reloj de la ficha, entre su fecha
->    de archivado y la de borrado, con la versión de plazos que la ficha guarda) y **`PB9` no borra
->    antes de esa fecha**. Un archivado que corrió tarde anuncia una fecha más tarde, y un `N` de
->    `PB5` que no queda por debajo del plazo de borrado lo rechaza el panel (`NUCLEO/02` §1.5). Lo
->    que decía: (FASE 9 completa, `K-5`,
->    `B-2`, `B-3`; declarado por `DEC-METH-015`, FASE 9 completa). `PB9` exige `ARCHIVED`, así que
->    el **orden** se cumple siempre; el **espacio** no: `PB9` cuenta sobre `inactiva_desde` y no
->    sobre el instante del archivado, así que un `N` de `PB5` entre 180 días y 6 meses (`V/20` §2,
->    `G-R5-B`) o un job de `PB4`/`PB5` caído más que su plazo (`V/02` §4.1) dejan al borrado en la
->    corrida siguiente al archivado, sin el tiempo para exportar que el aviso supone. **Causa**: el
->    borrado se ató al reloj de la ficha y no al del archivado. Levantar una moderación larga ya no
->    es uno de estos casos: `PB11` reinicia el reloj (hecho 6).
-> 8. **El empuje de *«la ficha llegó a `PURGED`»* no tiene transporte durable** (FASE 9 vuelta 1;
->    owner 2026-09-26, `G2-1`). Éste **sí puede mover plata**, y por eso se nombra aunque el
->    encabezado diga lo contrario: si el empuje de `PB9` o de `PB12` se pierde, `A6` corre recién
->    cuando el barrido diario de billing lee `fichaPurgada: sí` (contrato §4.1), y si el cobro
->    mensual de un destaque `LISTING` cae en ese día, entra. `S21` lo pone delante de una persona
->    con la marca del motivo 14. **La red es la consulta, no el empuje**, y un borrado que no pasa
->    por `PB9` ni por `PB12` **—desde `G5-2` el admin
->    no tiene ninguno (`NUCLEO/08` §3); el que queda es el borrado de la cuenta pedido por el propio
->    usuario, pendiente en `NUCLEO/08` §1 (fuera de esta épica, **por soporte desde el panel con una lista de pasos que corre `PB12` en cada ficha antes de dar de baja la cuenta (caso I-C), así que ya no borra ninguna ficha sin `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso F-C), HOS-1393 (`https://linear.app/hospeda-beta/issue/HOS-1393`): revisión del owner, 2026-09-28, N7, `g1`), y `fichaPurgada` contesta `sí` sobre la fila que ya no
->    existe (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—** no empuja nada y depende
->    sólo de ella. **Un empuje emitido antes del commit no sería un empuje perdido de vez en
->    cuando: sería un empuje perdido siempre**, porque `A6` relee `fichaPurgada` y lee `no`; por eso
->    sale después del commit (contrato §3.1; FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`). **Causa**: el outbox del núcleo es de correos, y ningún hecho de verticales
->    tiene transporte durable (`12-contrato…` §3).
-
 **Texto de la fuente — «Publicar ocupa cupo bajo un lock por `user + vertical`»** (`V/03-maquinas-de-estado.md:842–930`, sin lo tachado):
 
 FASE 8 completa, racimo `R14`: `F-8CA1-006`, `F-8CA2-010`, `F-8CA2-009`; owner 2026-09-25.
@@ -846,210 +678,19 @@ de atraso.
 >    día siguiente: el atraso es de un día, no los 90 de `F-8CA2-009`. **Causa**: el lock serializa
 >    las escrituras, no las lecturas del caché.
 
-**Texto de la fuente — «Cuáles vuelven, cuando el cupo no alcanza para todas»** (`V/03-maquinas-de-estado.md:931–1009`, sin lo tachado):
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:488, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:842
 
-**`PB3` y `PB7` compiten por el mismo cupo**, se disparan con el mismo hecho y en el mismo
-instante, y con cinco fichas abajo y lugar para tres **cuáles tres suben es una decisión de
-visibilidad pública**. Dejarla en el orden en que una implementación recorra dos tablas es, con las
-palabras del núcleo, *«exactamente la diferencia entre una máquina de estados y una convención»*.
+<a id="trans-v-pb2"></a>
 
-> **El criterio es el inverso exacto del de bajada: vuelve primero la que cayó al final.** Como
-> *«cae lo más reciente primero»* (`DEC-SUB-008`), eso es **la publicada menos recientemente entre
-> las que están abajo**, y se sigue subiendo hacia las más recientes hasta llenar el cupo.
+### `TRANS:V:PB2` · `PB2` — `PUBLISHED` → `UNPUBLISHED_BY_BILLING`
 
-**Se elige el inverso y no un criterio propio por una razón que se puede verificar**: con él, el
-conjunto que queda publicado **depende sólo del cupo y no del camino**. Quien bajó de cinco a dos y
-volvió a cuatro termina con **exactamente** las cuatro que tendría si hubiera contratado cuatro de
-entrada. Cualquier otro orden hace que el resultado dependa de por cuántos planes pasó, que es lo
-contrario de predecible — y `V/15` §4.3 ya declaró por qué no se inventa un segundo criterio:
-*«dos criterios distintos para la misma clase de problema es cómo se vuelve impredecible»*.
-
-**Una ficha `PURGED` no es candidata**: no está en el `desde` de `PB3` ni en el de `PB7`, y no
-cuenta para el cupo, así que ni ocupa lugar ni compite por él (`PB9`; FASE 8 completa,
-`F-8CA2-008`, owner 2026-09-25).
-
-**Qué cuenta para el cupo: las fichas en `PUBLISHED`, y ninguna otra** (FASE 8 completa, owner
-2026-09-25; lo que el corpus ya asumía, dicho en un solo lugar). Es la lectura que sostienen todas
-las filas que lo nombran: `PB2` **despublica** el excedente hasta entrar en el límite, `PB3` y `PB7`
-**publican** hasta llenarlo, `DEC-SUB-008` plantea el caso como *«5 fichas publicadas que baja a un
-plan de 3»*, publicar (`PB1`) es lo que **consume** un limit (`V/15` §3.4) y volver a `DRAFT` por
-`PB8` **no cuenta contra ningún limit** (`V/02` §2.1). Así que `DRAFT`, `UNPUBLISHED_BY_BILLING` y
-`ARCHIVED` **no ocupan lugar** —las dos últimas son candidatas que compiten por él— y `PURGED`, que
-es final, **ni ocupa lugar ni compite**. **`MODERATED` tampoco**: no está en el `desde` de `PB3` ni
-en el de `PB7`, así que ni ocupa lugar ni compite por él (`PB10`; FASE 8 completa, `F-8CA2-004`,
-owner 2026-09-25), **mientras está moderada**.
-
-**La ficha que vuelve de la moderación por `PB13` entra a esta misma cola, y recupera su lugar si
-le toca** (FASE 9 vuelta 3, owner 2026-09-30, lote O, `F-8V3A2-003`). Mientras estuvo moderada el
-reconciliador llenó su lugar con la candidata de abajo, y `PB13` encontraba el cupo lleno: la más
-vieja quedaba abajo y el conjunto publicado dependía de la historia de moderación, contra la
-propiedad de arriba. Ahora `PB13` la ordena junto con las publicadas, por el mismo criterio y con
-su instante de publicación, que es el de su último evento de publicación, anterior a la
-moderación. Si le toca, sube, y la publicada que queda fuera baja por la rama del excedente de
-`PB2`, que es *«cae lo más reciente primero»* (`DEC-SUB-008`). Con esto el conjunto publicado
-**sigue dependiendo sólo del cupo**, también después de una moderación.
-
-**El origen NO desempata, y es deliberado.** Una candidata en `ARCHIVED` y una en
-`UNPUBLISHED_BY_BILLING` entran en **la misma cola ordenada**, sin prioridad por el estado del que
-vienen. Lo único que las separa es **cuánto tardó nuestro reloj en archivar una y no la otra**, que
-es contabilidad nuestra y no algo que el dueño haya elegido; usarlo como criterio le haría depender
-la visibilidad de un detalle que no puede ver ni predecir. `PB7` **sí** mira su origen, pero para
-otra cosa: para no publicar el borrador de `PB5`, que nunca fue candidato.
-
-**El dato con el que se ordena ya existe y no pide columna nueva**: cuándo se publicó cada ficha,
-que es el mismo que la bajada necesita para decidir *«la más reciente»*. Sale del registro
-append-only de eventos de dominio (cap. 08 §1.2 y §1.3, núcleo), igual que el origen que `PB7`
-consulta.
-
-**Y la ficha del corte, que no tiene ninguna publicación en ese registro, cuenta como publicada en
-el instante del corte** (FASE 9 vuelta 1, `N-G1-01`). R1 le dio estado y reloj a toda ficha
-preexistente, pero no el tercer dato que `UNPUBLISHED_BY_BILLING` consume: nació por la escritura
-`C` de la migración (`V/21` §2.4), no por `PB1`, así que el criterio no la ordenaba y la ficha que
-quedaba visible era la que la implementación recorriera primero. **La lectura es ésta, sin columna
-nueva y sin escribir en el registro un evento que no ocurrió**: el instante de publicación de una
-candidata es el de su último evento de publicación en el registro y, si no tiene ninguno, el de su
-escritura `C` —el mismo instante que el corte le pone en `inactiva_desde`—. Así una ficha del corte
-es siempre menos reciente que cualquiera publicada después del corte, que es lo que fue. **A igual
-instante —todas las del corte de un mismo dueño lo comparten— desempata la fila más vieja**, por
-`listing.created_at`, que el corte conserva del sistema viejo (`V/02` §2.5), **y después el id**: un
-orden total, que el aviso de la fila 19 puede escribir como *«vuelven primero las que cargaste hace
-más tiempo»*. **Una ficha del corte que el dueño publica por `PB1` pasa a tener su evento** y se
-ordena por él, como cualquier otra. *(Con una sola ficha del corte por cuenta, `DEC-MIG-007`, el
-desempate entre fichas del corte de un mismo dueño no tiene población; la regla queda, porque no
-cuesta nada y el orden sigue siendo total. FASE 5,
-simplificación del corte, S-08.)*
-
-**Y va escrito en el aviso, por la misma razón que el de bajada.** `DEC-SUB-008` lo dice y `V/19`
-fila 8 lo obliga para el excedente: *«si el cliente no puede leerlo, deja de ser predecible y se
-pierde el motivo por el que se eligió»*. El espejo es la **fila 19** de `V/19` §4 y su correo está
-en el catálogo del cap. 07 §6 (núcleo). Las que no entran **no se borran** —su reloj se reinicia
-igual, §4.2 regla 4 del cap. 02—, pero quedan abajo, y el dueño tiene que poder saber por qué.
-
-**Texto de la fuente — «`ARCHIVED` tiene salida, y son dos porque hay dos maneras de volver»** (`V/03-maquinas-de-estado.md:1010–1145`, sin lo tachado):
-
-*(Revisión del owner, 2026-09-28, C14: la pausa pedida por el dueño ya no archiva, porque
-detiene el reloj; `PB4` relee `retenciónDetenida` antes de archivar. El caso de abajo queda como
-historia de por qué nacieron las dos salidas, que siguen haciendo falta para toda ficha archivada
-por inactividad fuera de una pausa.)*
-
-**El caso que las obliga es una pausa del catálogo.** Alguien toma la pausa más larga que le
-vendemos —**4 pausas-mes**, unos 120 días (`B/03` §5)—. La pausa por `CUSTOMER_REQUEST` **no
-emite fuente** (`12-contrato…` §2.6), así que `cubierto` pasa a falso, `PB2` baja la ficha, el
-día 90 llega antes que el fin de la pausa y `PB4` la archiva. Antes de la 9-bis-3 **ninguna
-fila de ninguna tabla del programa tenía `ARCHIVED` en su columna `desde`**, así que por la
-regla 1 del cap. 03 §1 (núcleo) volver de ahí no era una operación: era un incidente. Y el reloj
-seguía hasta el hard delete del día 180 (cap. 02 §4.1). El sujeto no era una ficha abandonada:
-era la de un cliente que no canceló nada.
-
-**`ARCHIVED` tiene además una tercera salida, que no es volver: `PB9`**, el hard delete del día
-180, hacia `PURGED`, que es final (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25). Las dos de
-vuelta siguen siendo dos. **Y desde la misma pasada tiene dos más, que tampoco son volver**: `PB10`, a `MODERATED` por
-un admin, y `PB12`, a `PURGED` por el dueño (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25), o por soporte a su pedido (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
-
-**Son dos filas y no una porque los dos caminos de vuelta no se pueden mezclar:**
-
-| | `PB7` | `PB8` |
-|---|---|---|
-| quién la dispara | el hecho que el contrato empuja | el dueño |
-| hacia dónde | `PUBLISHED` | `DRAFT` |
-| desde qué origen | sólo si venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING` | cualquiera |
-| para quién existe | el que pausó, el que recontrata, el que regularizó | el que quiere su ficha de vuelta sin pagar todavía, y el borrador que archivó `PB5` |
-| con qué la autoriza | su fuente de clase `TÍTULO`, que es la que acaba de volver | **la versión de piso**, *«recuperar lo suyo»* (cap. 02 §2.1) — su población **no tiene ninguna otra** |
-
-> 📌 **Cerrado el 2026-09-25** (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25): el hard delete
-> es la fila **`PB9`** y lleva la ficha a **`PURGED`**, un estado final. `PB7` sale de `ARCHIVED` y
-> `PB3` de `UNPUBLISHED_BY_BILLING`, así que **ninguna de las dos la toma**; no entra en la cola
-> de cuáles vuelven ni **cuenta para el cupo**, y el dato que la guarda pedía es el estado mismo,
-> que escribe una transición —`G-R6` no tiene nada que objetar—. **Adónde va** la ficha es a
-> `PURGED`, y el dueño ve que existió y que se borró por inactividad (cap. 19 §4 fila 20). Y como
-> `PB9` exige `ARCHIVED`, una ficha en `UNPUBLISHED_BY_BILLING` no llega nunca vaciada a `PB3`.
->
-> El texto original, como registro: el hard delete del día 180 **no mueve el estado** —le
-> borra el contenido y la deja en `ARCHIVED`—, y `PB7` sólo mira el origen. Si el dueño recupera
-> la cobertura después del día 180, `PB7` publica una página vacía, y por el criterio de vuelta
-> —*«la publicada menos recientemente»*, abajo— la vacía, que suele ser la más vieja, **ocupa el
-> cupo antes que las intactas**. El hallazgo propone que la guarda de `PB3`/`PB7` excluya lo
-> vaciado, y **no es mecánico**: pide un dato que diga *«el hard delete ya corrió sobre esta
-> ficha»* —el hard delete no es una transición, así que una guarda que lo leyera cae bajo `G-R6`
-> (`V/20` §2)—, y pide decidir adónde va esa ficha si no vuelve. El núcleo ya lo dice de un solo
-> lado: el correo de la reapertura avisa *«que el contenido no vuelve»* (`NUCLEO/07` §6), sin
-> decir si la ficha sí.
-
-**`PB7` no puede ignorar el origen, y ésa es toda la razón por la que lo mira.** A `ARCHIVED` se
-entra por dos puertas: `PB4`, desde una ficha que estaba a la vista, y `PB5`, desde un
-**borrador** que su dueño nunca publicó. Una vuelta automática que no las distinguiera
-**publicaría el borrador de alguien que nunca pidió publicarlo** el día que recupera cobertura.
-Es exactamente la razón por la que `UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT`,
-una puerta más adentro.
-
-**Y el origen no necesita ninguna columna nueva: ya está escrito.** El evento de dominio de
-`PB4` y el de `PB5` guardan *«los campos que cambiaron, con su valor anterior y el nuevo»*
-(cap. 08 §1.2, núcleo) sobre un registro **append-only** (§1.3). Preguntarle al registro de
-verticales por un hecho de verticales es el mismo mecanismo que `T7` usaba (salió: N7) y `T8` usa para *«ya ejerció el
-evento de activación»* (§2), y por el mismo motivo: el dato existe, es duradero y no hay que
-pedírselo a nadie. Una columna denormalizada es libertad de implementación, nunca una segunda
-fuente.
-
-**Las dos reinician el reloj, y `PB7` ni siquiera hace falta que dispare para que se reinicie.**
-El hecho que reinicia la inactividad es **la cobertura comprobada verdadera** (cap. 01 §1.2,
-núcleo, hecho 2) —un estado leído, no un cambio detectado, que es por lo que cualquiera que actúe
-sobre el reloj lo puede comprobar en el momento de actuar—, no la transición: si el cupo no alcanza
-y la ficha se queda abajo, el reloj se reinicia igual. Atarlo a `PB7` habría dejado el borrado vivo justo para el que vuelve con un plan más
-chico.
-
-**Qué queda del caso de la pausa, medido y no estimado.** **El reloj se detiene durante la
-pausa pedida por el dueño y la ficha no se archiva** (revisión del owner, 2026-09-28, C14): lo que
-sigue de este párrafo sobre el día 90 y `D16` queda como historia. Lo que ya no pasa es lo caro: al
-reanudar, `cubierto` vuelve a verdadero, el reloj se reinicia y `PB7` la republica sola; **y si la
-pausa termina por otro camino, en una baja, el reloj se reinicia igual** (revisión del owner, casos
-vecinos, 2026-09-29, caso 12; `12-contrato…` §4.1), **sin escribir nada: `retenciónDetenida` devuelve también cuándo terminó la última pausa, y los lectores cuentan desde el más tardío entre `listing.inactiva_desde` y ese instante** (revisión del owner, casos vecinos, 2026-09-29, caso F-A; `12-contrato…` §4.1) (**y `PB9`, además, desde `coberturaPerdidaEn`, el más tardío de los tres**: FASE 9 vuelta 3, owner 2026-09-30, lote Q). Entre el
-primer día de la pausa y ese reinicio hay **120 días** contra los **180** del borrado, y las
-pausas encadenadas no acumulan porque cada reanudación reinicia. Que las dos cifras sigan en ese
-orden es `D16` (cap. 04 §3, núcleo), no una cuenta que alguien tenga que rehacer.
-
-**Y la cuenta mide desde el primer día de la pausa porque `PB2` escribe el reloj ese día** (hecho 5
-del cap. 01 §1.2, núcleo; FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). Hasta
-entonces no lo escribía nadie: el reloj guardaba el último reinicio, que la relectura de `PB4` pone
-cada 90 días sobre una ficha publicada y cubierta, y con 85 días de antigüedad al pausar la ficha se
-archivaba el día 5 de la pausa y se borraba el día 95. **Vale para toda ficha del dueño en esa vertical** (FASE 8 completa, owner
-2026-09-25): la que ya estaba abajo —el borrador, la excedente— no pasa por `PB2`, y el mismo
-instante se lo escribe el recálculo que el aviso despierta (cap. 01 §1.2, núcleo, hecho 5). **El
-aviso perdido tiene red desde `DEC-ARCH-009`**: el reconciliador diario de cobertura (abajo) corre
-`PB2` y escribe el hecho 5 hasta un día después, salvo para el dueño
-**sin ninguna ficha publicada** (⚠️ del reconciliador, punto 1; FASE 9 completa, `B-1`). Lo
-que queda allá es el aviso repetido, que el owner aceptó, no el alcance.
-
-**Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
-esta misma tanda:**
-
-1. **`PB7` no es el evento de activación, y no consume ningún trial.** El evento que `T1`
-   miran es *«el dueño publica»*, que es `PB1` — un acto suyo. `PB3` ya republicaba sin ser `PB1`
-   y `PB7` hace lo mismo un estado más atrás: **restituir no es publicar**. Leerlo al revés le
-   quemaría el trial a quien reanuda una pausa. **`PB1` desde `UNPUBLISHED_BY_BILLING` sí es
-   publicar**: es un acto del dueño, y por eso es el evento que `T1` mira. Lo que no es publicar
-   es que la ficha vuelva sola (FASE 9 vuelta 1, R1). (Sale con `R15`: revisión del owner, 2026-09-28, C12, `L1-b`.)
-2. **Ninguna de las dos comparte par con otra fila.** Salen las dos de `ARCHIVED`, pero sus
-   eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
-   **una sola** fila y **`PB7`/`PB8` no agregan ninguno** a los pares con dos destinos, que desde la
-   FASE 9-bis-4 fueron cuatro y
-   desde la revisión del owner, 2026-09-28, C8, son **tres** (`NUCLEO/03` §1 regla 7: sale `S10`/`S25`), y
-    con C10 vuelven a ser **cuatro** (entra `PB11`/`PB13`). Es el mismo caso que
-   `T7` (que salió: revisión del owner, 2026-09-28, N7), y está anotado en la regla 7 del cap. 03 §1 (núcleo). **`PB9` tampoco agrega ninguno**:
-   sale también de `ARCHIVED`, pero su evento —el día 180 de inactividad— no lo declara ninguna
-   otra fila (FASE 8 completa, `F-8CA2-008`).
-3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
-   *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` , `PB5` y **`PB9`** (FASE 8 completa, `F-8CA2-008`), y las tres **quitan**; a `PB7` la disparan **un cambio de cobertura o un cambio de cupo**, igual que a
-   `PB3`. **Ninguno de los dos es el reloj**: los dos son el recálculo del conjunto efectivo de un
-   `user + vertical` (cap. 15 §4.2), que lo dispara un acto —el de la persona o el de billing— y
-   no el paso del tiempo.
-
-**Y la mitad `PUBLISHED` del `desde` de `PB4` deja de ser letra muerta con el término definido.**
-Una ficha publicada y cubierta no acumula inactividad, así que esa mitad sólo alcanza a una ficha
-que quedó **publicada sin cobertura** — **una ficha publicada sin
-cobertura que el reconciliador diario todavía no bajó** (FASE 9 completa, `C-7`: desde
-`DEC-ARCH-009` la cartera del corte la baja la primera corrida del reconciliador, dentro del primer
-día, y no `PB4`; desde la revisión del owner, 2026-09-28, C12, la cartera del corte nace publicada
-**y cubierta** por su prueba, así que no es de esta mitad). Es la red, y por eso se queda.
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [V6](10-corte/V6.md#pieza-v6)
+- **Fuente de la asignación**: `V/descomposicion.md:66`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `PUBLISHED`
+- **evento** (disparador): **`cubierto` pasa a falso**
+- **hacia** (estado destino): `UNPUBLISHED_BY_BILLING`
+- **nota** (guardas y efectos): o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). **`PB2` es uno de los dos ejecutores del hecho 5, no el único**: el hecho es *«el dueño pierde la cobertura en la vertical»* y alcanza a **todas** sus fichas en ella; a las que no están en `PUBLISHED` —y por eso `PB2` no toca— se lo escribe el recálculo que el mismo aviso despierta, sin transición de esta máquina (owner 2026-09-25). **Toma el mismo lock que `PB1`, en las dos ramas**, **y dentro del lock relee `cubierto` —primera rama— y el cupo —segunda— antes de escribir**: si la relectura ya no da la condición, `PB2` no ocurre (la regla de `B/05` §2, `C1`, igual que `PB1`; FASE 9 vuelta 1, `F-8V1A2-008`), y así la carrera contra `PB1` no deja una ficha publicada sin cobertura (abajo; FASE 8 completa, `F-8CA2-009`, owner 2026-09-25) **Revalida: sí**, sale de `PUBLISHED` (FASE 5, lote 3 A)
 
 **Texto de la fuente — «El reconciliador diario de cobertura: el aviso es rápido, el reconciliador es la red»** (`V/03-maquinas-de-estado.md:1146–1338`, sin lo tachado):
 
@@ -1223,21 +864,7 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    releer, y sus avisos previos no salieron porque estaba cubierto. No hace falta que el aviso
 >    se pierda, sólo que se atrase.
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:488, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:655, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:680, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:842, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:931, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1010, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1146
-
-<a id="trans-v-pb2"></a>
-
-### `TRANS:V:PB2` · `PB2` — `PUBLISHED` → `UNPUBLISHED_BY_BILLING`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [V6](10-corte/V6.md#pieza-v6)
-- **Fuente de la asignación**: `V/descomposicion.md:66`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `PUBLISHED`
-- **evento** (disparador): **`cubierto` pasa a falso**
-- **hacia** (estado destino): `UNPUBLISHED_BY_BILLING`
-- **nota** (guardas y efectos): o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo. **En la primera rama escribe `listing.inactiva_desde` con el instante de la caída** —es el hecho 5 del cap. 01 §1.2 (núcleo), *«la ficha deja de estar publicada porque perdió la cobertura»*—; **en la del excedente no la escribe**, porque la cobertura sigue verdadera (FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). **`PB2` es uno de los dos ejecutores del hecho 5, no el único**: el hecho es *«el dueño pierde la cobertura en la vertical»* y alcanza a **todas** sus fichas en ella; a las que no están en `PUBLISHED` —y por eso `PB2` no toca— se lo escribe el recálculo que el mismo aviso despierta, sin transición de esta máquina (owner 2026-09-25). **Toma el mismo lock que `PB1`, en las dos ramas**, **y dentro del lock relee `cubierto` —primera rama— y el cupo —segunda— antes de escribir**: si la relectura ya no da la condición, `PB2` no ocurre (la regla de `B/05` §2, `C1`, igual que `PB1`; FASE 9 vuelta 1, `F-8V1A2-008`), y así la carrera contra `PB1` no deja una ficha publicada sin cobertura (abajo; FASE 8 completa, `F-8CA2-009`, owner 2026-09-25) **Revalida: sí**, sale de `PUBLISHED` (FASE 5, lote 3 A)
-
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:489, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:489, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1146
 
 <a id="trans-v-pb3"></a>
 
@@ -1251,7 +878,86 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-d
 - **hacia** (estado destino): `PUBLISHED`
 - **nota** (guardas y efectos): y el cupo alcanza. **Es una disyunción de dos, simétrica a la de `PB2`** (`DEC-DATA-003`). Ocupa cupo, así que **toma el lock y cuenta adentro**, como `PB1` (abajo). (sale con `R15`: revisión del owner, 2026-09-28, C12, `L1-b`) **Revalida: sí**, llega a `PUBLISHED` (FASE 5, lote 3 A)
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:490, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66
+**Texto de la fuente — «Cuáles vuelven, cuando el cupo no alcanza para todas»** (`V/03-maquinas-de-estado.md:931–1009`, sin lo tachado):
+
+**`PB3` y `PB7` compiten por el mismo cupo**, se disparan con el mismo hecho y en el mismo
+instante, y con cinco fichas abajo y lugar para tres **cuáles tres suben es una decisión de
+visibilidad pública**. Dejarla en el orden en que una implementación recorra dos tablas es, con las
+palabras del núcleo, *«exactamente la diferencia entre una máquina de estados y una convención»*.
+
+> **El criterio es el inverso exacto del de bajada: vuelve primero la que cayó al final.** Como
+> *«cae lo más reciente primero»* (`DEC-SUB-008`), eso es **la publicada menos recientemente entre
+> las que están abajo**, y se sigue subiendo hacia las más recientes hasta llenar el cupo.
+
+**Se elige el inverso y no un criterio propio por una razón que se puede verificar**: con él, el
+conjunto que queda publicado **depende sólo del cupo y no del camino**. Quien bajó de cinco a dos y
+volvió a cuatro termina con **exactamente** las cuatro que tendría si hubiera contratado cuatro de
+entrada. Cualquier otro orden hace que el resultado dependa de por cuántos planes pasó, que es lo
+contrario de predecible — y `V/15` §4.3 ya declaró por qué no se inventa un segundo criterio:
+*«dos criterios distintos para la misma clase de problema es cómo se vuelve impredecible»*.
+
+**Una ficha `PURGED` no es candidata**: no está en el `desde` de `PB3` ni en el de `PB7`, y no
+cuenta para el cupo, así que ni ocupa lugar ni compite por él (`PB9`; FASE 8 completa,
+`F-8CA2-008`, owner 2026-09-25).
+
+**Qué cuenta para el cupo: las fichas en `PUBLISHED`, y ninguna otra** (FASE 8 completa, owner
+2026-09-25; lo que el corpus ya asumía, dicho en un solo lugar). Es la lectura que sostienen todas
+las filas que lo nombran: `PB2` **despublica** el excedente hasta entrar en el límite, `PB3` y `PB7`
+**publican** hasta llenarlo, `DEC-SUB-008` plantea el caso como *«5 fichas publicadas que baja a un
+plan de 3»*, publicar (`PB1`) es lo que **consume** un limit (`V/15` §3.4) y volver a `DRAFT` por
+`PB8` **no cuenta contra ningún limit** (`V/02` §2.1). Así que `DRAFT`, `UNPUBLISHED_BY_BILLING` y
+`ARCHIVED` **no ocupan lugar** —las dos últimas son candidatas que compiten por él— y `PURGED`, que
+es final, **ni ocupa lugar ni compite**. **`MODERATED` tampoco**: no está en el `desde` de `PB3` ni
+en el de `PB7`, así que ni ocupa lugar ni compite por él (`PB10`; FASE 8 completa, `F-8CA2-004`,
+owner 2026-09-25), **mientras está moderada**.
+
+**La ficha que vuelve de la moderación por `PB13` entra a esta misma cola, y recupera su lugar si
+le toca** (FASE 9 vuelta 3, owner 2026-09-30, lote O, `F-8V3A2-003`). Mientras estuvo moderada el
+reconciliador llenó su lugar con la candidata de abajo, y `PB13` encontraba el cupo lleno: la más
+vieja quedaba abajo y el conjunto publicado dependía de la historia de moderación, contra la
+propiedad de arriba. Ahora `PB13` la ordena junto con las publicadas, por el mismo criterio y con
+su instante de publicación, que es el de su último evento de publicación, anterior a la
+moderación. Si le toca, sube, y la publicada que queda fuera baja por la rama del excedente de
+`PB2`, que es *«cae lo más reciente primero»* (`DEC-SUB-008`). Con esto el conjunto publicado
+**sigue dependiendo sólo del cupo**, también después de una moderación.
+
+**El origen NO desempata, y es deliberado.** Una candidata en `ARCHIVED` y una en
+`UNPUBLISHED_BY_BILLING` entran en **la misma cola ordenada**, sin prioridad por el estado del que
+vienen. Lo único que las separa es **cuánto tardó nuestro reloj en archivar una y no la otra**, que
+es contabilidad nuestra y no algo que el dueño haya elegido; usarlo como criterio le haría depender
+la visibilidad de un detalle que no puede ver ni predecir. `PB7` **sí** mira su origen, pero para
+otra cosa: para no publicar el borrador de `PB5`, que nunca fue candidato.
+
+**El dato con el que se ordena ya existe y no pide columna nueva**: cuándo se publicó cada ficha,
+que es el mismo que la bajada necesita para decidir *«la más reciente»*. Sale del registro
+append-only de eventos de dominio (cap. 08 §1.2 y §1.3, núcleo), igual que el origen que `PB7`
+consulta.
+
+**Y la ficha del corte, que no tiene ninguna publicación en ese registro, cuenta como publicada en
+el instante del corte** (FASE 9 vuelta 1, `N-G1-01`). R1 le dio estado y reloj a toda ficha
+preexistente, pero no el tercer dato que `UNPUBLISHED_BY_BILLING` consume: nació por la escritura
+`C` de la migración (`V/21` §2.4), no por `PB1`, así que el criterio no la ordenaba y la ficha que
+quedaba visible era la que la implementación recorriera primero. **La lectura es ésta, sin columna
+nueva y sin escribir en el registro un evento que no ocurrió**: el instante de publicación de una
+candidata es el de su último evento de publicación en el registro y, si no tiene ninguno, el de su
+escritura `C` —el mismo instante que el corte le pone en `inactiva_desde`—. Así una ficha del corte
+es siempre menos reciente que cualquiera publicada después del corte, que es lo que fue. **A igual
+instante —todas las del corte de un mismo dueño lo comparten— desempata la fila más vieja**, por
+`listing.created_at`, que el corte conserva del sistema viejo (`V/02` §2.5), **y después el id**: un
+orden total, que el aviso de la fila 19 puede escribir como *«vuelven primero las que cargaste hace
+más tiempo»*. **Una ficha del corte que el dueño publica por `PB1` pasa a tener su evento** y se
+ordena por él, como cualquier otra. *(Con una sola ficha del corte por cuenta, `DEC-MIG-007`, el
+desempate entre fichas del corte de un mismo dueño no tiene población; la regla queda, porque no
+cuesta nada y el orden sigue siendo total. FASE 5,
+simplificación del corte, S-08.)*
+
+**Y va escrito en el aviso, por la misma razón que el de bajada.** `DEC-SUB-008` lo dice y `V/19`
+fila 8 lo obliga para el excedente: *«si el cliente no puede leerlo, deja de ser predecible y se
+pierde el motivo por el que se eligió»*. El espejo es la **fila 19** de `V/19` §4 y su correo está
+en el catálogo del cap. 07 §6 (núcleo). Las que no entran **no se borran** —su reloj se reinicia
+igual, §4.2 regla 4 del cap. 02—, pero quedan abajo, y el dueño tiene que poder saber por qué.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:490, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:931
 
 <a id="trans-v-pb4"></a>
 
@@ -1308,7 +1014,133 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-d
 - **hacia** (estado destino): `PUBLISHED`
 - **nota** (guardas y efectos): y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás, **con la misma disyunción y por la misma razón** (ver abajo). Ocupa cupo, así que **toma el lock y cuenta adentro**, como `PB1`, (sale con `R15`: revisión del owner, 2026-09-28, C12, `L1-b`) **Revalida: sí**, llega a `PUBLISHED` (FASE 5, lote 3 A)
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:494, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66
+**Texto de la fuente — «`ARCHIVED` tiene salida, y son dos porque hay dos maneras de volver»** (`V/03-maquinas-de-estado.md:1010–1145`, sin lo tachado):
+
+*(Revisión del owner, 2026-09-28, C14: la pausa pedida por el dueño ya no archiva, porque
+detiene el reloj; `PB4` relee `retenciónDetenida` antes de archivar. El caso de abajo queda como
+historia de por qué nacieron las dos salidas, que siguen haciendo falta para toda ficha archivada
+por inactividad fuera de una pausa.)*
+
+**El caso que las obliga es una pausa del catálogo.** Alguien toma la pausa más larga que le
+vendemos —**4 pausas-mes**, unos 120 días (`B/03` §5)—. La pausa por `CUSTOMER_REQUEST` **no
+emite fuente** (`12-contrato…` §2.6), así que `cubierto` pasa a falso, `PB2` baja la ficha, el
+día 90 llega antes que el fin de la pausa y `PB4` la archiva. Antes de la 9-bis-3 **ninguna
+fila de ninguna tabla del programa tenía `ARCHIVED` en su columna `desde`**, así que por la
+regla 1 del cap. 03 §1 (núcleo) volver de ahí no era una operación: era un incidente. Y el reloj
+seguía hasta el hard delete del día 180 (cap. 02 §4.1). El sujeto no era una ficha abandonada:
+era la de un cliente que no canceló nada.
+
+**`ARCHIVED` tiene además una tercera salida, que no es volver: `PB9`**, el hard delete del día
+180, hacia `PURGED`, que es final (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25). Las dos de
+vuelta siguen siendo dos. **Y desde la misma pasada tiene dos más, que tampoco son volver**: `PB10`, a `MODERATED` por
+un admin, y `PB12`, a `PURGED` por el dueño (FASE 8 completa, `F-8CA2-004`, owner 2026-09-25), o por soporte a su pedido (revisión del owner, casos vecinos, 2026-09-29, caso F-C).
+
+**Son dos filas y no una porque los dos caminos de vuelta no se pueden mezclar:**
+
+| | `PB7` | `PB8` |
+|---|---|---|
+| quién la dispara | el hecho que el contrato empuja | el dueño |
+| hacia dónde | `PUBLISHED` | `DRAFT` |
+| desde qué origen | sólo si venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING` | cualquiera |
+| para quién existe | el que pausó, el que recontrata, el que regularizó | el que quiere su ficha de vuelta sin pagar todavía, y el borrador que archivó `PB5` |
+| con qué la autoriza | su fuente de clase `TÍTULO`, que es la que acaba de volver | **la versión de piso**, *«recuperar lo suyo»* (cap. 02 §2.1) — su población **no tiene ninguna otra** |
+
+> 📌 **Cerrado el 2026-09-25** (FASE 8 completa, `F-8CA2-008`, owner 2026-09-25): el hard delete
+> es la fila **`PB9`** y lleva la ficha a **`PURGED`**, un estado final. `PB7` sale de `ARCHIVED` y
+> `PB3` de `UNPUBLISHED_BY_BILLING`, así que **ninguna de las dos la toma**; no entra en la cola
+> de cuáles vuelven ni **cuenta para el cupo**, y el dato que la guarda pedía es el estado mismo,
+> que escribe una transición —`G-R6` no tiene nada que objetar—. **Adónde va** la ficha es a
+> `PURGED`, y el dueño ve que existió y que se borró por inactividad (cap. 19 §4 fila 20). Y como
+> `PB9` exige `ARCHIVED`, una ficha en `UNPUBLISHED_BY_BILLING` no llega nunca vaciada a `PB3`.
+>
+> El texto original, como registro: el hard delete del día 180 **no mueve el estado** —le
+> borra el contenido y la deja en `ARCHIVED`—, y `PB7` sólo mira el origen. Si el dueño recupera
+> la cobertura después del día 180, `PB7` publica una página vacía, y por el criterio de vuelta
+> —*«la publicada menos recientemente»*, abajo— la vacía, que suele ser la más vieja, **ocupa el
+> cupo antes que las intactas**. El hallazgo propone que la guarda de `PB3`/`PB7` excluya lo
+> vaciado, y **no es mecánico**: pide un dato que diga *«el hard delete ya corrió sobre esta
+> ficha»* —el hard delete no es una transición, así que una guarda que lo leyera cae bajo `G-R6`
+> (`V/20` §2)—, y pide decidir adónde va esa ficha si no vuelve. El núcleo ya lo dice de un solo
+> lado: el correo de la reapertura avisa *«que el contenido no vuelve»* (`NUCLEO/07` §6), sin
+> decir si la ficha sí.
+
+**`PB7` no puede ignorar el origen, y ésa es toda la razón por la que lo mira.** A `ARCHIVED` se
+entra por dos puertas: `PB4`, desde una ficha que estaba a la vista, y `PB5`, desde un
+**borrador** que su dueño nunca publicó. Una vuelta automática que no las distinguiera
+**publicaría el borrador de alguien que nunca pidió publicarlo** el día que recupera cobertura.
+Es exactamente la razón por la que `UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT`,
+una puerta más adentro.
+
+**Y el origen no necesita ninguna columna nueva: ya está escrito.** El evento de dominio de
+`PB4` y el de `PB5` guardan *«los campos que cambiaron, con su valor anterior y el nuevo»*
+(cap. 08 §1.2, núcleo) sobre un registro **append-only** (§1.3). Preguntarle al registro de
+verticales por un hecho de verticales es el mismo mecanismo que `T7` usaba (salió: N7) y `T8` usa para *«ya ejerció el
+evento de activación»* (§2), y por el mismo motivo: el dato existe, es duradero y no hay que
+pedírselo a nadie. Una columna denormalizada es libertad de implementación, nunca una segunda
+fuente.
+
+**Las dos reinician el reloj, y `PB7` ni siquiera hace falta que dispare para que se reinicie.**
+El hecho que reinicia la inactividad es **la cobertura comprobada verdadera** (cap. 01 §1.2,
+núcleo, hecho 2) —un estado leído, no un cambio detectado, que es por lo que cualquiera que actúe
+sobre el reloj lo puede comprobar en el momento de actuar—, no la transición: si el cupo no alcanza
+y la ficha se queda abajo, el reloj se reinicia igual. Atarlo a `PB7` habría dejado el borrado vivo justo para el que vuelve con un plan más
+chico.
+
+**Qué queda del caso de la pausa, medido y no estimado.** **El reloj se detiene durante la
+pausa pedida por el dueño y la ficha no se archiva** (revisión del owner, 2026-09-28, C14): lo que
+sigue de este párrafo sobre el día 90 y `D16` queda como historia. Lo que ya no pasa es lo caro: al
+reanudar, `cubierto` vuelve a verdadero, el reloj se reinicia y `PB7` la republica sola; **y si la
+pausa termina por otro camino, en una baja, el reloj se reinicia igual** (revisión del owner, casos
+vecinos, 2026-09-29, caso 12; `12-contrato…` §4.1), **sin escribir nada: `retenciónDetenida` devuelve también cuándo terminó la última pausa, y los lectores cuentan desde el más tardío entre `listing.inactiva_desde` y ese instante** (revisión del owner, casos vecinos, 2026-09-29, caso F-A; `12-contrato…` §4.1) (**y `PB9`, además, desde `coberturaPerdidaEn`, el más tardío de los tres**: FASE 9 vuelta 3, owner 2026-09-30, lote Q). Entre el
+primer día de la pausa y ese reinicio hay **120 días** contra los **180** del borrado, y las
+pausas encadenadas no acumulan porque cada reanudación reinicia. Que las dos cifras sigan en ese
+orden es `D16` (cap. 04 §3, núcleo), no una cuenta que alguien tenga que rehacer.
+
+**Y la cuenta mide desde el primer día de la pausa porque `PB2` escribe el reloj ese día** (hecho 5
+del cap. 01 §1.2, núcleo; FASE 8 completa, `F-8CA2-001`, `F-8CA3-001`, owner 2026-09-25). Hasta
+entonces no lo escribía nadie: el reloj guardaba el último reinicio, que la relectura de `PB4` pone
+cada 90 días sobre una ficha publicada y cubierta, y con 85 días de antigüedad al pausar la ficha se
+archivaba el día 5 de la pausa y se borraba el día 95. **Vale para toda ficha del dueño en esa vertical** (FASE 8 completa, owner
+2026-09-25): la que ya estaba abajo —el borrador, la excedente— no pasa por `PB2`, y el mismo
+instante se lo escribe el recálculo que el aviso despierta (cap. 01 §1.2, núcleo, hecho 5). **El
+aviso perdido tiene red desde `DEC-ARCH-009`**: el reconciliador diario de cobertura (abajo) corre
+`PB2` y escribe el hecho 5 hasta un día después, salvo para el dueño
+**sin ninguna ficha publicada** (⚠️ del reconciliador, punto 1; FASE 9 completa, `B-1`). Lo
+que queda allá es el aviso repetido, que el owner aceptó, no el alcance.
+
+**Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
+esta misma tanda:**
+
+1. **`PB7` no es el evento de activación, y no consume ningún trial.** El evento que `T1`
+   miran es *«el dueño publica»*, que es `PB1` — un acto suyo. `PB3` ya republicaba sin ser `PB1`
+   y `PB7` hace lo mismo un estado más atrás: **restituir no es publicar**. Leerlo al revés le
+   quemaría el trial a quien reanuda una pausa. **`PB1` desde `UNPUBLISHED_BY_BILLING` sí es
+   publicar**: es un acto del dueño, y por eso es el evento que `T1` mira. Lo que no es publicar
+   es que la ficha vuelva sola (FASE 9 vuelta 1, R1). (Sale con `R15`: revisión del owner, 2026-09-28, C12, `L1-b`.)
+2. **Ninguna de las dos comparte par con otra fila.** Salen las dos de `ARCHIVED`, pero sus
+   eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
+   **una sola** fila y **`PB7`/`PB8` no agregan ninguno** a los pares con dos destinos, que desde la
+   FASE 9-bis-4 fueron cuatro y
+   desde la revisión del owner, 2026-09-28, C8, son **tres** (`NUCLEO/03` §1 regla 7: sale `S10`/`S25`), y
+    con C10 vuelven a ser **cuatro** (entra `PB11`/`PB13`). Es el mismo caso que
+   `T7` (que salió: revisión del owner, 2026-09-28, N7), y está anotado en la regla 7 del cap. 03 §1 (núcleo). **`PB9` tampoco agrega ninguno**:
+   sale también de `ARCHIVED`, pero su evento —el día 180 de inactividad— no lo declara ninguna
+   otra fila (FASE 8 completa, `F-8CA2-008`).
+3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
+   *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` , `PB5` y **`PB9`** (FASE 8 completa, `F-8CA2-008`), y las tres **quitan**; a `PB7` la disparan **un cambio de cobertura o un cambio de cupo**, igual que a
+   `PB3`. **Ninguno de los dos es el reloj**: los dos son el recálculo del conjunto efectivo de un
+   `user + vertical` (cap. 15 §4.2), que lo dispara un acto —el de la persona o el de billing— y
+   no el paso del tiempo.
+
+**Y la mitad `PUBLISHED` del `desde` de `PB4` deja de ser letra muerta con el término definido.**
+Una ficha publicada y cubierta no acumula inactividad, así que esa mitad sólo alcanza a una ficha
+que quedó **publicada sin cobertura** — **una ficha publicada sin
+cobertura que el reconciliador diario todavía no bajó** (FASE 9 completa, `C-7`: desde
+`DEC-ARCH-009` la cartera del corte la baja la primera corrida del reconciliador, dentro del primer
+día, y no `PB4`; desde la revisión del owner, 2026-09-28, C12, la cartera del corte nace publicada
+**y cubierta** por su prueba, así que no es de esta mitad). Es la red, y por eso se queda.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:494, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1010
 
 <a id="trans-v-pb8"></a>
 
@@ -1351,7 +1183,175 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-d
 - **hacia** (estado destino): **`MODERATED`**
 - **nota** (guardas y efectos): es una acción administrativa del cap. 08 §3 (núcleo): permiso propio y auditada **con su motivo** (el campo *«por qué»* del cap. 08 §1.2). **Toma el lock del `user + vertical` y relee adentro su `desde`**, porque lo comparte con `PB3` y `PB9` (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 9 vuelta 2, verificación). Sale del sitio público, **no cuenta para el cupo** y **no devuelve el trial** (§10.2; `V/11` §2). FASE 8 completa, `F-8CA2-004`, owner 2026-09-25 **Y guarda de dónde venía** (revisión del owner, 2026-09-28, C10, `L2-i`): su evento registra el estado de origen (y si es `ARCHIVED`, de dónde venía el archivado, que ya guarda el evento de `PB4` o `PB5`), que es lo que `PB11` y `PB13` leen para devolverla. **Si había un pedido de arreglo abierto, sigue abierto**: bajar es subir de nivel, no cambiar de pedido (*«la moderación en dos niveles»*, abajo) **Revalida: sí cuando sale de `PUBLISHED`**; desde los otros tres, no (FASE 5, lote 3 A)
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:497, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:402
+**Texto de la fuente — «La moderación y el borrado del dueño»** (`V/03-maquinas-de-estado.md:655–679`, sin lo tachado):
+
+FASE 8 completa, `F-8CA2-004`, owner 2026-09-25.
+
+**Desde `DEC-TRIAL-005` toda moderación es reactiva, y hasta acá ninguna fila bajaba una ficha por
+decisión nuestra ni la borraba.** Por la regla 1 del cap. 03 §1 (núcleo) esos actos no se
+ejecutaban, y llevarlos a un estado existente los deshacía la propia máquina: desde `DRAFT` el
+dueño la republica con `PB1`, y desde `UNPUBLISHED_BY_BILLING` la republica `PB3` en el próximo
+cambio de cobertura o de cupo. **`MODERATED` es un estado propio por la misma razón que
+`UNPUBLISHED_BY_BILLING` es distinto de `DRAFT`**: el estado es lo que dice quién puede sacarla de
+ahí.
+
+- **Entra desde cualquier estado no final** (`PB10`): `DRAFT`, `PUBLISHED`,
+  `UNPUBLISHED_BY_BILLING` o `ARCHIVED`. `PURGED` es final.
+- **No la republica nadie más que un admin**: ni el dueño con `PB1`, ni el sistema con `PB3` o
+  `PB7`. **Sólo un admin la saca, y la devuelve a donde estaba** (revisión del owner, 2026-09-28, C10, `L2-i`): a
+  `DRAFT` si era borrador (`PB11`), y si estaba publicada o bajada por billing, a
+  `UNPUBLISHED_BY_BILLING`, donde `PB3` la sube en el mismo acto si hay cobertura y cupo (`PB13`).
+  El dueño **sí** la puede borrar (`PB12`, `g3`).
+- **No cuenta para el cupo** ni compite por él (abajo, *«qué cuenta para el cupo»*).
+- **No devuelve el trial** (§10.2). `V/11` §2.2 ya separa la baja justificada, que no repara nada,
+  del error de moderación, que se repara con los instrumentos de `V/11` §2.3 y no con una
+  transición de vuelta.
+
+**Texto de la fuente — «La moderación en dos niveles»** (`V/03-maquinas-de-estado.md:680–841`, sin lo tachado):
+
+(revisión del owner, 2026-09-28, C10, `L2-i`, `g3`.)
+
+**Vale sólo para fichas**: el bit de moderación de la presencia de Partner no tiene niveles
+(`V/18` §1.6; revisión del owner, casos vecinos, 2026-09-29, caso 14).
+
+**El admin elige entre dos niveles, y puede cambiar su elección en las dos direcciones:**
+
+1. **Pedir un arreglo sin bajar la ficha.** Es una **marca al costado, no un estado**: el
+   *«pedido de arreglo»* (`V/02` §2.5), con su motivo, una fecha sugerida si la hay, quién y
+   cuándo, y si el dueño avisó que ya lo corrigió. La ficha sigue donde está (publicada, si lo
+   estaba), sigue cubierta y sigue ocupando cupo; **no toca el reloj de retención** y **no cambia
+   `admiteDestaque`** (`12-contrato…` §4.1: lo que lo apaga es `MODERATED`, no la marca). Es la
+   misma forma que la marca de conciliación de billing (`DEC-CONC-003`): se abre y se cierra sin
+   mover el estado.
+2. **Bajarla hasta que se arregle.** Es `MODERATED`, por `PB10`, como hasta ahora.
+
+**Cambiar de nivel**: de pedido a baja es `PB10` con el pedido abierto; de baja a sólo pedido es
+`PB11` o `PB13` con el pedido abierto, **y sigue la misma regla que levantar**: la ficha vuelve a
+donde estaba. **Levantar del todo** es `PB11` o `PB13` con el pedido cerrado, o, si la ficha no
+estaba bajada, cerrar el pedido. Todo es la misma acción administrativa (`NUCLEO/08` §3), con su
+motivo y su aviso (`NUCLEO/07` §6: pedido de arreglo, cambio de nivel, moderación levantada).
+
+**El dueño avisa que corrigió** con una operación propia sobre su ficha, que pasa por los siete
+pasos como cualquier escritura sobre lo propio y **no** cierra el pedido: lo cierra el admin.
+**Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con su
+antigüedad, la fecha sugerida vencida y los que el dueño ya avisó.
+
+**Qué puede hacer el dueño sobre una ficha `MODERATED`** (`g3`): **verla, exportarla, editarla y
+borrarla; no publicarla**, porque la levanta el admin. Editar es el hecho 1 y reinicia el reloj;
+borrar es `PB12`, con correo de confirmación. **Ningún proceso automático baja ni sube una ficha por
+moderación**: lo cubre la regla de que los procesos automáticos no ejecutan acciones administrativas.
+
+**El reloj de inactividad corre en `MODERATED`, por la regla general del cap. 01 §1.2 (núcleo)**:
+la inactividad es *«el tiempo que lleva sin estar a la vez publicada y cubierta»*, y una ficha
+moderada no está publicada. **`PB10` no escribe `listing.inactiva_desde`**: la
+ejecuta un admin, y el hecho 1 es *«un acto del dueño»*. Lo que no pasa mientras dura es que alguien actúe
+sobre ese reloj: `PB4`, `PB5` y `PB9` no tienen `MODERATED` en su `desde`, así que **una ficha
+moderada no se archiva ni se borra por inactividad**. **`PB11` sí lo escribe: levantar la moderación es el hecho 6** (owner 2026-09-25; FASE 9
+completa, decisión 5b, `OW-1`). Leída la versión anterior —*«al volver a `DRAFT` la ficha trae la
+inactividad acumulada»*—, una moderación larga sobre un dueño sin cobertura terminaba en
+`PB11` → `PB5` → `PB9`: el archivado con un aviso que imprimía una fecha de borrado ya pasada y el
+borrado en la corrida siguiente, días después de que un admin decidiera que la ficha estaba bien.
+Con el hecho 6 la ficha vuelve a `DRAFT` con el reloj en cero, y lo que le toca es lo de
+cualquier borrador recién tocado. Y el hecho 5 —*«el dueño pierde la cobertura en la vertical»*— se escribe también sobre
+ella, porque alcanza a toda ficha del dueño en la vertical, publicada o no.
+
+**`PB12` lleva al mismo estado final que `PB9`, y por eso no hace falta uno nuevo.** `PURGED` ya
+dice *«la fila queda, el contenido no, y no vuelve»*; lo que cambia es quién lo pide y cuándo:
+**el dueño, y el borrado es en el acto**. No relee la cobertura, porque la relectura de `PB4`,
+`PB5` y `PB9` existe para no borrarle nada a alguien que volvió, y acá el que borra es el dueño.
+Es el evento que `A6` (`B/03` §8) llama *«se borra la ficha destino»*, y desde
+`K-9` es la única fila que lo ejecuta: la orfandad de `A5` (`B/16` §4.2) ya no mira el borrado.
+**No es el único**: `PB9` llega al mismo `PURGED`, así que también dispara `A6` (FASE 9 vuelta 1,
+`F-8V1A2-002`, `F-8V1C1-013`) (orquestador, FASE 8 completa, 2026-09-25). **Billing se entera por
+dos caminos** (owner 2026-09-26, `G2-1`, contra la recomendación: no se acepta ni un cobro de más):
+`PB9` y `PB12` le **empujan en el mismo acto, después de su commit** (FASE 9
+vuelta 1, `N-G2V-01`/`N-G4V-05`) el hecho *«la ficha llegó a `PURGED`»*
+(`12-contrato…` §3.1), y como ese empuje no tiene transporte durable, **la red es la consulta
+`fichaPurgada` del contrato §4.1, que billing lee en su barrido diario** (`B/09` §3). Las construye
+V6, dueña de `PB12`: la consulta y el empuje de `PB12`; el de `PB9` va con V9, que tiene esa fila
+(`descomposicion.md` §2).
+
+**`PB10` y `PB12` no agregan pares a `G-R4`;
+`PB11` y `PB13` sí agregan uno** (revisión del owner, 2026-09-28, C10). `PB10` y `PB12` comparten `desde` con casi toda la
+tabla, pero sus eventos —el acto del admin y el del dueño— no los declara ninguna otra fila, así
+que cada par tiene **una sola** fila; **`PB11` y `PB13` comparten el par `(MODERATED, un admin levanta la baja)` con
+dos destinos, `DRAFT` y `UNPUBLISHED_BY_BILLING`**, y sus guardas son disjuntas por construcción:
+las separa el estado de origen que el evento de `PB10` guardó, un valor y no una combinación (cap.
+03 §1 regla 7, núcleo; lo cuenta `G-R4`). `PB12` sale también de `MODERATED`, con otro evento. **Ninguna es de la clase del reloj** (cap. 17 §3.4), así que `G-R3-B` no ve
+nada nuevo; **ninguna condición lee una columna**, así que `G-R6` tampoco; **`PB11` escribe
+`listing.inactiva_desde` desde la FASE 9 completa** —el hecho 6, decisión 5b—, y `G-R6-B` mitad
+*(a)* la admite **por la lista**, como a los otros cuatro hechos (cap. 20 §2; el 4 salió con la revisión del owner, 2026-09-28, C8).
+
+> ⚠️ **Lo que esto NO cierra, declarado con su causa por `DEC-METH-015`** (ninguno mueve plata en
+> el camino principal, da acceso indebido ni borra datos):
+>
+> 1. **Cerrado** (revisión del owner, 2026-09-28, `g3`): `PB12` sale de `MODERATED`, con
+>    correo de confirmación.
+> 2. **Cerrado** (`g3`): verla,
+>    exportarla, editarla y borrarla, no publicarla (arriba, *«la moderación en dos niveles»*;
+>    `V/17` §1.2 paso 4). Editar es el hecho 1 y reinicia el reloj.
+> 3. **Los avisos al dueño** al moderar, al levantar la moderación y al borrar no tienen fila en
+>    `V/19` §4, y la fila 20 de ahí dice *«se borró por inactividad»*, que no es la causa de una
+>    ficha que llegó a `PURGED` por `PB12`. **Cerrado en parte** (FASE 9 vuelta 1; owner
+>    2026-09-26, `G2-3`; precisado 2026-09-26), y por partes:
+>    - **Al moderar (`PB10`): cerrado.** Tiene la fila 24 de `V/19` §4 y su correo en
+>      `NUCLEO/07` §6, porque el dueño no está presente cuando un admin modera y la fila sola no
+>      le llegaba. La fila nombra el motivo y los destaques recurrentes sobre esa ficha, que se
+>      siguen cobrando hasta que el dueño los dé de baja.
+>    - **Al levantar
+>      (`PB11`, `PB13`) y al cambiar de nivel: cerrado** (revisión del owner, 2026-09-28, C10): los
+>      correos *«cambio de nivel»* y *«moderación levantada»* de `NUCLEO/07` §6.
+>    - **Al borrar (`PB12`): abierto, y con dos huecos**; **cerrado sobre una ficha `MODERATED`**,
+>      con el correo de confirmación (`g3`), y sobre las demás sigue abierto. **El correo, cerrado
+>      en todo `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso 15): sale sobre cualquier
+>      ficha que su dueño borra. Lo que sigue abierto es la fila de Mi Cuenta: no tiene fila, y la fila 20 sigue
+>      nombrando sólo `PB9` y la causa *«por inactividad»*, así que una ficha borrada por su dueño
+>      no tiene texto propio en Mi Cuenta.
+> 4. **El contenido de una ficha moderada no tiene fin**: ningún reloj actúa en `MODERATED`, así
+>    que se conserva mientras dure la moderación.
+> 5. **CERRADO por el owner el 2026-09-25** (FASE 8
+>    completa): **borrar lo propio es parte del piso**. La fila 3 de la lista cerrada de la versión de
+>    piso (cap. 02 §2.1) otorga ahora verla, exportarla, reactivarla **y borrarla**, así que el paso 6
+>    autoriza `PB12` siempre, con o sin plan (cap. 17 §1.2 precisión 1). La lista sigue teniendo tres
+>    filas y `G-R3` no cambia: es la misma clave, *«recuperar lo suyo»*, de clase `DE_ACCESO`.
+> 6. **Cerrado**
+>    (revisión del owner, 2026-09-28, N7): releen el estado de la ficha y la pausa, y no salen sobre
+>    una `MODERATED`, una `PURGED` ni con el reloj detenido (`NUCLEO/07` §6). Lo que decía: (FASE 9 completa,
+>    `B-4`; declarado por `DEC-METH-015`, FASE 9 completa). El reloj se escribe en `MODERATED` —el
+>    hecho 5 alcanza a toda ficha del dueño— y, por la letra de los hechos 2 y 5 (el 4 salió con la revisión del owner, 2026-09-28, C8) (*«toda
+>    ficha»*), también en `PURGED`. Sobre una ficha moderada, el aviso anuncia un archivado o un
+>    borrado que `PB4`, `PB5` y `PB9` no van a ejecutar; sobre una purgada, algo que ya pasó.
+>    **Causa**: los avisos leen la columna (`V/02` §2.5, lectores 4 y 5) y no el estado.
+> 7. **Cerrado** (revisión
+>    del owner, 2026-09-28, C9 y N7): el archivado (`PB4` o `PB5`) escribe la fecha de borrado que
+>    anuncia (el instante del archivado más la distancia, sobre el reloj de la ficha, entre su fecha
+>    de archivado y la de borrado, con la versión de plazos que la ficha guarda) y **`PB9` no borra
+>    antes de esa fecha**. Un archivado que corrió tarde anuncia una fecha más tarde, y un `N` de
+>    `PB5` que no queda por debajo del plazo de borrado lo rechaza el panel (`NUCLEO/02` §1.5). Lo
+>    que decía: (FASE 9 completa, `K-5`,
+>    `B-2`, `B-3`; declarado por `DEC-METH-015`, FASE 9 completa). `PB9` exige `ARCHIVED`, así que
+>    el **orden** se cumple siempre; el **espacio** no: `PB9` cuenta sobre `inactiva_desde` y no
+>    sobre el instante del archivado, así que un `N` de `PB5` entre 180 días y 6 meses (`V/20` §2,
+>    `G-R5-B`) o un job de `PB4`/`PB5` caído más que su plazo (`V/02` §4.1) dejan al borrado en la
+>    corrida siguiente al archivado, sin el tiempo para exportar que el aviso supone. **Causa**: el
+>    borrado se ató al reloj de la ficha y no al del archivado. Levantar una moderación larga ya no
+>    es uno de estos casos: `PB11` reinicia el reloj (hecho 6).
+> 8. **El empuje de *«la ficha llegó a `PURGED`»* no tiene transporte durable** (FASE 9 vuelta 1;
+>    owner 2026-09-26, `G2-1`). Éste **sí puede mover plata**, y por eso se nombra aunque el
+>    encabezado diga lo contrario: si el empuje de `PB9` o de `PB12` se pierde, `A6` corre recién
+>    cuando el barrido diario de billing lee `fichaPurgada: sí` (contrato §4.1), y si el cobro
+>    mensual de un destaque `LISTING` cae en ese día, entra. `S21` lo pone delante de una persona
+>    con la marca del motivo 14. **La red es la consulta, no el empuje**, y un borrado que no pasa
+>    por `PB9` ni por `PB12` **—desde `G5-2` el admin
+>    no tiene ninguno (`NUCLEO/08` §3); el que queda es el borrado de la cuenta pedido por el propio
+>    usuario, pendiente en `NUCLEO/08` §1 (fuera de esta épica, **por soporte desde el panel con una lista de pasos que corre `PB12` en cada ficha antes de dar de baja la cuenta (caso I-C), así que ya no borra ninguna ficha sin `PB12`** (revisión del owner, casos vecinos, 2026-09-29, caso F-C), HOS-1393 (`https://linear.app/hospeda-beta/issue/HOS-1393`): revisión del owner, 2026-09-28, N7, `g1`), y `fichaPurgada` contesta `sí` sobre la fila que ya no
+>    existe (FASE 9 vuelta 1, §4 punto 1 de `22-verificado-G2`)—** no empuja nada y depende
+>    sólo de ella. **Un empuje emitido antes del commit no sería un empuje perdido de vez en
+>    cuando: sería un empuje perdido siempre**, porque `A6` relee `fichaPurgada` y lee `no`; por eso
+>    sale después del commit (contrato §3.1; FASE 9 vuelta 1, `N-G2V-01`/`N-G4V-05`). **Causa**: el outbox del núcleo es de correos, y ningún hecho de verticales
+>    tiene transporte durable (`12-contrato…` §3).
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:497, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:402, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:655, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:680
 
 <a id="trans-v-pb11"></a>
 
@@ -1840,127 +1840,6 @@ revisión del owner, 2026-09-28, C8.) En `S13` **no corre**, y no es una excepci
 no queda ninguna sucesora viva a la que pasarle el origen (ver más abajo, *«`S13` alcanza a toda
 fila viva PRINCIPAL»*).
 
-**Texto de la fuente — «La baja tiene CUATRO filas y no una: qué significa cancelar desde cada estado»** (`B/03-maquinas-de-estado.md:886–941`, sin lo tachado):
-
-**El acto es UNO** —*«cancelar una suscripción»*, una de las **veinticinco** *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G; con la vigesimosexta, asignar o quitar el rol `SUPER_ADMIN`: FASE 9 vuelta 3, owner 2026-09-30, lote P; el nombre, lote AC)* del `NUCLEO/08` §3 (la vigesimotercera y la vigesimocuarta, borrar una ficha ajena y **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; revisión del owner, 2026-09-28, N1 y C9: de la decimoctava a la vigesimosegunda, las cinco del catálogo; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la decimoséptima, *«migrar a los clientes de un plan retirado»*: la misma revisión, C15; la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a), con un
-permiso y una confirmación—, y `B/19` §5 lo deja self-service. **Lo que cambia por estado de
-origen es qué queda por terminar**, y eso son cuatro desenlaces distintos que antes estaban
-escritos en un solo renglón:
-
-| desde | fila | a dónde va | qué queda por terminar |
-|---|---|---|---|
-| `ACTIVE` | `S11` | `CANCEL_SCHEDULED` | **el período que ya pagó**: se cancela allá de inmediato y lo sostenemos nosotros hasta esa fecha (`DEC-SUB-009`), que después ejecuta `S12` |
-| `PAUSED` | **`S22`** | `CANCELLED`, **o `CANCEL_SCHEDULED`, sobre una fila que vive del crédito sin consumir** (`V2-b`) | **nada**: `DEC-SUB-010` ya se llevó los días no usados del ciclo al pausar. La fecha de fin de servicio es hoy (`B/12` §7.2). **Salvo el crédito de `DEC-SUB-006` sin consumir, que es período pagado (`R17`): ahí queda hasta el fin del crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`) |
-| `SUSPENDED` | **`S23`** | `CANCELLED` | **nada**: el §21 ya cortó el servicio y el estado no emite fuente. La fecha de fin de servicio es hoy |
-| `GRACE_PERIOD` | **`S24`** | `CANCELLED` | **nada que esté pagado, y sí servicio que cortar**: el cobro del período en curso falló —por eso la fila está en el grace— y el último período pagado ya se consumió, así que la fecha de fin de servicio es hoy (`DEC-SUB-014`). Es la única de las cuatro en que la baja **retira cobertura que estaba corriendo** (§20) |
-
-**Los cuatro estados vivos desde los que alguien puede pedir irse están cubiertos, y son cuatro y
-no seis.** Los otros dos vivos no admiten el acto por razones que no son de esta tabla:
-`PENDING_AUTHORIZATION` no tiene suscripción que dar de baja sino un checkout que terminar o
-abandonar (§3.3.1), y `CANCEL_SCHEDULED` **ya tiene la baja pedida y mandada** (FASE 9 vuelta 3, lote D)
-— pedirla otra vez no es una
-transición, es un acto idempotente sobre el que `S12` ya está ejecutando.
-
-**Por qué las tres nuevas no pasan por `CANCEL_SCHEDULED`, y no es una elección de estilo.** Ese
-estado significa, textual, *«con la baja pedida y mandada al
-proveedor […], con servicio sostenido hasta el fin del período pagado»* (§3.1; FASE 9 vuelta 3, lote D).
-En las tres no hay período pagado que sostener, así que entrar ahí sería
-**prometer un servicio que ninguna de las tres tiene**: desde `PAUSED` porque los días ya se
-perdieron, desde `SUSPENDED` porque el §21 los cortó hace rato —y ahí además lo
-**resucitaría**, que es peor— y desde `GRACE_PERIOD` porque **el período en curso no está
-pagado**: su cobro es justamente el que falló. El §3.3 ya lo impedía para `PAUSED` (*«cualquier
-cosa que no sea `ACTIVE` o `CANCELLED`»*) y acá se escribe la razón para las tres. **Salvo `S22`
-sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2,
-verificación, owner 2026-09-27, `V2-b`): el crédito es período pagado (`R17`), así que ahí sí hay
-qué sostener y la fila pasa por `CANCEL_SCHEDULED` hasta el fin del crédito. **`S13` es el
-precedente exacto**: alcanza a las filas en `PAUSED`, en `SUSPENDED` y en `GRACE_PERIOD`, cancela
-el preapproval y las manda directo a `CANCELLED`, sin escala y sin fecha de fin de servicio.
-
-**Y el servicio que `S24` corta no se le regala hasta el fin del grace**, que era la otra
-respuesta posible. El reloj del §4 existe para acotar el servicio que se le presta a quien no
-pagó (`B/12` §4.3, *«el grace no es un beneficio de entrada»*); dejarlo correr sobre alguien que
-**ya decidió irse** alarga ese regalo sin que nadie lo haya elegido, y **deja el candado `A`
-ocupado** mientras tanto — el mismo encierro que `S23` vino a romper (`DEC-SUB-014`).
-
-**No compiten con ninguna fila, y se verifica por pares** (`NUCLEO/03` §1, regla 7). `S22`
-comparte `desde` con `S10`, cuyo evento es *«llega el fin, o la persona vuelve antes»*; `S23` lo
-comparte con `S7` y con `S19`, cuyo evento es *«entra el pago»*; `S24` lo comparte con `S5` y con
-`S19` —*«entra el pago»*— y con `S6`, cuyo evento es *«se agota el reloj»*. **Ninguna otra fila de
-esta tabla declara el evento de la baja**, así que los tres pares nuevos tienen una sola fila cada
-uno. **La tabla de pares con dos filas no crece por la baja** (`S25` salió con la revisión
-del owner, 2026-09-28, C8).
-
-**Y ninguna de las tres es consumidora de *«fila viva»***, así que el inventario de `NUCLEO/01`
-§2.4 no gana filas: su `desde` es **un estado concreto** y no el conjunto. Lo contrario habría
-sido escribirlas como `S13` —*«toda fila viva…»*—, y sobre este acto eso sería falso: la baja la
-pide una persona sobre **su** fila, no un barrido sobre un conjunto.
-
-**Texto de la fuente — «Y no alcanza a los complementos: el `desde` dice «principal» y eso es una acotación, no un matiz»** (`B/03-maquinas-de-estado.md:1016–1081`, sin lo tachado):
-
-**Una suscripción de complemento es una fila de `subscription` como cualquier otra** —con su
-`clase`, su `vertical` y su propio preapproval (`B/02` §2.2, `DEC-ADDON-002`)—, y el §3 declara
-que *«usan esta misma máquina»*. Con el `desde` escrito como *«toda fila viva del beneficiario en
-cada vertical que el acto ancla»*, **entraban por pertenencia al conjunto**, y el resultado era
-malo en las dos direcciones:
-
-- **hacia perder lo pagado**: el *«Boost 30 días»* que el beneficiario compró ayer quedaba con su
-  preapproval cancelado de forma irreversible (`PA-5`) y **sin reembolso** (`DEC-GRANT-001`), en el
-  mismo acto en que se le regala el plan;
-- **hacia regalar lo que nadie paga**: para un addon de scope `USER` o `GLOBAL` el objetivo es la
-  cuenta, que no se borró, así que **no queda huérfano** (`B/16` §4.2) — pero su cobro ya estaba
-  cancelado, y **ninguna transición de la máquina de addon tiene por evento *«mi suscripción de
-  complemento fue cancelada»*** (`A4` es su fecha de fin, `A5` la baja, la orfandad o la
-  revocación de su grant-título, y `A6` el borrado de la ficha, §8). La instancia se quedaba `ACTIVE` y gratis para
-  siempre.
-
-  > **`S20` deja a esa instancia exactamente así —`ACTIVE` y gratis— y no es el mismo desenlace**,
-  > aunque la foto coincida. Acá el addon quedaba gratis **porque nadie decidió nada** y sin
-  > ninguna forma de apagarse: el grant se revocaba y seguía encendido para siempre. Con `S20` es
-  > gratis **porque el §35.2 lo declara gratis** mientras el grant dure, la instancia **cuelga del
-  > ancla** y **tiene apagado declarado**: la tercera cláusula del evento de `A5` la corta cuando
-  > se revoca el grant (§8, `B/16` §3.3). Lo que hacía inadmisible este camino no era que el addon
-  > quedara gratis: era que **nada lo volvía a apagar**.
-
-**Las tres reglas que lo prohíben ya estaban escritas, y ninguna es de acá**: el §41 ordena *«no
-cancelar ciegamente»* y cancelar *«sólo cuando queda efectivamente huérfano»*; `DEC-ADDON-002`
-implicación 6 dice que **cancelar el plan NO cancela los addons**; y
-`12-contrato-de-cobertura.md` (`../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md`)
-§2.4 lo dice del caso exacto —*«quien tiene *Free Forever* y un addon **conserva los dos**»*—.
-`S13` cancelaba **por pertenecer al conjunto**, sin evaluar ninguna condición, que es literalmente
-lo que el §41 prohíbe.
-
-**Qué le pasa entonces a la instancia del addon, dicho para que no quede en la inferencia:**
-
-| scope del addon (§40) | qué pasa cuando `S13` mata la principal de esa vertical |
-|---|---|
-| `VERTICAL_SUBSCRIPTION` | **no queda huérfano**: el grant que acaba de caer **vale como título en esa vertical** (`B/16` §2.4), y ésa es la tercera salvedad de la condición de `B/16` §4.2. Sin ella, `A5` lo cancelaría de inmediato por la otra puerta y *«conserva los dos»* sería falso igual |
-| `USER` · `GLOBAL` | **no queda huérfano**: el objetivo es la cuenta y la cuenta no se borró. Ya era así; lo que cambia es que ahora `S13` tampoco le cancela el cobro |
-| `LISTING` | **no lo toca nadie**: su objetivo es la ficha (`B/16` §4.2) |
-
-**Y `S13` no le apaga el cobro a ninguno de los tres, que es lo que esta acotación garantiza.** Es
-la regla 1 del núcleo leída en la dirección que menos se lee: lo que la tabla no declara **no
-pasa**, así que un grant que no alcanza al complemento tampoco lo deja gratis por accidente.
-
-**Lo que SÍ se lo apaga es `S20`, y es otra fila con otra condición.** Que la instancia sobreviva
-al grant no decidía de dónde sale la plata, y **durante toda una tanda nadie lo escribió**: el
-beneficiario de un *Free Forever* con `includesAddons: true` seguía pagando todos los meses un
-addon que su propio flag le declaraba gratis. Eso lo cierra `S20` (arriba, y el caso entero en
-`B/16` §3.4), que **evalúa una condición** —el flag, la compatibilidad del producto con la
-vertical anclada y, en los scopes con vertical propia, el objetivo— en vez de alcanzar por
-pertenencia. Las dos afirmaciones conviven sin contradecirse porque **hablan de conjuntos
-distintos**: `S13` de las principales, `S20` de las de complemento que cumplen su condición. Un
-complemento **no compatible**, o cualquiera si el flag es `false`, **sigue cobrando** — y sigue
-siendo lo correcto, por la misma razón por la que `S13` no lo alcanza.
-
-**`S13` y `S20` comparten el evento y NO comparten el par, así que `G-R4` no tiene nada que
-mirar.** El evento es el mismo —otorgar, o anclar una vertical nueva—, pero el `desde` de una es
-*«toda fila viva **principal**»* y el de la otra *«toda fila viva **de complemento**»*, y la
-partición por `clase` (`B/02` §2.2) hace que los dos conjuntos sean **disjuntos por
-construcción**: ninguna fila puede satisfacer los dos. La regla 7 del núcleo pide guardas
-disjuntas cuando el par coincide; acá **el par no coincide**, y **los pares con dos filas de
-esta tabla no crecen por `S20`/`S21`** — hoy son **tres**:
-el cuarto, `S10`/`S25`, salió con la revisión del owner, 2026-09-28, C8 (`NUCLEO/03` §1 regla 7).
-
 **Texto de la fuente — «3.4 Las cuatro precisiones que `M-SUB-01` pedía sobre `PENDING_AUTHORIZATION`»** (`B/03-maquinas-de-estado.md:1520–1588`, sin lo tachado):
 
 El §5.6 define el modelo actual —Hospeda crea el preapproval y después manda a autorizar—, así
@@ -2027,140 +1906,6 @@ cuatro cosas y acá están las cuatro:
    cierre no espera la autorización cuando la predecesora se murió sola (§3.2). Sin ese segundo
    evento de `S18` esta frase era falsa exactamente para la población que más la necesita: el
    cliente al que le rechazaron el primer cobro (`S16`) con un cambio de plan en curso.
-
-**Texto de la fuente — «4. Grace»** (`B/03-maquinas-de-estado.md:1589–1655`, sin lo tachado):
-
-Sub-estado de Suscripción con reloj propio. Entra por `S4` y sale por `S5`, por `S6` o por
-**`S24`**, la baja que la persona pide en el medio (`DEC-SUB-014`), **o por `S36`**, la revocación
-dentro de los 10 días, que apaga el reloj (FASE 9 vuelta 1, `N-G3V-04`) — y por `S17` o
-`S13`, si la fila es la predecesora de una sucesión que se consuma o le cae un grant, (`S26` salió con la revisión del owner, 2026-09-28, C8) **o por el espejo de la baja decidida por el
-proveedor** (§10.1), con las salvedades de ese par que alcanzan al grace —las dos de `S6`: la sucesora de la
-rama de `S4` y el reloj ya agotado— (FASE 9 vuelta 1,
-`F-8V1B2-011`); en una fila de complemento, además, por `S20` o `S21` (§3.2; FASE 8 completa, `F-8CD1-011`). **Mientras
-esa sucesión esté en curso, ni `S5` ni `S6` por sus eventos primero, segundo, cuarto y quinto se ejecutan** —**por el tercero, un contracargo, `S6` corre igual y `S31` corta a la sucesora** (`DEC-SUB-020`, su 📌; FASE 9 completa, C4)—: el pago que entre queda pendiente por
-`S19` y el reloj no vence sobre él (§3.2). **Y vale también para el segundo evento de `S6`** —la
-pausa del proveedor por mora, que puede llegar con la fila todavía en `ACTIVE` (`DEC-MP-008`)—: a
-quien está en medio de un cambio de plan no se lo suspende por eso (owner, 2026-09-24).
-
-**Desde `DEC-SUB-021` la redeclaración que ese límite frenaba no puede ocurrir** (owner
-2026-09-25): el abuso —redeclarar una sucesión cada 72 h, o cada 7 días si paga a mano, para tener
-servicio completo sin pagar nunca (FASE 8 completa, `F-8CB1-005`, `F-8CB2-008`)— necesitaba
-**declarar desde `GRACE_PERIOD`**, y desde el grace ya no se declara (`G-R1-A`, `B/20` §2). **Lo que
-sigue vigente es la protección**, y vale para la única sucesión que todavía puede tener a la fila
-en el grace: **una declarada en `ACTIVE` cuya predecesora entra en el grace durante la ventana**
-(`S4`). Esa sucesión sigue su curso, `S6` no la suspende mientras esté en curso, y si la sucesora
-muere `S6` corre en la corrida siguiente — sin una segunda sucesión posible que lo vuelva a frenar,
-porque la fila ya está en `GRACE_PERIOD`. La fila `S6` de la tabla dice lo mismo (la salvedad del segundo evento se cerró el 2026-09-25; FASE 9
-completa, C4).
-
-**Y ahora entra también una sucesora que nunca cobró** (owner 2026-09-25; FASE 9 completa, 3c,
-contra la recomendación): si su predecesora venía pagando y el primer cobro de la sucesora se
-rechaza, va a `S4` y no a `S16` (§3.2). Es un grace sobre una autorización que el proveedor pudo
-haber cancelado ya (`PA-6`, `UNKNOWN`), y por eso tiene un control propio: **el barrido diario
-relee su preapproval por id; si lo ve `cancelled` o `paused`, `S6` corre en el acto** —cancelación
-de nuestro lado de lo que quede vivo y aviso de suspensión con *«volvé a suscribirte»*—, con la
-misma forma que `DEC-MP-008`. El riesgo de `PA-6` queda acotado a un día.
-
-| | |
-|---|---|
-| **cuándo entra** | falla un cobro de una suscripción `ACTIVE` (§20). **En un pagador con tarjeta, es el primer rechazo de un cobro de renovación, leído por id** (`B/12` §1.2, `D17`), no el fin de los reintentos del proveedor, que no emite evento (`GR-3`) — **o el primer cobro rechazado de una sucesora cuya predecesora venía pagando** (owner 2026-09-25; FASE 9 completa, 3c) |
-| **cuánto dura** | los días que declara **la versión de plan**, default **10** (`DEC-SUB-002`) — y **siempre menos que el ciclo de esa versión** (`DEC-SUB-019`): el proveedor reintenta durante **un ciclo** (sonda 49) y después pausa, así que un grace más largo dejaría la fila con servicio completo y sin nadie que vaya a cobrar. Es validación de la configuración |
-| **qué pasa durante** | §20: servicio activo, fichas publicadas, edición activa, entitlements activos, advertencias y correos. **Y un cambio programado cuya fecha llega se aplica igual, por `S38`** (revisión del owner, casos vecinos, 2026-09-29, caso G-A) |
-| **cómo sale bien** | entra el pago → `ACTIVE` |
-| **cómo sale mal** | se agota el reloj → `SUSPENDED`, **y en un pagador con tarjeta se cancela el preapproval** (`S6`, `DEC-SUB-019`) — **o antes del reloj**: el proveedor pausa (`DEC-MP-008`), un contracargo, el admin confirma la cuota impaga (`MP2`), o, sobre la sucesora de 3c, el barrido lee su preapproval `cancelled` (FASE 9 completa, C8 y 3c) |
-| **qué se puede hacer adentro** | **regularizar, y recién después cambiar de plan** (`DEC-SUB-021`, owner 2026-09-25, que supera a `DEC-SUB-003`). **Con tarjeta, cambiar la tarjeta** del preapproval, que se puede sin recrearlo (`EX-36`): los reintentos del proveedor, que siguen durante un ciclo (`GR-3`), cobran con ella, y la fila vuelve a `ACTIVE` por `S5` (tachado 2026-09-26) — **medido: `GR-1` `VERIFIED` el 2026-09-26** —cambiar el medio de pago dispara un reintento que cobra con el nuevo, sobre el mismo registro (sonda 49)—, **así que la pantalla y los correos del grace pueden decir que al cambiar la tarjeta se reintenta el cobro** (`B/12` §1.5; `B/19` §4 filas 9 y 17-bis). Sigue sin medir cuántos reintentos de un plan mensual o anual caen dentro del grace (`B/12`, *«lo que este capítulo NO cierra»*) (FASE 9 vuelta 1, `F-8V1B1-008`). **Con pago manual, pagar la cuota**. **Recién en `ACTIVE` se cambia de plan**: desde `GRACE_PERIOD` no se declara una sucesión (`G-R1-A`), y la pantalla lo dice (§3.3.1, `B/19` §4 fila 17-bis). El motivo: `S17` cancela la predecesora al **autorizar** la sucesora y `D8` le difiere el primer cobro, así que si ese cobro falla —con la misma tarjeta que venía fallando— la persona se queda sin nada (FASE 8 completa, `F-8CD1-002`, `F-8CB1-009`) |
-
-**Tres cosas que el reloj tiene que respetar:**
-
-- **El reloj decide cuándo se pregunta, no qué pasó.** Si cobró o no lo sabe el proveedor, así
-  que antes de suspender **se le pregunta** (`S6`). Sin eso, un webhook perdido suspende a alguien
-  que pagó, y el barrido diario lo repara con hasta un día de atraso. La pregunta se hace **con la
-  lectura del `B/09` §4**, que es el único lugar del diseño que decide *«cobró o no»*: `S6` no
-  elige campo, así que cuando esa lectura se corrija, `S6` queda corregido sin tocarlo. Y si el
-  proveedor no contesta, **no se suspende**: el costo de esperar una corrida es que un moroso
-  conserve el servicio un poco más, y el de no esperar es suspender a un cliente al día.
-
-- **Los correos del §42.3 son relativos al vencimiento, no absolutos.** Si la ventana es
-  configurable, un schedule con días fijos se cae fuera de la ventana en los planes con grace
-  más corto (`DEC-SUB-002`).
-- **El reloj no puede preguntar «¿ya cobró?» a una hora exacta.** Está medido que el cobro del
-  proveedor llega tarde y que el retraso es variable —33 minutos en una renovación de sandbox,
-  ~26 en producción, ~100 segundos en un alta—. Toda comparación contra el reloj lleva margen.
-
-**Texto de la fuente — «5. Pausa»** (`B/03-maquinas-de-estado.md:1656–1739`, sin lo tachado):
-
-Sub-estado de Suscripción con reloj propio **y motivo obligatorio**. Entra por S8 o S9 —**y una
-fila de complemento, por `S32`**, junto con su principal pausada por el cliente o suspendida (owner 2026-09-25, FASE 9 completa, 4a; la suspensión, owner 2026-09-26, `G2-2`)—, sale
-por S10 (**la de complemento, por `S33`**) — **o termina, sin reanudar, por `S22` (la persona pide la baja), por `S13` (le cae un grant), por
-`S17` (la sucede otra fila que se autorizó) o por el espejo de la baja decidida por el proveedor
-(§10.1)** —**o por `S36`**, la revocación del derecho de arrepentimiento (owner 2026-09-26, `X-2`;
-FASE 9 vuelta 2, `F-8V2D1-003`)—; en una fila de complemento, además, por `S20` o
-`S21` (§3.2; FASE 8 completa, `F-8CD1-011`: este párrafo nombraba dos terminales y omitía `S25` y
-`S17`; el espejo, FASE 9 completa, contradicción 2 de `03` §R4.5). **Y dentro de `PAUSED · COURTESY`
-hay dos filas que no salen del estado**: `S34` suma meses a la cortesía y `S35` la cambia por una
-pausa pedida por la persona (FASE 9 completa, contradicciones 4 y 5). **Las cinco terminales** (revisión del owner, 2026-09-28, C8: sale `S25`) mandan la fila a `CANCELLED` y **cierran
-la pausa** —el `fin_real` lo escriben `S22`, **y desde el 2026-09-25 también `S13` y
-`S17`** cuando la fila que cancelan estaba `PAUSED` (FASE 8 completa, `F-8CD1-007`), **y el espejo
-con el día de la relectura** (FASE 9 completa), **y `S36` con el día del registro** (FASE 9 vuelta
-2, `F-8V2D1-003`)—, así que la que sostiene lo que sigue es S10, **que
-también escribe `fin_real`** (FASE 9 completa, contradicción 3). **Y una pausa por cortesía se corta además por `S6`**, si un
-contracargo cae sobre ella: la fila va a `SUSPENDED` y la pausa se cierra con su `fin_real` (§3.2;
-FASE 8 completa, pendiente 8, owner 2026-09-25).
-
-| | |
-|---|---|
-| **motivos** | `CUSTOMER_REQUEST` · `COURTESY`. Valor cerrado |
-| **unidad** | **meses enteros** (`DEC-SUB-010`). No existe la pausa intra-ciclo |
-| **cuándo empieza** | en el momento en que se pide, no al fin del ciclo |
-| **quién la termina** | **la termina nuestro reloj, y del lado del proveedor no hay segunda vía**: está medido que **no tiene auto-reanudación** (`PS-4`). Por eso `S10` lleva **rama de fallo y detector** (§3.2, *«`S10` es la única salida de `PAUSED` que devuelve el servicio»*). **Que el reloj la termine es siempre reanudarla** (revisión del owner, 2026-09-28, C8: `S25` salió). **Y la persona tiene su propia vía, que tampoco reanuda: es irse** (`S22`) |
-| **qué pasa al volver** | se cobra normal en el ciclo siguiente; reanudar cambia **sólo el estado** y no dispara cobro de recuperación ni deja deuda (`PS-5`) |
-| **límites** | los del §26.3, reexpresados en meses: **4 pausas-mes** por pausa y **8** acumulados en 12 meses; máximo 3 pausas por ventana. Se cuentan por `user + vertical` y **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`). **Se cuentan sólo sobre filas principales**: la pausa que `S32` le abre a un complemento acompaña a la de su principal y no gasta cupo (FASE 9 completa, 4a) |
-
-**Qué le pasa a la ficha mientras dura la pausa, porque esto no se puede escribir de un solo
-lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…` §2.6), así que
-`cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9) **y en ese acto arranca el
-reloj de inactividad** —el hecho 5 del `NUCLEO/01` §1.2, FASE 8 completa, `F-8CA2-001`, owner
-2026-09-25—, **en ella y en todas las demás fichas del dueño en la vertical**, que el recálculo del
-aviso escribe sin pasar por `PB2` (owner 2026-09-25). **Y el reloj de inactividad de verticales se detiene mientras dure la pausa** (revisión del owner, 2026-09-28, C14): el hecho 5 lo escribe igual, pero `PB4`, `PB5` y `PB9` no actúan mientras `retenciónDetenida` conteste `sí`.
-
-**Desde la revisión del owner la pausa pedida por el cliente detiene el reloj de retención**
-(revisión del owner, 2026-09-28, C14, `L1-c`): verticales pregunta `retenciónDetenida` (`12-contrato…` §4.1) antes de
-archivar, borrar o avisar, y con esta fila en `PAUSED` la respuesta es `sí`. **La ficha ya no se
-archiva durante la pausa**, y lo que sigue sobre el tope y el día 180 queda como historia. Lo que
-antes protegía al cliente eran **tres** cosas:
-**`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar; **el tope de una
-pausa es menor que el día del hard delete** —4 pausas-mes, unos 120 días, contra 180 (`V/02`
-§4.1)—; y **que la reanudación efectivamente ocurra**, que es la premisa de las otras dos.
-
-(Salen `D16` y `G-R5`, revisión del owner, 2026-09-28, C14: el
-tope de pausa ya no está atado al día 180.) El aviso que se lo dice antes de confirmar es `B/19` §4, fila 5-bis.
-
-**La tercera es la única que depende de que un job corra, y por eso es la que lleva las dos
-escrituras nuevas.** Sigue en pie con C14: una reanudación que no ocurre deja el reloj detenido y
-al cliente sin servicio. Lo que la vigila es la **rama de fallo de `S10`**
-—la relectura que, si el proveedor sigue diciendo `paused`, deja la fila donde está y pone la
-marca— y la **quinta comprobación de cero llamadas** de `B/09` §3, que encuentra la pausa cuyo
-`fin_previsto` pasó y sigue sin `fin_real`. Sin las dos, la premisa con la que `DEC-DATA-002`
-declaró *«el daño residual es cero»* no la sostenía nada.
-
-**El motivo no es un adorno, y ésta es la razón exacta**: en el proveedor una cortesía y una
-pausa pedida por el cliente **se ven idénticas** —el mismo `paused`, sin ningún campo que las
-distinga—, así que un reloj que leyera el estado del proveedor reanudaría la cortesía de quien
-había pedido pausa, o al revés (`DEC-GRANT-004`). **El reloj lee el motivo, nunca al proveedor.**
-
-**Los tres cruces entre pausa y cortesía** ya están decididos (`DEC-GRANT-004`) y la máquina los
-ejecuta así: en cortesía pide pausar → **se permite**, avisando que pierde la cortesía que le
-quedaba —**lo ejecuta `S35`**—; en pausa se intenta otorgar cortesía → **se bloquea**; cortesía sobre cortesía → **se
-suman los meses** y el aviso dice la fecha de fin nueva —**lo ejecuta `S34`**— (FASE 8 completa,
-`F-8CB1-001`, owner 2026-09-25: la cortesía temporal es en meses enteros y sólo sobre planes
-mensuales, `DEC-GRANT-003` impl. 6 y `DEC-GRANT-004` punto 3). **Hasta la FASE 9 completa dos de
-los tres cruces no tenían fila**: `S8` y `S9` salen sólo de `ACTIVE`, así que el primero y el
-tercero no los ejecutaba nadie (contradicciones 4 y 5 de `03` §R4.5; `S34` y `S35`, §3.2).
-
-**Y una pausa pedida por el cliente pausa también sus complementos recurrentes** (owner
-2026-09-25; FASE 9 completa, 4a, `F-8CC1-004`): los de esa vertical, y los `USER`/`GLOBAL` sólo si
-no les queda título sin pausar en otra vertical compatible, por los mismos meses (`S32`), y se
-reanudan con ella (`S33`). Una pausa por cortesía no los toca, porque la cortesía emite título.
 
 **Texto de la fuente — «10. La regla de no-retroceso · cierra `M-CONC-02`»** (`B/03-maquinas-de-estado.md:2689–2713`, sin lo tachado):
 
@@ -2480,7 +2225,7 @@ releyendo y comparando campo por campo cada campo que se mandó**, porque está 
   cuota**: `MP6` no tiene período con qué chocar y no corre, así que también se devuelve por fuera.
   Exige una transferencia a una suscripción que nunca llegó a cobrar.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:21, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:46, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:285, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:377, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:886, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1016, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1520, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1589, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1656, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2689, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2714, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2748, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2801, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2833, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2839, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2849
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:849, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:21, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:46, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:285, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:377, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1520, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2689, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2714, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2748, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2801, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2833, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2839, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2849
 
 <a id="trans-b-s2"></a>
 
@@ -2643,7 +2388,66 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): **la fila tiene al menos un pago acreditado** (`B/09` §4; en un pagador manual lo cumple toda fila `ACTIVE`, porque `S29` sólo llega ahí con la primera cuota registrada) — **o es la sucesora de una predecesora que venía pagando** —la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, no desde `SUSPENDED`, y la predecesora tiene al menos un pago acreditado; se lee por el `sucede_a` de esta fila o, cerrada ya la sucesión por `S18`, por el `sucedida_por` de la predecesora—, **y éste es su primer cobro** (owner 2026-09-25; FASE 9 completa, 3c, **contra la recomendación**: que quien venía pagando no quede sin nada por el primer cobro fallido del plan nuevo). **Sobre una autorización sin ningún pago acreditado y sin esa predecesora manda `S16`**, no esta fila (abajo, *«el primer rechazo lo reclamaban tres filas»*; FASE 8 completa, `F-8CB2-006`, `F-8CB1-010`)
 - **efectos** (efectos): arranca el reloj del §4; el servicio **sigue entero** (§20). **Y si entró por la rama de la sucesora**, el barrido relee su preapproval por id en cada corrida diaria (`D17`, `B/09` §3): si el proveedor lo **canceló** o lo **pausó**, el grace termina en el acto por `S6` (su segundo evento sobre `paused`, o el quinto sobre `cancelled`) —un grace sobre una autorización que ya no puede cobrar es el que `PA-6` teme—, **con la misma forma que `DEC-MP-008`**. Así el riesgo de `PA-6` queda acotado a un día
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:154, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852
+**Texto de la fuente — «4. Grace»** (`B/03-maquinas-de-estado.md:1589–1655`, sin lo tachado):
+
+Sub-estado de Suscripción con reloj propio. Entra por `S4` y sale por `S5`, por `S6` o por
+**`S24`**, la baja que la persona pide en el medio (`DEC-SUB-014`), **o por `S36`**, la revocación
+dentro de los 10 días, que apaga el reloj (FASE 9 vuelta 1, `N-G3V-04`) — y por `S17` o
+`S13`, si la fila es la predecesora de una sucesión que se consuma o le cae un grant, (`S26` salió con la revisión del owner, 2026-09-28, C8) **o por el espejo de la baja decidida por el
+proveedor** (§10.1), con las salvedades de ese par que alcanzan al grace —las dos de `S6`: la sucesora de la
+rama de `S4` y el reloj ya agotado— (FASE 9 vuelta 1,
+`F-8V1B2-011`); en una fila de complemento, además, por `S20` o `S21` (§3.2; FASE 8 completa, `F-8CD1-011`). **Mientras
+esa sucesión esté en curso, ni `S5` ni `S6` por sus eventos primero, segundo, cuarto y quinto se ejecutan** —**por el tercero, un contracargo, `S6` corre igual y `S31` corta a la sucesora** (`DEC-SUB-020`, su 📌; FASE 9 completa, C4)—: el pago que entre queda pendiente por
+`S19` y el reloj no vence sobre él (§3.2). **Y vale también para el segundo evento de `S6`** —la
+pausa del proveedor por mora, que puede llegar con la fila todavía en `ACTIVE` (`DEC-MP-008`)—: a
+quien está en medio de un cambio de plan no se lo suspende por eso (owner, 2026-09-24).
+
+**Desde `DEC-SUB-021` la redeclaración que ese límite frenaba no puede ocurrir** (owner
+2026-09-25): el abuso —redeclarar una sucesión cada 72 h, o cada 7 días si paga a mano, para tener
+servicio completo sin pagar nunca (FASE 8 completa, `F-8CB1-005`, `F-8CB2-008`)— necesitaba
+**declarar desde `GRACE_PERIOD`**, y desde el grace ya no se declara (`G-R1-A`, `B/20` §2). **Lo que
+sigue vigente es la protección**, y vale para la única sucesión que todavía puede tener a la fila
+en el grace: **una declarada en `ACTIVE` cuya predecesora entra en el grace durante la ventana**
+(`S4`). Esa sucesión sigue su curso, `S6` no la suspende mientras esté en curso, y si la sucesora
+muere `S6` corre en la corrida siguiente — sin una segunda sucesión posible que lo vuelva a frenar,
+porque la fila ya está en `GRACE_PERIOD`. La fila `S6` de la tabla dice lo mismo (la salvedad del segundo evento se cerró el 2026-09-25; FASE 9
+completa, C4).
+
+**Y ahora entra también una sucesora que nunca cobró** (owner 2026-09-25; FASE 9 completa, 3c,
+contra la recomendación): si su predecesora venía pagando y el primer cobro de la sucesora se
+rechaza, va a `S4` y no a `S16` (§3.2). Es un grace sobre una autorización que el proveedor pudo
+haber cancelado ya (`PA-6`, `UNKNOWN`), y por eso tiene un control propio: **el barrido diario
+relee su preapproval por id; si lo ve `cancelled` o `paused`, `S6` corre en el acto** —cancelación
+de nuestro lado de lo que quede vivo y aviso de suspensión con *«volvé a suscribirte»*—, con la
+misma forma que `DEC-MP-008`. El riesgo de `PA-6` queda acotado a un día.
+
+| | |
+|---|---|
+| **cuándo entra** | falla un cobro de una suscripción `ACTIVE` (§20). **En un pagador con tarjeta, es el primer rechazo de un cobro de renovación, leído por id** (`B/12` §1.2, `D17`), no el fin de los reintentos del proveedor, que no emite evento (`GR-3`) — **o el primer cobro rechazado de una sucesora cuya predecesora venía pagando** (owner 2026-09-25; FASE 9 completa, 3c) |
+| **cuánto dura** | los días que declara **la versión de plan**, default **10** (`DEC-SUB-002`) — y **siempre menos que el ciclo de esa versión** (`DEC-SUB-019`): el proveedor reintenta durante **un ciclo** (sonda 49) y después pausa, así que un grace más largo dejaría la fila con servicio completo y sin nadie que vaya a cobrar. Es validación de la configuración |
+| **qué pasa durante** | §20: servicio activo, fichas publicadas, edición activa, entitlements activos, advertencias y correos. **Y un cambio programado cuya fecha llega se aplica igual, por `S38`** (revisión del owner, casos vecinos, 2026-09-29, caso G-A) |
+| **cómo sale bien** | entra el pago → `ACTIVE` |
+| **cómo sale mal** | se agota el reloj → `SUSPENDED`, **y en un pagador con tarjeta se cancela el preapproval** (`S6`, `DEC-SUB-019`) — **o antes del reloj**: el proveedor pausa (`DEC-MP-008`), un contracargo, el admin confirma la cuota impaga (`MP2`), o, sobre la sucesora de 3c, el barrido lee su preapproval `cancelled` (FASE 9 completa, C8 y 3c) |
+| **qué se puede hacer adentro** | **regularizar, y recién después cambiar de plan** (`DEC-SUB-021`, owner 2026-09-25, que supera a `DEC-SUB-003`). **Con tarjeta, cambiar la tarjeta** del preapproval, que se puede sin recrearlo (`EX-36`): los reintentos del proveedor, que siguen durante un ciclo (`GR-3`), cobran con ella, y la fila vuelve a `ACTIVE` por `S5` (tachado 2026-09-26) — **medido: `GR-1` `VERIFIED` el 2026-09-26** —cambiar el medio de pago dispara un reintento que cobra con el nuevo, sobre el mismo registro (sonda 49)—, **así que la pantalla y los correos del grace pueden decir que al cambiar la tarjeta se reintenta el cobro** (`B/12` §1.5; `B/19` §4 filas 9 y 17-bis). Sigue sin medir cuántos reintentos de un plan mensual o anual caen dentro del grace (`B/12`, *«lo que este capítulo NO cierra»*) (FASE 9 vuelta 1, `F-8V1B1-008`). **Con pago manual, pagar la cuota**. **Recién en `ACTIVE` se cambia de plan**: desde `GRACE_PERIOD` no se declara una sucesión (`G-R1-A`), y la pantalla lo dice (§3.3.1, `B/19` §4 fila 17-bis). El motivo: `S17` cancela la predecesora al **autorizar** la sucesora y `D8` le difiere el primer cobro, así que si ese cobro falla —con la misma tarjeta que venía fallando— la persona se queda sin nada (FASE 8 completa, `F-8CD1-002`, `F-8CB1-009`) |
+
+**Tres cosas que el reloj tiene que respetar:**
+
+- **El reloj decide cuándo se pregunta, no qué pasó.** Si cobró o no lo sabe el proveedor, así
+  que antes de suspender **se le pregunta** (`S6`). Sin eso, un webhook perdido suspende a alguien
+  que pagó, y el barrido diario lo repara con hasta un día de atraso. La pregunta se hace **con la
+  lectura del `B/09` §4**, que es el único lugar del diseño que decide *«cobró o no»*: `S6` no
+  elige campo, así que cuando esa lectura se corrija, `S6` queda corregido sin tocarlo. Y si el
+  proveedor no contesta, **no se suspende**: el costo de esperar una corrida es que un moroso
+  conserve el servicio un poco más, y el de no esperar es suspender a un cliente al día.
+
+- **Los correos del §42.3 son relativos al vencimiento, no absolutos.** Si la ventana es
+  configurable, un schedule con días fijos se cae fuera de la ventana en los planes con grace
+  más corto (`DEC-SUB-002`).
+- **El reloj no puede preguntar «¿ya cobró?» a una hora exacta.** Está medido que el cobro del
+  proveedor llega tarde y que el retraso es variable —33 minutos en una renovación de sandbox,
+  ~26 en producción, ~100 segundos en un alta—. Toda comparación contra el reloj lleva margen.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:154, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:852, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1589
 
 <a id="trans-b-s5"></a>
 
@@ -2928,7 +2732,82 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): `puedePausar()` (capítulo 01 (núcleo) §3) — **y el `PUT paused` se aplicó, confirmado por relectura**, la misma regla que `S10` y `S17` (FASE 9 completa, `F-8CB2-003`)
 - **efectos** (efectos): se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`). **Si la relectura sigue viendo `authorized`, `S8` NO ocurre**: la fila se queda en `ACTIVE`, no se abre la `subscription_pause`, y **`S14` pone la marca con motivo `PAUSA_NO_APLICADA`** (`B/02` §2.5, motivo 22) — sin esto la fila quedaba `PAUSED` de nuestro lado con el proveedor cobrando, y el espejo leía ese `authorized` como una reanudación (§10.1). En un pagador manual no hay `PUT` y esta parte no corre. **Y si `S8` ocurre, sus complementos recurrentes de esa vertical se pausan con ella, por `S32`** (owner 2026-09-25; FASE 9 completa, 4a, `F-8CC1-004`): sin eso el addon cobraba todos los meses de la pausa sin dar nada, porque sin título el pliegue lo descarta
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:158, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856
+**Texto de la fuente — «5. Pausa»** (`B/03-maquinas-de-estado.md:1656–1739`, sin lo tachado):
+
+Sub-estado de Suscripción con reloj propio **y motivo obligatorio**. Entra por S8 o S9 —**y una
+fila de complemento, por `S32`**, junto con su principal pausada por el cliente o suspendida (owner 2026-09-25, FASE 9 completa, 4a; la suspensión, owner 2026-09-26, `G2-2`)—, sale
+por S10 (**la de complemento, por `S33`**) — **o termina, sin reanudar, por `S22` (la persona pide la baja), por `S13` (le cae un grant), por
+`S17` (la sucede otra fila que se autorizó) o por el espejo de la baja decidida por el proveedor
+(§10.1)** —**o por `S36`**, la revocación del derecho de arrepentimiento (owner 2026-09-26, `X-2`;
+FASE 9 vuelta 2, `F-8V2D1-003`)—; en una fila de complemento, además, por `S20` o
+`S21` (§3.2; FASE 8 completa, `F-8CD1-011`: este párrafo nombraba dos terminales y omitía `S25` y
+`S17`; el espejo, FASE 9 completa, contradicción 2 de `03` §R4.5). **Y dentro de `PAUSED · COURTESY`
+hay dos filas que no salen del estado**: `S34` suma meses a la cortesía y `S35` la cambia por una
+pausa pedida por la persona (FASE 9 completa, contradicciones 4 y 5). **Las cinco terminales** (revisión del owner, 2026-09-28, C8: sale `S25`) mandan la fila a `CANCELLED` y **cierran
+la pausa** —el `fin_real` lo escriben `S22`, **y desde el 2026-09-25 también `S13` y
+`S17`** cuando la fila que cancelan estaba `PAUSED` (FASE 8 completa, `F-8CD1-007`), **y el espejo
+con el día de la relectura** (FASE 9 completa), **y `S36` con el día del registro** (FASE 9 vuelta
+2, `F-8V2D1-003`)—, así que la que sostiene lo que sigue es S10, **que
+también escribe `fin_real`** (FASE 9 completa, contradicción 3). **Y una pausa por cortesía se corta además por `S6`**, si un
+contracargo cae sobre ella: la fila va a `SUSPENDED` y la pausa se cierra con su `fin_real` (§3.2;
+FASE 8 completa, pendiente 8, owner 2026-09-25).
+
+| | |
+|---|---|
+| **motivos** | `CUSTOMER_REQUEST` · `COURTESY`. Valor cerrado |
+| **unidad** | **meses enteros** (`DEC-SUB-010`). No existe la pausa intra-ciclo |
+| **cuándo empieza** | en el momento en que se pide, no al fin del ciclo |
+| **quién la termina** | **la termina nuestro reloj, y del lado del proveedor no hay segunda vía**: está medido que **no tiene auto-reanudación** (`PS-4`). Por eso `S10` lleva **rama de fallo y detector** (§3.2, *«`S10` es la única salida de `PAUSED` que devuelve el servicio»*). **Que el reloj la termine es siempre reanudarla** (revisión del owner, 2026-09-28, C8: `S25` salió). **Y la persona tiene su propia vía, que tampoco reanuda: es irse** (`S22`) |
+| **qué pasa al volver** | se cobra normal en el ciclo siguiente; reanudar cambia **sólo el estado** y no dispara cobro de recuperación ni deja deuda (`PS-5`) |
+| **límites** | los del §26.3, reexpresados en meses: **4 pausas-mes** por pausa y **8** acumulados en 12 meses; máximo 3 pausas por ventana. Se cuentan por `user + vertical` y **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`). **Se cuentan sólo sobre filas principales**: la pausa que `S32` le abre a un complemento acompaña a la de su principal y no gasta cupo (FASE 9 completa, 4a) |
+
+**Qué le pasa a la ficha mientras dura la pausa, porque esto no se puede escribir de un solo
+lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…` §2.6), así que
+`cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9) **y en ese acto arranca el
+reloj de inactividad** —el hecho 5 del `NUCLEO/01` §1.2, FASE 8 completa, `F-8CA2-001`, owner
+2026-09-25—, **en ella y en todas las demás fichas del dueño en la vertical**, que el recálculo del
+aviso escribe sin pasar por `PB2` (owner 2026-09-25). **Y el reloj de inactividad de verticales se detiene mientras dure la pausa** (revisión del owner, 2026-09-28, C14): el hecho 5 lo escribe igual, pero `PB4`, `PB5` y `PB9` no actúan mientras `retenciónDetenida` conteste `sí`.
+
+**Desde la revisión del owner la pausa pedida por el cliente detiene el reloj de retención**
+(revisión del owner, 2026-09-28, C14, `L1-c`): verticales pregunta `retenciónDetenida` (`12-contrato…` §4.1) antes de
+archivar, borrar o avisar, y con esta fila en `PAUSED` la respuesta es `sí`. **La ficha ya no se
+archiva durante la pausa**, y lo que sigue sobre el tope y el día 180 queda como historia. Lo que
+antes protegía al cliente eran **tres** cosas:
+**`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar; **el tope de una
+pausa es menor que el día del hard delete** —4 pausas-mes, unos 120 días, contra 180 (`V/02`
+§4.1)—; y **que la reanudación efectivamente ocurra**, que es la premisa de las otras dos.
+
+(Salen `D16` y `G-R5`, revisión del owner, 2026-09-28, C14: el
+tope de pausa ya no está atado al día 180.) El aviso que se lo dice antes de confirmar es `B/19` §4, fila 5-bis.
+
+**La tercera es la única que depende de que un job corra, y por eso es la que lleva las dos
+escrituras nuevas.** Sigue en pie con C14: una reanudación que no ocurre deja el reloj detenido y
+al cliente sin servicio. Lo que la vigila es la **rama de fallo de `S10`**
+—la relectura que, si el proveedor sigue diciendo `paused`, deja la fila donde está y pone la
+marca— y la **quinta comprobación de cero llamadas** de `B/09` §3, que encuentra la pausa cuyo
+`fin_previsto` pasó y sigue sin `fin_real`. Sin las dos, la premisa con la que `DEC-DATA-002`
+declaró *«el daño residual es cero»* no la sostenía nada.
+
+**El motivo no es un adorno, y ésta es la razón exacta**: en el proveedor una cortesía y una
+pausa pedida por el cliente **se ven idénticas** —el mismo `paused`, sin ningún campo que las
+distinga—, así que un reloj que leyera el estado del proveedor reanudaría la cortesía de quien
+había pedido pausa, o al revés (`DEC-GRANT-004`). **El reloj lee el motivo, nunca al proveedor.**
+
+**Los tres cruces entre pausa y cortesía** ya están decididos (`DEC-GRANT-004`) y la máquina los
+ejecuta así: en cortesía pide pausar → **se permite**, avisando que pierde la cortesía que le
+quedaba —**lo ejecuta `S35`**—; en pausa se intenta otorgar cortesía → **se bloquea**; cortesía sobre cortesía → **se
+suman los meses** y el aviso dice la fecha de fin nueva —**lo ejecuta `S34`**— (FASE 8 completa,
+`F-8CB1-001`, owner 2026-09-25: la cortesía temporal es en meses enteros y sólo sobre planes
+mensuales, `DEC-GRANT-003` impl. 6 y `DEC-GRANT-004` punto 3). **Hasta la FASE 9 completa dos de
+los tres cruces no tenían fila**: `S8` y `S9` salen sólo de `ACTIVE`, así que el primero y el
+tercero no los ejecutaba nadie (contradicciones 4 y 5 de `03` §R4.5; `S34` y `S35`, §3.2).
+
+**Y una pausa pedida por el cliente pausa también sus complementos recurrentes** (owner
+2026-09-25; FASE 9 completa, 4a, `F-8CC1-004`): los de esa vertical, y los `USER`/`GLOBAL` sólo si
+no les queda título sin pausar en otra vertical compatible, por los mismos meses (`S32`), y se
+reanudan con ella (`S33`). Una pausa por cortesía no los toca, porque la cortesía emite título.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:158, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:856, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1656
 
 <a id="trans-b-s9"></a>
 
@@ -3057,7 +2936,62 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición** (guardas): —
 - **efectos** (efectos): **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`). **La fecha sale de los cobros acreditados, nunca de la fecha del próximo cobro** (FASE 8 completa, `F-8CB1-012`): **`fin_de_servicio = inicio(P) + un ciclo de la billing option anclada`**, donde **`P` es el `covered_period` más reciente de la fila con `liberado_en` nulo** (`B/02` §2.3) — el período que el último cobro acreditado pagó, **sea `payment` o `manual_payment`**. La copia de la fecha del próximo cobro **no entra**: sobre una fila con un cobro en reintento esa fecha ya corrió un ciclo sin pago (**observado el 2026-09-24, no registrado en la matriz**; FASE 9 completa, C2), y usarla regalaba ese ciclo. **Si un cobro anterior a la baja se acredita después** (`B/05` C2, primera fila), escribe su `covered_period` y la extensión que ese § manda es **`max(fin_de_servicio vigente, la fórmula recalculada)`**: una extensión nunca acorta (FASE 9 vuelta 1, R4, `F-8V1B2-002`). **Precisado el 2026-09-27 (owner, FASE 9 vuelta 2, `R17`, `F-8V2B1-002`): el crédito de `DEC-SUB-006` cuenta como período pagado.** Sobre una sucesora que vive de ese crédito —lo pagado sin usar de la predecesora, convertido en días que corren su primer cobro (`B/12` §5.2)—, **`fin_de_servicio = max(fórmula, fin del crédito)`**, donde **el fin del crédito es la fecha de primer cobro que `DEC-SUB-006` le corrió al crearla**, con la corrección de `B/12` §5.4 si la hubo. **Una fila sin ningún `covered_period`** no tiene entrada para la fórmula, y su fin de servicio es el fin del crédito; **sólo si tampoco tiene crédito** el fin de servicio es el instante de la baja, como en `S24`: como `CANCEL_SCHEDULED` emite fuente sólo hasta esa fecha (`12-contrato…` §2.6), el servicio se corta ahí mismo y `S12` encuentra su fecha ya cumplida. Lo cerrado el 2026-09-25 pensaba sólo en la ventana de 72 h de `B/12` §5.2, y el crédito dura semanas —un cambio de anual a mensual, un arrepentimiento—: la baja cortaba en el acto lo que la persona ya había pagado. **Antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala. **Y en el mismo acto cancela en el proveedor los complementos recurrentes que dependen de ella** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`, `F-8V2B1-001`). **La selección es la de `S32`**: las filas DE COMPLEMENTO en `ACTIVE`, con su instancia viva, que complementan a esta principal —la `VERTICAL_SUBSCRIPTION` que cuelga de ella, el `LISTING` sobre una ficha de su vertical, y el `USER`/`GLOBAL` cuyo producto declara compatible esa vertical sólo si en ninguna otra vertical compatible queda una principal viva que no esté `PAUSED`, `SUSPENDED` **ni `CANCEL_SCHEDULED`**, ni un ancla viva— (**`CANCEL_SCHEDULED` en la exclusión es la lectura del grupo A de la FASE 9 vuelta 2, confirmada por el owner**: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`; sin ella, un `USER` compatible con dos verticales que se da de baja en las dos cobra un ciclo después de la segunda baja). **La regla es la de la principal**: el correo antes de cada llamada, la relectura de `S17`, y la fila de complemento a `CANCEL_SCHEDULED` **con el mismo `fin_de_servicio` de la principal** —para un `USER`/`GLOBAL`, el más tardío entre las principales compatibles en `CANCEL_SCHEDULED`—. **El complemento sigue dando servicio hasta esa fecha**, la instancia no cambia de estado, y **en esa fecha los cierra `S21`, antes que su propio `S12`**: el `S12` de la principal dispara la orfandad (`A5`), y `S21` toma la fila de complemento y abre el motivo 14 si su último cobro pagó días posteriores (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`; el orden, en la fila de `S12`). (Sale: `S26` y `vertical_discontinuation` se retiraron con la revisión del owner, 2026-09-28, C8, y el motivo que abre `S21` es el de su tabla de disparadores; FASE 9 vuelta 3, `F-8V3B1-007`.) Es lo que `DEC-SUB-009` hace con la principal y lo que `S32` hizo con la pausa y la suspensión (`G2-2`): sin esto el preapproval del complemento, con su propio aniversario, cobraba un ciclo entero después de la baja, y `S21` lo ponía en el motivo 14 con propuesta *no devolver*. **Una fila de complemento que no está en `ACTIVE` no entra**, igual que en `S32`: la alcanza la orfandad cuando `S12` saca a la principal de las filas vivas (`B/16` §4.3)
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859
+**Texto de la fuente — «La baja tiene CUATRO filas y no una: qué significa cancelar desde cada estado»** (`B/03-maquinas-de-estado.md:886–941`, sin lo tachado):
+
+**El acto es UNO** —*«cancelar una suscripción»*, una de las **veinticinco** *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G; con la vigesimosexta, asignar o quitar el rol `SUPER_ADMIN`: FASE 9 vuelta 3, owner 2026-09-30, lote P; el nombre, lote AC)* del `NUCLEO/08` §3 (la vigesimotercera y la vigesimocuarta, borrar una ficha ajena y **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; revisión del owner, 2026-09-28, N1 y C9: de la decimoctava a la vigesimosegunda, las cinco del catálogo; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la decimoséptima, *«migrar a los clientes de un plan retirado»*: la misma revisión, C15; la decimoquinta, *«editar el contenido de una ficha ajena»*: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a), con un
+permiso y una confirmación—, y `B/19` §5 lo deja self-service. **Lo que cambia por estado de
+origen es qué queda por terminar**, y eso son cuatro desenlaces distintos que antes estaban
+escritos en un solo renglón:
+
+| desde | fila | a dónde va | qué queda por terminar |
+|---|---|---|---|
+| `ACTIVE` | `S11` | `CANCEL_SCHEDULED` | **el período que ya pagó**: se cancela allá de inmediato y lo sostenemos nosotros hasta esa fecha (`DEC-SUB-009`), que después ejecuta `S12` |
+| `PAUSED` | **`S22`** | `CANCELLED`, **o `CANCEL_SCHEDULED`, sobre una fila que vive del crédito sin consumir** (`V2-b`) | **nada**: `DEC-SUB-010` ya se llevó los días no usados del ciclo al pausar. La fecha de fin de servicio es hoy (`B/12` §7.2). **Salvo el crédito de `DEC-SUB-006` sin consumir, que es período pagado (`R17`): ahí queda hasta el fin del crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`) |
+| `SUSPENDED` | **`S23`** | `CANCELLED` | **nada**: el §21 ya cortó el servicio y el estado no emite fuente. La fecha de fin de servicio es hoy |
+| `GRACE_PERIOD` | **`S24`** | `CANCELLED` | **nada que esté pagado, y sí servicio que cortar**: el cobro del período en curso falló —por eso la fila está en el grace— y el último período pagado ya se consumió, así que la fecha de fin de servicio es hoy (`DEC-SUB-014`). Es la única de las cuatro en que la baja **retira cobertura que estaba corriendo** (§20) |
+
+**Los cuatro estados vivos desde los que alguien puede pedir irse están cubiertos, y son cuatro y
+no seis.** Los otros dos vivos no admiten el acto por razones que no son de esta tabla:
+`PENDING_AUTHORIZATION` no tiene suscripción que dar de baja sino un checkout que terminar o
+abandonar (§3.3.1), y `CANCEL_SCHEDULED` **ya tiene la baja pedida y mandada** (FASE 9 vuelta 3, lote D)
+— pedirla otra vez no es una
+transición, es un acto idempotente sobre el que `S12` ya está ejecutando.
+
+**Por qué las tres nuevas no pasan por `CANCEL_SCHEDULED`, y no es una elección de estilo.** Ese
+estado significa, textual, *«con la baja pedida y mandada al
+proveedor […], con servicio sostenido hasta el fin del período pagado»* (§3.1; FASE 9 vuelta 3, lote D).
+En las tres no hay período pagado que sostener, así que entrar ahí sería
+**prometer un servicio que ninguna de las tres tiene**: desde `PAUSED` porque los días ya se
+perdieron, desde `SUSPENDED` porque el §21 los cortó hace rato —y ahí además lo
+**resucitaría**, que es peor— y desde `GRACE_PERIOD` porque **el período en curso no está
+pagado**: su cobro es justamente el que falló. El §3.3 ya lo impedía para `PAUSED` (*«cualquier
+cosa que no sea `ACTIVE` o `CANCELLED`»*) y acá se escribe la razón para las tres. **Salvo `S22`
+sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2,
+verificación, owner 2026-09-27, `V2-b`): el crédito es período pagado (`R17`), así que ahí sí hay
+qué sostener y la fila pasa por `CANCEL_SCHEDULED` hasta el fin del crédito. **`S13` es el
+precedente exacto**: alcanza a las filas en `PAUSED`, en `SUSPENDED` y en `GRACE_PERIOD`, cancela
+el preapproval y las manda directo a `CANCELLED`, sin escala y sin fecha de fin de servicio.
+
+**Y el servicio que `S24` corta no se le regala hasta el fin del grace**, que era la otra
+respuesta posible. El reloj del §4 existe para acotar el servicio que se le presta a quien no
+pagó (`B/12` §4.3, *«el grace no es un beneficio de entrada»*); dejarlo correr sobre alguien que
+**ya decidió irse** alarga ese regalo sin que nadie lo haya elegido, y **deja el candado `A`
+ocupado** mientras tanto — el mismo encierro que `S23` vino a romper (`DEC-SUB-014`).
+
+**No compiten con ninguna fila, y se verifica por pares** (`NUCLEO/03` §1, regla 7). `S22`
+comparte `desde` con `S10`, cuyo evento es *«llega el fin, o la persona vuelve antes»*; `S23` lo
+comparte con `S7` y con `S19`, cuyo evento es *«entra el pago»*; `S24` lo comparte con `S5` y con
+`S19` —*«entra el pago»*— y con `S6`, cuyo evento es *«se agota el reloj»*. **Ninguna otra fila de
+esta tabla declara el evento de la baja**, así que los tres pares nuevos tienen una sola fila cada
+uno. **La tabla de pares con dos filas no crece por la baja** (`S25` salió con la revisión
+del owner, 2026-09-28, C8).
+
+**Y ninguna de las tres es consumidora de *«fila viva»***, así que el inventario de `NUCLEO/01`
+§2.4 no gana filas: su `desde` es **un estado concreto** y no el conjunto. Lo contrario habría
+sido escribirlas como `S13` —*«toda fila viva…»*—, y sobre este acto eso sería falso: la baja la
+pide una persona sobre **su** fila, no un barrido sobre un conjunto.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:859, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:886
 
 <a id="trans-b-s12"></a>
 
@@ -3148,6 +3082,72 @@ fila.
 … porque no queda nada que no cobrar»*—, que con `S13` alcanzando una sola fila era falsa
 exactamente en este camino.
 
+**Texto de la fuente — «Y no alcanza a los complementos: el `desde` dice «principal» y eso es una acotación, no un matiz»** (`B/03-maquinas-de-estado.md:1016–1081`, sin lo tachado):
+
+**Una suscripción de complemento es una fila de `subscription` como cualquier otra** —con su
+`clase`, su `vertical` y su propio preapproval (`B/02` §2.2, `DEC-ADDON-002`)—, y el §3 declara
+que *«usan esta misma máquina»*. Con el `desde` escrito como *«toda fila viva del beneficiario en
+cada vertical que el acto ancla»*, **entraban por pertenencia al conjunto**, y el resultado era
+malo en las dos direcciones:
+
+- **hacia perder lo pagado**: el *«Boost 30 días»* que el beneficiario compró ayer quedaba con su
+  preapproval cancelado de forma irreversible (`PA-5`) y **sin reembolso** (`DEC-GRANT-001`), en el
+  mismo acto en que se le regala el plan;
+- **hacia regalar lo que nadie paga**: para un addon de scope `USER` o `GLOBAL` el objetivo es la
+  cuenta, que no se borró, así que **no queda huérfano** (`B/16` §4.2) — pero su cobro ya estaba
+  cancelado, y **ninguna transición de la máquina de addon tiene por evento *«mi suscripción de
+  complemento fue cancelada»*** (`A4` es su fecha de fin, `A5` la baja, la orfandad o la
+  revocación de su grant-título, y `A6` el borrado de la ficha, §8). La instancia se quedaba `ACTIVE` y gratis para
+  siempre.
+
+  > **`S20` deja a esa instancia exactamente así —`ACTIVE` y gratis— y no es el mismo desenlace**,
+  > aunque la foto coincida. Acá el addon quedaba gratis **porque nadie decidió nada** y sin
+  > ninguna forma de apagarse: el grant se revocaba y seguía encendido para siempre. Con `S20` es
+  > gratis **porque el §35.2 lo declara gratis** mientras el grant dure, la instancia **cuelga del
+  > ancla** y **tiene apagado declarado**: la tercera cláusula del evento de `A5` la corta cuando
+  > se revoca el grant (§8, `B/16` §3.3). Lo que hacía inadmisible este camino no era que el addon
+  > quedara gratis: era que **nada lo volvía a apagar**.
+
+**Las tres reglas que lo prohíben ya estaban escritas, y ninguna es de acá**: el §41 ordena *«no
+cancelar ciegamente»* y cancelar *«sólo cuando queda efectivamente huérfano»*; `DEC-ADDON-002`
+implicación 6 dice que **cancelar el plan NO cancela los addons**; y
+`12-contrato-de-cobertura.md` (`../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md`)
+§2.4 lo dice del caso exacto —*«quien tiene *Free Forever* y un addon **conserva los dos**»*—.
+`S13` cancelaba **por pertenecer al conjunto**, sin evaluar ninguna condición, que es literalmente
+lo que el §41 prohíbe.
+
+**Qué le pasa entonces a la instancia del addon, dicho para que no quede en la inferencia:**
+
+| scope del addon (§40) | qué pasa cuando `S13` mata la principal de esa vertical |
+|---|---|
+| `VERTICAL_SUBSCRIPTION` | **no queda huérfano**: el grant que acaba de caer **vale como título en esa vertical** (`B/16` §2.4), y ésa es la tercera salvedad de la condición de `B/16` §4.2. Sin ella, `A5` lo cancelaría de inmediato por la otra puerta y *«conserva los dos»* sería falso igual |
+| `USER` · `GLOBAL` | **no queda huérfano**: el objetivo es la cuenta y la cuenta no se borró. Ya era así; lo que cambia es que ahora `S13` tampoco le cancela el cobro |
+| `LISTING` | **no lo toca nadie**: su objetivo es la ficha (`B/16` §4.2) |
+
+**Y `S13` no le apaga el cobro a ninguno de los tres, que es lo que esta acotación garantiza.** Es
+la regla 1 del núcleo leída en la dirección que menos se lee: lo que la tabla no declara **no
+pasa**, así que un grant que no alcanza al complemento tampoco lo deja gratis por accidente.
+
+**Lo que SÍ se lo apaga es `S20`, y es otra fila con otra condición.** Que la instancia sobreviva
+al grant no decidía de dónde sale la plata, y **durante toda una tanda nadie lo escribió**: el
+beneficiario de un *Free Forever* con `includesAddons: true` seguía pagando todos los meses un
+addon que su propio flag le declaraba gratis. Eso lo cierra `S20` (arriba, y el caso entero en
+`B/16` §3.4), que **evalúa una condición** —el flag, la compatibilidad del producto con la
+vertical anclada y, en los scopes con vertical propia, el objetivo— en vez de alcanzar por
+pertenencia. Las dos afirmaciones conviven sin contradecirse porque **hablan de conjuntos
+distintos**: `S13` de las principales, `S20` de las de complemento que cumplen su condición. Un
+complemento **no compatible**, o cualquiera si el flag es `false`, **sigue cobrando** — y sigue
+siendo lo correcto, por la misma razón por la que `S13` no lo alcanza.
+
+**`S13` y `S20` comparten el evento y NO comparten el par, así que `G-R4` no tiene nada que
+mirar.** El evento es el mismo —otorgar, o anclar una vertical nueva—, pero el `desde` de una es
+*«toda fila viva **principal**»* y el de la otra *«toda fila viva **de complemento**»*, y la
+partición por `clase` (`B/02` §2.2) hace que los dos conjuntos sean **disjuntos por
+construcción**: ninguna fila puede satisfacer los dos. La regla 7 del núcleo pide guardas
+disjuntas cuando el par coincide; acá **el par no coincide**, y **los pares con dos filas de
+esta tabla no crecen por `S20`/`S21`** — hoy son **tres**:
+el cuarto, `S10`/`S25`, salió con la revisión del owner, 2026-09-28, C8 (`NUCLEO/03` §1 regla 7).
+
 **Texto de la fuente — «La ejecución parcial: `S13` es idempotente, y su detector cuesta cero llamadas»** (`B/03-maquinas-de-estado.md:1082–1119`, sin lo tachado):
 
 **`S13` es un fan-out**, y desde que el scope son anclas es un fan-out de N verticales × hasta seis
@@ -3186,7 +3186,7 @@ corresponde además un cambio de estado, ése se ejecuta **con la transición de
 lo permita** — y eso es justamente lo que se ganó, porque antes `S15` tenía que adivinar a dónde
 volver.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:957, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1082
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:163, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:957, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1016, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1082
 
 <a id="trans-b-s14"></a>
 
@@ -4500,6 +4500,146 @@ la devolución no es automática en ninguno de los dos casos: la confirma una pe
 - **hacia** (estado destino): `REGISTERED`
 - **efectos** (efectos): la suscripción sale de `GRACE_PERIOD` por `S5` — **o, si la cuota es la PRIMERA y la fila está todavía en `PENDING_AUTHORIZATION`, es este registro el que la habilita a llegar a `ACTIVE`**, por **`S29`** (§3.2, escrita el 2026-09-24; antes decía *«la fila que el capítulo 13 todavía debe»*): ahí no hay grace del que salir, porque no lo hubo — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago. **`S19` lo admite por su propio evento**, que nombra las dos puertas (§3.2): sin eso la derivación apuntaba a una fila que no podía recibirlo. **Y avanza un ciclo la fecha del próximo cobro** (`B/02` §2.2): registrada la cuota de este período, lo que queda por cobrar es el siguiente. Es **acá** y no en `S5`, cuya celda de efectos es *«se apaga el reloj»* y nada más (§7.2, *«qué mueve la fecha»*). **Y emite el comprobante** —el `receipt` de esta cuota, colgando del `manual_payment` (`B/02` §2.3, `DEC-LEGAL-001`; FASE 8 completa, `F-8CB3-006`)—, **con la copia del nombre y el correo del `user` de la suscripción, leídos en esta misma transacción** (revisión del owner, casos vecinos, 2026-09-29, caso K-A)
 
+**Texto de la fuente — «Es una fila nueva y no el `desde` de `MP1` ampliado»** (`B/03-maquinas-de-estado.md:2047–2067`, sin lo tachado):
+
+**Ampliar `MP1` a `{AWAITING, DECLARED_UNPAID}` habría sido una fila con dos efectos según de
+dónde viene**, y este capítulo ya tiene escrito por qué eso no se hace: *«una transición cuyo
+`desde` se escribe como un conjunto de filas tiene que decir si alcanza también a…»* (§3). Los dos
+efectos difieren de verdad y no en el matiz: `MP1` saca de `GRACE_PERIOD` por **`S5`** y `MP4` saca
+de `SUSPENDED` por **`S7`**, que son dos transiciones distintas de la tabla del §3.2 con dos
+condiciones que se evalúan sobre estados distintos. Con una sola fila, la derivación habría
+quedado escrita como *«`S5`, o `S7` si venía de `DECLARED_UNPAID`»*, que es la forma que la regla 1
+del núcleo no puede verificar.
+
+**Y `MP4` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — y son cuatro, con `PB11`/`PB13` (revisión del owner, 2026-09-28, C10)** (`NUCLEO/03` §1 regla 7; esta frase decía *«sigue contando tres»* y
+caducó con `DEC-SUB-015`, que creó el cuarto par sin tocar este §; vuelve a ser verdadera desde la
+revisión del owner, 2026-09-28, C8, que sacó `S25`). Comparte el
+evento con `MP1` —*«el admin registra el pago»*— y **compartir el evento no es compartir el par**
+(`NUCLEO/03` §1 regla 7): el `desde` de una es `AWAITING` y el de la otra `DECLARED_UNPAID`, y
+ninguna otra fila de esta tabla sale de ninguno de los dos con ese evento. Del lado de la tabla del
+§3.2 **tampoco agrega uno**, por el argumento que el §3.2 ya escribió para `MP1`: `MP4` no es un
+evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y `S19` ya compartían.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1871, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:299, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2047
+
+<a id="trans-b-mp2"></a>
+
+### `TRANS:B:MP2` · `MP2` — `AWAITING` → `DECLARED_UNPAID`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B7](10-corte/B7.md#pieza-b7) (implementa)
+- **Fuente de la asignación**: `B/descomposicion.md:139`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `AWAITING`
+- **evento** (disparador): el admin confirma que no se pagó
+- **hacia** (estado destino): `DECLARED_UNPAID`
+- **efectos** (efectos): la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj — **es el cuarto evento de `S6`**, declarado en su fila desde la FASE 9 completa (C8, `F-8CB2-009`): antes `S6` no lo nombraba y por la regla 1 del núcleo `MP2` no suspendía. **Sólo si la suscripción está en `GRACE_PERIOD`**: sobre una fila que ya salió del grace la cuota no queda `AWAITING` —la cierra la tercera cláusula de `MP3`—
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1872, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
+
+<a id="trans-b-mp3"></a>
+
+### `TRANS:B:MP3` · `MP3` — `AWAITING` → `DECLARED_UNPAID`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
+- **Fuente de la asignación**: `B/descomposicion.md:139`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `AWAITING`
+- **evento** (disparador): se agota el grace sin que el admin haga nada — **o, sobre la PRIMERA cuota, se agota la ventana de autorización y `S3` se lleva la fila a `ABANDONED`** (§7.2, *«cómo entra el grace»*) — **o, tercera cláusula, la suscripción sale de `GRACE_PERIOD` o de `PENDING_AUTHORIZATION` por cualquier transición que no sea `S5`, `S6`, `S2`/`S29` ni `S3`** —del grace, `S13`, `S17`, `S20`, `S21` y `S24`; de `PENDING_AUTHORIZATION` con la primera cuota abierta, `S13`, `S20` y `S21`: **las ocho salidas del dominio**, recontadas sobre la tabla del §3.2 (revisión del owner, 2026-09-28, C8: salen `S26` y `S28`); `S31` ya la cierra por la segunda cláusula— (owner 2026-09-25; FASE 9 completa, 8f, `F-8CB2-005`): la cuota impaga de quien se va no queda viva, y registrarla después con `MP1` ya no avanza la fecha del próximo cobro de una fila muerta
+- **hacia** (estado destino): `DECLARED_UNPAID`
+- **efectos** (efectos): `S6` por la primera cláusula. **Por la segunda, ninguno**: la fila de suscripción ya la mató `S3`, y lo que esta transición hace es cerrar la cuota para que no quede un `AWAITING` colgando de una suscripción muerta. **Por la tercera, ninguno tampoco**, con la misma razón
+
+**Texto de la fuente — «Cómo entra el grace, que era la otra mitad de `F-8B2-018`»** (`B/03-maquinas-de-estado.md:2179–2256`, sin lo tachado):
+
+La primera cláusula de `MP3` sale de *«se agota el grace»* y el grace tenía el mismo problema que
+`AWAITING`: **`S4`
+describe *«un cobro falla»* y en el pago manual nadie cobra**. Con `MP5` el hecho queda nombrado
+y **no hace falta una fila nueva**: para una suscripción sin débito, *«el cobro de este período
+falló»* **es** que su cuota se abrió y no hay pago acreditado contra ella. Es lo que este § ya
+ordenaba abajo de la tabla —*«si falta el pago, va a `GRACE_PERIOD` los mismos días
+configurables»*— y lo que `MP1` y `MP2` ya presuponían: los dos declaran que la suscripción está
+en `GRACE_PERIOD` cuando el admin actúa. Así que `S4` es la fila, con su `desde` en `ACTIVE`, que
+es el único estado desde el que **el reloj** —la cláusula *(a)* de `MP5`— crea.
+
+**Pero eso vale de la SEGUNDA cuota en adelante, y hay que decir por qué la primera es otra cosa.**
+`B/12` §4.3 ordena que **el grace no sea un beneficio de entrada**, y esa regla **sí alcanza a un
+pagador manual**: su sujeto es el grace, no la autorización. Lo que se lee *«por autorización»* es
+el **predicado de `S16`**, que es el **remedio** —mandar a `CHARGE_DECLINED` al que autorizó y no
+cobró—, y ese remedio acá no tiene sujeto: `S16` exige que sea el primer cobro de esa autorización
+—desde la FASE 8 completa ya no exige que el
+proveedor la haya cancelado: la cancela él (owner 2026-09-25)—, y un pagador manual **no tiene
+autorización en el proveedor** (`B/06` §7), así que esa condición es
+falsa y `CHARGE_DECLINED` tiene acá
+población vacía. **Que el remedio no tenga sujeto no vuelve inaplicable la regla: la deja sin
+ejecutor**, y sin uno el §4.3 se viola en su forma más literal — quien contrata con pago manual
+recibiría los días de `DEC-SUB-002` **con servicio entero sin haber transferido un peso**, y desde
+que `S23` libera el candado `A` (§3.2) podría repetirlo **por intento**, que es la palabra con que
+el §4.3 describe el daño que rechazó.
+
+> **La regla, con su ejecutor sobre esta población.** **La primera cuota de un pagador manual no
+> abre grace.** La abre la cláusula *(b)* de `MP5` **en el alta —`S1`, §3.2—**, o sea con la fila
+> en `PENDING_AUTHORIZATION` y no en `ACTIVE`,
+> así que `S4` —cuyo `desde` es `ACTIVE`— no corre sobre ella; mientras esa cuota no esté
+> registrada la fila **no emite fuente** (`12-contrato…` §2.6) y no hay servicio que cosechar. Su
+> ventana es la de la autorización, y su final ya está escrito: **`S3` la lleva a `ABANDONED`**,
+> que **no es vivo**, con lo que el candado `A` queda libre y el reintento es un alta nueva —
+> exactamente el desenlace que `CHARGE_DECLINED` le da al pagador con tarjeta.
+
+**Qué período cubre esa primera cuota, que hay que decirlo porque al abrirse no hay fecha que
+copiar.** El resto de las cuotas copian *«la fecha del próximo cobro»* vigente (`B/02` §2.3), y en
+`PENDING_AUTHORIZATION` esa columna todavía no existe. **El período de la primera es el instante
+del alta** —el de `S1`—, que es un valor que existe cuando la cuota se abre y deja el `período`
+escrito de entrada, como esa entidad exige. **Y la fecha del próximo cobro la estrena `MP1` al
+registrarla**, un ciclo más adelante, por la escritura 2 de arriba: sobre un pagador manual la
+escritura 1 —*«la estrena `S2`»*— tiene **población vacía**, porque el evento de `S2` es un webhook
+de autorizada y acá no hay preapproval que autorice. **Los días que van del alta al registro corren
+adentro de ese período y no se reponen**, que es la misma regla de *«nada es retroactivo»* del §7.1
+y lo que impide que abrir el alta y transferir al filo de la ventana corra el ciclo gratis.
+
+**Y con eso la garantía de no-repetición del §4.5 punto 1 gana sujeto acá.** Esa garantía dice que
+*«no hay diez días que cosechar por más veces que se repita»* porque **cada reintento muere sin
+pasar por `GRACE_PERIOD`**; el pagador con tarjeta muere en `CHARGE_DECLINED` y el pagador manual
+que nunca transfiere muere en `ABANDONED`, y en los dos casos lo que no hubo es grace. La cuota
+queda cerrada por la segunda cláusula de `MP3`, para que no sobreviva un `AWAITING` colgando de una
+suscripción muerta.
+
+**Lo que falta y lo que no.** Abrir la primera cuota **no** falta: lo hace `S1`, que ya está
+escrita, y por eso esta regla tiene ejecutor hoy y no el día que alguien escriba el capítulo 13.
+Lo que falta es **la transición que lleva un pagador manual a `ACTIVE`** —el evento de `S2` es
+*«webhook de autorizada»* y acá no hay preapproval que autorice, que es el hueco que el capítulo 13
+tiene abierto—, y esta regla **la ata por adelantado**: **esa fila no puede llevar a `ACTIVE` sin
+la primera cuota registrada**. Va escrito acá porque es acá donde alguien la escribiría sin verla.
+
+> ✅ **Cerrado el 2026-09-24: la fila existe y es `S29`** (§3.2). La condición que este párrafo ató
+> por adelantado **se cumple por construcción**, porque el evento de `S29` **es** el registro de la
+> primera cuota. Y la jurisdicción quedó donde este párrafo la reclamaba: **la fila vive en esta
+> tabla, no en el capítulo 13**, que desarrolla el flujo del pagador manual y la referencia. Lo
+> único que hubo que agregarle y este párrafo no anticipaba: **`S29` NO mueve la fecha del próximo
+> cobro**, porque ya la mueve `MP1` y repetirlo daría **dos ciclos** de crédito.
+**El que cuenta es el pago acreditado y nunca la fecha**, que es el punto 2 del mismo §4.5.
+
+**Y la duración de esa ventana ya está elegida, y no es la de `S3` para el pagador con tarjeta.**
+Era la única declarada —**72 h**, escrita para el tiempo que tarda alguien en completar un
+checkout, no para el que tarda una transferencia en acreditarse—, y `DEC-SUB-016` la partió: sobre
+un pagador manual la ventana de `S3` dura **7 días corridos** (§3.4 punto 1). **La regla de este §
+no cambia ni depende de la cifra**: lo que la sostiene es que la fila **no dé servicio** durante la
+ventana, y eso vale igual con 72 h que con 7 días. Lo que la cifra cambia es a quién se pierde: con
+las 72 h, el pagador manual que transfiere un viernes muere en `ABANDONED` y tiene que rehacer el
+alta entera.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1873, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2179
+
+<a id="trans-b-mp4"></a>
+
+### `TRANS:B:MP4` · `MP4` — `DECLARED_UNPAID` → `REGISTERED`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
+- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:592`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `DECLARED_UNPAID`
+- **evento** (disparador): el admin registra el pago, que llegó **después**
+- **hacia** (estado destino): `REGISTERED`
+- **efectos** (efectos): la suscripción sale de `SUSPENDED` por `S7` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: misma herencia y misma razón que `MP1`, porque **el daño no depende de por qué puerta entró el pago** ni de desde qué estado del pago manual se lo registre. **`S19` lo admite por su propio evento**, que nombra el hecho —entró el pago del período impago— y no el mecanismo (§3.2). **Y no es incondicional**, por partida doble: el cruce de `C5` vale igual que en `MP1`, y `S7` exige **las cuatro condiciones del `B/05` §3** — la **1** es el tope de la reapertura (ver abajo, *«el tope no es un día»*). **Y avanza un ciclo la fecha del próximo cobro, igual que `MP1`** — **y si el período que esa cuota cubre YA TERMINÓ**, o sea si la suspensión duró más que un período, **antes de registrarla la reimputa al período que arranca en la reactivación** (§7.2, *«al reabrir por `MP4`»*): el avance sale entonces de ese período nuevo y la fecha queda en **la reactivación más un ciclo**. Dejar la fecha **en** la reactivación era abrirle la cuota del período que arranca en la misma corrida del reloj, con `S4` devolviéndolo a `GRACE_PERIOD` el mismo día — dos períodos cobrados y ningún día comprado. Y avanzar siempre al día de la reactivación, sin mirar si el período terminó, le cobraba dos veces los días que le quedaban del período que acababa de pagar. **Y emite el comprobante**, igual que `MP1` (`B/02` §2.3, `DEC-LEGAL-001`; FASE 8 completa, `F-8CB3-006`)
+
 **Texto de la fuente — «7.1 `DECLARED_UNPAID` deja de ser el final: el pago que llega tarde reabre»** (`B/03-maquinas-de-estado.md:1906–1930`, sin lo tachado):
 
 **El §30 le da al admin el acto de *«confirmar que no se pagó»* y esta máquina no tenía cómo
@@ -4639,26 +4779,6 @@ cambiando de plan.
 > sigue sin crear filas de `manual_payment`: sólo mueve la que `MP2` o `MP3` cerraron, y **desde
 > esta pasada también la reimputa** cuando el período que cubría ya terminó (§7.2).
 
-**Texto de la fuente — «Es una fila nueva y no el `desde` de `MP1` ampliado»** (`B/03-maquinas-de-estado.md:2047–2067`, sin lo tachado):
-
-**Ampliar `MP1` a `{AWAITING, DECLARED_UNPAID}` habría sido una fila con dos efectos según de
-dónde viene**, y este capítulo ya tiene escrito por qué eso no se hace: *«una transición cuyo
-`desde` se escribe como un conjunto de filas tiene que decir si alcanza también a…»* (§3). Los dos
-efectos difieren de verdad y no en el matiz: `MP1` saca de `GRACE_PERIOD` por **`S5`** y `MP4` saca
-de `SUSPENDED` por **`S7`**, que son dos transiciones distintas de la tabla del §3.2 con dos
-condiciones que se evalúan sobre estados distintos. Con una sola fila, la derivación habría
-quedado escrita como *«`S5`, o `S7` si venía de `DECLARED_UNPAID`»*, que es la forma que la regla 1
-del núcleo no puede verificar.
-
-**Y `MP4` no agrega ningún par con dos filas, así que el conteo de `G-R4` no se mueve — y son cuatro, con `PB11`/`PB13` (revisión del owner, 2026-09-28, C10)** (`NUCLEO/03` §1 regla 7; esta frase decía *«sigue contando tres»* y
-caducó con `DEC-SUB-015`, que creó el cuarto par sin tocar este §; vuelve a ser verdadera desde la
-revisión del owner, 2026-09-28, C8, que sacó `S25`). Comparte el
-evento con `MP1` —*«el admin registra el pago»*— y **compartir el evento no es compartir el par**
-(`NUCLEO/03` §1 regla 7): el `desde` de una es `AWAITING` y el de la otra `DECLARED_UNPAID`, y
-ninguna otra fila de esta tabla sale de ninguno de los dos con ese evento. Del lado de la tabla del
-§3.2 **tampoco agrega uno**, por el argumento que el §3.2 ya escribió para `MP1`: `MP4` no es un
-evento de esa tabla sino un efecto que entra por *«entra el pago»*, que `S7` y `S19` ya compartían.
-
 **Texto de la fuente — «Lo que NO cambia, y hay que contarlo para que nadie lo recuente»** (`B/03-maquinas-de-estado.md:2068–2094`, sin lo tachado):
 
 - **El barrido de `B/09` §3 no gana ninguna puerta por `MP4`, y sigue con cuatro salvedades.** Sus
@@ -4698,6 +4818,107 @@ lugar**, más cuatro apariciones que quedan como estaban con su razón:
 | *«los estados terminales de una suscripción no se barren»* y sus puertas —**nueve** cuando se escribió esta fila, **quince** hoy, con `S31` (FASE 8 completa, owner 2026-09-25), `S36` (FASE 9 vuelta 1) y la lápida de recepción (owner 2026-09-26, `X-1`), y sin `S25`, `S27` ni `S28` (revisión del owner, 2026-09-28, C8)— | `B/09` §3, y `B/16` §4.4 que las contó | **sigue verdadera**: `DECLARED_UNPAID` es del `manual_payment` y nunca estuvo en esa tabla, cuyos sujetos son `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` | sin tocar |
 | *«la tabla tiene DOCE filas»* (`NUCLEO/08` §3) y las cinco líneas que la cuantifican | el arreglo del anclaje de verticales | **sigue verdadera para `MP4`** (desde la FASE 8 completa son por moderar una ficha, `F-8CA2-004`, owner 2026-09-25, **catorce** desde la FASE 9 completa por asentar lo ocurrido por fuera, decisión 5a, **y quince desde la FASE 9 vuelta 1 por editar el contenido de una ficha ajena, `G5-2`**, (dieciséis en la FASE 9 vuelta 2, quince con la revisión del owner, 2026-09-28, C8, y dieciséis otra vez con C15, que agrega la decimoséptima, y veintiuna con N1 y C9, que agregan las cinco del catálogo, y veintitrés con los casos vecinos, 2026-09-29, F-C, que agregan borrar una ficha ajena y **dar de baja una cuenta** (caso I-C) a pedido de su dueño): otras acciones): `MP4` es la fila *«registrar un pago manual»* ejecutada desde otro origen, no una acción nueva | sin tocar |
 | *«el crédito de `DEC-SUB-006` se computa en cero en grace»* y las ramas de `B/12` §5.3 | el arreglo del pago tardío | **siguen verdaderas**: `MP4` hereda la condición de `S19`, así que no reactiva durante una sucesión y el pago se resuelve por las mismas ramas — que desde `S23` son **seis** y no cinco, y no las recontó este arreglo | `B/12` §5.3, con `MP4` nombrado en la puerta manual |
+
+**Texto de la fuente — «Al reabrir por `MP4`: el reloj vuelve a crear, y si el período viejo ya terminó la cuota se REIMPUTA»** (`B/03-maquinas-de-estado.md:2323–2409`, sin lo tachado):
+
+Si estuvo `SUSPENDED` no se crearon cuotas, así que hay que decir qué pasa cuando vuelve.
+
+> **`MP4` lleva la fila a `ACTIVE` por `S7`, y desde ese instante el reloj vuelve a crear.** Lo
+> que la persona paga es **un** período, y cuál es depende de si el de la cuota todavía corre:
+>
+> - **Todavía corre** —la reapertura cae adentro de él—: la cuota queda donde está y la fecha del
+>   próximo cobro **avanza un ciclo** desde el inicio de ese período, igual que en `MP1`.
+> - **Ya terminó** —la suspensión duró más que un período—: **antes de registrarla, `MP4`
+>   reimputa la cuota al período que arranca en la reactivación** —le reescribe el `período`
+>   (`B/02` §2.3), sobre la misma fila que `MP2` o `MP3` cerraron— y el avance de un ciclo sale de
+>   ahí, así que la fecha queda en **la reactivación más un ciclo**.
+
+**Dejar la fecha EN la reactivación era cobrarle dos períodos y no venderle ninguno.** El que se
+atrasa, pasa tres meses `SUSPENDED` y transfiere el día 100 liquida con ese pago el período que
+arrancó el día 0 —el que pasó **casi entero suspendido**—, y como la fecha del próximo cobro queda
+en el día 100, **la primera corrida del reloj encuentra que la fecha ya llegó y que ese período no
+tiene cuota**: `MP5` abre la del período que empieza hoy y `S4` lo devuelve a `GRACE_PERIOD` **en
+el mismo acto**. El día que volvió debe dos períodos completos y lo que su plata compró son **cero
+días**. La reimputación es lo que lo cierra: el pago compra el período que arranca, la fecha queda
+un ciclo por delante y el reloj no encuentra nada que abrir hasta entonces.
+
+**Y es literalmente la mitad (b), que hasta acá se cumplía a medias.** *«El que vuelve paga el
+período que arranca, no los que pasó suspendido»*: sin reimputar, pagaba el que pasó suspendido
+—`MP4`— **y** el que arranca —`MP5`, el mismo día—; con la reimputación paga **el que arranca y
+nada más**, y los períodos que transcurrieron bajo la suspensión no se cobran ni quedan como deuda
+(§7.1, *«lo adeudado»*).
+
+**Re-anclar siempre a la reactivación era el otro doble cobro, y hay que decir sobre quién.** El
+que se atrasa, transfiere **el día 20 de un período que arrancó el día 0** y paga el importe del
+período entero (`B/05` §3, condición 2) tiene diez días por delante que ya pagó. Con el re-anclaje
+incondicional esos diez días pasaban a ser el arranque del período **siguiente**: el reloj le abría
+la cuota en el acto y `S4` lo devolvía a `GRACE_PERIOD` el mismo día. **Pagaba dos veces los días
+20 a 30**, y ni el correo ni la pantalla lo decían. Como la reimputación **sólo corre cuando el
+período ya terminó**, ese caso no la toca: la fecha queda en el día 30, el reloj no encuentra nada
+que abrir hasta ese día, y los diez días son los que compró.
+
+**Las cuatro condiciones del `B/05` §3 se evalúan igual, y hay que decir por qué la reimputación no
+las mueve.** La **2** —*«el monto coincide con el esperado para el período que cubre»*— no depende
+de cuál sea el período: el monto **no se guarda**, se resuelve de la versión de plan anclada
+(`B/02` §2.3), que la reimputación no toca, así que evaluarla antes o después del cambio da la
+misma respuesta. La **4** —*«no hay otro pago acreditado para el mismo período»*— se evalúa sobre
+el período reimputado y no encuentra ninguno, porque durante la suspensión no se creó ninguna cuota
+(la mitad (b)). Las condiciones **1** y **3** no nombran ningún período.
+
+**Y la reimputación se asienta, porque una columna que se reescribe sin rastro no es auditable.**
+Va en el evento de dominio de `MP4`, que la **regla 4** del `NUCLEO/03` §1 ya exige por cada
+transición: ahí quedan el período que la cuota tenía y el que pasó a cubrir, que es lo que permite
+contestar *«¿qué compró esta transferencia?»* sin reconstruirlo. **Es la única escritura del
+`período` que no es la de su creación**, y `B/02` §2.3 la declara como tal.
+
+**Lo que la reimputación NO le devuelve son los días que consumió en grace adentro del período que
+ya no se le cobra.** Ese período se abrió, la persona tuvo servicio entero mientras corrió el grace
+(`S4`, §3.2) y después `S6` se lo cortó; al reimputar la cuota, ese tramo queda **sin cobrar**. Es
+el precio de la política de retención del §20, que el §21 acota cortando el servicio en cuanto el
+grace se agota — y **no es un beneficio de entrada**, porque sobre un pagador manual el grace sólo
+alcanza a una suscripción que **ya tiene al menos un pago acreditado** (abajo, *«cómo entra el
+grace»*): nadie llega a ese tramo sin haber pagado antes.
+
+**Y el argumento que justificaba el re-anclaje era verdadero en su conclusión y falso en su
+mecanismo, que es lo que le agrandó el alcance.** Decía que con el ancla vieja *«el reloj, en su
+primera corrida, crearía **de golpe** todas las cuotas que (b) mandó no crear»*. **De golpe no**:
+la condición de `MP5` nombra **un** período —el de la fecha vigente— y es idempotente, así que
+crea **una** cuota por corrida. El daño verdadero es otro y sigue siendo real: esa única cuota
+sería la de un período que **transcurrió entero durante la suspensión**, o sea días sin servicio,
+que es exactamente lo que la mitad (b) mandó no cobrar; y al registrarse, la fecha avanzaría a otro
+pasado, y así hasta ponerse al día. No una avalancha sino una cola, con la misma deuda al final.
+**El remedio era correcto y su alcance estaba mal escrito**: se aplicaba también a la población
+donde el avance cae en el futuro, y ahí su propio motivo no existe.
+
+**Y no le regala nada a nadie, en ninguna de las dos ramas.** Con el período todavía corriendo, lo
+que `MP4` registra **es la cuota del período impago** —la misma fila que `MP2` o `MP3` cerraron,
+por el importe esperado (§7.1, *«lo adeudado»*)—, y lo que **no** le devuelve son los días que pasó
+en grace y suspendido adentro de ese período: *«nada es retroactivo»* (§7.1), y ésa es la
+consecuencia de no haber pagado a término, no un cobro nuevo. Con el período ya terminado, lo que
+registra es **un** período —el que arranca— por el mismo importe, y lo que no le devuelve son los
+meses que pasó suspendido, que no se cobran y tampoco se prestaron.
+
+**La reimputación es de esta puerta, y el avance no.** Sobre un pagador con tarjeta **no hay nada
+que reimputar**: las fechas las tiene el proveedor y son inmutables (`EX-39`, `B/12` §5.4), y sobre
+esa población la columna es una copia que ninguna regla lee para decidir (`B/02` §2.2) — además de
+que ahí no hay cuota de `manual_payment` que mover. Sobre un pagador manual la reimputación corre
+**sólo acá**, porque es la única vuelta a `ACTIVE` que puede encontrar una cuota cuyo período ya
+terminó. El **avance**, en cambio, no es sólo de `MP4` —la vuelta de una cortesía lo necesita
+igual—, y por eso está escrito arriba como la tercera escritura y no adentro de esta puerta.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1874, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1906, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1931, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1990, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2068, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2095, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2323
+
+<a id="trans-b-mp5"></a>
+
+### `TRANS:B:MP5` · `MP5` — *(sin fila)* → `AWAITING`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
+- **Fuente de la asignación**: `B/descomposicion.md:139`
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): *(sin fila)*
+- **evento** (disparador): **dos cláusulas, un mismo acto — abrir la cuota de un período**: *(a)* **un reloj abre el período** de una suscripción de pagador manual, porque **llegó la fecha del próximo cobro** (`B/02` §2.2), que es el instante en que el proveedor habría cobrado (§7.2); *(b)* **el alta de un pagador manual abre su PRIMERA cuota** — y el alta es **`S1`**, que ya existe (§3.2) —, que es el espejo del primer cobro que en un pagador con tarjeta ocurre antes de `S2`
+- **hacia** (estado destino): `AWAITING`
+- **efectos** (efectos): **es la entrada de esta máquina, y la crea el sistema, no un admin.** La cláusula *(a)* **sólo corre con la suscripción en `ACTIVE`** —los otros cinco estados vivos están descartados uno por uno en el §7.2— y **en el mismo acto la suscripción entra en `GRACE_PERIOD` por `S4`**, que es lo que el §30 ya ordenaba abajo y lo que `MP1` y `MP2` ya presuponían en sus efectos. La cláusula *(b)* corre en **`PENDING_AUTHORIZATION`** y **no dispara `S4`**: el `desde` de `S4` es `ACTIVE`, así que la primera cuota **no abre grace** y la fila no da servicio hasta que se registre (§7.2, *«cómo entra el grace»*). **El par `(desde, evento)` sigue siendo uno solo** —*(sin fila)*, abrir una cuota— con sus dos cláusulas, igual que `S9` tiene tres y `A5` tres: `G-R4` no gana ningún par. **Idempotente por condición**: no crea si ya existe una fila de `manual_payment` para ese período, igual que `S13` y `S20` son *«idempotentes y reanudables fila por fila»*. **Y si ese día llega también un cambio programado de la fila, lo aplica `S38` primero** (§3.2): la cuota se abre ya con la versión destino (verificación corta, 2026-09-29, lote M-B)
 
 **Texto de la fuente — «7.2 La cuota la crea el sistema —un reloj, salvo la primera— y no se crea durante la suspensión»** (`B/03-maquinas-de-estado.md:2111–2141`, sin lo tachado):
 
@@ -4764,84 +4985,6 @@ la puerta del mecanismo que iba a cerrarlo.
 acciones **del admin**, y crear la cuota no es ninguna: la tabla **no suma filas por el reloj** —tiene veinticinco *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G; con la vigesimosexta, asignar o quitar el rol `SUPER_ADMIN`: FASE 9 vuelta 3, owner 2026-09-30, lote P; el nombre, lote AC)* (la vigesimotercera y la vigesimocuarta, borrar una ficha ajena y **dar de baja una cuenta** (caso I-C) a pedido de su dueño: casos vecinos, 2026-09-29, F-C; revisión del owner, 2026-09-28, N1 y C9: de la decimoctava a la vigesimosegunda, las cinco del catálogo; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la decimoséptima, *«migrar a los clientes de un plan retirado»*: la misma revisión, C15; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a)— y
 las cinco líneas que cuantifican sobre ella —`V/17` §3.2 reglas 1 y 3, §3.3, §3.4 y `B/19` §6—
 siguen siendo exactas. Es el mismo argumento con el que el barrido y `S18` no suman filas ahí.
-
-**Texto de la fuente — «Cómo entra el grace, que era la otra mitad de `F-8B2-018`»** (`B/03-maquinas-de-estado.md:2179–2256`, sin lo tachado):
-
-La primera cláusula de `MP3` sale de *«se agota el grace»* y el grace tenía el mismo problema que
-`AWAITING`: **`S4`
-describe *«un cobro falla»* y en el pago manual nadie cobra**. Con `MP5` el hecho queda nombrado
-y **no hace falta una fila nueva**: para una suscripción sin débito, *«el cobro de este período
-falló»* **es** que su cuota se abrió y no hay pago acreditado contra ella. Es lo que este § ya
-ordenaba abajo de la tabla —*«si falta el pago, va a `GRACE_PERIOD` los mismos días
-configurables»*— y lo que `MP1` y `MP2` ya presuponían: los dos declaran que la suscripción está
-en `GRACE_PERIOD` cuando el admin actúa. Así que `S4` es la fila, con su `desde` en `ACTIVE`, que
-es el único estado desde el que **el reloj** —la cláusula *(a)* de `MP5`— crea.
-
-**Pero eso vale de la SEGUNDA cuota en adelante, y hay que decir por qué la primera es otra cosa.**
-`B/12` §4.3 ordena que **el grace no sea un beneficio de entrada**, y esa regla **sí alcanza a un
-pagador manual**: su sujeto es el grace, no la autorización. Lo que se lee *«por autorización»* es
-el **predicado de `S16`**, que es el **remedio** —mandar a `CHARGE_DECLINED` al que autorizó y no
-cobró—, y ese remedio acá no tiene sujeto: `S16` exige que sea el primer cobro de esa autorización
-—desde la FASE 8 completa ya no exige que el
-proveedor la haya cancelado: la cancela él (owner 2026-09-25)—, y un pagador manual **no tiene
-autorización en el proveedor** (`B/06` §7), así que esa condición es
-falsa y `CHARGE_DECLINED` tiene acá
-población vacía. **Que el remedio no tenga sujeto no vuelve inaplicable la regla: la deja sin
-ejecutor**, y sin uno el §4.3 se viola en su forma más literal — quien contrata con pago manual
-recibiría los días de `DEC-SUB-002` **con servicio entero sin haber transferido un peso**, y desde
-que `S23` libera el candado `A` (§3.2) podría repetirlo **por intento**, que es la palabra con que
-el §4.3 describe el daño que rechazó.
-
-> **La regla, con su ejecutor sobre esta población.** **La primera cuota de un pagador manual no
-> abre grace.** La abre la cláusula *(b)* de `MP5` **en el alta —`S1`, §3.2—**, o sea con la fila
-> en `PENDING_AUTHORIZATION` y no en `ACTIVE`,
-> así que `S4` —cuyo `desde` es `ACTIVE`— no corre sobre ella; mientras esa cuota no esté
-> registrada la fila **no emite fuente** (`12-contrato…` §2.6) y no hay servicio que cosechar. Su
-> ventana es la de la autorización, y su final ya está escrito: **`S3` la lleva a `ABANDONED`**,
-> que **no es vivo**, con lo que el candado `A` queda libre y el reintento es un alta nueva —
-> exactamente el desenlace que `CHARGE_DECLINED` le da al pagador con tarjeta.
-
-**Qué período cubre esa primera cuota, que hay que decirlo porque al abrirse no hay fecha que
-copiar.** El resto de las cuotas copian *«la fecha del próximo cobro»* vigente (`B/02` §2.3), y en
-`PENDING_AUTHORIZATION` esa columna todavía no existe. **El período de la primera es el instante
-del alta** —el de `S1`—, que es un valor que existe cuando la cuota se abre y deja el `período`
-escrito de entrada, como esa entidad exige. **Y la fecha del próximo cobro la estrena `MP1` al
-registrarla**, un ciclo más adelante, por la escritura 2 de arriba: sobre un pagador manual la
-escritura 1 —*«la estrena `S2`»*— tiene **población vacía**, porque el evento de `S2` es un webhook
-de autorizada y acá no hay preapproval que autorice. **Los días que van del alta al registro corren
-adentro de ese período y no se reponen**, que es la misma regla de *«nada es retroactivo»* del §7.1
-y lo que impide que abrir el alta y transferir al filo de la ventana corra el ciclo gratis.
-
-**Y con eso la garantía de no-repetición del §4.5 punto 1 gana sujeto acá.** Esa garantía dice que
-*«no hay diez días que cosechar por más veces que se repita»* porque **cada reintento muere sin
-pasar por `GRACE_PERIOD`**; el pagador con tarjeta muere en `CHARGE_DECLINED` y el pagador manual
-que nunca transfiere muere en `ABANDONED`, y en los dos casos lo que no hubo es grace. La cuota
-queda cerrada por la segunda cláusula de `MP3`, para que no sobreviva un `AWAITING` colgando de una
-suscripción muerta.
-
-**Lo que falta y lo que no.** Abrir la primera cuota **no** falta: lo hace `S1`, que ya está
-escrita, y por eso esta regla tiene ejecutor hoy y no el día que alguien escriba el capítulo 13.
-Lo que falta es **la transición que lleva un pagador manual a `ACTIVE`** —el evento de `S2` es
-*«webhook de autorizada»* y acá no hay preapproval que autorice, que es el hueco que el capítulo 13
-tiene abierto—, y esta regla **la ata por adelantado**: **esa fila no puede llevar a `ACTIVE` sin
-la primera cuota registrada**. Va escrito acá porque es acá donde alguien la escribiría sin verla.
-
-> ✅ **Cerrado el 2026-09-24: la fila existe y es `S29`** (§3.2). La condición que este párrafo ató
-> por adelantado **se cumple por construcción**, porque el evento de `S29` **es** el registro de la
-> primera cuota. Y la jurisdicción quedó donde este párrafo la reclamaba: **la fila vive en esta
-> tabla, no en el capítulo 13**, que desarrolla el flujo del pagador manual y la referencia. Lo
-> único que hubo que agregarle y este párrafo no anticipaba: **`S29` NO mueve la fecha del próximo
-> cobro**, porque ya la mueve `MP1` y repetirlo daría **dos ciclos** de crédito.
-**El que cuenta es el pago acreditado y nunca la fecha**, que es el punto 2 del mismo §4.5.
-
-**Y la duración de esa ventana ya está elegida, y no es la de `S3` para el pagador con tarjeta.**
-Era la única declarada —**72 h**, escrita para el tiempo que tarda alguien en completar un
-checkout, no para el que tarda una transferencia en acreditarse—, y `DEC-SUB-016` la partió: sobre
-un pagador manual la ventana de `S3` dura **7 días corridos** (§3.4 punto 1). **La regla de este §
-no cambia ni depende de la cifra**: lo que la sostiene es que la fila **no dé servicio** durante la
-ventana, y eso vale igual con 72 h que con 7 días. Lo que la cifra cambia es a quién se pierde: con
-las 72 h, el pagador manual que transfiere un viernes muere en `ABANDONED` y tiene que rehacer el
-alta entera.
 
 **Texto de la fuente — «Qué mueve la fecha del próximo cobro: tres escrituras, y ninguna cuarta»** (`B/03-maquinas-de-estado.md:2257–2322`, sin lo tachado):
 
@@ -5027,150 +5170,7 @@ La obligación 2 de `DEC-METH-008`, contestada por escrito:
 | *«el ciclo que vence estando pausada avanza la fecha +1 ciclo sin cobrar»* (`PS-6`) | la matriz, citada por `DEC-SUB-010` y `B/12` §7.1 | **sigue verdadera y gana un consumidor**: es la medición que fija qué hace `S10` sobre un pagador manual, donde nadie la ejecuta por nosotros | arriba, punto 3 |
 | *«la fecha del próximo cobro se registra»* del barrido | `B/09` §3 | **sigue verdadera y sin tocar**: es la escritura del régimen **con** proveedor, y sobre un pagador manual el barrido no tiene preapproval que leer | sin tocar |
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1871, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:299, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1906, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1931, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1990, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2047, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2068, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2095, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2111, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2142, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2179, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2257, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2410, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2439, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2462, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2505
-
-<a id="trans-b-mp2"></a>
-
-### `TRANS:B:MP2` · `MP2` — `AWAITING` → `DECLARED_UNPAID`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5) · **también**: [B7](10-corte/B7.md#pieza-b7) (implementa)
-- **Fuente de la asignación**: `B/descomposicion.md:139`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `AWAITING`
-- **evento** (disparador): el admin confirma que no se pagó
-- **hacia** (estado destino): `DECLARED_UNPAID`
-- **efectos** (efectos): la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj — **es el cuarto evento de `S6`**, declarado en su fila desde la FASE 9 completa (C8, `F-8CB2-009`): antes `S6` no lo nombraba y por la regla 1 del núcleo `MP2` no suspendía. **Sólo si la suscripción está en `GRACE_PERIOD`**: sobre una fila que ya salió del grace la cuota no queda `AWAITING` —la cierra la tercera cláusula de `MP3`—
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1872, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
-
-<a id="trans-b-mp3"></a>
-
-### `TRANS:B:MP3` · `MP3` — `AWAITING` → `DECLARED_UNPAID`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `AWAITING`
-- **evento** (disparador): se agota el grace sin que el admin haga nada — **o, sobre la PRIMERA cuota, se agota la ventana de autorización y `S3` se lleva la fila a `ABANDONED`** (§7.2, *«cómo entra el grace»*) — **o, tercera cláusula, la suscripción sale de `GRACE_PERIOD` o de `PENDING_AUTHORIZATION` por cualquier transición que no sea `S5`, `S6`, `S2`/`S29` ni `S3`** —del grace, `S13`, `S17`, `S20`, `S21` y `S24`; de `PENDING_AUTHORIZATION` con la primera cuota abierta, `S13`, `S20` y `S21`: **las ocho salidas del dominio**, recontadas sobre la tabla del §3.2 (revisión del owner, 2026-09-28, C8: salen `S26` y `S28`); `S31` ya la cierra por la segunda cláusula— (owner 2026-09-25; FASE 9 completa, 8f, `F-8CB2-005`): la cuota impaga de quien se va no queda viva, y registrarla después con `MP1` ya no avanza la fecha del próximo cobro de una fila muerta
-- **hacia** (estado destino): `DECLARED_UNPAID`
-- **efectos** (efectos): `S6` por la primera cláusula. **Por la segunda, ninguno**: la fila de suscripción ya la mató `S3`, y lo que esta transición hace es cerrar la cuota para que no quede un `AWAITING` colgando de una suscripción muerta. **Por la tercera, ninguno tampoco**, con la misma razón
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1873, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
-
-<a id="trans-b-mp4"></a>
-
-### `TRANS:B:MP4` · `MP4` — `DECLARED_UNPAID` → `REGISTERED`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`; `B/descomposicion.md:592`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `DECLARED_UNPAID`
-- **evento** (disparador): el admin registra el pago, que llegó **después**
-- **hacia** (estado destino): `REGISTERED`
-- **efectos** (efectos): la suscripción sale de `SUSPENDED` por `S7` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: misma herencia y misma razón que `MP1`, porque **el daño no depende de por qué puerta entró el pago** ni de desde qué estado del pago manual se lo registre. **`S19` lo admite por su propio evento**, que nombra el hecho —entró el pago del período impago— y no el mecanismo (§3.2). **Y no es incondicional**, por partida doble: el cruce de `C5` vale igual que en `MP1`, y `S7` exige **las cuatro condiciones del `B/05` §3** — la **1** es el tope de la reapertura (ver abajo, *«el tope no es un día»*). **Y avanza un ciclo la fecha del próximo cobro, igual que `MP1`** — **y si el período que esa cuota cubre YA TERMINÓ**, o sea si la suspensión duró más que un período, **antes de registrarla la reimputa al período que arranca en la reactivación** (§7.2, *«al reabrir por `MP4`»*): el avance sale entonces de ese período nuevo y la fecha queda en **la reactivación más un ciclo**. Dejar la fecha **en** la reactivación era abrirle la cuota del período que arranca en la misma corrida del reloj, con `S4` devolviéndolo a `GRACE_PERIOD` el mismo día — dos períodos cobrados y ningún día comprado. Y avanzar siempre al día de la reactivación, sin mirar si el período terminó, le cobraba dos veces los días que le quedaban del período que acababa de pagar. **Y emite el comprobante**, igual que `MP1` (`B/02` §2.3, `DEC-LEGAL-001`; FASE 8 completa, `F-8CB3-006`)
-
-**Texto de la fuente — «Al reabrir por `MP4`: el reloj vuelve a crear, y si el período viejo ya terminó la cuota se REIMPUTA»** (`B/03-maquinas-de-estado.md:2323–2409`, sin lo tachado):
-
-Si estuvo `SUSPENDED` no se crearon cuotas, así que hay que decir qué pasa cuando vuelve.
-
-> **`MP4` lleva la fila a `ACTIVE` por `S7`, y desde ese instante el reloj vuelve a crear.** Lo
-> que la persona paga es **un** período, y cuál es depende de si el de la cuota todavía corre:
->
-> - **Todavía corre** —la reapertura cae adentro de él—: la cuota queda donde está y la fecha del
->   próximo cobro **avanza un ciclo** desde el inicio de ese período, igual que en `MP1`.
-> - **Ya terminó** —la suspensión duró más que un período—: **antes de registrarla, `MP4`
->   reimputa la cuota al período que arranca en la reactivación** —le reescribe el `período`
->   (`B/02` §2.3), sobre la misma fila que `MP2` o `MP3` cerraron— y el avance de un ciclo sale de
->   ahí, así que la fecha queda en **la reactivación más un ciclo**.
-
-**Dejar la fecha EN la reactivación era cobrarle dos períodos y no venderle ninguno.** El que se
-atrasa, pasa tres meses `SUSPENDED` y transfiere el día 100 liquida con ese pago el período que
-arrancó el día 0 —el que pasó **casi entero suspendido**—, y como la fecha del próximo cobro queda
-en el día 100, **la primera corrida del reloj encuentra que la fecha ya llegó y que ese período no
-tiene cuota**: `MP5` abre la del período que empieza hoy y `S4` lo devuelve a `GRACE_PERIOD` **en
-el mismo acto**. El día que volvió debe dos períodos completos y lo que su plata compró son **cero
-días**. La reimputación es lo que lo cierra: el pago compra el período que arranca, la fecha queda
-un ciclo por delante y el reloj no encuentra nada que abrir hasta entonces.
-
-**Y es literalmente la mitad (b), que hasta acá se cumplía a medias.** *«El que vuelve paga el
-período que arranca, no los que pasó suspendido»*: sin reimputar, pagaba el que pasó suspendido
-—`MP4`— **y** el que arranca —`MP5`, el mismo día—; con la reimputación paga **el que arranca y
-nada más**, y los períodos que transcurrieron bajo la suspensión no se cobran ni quedan como deuda
-(§7.1, *«lo adeudado»*).
-
-**Re-anclar siempre a la reactivación era el otro doble cobro, y hay que decir sobre quién.** El
-que se atrasa, transfiere **el día 20 de un período que arrancó el día 0** y paga el importe del
-período entero (`B/05` §3, condición 2) tiene diez días por delante que ya pagó. Con el re-anclaje
-incondicional esos diez días pasaban a ser el arranque del período **siguiente**: el reloj le abría
-la cuota en el acto y `S4` lo devolvía a `GRACE_PERIOD` el mismo día. **Pagaba dos veces los días
-20 a 30**, y ni el correo ni la pantalla lo decían. Como la reimputación **sólo corre cuando el
-período ya terminó**, ese caso no la toca: la fecha queda en el día 30, el reloj no encuentra nada
-que abrir hasta ese día, y los diez días son los que compró.
-
-**Las cuatro condiciones del `B/05` §3 se evalúan igual, y hay que decir por qué la reimputación no
-las mueve.** La **2** —*«el monto coincide con el esperado para el período que cubre»*— no depende
-de cuál sea el período: el monto **no se guarda**, se resuelve de la versión de plan anclada
-(`B/02` §2.3), que la reimputación no toca, así que evaluarla antes o después del cambio da la
-misma respuesta. La **4** —*«no hay otro pago acreditado para el mismo período»*— se evalúa sobre
-el período reimputado y no encuentra ninguno, porque durante la suspensión no se creó ninguna cuota
-(la mitad (b)). Las condiciones **1** y **3** no nombran ningún período.
-
-**Y la reimputación se asienta, porque una columna que se reescribe sin rastro no es auditable.**
-Va en el evento de dominio de `MP4`, que la **regla 4** del `NUCLEO/03` §1 ya exige por cada
-transición: ahí quedan el período que la cuota tenía y el que pasó a cubrir, que es lo que permite
-contestar *«¿qué compró esta transferencia?»* sin reconstruirlo. **Es la única escritura del
-`período` que no es la de su creación**, y `B/02` §2.3 la declara como tal.
-
-**Lo que la reimputación NO le devuelve son los días que consumió en grace adentro del período que
-ya no se le cobra.** Ese período se abrió, la persona tuvo servicio entero mientras corrió el grace
-(`S4`, §3.2) y después `S6` se lo cortó; al reimputar la cuota, ese tramo queda **sin cobrar**. Es
-el precio de la política de retención del §20, que el §21 acota cortando el servicio en cuanto el
-grace se agota — y **no es un beneficio de entrada**, porque sobre un pagador manual el grace sólo
-alcanza a una suscripción que **ya tiene al menos un pago acreditado** (abajo, *«cómo entra el
-grace»*): nadie llega a ese tramo sin haber pagado antes.
-
-**Y el argumento que justificaba el re-anclaje era verdadero en su conclusión y falso en su
-mecanismo, que es lo que le agrandó el alcance.** Decía que con el ancla vieja *«el reloj, en su
-primera corrida, crearía **de golpe** todas las cuotas que (b) mandó no crear»*. **De golpe no**:
-la condición de `MP5` nombra **un** período —el de la fecha vigente— y es idempotente, así que
-crea **una** cuota por corrida. El daño verdadero es otro y sigue siendo real: esa única cuota
-sería la de un período que **transcurrió entero durante la suspensión**, o sea días sin servicio,
-que es exactamente lo que la mitad (b) mandó no cobrar; y al registrarse, la fecha avanzaría a otro
-pasado, y así hasta ponerse al día. No una avalancha sino una cola, con la misma deuda al final.
-**El remedio era correcto y su alcance estaba mal escrito**: se aplicaba también a la población
-donde el avance cae en el futuro, y ahí su propio motivo no existe.
-
-**Y no le regala nada a nadie, en ninguna de las dos ramas.** Con el período todavía corriendo, lo
-que `MP4` registra **es la cuota del período impago** —la misma fila que `MP2` o `MP3` cerraron,
-por el importe esperado (§7.1, *«lo adeudado»*)—, y lo que **no** le devuelve son los días que pasó
-en grace y suspendido adentro de ese período: *«nada es retroactivo»* (§7.1), y ésa es la
-consecuencia de no haber pagado a término, no un cobro nuevo. Con el período ya terminado, lo que
-registra es **un** período —el que arranca— por el mismo importe, y lo que no le devuelve son los
-meses que pasó suspendido, que no se cobran y tampoco se prestaron.
-
-**La reimputación es de esta puerta, y el avance no.** Sobre un pagador con tarjeta **no hay nada
-que reimputar**: las fechas las tiene el proveedor y son inmutables (`EX-39`, `B/12` §5.4), y sobre
-esa población la columna es una copia que ninguna regla lee para decidir (`B/02` §2.2) — además de
-que ahí no hay cuota de `manual_payment` que mover. Sobre un pagador manual la reimputación corre
-**sólo acá**, porque es la única vuelta a `ACTIVE` que puede encontrar una cuota cuyo período ya
-terminó. El **avance**, en cambio, no es sólo de `MP4` —la vuelta de una cortesía lo necesita
-igual—, y por eso está escrito arriba como la tercera escritura y no adentro de esta puerta.
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1874, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:592, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2323
-
-<a id="trans-b-mp5"></a>
-
-### `TRANS:B:MP5` · `MP5` — *(sin fila)* → `AWAITING`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
-- **Fuente de la asignación**: `B/descomposicion.md:139`
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): *(sin fila)*
-- **evento** (disparador): **dos cláusulas, un mismo acto — abrir la cuota de un período**: *(a)* **un reloj abre el período** de una suscripción de pagador manual, porque **llegó la fecha del próximo cobro** (`B/02` §2.2), que es el instante en que el proveedor habría cobrado (§7.2); *(b)* **el alta de un pagador manual abre su PRIMERA cuota** — y el alta es **`S1`**, que ya existe (§3.2) —, que es el espejo del primer cobro que en un pagador con tarjeta ocurre antes de `S2`
-- **hacia** (estado destino): `AWAITING`
-- **efectos** (efectos): **es la entrada de esta máquina, y la crea el sistema, no un admin.** La cláusula *(a)* **sólo corre con la suscripción en `ACTIVE`** —los otros cinco estados vivos están descartados uno por uno en el §7.2— y **en el mismo acto la suscripción entra en `GRACE_PERIOD` por `S4`**, que es lo que el §30 ya ordenaba abajo y lo que `MP1` y `MP2` ya presuponían en sus efectos. La cláusula *(b)* corre en **`PENDING_AUTHORIZATION`** y **no dispara `S4`**: el `desde` de `S4` es `ACTIVE`, así que la primera cuota **no abre grace** y la fila no da servicio hasta que se registre (§7.2, *«cómo entra el grace»*). **El par `(desde, evento)` sigue siendo uno solo** —*(sin fila)*, abrir una cuota— con sus dos cláusulas, igual que `S9` tiene tres y `A5` tres: `G-R4` no gana ningún par. **Idempotente por condición**: no crea si ya existe una fila de `manual_payment` para ese período, igual que `S13` y `S20` son *«idempotentes y reanudables fila por fila»*. **Y si ese día llega también un cambio programado de la fila, lo aplica `S38` primero** (§3.2): la cuota se abre ya con la versión destino (verificación corta, 2026-09-29, lote M-B)
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1875, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1875, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2111, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2142, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2257, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2410, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2439, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2462, .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2505
 
 <a id="trans-b-mp6"></a>
 

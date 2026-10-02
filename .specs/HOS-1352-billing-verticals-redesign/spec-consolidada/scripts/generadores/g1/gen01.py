@@ -15,7 +15,12 @@ once, or if a dead quote of the verdict (R19 of trazar.py) is still in the block
 And (first blind-verification round, 2026-10-02) it fails if an owner letter's cell ends in «\\» (a
 table split at an escaped pipe), if a letter that a caducity note of its own file names («> **Caducada…**»)
 renders without its «⚠️ Caducada» line (omisiones.json, `letras_muertas`), or if a PARCIAL note promises
-to show a span («la muestra bajo el 📌N») and that 📌 does not receive it (omisiones.json, `reubicar`)."""
+to show a span («la muestra bajo el 📌N») and that 📌 does not receive it (omisiones.json, `reubicar`).
+
+And (second round, pattern P-H) it fails if a letter of a round in RONDAS_CITADAS is cited by a later
+source only inside ~~…~~ and is in neither `letras_muertas` nor `letras_vivas_revisadas` (H2-G1-10), or
+if a DEC body or a 📌 has unbalanced parentheses after segmenting: a 📌 that opens with «(**📌» ends at
+the «)» that balances it, not at the end of the line (H2-G1-9, DEC-GRANT-004)."""
 import json
 import os
 import re
@@ -37,6 +42,7 @@ OMIT = json.load(open(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.starts
                           os.path.join(HERE, 'omisiones.json')), encoding='utf-8'))
 MUERTAS = OMIT.pop('letras_muertas', {})
 REUBICAR = OMIT.pop('reubicar', {})
+VIVAS_REVISADAS = OMIT.pop('letras_vivas_revisadas', {})
 REUBICADOS = {}  # destination 📌 -> the source 📌 whose glued text it received
 MUERTAS_RENDIDAS = set()
 
@@ -187,12 +193,36 @@ def pin_start_col(line):
     return k
 
 
+def cierre_en_linea(a, fin):
+    """For a 📌 that opens inside a parenthesis of the body («… (**📌 …**: …), y sigue»), the
+    (line, column) of the «)» that balances that parenthesis, which may be on a later line: the 📌
+    ends there and what follows goes back to the body (H2-G1-9, DEC-GRANT-004). None otherwise."""
+    line = LL[a - 1]
+    k = line.find('📌')
+    if line[max(0, k - 3):k] != '(**':
+        return None
+    depth, n, col = 1, a, k
+    while n <= fin:
+        l = LL[n - 1]
+        for j in range(col, len(l)):
+            depth += {'(': 1, ')': -1}.get(l[j], 0)
+            if depth == 0:
+                return n, j
+        n, col = n + 1, 0
+    sys.exit(f'📌 en línea sin «)» que lo cierre: {LOG}:{a}')
+
+
 def pin_segments(dec):
+    """(pin, first line, last line, closing column or None) of every 📌 of ``dec``."""
     pins = sorted((i for i in items if i['fuente'] == 'PIN' and i.get('dec') == dec['id']), key=lambda i: i['linea'])
     starts = {p['linea'] for p in pins}
     segs = []
     for p in pins:
         a = p['linea']
+        cierre = cierre_en_linea(a, dec['fin'])
+        if cierre:
+            segs.append((p, a, cierre[0], cierre[1]))
+            continue
         first = LL[a - 1]
         ind = len(first) - len(first.lstrip())
         list_start = bool(LIST.match(first)) and first.lstrip()[:6].find('📌') >= 0 or bool(re.match(r'^\s*(?:[-*]|\d+\.)\s+\*\*📌', first)) or bool(re.match(r'^\s*[-*]\s+📌', first))
@@ -228,8 +258,18 @@ def pin_segments(dec):
                 break
             b = n
             n += 1
-        segs.append((p, a, b))
+        segs.append((p, a, b, None))
     return segs
+
+
+def balanceado(cid, txt):
+    """P-H (b): the body of a DEC and the text of each 📌, after segmenting, open as many «(» as they
+    close (links aside). A 📌 cut by line instead of by its closing «)» leaves one open in the body and
+    one extra «)» in the 📌 (H2-G1-9)."""
+    t = re.sub(r'\]\([^)\s]*\)', ']', txt)
+    if t.count('(') != t.count(')'):
+        sys.exit(f'{cid}: paréntesis desbalanceados después de segmentar los 📌 '
+                 f'({t.count("(")} «(» contra {t.count(")")} «)»)')
 
 
 def render_dec(dec):
@@ -237,21 +277,33 @@ def render_dec(dec):
     segs = pin_segments(dec)
     body, pins_out = [], []
     n = dec['linea'] + 1
-    seg_at = {a: (p, a, b) for p, a, b in segs}
+    seg_at = {s[1]: s for s in segs}
     while n <= dec['fin']:
         if n in seg_at:
-            p, a, b = seg_at[n]
+            p, a, b, fin_col = seg_at[n]
             line = LL[a - 1]
             col = pin_start_col(line)
             prefix = relink(line[:col], LOG)
-            seg_lines = [relink(' ' * col + line[col:], LOG)] + [relink(x, LOG) for x in LL[a:b]]
+            if fin_col is None:
+                seg_lines = [relink(' ' * col + line[col:], LOG)] + [relink(x, LOG) for x in LL[a:b]]
+                cola = ''
+            else:
+                # a 📌 inside a parenthesis ends at the «)» that closes it; the rest is body again
+                trozo = [line[col:fin_col]] if b == a else [line[col:]] + list(LL[a:b - 1]) + [LL[b - 1][:fin_col]]
+                seg_lines = [relink(' ' * col + trozo[0], LOG)] + [relink(x, LOG) for x in trozo[1:]]
+                cola = relink(LL[b - 1][fin_col:], LOG)
             dead = p['estado'] in ('MUERTO',) or (adj.get(p['id'], {}).get('veredicto') == 'MUERTO')
             if dead or p['id'] not in mine:
-                body.append(f'{prefix}→ {p["local"]} retirado: [{p["id"]}](90-retirados.md#{slug(p["id"])})')
+                body.append(f'{prefix}→ {p["local"]} retirado: [{p["id"]}](90-retirados.md#{slug(p["id"])}){cola}')
             else:
                 ef = adj.get(p['id'], {}).get('efecto')
-                extra = f' ({ef} de lo anterior; adjudicación)' if ef in ('reemplaza parte', 'reemplaza todo') else ''
-                body.append(f'{prefix}→ ver [{p["local"]}](#{slug(p["id"])}){extra}.')
+                if ef not in ('reemplaza parte', 'reemplaza todo'):
+                    extra = ''
+                elif fin_col is None:
+                    extra = f' ({ef} de lo anterior; adjudicación)'
+                else:
+                    extra = f'; {ef} de lo anterior, adjudicación'
+                body.append(f'{prefix}→ ver [{p["local"]}](#{slug(p["id"])}){extra}' + (cola if fin_col is not None else '.'))
                 pins_out.append((p, seg_lines))
             n = b + 1
             continue
@@ -273,6 +325,7 @@ def render_dec(dec):
     cl = cobertura_lines(cid)
     if cl:
         out += cl + ['']
+    balanceado(cid, body_txt)
     out.append(body_txt)
     out += nota_parcial(cid)
     for p, seg in pins_out:
@@ -282,6 +335,7 @@ def render_dec(dec):
         txt = '\n'.join([first] + dedent(rest))
         txt = clean(unstrike(txt)).strip('\n')
         txt = omitir(p['id'], txt)
+        balanceado(p['id'], txt)
         out += ['', f'<a id="{slug(p["id"])}"></a>', f'#### {p["local"]} de {cid}', '', f'Origen: {LOG}:{p["linea"]}', '']
         cl = cobertura_lines(p['id'])
         if cl:
@@ -330,8 +384,11 @@ def own_render(i):
         out.append(f'- **{h}**: {c if c else "—"}')
     m = MUERTAS.get(i['id'])
     if m:
+        inf = m['inferido']
+        if inf is True:
+            inf = 'la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8'
         out.append(f'- ⚠️ **Caducada {m["alcance"]}**: {m["por"]} (Origen: {m["origen"]})'
-                   + (' *(inferido: la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8)*' if m['inferido'] else '')
+                   + (f' *(inferido: {inf})*' if inf else '')
                    + '. Sólo citable; no se implementa.')
         MUERTAS_RENDIDAS.add(i['id'])
     return out
@@ -361,6 +418,55 @@ def caducadas_por_nota(path):
         if dentro:
             out |= {t for t in re.findall(r'`([^`]+)`', l) if t in locales}
     return out
+
+
+# P-H (second blind-verification round, H2-G1-10): how the later sources cite the letters of a round,
+# and which sources are later than every round checked. A letter whose every cite there is struck lost
+# its decision, unless the source keeps it in words that do not cite it (`letras_vivas_revisadas`).
+RONDAS_CITADAS = {'26-fase-9-completa': 'FASE 9 completa', '28-fase-9-vuelta-1': 'FASE 9 vuelta 1',
+                  '29-fase-8-vuelta-2': 'FASE 9 vuelta 2', '37-fase-8-vuelta-3': 'FASE 9 vuelta 3'}
+
+
+def fuentes_posteriores():
+    from comun import ls  # noqa: E402
+    return [D + '16-fase-7-del-paraguas.md', LOG] + sorted(f for f in ls(D + '41-corte-del-mvp/') if f.endswith('.md'))
+
+
+def citas_de_letra(ronda, letra, textos):
+    """(live, struck) cites of ``letra`` of ``ronda`` in the later sources («FASE 9 vuelta 3, owner
+    2026-09-30, lote T», «FASE 9 completa, `2d`», «FASE 9 vuelta 2, `R9-b`»)."""
+    rx = re.compile(re.escape(RONDAS_CITADAS[ronda]) + r'(?:, owner 2026-\d\d-\d\d)?,? (?:lote |decisión |`)?'
+                    + re.escape(letra) + r'(?![A-Za-z0-9-])')
+    vivas = tachadas = 0
+    for t, spans in textos:
+        for m in rx.finditer(t):
+            if any(a <= m.start() < b for a, b in spans):
+                tachadas += 1
+            else:
+                vivas += 1
+    return vivas, tachadas
+
+
+def letras_tachadas_sin_marca():
+    """Letters of the rounds in RONDAS_CITADAS cited only inside ~~…~~ by a later source and in neither
+    `letras_muertas` nor `letras_vivas_revisadas`; and reviewed-alive entries whose evidence is gone."""
+    textos = []
+    for f in fuentes_posteriores():
+        t = '\n'.join(lines(f))
+        textos.append((t, [(m.start(), m.end()) for m in re.finditer(r'~~.*?~~', t, re.S)]))
+    malas = []
+    for i in items:
+        r = next((r for r in RONDAS_CITADAS if f'/{r}/' in i['archivo']), None)
+        if i['fuente'] != 'OWN' or not r or i['id'] not in mine:
+            continue
+        vivas, tachadas = citas_de_letra(r, i['local'], textos)
+        if tachadas and not vivas and i['id'] not in MUERTAS and i['id'] not in VIVAS_REVISADAS:
+            malas.append(i['id'])
+    for k, v in VIVAS_REVISADAS.items():
+        p, n = v['origen'].rsplit(':', 1)
+        if v['texto'] not in lines(p)[int(n) - 1]:
+            malas.append(f'{k} (letras_vivas_revisadas: su texto ya no está en {v["origen"]})')
+    return malas
 
 
 def own_section_heading(path, n):
@@ -434,6 +540,10 @@ def main():
     for k in MUERTAS:
         if k in mine and k not in MUERTAS_RENDIDAS:
             sys.exit(f'letra muerta sin renderizar: {k}')
+    malas = letras_tachadas_sin_marca()
+    if malas:
+        sys.exit('letra tachada en una fuente posterior y sin ⚠️ (omisiones.py, LETRAS_MUERTAS o '
+                 f'LETRAS_VIVAS_REVISADAS): {", ".join(malas)}')
     for cid, v in adj.items():
         for n in re.findall(r'(?:muestra|mostrar\w*)\s+bajo el 📌(\d+)', v.get('muerto') or ''):
             dest = cid.split('#')[0] + f'#📌{n}'

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Write the body of the «sections the row assigns» blocks of six pieces (H-ORQ-2, pattern P2).
 
-    python3 gen.py [--salida=<dir>]   (default: rewrites the six piece files of the spec in place)
+    python3 gen.py [--salida=<dir>]   (default: rewrites the six piece files of the spec in place;
+                                      with --salida it writes the six files under <dir> and leaves the
+                                      spec and fuentes.json untouched: the dry run)
 
 Six pieces announce «Las secciones de <cap>, que la columna de capítulos de la fila le asigna:» and
 used to follow it with a bare `Origen:` line and no body (trazar R21). This generator transcribes,
@@ -65,6 +67,27 @@ def limpiar(t):
     return LINK.sub(lambda m: f'{m.group(1)} (`{m.group(2)}`)' if m.group(2) else m.group(1), t)
 
 
+def _tachada_entera(c):
+    """Nothing of the cell survives outside ~~…~~ but markup, ✚ and parentheses that date the strike."""
+    t = re.sub(r'~~.*?~~', '', c, flags=re.S)
+    while re.search(r'\([^()]*\)', t):
+        t = re.sub(r'\([^()]*\)', '', t)
+    return '~~' in c and not re.sub(r'[\s✚*`]', '', t)
+
+
+def sin_texto_vivo(path, n, cs):
+    """P-K (second blind-verification round, H2-VA8-3): a row dropped as dead carries no live text. It is
+    dead by its id cell struck entire, by every non-empty cell after it struck entire, or by a «**Sale**»
+    second cell; checked here with a predicate of its own, so a ``dead_row`` that drops a row only
+    because its first cell STARTS with ~~ («~~monto vigente~~ **monto esperado, derivado**») fails."""
+    body = [c for c in cs[1:] if c.strip() and c.strip() not in ('—', '-')]
+    if _tachada_entera(cs[0]) or (body and all(_tachada_entera(c) for c in body)):
+        return
+    if len(cs) > 1 and re.search(r'\*\*Sale\*\*', cs[1]):
+        return
+    sys.exit(f'✗ {path}:{n}: fila descartada como muerta con texto vivo fuera de ~~…~~: {cs[0].strip()[:80]}')
+
+
 def sec_de(path, n):
     """The leaf SEC of the inventory that contains line ``n`` of ``path``."""
     hit = [s for s in SECS if s['archivo'] == path and s['linea'] <= n <= s['fin']]
@@ -86,6 +109,7 @@ def cuerpo(sec, base, nivel_fuente):
     for k in range(sec['linea'] + 1, sec['fin'] + 1):
         l = L[k - 1]
         if l.startswith('|') and not re.match(r'^\|[\s:|-]+\|?\s*$', l) and dead_row(cells(l)):
+            sin_texto_vivo(sec['archivo'], k, cells(l))
             continue
         if re.match(r'^---\s*$', l):
             continue

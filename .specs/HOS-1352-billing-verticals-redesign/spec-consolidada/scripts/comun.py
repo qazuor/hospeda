@@ -108,16 +108,39 @@ def table_after(path, rng, header_rx):
     sys.exit(f'✗ table /{header_rx}/ not found in {path}:{a}-{b}')
 
 
-STRUCK_CELL = re.compile(r'^\s*(?:✚\s*)?~~.*~~\s*(?:✚)?\s*$', re.S)
+def _solo_parentesis(t):
+    """True when ``t`` is exactly one balanced parenthesis, «(…)», from its first char to its last."""
+    if not t.startswith('(') or not t.endswith(')'):
+        return False
+    depth = 0
+    for k, ch in enumerate(t):
+        depth += {'(': 1, ')': -1}.get(ch, 0)
+        if depth == 0 and k < len(t) - 1:
+            return False
+    return depth == 0
+
+
+def struck_cell(c):
+    """A cell is struck when nothing it says survives outside ~~…~~: what is left is markup, ✚, or —
+    for a cell that opens struck — one trailing parenthesis that dates the strike («~~x~~ (owner …,
+    C8)»). A cell that only STARTS struck and goes on with the live text that replaces it
+    («~~monto vigente~~ **monto esperado, derivado**») is alive (second blind-verification round,
+    pattern P-K, H2-VA8-3: three live rows of B11 and B13a were dropped that way)."""
+    if '~~' not in c:
+        return False
+    resto = re.sub(r'[\s✚*`]', '', re.sub(r'~~.*?~~', '', c, flags=re.S))
+    if not resto:
+        return True
+    return bool(re.match(r'^\s*(?:\*\*)?~~', c)) and _solo_parentesis(resto)
 
 
 def dead_row(cs):
-    """A row is dead when its id is struck, when ALL its non-empty content is struck, or when
-    its second cell says **Sale**."""
-    if re.match(r'^\s*~~', cs[0]):
+    """A row is dead when its id cell is struck ENTIRE (struck_cell, not merely starting with ~~),
+    when ALL its non-empty content is struck, or when its second cell says **Sale**."""
+    if struck_cell(cs[0]):
         return True
     body = [c for c in cs[1:] if c.strip() and c.strip() not in ('—', '-')]
-    if body and all(STRUCK_CELL.match(c) for c in body):
+    if body and all(struck_cell(c) for c in body):
         return True
     return bool(len(cs) > 1 and re.search(r'\*\*Sale\*\*', cs[1]))
 

@@ -8,5 +8,282 @@
             "de": "pasos 3, 4 y 4b",
             "a": "pasos […] y 4b"
         }
-    ]
+    ],
+    "adjuntar": {
+        "B/03-maquinas-de-estado.md:21": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:46": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:285": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo (una condición de toda fila que cancela en el proveedor)",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:377": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo (el dominio de la sucesión, recorrido por la predecesora)",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:886": {
+            "a": "TRANS:B:S11",
+            "por": "la baja: sus cuatro filas son S11, S22, S23 y S24, y la primera es S11",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1484": {
+            "a": "PROH:B:1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo (el cambio de plan que no se ofrece no es ninguna de las seis prohibidas)",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:1520": {
+            "a": "TRANS:B:S1",
+            "por": "las precisiones sobre `PENDING_AUTHORIZATION`, el estado al que entra S1",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1589": {
+            "a": "TRANS:B:S4",
+            "por": "«Entra por `S4`»: el grace nace de S4",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1656": {
+            "a": "TRANS:B:S8",
+            "por": "«Entra por S8 o S9»: la pausa nace de S8",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1906": {
+            "a": "TRANS:B:MP4",
+            "por": "`DECLARED_UNPAID` que reabre: es MP4",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1931": {
+            "a": "TRANS:B:MP4",
+            "por": "subsección de 7.1 (MP4)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:1990": {
+            "a": "TRANS:B:MP4",
+            "por": "subsección de 7.1 (MP4)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2012": {
+            "a": "TRANS:B:MP4",
+            "por": "subsección de 7.1 (MP4)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2068": {
+            "a": "TRANS:B:MP4",
+            "por": "subsección de 7.1 (MP4)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2095": {
+            "a": "TRANS:B:MP4",
+            "por": "subsección de 7.1 (MP4)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2111": {
+            "a": "TRANS:B:MP5",
+            "por": "la cuota la abre el reloj: es MP5",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2142": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5): desde qué estados abre el reloj",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2179": {
+            "a": "TRANS:B:MP3",
+            "por": "«La primera cláusula de `MP3` sale de “se agota el grace”»",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2257": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5): la fecha del próximo cobro",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2410": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5): que el reloj no abra la cuota durante la pausa no contradice `B/06` §7 (la adjudicación proponía S8; la regla que defiende es la del reloj)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2439": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5): el aviso de la cuota",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2462": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2505": {
+            "a": "TRANS:B:MP5",
+            "por": "subsección de 7.2 (MP5)",
+            "hereda": true
+        },
+        "B/03-maquinas-de-estado.md:2689": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2714": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2748": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2801": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2833": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2839": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/03-maquinas-de-estado.md:2849": {
+            "a": "TRANS:B:S1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "V/03-maquinas-de-estado.md:91": {
+            "a": "TRANS:V:T1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "V/03-maquinas-de-estado.md:123": {
+            "a": "TRANS:V:T2",
+            "por": "la conversión con el primer pago acreditado: es T2",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:655": {
+            "a": "TRANS:V:PB10",
+            "por": "la moderación: PB10 es la primera de sus filas",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:680": {
+            "a": "TRANS:V:PB10",
+            "por": "la moderación en dos niveles (PB10)",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:842": {
+            "a": "TRANS:V:PB1",
+            "por": "publicar ocupa cupo: es PB1",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:931": {
+            "a": "TRANS:V:PB3",
+            "por": "cuáles vuelven cuando el cupo alcanza: es PB3",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:1010": {
+            "a": "TRANS:V:PB7",
+            "por": "las dos salidas de `ARCHIVED` son PB7 y PB8",
+            "hereda": true
+        },
+        "V/03-maquinas-de-estado.md:1146": {
+            "a": "TRANS:V:PB2",
+            "por": "el reconciliador es la red de las filas que mueve `cubierto`, PB2 y PB3",
+            "hereda": true
+        },
+        "B/05-idempotencia-y-concurrencia.md:27": {
+            "a": "LOCK:C1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/05-idempotencia-y-concurrencia.md:39": {
+            "a": "LOCK:C1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/05-idempotencia-y-concurrencia.md:50": {
+            "a": "LOCK:C1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/05-idempotencia-y-concurrencia.md:306": {
+            "a": "TRANS:B:S5",
+            "por": "las cuatro condiciones del cap. 05 §3 son la condición de S5",
+            "hereda": true
+        },
+        "B/05-idempotencia-y-concurrencia.md:544": {
+            "a": "LOCK:C1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:447": {
+            "a": "GUARD:G7",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "V/20-testing.md:352": {
+            "a": "GUARD:G1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:466": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:468": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:482": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:554": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:566": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:572": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:618": {
+            "a": "M:M1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:628": {
+            "a": "RP:RP1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/20-testing.md:651": {
+            "a": "RP:RP1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        },
+        "B/02-modelo-de-datos.md:972": {
+            "a": "MOT:1",
+            "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",
+            "hereda": false
+        }
+    }
 }

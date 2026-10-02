@@ -5,7 +5,13 @@ Every item is copied VERBATIM from its source line at the SHA, with only the str
 removed and markdown links neutralized; nothing is paraphrased. Metadata (owner piece, también)
 comes from cobertura.json and its citations; the TPZ/APZ notes from the inventory.
 
-    python3 gen.py [--salida=<dir>]     (default: writes 04-catalogos.md into the spec)
+    python3 gen.py [--salida=<dir>] [--omisiones=<json>]
+    (default: writes 04-catalogos.md into the spec; --omisiones replaces omisiones.json, for
+    canarios_g3.py only)
+
+A prose section of the source is attached to the item its title names, to its «adjuntar» entry in
+omisiones.json, or to the item of its nearest ancestor; with none of the three the run fails instead
+of falling back on the first item of the catalog (P-I, H2-G2-5).
 """
 import collections
 import json
@@ -26,7 +32,8 @@ BYID = {i['id']: i for i in INV}
 MINE = [k for k, v in ASG['items'].items() if (v['destino'] or '').startswith('04')]
 SECS = [i for i in INV if i['fuente'] == 'SEC']
 # BK: what a PARCIAL verdict declares dead is omitted with «[…]» (spans written by omisiones.py)
-OMIT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omisiones.json'), encoding='utf-8'))
+OMIT = json.load(open(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--omisiones=')),
+                          os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omisiones.json')), encoding='utf-8'))
 _sin_omision = [k for k in MINE if ADJ.get(k, {}).get('veredicto') == 'PARCIAL' and not OMIT.get(k)]
 assert not _sin_omision, f'PARCIAL sin omisiones (correr omisiones.py): {_sin_omision}'
 
@@ -326,31 +333,74 @@ def _secs(f, a, b):
     return sorted(out, key=lambda i: i['linea'])
 
 
-def _adjuntar(f, a, b, prefijo, defecto):
+# P-I (second blind-verification round, H2-G2-5): no silent default. A section goes with the item its
+# title names; else with the one its omisiones.json «adjuntar» entry names; else with the item of its
+# nearest ancestor that names one in its title or has a non-general «adjuntar» entry; else gen.py fails. «4. Grace» used to land under S1 this way.
+ADJUNTAR = OMIT.pop('adjuntar', {})
+ADJUNTAR_USADOS = set()
+
+
+def _ids_del_titulo(f, linea, loc):
+    head = limpiar(lines(f)[linea - 1])
+    return [loc[x] for x in re.findall(r'`([A-Z]+\d+)`', head) if x in loc]
+
+
+def _destino(f, i, loc, prefijo):
+    clave = f"{corto(f)}:{i['linea']}"
+    del_titulo = _ids_del_titulo(f, i['linea'], loc)
+    if clave in ADJUNTAR:
+        if del_titulo:
+            sys.exit(f'✗ g3: {clave} nombra {del_titulo[0]} en su título y además está en «adjuntar»')
+        ADJUNTAR_USADOS.add(clave)
+        dest = ADJUNTAR[clave]['a']
+        if dest not in MINE:
+            sys.exit(f'✗ g3: «adjuntar» manda {clave} a {dest}, que no es un ítem de 04')
+        return dest
+    if del_titulo:
+        return del_titulo[0]
+    # the inventory's sections are leaves, so the ancestors come from the heading levels of the source
+    L = lines(f)
+    nivel = len(re.match(r'^(#+)', L[i['linea'] - 1]).group(1))
+    for k in range(i['linea'] - 1, 0, -1):
+        m = re.match(r'^(#+)\s', L[k - 1])
+        if m and len(m.group(1)) < nivel:
+            nivel = len(m.group(1))
+            clave_padre = f'{corto(f)}:{k}'
+            if clave_padre in ADJUNTAR and ADJUNTAR[clave_padre]['hereda']:
+                return ADJUNTAR[clave_padre]['a']
+            ids = _ids_del_titulo(f, k, loc)
+            if ids:
+                return ids[0]
+    sys.exit(f'✗ g3: la sección {clave} («{limpiar(lines(f)[i["linea"] - 1]).strip()}») no nombra un id de '
+             f'{prefijo} en su título ni en el de un ancestro, y no está en «adjuntar» (g3/omisiones.py, ADJUNTAR)')
+
+
+def _adjuntar(f, a, b, prefijo):
     loc = {BYID[k]['local']: k for k in MINE if k.startswith(prefijo)}
     for i in _secs(f, a, b):
-        head = limpiar(lines(f)[i['linea'] - 1])
-        ids = [x for x in re.findall(r'`([A-Z]+\d+)`', head) if x in loc]
-        ADJUNTOS[loc[ids[0]] if ids else defecto].append((f, i['linea'], i['fin']))
+        ADJUNTOS[_destino(f, i, loc, prefijo)].append((f, i['linea'], i['fin']))
 
 
-_adjuntar(_B03, 21, 1446, 'TRANS:B:S', 'TRANS:B:S1')
-_adjuntar(_B03, 1447, 1519, 'PROH:', 'PROH:B:1')
-_adjuntar(_B03, 1520, 1739, 'TRANS:B:S', 'TRANS:B:S1')
-_adjuntar(_B03, 1906, 2529, 'TRANS:B:MP', 'TRANS:B:MP1')
-_adjuntar(_B03, 2549, 2687, 'TRANS:B:A', 'TRANS:B:A1')
-_adjuntar(_B03, 2688, 3062, 'TRANS:B:S', 'TRANS:B:S1')
-_adjuntar(_V03, 91, 479, 'TRANS:V:T', 'TRANS:V:T1')
-_adjuntar(_V03, 655, 1338, 'TRANS:V:PB', 'TRANS:V:PB1')
-_adjuntar(_B05, 27, 103, 'LOCK:', 'LOCK:C1')
-_adjuntar(_B05, 306, 543, 'TRANS:B:S', 'TRANS:B:S5')
-_adjuntar(_B05, 544, 557, 'LOCK:', 'LOCK:C1')
-_adjuntar(_B20, 447, 465, 'GUARD:', 'GUARD:G7')
-_adjuntar(_V20, 352, 370, 'GUARD:', 'GUARD:G1')
-_adjuntar(_B20, 466, 498, 'M:', 'M:M1')
-_adjuntar(_B20, 553, 626, 'M:', 'M:M1')
-_adjuntar(_B20, 627, 704, 'RP:', 'RP:RP1')
-_adjuntar(_B02, 972, 1007, 'MOT:', 'MOT:1')
+_adjuntar(_B03, 21, 1446, 'TRANS:B:S')
+_adjuntar(_B03, 1447, 1519, 'PROH:')
+_adjuntar(_B03, 1520, 1739, 'TRANS:B:S')
+_adjuntar(_B03, 1906, 2529, 'TRANS:B:MP')
+_adjuntar(_B03, 2549, 2687, 'TRANS:B:A')
+_adjuntar(_B03, 2688, 3062, 'TRANS:B:S')
+_adjuntar(_V03, 91, 479, 'TRANS:V:T')
+_adjuntar(_V03, 655, 1338, 'TRANS:V:PB')
+_adjuntar(_B05, 27, 103, 'LOCK:')
+_adjuntar(_B05, 306, 543, 'TRANS:B:S')
+_adjuntar(_B05, 544, 557, 'LOCK:')
+_adjuntar(_B20, 447, 465, 'GUARD:')
+_adjuntar(_V20, 352, 370, 'GUARD:')
+_adjuntar(_B20, 466, 498, 'M:')
+_adjuntar(_B20, 553, 626, 'M:')
+_adjuntar(_B20, 627, 704, 'RP:')
+_adjuntar(_B02, 972, 1007, 'MOT:')
+_sobran = sorted(set(ADJUNTAR) - ADJUNTAR_USADOS)
+if _sobran:
+    sys.exit(f'✗ g3: entradas de «adjuntar» que no son una sección adjuntable: {_sobran}')
 ADJUNTOS['MOT:7'].append((_B02, 1125, 1154))
 ADJUNTOS['MOT:1'].append((_B02, 1155, 1178))
 # R17: `B/descomposicion.md` §2.1 assigns `G12` to `B1` and sends `G13` to `V4`; the guards themselves

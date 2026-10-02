@@ -7675,7 +7675,8 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
      cortesía que le quedaba**, y elige. Si acepta, el grant se cancela y queda una pausa normal.
   2. **En pausa, el super admin intenta otorgar cortesía** → **se bloquea**, avisando que la
      suscripción está pausada.
-  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (→ ver [📌1](#dec-grant-004-p1) (reemplaza parte de lo anterior; adjudicación).
+  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (→ ver [📌1](#dec-grant-004-p1); reemplaza parte de lo anterior, adjudicación), y el aviso dice la
+     **fecha de fin nueva**, no «un mes más».
 - **Motivo**:
   - **(1) es la opción menos compleja, y esa es la razón.** La alternativa evaluada —prohibir
     pausar durante la cortesía y ofrecer una **pausa programada** para cuando termine— protege
@@ -7714,8 +7715,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2054
 Dueña del AC: [B9b](20-fase-2/B9b.md#pieza-b9b).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
-**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la
-**fecha de fin nueva**, no «un mes más».
+**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6
 
 <a id="dec-grant-005"></a>
 
@@ -11060,6 +11060,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-de
 - **punto**: la diferencia que cobra la rama de aborto a quien se re-suscribe
 - **origen**: `02` `AO-4`
 - **decisión**: **no se devuelve**: quien se re-suscribe arranca un trial nuevo desde cero. **Contra la recomendación** (resolverlo hablando, `DEC-MIG-004`). **Aclarado por el owner**: *«cuando en producción pasemos del sistema viejo al nuevo, a los clientes que haya en ese momento les hablamos y los tomamos como clientes nuevos que recién arrancan: tendrán su trial y luego se suscribirán»*. El trial nuevo es el del sistema nuevo, cuando el corte termina
+- ⚠️ **Caducada entera**: nadie se re-suscribe (S-15) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:508) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; no se implementa.
 
 <a id="own-26-fase-9-completa-t1-2e"></a>
 **# 2e**
@@ -11983,6 +11984,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: cuándo se cuenta que Gastronomía y Experiencia den cero
 - **elige**: **1** — también antes del 1a, y el corte no arranca si ahí ya aparece una fila; el paso 2 queda como segundo control
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada entera**: sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3 (S-07) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:148) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r18-b"></a>
 **pregunta `R18-b`**
@@ -12437,6 +12439,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: qué detector tiene el titular que sólo conoce el proveedor, si el `GET` trae el `payer_email` vacío
 - **elige**: **1**: se mide en sandbox si otra lectura trae el pagador (búsqueda sin filtro, pago asociado); si ninguna, la declaración dice que no tiene detector
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada entera**: el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6499). Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-h"></a>
 **lote H**
@@ -12507,6 +12510,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: qué pasa con `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que `U1` borra y la traducción del corte lee
 - **elige**: **1**: sobreviven a `U1` como excepción temporal y nombrada que los guards de limpieza admiten hasta el corte; las borra una migración posterior al paso 3, después de la clasificación
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada en parte**: que las borre una migración posterior al paso 3, después de la clasificación, salió (S-09): las borra la migración del paso 3 (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-o"></a>
 **lote O**
@@ -12557,6 +12561,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: cuándo se borran las tres columnas viejas
 - **elige**: **1**: en el mismo despliegue del paso 3, después de la clasificación (lo ya aplicado)
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada en parte**: el orden «después de la clasificación» salió (S-09): las tres columnas llegan vivas a la migración del paso 3, que las borra, y `V6` retira sus lectores en el mismo cambio (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152). Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-t"></a>
 **lote T**
@@ -12567,6 +12572,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: qué se hace con lo que el viejo acepta entre el recuento del paso 2 y la migración del paso 3
 - **elige**: **1**: se repiten los recuentos con el viejo apagado, antes de migrar; si no coinciden, aborto (lo ya aplicado)
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada entera**: salen los recuentos repetidos: con la regla del 0b nadie crea nada (S-27) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152). Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-u"></a>
 **lote U**
@@ -12607,6 +12613,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: con qué fecha entra a la segunda corrida del detector del corte un alta sin `expire_date`
 - **elige**: **1**: la fecha de creación más un ciclo, y la segunda corrida lista igual todo registro que siga abierto
 - **¿la recomendada?**: sí
+- ⚠️ **Caducada entera**: no hay detector posterior al corte, así que no hay segunda corrida (S-40, S-42) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:381) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-y"></a>
 **lote Y**

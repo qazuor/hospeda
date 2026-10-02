@@ -619,6 +619,48 @@
             "por": "`admiteAltas` y `fin_de_servicio` salieron con C8",
             "origen": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151",
             "inferido": false
+        },
+        "OWN:37-fase-8-vuelta-3:t1:G": {
+            "alcance": "entera",
+            "por": "el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6499",
+            "inferido": false
+        },
+        "OWN:37-fase-8-vuelta-3:t1:S": {
+            "alcance": "en parte",
+            "por": "el orden «después de la clasificación» salió (S-09): las tres columnas llegan vivas a la migración del paso 3, que las borra, y `V6` retira sus lectores en el mismo cambio",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152",
+            "inferido": false
+        },
+        "OWN:37-fase-8-vuelta-3:t1:T": {
+            "alcance": "entera",
+            "por": "salen los recuentos repetidos: con la regla del 0b nadie crea nada (S-27)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152",
+            "inferido": false
+        },
+        "OWN:37-fase-8-vuelta-3:t1:N": {
+            "alcance": "en parte",
+            "por": "que las borre una migración posterior al paso 3, después de la clasificación, salió (S-09): las borra la migración del paso 3",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152",
+            "inferido": "la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada"
+        },
+        "OWN:37-fase-8-vuelta-3:t1:X": {
+            "alcance": "entera",
+            "por": "no hay detector posterior al corte, así que no hay segunda corrida (S-40, S-42)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:381",
+            "inferido": "la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada"
+        },
+        "OWN:26-fase-9-completa:t1:2d": {
+            "alcance": "entera",
+            "por": "nadie se re-suscribe (S-15)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:508",
+            "inferido": "la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada"
+        },
+        "OWN:29-fase-8-vuelta-2:t1:R9-b": {
+            "alcance": "entera",
+            "por": "sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3 (S-07)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:148",
+            "inferido": "la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada"
         }
     },
     "reubicar": {
@@ -626,6 +668,16 @@
             "a": "DEC-ARCH-014#📌6",
             "texto": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).",
             "letra": "F"
+        }
+    },
+    "letras_vivas_revisadas": {
+        "OWN:37-fase-8-vuelta-3:t1:F": {
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6500",
+            "texto": "S-38); lo del lote F sigue."
+        },
+        "OWN:26-fase-9-completa:t1:2g": {
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:241",
+            "texto": "clientes actuales se siguen tratando como nuevos, y su prueba arranca el día del corte"
         }
     }
 }

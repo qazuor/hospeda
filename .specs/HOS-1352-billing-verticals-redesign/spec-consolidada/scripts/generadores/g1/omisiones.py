@@ -24,6 +24,13 @@ Two more keys, from the first blind-verification round (2026-10-02):
 - `reubicar`: text the source glued to the wrong 📌. The PARCIAL verdict of the 📌 that carries it says
   «la consolidada la muestra bajo el 📌N»; gen01.py renders it under that 📌, and fails if a verdict
   promises a 📌 that does not receive it (H-VA-A8-r2-7).
+
+And one from the second round (H2-G1-10, pattern P-H):
+
+- `letras_vivas_revisadas`: letters whose every cite in a later source (16-fase-7, the decision log,
+  41-corte-del-mvp) is struck, reviewed and alive anyway, each with the live words that keep it.
+  gen01.py fails on a letter so cited that is neither here nor in `letras_muertas`. The fourth item of
+  a `letras_muertas` tuple is False, True (inferred under C8) or the reason of the inference.
 """
 import json
 import os
@@ -157,6 +164,8 @@ C8_S1 = (B + 'docs/03-maquinas-de-estado.md', '(La guarda `admiteAltas` salió c
 C8_ARCH011 = (LOG, '### DEC-ARCH-011 — Una vertical que deja de admitir altas')
 CAD_28 = (D + '28-fase-9-vuelta-1/10-decisiones-del-owner.md', '`G1-1` y R1, en lo que decían de la cartera: los reemplaza `DEC-MIG-006` (C12)')
 CAD_29 = (D + '29-fase-8-vuelta-2/10-decisiones-del-owner.md', '`R15`, entera: cae con `DEC-MIG-006` (C12, `L1-b`)')
+S09 = (D + '16-fase-7-del-paraguas.md', 'S-09: sale la razón de la tabla de traducción y la condición de orden')
+DETECTOR = 'la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada'
 DISC = ('entera', 'la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)', C8_ARCH011)
 LETRAS_MUERTAS = {
     'OWN:28-fase-9-vuelta-1:t1:G1-1': ('en parte', 'en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)', CAD_28, False),
@@ -178,6 +187,37 @@ LETRAS_MUERTAS = {
                                         (LOG, 'ni las va a haber antes del corte). Quedan **`SUPERSEDED`**: el 📌 del 2026-09-27 (`R2`, `R21`'), False),
     'OWN:26-fase-9-completa:t1:6a': ('entera', '`admiteAltas` salió con C8', C8_S1, False),
     'OWN:26-fase-9-completa:t1:6b': ('entera', '`admiteAltas` y `fin_de_servicio` salieron con C8', C8_S1, False),
+    # Second blind-verification round (H2-G1-10, pattern P-H): letters of 37-fase-8-vuelta-3 that a later
+    # source struck or declared SUPERSEDED. G, S and T come from the adjudication; S is «en parte», not
+    # «entera» as the adjudication says, because the columns are still deleted in the step-3 deployment
+    # (16-fase-7 :152, «y las tres que sobrevivieron a `U1`»): only the order after the classification went.
+    'OWN:37-fase-8-vuelta-3:t1:G': ('entera', 'el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38)',
+                                    (LOG, '📌 del 2026-09-30, la parte del lote G (el detector del titular que sólo conoce el proveedor,'), False),
+    'OWN:37-fase-8-vuelta-3:t1:S': ('en parte', 'el orden «después de la clasificación» salió (S-09): las tres columnas llegan vivas '
+                                    'a la migración del paso 3, que las borra, y `V6` retira sus lectores en el mismo cambio', S09, False),
+    'OWN:37-fase-8-vuelta-3:t1:T': ('entera', 'salen los recuentos repetidos: con la regla del 0b nadie crea nada (S-27)',
+                                    (D + '16-fase-7-del-paraguas.md', 'Salen los recuentos repetidos: con la regla del 0b nadie crea nada; S-27'), False),
+    # Found by the P-H detector of gen01.py (every cite of the letter in a later source is struck); the
+    # adjudication did not list them, so they carry the reason of the inference.
+    'OWN:37-fase-8-vuelta-3:t1:N': ('en parte', 'que las borre una migración posterior al paso 3, después de la clasificación, '
+                                    'salió (S-09): las borra la migración del paso 3', S09, DETECTOR),
+    'OWN:37-fase-8-vuelta-3:t1:X': ('entera', 'no hay detector posterior al corte, así que no hay segunda corrida (S-40, S-42)',
+                                    (D + '16-fase-7-del-paraguas.md', '**Sale** (FASE 5, owner 2026-09-30, simplificación del corte, C; S-40, S-42, S-73, S-74): no hay'),
+                                    DETECTOR),
+    'OWN:26-fase-9-completa:t1:2d': ('entera', 'nadie se re-suscribe (S-15)',
+                                     (D + '16-fase-7-del-paraguas.md', '(S-15: nadie se re-suscribe)'), DETECTOR),
+    'OWN:29-fase-8-vuelta-2:t1:R9-b': ('entera', 'sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3 (S-07)',
+                                       (D + '16-fase-7-del-paraguas.md',
+                                        '(Sale el recuento: cualquier ficha de esas verticales que no sea de las cinco se borra en el paso 3; S-07.)'),
+                                       DETECTOR),
+}
+
+# Letters the P-H detector flags (every cite in a later source is struck) that are alive anyway: the
+# later source keeps their decision in words that do not cite them. {letter: (path, verbatim fragment)}.
+LETRAS_VIVAS_REVISADAS = {
+    'OWN:37-fase-8-vuelta-3:t1:F': (LOG, 'S-38); lo del lote F sigue.'),
+    'OWN:26-fase-9-completa:t1:2g': (D + '16-fase-7-del-paraguas.md',
+                                     'clientes actuales se siguen tratando como nuevos, y su prueba arranca el día del corte'),
 }
 
 # Text the source glued to the wrong 📌: {the 📌 that carries it: (the 📌 it belongs to, the verbatim
@@ -211,11 +251,13 @@ def main():
     out['letras_muertas'] = {k: {'alcance': a, 'por': por, 'origen': f'{p}:{linea_de(p, frag)}', 'inferido': inf}
                              for k, (a, por, (p, frag), inf) in LETRAS_MUERTAS.items()}
     out['reubicar'] = {k: {'a': a, 'texto': txt, 'letra': letra} for k, (a, txt, letra) in REUBICAR.items()}
+    out['letras_vivas_revisadas'] = {k: {'origen': f'{p}:{linea_de(p, frag)}', 'texto': frag}
+                                     for k, (p, frag) in LETRAS_VIVAS_REVISADAS.items()}
     # indent=4 plus a final newline is exactly what the pre-commit's biome format leaves
     with open(os.path.join(HERE, 'omisiones.json'), 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, indent=4)
         fh.write('\n')
-    print(len(out) - 2, sum(len(s) for k, s in out.items() if k not in ('letras_muertas', 'reubicar')),
+    print(len(out) - 3, sum(len(s) for k, s in out.items() if k not in ('letras_muertas', 'reubicar', 'letras_vivas_revisadas')),
           'letras muertas', len(out['letras_muertas']), 'reubicados', len(out['reubicar']))
 
 
