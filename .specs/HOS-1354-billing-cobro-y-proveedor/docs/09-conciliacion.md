@@ -909,10 +909,16 @@ del pedido**: por cada instancia `UNA_VEZ` en `ABANDONED` sin id de orden y con 
 persistida (la clave se persiste antes de la llamada, así que sin clave no salió ninguna), dentro
 de la misma ventana, el barrido busca en el proveedor la orden cuya referencia es el identificador
 del pedido (`B/06` §3.2) y, si la encuentra con un pago aprobado, abre la misma marca con el
-motivo 23. **Que el proveedor permita buscar una orden por esa referencia no está medido**
-(~~propuesto a la matriz, registro de la FASE 9 vuelta 3, B~~ `EX-57`, `UNKNOWN`): si no lo permite, esa población queda
-sin detector y declarada (*«lo que este capítulo NO cierra»*). La búsqueda sólo lee; no crea ni
-reenvía nada.
+motivo 23. ~~**Que el proveedor permita buscar una orden por esa referencia no está medido**~~
+~~(~~ ~~propuesto a la matriz, registro de la FASE 9 vuelta 3, B~~ ~~`EX-57`, `UNKNOWN`): si no lo permite, esa población queda
+sin detector y declarada (*«lo que este capítulo NO cierra»*).~~ **El proveedor permite buscar una
+orden por esa referencia** (`EX-57`, `VERIFIED` el 2026-09-30, en sandbox): `GET /v1/orders` con
+la `external_reference` exacta encuentra la orden, la aprobada y la rechazada, con `begin_date` y
+`end_date` obligatorias, que filtran por creación y abarcan como mucho 30 días; **así que la
+búsqueda se hace con la ventana anclada a la creación local del pedido** (matriz, `EX-57`; estado
+aplicado con OK del owner, FASE 5, lote C1; residuo corregido el 2026-10-02). Lo que la medición
+no cubre está en *«lo que este capítulo NO cierra»*. La búsqueda sólo lee; no crea ni reenvía
+nada.
 
 > **No es una de las seis comprobaciones de cero llamadas**, igual que la de pagos acreditados:
 > relee por id cada orden de la ventana. El conteo de seis no se mueve. **Tampoco lo mueve la
@@ -1289,11 +1295,16 @@ vigilados, es uno más.
   manifiesto, no en la marca.
 - **La orden de un addon de única vez que `A3` abandonó sin id sólo se ve si el proveedor deja
   buscarla por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E,
-  `F-8V3B1-001`). ~~La medición está propuesta a la matriz.~~ La medición es `EX-57`, `UNKNOWN`. **Si da que no se puede, ese caso queda
+  `F-8V3B1-001`). ~~La medición está propuesta a la matriz.~~ ~~La medición es `EX-57`, `UNKNOWN`. **Si da que no se puede, ese caso queda
   sin detector**: la persona pagó, no recibió el addon y ninguna marca propone devolverle, hasta
-  que reclame. **Causa**: `A3` dejó de reenviar para no crear órdenes que nadie pidió (`EX-43`,
-  `UNKNOWN`), y sin el id de la orden no hay otra lectura. Exige una respuesta perdida y un
-  proveedor que igual creó y cobró la orden.
+  que reclame.~~ **El proveedor la deja buscar: `EX-57` es `VERIFIED` desde el 2026-09-30, en
+  sandbox y con ventana, y la compra sin id de orden tiene detector** (§3, la comprobación de
+  órdenes pagadas; residuo corregido el 2026-10-02). **Lo que queda abierto** es lo que la
+  medición no cubrió: producción, que se lee sin mutar con la referencia de la primera orden real,
+  y un pedido de más de 30 días, el rango máximo de la búsqueda (matriz, `EX-57`). **Causa**: `A3`
+  dejó de reenviar para no crear órdenes que nadie pidió (`EX-43`, `UNKNOWN`), y sin el id de la
+  orden ~~no hay otra lectura~~ **la única lectura es esa búsqueda**. Exige una respuesta perdida y un proveedor que igual creó
+  y cobró la orden.
 - **Dos devoluciones parciales del mismo monto sobre el mismo pago, las dos con la respuesta
   perdida**, no se pueden atar solas a su fila (sobre una orden no pasa: sus devoluciones se
   serializan y la nueva sale por resta, §3; FASE 5, owner 2026-09-30, lote 5 F) (FASE 9 vuelta 3, `F-8V3B1-004`, `F-8V3B2-003`;
