@@ -50,7 +50,294 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:144
 
 Las secciones de `12` §2, §3, §6 y §7, y `02` §2.6, que la columna de capítulos de la fila le asigna:
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:187, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:216, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:277, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:288, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1014, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1021, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1030, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1040, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1049, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1051, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1060, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1089, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1179
+<!-- g-secciones: inicio (generado por scripts/generadores/secciones/gen.py; no editar a mano) -->
+
+#### B/12-suscripcion.md · 2. La cola de cambios programados · cierra `M-SUB-02`
+
+##### B/12-suscripcion.md · 2.1 Qué se programa realmente
+
+El hueco pedía *«a lo sumo un cambio programado vigente, con reglas explícitas de reemplazo y de
+cancelación»*, porque si no *«el estado del sistema depende del orden en que llegaron los
+clicks»*.
+
+Y lo primero es acotar qué se programa, porque `DEC-SUB-008` lo corrigió: **el monto se muta
+cuando el cliente lo pide**, no se difiere. Lo único que queda para el fin del ciclo es **el
+descenso de capacidades**, más la elección del cliente sobre qué conserva.
+
+**Es una cola nuestra, de entitlements. No es una cola de cambios en el proveedor** — el
+proveedor no tiene ninguna. **La transición que la aplica es `S38`** (`B/03` §3.2): llegada la
+fecha, la fila pasa a la versión destino, se aplica la elección de qué conservar y se emite el
+aviso de cobertura. Hasta los casos vecinos la cola no tenía transición que la nombrara
+(revisión del owner, casos vecinos, 2026-09-29, caso 37).
+
+**Y desde la revisión del owner (2026-09-28, C15) encola también el cambio de versión de una
+migración de un plan retirado**: `S37` muta el monto siete días antes de la renovación y deja acá el
+cambio de versión para ese día (`B/03` §3.2, `B/10` §3.7). Sigue siendo **a lo sumo uno** (`S37`
+no corre sobre una fila con un cambio programado) y las colisiones del §2.2 valen igual, con una
+diferencia: **un cambio que pide el cliente saca a la fila de la migración** (`B/10` §3.7 punto 8)
+en vez de reemplazar el cambio encolado en silencio.
+
+**Qué es un downgrade y qué un upgrade no lo decide este capítulo**: es el veredicto
+`direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA` que emite verticales
+(`12-contrato…` §4.1, `DEC-ARCH-008`), y lo que billing hace con cada uno está en `B/10` §3.5. Ni
+el `rank` ni un delta que billing compute sobre las tablas de verticales (FASE 8 completa,
+`F-8CD1-003`).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:185, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:187
+
+##### B/12-suscripcion.md · 2.2 A lo sumo uno, y las cuatro colisiones
+
+| # | lo que llega encima | qué pasa con el descenso programado |
+|---|---|---|
+| 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
+| 2 | **un upgrade** | **muere con la suscripción vieja.** `DEC-SUB-007` ejecuta el upgrade cancelando y recreando, y la nueva nace sin cola |
+| 3 | **una cancelación** (§24) | **lo absorbe, y en los cuatro casos.** Desde `ACTIVE` (`S11`) las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio. Desde `PAUSED` (`S22`), desde `SUSPENDED` (`S23`) y desde `GRACE_PERIOD` (`S24`) la baja cae **hoy** (cap. 03 §3.2), así que el descenso no llega a ejecutarse nunca — que es la regla general de abajo: *«si no va a tenerlo nunca más, se descarta»* |
+| 4 | **una pausa** (§26) | **espera a la reanudación, y en las DOS pausas por la misma razón.** No es que durante la pausa no haya servicio —eso es verdad de `CUSTOMER_REQUEST` y **falso de `COURTESY`**, que **sí emite** como `tipo: CORTESÍA` (`12-contrato…` §2.6, `DEC-GRANT-003`)—: es que **estando pausada el proveedor rechaza toda modificación**, con `400` explícito y medido (`EX-11`, `VERIFIED`), y un descenso arranca mutando el monto *«cuando el cliente lo pide»* (`DEC-SUB-008`). Así que el cambio **no se puede aplicar**, tenga o no servicio. Es la implicación 3 de `DEC-SUB-010` —*«todo cambio pedido durante la pausa se aplica DESPUÉS de reanudar»*— y es **el mismo argumento que el §6.2 ya usa para el aumento de precio** |
+
+**La regla general detrás de las cuatro, en dos cláusulas y no en una:**
+
+1. **Si la fila está pausada, el cambio espera a la reanudación** — por `EX-11` y la implicación 3
+   de `DEC-SUB-010`, que es una regla sobre **lo que el proveedor acepta**, no sobre lo que el
+   cliente está recibiendo.
+2. **Si no va a tener servicio nunca más, se descarta** — es la colisión 3, y ahí no hay
+   reanudación que esperar.
+
+**Y el estado en que la fecha encuentra a la fila, que no es una colisión** (revisión del owner,
+casos vecinos, 2026-09-29, caso G-A). Las cuatro de arriba son lo que llega encima del cambio;
+esto es con qué estado llega su fecha. **En `GRACE_PERIOD` se aplica igual**: el servicio sigue,
+`S38` no toca al proveedor y el monto ya se mutó, así que esperar dejaba al cliente con
+capacidades que ya no paga. **En `SUSPENDED` espera y se aplica al volver por `S7`**: no hay
+servicio que bajar. **Y si `S7` la devuelve a `CANCEL_SCHEDULED`**, porque el cobro entró sobre
+un preapproval que `S6` ya había cancelado, **se aplica igual**: el período que se sostiene hasta
+`S12` se pagó con el monto ya mutado (revisión del owner, casos vecinos, 2026-09-29, caso I-A).
+**Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora** (`DEC-SUB-019`), **y el
+cambio muere con la fila vieja, como en la colisión 2**: la sucesora eligió su plan en el checkout
+y nace sin cola (revisión del owner, casos vecinos, 2026-09-29, caso I-B). Ninguna de las cuatro colisiones cambia, y la regla general tampoco: la baja
+desde la grace o desde la suspensión (`S24`, `S23`) lo sigue absorbiendo, y una fila que no vuelve
+no lo aplica nunca (`B/03` §3.2, `S38`).
+
+> **La versión anterior tenía UNA cláusula y era falsa de la mitad de su sujeto.** Decía que el
+> descenso se aplica *«al fin del primer ciclo en que el cliente efectivamente tiene servicio»*, y
+> en una **cortesía** el cliente **sí tiene servicio** —lo sostenemos nosotros—, así que esa regla
+> ordenaba aplicar el descenso sobre una fila pausada: exactamente lo que `EX-11` demuestra
+> imposible. Es el mismo defecto de razón que el §7.2 ya había corregido para la baja
+> —*«el argumento va por el período pagado y no por “durante la pausa no hay servicio”, que es
+> verdad de una sola de las dos pausas»*—, y acá sobrevivía porque la conclusión era correcta y
+> nadie vuelve sobre la razón de una conclusión correcta. **La conclusión no cambia: esperar.**
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:216
+
+##### B/12-suscripcion.md · 2.3 Arrepentirse sigue siendo barato
+
+`DEC-SUB-008` lo dejó escrito y vale acá: volver al plan alto antes del fin del ciclo es **otra
+mutación del monto más cancelar el descenso programado**. La cola es cancelable, no sólo
+reemplazable.
+
+**Y el pedido del descenso termina la promo de la fila** (orquestador, FASE 8
+completa, pendiente 8; **el pedido y no el acto**, FASE 9 completa, contradicción 1 de `03`
+§R6.5): escribe **`cobros_restantes = 0`** en la redención de promo que cuelga de
+ella (`B/02` §2.4), porque la promo no sobrevive a un cambio de plan (`B/14` §2.2), **en el mismo
+acto en que `DEC-SUB-008` muta el monto, y lo muta al precio de lista del plan nuevo, sin
+promos**. En el downgrade
+la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
+esperado de `B/14` §2.4 la seguiría restando. **Entre el pedido y
+el acto que aplica el descenso, el monto esperado es el del plan nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:256
+
+#### B/12-suscripcion.md · 3. El precio que cambia entre programar y ejecutar · cierra `E-SUB-01`
+
+##### B/12-suscripcion.md · 3.1 El hueco se disuelve casi entero, y conviene decir por qué
+
+`E-SUB-01` preguntaba si al downgrade se le aplica el precio vigente **al programar** o **al
+ejecutar**, y si al ejecutar fuera más caro, si eso cuenta como aumento a los efectos del §29.
+
+**La pregunta presupone que el precio se aplica al ejecutar**, y `DEC-SUB-008` decidió lo
+contrario: **el monto se muta cuando el cliente lo pide.** Lo que corre al fin del ciclo no lleva
+precio.
+
+**Entonces: rige el precio vigente al pedirlo**, que además es el que el cliente vio y aceptó.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:275, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:277
+
+##### B/12-suscripcion.md · 3.2 Y un aumento posterior no lo alcanza por esta puerta
+
+Si el precio del plan destino sube entre el pedido y el fin del ciclo, **la suscripción conserva
+el monto que se mutó**: `DEC-MP-002` fijó que **el precio vive en la suscripción, no sólo en el
+plan** (implicación 2).
+
+Ese cliente queda alcanzado por el aumento **como cualquier otro**: por la ventana de 60 días con
+tres contactos, con **su** fecha efectiva. No hay un camino especial, y eso es lo que hay que
+preservar — un aumento que entrara por la puerta del downgrade se saltearía el aviso del §29.
+
+**Y desde BM y BZ el aumento no entra cambiando el precio de la versión destino** (corte del MVP,
+owner 2026-10-02, CC): **un descenso encolado —el monto ya mutado por `DEC-SUB-008` y el `S38` que
+aplica el cambio de versión al fin del ciclo— cuenta como cliente de la versión destino**, así que
+la acción 19 rechaza fijar su precio (BM) y se publica una versión nueva. El cliente llega por `S38`
+a la versión cuyo precio vio, y un aumento posterior le llega por BZ —una migración por `S37` y `S38`
+con el motivo *«aumento»*— como a cualquier anclado. **El rechazo de la acción 19 cuenta también las
+filas con un `S38` encolado hacia esa versión**, con su test en `B2`.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:288
+
+#### B/12-suscripcion.md · 6. Un cambio de precio que cae sobre una pausada · cierra `E-SUB-06`
+
+##### B/12-suscripcion.md · 6.1 El choque está medido
+
+`EX-11` **`VERIFIED`**: estando pausada **el proveedor rechaza toda modificación** con un `400`
+explícito. Así que un aumento de `DEC-MP-002` cuya fecha efectiva caiga sobre un cliente pausado
+**no se puede aplicar ese día**. El hueco daba tres salidas: encolarlo, bloquear la pausa
+mientras haya un cambio pendiente, o cumplir el §29 de otro modo.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1012, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1014
+
+##### B/12-suscripcion.md · 6.2 Se encola, y la pausa no se bloquea
+
+**El aumento espera a la reanudación y se aplica ahí.** `DEC-SUB-010` ya lo había anticipado en su
+implicación 3: *«todo cambio pedido durante la pausa se aplica DESPUÉS de reanudar»*. Esta sección
+sólo confirma que el aumento no es una excepción.
+
+**Bloquear la pausa se descarta y conviene decir por qué**: sería negarle a un cliente un derecho
+que su plan le da **para poder subirle el precio**. No hay forma de escribir eso en un aviso.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1021
+
+##### B/12-suscripcion.md · 6.3 Lo que hay que decirle, y cuándo
+
+El aviso del §29 ya salió con **una fecha que va a dejar de ser cierta**. Y acá `DEC-SUB-010`
+aporta la restricción incómoda: al reanudar se le muestra **una sola cosa, qué día se le va a
+cobrar** — decisión explícita del owner, para no inventarle un problema.
+
+**Las dos cosas se cumplen a la vez porque el aumento va en ese mismo dato**: al reanudar se le
+dice **cuándo** se le cobra **y cuánto**. No es un aviso nuevo sobre el aumento; es el aviso de
+reanudación diciendo la verdad.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1030
+
+##### B/12-suscripcion.md · 6.4 Y la ventana de 60 días no se recorta
+
+Si la pausa fue larga, la fecha efectiva se corre **hacia adelante**, nunca hacia atrás. La
+ventana del §29 protege el tiempo de reacción del cliente, y reanudar con un aumento aplicado
+**el mismo día** le daría cero. Se aplica en el **primer cobro posterior a la reanudación**, y si
+entre el aviso original y ese cobro no se cumplieron los 60 días, se espera al siguiente.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1040
+
+#### B/12-suscripcion.md · 7. Pausa más cancelación programada · cierra `E-SUB-02`
+
+##### B/12-suscripcion.md · 7.1 La premisa del hueco ya no es cierta
+
+`E-SUB-02` razonaba que el §26.4 corre el fin del período hacia adelante, y preguntaba si la
+cancelación espera a ese fin extendido o corta en la fecha original.
+
+**`DEC-SUB-010` decidió que los días no usados del ciclo en curso se pierden.** No hay período
+extendido que esperar: lo que corre es la fecha del proveedor (`PS-6`: el ciclo que vence estando
+pausada **avanza la fecha sin cobrar**), y eso no es servicio adeudado.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1049, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1051
+
+##### B/12-suscripcion.md · 7.2 Cancelar estando pausado termina el servicio en el acto
+
+Y no es una decisión dura, es la única coherente: **lo que `DEC-SUB-009` sostiene es el período
+que la persona ya pagó, y al pausar ese período se perdió**. `DEC-SUB-010` fijó que *«los días no
+usados del ciclo en curso se pierden»* (§7.1), así que **no queda período pagado que sostener**.
+
+La fecha de fin de servicio **es un dato nuestro** (`DEC-SUB-009`, implicación 3), así que la
+fijamos: es el día de la cancelación.
+
+**El argumento va por el período pagado y no por *«durante la pausa no hay servicio»*, que es
+verdad de una sola de las dos pausas.** Una `PAUSED` por `CUSTOMER_REQUEST` efectivamente no tiene
+servicio —el §26.1 detiene publicación, edición y servicio, y esa fila **no emite fuente**
+(`12-contrato…` §2.6)—; una `PAUSED` por `COURTESY` **sí emite**, como `tipo: CORTESÍA`, porque el
+servicio *«lo sostenemos nosotros»* (`DEC-GRANT-003`). Con la razón vieja el § decidía sólo la
+mitad de su sujeto; con ésta decide las dos, porque **en las dos el ciclo pagado ya se perdió al
+pausar**. Lo que la baja desde una cortesía sí corta son los meses de cortesía que quedaban
+(en meses desde la FASE 8 completa, `F-8CB1-001`), y eso
+se dice **antes de confirmar** (`B/19` §4, fila 8), con la misma forma que `DEC-GRANT-004` ya usa
+para el cruce vecino.
+
+**Quién lo ejecuta: `S22`** (`B/03` §3.2), que manda la fila directo a `CANCELLED` sin pasar por
+`CANCEL_SCHEDULED`. Hasta esa fila **esta decisión no tenía ninguna transición que la cumpliera**,
+y por la regla 1 del núcleo el intento se iba a la marca mientras el reloj de la pausa vencía,
+`S10` devolvía la fila a `ACTIVE` y se le cobraba el ciclo siguiente. **Salvo sobre una sucesora
+que vive del crédito de `DEC-SUB-006` sin consumir** (la que `S9` pausó al autorizar para
+re-emitirle una cortesía diferida): el crédito es período pagado (`R17`), así que `S22` la lleva a
+`CANCEL_SCHEDULED` con fin de servicio en el fin del crédito, como `S11`, y no corta en el acto lo
+que la persona ya pagó (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1060
+
+##### B/12-suscripcion.md · 7.3 El orden inverso no existe
+
+**Y no es el §7.2 al revés, aunque lo parezca.** Ahí faltaba la fila de una decisión ya tomada y
+la fila se escribió (`S22`); acá **la decisión es que no haya fila**, y el motivo es una condición
+del §26 —exige `ACTIVE`— más `EX-11`, que mide que el proveedor rechaza toda modificación sobre
+una pausada. Leer la exhaustividad como argumento **a favor** de que algo no pasa sólo vale
+cuando alguien decidió que no pase: si un capítulo decidió que sí y la tabla no lo tiene, lo que
+falta es la fila.
+
+Pausar estando en `CANCEL_SCHEDULED` **no es una transición de la máquina**: el §26 exige
+`ACTIVE`, y la tabla del capítulo 03 §1 es exhaustiva —*lo que no está, no pasa*—. No hace falta
+una regla: hace falta que nadie agregue esa transición.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1089
+
+##### B/02-modelo-de-datos.md · 2.6 Qué cuelga de una suscripción, y qué le pasa cuando otra la sucede
+
+**Un upgrade cancela y recrea** (`DEC-SUB-007` alternativa C), así que la fila que llevaba todo se
+va a `CANCELLED` y **cada cosa que le colgaba tiene que tener un destino declarado**. El §2.4
+nombraba las entidades y ninguna decía qué le pasa en una sucesión; `S18` enumeraba sus efectos y
+nombraba una sola de las tres. **Enumerar acá es lo que vuelve la pregunta contestable de una
+vez**, en vez de descubrirse entidad por entidad:
+
+| qué cuelga | columna | qué pasa cuando `S18` cierra la sucesión | por qué |
+|---|---|---|---|
+| **complementos** (addons recurrentes y de única vez) | `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION` | **se re-apuntan a la sucesora** | el objetivo no desapareció, se sucedió (`B/16` §4.2). Sin esto, todo upgrade cancela de forma irreversible los addons que el cliente pagó |
+| **la redención de promo** | `promo_redemption.subscription_id` | **NO se re-apunta: la promo se pierde.** La redención se queda colgando de la predecesora, con su contador como estaba, y **no se escribe nada**; la sucesora nace con el precio de lista y ése es el que corresponde. **La fila no se borra**, así que `UNIQUE(promo_code_id, user_id)` (§2.4) sigue impidiendo volver a canjear el mismo código en la sucesora (FASE 8 completa, pendiente 7, owner 2026-09-25) | **La promo se dio sobre el plan en que estaba**, y las promos no sobreviven a un cambio de plan —upgrade, downgrade o de ciclo— (`B/14` §2.2, owner 2026-09-25). No es una falla silenciosa: la persona lo lee antes de confirmar (`B/19` §4, fila 7) |
+| **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) + **`saldo_meses`** (§2.4) | **NO se re-apunta: queda DIFERIDA.** `S18` la cierra sobre la predecesora y le escribe en `saldo_meses` los meses que le quedaban (en meses desde la FASE 8 completa, `F-8CB1-001`; la fracción, abierta en §2.4); **`S9` la re-emite sobre la sucesora cuando ésta llega a `ACTIVE`** —re-apuntando ahí sí `subscription_id`, recalculando `inicio`/`fin` y volviendo el saldo a nulo— y la deja `PAUSED` con motivo `COURTESY` | `DEC-GRANT-007`. Re-apuntarla en el cierre **pedía una pausa que ninguna transición declara**: el `hacia` de `S18` es *«el mismo estado»* y la única fila que llega a `PAUSED · COURTESY` es `S9`, cuyo `desde` es `ACTIVE`; sobre una sucesora en `PENDING_AUTHORIZATION` no hay transición, y la regla 1 del núcleo mandaba el cierre del camino normal a la marca. Y si alguien la re-apuntaba sin pausar, la sucesora autorizaba y **cobraba** con una cortesía encima que es *«una fila de base que no hace nada»*. Diferirla usa `S9` **tal como está**, sobre una fila `ACTIVE` que el proveedor sí deja pausar |
+| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le abre a **esa** fila una marca con motivo **`REEMBOLSO_POR_CONFIRMAR`** (§2.5), **con el pago colgado de ella** (§2.2), y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre ese mismo pago (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** — y sin el motivo esa fila llegaba al listado indistinguible de las otras doce marcas |
+| **pagos y pagos manuales ya resueltos, comprobantes, pausas cerradas, el `provider_link`** | varias | **no se re-apuntan** | son el histórico de esa fila y de su preapproval. Cada suscripción tiene el suyo |
+
+**La primera es el re-apunte, la segunda es la PÉRDIDA
+(pendiente 7), la tercera es el DIFERIMIENTO, la cuarta es el aviso, y la quinta es historia.** El reparto cambió con `DEC-GRANT-007`: hasta entonces las tres primeras se
+re-apuntaban y la cortesía era la que no se podía ejecutar. Es la distinción que `S18` tiene que
+ejecutar y la que `G-R1-C` vigila: un cierre que escribe las dos
+columnas y deja **un complemento** apuntando a la predecesora, **o una cortesía
+vigente sin cerrar y sin saldo**, es un cierre incompleto, no un cierre.
+
+> **Ya no**: `S25` salió con la revisión del
+> owner, 2026-09-28, C8, y el cierre de `S18` vuelve a ser el único escritor del diferimiento.
+
+**Y la primera y la tercera tienen el mismo modo de falla: son silenciosas.**
+Ninguna emite webhook, ninguna cambia un estado que el barrido compare, y las dos le
+sacan al cliente algo que ya tenía —capacidad comprada, cortesía firmada— en
+el acto con el que decidió gastar más. La segunda **ya no**: desde la pendiente 7 la promo se
+pierde a propósito y se avisa antes (`B/14` §2.2). Por eso el inventario va acá y no repartido en
+dos capítulos. **Y la tercera tiene además un segundo modo de falla que
+la primera no tiene**: el diferimiento se puede escribir bien y la
+re-emisión no ocurrir nunca, porque `S9` es un acto y no un reloj — para eso está la **sexta**
+comprobación de cero llamadas del `B/09` §3.
+
+> **Y un grant NO es una sucesión: no re-apunta nada, y tampoco se lleva nada puesto.** `S13`
+> alcanza *«toda fila viva **principal**»* (`B/03` §3.2), así que **no toca la suscripción de
+> complemento** —que es una fila de esta misma tabla, con su `clase`—; y el addon tampoco queda
+> huérfano, porque el grant **releva** a la principal en esa vertical (`B/16` §4.2, tercera
+> mitad de la condición). De las cinco filas de arriba la única que un grant mueve por ser grant
+> es la cuarta —el pago pendiente por `S19`—, y la mueve **apagando la bandera**, no
+> re-apuntándola (rama 4 de `B/12` §5.3).
+>
+> **Y si el grant lleva `includesAddons: true`, la primera fila la mueve OTRO acto, que tampoco
+> es una sucesión.** `S20` (`B/03` §3.2) **cancela** la suscripción de complemento de cada addon
+> compatible y **la instancia pasa a colgar del ancla** —no de la sucesora, porque no hay
+> sucesora—, que es el addon a costo $0 del §35.2 escrito por fin como un acto (`B/16` §3.4).
+> Esto **no convierte al grant en una sucesión**: no hereda nada, no re-apunta la promo ni la
+> cortesía y no cierra ningún candado. Lo único que comparte con `S18` es que el complemento
+> **deja de colgar de donde colgaba**, y hacia dónde pasa a colgar es distinto: allá la sucesora,
+> acá el ancla. Con el flag en `false` no se mueve nada y el complemento sigue cobrando.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1179
+
+<!-- g-secciones: fin -->
 
 La fila de origen, [FILA:B8](../10-corte/B8a.md#fila-b8), y su criterio,
 [LISTA:B8](../10-corte/B8a.md#lista-b8), están definidos en la mitad *a*; esta pieza los implementa
