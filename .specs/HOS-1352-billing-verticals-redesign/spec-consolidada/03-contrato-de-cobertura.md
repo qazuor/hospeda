@@ -3,7 +3,9 @@
 Este archivo reúne la frontera entre las dos épicas: el contrato de cobertura entero, en su forma
 vigente (`docs/12-contrato-de-cobertura.md`, sin tachados), las doce dependencias vivas entre
 épicas (`DEP`, de `B/descomposicion.md` §2.6) y la lista cerrada de los ítems normativos que son
-sólo citables (owner BA y BB). Las referencias `§n` sin otro prefijo son a las secciones de este
+sólo citables (owner BA y BB). Suma la misma interfaz vista desde la partición del programa (§8,
+`docs/11-particion-del-programa.md` §3) y dos secciones de programa de las descomposiciones de las
+épicas (§9). Las referencias `§n` sin otro prefijo son a las secciones de este
 mismo contrato; `V/NN`, `B/NN`, `NUCLEO/NN` y `16-fase-7…` son los capítulos de las fuentes
 congeladas, que quedan como rastro. Los nombres de pieza ya están en su forma del corte del MVP
 ([`DEC-ARCH-017`](01-decisiones-vigentes.md#dec-arch-017)): donde la fuente decía `V8`, `V9`, `B8`
@@ -82,7 +84,9 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura
 
 ### 1.2 Y no depende de lo que billing todavía no decidió
 
-El capítulo 13 tiene abierta una pregunta grande: si el reloj de cobro es nuestro o del proveedor.
+El capítulo 13 de billing, que ya no existe, tenía abierta una pregunta grande: si el reloj de
+cobro es nuestro o del proveedor (la cerró [`DEC-MP-006`](01-decisiones-vigentes.md#dec-mp-006),
+abajo; residuo corregido el 2026-10-02).
 **Este contrato se escribe igual en los dos mundos** — en los dos hay un título con un estado y
 una fecha hasta la cual cubre. Se puede definir hoy sin prejuzgar el 13.
 
@@ -1486,12 +1490,11 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura
   de billing. Acá está qué aportan, no cómo funcionan.
 - **Quién tiene el reloj de cobro: DECIDIDO el 2026-09-24 por [`DEC-MP-006`](01-decisiones-vigentes.md#dec-mp-006): es del
   proveedor.** Este contrato **no cambió una línea** por eso — que era lo que el §1.2 afirmaba.
-- **El domicilio ya está decidido** (revisión del owner, 2026-09-28, N6, `L1-d`): abajo, *«dónde
-  vive»*. **Y también el nombre del package**, `@repo/billing-verticals-contract`, que fijó la FASE 5
-  ([`DEC-ARCH-015`](01-decisiones-vigentes.md#dec-arch-015); §7.1). En qué package vive cada
-  implementación lo dice el párrafo de las implementaciones, abajo (FASE 5, [`DEC-METH-003`](01-decisiones-vigentes.md#dec-meth-003)).
+- **El domicilio y el nombre están decididos**: §7.1 (`@repo/billing-verticals-contract`,
+  [`DEC-ARCH-015`](01-decisiones-vigentes.md#dec-arch-015), FASE 5, lote B); la implementación real
+  la inyecta la raíz de composición de `apps/api` (§7.1) (residuo corregido el 2026-10-02).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1509, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1511, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1520
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1509, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1511, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1521
 
 ### 7.1 Dónde vive: un package compartido, único punto de comunicación
 
@@ -1556,6 +1559,175 @@ primera vez** (FASE 9 vuelta 3, F-8V3C1-008: `B1` corre en paralelo con `V1`) co
 la dirección inversa (`V/descomposicion.md`, `B/descomposicion.md` §2).
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1525, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1527, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1585
+
+## 8. La interfaz vista desde la partición del programa: un hecho y un aviso
+
+Es el §3 de la partición (`D/11`), que llega a lo mismo que este contrato desde el otro lado:
+verificado capítulo por capítulo, todo lo que el lado verticales necesita del lado billing se
+reduce a **un solo hecho**, que el diseño pedía en cuatro lugares distintos con cuatro nombres
+distintos y es siempre el mismo. La tabla de esos cuatro lugares es la del §1.1, y no se repite.
+
+**El hecho, enunciado una vez, y en un solo lugar, que es este contrato**: una consulta de
+cobertura por `user + vertical`, cuya firma exacta vive en el §2. Su contracara, lo único que
+billing le empuja a verticales, es el evento *«la cobertura de (user, vertical) cambió»*, y es el
+§3.
+
+> **La partición llevaba una transcripción de la firma, y es la que no hay que volver a
+> escribir.** Decía `{ tiene_título_vivo, fuente, hasta_cuándo }` —tres campos, con `fuente` en
+> singular, que es exactamente lo que el §2.2 descarta por su nombre (*«quitar una fuente no quita
+> la cobertura si queda otra»*), y con tres nombres que no existen en ningún otro documento del
+> programa—. Era `F-8C1-009`, y es el mismo generador que `F-8dC2-001` encontró en los dos
+> `spec.md`: **una copia no necesita que nadie la mute para divergir, alcanza con que el contrato
+> avance**. Se retiró en vez de actualizarse, porque actualizarla dejaba el generador en pie (§0).
+
+**Nada más cruza la frontera.** No cruzan montos, ni estados de pago, ni ids del proveedor, ni
+fechas de cobro —sobre cobros cruza un solo bit, `cobrada`, declarado en el §4
+([`DEC-TRIAL-010`](01-decisiones-vigentes.md#dec-trial-010))—. **La regla de vigilancia vive en el
+§4.2 y la partición la cita, no la repite**: si aparece un lugar que necesita algo de billing y no
+figura en la fila `cubierto` del §2.1 ni en su fila `cobrada` —y no es este hecho—, es señal de que
+el corte se está filtrando y hay que mirarlo, no resolverlo en el lugar.
+
+> **Ese renglón de la partición decía *«un quinto lugar»* y era la tercera copia de una cifra que
+> ya había caducado.** La tabla del §1.1 enumera **los cuatro nombres con que el diseño pedía el
+> hecho antes de que el contrato existiera**, y el censo vivo de quién lo consume es la fila
+> `cubierto` del §2.1, que hoy es más larga. Es el mismo generador que el recuadro de arriba
+> describe para la firma —**una copia no necesita que nadie la mute para divergir**—, aplicado esta
+> vez a un conteo en vez de a un bloque de campos. **La mitad inversa de la misma regla llevaba la
+> otra cifra caduca** (*«los seis campos»* contra los **siete** del §4.1), y las dos se arreglaron
+> sacándole el ordinal a la que puede vivir sin él (§4.2).
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:91, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:93, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:97, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:104, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:110, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:118, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:125
+
+### 8.1 El valor por defecto que hace posible construir sin billing
+
+**El trial ya es un título vivo, y el trial no es billing.** Esa es toda la respuesta.
+
+Mientras la épica de billing no exista, `cobertura()` se resuelve con las **dos** fuentes que ya
+viven del lado de verticales —el trial y el título `BASE` del §2.5— y las **cuatro** de billing
+(suscripción, cortesía, grant y addon) responden que no (§5.1). Con eso:
+
+- la resolución de autorización recorre sus **nueve pasos completos** (cap. 17 §1.2);
+- la máquina de publicación tiene su disparador de [`PB2`](04-catalogos.md#trans-v-pb2) vivo,
+  alimentado por [`T3`](04-catalogos.md#trans-v-t3);
+- el reconciliador de excedentes se prueba entero, disparado por las transiciones de trial;
+- y la agregación de limits, los scopes y el excedente no tienen ninguna dependencia que
+  defaultear: nunca preguntaron por dinero.
+
+Cuando billing exista, **se agrega como fuente de `cobertura()` y como llamador del
+reconciliador.** No se modifica nada de lo construido: se enchufa (§5.2).
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:134, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:136, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:138, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:142, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:148
+
+### 8.2 Lo que queda inactivo, declarado y no escondido
+
+Tres cosas del lado verticales no se pueden ejercer hasta que exista billing. Van declaradas acá
+para que nadie las descubra como un bug:
+
+1. **El trial nunca convierte.** Las transiciones [`T2`](04-catalogos.md#trans-v-t2) y
+   [`T5`](04-catalogos.md#trans-v-t5) del capítulo 03 §2 disparan cuando aparece un título que
+   convierte —una suscripción, recién con su primer pago acreditado
+   ([`DEC-TRIAL-010`](01-decisiones-vigentes.md#dec-trial-010))—. Sin billing, un trial sólo puede
+   vencer.
+2. **La reparación de un trial ya vencido no existe.** El capítulo 11 §2.3 la resuelve con una
+   cortesía, que es un instrumento de billing. Alguien perjudicado por un error de moderación
+   nuestro **después** de que su trial venció no tiene reparación hasta entonces. Mientras el
+   trial sigue vivo sí la tiene: la extensión [`T4`](04-catalogos.md#trans-v-t4) es propia del
+   trial.
+3. **El techo de días de trial cuenta una fuente de tres.** Cuenta las extensiones de `T4` y no
+   las que vendrían de un promo o de una cortesía (cap. 11 §3.2), porque esas dos todavía no
+   existen. El número no cambia; cambia cuántas cosas suman contra él.
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:151, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:153, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:156, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:159, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:163
+
+## 9. El programa: lo que se agregó a las unidades y lo que las ordena
+
+Dos secciones de las descomposiciones de las épicas que no son de ninguna pieza sola: qué agregó
+la FASE 5 y a qué unidad, en verticales (`V/descomposicion.md` §2.13), y qué podía construirse
+antes de que la pasarela estuviera elegida, en billing (`B/descomposicion.md` §2.3), de la que
+queda vigente su tabla de política y forma.
+
+### 9.1 Lo que la FASE 5 agregó, y qué unidad lo construye
+
+(FASE 5, sobre `HOS-1352/docs/38-fase-5/10-decisiones-del-owner.md`, lotes 1 a 6 y el lote de
+simplificación del corte, y `20-simplificacion-del-corte.md`.) Recorrido contra la tabla de unidades
+de `V/descomposicion.md` §2 con la misma pregunta que su §2.11. Lo que la FASE 5 agregó a
+[`U1`](10-corte/U1.md#pieza-u1) está en la fila de `U1` de ese §2.11.
+
+| qué | de dónde | unidad | qué la demuestra |
+|---|---|---|---|
+| **`U2`, el outbox común**: sobre el precedente del newsletter, con la supresión, la bitácora de correos que `U1` renombró desde `billing_notification_log`, la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs (el reloj sigue en `B1`) | lote 2 A y B | **[`U2`](10-corte/U2.md#pieza-u2)**, del paraguas como `U1`: depende de `U1` y va antes de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12`, las primeras que encolan. Su fila y su criterio viven en `16-fase-7…` §4.6 | **`V6`, `V9a` y `V9b` (AC) dependen de `U2`** (`V/descomposicion.md` §3) |
+| **el paso de cobertura en toda ruta de escritura de vertical**, que `U1` deja con permiso y propiedad solos | lote 1 A | **[`V5`](10-corte/V5.md#pieza-v5)** | **criterio de salida: ninguna ruta de escritura de vertical sin el paso de cobertura** |
+| **la ficha ajena `RESTRICTED` contesta `404`**: sale la excepción VIP de `apps/api/docs/error-contract.md` | lote 4 D | **`V5`** | una ficha ajena `RESTRICTED` contesta lo mismo que una inexistente, y el test que fijaba el `403` afirma el `404` |
+| **salen la impersonación y `set-role`**: `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón del panel y `USER_IMPERSONATE`; **y `fullAdminRole` queda sin ninguna acción: el plugin sigue sólo como guardia del baneo en el inicio de sesión** (FASE 5, lote de la aplicación, owner 2026-09-30, L; `apps/api/src/lib/auth.ts:76-89` en `origin/staging`) | lote 4 C; lote de la aplicación, L | **`V5`** (el plugin y el permiso) · el botón sale en el mismo cambio | ningún rol del plugin lleva `impersonate` ni `set-role`, el permiso no existe en el enum y el panel no muestra el botón; **`fullAdminRole` no lista ninguna acción sobre `user` ni sobre `session`, y un baneado sigue sin poder iniciar sesión** (L) |
+| **el estado nuevo de la ficha reemplaza a `lifecycle_state`, `visibility` y `moderation_state`**, con sus lectores, los disparadores de revalidación y el *«revalida»* de cada fila de `03` §9 | lote 3 A | **[`V6`](10-corte/V6.md#pieza-v6)** | ningún archivo lee las tres columnas viejas; una transición que cambia lo que se ve programa la revalidación que su fila declara; las tres se borran en el paso 3 |
+| **los lectores de `owner_suspended`, `plan_restricted` y `billing_unpublished_at`**, retirados en el mismo cambio que la migración que las borra | lote 3 B; S-09 | **`V6`** | fila de las tres columnas de `V/descomposicion.md` §2.12 |
+| **las puertas de borrado y restauración fuera del diseño**: `softDelete` del dueño, `delete`, `hardDelete` y `restore` del admin en las tres verticales, y `user/admin/hardDelete.ts` | lote 3 C | **`V6`** (las de fichas) · **[`V8a`](10-corte/V8a.md#pieza-v8a)** (corte del MVP, owner 2026-10-01, Z) (la de cuentas, que reemplaza la acción 24, [ACC:24](02-nucleo.md#acc-24)) | el dueño borra sólo por [`PB12`](04-catalogos.md#trans-v-pb12); el equipo borra una ficha sólo por la acción 23 ([ACC:23](02-nucleo.md#acc-23)), a pedido y con motivo; no queda ruta que borre físicamente una ficha o una cuenta, ni que restaure una ficha |
+| **los plazos sin valor, fijados antes del merge de `V6`** | lote 3 D | el owner, antes del merge de **`V6`** | la migración que crea la versión 1 de los plazos no falla en `e2e-pr` |
+| **el corte simplificado**: la lista cerrada de cinco fichas, el borrado de las demás, el 4c siempre y el 5b sobre lo borrado; salen la tabla `L1`–`L8`, los recuentos del paso 0, 2 y 3 y el gate de seudónimos compartidos; **la tabla de paso que la migración llena antes de borrar (id de cada ficha borrada, rutas de sus fotos y token de calendario), que el 5b recorre y borra al terminar** (FASE 5, lote de la aplicación, owner 2026-09-30, D)**, sólo en el SQL de la migración del paso 3 y fuera del esquema de Drizzle** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, P); **y la herramienta del corte que escribe las cinco pruebas** (FASE 5, lote de la aplicación, owner 2026-09-30, B) | S-01, S-02, S-04, S-07, S-08, S-28, S-36, S-67; lote 1 J; lote de la aplicación, B y D; segunda tanda, P | **`V6`** | criterio de `V6` en `V/descomposicion.md` §4 |
+| **la postulación propia de Partner**, la de `02` §2.7; `alliance_leads` queda para los otros tipos | lote 4 A | **[`V7`](20-fase-4/V7.md#pieza-v7)** | postularse como Partner crea una postulación nueva y ninguna fila en `alliance_leads`; una postulación de patrocinador sigue entrando por `alliance_leads` |
+| **el rol de socio**, con su familia de operaciones, sus permisos y su migración de datos, asignado **en el acto que fija al dueño de la presencia —el reclamo—** (FASE 5, lote de la aplicación, owner 2026-09-30, F), **porque el alta directa del admin no fija dueño y manda el aviso de reclamo** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N), y nunca quitado | lote 4 B; lote de la aplicación, F; segunda tanda, N | **`V7`** (el rol, los permisos, la migración y la asignación) · **`V5`** (el paso 3 que pregunta por esa familia) | **aprobar una postulación no asigna ningún rol; reclamar le asigna el rol de socio a la cuenta con que se reclama, y no a la que tiene el correo** (F); **el alta directa del admin no asigna ningún rol ni escribe `owner_user_id`: manda el aviso de reclamo, y el rol llega con el reclamo** (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N); un socio que pierde la presencia conserva el rol; el paso 3 deja pasar sus operaciones de socio y rechaza las de otra familia |
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:533, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:535, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:541, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:542, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:543, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:544, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:545, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:546, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:548, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:549, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:550, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:551
+
+### 9.2 Qué se podía hacer antes de la pasarela, y qué sigue vigente
+
+**Las trece unidades de billing tienen diseño y ninguna espera a un tercero**: con
+[`DEC-MP-005`](01-decisiones-vigentes.md#dec-mp-005) (la pasarela es Mercado Pago) y
+[`DEC-MP-006`](01-decisiones-vigentes.md#dec-mp-006) (su política de cobro, 2026-09-24), lo que
+ordena la construcción son sólo las dependencias de `B/descomposicion.md` §3 (FASE 9 completa,
+salida 3 de `DEC-METH-004`). Las trece se pueden construir, en ese orden: ninguna queda sin diseño
+(el capítulo 13 se repartió y `DEC-MP-006` decidió su política) y ninguna espera la pasarela.
+
+**Lo que sigue vigente de la sección de la fuente es la tabla de política y forma**, con la columna
+de la forma ya contestada por Mercado Pago. La política es lo que no cambiaba con la respuesta, y
+por eso la especificación se pudo escribir antes de elegir proveedor:
+
+| unidad | política, que sobrevive a las dos respuestas | forma (contestada por Mercado Pago) |
+|---|---|---|
+| **[`B3`](10-corte/B3.md#pieza-b3)** | hay una ventana entre *«empezamos»* y *«hay compromiso»*, tiene duración máxima, se limpia y el candado es nuestro y va antes | qué vive adentro: un checkout para autorizar un mandato, o la captura de una tarjeta |
+| **[`B7`](10-corte/B7.md#pieza-b7)** | el reloj del grace arranca en el **primer rechazo** de una renovación, leído por id —reemplazo de la FASE 8 completa (`R1`) del *«cuando se agotan los reintentos»*: ese instante no emite evento (`GR-3`)—, y eso se observa releyendo, nunca contando días | de quién son esos reintentos — y si son nuestros, **son terreno regulado** |
+| **[`B8b`](20-fase-2/B8b.md#pieza-b8b)** (corte del MVP, owner 2026-10-01, Z) | cambiar de ciclo re-autoriza; la pausa es en meses enteros y el reloj que reanuda es nuestro | si hace falta cancelar y recrear — [`DEC-ARCH-004`](01-decisiones-vigentes.md#dec-arch-004) impl. 3: *«si se puede mutar el ciclo de una suscripción viva, `DEC-SUB-006` deja de necesitar el cancelar-y-recrear»* |
+| **[`B9b`](20-fase-2/B9b.md#pieza-b9b)** (corte del MVP, owner 2026-10-01, Z) | el orden de aplicación, el piso, y **que un canje o un apilado bajo el piso se rechaza al canjear, con un motivo que dice que el mínimo lo pone Mercado Pago** (owner 2026-09-25, 4b y 9g) | **sin sujeto**: la cortesía se implementa pausando ([`DEC-GRANT-003`](01-decisiones-vigentes.md#dec-grant-003)), y una promo ya no se ejecuta como cortesía |
+| **[`B10`](20-fase-3/B10.md#pieza-b10)** | los dos ejes, qué es una suscripción válida, el huérfano | si el huérfano recurrente **existe** — con un cargo puntual no hay autorización suelta que siga cobrando |
+| **[`B11`](10-corte/B11.md#pieza-b11)** | el inventario es nuestro y lo que toca plata lo mira una persona | si hace falta leer de a una por id |
+
+**[`B6`](10-corte/B6.md#pieza-b6) ya tiene su columna de política**
+([`DEC-MP-006`](01-decisiones-vigentes.md#dec-mp-006), 2026-09-24): **un solo reloj, el del
+proveedor**, y el reembolso siempre confirmado por una persona y verificado releyendo
+([`DEC-RF-002`](01-decisiones-vigentes.md#dec-rf-002), `B/03` §6.1). Su forma es la de Mercado
+Pago: el mandato cobra solo y el reembolso va por `POST /v1/payments/{id}/refunds` con clave
+obligatoria (`B/06` §4.6). La fila de `B12` de la fuente está tachada entera: era de la
+discontinuación de una vertical, que salió con la revisión del owner, 2026-09-28, C8 (tachada en
+los casos vecinos, 2026-09-29, caso 38).
+
+**Y lo que no conviene**: escribir el adaptador contra Mercado Pago «para ir avanzando». Es
+exactamente el error que [`DEC-ARCH-004`](01-decisiones-vigentes.md#dec-arch-004) fue a corregir
+—la alternativa (3) que descartó, *«acoplarse a la pasarela elegida y aceptar que cambiarla sea una
+reescritura»*, es la que **nos trajo hasta acá**—. **Sigue valiendo con la pasarela decidida**:
+desde `DEC-MP-005` el adaptador real **es** el de Mercado Pago, pero se escribe detrás de la
+interfaz, con [`G12`](04-catalogos.md#guard-g12), y `DEC-MP-005` declara que la elección se revisa
+si aparece otra habilitación.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:204, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:217, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:219, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:245, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:247, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:251, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:252, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:253, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:254, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:255, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:256, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:257, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:261, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:279, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:282
+
+**Lo que de esa sección de la fuente NO es vigente** (la fuente misma lo deja como rastro: *«Este §
+describe el estado anterior al 2026-09-24 y se deja como rastro»*, y lo superaron `DEC-MP-005` y
+`DEC-MP-006`), y por eso no se especifica acá ni se construye:
+
+- **el conteo previo a la pasarela** —*«sin diseño: 1 (B6)»*, *«con diseño, esperando la pasarela:
+  11»*, *«se puede hacer entera hoy: 1 (B2)»*— y la frase *«Doce de trece tienen el diseño escrito.
+  Doce de trece no se pueden construir todavía»*, tachados en la fuente y reemplazados por el
+  *«ninguna espera a un tercero»* de arriba;
+- **«Por qué el alcance es tan ancho»**, la tabla de lo que la pasarela decide con su respuesta de
+  Mercado Pago: es la justificación de por qué la elección pesaba, escrita mientras la pasarela no
+  estaba elegida; lo que cada fila dice como hecho de Mercado Pago es decisión ya tomada y vive en
+  sus decisiones (`DEC-MP-005`, `DEC-MP-006`, [`DEC-ARCH-004`](01-decisiones-vigentes.md#dec-arch-004)
+  y las demás que la tabla de política y forma cita);
+- **«Lo que sí conviene hacer mientras tanto»** (atomizar las once con diseño, construir `B2` entera
+  con su único gate en `V2`, escribir la interfaz del adaptador y `G12` antes de saber la pasarela):
+  la fuente lo declara *«sin objeto desde el 2026-09-24»* y tacha sus tres puntos.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:212, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:221, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:225, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:227, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:231, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:241, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:267, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:269, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:272
 
 ## Las dependencias entre épicas (`B/descomposicion.md` §2.6)
 
@@ -1678,13 +1850,12 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/
 (vertical, dueño **y `admiteDestaque`** del objetivo; FASE 9 vuelta 1, `N-G4V-06`) y
 `políticaDeAddon` (`addon`, vigencia, **`díasDeVigencia`**, tipo de scope de la versión), del
 §4.1 (owner 2026-09-26, `G4-2`; FASE 9 vuelta 1, `F-8V1A3-008`, `F-8V1C1-008`). **Contra `V6` y
-`V2`.** Es una entrada nueva del §4.1, no un campo de las que había. La fuente la dejaba como dependencia
-del camino de billing porque no se había medido si `V6` llega antes que `B10`; con el corte del MVP
-`V6` es del corte y `B10` de la Fase 3 ([`DEC-ARCH-017`](01-decisiones-vigentes.md#dec-arch-017),
-puntos 1 y su tercer 📌), así que `V6` llega antes.
+`V2`.** Es una entrada nueva del §4.1, no un campo de las que había. **`V6` llega antes que
+`B10`: `V6` es del corte y `B10` de la Fase 3** (Z, AW; residuo corregido el 2026-10-02;
+[`DEC-ARCH-017`](01-decisiones-vigentes.md#dec-arch-017)).
 
 Pieza dueña del AC: [B10](20-fase-3/B10.md#pieza-b10) · también: [V6](10-corte/V6.md#pieza-v6) (provee), [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:383, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:402
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:383, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:402, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:405
 
 <a id="dep-10"></a>
 **DEP:10** — **Lee `B9b`**, el canje de una extensión de trial (era `B9`: corte del MVP, owner

@@ -263,6 +263,58 @@ Pieza dueña del AC: [B3](10-corte/B3.md#pieza-b3) (las tablas del modelo de add
 `B3`: owner, letra AV, [DEC-ARCH-017#📌2](01-decisiones-vigentes.md#dec-arch-017-p2)).
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:49
 
+### 2.2.1 Las restricciones que sostienen las invariantes, en los dos modelos de datos
+
+El §64 lista 37 invariantes. Éstas son las que **la base puede hacer cumplir sola**, y por eso son
+las que no dependen de que ningún camino de código se acuerde. Cada modelo de datos de las épicas
+(`V/02` §5 y `B/02` §5) declara las suyas; cada restricción remite a la invariante que sostiene.
+
+**En el modelo de datos de verticales** (`V/02` §5):
+
+| invariante del §64 | restricción |
+|---|---|
+| [INV:1](#inv-1) · trial máximo una vez por `user + vertical` | `UNIQUE(user_id, vertical)` en `trial`, sin condición de estado |
+| [INV:2](#inv-2) · borrar ficha no devuelve trial | la fila de `trial` no se borra nunca (`V/02` §4.1) — **la sostiene contra el borrado de la cuenta la FK `trial.user_id` → `user` con `ON DELETE RESTRICT`** (`V/02` §2.2; FASE 8 completa, `F-8CA3-008`) |
+| [INV:11](#inv-11) · una ficha tiene un único dueño | columna no anulable, no tabla de relación |
+| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (`NUCLEO/03` §1, regla 2; [02-nucleo-glosario.md](02-nucleo-glosario.md) §2.3, regla 2) |
+
+> ⚠️ **Lo que la fila de [INV:2](#inv-2) NO tiene, declarado por
+> [DEC-METH-015](01-decisiones-vigentes.md#dec-meth-015)** (FASE 8 completa, `F-8CA3-008`): la FK
+> impide que la fila caiga **por arrastre** del borrado de la cuenta, pero **ninguna restricción
+> declarada impide un `DELETE` directo sobre `trial`**. Hasta que exista una, esa mitad de la
+> invariante depende de que ningún camino de código la borre, que es lo que esta sección dice que
+> las de arriba no hacen. **Se rechaza con un trigger que rechaza todo `DELETE` sobre `trial`**, en
+> el carril de extras (`packages/db/src/migrations/extras/`): ningún camino legítimo borra esa fila,
+> porque el borrado de la cuenta la anonimiza (FASE 9 vuelta 1, `F-8V1A3-013`). Con eso el cap. 04
+> §2.1 (núcleo), es decir el §2.2 de este archivo, queda cierto sin cambiar el conteo de seis.
+>
+> **Y `trial` nace sin `deleted_at`, y las tablas de sólo agregar también** (FASE 5, owner
+> 2026-09-30, lote 4 E, `F5-BD-029`). El trigger ve un `DELETE`, no un `UPDATE` que ponga la fecha,
+> y el borrado suave de hoy la estampa en toda tabla que la tenga: una fila de `trial` *«borrada»*
+> así desaparecía para toda lectura que filtrara por `deleted_at`, y la guarda de
+> [T1](04-catalogos.md#trans-v-t1) dejaba de verla mientras el `UNIQUE` seguía rechazando la
+> inserción. Sin la columna, no hay borrado suave que hacer.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:979, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:981, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:986, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:987, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:988, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:989, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:991, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:995, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1001, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:1008
+
+**En el modelo de datos de billing** (`B/02` §5):
+
+| invariante del §64 | restricción |
+|---|---|
+| [INV:8](#inv-8) · máximo una suscripción principal por vertical | **dos** `UNIQUE` parciales sobre los estados vivos, partidos por `sucede_a` (`B/02` §2.2). La invariante cuenta **compromisos, no filas**: durante la ventana del cambio de plan hay dos filas y un solo compromiso de pago |
+| [INV:10](#inv-10) · una acción en una vertical no afecta a otra | **`UNIQUE(permanent_grant_id, vertical)` en `permanent_grant_vertical`, más «el plan del ancla pertenece a esa vertical»** (`B/02` §2.4). Es la mitad del §64.10 que el scope estructural del cap. 17 **no** alcanza: ahí la resolución pide la vertical, pero el cruce venía **adentro** de la fuente |
+| [INV:19](#inv-19) · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment` |
+| — · a lo sumo **un grant vivo** por beneficiario | **`UNIQUE(beneficiario) WHERE revocado_en IS NULL` en `permanent_grant`** (`B/02` §2.4, [DEC-GRANT-009](01-decisiones-vigentes.md#dec-grant-009)). No está en el §64 —el PDR no la enuncia— y entra acá por la misma razón que las otras: es lo que hace que **los nueve consumidores de *«grant vivo»*** (`NUCLEO/01` §2.4, en [02-nucleo-glosario.md](02-nucleo-glosario.md)) no puedan encontrar dos filas si alguno olvida el filtro |
+| [INV:26](#inv-26) · producto ≠ instancia | son dos tablas, y la instancia no repite ningún campo del producto |
+| — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (`NUCLEO/03` §1, regla 2) |
+
+**Las demás no las puede sostener la base** —dependen de la resolución en el servicio— y son las
+del capítulo 04 (núcleo), el resto de esta sección 2. Lo que importa es la distinción: las de
+arriba **no admiten un camino que las esquive**, las otras sí, y por eso las otras necesitan estar
+en un solo lugar. Las dos épicas lo dicen con las mismas palabras.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1282, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1284, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1289, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1290, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1291, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1292, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1293, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1294, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1296
+
 ### 2.3 Las 37 del §64: las que sostiene un servicio (14)
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:51
@@ -810,18 +862,14 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md
 
 ### 2.9 Lo que ninguna invariante cubre todavía
 
-Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se completan acá** (§67):
+Tres cosas que el §64 no nombra, que ninguna decisión había resuelto al escribirse (la primera la
+cerró después `B/16` §4), y que **no se completan acá** (§67):
 
-1. **Qué pasa cuando una suscripción principal muere y quedan complementos vivos.** El §41 dice que un
-   addon se cancela *«solo cuando queda efectivamente huérfano»*, y con
-   [DEC-ADDON-002](01-decisiones-vigentes.md#dec-addon-002) cada addon recurrente es una suscripción
-   aparte que **no se cancela sola**. Es `E-ADDON-04`, `B/16`. *(Nota de la consolidación, inferida:
-   la fuente lo sigue listando, pero [DEC-ADDON-004](01-decisiones-vigentes.md#dec-addon-004) —el
-   complemento que se queda sin instancia muere en el acto— y
-   [DEC-ADDON-007](01-decisiones-vigentes.md#dec-addon-007) —los addons mueren cuando ninguna
-   principal los sostiene—, con la orfandad [A5](04-catalogos.md#trans-b-a5) y
-   [S21](04-catalogos.md#trans-b-s21), le dan respuesta de diseño; queda anotado como posible resto
-   de la fuente, sin quitarlo de esta lista.)*
+1. **Cerrado: qué pasa cuando una suscripción principal muere y quedan complementos vivos.** Lo
+   cierra `B/16` §4 (*«Cuando un addon se apaga · cierra `E-ADDON-04`»*), con
+   [DEC-ADDON-004](01-decisiones-vigentes.md#dec-addon-004) y
+   [DEC-ADDON-007](01-decisiones-vigentes.md#dec-addon-007) (`04-open-decisions.md`, `E-ADDON-04`
+   tachado; residuo corregido el 2026-10-02).
 2. **Una vertical discontinuada: fuera de esta versión** (revisión del owner, 2026-09-28, C8): las
    verticales no se discontinúan; si algún día hace falta, se diseña entonces. `D14` se retiró;
    [INV:D13](#inv-d13), retirar un plan, sigue.
@@ -830,7 +878,7 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
    necesita aceptación activa y a quien no responda no se lo puede aumentar. `B/22`, y pide revisión
    profesional.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:207, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:213, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:217
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:202, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:204, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:210, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:213, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:217
 
 ### 2.10 El resumen del reparto
 
@@ -903,7 +951,10 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-ob
 **ACC:1** — **Otorgar o revocar una cortesía temporal**, **en meses enteros y sólo sobre un plan
 mensual**; sobre uno **no mensual —trimestral, semestral o anual—** no está disponible (FASE 8
 completa, `F-8CB1-001`; `B/14` §4.7; *«no mensual»* donde antes decía *«anual»*, corregido en la
-FASE 9 completa, contradicción 1 de `R4`).
+FASE 9 completa, contradicción 1 de `R4`). **Revocar es reanudar antes del fin: corre
+[S10](04-catalogos.md#trans-b-s10) por su tercer evento, con `fin_real`, la relectura, sin
+reembolso y con el aviso a la persona; lo construye [B9b](20-fase-2/B9b.md#pieza-b9b)** (corte del
+MVP, owner 2026-10-02, BO).
 
 - **De dónde sale**: §34, [DEC-GRANT-002](01-decisiones-vigentes.md#dec-grant-002),
   [DEC-GRANT-003](01-decisiones-vigentes.md#dec-grant-003) implicación 6.
@@ -1451,11 +1502,11 @@ casos vecinos, 2026-09-29, caso 46): el §25 los fija (su *«Día 90»*, el soft
 plazos 1 y 2. El PDR no se edita: el apartamiento se registra en `DEC-DATA-008`, donde viven los
 otros.
 
-**La lista es cerrada, y son dieciocho.** Cada mitad es dueña de sus claves, como del resto de su
+**La lista es cerrada, y son diecinueve.** Cada mitad es dueña de sus claves, como del resto de su
 catálogo. Cada plazo dice su mitad, su valor inicial, qué decide y qué reloj guarda la versión de
 plazos con que arrancó.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:155, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:157, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:163, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:169, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:192
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:155, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:157, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:163, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:169, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:193
 
 ### 4.1 La lista cerrada
 
@@ -1611,10 +1662,29 @@ Adjudicación: fila `MIXTO`, veredicto **VIVO** (el valor reemplaza al «sin val
 Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee).
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:190, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:204
 
+<a id="plazo-19"></a>
+**PLAZO:19** — **La ventana `N` del resumen de conciliación.**
+Mitad: billing · valor inicial: **sin valor escrito: lo fija el owner antes del merge de
+[B2](10-corte/B2.md#pieza-b2)** (corte del MVP, owner 2026-10-02, BU; corte del MVP, owner
+2026-10-02, BX: la versión 1 falla con un plazo vacío, sin excepciones) · qué decide: cada cuántos
+minutos sale el resumen agregado de `RECONCILIATION_REQUIRED`
+([DEC-OBS-001](01-decisiones-vigentes.md#dec-obs-001): *«`N` es configuración (§9)»*) · qué reloj
+guarda la versión: ninguno: el resumen usa la versión vigente al abrir su ventana (inferido de BU,
+*«a los `N` minutos que dice la versión de plazos vigente»*; así lo marca la fuente). **Es una clave
+más en la tabla versionada de plazos de billing de `B2`, que cambia [ACC:22](#acc-22)**; la
+alternativa de una variable de entorno o una constante queda descartada por ir contra el PDR §9
+(BU).
+Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee).
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:191, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:193
+
 ### 4.2 Los valores, cuándo se fijan y dónde nacen
 
-**Son dieciocho** (FASE 9 vuelta 3: el 16 por el lote K, owner 2026-09-30; el 17 y el 18 por
-`F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla ni unidad). **Los cinco sin valor
+**Son diecinueve** (el 19, la ventana del resumen de conciliación, desde el lote BK a BV del corte
+del MVP, owner 2026-10-02, BU: **su valor lo fija el owner antes del merge de
+[B2](10-corte/B2.md#pieza-b2)**, y no de `B11`; corte del MVP, owner 2026-10-02, BX: así la regla de
+que la versión 1 falla con un plazo vacío vale sin excepciones) (FASE 9 vuelta 3: el 16 por el lote
+K, owner 2026-09-30; el 17 y el 18 por `F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla
+ni unidad; recontados sobre la tabla). **Los cinco sin valor
 escrito —[PLAZO:3](#plazo-3), [PLAZO:4](#plazo-4), [PLAZO:7](#plazo-7), [PLAZO:8](#plazo-8) y
 [PLAZO:9](#plazo-9)— los fija el owner antes del merge de [V6](10-corte/V6.md#pieza-v6)** (FASE 5,
 owner 2026-09-30, lote 3 D; [DEC-DATA-008#📌5](01-decisiones-vigentes.md#dec-data-008-p5): la
@@ -1625,13 +1695,14 @@ fijó el owner (FASE 9 vuelta 3, owner 2026-09-30, lote R;
 [DEC-DATA-008#📌4](01-decisiones-vigentes.md#dec-data-008-p4)), y ninguno de los tres está medido: son
 los valores iniciales, y los cambia [ACC:22](#acc-22) como a cualquier plazo.
 
-**La versión 1 de los plazos de cada mitad, con los dieciocho valores, nace en la migración
+**La versión 1 de los plazos de cada mitad, con los dieciocho valores (así lo dice la fuente, que
+no recontó con el [PLAZO:19](#plazo-19); anotado como error de fuente), nace en la migración
 estructural del paso 3 del corte** (`16-fase-7…` §4.2; [30-el-corte.md](30-el-corte.md)), antes que la
 escritura `C` y la prueba del corte, que la guardan, y el paso 3a sólo la verifica (la prueba la escribe
 después la herramienta del corte de `V6`: FASE 5, owner 2026-09-30, lote 2 D; FASE 5, lote de la
 aplicación, owner 2026-09-30, B). Un plazo vacío dejaría un reloj sin fecha.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:192, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:195, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:198, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:201
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:193, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:195, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:198, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:201
 
 ### 4.3 Lo que no está en la lista, cómo cambia un plazo y lo que el panel rechaza
 
@@ -1692,18 +1763,18 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 ### 4.4 Quién lo construye
 
 - **La tabla de plazos de cada mitad y la operación de cambiarlos**: en verticales,
-  [V6](10-corte/V6.md#pieza-v6), al corte —**la tabla versionada de los plazos de verticales, su versión
-  1 con sus valores y la acción 22 sobre sus claves los crea `V6` en la misma migración que la escritura
-  `C`, junto con la versión guardada en la ficha (`plazos_version` y `borrado_anunciado`); `V9b` sólo
-  los lee**— (owner, letra BD, [DEC-DATA-008#📌6](01-decisiones-vigentes.md#dec-data-008-p6), que
-  reemplaza el *«`V9` en verticales»* de la fuente: con la partición Z, `V9` dejó de ser pieza); en
-  billing, [B2](10-corte/B2.md#pieza-b2) (no cambia).
+  [V6](10-corte/V6.md#pieza-v6), al corte (corte del MVP, owner 2026-10-01, BD) —**la tabla versionada
+  de los plazos de verticales, su versión 1 con sus valores y la acción 22 sobre sus claves los crea
+  `V6` en la misma migración que la escritura `C`, junto con la versión guardada en la ficha
+  (`plazos_version` y `borrado_anunciado`); `V9b` sólo los lee**
+  ([DEC-DATA-008#📌6](01-decisiones-vigentes.md#dec-data-008-p6))—; en billing,
+  [B2](10-corte/B2.md#pieza-b2) (no cambia).
 - **Cada reloj guarda su versión en la pieza que lo construye.**
 - **Una sola pantalla de plazos, compuesta en la app del panel** (revisión del owner, casos vecinos,
-  2026-09-29, caso 47), que lee las dos mitades por la API sin importar ninguna (caso H-F): `V8` y `B13`
-  construyen cada uno la parte de su mitad —por la partición Z, [V8a](10-corte/V8a.md#pieza-v8a) y
-  [B13a](10-corte/B13a.md#pieza-b13a), que son las que `cobertura.json` pone como implementadoras de
-  [ACC:22](#acc-22)—, y cada cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la
+  2026-09-29, caso 47), que lee las dos mitades por la API sin importar ninguna (caso H-F):
+  [V8a](10-corte/V8a.md#pieza-v8a) y [B13a](10-corte/B13a.md#pieza-b13a) construyen cada uno la parte
+  de su mitad (corte del MVP, owner 2026-10-01, Z; inferido por la fuente que la pantalla es de las
+  mitades a, y así lo marca; residuo corregido el 2026-10-02), y cada cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la
   clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:250, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7380, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:251, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:254, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7380, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108

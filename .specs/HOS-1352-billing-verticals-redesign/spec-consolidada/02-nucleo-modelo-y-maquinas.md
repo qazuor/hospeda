@@ -74,7 +74,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 Todo lo que el §9 enumera menos los tres nombres de arriba: planes, planes de trial, billing options,
 precios, duración de trial, schedules de correo, qué entitlement da cada plan, qué límite, herencia,
 ajustes de pausa, métodos de pago admitidos, políticas de promo, addons, y cualquier regla comercial
-configurable. **Y los plazos que deciden cuándo pasa algo** (los dieciocho `PLAZO:n` de
+configurable. **Y los plazos que deciden cuándo pasa algo** (los diecinueve `PLAZO:n` de
 [02-nucleo.md](02-nucleo.md); revisión del owner, 2026-09-28, C9).
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:74, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:76
@@ -159,13 +159,38 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** —no una copia del contenido; **de los campos de contenido de una ficha, sólo el nombre**— (auditoría §1.2, en [02-nucleo-auditoria.md](02-nucleo-auditoria.md); owner 2026-09-25, FASE 9 completa, decisión 8e) | append-only, **y sin `deleted_at`** (FASE 5, owner 2026-09-30, lote 4 E) |
+| **`domain_event`** | qué pasó, sobre qué entidad, quién lo causó, cuándo, **qué campos cambiaron** —no una copia del contenido; **de los campos de contenido de una ficha, sólo el nombre**— (auditoría §1.2, en [02-nucleo-auditoria.md](02-nucleo-auditoria.md); owner 2026-09-25, FASE 9 completa, decisión 8e) | append-only, **y sin `deleted_at`** (FASE 5, owner 2026-09-30, lote 4 E). **La crea [U2](10-corte/U2.md#pieza-u2)** (corte del MVP, owner 2026-10-02, BW) |
 | **`outbox`** | destinatario, plantilla, estado (`pending`, `processing`, `sent`, `failed`, `retry`), id del proveedor, intentos (§44). **Lo construye [U2](10-corte/U2.md#pieza-u2), que absorbe la bitácora de correos renombrada desde `billing_notification_log`** (outbox §1.4, en [02-nucleo-outbox.md](02-nucleo-outbox.md); FASE 5, owner 2026-09-30, lotes 1 B y 2 A) | |
 
 **`domain_event` guarda referencias y deltas, no copias del contenido**, y ésa es una decisión de
 modelo con consecuencia directa en la retención: se explica en `V/02` §4, la retención.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:259, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:262, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:264, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:266
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:259, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:263, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:264, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:266
+
+### 1.5.1 La retención de billing: qué se borra, qué se anonimiza, qué se conserva
+
+Es la mitad de billing de la retención (`B/02` §4, que **cierra `M-DATA-01`**); la de verticales es
+`V/02` §4.
+
+| | qué | por qué |
+|---|---|---|
+| **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor | los cuatro primeros son obligación legal y contable |
+| **Se borra a los 180 días** | las entregas guardadas de los dos canales, `provider_notification` (`B/02` §2.7; mediciones del 2026-09-29, lote L-B) | son un registro técnico para una revisión, sin valor contable; el plazo es técnico y no configurable (mediciones del 2026-09-29, M-2; por eso no está en la lista cerrada de plazos de [02-nucleo.md](02-nucleo.md) §4, punto (b)) |
+
+**La primera fila habla del modelo nuevo** (la segunda entró con las mediciones del 2026-09-29,
+M-2) —`payment`, `manual_payment`, `refund`, `provider_link` (`B/02` §2.3)—, **no de las tablas del
+sistema viejo** (`billing_payments` y las demás). Del sistema viejo **no se conserva nada**, ni sus
+tablas ni las columnas que las copian: el owner lo decidió el 2026-09-25 (FASE 9 completa, `2a`;
+`B/21` §4) —*«recién arrancamos; a los clientes que hay los contactamos en persona, de a uno, y se
+vuelven a suscribir»*—. Se aclara porque la fila se podía leer como una obligación sobre
+`billing_payments`.
+
+**Los comprobantes se conservan con el nombre y el correo de quien pagó**, copiados al emitirse
+(`B/02` §2.3): la baja de una cuenta, que seudonimiza la fila de `user`, no los alcanza. Son los
+datos de facturación que la baja conserva (revisión del owner, casos vecinos, 2026-09-29, casos J-C
+y K-A).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1260, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1262, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1266, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1267, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1269, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1276
 
 ### 1.6 Lo que esta mitad NO cierra
 

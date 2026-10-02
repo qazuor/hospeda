@@ -678,15 +678,14 @@ enunciado de un invariante y en el de un guard.
 > desde `F-8CB1-013`, y el 17, el 18 y el 19 desde `F-8CB3-009`, `DEC-SUB-020` y `F-8CB3-003`, FASE
 > 8 completa, owner 2026-09-25; el 20, `COBRO_DUPLICADO`, desde la pendiente 6; el 21 y el 22 desde
 > la FASE 9 completa —`B/02` §2.5: `COBRO_DEL_PERÍODO_SIN_RESOLVER`, decisión 3d, y
-> `PAUSA_NO_APLICADA`, `F-8CB2-003`—), y **ocho de ellos significan *«hay plata del cliente que
-> devolver»*** (así lo dice esta línea de la fuente; el listado accionable de abajo, fila 6, y
-> `NUCLEO/04`/`NUCLEO/08` dicen **nueve**: la discrepancia está anotada como error de fuente y no se
-> elige acá). Con un booleano, dos
+> `PAUSA_NO_APLICADA`, `F-8CB2-003`—), y **nueve de ellos significan *«hay plata del cliente que
+> devolver»*** (el octavo y el noveno desde la FASE 9 vuelta 2, `R4` y `R20`, como dice la fila 6
+> de abajo; residuo corregido el 2026-10-02). Con un booleano, dos
 > casos simultáneos eran uno solo y [`S15`](04-catalogos.md#trans-b-s15) los apagaba juntos; el que
 > se perdía era el del dinero, porque es el que ninguna superficie nombraba. *«Puesta»* describe una
 > casilla; *«abierta»* describe **un caso**, que es lo que una persona levanta de a uno.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:699, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:701, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:708, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:709, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:711, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:714
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:699, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:701, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:708, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:709, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:711, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:714, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:716
 
 #### El inventario de consumidores de «marca abierta»
 
