@@ -733,6 +733,15 @@ completa, 6b y 8a).
 leen de la base. El caché sirve para responder «¿puede hacer esto?» en el camino de lectura,
 no para decidir un movimiento de dinero.
 
+### 3.4 Dónde vive ✚
+
+(corte del MVP, owner 2026-10-02, CB, la 1.) **En el Redis que la API ya usa** (`HOSPEDA_REDIS_URL`), y no en la memoria del
+proceso: en un redeploy conviven dos contenedores, y con más de una instancia una invalidación
+hecha en una no alcanzaría a las otras. **Se invalida por `user`**, como dice §3.2. **Si Redis no
+responde, se lee la resolución en vivo**: el caché nunca decide sobre plata (§3.3), y su caída no
+puede otorgar ni negar nada que la base no diga. **Y un contador de entradas sospechosas** (§3.2)
+va en los logs estructurados.
+
 ---
 
 ## 4. Retención: qué se borra, qué se anonimiza, qué se conserva · cierra `M-DATA-01`
