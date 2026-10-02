@@ -7829,7 +7829,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-017 — El MVP: el corte lleva 22 piezas y ocho llegan después, en fases aditivas sobre el sistema nuevo
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AP a AU y AV; ver sus dos 📌; **y otra vez el mismo día**, AW: las cuatro fases posteriores; ver su tercer 📌; **y otra vez el mismo día**, BC, BF, BG y BH: tres comportamientos sin pieza, la herramienta del 4b, el esquema de promos y cortesías y las superficies de `B13` que confirman actos de otra fase; ver su cuarto 📌; **y otra vez el mismo día**, BJ, que reemplaza a BI: el rechazo de la compra de Turista VIP; ver su quinto 📌; **y otra vez el 2026-10-02**, BL, BN, BO, BP y BR: las llamadas a lo posterior por interfaz, la pieza que crea una tabla que usan dos del corte, la revocación de una cortesía, el Turista VIP heredado en `S2` y las flechas de `U2`; ver su sexto 📌; **y otra vez el mismo día**, BW: `domain_event` la crea `U2`, y la parte de `S13` del criterio de `B7` pasa a `B9a` por BL; ver su séptimo 📌; **y otra vez el mismo día**, BY y CA: BL vale para leer, y la suspensión y el Turista VIP; ver su octavo 📌; **y otra vez el mismo día**, CD: `A1-bis`, el addon que se elige gratis bajo un grant con `includesAddons: true`; ver su noveno 📌; **y otra vez el mismo día**, CE: el objetivo `LISTING` de `A1-bis` pasa las guardas de `A1`; ver su décimo 📌; **y otra vez el mismo día**, CF y CG: el predicado de CC en el PR de `B3` y la prueba de punta a punta de la baja en `B13a`; ver su undécimo 📌; **y otra vez el mismo día**, CH y CI: `provider_link.cancelado_visto_en` la escribe toda relectura que ve `cancelled`, por una interfaz que llama `B3` e implementa `B4`, y `B11` espera a `B4`; ver su duodécimo 📌) · **Decide**: owner
 - **Problema**: el plan del 2026-10-01 pedía un corte con lo indispensable y fases posteriores, y el
   MVP no existía como decisión: sólo estaba en el handoff y en el worklog (`03-handoff.md`,
   `02-worklog.md`). Medido contra el grafo escrito, la lectura previa —diferir addons, Partner,
@@ -8044,6 +8044,21 @@ Cada entrada lleva, según §3.4:
   de la baja; `B8a` conserva sus pruebas de integración. Sin flechas nuevas: `B3` ya sigue a `B2` y
   `B13a` a `B8a`. Dónde: `B/descomposicion.md` §2, §2.12 y §4 (`B2`, `B3`, `B8a`, `B13a`);
   `B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG.
+- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CH y CI, las dos la 1)**:
+  quién escribe `provider_link.cancelado_visto_en`, y cuándo puede llegar la pieza que la lee.
+  **CH**: `B/09` §3 decía *«toda relectura que ve `cancelled`, sea del barrido, del handler o de una
+  transición»* y el reparto de `B/descomposicion.md` §2.11, de la misma letra Z, se la daba sólo al
+  barrido de `B11`; el handler y `S16` son de `B3`, que va antes que `B4`, la pieza que crea la
+  columna. **Vale el capítulo**: `B3` (el handler y `S16`) llama a una interfaz interna, *«anotar la
+  cancelación vista»*; **`B4` la implementa al crear la columna**, con su caso sobre filas
+  sembradas, y **el barrido de `B11` la usa también**. Es BL aplicada, y el reparto suma a `B3` como
+  pieza que llama. **CI**: el grafo de §3 hacía esperar a `B11` sólo a `B5`, y `B11` escribe y lee
+  esa columna; **flecha nueva `B4 → B11`**. Las otras eran BL para `B11` con interfaces de escritura
+  y de lectura (antes de `B4` la exención leería *«no vista»* y abriría marcas falsas) o mover la
+  columna a `B3` (reabre AP y AV). No mueve el camino crítico del corte, donde `B11` no está.
+  Recontado con `41-corte-del-mvp/`: 30 piezas, 22 al corte, 64 flechas —la de CI, `B4 → B11`— y
+  cero violaciones. Dónde: `B/descomposicion.md` §2, §2.11, §2.12, §3 y §4 (`B3`, `B4`, `B11`);
+  `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CH y CI.
 
 ---
 
