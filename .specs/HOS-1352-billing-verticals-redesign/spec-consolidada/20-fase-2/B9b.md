@@ -26,7 +26,7 @@ De `B9`: promos, cortesías, `S9`, `S34`, `S35` y el canje con `extenderTrial` (
 códigos promocionales (BH); **y las filas 7-bis y 13-ter del `19` §4** (BH; el reparto por fila lo
 infiere la fuente y lo marca).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:965, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:744
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:969, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:745
 
 <a id="fila-b9b"></a>
 
@@ -53,7 +53,7 @@ La fila de origen, [FILA:B9](../10-corte/B9a.md#fila-b9), y su criterio,
 
 **Fuera de alcance** (y dónde vive): los grants, su fuente, su piso, `S13`, `S20`, la fuente
 `CORTESÍA` real y la herramienta del 3b, en [B9a](../10-corte/B9a.md#pieza-b9a); el segundo
-disparador de `S9` (la re-emisión sobre la sucesora), en [B8b](B8b.md#tpz-s9), que lo llama por interfaz desde el cierre de la sucesión *(derivado: la fuente da `S9` como compartida, `B/descomposicion.md:857`, y el reparto sale de BL; la cláusula 6 la prueba esta pieza; lo marco)*; el esquema de promos
+disparador de `S9` (la re-emisión sobre la sucesora), en [B8b](B8b.md#tpz-s9), que lo llama por interfaz desde el cierre de la sucesión *(derivado: la fuente da `S9` como compartida, `B/descomposicion.md:859`, y el reparto sale de BL; la cláusula 6 la prueba esta pieza; lo marco)*; el esquema de promos
 y cortesías, en [B3](../10-corte/B3.md#pieza-b3) ([ESQ:6](../10-corte/B3.md#esq-6),
 [ESQ:7](../10-corte/B3.md#esq-7)); `T4`, la extensión del trial de verticales, en
 [V4](../10-corte/V4.md#pieza-v4).
@@ -286,7 +286,7 @@ rechaza el canje siguiente y no toca los ya canjeados** (§2.10; corte del MVP, 
 relectura, sin reembolso, la suscripción vuelve a `ACTIVE` y el aviso dice qué día se le cobra**
 (corte del MVP, owner 2026-10-02, BO).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1072
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1074
 
 ## Reglas
 
@@ -324,17 +324,17 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1072
 <a id="tpz-s30"></a>
 **TPZ:S30** — `S30` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:874
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:876
 
 <a id="tpz-s34"></a>
 **TPZ:S34** — `S34` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:878
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:880
 
 <a id="tpz-s35"></a>
 **TPZ:S35** — `S35` → `B9b`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:879
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:881
 
 ## Modelo de datos y migraciones
 

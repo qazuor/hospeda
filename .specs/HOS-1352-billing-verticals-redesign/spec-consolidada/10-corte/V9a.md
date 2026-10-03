@@ -3,7 +3,7 @@
 <a id="pieza-v9a"></a>
 **PIEZA:V9a** — pieza `V9a`, de la unidad `V9` (partida); **cuándo**: al corte; **fuente**: Z y AC
 (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 3 y 6).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:953
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:957
 
 ## Objetivo, alcance y fuera de alcance
 

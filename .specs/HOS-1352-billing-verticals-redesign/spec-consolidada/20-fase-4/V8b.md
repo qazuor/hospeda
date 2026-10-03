@@ -4,7 +4,7 @@
 **[PIEZA:V8b](#pieza-v8b)** — pieza `V8b`, la mitad *b* de la unidad `V8`; **cuándo**: después, en
 la **Fase 4** (con `V7`, a la que espera); **fuente**: Z (lista de piezas,
 `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 3).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:952
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:956
 
 ## Objetivo, alcance y fuera de alcance
 

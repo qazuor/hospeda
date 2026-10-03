@@ -839,7 +839,7 @@ contesta con el pago que el listado nombra, leído por id** con `GET /v1/payment
 *«cobró»*, cualquier otro estado es *«intentó y se rechazó»*, y esa lectura es la que dispara
 [S16](04-catalogos.md#trans-b-s16). **No es una lectura fallida de la corrida**; si el listado no
 nombra pago, o esa lectura también falla, sí lo es. (Origen: `B/09` §4,
-.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:983, :996, :1000, :1001, :1003)
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:989, :996, :1000, :1001, :1003)
 
 **Excepciones declaradas**:
 
@@ -1809,4 +1809,4 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
   mitades a, y así lo marca; residuo corregido el 2026-10-02), y cada cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la
   clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:251, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:254, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7409, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:251, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:254, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7418, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108

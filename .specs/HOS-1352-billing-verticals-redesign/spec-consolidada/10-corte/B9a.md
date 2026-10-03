@@ -14,7 +14,7 @@ del MVP (Z): los grants, su fuente con su `piso`, el piso del ancla, `S13`, `S20
 |---|---|---|---|
 | `B9a` | `B9` | corte | Z; la fuente `CORTESÍA` (AQ) y `S20` (AS); el esquema de promos y cortesías pasa a `B3` (BG) |
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:964, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:743
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:968, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:744
 
 <a id="fila-b9"></a>
 
@@ -57,6 +57,21 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145
 Las secciones de el capítulo `14`, entero, que la columna de capítulos de la fila le asigna:
 
 <!-- g-secciones: inicio (generado por scripts/generadores/secciones/gen.py; no editar a mano) -->
+
+#### B/14-promos-cortesias-y-grants.md · 14 · Promos, cortesías y grants
+
+Los tres instrumentos aparecen juntos en el §36 como fuentes de entitlements, y el PDR los trata
+como variantes de lo mismo. **No lo son, y toda la diferencia está en qué tocan:**
+
+| instrumento | qué toca | con qué mecanismo |
+|---|---|---|
+| **promo de descuento** (§33) | el **monto** | se muta el monto en el proveedor (`DEC-MP-001`) |
+| **cortesía temporal** (§34) | el **cobro** | se **pausa** en el proveedor y el servicio lo sostenemos nosotros (`DEC-GRANT-003`); **sólo sobre planes mensuales y en meses enteros** (§4.7, FASE 8 completa, `F-8CB1-001`) |
+| **grant permanente** (§35) | la **obligación** | se cancela toda obligación de pago cubierta (§35.3, `DEC-GRANT-001`) |
+
+Los cuatro huecos de este capítulo se contestan casi todos leyendo esa tabla.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:17
 
 #### B/14-promos-cortesias-y-grants.md · 1. El orden de aplicación y el piso · cierra `A-PROMO-01`
 
@@ -624,6 +639,16 @@ billing** (§4.7); **la del trial, en días, es de verticales**.
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:613
 
+##### B/14-promos-cortesias-y-grants.md · sección de título retirado, lo que sigue vivo de su cuerpo
+
+**Sale entero**
+(revisión del owner, 2026-09-28, C8): las verticales no se discontinúan. Una cortesía sobre un
+plan **retirado** no tiene nada que resolver: el plan retirado se sigue prestando (`B/10` §3.2), y
+la pausa termina reanudando por `S10`. El diferimiento del saldo tiene un solo escritor, el cierre
+de `S18` (§4.4).
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:634
+
 ##### B/14-promos-cortesias-y-grants.md · 4.7 La unidad de la cortesía temporal: meses enteros, y sólo sobre planes mensuales
 
 **FASE 8 completa, `F-8CB1-001`, owner 2026-09-25** (`DEC-GRANT-003` impl. 6, `DEC-GRANT-004`
@@ -1023,7 +1048,7 @@ Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
 Las cláusulas 4 (entera: la fuente `GRANT` y, por AQ, la `CORTESÍA` real sobre la tabla vacía) y 7 son de `B9a`; las demás, de
 [B9b](../20-fase-2/B9b.md#lista-b9b).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1070
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1072
 
 <a id="lista-b9a"></a>
 
@@ -1039,7 +1064,7 @@ del MVP, owner 2026-10-01, AQ). *(Lo sembrado, con el mismo precedente que la fu
 la rama 4 de `12` §5.3 por la interfaz que escribió `B7`, sin cambiar su código** (era del criterio
 de `B7`, que llega antes: corte del MVP, owner 2026-10-02, BL).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1071
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1073
 
 ## Reglas
 
@@ -1078,12 +1103,12 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1071
 <a id="tpz-s13"></a>
 **TPZ:S13** — `S13` → `B9a`.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:861
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:863
 
 <a id="tpz-s20"></a>
 **TPZ:S20** — `S20` → `B9a` (AS).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:868
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:870
 
 ## Modelo de datos y migraciones
 
