@@ -23,8 +23,8 @@ la recomendada):
   dos verificaciones ciegas opuestas** —qué falta y qué se inventó—, con canarios, hasta una vuelta
   sin `BLOQUEA`.
 
-Todo sale de las fuentes congeladas en el commit `591034c665b56336d49eab894a4e4ce3c38d5abe`
-(re-congeladas después de aplicar las letras BK a CI del owner): cada
+Todo sale de las fuentes congeladas en el commit `9149b84a255efc94473ace4458541f4d2278da8d`
+(re-congeladas después de aplicar las letras BK a CJ del owner): cada
 `Origen:` cita `archivo:línea` en ese SHA, y las herramientas leen las fuentes desde ahí
 (`scripts/comun.py`), nunca del árbol de trabajo.
 
@@ -101,7 +101,7 @@ corte, donde `B11` no está. Las dos flechas de
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7987, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8027, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8056, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8059
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7970, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7996, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8036, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8065, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8068
 
 ## Reglas que valen para todas las piezas
 
@@ -181,7 +181,7 @@ Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrolla
 
 Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7961, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8161, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8004, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8183, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6684
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7970, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8001, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8182, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8013, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8204, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6693
 
 ## Cómo leer un archivo de pieza
 
@@ -475,7 +475,7 @@ condición A de [DEC-ARCH-004](01-decisiones-vigentes.md#dec-arch-004): converti
 salga de `staging` y vuelva a `staging`. Queda escrita acá para que el próximo agente que entre no la
 «corrija».
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:260, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:262, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:265, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:272, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1050
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:260, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:262, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:265, .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:272, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1054
 
 #### Qué significa «terminada» para una épica
 
@@ -718,7 +718,7 @@ están listas: una unidad lo está cuando todas sus dependencias están hechas.
 [la épica de billing](https://claude.ai/artifact/Bp6dJstfwqoMzFTLP11BPZ) ·
 [el contrato de cobertura](https://claude.ai/artifact/KgHuCs8uTVEtNeuYfuLLJQ).
 
-Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1082, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1084, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1092, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1108
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:728, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:730, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:737, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:749, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1084, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1086, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1094, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1110
 
 ## La épica de verticales (`HOS-1353`): el diseño que reemplaza a su `spec.md`
 
@@ -1607,3 +1607,23 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:309, .specs/HOS-1354-b
   `V*` y en la sección de la épica de verticales de este índice.
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:335, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:337, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:340, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:342, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:343, .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:347
+
+## Preámbulos de las fuentes (contexto, sin norma)
+
+Cada fuente de abajo abre con un texto entre su título y su primera sección. No trae una regla propia: lo que presenta está escrito en las secciones que la siguen, y se cita acá para que la red de cobertura (R17) lo vea.
+
+- `D/11`, el texto entre su título y su primera sección (contexto, sin norma): la decisión de partir el programa en dos épicas y la forma de declararla; la partición está en este índice y en `DEC-ARCH-007`.
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:12
+
+- `V/descomposicion.md`, el texto entre su título y su primera sección (contexto, sin norma): qué es la descomposición: el corte en unidades y su orden, no un plan de fechas.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:12
+
+- `V/spec.md`, el texto entre su título y su primera sección (contexto, sin norma): que la épica se sostiene sola para desarrollar y no sale a producción sola; la regla es `DEC-ARCH-007`.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:18
+
+- `B/spec.md`, el texto entre su título y su primera sección (contexto, sin norma): que la épica se sostiene sola en su diseño y no sale a producción sola; la regla es `DEC-ARCH-007`.
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/spec.md:17

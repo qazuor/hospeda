@@ -4,7 +4,7 @@
 **PIEZA:V9b** — pieza `V9b`, de la unidad `V9` (partida); **cuándo**: después, en la **Fase 1**,
 sola; **fuente**: Z y AC (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6;
 [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 3 y 6 y su 📌 de AW).
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:954
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:958
 
 ## Objetivo, alcance y fuera de alcance
 
@@ -27,7 +27,7 @@ corte + el plazo 1 − el plazo 4 de `NUCLEO/02` §1.5, con la versión 1 de los
 instante del corte (`NUCLEO/01`, fila `C`) y el primer aviso de `V9b` es el previo al archivado; el
 aviso *«al archivar»* ya sale desde `V6` ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)). Cada reloj guarda la versión con que arrancó, así que
 un cambio de plazo posterior no adelanta la fecha.
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1171, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1172, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1173, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1174, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1175, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1176
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1177, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1179, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1180, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1181, .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1182
 
 <a id="fila-v9b"></a>
 **FILA:V9b — Retención** *(después)*. Qué deja funcionando, en su forma vigente: **el resto de
@@ -804,3 +804,9 @@ el plazo 1 − el plazo 4, con la versión 1 de los plazos ([BV](../01-decisione
 - `16-fase-7-del-paraguas.md` §4.6 (l. 954) y §4.7 (*«Las fases posteriores»* y la fecha límite de
   la Fase 1, l. 1171–1176).
 - `41-corte-del-mvp/10-decisiones-del-owner.md`: AC, BD, BL y BV (l. 23, 108, 137 y 147).
+
+**Preámbulos de las fuentes, contexto sin norma.** Cada fuente de abajo abre con un texto entre su título y su primera sección. No trae una regla propia: lo que presenta está escrito en las secciones que la siguen, y se cita acá para que la red de cobertura (R17) lo vea.
+
+- `V/22`, el texto entre su título y su primera sección (contexto, sin norma): qué es el capítulo: el pliego de la consulta legal, separando las preguntas legales de las decisiones de diseño.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:18

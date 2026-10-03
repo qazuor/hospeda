@@ -80,6 +80,10 @@ ADJUNTAR = {
     f'{_V03}:931': ('TRANS:V:PB3', 'cuáles vuelven cuando el cupo alcanza: es PB3'),
     f'{_V03}:1010': ('TRANS:V:PB7', 'las dos salidas de `ARCHIVED` son PB7 y PB8'),
     f'{_V03}:1146': ('TRANS:V:PB2', 'el reconciliador es la red de las filas que mueve `cubierto`, PB2 y PB3'),
+    # third blind-verification round, tanda B (owner, 2026-10-02, option 1): a MIXTO section; what is alive
+    # is that the daily coverage reconciler «sigue haciendo lo que hacía por cada dueño», which is PB2
+    f'{_V03}:1339': ('TRANS:V:PB2', 'sección de título tachado con cuerpo vivo: el reconciliador diario de cobertura '
+                                    'sigue haciendo lo que hacía por cada dueño, que es correr PB2'),
     # B/05: locks and the late payment
     f'{_B05}:27': ('LOCK:C1', GENERAL),
     f'{_B05}:39': ('LOCK:C1', GENERAL),

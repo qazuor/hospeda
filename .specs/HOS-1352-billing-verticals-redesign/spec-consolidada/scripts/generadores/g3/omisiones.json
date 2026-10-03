@@ -205,6 +205,11 @@
             "por": "el reconciliador es la red de las filas que mueve `cubierto`, PB2 y PB3",
             "hereda": true
         },
+        "V/03-maquinas-de-estado.md:1339": {
+            "a": "TRANS:V:PB2",
+            "por": "sección de título tachado con cuerpo vivo: el reconciliador diario de cobertura sigue haciendo lo que hacía por cada dueño, que es correr PB2",
+            "hereda": true
+        },
         "B/05-idempotencia-y-concurrencia.md:27": {
             "a": "LOCK:C1",
             "por": "general del capítulo, sin fila propia: va con el primer ítem del catálogo",

@@ -593,6 +593,15 @@ la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o [`S17`](
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:430, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:432, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:579
 
+**Y una vertical no deja de cubrir** (revisión del owner, 2026-09-28, C8): las verticales no se
+discontinúan, así que no hay fecha de fin de servicio de una vertical ni regla de emisión que la lea.
+La emisión se decide sólo por el estado de cada fuente (las tablas de arriba, del §2.8 y de `V/03`
+§2). **Retirar planes sigue existiendo, también todos los de una vertical** (`B/10` §3), y no toca
+esta regla: una versión retirada deja de venderse y quien la tiene la conserva
+([AC:B12:1](20-fase-3/B12.md#ac-b12-1)). Discontinuar una vertical queda fuera de esta versión.
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:588, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:589, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:590
+
 ### 2.7 `alcance` y `objetivo`: la firma no cambia, la respuesta sí
 
 Una fuente de alcance `LISTING` —un addon comprado para una ficha— entra en un conjunto que se
@@ -1656,7 +1665,7 @@ de `V/descomposicion.md` §2 con la misma pregunta que su §2.11. Lo que la FASE
 
 | qué | de dónde | unidad | qué la demuestra |
 |---|---|---|---|
-| **`U2`, el outbox común**: sobre el precedente del newsletter, con la supresión, la bitácora de correos que `U1` renombró desde `billing_notification_log`, la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs (el reloj sigue en `B1`) | lote 2 A y B | **[`U2`](10-corte/U2.md#pieza-u2)**, del paraguas como `U1`: depende de `U1` y va antes de `V4` y `B3`, las primeras que encolan, y por transitividad de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br); `V/descomposicion.md:602`, `B/descomposicion.md:814`). Su fila y su criterio viven en `16-fase-7…` §4.6 | **`V6`, `V9a` y `V9b` (AC) dependen de `U2`** (`V/descomposicion.md` §3) |
+| **`U2`, el outbox común**: sobre el precedente del newsletter, con la supresión, la bitácora de correos que `U1` renombró desde `billing_notification_log`, la correlación de punta a punta, el id de corrida y el huso del mercado en los jobs (el reloj sigue en `B1`) | lote 2 A y B | **[`U2`](10-corte/U2.md#pieza-u2)**, del paraguas como `U1`: depende de `U1` y va antes de `V4` y `B3`, las primeras que encolan, y por transitividad de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br); `V/descomposicion.md:602`, `B/descomposicion.md:815`). Su fila y su criterio viven en `16-fase-7…` §4.6 | **`V6`, `V9a` y `V9b` (AC) dependen de `U2`** (`V/descomposicion.md` §3) |
 | **el paso de cobertura en toda ruta de escritura de vertical**, que `U1` deja con permiso y propiedad solos | lote 1 A | **[`V5`](10-corte/V5.md#pieza-v5)** | **criterio de salida: ninguna ruta de escritura de vertical sin el paso de cobertura** |
 | **la ficha ajena `RESTRICTED` contesta `404`**: sale la excepción VIP de `apps/api/docs/error-contract.md` | lote 4 D | **`V5`** | una ficha ajena `RESTRICTED` contesta lo mismo que una inexistente, y el test que fijaba el `403` afirma el `404` |
 | **salen la impersonación y `set-role`**: `impersonate` y `set-role` del plugin `admin` de Better Auth, el botón del panel y `USER_IMPERSONATE`; **y `fullAdminRole` queda sin ninguna acción: el plugin sigue sólo como guardia del baneo en el inicio de sesión** (FASE 5, lote de la aplicación, owner 2026-09-30, L; `apps/api/src/lib/auth.ts:76-89` en `origin/staging`) | lote 4 C; lote de la aplicación, L | **`V5`** (el plugin y el permiso) · el botón sale en el mismo cambio | ningún rol del plugin lleva `impersonate` ni `set-role`, el permiso no existe en el enum y el panel no muestra el botón; **`fullAdminRole` no lista ninguna acción sobre `user` ni sobre `session`, y un baneado sigue sin poder iniciar sesión** (L) |
@@ -1734,7 +1743,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:206, .specs/
 
 Son **trece**: con el corte del MVP las filas siguen siendo doce (Z) **y BC suma la 15**, la de
 `V7` sobre el pago manual de `B5` para la acción 6 (corte del MVP, owner 2026-10-01, BC; residuo
-corregido en la fuente el 2026-10-02: `B/descomposicion.md:389`, `:391`). Van contra cuatro piezas
+corregido en la fuente el 2026-10-02: `B/descomposicion.md:390`, `:391`). Van contra cuatro piezas
 de verticales (`V2`, `V4`, `V6` y `V9b`) y dos de billing (`B1`, en la fila 14, y `B5`, en la 15),
 y las de `V6` y `V9b` no son tempranas. Las filas 8 y 13 de la fuente
 están retiradas (la 8 en la FASE 9 vuelta 2, `R5`: la fecha la calculaba billing; la 13 con la
@@ -1773,7 +1782,7 @@ puede probar antes. **Y desde el lote N-A el simulador es lo único contra qué 
 de la rama está rota**, desde la limpieza del principio, que borra el cobro viejo, hasta que `B4`
 integra la implementación real (`16-fase-7…` §4.6; verificación corta, 2026-09-29).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:330, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:332, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:340, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:347, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:349, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:356, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:361, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:363
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:330, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:332, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:340, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:347, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:349, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:356, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:361, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:364
 
 Cada dependencia está medida contra el lector que la pide. **Con el corte del MVP siguen siendo
 doce** (corte del MVP, owner 2026-10-01, Z) **y BC suma la 15: son trece** (corte del MVP, owner
@@ -1783,7 +1792,7 @@ doce** (corte del MVP, owner 2026-10-01, Z) **y BC suma la 15: son trece** (cort
 del corte lee a una posterior**: recontado con `41-corte-del-mvp/aristas.py`, que lee esta tabla
 por su encabezado.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:365, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:391, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:393
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:366, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:391, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:392, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:394
 
 <a id="dep-1"></a>
 **DEP:1** — **Lee `B2`**: `billing_option` cuelga de `plan_version`. No es la dirección inversa:
@@ -1791,7 +1800,7 @@ es la tabla misma (la FK de `billing_option` a `plan_version`, con
 `UNIQUE(plan_version_id, ciclo)`). **Contra `V2`.**
 
 Pieza dueña del AC: [B2](10-corte/B2.md#pieza-b2) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:375, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:332
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:376, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:332
 
 <a id="dep-2"></a>
 **DEP:2** — **Lee `B4`**: el contrato con su implementación de arranque. Es la dirección de ida.
@@ -1803,7 +1812,7 @@ dependencia de construcción: verticales se construye contra la respuesta de arr
 2026-09-29, lotes M-F y M-G).
 
 Pieza dueña del AC: [B4](10-corte/B4.md#pieza-b4) · también: [V4](10-corte/V4.md#pieza-v4) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:376, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:422
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:377, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:423
 
 <a id="dep-3"></a>
 **DEP:3** — **Lee `B7`**, el reloj del grace: `díasDeGrace` de `políticaDePlan` (§4.1). *«El §20
@@ -1811,7 +1820,7 @@ fija el grace en 10 días y [`DEC-SUB-002`](01-decisiones-vigentes.md#dec-sub-00
 **por versión de plan**»* (§1 del contrato). **Contra `V2`.**
 
 Pieza dueña del AC: [B7](10-corte/B7.md#pieza-b7) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:377
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:378
 
 <a id="dep-4"></a>
 **DEP:4** — **Lee `B8b`**, la pausa (era `B8`: corte del MVP, owner 2026-10-01, Z): `permitePausa`
@@ -1819,7 +1828,7 @@ de `políticaDePlan` (§4.1). Es el tercer término de `puedePausar()` (`NUCLEO/
 [`S8`](04-catalogos.md#trans-b-s8) exige. **Contra `V2`.**
 
 Pieza dueña del AC: [B8b](20-fase-2/B8b.md#pieza-b8b) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:378
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:379
 
 <a id="dep-5"></a>
 **DEP:5** — **Lee `B8b`**, el cambio de plan (era `B8`: corte del MVP, owner 2026-10-01, Z):
@@ -1828,7 +1837,7 @@ fin del ciclo. Sin él lo único a mano es el `rank`, que el diseño ya rechazó
 **Contra `V2`.**
 
 Pieza dueña del AC: [B8b](20-fase-2/B8b.md#pieza-b8b) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:379
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:380
 
 <a id="dep-6"></a>
 **DEP:6** — **Lee `B12`**, el retiro de un plan: `vigente`/`vendible` de `políticaDePlan` (§4.1);
@@ -1839,7 +1848,7 @@ a cada cliente si la migración le sube o le baja (revisión del owner, 2026-09-
 campo ya declarado. **Contra `V2`.**
 
 Pieza dueña del AC: [B12](20-fase-3/B12.md#pieza-b12) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:380
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381
 
 <a id="dep-7"></a>
 **DEP:7** — **Lee `B3`**, el alta y la sucesión ([`S1`](04-catalogos.md#trans-b-s1)):
@@ -1849,7 +1858,7 @@ versión retirada (`N-G4V-07`; `B/03` §3.2); `admiteAltas` salió con la revisi
 declarado»*, y no mueve el grafo: `V2` llega antes que `B3`. **Contra `V2`.**
 
 Pieza dueña del AC: [B3](10-corte/B3.md#pieza-b3) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:396
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:382, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:397
 
 <a id="dep-9"></a>
 **DEP:9** — **Lee `B10`**, [`A1`](04-catalogos.md#trans-b-a1), la venta de un addon: `ficha`
@@ -1861,7 +1870,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:381, .specs/
 [`DEC-ARCH-017`](01-decisiones-vigentes.md#dec-arch-017)).
 
 Pieza dueña del AC: [B10](20-fase-3/B10.md#pieza-b10) · también: [V6](10-corte/V6.md#pieza-v6) (provee), [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:383, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:403, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:406
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:384, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:404, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:407
 
 <a id="dep-10"></a>
 **DEP:10** — **Lee `B9b`**, el canje de una extensión de trial (era `B9`: corte del MVP, owner
@@ -1870,7 +1879,7 @@ canje sólo con `ACEPTADA` (owner 2026-09-26, `G4-2`; `F-8V1C1-009`). **Contra `
 gate de `B4`.
 
 Pieza dueña del AC: [B9b](20-fase-2/B9b.md#pieza-b9b) · también: [V4](10-corte/V4.md#pieza-v4) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:384, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:406
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:385, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:407
 
 <a id="dep-11"></a>
 **DEP:11** — **Lee `B10`**, [`A6`](04-catalogos.md#trans-b-a6), el addon `LISTING` cuya ficha llegó a
@@ -1880,7 +1889,7 @@ empuje lo consume `B10`, dueña de `A6`** (con OK del owner, 2026-09-26, FASE 9 
 2026-10-01, Z). Como en la 9, `V6` (corte) y `V9b` (Fase 1) llegan antes que `B10` (Fase 3).
 
 Pieza dueña del AC: [B10](20-fase-3/B10.md#pieza-b10) · también: [V6](10-corte/V6.md#pieza-v6) (provee), [V9b](20-fase-1/V9b.md#pieza-v9b) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:385, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:403
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:386, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:404
 
 <a id="dep-12"></a>
 **DEP:12** — **Lee `B9a`**, el piso de un grant, al otorgar, al anclar y en el corte (era `B9`:
@@ -1890,7 +1899,7 @@ FASE 9 vuelta 2, `F-8V2C1-004`). Es un consumidor más de un campo ya declarado,
 grafo: `V2` llega antes. **Contra `V2`.**
 
 Pieza dueña del AC: [B9a](10-corte/B9a.md#pieza-b9a) · también: [V2](10-corte/V2.md#pieza-v2) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:386, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:409
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:387, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:410
 
 <a id="dep-14"></a>
 **DEP:14** — **La hora del trial, en la otra dirección: la pieza de verticales espera a la de
@@ -1901,7 +1910,7 @@ inversa ni la de ida: es el package mismo, como la 1 es la tabla. **`V4` espera 
 el grafo: `B1` es la primera pieza de billing, y `V4` llega después de `V3`.
 
 Pieza dueña del AC: [V4](10-corte/V4.md#pieza-v4) · también: [B1](10-corte/B1.md#pieza-b1) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:388, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:417
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:389, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:418
 
 <a id="dep-15"></a>
 **DEP:15** — **La acción 6, el plan y el método de pago de un Partner, en la otra dirección: la
@@ -1912,7 +1921,7 @@ pago manual de `B5`»*). **`V7` espera a `B5`.** No hay violación del grafo: `V
 `B5` es del corte.
 
 Pieza dueña del AC: [V7](20-fase-4/V7.md#pieza-v7) · también: [B5](10-corte/B5.md#pieza-b5) (provee)
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:389, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:391
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:392
 
 **El conteo se recorre entero, no se suma.** Se recorrieron los campos del §4.1 uno por uno
 buscando su lector, y cada campo que queda tiene un lector en estas filas; los que no aparecen es
@@ -1929,7 +1938,7 @@ lado de la frontera, y por eso salió de la firma: FASE 9 vuelta 1, `F-8V1C1-015
 resueltas mucho antes que `B7`, `B8a`, `B8b` y `B12`. Lo que cambia no es el orden: es que dejan de ser
 invisibles.
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:424, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:431, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:440
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:425, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:432, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:441
 
 ## La lista cerrada de ítems sólo citables (owner BA y BB)
 
@@ -1972,4 +1981,4 @@ su pieza dueña.
 dispositivo no se guardan) **no está en la lista**: se cubre con **un AC negativo en `V4`** (owner,
 BB). La lista es cerrada: agregarle o sacarle un ítem es una decisión del owner, no una edición.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8146
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8167

@@ -4,7 +4,7 @@
 **[PIEZA:V8a](#pieza-v8a)** — pieza `V8a`, mitad *a* de la unidad `V8`; **cuándo**: al corte;
 **fuente**: Z (lista de piezas del corte, `16-fase-7-del-paraguas.md` §4.6; [DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos
 1 y 3). Su otra mitad es [PIEZA:V8b](../20-fase-4/V8b.md#pieza-v8b), de la Fase 4.
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:951
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:955
 
 ## Objetivo, alcance y fuera de alcance
 
@@ -647,3 +647,9 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficie
 - `NUCLEO/08` §1.2, §1.3 y §3 (acciones 15, 23 y 24, l. 205, 213 y 214); `NUCLEO/07` §1.1 y §6.
 - `16-fase-7-del-paraguas.md` §4.6 (l. 951) y §4.7.
 - `01-decision-log.md`: `DEC-AUTH-002`, `DEC-AUTH-003`, `DEC-DATA-005`, `DEC-RF-008`, `DEC-ARCH-017`.
+
+**Preámbulos de las fuentes, contexto sin norma.** Cada fuente de abajo abre con un texto entre su título y su primera sección. No trae una regla propia: lo que presenta está escrito en las secciones que la siguen, y se cita acá para que la red de cobertura (R17) lo vea.
+
+- `V/19`, el texto entre su título y su primera sección (contexto, sin norma): qué es el capítulo: la lista de lo que hay que decirle a la gente.
+
+Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:14
