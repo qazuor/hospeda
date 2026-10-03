@@ -634,8 +634,9 @@ con `PB12` ([FILA:V6](../10-corte/V6.md#fila-v6)); `V9b` emite el empuje de `PB9
   (`NUCLEO/08` §2.3), y con un actor de sistema de la fábrica de `V5` ([FILA:V5](../10-corte/V5.md#fila-v5)).
 - `PB9` usa la corrida diaria que reintenta los borrados remotos pendientes, que construye `V6` con
   `PB12` ([V6](../10-corte/V6.md#pieza-v6); [TRANS:V:PB9](../04-catalogos.md#trans-v-pb9)).
-- Los dos avisos previos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la
-  clave de schedule que lleva la fecha objetivo (`NUCLEO/07` §2); el *«al archivar»* lo encola `V6`
+- Los dos avisos previos se encolan en el outbox común de `U2` con la clave de schedule que lleva
+  la fecha objetivo; el aviso de alerta cerrada por `PURGED` usa como ocurrencia el id del evento
+  de dominio que lo causó (`NUCLEO/07` §2). El *«al archivar»* lo encola `V6`
   en el acto de `PB4`/`PB5` ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)).
 
 ## Variables de entorno

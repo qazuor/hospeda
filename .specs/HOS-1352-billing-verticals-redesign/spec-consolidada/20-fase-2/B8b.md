@@ -485,7 +485,9 @@ Fuente: [PROH:B:4](../04-catalogos.md#proh-b-4) · [MOT:6](../04-catalogos.md#mo
 <a id="ac-b8b-7"></a>
 **AC:B8b:7** — la dirección del cambio sale de `direcciónDeCambio`, y cada camino
 
-- **Dado** un cambio hacia una versión de `rank` MAYOR con un solo limit menor
+- **Dado** un cambio hacia una versión de `rank` MAYOR en el que un limit empeora según su
+  estrategia —menor en `SUMA`/`MÁXIMO`, mayor en `MÍNIMO` o peor en `MEJOR_DECLARADO`—,
+  por lo que `direcciónDeCambio` devuelve `BAJA`
 - **Cuando** la persona lo pide
 - **Entonces** sigue el camino de **DOWNGRADE**, porque la dirección la da `direcciónDeCambio` del
   contrato y nunca el `rank`: **muta el monto ya**, al precio de lista del plan nuevo sin promos, y

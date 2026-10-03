@@ -71,8 +71,9 @@ transiciones.
 
 **Fuera de alcance** (lo construye otra pieza):
 
-- el reloj, `PB9`, el empuje a billing, la lista cerrada de `PURGED` y los tres avisos: `V9b`
-  ([FILA:V9b](../20-fase-1/V9b.md#fila-v9b)), en la Fase 1;
+- el reloj, `PB9`, el empuje a billing, la lista cerrada de `PURGED` y los dos avisos previos: `V9b`
+  ([FILA:V9b](../20-fase-1/V9b.md#fila-v9b)), en la Fase 1; el aviso «al archivar» lo encola `V6`
+  en `PB4`/`PB5`, con su plantilla (BL);
 - la función del seudónimo y sus casos: `V4` ([FILA:V4](V4.md#fila-v4));
 - los hechos 2, 3, 5 y 6 y la escritura `C` del corte: la máquina de publicación y el reconciliador
   de `V6` ([FILA:V6](V6.md#fila-v6)).

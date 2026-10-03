@@ -1777,7 +1777,7 @@ el simulador desde su arranque**: lo escribe `V1`, que corre en paralelo, así q
 de billing que lo lee es la primera que lee la dirección inversa, `B3` (`vigente`/`vendible`,
 fila 7), que llega después de `B2`, y `B2` espera a `V2`, que va después de `V1`; lo que `B1`
 escribe en el package, la interfaz del reloj, no lee nada de verticales (FASE 9 vuelta 3, R20,
-`F-8V3C1-008`). **El grafo de las dependencias no cambia por esto**: las doce siguen, cambia qué se
+`F-8V3C1-008`). **El grafo de las dependencias no cambia por esto**: las trece siguen, cambia qué se
 puede probar antes. **Y desde el lote N-A el simulador es lo único contra qué probar mientras la app
 de la rama está rota**, desde la limpieza del principio, que borra el cobro viejo, hasta que `B4`
 integra la implementación real (`16-fase-7…` §4.6; verificación corta, 2026-09-29).
