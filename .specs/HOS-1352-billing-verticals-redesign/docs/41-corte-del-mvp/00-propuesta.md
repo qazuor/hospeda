@@ -262,7 +262,7 @@ Con la propuesta: **34 de los 35**.
 | `B2` | `G7` | sí |
 | `B3` | `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` | sí |
 | `B7` | `G-R1-D` | sí |
-| `B10` | `G-R2-C` | **sí, si AA es la 1**: vigila que un addon `USER`/`GLOBAL` se emita sólo en sus verticales compatibles, y la fuente `ADDON` real nace al corte. Su dominio es el catálogo de productos, que se carga en el 3a |
+| `B10` | `G-R2-C` | **sí, si AA es la 1**: vigila que un addon `USER`/`GLOBAL` se emita sólo en sus verticales compatibles, y la fuente `ADDON` real nace al corte. Su dominio es el catálogo de productos, que ~~se carga en el 3a~~ **carga la migración estructural del paso 3 y verifica el 3a (BM)** |
 | `B8` | `G-R1-C` | **no**: es el guard del cierre de la sucesión (`B/docs/20-testing.md:58`), que es de `B8b` |
 
 Conteo: 1 + 19 + 7 + 1 + 4 + 1 + 1 = 34. Si AA no es la 1, son 33.
