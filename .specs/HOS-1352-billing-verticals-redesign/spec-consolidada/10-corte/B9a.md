@@ -1213,7 +1213,10 @@ Cubre: [AC:B9a:2](#ac-b9a-2)
 
 Fuente: [TRANS:B:S13](../04-catalogos.md#trans-b-s13) · [ACC:2](../02-nucleo.md#acc-2)
 
-Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar encolan cada uno el aviso de cobertura;
+Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar emiten cada uno el aviso de cobertura
+después del commit, sin entrega durable y sin usar el outbox de `U2`, que es sólo de correos
+(CK, [DEC-ARCH-009](../01-decisiones-vigentes.md#dec-arch-009)); la red es el reconciliador diario.
+La prueba observa el aviso después del commit y comprueba que un rollback no lo emite;
 en una vertical sin ancla la fuente `GRANT` no aparece.
 
 <a id="test-b9a-3"></a>
