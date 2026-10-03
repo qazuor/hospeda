@@ -94,6 +94,8 @@ MIXTO = [
      'tachado y reemplazo explícitos (lotes F y N)'),
     ('ACC:12', V_, '**Y sobre la presencia de un Partner, con el mismo permiso y sin los dos niveles, que son sólo de la ficha**',
      None, None, [], 'G', 'tachado y reemplazo explícitos (residuo de la primera vuelta de verificación ciega, `H-VB-B2-3`)'),
+    ('ACC:14', V_, '**con el comprobante de la transferencia o la referencia del panel**',
+     None, None, [], 'RF4', 'tachado y reemplazo explícitos (propagación pasada 10)'),
     ('ACC:24', V_, '**dar de baja una cuenta a pedido de su dueño**', None, None, [], None,
      'cada ⚠️ tachado quedó decidido en la misma celda; «la unidad, `V8`» se lee `V8a` (V §2, fila `V8a`)'),
     ('ACC:26', V_, 'asignar o quitar el rol `SUPER_ADMIN` a una cuenta', None, None, [], None, 'lote AC, explícito'),

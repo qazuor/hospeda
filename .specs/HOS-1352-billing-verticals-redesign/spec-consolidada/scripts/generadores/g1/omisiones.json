@@ -628,37 +628,37 @@
         "OWN:29-fase-8-vuelta-2:t1:R5": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS-b": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:R24": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-FECHA": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ANUNCIO": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784",
             "inferido": true
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ACC16": {

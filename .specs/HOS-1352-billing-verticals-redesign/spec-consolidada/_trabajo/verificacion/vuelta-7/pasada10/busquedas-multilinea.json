@@ -1,0 +1,152 @@
+{
+    "R01": {
+        "pattern": "carga.{0,60}3a|3a.{0,60}carga|no\\s+esta\\s+migración",
+        "exit": 0,
+        "lines": 14
+    },
+    "R02": {
+        "pattern": "mut.{0,80}fecha\\s+efectiva|cambio\\s+se\\s+ejecuta|reintent.{0,100}fecha\\s+efectiva|desde\\s+su\\s+fecha\\s+efectiva",
+        "exit": 0,
+        "lines": 6
+    },
+    "R03": {
+        "pattern": "tres\\s+correos|B13a.{0,80}aumento",
+        "exit": 0,
+        "lines": 11
+    },
+    "R04": {
+        "pattern": "alta\\s+nueva|checkout\\s+ya\\s+abierto",
+        "exit": 0,
+        "lines": 75
+    },
+    "R05": {
+        "pattern": "promo_redemption|instante\\s+del\\s+canje",
+        "exit": 0,
+        "lines": 8
+    },
+    "R06": {
+        "pattern": "BL\\s+por\\s+inferencia|rama\\s+que\\s+la.{0,10}lee|reconciliation_mark_payment",
+        "exit": 0,
+        "lines": 66
+    },
+    "R07": {
+        "pattern": "aviso.{0,100}encola|encola.{0,100}cobertura|B4.{0,80}outbox|aviso.{0,50}durable",
+        "exit": 0,
+        "lines": 43
+    },
+    "R08": {
+        "pattern": "misma\\s+transacción\\s+que\\s+encol|con\\s+el\\s+encolado\\s+del\\s+aviso|coberturaPerdidaEn",
+        "exit": 0,
+        "lines": 45
+    },
+    "R09": {
+        "pattern": "comprobante\\s+de\\s+la\\s+transferencia|comprobante.{0,35}transferencia|RF4",
+        "exit": 0,
+        "lines": 62
+    },
+    "R10": {
+        "pattern": "primera\\s+cuota|MP5|aviso\\s+de\\s+falta\\s+de\\s+pago",
+        "exit": 0,
+        "lines": 187
+    },
+    "R11": {
+        "pattern": "relectura\\s+por\\s+id\\s+del\\s+pago|RF3",
+        "exit": 0,
+        "lines": 51
+    },
+    "R12": {
+        "pattern": "pendiente\\s+de.{0,5}S19|S6.{0,8}no\\s+ocurre|ocurre\\s+y\\s+corre.{0,5}S5",
+        "exit": 0,
+        "lines": 23
+    },
+    "R13": {
+        "pattern": "deja\\s+en.{0,5}DRAFT|levantar\\s+la\\s+moderación|levantar.*moder|PB11",
+        "exit": 0,
+        "lines": 99
+    },
+    "R14": {
+        "pattern": "los\\s+tres\\s+avisos|tres\\s+avisos.{0,80}V9b|aviso.{0,10}al\\s+archivar",
+        "exit": 0,
+        "lines": 53
+    },
+    "R15": {
+        "pattern": "alerta\\s+cerrada|fecha\\s+objetivo",
+        "exit": 0,
+        "lines": 22
+    },
+    "R16": {
+        "pattern": "limit\\s+menor|limit.{0,20}menor|rank.{0,10}MAYOR",
+        "exit": 0,
+        "lines": 7
+    },
+    "R17": {
+        "pattern": "dieciocho|18\\s+plazos|merge.{0,15}B11",
+        "exit": 0,
+        "lines": 19
+    },
+    "R18": {
+        "pattern": "V9a.{0,60}domain_event|domain_event.{0,60}V9a|crea.{0,10}domain_event",
+        "exit": 0,
+        "lines": 23
+    },
+    "R19": {
+        "pattern": "destino\\s+para\\s+su\\s+ciclo|ventana\\s+gemela|sin\\s+promos",
+        "exit": 0,
+        "lines": 21
+    },
+    "R20": {
+        "pattern": "contracargo.{0,80}defecto|contracargo\\s+y\\s+no\\s+en\\s+la\\s+vista",
+        "exit": 0,
+        "lines": 2
+    },
+    "R21": {
+        "pattern": "doce.{0,60}depend|las\\s+doce|doce\\s+del|trece.{0,40}depend",
+        "exit": 0,
+        "lines": 18
+    },
+    "R22": {
+        "pattern": "B/09.{0,5}§6|nueva\\s+acuñada",
+        "exit": 0,
+        "lines": 10
+    },
+    "R23": {
+        "pattern": "correo\\s+encolado\\s+antes\\s+de\\s+la\\s+cancelación|VIP|vip",
+        "exit": 0,
+        "lines": 249
+    },
+    "R24": {
+        "pattern": "no\\s+como\\s+gate|ventanas\\s+del\\s+corte|TEST:U1:24",
+        "exit": 0,
+        "lines": 7
+    },
+    "R25": {
+        "pattern": "paso\\s+5/6|sin\\s+fuente\\s+que|sin\\s+fuente\\s+comercial|pasos\\s+5\\s+y\\s+6",
+        "exit": 0,
+        "lines": 4
+    },
+    "R26": {
+        "pattern": "lista\\s+de\\s+piezas,\\s+l\\.\\s+95[03]|§4\\.6\\s+\\(l\\.\\s+95[12]",
+        "exit": 0,
+        "lines": 3
+    },
+    "R27": {
+        "pattern": "promos\\s+y\\s+cortesías,\\s+en.{0,5}B9a|addons,\\s+en.{0,5}B4|le\\s+agrega\\s+a.{0,5}payment",
+        "exit": 0,
+        "lines": 4
+    },
+    "R28": {
+        "pattern": "precisar\\s+nunca\\s+corrige|Caducada\\s+en\\s+parte|LETRAS_MUERTAS|LETRAS_VIVAS_REVISADAS",
+        "exit": 0,
+        "lines": 16
+    },
+    "R29": {
+        "pattern": "predicado.{0,100}B2|su\\s+test.{0,30}B2",
+        "exit": 0,
+        "lines": 14
+    },
+    "R30": {
+        "pattern": "fuera\\s+de.{0,5}staging|producción.{0,80}aborta|guard\\s+de\\s+entorno|sólo\\s+staging|toda\\s+sonda|todas\\s+las\\s+sondas",
+        "exit": 0,
+        "lines": 10
+    }
+}

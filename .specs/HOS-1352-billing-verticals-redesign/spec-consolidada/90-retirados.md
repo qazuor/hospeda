@@ -92,7 +92,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5410,
   diseña entonces, y este texto queda como punto de partida. Sus dos 📌
   ([DEC-ARCH-011#📌1](#dec-arch-011-p1), [DEC-ARCH-011#📌2](#dec-arch-011-p2)) mueren con ella.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6786
 
 ## 📌 muertos
 
@@ -215,7 +215,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6578,
   la discontinuación de una vertical.
 - **Por qué murió**: su decisión está `SUPERSEDED` ([DEC-ARCH-011](#dec-arch-011)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6807, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6809, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6786
 
 <a id="dec-arch-011-p2"></a>
 
@@ -226,7 +226,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6807,
   de la mitad de billing.
 - **Por qué murió**: su decisión está `SUPERSEDED` ([DEC-ARCH-011](#dec-arch-011)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6823, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6825, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6786
 
 <a id="dec-mig-006-p1"></a>
 
@@ -240,7 +240,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6823,
   cuenta es premisa ([PASO:4c](30-el-corte.md#paso-4c)). La decisión viva es
   [DEC-MIG-006](01-decisiones-vigentes.md#dec-mig-006).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6997, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7012
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6999, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7014
 
 ## Pasos, letras y filas de catálogo
 

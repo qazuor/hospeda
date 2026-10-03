@@ -101,7 +101,7 @@ corte, donde `B11` no está. Las dos flechas de
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8018, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8058, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8087, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8090
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7996, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8022, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8062, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8091, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8094
 
 ## Reglas que valen para todas las piezas
 
@@ -181,7 +181,7 @@ Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrolla
 
 Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8204, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8035, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8226, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6715
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7996, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8027, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8208, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8039, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8230, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6717
 
 ## Cómo leer un archivo de pieza
 

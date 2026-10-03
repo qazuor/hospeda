@@ -37,7 +37,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
    `V9a`—;
 2. **`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija**: la desconexión del calendario,
    el lock, la lista cerrada de lo que cuelga de `listing` y el empuje a billing después del commit;
-3. **los tres avisos, que encola en `U2`**: **de los tres, suma los dos previos y su job; el *«al
+3. **los dos avisos previos, que encola en `U2`, y su job; el *«al
    archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl));
 4. **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los
    plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC);

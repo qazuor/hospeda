@@ -1,0 +1,338 @@
+[
+    {
+        "archivo": "bloques.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "0e5f6d2d758af752576d6b11090575cd23188cadbbbe0e13a9bf7a85eb7ab04b"
+    },
+    {
+        "archivo": "brief-vb.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "584cb4170954b4e230c8ed994f5b9f75bd97c19d2163a62ea9a367efda5c0f79"
+    },
+    {
+        "archivo": "hallazgos-todos.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "2b0a0991d64ffac60e589bdb11291b7c13cf19350404038720ae90bc093c3526"
+    },
+    {
+        "archivo": "brief-g.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "09979304de620dd6bbec0b3f136a1c51ae48f0109786dbc4fb08c44aa0de4ed9"
+    },
+    {
+        "archivo": "brief-va.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "56b5fb4e880a887ad94b55909a69aa920adc7aa0de8e5f5b8dc5db4c557bd8ac"
+    },
+    {
+        "archivo": "canarios.diff",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "b20b547961ad63806b5cfdefcb025eaa4e3e40cf4cb168ec82480829958a739e"
+    },
+    {
+        "archivo": "canarios.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "991c01a33c79412544a7a30fb1cee0b6aa28a11e04d54244bde2e443023f992b"
+    },
+    {
+        "archivo": "adjudicacion/build.py",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "e06813a28813a01df1f93afa4a0cb2495e26982dc171441ba891535af9f9d860"
+    },
+    {
+        "archivo": "adjudicacion/patrones.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "b08f5674b3767a87e40048caabceaeced31470c74e30ff1fc98ea0e5a6720462"
+    },
+    {
+        "archivo": "adjudicacion/canarios-resultado.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "91a9975e77d6aa5acbb8d08780772f7aefbd9cb54078e1793f67e1c61e002944"
+    },
+    {
+        "archivo": "adjudicacion/hallazgos.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "0927448434a7c8ed1017e33bf6893b1ffab07ab648e1e9a9ad3916151add5f93"
+    },
+    {
+        "archivo": "adjudicacion/correcciones.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "d7534fb69a63cf0dfb9f0d5dfdbdc09e20785b11dab38a2e88f8da0fea05973f"
+    },
+    {
+        "archivo": "salidas/G2-completar.py",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "6500d617aaccff064fa315e031a42514639d18973f9a3fa6c8743eb6fa5c498e"
+    },
+    {
+        "archivo": "salidas/VA-A4.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "f40bc07e63ba2b4f1c285c6e9dc3376cc04fbd630ae8d076fc549ebabf34fc62"
+    },
+    {
+        "archivo": "salidas/G1-omisiones-candidatas.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "398020ab5b09d3673743d2b35dabab9059129dc890a8dbd199ced9a518a29d98"
+    },
+    {
+        "archivo": "salidas/G2-cruces.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "5c7d0749c446bd87e531b899f1c0c33a4000fa62b36e4eb4ccf06d2778e9fcbf"
+    },
+    {
+        "archivo": "salidas/G1-tachados-coincidencias.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+        "archivo": "salidas/VB-10.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "38b775ea054a85d4262d6cab19df6416e016dad9e8c7ac91b7d2a54b40787795"
+    },
+    {
+        "archivo": "salidas/VB-02.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "3f0b01693e5899f73fea76f901a416e3980e020e6953047f68e75a0110e2042b"
+    },
+    {
+        "archivo": "salidas/VB-05.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "af982bdf329554d0c0d351478d53b841c7dbffc4356de624cc8952eb87ad46a2"
+    },
+    {
+        "archivo": "salidas/VA-A9.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "a33f9aaa2abc8dadc1936bc3bfe3a8f26b27ce6c2ad149fc2ba429c314ba1030"
+    },
+    {
+        "archivo": "salidas/G2-owner-busqueda.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "fd01dce6fc6cfe9280bc0446eab3f4f32babd7a0d34fcc4fce6084690e2d36f7"
+    },
+    {
+        "archivo": "salidas/VB-07.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "394d52065772ebeb5f8cbdd3954a79457793777de76a71868a695a58d1ebe3db"
+    },
+    {
+        "archivo": "salidas/G2-patrones.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "a7a3e631931a2b397bb5dc05e51fda7d4b8fe679466c9487fa52aeeafdf8f62e"
+    },
+    {
+        "archivo": "salidas/VB-04.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "43c18b4f1e17dfb701732c63fa6018f0b54365411a467b8da0c03ebb5d25643e"
+    },
+    {
+        "archivo": "salidas/VB-11.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "8cfd66dc1726926a0a82f3c4cc80946ac71a880d9eb1926e2513aedcd0f01860"
+    },
+    {
+        "archivo": "salidas/VB-08.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "10a9736030c549e9b1fdfb0fc262043aec7fb821c71105048eeb43ce1e155e45"
+    },
+    {
+        "archivo": "salidas/VB-09.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "4c52997638372819a95a9064038db56fe1915e311939003ccdace328188a66b0"
+    },
+    {
+        "archivo": "salidas/VB-14.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "5744275e5288b8ee551f6ca8afe48d32c07166142c84e2f8e184426e4be3eb84"
+    },
+    {
+        "archivo": "salidas/G2-complemento-audit.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "4e705847fa2b62f122c7aefef877b5c7f19ec61af697c8a33986de1a302094e4"
+    },
+    {
+        "archivo": "salidas/VB-12.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "53a95f6dc892760175f4f3f2818d898114776a617ff53f5173feddfefdcd7153"
+    },
+    {
+        "archivo": "salidas/G1-auditoria.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "c29f6c9c72289e982bc18b63122aefa43dae53c620094772f261547840900abc"
+    },
+    {
+        "archivo": "salidas/G1-contraste-transversal.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "edc3242e739c9809d52db5f78ac71a10cf2f1192c568d7b22b9eb9e39feb4587"
+    },
+    {
+        "archivo": "salidas/VA-A6.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "ce2103eb2db14e353f5832d57ef7adf42917862f3b2cc198513ed803a2359ea9"
+    },
+    {
+        "archivo": "salidas/G1.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "ac2dd5c4cfc18b33f455cec58266d77fa8cfd80cb56558aa6689f62bd7c74bd3"
+    },
+    {
+        "archivo": "salidas/VA-A5.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "8d2ae3ab15834cf01a82ad011130f779987791b802e3ae15809a3710e5c56eb0"
+    },
+    {
+        "archivo": "salidas/G1-patrones.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "f36fe3d52cb0f2e75885aa8417224a05c302cf119f5e7bc6f0e617857301ade5"
+    },
+    {
+        "archivo": "salidas/VA-A1.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "65a70f4f3345ea43a546c690205d6776ef12136b91ea638d0a792654fa74c6f3"
+    },
+    {
+        "archivo": "salidas/VB-13.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "d72061e830d245fa3edec3c95d510c6c8a086e973b5c22952c6998e90e5aa3cc"
+    },
+    {
+        "archivo": "salidas/VB-06.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "583d53647eb01111614476cc8044c867092771d87173c5b64465b8761f925014"
+    },
+    {
+        "archivo": "salidas/VB-03.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "719d9f5ae89b5d3860684e5e9bfaf6a10e004a1c077845c1a1491bc0a6351245"
+    },
+    {
+        "archivo": "salidas/G2-secciones-audit.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "7236368e9166df31db685bb55fd473b760b9cd0d9f53d94b477aea3104a1035a"
+    },
+    {
+        "archivo": "salidas/VB-01.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "f2be8cd5bae3886d06ff5f6eca96287b662e248615f5459c8ffb192e2b47f069"
+    },
+    {
+        "archivo": "salidas/G1-muestra.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "0025feacc82d08f0c9e3fe0f25c379ba07f5f0c58e1f6f90e5212989617eaf7a"
+    },
+    {
+        "archivo": "salidas/VA-A8.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "4b004549d5dd9a9e5af202e221d14844d0bd2ac77479a0afb83a43821262a64c"
+    },
+    {
+        "archivo": "salidas/G2.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "c28f59cf6d99df2945c379964ea12816e370f5d76dd3d2fd93a9a2d3fb6da4ac"
+    },
+    {
+        "archivo": "salidas/VA-A2.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "d4519ee7276ec36a06a1d2b3a28ca29a9d414964dfc8d91bb62c5fddb9f93767"
+    },
+    {
+        "archivo": "salidas/G2-informe.py",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "5fb2a7534654e731dd46c8cac8089ff46dacc314cd9c50c98d2fa7a373326357"
+    },
+    {
+        "archivo": "salidas/G2-corpus.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "b082655473e1750c367731e24659a4e0a06621ebe84e86d219684a58752618f9"
+    },
+    {
+        "archivo": "salidas/G2-catalogo-audit.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "c6e0e8f92c8a60ba0d7cc68ea1cd58d81ec2335d793005f98c067ff6c9c81958"
+    },
+    {
+        "archivo": "salidas/G2-auditar.py",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "674b47c5760ae8f8ac46d68a5bff0a8132aab1a5ed5aee6ba0129d5486279776"
+    },
+    {
+        "archivo": "salidas/G2-log-busqueda.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "6ce63a2b8548fcfed7a5e19482eca49c43fd257cb6c6872a2a64c311acb5267e"
+    },
+    {
+        "archivo": "salidas/VA-A10.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "6eaf9a27f79a7c54ec1bf2b333f5ce334c8f1dae5e161a37addc05f5900f9721"
+    },
+    {
+        "archivo": "salidas/G1-omisiones-filtradas.json",
+        "bytes_originales": false,
+        "json_identico": true,
+        "sha256_archivado": "495a4a09d5b0a8043fb75fdbad0ca0b4ebc35ee573fefe8b1c6a36a20bda4022"
+    },
+    {
+        "archivo": "salidas/VA-A3.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "a053fb297609c5790d158a5304dc61be32a764e7f39ac6e873e8aa7689eb803c"
+    },
+    {
+        "archivo": "salidas/VA-A7.txt",
+        "bytes_originales": true,
+        "json_identico": null,
+        "sha256_archivado": "f7a87043352daf4784fb1aa9141d427c5cf1801619014d86178b867ac265d2b2"
+    }
+]

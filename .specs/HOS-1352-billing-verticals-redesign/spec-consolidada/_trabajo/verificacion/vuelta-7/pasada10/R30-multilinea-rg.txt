@@ -1,0 +1,10 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/30-el-corte.md:210:§9 dicen lo mismo. **Causa**: toda sonda viva que cobre después del corte llega como desconocida.
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-7/pasada10/inventario-reglas.md:36:| R30 | 10 | Guard entorno sólo sondas mutantes; sólo lectura producción permitida | fuera de staging; producción.*aborta; guard de entorno; sólo staging |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:362:  sirve para distinguirlas); y toda sonda que mueve plata aborta si el máximo a cobrar no da
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:363:  **exactamente** el número autorizado: un orden de magnitud no alcanza. *(Que el guard de entorno
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:636:| **el guard de entorno** | toda sonda que mute abre con `GET /users/me` (la regla 4) |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:637:| **el guard de presupuesto** | toda sonda que mueva plata aborta si el máximo a cobrar no da **exactamente** el número autorizado; un orden de magnitud no alcanza |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:770:  `GET /users/me` y aborta contra la cuenta equivocada; toda sonda que mueve plata aborta si el máximo a
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B1.md:919:cuenta de producción en una corrida de la cuenta de pruebas (y al revés), la corrida aborta antes de la
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:6741:**Con dos límites que el capítulo 06 (épica de billing) ya fijó y que valen igual acá**: guard de
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:6742:entorno y guard de presupuesto — una sonda que pueda correr contra producción por error, o gastar

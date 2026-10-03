@@ -1,10 +1,10 @@
 {
-  "sha": "5381f7579687651df168575c85f144f9b48daea7",
+  "sha": "277980c125af3050c5ca3949b82285518afdbf9b",
   "criterio": "(exit 1 when any fails)\n  C1  every live normative item has an owner piece (a lectura entry in `sin_pieza` still fails: it\n      is a question for the owner, not an answer).\n  C2  the owner piece and every `tambien` piece exist (or the owner is the pseudo-piece CORTE, BE).\n  C3  timing: an item the sources put at the cut is owned by a cut piece (or CORTE), an\n      item they put later by a later piece, and a phase gate by a piece of that phase.\n  C4  one citation is the item itself (inside its own block) or names its local id; one citation\n      names the owner piece and lives in the partition (V/B descomposicion, D/16) or is the item.\n  C5  every citation is verbatim in its line at the SHA, and its stored hash is that line's hash.\n  C6  a `tambien` piece with role `implementa` is not an ancestor of the owner in the graph of\n      41-corte-del-mvp/aristas.py, nor a cut piece when the owner is a later one (the owner is the\n      one that implements it first).\n  C7  an item is derived once: never by script and by lectura, never a dead or citable-only item.\n  C8  the closed list of citable-only items (defs.SOLO_CITABLES, owner BA and BB) is valid: every id\n      in the inventory, named by its owner row, row hash unchanged. Those items need no owner.\n  C9  the closed list of pieces that create schema (defs.CREA_ESQUEMA) is valid: each fragment is in\n      exactly one line at the SHA, and that line names its piece.\n  C10 the closed lists of exemptions (defs.SIN_MIGRACION_DEL_TEXTO) and of extra «tambien» of a\n      script derivation (defs.TAMBIEN_SCRIPT) are valid: each fragment is in exactly one line at\n      the SHA (and a «tambien» line names its piece).\n\nTYPES (AN; not a rule, they never fail here: trazar.py R18 reads them). The types AN demands per\nfamily always bind the owner. A type read only in the item's words binds it with three limits\n(triage of the open items, 2026-10-02): a migration type binds the owner only if the owner creates\nschema (CREA_ESQUEMA); otherwise it moves to the first «tambien» piece that does\n(`tipos_trasladados`) or is dropped (`tipos_descartados`); the pseudo-piece CORTE only takes\n`smoke manual` or `guard estático` (owner BE), and anything else follows the same move; and a gate\nwhose conditions are CI and merge conditions takes no smoke from the word (SIN_SMOKE_DEL_TEXTO).",
-  "normativos": 752,
+  "normativos": 754,
   "por_metodo": {
     "script": 209,
-    "lectura": 543
+    "lectura": 545
   },
   "por_pieza": {
     "U1": {
@@ -72,8 +72,8 @@
     },
     "V7": {
       "script": 3,
-      "lectura": 8,
-      "dueña": 11,
+      "lectura": 9,
+      "dueña": 12,
       "tambien": 19,
       "cuando": "después"
     },
@@ -135,8 +135,8 @@
     },
     "B5": {
       "script": 11,
-      "lectura": 47,
-      "dueña": 58,
+      "lectura": 48,
+      "dueña": 59,
       "tambien": 29,
       "cuando": "corte"
     },
@@ -207,7 +207,7 @@
       "script": 4,
       "lectura": 9,
       "dueña": 13,
-      "tambien": 30,
+      "tambien": 31,
       "cuando": "corte"
     },
     "B13b": {
@@ -657,7 +657,7 @@
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md",
           "linea": 204,
           "cita": "**asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚",
-          "hash": "454f203d168ac49f5b88e49edf2da64f178ebf0d31e3310c820e62d72fe5fdae"
+          "hash": "1881f86ef364d16523d8a045dc87b751e1b5fd16ea661016bfa77be707827782"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -2264,7 +2264,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6643,
+          "linea": 6645,
           "cita": "2. **Un `LISTING` queda huérfano sólo si NINGUNA principal de ese `user + vertical` está viva y no",
           "hash": "ead19fd92d99919d9e7e53347d901a9c4f35f4f8e4cdfa0d84a754cd5cd10846"
         },
@@ -2759,7 +2759,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7241,
+          "linea": 7243,
           "cita": "`G8` falla si su nombre aparece, sin distinguir mayúsculas, en cualquier archivo",
           "hash": "edc27deba615096241de159e7d70ef378a867c6973d41220fa5cc71da7eeca66"
         },
@@ -2820,7 +2820,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7315,
+          "linea": 7317,
           "cita": "la configuración de planes vive 100 % en la base. El archivo de configuración de",
           "hash": "105ba4420831f0cdefac0e6871a149066e941ec3374eb12e574996bbe6e1ac5f"
         },
@@ -2997,7 +2997,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7536,
+          "linea": 7538,
           "cita": "tenemos que estar 100 % seguros de eliminarlo por",
           "hash": "ab46a7fa2426f8a9ec7ce6013cebdd5a0d0b09d1178ddd9aafab2004b3d03ea5"
         },
@@ -3038,7 +3038,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7674,
+          "linea": 7678,
           "cita": "**`@repo/billing-verticals-contract`**, en `packages/billing-verticals-contract`.",
           "hash": "0ac3d05dfc9512bd12611be38045620271eb6601c37237aed3fa277db27c9393"
         },
@@ -3083,7 +3083,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7781,
+          "linea": 7785,
           "cita": "se da por bueno y el trabajo siguiente puede apoyarse en él",
           "hash": "6753a2a213795b6d365f807ceb7d957a4ed73c7c4f0cce35f52b7894fa285d58"
         },
@@ -3135,7 +3135,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7879,
+          "linea": 7883,
           "cita": "**30 piezas**, **22 al corte y 8 después**",
           "hash": "3e3e259d8f3bd25517fa22359810b2dcadfa236730db8a9e39c81251ffcf21cf"
         },
@@ -3242,7 +3242,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6695,
+          "linea": 6697,
           "cita": "2. **La invalidación del caché del conjunto efectivo es por `user`, no por `user + vertical`**",
           "hash": "2081be0f9f6fdbb79d986837ac390895a22d39e1f7b19be93621f4c45749c0cc"
         },
@@ -3300,7 +3300,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6837,
+          "linea": 6839,
           "cita": "**una acción administrativa nunca tiene `actor = sujeto`.**",
           "hash": "3ec37514591440ea97b2644ef4382aa478470f931e6d1561a387deccad89e73b"
         },
@@ -3331,7 +3331,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6861,
+          "linea": 6863,
           "cita": "fila decimoquinta de `NUCLEO/08` §3 —crear en borrador a nombre del dueño,",
           "hash": "21f491a6d6c773586cdbb0a54beaa209f5d8c2ddb541a479768942e06bfd02c3"
         },
@@ -3368,7 +3368,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6915,
+          "linea": 6917,
           "cita": "el reclamo de un Partner escribe `owner_user_id` sólo si está nulo, y su link es de",
           "hash": "1b4a92e83e8b067b5500ff06bec555011e23a6b52f8a804537f8f742432059ca"
         },
@@ -3425,7 +3425,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6944,
+          "linea": 6946,
           "cita": "postular un Partner no exige cuenta: es la segunda excepción del guest en el paso 1,",
           "hash": "27dbd0dcbfe31202e4c335c4b06ca0cbcbc39774c60ba477aad832f1a9df1d63"
         },
@@ -3640,7 +3640,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "El día 180 (`PB9`) y los avisos."
@@ -3704,7 +3704,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "el reloj de 90 y 180 días con sus cinco hechos de reinicio",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "el reloj con sus hechos de reinicio y los avisos"
@@ -3812,7 +3812,7 @@
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "| **V9b** | **Retención** *(después)*",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         }
       ],
       "razon": "El criterio de `V9b` nombra la decisión; el estado `PURGED` y el `PB5` validado los provee `V6`.",
@@ -3857,7 +3857,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7065,
+          "linea": 7067,
           "cita": "Cruza como una pregunta de ida del contrato,",
           "hash": "463317a988fbafc8ee12c15dc495535600b239dc4d2fd299571de84832a82d0d"
         },
@@ -3934,7 +3934,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7098,
+          "linea": 7100,
           "cita": "moderación en dos niveles, a elección del admin y cambiable en las dos direcciones:",
           "hash": "18ea504db63f56c236ec77c440e11ef32c47240ea1839cd12316ff0847232375"
         },
@@ -3985,7 +3985,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7385,
+          "linea": 7387,
           "cita": "todo plazo en días o meses que decide cuándo pasa algo lo configura el `SUPER_ADMIN`",
           "hash": "292773376f3cfb8821a0f943e94cd3493641827bf0dde5f9c0a9c60e0d17c46b"
         },
@@ -4038,13 +4038,13 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "| **V9b** | **Retención** *(después)*",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             },
             {
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "**lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas**",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "Lee la tabla y la versión de la ficha sin escribirlas (BD)."
@@ -4422,7 +4422,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6734,
+          "linea": 6736,
           "cita": "1. **Clave propia *«presencia en el carrusel»***, que otorgan Gold y Silver",
           "hash": "2a0da355cf5e6408e3ffcf76b150ea84feb77e78e0b25f20a0f0772c30aaf695"
         },
@@ -5432,7 +5432,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6987,
+          "linea": 6989,
           "cita": "Las dos cuentas del owner reciben la prueba y el grant del 3b",
           "hash": "2559105e322c51c22ecf194e011ed2a6685e3961406827dc7b753be6dccafbd2"
         },
@@ -5500,7 +5500,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7036,
+          "linea": 7038,
           "cita": "2. **Un usuario que entre durante el corte no se diseña.**",
           "hash": "c1c44f643906ba4ebb7cf7e901034eb48ba6fc200ddb188ca97d352efb4a12d2"
         },
@@ -5902,7 +5902,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7481,
+          "linea": 7483,
           "cita": "El receptor nuevo guarda cada entrega de IPN entera en",
           "hash": "5802817e4574cab3da5681999e941063524688d12fabeb4babc47f83fbee9157"
         },
@@ -7101,7 +7101,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 1069,
           "cita": "**en `GRACE_PERIOD` el cambio de plan no se ofrece ni se puede declarar**",
-          "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
+          "hash": "0edd9b8c0e48a0ddb0ae23dbb86f50e770ee711c475e4f13292dace0e4136ce6"
         },
         {
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -7161,7 +7161,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7129,
+          "linea": 7131,
           "cita": "migrar a los clientes de un plan retirado a una versión vigente y vendible de la",
           "hash": "80447e9f3a09e621e6cf7993617ee2e35506219b3d069e2d4bb0f4bd7fd8d2a1"
         },
@@ -7330,7 +7330,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7195,
+          "linea": 7197,
           "cita": "Tres guards nuevos, de `B1`",
           "hash": "47a69b6470f8e9d75dd8cc2240227dde18a66a1cb032d87dad7cfdddbe936576"
         },
@@ -9790,7 +9790,7 @@
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj ",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         }
       ],
       "razon": "la fila de la pieza V9b",
@@ -9953,7 +9953,7 @@
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "**mergeada antes de la primera fecha en que un aviso de retención podría salir**",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         }
       ],
       "razon": "La fase 1 es sólo V9b, y la condición que la fila de la fase da («mergeada antes de la primera fecha…») está escrita en la propia fila de V9b.",
@@ -16346,7 +16346,7 @@
           "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
           "linea": 1069,
           "cita": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un ",
-          "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
+          "hash": "0edd9b8c0e48a0ddb0ae23dbb86f50e770ee711c475e4f13292dace0e4136ce6"
         }
       ],
       "razon": "fila de origen de B8a y B8b (Z): la mitad a va al corte y precede a la b",
@@ -16359,7 +16359,7 @@
               "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
               "linea": 1069,
               "cita": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un cambio h",
-              "hash": "fa7528483e1875f45270980e62c062f6d9cd8b84a117a00b41f10f72ea38a4fd"
+              "hash": "0edd9b8c0e48a0ddb0ae23dbb86f50e770ee711c475e4f13292dace0e4136ce6"
             }
           ]
         }
@@ -20201,13 +20201,13 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6655,
+          "linea": 6657,
           "cita": "**📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9e y 9f de",
           "hash": "86078cd11cbbe5f25beae6f6f9b35a2c07acc14b655a7f2d66703e7c3c963ace"
         },
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6658,
+          "linea": 6660,
           "cita": "1. **«Cobrada», en el punto 3 y en la compra de un addon, se lee como en `S4`** (9e)",
           "hash": "89e023fd16b0f66fa5d5896d23fb8725e17cbed1408995a50e12da1f91b9c972"
         },
@@ -20446,8 +20446,8 @@
             {
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
-              "cita": "el empuje a billing después del commit) y los tres avisos",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "cita": "el empuje a billing después del commit)",
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "el empuje de PB9 después del commit"
@@ -20543,7 +20543,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "PB9 cuenta su plazo también desde coberturaPerdidaEn"
@@ -21142,7 +21142,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7261,
+          "linea": 7263,
           "cita": "El tipo de partner se renombra a `business`",
           "hash": "a99da9c8a86540fbfb50601484891e302708eb99405a0efd079414f1bb85f224"
         },
@@ -21210,7 +21210,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7285,
+          "linea": 7287,
           "cita": "código del sistema viejo que nombra el agrupamiento viejo",
           "hash": "a22c04747e4a33a4768b88414be49c67d871bd94575e702c898b5006a23528d2"
         },
@@ -21254,7 +21254,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7298,
+          "linea": 7300,
           "cita": "las saca de la rama `U1`**",
           "hash": "329aa64b8354d222de112579bc5d1fb0ef22bbc56af92e652b21cd179b215643"
         },
@@ -21303,7 +21303,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7341,
+          "linea": 7343,
           "cita": "planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write",
           "hash": "43f708818e2fcce2791d6081fe8db670a2ac8958d24e172971ddd0fabbecfe88"
         },
@@ -21352,7 +21352,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7348,
+          "linea": 7350,
           "cita": "única del catálogo corre dentro de la migración estructural del paso 3 del corte",
           "hash": "d958d008df148a6fa5f87c4b2708e3d679d8dde8d9368a01f4f962cbc1a84737"
         },
@@ -21404,7 +21404,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7353,
+          "linea": 7355,
           "cita": "catálogo va en la migración como **SQL generado por un script TypeScript**",
           "hash": "7fb9bdd8321b8a82329ed8ab5a50398636c36ca9eb17d958344f583d763cbb08"
         },
@@ -21466,7 +21466,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7365,
+          "linea": 7367,
           "cita": "**La tabla de claves de `V1` viaja como SQL generado y vigilado,",
           "hash": "c0a11a5c65a622ed2b13cd534c56d0d41945e93aecede4374812f6a4ef76df5a"
         },
@@ -21515,7 +21515,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7561,
+          "linea": 7563,
           "cita": "que hace sólo la limpieza y construye `G8` en el",
           "hash": "dd2d7c555428b586074d9e160a756dc8f3c86a6238274e95a78708e23d4a7481"
         },
@@ -21560,7 +21560,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7581,
+          "linea": 7583,
           "cita": "crea vacío el package del contrato",
           "hash": "05dc0bbfa263f0c45b5ca6609474ddc574809156bccaf458a2c0b096bb46bc3b"
         },
@@ -21622,7 +21622,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7586,
+          "linea": 7588,
           "cita": "**`U1` crece**, sin código nuevo del diseño salvo el",
           "hash": "ca6428e72e028dee7882d43eed5e5958664f8ad8152f133d071e1e30270ecdba"
         },
@@ -21687,7 +21687,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7617,
+          "linea": 7619,
           "cita": "y la ruta de avisos queda abierta durante todo el corte",
           "hash": "4d2767db5c2808c62a734104b43aacd74436d61ccfc9c6eaa5bf81a37383af08"
         },
@@ -21724,7 +21724,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7621,
+          "linea": 7623,
           "cita": "En la lista de `U1`, *«borra las columnas de pago de",
           "hash": "b8c9fbab6246160bab8ac7ebddb7d44110dd9f279904c3796826cf3aa68ff42c"
         },
@@ -21782,7 +21782,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7631,
+          "linea": 7633,
           "cita": "**`U3`, el script del corte**",
           "hash": "edbcc59d56a6522e2d3c15ef5d6b8d63f85be2cee4f906e56db0257a858e6c25"
         },
@@ -21817,7 +21817,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7644,
+          "linea": 7646,
           "cita": "borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`",
           "hash": "e15ec8043e631e49aeedd05f78ac992a080bee60f8a51e5ae7fc381b4c85673b"
         },
@@ -21871,6 +21871,37 @@
       "tipos_trasladados": [],
       "tipos_descartados": []
     },
+    "DEC-ARCH-014#📌8": {
+      "fuente": "PIN",
+      "pieza": "V7",
+      "metodo": "lectura",
+      "fuente_de_la_asignacion": [
+        {
+          "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+          "linea": 7659,
+          "cita": "**son trece desde BC**",
+          "hash": "cbe5cff6b98717485b7f79d563ef8b4e651612c40ab70006933431e9e61d5fe8"
+        },
+        {
+          "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+          "linea": 390,
+          "cita": "| 15 ✚ |",
+          "hash": "c1a1bdc4dd2cb5fc500270c5bf6fea7d4eedfc39b2e260095289c9a347397dc4"
+        }
+      ],
+      "razon": "La precisión numérica identifica la dependencia 15 de V7 sobre B5 para la acción 6 (BC), ya ejercida por AC:V7:17; no agrega una dependencia.",
+      "tambien_lo_ejercen": [],
+      "tipos_de_test_minimos": [
+        "≥1 de cualquier tipo de la lista cerrada"
+      ],
+      "tipos_derivados_del_texto": [],
+      "tipos_exigidos_por_familia": [
+        "≥1 de cualquier tipo de la lista cerrada"
+      ],
+      "tipos_solo_del_texto": [],
+      "tipos_trasladados": [],
+      "tipos_descartados": []
+    },
     "DEC-ARCH-016#📌1": {
       "fuente": "PIN",
       "pieza": "CORTE",
@@ -21878,7 +21909,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7845,
+          "linea": 7849,
           "cita": "*«las 22 piezas del corte",
           "hash": "77b150dbe4cf591ffc702b5767030b3595243acf130a0d09f96aa8764bfe67af"
         },
@@ -21909,7 +21940,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7850,
+          "linea": 7854,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BQ, Q1 y Q2, las dos la",
           "hash": "ea7cf081e2fa305419bae814a212d23926094848be6af839ca5b83509deda887"
         },
@@ -21947,7 +21978,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7930,
+          "linea": 7934,
           "cita": "(AP) **el esquema de lo posterior lo crea al corte la pieza dueña de la tabla de la que cuelga**",
           "hash": "2228eeb4195283a218a8af5adf1afb71bf6ec28f8f8d0fbb8e04870dcf2130d4"
         },
@@ -22077,7 +22108,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8061,
+          "linea": 8065,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CE, la 1)**, sobre `A1-bis`",
           "hash": "8cffea204415a5aedebaf0bbf4c93bc87fcd60faaca396c84bda3a895e1e653c"
         },
@@ -22108,7 +22139,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8068,
+          "linea": 8072,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CF y CG, las dos la 1)**:",
           "hash": "736f4b606439d10379d9f61b563c85a134af50a92af404b3119ad095ee98447f"
         },
@@ -22153,7 +22184,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8078,
+          "linea": 8082,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CH y CI, las dos la 1)**:",
           "hash": "d4c85e2b9b87d66a92aed53a99495e5c14f77e2d450fa556d86090e53f9214bf"
         },
@@ -22215,7 +22246,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8097,
+          "linea": 8101,
           "cita": "**La retira `V6`**, en el mismo cambio que las puertas de fichas",
           "hash": "fdb16acbf4ee25f83098ecdfce75c3cd612da10e9859eb315e5d7a75aa42bcbb"
         },
@@ -22250,7 +22281,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7947,
+          "linea": 7951,
           "cita": "pasan de `B4` a `B3`**",
           "hash": "92cf5a5d784e0d0c2edc2d344569c0175ac7090a77814c0c7a3d7e8c91825d1f"
         },
@@ -22325,13 +22356,13 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7969,
+          "linea": 7973,
           "cita": "`U2`. **BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`",
           "hash": "44ba773d5d155fde763e237f9d24bc7d2707af47ce982d532fb014f8d9364dac"
         },
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7963,
+          "linea": 7967,
           "cita": "es de `B3`; la acción 6 (el plan y el método de pago de un Partner) es de `V7`",
           "hash": "772f6204f7c039ac01497458a650116f64ec424ba93e6dfae1c1287d67c1fd7a"
         },
@@ -22503,7 +22534,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7981,
+          "linea": 7985,
           "cita": "- 📌 **Precisada otra vez el 2026-10-01, con OK del owner (corte del MVP, BJ, la 1, que reemplaza a",
           "hash": "ce0e12bb6186dfbc867ae4176665d9d14089700ba1ede1fb7ad2e8d2f6e9f4bf"
         },
@@ -22568,7 +22599,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7992,
+          "linea": 7996,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BL, BN, BO, BP y BR, todas",
           "hash": "de2d395a07a2ae50a5135d10d19774993a5ec758743be13f7c66c9a1a00e763e"
         },
@@ -22693,7 +22724,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "**de los tres avisos, suma los dos previos y su job",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "BL"
@@ -22734,7 +22765,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8023,
+          "linea": 8027,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la",
           "hash": "06b7ca88ff9234ff04966c8c158e08b8d8d2e0d988cb9d8125f6eb13130ceb30"
         },
@@ -22809,7 +22840,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8035,
+          "linea": 8039,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BY y CA, las dos la 1)**.",
           "hash": "0e089d61d9f8a0dc9013b1d87b6ceabbba40c55469ea90eb7a29b063bd08b77c"
         },
@@ -22884,7 +22915,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 8047,
+          "linea": 8051,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CD, la 1)**: **el addon que",
           "hash": "0e4ef244234889b3451ac39c3f455c405c1a3556d40da55321200cf779771384"
         },
@@ -22922,7 +22953,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6714,
+          "linea": 6716,
           "cita": "`RESTRICTED` pasa a `404` en `V5`, con su test",
           "hash": "2107a9b57fe8a807eb127acda467d443c64617dcadf84263a64715115186b5de"
         },
@@ -22953,7 +22984,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6715,
+          "linea": 6717,
           "cita": "- 📌 **Precisada el 2026-10-02, con OK del owner (corte del MVP, CB, la 1)**, sobre el caché que se",
           "hash": "32a4cd14ba43cd5de9cd03cb8e4f703e83c1b3f88bbdfda0163a719cb71cf7a0"
         },
@@ -22984,7 +23015,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6844,
+          "linea": 6846,
           "cita": "**La regla compara cuentas, no personas**",
           "hash": "e00976123314dc0ef8763e03c3f2da9f4db7014bbea2bc2bed0a6d8c35806468"
         },
@@ -23015,7 +23046,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6869,
+          "linea": 6871,
           "cita": "la acción 15 no es capacidad del actor:",
           "hash": "c3fb7eed2dd10490ff473b1ec60bfc59676c31c47c8cac22aff1a22065f81120"
         },
@@ -23066,7 +23097,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6876,
+          "linea": 6878,
           "cita": "\"sin borrar\" de la acción 15 vale para la edición de contenido",
           "hash": "36bd38c99dc762c99d33851695f21a9a958dd5789815fb4e218046fbbf079205"
         },
@@ -23097,7 +23128,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6880,
+          "linea": 6882,
           "cita": "salen `impersonate` y `set-role` del plugin `admin` de Better Auth",
           "hash": "7778ca65c788ae5f78730d858ef2869b2ec36117daf4f4809af0a107fafd75b0"
         },
@@ -23161,7 +23192,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6888,
+          "linea": 6890,
           "cita": "**`fullAdminRole` del plugin `admin`",
           "hash": "8ab349b3d18ef5394374ebebdc1a736075cfec251951e0a0b46056e1a934527a"
         },
@@ -23192,7 +23223,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6960,
+          "linea": 6962,
           "cita": "con sesión y el correo sin verificar no postula como un visitante sin cuenta",
           "hash": "d036cc8e013d6b6a5252e7e7bc3abf2d9056b25502085c02ff90704b351b0017"
         },
@@ -23243,7 +23274,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6966,
+          "linea": 6968,
           "cita": "la postulación de Partner es **propia**",
           "hash": "928193fc193b80203434623c12bd7bfaea7bce4c604d1acaaad50047b61cec25"
         },
@@ -23838,7 +23869,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "el reloj de 90 y 180 días con sus cinco hechos de reinicio",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "el reloj con sus cinco hechos"
@@ -23883,7 +23914,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "PB9 no borra antes de la fecha anunciada"
@@ -23972,7 +24003,7 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "`PB9` con la lista cerrada."
@@ -24196,7 +24227,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7078,
+          "linea": 7080,
           "cita": "`retenciónDetenida` devuelve también cuándo terminó la última",
           "hash": "1a40eaaf9403f51e22c5a24f7878415a3113c4cdef192bbc122c6771007a790c"
         },
@@ -24267,7 +24298,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7087,
+          "linea": 7089,
           "cita": "Y la mitad (d) de `G-R6-B` falla también sobre un lector de retención que",
           "hash": "c7c3058e96492135c775378895a2e585443b248c93b88e169302bfe019972f5d"
         },
@@ -24287,8 +24318,8 @@
             {
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
-              "cita": "y los tres avisos, que encola en `U2`",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "cita": "los dos avisos previos, que encola en `U2`",
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "Los avisos previos de retención."
@@ -24312,7 +24343,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7114,
+          "linea": 7116,
           "cita": "Una ficha moderada desde `ARCHIVED` vuelve por el origen de su archivado.",
           "hash": "b101e84cf069f12a0209d8c9ede836d4cbc75dd4dc88feab2c288f604f4cc911"
         },
@@ -24369,7 +24400,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7410,
+          "linea": 7412,
           "cita": "Configurar el 90 y el 180, que el §25 del PDR fija, es un apartamiento",
           "hash": "b631cbdd245f62a9ad12601214b98001156a97d7889a52ff7b30c558c0aca507"
         },
@@ -24437,7 +24468,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7420,
+          "linea": 7422,
           "cita": "180 días que se guarda una entrega de aviso",
           "hash": "af6c9e7e6a94459d11435a46c125df230aca99d46a125c2f7693e844d11fd469"
         },
@@ -24468,7 +24499,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7423,
+          "linea": 7425,
           "cita": "la crea la migración estructural del paso 3 del",
           "hash": "66533a7794fed8060e9e6138ac7af4456409011571188fcde3be10396d542ea6"
         },
@@ -24526,7 +24557,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7428,
+          "linea": 7430,
           "cita": "pasa de quince a dieciocho plazos",
           "hash": "ce55d0f54ac31e5651bde6e5b51aca843b94551478c41e413d9e630e53faf3bc"
         },
@@ -24581,7 +24612,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7435,
+          "linea": 7437,
           "cita": "Los cinco plazos sin valor escrito los",
           "hash": "eff16620403f27f6669dbcb893bbe15567777c6cec9e35ddd45f9ff178921340"
         },
@@ -24622,7 +24653,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7442,
+          "linea": 7444,
           "cita": "**los crea `V6` al corte, en la misma migración que la escritura `C`**",
           "hash": "1d2c71480de26ce007b450cdb1c8a8493e66f2f11ae228d21ae8fe4855ed494a"
         },
@@ -24655,13 +24686,13 @@
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "| **V9b** | **Retención** *(después)*",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             },
             {
               "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
               "linea": 73,
               "cita": "**lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas**",
-              "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+              "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
             }
           ],
           "razon": "Lee la tabla y la versión de la ficha sin escribirlas."
@@ -24689,7 +24720,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7448,
+          "linea": 7450,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BU y BV, las dos la 1)**:",
           "hash": "13249dd94a0e13eaf5519c892a834ccacaaae9642c94e3ef207469677cc50910"
         },
@@ -24751,7 +24782,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7458,
+          "linea": 7460,
           "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌",
           "hash": "a8f39f2e230e226cca91907dc768a5643e90cf133e2fabfeb39344768c399fc4"
         },
@@ -24973,7 +25004,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6747,
+          "linea": 6749,
           "cita": "`U1` borra las columnas de",
           "hash": "67f729f23971f2b8d9b944ce0a9c92366fc21ee339d5538616926be520c26566"
         },
@@ -25051,7 +25082,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6761,
+          "linea": 6763,
           "cita": "columnas de pago de `partners`»* que borra `U1` son **seis**",
           "hash": "d93c60c2dd4c0815feae5e2eabf2bb2de988b66c47a913048704ed9107bc3328"
         },
@@ -25109,7 +25140,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6767,
+          "linea": 6769,
           "cita": "dueño**: manda el aviso de reclamo, y el rol de socio llega con el reclamo.",
           "hash": "89f4413b07ce9021caaee6f292dad65d6ab08fdf1ba2df9a4ff437921b6c78f1"
         },
@@ -25160,7 +25191,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 6775,
+          "linea": 6777,
           "cita": "sus lectores —la página pública y las tres rutas del socio— pasan a leer la clave**",
           "hash": "92bf77c84c5490c62ffba3ac4cbe6299ca2369c3613a67ddd3c2e46a1c6f77cc"
         },
@@ -26184,7 +26215,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7004,
+          "linea": 7006,
           "cita": "pasa a **las cinco de la lista** cerrada que",
           "hash": "749c45222d8d80b4107a17581c17a3b6619dcfe5f1a25326f54997692296dcca"
         },
@@ -26233,7 +26264,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7021,
+          "linea": 7023,
           "cita": "**la migración copia a una tabla de paso el id de cada una, las",
           "hash": "c5bfb55776e05bcb7e12d4ffa1bd4ca8a45a01c3269f3bd87cd5b2b158d36ee0"
         },
@@ -26609,7 +26640,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7501,
+          "linea": 7503,
           "cita": "guarda también cada entrega de Webhooks, en la misma tabla",
           "hash": "4846ce6aa4a77717b8e5c0b55499c45c632e5e959f9df4738533774dbc606fec"
         },
@@ -26662,7 +26693,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7508,
+          "linea": 7510,
           "cita": "verifica el apuntado de la URL de IPN con una entrega real de `payment`",
           "hash": "e39861e52b754d537e934bf60be80edf54d5a6f85300128e3929ca10f5b1c86e"
         },
@@ -26699,7 +26730,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7515,
+          "linea": 7517,
           "cita": "El receptor nuevo sirve la misma ruta que el viejo",
           "hash": "fca28bfef091a14e584463a89c2e18b1698d24487794993623c000f05bae9c3c"
         },
@@ -27553,6 +27584,51 @@
       "tipos_trasladados": [],
       "tipos_descartados": []
     },
+    "DEC-RF-008#📌8": {
+      "fuente": "PIN",
+      "pieza": "B5",
+      "metodo": "lectura",
+      "fuente_de_la_asignacion": [
+        {
+          "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+          "linea": 6622,
+          "cita": "La devolución por fuera que se asienta con `RF4` admite",
+          "hash": "29fedacdc65f02063c684fa4f734a385269891d79d593a0c98f2d187891bf502"
+        },
+        {
+          "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+          "linea": 139,
+          "cita": "y la acción administrativa 14, que asienta un cobro o una devolución ocurridos por fuera** (owner 2026-09-25, 5a, `DEC-RF-008`)",
+          "hash": "96b8032665536875b244670fbfda46185fa0c3ffd68748dab6ca35652d23ddc5"
+        }
+      ],
+      "razon": "RF4 y acción 14: B5 provee el asiento, B13a la superficie; precisión del catálogo vigente.",
+      "tambien_lo_ejercen": [
+        {
+          "pieza": "B13a",
+          "rol": "implementa",
+          "citas": [
+            {
+              "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+              "linea": 152,
+              "cita": "la acción 14 en Admin",
+              "hash": "213101e20054a61ec197a7dd7f8ad14b3e4ddbf3b9eff421daaf35bd40538d04"
+            }
+          ],
+          "razon": "La acción en el panel."
+        }
+      ],
+      "tipos_de_test_minimos": [
+        "≥1 de cualquier tipo de la lista cerrada"
+      ],
+      "tipos_derivados_del_texto": [],
+      "tipos_exigidos_por_familia": [
+        "≥1 de cualquier tipo de la lista cerrada"
+      ],
+      "tipos_solo_del_texto": [],
+      "tipos_trasladados": [],
+      "tipos_descartados": []
+    },
     "DEC-SUB-002#📌1": {
       "fuente": "PIN",
       "pieza": "V2",
@@ -28291,7 +28367,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7149,
+          "linea": 7151,
           "cita": "`S37` muta el monto siete días antes de la fecha de aplicación",
           "hash": "a0f62c3db1d5e78f4452163ac3b5a409ab051d531dfba7e3fc9546e32d8b6a74"
         },
@@ -28342,7 +28418,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7163,
+          "linea": 7165,
           "cita": "llegada de una suscripción a un estado terminal, por cualquier camino",
           "hash": "353ee7b9a3b385372e0c42acc6128138de17fdce624f9184dfc7d0214e5e2dc1"
         },
@@ -28681,7 +28757,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7205,
+          "linea": 7207,
           "cita": "mentira ni regla exigida (`RC-7`, `GR-3`, `PS-2`, `PS-6` y el campo `last_charged` de `RC-5`): son",
           "hash": "4f8e0031222d45305a718f362d4cb368eeb4ba333154e55a864c5874821ca00a"
         },
@@ -28716,7 +28792,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7216,
+          "linea": 7218,
           "cita": "segunda lista del falso suma `RP12`",
           "hash": "5caef4e1774ebc3eb4c83ac2d613a1396189ddf2864731027df99cd6688783a4"
         },
@@ -28747,7 +28823,7 @@
       "fuente_de_la_asignacion": [
         {
           "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-          "linea": 7225,
+          "linea": 7227,
           "cita": "**la reapunta `U1`, de una vez, al checklist del sistema nuevo",
           "hash": "6d639a05e310370ba60d0ae91e1b743373b438a178caa200f490b3c4e6138f81"
         },
@@ -29635,13 +29711,13 @@
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         },
         {
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "**lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas**",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         }
       ],
       "razon": "Su lector es `PB9`, de V9b (después); la tabla y su versión 1 las crea V6 al corte y V9b sólo las lee (BD).",
@@ -29722,8 +29798,8 @@
         {
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
-          "cita": "y los tres avisos, que encola en `U2`",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "cita": "los dos avisos previos, que encola en `U2`",
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         }
       ],
       "razon": "Los avisos de retención son de V9b, que lee la tabla de plazos que crea V6 (BD).",
@@ -34228,7 +34304,7 @@
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
           "linea": 73,
           "cita": "`PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija",
-          "hash": "580a4de3536c3bd0f8b54a65e57c1e33ebe3ff4fa1f2408935251887ad8cae95"
+          "hash": "6cc735008bd3456dfaa63d1892bd81be79b7ff3c6d6222ce913ff1fb67cbda33"
         },
         {
           "archivo": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",

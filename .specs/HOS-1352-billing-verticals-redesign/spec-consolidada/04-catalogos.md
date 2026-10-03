@@ -2,7 +2,7 @@
 
 Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah)).
 
-**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`5381f75796`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
+**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`277980c125`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.
 
 Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas.
 
@@ -924,7 +924,7 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    `MODERATED`**, que está adentro. Su red sigue siendo la relectura de `PB4`, `PB5` y `PB9`
 >    sobre el reloj viejo, **y eso puede adelantar el archivado (`PB4` y `PB5`), que no es irreversible; el
 >    borrado del día 180 no, porque `PB9` cuenta además desde `coberturaPerdidaEn`, que se guarda
->    con el encolado del aviso y no depende de que llegue** (punto 5; FASE 9 vuelta 3, owner
+>    **en la misma transacción que escribe la pérdida de cobertura, antes del aviso posterior al commit, sin entrega durable (CK, `DEC-ARCH-009`)**, y no depende de que llegue** (punto 5; FASE 9 vuelta 3, owner
 >    2026-09-30, lote Q; el cuerpo, verificación, VC3-VT-05). **Causa**: la fila compara estados de
 >    ficha, y la ficha publicada es la única que
 >    guarda la memoria de que hubo cobertura (cap. 01 §1.2, núcleo, ⚠️ punto 3).
@@ -961,7 +961,7 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 > 5. **Cerrado por el owner** (FASE 9 vuelta 3, owner
 >    2026-09-30, lote Q): `PB9` cuenta el plazo de borrado también desde `coberturaPerdidaEn`, el
 >    instante de la última pérdida de cobertura que devuelve `retenciónDetenida` (`12-contrato…`
->    §4.1), que billing guarda en la misma transacción que encola el aviso, así que el aviso
+>    §4.1), que billing guarda **en la misma transacción que escribe la pérdida de cobertura, antes del aviso posterior al commit, sin entrega durable (CK, `DEC-ARCH-009`)**, así que el aviso
 >    atrasado no le adelanta nada; y mientras el dato valga `NINGUNO`, `PB9` no borra en la misma
 >    pasada en que ve la ficha vencida y sin cobertura por primera vez (la fila de `PB9`, arriba).
 >    El caso que lo pedía: sobre la ficha que no estaba publicada el hecho 5 lo escribe
@@ -6719,7 +6719,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:515, .specs
 - **qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido)**: el token de tarjeta es de **un solo uso**
 - **fila**: `EX-12`
 
-**Texto de la fuente — «4. La suite de sandbox es chica, y prueba otra cosa»** (`B/20-testing.md:628–650`, sin lo tachado):
+**Texto de la fuente — «4. La suite de sandbox es chica, y prueba otra cosa»** (`B/20-testing.md:628–653`, sin lo tachado):
 
 El §62.3 la pide *«más pequeña pero obligatoria»* y dice que *«verifica assumptions e integración
 real»*. Conviene ser exacto sobre qué significa eso acá, porque no es lo mismo que probar nuestro
@@ -6739,10 +6739,12 @@ porque son pocas filas las que sostienen decisiones, y es obligatoria porque es 
 convierte a `S-METH-01` de una advertencia en un control.
 
 **Con dos límites que el capítulo 06 (épica de billing) ya fijó y que valen igual acá**: guard de
-entorno y guard de presupuesto — una sonda que pueda correr contra producción por error, o gastar
-más de lo autorizado, no se ejecuta.
+entorno y guard de presupuesto — **el guard de entorno abre con `GET /users/me` antes de toda
+operación que muta algo y aborta si la cuenta no coincide con la esperada; no se exige a las
+sondas de sólo lectura. El guard de presupuesto aborta una sonda que mueve plata si el máximo
+a cobrar no coincide exactamente con el monto autorizado** (`06` §4.4 y §9).
 
-**Texto de la fuente — «4.1 La batería que vigila a Mercado Pago»** (`B/20-testing.md:651–705`, sin lo tachado):
+**Texto de la fuente — «4.1 La batería que vigila a Mercado Pago»** (`B/20-testing.md:654–708`, sin lo tachado):
 
 (Revisión del owner, 2026-09-28, C13 y `L3-d`.) La suite de arriba **no tenía cadencia, ni
 producción, ni comparación de forma, ni quién avisara si no corría**. Desde esta revisión es una
@@ -6794,7 +6796,7 @@ falso; la batería semanal la sigue midiendo, y **cuando la fila cierra, la rama
 borra**. Es el caso de las que el proveedor no deja fabricar a voluntad: `GR-2`, `PA-6` y `RC-8`
 (`descomposicion.md` §2.7).
 
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:534, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:628, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:651
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:534, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:628, .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:654
 
 <a id="rp-rp2"></a>
 

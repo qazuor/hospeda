@@ -1,0 +1,343 @@
+{
+    "desde": "5381f7579687651df168575c85f144f9b48daea7",
+    "hasta": "277980c125af3050c5ca3949b82285518afdbf9b",
+    "archivos": {
+        "00-indice.md": {
+            "cambiadas": [
+                {
+                    "linea": 402,
+                    "cita": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:623",
+                    "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                    "linea_vieja": 623,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **`U2` antes de las que encolan** | **V6** y **V9** esperan a `U2`, el outbox común (y del otro lado `B4` y `B12`) **—y desde el lote BK a BV también `V4`, que encola los avisos del trial, y por transitividad `V5` a `V9b`; del otro lado, `B3`** (corte del MVP, owner 2026-10-02, BR)—; **no es una dependencia entre épicas**: `U2` es del paraguas, como `U1`, y no suma a las doce de `B/descomposicion.md` §2.6 (FASE 5, owner 2026-09-30, lote 2 A) |",
+                    "candidata": 623,
+                    "texto_candidata": "| **`U2` antes de las que encolan** | **V6** y **V9** esperan a `U2`, el outbox común (y del otro lado `B4` y `B12`) **—y desde el lote BK a BV también `V4`, que encola los avisos del trial, y por transitividad `V5` a `V9b`; del otro lado, `B3`** (corte del MVP, owner 2026-10-02, BR)—; **no es una dependencia entre épicas**: `U2` es del paraguas, como `U1`, y no suma a las ~~doce~~ trece de `B/descomposicion.md` §2.6 (BC) (FASE 5, owner 2026-09-30, lote 2 A) |"
+                },
+                {
+                    "linea": 688,
+                    "cita": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:623",
+                    "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                    "linea_vieja": 623,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **`U2` antes de las que encolan** | **V6** y **V9** esperan a `U2`, el outbox común (y del otro lado `B4` y `B12`) **—y desde el lote BK a BV también `V4`, que encola los avisos del trial, y por transitividad `V5` a `V9b`; del otro lado, `B3`** (corte del MVP, owner 2026-10-02, BR)—; **no es una dependencia entre épicas**: `U2` es del paraguas, como `U1`, y no suma a las doce de `B/descomposicion.md` §2.6 (FASE 5, owner 2026-09-30, lote 2 A) |",
+                    "candidata": 623,
+                    "texto_candidata": "| **`U2` antes de las que encolan** | **V6** y **V9** esperan a `U2`, el outbox común (y del otro lado `B4` y `B12`) **—y desde el lote BK a BV también `V4`, que encola los avisos del trial, y por transitividad `V5` a `V9b`; del otro lado, `B3`** (corte del MVP, owner 2026-10-02, BR)—; **no es una dependencia entre épicas**: `U2` es del paraguas, como `U1`, y no suma a las ~~doce~~ trece de `B/descomposicion.md` §2.6 (BC) (FASE 5, owner 2026-09-30, lote 2 A) |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 11,
+            "iguales": 310
+        },
+        "02-nucleo-auditoria.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 102
+        },
+        "02-nucleo-glosario.md": {
+            "cambiadas": [
+                {
+                    "linea": 429,
+                    "cita": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:439",
+                    "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md",
+                    "linea_vieja": 439,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` · **`PURGED`** · **`MODERATED`** — el quinto, final: la ficha cuyo contenido borró el día 180 (`PB9`) **o su dueño (`PB12`)**, que no se republica ni cuenta para el cupo; desde la FASE 8 completa (`F-8CA2-008`, `DEC-DATA-005`, owner 2026-09-25; `V/03` §9). **El sexto, `MODERATED`**: la ficha que un admin bajó con motivo (`PB10`); no la republica el dueño ni el sistema, no cuenta para el cupo y sólo un admin la saca, a `DRAFT` (`PB11`) (`F-8CA2-004`, owner 2026-09-25) |",
+                    "candidata": 439,
+                    "texto_candidata": "| **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` · **`PURGED`** · **`MODERATED`** — el quinto, final: la ficha cuyo contenido borró el día 180 (`PB9`) **o su dueño (`PB12`)**, que no se republica ni cuenta para el cupo; desde la FASE 8 completa (`F-8CA2-008`, `DEC-DATA-005`, owner 2026-09-25; `V/03` §9). **El sexto, `MODERATED`**: la ficha que un admin bajó con motivo (`PB10`); no la republica el dueño ni el sistema, no cuenta para el cupo y sólo un admin la saca, ~~a `DRAFT` (`PB11`)~~ **al estado previo: `DRAFT` por `PB11` si era borrador; `UNPUBLISHED_BY_BILLING` por `PB13`, con `PB3` en el mismo acto, si estaba publicada o bajada por billing; y si estaba archivada, según el origen de su archivado (`DEC-DATA-007`, 📌). Se reinicia el reloj** (`F-8CA2-004`, owner 2026-09-25) |"
+                },
+                {
+                    "linea": 454,
+                    "cita": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73",
+                    "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                    "linea_vieja": 73,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y los tres avisos, que encola en `U2`; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |",
+                    "candidata": 73,
+                    "texto_candidata": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y ~~los tres avisos, que encola en `U2`~~ **los dos avisos previos, que encola en `U2`; el de «al archivar» lo encola `V6` con `PB4`/`PB5` (BL)**; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 238
+        },
+        "02-nucleo-modelo-y-maquinas.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 62
+        },
+        "02-nucleo-outbox.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 116
+        },
+        "02-nucleo.md": {
+            "cambiadas": [
+                {
+                    "linea": 1168,
+                    "cita": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:204",
+                    "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md",
+                    "linea_vieja": 204,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚ —el cobro del motivo 19 (`COBRO_SIN_REGISTRAR`): crear la fila de `payment` en `PENDING` con el id del registro y correr `P1` sobre ella; la devolución del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`), la de un `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por **`RF4`**, que nace en `EXECUTED` con el comprobante de la transferencia (cap. 03 (billing) §6.1) | motivos 18 y 19 del cap. 02 (billing) §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa, decisión 5a | **sí**: registra plata que ya se movió y lo que de eso se desprende —el comprobante, `covered_period`, el cierre del reembolso—. Sin esta fila las dos marcas mandaban a una persona a *«asentar»* con un acto que la tabla no nombraba, y *«lo que no se puede es ejecutar una escritura que no esté nombrada en ninguna fila»* (abajo) |",
+                    "candidata": 204,
+                    "texto_candidata": "| **asentar un cobro o una devolución que ya ocurrió fuera de nuestro flujo** ✚ —el cobro del motivo 19 (`COBRO_SIN_REGISTRAR`): crear la fila de `payment` en `PENDING` con el id del registro y correr `P1` sobre ella; la devolución del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`), la de un `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por **`RF4`**, que nace en `EXECUTED` ~~con el comprobante de la transferencia~~ **con el comprobante de la transferencia o la referencia del panel** (cap. 03 (billing) §6.1) | motivos 18 y 19 del cap. 02 (billing) §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa, decisión 5a | **sí**: registra plata que ya se movió y lo que de eso se desprende —el comprobante, `covered_period`, el cierre del reembolso—. Sin esta fila las dos marcas mandaban a una persona a *«asentar»* con un acto que la tabla no nombraba, y *«lo que no se puede es ejecutar una escritura que no esté nombrada en ninguna fila»* (abajo) |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 1,
+            "iguales": 237
+        },
+        "03-contrato-de-cobertura.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 1,
+            "iguales": 208
+        },
+        "30-el-corte.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 205
+        },
+        "80-abiertos.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 2,
+            "iguales": 236
+        },
+        "90-retirados.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 8,
+            "iguales": 81
+        },
+        "10-corte/B1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 8,
+            "iguales": 73
+        },
+        "10-corte/B11.md": {
+            "cambiadas": [
+                {
+                    "linea": 1495,
+                    "cita": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:271",
+                    "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+                    "linea_vieja": 271,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C).",
+                    "candidata": 271,
+                    "texto_candidata": "el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es ~~el precio de lista de la versión destino para su ciclo, sin promos~~ **el precio de lista de la versión destino para su ciclo, sin promos si el motivo es «retiro», y menos la promo que siga viva si es «aumento»** (BZ; `B/09` §3) (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C)."
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 1,
+            "iguales": 52
+        },
+        "10-corte/B13a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 2,
+            "iguales": 36
+        },
+        "10-corte/B2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 2,
+            "iguales": 21
+        },
+        "10-corte/B3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 4,
+            "iguales": 74
+        },
+        "10-corte/B8a.md": {
+            "cambiadas": [
+                {
+                    "linea": 359,
+                    "cita": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1069",
+                    "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                    "linea_vieja": 1069,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un cambio hacia una versión de `rank` MAYOR con un solo limit menor sigue el camino de DOWNGRADE** —si sigue el de upgrade, la dirección se está derivando del `rank` en vez de pedírsela a `direcciónDeCambio` (contrato §4.1), y el cliente pierde el aviso previo del excedente—; un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; cancelar estando pausado corta el servicio **ese día**; **una predecesora que se muere sola con la sucesora todavía esperando autorización cierra la sucesión en el acto, y un alta nueva sobre ese `user + vertical` la rechaza la base**; y **un upgrade no le saca nada al cliente**: los complementos ~~y la redención de promo~~ terminan colgando de la sucesora~~, con el descuento vuelto a aplicar sobre el monto nuevo y verificado releyendo~~, y **la cortesía vigente NO se re-apunta: se cierra con su saldo de ~~días~~ meses y `S9` la re-emite sobre la sucesora cuando ésta autoriza** (`02` §2.6, `14` §4.4, `DEC-GRANT-007`) — **salvo la promo, que se pierde en todo cambio de plan** (`02` §2.6, `14` §2.2: FASE 8 completa, `R6`, pendiente 7; y la vuelta del suspendido por sucesión la pierde también, que se acepta y se dice: owner 2026-09-25, 3b). *(Corregido el 2026-09-25, FASE 9 completa, salida 3: el criterio seguía pidiendo el re-apunte de la redención que la FASE 8 completa eliminó.)*; y **en `GRACE_PERIOD` el cambio de plan no se ofrece ni se puede declarar** —la pantalla dice cómo regularizar— (`DEC-SUB-021`); y **darse de baja desde `ACTIVE` con un destaque recurrente cancela en el mismo acto los dos preapprovals, y el destaque se sigue viendo hasta el fin de servicio sin un cobro más** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`); y **una baja sobre una sucesora que vive del crédito deja el servicio hasta el fin del crédito**, nunca en el acto (FASE 9 vuelta 2, owner 2026-09-27, `R17`); **también si está pausada por una cortesía re-emitida: `S22` la lleva a `CANCEL_SCHEDULED` con fin en el fin del crédito, y si la lleva a `CANCELLED` en el acto está leyendo la pausa y no el crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`) |",
+                    "candidata": 1069,
+                    "texto_candidata": "| **B8** | *(partida: ver `B8a` y `B8b`, abajo; corte del MVP, owner 2026-10-01, Z)* **un cambio hacia una versión de `rank` MAYOR ~~con un solo limit menor~~ **con un limit peor según su estrategia —menor en `SUMA`/`MÁXIMO`, mayor en `MÍNIMO` o peor en `MEJOR_DECLARADO`—** sigue el camino de DOWNGRADE** —si sigue el de upgrade, la dirección se está derivando del `rank` en vez de pedírsela a `direcciónDeCambio` (contrato §4.1), y el cliente pierde el aviso previo del excedente—; un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; cancelar estando pausado corta el servicio **ese día**; **una predecesora que se muere sola con la sucesora todavía esperando autorización cierra la sucesión en el acto, y un alta nueva sobre ese `user + vertical` la rechaza la base**; y **un upgrade no le saca nada al cliente**: los complementos ~~y la redención de promo~~ terminan colgando de la sucesora~~, con el descuento vuelto a aplicar sobre el monto nuevo y verificado releyendo~~, y **la cortesía vigente NO se re-apunta: se cierra con su saldo de ~~días~~ meses y `S9` la re-emite sobre la sucesora cuando ésta autoriza** (`02` §2.6, `14` §4.4, `DEC-GRANT-007`) — **salvo la promo, que se pierde en todo cambio de plan** (`02` §2.6, `14` §2.2: FASE 8 completa, `R6`, pendiente 7; y la vuelta del suspendido por sucesión la pierde también, que se acepta y se dice: owner 2026-09-25, 3b). *(Corregido el 2026-09-25, FASE 9 completa, salida 3: el criterio seguía pidiendo el re-apunte de la redención que la FASE 8 completa eliminó.)*; y **en `GRACE_PERIOD` el cambio de plan no se ofrece ni se puede declarar** —la pantalla dice cómo regularizar— (`DEC-SUB-021`); y **darse de baja desde `ACTIVE` con un destaque recurrente cancela en el mismo acto los dos preapprovals, y el destaque se sigue viendo hasta el fin de servicio sin un cobro más** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`); y **una baja sobre una sucesora que vive del crédito deja el servicio hasta el fin del crédito**, nunca en el acto (FASE 9 vuelta 2, owner 2026-09-27, `R17`); **también si está pausada por una cortesía re-emitida: `S22` la lleva a `CANCEL_SCHEDULED` con fin en el fin del crédito, y si la lleva a `CANCELLED` en el acto está leyendo la pausa y no el crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`) |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 12
+        },
+        "10-corte/B9a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 37
+        },
+        "10-corte/U1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 23
+        },
+        "10-corte/U2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 6
+        },
+        "10-corte/U3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 9
+        },
+        "10-corte/V1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 14
+        },
+        "10-corte/V2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 23
+        },
+        "10-corte/V3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 50
+        },
+        "10-corte/V4.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 3,
+            "iguales": 68
+        },
+        "10-corte/V5.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 681
+        },
+        "10-corte/V6.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 393
+        },
+        "10-corte/V8a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 79
+        },
+        "10-corte/V9a.md": {
+            "cambiadas": [
+                {
+                    "linea": 51,
+                    "cita": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73",
+                    "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                    "linea_vieja": 73,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y los tres avisos, que encola en `U2`; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |",
+                    "candidata": 73,
+                    "texto_candidata": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y ~~los tres avisos, que encola en `U2`~~ **los dos avisos previos, que encola en `U2`; el de «al archivar» lo encola `V6` con `PB4`/`PB5` (BL)**; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 5
+        },
+        "20-fase-1/V9b.md": {
+            "cambiadas": [
+                {
+                    "linea": 48,
+                    "cita": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73",
+                    "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+                    "linea_vieja": 73,
+                    "estado": "CAMBIADA",
+                    "texto_viejo": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y los tres avisos, que encola en `U2`; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |",
+                    "candidata": 73,
+                    "texto_candidata": "| **V9b** | **Retención** *(después)* | el resto de `V9`: el reloj de 90 y 180 días con sus cinco hechos de reinicio —el hecho 1 lo lee del registro de `V9a`—, `PB9` hacia `PURGED` con todo lo que la fila de `V9` le fija (la desconexión del calendario, el lock, la lista cerrada de lo que cuelga de `listing`, el empuje a billing después del commit) y ~~los tres avisos, que encola en `U2`~~ **los dos avisos previos, que encola en `U2`; el de «al archivar» lo encola `V6` con `PB4`/`PB5` (BL)**; **mergeada antes de la primera fecha en que un aviso de retención podría salir**, según los plazos que el owner fija antes del merge de `V6` (corte del MVP, owner 2026-10-01, AC); **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas** (corte del MVP, owner 2026-10-01, BD); **de los tres avisos, suma los dos previos y su job: el *«al archivar»* ya lo encola `V6` con `PB4` y `PB5`** (corte del MVP, owner 2026-10-02, BL) | `02` §4 · `22` §3 · `01` §1.2 (núcleo) · `03` §9 (`PB9`) | — |"
+                }
+            ],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 289
+        },
+        "20-fase-2/B8b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 3,
+            "iguales": 50
+        },
+        "20-fase-2/B9b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 15
+        },
+        "20-fase-3/B10.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 1,
+            "iguales": 42
+        },
+        "20-fase-3/B12.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 3,
+            "iguales": 23
+        },
+        "20-fase-3/B13b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 4
+        },
+        "20-fase-4/V7.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 396
+        },
+        "20-fase-4/V8b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 3
+        },
+        "scripts/generadores/g8/src/B4.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 1,
+            "iguales": 32
+        },
+        "scripts/generadores/g8/src/B5.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 2,
+            "iguales": 86
+        },
+        "scripts/generadores/g8/src/B6.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 50
+        },
+        "scripts/generadores/g8/src/B7.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 2,
+            "iguales": 744
+        }
+    }
+}

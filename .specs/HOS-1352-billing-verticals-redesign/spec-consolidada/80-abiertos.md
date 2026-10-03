@@ -72,7 +72,7 @@ de ellas no termina sin sus dos ramas escritas y una prueba por rama contra el p
 comprar Turista VIP mientras el plan vigente lo hereda (la mitad de
 [DEC-ENT-003](01-decisiones-vigentes.md#dec-ent-003) que ninguna pieza construía), y dejan dicho:
 **el código de error del rechazo queda abierto**: `apps/api/docs/error-contract.md` no lo fija.
-(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7988`.) **Cómo se fija
+(`D/41-corte-del-mvp/10-decisiones-del-owner.md:124`; `D/01-decision-log.md:7992`.) **Cómo se fija
 lo cerró [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)**, la regla de los detalles
 que las fuentes dejan a la implementación (`error.code` entre ellos): lo propone el PR de la pieza
 dueña, `B3`, siguiendo lo escrito del repo; lo aprueba la revisión de contexto fresco del momento 1
@@ -578,7 +578,7 @@ Los 55 abiertos de `_trabajo/abiertos/g1-*.md` a `g9-*.md`, con la clasificació
 | AB-g5-5 · La lista nominal de las diez variables que sólo usa el sistema viejo | `g5-u-v1-v4.md`:76 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-6 · Cuáles son *«las tres tablas»* de `is_featured` y `featured_by_entitlement` | `g5-u-v1-v4.md`:89 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-7 · Las credenciales del script del corte y el monto del pago chico | `g5-u-v1-v4.md`:101 | las credenciales, [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)): variables de entorno de la sesión de quien opera, nunca versionadas; **el monto del pago chico sigue vivo como dato operativo**: ver abajo |
-| AB-g5-8 · Qué pieza arma con `db:migrate` las bases de desarrollo, de integración y del e2e nocturno | `g5-u-v1-v4.md`:118 | derivado, no de las fuentes: `V1`, dueña de [DEC-ARCH-013#📌3](01-decisiones-vigentes.md#dec-arch-013-p3) en el mapa de cobertura porque construye `G18`, lleva la cláusula (d) de [AC:V1:4](10-corte/V1.md#ac-v1-4); ninguna fuente nombra la pieza (`D/01-decision-log.md:7342`, `D/38-fase-5/10-decisiones-del-owner.md:57`) *(lo marco)* |
+| AB-g5-8 · Qué pieza arma con `db:migrate` las bases de desarrollo, de integración y del e2e nocturno | `g5-u-v1-v4.md`:118 | derivado, no de las fuentes: `V1`, dueña de [DEC-ARCH-013#📌3](01-decisiones-vigentes.md#dec-arch-013-p3) en el mapa de cobertura porque construye `G18`, lleva la cláusula (d) de [AC:V1:4](10-corte/V1.md#ac-v1-4); ninguna fuente nombra la pieza (`D/01-decision-log.md:7344`, `D/38-fase-5/10-decisiones-del-owner.md:57`) *(lo marco)* |
 | AB-g5-9 · Dónde vive el script TypeScript que genera el SQL del catálogo y de la tabla de claves | `g5-u-v1-v4.md`:135 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs): lo propone el PR de `V1` |
 | AB-g5-10 · Las rutas, permisos y códigos de error de las acciones 18 y 11 | `g5-u-v1-v4.md`:147 | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) |
 | AB-g5-11 · Dónde vive el caché del conjunto efectivo y cómo se observa una entrada sospechosa | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb): en el Redis que la API ya usa, lectura en vivo si Redis no responde, y un contador de entradas sospechosas en los logs estructurados |

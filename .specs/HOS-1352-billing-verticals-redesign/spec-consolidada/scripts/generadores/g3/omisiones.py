@@ -101,7 +101,7 @@ ADJUNTAR = {
     f'{_B20}:572': ('M:M1', GENERAL),
     f'{_B20}:618': ('M:M1', GENERAL),
     f'{_B20}:628': ('RP:RP1', GENERAL),
-    f'{_B20}:651': ('RP:RP1', GENERAL),
+    f'{_B20}:654': ('RP:RP1', GENERAL),
     f'{_B02}:972': ('MOT:1', GENERAL),
 }
 
