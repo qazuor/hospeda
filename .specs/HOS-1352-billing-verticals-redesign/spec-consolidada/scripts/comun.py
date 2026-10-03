@@ -18,8 +18,9 @@ import sys
 # then 4278aa1adc…, then 17f9702675…, then c7a3fac900…, then e291df0b5b… after the owner's CC and CD
 # and the residues of the first blind-verification round, then 254684691f… after the owner's CE,
 # then b949031c70… once the CE row named the options it discarded, then 69cbe79360… after CF and CG;
-# re-frozen again after CH and CI).
-SHA = '591034c665b56336d49eab894a4e4ce3c38d5abe'
+# then 591034c665… after CH and CI; re-frozen again after CJ, the source residues of the third
+# blind-verification round and the residue of letter Q).
+SHA = '9149b84a255efc94473ace4458541f4d2278da8d'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
