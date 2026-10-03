@@ -871,9 +871,9 @@ lote 2 A), **ni `U3`** (FASES 6 y 7, owner 2026-09-30, F): ~~siguen 34~~ el tota
 ella**: `V1`, `B1` **y `U2`** (FASE 5, lote 2 A), y por ellas todo lo demás; `B2`, que no espera a `B1`, también la espera (su
 dependencia es `V2`, que llega después de `V1`). **No es una dependencia entre épicas**: `U1` no es
 de ninguna, así que ~~las once de `B/descomposicion.md` §2.6 siguen siendo once, recontadas sobre la
-tabla~~ `U1` no le suma ninguna a las de `B/descomposicion.md` §2.6. **Son doce desde la FASE 9
-vuelta 3, y no por `U1`**: la duodécima es la de `V4` sobre `B1`, por la interfaz del reloj
-(`12-contrato…` §7.1, punto 5; `F-8V3C1-006`).
+tabla~~ `U1` no le suma ninguna a las de `B/descomposicion.md` §2.6. **Son ~~doce~~ trece desde la FASE 9
+vuelta 3 y la fila 15, y no por `U1`**: la duodécima es la de `V4` sobre `B1`, por la interfaz del reloj
+(`12-contrato…` §7.1, punto 5; `F-8V3C1-006`); la decimotercera es `V7` sobre `B5` (fila 15, corte del MVP, BC).
 
 **`U2`, el outbox común** (FASE 5, owner 2026-09-30, lote 2 A y B). Hasta la FASE 5 ninguna unidad
 construía el outbox que `NUCLEO/07` diseña, y lo consumen `V6`, `V9`, `B4` y `B12` (`R5-10`,

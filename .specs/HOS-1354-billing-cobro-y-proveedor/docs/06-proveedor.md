@@ -154,7 +154,7 @@ igual**, `failed`, con su id en el cuerpo del error (`EX-30`), así que un `402`
 orden»*: el id se guarda como el de cualquier orden, y la compra se cierra en el acto, releyendo la orden por su id (`A7`; verificación corta, 2026-09-29, VC-cobro-05;
 `B/03` §8; mediciones del 2026-09-29, lote L-C); y **ni la orden ni su reembolso avisan por
 ningún canal** (`EX-15`, `RF-7`), así que nada de este camino espera un aviso: la orden se confirma
-con la respuesta y releyéndola, y el reembolso, releyendo el pago (`B/16` §1.4).
+con la respuesta y releyéndola, y el reembolso, ~~releyendo el pago~~ **releyendo la orden por id** (`B/03` §6.1, RF3; `B/16` §1.4).
 
 ---
 
