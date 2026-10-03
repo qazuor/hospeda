@@ -1156,7 +1156,7 @@ motivo 19 (`COBRO_SIN_REGISTRAR`, [MOT:19](04-catalogos.md#mot-19)): crear la fi
 del motivo 18 (`REEMBOLSO_FUERA_DEL_FLUJO`, [MOT:18](04-catalogos.md#mot-18)), la de un
 `manual_payment` o la del cobro más viejo que el plazo del proveedor: asentar el `refund` por
 **[RF4](04-catalogos.md#trans-b-rf4)**, que nace en `EXECUTED` con el comprobante de la transferencia
-(`B/03` §6.1).
+o la referencia del panel (`B/03` §6.1).
 
 - **De dónde sale**: motivos 18 y 19 de `B/02` §2.5, `F-8CB1-015`; owner 2026-09-25, FASE 9 completa,
   decisión 5a.

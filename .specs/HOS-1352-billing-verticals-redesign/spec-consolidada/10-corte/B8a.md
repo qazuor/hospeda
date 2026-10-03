@@ -326,7 +326,8 @@ Fuente: [LISTA:B8a](#lista-b8a) · [LISTA:B8](#lista-b8) · [FILA:B8a](#fila-b8a
 
 El criterio de la unidad de origen (corte del MVP, owner 2026-10-01, Z):
 
-1. **un cambio hacia una versión de `rank` MAYOR con un solo limit menor sigue el camino de
+1. **un cambio hacia una versión de `rank` MAYOR con un limit que empeora según su estrategia
+   —menor en `SUMA`/`MÁXIMO`, mayor en `MÍNIMO` o peor en `MEJOR_DECLARADO`— sigue el camino de
    DOWNGRADE** —si sigue el de upgrade, la dirección se está derivando del `rank` en vez de
    pedírsela a `direcciónDeCambio` (contrato §4.1), y el cliente pierde el aviso previo del
    excedente—;

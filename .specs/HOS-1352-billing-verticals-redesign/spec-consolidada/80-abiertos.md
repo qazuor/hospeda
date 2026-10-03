@@ -352,7 +352,7 @@ Fuente: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-gr
 - `B/docs/14-promos-cortesias-y-grants.md:726` — **Lo que la pendiente 8 dejaba abierto quedó cerrado** (FASE 8 completa, owner 2026-09-25):
 - `B/docs/14-promos-cortesias-y-grants.md:727` — **Cerrado**: en esa ventana el monto esperado es el del plan nuevo desde el pedido, porque `DEC-SUB-008` muta el monto en ese acto (§2.4) —**y sin promos**: el mismo pedido escribe `cobros_restantes = 0` (FASE 9 completa, contradicción 1 de `03` §R6.5; el §2.4 decía *«plan vigente»*, que en esa ventana es el viejo).
 - `B/docs/14-promos-cortesias-y-grants.md:734` — **Cerrado** (residuo de la fuente): desde la FASE 9 vuelta 1 `S30` sale de `ACTIVE` **o `GRACE_PERIOD`**, y con la fila en grace `S5` y `S30` corren en el mismo acto y la mutación se aplica ([TRANS:B:S30](04-catalogos.md#trans-b-s30); [AC:B9b:5](20-fase-2/B9b.md#ac-b9b-5)). (`B/03` §3.2, fila `S30`: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180`, `F-8V1B1-006`)
-- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento de monto corren desde su fecha efectiva (`B/14` §2.4), como dice la fuente (corte del MVP, owner 2026-10-02, [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)).
+- `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento de monto corren desde `S37`, que muta el monto siete días antes de la fecha efectiva (`B/14`, cierre de «El instante del aumento de precio»; `B/09` §3; `DEC-MP-002` y su 📌 de CC), como dice la fuente (corte del MVP, owner 2026-10-02, [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz)).
 
 ### `B/docs/16-addons.md` — Lo que este capítulo NO cierra
 
@@ -448,7 +448,7 @@ de un aumento?»*). **Es la más pesada, y es estructural.**
 
 | | |
 |---|---|
-| **qué se asumió** | que sí. [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002) parte 3: llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes |
+| **qué se asumió** | que sí. [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002) parte 3: **`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes |
 | **en qué se apoya** | es el modelo estándar de la industria, y [MP:PC-3](04-catalogos.md#mp-pc-3) **`VERIFIED`** midió que el proveedor **no pide un consentimiento nuevo** para mutar el monto |
 | **qué NO está verificado** | que eso sea válido en Argentina, que es justo el terreno donde la normativa de consumo suele ser restrictiva |
 | **qué cambia si la respuesta es no** | **`DEC-MP-002` cambia de forma, no de redacción.** Haría falta **aceptación activa**, y a quien no responda **no se lo podría aumentar**: la cartera quedaría partida en dos precios por tiempo indefinido, y todo el diseño de la ventana de 60 días con tres contactos pasaría a ser otra cosa |
