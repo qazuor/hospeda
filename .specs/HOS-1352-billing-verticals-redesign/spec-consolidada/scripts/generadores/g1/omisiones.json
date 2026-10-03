@@ -551,37 +551,37 @@
         "OWN:29-fase-8-vuelta-2:t1:R5": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ALTAS-b": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:R24": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-FECHA": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ANUNCIO": {
             "alcance": "entera",
             "por": "la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770",
             "inferido": true
         },
         "OWN:29-fase-8-vuelta-2:t1:Q-ACC16": {
@@ -593,19 +593,19 @@
         "OWN:29-fase-8-vuelta-2:t1:R2": {
             "alcance": "entera",
             "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6503",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:R21": {
             "alcance": "entera",
             "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6503",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513",
             "inferido": false
         },
         "OWN:29-fase-8-vuelta-2:t1:R21-b": {
             "alcance": "entera",
             "por": "su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6503",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513",
             "inferido": false
         },
         "OWN:26-fase-9-completa:t1:6a": {
@@ -623,7 +623,7 @@
         "OWN:37-fase-8-vuelta-3:t1:G": {
             "alcance": "entera",
             "por": "el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6508",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6518",
             "inferido": false
         },
         "OWN:37-fase-8-vuelta-3:t1:S": {
@@ -689,13 +689,13 @@
         "OWN:28-fase-9-vuelta-1:t1:G5-3": {
             "alcance": "en parte",
             "por": "el barrido lista las pausas con regalo neto positivo, dure lo que dure, no las de menos de un ciclo (L3)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1935",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1945",
             "inferido": false
         },
         "OWN:28-fase-9-vuelta-1:t1:G2-1": {
             "alcance": "en parte",
             "por": "el hecho lo emite el mismo acto de `PB9`/`PB12` después de su commit, no en el mismo acto (L1)",
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2533",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2543",
             "inferido": false
         },
         "OWN:30-revision-del-owner:t5:L3-a": {
@@ -714,7 +714,7 @@
     },
     "letras_vivas_revisadas": {
         "OWN:37-fase-8-vuelta-3:t1:F": {
-            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6509",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6519",
             "texto": "S-38); lo del lote F sigue."
         },
         "OWN:26-fase-9-completa:t1:2g": {

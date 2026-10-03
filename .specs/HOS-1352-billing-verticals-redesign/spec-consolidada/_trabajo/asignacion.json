@@ -1,5 +1,5 @@
 {
-    "sha": "9149b84a255efc94473ace4458541f4d2278da8d",
+    "sha": "8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 669,
+        "01-decisiones-vigentes.md": 670,
         "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 13,
         "04-catalogos.md": 298,
@@ -482,6 +482,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-MP-002#📌4": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-MP-002#📌5": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,

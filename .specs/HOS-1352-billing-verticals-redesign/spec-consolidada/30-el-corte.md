@@ -570,7 +570,7 @@ eso:
    la épica a `staging`, no falla la promoción `staging → main` del punto 2 (owner 2026-10-01,
    [T](01-decisiones-vigentes.md#own-40-congelamiento-y-ci-t1-t); residuo corregido el 2026-10-02). Q
    sigue valiendo para el PR final del paraguas: la rama se borra al mergear. (`D/16` §4.4 punto 5,
-   `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653`; `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2847-2853`)
+   `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:653`; `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2857-2863`)
 
 **Con esto `rollout` queda cerrado en lo que hace a ramas** (revisión del owner, casos vecinos,
 2026-09-29, caso 4): las ramas son este apartado, y el orden de despliegue son los pasos.
@@ -1882,7 +1882,7 @@ Fuente: [GATE:M2](#gate-m2), [GATE:M2.1](#gate-m2-1)
 **TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` con la condición de T: falla
 un PR cuyo HEAD trae un commit de la rama épica que no está ni en el destino ni en `staging`, y no
 falla la promoción `staging → main` cuando los commits de la épica ya están en `staging`
-(`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2847-2853`).
+(`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2857-2863`).
 Tipo: guard estático
 Mutación: volver a la condición de P (contar todo commit de la épica que el destino no tiene) y ver que la promoción `staging → main` con la épica mergeada falla.
 Cubre: [AC:CORTE:11](#ac-corte-11)

@@ -1,0 +1,43 @@
+Pasada 7 · vuelta 4 · HOS-1352
+
+Aplicada con autorización del owner. Contra: 15 CONFIRMADO, 0 FALSO,
+2 CORRECCIÓN A AJUSTAR. Se aplicaron los 22 únicos: 13 REAL BLOQUEA,
+5 REAL MENOR y 4 FUENTE. Sin GENERADOR ni OWNER nuevos.
+Ajustes: H4-VB-09-6 suma AC:B6:5 y TRANS:B:RF3 a TEST:B6:6;
+H4-VB-11-1 se extiende a B/09 y acota en B/14 la explicación del retiro.
+El log conserva su historia: nuevo DEC-MP-002#📌5 y remisión Estado.
+
+Commits previos: a62f0f92fe (artefactos), 8a1d8902c2 (F), c63c3a4ee2 (S).
+Re-congelado: 8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b.
+Inventario, asignación y adjudicación actualizados. Reancladas 58 citas
+manuales y 269 de cobertura. Revisadas cuatro citas CAMBIADA: mantienen
+línea y autoridad (paso3:152, conciliación:185, V6/descomposición:717).
+secciones/fuentes.json: todos los anclajes conservan línea; comprobados.
+Cobertura incorpora DEC-MP-002#📌5 -> B2, vinculado en AC:B2:8 y TEST:B2:11.
+g1/omisiones.json regenerado para desplazar los anclajes del log.
+Regenerados g1, g3, g8 B4-B7 y secciones; formatos Markdown/JSON aplicados.
+Índice y abiertos declaran el SHA nuevo.
+
+Validación final (logs adjuntos):
+- cobertura: 751/751 normativos con pieza; APROBADO (0).
+- trazar: APROBADO (0), cinco avisos R18 no bloqueantes sobre tipos de prueba.
+- canarios: 65 + 40 + 10 + 6 + 8 = 129, cero fallas; cada suite exit 0.
+- aristas: 0 violaciones; exit 0.
+- contar: exit 0 (copia del log sin espacios finales; original en /tmp).
+- markdownlint global: 83 archivos, cero errores; exit 0.
+- 29 sustituciones REAL verificadas literalmente en salidas finales.
+- Artefactos: 49 archivos cotejados con caché; textos idénticos y JSON
+  semánticamente iguales (el hook formateó JSON al archivarlos).
+
+Incidencias resueltas: pnpm intentó autoinstall en el primer lint;
+se usó --config.verify-deps-before-run=false en checks posteriores.
+G1 pidió actualizar omisiones.json antes de regenerar; actualizado con
+omisiones.py. Cobertura pidió sellar hashes y asignar el nuevo 📌: resuelto.
+
+Alcance: verificación documental; sin implementación ni runtime de producto.
+No push ni Linear. Archivos ajenos y cachés preexistentes sin incorporar.
+Reversión: commits F/S/G separan fuentes, contratos y re-congelado; al
+revertir fuentes, revertir también su re-congelado para mantener coherencia.
+La vuelta 4 sigue sin cortar: su resultado ciego tuvo 13 REAL BLOQUEA.
+La pasada corrige ese resultado; una vuelta 5 desde terminal debe comprobar
+el criterio de corte. No se lanzó codex exec dentro de esta sesión.

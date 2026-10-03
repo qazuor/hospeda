@@ -1,0 +1,30 @@
+Grupo F · pasada 7 · vuelta 4 HOS-1352
+
+APLICADA H4-VA-A6-1: BM asigna carga de precios a migración estructural paso 3, verificación a 3a. DEC-MP-002 conserva todo su texto histórico, suma quinto 📌 y remisión Estado. Mantiene precios vigentes y veto hasta momento 5.
+APLICADA H4-VB-06-3: criterio V6 restaura retorno según estado previo, PB11/PB13/PB3 y origen del archivado, con reinicio del reloj.
+APLICADA CON AJUSTE H4-VB-11-1: excepción promo viva sólo para aumento tanto en B/14 como en B/09; B/14 limita explicación de versión retirada al retiro. Downgrade y retiro continúan sin promos.
+APLICADA H4-VB-11-2: cierre de pendientes B/14 cuenta tres días desde S37, siete días antes de fecha efectiva.
+APLICADA H4-VB-14-1: paso 3 contiene diecinueve plazos y deadline de clave 19 antes de merge B2.
+FALSO: contra.txt no contiene ningún veredicto FALSO.
+Sin letras OWNER nuevas. Sin PDR, matriz, informes, generadores, regeneración ni Git mutante.
+
+Archivos exactos:
+.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md
+.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md
+.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md
+
+Verificación:
+- Literales sale únicos antes de aplicar; entra presentes una vez después; sale ausentes salvo histórico preservado en log: OK (/tmp/hos1352-f-literales.log).
+- Decision log: única línea histórica modificada = Estado; quinto 📌 agregado. OK.
+- git diff --check sobre los seis archivos: exit 0.
+- pnpm exec markdownlint-cli2 inicial: exit 1; pnpm intentó instalación automática y SQLite falló.
+- pnpm --config.verify-deps-before-run=false exec markdownlint-cli2 <seis rutas>: exit 0, 6 archivos, 0 issues (/tmp/hos1352-f-markdownlint.log). No instalación necesaria.
+Pendiente del coordinador: commit grupo F, re-congelado y regeneración g1/g3/secciones para sincronizar transcripciones. No validación de producto (cambios documentales).
+Commit sugerido: docs(spec): corrige fuentes de la vuelta 4 (HOS-1352)
+
+## Key Learnings:
+- CORRECCIÓN A AJUSTAR para H4-VB-11-1 requiere B/09 además de B/14 para no reintroducir divergencia en B11.
+- La propuesta literal de reemplazar el log se transforma en un 📌 nuevo por regla dura del runbook.

@@ -1809,4 +1809,4 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
   mitades a, y así lo marca; residuo corregido el 2026-10-02), y cada cambio lo ejecuta la acción *«cambiar un plazo»* de la mitad dueña de la
   clave (`V/descomposicion.md` §2.11, `B/descomposicion.md` §2).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:251, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:254, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7418, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:251, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:253, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:254, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7428, .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108
