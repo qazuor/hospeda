@@ -42,7 +42,7 @@ una mitad *a* (corte) y una *b* (posterior); su alcance exacto vuelve al owner e
 | unidad | qué hace (1 línea) | depende de | corte o posterior | justificación | riesgo si se difiere |
 |---|---|---|---|---|---|
 | **U1** · limpieza del principio | borra el sistema viejo de la rama y crea vacío el package del contrato | nada | **CORTE** | primer nodo de los dos grafos (`D/16-fase-7-del-paraguas.md:789-790`); sin ella `G8` no nace | no aplica: sin `U1` no arranca nada |
-| **U2** · outbox común | correo encolado en la transacción, supresión, correlación, huso | U1 | **CORTE** | la esperan `V6`, `B4`, `V9` y `B12` (`D/16…:875-876`); `PB12` y el aviso de cobertura encolan desde el día uno | `V6` y `B4` no se pueden terminar |
+| **U2** · outbox común | correo encolado en la transacción, supresión, correlación, huso | U1 | **CORTE** | la esperan `V6`, `B4`, `V9` y `B12` (`D/16…:875-876`); ~~`PB12` y el aviso de cobertura encolan desde el día uno~~ **`PB12` encola su correo desde el día uno; el aviso de cobertura se emite después del commit, sin entrega durable; la red es el reconciliador diario (CK, `DEC-ARCH-009`). La dependencia de `B4` respecto de `U2` se conserva por sus predecesores, incluidos los correos de `B3` (BR)** | `V6` y `B4` no se pueden terminar |
 | **U3** · script del corte | censo, cancelación, relectura y completitud contra el proveedor | U1 (orden, no código) | **CORTE** | ejecuta los pasos 1a, 1b y 2 (`D/16…:847`); el momento 3 exige que esté mergeada (`D/16…:974`) | no hay corte |
 | **V1** · catálogo y su doble guard | enum de verticales, catálogo de claves, el contrato con interfaces y simuladores | U1 | **CORTE** | todo lo demás lee el catálogo; `G1`, `G3`, `G14`, `G18` no se pueden agregar después sin reescribir (`V/descomposicion.md:64-70`) | ninguno: está en el camino crítico |
 | **V2** · catálogo de planes y dirección inversa | `plan`, `plan_version`, `rank`, `políticaDePlan`, `direcciónDeCambio`, `políticaDeAddon` | V1 | **CORTE** | la carga del catálogo de producción corre en la migración del paso 3 (`D/16…:153`); 8 de las 12 aristas entre épicas salen de acá | no hay precios ni trial |
@@ -194,8 +194,8 @@ llegue, o se declaran sucesiones que nadie cierra. Es parte de la letra Z.
 
 1. **El catálogo entero que carga la migración del paso 3**: planes y versiones (`V2`), precios
    (`B2`), **complementos** (las tablas de producto y versión de addon de `B10`) y **códigos
-   promocionales** (las de `B9b`). El paso 3a los carga *«dentro de la migración estructural del
-   paso 3»* (`D/16…:153`): si su tabla no existe ese día, no hay dónde cargarlos.
+   promocionales** (las de `B9b`). ~~El paso 3a los carga *«dentro de la migración estructural del
+   paso 3»*~~ **Los carga la migración estructural del paso 3 y el 3a los verifica (BM)** (`D/16…:153`): si su tabla no existe ese día, no hay dónde cargarlos.
 2. **Las tablas de las cuatro fuentes de billing**, también las vacías (cortesía, instancia de
    addon), porque la real tiene que contestarlas leyendo algo (§4.2).
 3. **Los enums de estados completos**: los seis de la ficha, los de la suscripción (también
@@ -377,7 +377,7 @@ puede cambiar de plan desde el día uno.
    `ADDON` real leyendo la tabla vacía, con `G-R2-C`. La venta, el destaque y la orfandad
    (`B10`), después.** **Recomendada.**
    - Costo: un poco de `B10` se adelanta a `B4`.
-   - Riesgo: bajo; el catálogo de complementos se carga igual en el 3a y queda sin vender.
+   - Riesgo: bajo; el catálogo de complementos ~~se carga igual en el 3a~~ **lo carga la migración estructural del paso 3 y el 3a lo verifica (BM)** y queda sin vender.
 2. **`B10` entero al corte.**
    - Costo: la unidad más ancha de billing entra al camino del corte.
    - Riesgo: atrasa el corte.
