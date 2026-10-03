@@ -308,7 +308,7 @@ punto 4):
 de `03` §R6.5: en esa ventana el plan vigente es el viejo, y el pedido ya mutó al nuevo; la promo
 se termina en el pedido, §2.2).
 
-**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos** (verificación corta, 2026-09-29, lote M-C). Es la ventana gemela de la del downgrade: `S37` ya mutó el monto (`B/03` §3.2) y la fila sigue en la versión retirada hasta `S38`, así que derivarlo de la versión de la fila le abría `DIVERGENCIA_DE_MONTO` a cada cliente migrado, o hacía que el reintento deshiciera la mutación. **Y el motivo 24 deriva el precio de la versión que rige el período que cubre el cobro**: la destino, si una migración encoló su cambio para ese período (`B/02` §2.5).
+**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)** (verificación corta, 2026-09-29, lote M-C). En la migración por retiro es la ventana gemela de la del downgrade, sin promos: `S37` ya mutó el monto (`B/03` §3.2) y la fila sigue en la versión retirada hasta `S38`, así que derivarlo de la versión de la fila le abría `DIVERGENCIA_DE_MONTO` a cada cliente migrado, o hacía que el reintento deshiciera la mutación. **Y el motivo 24 deriva el precio de la versión que rige el período que cubre el cobro**: la destino, si una migración encoló su cambio para ese período (`B/02` §2.5).
 
 **Sin columna nueva.**
 
@@ -739,4 +739,4 @@ meses (`B/02` §2.4), por ~~los dos escritores de §4.4 y §4.6~~ el escritor de
   2. ~~**El instante del aumento de precio.** El aumento de `DEC-MP-002` no tiene fila en la tabla de
      `B/03` §3.2, así que *«desde esa transición»* no tiene todavía un instante registrado que el
      barrido pueda leer para él; para `S30` y `S10` sí lo hay.~~ **Cerrado**: los 3 días del
-     reintento de monto de un aumento corren desde su fecha efectiva (§2.4).
+     reintento de monto de un aumento corren desde `S37`, la transición que muta el monto siete días antes de la fecha efectiva (BZ; `B/09` §3; `DEC-MP-002` y su 📌 de CC).

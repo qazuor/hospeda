@@ -1374,7 +1374,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MP-002 — El aumento rige ya para los nuevos, y alcanza a los existentes tras 60 días de aviso
 
-- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C15, C9; ver su ~~📌~~ primer 📌) — **y precisada otra vez el 2026-10-02, con OK del owner** (corte del MVP, BM: ningún precio cambia hasta el momento 5 del corte, y la parte 2 llega con `B12`; ver su segundo 📌; **y otra vez el mismo día**, BZ: el aumento a un anclado va por `S37` y `S38`; ver su tercer 📌; **y otra vez el mismo día**, CC: un descenso encolado cuenta como cliente de la versión destino; ver su cuarto 📌) · **Decide**: owner
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED — **precisada el 2026-09-28, con OK del owner** (revisión del owner, C15, C9; ver su ~~📌~~ primer 📌) — **y precisada otra vez el 2026-10-02, con OK del owner** (corte del MVP, BM: ningún precio cambia hasta el momento 5 del corte, y la parte 2 llega con `B12`; ver su segundo 📌; **y otra vez el mismo día**, BZ: el aumento a un anclado va por `S37` y `S38`; ver su tercer 📌; **y otra vez el mismo día**, CC: un descenso encolado cuenta como cliente de la versión destino; ver su cuarto 📌); **y precisada el 2026-10-02** (verificación ciega de la spec consolidada, vuelta 4, `H4-VA-A6-1`: la carga de precios pertenece a la migración estructural del paso 3 y el 3a sólo verifica; ver su quinto 📌) · **Decide**: owner
 - **Complementa** `DEC-MP-001`, que decidió el **mecanismo** (mutar el monto). Esta decide la
   **política**: cuándo se avisa, con cuánta antelación, y cómo alcanza a quien ya está.
 - **Problema**: el §29 exige avisar, mostrar el precio anterior y el nuevo, la fecha efectiva y
@@ -1498,6 +1498,16 @@ Cada entrada lleva, según §3.4:
   sale al precio nuevo antes de esa fecha**. Dónde: `B/12` §3.2; `NUCLEO/08` §3 (la acción 19);
   `B/descomposicion.md` §2, §2.12 y §4 (`B2`, `B12`); `41-corte-del-mvp/10-decisiones-del-owner.md`,
   CC.
+
+- 📌 **Precisada el 2026-10-02 (verificación ciega de la spec consolidada, vuelta 4,
+  `H4-VA-A6-1`)**: La atribución de la carga al paso 3a en el 📌 de BM es un residuo:
+  **los precios del corte son los vigentes hoy, los carga la migración estructural del paso 3
+  con el catálogo y el paso 3a sólo los verifica**. Es el reparto ya corregido en
+  `B/descomposicion.md` §2 y §4 y en `16-fase-7-del-paraguas.md` §4.2, pasos 3 y 3a, y §4.7.
+  No cambia la decisión comercial de BM: **ningún precio cambia durante el corte ni antes de
+  cumplir el momento 5**; la acción 19 sigue siendo de `B2` y los avisos y la mutación a los
+  clientes ya anclados siguen llegando con `B12`. La fila BM de
+  `41-corte-del-mvp/10-decisiones-del-owner.md` se sincroniza con este reparto.
 
 ### DEC-CONC-001 — El candado contra el doble cobro es nuestro, durable, y el duplicado se cancela solo pero se reembolsa con confirmación
 
