@@ -97,11 +97,19 @@ orden (el inverso rompe g3 y g-secciones):
 - Las correcciones manuales también se equivocan de cita (`§3.4` por `§4.3`): cotejalas contra el título
   de la sección de la fuente congelada.
 
-## Prompt para la sesión de Codex que orquesta
+## Quién corre qué
 
-> Sos el orquestador de la vuelta ciega N de HOS-1352. Leé
+Las etapas de `vuelta.sh` las corrés vos desde una terminal: cada una lanza `codex exec`, y un Codex
+dentro del sandbox de otro Codex no tiene red para llamar al modelo. La sesión interactiva de Codex
+entra después, para revisar la adjudicación y hacer la pasada.
+
+## Prompt para la sesión interactiva de Codex (después de `adjudicar`)
+
+> Sos el revisor de la vuelta ciega N de HOS-1352. Leé
 > `.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/codex/RUNBOOK.md`
-> entero y seguilo paso a paso. Corré las etapas de `vuelta.sh` de a una y verificá cada resultado antes
-> de pasar a la siguiente. Al terminar la adjudicación, mostrame: canarios detectados (por tipo y por
-> bloque propio), únicos por veredicto, una línea por REAL BLOQUEA y GENERADOR, y las preguntas OWNER en
-> lote si las hay. No apliques correcciones ni commitees nada hasta que yo lo apruebe.
+> entero. Las etapas ya corrieron; los artefactos están en `~/.cache/hos1352/vuelta-N/`. Verificá que
+> `canarios.txt` tenga 42 líneas, que haya 26 salidas en `v/salidas/` y que exista `adjudicacion/`.
+> Mostrame: canarios detectados (por tipo y por bloque propio), únicos por veredicto, una línea por REAL
+> BLOQUEA y GENERADOR, y las preguntas OWNER en lote si las hay, y decime si la vuelta corta según el
+> criterio del runbook. No apliques correcciones ni commitees nada hasta que yo lo apruebe; cuando lo
+> apruebe, seguí la sección «Pasada de correcciones».
