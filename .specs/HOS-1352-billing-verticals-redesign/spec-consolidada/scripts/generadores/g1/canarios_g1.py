@@ -22,7 +22,8 @@ Third round (H3-G1-3, P-H over the content):
   cinco     the base run marks «⚠️ Caducada en parte» the five letters the adjudication listed (B, F
             and H of 38-fase-5; G5-3 and G2-1 of 28-fase-9-vuelta-1).
   nombra    F of 38-fase-5 out of `letras_muertas`: N, a later letter of its file, says «F se lee».
-  precisa   (fifth round) AP/BN/BU marked partially dead; removing any warning fails. BY keeps BL alive.
+  precisa   (fifth and sixth rounds) AP/BN/BU/CC marked partially dead; removing any warning fails. BY keeps BL alive.
+  paso3     (sixth-round propagation) removing either BM load-step omission fails.
   contenido L3-a out of `letras_muertas`: what it decides is struck in 16-fase-7 and live nowhere.
 """
 import json
@@ -106,16 +107,25 @@ def main():
         good = code == 1 and 'letra corregida por una letra posterior o por un tachado' in out and que in out
         print(f'{"✓" if good else "✗ CIEGO"} {clave:9} exit {code} · {letra} fuera de `letras_muertas`')
         fallas += not good
-    for letra in ('AP', 'BN', 'BU'):
-        cid = next(k for k in OMIT['letras_muertas'] if k.startswith('OWN:41-corte-del-mvp:') and k.endswith(':' + letra))
+    for letra, cid in (('AP', 'OWN:41-corte-del-mvp:t3:AP'),
+                       ('BN', 'OWN:41-corte-del-mvp:t9:BN'),
+                       ('BU', 'OWN:41-corte-del-mvp:t9:BU'),
+                       ('CC', 'OWN:41-corte-del-mvp:t12:CC')):
         # First prove the corrected rendering carries a partial warning, then remove just that entry.
         code, out = run(OMIT)
         base_ok = code == 0 and marcada(SALIDA['txt'], cid)
         m = json.loads(json.dumps(OMIT))
-        del m['letras_muertas'][cid]
+        m['letras_muertas'].pop(cid, None)
         code, out = run(m)
         good = base_ok and code == 1 and 'precisión sin revisión o marca' in out and cid in out
         print(f'{"✓" if good else "✗ CIEGO"} precisa-{letra} exit {code} · marca parcial presente; quitarla se detecta')
+        fallas += not good
+    for cid in ('DEC-MP-002#📌2', 'DEC-ARCH-013'):
+        m = json.loads(json.dumps(OMIT))
+        m.pop(cid, None)
+        code, out = run(m)
+        good = code == 1 and cid in out and 'sin ninguna omisión aplicada' in out
+        print(f'{"✓" if good else "✗ CIEGO"} paso3 · exit {code} · {cid} sin omitir la carga en 3a')
         fallas += not good
     # BY is additive: reviewing its relation must not mark BL as dead.
     code, out = run(OMIT)
@@ -156,7 +166,7 @@ def main():
     good = code == 1 and 'DEC-GRANT-004' in out and 'paréntesis desbalanceados' in out
     print(f'{"✓" if good else "✗ CIEGO"} parentes exit {code} · el 📌1 de DEC-GRANT-004 cortado por línea')
     fallas += not good
-    print(f'\n14 canarios · {fallas} fallas')
+    print(f'\n17 canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 

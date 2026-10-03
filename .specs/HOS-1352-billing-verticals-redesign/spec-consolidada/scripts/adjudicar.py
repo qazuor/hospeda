@@ -119,6 +119,11 @@ MIXTO = [
 
 AG, RP, RT = 'agrega', 'reemplaza parte', 'reemplaza todo'
 PINES = [
+    # Sixth round propagation sweep (BM): the later pin corrects only the load step.
+    ('DEC-MP-002#📌2', P_, None, AG,
+     '«los carga el paso 3a»: los precios del corte los carga la migración estructural del paso 3; el 3a sólo los verifica',
+     [(LOG, None, '**los precios del corte son los vigentes hoy, los carga la migración estructural del paso 3')],
+     'DEC-MP-002#📌5; BM', 'barrido de propagación BM de la pasada 9'),
     # --- 📌 en prosa (los 41 que no son una viñeta de primer nivel de su decisión) ---------
     ('DEC-PROMO-001#📌1', V_, None, RP, None, [], None, 'cierra la mitad «piso del apilado» de `A-PROMO-01` que el punto 5 daba abierta'),
     ('DEC-PROMO-001#📌2', V_, None, AG, None, [], None, 'agrega el texto del motivo al 📌 anterior'),
@@ -274,6 +279,10 @@ PINES = [
 #     that precises it, so none of these picks a reading no later source states. ------------------
 SUP, OTRA, MAT = 'SUPERSEDED EN PARTE', 'precisada por otra decisión', 'matriz'
 BK = [
+    ('DEC-ARCH-013', P_, None, None,
+     '«corre una vez en el paso 3a»: la migración única del catálogo corre dentro de la migración estructural del paso 3; el 3a sólo verifica',
+     [(LOG, None, 'única del catálogo corre dentro de la migración estructural del paso 3 del corte, antes de la')],
+     'DEC-ARCH-013#📌2', 'precisada por su propio 📌'),
     ('DEC-MIG-001', P_, None, None,
      '«se los da de alta en el motor nuevo» (la decisión, (1)): lo que se cae es el destino, ya no se transcribe ninguna fila al sistema nuevo (`DEC-MIG-003`)',
      [(LOG, None, '**Lo que se cae es el destino**: ya no se transcribe'),

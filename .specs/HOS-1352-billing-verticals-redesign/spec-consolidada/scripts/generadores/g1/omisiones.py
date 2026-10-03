@@ -179,6 +179,10 @@ LETRAS_MUERTAS = {
     'OWN:41-corte-del-mvp:t9:BU': ('en parte', 'el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU',
         (D + '41-corte-del-mvp/10-decisiones-del-owner.md', '| BX |'), False),
 
+    # Sixth round (H6-G1-7): CF relocates the predicate and test; CC keeps its AC and client rule.
+    'OWN:41-corte-del-mvp:t12:CC': ('en parte', 'CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf)',
+        (D + '41-corte-del-mvp/10-decisiones-del-owner.md', '| CF |'), False),
+
     'OWN:28-fase-9-vuelta-1:t1:G1-1': ('en parte', 'en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)', CAD_28, False),
     'OWN:28-fase-9-vuelta-1:t1:G2-4': ('entera', '`T7` salió (N7, `DEC-TRIAL-003`)', CAD_28, False),
     'OWN:29-fase-8-vuelta-2:t1:R15': ('entera', 'cae con `DEC-MIG-006` (C12, `L1-b`), y con ella `N-B-01`', CAD_29, False),
@@ -266,7 +270,7 @@ LETRAS_VIVAS_REVISADAS = {
 
 # Semantic review of each owner-letter «precisa» in the MVP file (round 5).
 # A new relation must be reviewed; a replacement requires its historical warning.
-# CF→CC is explicitly outside this pass's three adjudicated generator findings.
+# Sixth round includes CF→CC (H6-G1-7), deferred by the fifth round.
 PRECISIONES_REVISADAS = {
     'AV:AP': ('reemplazo', 'AV cambia el dueño del modelo de addons y la columna de payment'),
     'AY:AE': ('aditiva', 'AY remite a AW y al pin que registra la aplicación de AE'),
@@ -284,8 +288,7 @@ PRECISIONES_REVISADAS = {
     'CC:BM': ('aditiva', 'CC incluye descensos encolados en los clientes de BM'),
     'CC:BZ': ('aditiva', 'CC aplica a esos clientes el mismo camino de aumento de BZ'),
     'CE:CD': ('aditiva', 'CE añade guardas de objetivo LISTING sin retirar A1-bis ni su dueño B10'),
-    'CF:CC': ('fuera de alcance', 'CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2; '
-              'pendiente de adjudicación propia, fuera de H5-G1-5/6/7; no es una precisión aditiva'),
+    'CF:CC': ('reemplazo', 'CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2'),
 }
 
 # Text the source glued to the wrong 📌: {the 📌 that carries it: (the 📌 it belongs to, the verbatim
