@@ -23,7 +23,7 @@ la recomendada):
   dos verificaciones ciegas opuestas** —qué falta y qué se inventó—, con canarios, hasta una vuelta
   sin `BLOQUEA`.
 
-Todo sale de las fuentes congeladas en el commit `5381f7579687651df168575c85f144f9b48daea7`
+Todo sale de las fuentes congeladas en el commit `284c6dd583156a728876950ce0171d7c43ce7084`
 (re-congeladas después de aplicar las letras BK a CK del owner): cada
 `Origen:` cita `archivo:línea` en ese SHA, y las herramientas leen las fuentes desde ahí
 (`scripts/comun.py`), nunca del árbol de trabajo.

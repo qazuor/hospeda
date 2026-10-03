@@ -802,7 +802,7 @@ el plazo 1 − el plazo 4, con la versión 1 de los plazos ([BV](../01-decisione
 - `V/docs/03-maquinas-de-estado.md` §9 (`PB9`, l. 496); `V/docs/02-modelo-de-datos.md` §4.1–§4.2.
 - `NUCLEO/01` §1.2; `NUCLEO/02` §1.5 (plazos 2 y 4); `NUCLEO/07` §2, §4.1 y §6; `NUCLEO/08` §1.1 y §2.3.
 - `01-decision-log.md`: `DEC-DATA-005`, `DEC-DATA-001`, `DEC-ARCH-017`.
-- `16-fase-7-del-paraguas.md` §4.6 (l. 954) y §4.7 (*«Las fases posteriores»* y la fecha límite de
+- `16-fase-7-del-paraguas.md` §4.6 (l. 958) y §4.7 (*«Las fases posteriores»* y la fecha límite de
   la Fase 1, l. 1171–1176).
 - `41-corte-del-mvp/10-decisiones-del-owner.md`: AC, BD, BL y BV (l. 23, 108, 137 y 147).
 

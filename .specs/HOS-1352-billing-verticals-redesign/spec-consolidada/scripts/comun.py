@@ -22,7 +22,7 @@ import sys
 # blind-verification round and the residue of letter Q; then 9149b84a25…; now after the
 # fourth round source corrections, including the counter-review adjustments; CK from round five;
 # now the BM/CK propagation sweep of correction pass nine).
-SHA = '277980c125af3050c5ca3949b82285518afdbf9b'
+SHA = '284c6dd583156a728876950ce0171d7c43ce7084'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
