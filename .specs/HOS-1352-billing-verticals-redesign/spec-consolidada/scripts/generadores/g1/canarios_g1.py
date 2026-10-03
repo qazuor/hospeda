@@ -22,6 +22,7 @@ Third round (H3-G1-3, P-H over the content):
   cinco     the base run marks «⚠️ Caducada en parte» the five letters the adjudication listed (B, F
             and H of 38-fase-5; G5-3 and G2-1 of 28-fase-9-vuelta-1).
   nombra    F of 38-fase-5 out of `letras_muertas`: N, a later letter of its file, says «F se lee».
+  precisa   (fifth round) AP/BN/BU marked partially dead; removing any warning fails. BY keeps BL alive.
   contenido L3-a out of `letras_muertas`: what it decides is struck in 16-fase-7 and live nowhere.
 """
 import json
@@ -105,6 +106,24 @@ def main():
         good = code == 1 and 'letra corregida por una letra posterior o por un tachado' in out and que in out
         print(f'{"✓" if good else "✗ CIEGO"} {clave:9} exit {code} · {letra} fuera de `letras_muertas`')
         fallas += not good
+    for letra in ('AP', 'BN', 'BU'):
+        cid = next(k for k in OMIT['letras_muertas'] if k.startswith('OWN:41-corte-del-mvp:') and k.endswith(':' + letra))
+        # First prove the corrected rendering carries a partial warning, then remove just that entry.
+        code, out = run(OMIT)
+        base_ok = code == 0 and marcada(SALIDA['txt'], cid)
+        m = json.loads(json.dumps(OMIT))
+        del m['letras_muertas'][cid]
+        code, out = run(m)
+        good = base_ok and code == 1 and 'precisión sin revisión o marca' in out and cid in out
+        print(f'{"✓" if good else "✗ CIEGO"} precisa-{letra} exit {code} · marca parcial presente; quitarla se detecta')
+        fallas += not good
+    # BY is additive: reviewing its relation must not mark BL as dead.
+    code, out = run(OMIT)
+    from comun import slug
+    bl = 'OWN:41-corte-del-mvp:t9:BL'
+    good = code == 0 and f'<a id="{slug(bl)}"></a>' in SALIDA['txt'] and not marcada(SALIDA['txt'], bl)
+    print(f'{"✓" if good else "✗ CIEGO"} precisa-BY · BL se conserva sin caducidad')
+    fallas += not good
     ok, code, out = pipe()
     good = ok and code == 1 and 'celda partida' in out
     print(f'{"✓" if good else "✗ CIEGO"} pipe     exit {code} · la fila 5a se lee entera, y partida en cada «|» falla')
@@ -137,7 +156,7 @@ def main():
     good = code == 1 and 'DEC-GRANT-004' in out and 'paréntesis desbalanceados' in out
     print(f'{"✓" if good else "✗ CIEGO"} parentes exit {code} · el 📌1 de DEC-GRANT-004 cortado por línea')
     fallas += not good
-    print(f'\n10 canarios · {fallas} fallas')
+    print(f'\n14 canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 

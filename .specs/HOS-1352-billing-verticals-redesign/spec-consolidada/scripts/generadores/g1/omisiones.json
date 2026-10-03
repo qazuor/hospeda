@@ -530,6 +530,24 @@
         }
     ],
     "letras_muertas": {
+        "OWN:41-corte-del-mvp:t3:AP": {
+            "alcance": "en parte",
+            "por": "las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:111",
+            "inferido": false
+        },
+        "OWN:41-corte-del-mvp:t9:BN": {
+            "alcance": "en parte",
+            "por": "la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156",
+            "inferido": false
+        },
+        "OWN:41-corte-del-mvp:t9:BU": {
+            "alcance": "en parte",
+            "por": "el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157",
+            "inferido": false
+        },
         "OWN:28-fase-9-vuelta-1:t1:G1-1": {
             "alcance": "en parte",
             "por": "en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)",
@@ -720,6 +738,76 @@
         "OWN:26-fase-9-completa:t1:2g": {
             "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:241",
             "texto": "clientes actuales se siguen tratando como nuevos, y su prueba arranca el día del corte"
+        }
+    },
+    "precisiones_revisadas": {
+        "AV:AP": {
+            "clase": "reemplazo",
+            "por": "AV cambia el dueño del modelo de addons y la columna de payment"
+        },
+        "AY:AE": {
+            "clase": "aditiva",
+            "por": "AY remite a AW y al pin que registra la aplicación de AE"
+        },
+        "BA:AX": {
+            "clase": "aditiva",
+            "por": "BA enumera la lista cerrada de excepciones sólo citables de AX"
+        },
+        "BG:AP": {
+            "clase": "reemplazo",
+            "por": "BG cambia el dueño del esquema de promos y cortesías"
+        },
+        "BH:Z": {
+            "clase": "aditiva",
+            "por": "BH distribuye superficies dentro de las mitades que Z ya separó"
+        },
+        "BK:AI": {
+            "clase": "aditiva",
+            "por": "BK amplía la política de omisión; conserva la adjudicación y revisión de AI"
+        },
+        "BN:AP": {
+            "clase": "aditiva",
+            "por": "BN explicita la regla de nacimiento de tablas compartidas"
+        },
+        "BN:AV": {
+            "clase": "aditiva",
+            "por": "BN conserva payment en B5 y aplica AV a sus tablas compartidas"
+        },
+        "BP:BC": {
+            "clase": "aditiva",
+            "por": "BP concreta en S2 el acto y el correo; conserva el dueño B3 de BC"
+        },
+        "BW:BN": {
+            "clase": "reemplazo",
+            "por": "BW reemplaza la premisa errónea: domain_event nace en U2"
+        },
+        "BX:BU": {
+            "clase": "reemplazo",
+            "por": "BX adelanta el gate del plazo 19 desde B11 a B2"
+        },
+        "BY:BL": {
+            "clase": "aditiva",
+            "por": "BY amplía BL a lecturas sin quitar la regla para llamadas"
+        },
+        "BZ:BM": {
+            "clase": "aditiva",
+            "por": "BZ concreta el camino del aumento a anclados que BM asignó a B12"
+        },
+        "CC:BM": {
+            "clase": "aditiva",
+            "por": "CC incluye descensos encolados en los clientes de BM"
+        },
+        "CC:BZ": {
+            "clase": "aditiva",
+            "por": "CC aplica a esos clientes el mismo camino de aumento de BZ"
+        },
+        "CE:CD": {
+            "clase": "aditiva",
+            "por": "CE añade guardas de objetivo LISTING sin retirar A1-bis ni su dueño B10"
+        },
+        "CF:CC": {
+            "clase": "fuera de alcance",
+            "por": "CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2; pendiente de adjudicación propia, fuera de H5-G1-5/6/7; no es una precisión aditiva"
         }
     }
 }

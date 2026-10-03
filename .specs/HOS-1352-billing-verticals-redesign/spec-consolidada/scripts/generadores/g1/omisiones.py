@@ -32,6 +32,9 @@ And one from the second round (H2-G1-10, pattern P-H):
   gen01.py fails on a letter so cited that is neither here nor in `letras_muertas`. The fourth item of
   a `letras_muertas` tuple is False, True (inferred under C8) or the reason of the inference.
 """
+# Fifth round (H5-G1-5/6/7): `precisiones_revisadas` records the semantic review of explicit
+# owner-letter «precisa» relations. Replacements require a warning independently of that review;
+# additive relations keep their letter alive. A deferred finding states its scope and reason.
 import json
 import os
 import re
@@ -168,6 +171,14 @@ S09 = (D + '16-fase-7-del-paraguas.md', 'S-09: sale la razón de la tabla de tra
 DETECTOR = 'la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada'
 DISC = ('entera', 'la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)', C8_ARCH011)
 LETRAS_MUERTAS = {
+    # Fifth round: precisions that replace an application or a deadline.
+    'OWN:41-corte-del-mvp:t3:AP': ('en parte', 'las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP',
+        (D + '41-corte-del-mvp/10-decisiones-del-owner.md', '| BG |'), False),
+    'OWN:41-corte-del-mvp:t9:BN': ('en parte', 'la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones',
+        (D + '41-corte-del-mvp/10-decisiones-del-owner.md', '| BW |'), False),
+    'OWN:41-corte-del-mvp:t9:BU': ('en parte', 'el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU',
+        (D + '41-corte-del-mvp/10-decisiones-del-owner.md', '| BX |'), False),
+
     'OWN:28-fase-9-vuelta-1:t1:G1-1': ('en parte', 'en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12)', CAD_28, False),
     'OWN:28-fase-9-vuelta-1:t1:G2-4': ('entera', '`T7` salió (N7, `DEC-TRIAL-003`)', CAD_28, False),
     'OWN:29-fase-8-vuelta-2:t1:R15': ('entera', 'cae con `DEC-MIG-006` (C12, `L1-b`), y con ella `N-B-01`', CAD_29, False),
@@ -253,6 +264,30 @@ LETRAS_VIVAS_REVISADAS = {
                                      'clientes actuales se siguen tratando como nuevos, y su prueba arranca el día del corte'),
 }
 
+# Semantic review of each owner-letter «precisa» in the MVP file (round 5).
+# A new relation must be reviewed; a replacement requires its historical warning.
+# CF→CC is explicitly outside this pass's three adjudicated generator findings.
+PRECISIONES_REVISADAS = {
+    'AV:AP': ('reemplazo', 'AV cambia el dueño del modelo de addons y la columna de payment'),
+    'AY:AE': ('aditiva', 'AY remite a AW y al pin que registra la aplicación de AE'),
+    'BA:AX': ('aditiva', 'BA enumera la lista cerrada de excepciones sólo citables de AX'),
+    'BG:AP': ('reemplazo', 'BG cambia el dueño del esquema de promos y cortesías'),
+    'BH:Z': ('aditiva', 'BH distribuye superficies dentro de las mitades que Z ya separó'),
+    'BK:AI': ('aditiva', 'BK amplía la política de omisión; conserva la adjudicación y revisión de AI'),
+    'BN:AP': ('aditiva', 'BN explicita la regla de nacimiento de tablas compartidas'),
+    'BN:AV': ('aditiva', 'BN conserva payment en B5 y aplica AV a sus tablas compartidas'),
+    'BP:BC': ('aditiva', 'BP concreta en S2 el acto y el correo; conserva el dueño B3 de BC'),
+    'BW:BN': ('reemplazo', 'BW reemplaza la premisa errónea: domain_event nace en U2'),
+    'BX:BU': ('reemplazo', 'BX adelanta el gate del plazo 19 desde B11 a B2'),
+    'BY:BL': ('aditiva', 'BY amplía BL a lecturas sin quitar la regla para llamadas'),
+    'BZ:BM': ('aditiva', 'BZ concreta el camino del aumento a anclados que BM asignó a B12'),
+    'CC:BM': ('aditiva', 'CC incluye descensos encolados en los clientes de BM'),
+    'CC:BZ': ('aditiva', 'CC aplica a esos clientes el mismo camino de aumento de BZ'),
+    'CE:CD': ('aditiva', 'CE añade guardas de objetivo LISTING sin retirar A1-bis ni su dueño B10'),
+    'CF:CC': ('fuera de alcance', 'CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2; '
+              'pendiente de adjudicación propia, fuera de H5-G1-5/6/7; no es una precisión aditiva'),
+}
+
 # Text the source glued to the wrong 📌: {the 📌 that carries it: (the 📌 it belongs to, the verbatim
 # span, its letter)}. The span is the {"de"} of EXTRA, so it is omitted from the first and shown under
 # the second.
@@ -286,11 +321,12 @@ def main():
     out['reubicar'] = {k: {'a': a, 'texto': txt, 'letra': letra} for k, (a, txt, letra) in REUBICAR.items()}
     out['letras_vivas_revisadas'] = {k: {'origen': f'{p}:{linea_de(p, frag)}', 'texto': frag}
                                      for k, (p, frag) in LETRAS_VIVAS_REVISADAS.items()}
+    out['precisiones_revisadas'] = {k: {'clase': c, 'por': por} for k, (c, por) in PRECISIONES_REVISADAS.items()}
     # indent=4 plus a final newline is exactly what the pre-commit's biome format leaves
     with open(os.path.join(HERE, 'omisiones.json'), 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, indent=4)
         fh.write('\n')
-    print(len(out) - 3, sum(len(s) for k, s in out.items() if k not in ('letras_muertas', 'reubicar', 'letras_vivas_revisadas')),
+    print(len(out) - 4, sum(len(s) for k, s in out.items() if k not in ('letras_muertas', 'reubicar', 'letras_vivas_revisadas', 'precisiones_revisadas')),
           'letras muertas', len(out['letras_muertas']), 'reubicados', len(out['reubicar']))
 
 

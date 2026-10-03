@@ -48,6 +48,7 @@ OMIT = json.load(open(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.starts
 MUERTAS = OMIT.pop('letras_muertas', {})
 REUBICAR = OMIT.pop('reubicar', {})
 VIVAS_REVISADAS = OMIT.pop('letras_vivas_revisadas', {})
+PRECISIONES = OMIT.pop('precisiones_revisadas', {})
 REUBICADOS = {}  # destination 📌 -> the source 📌 whose glued text it received
 MUERTAS_RENDIDAS = set()
 
@@ -394,7 +395,8 @@ def own_render(i):
             inf = 'la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8'
         out.append(f'- ⚠️ **Caducada {m["alcance"]}**: {m["por"]} (Origen: {m["origen"]})'
                    + (f' *(inferido: {inf})*' if inf else '')
-                   + '. Sólo citable; no se implementa.')
+                   + ('. Sólo citable; la parte reemplazada no se implementa.'
+                      if m['alcance'] == 'en parte' else '. Sólo citable; no se implementa.'))
         MUERTAS_RENDIDAS.add(i['id'])
     return out
 
@@ -479,8 +481,8 @@ def letras_tachadas_sin_marca():
 # 38-fase-5 is corrected by N, «F se lee…»; G5-3's predicate died struck in the log), so these two
 # sweeps read the content and run over every round, 38-fase-5 included.
 COLUMNA_DECIDE = ('qué decide', 'en una línea', 'decisión', 'decide', 'respuesta', 'elige', 'elegida')
-# «precisa X» is not here on purpose: 41-corte-del-mvp writes «Precisa X» eleven times for a letter that
-# keeps X alive and adds to it (BY: «BL vale también para leer. Precisa BL»); a precision is no correction
+# A precision can replace an application or add to it. The reviewed relations below distinguish
+# those cases; do not classify every «precisa» as a correction (BY keeps BL alive).
 CORRIGE = r'(?i:corrige|reemplaza|supera|enmienda|deja sin efecto)'
 N_TACHADO = 8  # words in a row, as R20 of trazar.py: shorter runs are common wording, not a decision
 
@@ -553,6 +555,35 @@ def letras_corregidas_sin_marca():
                 por = f'(b) una fuente posterior tacha «{hit}» y ninguna lo dice vivo'
         if por:
             malas.append(f'{i["id"]} {por}')
+    return malas
+
+
+def precisiones_sin_revision():
+    """Review every explicit «precisa» relation of MVP owner letters, including additive ones.
+
+    The review is separate from MUERTAS: deleting AP/BN/BU's warning must fail even if the
+    semantic review survives. A scoped deferred replacement is visible and is never called additive.
+    """
+    owns = [i for i in items if i['fuente'] == 'OWN' and '/41-corte-del-mvp/' in i['archivo']]
+    rx = re.compile(r'(?i:precisa) (?:la aplicación de )?([A-Z]{1,2})(?![\w-])'
+                    r'(?: y ([A-Z]{1,2})(?![\w-]))?')
+    malas, vistas = [], set()
+    for j in owns:
+        fila = re.sub(r'~~.*?~~', '', lines(j['archivo'])[j['linea'] - 1])
+        for m in rx.finditer(fila):
+            for loc in filter(None, m.groups()):
+                prev = [i for i in owns if i['local'] == loc and i['linea'] < j['linea']]
+                if not prev:
+                    continue
+                i = max(prev, key=lambda i: i['linea'])
+                key = f'{j["local"]}:{loc}'
+                vistas.add(key)
+                rev = PRECISIONES.get(key, {})
+                if rev.get('clase') not in ('reemplazo', 'aditiva', 'fuera de alcance') or not rev.get('por'):
+                    malas.append(f'{key}: falta revisión semántica de «precisa»')
+                elif rev['clase'] == 'reemplazo' and i['id'] not in MUERTAS and i['id'] not in VIVAS_REVISADAS:
+                    malas.append(f'{i["id"]}: {key} reemplaza una parte y falta su ⚠️')
+    malas += [f'{k}: revisión sin relación vigente en la fuente' for k in PRECISIONES.keys() - vistas]
     return malas
 
 
@@ -635,6 +666,9 @@ def main():
     if malas:
         sys.exit('letra corregida por una letra posterior o por un tachado y sin ⚠️ (omisiones.py, LETRAS_MUERTAS '
                  f'o LETRAS_VIVAS_REVISADAS): {"; ".join(malas)}')
+    malas = precisiones_sin_revision()
+    if malas:
+        sys.exit('precisión sin revisión o marca: ' + '; '.join(malas))
     for cid, v in adj.items():
         for n in re.findall(r'(?:muestra|mostrar\w*)\s+bajo el 📌(\d+)', v.get('muerto') or ''):
             dest = cid.split('#')[0] + f'#📌{n}'
