@@ -1,0 +1,12 @@
+# VA-A3 · fuente → spec · V/docs/02-modelo-de-datos.md, V/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:660 · «Nada más se cachea: ni el catálogo, ni los planes, ni el estado de una suscripción.» · ausente (búsqueda con rg --hidden en toda s/b249f841/ por cachea, caché, catálogo, planes y estado de suscripción; 10-corte/V3.md:633 sólo dice «El caché incluye el conjunto efectivo de entitlements y limits de un `user + vertical`», sin cerrar su alcance; AC:V3:6, AC:V3:10 y sus TEST regulan invalidación, TTL y Redis, pero no recogen esta exclusión. Revisados P/docs/01-decision-log.md, DEC-AUTH-001 y su 📌 de Redis, y P/docs/41-corte-del-mvp/10-decisiones-del-owner.md:171, CB: no reemplazan la prohibición. Queda permitido implementar cachés adicionales de catálogo, planes o estado de suscripción que la fuente excluye) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| V/docs/02-modelo-de-datos.md | ≈230 | 1–1032 | 1 | 0 |
+| V/docs/03-maquinas-de-estado.md | ≈210 | 1–1376 | 0 | 0 |

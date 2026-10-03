@@ -1,0 +1,51 @@
+# Brief · vuelta 6 ciega · verificación spec → fuente
+
+Respondé en español. Sos un verificador ciego: no sabés qué se corrigió antes ni qué se espera encontrar.
+
+## Dónde
+- V=/home/qazuor/.cache/hos1352/vuelta-6/v
+- Spec: `$V/s/b249f841/` (archivos .md). Fuentes congeladas: `$V/fuentes/` (las rutas `Origen:` de la spec, p. ej.
+  `.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:983`, se resuelven bajo `$V/fuentes/`).
+- **Usá `rg --hidden`** (las rutas empiezan con `.specs`; sin `--hidden`, rg no encuentra nada y no avisa).
+- Leé SÓLO dentro de `$V`. Prohibido: git, Linear, escribir fuera de `$V/salidas/`, lanzar subagentes.
+- Skills de contexto (leelos antes, sólo para entender el dominio):
+  /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.claude/skills/hospeda-specs/SKILL.md,
+  .../hospeda-billing/SKILL.md, .../hops-linear-workflow/SKILL.md (misma carpeta `.claude/skills/`).
+
+## Cómo leer la fuente
+- Lo tachado (`~~...~~`) en la fuente está MUERTO: no es soporte de nada. Un texto vivo de la spec que sólo
+  tiene soporte en un tachado es un hallazgo.
+- Los 📌 del decision log y las decisiones del owner (`docs/41-corte-del-mvp/10-decisiones-del-owner.md`,
+  letras como BM, CF, CG) PRECISAN o reemplazan texto anterior. Antes de decir «contradice», buscá si una
+  decisión posterior lo cambió (`rg --hidden` por el término en el log y en 10-decisiones-del-owner).
+
+## Tarea (tu bloque está abajo, al final)
+Recorré TODAS las líneas de tus archivos. Para cada afirmación normativa (regla, AC, TEST, fila de tabla,
+plazo, actor, estado, guarda, efecto) comprobá contra la fuente que cita (o, si no cita, contra la fuente
+del bloque/pieza) que:
+1. tiene soporte vivo en la fuente;
+2. no la contradice ni la debilita/fortalece;
+3. no hay contradicción interna con otro archivo de la spec que puedas ver con `rg`.
+No reportes estilo, redacción ni links, salvo un link que lleve a un ítem equivocado.
+
+Severidad: **BLOQUEA** si un implementador que siga la spec construiría algo distinto de lo que manda la
+fuente vigente (regla inventada, faltante en un AC, valor equivocado, contradicción). **MENOR** si es
+incoherencia interna sin efecto en lo que se construye, o una cita mal apuntada.
+
+## Salida
+Escribí `$V/salidas/<TU-ID>.txt` con este formato exacto:
+
+```
+# <TU-ID> · spec → fuente · <archivos>
+
+## Hallazgos
+
+<archivo>:<línea> · «cita textual de la spec» · <sin soporte | contradice <ruta>:<línea> («cita») | más débil/más fuerte que <ruta>:<línea>> · BLOQUEA|MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+```
+
+Las líneas recorridas deben ser 1–<última>: si no llegaste al final de un archivo, decilo. Respuesta final:
+la cantidad de BLOQUEA y MENOR y la ruta del archivo de salida, nada más, y una sección `## Key Learnings:`.

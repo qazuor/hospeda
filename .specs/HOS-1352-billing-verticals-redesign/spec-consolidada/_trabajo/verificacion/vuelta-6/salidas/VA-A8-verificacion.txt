@@ -1,0 +1,15 @@
+VA-A8 · Evidencia auxiliar de revisión documental
+
+Alcance: los tres archivos completos indicados en VA-A8.txt, bajo fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/. B es esa raíz. Los conteos de reglas son aproximados: se agrupan reiteraciones de una misma regla y se separan sus guardas y efectos relevantes.
+
+Método: lectura integral de las fuentes; exclusión de tachados, incluso multilineales; búsqueda con rg --hidden en toda s/b249f841; contraste de las formulaciones normativas y búsquedas en P/docs/01-decision-log.md y P/docs/41-corte-del-mvp/10-decisiones-del-owner.md. VA-A8-cobertura.json contiene un índice auxiliar de coincidencias léxicas por bloque, no un veredicto automático de equivalencia.
+
+05: §1 y §4 se recogen en 04-catalogos.md, LOCK:C1; los seis cruces en LOCK:C1–C6; §3 en TRANS:B:S5 y el texto íntegro de sus condiciones y desempate. Se contrastaron las aplicaciones en B3, B5, B7, B8a, B9a y las piezas posteriores B8b/B10. En particular, 04-catalogos.md:6293 abrevia los datos que se muestran en la baja desde grace, pero AC:B8a:11 (B8a.md:280–281) sí exige desde cuándo la fila estaba en grace; por eso la regla de la fuente:192–193 no está ausente.
+
+06: interfaz y reglas de trato en B1; ocho capacidades en su alcance y AC:B1:1; relectura y saneamiento en AC:B1:3 y AC:B1:6; guards de entorno y presupuesto en AC:B1:20; contrato de reembolsos en B6 y catálogo RF/RP; ciclos y moneda en B2 y catálogo de mediciones FR/EX; ventana de autorización en B3/S3; canal IPN y persistencia de entregas en B3, y deduplicación del pago en B5/C6. Las reglas de órdenes corresponden también a B10, pieza posterior: no se clasifican como ausentes por no activarse al corte.
+
+09: B11.md:77–1315 recoge las secciones completas sin los tachados y las enlaza con criterios normativos. Se contrastaron AC:B11:1–26, catálogo de motivos/transiciones y las piezas dueñas de comprobaciones repartidas (B5, B7, B9a/B9b y B10). Se verificaron especialmente: re-vinculación condicionada; lápida y excepción de sondas; tres días de reintento y corte al abrir marca; exención de terminales y ventana de siete días; cancelado_visto_en y sus escritores; pagos/refunds/órdenes y sus excepciones; búsqueda del pedido anclada a su creación; escalamiento y corridas completas con ping externo.
+
+Autoridad posterior considerada: precisiones de DEC-CONC-001/002; reparto del corte AS/AV/BL; BM/BZ sobre precios y promociones; CH/CI sobre cancelado_visto_en y dependencia B4 → B11; CK sobre avisos de cobertura sin entrega durable. No se trató como vigente la lápida del corte ni las transiciones retiradas de discontinuación.
+
+Verificación exclusivamente documental. No se ejecutó la implementación ni pruebas de producto. No se usaron git, trackers, red ni subagentes. Las únicas escrituras fueron los tres archivos propios VA-A8 dentro de salidas/. No se leyeron skills externos porque los briefs limitan las lecturas a V; no se encontraron AGENTS.md ni .qz/project.json dentro de V en el inventario inicial.
