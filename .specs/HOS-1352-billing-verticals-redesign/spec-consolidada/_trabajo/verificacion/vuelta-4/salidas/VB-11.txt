@@ -1,0 +1,21 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md, 20-fase-2/B9b.md, 20-fase-1/V9b.md
+
+## Hallazgos
+
+10-corte/B9a.md:307 · «Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478 («el aumento a un cliente ya anclado es una migración a la versión nueva, por `S37` y `S38`, con el motivo *«aumento»*», «conservando la promo viva, porque el monto esperado ya la descuenta»). La regla copiada de B/14 §2.4 no incorpora la excepción posterior de BZ: aplicarla al aumento haría comparar o reintentar con el precio sin descuento. También contradice 10-corte/B11.md:1486 y 20-fase-3/B12.md:449 · BLOQUEA
+
+10-corte/B9a.md:720 · «**Cerrado**: los 3 días del reintento de monto de un aumento corren desde su fecha efectiva (§2.4).» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185 («desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición»). Esa fuente tacha expresamente el cómputo desde la fecha efectiva; `S37` ocurre siete días antes de la aplicación, por lo que la regla posterga la marca de divergencia. También contradice 10-corte/B9a.md:294 y 10-corte/B11.md:1479 · BLOQUEA
+
+20-fase-2/B9b.md:177 · «sólo se puede **en meses enteros o fracciones de mes y sobre un plan mensual**» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:159 («por el primer disparador, la fila es de un plan MENSUAL y la cortesía se firma en MESES ENTEROS») y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2033 («sólo sobre planes mensuales y en meses enteros»). El AC autoriza fracciones que la guarda de `S9` no permite; también contradice 20-fase-2/B9b.md:254 y 10-corte/B9a.md:666 · BLOQUEA
+
+20-fase-1/V9b.md:637 · «Los dos avisos previos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la clave de schedule que lleva la fecha objetivo» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:103 («de **evento** (cobro fallido, cancelación, aumento aplicado) | el id del evento de dominio que lo causó») y la fila del aviso en esa misma fuente:281 («cuando la ficha de la alerta llega a `PURGED`»). La clave con fecha objetivo corresponde a los avisos previos; extenderla a la alerta cerrada cambia la identidad de su ocurrencia, que debe ser el evento de purga · BLOQUEA
+
+20-fase-1/V9b.md:653 · «Antes de purgar se guarda una copia cifrada del contenido por treinta días, recuperable por soporte a pedido del dueño; cumplido ese plazo se elimina la copia.» · sin soporte; contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6062 («El día 180 borra el contenido de **esa** ficha —textos, fotos, FAQ, horarios— y sus borradores, y nada más») y fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:496 («es irreversible»). Agrega almacenamiento, un plazo y una recuperación que ninguna decisión vigente declara; también contradice 20-fase-1/V9b.md:655 y :782 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–1427 | 300 | 2 | 0 |
+| 20-fase-2/B9b.md | 1–667 | 145 | 1 | 0 |
+| 20-fase-1/V9b.md | 1–814 | 200 | 2 | 0 |

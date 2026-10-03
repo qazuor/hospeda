@@ -1,0 +1,14 @@
+# VA-A3 · fuente → spec · V/docs/02-modelo-de-datos.md; V/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:742 · «Y un contador de entradas sospechosas (§3.2) va en los logs estructurados.» · ausente (buscado con rg --hidden en toda s/5586fad7/ por «sospechos», «contador» y referencias a CB; sólo se menciona el contador como contexto en «Abiertos», 10-corte/V3.md:887–889, que remite a AC:V3:10, pero ese AC, en las líneas 255–268, sólo exige Redis compartido y resolución en vivo; tampoco lo exigen los tests, el catálogo ni «Auditoría y observabilidad», líneas 734–736. La marca de entrada sospechosa de AC:V3:6 no implementa un contador en logs. La obligación sigue vigente en P/docs/01-decision-log.md:6693–6698, 📌 de DEC-AUTH-001, y P/docs/41-corte-del-mvp/10-decisiones-del-owner.md:171, CB) · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1359 · «PP1 | — | alguien completa el formulario del §17.3 | `PENDIENTE`» y «Y sólo si no hay otra postulación `PENDIENTE` del mismo correo, ni una `RECHAZADA` del mismo correo dentro de la espera configurable» · distinta en s/5586fad7/20-fase-4/V7.md:815 («La postulación exige un CUIT válido y único entre las postulaciones pendientes o aprobadas; un CUIT repetido rechaza el envío antes de crear la fila.»): agrega una guarda obligatoria y una unicidad por CUIT que la fuente no declara; rechaza postulantes que cumplen las guardas vigentes de correo, espera y captcha. V/docs/02-modelo-de-datos.md:640 materializa las restricciones por correo, y V/docs/17-autorizacion.md:248–263 precisa la excepción del guest y sus controles sin exigir CUIT. La búsqueda por CUIT, identificador fiscal y postulación en el decision log y en las decisiones posteriores del owner no aporta una decisión que autorice esta guarda · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| V/docs/02-modelo-de-datos.md | ≈200 | 1–1032 | 1 | 0 |
+| V/docs/03-maquinas-de-estado.md | ≈200 | 1–1376 | 0 | 1 |
