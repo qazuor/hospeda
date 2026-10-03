@@ -645,7 +645,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficie
   `V8a` (l. 719 y 720).
 - `V/docs/19-superficies.md` §1, §2, §4 y §6.
 - `NUCLEO/08` §1.2, §1.3 y §3 (acciones 15, 23 y 24, l. 205, 213 y 214); `NUCLEO/07` §1.1 y §6.
-- `16-fase-7-del-paraguas.md` §4.6 (l. 951) y §4.7.
+- `16-fase-7-del-paraguas.md` §4.6 (l. 955) y §4.7.
 - `01-decision-log.md`: `DEC-AUTH-002`, `DEC-AUTH-003`, `DEC-DATA-005`, `DEC-RF-008`, `DEC-ARCH-017`.
 
 **Preámbulos de las fuentes, contexto sin norma.** Cada fuente de abajo abre con un texto entre su título y su primera sección. No trae una regla propia: lo que presenta está escrito en las secciones que la siguen, y se cita acá para que la red de cobertura (R17) lo vea.

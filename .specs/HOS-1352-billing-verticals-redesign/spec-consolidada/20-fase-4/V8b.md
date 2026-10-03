@@ -303,4 +303,4 @@ Ninguno: las cláusulas derivadas (1 y 2 de la *«Lista cuando»*) están marcad
 - `V/docs/19-superficies.md` §4, filas 22, 32, 33 y 34 (l. 69, 79–81).
 - `V/docs/18-partner.md` §1.6, §2.3, §2.4; `V/docs/03-maquinas-de-estado.md` §11.
 - `NUCLEO/08` §3, acción 25 (l. 215).
-- `16-fase-7-del-paraguas.md` §4.6 (l. 952, nota del esquema l. 994–997) y §4.7 (fases posteriores).
+- `16-fase-7-del-paraguas.md` §4.6 (l. 956, nota del esquema l. 994–997) y §4.7 (fases posteriores).
