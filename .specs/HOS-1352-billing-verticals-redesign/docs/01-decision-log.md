@@ -6145,7 +6145,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-ARCH-009 — Un reconciliador diario de cobertura en verticales: el aviso es rápido, el reconciliador es la red
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la población excluye `MODERATED` e incluye a Partner; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la población excluye `MODERATED` e incluye a Partner; ver su 📌) — **ratificada el 2026-10-03** (corte del MVP, CK; ver su 📌) · **Decide**: owner
 - **Problema**: el aviso *«la cobertura de (user, vertical) cambió»* (`12-contrato…` §3) es la
   **única** señal que billing le empuja a verticales, y no tiene transporte declarado —el outbox
   del núcleo es sólo de correos—. Tres agujeros (FASE 8 completa, racimo `R10`): (1) si se pierde
@@ -6178,6 +6178,18 @@ Cada entrada lleva, según §3.4:
   `DEC-ENT-006`), que no tiene fichas: sobre ése no corre ninguna transición; resuelve en vivo si el
   conjunto efectivo otorga la clave, lo compara con el caché y, si difieren, **invalida** (`V/03` §9,
   `V/18` §1.6). La entrada no se edita en su contenido.
+
+- 📌 **Ratificada el 2026-10-03, con OK del owner (corte del MVP, CK, la 1)**: el aviso de
+  cambio de cobertura **sale después del commit, sin entrega durable**; el reconciliador diario
+  sigue siendo la red. **El outbox de `U2` es sólo de correos**: se corrige el encolado del aviso
+  que decía `B/descomposicion.md`, fila `B4` y §3. `B4` sigue esperando a `U2` por las
+  obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por ese aviso.
+  **`coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura**,
+  antes de emitir el aviso; la lectura no espera su entrega (`12-contrato…` §4.1).
+  La población y las exclusiones del reconciliador no cambian: **no corre la máquina de trial**
+  ni promete recuperar el aviso de primer pago. El atraso admitido sigue siendo hasta un día
+  para los casos que cubre (`12-contrato…` §3). Registro: `41-corte-del-mvp/10-decisiones-del-owner.md`,
+  tabla t17, CK. La entrada no se edita en su contenido.
 
 ---
 

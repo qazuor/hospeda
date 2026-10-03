@@ -223,6 +223,16 @@ recomendada (opción 1).
 |---|---|---|---|---|
 | CJ | quién retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`), si la fila de `V6` de `V/descomposicion.md` §2 dice que con `V6` *«desaparecen el borrado físico de fichas y de cuentas»* y la tabla de puertas de la misma descomposición (§2.13, lote 3 C) le da la de cuentas a `V8a` (Z sólo renombró `V8` a `V8a`; el reparto es de antes) | 1 | sí | **la retira `V6`**, en el mismo cambio que las puertas de fichas y antes del corte: se corrige la tabla de puertas para que diga `V6`, y el mapa de cobertura de la spec consolidada también. `AC:V6:25` ya lo exige, y queda una sola pieza dueña de todas las puertas de borrado físico; la acción 24, que la reemplaza, sigue en `V8a`. Las otras opciones eran que la retirara `V8a` (cuatro lugares que cambiar, y entre el merge de `V6` y el de `V8a` la ruta sigue viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6` deshabilitándola y `V8a` borrando el archivo (reparte un solo acto en dos piezas, contra cómo la fuente reparte las puertas) |
 
+## Lote CK (2026-10-03)
+
+Respuesta del owner, 2026-10-03, a la única pregunta que dejó la adjudicación de la vuelta 5 de
+verificación ciega (fuentes en `8a1d8902c2`, spec en `2e9ef99e2e`; hallazgo `H5-VA-A2-1`,
+duplicado `H5-VB-03-1`). Es la recomendada (opción 1).
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CK | si el aviso de cambio de cobertura sale después del commit sin entrega durable, como `DEC-ARCH-009` y el contrato, o se encola en U2, como decía la fila de B4 | 1 | sí | **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
