@@ -249,7 +249,13 @@ PINES = [
     ('DEC-DATA-008#📌1', P_, None, AG, '«antes del ensayo del corte en staging» (antes del merge de `V6`)', [MERGE_V6], 'lote 3 D', ''),
     ('DEC-DATA-008#📌3', P_, None, AG, '«antes del ensayo» y la cifra «quince valores» (dieciocho)',
      [MERGE_V6, (LOG, 7382, 'pasa de quince a dieciocho plazos')], 'lote 3 D; lotes K y R', ''),
-    ('DEC-DATA-008#📌4', P_, None, AG, '«antes del ensayo del corte en `staging`» (antes del merge de `V6`)', [MERGE_V6], 'lote 3 D', ''),
+    ('DEC-DATA-008#📌4', P_, None, AG,
+     '«antes del ensayo del corte en `staging`» (antes del merge de `V6`) y «paso 3 lleva los dieciocho»: BU agrega la clave 19',
+     [MERGE_V6, (LOG, None, 'es **una clave más de la lista cerrada, la 19, en la tabla versionada de plazos de billing')], 'lote 3 D; BU', ''),
+    ('DEC-DATA-008#📌7', P_, None, AG, '«antes del merge de `B11`»: BX adelanta el valor inicial del plazo 19 al merge de `B2`',
+     [(LOG, None, '**el valor del plazo 19 lo fija el owner antes del merge de `B2`**')], 'BX', ''),
+    ('DEC-ARCH-014#📌6', P_, None, AG, '«las doce dependencias entre épicas»: BC agrega la fila 15 y quedan trece',
+     [(BD, None, '**y BC suma la 15: son trece**')], 'BC', ''),
     ('DEC-ARCH-017#📌1', P_, None, AG, 'el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5` (AV); '
      'y «promos y cortesías, `B9a`»: el esquema de promos y cortesías es de `B3` (BG; residuo del triage AB-g1-2, 2026-10-02)',
      [(LOG, None, '**las tablas del modelo de addons'), AV,
@@ -279,6 +285,14 @@ PINES = [
 #     that precises it, so none of these picks a reading no later source states. ------------------
 SUP, OTRA, MAT = 'SUPERSEDED EN PARTE', 'precisada por otra decisión', 'matriz'
 BK = [
+    ('DEC-MP-001', P_, None, None,
+     '«El cambio se ejecuta en la fecha efectiva, no cuando se decide.»: para el aumento a un anclado S37 muta siete días antes; ningún cobro sale al precio nuevo antes de la fecha efectiva',
+     [(LOG, None, '`S37` muta el monto siete días antes de la fecha, y lo que se conserva es que **ningún cobro')],
+     'BZ y DEC-MP-002#📌4', 'precisada por otra decisión'),
+    ('DEC-RF-008', P_, None, None,
+     '«la persona con el comprobante de la transferencia»: RF4 también admite la referencia del panel para una devolución ocurrida por fuera',
+     [(B03, None, 'con el comprobante de la transferencia o la referencia del panel')],
+     'RF4', 'precisada por su catálogo'),
     ('DEC-ARCH-013', P_, None, None,
      '«corre una vez en el paso 3a»: la migración única del catálogo corre dentro de la migración estructural del paso 3; el 3a sólo verifica',
      [(LOG, None, 'única del catálogo corre dentro de la migración estructural del paso 3 del corte, antes de la')],

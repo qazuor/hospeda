@@ -24,6 +24,8 @@ Third round (H3-G1-3, P-H over the content):
   nombra    F of 38-fase-5 out of `letras_muertas`: N, a later letter of its file, says «F se lee».
   precisa   (fifth and sixth rounds) AP/BN/BU/CC marked partially dead; removing any warning fails. BY keeps BL alive.
   paso3     (sixth-round propagation) removing either BM load-step omission fails.
+  propagacion (seventh round) removes five superseded rules from normative bodies;
+              deleting each omission must fail the generation.
   contenido L3-a out of `letras_muertas`: what it decides is struck in 16-fase-7 and live nowhere.
 """
 import json
@@ -127,6 +129,31 @@ def main():
         good = code == 1 and cid in out and 'sin ninguna omisión aplicada' in out
         print(f'{"✓" if good else "✗ CIEGO"} paso3 · exit {code} · {cid} sin omitir la carga en 3a')
         fallas += not good
+    # Round-seven propagation: an old rule must disappear from the normative body,
+    # while its partial-retirement note retains the quoted history and the evidence.
+    code, out = run(OMIT)
+    corrected = SALIDA['txt']
+    from comun import slug
+    propagation = (
+        ('DEC-MP-001', 'El cambio se ejecuta en la fecha efectiva'),
+        ('DEC-DATA-008#📌4', 'paso 3 lleva los dieciocho'),
+        ('DEC-DATA-008#📌7', 'antes del merge de `B11`'),
+        ('DEC-RF-008', 'la persona con el comprobante de la transferencia'),
+        ('DEC-ARCH-014#📌6', 'las doce dependencias entre épicas'),
+    )
+    for cid, old in propagation:
+        anchor = f'<a id="{slug(cid)}"></a>'
+        start = corrected.find(anchor)
+        end = corrected.find('<a id=', start + len(anchor))
+        block = corrected[start:end if end >= 0 else len(corrected)]
+        body = ' '.join(line for line in block.splitlines() if not line.startswith('>'))
+        base_ok = code == 0 and start >= 0 and old not in body and '**Parte sin efecto**' in block
+        mutation = json.loads(json.dumps(OMIT))
+        mutation.pop(cid, None)
+        mutated_code, mutated_out = run(mutation)
+        good = base_ok and mutated_code == 1 and cid in mutated_out and 'sin ninguna omisión aplicada' in mutated_out
+        print(f'{"✓" if good else "✗ CIEGO"} propagacion · {cid} · base omite regla vieja; quitar omisión: exit {mutated_code}')
+        fallas += not good
     # BY is additive: reviewing its relation must not mark BL as dead.
     code, out = run(OMIT)
     from comun import slug
@@ -166,7 +193,7 @@ def main():
     good = code == 1 and 'DEC-GRANT-004' in out and 'paréntesis desbalanceados' in out
     print(f'{"✓" if good else "✗ CIEGO"} parentes exit {code} · el 📌1 de DEC-GRANT-004 cortado por línea')
     fallas += not good
-    print(f'\n17 canarios · {fallas} fallas')
+    print(f'\n22 canarios · {fallas} fallas')
     return 1 if fallas else 0
 
 

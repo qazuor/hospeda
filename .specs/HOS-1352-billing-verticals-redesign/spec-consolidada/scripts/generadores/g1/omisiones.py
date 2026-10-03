@@ -51,6 +51,10 @@ ASG = json.load(open(C + '/_trabajo/asignacion.json', encoding='utf-8'))['items'
 
 # Hand-written spans that predate the policy: {item: [(span, replacement)]}.
 LEGADO = {
+ "DEC-MP-001": [("**El cambio se ejecuta en la fecha efectiva, no cuando se decide.**", "[…]")],
+ "DEC-RF-008": [("la persona con el comprobante de la transferencia", "la persona […]")],
+ "DEC-DATA-008#📌7": [("antes del merge de `B11`", "[…]")],
+ "DEC-ARCH-014#📌6": [("las doce dependencias entre épicas", "las […] dependencias entre épicas")],
  "DEC-CONC-002#📌1": [("Once filas de\n`B/03`", "[…] Filas de\n`B/03`")],
  "DEC-CONC-002#📌3": [(" —que desde\nentonces cuenta las dos lápidas, la del corte y la de recepción—", " […]")],
  "DEC-ADDON-002#📌2": [("`S26` la\naplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa. ", "[…] "),
@@ -102,7 +106,7 @@ LEGADO = {
  "DEC-ARCH-014#📌5": [("; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el\n📌 de `DEC-ENT-006`)", "; […] (H; ver el\n📌 de `DEC-ENT-006`)"), ("33, pasan a **34**:", "33, pasan a **[…]**:")],
  "DEC-DATA-008#📌1": [("los fija el owner antes del ensayo del corte en staging, y", "los fija el owner […], y")],
  "DEC-DATA-008#📌3": [("con los quince valores,", "con los […] valores,"), ("los cinco sin valor escrito\nantes del ensayo del corte en `staging`.", "los cinco sin valor escrito\n[…].")],
- "DEC-DATA-008#📌4": [("los sigue fijando el owner antes\ndel ensayo del corte en `staging`.", "los sigue fijando el owner […].")],
+ "DEC-DATA-008#📌4": [("los sigue fijando el owner antes\ndel ensayo del corte en `staging`.", "los sigue fijando el owner […]."), ("paso 3 lleva los dieciocho", "paso 3 lleva los […]")],
  "DEC-ARCH-017#📌1": [("\naddons, `B4`, que le agrega a `payment` la columna de la instancia—", "\n[…]—")],
 }
 

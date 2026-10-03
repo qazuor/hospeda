@@ -125,6 +125,15 @@
             "cita": "`starts_at` y `ends_at` quedan hasta la unidad de socios"
         }
     ],
+    "DEC-ARCH-014#📌6": [
+        {
+            "de": "las doce dependencias entre épicas",
+            "a": "las […] dependencias entre épicas"
+        },
+        {
+            "cita": "las doce dependencias entre épicas"
+        }
+    ],
     "DEC-ARCH-014#📌7": [
         {
             "de": "Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).",
@@ -241,7 +250,23 @@
             "a": "los sigue fijando el owner […]."
         },
         {
+            "de": "paso 3 lleva los dieciocho",
+            "a": "paso 3 lleva los […]"
+        },
+        {
             "cita": "antes del ensayo del corte en `staging`"
+        },
+        {
+            "cita": "paso 3 lleva los dieciocho"
+        }
+    ],
+    "DEC-DATA-008#📌7": [
+        {
+            "de": "antes del merge de `B11`",
+            "a": "[…]"
+        },
+        {
+            "cita": "antes del merge de `B11`"
         }
     ],
     "DEC-ENT-006#📌1": [
@@ -388,6 +413,15 @@
             "cita": "la escribe después el script del corte"
         }
     ],
+    "DEC-MP-001": [
+        {
+            "de": "**El cambio se ejecuta en la fecha efectiva, no cuando se decide.**",
+            "a": "[…]"
+        },
+        {
+            "cita": "El cambio se ejecuta en la fecha efectiva, no cuando se decide."
+        }
+    ],
     "DEC-MP-002#📌2": [
         {
             "cita": "los carga el paso 3a"
@@ -428,6 +462,15 @@
         {
             "de": "el `USER`/`GLOBAL` que `S26`\ncanceló y todo complemento cuya principal mató `S12` sobre una vertical con fila en\n`vertical_discontinuation`.",
             "a": "[…]."
+        }
+    ],
+    "DEC-RF-008": [
+        {
+            "de": "la persona con el comprobante de la transferencia",
+            "a": "la persona […]"
+        },
+        {
+            "cita": "la persona con el comprobante de la transferencia"
         }
     ],
     "DEC-RF-008#📌1": [
