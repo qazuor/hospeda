@@ -1,0 +1,8 @@
+605:  también se renueva cada mes, desde el día en que arrancó la prueba (contra la recomendación).
+1805:    monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500.
+5024:  camino»*** (`V/03` §9). Cualquier otro criterio —antigüedad, elección del dueño, el origen
+5054:- **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo
+5957:  a `settled` (perdimos) o `reimbursed` (ganamos); hay un aviso propio (`topic_chargebacks_wh`). No
+5966:  una persona siga el caso. Si la disputa se resuelve a nuestro favor (`reimbursed`), la persona
+7156:  antigüedad. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y
+7210:  autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y

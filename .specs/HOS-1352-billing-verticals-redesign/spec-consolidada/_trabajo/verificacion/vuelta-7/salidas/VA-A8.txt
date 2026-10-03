@@ -1,0 +1,15 @@
+# VA-A8 · fuente → spec · B/docs/05-idempotencia-y-concurrencia.md, B/docs/06-proveedor.md, B/docs/09-conciliacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212 · «dos, recién cuando cerró el registro de cobro del último ciclo de su preapproval» · distinta en s/c1c03210/10-corte/B11.md:35 («la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo»). Exime antes de cerrar el último registro, que todavía puede cobrar; contradice además la transcripción de B11.md:277 y AC:B11:15 en B11.md:1597. La búsqueda en el decision log y las decisiones del owner no encontró una precisión que sustituya último por penúltimo · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:817 · «y sale el correo *«la disputa se resolvió a nuestro favor»*» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por reimbursed, P7, disputa, nuestro favor y ganamos; revisión de 02-nucleo-outbox.md, 04-catalogos.md y B5, B7, B11 y B13a). La fila de B11.md:854 sólo manda P7; AC:B11:25 en B11.md:1551 y TEST:B11:25 en B11.md:2286 tampoco exigen el correo de ese desenlace; TRANS:B:P7 en 04-catalogos.md:4464 carece del efecto y el catálogo de correos sólo conserva el de settled. La mención genérica a «los dos de la disputa resuelta» en 02-nucleo-outbox.md:178 no declara el disparador ni recupera el correo omitido. La regla sigue viva, corroborada por fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263; sin reemplazo en el decision log ni en las decisiones del owner · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/05-idempotencia-y-concurrencia.md | ≈90 | 1–556 | 0 | 0 |
+| B/docs/06-proveedor.md | ≈100 | 1–570 | 0 | 0 |
+| B/docs/09-conciliacion.md | ≈190 | 1–1322 | 1 | 1 |

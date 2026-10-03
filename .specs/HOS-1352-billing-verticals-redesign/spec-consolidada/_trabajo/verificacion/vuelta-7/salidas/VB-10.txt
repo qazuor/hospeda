@@ -1,0 +1,14 @@
+# VB-10 · spec → fuente · 10-corte/B7.md 10-corte/B8a.md
+
+## Hallazgos
+
+10-corte/B7.md:26 · «un *«todavía no se sabe»* que dura 5 días abre la marca 21» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141 («un *«todavía no se sabe»* que dura 3 días abre la marca 21»). La regla vigente de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1072–1074 exige abrirla a los 3 días desde date_created; DEC-CONC-002, segundo 📌, mantiene los 3 días. La propia spec exige 3 en AC:B7:8 (líneas 192–194), LISTA:B7 (390) y TEST:B7:4 (1598). Aplicar el alcance retrasaría dos días la intervención · BLOQUEA
+
+10-corte/B8a.md:467 · «La baja se rechaza mientras exista una devolución de la suscripción en estado CONFIRMED sin desenlace; debe resolverse antes de mandar cancelar el cobro.» · sin soporte: las filas S11, S23 y S24 de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161,173,174 no tienen esa guarda y ordenan cancelar al pedir la baja («se cancela en el proveedor de inmediato», S11). DEC-SUB-009 y sus precisiones tampoco subordinan la baja a resolver un refund. La nueva condición impide una baja permitida y deja abierto el cobro mientras la devolución siga pendiente · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B7.md | 1–1817 | 350 | 1 | 0 |
+| 10-corte/B8a.md | 1–721 | 160 | 1 | 0 |
