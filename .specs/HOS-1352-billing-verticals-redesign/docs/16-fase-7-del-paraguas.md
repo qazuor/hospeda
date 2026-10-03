@@ -883,7 +883,7 @@ package del cobro para mandar un correo (`12-contrato…` §7.1). El nombre sigu
 **Dónde vive**: en Linear, como sub-issue de HOS-1352, igual que `U1`. **Sus dependencias**: `U1`,
 que le deja renombrada la bitácora de correos. **Quién depende de ella**: `V6`, `V9`, `B4` y `B12`, **y desde el lote BK a BV `V4` y `B3`, que encolan antes que ellas —los avisos del trial, el correo del alta y el de antes de cancelar— y cubren por transitividad al resto** (corte del MVP, owner 2026-10-02, BR),
 las primeras unidades que encolan *(con el corte del MVP, `V9` es `V9a` y `V9b`, que heredan la flecha; corte del MVP, owner 2026-10-01, Z)*. **No es una dependencia entre épicas**: `U2` no es de ninguna, así
-que no le suma ninguna a las doce de `B/descomposicion.md` §2.6. ~~**Con ella el programa tiene 24
+que no le suma ninguna a las ~~doce~~ trece de `B/descomposicion.md` §2.6 (BC). ~~**Con ella el programa tiene 24
 unidades.**~~ **Con ella el programa tenía 24 unidades; con `U3`, abajo, tiene 25** (FASES 6 y 7,
 owner 2026-09-30, F).
 
@@ -901,8 +901,8 @@ de `U1` es el primero de la rama con CI completo (arriba).~~ **Entra después de
 con `V1`, `B1` y `U2`, y sólo tiene que estar mergeada antes del ensayo; `U1` sigue siendo el
 primer PR de la rama** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, K). **Quién depende de ella**: ninguna unidad. La esperan el ensayo del corte, que la corre en
 el paso 0 y por eso la necesita mergeada antes, y los pasos 1a, 1b y 2 del corte real. **No es una
-dependencia entre épicas**: `U3` no es de ninguna, así que no le suma ninguna a las doce de
-`B/descomposicion.md` §2.6. **No suma guards** (arriba). **Con ella el programa tiene 25
+dependencia entre épicas**: `U3` no es de ninguna, así que no le suma ninguna a las ~~doce~~ trece de
+`B/descomposicion.md` §2.6 (BC). **No suma guards** (arriba). **Con ella el programa tiene 25
 unidades.**
 
 **`V1` y `B1` arrancan en paralelo** (verificación corta, 2026-09-29, lote P-C): las dos dependen

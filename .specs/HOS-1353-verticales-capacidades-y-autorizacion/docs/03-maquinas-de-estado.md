@@ -1279,7 +1279,7 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    `ARCHIVED` de un dueño cubierto puede tener hasta 180 días, porque `PB9` lo reinicia al
 >    releer~~ **y eso puede adelantar el archivado (`PB4` y `PB5`), que no es irreversible; el
 >    borrado del día 180 no, porque `PB9` cuenta además desde `coberturaPerdidaEn`, que se guarda
->    con el encolado del aviso y no depende de que llegue** (punto 5; FASE 9 vuelta 3, owner
+>    ~~con el encolado del aviso~~ **en la misma transacción que escribe la pérdida de cobertura, antes del aviso posterior al commit, sin entrega durable (CK, `DEC-ARCH-009`)**, y no depende de que llegue** (punto 5; FASE 9 vuelta 3, owner
 >    2026-09-30, lote Q; el cuerpo, verificación, VC3-VT-05). **Causa**: la fila compara estados de
 >    ficha, y la ficha publicada es la única que
 >    guarda la memoria de que hubo cobertura (cap. 01 §1.2, núcleo, ⚠️ punto 3).
@@ -1322,7 +1322,7 @@ atraso cae del lado que **atrasa** el borrado, nunca del que lo adelanta.
 >    (FASE 9 vuelta 3, `F-8V3A2-006`).~~ **Cerrado por el owner** (FASE 9 vuelta 3, owner
 >    2026-09-30, lote Q): `PB9` cuenta el plazo de borrado también desde `coberturaPerdidaEn`, el
 >    instante de la última pérdida de cobertura que devuelve `retenciónDetenida` (`12-contrato…`
->    §4.1), que billing guarda en la misma transacción que encola el aviso, así que el aviso
+>    §4.1), que billing guarda ~~en la misma transacción que encola el aviso~~ **en la misma transacción que escribe la pérdida de cobertura, antes del aviso posterior al commit, sin entrega durable (CK, `DEC-ARCH-009`)**, así que el aviso
 >    atrasado no le adelanta nada; y mientras el dato valga `NINGUNO`, `PB9` no borra en la misma
 >    pasada en que ve la ficha vencida y sin cobertura por primera vez (la fila de `PB9`, arriba).
 >    El caso que lo pedía: sobre la ficha que no estaba publicada el hecho 5 lo escribe

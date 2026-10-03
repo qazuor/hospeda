@@ -645,8 +645,11 @@ porque son pocas filas las que sostienen decisiones, y es obligatoria porque es 
 convierte a `S-METH-01` de una advertencia en un control.
 
 **Con dos límites que el capítulo 06 (épica de billing) ya fijó y que valen igual acá**: guard de
-entorno y guard de presupuesto — una sonda que pueda correr contra producción por error, o gastar
-más de lo autorizado, no se ejecuta.
+entorno y guard de presupuesto — ~~una sonda que pueda correr contra producción por error, o gastar
+más de lo autorizado, no se ejecuta~~ **el guard de entorno abre con `GET /users/me` antes de toda
+operación que muta algo y aborta si la cuenta no coincide con la esperada; no se exige a las
+sondas de sólo lectura. El guard de presupuesto aborta una sonda que mueve plata si el máximo
+a cobrar no coincide exactamente con el monto autorizado** (`06` §4.4 y §9).
 
 ### 4.1 La batería que vigila a Mercado Pago
 

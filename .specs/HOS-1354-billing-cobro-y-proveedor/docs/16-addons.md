@@ -141,7 +141,7 @@ exactamente una de las dos es no nula.
   espera un aviso**: la orden se confirma con la respuesta y releyéndola (`A2`), la que queda sin
   respuesta ~~la reenvía `A3`~~ la confirma `A3` releyéndola si tiene su id,
   y si no la abandona sin reenviar (FASE 9 vuelta 3, lote E), la que se paga después la ve el barrido, y el reembolso se confirma
-  releyendo el pago (`RF3`). Producción no está medida. **Y la devolución de una orden trae su
+  ~~releyendo el pago~~ **releyendo la orden por id** (`RF3`). Producción no está medida. **Y la devolución de una orden trae su
   id**: el `POST` devuelve todas las de la orden, así que la nueva sale por resta contra las ya
   registradas, y por eso las devoluciones de una misma orden se serializan; un `409` es un error
   de programación, no *«ya estaba hecha»* (FASE 5, owner 2026-09-30, lote 5 F, `R5-27`; `EX-58`,

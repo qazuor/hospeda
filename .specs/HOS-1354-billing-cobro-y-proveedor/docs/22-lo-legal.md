@@ -84,7 +84,7 @@ constancia de haber llegado a nadie.
 
 | | |
 |---|---|
-| **qué se asumió** | que sí. `DEC-MP-002` parte 3: llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes |
+| **qué se asumió** | que sí. `DEC-MP-002` parte 3: ~~llegada la fecha efectiva **el monto se muta automáticamente**~~ **`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes |
 | **en qué se apoya** | es el modelo estándar de la industria, y `PC-3` **`VERIFIED`** midió que el proveedor **no pide un consentimiento nuevo** para mutar el monto |
 | **qué NO está verificado** | que eso sea válido en Argentina, que es justo el terreno donde la normativa de consumo suele ser restrictiva |
 | **qué cambia si la respuesta es no** | **`DEC-MP-002` cambia de forma, no de redacción.** Haría falta **aceptación activa**, y a quien no responda **no se lo podría aumentar** — o sea que la cartera quedaría partida en dos precios por tiempo indefinido, y todo el diseño de la ventana de 60 días con tres contactos pasaría a ser otra cosa |

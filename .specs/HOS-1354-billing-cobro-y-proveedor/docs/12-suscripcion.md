@@ -268,7 +268,7 @@ promos**. En el downgrade
 la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto
 esperado de `B/14` §2.4 la seguiría restando. ~~⚠️ Qué monto espera el barrido **entre el pedido y
 este acto** no está escrito (`B/14`, *«lo que este capítulo NO cierra»*).~~ **Entre el pedido y
-el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C).
+el acto que aplica el descenso, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (FASE 8 completa, owner 2026-09-25; `B/14` §2.4; FASE 9 completa: en esa ventana el plan vigente es el viejo, y el monto ya se mutó al nuevo). **Y la migración tiene la ventana gemela**: entre `S37` y el `S38` que aplica su cambio, el monto esperado es ~~el precio de lista de la versión destino para su ciclo, sin promos~~ **el precio de lista de la versión destino para su ciclo, sin promos si el motivo es «retiro», y menos la promo que siga viva si es «aumento»** (BZ; `B/09` §3) (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C).
 
 ---
 
@@ -301,7 +301,7 @@ aplica el cambio de versión al fin del ciclo— cuenta como cliente de la versi
 la acción 19 rechaza fijar su precio (BM) y se publica una versión nueva. El cliente llega por `S38`
 a la versión cuyo precio vio, y un aumento posterior le llega por BZ —una migración por `S37` y `S38`
 con el motivo *«aumento»*— como a cualquier anclado. **El rechazo de la acción 19 cuenta también las
-filas con un `S38` encolado hacia esa versión**, con su test en `B2`.
+filas con un `S38` encolado hacia esa versión**, ~~con su test en `B2`~~; **el predicado y su test los escribe el PR de `B3`, que crea la cola; el AC sigue siendo de `B2` (CF)**.
 
 ---
 
