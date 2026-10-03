@@ -1,17 +1,17 @@
 {
-    "sha": "3c3e88b9b59cb7d766bc34848b8ffd657eb95770",
+    "sha": "5381f7579687651df168575c85f144f9b48daea7",
     "criterio": "VIVO     the live (non-struck) text can be taken literally, and is complete.\n  PARCIAL  the item lives, but a part of its live text is overtaken by a later source that did\n           not strike it: `muerto` says which part, `evidencia` where it was overtaken.\n  MUERTO   the whole item is overtaken: it goes to 90-retirados.\n`efecto` (pins only) says what the 📌 does to the text it lands on: agrega | reemplaza parte |\nreemplaza todo. `cambia_sentido` is true only when the verdict itself picks a reading that no\nlater source states: those go to the owner (AI). Every citation is checked against the line at\nthe SHA; a citation that is not there aborts the run.",
     "resumen": {
         "MIXTO": {
             "VIVO": 41
         },
         "PIN": {
+            "PARCIAL": 47,
             "VIVO": 27,
-            "PARCIAL": 46,
             "MUERTO": 9
         },
         "BK": {
-            "PARCIAL": 9,
+            "PARCIAL": 10,
             "VIVO": 3
         }
     },
@@ -616,6 +616,27 @@
             "evidencia": [],
             "base": null,
             "razon": "lote 1 J y lote P",
+            "cambia_sentido": false
+        },
+        "DEC-MP-002#📌2": {
+            "clase": "PIN",
+            "veredicto": "PARCIAL",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 1463,
+            "hash": "79b63502f38e395eb1872ca5719a30aeb8ea428613942c17a47fb44dd79f1c5e",
+            "cita": "📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BM, la 1, con la",
+            "efecto": "agrega",
+            "muerto": "«los carga el paso 3a»: los precios del corte los carga la migración estructural del paso 3; el 3a sólo los verifica",
+            "evidencia": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 1504,
+                    "cita": "**los precios del corte son los vigentes hoy, los carga la migración estructural del paso 3",
+                    "hash": "75f49db070e25b1dbc8d20a0f17ec682054e8a5a36b3da163d2dfaee792bf087"
+                }
+            ],
+            "base": "DEC-MP-002#📌5; BM",
+            "razon": "barrido de propagación BM de la pasada 9",
             "cambia_sentido": false
         },
         "DEC-PROMO-001#📌1": {
@@ -2278,6 +2299,29 @@
             "base": "BW",
             "razon": "el 📌 siguiente corrige la aplicación inferida de BN",
             "cambia_sentido": false
+        },
+        "DEC-ARCH-013": {
+            "clase": "BK",
+            "veredicto": "PARCIAL",
+            "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+            "linea": 7309,
+            "hash": "4c9df906c90d14a48a3c11fd958522d1ed06e4c416bf7a3d568f6ad365790521",
+            "cita": "### DEC-ARCH-013 — La configuración de planes vive 100 % en la base, y cambia sólo por acciones administrativas",
+            "efecto": null,
+            "muerto": "«corre una vez en el paso 3a»: la migración única del catálogo corre dentro de la migración estructural del paso 3; el 3a sólo verifica",
+            "evidencia": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 7348,
+                    "cita": "única del catálogo corre dentro de la migración estructural del paso 3 del corte, antes de la",
+                    "hash": "d958d008df148a6fa5f87c4b2708e3d679d8dde8d9368a01f4f962cbc1a84737"
+                }
+            ],
+            "base": "DEC-ARCH-013#📌2",
+            "razon": "",
+            "cambia_sentido": false,
+            "familia": "precisada por su propio 📌",
+            "invierte_una_regla_con_fuente": false
         },
         "DEC-MIG-001": {
             "clase": "BK",

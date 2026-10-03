@@ -1,0 +1,34 @@
+sellado: 0 hashes nuevos o cambiados en _trabajo/cobertura-lectura.json
+SHA 5381f75796 · 752 normativos · 752 con pieza · {'script': 209, 'lectura': 543} · sin pieza 0
+  U1           corte    dueña   32 (script   3, lectura  29) · también 1
+  U2           corte    dueña    5 (script   2, lectura   3) · también 12
+  U3           corte    dueña   14 (script   2, lectura  12) · también 11
+  V1           corte    dueña   18 (script   6, lectura  12) · también 14
+  V2           corte    dueña   16 (script   3, lectura  13) · también 27
+  V3           corte    dueña   18 (script   4, lectura  14) · también 11
+  V4           corte    dueña   40 (script   7, lectura  33) · también 30
+  V5           corte    dueña   22 (script   8, lectura  14) · también 14
+  V6           corte    dueña   67 (script   8, lectura  59) · también 48
+  V7           después  dueña   11 (script   3, lectura   8) · también 19
+  V8a          corte    dueña   14 (script   4, lectura  10) · también 21
+  V8b          después  dueña    3 (script   2, lectura   1) · también 12
+  V9a          corte    dueña    5 (script   4, lectura   1) · también 9
+  V9b          después  dueña    8 (script   2, lectura   6) · también 25
+  B1           corte    dueña   48 (script   9, lectura  39) · también 14
+  B2           corte    dueña   19 (script   4, lectura  15) · también 26
+  B3           corte    dueña   71 (script  25, lectura  46) · también 52
+  B4           corte    dueña    7 (script   4, lectura   3) · también 24
+  B5           corte    dueña   58 (script  11, lectura  47) · también 29
+  B6           corte    dueña   12 (script   2, lectura  10) · también 16
+  B7           corte    dueña   36 (script  18, lectura  18) · también 26
+  B8a          corte    dueña   19 (script  12, lectura   7) · también 14
+  B8b          después  dueña   42 (script  21, lectura  21) · también 34
+  B9a          corte    dueña   25 (script   9, lectura  16) · también 23
+  B9b          después  dueña   19 (script   9, lectura  10) · también 31
+  B10          después  dueña   24 (script  14, lectura  10) · también 23
+  B11          corte    dueña   36 (script   2, lectura  34) · también 33
+  B12          después  dueña   14 (script   5, lectura   9) · también 14
+  B13a         corte    dueña   13 (script   4, lectura   9) · también 30
+  B13b         después  dueña    2 (script   2, lectura   0) · también 12
+  CORTE        —        dueña   34 (script   0, lectura  34) · también 0
+RESULTADO: APROBADO (0)

@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `3c3e88b9b59cb7d766bc34848b8ffd657eb95770` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `5381f7579687651df168575c85f144f9b48daea7` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -2111,7 +2111,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 aclaración del owner: *«en el momento del corte no se puede cambiar precio, quedan los que tenemos
 actualmente.. una vez la epica esta terminada, mergeada, deployada y smokeada y queda en produccion
 andando estable, ahi si, si algun dia queremos cambiar un precio, lo podemos cambiar»*)**: **los
-precios del corte son los vigentes hoy**: los carga el paso 3a y no se cambian durante el corte, y
+precios del corte son los vigentes hoy**: […] y no se cambian durante el corte, y
 **ningún precio cambia hasta que el momento 5 del corte esté cumplido**. Desde ahí, la acción 19
 aplica esta decisión así: sobre una versión de plan sin clientes fija el precio; sobre una con
 clientes se rechaza y se publica una versión nueva, que rige para las altas nuevas (la parte 1); el
@@ -2122,6 +2122,8 @@ momento 5, es una regla de operación y no un control del código. Respeta `DEC-
 versión con clientes no cambia de precio. Dónde: `B/descomposicion.md` §2 (filas de `B2` y `B12`)
 y §4; `16-fase-7-del-paraguas.md` §4.7, momento 5; `41-corte-del-mvp/10-decisiones-del-owner.md`,
 BM.
+
+> **Parte sin efecto** (adjudicación `PARCIAL`): «los carga el paso 3a»: los precios del corte los carga la migración estructural del paso 3; el 3a sólo los verifica. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1504` («**los precios del corte son los vigentes hoy, los carga la migración estructural del paso 3»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-mp-002-p3"></a>
 
@@ -5909,8 +5911,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 - **Decisión**: la configuración de planes vive 100 % en la base. El archivo de configuración de
   planes de hoy (`packages/billing/src/config/`, 11 archivos y 3378 líneas) se borra entero, con lo
   que lo lee sólo para eso, y no queda archivo de valores ni como punto de partida del seed. El
-  catálogo de producción nace el día del corte con una migración de datos única, que corre una vez
-  en el paso 3a y nunca más es fuente de nada. Después, los valores sólo cambian por cinco acciones
+  catálogo de producción nace el día del corte con una migración de datos única, que […] y nunca más es fuente de nada. Después, los valores sólo cambian por cinco acciones
   administrativas nuevas, de la 18 a la 22, sólo `SUPER_ADMIN`, auditadas y con una confirmación que
   dice qué cambia: publicar una versión de plan, fijar el precio de un ciclo, publicar una versión
   de complemento, crear o cerrar un código promocional y cambiar un plazo. Lo que antes miraban
@@ -5933,6 +5934,8 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 - → ver [📌2](#dec-arch-013-p2).
 - → ver [📌3](#dec-arch-013-p3).
 - → ver [📌4](#dec-arch-013-p4).
+
+> **Parte sin efecto** (adjudicación `PARCIAL`): «corre una vez en el paso 3a»: la migración única del catálogo corre dentro de la migración estructural del paso 3; el 3a sólo verifica. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7348` («única del catálogo corre dentro de la migración estructural del paso 3 del corte, antes de la»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-013-p1"></a>
 
@@ -14169,6 +14172,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **un descenso encolado cuenta como cliente de la versión destino**: la acción 19 rechaza fijar el precio de una versión hacia la que hay un `S38` encolado (BM) y se publica una versión nueva; el cliente llega por `S38` a la versión cuyo precio vio y, si después hay aumento, le llega por BZ como a cualquier anclado. **El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`. Precisa BM y BZ, y `B/12` §3.2. Las otras opciones eran que no cuente (`S38` aplica el precio nuevo y una relectura muta el monto en el acto: un aumento sin los 60 días del §29) o que fijar el precio cancele los descensos encolados con un aviso (el cliente pierde un pedido que hizo)
+- ⚠️ **Caducada en parte**: CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-41-corte-del-mvp-t12-cd"></a>
 **Letra CD**

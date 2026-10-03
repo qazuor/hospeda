@@ -4,7 +4,7 @@ Lo que las fuentes **declaran no cerrado**, y las preguntas al owner que dejó l
 spec. **Un abierto no es un criterio**: acá no hay US, AC ni tests ([AL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-al));
 cuando el owner contesta, la respuesta se registra en el log y en el ítem que corresponde, y el
 abierto sale de acá. Las citas son `archivo:línea` en el SHA congelado
-`3c3e88b9b59cb7d766bc34848b8ffd657eb95770`. Abreviaturas de ruta: `D/` es
+`5381f7579687651df168575c85f144f9b48daea7`. Abreviaturas de ruta: `D/` es
 `.specs/HOS-1352-billing-verticals-redesign/docs/`, `NUCLEO/` es `D/nucleo/`, `V/` es
 `.specs/HOS-1353-verticales-capacidades-y-autorizacion/` y `B/` es
 `.specs/HOS-1354-billing-cobro-y-proveedor/`.

@@ -20,8 +20,9 @@ import sys
 # then b949031c70… once the CE row named the options it discarded, then 69cbe79360… after CF and CG;
 # then 591034c665… after CH and CI; re-frozen again after CJ, the source residues of the third
 # blind-verification round and the residue of letter Q; then 9149b84a25…; now after the
-# fourth round source corrections, including the counter-review adjustments; now CK from round five).
-SHA = '3c3e88b9b59cb7d766bc34848b8ffd657eb95770'
+# fourth round source corrections, including the counter-review adjustments; CK from round five;
+# now the BM/CK propagation sweep of correction pass nine).
+SHA = '5381f7579687651df168575c85f144f9b48daea7'
 
 # Repository root: scripts/ -> spec-consolidada/ -> HOS-1352.../ -> .specs/ -> repo.
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))

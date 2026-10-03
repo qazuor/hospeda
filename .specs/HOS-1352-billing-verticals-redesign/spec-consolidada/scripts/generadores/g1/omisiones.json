@@ -55,6 +55,11 @@
             "cita": "siguen en once"
         }
     ],
+    "DEC-ARCH-013": [
+        {
+            "cita": "corre una vez en el paso 3a"
+        }
+    ],
     "DEC-ARCH-013#📌1": [
         {
             "de": "se congelan con\nsus valores adentro, en el mismo cambio que lo borra, y salen en el paso 6 del corte.",
@@ -383,6 +388,11 @@
             "cita": "la escribe después el script del corte"
         }
     ],
+    "DEC-MP-002#📌2": [
+        {
+            "cita": "los carga el paso 3a"
+        }
+    ],
     "DEC-MP-003": [
         {
             "de": "**un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de `CUSTOMER_REQUEST`. Los motivos pasan de **dos a tres**, y **todo lo que lee el motivo de pausa hay que recorrerlo** — empezando por `puedePausar()`, los topes del §26 y las salidas `S10`, `S22` y `PB*`.",
@@ -546,6 +556,12 @@
             "alcance": "en parte",
             "por": "el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU",
             "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157",
+            "inferido": false
+        },
+        "OWN:41-corte-del-mvp:t12:CC": {
+            "alcance": "en parte",
+            "por": "CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf)",
+            "origen": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201",
             "inferido": false
         },
         "OWN:28-fase-9-vuelta-1:t1:G1-1": {
@@ -806,8 +822,8 @@
             "por": "CE añade guardas de objetivo LISTING sin retirar A1-bis ni su dueño B10"
         },
         "CF:CC": {
-            "clase": "fuera de alcance",
-            "por": "CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2; pendiente de adjudicación propia, fuera de H5-G1-5/6/7; no es una precisión aditiva"
+            "clase": "reemplazo",
+            "por": "CF reemplaza la ubicación del predicado y test por B3 y conserva el AC de B2"
         }
     }
 }
