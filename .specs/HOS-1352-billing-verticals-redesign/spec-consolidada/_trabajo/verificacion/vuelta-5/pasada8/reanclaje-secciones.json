@@ -1,0 +1,751 @@
+[
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 12,
+        "despues": 12,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 23,
+        "despues": 23,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 44,
+        "despues": 44,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 46,
+        "despues": 46,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 55,
+        "despues": 55,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 68,
+        "despues": 68,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 83,
+        "despues": 83,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 176,
+        "despues": 176,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 967,
+        "despues": 967,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 1022,
+        "despues": 1022,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 1046,
+        "despues": 1046,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 1083,
+        "despues": 1083,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 1115,
+        "despues": 1115,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B11.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "antes": 1166,
+        "despues": 1166,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 12,
+        "despues": 12,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 23,
+        "despues": 23,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 40,
+        "despues": 40,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 54,
+        "despues": 54,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 69,
+        "despues": 69,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 97,
+        "despues": 97,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 161,
+        "despues": 161,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 171,
+        "despues": 171,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 204,
+        "despues": 204,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 301,
+        "despues": 301,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "antes": 327,
+        "despues": 327,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "antes": 33,
+        "despues": 33,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "antes": 38,
+        "despues": 38,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "antes": 50,
+        "despues": 50,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B13a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "antes": 72,
+        "despues": 72,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 17,
+        "despues": 17,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 32,
+        "despues": 32,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 34,
+        "despues": 34,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 46,
+        "despues": 46,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 66,
+        "despues": 66,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 99,
+        "despues": 99,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 101,
+        "despues": 101,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 122,
+        "despues": 122,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 209,
+        "despues": 209,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 234,
+        "despues": 234,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 337,
+        "despues": 337,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 350,
+        "despues": 350,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 352,
+        "despues": 352,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 357,
+        "despues": 357,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 374,
+        "despues": 374,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 385,
+        "despues": 385,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 393,
+        "despues": 393,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 395,
+        "despues": 395,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 401,
+        "despues": 401,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 416,
+        "despues": 416,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 454,
+        "despues": 454,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 502,
+        "despues": 502,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 545,
+        "despues": 545,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 613,
+        "despues": 613,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 634,
+        "despues": 634,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 645,
+        "despues": 645,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "10-corte/B9a.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "antes": 685,
+        "despues": 685,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 185,
+        "despues": 185,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 187,
+        "despues": 187,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 216,
+        "despues": 216,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 256,
+        "despues": 256,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 275,
+        "despues": 275,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 277,
+        "despues": 277,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 288,
+        "despues": 288,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1012,
+        "despues": 1012,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1014,
+        "despues": 1014,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1021,
+        "despues": 1021,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1030,
+        "despues": 1030,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1040,
+        "despues": 1040,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1049,
+        "despues": 1049,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1051,
+        "despues": 1051,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1060,
+        "despues": 1060,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "antes": 1089,
+        "despues": 1089,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-2/B8b.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+        "antes": 1179,
+        "despues": 1179,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 17,
+        "despues": 17,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 25,
+        "despues": 25,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 27,
+        "despues": 27,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 38,
+        "despues": 38,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 53,
+        "despues": 53,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 71,
+        "despues": 71,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 164,
+        "despues": 164,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 166,
+        "despues": 166,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 172,
+        "despues": 172,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 186,
+        "despues": 186,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 200,
+        "despues": 200,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 226,
+        "despues": 226,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 234,
+        "despues": 234,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 248,
+        "despues": 248,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 263,
+        "despues": 263,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 337,
+        "despues": 337,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 359,
+        "despues": 359,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 402,
+        "despues": 402,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 416,
+        "despues": 416,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 434,
+        "despues": 434,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 466,
+        "despues": 466,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 468,
+        "despues": 468,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 485,
+        "despues": 485,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 758,
+        "despues": 758,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 921,
+        "despues": 921,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B10.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "antes": 1039,
+        "despues": 1039,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 30,
+        "despues": 30,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 32,
+        "despues": 32,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 40,
+        "despues": 40,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 58,
+        "despues": 58,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 75,
+        "despues": 75,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 95,
+        "despues": 95,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 130,
+        "despues": 130,
+        "estado": "IGUAL"
+    },
+    {
+        "pieza": "20-fase-3/B12.md",
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "antes": 146,
+        "despues": 146,
+        "estado": "IGUAL"
+    }
+]

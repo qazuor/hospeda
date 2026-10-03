@@ -1,0 +1,16 @@
+✓ base: exit 0
+✓ cinco    las cinco letras de la adjudicación llevan su ⚠️
+✓ nombra    exit 1 · OWN:38-fase-5:t6:F fuera de `letras_muertas`
+✓ contenido exit 1 · OWN:30-revision-del-owner:t5:L3-a fuera de `letras_muertas`
+✓ precisa-AP exit 1 · marca parcial presente; quitarla se detecta
+✓ precisa-BN exit 1 · marca parcial presente; quitarla se detecta
+✓ precisa-BU exit 1 · marca parcial presente; quitarla se detecta
+✓ precisa-BY · BL se conserva sin caducidad
+✓ pipe     exit 1 · la fila 5a se lee entera, y partida en cada «|» falla
+✓ caducada exit 1 · G2-4 sin su ⚠️, con la nota de caducidad de su archivo
+✓ promesa  exit 1 · la nota del 📌7 promete el 📌6 y nada se reubica
+✓ tachada  exit 1 · T sin su ⚠️, con su única cita tachada en 16-fase-7 (S-27)
+✓ revisada exit 1 · F fuera de las vivas revisadas
+✓ parentes exit 1 · el 📌1 de DEC-GRANT-004 cortado por línea
+
+14 canarios · 0 fallas

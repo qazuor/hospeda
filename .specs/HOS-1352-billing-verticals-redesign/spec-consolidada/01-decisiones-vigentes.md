@@ -2,7 +2,7 @@
 
 Las decisiones `ACCEPTED` (y las `SUPERSEDED EN PARTE`, en lo que sobrevive) del decision log del
 paraguas, en su forma efectiva, con sus 📌 vivos; y, al final, el registro de las letras del owner.
-Fuente congelada: `8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b` (`DEC-METH-019`, punto 1). Lo
+Fuente congelada: `3c3e88b9b59cb7d766bc34848b8ffd657eb95770` (`DEC-METH-019`, punto 1). Lo
 retirado —las decisiones `SUPERSEDED` enteras, los 📌 muertos y la letra BI— vive en
 [`90-retirados.md`](90-retirados.md) y acá sólo se enlaza.
 
@@ -507,7 +507,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-TRIAL-010 — El trial se convierte con el primer pago acreditado, y suscribirse termina el trial
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6184
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6196
 
 Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -537,7 +537,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-TRIAL-010
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6205
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6217
 
 Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -563,7 +563,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 La entrada no se edita en su contenido.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «, igual que `T7`»: `T7` salió (N7); la conducta —escribe la fila consumida— está dicha en la misma frase. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6212` («escribe la fila consumida, igual que `T7`.»); `.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:491` («| **sale `T7`**, y el panel rechaza»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «, igual que `T7`»: `T7` salió (N7); la conducta —escribe la fila consumida— está dicha en la misma frase. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6224` («escribe la fila consumida, igual que `T7`.»); `.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:491` («| **sale `T7`**, y el panel rechaza»). Lo omitido del texto de arriba está marcado «[…]».
 
 ## Área SUB
 
@@ -1776,7 +1776,7 @@ muestra**; y la extrapolación de `GR-3` a un plan mensual (punto 1) no la toca 
 
 ### DEC-SUB-022 — La sucesora de quien venía pagando entra en grace si falla su primer cobro, y el barrido corta ese grace si el proveedor ya se rindió
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6356
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6368
 
 Dueña del AC: [B7](10-corte/B7.md#pieza-b7).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -1828,7 +1828,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-SUB-022
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6399
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6411
 
 Dueña del AC: [B7](10-corte/B7.md#pieza-b7).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -1846,7 +1846,7 @@ La entrada no se edita en su contenido.
 
 ### DEC-SUB-023 — Migrar a los clientes de un plan retirado es un tercer camino, aparte del upgrade y del downgrade
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7110
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7122
 
 Dueña del AC: [B12](20-fase-3/B12.md#pieza-b12).
 También: [B3](10-corte/B3.md#pieza-b3) (provee) · [B8b](20-fase-2/B8b.md#pieza-b8b) (provee).
@@ -1883,7 +1883,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-SUB-023
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7136
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7148
 
 Dueña del AC: [B12](20-fase-3/B12.md#pieza-b12).
 También: [B8b](20-fase-2/B8b.md#pieza-b8b) (provee).
@@ -1908,7 +1908,7 @@ cambiado de versión.
 
 #### 📌2 de DEC-SUB-023
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7150
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7162
 
 Dueña del AC: [B12](20-fase-3/B12.md#pieza-b12).
 También: [B3](10-corte/B3.md#pieza-b3) (provee) · [B8b](20-fase-2/B8b.md#pieza-b8b) (provee).
@@ -2626,7 +2626,7 @@ mora que esta decisión espeja, y la pausa deja de estar pendiente en el 📌 an
 
 ### DEC-MP-009 — El canal IPN se escucha y se guarda, sin actuar
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7455
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7467
 
 Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
 También: [B3](10-corte/B3.md#pieza-b3) (implementa).
@@ -2671,7 +2671,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-MP-009
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7488
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7500
 
 Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
 También: [B3](10-corte/B3.md#pieza-b3) (implementa).
@@ -2689,7 +2689,7 @@ tabla deja de ser sólo de IPN y cambia de nombre: `ipn_delivery` pasa a ser
 
 #### 📌2 de DEC-MP-009
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7495
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7507
 
 Dueña del AC: [U3](10-corte/U3.md#pieza-u3).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -2706,7 +2706,7 @@ entregas IPN sin guardarlas, y no mueve plata.
 
 #### 📌3 de DEC-MP-009
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7502
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7514
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -2968,7 +2968,7 @@ Tests mínimos: migración desde cero.
 
 ### DEC-ENT-006 — La presencia pública de Partner es un entitlement sin máquina: la página y el carrusel son claves, y el admin la baja con un bit de moderación
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6712
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6724
 
 Dueña del AC: [V1](10-corte/V1.md#pieza-v1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa) · [V7](20-fase-4/V7.md#pieza-v7) (implementa) · [V8b](20-fase-4/V8b.md#pieza-v8b) (implementa).
@@ -3003,7 +3003,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-ENT-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6734
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6746
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V5](10-corte/V5.md#pieza-v5) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -3020,13 +3020,13 @@ cadena pregunta por esa familia. Por `V/17` (*«perder el acceso nunca revoca un
 sin moderar de esta decisión (B, **contra la recomendación**, que era declarar el paso 3 vacuo
 para Partner).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «se asigna al aprobar la postulación»: el rol llega con el reclamo. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6745` («El rol de socio del»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «se asigna al aprobar la postulación»: el rol llega con el reclamo. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6757` («El rol de socio del»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-ent-006-p2"></a>
 
 #### 📌2 de DEC-ENT-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6744
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6756
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -3042,13 +3042,13 @@ columnas de pago de `partners`»* que borra `U1` son **seis**: `subscription_sta
 `payment_confirmed_through`; […] (H; ver el
 📌 de `DEC-ARCH-014`). Origen: (FASE 5, lote de la aplicación, owner 2026-09-30, F y H).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «o el alta directa del admin con dueño» y «`starts_at` y `ends_at` quedan hasta la unidad de socios». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6756` («del 📌 anterior se lee *«cuando queda con dueño»*»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988` («| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «o el alta directa del admin con dueño» y «`starts_at` y `ends_at` quedan hasta la unidad de socios». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6768` («del 📌 anterior se lee *«cuando queda con dueño»*»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988` («| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-ent-006-p3"></a>
 
 #### 📌3 de DEC-ENT-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6753
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6765
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -3068,7 +3068,7 @@ Origen: (FASE 5, lote de la aplicación, segunda tanda, owner 2026-09-30, N y O)
 
 #### 📌4 de DEC-ENT-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6760
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6772
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -3465,7 +3465,7 @@ Tests mínimos: migración desde cero.
 
 ### DEC-ADDON-007 — Los addons siguen a su título: se pausan con la pausa, mueren cuando ninguna principal los sostiene, y se emiten sólo donde son compatibles
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6612
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6624
 
 Dueña del AC: [B5](10-corte/B5.md#pieza-b5).
 También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [B7](10-corte/B7.md#pieza-b7) (implementa) · [B10](20-fase-3/B10.md#pieza-b10) (implementa).
@@ -3506,7 +3506,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-ADDON-007
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6643
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6655
 
 Dueña del AC: [B5](10-corte/B5.md#pieza-b5).
 También: [B10](20-fase-3/B10.md#pieza-b10) (implementa).
@@ -3635,7 +3635,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-AUTH-001 — La vertical de un recurso es inmutable y se lee del recurso; lo ajeno existe sólo en público, lo propio no consulta el paso 6, y el caché se invalida por `user`
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6660
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6672
 
 Dueña del AC: [V3](10-corte/V3.md#pieza-v3).
 También: [V5](10-corte/V5.md#pieza-v5) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -3682,7 +3682,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-AUTH-001
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6696
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6708
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3699,7 +3699,7 @@ inhabilitada, y se conservan. Se corrige sólo la razón: el punto 3 no cambia (
 
 #### 📌2 de DEC-AUTH-001
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6703
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6715
 
 Dueña del AC: [V3](10-corte/V3.md#pieza-v3).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3715,7 +3715,7 @@ sospechosas va en los logs estructurados. Dónde: `V/02` §3.4; `V/descomposicio
 
 ### DEC-AUTH-002 — Una acción administrativa nunca tiene actor = sujeto
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6820
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6832
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3735,7 +3735,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-AUTH-002
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6831
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6843
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3753,7 +3753,7 @@ solo, bloquearía la operación (`V/17` §3.2 regla 5 y su «NO cierra»; `27-ci
 
 ### DEC-AUTH-003 — El admin edita el contenido de una ficha ajena con una acción propia, y nada más
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6842
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6854
 
 Dueña del AC: [V8a](10-corte/V8a.md#pieza-v8a).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3781,7 +3781,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-AUTH-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6857
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6869
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa).
@@ -3794,7 +3794,7 @@ sus pasos 5 a 7 se evalúan sobre el dueño de la ficha. Su aviso es la fila 26 
 
 #### 📌2 de DEC-AUTH-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6859
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6871
 
 Cobertura: **sólo citable**, en la lista cerrada de `03-contrato-de-cobertura.md` (letra [BA](#own-41-corte-del-mvp-t7-ba): `DEC-AUTH-003#📌2`); no lleva AC.
 
@@ -3807,7 +3807,7 @@ nombre del cliente; cuando se diseñe, se reabre el "ni las que se agreguen" de 
 
 #### 📌3 de DEC-AUTH-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6863
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6875
 
 Dueña del AC: [V8a](10-corte/V8a.md#pieza-v8a).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3820,7 +3820,7 @@ su dueño es la acción 23, otra fila con su permiso.
 
 #### 📌4 de DEC-AUTH-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6866
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6878
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa) · [V8a](10-corte/V8a.md#pieza-v8a) (implementa).
@@ -3840,7 +3840,7 @@ físico de fichas y de cuentas (lote 3, C).
 
 #### 📌5 de DEC-AUTH-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6875
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6887
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -3859,7 +3859,7 @@ la aplicación, owner 2026-09-30, L).
 
 ### DEC-AUTH-004 — El reclamo de un Partner vincula una sola vez y a la cuenta que reclama, y una cuenta es dueña de a lo sumo un Partner
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6887
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6899
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -3900,7 +3900,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-AUTH-005 — Postular un Partner no exige cuenta: es la segunda excepción del guest en el paso 1
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6922
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6934
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa) · [V6](10-corte/V6.md#pieza-v6) (provee).
@@ -3936,7 +3936,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-AUTH-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6947
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6959
 
 Dueña del AC: [V5](10-corte/V5.md#pieza-v5).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa).
@@ -3953,7 +3953,7 @@ baja (lote AI).
 
 #### 📌2 de DEC-AUTH-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6953
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6965
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V7](20-fase-4/V7.md#pieza-v7) (implementa).
@@ -4433,7 +4433,7 @@ costado.
 
 ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7045
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7057
 
 Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
 También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa).
@@ -4463,7 +4463,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-DATA-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7064
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7076
 
 Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
 También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa).
@@ -4482,7 +4482,7 @@ persona el barrido diario, con el motivo `REANUDACIÓN_NO_APLICADA`, que ya exis
 
 #### 📌2 de DEC-DATA-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7072
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7084
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa).
@@ -4498,7 +4498,7 @@ consulta `retenciónDetenida` y no cuenta desde el más tardío de los dos insta
 
 ### DEC-DATA-007 — La moderación tiene dos niveles: pedir un arreglo o bajar la ficha
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7080
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7092
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa).
@@ -4529,7 +4529,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌1 de DEC-DATA-007
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7101
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7113
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa).
@@ -4546,7 +4546,7 @@ fila nueva en el catálogo.
 
 ### DEC-DATA-008 — Todo plazo que decide cuándo pasa algo es configurable, y cada reloj cuenta con la versión con que arrancó
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7366
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7378
 
 Dueña del AC: [B2](10-corte/B2.md#pieza-b2).
 También: [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (lee) · [V8a](10-corte/V8a.md#pieza-v8a) (implementa) · [B3](10-corte/B3.md#pieza-b3) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa) · [B12](20-fase-3/B12.md#pieza-b12) (implementa).
@@ -4594,7 +4594,7 @@ Tests mínimos: migración desde cero; smoke manual · prod.
 
 #### 📌1 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7397
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7409
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V8a](10-corte/V8a.md#pieza-v8a) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -4611,13 +4611,13 @@ cada uno cuenta con su versión. Los plazos de las dos mitades van en una sola p
 en la app del panel, que lee las dos mitades por la API sin importar ninguna, así que `G14` no la
 marca. Y la cota de `G-R5-B` queda atada al plazo de borrado, no a 6 meses literales.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en staging» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7424` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en staging» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-data-008-p2"></a>
 
 #### 📌2 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7407
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7419
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -4630,7 +4630,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 #### 📌3 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7410
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7422
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [B2](10-corte/B2.md#pieza-b2) (implementa).
@@ -4642,13 +4642,13 @@ corte, antes que la escritura `C` y la prueba del corte, que la guardan, y el pa
 verifica. La migración falla si alguno está vacío, y el owner fija los cinco sin valor escrito
 […].
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo» y la cifra «quince valores» (dieciocho). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7424` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7416` («pasa de quince a dieciocho plazos»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo» y la cifra «quince valores» (dieciocho). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7428` («pasa de quince a dieciocho plazos»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-data-008-p4"></a>
 
 #### 📌4 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7415
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7427
 
 Dueña del AC: [B2](10-corte/B2.md#pieza-b2).
 También: [B11](10-corte/B11.md#pieza-b11) (lee).
@@ -4661,13 +4661,13 @@ acreditados y de órdenes pagadas (plazo 18), los tres de billing. Sus valores l
 (lote R): el 16, 7 días; el 17, 7 días; el 18, 180 días. La versión 1 de los plazos que crea el
 paso 3 lleva los dieciocho, y los otros cinco sin valor escrito los sigue fijando el owner […].
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en `staging`» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7424` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en `staging`» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-data-008-p5"></a>
 
 #### 📌5 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7422
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7434
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 Tests mínimos: smoke manual · staging.
@@ -4683,7 +4683,7 @@ migración que falla si alguno está vacío corre en cada revisión automática 
 
 #### 📌6 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7428
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7440
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V9b](20-fase-1/V9b.md#pieza-v9b) (lee).
@@ -4702,7 +4702,7 @@ aunque la escritura `C` y la prueba del corte ya leían la versión 1. La mitad 
 
 #### 📌7 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7448
 
 Dueña del AC: [B2](10-corte/B2.md#pieza-b2).
 También: [B11](10-corte/B11.md#pieza-b11) (usa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa).
@@ -4723,7 +4723,7 @@ cambio de plazo posterior no la adelanta. Dónde: `NUCLEO/02` §1.5; `B/descompo
 
 #### 📌8 de DEC-DATA-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7446
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7458
 
 Dueña del AC: [B2](10-corte/B2.md#pieza-b2).
 También: [B11](10-corte/B11.md#pieza-b11) (usa).
@@ -5463,7 +5463,7 @@ la cubre la de la dirección de ida, y […]. Y mientras la app de la rama está
 desde la limpieza del principio hasta que `B4` integra la implementación real, las dos mitades se
 construyen y se prueban contra los simuladores del contrato (`12-contrato…` §7.1).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «las filas vivas sin `CANCEL_SCHEDULED`» (contesta sobre la cancelación confirmada, lote D) y «siguen siendo once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2621` («contesta sobre la cancelación confirmada por Mercado Pago»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7598` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «las filas vivas sin `CANCEL_SCHEDULED`» (contesta sobre la cancelación confirmada, lote D) y «siguen siendo once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2621` («contesta sobre la cancelación confirmada por Mercado Pago»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-006-p9"></a>
 
@@ -5481,7 +5481,7 @@ estructura, sin interfaces, validaciones, simuladores ni casos. `V1` y `B1` arra
 y cada una llena su parte: `V1` las cuatro primeras cosas, y construye `G14`, y `B1` la quinta,
 la interfaz del reloj. Así `B1` no espera a `V1`, y las dependencias entre épicas siguen en […].
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «siguen en once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7598` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «siguen en once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-006-p10"></a>
 
@@ -5674,9 +5674,9 @@ Tests mínimos: migración desde cero.
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6146
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
-Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+Tests mínimos: migración desde cero.
 
-- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la población excluye `MODERATED` e incluye a Partner; ver su 📌) · **Decide**: owner
+- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el mismo día** (FASE 9 completa: la población excluye `MODERATED` e incluye a Partner; ver su 📌) — **ratificada el 2026-10-03** (corte del MVP, CK; ver su 📌) · **Decide**: owner
 - **Problema**: el aviso *«la cobertura de (user, vertical) cambió»* (`12-contrato…` §3) es la
   **única** señal que billing le empuja a verticales, y no tiene transporte declarado —el outbox
   del núcleo es sólo de correos—. Tres agujeros (FASE 8 completa, racimo `R10`): (1) si se pierde
@@ -5703,6 +5703,8 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 - **Origen**: FASE 8 completa, racimo `R10`; elección del owner del 2026-09-25.
 - → ver [📌1](#dec-arch-009-p1).
 
+- → ver [📌2](#dec-arch-009-p2).
+
 <a id="dec-arch-009-p1"></a>
 
 #### 📌1 de DEC-ARCH-009
@@ -5720,6 +5722,27 @@ cobertura—; (2) **incluye a todo `user + Partner` con una clave de presencia**
 `DEC-ENT-006`), que no tiene fichas: sobre ése no corre ninguna transición; resuelve en vivo si el
 conjunto efectivo otorga la clave, lo compara con el caché y, si difieren, **invalida** (`V/03` §9,
 `V/18` §1.6). La entrada no se edita en su contenido.
+
+<a id="dec-arch-009-p2"></a>
+
+#### 📌2 de DEC-ARCH-009
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6182
+
+Dueña del AC: [B4](10-corte/B4.md#pieza-b4).
+Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+
+📌 **Ratificada el 2026-10-03, con OK del owner (corte del MVP, CK, la 1)**: el aviso de
+cambio de cobertura **sale después del commit, sin entrega durable**; el reconciliador diario
+sigue siendo la red. **El outbox de `U2` es sólo de correos**: se corrige el encolado del aviso
+que decía `B/descomposicion.md`, fila `B4` y §3. `B4` sigue esperando a `U2` por las
+obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por ese aviso.
+**`coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura**,
+antes de emitir el aviso; la lectura no espera su entrega (`12-contrato…` §4.1).
+La población y las exclusiones del reconciliador no cambian: **no corre la máquina de trial**
+ni promete recuperar el aviso de primer pago. El atraso admitido sigue siendo hasta un día
+para los casos que cubre (`12-contrato…` §3). Registro: `41-corte-del-mvp/10-decisiones-del-owner.md`,
+tabla t17, CK. La entrada no se edita en su contenido.
 
 <a id="dec-arch-010"></a>
 
@@ -5755,7 +5778,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-ARCH-012 — El agrupamiento viejo de Gastronomía y Experiencia desaparece del repositorio, ni como histórico
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7220
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7232
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -5795,7 +5818,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 
 #### 📌1 de DEC-ARCH-012
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7248
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7260
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa) · [U3](10-corte/U3.md#pieza-u3) (implementa).
@@ -5830,7 +5853,7 @@ se reescriben sin la palabra, con el OK del owner a esa reescritura.
 
 #### 📌2 de DEC-ARCH-012
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7272
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7284
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 Tests mínimos: migración desde cero; migración sobre datos.
@@ -5851,7 +5874,7 @@ también `alliance_leads.partner_type`.
 
 #### 📌3 de DEC-ARCH-012
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7283
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7295
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -5873,7 +5896,7 @@ producción: la genera Drizzle desde el esquema del repositorio y se compara con
 
 ### DEC-ARCH-013 — La configuración de planes vive 100 % en la base, y cambia sólo por acciones administrativas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7297
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7309
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V1](10-corte/V1.md#pieza-v1) (implementa) · [V2](10-corte/V2.md#pieza-v2) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [B2](10-corte/B2.md#pieza-b2) (implementa) · [V8a](10-corte/V8a.md#pieza-v8a) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa) · [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa) · [B10](20-fase-3/B10.md#pieza-b10) (implementa) · [B13b](20-fase-3/B13b.md#pieza-b13b) (implementa).
@@ -5915,7 +5938,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 
 #### 📌1 de DEC-ARCH-013
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7326
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7338
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -5929,13 +5952,13 @@ planes de billing en la regla del `CLAUDE.md` raíz. La migración única del ca
 alguno de los cinco plazos sin valor escrito está vacío, y el owner los fija […]. Y las claves, de los entitlements y de los límites, siguen en el código; los
 valores viven en la base.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): las 11 migraciones «se congelan» (las saca `U1`) y «antes del ensayo del corte» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7347` («ya no se congelan hasta el paso 6: las saca de la rama»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7424` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): las 11 migraciones «se congelan» (las saca `U1`) y «antes del ensayo del corte» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7359` («ya no se congelan hasta el paso 6: las saca de la rama»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-013-p2"></a>
 
 #### 📌2 de DEC-ARCH-013
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7335
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7347
 
 Dueña del AC: [V2](10-corte/V2.md#pieza-v2).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -5950,7 +5973,7 @@ mitad, el corte entra en la rama de aborto.
 
 #### 📌3 de DEC-ARCH-013
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7339
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7351
 
 Dueña del AC: [V1](10-corte/V1.md#pieza-v1).
 También: [V2](10-corte/V2.md#pieza-v2) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -5970,13 +5993,13 @@ owner **antes del merge de `V6`**, no antes del ensayo del corte, porque la migr
 alguno está vacío corre en cada revisión automática desde que se mergea (lote 3 D; ver el 📌 de
 `DEC-DATA-008`).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «las escribe después el script del corte»: la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7360` («**los escribe la herramienta del corte de `V6`**»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «las escribe después el script del corte»: la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7372` («**los escribe la herramienta del corte de `V6`**»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-013-p4"></a>
 
 #### 📌4 de DEC-ARCH-013
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7352
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7364
 
 Dueña del AC: [V1](10-corte/V1.md#pieza-v1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -6000,7 +6023,7 @@ suelto sigue sin importar código de ningún sistema (B; ver el 📌 de `DEC-MIG
 
 ### DEC-ARCH-014 — El sistema viejo sale entero de la rama al principio de la épica, antes de construir el nuevo
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7510
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7522
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 Tests mínimos: migración desde cero; migración sobre datos; smoke manual · prod.
@@ -6052,7 +6075,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 
 #### 📌1 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7547
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7559
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [B1](10-corte/B1.md#pieza-b1) (implementa).
@@ -6066,13 +6089,13 @@ mismo cambio; `G16` sigue en `B1`, porque su predicado (b) necesita el package d
 sonda de Webhooks y el pago chico de IPN (`DEC-MP-009`). `EX-46` queda sin sujeto. […] Dónde: `16-fase-7-del-paraguas.md` §4.2 y
 §4.6; las dos descomposiciones, §2 a §4.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): O-B: el cierre de la ruta hasta las lápidas del paso 4; las cifras «23 unidades», «33» y «once». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7603` («lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7598` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): O-B: el cierre de la ruta hasta las lápidas del paso 4; las cifras «23 unidades», «33» y «once». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7615` («lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-014-p2"></a>
 
 #### 📌2 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7561
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7573
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V1](10-corte/V1.md#pieza-v1) (implementa) · [B1](10-corte/B1.md#pieza-b1) (implementa).
@@ -6084,13 +6107,13 @@ limpieza, crea vacío el package del contrato; `V1` y `B1` arrancan en paralelo 
 su parte (`DEC-ARCH-006`). […] `G14` sigue en `V1`. Dónde: `16-fase-7-del-paraguas.md` §4.2 y §4.6; `B/21`, «NO
 cierra»; `B/09` §3; `12-contrato-de-cobertura.md` §7.1; las dos descomposiciones.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): P-A (el Worker) y P-B (el detector); las cifras «once» y «33»; P-C sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7603` («lote P pierde el Worker del borde (P-A)»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7598` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): P-A (el Worker) y P-B (el detector); las cifras «once» y «33»; P-C sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7615` («lote P pierde el Worker del borde (P-A)»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-014-p3"></a>
 
 #### 📌3 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7573
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7585
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [U2](10-corte/U2.md#pieza-u2) (implementa) · [V5](10-corte/V5.md#pieza-v5) (implementa).
@@ -6129,7 +6152,7 @@ Recontadas con script sobre `B/descomposicion.md` §2.6: filas 1 a 7, 9 a 12 y 1
 
 #### 📌4 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7601
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7613
 
 Dueña del AC: [CORTE](30-el-corte.md).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -6146,7 +6169,7 @@ excepción de la regla que bloquea toda escritura (lote B). El package del contr
 
 #### 📌5 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7608
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7620
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V1](10-corte/V1.md#pieza-v1) (implementa).
@@ -6168,7 +6191,7 @@ de la aplicación, owner 2026-09-30, H y E).
 
 #### 📌6 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7617
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7629
 
 Dueña del AC: [U3](10-corte/U3.md#pieza-u3).
 Tests mínimos: smoke manual · staging.
@@ -6189,13 +6212,13 @@ antes del ensayo; `U1` sigue siendo el primer PR de la rama** (FASES 6 y 7, lote
 
 Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).
 
-> **Texto reubicado**: la fuente lo pegó al 📌7 ([DEC-ARCH-014#📌7](#dec-arch-014-p7), `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7640`); es de este 📌 (letra F). Allá está omitido y marcado «[…]».
+> **Texto reubicado**: la fuente lo pegó al 📌7 ([DEC-ARCH-014#📌7](#dec-arch-014-p7), `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7652`); es de este 📌 (letra F). Allá está omitido y marcado «[…]».
 
 <a id="dec-arch-014-p7"></a>
 
 #### 📌7 de DEC-ARCH-014
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7642
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V1](10-corte/V1.md#pieza-v1) (implementa).
@@ -6213,13 +6236,13 @@ vieja, así que sin esto `G8` no nace verde. Ninguno suma un guard del programa.
 Origen: (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, I) (FASES 6 y 7, verificación, 2026-09-30, F12).
 […]
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): la cola «Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke … Origen: (FASES 6 y 7, owner 2026-09-30, F)»: es texto del 📌6 (`U3`, letra F) que quedó pegado a éste; la consolidada la muestra bajo el 📌6, con su nota, y no bajo el 📌7. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7640` («Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7618` («**el programa pasa de 24 a 25 unidades**. Una»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): la cola «Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke … Origen: (FASES 6 y 7, owner 2026-09-30, F)»: es texto del 📌6 (`U3`, letra F) que quedó pegado a éste; la consolidada la muestra bajo el 📌6, con su nota, y no bajo el 📌7. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7652` («Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630` («**el programa pasa de 24 a 25 unidades**. Una»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-015"></a>
 
 ### DEC-ARCH-015 — El package del contrato se llama `@repo/billing-verticals-contract`
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7647
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7659
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V1](10-corte/V1.md#pieza-v1) (implementa).
@@ -6249,7 +6272,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-ARCH-016 — Los gates de aceptación del programa: cinco momentos, cada uno con una condición que se comprueba desde afuera
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7743
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7755
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -6349,7 +6372,7 @@ Tests mínimos: migración desde cero; smoke manual · prod.
 
 #### 📌1 de DEC-ARCH-016
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7832
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7844
 
 Dueña del AC: [CORTE](30-el-corte.md).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -6365,7 +6388,7 @@ piezas igual que para las del corte (`DEC-ARCH-017`, AE). Los momentos 3 a 5 no 
 
 #### 📌2 de DEC-ARCH-016
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7838
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7850
 
 Dueña del AC: [CORTE](30-el-corte.md).
 Tests mínimos: smoke manual · prod; smoke manual · staging.
@@ -6383,7 +6406,7 @@ producción»* (Q2). Dónde: `16-fase-7-del-paraguas.md` §4.2 (el paso 0 y la r
 
 ### DEC-ARCH-017 — El MVP: el corte lleva 22 piezas y ocho llegan después, en fases aditivas sobre el sistema nuevo
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7849
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7861
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [B4](10-corte/B4.md#pieza-b4) (implementa) · [V9a](10-corte/V9a.md#pieza-v9a) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa).
@@ -6472,7 +6495,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
 
 #### 📌1 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7916
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7928
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa) · [B9a](10-corte/B9a.md#pieza-b9a) (implementa) · [B8a](10-corte/B8a.md#pieza-b8a) (implementa) · [B5](10-corte/B5.md#pieza-b5) (implementa) · [B7](10-corte/B7.md#pieza-b7) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa).
@@ -6495,13 +6518,13 @@ suscribirte»* y `B8b` lo saca: **la única excepción declarada a *«aditiva»*
 texto (`16-fase-7-del-paraguas.md` §4.6 y §4.7; `V/descomposicion.md` §2.14;
 `B/descomposicion.md` §2.12).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5` (AV); y «promos y cortesías, `B9a`»: el esquema de promos y cortesías es de `B3` (BG; residuo del triage AB-g1-2, 2026-10-02). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7934` («**las tablas del modelo de addons»); `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73` («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7957` («**BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5` (AV); y «promos y cortesías, `B9a`»: el esquema de promos y cortesías es de `B3` (BG; residuo del triage AB-g1-2, 2026-10-02). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946` («**las tablas del modelo de addons»); `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73` («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7969` («**BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-017-p2"></a>
 
 #### 📌2 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7933
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7945
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B5](10-corte/B5.md#pieza-b5) (implementa) · [B7](10-corte/B7.md#pieza-b7) (implementa) · [B4](10-corte/B4.md#pieza-b4) (implementa).
@@ -6518,7 +6541,7 @@ columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`; **`S21` y 
 
 #### 📌3 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7939
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7951
 
 Cobertura: **sólo citable**, en la lista cerrada de `03-contrato-de-cobertura.md` (letra [BA](#own-41-corte-del-mvp-t7-ba): `DEC-ARCH-017#📌3`); no lleva AC.
 
@@ -6535,7 +6558,7 @@ primera fecha en que un aviso de retención podría salir (AC)—; Fase 2, `B8b`
 
 #### 📌4 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7947
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7959
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [U3](10-corte/U3.md#pieza-u3) (implementa) · [V3](10-corte/V3.md#pieza-v3) (implementa) · [V7](20-fase-4/V7.md#pieza-v7) (implementa) · [B5](10-corte/B5.md#pieza-b5) (provee) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa) · [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa) · [B13b](20-fase-3/B13b.md#pieza-b13b) (implementa).
@@ -6568,7 +6591,7 @@ descomposiciones, §2 y §4; `16-fase-7-del-paraguas.md` §4.2 y §4.6;
 
 #### 📌5 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7969
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7981
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa) · [V3](10-corte/V3.md#pieza-v3) (implementa).
@@ -6590,7 +6613,7 @@ es el registro del dinero. Sin flechas nuevas. Dónde: `B/descomposicion.md` §2
 
 #### 📌6 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7980
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B5](10-corte/B5.md#pieza-b5) (implementa) · [B7](10-corte/B7.md#pieza-b7) (implementa) · [B8b](20-fase-2/B8b.md#pieza-b8b) (implementa) · [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa) · [B10](20-fase-3/B10.md#pieza-b10) (implementa) · [B11](10-corte/B11.md#pieza-b11) (implementa) · [V4](10-corte/V4.md#pieza-v4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa) · [U2](10-corte/U2.md#pieza-u2) (provee).
@@ -6627,13 +6650,13 @@ descomposiciones, §2, §2.12 y §2.14, §3 y §4; `B/03` §3.2 (`S2`, `S10`); `
 `NUCLEO/07` §1.4 y §6; `NUCLEO/08` §3 y §4.1; `16-fase-7-del-paraguas.md` §4.6;
 `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, BL, BN, BO, BP y BR.
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): en BN, «`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)»: la crea `U2` (BW). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8012` («**`domain_event` la crea `U2`**, y no `V9a`.»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): en BN, «`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)»: la crea `U2` (BW). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8024` («**`domain_event` la crea `U2`**, y no `V9a`.»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-arch-017-p7"></a>
 
 #### 📌7 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8011
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023
 
 Dueña del AC: [U2](10-corte/U2.md#pieza-u2).
 También: [B7](10-corte/B7.md#pieza-b7) (implementa) · [B9a](10-corte/B9a.md#pieza-b9a) (implementa) · [V9a](10-corte/V9a.md#pieza-v9a) (usa).
@@ -6656,7 +6679,7 @@ es de `B9a`, que llega después, así que `B7` escribe esa rama entera y la llam
 
 #### 📌8 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8035
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B5](10-corte/B5.md#pieza-b5) (implementa) · [B7](10-corte/B7.md#pieza-b7) (implementa) · [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -6679,7 +6702,7 @@ quien está suspendido. Sin flechas nuevas. Dónde: `B/03` §3.2 (`S7`, `S15`);
 
 #### 📌9 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8035
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8047
 
 Dueña del AC: [B10](20-fase-3/B10.md#pieza-b10).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -6703,7 +6726,7 @@ vuelta** (`H-VB-B2-15`): recontado con `41-corte-del-mvp/`: 30 piezas, 22 al cor
 
 #### 📌10 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8049
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8061
 
 Dueña del AC: [B10](20-fase-3/B10.md#pieza-b10).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -6720,7 +6743,7 @@ destacar. La guarda y su test son de `B10`. Sin flechas nuevas. Dónde: `B/03` �
 
 #### 📌11 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8056
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8068
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -6741,7 +6764,7 @@ de la baja; `B8a` conserva sus pruebas de integración. Sin flechas nuevas: `B3`
 
 #### 📌12 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8066
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8078
 
 Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
 También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [B11](10-corte/B11.md#pieza-b11) (implementa).
@@ -6767,7 +6790,7 @@ cero violaciones. Dónde: `B/descomposicion.md` §2, §2.11, §2.12, §3 y §4 (
 
 #### 📌13 de DEC-ARCH-017
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8081
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8093
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 Tests mínimos: migración desde cero.
@@ -7244,7 +7267,7 @@ control de drift la ven. Origen: (FASE 5, lote de la aplicación, segunda tanda,
 
 ### DEC-MIG-005 — El corte trata a la cartera vieja como clientes nuevos: de su billing no se conserva nada, no se devuelve la diferencia del aborto y se les regala el trial; se conservan el usuario, sus preferencias y sus fichas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6410
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6422
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -7330,7 +7353,7 @@ Tests mínimos: migración desde cero.
 
 #### 📌3 de DEC-MIG-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6496
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6508
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -7343,7 +7366,7 @@ a cada dueño con una ficha a la vista.
 
 #### 📌5 de DEC-MIG-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6505
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6517
 
 Cobertura: **sólo citable**, en la lista cerrada de `03-contrato-de-cobertura.md` (letra [BA](#own-41-corte-del-mvp-t7-ba): `DEC-MIG-005#📌5`); no lleva AC.
 
@@ -7352,13 +7375,13 @@ recomendación)**: No se devuelve nada a nadie, y el trial regalado no se presen
 compensación. Hecho del owner: no hay anuales vivas en el sistema viejo ni las va a haber antes
 del corte. […]
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): la parte del lote G (el detector del titular que sólo conoce el proveedor); lo del lote F sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6518` («📌 del 2026-09-30, la parte del lote G»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): la parte del lote G (el detector del titular que sólo conoce el proveedor); lo del lote F sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6530` («📌 del 2026-09-30, la parte del lote G»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-mig-005-p6"></a>
 
 #### 📌6 de DEC-MIG-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6510
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6522
 
 Dueña del AC: [B11](10-corte/B11.md#pieza-b11).
 También: [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -7385,7 +7408,7 @@ lista, una ficha cada una: las fichas de las demás cuentas se borran en el cort
 
 #### 📌7 de DEC-MIG-005
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6526
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6538
 
 Dueña del AC: [CORTE](30-el-corte.md).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -7404,7 +7427,7 @@ los 📌 de `DEC-MIG-002` y `DEC-MIG-003`).
 
 ### DEC-MIG-006 — El corte publica las fichas que estaban a la vista y le arranca a su dueño una prueba activa
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6961
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6973
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [B9a](10-corte/B9a.md#pieza-b9a) (implementa) · [V4](10-corte/V4.md#pieza-v4) (provee).
@@ -7440,7 +7463,7 @@ Tests mínimos: migración desde cero.
 
 #### 📌2 de DEC-MIG-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6990
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7002
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [B9a](10-corte/B9a.md#pieza-b9a) (implementa).
@@ -7461,13 +7484,13 @@ no hay recuentos en el paso 0, y el 4c corre siempre, sobre las fichas borradas 
 servía, las tres colecciones y los 22 destinos (S-28). Las dos cuentas de cortesía siguen
 recibiendo la prueba y el grant del 3b (S-13).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): «la escribe después el script del corte»: la escribe la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7006` («**los escribe la herramienta del corte»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): «la escribe después el script del corte»: la escribe la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7018` («**los escribe la herramienta del corte»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-mig-006-p3"></a>
 
 #### 📌3 de DEC-MIG-006
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7004
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7016
 
 Dueña del AC: [V6](10-corte/V6.md#pieza-v6).
 También: [V4](10-corte/V4.md#pieza-v4) (provee).
@@ -7486,7 +7509,7 @@ rutas de sus fotos y su token de calendario**; el 5b la recorre y la borra al te
 
 ### DEC-MIG-007 — Las premisas del corte: reemplazo sin convivencia, cinco cuentas que importan y el resto a cargo del owner, por privado
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7015
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7027
 
 Dueña del AC: [CORTE](30-el-corte.md).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -8540,7 +8563,7 @@ no un guard. Dónde: `16-fase-7-del-paraguas.md` §4.7, momento 1; las dos desco
 
 ### DEC-TEST-003 — El Mercado Pago falso miente sólo lo medido, y una batería vigila al proveedor real
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7167
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7179
 
 Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
 Tests mínimos: smoke manual · prod.
@@ -8575,7 +8598,7 @@ Tests mínimos: smoke manual · prod.
 
 #### 📌1 de DEC-TEST-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7191
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7203
 
 Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
 Tests mínimos: smoke manual · prod.
@@ -8597,7 +8620,7 @@ ofrece compare-and-swap, y la cubre el barrido.
 
 #### 📌2 de DEC-TEST-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7203
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7215
 
 Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -8612,7 +8635,7 @@ de ARS 0 con `operation_type: card_validation`, por los dos canales y sin nombra
 
 #### 📌3 de DEC-TEST-003
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7208
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7220
 
 Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
 También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -9598,7 +9621,7 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 
 ### DEC-RF-008 — El reembolso tiene máquina mínima, y lo que ocurrió por fuera del flujo se asienta con una acción administrativa nueva
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6538
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6550
 
 Dueña del AC: [B5](10-corte/B5.md#pieza-b5).
 También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
@@ -9646,7 +9669,7 @@ Tests mínimos: migración desde cero.
 
 #### 📌1 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6560
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6572
 
 Dueña del AC: [V8a](10-corte/V8a.md#pieza-v8a).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -9663,7 +9686,7 @@ ni borrar—, y las líneas que lo cuantifican (`NUCLEO/08` §3, `V/17` §3.2 re
 
 #### 📌3 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6579
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6591
 
 Dueña del AC: [V2](10-corte/V2.md#pieza-v2).
 También: [B2](10-corte/B2.md#pieza-b2) (implementa) · [B10](20-fase-3/B10.md#pieza-b10) (implementa) · [B12](20-fase-3/B12.md#pieza-b12) (implementa) · [B9b](20-fase-2/B9b.md#pieza-b9b) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa).
@@ -9674,13 +9697,13 @@ acciones administrativas pasan de dieciséis a […] vivas: sale la 16, disconti
 vertical, con su número sin reusar (C8); entra la 17, migrar a los clientes de un plan retirado
 (C15); y entran de la 18 a la 22, las cinco del catálogo (N1, C9, `L1-f`).
 
-> **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «veintiuna» (hoy 25 vivas). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6584` («pasan de veintiuna a veintitrés vivas»); `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216` («**Es la vigesimosexta**»). Lo omitido del texto de arriba está marcado «[…]».
+> **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «veintiuna» (hoy 25 vivas). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6596` («pasan de veintiuna a veintitrés vivas»); `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216` («**Es la vigesimosexta**»). Lo omitido del texto de arriba está marcado «[…]».
 
 <a id="dec-rf-008-p4"></a>
 
 #### 📌4 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6583
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6595
 
 Dueña del AC: [V8a](10-corte/V8a.md#pieza-v8a).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -9699,7 +9722,7 @@ owner.
 
 #### 📌5 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6590
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6602
 
 Dueña del AC: [B6](10-corte/B6.md#pieza-b6).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -9716,7 +9739,7 @@ la orden el reenvío devuelve la misma devolución con su id.
 
 #### 📌6 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6597
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6609
 
 Dueña del AC: [B6](10-corte/B6.md#pieza-b6).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -9732,7 +9755,7 @@ reenvía, que ya está diseñado (FASE 5, lote de la aplicación, owner 2026-09-
 
 #### 📌7 de DEC-RF-008
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6603
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6615
 
 Dueña del AC: [B11](10-corte/B11.md#pieza-b11).
 Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
@@ -10670,7 +10693,7 @@ ciclo no tiene convergencia demostrada»* (l. 114-116). Su §1.5 propuso **tres*
 
 ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6226
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6238
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10717,7 +10740,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-015 — Los residuos de borde que deja un arreglo se declaran, no se persiguen
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6269
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6281
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10737,7 +10760,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-016 — Una tercera vuelta de la FASE 8 y la FASE 9, entera y desde cero, como excepción declarada al tope de `DEC-METH-013`
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6285
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6297
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10770,7 +10793,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-017 — El criterio de la FASE 5: lo que `U1` borra se lista, y lo demás se clasifica contra el diseño
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6314
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6326
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10816,7 +10839,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-018 — La FASE 6 queda cerrada por absorción en la FASE 5, con un pase sobre lo que la 5 no clasificó
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7671
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7683
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10892,7 +10915,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8096
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8108
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10963,7 +10986,7 @@ Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer
 
 #### 📌1 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8155
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8167
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -10988,7 +11011,7 @@ de las fases posteriores (AW) precisa AE y va en el 📌 de `DEC-ARCH-017`
 
 #### 📌2 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8171
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8183
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -11003,7 +11026,7 @@ sólo citable sigue siendo la matriz, las letras del owner y la lista de piezas
 
 #### 📌3 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8177
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8189
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -11027,7 +11050,7 @@ las 30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE).
 
 #### 📌4 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8192
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8204
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -11058,7 +11081,7 @@ BS y BT.
 
 #### 📌5 de DEC-METH-019
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8214
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8226
 
 Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
 
@@ -11499,7 +11522,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-de
 - **qué pregunta**: por qué camino estrena el trial el dueño del corte, cuya ficha queda abajo
 - **elige**: **1** — `PB1` sale también de `UNPUBLISHED_BY_BILLING`, sólo si arranca un trial
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada en parte**: en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-28-fase-9-vuelta-1-t1-g1-2"></a>
 **pregunta `G1-2`**
@@ -11545,7 +11568,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-de
 - **qué pregunta**: por dónde se entera billing de que una ficha llegó a `PURGED`
 - **elige**: **2** — un hecho empujado de verticales a billing en el mismo acto de `PB9`/`PB12`, con la consulta `fichaPurgada` leída por el barrido como red
 - **¿la recomendada?**: **no** (la recomendada era la 1, sólo la consulta con hasta un día de atraso; el owner no acepta ni un cobro de más)
-- ⚠️ **Caducada en parte**: el hecho lo emite el mismo acto de `PB9`/`PB12` después de su commit, no en el mismo acto (L1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2543). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: el hecho lo emite el mismo acto de `PB9`/`PB12` después de su commit, no en el mismo acto (L1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2543). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-28-fase-9-vuelta-1-t1-g2-2"></a>
 **pregunta `G2-2`**
@@ -11646,7 +11669,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-de
 - **qué pregunta**: si la vuelta anticipada de una pausa sigue libre
 - **elige**: **2** — se acepta y se declara, con detector: el barrido lista en el resumen las pausas de menos de un ciclo que cruzaron una fecha de cobro salteada
 - **¿la recomendada?**: **no** (la recomendada era la 1, volver en el aniversario mensual; el owner mantiene «volver cuando quiera» del §26.2 a la letra)
-- ⚠️ **Caducada en parte**: el barrido lista las pausas con regalo neto positivo, dure lo que dure, no las de menos de un ciclo (L3) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1945). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: el barrido lista las pausas con regalo neto positivo, dure lo que dure, no las de menos de un ciclo (L3) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1945). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-28-fase-9-vuelta-1-t1-g5-4"></a>
 **pregunta `G5-4`**
@@ -11853,7 +11876,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: si «no devolver» de `G3-1` se sostiene con la población real (registro que reintenta un ciclo, cancelación que se deshace, altas que siguen)
 - **elige**: **1** — «no devolver» vale sólo para la ventana del corte; un cobro sobre una lápida posterior al día del corte abre marca y propone devolver; el paso 0 mide si cancelar corta el reciclado y si la cancelación releída horas después sigue `cancelled`; la población se lee de la re-verificación y no se fija; un detector corre después del corte, con dueño y fecha
 - **¿la recomendada?**: sí (precisa `G3-1`, no lo revierte)
-- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r4"></a>
 **pregunta `R4`**
@@ -11872,7 +11895,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: quién ejecuta sobre las fichas lo del día del fin de servicio (hecho 4, `PB2`, invalidación) y quién escribe `vertical.fin_de_servicio`
 - **elige**: **1** — billing sólo avisa: la cobertura cae a falso por el contrato §2.6 con el aviso que ya existe, y verticales ejecuta `PB2`, el hecho 4 y la invalidación; `fin_de_servicio` lo calcula billing y verticales lo lee por una pregunta nueva del §4.1; el contrato conserva `extenderTrial` como única escritura
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r9"></a>
 **pregunta `R9`**
@@ -11910,7 +11933,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: si el titular de una autorización que sólo conoce el proveedor entra a la población a avisar
 - **elige**: **1** — el manifiesto del 1b trae el pagador (`payer_email`) y esa persona entra a la población a avisar y a la lista del owner; lo que pierde queda declarado como en `G1-4`
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r7"></a>
 **pregunta `R7`**
@@ -11947,7 +11970,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: quién escribe `vertical.admite_altas` el día del anuncio de una discontinuación
 - **elige**: **1** — el acto del `SUPER_ADMIN` tiene dos mitades: verticales escribe `admite_altas = no` y billing la fecha y los avisos; la acción administrativa existente orquesta, primero verticales y después billing
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r24"></a>
 **pregunta `R24`**
@@ -11957,7 +11980,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: cómo se cierra una vertical sin planes vendibles (`F-8V2A3-005`)
 - **elige**: **1** — `T1` exige una versión vigente y vendible, la pantalla dice que la vertical no tiene planes disponibles, y se tacha en `B/10` §4.1 que retirar todos los vendibles cierra la vertical: cerrarla es discontinuarla
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-q-fecha"></a>
 **pregunta `Q-FECHA`**
@@ -11967,7 +11990,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: dónde guarda billing la fecha de fin de servicio (pregunta 1 de `13-`)
 - **elige**: **1** — una fila de billing por vertical discontinuada (anuncio y fecha), escrita por el acto del día 0 y reescrita por el acortamiento de `B/10` §4.4; se deriva de la decisión `R5` («verticales la lee por una pregunta»), que descarta la copia en verticales
 - **¿la recomendada?**: sí (derivada de `R5`, sin pregunta aparte)
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r11-3b"></a>
 **pregunta `R11-3b`**
@@ -11986,7 +12009,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: cuándo recibe el aviso previo el titular que sólo conoce el proveedor
 - **elige**: **1** — una pasada de sólo lectura sobre el proveedor antes del aviso previo lista las autorizaciones vivas con su `payer_email` y suma a la población a los titulares desconocidos por la base; el 1b cancela después, como está
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED`; está en [90-retirados.md](90-retirados.md#dec-mig-005-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-r3-g4-1"></a>
 **pregunta `R3-G4-1`**
@@ -12069,7 +12092,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: qué pasa si falla la mitad de billing del acto de discontinuar
 - **elige**: **1** — la acción reintenta la mitad de billing hasta que entra y le muestra al admin que el acto quedó a medias; nunca deshace la mitad de verticales
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782). Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-q-acc16"></a>
 **pregunta `Q-ACC16`**
@@ -12089,7 +12112,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-de
 - **qué pregunta**: qué instante cuenta como anuncio si la mitad de billing entra tarde
 - **elige**: **1** — el de billing, que es cuando salen los avisos; las altas quedan cerradas de más y nadie recibe menos aviso del prometido
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770) *(inferido: la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8)*. Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782) *(inferido: la adjudicación no la listaba; sigue su criterio, una letra cuya premisa sale con C8)*. Sólo citable; no se implementa.
 
 <a id="own-29-fase-8-vuelta-2-t1-q-estado"></a>
 **pregunta `Q-ESTADO`**
@@ -12377,7 +12400,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10
 - **qué pregunta**: dónde vive la herramienta del día del corte
 - **elige**: **1**: script suelto, fuera de los dos sistemas, que habla directo con Mercado Pago (lee, cancela y arma la lista de a quién avisa el owner); se archiva después
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada en parte**: la herramienta del corte ya no arma la lista de a quién avisa el owner (S-51) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:367) *(inferido: la adjudicación no la listaba; la encontró el barrido de contenido de P-H: lo que decide está tachado en una fuente posterior y no está vivo en ninguna)*. Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: la herramienta del corte ya no arma la lista de a quién avisa el owner (S-51) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:367) *(inferido: la adjudicación no la listaba; la encontró el barrido de contenido de P-H: lo que decide está tachado en una fuente posterior y no está vivo en ninguna)*. Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-30-revision-del-owner-t5-l3-b"></a>
 **punto L3-b**
@@ -12506,7 +12529,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: qué detector tiene el titular que sólo conoce el proveedor, si el `GET` trae el `payer_email` vacío
 - **elige**: **1**: se mide en sandbox si otra lectura trae el pagador (búsqueda sin filtro, pago asociado); si ninguna, la declaración dice que no tiene detector
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada entera**: el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6518). Sólo citable; no se implementa.
+- ⚠️ **Caducada entera**: el detector del titular que sólo conoce el proveedor quedó `SUPERSEDED` (S-38) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6530). Sólo citable; no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-h"></a>
 **lote H**
@@ -12577,7 +12600,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: qué pasa con `owner_suspended`, `plan_restricted` y `billing_unpublished_at`, que `U1` borra y la traducción del corte lee
 - **elige**: **1**: sobreviven a `U1` como excepción temporal y nombrada que los guards de limpieza admiten hasta el corte; las borra una migración posterior al paso 3, después de la clasificación
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada en parte**: que las borre una migración posterior al paso 3, después de la clasificación, salió (S-09): las borra la migración del paso 3 (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: que las borre una migración posterior al paso 3, después de la clasificación, salió (S-09): las borra la migración del paso 3 (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152) *(inferido: la adjudicación no la listaba; la encontró el detector de P-H: toda cita suya en una fuente posterior está tachada)*. Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-o"></a>
 **lote O**
@@ -12628,7 +12651,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-de
 - **qué pregunta**: cuándo se borran las tres columnas viejas
 - **elige**: **1**: en el mismo despliegue del paso 3, después de la clasificación (lo ya aplicado)
 - **¿la recomendada?**: sí
-- ⚠️ **Caducada en parte**: el orden «después de la clasificación» salió (S-09): las tres columnas llegan vivas a la migración del paso 3, que las borra, y `V6` retira sus lectores en el mismo cambio (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: el orden «después de la clasificación» salió (S-09): las tres columnas llegan vivas a la migración del paso 3, que las borra, y `V6` retira sus lectores en el mismo cambio (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-37-fase-8-vuelta-3-t1-t"></a>
 **lote T**
@@ -13083,7 +13106,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-
 - **elegida**: 2
 - **contra la recomendación**: **sí**
 - **qué decide**: se crea un **rol de socio** con su familia de operaciones, sus permisos y su migración de datos, asignado al aprobar la postulación; el paso 3 de la cadena pregunta por esa familia. Por `V/17` (*«perder el acceso nunca revoca un rol»*), el rol **no se quita** cuando el socio pierde su presencia
-- ⚠️ **Caducada en parte**: el rol de socio se da en el acto que fija al dueño de la presencia, no al aprobar la postulación (F) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:133). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: el rol de socio se da en el acto que fija al dueño de la presencia, no al aprobar la postulación (F) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:133). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-38-fase-5-t4-c"></a>
 **letra C**
@@ -13237,7 +13260,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-
 - **elegida**: 1
 - **contra la recomendación**: no
 - **qué decide**: el rol de socio se da en el acto que fija al dueño de la presencia (el reclamo, o el alta directa del admin con dueño), no al aprobar la postulación
-- ⚠️ **Caducada en parte**: el alta directa de un Partner por el admin no fija dueño; F se lee *«cuando queda con dueño»* (N) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:153). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: el alta directa de un Partner por el admin no fija dueño; F se lee *«cuando queda con dueño»* (N) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:153). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-38-fase-5-t6-g"></a>
 **letra G**
@@ -13256,7 +13279,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-
 - **elegida**: 1
 - **contra la recomendación**: no
 - **qué decide**: `U1` borra de `partners` las seis columnas del cobro viejo (`subscription_status`, `plan_id`, `subscription_id`, `unpaid_notice_sent_at`, `payment_review_state`, `payment_confirmed_through`); `starts_at` y `ends_at` quedan hasta la unidad de socios
-- ⚠️ **Caducada en parte**: `starts_at` y `ends_at` no quedan hasta la unidad de socios: los borra la migración estructural de `partners`, que es de `V7` y la lleva `V6` al corte (O, AB) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: `starts_at` y `ends_at` no quedan hasta la unidad de socios: los borra la migración estructural de `partners`, que es de `V7` y la lleva `V6` al corte (O, AB) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-38-fase-5-t6-i"></a>
 **letra I**
@@ -13322,7 +13345,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-
 - **elegida**: 1
 - **contra la recomendación**: no
 - **qué decide**: `V7` borra `partners.starts_at` y `partners.ends_at` con su migración, junto con sus lectores del panel
-- ⚠️ **Caducada en parte**: la migración que borra `starts_at` y `ends_at` es la estructural de `partners`, que es de `V7` pero la lleva `V6` al corte (AB) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988). Sólo citable; no se implementa.
+- ⚠️ **Caducada en parte**: la migración que borra `starts_at` y `ends_at` es la estructural de `partners`, que es de `V7` pero la lleva `V6` al corte (AB) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-38-fase-5-t7-p"></a>
 **letra P**
@@ -13743,6 +13766,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural
+- ⚠️ **Caducada en parte**: las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:111). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-41-corte-del-mvp-t3-aq"></a>
 **Letra AQ**
@@ -13987,6 +14011,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)
+- ⚠️ **Caducada en parte**: la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-41-corte-del-mvp-t9-bo"></a>
 **Letra BO**
@@ -14057,6 +14082,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)
+- ⚠️ **Caducada en parte**: el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157). Sólo citable; la parte reemplazada no se implementa.
 
 <a id="own-41-corte-del-mvp-t9-bv"></a>
 **Letra BV**
@@ -14221,3 +14247,15 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **la retira `V6`**, en el mismo cambio que las puertas de fichas y antes del corte: se corrige la tabla de puertas para que diga `V6`, y el mapa de cobertura de la spec consolidada también. `AC:V6:25` ya lo exige, y queda una sola pieza dueña de todas las puertas de borrado físico; la acción 24, que la reemplaza, sigue en `V8a`. Las otras opciones eran que la retirara `V8a` (cuatro lugares que cambiar, y entre el merge de `V6` y el de `V8a` la ruta sigue viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6` deshabilitándola y `V8a` borrando el archivo (reparte un solo acto en dos piezas, contra cómo la fuente reparte las puertas)
+
+#### Lote CK (2026-10-03)
+
+<a id="own-41-corte-del-mvp-t17-ck"></a>
+**Letra CK**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:234
+
+- **Pregunta**: si el aviso de cambio de cobertura sale después del commit sin entrega durable, como `DEC-ARCH-009` y el contrato, o se encola en U2, como decía la fila de B4
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos

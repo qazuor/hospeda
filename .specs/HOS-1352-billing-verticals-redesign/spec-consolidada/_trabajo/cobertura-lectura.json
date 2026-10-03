@@ -1,5 +1,5 @@
 {
-    "sha": "8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b",
+    "sha": "3c3e88b9b59cb7d766bc34848b8ffd657eb95770",
     "entradas": {
         "DEC-ARCH-001": {
             "pieza": "V2",
@@ -688,7 +688,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**`desde` en todas**, el alta de la fila o el arranque de la fuente",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "`desde` en las fuentes de billing."
@@ -3490,7 +3490,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**con los ~~siete~~ ocho campos de la fuente**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "la fuente de billing con sus ocho campos"
@@ -3570,7 +3570,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la respuesta real de `retenciónDetenida`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "retenciónDetenida real y desde"
@@ -3632,7 +3632,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la de `puedeCobrarle`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "la respuesta real"
@@ -3752,7 +3752,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 731,
                             "cita": "**`coberturaPerdidaEn` en `retenciónDetenida`**",
-                            "hash": "9260f587c1c14ed2b2cc65f0e746c0e90bff47fdf6143060c2a0412b1e2516ed"
+                            "hash": "d042ea05f650489ae67452799ef41bc221ad42ce402b77fd222b3588ad4bb2b8"
                         }
                     ],
                     "razon": "puedeCobrarle sobre la cancelación confirmada y coberturaPerdidaEn"
@@ -4605,7 +4605,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la respuesta real de `retenciónDetenida`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "retenciónDetenida real"
@@ -6721,7 +6721,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la de `puedeCobrarle`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "La respuesta real de `puedeCobrarle`."
@@ -6819,7 +6819,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6194,
+                    "linea": 6206,
                     "cita": "**`T2` exige una suscripción con al menos un cobro acreditado**",
                     "hash": "6a9a64c35355a71ca172f246a616cbd526cf20329f12cc1ced356ea919e9e3b2"
                 },
@@ -6840,13 +6840,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6205,
+                    "linea": 6217,
                     "cita": "**📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, decisiones 6c y 2g de",
                     "hash": "01061b0d03fcdc69b44c4d1592645d7ea0cb18fdbe7c994de2f0a0e240b3280b"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6207,
+                    "linea": 6219,
                     "cita": "**`T6` exige un título que convierte**",
                     "hash": "c043c96c68861acfcf32350ddf74981624e7d0b11a14c70a98e2942e0c4f4e11"
                 },
@@ -6894,7 +6894,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6373,
+                    "linea": 6385,
                     "cita": "**Decisión**: **(2), más un control del owner.**",
                     "hash": "80a37e96252f739bd5ca722696ad51f92b32374c70e7566083dd6a7c4ac84adb"
                 },
@@ -6915,7 +6915,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6401,
+                    "linea": 6413,
                     "cita": "**«Venía pagando» es: la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, y la",
                     "hash": "0c2e3e80d6fa77492231c0e2288885f39ed580ddde03a491d846685f216c022a"
                 },
@@ -6936,7 +6936,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6432,
+                    "linea": 6444,
                     "cita": "**Del billing del sistema viejo no se conserva nada** (2a)",
                     "hash": "eeded6e02fe884b13c7c5e3129d1580f25a059e7afffcce92730c572c000910f"
                 },
@@ -6977,7 +6977,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6497,
+                    "linea": 6509,
                     "cita": "no se siembran trials consumidos; se siembra uno activo",
                     "hash": "7fe4743cc55893336aa4b6fb1bcfe699aefd11aa23b3d58a7a570906a8b7604b"
                 },
@@ -6998,7 +6998,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6520,
+                    "linea": 6532,
                     "cita": "desconocido: se anota, se cancela y le aparece al owner marcado para decidir la devolución",
                     "hash": "1da8b51fb3fb0ed8128b964db84b3c1234e18f0ea54d556c33ebcec6696690f7"
                 },
@@ -7033,7 +7033,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6529,
+                    "linea": 6541,
                     "cita": "**la regla que bloquea toda escritura hasta el reintento**",
                     "hash": "2ae58e6b946a1147346f14e5b79a3604e2d5ddb5272bdcb35b99c76a36a69313"
                 },
@@ -7060,7 +7060,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6553,
+                    "linea": 6565,
                     "cita": "**`refund`: `REQUESTED → CONFIRMED → EXECUTED | FAILED`.**",
                     "hash": "747e46bd902a59c9af76dabd3e0e97ae8dd3002eb2d16ffbe708768e4d798363"
                 },
@@ -7095,7 +7095,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6562,
+                    "linea": 6574,
                     "cita": "*«editar el contenido de una ficha ajena»*, sin publicar, destacar",
                     "hash": "e82b8f0294f841591b021cedd6ecf338bfe2050b323cd620f0dfc1c5ec8b9a22"
                 },
@@ -7116,7 +7116,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6582,
+                    "linea": 6594,
                     "cita": "(C15); y entran de la 18 a la 22, las cinco del catálogo (N1, C9, `L1-f`).",
                     "hash": "72a8347aa6a5b2232ab29d5441cdba66fbaca549e5e5927156a747d152f8dab0"
                 },
@@ -7203,7 +7203,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6584,
+                    "linea": 6596,
                     "cita": "entran la 23, borrar",
                     "hash": "defd4d250d3d1ae183b5084de6d33b5fa0ee65b5e31070be95043561a0e0bfa9"
                 },
@@ -7224,7 +7224,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6592,
+                    "linea": 6604,
                     "cita": "de una misma orden se serializan.",
                     "hash": "670c87049601edd92ddf390b811e5a8fe66d88a3ea4f3572c036b37d2d04b36a"
                 },
@@ -7245,7 +7245,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6599,
+                    "linea": 6611,
                     "cita": "impone una restricción de la base: un índice parcial que admite a lo sumo una devolución de la",
                     "hash": "420fbdd469dfb0fc2fad42b0fee2b0ffab0b6bfe3a1e6caae78f85251b1c1f75"
                 },
@@ -7266,7 +7266,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6607,
+                    "linea": 6619,
                     "cita": "con su clave persistida antes (`B/03` §6.1 `RF2`, `B/09` §3; el criterio es de `B11`).",
                     "hash": "6b7b6689f464d5ceba797e27d3cf64fe5041fa23acf3500fa0c389ece0edc9de"
                 },
@@ -7287,7 +7287,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6631,
+                    "linea": 6643,
                     "cita": "2. **Un `LISTING` queda huérfano sólo si NINGUNA principal de ese `user + vertical` está viva y no",
                     "hash": "ead19fd92d99919d9e7e53347d901a9c4f35f4f8e4cdfa0d84a754cd5cd10846"
                 },
@@ -7314,7 +7314,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "la fuente `ADDON` real, que contesta leyendo la tabla vacía hasta que `B10` venda",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         },
                         {
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
@@ -7360,13 +7360,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6643,
+                    "linea": 6655,
                     "cita": "**📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9e y 9f de",
                     "hash": "86078cd11cbbe5f25beae6f6f9b35a2c07acc14b655a7f2d66703e7c3c963ace"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6646,
+                    "linea": 6658,
                     "cita": "1. **«Cobrada», en el punto 3 y en la compra de un addon, se lee como en `S4`** (9e)",
                     "hash": "89e023fd16b0f66fa5d5896d23fb8725e17cbed1408995a50e12da1f91b9c972"
                 },
@@ -7401,7 +7401,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6683,
+                    "linea": 6695,
                     "cita": "2. **La invalidación del caché del conjunto efectivo es por `user`, no por `user + vertical`**",
                     "hash": "2081be0f9f6fdbb79d986837ac390895a22d39e1f7b19be93621f4c45749c0cc"
                 },
@@ -7449,7 +7449,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6702,
+                    "linea": 6714,
                     "cita": "`RESTRICTED` pasa a `404` en `V5`, con su test",
                     "hash": "2107a9b57fe8a807eb127acda467d443c64617dcadf84263a64715115186b5de"
                 },
@@ -7470,7 +7470,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6722,
+                    "linea": 6734,
                     "cita": "1. **Clave propia *«presencia en el carrusel»***, que otorgan Gold y Silver",
                     "hash": "2a0da355cf5e6408e3ffcf76b150ea84feb77e78e0b25f20a0f0772c30aaf695"
                 },
@@ -7537,7 +7537,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6735,
+                    "linea": 6747,
                     "cita": "`U1` borra las columnas de",
                     "hash": "67f729f23971f2b8d9b944ce0a9c92366fc21ee339d5538616926be520c26566"
                 },
@@ -7598,7 +7598,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6749,
+                    "linea": 6761,
                     "cita": "columnas de pago de `partners`»* que borra `U1` son **seis**",
                     "hash": "d93c60c2dd4c0815feae5e2eabf2bb2de988b66c47a913048704ed9107bc3328"
                 },
@@ -7639,7 +7639,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6755,
+                    "linea": 6767,
                     "cita": "dueño**: manda el aviso de reclamo, y el rol de socio llega con el reclamo.",
                     "hash": "89f4413b07ce9021caaee6f292dad65d6ab08fdf1ba2df9a4ff437921b6c78f1"
                 },
@@ -7680,7 +7680,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6763,
+                    "linea": 6775,
                     "cita": "sus lectores —la página pública y las tres rutas del socio— pasan a leer la clave**",
                     "hash": "92bf77c84c5490c62ffba3ac4cbe6299ca2369c3613a67ddd3c2e46a1c6f77cc"
                 },
@@ -7715,7 +7715,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6825,
+                    "linea": 6837,
                     "cita": "**una acción administrativa nunca tiene `actor = sujeto`.**",
                     "hash": "3ec37514591440ea97b2644ef4382aa478470f931e6d1561a387deccad89e73b"
                 },
@@ -7736,7 +7736,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6832,
+                    "linea": 6844,
                     "cita": "**La regla compara cuentas, no personas**",
                     "hash": "e00976123314dc0ef8763e03c3f2da9f4db7014bbea2bc2bed0a6d8c35806468"
                 },
@@ -7757,7 +7757,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6849,
+                    "linea": 6861,
                     "cita": "fila decimoquinta de `NUCLEO/08` §3 —crear en borrador a nombre del dueño,",
                     "hash": "21f491a6d6c773586cdbb0a54beaa209f5d8c2ddb541a479768942e06bfd02c3"
                 },
@@ -7784,7 +7784,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6857,
+                    "linea": 6869,
                     "cita": "la acción 15 no es capacidad del actor:",
                     "hash": "c3fb7eed2dd10490ff473b1ec60bfc59676c31c47c8cac22aff1a22065f81120"
                 },
@@ -7825,7 +7825,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6864,
+                    "linea": 6876,
                     "cita": "\"sin borrar\" de la acción 15 vale para la edición de contenido",
                     "hash": "36bd38c99dc762c99d33851695f21a9a958dd5789815fb4e218046fbbf079205"
                 },
@@ -7846,7 +7846,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6868,
+                    "linea": 6880,
                     "cita": "salen `impersonate` y `set-role` del plugin `admin` de Better Auth",
                     "hash": "7778ca65c788ae5f78730d858ef2869b2ec36117daf4f4809af0a107fafd75b0"
                 },
@@ -7900,7 +7900,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6876,
+                    "linea": 6888,
                     "cita": "**`fullAdminRole` del plugin `admin`",
                     "hash": "8ab349b3d18ef5394374ebebdc1a736075cfec251951e0a0b46056e1a934527a"
                 },
@@ -7921,7 +7921,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6903,
+                    "linea": 6915,
                     "cita": "el reclamo de un Partner escribe `owner_user_id` sólo si está nulo, y su link es de",
                     "hash": "1b4a92e83e8b067b5500ff06bec555011e23a6b52f8a804537f8f742432059ca"
                 },
@@ -7968,7 +7968,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6932,
+                    "linea": 6944,
                     "cita": "postular un Partner no exige cuenta: es la segunda excepción del guest en el paso 1,",
                     "hash": "27dbd0dcbfe31202e4c335c4b06ca0cbcbc39774c60ba477aad832f1a9df1d63"
                 },
@@ -8016,7 +8016,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6948,
+                    "linea": 6960,
                     "cita": "con sesión y el correo sin verificar no postula como un visitante sin cuenta",
                     "hash": "d036cc8e013d6b6a5252e7e7bc3abf2d9056b25502085c02ff90704b351b0017"
                 },
@@ -8057,7 +8057,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6954,
+                    "linea": 6966,
                     "cita": "la postulación de Partner es **propia**",
                     "hash": "928193fc193b80203434623c12bd7bfaea7bce4c604d1acaaad50047b61cec25"
                 },
@@ -8092,7 +8092,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6975,
+                    "linea": 6987,
                     "cita": "Las dos cuentas del owner reciben la prueba y el grant del 3b",
                     "hash": "2559105e322c51c22ecf194e011ed2a6685e3961406827dc7b753be6dccafbd2"
                 },
@@ -8146,7 +8146,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6992,
+                    "linea": 7004,
                     "cita": "pasa a **las cinco de la lista** cerrada que",
                     "hash": "749c45222d8d80b4107a17581c17a3b6619dcfe5f1a25326f54997692296dcca"
                 },
@@ -8181,7 +8181,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7009,
+                    "linea": 7021,
                     "cita": "**la migración copia a una tabla de paso el id de cada una, las",
                     "hash": "c5bfb55776e05bcb7e12d4ffa1bd4ca8a45a01c3269f3bd87cd5b2b158d36ee0"
                 },
@@ -8216,7 +8216,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7024,
+                    "linea": 7036,
                     "cita": "2. **Un usuario que entre durante el corte no se diseña.**",
                     "hash": "c1c44f643906ba4ebb7cf7e901034eb48ba6fc200ddb188ca97d352efb4a12d2"
                 },
@@ -8243,7 +8243,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7053,
+                    "linea": 7065,
                     "cita": "Cruza como una pregunta de ida del contrato,",
                     "hash": "463317a988fbafc8ee12c15dc495535600b239dc4d2fd299571de84832a82d0d"
                 },
@@ -8270,7 +8270,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la respuesta real de `retenciónDetenida`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "La respuesta real: `sí` sólo con una `PAUSED` por `CUSTOMER_REQUEST`."
@@ -8310,7 +8310,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7066,
+                    "linea": 7078,
                     "cita": "`retenciónDetenida` devuelve también cuándo terminó la última",
                     "hash": "1a40eaaf9403f51e22c5a24f7878415a3113c4cdef192bbc122c6771007a790c"
                 },
@@ -8331,7 +8331,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la respuesta real de `retenciónDetenida`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "La real devuelve el fin de la última pausa."
@@ -8371,7 +8371,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7075,
+                    "linea": 7087,
                     "cita": "Y la mitad (d) de `G-R6-B` falla también sobre un lector de retención que",
                     "hash": "c7c3058e96492135c775378895a2e585443b248c93b88e169302bfe019972f5d"
                 },
@@ -8406,7 +8406,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7086,
+                    "linea": 7098,
                     "cita": "moderación en dos niveles, a elección del admin y cambiable en las dos direcciones:",
                     "hash": "18ea504db63f56c236ec77c440e11ef32c47240ea1839cd12316ff0847232375"
                 },
@@ -8447,7 +8447,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7102,
+                    "linea": 7114,
                     "cita": "Una ficha moderada desde `ARCHIVED` vuelve por el origen de su archivado.",
                     "hash": "b101e84cf069f12a0209d8c9ede836d4cbc75dd4dc88feab2c288f604f4cc911"
                 },
@@ -8494,7 +8494,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7117,
+                    "linea": 7129,
                     "cita": "migrar a los clientes de un plan retirado a una versión vigente y vendible de la",
                     "hash": "80447e9f3a09e621e6cf7993617ee2e35506219b3d069e2d4bb0f4bd7fd8d2a1"
                 },
@@ -8542,7 +8542,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7137,
+                    "linea": 7149,
                     "cita": "`S37` muta el monto siete días antes de la fecha de aplicación",
                     "hash": "a0f62c3db1d5e78f4452163ac3b5a409ab051d531dfba7e3fc9546e32d8b6a74"
                 },
@@ -8583,7 +8583,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7151,
+                    "linea": 7163,
                     "cita": "llegada de una suscripción a un estado terminal, por cualquier camino",
                     "hash": "353ee7b9a3b385372e0c42acc6128138de17fdce624f9184dfc7d0214e5e2dc1"
                 },
@@ -8631,7 +8631,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7183,
+                    "linea": 7195,
                     "cita": "Tres guards nuevos, de `B1`",
                     "hash": "47a69b6470f8e9d75dd8cc2240227dde18a66a1cb032d87dad7cfdddbe936576"
                 },
@@ -8652,7 +8652,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7193,
+                    "linea": 7205,
                     "cita": "mentira ni regla exigida (`RC-7`, `GR-3`, `PS-2`, `PS-6` y el campo `last_charged` de `RC-5`): son",
                     "hash": "4f8e0031222d45305a718f362d4cb368eeb4ba333154e55a864c5874821ca00a"
                 },
@@ -8673,7 +8673,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7204,
+                    "linea": 7216,
                     "cita": "segunda lista del falso suma `RP12`",
                     "hash": "5caef4e1774ebc3eb4c83ac2d613a1396189ddf2864731027df99cd6688783a4"
                 },
@@ -8694,7 +8694,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7213,
+                    "linea": 7225,
                     "cita": "**la reapunta `U1`, de una vez, al checklist del sistema nuevo",
                     "hash": "6d639a05e310370ba60d0ae91e1b743373b438a178caa200f490b3c4e6138f81"
                 },
@@ -8729,7 +8729,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7229,
+                    "linea": 7241,
                     "cita": "`G8` falla si su nombre aparece, sin distinguir mayúsculas, en cualquier archivo",
                     "hash": "edc27deba615096241de159e7d70ef378a867c6973d41220fa5cc71da7eeca66"
                 },
@@ -8770,7 +8770,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7249,
+                    "linea": 7261,
                     "cita": "El tipo de partner se renombra a `business`",
                     "hash": "a99da9c8a86540fbfb50601484891e302708eb99405a0efd079414f1bb85f224"
                 },
@@ -8818,7 +8818,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7273,
+                    "linea": 7285,
                     "cita": "código del sistema viejo que nombra el agrupamiento viejo",
                     "hash": "a22c04747e4a33a4768b88414be49c67d871bd94575e702c898b5006a23528d2"
                 },
@@ -8845,7 +8845,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7286,
+                    "linea": 7298,
                     "cita": "las saca de la rama `U1`**",
                     "hash": "329aa64b8354d222de112579bc5d1fb0ef22bbc56af92e652b21cd179b215643"
                 },
@@ -8880,7 +8880,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7303,
+                    "linea": 7315,
                     "cita": "la configuración de planes vive 100 % en la base. El archivo de configuración de",
                     "hash": "105ba4420831f0cdefac0e6871a149066e941ec3374eb12e574996bbe6e1ac5f"
                 },
@@ -9037,7 +9037,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7329,
+                    "linea": 7341,
                     "cita": "planes que usan desarrollo y las pruebas son datos de demostración, fuera del dual-write",
                     "hash": "43f708818e2fcce2791d6081fe8db670a2ac8958d24e172971ddd0fabbecfe88"
                 },
@@ -9072,7 +9072,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7336,
+                    "linea": 7348,
                     "cita": "única del catálogo corre dentro de la migración estructural del paso 3 del corte",
                     "hash": "d958d008df148a6fa5f87c4b2708e3d679d8dde8d9368a01f4f962cbc1a84737"
                 },
@@ -9107,7 +9107,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7341,
+                    "linea": 7353,
                     "cita": "catálogo va en la migración como **SQL generado por un script TypeScript**",
                     "hash": "7fb9bdd8321b8a82329ed8ab5a50398636c36ca9eb17d958344f583d763cbb08"
                 },
@@ -9155,7 +9155,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7353,
+                    "linea": 7365,
                     "cita": "**La tabla de claves de `V1` viaja como SQL generado y vigilado,",
                     "hash": "c0a11a5c65a622ed2b13cd534c56d0d41945e93aecede4374812f6a4ef76df5a"
                 },
@@ -9190,7 +9190,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7373,
+                    "linea": 7385,
                     "cita": "todo plazo en días o meses que decide cuándo pasa algo lo configura el `SUPER_ADMIN`",
                     "hash": "292773376f3cfb8821a0f943e94cd3493641827bf0dde5f9c0a9c60e0d17c46b"
                 },
@@ -9315,7 +9315,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7398,
+                    "linea": 7410,
                     "cita": "Configurar el 90 y el 180, que el §25 del PDR fija, es un apartamiento",
                     "hash": "b631cbdd245f62a9ad12601214b98001156a97d7889a52ff7b30c558c0aca507"
                 },
@@ -9369,7 +9369,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7408,
+                    "linea": 7420,
                     "cita": "180 días que se guarda una entrega de aviso",
                     "hash": "af6c9e7e6a94459d11435a46c125df230aca99d46a125c2f7693e844d11fd469"
                 },
@@ -9390,7 +9390,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7411,
+                    "linea": 7423,
                     "cita": "la crea la migración estructural del paso 3 del",
                     "hash": "66533a7794fed8060e9e6138ac7af4456409011571188fcde3be10396d542ea6"
                 },
@@ -9431,7 +9431,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7416,
+                    "linea": 7428,
                     "cita": "pasa de quince a dieciocho plazos",
                     "hash": "ce55d0f54ac31e5651bde6e5b51aca843b94551478c41e413d9e630e53faf3bc"
                 },
@@ -9472,7 +9472,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7423,
+                    "linea": 7435,
                     "cita": "Los cinco plazos sin valor escrito los",
                     "hash": "eff16620403f27f6669dbcb893bbe15567777c6cec9e35ddd45f9ff178921340"
                 },
@@ -9499,7 +9499,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7469,
+                    "linea": 7481,
                     "cita": "El receptor nuevo guarda cada entrega de IPN entera en",
                     "hash": "5802817e4574cab3da5681999e941063524688d12fabeb4babc47f83fbee9157"
                 },
@@ -9534,7 +9534,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7489,
+                    "linea": 7501,
                     "cita": "guarda también cada entrega de Webhooks, en la misma tabla",
                     "hash": "4846ce6aa4a77717b8e5c0b55499c45c632e5e959f9df4738533774dbc606fec"
                 },
@@ -9569,7 +9569,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7496,
+                    "linea": 7508,
                     "cita": "verifica el apuntado de la URL de IPN con una entrega real de `payment`",
                     "hash": "e39861e52b754d537e934bf60be80edf54d5a6f85300128e3929ca10f5b1c86e"
                 },
@@ -9596,7 +9596,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7503,
+                    "linea": 7515,
                     "cita": "El receptor nuevo sirve la misma ruta que el viejo",
                     "hash": "fca28bfef091a14e584463a89c2e18b1698d24487794993623c000f05bae9c3c"
                 },
@@ -9623,7 +9623,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7524,
+                    "linea": 7536,
                     "cita": "tenemos que estar 100 % seguros de eliminarlo por",
                     "hash": "ab46a7fa2426f8a9ec7ce6013cebdd5a0d0b09d1178ddd9aafab2004b3d03ea5"
                 },
@@ -9644,7 +9644,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7549,
+                    "linea": 7561,
                     "cita": "que hace sólo la limpieza y construye `G8` en el",
                     "hash": "dd2d7c555428b586074d9e160a756dc8f3c86a6238274e95a78708e23d4a7481"
                 },
@@ -9679,7 +9679,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7569,
+                    "linea": 7581,
                     "cita": "crea vacío el package del contrato",
                     "hash": "05dc0bbfa263f0c45b5ca6609474ddc574809156bccaf458a2c0b096bb46bc3b"
                 },
@@ -9727,7 +9727,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7574,
+                    "linea": 7586,
                     "cita": "**`U1` crece**, sin código nuevo del diseño salvo el",
                     "hash": "ca6428e72e028dee7882d43eed5e5958664f8ad8152f133d071e1e30270ecdba"
                 },
@@ -9775,7 +9775,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7605,
+                    "linea": 7617,
                     "cita": "y la ruta de avisos queda abierta durante todo el corte",
                     "hash": "4d2767db5c2808c62a734104b43aacd74436d61ccfc9c6eaa5bf81a37383af08"
                 },
@@ -9802,7 +9802,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7609,
+                    "linea": 7621,
                     "cita": "En la lista de `U1`, *«borra las columnas de pago de",
                     "hash": "b8c9fbab6246160bab8ac7ebddb7d44110dd9f279904c3796826cf3aa68ff42c"
                 },
@@ -9843,7 +9843,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7619,
+                    "linea": 7631,
                     "cita": "**`U3`, el script del corte**",
                     "hash": "edbcc59d56a6522e2d3c15ef5d6b8d63f85be2cee4f906e56db0257a858e6c25"
                 },
@@ -9864,7 +9864,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7632,
+                    "linea": 7644,
                     "cita": "borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`",
                     "hash": "e15ec8043e631e49aeedd05f78ac992a080bee60f8a51e5ae7fc381b4c85673b"
                 },
@@ -9911,7 +9911,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7662,
+                    "linea": 7674,
                     "cita": "**`@repo/billing-verticals-contract`**, en `packages/billing-verticals-contract`.",
                     "hash": "0ac3d05dfc9512bd12611be38045620271eb6601c37237aed3fa277db27c9393"
                 },
@@ -9946,7 +9946,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7769,
+                    "linea": 7781,
                     "cita": "se da por bueno y el trabajo siguiente puede apoyarse en él",
                     "hash": "6753a2a213795b6d365f807ceb7d957a4ed73c7c4f0cce35f52b7894fa285d58"
                 },
@@ -9981,7 +9981,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7833,
+                    "linea": 7845,
                     "cita": "*«las 22 piezas del corte",
                     "hash": "77b150dbe4cf591ffc702b5767030b3595243acf130a0d09f96aa8764bfe67af"
                 },
@@ -10002,7 +10002,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7867,
+                    "linea": 7879,
                     "cita": "**30 piezas**, **22 al corte y 8 después**",
                     "hash": "3e3e259d8f3bd25517fa22359810b2dcadfa236730db8a9e39c81251ffcf21cf"
                 },
@@ -10049,7 +10049,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "la fuente `ADDON` real, que contesta leyendo la tabla vacía hasta que `B10` venda",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "AA: la fuente `ADDON` sobre la tabla vacía."
@@ -10089,7 +10089,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7918,
+                    "linea": 7930,
                     "cita": "(AP) **el esquema de lo posterior lo crea al corte la pieza dueña de la tabla de la que cuelga**",
                     "hash": "2228eeb4195283a218a8af5adf1afb71bf6ec28f8f8d0fbb8e04870dcf2130d4"
                 },
@@ -10202,7 +10202,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7935,
+                    "linea": 7947,
                     "cita": "pasan de `B4` a `B3`**",
                     "hash": "92cf5a5d784e0d0c2edc2d344569c0175ac7090a77814c0c7a3d7e8c91825d1f"
                 },
@@ -11265,7 +11265,7 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "`sí` sólo con una `PAUSED` por `CUSTOMER_REQUEST` en esa vertical",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "retenciónDetenida lee el motivo"
@@ -13520,13 +13520,13 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**y la de `puedeCobrarle`**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         },
                         {
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "| **B4** | **El contrato de cobertura, de verdad**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "La precondición `puedeCobrarle` real la contesta B4."
@@ -14412,13 +14412,13 @@
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "**o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         },
                         {
                             "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
                             "linea": 138,
                             "cita": "| **B4** | **El contrato de cobertura, de verdad**",
-                            "hash": "06bd28a657cc2b410ed05f21e69703f0bddb727aba1d5dc1a826a96c28b015c9"
+                            "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
                         }
                     ],
                     "razon": "`puedeCobrarle` lee la marca abierta."
@@ -21234,13 +21234,13 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7957,
+                    "linea": 7969,
                     "cita": "`U2`. **BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`",
                     "hash": "44ba773d5d155fde763e237f9d24bc7d2707af47ce982d532fb014f8d9364dac"
                 },
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7951,
+                    "linea": 7963,
                     "cita": "es de `B3`; la acción 6 (el plan y el método de pago de un Partner) es de `V7`",
                     "hash": "772f6204f7c039ac01497458a650116f64ec424ba93e6dfae1c1287d67c1fd7a"
                 },
@@ -21395,7 +21395,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7430,
+                    "linea": 7442,
                     "cita": "**los crea `V6` al corte, en la misma migración que la escritura `C`**",
                     "hash": "1d2c71480de26ce007b450cdb1c8a8493e66f2f11ae228d21ae8fe4855ed494a"
                 },
@@ -21537,7 +21537,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7969,
+                    "linea": 7981,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-01, con OK del owner (corte del MVP, BJ, la 1, que reemplaza a",
                     "hash": "ce0e12bb6186dfbc867ae4176665d9d14089700ba1ede1fb7ad2e8d2f6e9f4bf"
                 },
@@ -21620,7 +21620,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7436,
+                    "linea": 7448,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BU y BV, las dos la 1)**:",
                     "hash": "13249dd94a0e13eaf5519c892a834ccacaaae9642c94e3ef207469677cc50910"
                 },
@@ -21668,7 +21668,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7838,
+                    "linea": 7850,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BQ, Q1 y Q2, las dos la",
                     "hash": "ea7cf081e2fa305419bae814a212d23926094848be6af839ca5b83509deda887"
                 },
@@ -21724,7 +21724,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7980,
+                    "linea": 7992,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BL, BN, BO, BP y BR, todas",
                     "hash": "de2d395a07a2ae50a5135d10d19774993a5ec758743be13f7c66c9a1a00e763e"
                 },
@@ -21876,7 +21876,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8011,
+                    "linea": 8023,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la",
                     "hash": "06b7ca88ff9234ff04966c8c158e08b8d8d2e0d988cb9d8125f6eb13130ceb30"
                 },
@@ -21937,7 +21937,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 7446,
+                    "linea": 7458,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌",
                     "hash": "a8f39f2e230e226cca91907dc768a5643e90cf133e2fabfeb39344768c399fc4"
                 },
@@ -22007,7 +22007,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8023,
+                    "linea": 8035,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BY y CA, las dos la 1)**.",
                     "hash": "0e089d61d9f8a0dc9013b1d87b6ceabbba40c55469ea90eb7a29b063bd08b77c"
                 },
@@ -22068,7 +22068,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 6703,
+                    "linea": 6715,
                     "cita": "- 📌 **Precisada el 2026-10-02, con OK del owner (corte del MVP, CB, la 1)**, sobre el caché que se",
                     "hash": "32a4cd14ba43cd5de9cd03cb8e4f703e83c1b3f88bbdfda0163a719cb71cf7a0"
                 },
@@ -22137,7 +22137,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8035,
+                    "linea": 8047,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CD, la 1)**: **el addon que",
                     "hash": "0e4ef244234889b3451ac39c3f455c405c1a3556d40da55321200cf779771384"
                 },
@@ -22158,7 +22158,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8049,
+                    "linea": 8061,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CE, la 1)**, sobre `A1-bis`",
                     "hash": "8cffea204415a5aedebaf0bbf4c93bc87fcd60faaca396c84bda3a895e1e653c"
                 },
@@ -22179,7 +22179,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8056,
+                    "linea": 8068,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CF y CG, las dos la 1)**:",
                     "hash": "736f4b606439d10379d9f61b563c85a134af50a92af404b3119ad095ee98447f"
                 },
@@ -22214,7 +22214,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8066,
+                    "linea": 8078,
                     "cita": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CH y CI, las dos la 1)**:",
                     "hash": "d4c85e2b9b87d66a92aed53a99495e5c14f77e2d450fa556d86090e53f9214bf"
                 },
@@ -22289,7 +22289,7 @@
             "citas": [
                 {
                     "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
-                    "linea": 8085,
+                    "linea": 8097,
                     "cita": "**La retira `V6`**, en el mismo cambio que las puertas de fichas",
                     "hash": "fdb16acbf4ee25f83098ecdfce75c3cd612da10e9859eb315e5d7a75aa42bcbb"
                 },
@@ -22325,6 +22325,27 @@
             "tambien": [],
             "tipos": [],
             "lote": "vuelta-4-pasada-7"
+        },
+        "DEC-ARCH-009#📌2": {
+            "pieza": "B4",
+            "citas": [
+                {
+                    "archivo": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+                    "linea": 6182,
+                    "cita": "- 📌 **Ratificada el 2026-10-03, con OK del owner (corte del MVP, CK, la 1)**: el aviso de",
+                    "hash": "c473e1d82ef256b182224b8ea9155e6481743f3da6fc709ffadb66dc820358d5"
+                },
+                {
+                    "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+                    "linea": 138,
+                    "cita": "el aviso de cobertura sale después del commit, sin entrega durable",
+                    "hash": "0423415d7a489d239f67687bd36714dda2d4eba52aa4a5ff70ace1129d70764d"
+                }
+            ],
+            "razon": "CK ratifica el transporte del aviso de B4 y la escritura del reloj antes de emitirlo; el reconciliador de V6 conserva su contrato.",
+            "tambien": [],
+            "tipos": [],
+            "lote": "CK"
         }
     },
     "sin_pieza": {},

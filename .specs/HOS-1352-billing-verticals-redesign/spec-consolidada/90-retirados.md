@@ -92,7 +92,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5410,
   diseña entonces, y este texto queda como punto de partida. Sus dos 📌
   ([DEC-ARCH-011#📌1](#dec-arch-011-p1), [DEC-ARCH-011#📌2](#dec-arch-011-p2)) mueren con ella.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6770, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6772
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6782, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
 
 ## 📌 muertos
 
@@ -170,7 +170,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3486,
   de [DEC-MIG-005](01-decisiones-vigentes.md#dec-mig-005) (S-37, S-41, S-42): salieron la lápida del
   corte, el detector y la pasada del proveedor.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6480, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6492, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525
 
 <a id="dec-mig-005-p2"></a>
 
@@ -182,7 +182,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6480,
 - **Por qué murió** (adjudicación, entero): `EX-48` y `EX-50` no se miden (S-57, S-58); el log lo
   registra en el 📌 posterior de [DEC-MIG-005](01-decisiones-vigentes.md#dec-mig-005).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6489, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6501, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525
 
 <a id="dec-mig-005-p4"></a>
 
@@ -193,7 +193,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6489,
 - **Por qué murió** (adjudicación, entero): el detector del día siguiente salió (S-42); el log lo
   registra en el 📌 posterior de [DEC-MIG-005](01-decisiones-vigentes.md#dec-mig-005).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6499, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6513
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6511, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6525
 
 <a id="dec-rf-008-p2"></a>
 
@@ -205,7 +205,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6499,
   log lo registra (*«sale la 16, discontinuar»*). Ver [ACC:16](#acc-16) y la decisión viva
   [DEC-RF-008](01-decisiones-vigentes.md#dec-rf-008).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6566, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6580
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6578, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6592
 
 <a id="dec-arch-011-p1"></a>
 
@@ -215,7 +215,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6566,
   la discontinuación de una vertical.
 - **Por qué murió**: su decisión está `SUPERSEDED` ([DEC-ARCH-011](#dec-arch-011)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6795, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6772
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6807, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
 
 <a id="dec-arch-011-p2"></a>
 
@@ -226,7 +226,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6795,
   de la mitad de billing.
 - **Por qué murió**: su decisión está `SUPERSEDED` ([DEC-ARCH-011](#dec-arch-011)).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6811, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6772
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6823, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6784
 
 <a id="dec-mig-006-p1"></a>
 
@@ -240,7 +240,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6811,
   cuenta es premisa ([PASO:4c](30-el-corte.md#paso-4c)). La decisión viva es
   [DEC-MIG-006](01-decisiones-vigentes.md#dec-mig-006).
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6985, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7000
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6997, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7012
 
 ## Pasos, letras y filas de catálogo
 

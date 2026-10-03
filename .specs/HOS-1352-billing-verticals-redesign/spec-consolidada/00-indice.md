@@ -23,8 +23,8 @@ la recomendada):
   dos verificaciones ciegas opuestas** —qué falta y qué se inventó—, con canarios, hasta una vuelta
   sin `BLOQUEA`.
 
-Todo sale de las fuentes congeladas en el commit `8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b`
-(re-congeladas después de aplicar las letras BK a CJ del owner): cada
+Todo sale de las fuentes congeladas en el commit `3c3e88b9b59cb7d766bc34848b8ffd657eb95770`
+(re-congeladas después de aplicar las letras BK a CK del owner): cada
 `Origen:` cita `archivo:línea` en ese SHA, y las herramientas leen las fuentes desde ahí
 (`scripts/comun.py`), nunca del árbol de trabajo.
 
@@ -101,7 +101,7 @@ corte, donde `B11` no está. Las dos flechas de
 común va antes de las primeras piezas que encolan, y por transitividad antes de todas las demás que
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7980, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8006, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8046, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8075, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8078
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8018, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8058, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8087, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8090
 
 ## Reglas que valen para todas las piezas
 
@@ -181,7 +181,7 @@ Las otras tres letras del lote BY a CB deciden piezas puntuales, y se desarrolla
 
 Ninguna de las cuatro letras del lote BY a CB agrega flechas al grafo.
 
-Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7980, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8011, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8192, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8214, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6703
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8204, .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:603, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8035, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8226, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6715
 
 ## Cómo leer un archivo de pieza
 
