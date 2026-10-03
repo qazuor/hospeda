@@ -384,7 +384,9 @@ def main(inv_p, out_p):
             out[cid]['invierte_una_regla_con_fuente'] = cid in INVIERTEN_UNA_REGLA
         elif cid in INVIERTEN_UNA_REGLA:
             out[cid]['invierte_una_regla_con_fuente'] = True
-    faltan = sorted(i for i, it in inv.items() if it['estado'] == 'MIXTO' and i not in out)
+    # a MIXTO section (struck title, live body; H3-G2-10) is no row to adjudicate: it is part of the
+    # coverage net, and R17 asks for it to be cited (owner, 2026-10-02, option 1: no new verdict)
+    faltan = sorted(i for i, it in inv.items() if it['estado'] == 'MIXTO' and it['fuente'] != 'SEC' and i not in out)
     prosa = sorted(i for i, it in inv.items() if it['fuente'] == 'PIN' and it['forma'] == 'prosa' and i not in out)
     if faltan or prosa:
         sys.exit(f'✗ sin adjudicar: MIXTO {faltan} · 📌 en prosa {prosa}')

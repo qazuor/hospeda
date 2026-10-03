@@ -1,5 +1,5 @@
 {
-    "sha": "591034c665b56336d49eab894a4e4ce3c38d5abe",
+    "sha": "9149b84a255efc94473ace4458541f4d2278da8d",
     "reglas": {
         "DEC": "01-decisiones-vigentes.md",
         "PIN": "01-decisiones-vigentes.md (con su decisión)",
@@ -35,7 +35,7 @@
         "20-fase-4": ["V7", "V8b"]
     },
     "por_archivo": {
-        "01-decisiones-vigentes.md": 666,
+        "01-decisiones-vigentes.md": 669,
         "02-nucleo.md": 96,
         "03-contrato-de-cobertura.md": 13,
         "04-catalogos.md": 298,
@@ -71,7 +71,7 @@
         "20-fase-4/V8b.md": 3,
         "30-el-corte.md": 38,
         "90-retirados.md": 40,
-        "red (SEC)": 677
+        "red (SEC)": 715
     },
     "archivos_pendientes": [],
     "inferidos": [
@@ -506,6 +506,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-CONC-001#📌3": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-CONC-001#📌4": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -2258,6 +2264,12 @@
             "destino": "01-decisiones-vigentes.md"
         },
         "DEC-ARCH-017#📌12": {
+            "fuente": "PIN",
+            "estado": "VIGENTE",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
+        "DEC-ARCH-017#📌13": {
             "fuente": "PIN",
             "estado": "VIGENTE",
             "veredicto": null,
@@ -7565,6 +7577,12 @@
             "veredicto": null,
             "destino": "01-decisiones-vigentes.md"
         },
+        "OWN:41-corte-del-mvp:t16:CJ": {
+            "fuente": "OWN",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": "01-decisiones-vigentes.md"
+        },
         "ESQ:1": {
             "fuente": "ESQ",
             "estado": "VIVO",
@@ -8027,6 +8045,12 @@
             "veredicto": null,
             "destino": "30-el-corte.md"
         },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:10": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:20": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -8112,6 +8136,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:290": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:10": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8203,7 +8233,7 @@
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:581": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
@@ -8327,6 +8357,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:11": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:37": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -8387,55 +8423,61 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1022": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1026": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1031": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1035": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1080": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1084": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1093": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1097": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1107": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1111": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1115": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1119": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1135": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1141": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1178": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1184": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1193": {
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1199": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/00-indice.md:11": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8502,6 +8544,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/00-indice.md:203": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:18": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8675,6 +8723,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:17": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:29": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -8723,6 +8777,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:15": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:30": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -8730,6 +8790,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:172": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:12": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8790,6 +8856,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:223": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:17": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -8903,6 +8975,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:18": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:29": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9000,6 +9078,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:509": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:10": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -9131,6 +9215,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:17": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:23": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9221,6 +9311,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:15": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:21": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9277,7 +9373,7 @@
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:365": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
@@ -9325,11 +9421,17 @@
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1339": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1352": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:15": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -9366,6 +9468,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:149": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:20": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -9581,6 +9689,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:18": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:29": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9629,121 +9743,127 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:229": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:232": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:231": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:234": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:242": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:245": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:265": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:268": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:278": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:281": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:334": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:337": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:336": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:339": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:344": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:347": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:376": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:379": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:406": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:409": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:430": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:433": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:432": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:435": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:441": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:444": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:450": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:453": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:465": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:468": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:467": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:470": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:474": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:477": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:497": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:500": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:513": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:516": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:567": {
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:570": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:17": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -9875,6 +9995,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:15": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:27": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9965,6 +10091,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:12": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:23": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -9995,6 +10127,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:12": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:27": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -10014,6 +10152,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:371": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:16": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -10079,6 +10223,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:16": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:33": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -10122,6 +10272,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:137": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:16": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -10259,6 +10415,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:10": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:49": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -10343,67 +10505,73 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:445": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:446": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:497": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:498": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:629": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:630": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:681": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:682": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:697": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:698": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:732": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:733": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:886": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:888": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:941": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:943": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:987": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:989": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1082": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1084": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1116": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1118": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:17": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -10499,6 +10667,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:15": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:21": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -10573,7 +10747,7 @@
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:944": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
@@ -10817,6 +10991,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:15": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:27": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -10884,6 +11064,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:544": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:21": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11003,7 +11189,13 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:507": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:508": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:12": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11051,37 +11243,43 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:961": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:967": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1016": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1022": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1040": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1046": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1077": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1083": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1109": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1115": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1160": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1166": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:15": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11137,11 +11335,17 @@
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:229": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:248": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:19": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11375,6 +11579,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:17": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:32": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -11515,7 +11725,7 @@
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:634": {
             "fuente": "SEC",
-            "estado": "MUERTO",
+            "estado": "MIXTO",
             "veredicto": null,
             "destino": null
         },
@@ -11526,6 +11736,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:685": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:17": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11561,121 +11777,127 @@
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:161": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:164": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:163": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:166": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:169": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:172": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:183": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:186": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:197": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:200": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:223": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:226": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:231": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:234": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:245": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:248": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:260": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:263": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:334": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:337": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:356": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:359": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:399": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:402": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:413": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:416": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:431": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:434": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:463": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:466": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:465": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:468": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:482": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:485": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:755": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:758": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:918": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:921": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
             "destino": null
         },
-        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:1036": {
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:1039": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:12": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11736,6 +11958,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:327": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:12": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
@@ -11843,6 +12071,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:16": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:27": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -11921,6 +12155,12 @@
             "veredicto": null,
             "destino": null
         },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:16": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:33": {
             "fuente": "SEC",
             "estado": "VIVO",
@@ -11970,6 +12210,12 @@
             "destino": null
         },
         "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:182": {
+            "fuente": "SEC",
+            "estado": "VIVO",
+            "veredicto": null,
+            "destino": null
+        },
+        "SEC:.specs/HOS-1354-billing-cobro-y-proveedor/spec.md:15": {
             "fuente": "SEC",
             "estado": "VIVO",
             "veredicto": null,
