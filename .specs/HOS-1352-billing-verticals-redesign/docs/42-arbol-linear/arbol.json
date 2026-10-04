@@ -7,7 +7,7 @@
             "clave": "HOS-1352",
             "padre": null,
             "titulo": "Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos",
-            "descripcion": "Raíz del rediseño (existe). Hijos de trabajo: el package del contrato (nuevo, `PKG`), `U2`, `U3` y las épicas existentes `HOS-1353` y `HOS-1354`.",
+            "descripcion": "Raíz del rediseño (existe). Hijos de trabajo: `U1`, `U2`, `U3` y las épicas existentes `HOS-1353` y `HOS-1354`.",
             "acs": [],
             "depende_de": [],
             "labels": ["kind-spec", "source-owner"],
@@ -17,7 +17,7 @@
             "clave": "HOS-1353",
             "padre": "HOS-1352",
             "titulo": "Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela",
-            "descripcion": "Épica Verticales (existe). `V2`..`V7` cuelgan aquí; `V1` se mueve bajo el package del contrato; `V8` y `V9` quedan como contenedores de sus mitades.",
+            "descripcion": "Épica Verticales (existe). `V2`..`V7` cuelgan aquí; `V1` conserva este padre y construye el contrato compartido; `V8` y `V9` quedan como contenedores de sus mitades.",
             "acs": [],
             "depende_de": [],
             "labels": ["kind-spec", "source-owner"],
@@ -27,21 +27,11 @@
             "clave": "HOS-1354",
             "padre": "HOS-1352",
             "titulo": "Épica Billing — cobro, suscripción y proveedor detrás de un adaptador",
-            "descripcion": "Épica Billing (existe). `B2`..`B7`, `B10`..`B12` cuelgan aquí; `B1` se mueve bajo el package del contrato; `B8`, `B9` y `B13` quedan como contenedores de sus mitades.",
+            "descripcion": "Épica Billing (existe). `B2`..`B7`, `B10`..`B12` cuelgan aquí; `B1` conserva este padre y construye el contrato compartido; `B8`, `B9` y `B13` quedan como contenedores de sus mitades.",
             "acs": [],
             "depende_de": [],
             "labels": ["kind-spec", "source-owner"],
             "existente": "HOS-1354"
-        },
-        {
-            "clave": "PKG",
-            "padre": "HOS-1352",
-            "titulo": "Package del contrato @repo/billing-verticals-contract (U1 · V1 · B1)",
-            "descripcion": "Issue NUEVA, contenedor del package del contrato: el único punto por donde se hablan verticales y billing (`03-contrato-de-cobertura.md` §7.1). `U1` lo deja vacío (AC:U1:11, `packages/billing-verticals-contract`), `V1` le pone interfaces, validaciones, simuladores y `G14` (AC:V1:6, AC:V1:7) y `B1` la interfaz del cobro y el reloj (AC:B1:1, AC:B1:2). Bajo esta issue se mueven `U1` (HOS-1400), `V1` (HOS-1355) y `B1` (HOS-1364).",
-            "acs": [],
-            "depende_de": [],
-            "labels": ["kind-spec", "area-db", "area-api", "source-agent"],
-            "existente": null
         },
         {
             "clave": "HOS-1362",
@@ -95,7 +85,7 @@
         },
         {
             "clave": "U1",
-            "padre": "PKG",
+            "padre": "HOS-1352",
             "titulo": "U1 · La limpieza del principio",
             "descripcion": "Pieza existente en Linear: se reusa y se le cuelgan las hojas de PR. Depende de: nada. Nota de contexto para el árbol: padre/dependencias van en `depende_de`. Spec: [U1.md](../../spec-consolidada/10-corte/U1.md).",
             "acs": [],
@@ -125,7 +115,7 @@
         },
         {
             "clave": "V1",
-            "padre": "PKG",
+            "padre": "HOS-1353",
             "titulo": "V1 · El catálogo y su doble guard",
             "descripcion": "Pieza existente en Linear: se reusa y se le cuelgan las hojas de PR. Depende de: `U1`. Nota de contexto para el árbol: padre/dependencias van en `depende_de`. Spec: [V1.md](../../spec-consolidada/10-corte/V1.md).",
             "acs": [],
@@ -242,7 +232,7 @@
         },
         {
             "clave": "B1",
-            "padre": "PKG",
+            "padre": "HOS-1354",
             "titulo": "B1 · El adaptador y el proveedor que miente",
             "descripcion": "Pieza existente en Linear: se reusa y se le cuelgan las hojas de PR. Depende de: `U1`. Nota de contexto para el árbol: padre/dependencias van en `depende_de`. Spec: [B1.md](../../spec-consolidada/10-corte/B1.md).",
             "acs": [],
@@ -1174,10 +1164,20 @@
         {
             "clave": "V7.1",
             "padre": "V7",
-            "titulo": "V7 · Postulación: PP1, PP2 y PP3 (PR 1/6)",
-            "descripcion": "**Qué entrega:** Postulación: PP1, PP2 y PP3.\n\n**Pieza:** `V7` — spec [V7.md](../../spec-consolidada/20-fase-4/V7.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V7:1` — `PP1`: alguien postula y nace una `PENDIENTE`.\n- `AC:V7:2` — `PP1` prohibida por la guarda de la base.\n- `AC:V7:3` — La espera anulada deja postular.\n- `AC:V7:4` — `PP2`: aprobar no vincula nada.\n- `AC:V7:5` — `PP3`: rechazar se comunica.\n- `AC:V7:6` — Ninguna transición la dispara el tiempo; la atrasada se marca.\n\n**Depende de:** Dependencias del grafo: `B5`, `V5` (cada una por su hoja de salida: `B5.9`, `V5.10`).\n\n**Verificación:** tests `TEST:V7:1`, `TEST:V7:2`, `TEST:V7:3`, `TEST:V7:4`, `TEST:V7:5`, `TEST:V7:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:V7:1", "AC:V7:2", "AC:V7:3", "AC:V7:4", "AC:V7:5", "AC:V7:6"],
+            "titulo": "V7 · Postulación: PP1, PP2 y PP3 (PR 1/6, parte 1/2)",
+            "descripcion": "**Qué entrega:** Postulación: PP1, PP2 y PP3.\n\n**Pieza:** `V7` — spec [V7.md](../../spec-consolidada/20-fase-4/V7.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V7:1` — `PP1`: alguien postula y nace una `PENDIENTE`.\n- `AC:V7:2` — `PP1` prohibida por la guarda de la base.\n- `AC:V7:3` — La espera anulada deja postular.\n\n**Depende de:** Dependencias del grafo: `B5`, `V5` (cada una por su hoja de salida: `B5.9`, `V5.10`).\n\n**Verificación:** tests `TEST:V7:1`, `TEST:V7:2`, `TEST:V7:3`, `TEST:V7:4`, `TEST:V7:5`, `TEST:V7:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V7:1", "AC:V7:2", "AC:V7:3"],
             "depende_de": ["B5.9", "V5.10"],
+            "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "V7.1b",
+            "padre": "V7",
+            "titulo": "V7 · Postulación: PP1, PP2 y PP3 (PR 1/6, parte 2/2)",
+            "descripcion": "**Qué entrega:** Postulación: PP1, PP2 y PP3.\n\n**Pieza:** `V7` — spec [V7.md](../../spec-consolidada/20-fase-4/V7.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V7:4` — `PP2`: aprobar no vincula nada.\n- `AC:V7:5` — `PP3`: rechazar se comunica.\n- `AC:V7:6` — Ninguna transición la dispara el tiempo; la atrasada se marca.\n\n**Depende de:** Dentro de `V7.1`: esperar a `V7.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V7:4", "AC:V7:5", "AC:V7:6"],
+            "depende_de": ["V7.1"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1187,7 +1187,7 @@
             "titulo": "V7 · El reclamo y su link (PR 2/6)",
             "descripcion": "**Qué entrega:** El reclamo y su link.\n\n**Pieza:** `V7` — spec [V7.md](../../spec-consolidada/20-fase-4/V7.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V7:7` — El reclamo exige sesión, vincula a la cuenta que reclama y le da el rol de socio.\n- `AC:V7:8` — El reclamo desde la cuenta del correo la verifica y cierra todo lo previo.\n- `AC:V7:9` — Link de un solo uso, con secreto.\n- `AC:V7:10` — Un correo nunca verificado no se cambia llevándose vínculos.\n\n**Depende de:** Dentro de `V7`: esperar a `V7.1`.\n\n**Verificación:** tests `TEST:V7:10`, `TEST:V7:22`, `TEST:V7:7`, `TEST:V7:8`, `TEST:V7:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V7:7", "AC:V7:8", "AC:V7:9", "AC:V7:10"],
-            "depende_de": ["V7.1"],
+            "depende_de": ["V7.1b"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1234,10 +1234,20 @@
         {
             "clave": "V8a.1",
             "padre": "V8a",
-            "titulo": "V8a · Superficies, botones y mensajes de fichas (PR 1/4)",
-            "descripcion": "**Qué entrega:** Superficies, botones y mensajes de fichas.\n\n**Pieza:** `V8a` — spec [V8a.md](../../spec-consolidada/10-corte/V8a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V8a:1` — Ninguna superficie decide por sí misma.\n- `AC:V8a:2` — El botón de suscribirse manda a publicar a quien publicar le arrancaría el trial.\n- `AC:V8a:3` — La vertical sin planes no ofrece nada.\n- `AC:V8a:4` — Filas 20 y 21: la ficha borrada y *«suscribite para publicar»*.\n- `AC:V8a:5` — Filas 27 y 28: lo que cuelga de una ficha `PURGED`.\n- `AC:V8a:6` — Los demás mensajes de verticales que la fila lleva.\n\n**Depende de:** Dependencias del grafo: `V6` (cada una por su hoja de salida: `V6.13`).\n\n**Verificación:** tests `TEST:V8a:1`, `TEST:V8a:2`, `TEST:V8a:3`, `TEST:V8a:4`, `TEST:V8a:5`, `TEST:V8a:6`, `TEST:V8a:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:V8a:1", "AC:V8a:2", "AC:V8a:3", "AC:V8a:4", "AC:V8a:5", "AC:V8a:6"],
+            "titulo": "V8a · Superficies, botones y mensajes de fichas (PR 1/4, parte 1/2)",
+            "descripcion": "**Qué entrega:** Superficies, botones y mensajes de fichas.\n\n**Pieza:** `V8a` — spec [V8a.md](../../spec-consolidada/10-corte/V8a.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V8a:1` — Ninguna superficie decide por sí misma.\n- `AC:V8a:2` — El botón de suscribirse manda a publicar a quien publicar le arrancaría el trial.\n- `AC:V8a:3` — La vertical sin planes no ofrece nada.\n\n**Depende de:** Dependencias del grafo: `V6` (cada una por su hoja de salida: `V6.13`).\n\n**Verificación:** tests `TEST:V8a:1`, `TEST:V8a:2`, `TEST:V8a:3`, `TEST:V8a:4`, `TEST:V8a:5`, `TEST:V8a:6`, `TEST:V8a:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V8a:1", "AC:V8a:2", "AC:V8a:3"],
             "depende_de": ["V6.13"],
+            "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "V8a.1b",
+            "padre": "V8a",
+            "titulo": "V8a · Superficies, botones y mensajes de fichas (PR 1/4, parte 2/2)",
+            "descripcion": "**Qué entrega:** Superficies, botones y mensajes de fichas.\n\n**Pieza:** `V8a` — spec [V8a.md](../../spec-consolidada/10-corte/V8a.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V8a:4` — Filas 20 y 21: la ficha borrada y *«suscribite para publicar»*.\n- `AC:V8a:5` — Filas 27 y 28: lo que cuelga de una ficha `PURGED`.\n- `AC:V8a:6` — Los demás mensajes de verticales que la fila lleva.\n\n**Depende de:** Dentro de `V8a.1`: esperar a `V8a.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V8a:4", "AC:V8a:5", "AC:V8a:6"],
+            "depende_de": ["V8a.1"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1247,7 +1257,7 @@
             "titulo": "V8a · Acciones 15 y 23 (PR 2/4)",
             "descripcion": "**Qué entrega:** Acciones 15 y 23.\n\n**Pieza:** `V8a` — spec [V8a.md](../../spec-consolidada/10-corte/V8a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V8a:7` — La acción 15 edita contenido y nada más.\n- `AC:V8a:8` — La acción 15 pide su propio permiso y no sirve para borrar.\n- `AC:V8a:9` — La acción 23: borrar una ficha ajena a pedido de su dueño.\n\n**Depende de:** Dentro de `V8a`: esperar a `V8a.1`.\n\n**Verificación:** tests `TEST:V8a:10`, `TEST:V8a:11`, `TEST:V8a:8`, `TEST:V8a:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V8a:7", "AC:V8a:8", "AC:V8a:9"],
-            "depende_de": ["V8a.1"],
+            "depende_de": ["V8a.1b"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1274,10 +1284,20 @@
         {
             "clave": "V8b.1",
             "padre": "V8b",
-            "titulo": "V8b · Panel de postulaciones y filas de presencia (PR 1/2)",
-            "descripcion": "**Qué entrega:** Panel de postulaciones y filas de presencia.\n\n**Pieza:** `V8b` — spec [V8b.md](../../spec-consolidada/20-fase-4/V8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V8b:1` — Fila 22: la presencia que dejó de verse.\n- `AC:V8b:2` — El panel de postulaciones.\n- `AC:V8b:3` — Fila 32: link de un Partner que ya tiene dueño.\n- `AC:V8b:4` — Fila 33: reclamar un segundo Partner.\n- `AC:V8b:5` — Fila 34: postular con sesión y el correo sin verificar.\n\n**Depende de:** Dependencias del grafo: `V6`, `V7`, `V8a` (cada una por su hoja de salida: `V6.13`, `V7.6`, `V8a.4`).\n\n**Verificación:** tests `TEST:V8b:1`, `TEST:V8b:2`, `TEST:V8b:3`, `TEST:V8b:4`, `TEST:V8b:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:V8b:1", "AC:V8b:2", "AC:V8b:3", "AC:V8b:4", "AC:V8b:5"],
+            "titulo": "V8b · Panel de postulaciones y filas de presencia (PR 1/2, parte 1/2)",
+            "descripcion": "**Qué entrega:** Panel de postulaciones y filas de presencia.\n\n**Pieza:** `V8b` — spec [V8b.md](../../spec-consolidada/20-fase-4/V8b.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V8b:1` — Fila 22: la presencia que dejó de verse.\n- `AC:V8b:2` — El panel de postulaciones.\n- `AC:V8b:3` — Fila 32: link de un Partner que ya tiene dueño.\n\n**Depende de:** Dependencias del grafo: `V6`, `V7`, `V8a` (cada una por su hoja de salida: `V6.13`, `V7.6`, `V8a.4`).\n\n**Verificación:** tests `TEST:V8b:1`, `TEST:V8b:2`, `TEST:V8b:3`, `TEST:V8b:4`, `TEST:V8b:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V8b:1", "AC:V8b:2", "AC:V8b:3"],
             "depende_de": ["V6.13", "V7.6", "V8a.4"],
+            "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "V8b.1b",
+            "padre": "V8b",
+            "titulo": "V8b · Panel de postulaciones y filas de presencia (PR 1/2, parte 2/2)",
+            "descripcion": "**Qué entrega:** Panel de postulaciones y filas de presencia.\n\n**Pieza:** `V8b` — spec [V8b.md](../../spec-consolidada/20-fase-4/V8b.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V8b:4` — Fila 33: reclamar un segundo Partner.\n- `AC:V8b:5` — Fila 34: postular con sesión y el correo sin verificar.\n\n**Depende de:** Dentro de `V8b.1`: esperar a `V8b.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V8b:4", "AC:V8b:5"],
+            "depende_de": ["V8b.1"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1287,17 +1307,27 @@
             "titulo": "V8b · Acción 25 y salida (PR 2/2)",
             "descripcion": "**Qué entrega:** Acción 25 y salida.\n\n**Pieza:** `V8b` — spec [V8b.md](../../spec-consolidada/20-fase-4/V8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V8b:6` — La acción 25: vaciar la presencia a pedido del dueño.\n- `AC:V8b:7` — Salida: la pieza está lista.\n\n**Depende de:** Dentro de `V8b`: esperar a `V8b.1`.\n\n**Verificación:** tests `TEST:V8b:6`, `TEST:V8b:7`, `TEST:V8b:8`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V8b:6", "AC:V8b:7"],
-            "depende_de": ["V8b.1"],
+            "depende_de": ["V8b.1b"],
             "labels": ["area-admin", "area-api", "area-web", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "V9a.1",
             "padre": "V9a",
-            "titulo": "V9a · El registro de hechos de contenido (corte) (PR 1/1)",
-            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V9a:1` — Crear, editar y exportar se registran aunque no sean transiciones.\n- `AC:V9a:2` — De los campos de contenido, sólo el nombre.\n- `AC:V9a:3` — Ninguna copia del texto en los eventos.\n- `AC:V9a:4` — Escribe desde el día del corte, y es la fuente del hecho 1.\n- `AC:V9a:5` — Salida: la pieza está lista.\n\n**Depende de:** Dependencias del grafo: `U2`, `V4`, `V6` (cada una por su hoja de salida: `U2.4`, `V4.7`, `V6.13`).\n\n**Verificación:** tests `TEST:V9a:1`, `TEST:V9a:2`, `TEST:V9a:3`, `TEST:V9a:4`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:V9a:1", "AC:V9a:2", "AC:V9a:3", "AC:V9a:4", "AC:V9a:5"],
+            "titulo": "V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 1/2)",
+            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V9a:1` — Crear, editar y exportar se registran aunque no sean transiciones.\n- `AC:V9a:2` — De los campos de contenido, sólo el nombre.\n- `AC:V9a:3` — Ninguna copia del texto en los eventos.\n\n**Depende de:** Dependencias del grafo: `U2`, `V4`, `V6` (cada una por su hoja de salida: `U2.4`, `V4.7`, `V6.13`).\n\n**Verificación:** tests `TEST:V9a:1`, `TEST:V9a:2`, `TEST:V9a:3`, `TEST:V9a:4`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V9a:1", "AC:V9a:2", "AC:V9a:3"],
             "depende_de": ["U2.4", "V4.7", "V6.13"],
+            "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "V9a.1b",
+            "padre": "V9a",
+            "titulo": "V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 2/2)",
+            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V9a:4` — Escribe desde el día del corte, y es la fuente del hecho 1.\n- `AC:V9a:5` — Salida: la pieza está lista.\n\n**Depende de:** Dentro de `V9a.1`: esperar a `V9a.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V9a:4", "AC:V9a:5"],
+            "depende_de": ["V9a.1"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1307,7 +1337,7 @@
             "titulo": "V9b · El borrado del día 180 (PR 1/5)",
             "descripcion": "**Qué entrega:** El borrado del día 180.\n\n**Pieza:** `V9b` — spec [V9b.md](../../spec-consolidada/20-fase-1/V9b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V9b:1` — El día 180 borra el contenido de esa ficha y nada de la persona.\n- `AC:V9b:2` — Después del borrado, ningún evento conserva el texto.\n- `AC:V9b:7` — Nunca antes del plazo ni de la fecha anunciada.\n\n**Depende de:** Dependencias del grafo: `U2`, `V4`, `V6`, `V9a` (cada una por su hoja de salida: `U2.4`, `V4.7`, `V6.13`, `V9a.1`).\n\n**Verificación:** tests `TEST:V9b:1`, `TEST:V9b:2`, `TEST:V9b:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V9b:1", "AC:V9b:2", "AC:V9b:7"],
-            "depende_de": ["U2.4", "V4.7", "V6.13", "V9a.1"],
+            "depende_de": ["U2.4", "V4.7", "V6.13", "V9a.1b"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1374,10 +1404,20 @@
         {
             "clave": "B1.3",
             "padre": "B1",
-            "titulo": "B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7)",
-            "descripcion": "**Qué entrega:** Guards del adaptador: G9 a G12, G16 y G17.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B1:5` — `G9`: el `reason` es copy, no un identificador.\n- `AC:B1:6` — `G10`: el enlace de pago nunca se muestra sin sanear.\n- `AC:B1:7` — `G11`: nunca se le pide un trial al proveedor.\n- `AC:B1:8` — `G12`: el SDK de la pasarela no se importa fuera del adaptador.\n- `AC:B1:10` — `G16`: el cobro no vuelve a depender de lo que dejó.\n- `AC:B1:11` — `G17`: ninguna decisión sale de un aviso sin releer por id.\n\n**Depende de:** Dentro de `B1`: esperar a `B1.2`.\n\n**Verificación:** tests `TEST:B1:10`, `TEST:B1:11`, `TEST:B1:5`, `TEST:B1:6`, `TEST:B1:7`, `TEST:B1:8`; guards `G10`, `G11`, `G12`, `G14`, `G16`, `G17`, `G9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B1:5", "AC:B1:6", "AC:B1:7", "AC:B1:8", "AC:B1:10", "AC:B1:11"],
+            "titulo": "B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7, parte 1/2)",
+            "descripcion": "**Qué entrega:** Guards del adaptador: G9 a G12, G16 y G17.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B1:5` — `G9`: el `reason` es copy, no un identificador.\n- `AC:B1:6` — `G10`: el enlace de pago nunca se muestra sin sanear.\n- `AC:B1:7` — `G11`: nunca se le pide un trial al proveedor.\n\n**Depende de:** Dentro de `B1`: esperar a `B1.2`.\n\n**Verificación:** tests `TEST:B1:10`, `TEST:B1:11`, `TEST:B1:5`, `TEST:B1:6`, `TEST:B1:7`, `TEST:B1:8`; guards `G10`, `G11`, `G12`, `G14`, `G16`, `G17`, `G9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B1:5", "AC:B1:6", "AC:B1:7"],
             "depende_de": ["B1.2"],
+            "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B1.3b",
+            "padre": "B1",
+            "titulo": "B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7, parte 2/2)",
+            "descripcion": "**Qué entrega:** Guards del adaptador: G9 a G12, G16 y G17.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B1:8` — `G12`: el SDK de la pasarela no se importa fuera del adaptador.\n- `AC:B1:10` — `G16`: el cobro no vuelve a depender de lo que dejó.\n- `AC:B1:11` — `G17`: ninguna decisión sale de un aviso sin releer por id.\n\n**Depende de:** Dentro de `B1.3`: esperar a `B1.3`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B1:8", "AC:B1:10", "AC:B1:11"],
+            "depende_de": ["B1.3"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1387,7 +1427,7 @@
             "titulo": "B1 · El falso: listas cerradas, mentiras y reglas (PR 4/7)",
             "descripcion": "**Qué entrega:** El falso: listas cerradas, mentiras y reglas.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B1:9` — Las dos listas del falso son cerradas, y `G15` lo hace cumplir.\n- `AC:B1:13` — El falso reproduce las trece mentiras medidas.\n- `AC:B1:14` — El falso cumple las doce reglas propias y comportamientos medidos.\n\n**Depende de:** Dentro de `B1`: esperar a `B1.3`.\n\n**Verificación:** tests `TEST:B1:13`, `TEST:B1:14`, `TEST:B1:9`; guards `G15`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B1:9", "AC:B1:13", "AC:B1:14"],
-            "depende_de": ["B1.3"],
+            "depende_de": ["B1.3b"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1464,10 +1504,20 @@
         {
             "clave": "B3.1",
             "padre": "B3",
-            "titulo": "B3 · El alta nace pendiente, con candado y preapproval (PR 1/11)",
-            "descripcion": "**Qué entrega:** El alta nace pendiente, con candado y preapproval.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:1` — El alta nueva nace pendiente, con su candado persistido y un preapproval suelto.\n- `AC:B3:2` — Un plan que ya no está a la venta no nace, aunque llegue por un link viejo.\n- `AC:B3:3` — Un alta no convive con un intento anterior rechazado cuyo preapproval sigue sin cerrar.\n- `AC:B3:4` — El alta de un pagador manual abre su primera cuota.\n- `AC:B3:6` — Diez altas simultáneas dejan una fila y un preapproval.\n\n**Depende de:** Dependencias del grafo: `B1`, `B2`, `U2`, `V2` (cada una por su hoja de salida: `B1.7`, `B2.4`, `U2.4`, `V2.5`).\n\n**Verificación:** tests `TEST:B3:1`, `TEST:B3:2`, `TEST:B3:3`, `TEST:B3:4`, `TEST:B3:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B3:1", "AC:B3:2", "AC:B3:3", "AC:B3:4", "AC:B3:6"],
+            "titulo": "B3 · El alta nace pendiente, con candado y preapproval (PR 1/11, parte 1/2)",
+            "descripcion": "**Qué entrega:** El alta nace pendiente, con candado y preapproval.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B3:1` — El alta nueva nace pendiente, con su candado persistido y un preapproval suelto.\n- `AC:B3:2` — Un plan que ya no está a la venta no nace, aunque llegue por un link viejo.\n- `AC:B3:3` — Un alta no convive con un intento anterior rechazado cuyo preapproval sigue sin cerrar.\n\n**Depende de:** Dependencias del grafo: `B1`, `B2`, `U2`, `V2` (cada una por su hoja de salida: `B1.7`, `B2.4`, `U2.4`, `V2.5`).\n\n**Verificación:** tests `TEST:B3:1`, `TEST:B3:2`, `TEST:B3:3`, `TEST:B3:4`, `TEST:B3:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:1", "AC:B3:2", "AC:B3:3"],
             "depende_de": ["B1.7", "B2.4", "U2.4", "V2.5"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B3.1b",
+            "padre": "B3",
+            "titulo": "B3 · El alta nace pendiente, con candado y preapproval (PR 1/11, parte 2/2)",
+            "descripcion": "**Qué entrega:** El alta nace pendiente, con candado y preapproval.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B3:4` — El alta de un pagador manual abre su primera cuota.\n- `AC:B3:6` — Diez altas simultáneas dejan una fila y un preapproval.\n\n**Depende de:** Dentro de `B3.1`: esperar a `B3.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:4", "AC:B3:6"],
+            "depende_de": ["B3.1"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1477,17 +1527,27 @@
             "titulo": "B3 · La sucesión antes de B8b y el invariante 8 (PR 2/11)",
             "descripcion": "**Qué entrega:** La sucesión antes de B8b y el invariante 8.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:5` — Hasta `B8b`, ninguna ruta declara una sucesión.\n- `AC:B3:7` — El invariante 8 cuenta compromisos: dos índices parciales, un origen y su única sucesora.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.1`.\n\n**Verificación:** tests `TEST:B3:39`, `TEST:B3:5`, `TEST:B3:7`, `TEST:B3:8`; guards `G-R1-A`, `G-R1-B`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B3:5", "AC:B3:7"],
-            "depende_de": ["B3.1"],
+            "depende_de": ["B3.1b"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B3.3",
             "padre": "B3",
-            "titulo": "B3 · Activación, ventana y sus ramas (PR 3/11)",
-            "descripcion": "**Qué entrega:** Activación, ventana y sus ramas.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:8` — La autorización confirmada por relectura activa la fila.\n- `AC:B3:9` — La ventana vence por el método de la fila, y no le gana a una autorización que llegó.\n- `AC:B3:10` — La ventana que vence cancela en el proveedor, con nuestro correo antes.\n- `AC:B3:11` — `S3` cierra el saldo de una cortesía diferida, y sin filas no escribe nada.\n- `AC:B3:12` — De `ABANDONED` no se vuelve a `ACTIVE`.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.2`.\n\n**Verificación:** tests `TEST:B3:10`, `TEST:B3:11`, `TEST:B3:12`, `TEST:B3:13`, `TEST:B3:28`, `TEST:B3:35`, `TEST:B3:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B3:8", "AC:B3:9", "AC:B3:10", "AC:B3:11", "AC:B3:12"],
+            "titulo": "B3 · Activación, ventana y sus ramas (PR 3/11, parte 1/2)",
+            "descripcion": "**Qué entrega:** Activación, ventana y sus ramas.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B3:8` — La autorización confirmada por relectura activa la fila.\n- `AC:B3:9` — La ventana vence por el método de la fila, y no le gana a una autorización que llegó.\n- `AC:B3:10` — La ventana que vence cancela en el proveedor, con nuestro correo antes.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.2`.\n\n**Verificación:** tests `TEST:B3:10`, `TEST:B3:11`, `TEST:B3:12`, `TEST:B3:13`, `TEST:B3:28`, `TEST:B3:35`, `TEST:B3:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:8", "AC:B3:9", "AC:B3:10"],
             "depende_de": ["B3.2"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B3.3b",
+            "padre": "B3",
+            "titulo": "B3 · Activación, ventana y sus ramas (PR 3/11, parte 2/2)",
+            "descripcion": "**Qué entrega:** Activación, ventana y sus ramas.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B3:11` — `S3` cierra el saldo de una cortesía diferida, y sin filas no escribe nada.\n- `AC:B3:12` — De `ABANDONED` no se vuelve a `ACTIVE`.\n\n**Depende de:** Dentro de `B3.3`: esperar a `B3.3`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:11", "AC:B3:12"],
+            "depende_de": ["B3.3"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1497,17 +1557,27 @@
             "titulo": "B3 · La marca y el catálogo de motivos (PR 4/11)",
             "descripcion": "**Qué entrega:** La marca y el catálogo de motivos.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:13` — Una divergencia abre una marca con su motivo y no toca el estado.\n- `AC:B3:14` — La marca no es un estado: ocupa el candado y frena la sucesión.\n- `AC:B3:15` — Se levanta una marca, no la fila, y nunca con plata adentro.\n- `AC:B3:16` — El catálogo de motivos es cerrado: veinticuatro, nueve devuelven plata.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.3`.\n\n**Verificación:** tests `TEST:B3:14`, `TEST:B3:15`, `TEST:B3:16`, `TEST:B3:40`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B3:13", "AC:B3:14", "AC:B3:15", "AC:B3:16"],
-            "depende_de": ["B3.3"],
+            "depende_de": ["B3.3b"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B3.5",
             "padre": "B3",
-            "titulo": "B3 · Rechazos, espejos y avisos sin estado (PR 5/11)",
-            "descripcion": "**Qué entrega:** Rechazos, espejos y avisos sin estado.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:17` — El primer rechazo de un alta la lleva a `CHARGE_DECLINED`, pase lo que pase con la llamada.\n- `AC:B3:18` — Un aviso no es un estado: dos webhooks al revés dejan el mismo estado.\n- `AC:B3:19` — La baja dada desde la cuenta de Mercado Pago se espeja como baja del proveedor.\n- `AC:B3:20` — Un aviso sin id de hecho propio se procesa dos veces con el mismo resultado, y la entrega\n- `AC:B3:21` — Cada entrega se guarda en `provider_notification`, y nadie la lee.\n- `AC:B3:36` — La tabla de entregas se llama `provider_notification`, y así la nombra `G17`.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.4`.\n\n**Verificación:** tests `TEST:B3:17`, `TEST:B3:18`, `TEST:B3:19`, `TEST:B3:20`, `TEST:B3:21`, `TEST:B3:22`, `TEST:B3:38`; guards `G17`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B3:17", "AC:B3:18", "AC:B3:19", "AC:B3:20", "AC:B3:21", "AC:B3:36"],
+            "titulo": "B3 · Rechazos, espejos y avisos sin estado (PR 5/11, parte 1/2)",
+            "descripcion": "**Qué entrega:** Rechazos, espejos y avisos sin estado.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B3:17` — El primer rechazo de un alta la lleva a `CHARGE_DECLINED`, pase lo que pase con la llamada.\n- `AC:B3:18` — Un aviso no es un estado: dos webhooks al revés dejan el mismo estado.\n- `AC:B3:19` — La baja dada desde la cuenta de Mercado Pago se espeja como baja del proveedor.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.4`.\n\n**Verificación:** tests `TEST:B3:17`, `TEST:B3:18`, `TEST:B3:19`, `TEST:B3:20`, `TEST:B3:21`, `TEST:B3:22`, `TEST:B3:38`; guards `G17`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:17", "AC:B3:18", "AC:B3:19"],
             "depende_de": ["B3.4"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B3.5b",
+            "padre": "B3",
+            "titulo": "B3 · Rechazos, espejos y avisos sin estado (PR 5/11, parte 2/2)",
+            "descripcion": "**Qué entrega:** Rechazos, espejos y avisos sin estado.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B3:20` — Un aviso sin id de hecho propio se procesa dos veces con el mismo resultado, y la entrega\n- `AC:B3:21` — Cada entrega se guarda en `provider_notification`, y nadie la lee.\n- `AC:B3:36` — La tabla de entregas se llama `provider_notification`, y así la nombra `G17`.\n\n**Depende de:** Dentro de `B3.5`: esperar a `B3.5`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B3:20", "AC:B3:21", "AC:B3:36"],
+            "depende_de": ["B3.5"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1517,7 +1587,7 @@
             "titulo": "B3 · Receptor real, ensayo y producción (PR 6/11)",
             "descripcion": "**Qué entrega:** Receptor real, ensayo y producción.\n\n**Pieza:** `B3` — spec [B3.md](../../spec-consolidada/10-corte/B3.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B3:22` — En el ensayo, la entrega real del pago chico llega a este receptor.\n- `AC:B3:32` — Nuestro correo de alta anticipa el del proveedor.\n- `AC:B3:33` — El alta, de punta a punta, con sus dos checkouts abandonados.\n- `AC:B3:34` — En producción, el alta real nace bien.\n\n**Depende de:** Dentro de `B3`: esperar a `B3.5`.\n\n**Verificación:** tests `TEST:B3:23`, `TEST:B3:34`, `TEST:B3:35`, `TEST:B3:36`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B3:22", "AC:B3:32", "AC:B3:33", "AC:B3:34"],
-            "depende_de": ["B3.5"],
+            "depende_de": ["B3.5b"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1634,10 +1704,20 @@
         {
             "clave": "B5.2",
             "padre": "B5",
-            "titulo": "B5 · Comprobantes, reintentos y provider_notification (PR 2/9)",
-            "descripcion": "**Qué entrega:** Comprobantes, reintentos y provider_notification.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago (`03` §6)».\n\n**Cubre:**\n- `AC:B5:4` — el `receipt` —comprobante no fiscal— se escribe en la misma transacción que acredita, con\n- `AC:B5:5` — pasa a `FAILED` por `P2`, que ya no dispara `S4`: el grace lo arranca el primer rechazo,\n- `AC:B5:6` — sólo ese `refund` mueve el acumulado del pago —un pedido sin confirmar o uno fallido no corre\n- `AC:B5:7` — pasa a `CHARGED_BACK` por `P6` y no toca `covered_period`; esté en el estado que esté la\n- `AC:B5:8` — vuelve por `P7` a `PARTIALLY_REFUNDED` si su acumulado reembolsado es mayor que cero, o a\n\n**Depende de:** Dentro de `B5`: esperar a `B5.1`.\n\n**Verificación:** tests `TEST:B5:1`, `TEST:B5:4`, `TEST:B5:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B5:4", "AC:B5:5", "AC:B5:6", "AC:B5:7", "AC:B5:8"],
+            "titulo": "B5 · Comprobantes, reintentos y provider_notification (PR 2/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** Comprobantes, reintentos y provider_notification.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago (`03` §6)».\n (parte 1/2).\n**Cubre:**\n- `AC:B5:4` — el `receipt` —comprobante no fiscal— se escribe en la misma transacción que acredita, con\n- `AC:B5:5` — pasa a `FAILED` por `P2`, que ya no dispara `S4`: el grace lo arranca el primer rechazo,\n- `AC:B5:6` — sólo ese `refund` mueve el acumulado del pago —un pedido sin confirmar o uno fallido no corre\n\n**Depende de:** Dentro de `B5`: esperar a `B5.1`.\n\n**Verificación:** tests `TEST:B5:1`, `TEST:B5:4`, `TEST:B5:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:4", "AC:B5:5", "AC:B5:6"],
             "depende_de": ["B5.1"],
+            "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B5.2b",
+            "padre": "B5",
+            "titulo": "B5 · Comprobantes, reintentos y provider_notification (PR 2/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** Comprobantes, reintentos y provider_notification.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago (`03` §6)».\n (parte 2/2).\n**Cubre:**\n- `AC:B5:7` — pasa a `CHARGED_BACK` por `P6` y no toca `covered_period`; esté en el estado que esté la\n- `AC:B5:8` — vuelve por `P7` a `PARTIALLY_REFUNDED` si su acumulado reembolsado es mayor que cero, o a\n\n**Depende de:** Dentro de `B5.2`: esperar a `B5.2`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:7", "AC:B5:8"],
+            "depende_de": ["B5.2"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1647,63 +1727,87 @@
             "titulo": "B5 · El reembolso y la acción 14 (PR 3/9)",
             "descripcion": "**Qué entrega:** El reembolso y la acción 14.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El reembolso (`03` §6.1) y la acción 14».\n\n**Cubre:**\n- `AC:B5:9` — nace un `refund` en `REQUESTED` por `RF1`, con el pago que se devuelve —un `payment` o un\n- `AC:B5:10` — nace el `refund` en `EXECUTED` por `RF4`, con quién la asentó, por dónde y el comprobante de\n- `AC:B5:11` — se crea el `payment` en `PENDING` con el id del registro y corre la regla con la que la fila\n- `AC:B5:12` — sus estados son `REQUESTED → CONFIRMED → EXECUTED | FAILED`; `EXECUTED` lo escribe la\n\n**Depende de:** Dentro de `B5`: esperar a `B5.2`.\n\n**Verificación:** tests `TEST:B5:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B5:9", "AC:B5:10", "AC:B5:11", "AC:B5:12"],
-            "depende_de": ["B5.2"],
+            "depende_de": ["B5.2b"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B5.4",
             "padre": "B5",
-            "titulo": "B5 · El pago manual MP1 a MP5 (PR 4/9)",
-            "descripcion": "**Qué entrega:** El pago manual MP1 a MP5.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago manual (`03` §7)».\n\n**Cubre:**\n- `AC:B5:13` — `MP5` abre la cuota del período en `AWAITING`: por el reloj, con `S4` en el mismo acto; por\n- `AC:B5:14` — la cuota pasa a `REGISTERED` con quién, cuándo y el comprobante; escribe `covered_period`;\n- `AC:B5:15` — la fila pasa a `ACTIVE` por `S29` y empieza a emitir fuente ya con `cobrada: sí`; `S29` no\n- `AC:B5:16` — la cuota pasa a `DECLARED_UNPAID` y la suscripción va a `SUSPENDED` por `S6` —su cuarto\n- `AC:B5:17` — la cuota pasa a `DECLARED_UNPAID` por `MP3`: con `S6` por la primera cláusula, y sin ningún\n- `AC:B5:18` — la cuota pasa a `REGISTERED` y la suscripción sale de `SUSPENDED` por `S7` —o queda\n- `AC:B5:19` — `MP6` crea una segunda fila de `manual_payment` ya `REGISTERED`, con el período de la última\n\n**Depende de:** Dentro de `B5`: esperar a `B5.3`.\n\n**Verificación:** tests `TEST:B5:10`, `TEST:B5:7`, `TEST:B5:8`, `TEST:B5:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": [
-                "AC:B5:13",
-                "AC:B5:14",
-                "AC:B5:15",
-                "AC:B5:16",
-                "AC:B5:17",
-                "AC:B5:18",
-                "AC:B5:19"
-            ],
+            "titulo": "B5 · El pago manual MP1 a MP5 (PR 4/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** El pago manual MP1 a MP5.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago manual (`03` §7)».\n (parte 1/2).\n**Cubre:**\n- `AC:B5:13` — `MP5` abre la cuota del período en `AWAITING`: por el reloj, con `S4` en el mismo acto; por\n- `AC:B5:14` — la cuota pasa a `REGISTERED` con quién, cuándo y el comprobante; escribe `covered_period`;\n- `AC:B5:15` — la fila pasa a `ACTIVE` por `S29` y empieza a emitir fuente ya con `cobrada: sí`; `S29` no\n- `AC:B5:16` — la cuota pasa a `DECLARED_UNPAID` y la suscripción va a `SUSPENDED` por `S6` —su cuarto\n\n**Depende de:** Dentro de `B5`: esperar a `B5.3`.\n\n**Verificación:** tests `TEST:B5:10`, `TEST:B5:7`, `TEST:B5:8`, `TEST:B5:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:13", "AC:B5:14", "AC:B5:15", "AC:B5:16"],
             "depende_de": ["B5.3"],
+            "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B5.4b",
+            "padre": "B5",
+            "titulo": "B5 · El pago manual MP1 a MP5 (PR 4/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** El pago manual MP1 a MP5.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El pago manual (`03` §7)».\n (parte 2/2).\n**Cubre:**\n- `AC:B5:17` — la cuota pasa a `DECLARED_UNPAID` por `MP3`: con `S6` por la primera cláusula, y sin ningún\n- `AC:B5:18` — la cuota pasa a `REGISTERED` y la suscripción sale de `SUSPENDED` por `S7` —o queda\n- `AC:B5:19` — `MP6` crea una segunda fila de `manual_payment` ya `REGISTERED`, con el período de la última\n\n**Depende de:** Dentro de `B5.4`: esperar a `B5.4`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:17", "AC:B5:18", "AC:B5:19"],
+            "depende_de": ["B5.4"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B5.5",
             "padre": "B5",
-            "titulo": "B5 · La revocación (S36) (PR 5/9)",
-            "descripcion": "**Qué entrega:** La revocación (S36).\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La revocación (`S36`)».\n\n**Cubre:**\n- `AC:B5:20` — (ver sección «La revocación (`S36`)» de la spec)\n- `AC:B5:21` — `S36` no ocurre: su guarda es estar dentro de los 10 días corridos del cobro que se revoca.\n- `AC:B5:22` — el último pago acreditado es el de su predecesora, que se encuentra por `sucedida_por` —la\n- `AC:B5:23` — ese pago retenido es el último pago acreditado de la revocación: lo devuelve el `RF1` de\n- `AC:B5:24` — `A5` y `S21` corren en el mismo acto: el último cobro del complemento se devuelve por `RF1`\n\n**Depende de:** Dentro de `B5`: esperar a `B5.4`.\n\n**Verificación:** tests `TEST:B5:11`, `TEST:B5:12`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B5:20", "AC:B5:21", "AC:B5:22", "AC:B5:23", "AC:B5:24"],
-            "depende_de": ["B5.4"],
+            "titulo": "B5 · La revocación (S36) (PR 5/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** La revocación (S36).\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La revocación (`S36`)».\n (parte 1/2).\n**Cubre:**\n- `AC:B5:20` — (ver sección «La revocación (`S36`)» de la spec)\n- `AC:B5:21` — `S36` no ocurre: su guarda es estar dentro de los 10 días corridos del cobro que se revoca.\n- `AC:B5:22` — el último pago acreditado es el de su predecesora, que se encuentra por `sucedida_por` —la\n\n**Depende de:** Dentro de `B5`: esperar a `B5.4`.\n\n**Verificación:** tests `TEST:B5:11`, `TEST:B5:12`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:20", "AC:B5:21", "AC:B5:22"],
+            "depende_de": ["B5.4b"],
+            "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B5.5b",
+            "padre": "B5",
+            "titulo": "B5 · La revocación (S36) (PR 5/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** La revocación (S36).\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La revocación (`S36`)».\n (parte 2/2).\n**Cubre:**\n- `AC:B5:23` — ese pago retenido es el último pago acreditado de la revocación: lo devuelve el `RF1` de\n- `AC:B5:24` — `A5` y `S21` corren en el mismo acto: el último cobro del complemento se devuelve por `RF1`\n\n**Depende de:** Dentro de `B5.5`: esperar a `B5.5`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:23", "AC:B5:24"],
+            "depende_de": ["B5.5"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B5.6",
             "padre": "B5",
-            "titulo": "B5 · La orfandad (A5) y S21 (PR 6/9)",
-            "descripcion": "**Qué entrega:** La orfandad (A5) y S21.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La orfandad (`A5`) y `S21`».\n\n**Cubre:**\n- `AC:B5:25` — `A5` lleva la instancia a `CANCELLED` sólo si queda efectivamente huérfana: el objetivo dejó\n- `AC:B5:26` — `A5` lleva la instancia a `CANCELLED` por su tercera cláusula, aunque su ficha o su cuenta\n- `AC:B5:27` — antes de la llamada sale nuestro correo —si falla de forma transitoria, la cancelación no se\n- `AC:B5:28` — `S21` la lleva a `CANCELLED` en el mismo acto: sin período de gracia, sin fecha de fin de\n- `AC:B5:29` — abre la marca `requiere_conciliación` con ese pago colgado y uno de dos motivos: el 15,\n- `AC:B5:30` — corre primero el `S12` de la principal, la orfandad corre `A5`, y `S21` toma el complemento\n- `AC:B5:31` — se abre la marca `ADDON_SIN_APAGAR` (motivo 11) para correr `A5`, sin ninguna llamada al\n\n**Depende de:** Dentro de `B5`: esperar a `B5.5`.\n\n**Verificación:** tests `TEST:B5:13`, `TEST:B5:14`, `TEST:B5:15`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": [
-                "AC:B5:25",
-                "AC:B5:26",
-                "AC:B5:27",
-                "AC:B5:28",
-                "AC:B5:29",
-                "AC:B5:30",
-                "AC:B5:31"
-            ],
-            "depende_de": ["B5.5"],
+            "titulo": "B5 · La orfandad (A5) y S21 (PR 6/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** La orfandad (A5) y S21.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La orfandad (`A5`) y `S21`».\n (parte 1/2).\n**Cubre:**\n- `AC:B5:25` — `A5` lleva la instancia a `CANCELLED` sólo si queda efectivamente huérfana: el objetivo dejó\n- `AC:B5:26` — `A5` lleva la instancia a `CANCELLED` por su tercera cláusula, aunque su ficha o su cuenta\n- `AC:B5:27` — antes de la llamada sale nuestro correo —si falla de forma transitoria, la cancelación no se\n- `AC:B5:28` — `S21` la lleva a `CANCELLED` en el mismo acto: sin período de gracia, sin fecha de fin de\n\n**Depende de:** Dentro de `B5`: esperar a `B5.5`.\n\n**Verificación:** tests `TEST:B5:13`, `TEST:B5:14`, `TEST:B5:15`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:25", "AC:B5:26", "AC:B5:27", "AC:B5:28"],
+            "depende_de": ["B5.5b"],
+            "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B5.6b",
+            "padre": "B5",
+            "titulo": "B5 · La orfandad (A5) y S21 (PR 6/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** La orfandad (A5) y S21.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «La orfandad (`A5`) y `S21`».\n (parte 2/2).\n**Cubre:**\n- `AC:B5:29` — abre la marca `requiere_conciliación` con ese pago colgado y uno de dos motivos: el 15,\n- `AC:B5:30` — corre primero el `S12` de la principal, la orfandad corre `A5`, y `S21` toma el complemento\n- `AC:B5:31` — se abre la marca `ADDON_SIN_APAGAR` (motivo 11) para correr `A5`, sin ninguna llamada al\n\n**Depende de:** Dentro de `B5.6`: esperar a `B5.6`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:29", "AC:B5:30", "AC:B5:31"],
+            "depende_de": ["B5.6"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B5.7",
             "padre": "B5",
-            "titulo": "B5 · Las llamadas BL y la rama S14 (PR 7/9)",
-            "descripcion": "**Qué entrega:** Las llamadas BL y la rama S14.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «Las llamadas a piezas posteriores (BL) y la rama de `S14` que cuelga un pago (BN)».\n\n**Cubre:**\n- `AC:B5:34` — `S36` dispara `S18` —igual que `S23` y `S24`— por la interfaz interna que implementa `B8b`:\n- `AC:B5:35` — `MP5` llama primero a `S38` por la interfaz interna que implementa `B8b` y abre la cuota\n- `AC:B5:36` — el barrido llama primero a `A6` por la interfaz interna que implementa `B10`, y abre la marca\n- `AC:B5:37` — no abre una segunda marca ni descarta el hecho: cuelga el pago de la abierta en\n- `AC:B5:38` — con un pago colgado de esa marca sin `resuelto_en`, `S15` se rechaza y el predicado (f) de\n\n**Depende de:** Dentro de `B5`: esperar a `B5.6`.\n\n**Verificación:** tests `TEST:B5:18`, `TEST:B5:19`, `TEST:B5:20`; guards `G-R1-F`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B5:34", "AC:B5:35", "AC:B5:36", "AC:B5:37", "AC:B5:38"],
-            "depende_de": ["B5.6"],
+            "titulo": "B5 · Las llamadas BL y la rama S14 (PR 7/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** Las llamadas BL y la rama S14.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «Las llamadas a piezas posteriores (BL) y la rama de `S14` que cuelga un pago (BN)».\n (parte 1/2).\n**Cubre:**\n- `AC:B5:34` — `S36` dispara `S18` —igual que `S23` y `S24`— por la interfaz interna que implementa `B8b`:\n- `AC:B5:35` — `MP5` llama primero a `S38` por la interfaz interna que implementa `B8b` y abre la cuota\n- `AC:B5:36` — el barrido llama primero a `A6` por la interfaz interna que implementa `B10`, y abre la marca\n\n**Depende de:** Dentro de `B5`: esperar a `B5.6`.\n\n**Verificación:** tests `TEST:B5:18`, `TEST:B5:19`, `TEST:B5:20`; guards `G-R1-F`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:34", "AC:B5:35", "AC:B5:36"],
+            "depende_de": ["B5.6b"],
+            "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B5.7b",
+            "padre": "B5",
+            "titulo": "B5 · Las llamadas BL y la rama S14 (PR 7/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** Las llamadas BL y la rama S14.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «Las llamadas a piezas posteriores (BL) y la rama de `S14` que cuelga un pago (BN)».\n (parte 2/2).\n**Cubre:**\n- `AC:B5:37` — no abre una segunda marca ni descarta el hecho: cuelga el pago de la abierta en\n- `AC:B5:38` — con un pago colgado de esa marca sin `resuelto_en`, `S15` se rechaza y el predicado (f) de\n\n**Depende de:** Dentro de `B5.7`: esperar a `B5.7`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B5:37", "AC:B5:38"],
+            "depende_de": ["B5.7"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1713,7 +1817,7 @@
             "titulo": "B5 · El esquema y los builds (PR 8/9)",
             "descripcion": "**Qué entrega:** El esquema y los builds.\n\n**Pieza:** `B5` — spec [B5.md](../../spec-consolidada/10-corte/B5.md), secciones «El esquema».\n\n**Cubre:**\n- `AC:B5:32` — `payment` nace con la columna que apunta a la instancia de addon y un CHECK de que\n- `AC:B5:39` — se cumplen las aserciones sobre el contenido de las filas del `B/19` §4 que ese flujo muestra\n\n**Depende de:** Dentro de `B5`: esperar a `B5.7`.\n\n**Verificación:** tests `TEST:B5:16`, `TEST:B5:22`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B5:32", "AC:B5:39"],
-            "depende_de": ["B5.7"],
+            "depende_de": ["B5.7b"],
             "labels": ["area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1750,10 +1854,20 @@
         {
             "clave": "B6.3",
             "padre": "B6",
-            "titulo": "B6 · Una vez, idempotencia y mandato (PR 3/4)",
-            "descripcion": "**Qué entrega:** Una vez, idempotencia y mandato.\n\n**Pieza:** `B6` — spec [B6.md](../../spec-consolidada/10-corte/B6.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B6:8` — sale por `POST /v1/orders/{id}/refund` —el total sin cuerpo, el parcial con su monto— con la\n- `AC:B6:9` — la base rechaza persistir la llamada de la segunda —a lo sumo una devolución de la orden\n- `AC:B6:10` — usa la misma clave y el mismo cuerpo, nunca una clave nueva; sobre un pago, si la\n- `AC:B6:11` — ningún reloj nuestro ejecuta el cobro: lo ejecuta el mandato del proveedor creado en `B3`,\n- `AC:B6:12` — la orden sale con la clave del pedido y queda una sola orden y un solo cobro: el segundo\n\n**Depende de:** Dentro de `B6`: esperar a `B6.2`.\n\n**Verificación:** tests `TEST:B6:10`, `TEST:B6:11`, `TEST:B6:6`, `TEST:B6:7`, `TEST:B6:8`, `TEST:B6:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B6:8", "AC:B6:9", "AC:B6:10", "AC:B6:11", "AC:B6:12"],
+            "titulo": "B6 · Una vez, idempotencia y mandato (PR 3/4, parte 1/2)",
+            "descripcion": "**Qué entrega:** Una vez, idempotencia y mandato.\n\n**Pieza:** `B6` — spec [B6.md](../../spec-consolidada/10-corte/B6.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B6:8` — sale por `POST /v1/orders/{id}/refund` —el total sin cuerpo, el parcial con su monto— con la\n- `AC:B6:9` — la base rechaza persistir la llamada de la segunda —a lo sumo una devolución de la orden\n- `AC:B6:10` — usa la misma clave y el mismo cuerpo, nunca una clave nueva; sobre un pago, si la\n\n**Depende de:** Dentro de `B6`: esperar a `B6.2`.\n\n**Verificación:** tests `TEST:B6:10`, `TEST:B6:11`, `TEST:B6:6`, `TEST:B6:7`, `TEST:B6:8`, `TEST:B6:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B6:8", "AC:B6:9", "AC:B6:10"],
             "depende_de": ["B6.2"],
+            "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B6.3b",
+            "padre": "B6",
+            "titulo": "B6 · Una vez, idempotencia y mandato (PR 3/4, parte 2/2)",
+            "descripcion": "**Qué entrega:** Una vez, idempotencia y mandato.\n\n**Pieza:** `B6` — spec [B6.md](../../spec-consolidada/10-corte/B6.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B6:11` — ningún reloj nuestro ejecuta el cobro: lo ejecuta el mandato del proveedor creado en `B3`,\n- `AC:B6:12` — la orden sale con la clave del pedido y queda una sola orden y un solo cobro: el segundo\n\n**Depende de:** Dentro de `B6.3`: esperar a `B6.3`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B6:11", "AC:B6:12"],
+            "depende_de": ["B6.3"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1763,17 +1877,27 @@
             "titulo": "B6 · Salida (PR 4/4)",
             "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `B6` — spec [B6.md](../../spec-consolidada/10-corte/B6.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B6:13` — se cumplen las siete cláusulas de su «Lista cuando»: clave persistida antes y un solo reloj\n\n**Depende de:** Dentro de `B6`: esperar a `B6.3`.\n\n**Verificación:** tests `TEST:B6:11`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B6:13"],
-            "depende_de": ["B6.3"],
+            "depende_de": ["B6.3b"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B7.1",
             "padre": "B7",
-            "titulo": "B7 · Entra a grace (PR 1/9)",
-            "descripcion": "**Qué entrega:** Entra a grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B7:1` — la fila pasa a `GRACE_PERIOD` por `S4`, arranca el reloj del grace con el servicio entero, el\n- `AC:B7:2` — su lectura del período en curso corre `S4` y la fila entra en grace igual, con sus días y\n- `AC:B7:3` — no corre `S4` y no hay grace: lo que corre es `S16`, de `B3` —el que nunca pagó no recibe\n- `AC:B7:4` — entra en grace por `S4` y no muere por `S16`; el barrido relee su preapproval por id en cada\n- `AC:B7:5` — corre `S4` en el mismo acto, con el evento leído sobre la cuota; y sobre la primera cuota,\n\n**Depende de:** Dependencias del grafo: `B5`, `V2` (cada una por su hoja de salida: `B5.9`, `V2.5`).\n\n**Verificación:** tests `TEST:B7:1`, `TEST:B7:2`, `TEST:B7:3`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B7:1", "AC:B7:2", "AC:B7:3", "AC:B7:4", "AC:B7:5"],
+            "titulo": "B7 · Entra a grace (PR 1/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** Entra a grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B7:1` — la fila pasa a `GRACE_PERIOD` por `S4`, arranca el reloj del grace con el servicio entero, el\n- `AC:B7:2` — su lectura del período en curso corre `S4` y la fila entra en grace igual, con sus días y\n- `AC:B7:3` — no corre `S4` y no hay grace: lo que corre es `S16`, de `B3` —el que nunca pagó no recibe\n\n**Depende de:** Dependencias del grafo: `B5`, `V2` (cada una por su hoja de salida: `B5.9`, `V2.5`).\n\n**Verificación:** tests `TEST:B7:1`, `TEST:B7:2`, `TEST:B7:3`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:1", "AC:B7:2", "AC:B7:3"],
             "depende_de": ["B5.9", "V2.5"],
+            "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B7.1b",
+            "padre": "B7",
+            "titulo": "B7 · Entra a grace (PR 1/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** Entra a grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B7:4` — entra en grace por `S4` y no muere por `S16`; el barrido relee su preapproval por id en cada\n- `AC:B7:5` — corre `S4` en el mismo acto, con el evento leído sobre la cuota; y sobre la primera cuota,\n\n**Depende de:** Dentro de `B7.1`: esperar a `B7.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:4", "AC:B7:5"],
+            "depende_de": ["B7.1"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1783,7 +1907,7 @@
             "titulo": "B7 · Sale de grace (PR 2/9)",
             "descripcion": "**Qué entrega:** Sale de grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B7:6` — la fila vuelve a `ACTIVE` por `S5` y se apaga el reloj; si corre porque la relectura de `S6`\n- `AC:B7:7` — `S6` la lleva a `SUSPENDED` (§21: sin listado público, sin edición, sin creación, sin\n- `AC:B7:8` — con el cobro acreditado `S6` no ocurre y corre `S5` —y sobre una fila `ACTIVE`, `P1` sobre\n\n**Depende de:** Dentro de `B7`: esperar a `B7.1`.\n\n**Verificación:** tests `TEST:B7:4`, `TEST:B7:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B7:6", "AC:B7:7", "AC:B7:8"],
-            "depende_de": ["B7.1"],
+            "depende_de": ["B7.1b"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1800,10 +1924,20 @@
         {
             "clave": "B7.4",
             "padre": "B7",
-            "titulo": "B7 · Manual, sucesión y banderas (PR 4/9)",
-            "descripcion": "**Qué entrega:** Manual, sucesión y banderas.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación» y «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n\n**Cubre:**\n- `AC:B7:12` — corre `S6` por su cuarto evento, sin esperar el reloj y sin la lectura del `B/09` §4, y la\n- `AC:B7:13` — `S7` la lleva a `ACTIVE` y la fila vuelve a emitir fuente; si el cobro entró sobre un\n- `AC:B7:16` — `S19` lo registra y lo deja pendiente de resolución en el mismo estado: no reactiva, no se\n- `AC:B7:17` — `G-R1-D` falla; con la condición 3 del `05` §3 en su lugar, ningún camino reactiva a la\n- `AC:B7:18` — el crédito corto se corrige sobre la copia local; y un pago de la predecesora retenido por\n- `AC:B7:25` — la rama escrita en `B7` llama a `S18` por la interfaz interna que implementa `B8b`, y la\n\n**Depende de:** Dentro de `B7`: esperar a `B7.3`.\n\n**Verificación:** tests `TEST:B7:10`, `TEST:B7:11`, `TEST:B7:12`, `TEST:B7:16`, `TEST:B7:3`, `TEST:B7:8`; guards `G-R1-D`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B7:12", "AC:B7:13", "AC:B7:16", "AC:B7:17", "AC:B7:18", "AC:B7:25"],
+            "titulo": "B7 · Manual, sucesión y banderas (PR 4/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** Manual, sucesión y banderas.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación» y «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n (parte 1/2).\n**Cubre:**\n- `AC:B7:12` — corre `S6` por su cuarto evento, sin esperar el reloj y sin la lectura del `B/09` §4, y la\n- `AC:B7:13` — `S7` la lleva a `ACTIVE` y la fila vuelve a emitir fuente; si el cobro entró sobre un\n- `AC:B7:16` — `S19` lo registra y lo deja pendiente de resolución en el mismo estado: no reactiva, no se\n\n**Depende de:** Dentro de `B7`: esperar a `B7.3`.\n\n**Verificación:** tests `TEST:B7:10`, `TEST:B7:11`, `TEST:B7:12`, `TEST:B7:16`, `TEST:B7:3`, `TEST:B7:8`; guards `G-R1-D`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:12", "AC:B7:13", "AC:B7:16"],
             "depende_de": ["B7.3"],
+            "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B7.4b",
+            "padre": "B7",
+            "titulo": "B7 · Manual, sucesión y banderas (PR 4/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** Manual, sucesión y banderas.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación» y «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n (parte 2/2).\n**Cubre:**\n- `AC:B7:17` — `G-R1-D` falla; con la condición 3 del `05` §3 en su lugar, ningún camino reactiva a la\n- `AC:B7:18` — el crédito corto se corrige sobre la copia local; y un pago de la predecesora retenido por\n- `AC:B7:25` — la rama escrita en `B7` llama a `S18` por la interfaz interna que implementa `B8b`, y la\n\n**Depende de:** Dentro de `B7.4`: esperar a `B7.4`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:17", "AC:B7:18", "AC:B7:25"],
+            "depende_de": ["B7.4"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1813,7 +1947,7 @@
             "titulo": "B7 · Complementos en la mora (PR 5/9)",
             "descripcion": "**Qué entrega:** Complementos en la mora.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B7:14` — en el mismo acto se cancela el preapproval del complemento por la regla de `S11` y la fila\n- `AC:B7:21` — `S32` pausa en ese mismo acto la fila de complemento del `USER` —su orfandad no se cumple\n- `AC:B7:22` — cada fila cuya relectura confirma la pausa pasa a `PAUSED` con motivo `CUSTOMER_REQUEST`,\n- `AC:B7:23` — `S33` manda el `PUT status=authorized` y, confirmado por relectura, lo lleva a `ACTIVE` y\n\n**Depende de:** Dentro de `B7`: esperar a `B7.4`.\n\n**Verificación:** tests `TEST:B7:14`, `TEST:B7:8`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B7:14", "AC:B7:21", "AC:B7:22", "AC:B7:23"],
-            "depende_de": ["B7.4"],
+            "depende_de": ["B7.4b"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1830,10 +1964,20 @@
         {
             "clave": "B7.7",
             "padre": "B7",
-            "titulo": "B7 · BL y punta a punta (PR 7/9)",
-            "descripcion": "**Qué entrega:** BL y punta a punta.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n\n**Cubre:**\n- `AC:B7:26` — la bandera de pago pendiente se apaga en ese acto y el pago no se reembolsa —una excepción\n- `AC:B7:27` — `S6` ocurre igual y llama a `S31` por la interfaz interna que implementa `B8b` para cortar a\n- `AC:B7:28` — `S7` llama a `S38` por la interfaz interna que implementa `B8b`; la prueba, con filas\n- `AC:B7:29` — ve el grace vencer contra el falso como servidor —`S6` la lleva a `SUSPENDED`—, sin que la\n- `AC:B7:32` — cada camino llega a su desenlace, y se cumplen las aserciones sobre el contenido de las\n\n**Depende de:** Dentro de `B7`: esperar a `B7.6`.\n\n**Verificación:** tests `TEST:B7:16`, `TEST:B7:17`, `TEST:B7:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B7:26", "AC:B7:27", "AC:B7:28", "AC:B7:29", "AC:B7:32"],
+            "titulo": "B7 · BL y punta a punta (PR 7/9, parte 1/2)",
+            "descripcion": "**Qué entrega:** BL y punta a punta.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n (parte 1/2).\n**Cubre:**\n- `AC:B7:26` — la bandera de pago pendiente se apaga en ese acto y el pago no se reembolsa —una excepción\n- `AC:B7:27` — `S6` ocurre igual y llama a `S31` por la interfaz interna que implementa `B8b` para cortar a\n- `AC:B7:28` — `S7` llama a `S38` por la interfaz interna que implementa `B8b`; la prueba, con filas\n\n**Depende de:** Dentro de `B7`: esperar a `B7.6`.\n\n**Verificación:** tests `TEST:B7:16`, `TEST:B7:17`, `TEST:B7:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:26", "AC:B7:27", "AC:B7:28"],
             "depende_de": ["B7.6"],
+            "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B7.7b",
+            "padre": "B7",
+            "titulo": "B7 · BL y punta a punta (PR 7/9, parte 2/2)",
+            "descripcion": "**Qué entrega:** BL y punta a punta.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Las llamadas a piezas posteriores (BL) y el grace de punta a punta».\n (parte 2/2).\n**Cubre:**\n- `AC:B7:29` — ve el grace vencer contra el falso como servidor —`S6` la lleva a `SUSPENDED`—, sin que la\n- `AC:B7:32` — cada camino llega a su desenlace, y se cumplen las aserciones sobre el contenido de las\n\n**Depende de:** Dentro de `B7.7`: esperar a `B7.7`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B7:29", "AC:B7:32"],
+            "depende_de": ["B7.7"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1843,7 +1987,7 @@
             "titulo": "B7 · Turista VIP en mora (PR 8/9)",
             "descripcion": "**Qué entrega:** Turista VIP en mora.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «La suspensión y el Turista VIP (CA)».\n\n**Cubre:**\n- `AC:B7:30` — el aviso **nombra lo que pierde como turista**, no sólo lo que pierde como anfitrión, y los\n- `AC:B7:31` — en el mismo acto de `S7` la suscripción de Turista VIP se cancela, con nuestro correo antes\n\n**Depende de:** Dentro de `B7`: esperar a `B7.7`.\n\n**Verificación:** tests `TEST:B7:18`, `TEST:B7:19`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B7:30", "AC:B7:31"],
-            "depende_de": ["B7.7"],
+            "depende_de": ["B7.7b"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1910,46 +2054,60 @@
         {
             "clave": "B8b.1",
             "padre": "B8b",
-            "titulo": "B8b · Pausar y reanudar (S8 y S10) (PR 1/6)",
-            "descripcion": "**Qué entrega:** Pausar y reanudar (S8 y S10).\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B8b:1` — pausar (`S8`)\n- `AC:B8b:2` — una pausa siempre tiene motivo\n- `AC:B8b:3` — reanudar (`S10`), en el fin previsto o antes\n- `AC:B8b:4` — un aumento que cae sobre una pausada\n- `AC:B8b:5` — la baja estando pausado (`S22`)\n- `AC:B8b:6` — de `PAUSED` no se sale a otro lado\n\n**Depende de:** Dependencias del grafo: `B7`, `B8a`, `V2` (cada una por su hoja de salida: `B7.9`, `B8a.5`, `V2.5`).\n\n**Verificación:** tests `TEST:B8b:1`, `TEST:B8b:2`, `TEST:B8b:3`, `TEST:B8b:4`, `TEST:B8b:5`, `TEST:B8b:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B8b:1", "AC:B8b:2", "AC:B8b:3", "AC:B8b:4", "AC:B8b:5", "AC:B8b:6"],
+            "titulo": "B8b · Pausar y reanudar (S8 y S10) (PR 1/6, parte 1/2)",
+            "descripcion": "**Qué entrega:** Pausar y reanudar (S8 y S10).\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B8b:1` — pausar (`S8`)\n- `AC:B8b:2` — una pausa siempre tiene motivo\n- `AC:B8b:3` — reanudar (`S10`), en el fin previsto o antes\n\n**Depende de:** Dependencias del grafo: `B7`, `B8a`, `V2` (cada una por su hoja de salida: `B7.9`, `B8a.5`, `V2.5`).\n\n**Verificación:** tests `TEST:B8b:1`, `TEST:B8b:2`, `TEST:B8b:3`, `TEST:B8b:4`, `TEST:B8b:5`, `TEST:B8b:6`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:1", "AC:B8b:2", "AC:B8b:3"],
             "depende_de": ["B7.9", "B8a.5", "V2.5"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B8b.1b",
+            "padre": "B8b",
+            "titulo": "B8b · Pausar y reanudar (S8 y S10) (PR 1/6, parte 2/2)",
+            "descripcion": "**Qué entrega:** Pausar y reanudar (S8 y S10).\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B8b:4` — un aumento que cae sobre una pausada\n- `AC:B8b:5` — la baja estando pausado (`S22`)\n- `AC:B8b:6` — de `PAUSED` no se sale a otro lado\n\n**Depende de:** Dentro de `B8b.1`: esperar a `B8b.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:4", "AC:B8b:5", "AC:B8b:6"],
+            "depende_de": ["B8b.1"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B8b.2",
             "padre": "B8b",
-            "titulo": "B8b · La sucesión: S17, S18 y sus ramas (PR 2/6)",
-            "descripcion": "**Qué entrega:** La sucesión: S17, S18 y sus ramas.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B8b:7` — la dirección del cambio sale de `direcciónDeCambio`, y cada camino\n- `AC:B8b:8` — la sucesión se abre, y la vieja se cancela sólo al autorizarse la nueva\n- `AC:B8b:9` — `S17`: la predecesora se cancela al autorizar la sucesora\n- `AC:B8b:10` — `S18`: el cierre de la sucesión, con sus cinco escrituras\n- `AC:B8b:11` — la predecesora que se muere sola, y el upgrade que no le saca nada\n- `AC:B8b:12` — `S9`, la re-emisión de la cortesía diferida (su segundo disparador)\n- `AC:B8b:13` — `S31`: la sucesora se corta cuando un contracargo corta a su predecesora\n\n**Depende de:** Dentro de `B8b`: esperar a `B8b.1`.\n\n**Verificación:** tests `TEST:B8b:10`, `TEST:B8b:11`, `TEST:B8b:12`, `TEST:B8b:13`, `TEST:B8b:7`, `TEST:B8b:8`, `TEST:B8b:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": [
-                "AC:B8b:7",
-                "AC:B8b:8",
-                "AC:B8b:9",
-                "AC:B8b:10",
-                "AC:B8b:11",
-                "AC:B8b:12",
-                "AC:B8b:13"
-            ],
-            "depende_de": ["B8b.1"],
+            "titulo": "B8b · La sucesión: S17, S18 y sus ramas (PR 2/6, parte 1/2)",
+            "descripcion": "**Qué entrega:** La sucesión: S17, S18 y sus ramas.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B8b:7` — la dirección del cambio sale de `direcciónDeCambio`, y cada camino\n- `AC:B8b:8` — la sucesión se abre, y la vieja se cancela sólo al autorizarse la nueva\n- `AC:B8b:9` — `S17`: la predecesora se cancela al autorizar la sucesora\n- `AC:B8b:10` — `S18`: el cierre de la sucesión, con sus cinco escrituras\n\n**Depende de:** Dentro de `B8b`: esperar a `B8b.1`.\n\n**Verificación:** tests `TEST:B8b:10`, `TEST:B8b:11`, `TEST:B8b:12`, `TEST:B8b:13`, `TEST:B8b:7`, `TEST:B8b:8`, `TEST:B8b:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:7", "AC:B8b:8", "AC:B8b:9", "AC:B8b:10"],
+            "depende_de": ["B8b.1b"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B8b.2b",
+            "padre": "B8b",
+            "titulo": "B8b · La sucesión: S17, S18 y sus ramas (PR 2/6, parte 2/2)",
+            "descripcion": "**Qué entrega:** La sucesión: S17, S18 y sus ramas.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B8b:11` — la predecesora que se muere sola, y el upgrade que no le saca nada\n- `AC:B8b:12` — `S9`, la re-emisión de la cortesía diferida (su segundo disparador)\n- `AC:B8b:13` — `S31`: la sucesora se corta cuando un contracargo corta a su predecesora\n\n**Depende de:** Dentro de `B8b.2`: esperar a `B8b.2`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:11", "AC:B8b:12", "AC:B8b:13"],
+            "depende_de": ["B8b.2"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
         {
             "clave": "B8b.3",
             "padre": "B8b",
-            "titulo": "B8b · La cola del cambio (S38) y sus colisiones (PR 3/6)",
-            "descripcion": "**Qué entrega:** La cola del cambio (S38) y sus colisiones.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B8b:14` — Mi Suscripción ya no dice *«todavía no se puede cambiar de plan»*\n- `AC:B8b:15` — `S38`: la cola se aplica en su fecha\n- `AC:B8b:16` — a lo sumo un cambio programado, y las cuatro colisiones\n- `AC:B8b:17` — en grace no se cambia de plan\n- `AC:B8b:18` — el mínimo del ciclo para ofrecer un cambio\n- `AC:B8b:19` — comprar un addon durante un downgrade programado (`05` C4)\n- `AC:B8b:20` — la rama 6 entra al listado con el default en devolver\n\n**Depende de:** Dentro de `B8b`: esperar a `B8b.2`.\n\n**Verificación:** tests `TEST:B8b:14`, `TEST:B8b:15`, `TEST:B8b:16`, `TEST:B8b:17`, `TEST:B8b:18`, `TEST:B8b:19`, `TEST:B8b:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": [
-                "AC:B8b:14",
-                "AC:B8b:15",
-                "AC:B8b:16",
-                "AC:B8b:17",
-                "AC:B8b:18",
-                "AC:B8b:19",
-                "AC:B8b:20"
-            ],
-            "depende_de": ["B8b.2"],
+            "titulo": "B8b · La cola del cambio (S38) y sus colisiones (PR 3/6, parte 1/2)",
+            "descripcion": "**Qué entrega:** La cola del cambio (S38) y sus colisiones.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B8b:14` — Mi Suscripción ya no dice *«todavía no se puede cambiar de plan»*\n- `AC:B8b:15` — `S38`: la cola se aplica en su fecha\n- `AC:B8b:16` — a lo sumo un cambio programado, y las cuatro colisiones\n- `AC:B8b:17` — en grace no se cambia de plan\n\n**Depende de:** Dentro de `B8b`: esperar a `B8b.2`.\n\n**Verificación:** tests `TEST:B8b:14`, `TEST:B8b:15`, `TEST:B8b:16`, `TEST:B8b:17`, `TEST:B8b:18`, `TEST:B8b:19`, `TEST:B8b:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:14", "AC:B8b:15", "AC:B8b:16", "AC:B8b:17"],
+            "depende_de": ["B8b.2b"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B8b.3b",
+            "padre": "B8b",
+            "titulo": "B8b · La cola del cambio (S38) y sus colisiones (PR 3/6, parte 2/2)",
+            "descripcion": "**Qué entrega:** La cola del cambio (S38) y sus colisiones.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B8b:18` — el mínimo del ciclo para ofrecer un cambio\n- `AC:B8b:19` — comprar un addon durante un downgrade programado (`05` C4)\n- `AC:B8b:20` — la rama 6 entra al listado con el default en devolver\n\n**Depende de:** Dentro de `B8b.3`: esperar a `B8b.3`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B8b:18", "AC:B8b:19", "AC:B8b:20"],
+            "depende_de": ["B8b.3"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1959,7 +2117,7 @@
             "titulo": "B8b · G-R1-C y la implementación real (PR 4/6)",
             "descripcion": "**Qué entrega:** G-R1-C y la implementación real.\n\n**Pieza:** `B8b` — spec [B8b.md](../../spec-consolidada/20-fase-2/B8b.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B8b:21` — `G-R1-C`, el guard del cierre\n- `AC:B8b:24` — la implementación real detrás de las interfaces que ya llaman `B5` y `B7`\n\n**Depende de:** Dentro de `B8b`: esperar a `B8b.3`.\n\n**Verificación:** tests `TEST:B8b:21`, `TEST:B8b:24`; guards `G-R1-C`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B8b:21", "AC:B8b:24"],
-            "depende_de": ["B8b.3"],
+            "depende_de": ["B8b.3b"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1986,10 +2144,20 @@
         {
             "clave": "B9a.1",
             "padre": "B9a",
-            "titulo": "B9a · Otorgar el grant corta el cobro (S13) (PR 1/5)",
-            "descripcion": "**Qué entrega:** Otorgar el grant corta el cobro (S13).\n\n**Pieza:** `B9a` — spec [B9a.md](../../spec-consolidada/10-corte/B9a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B9a:1` — otorgar un grant corta el cobro en el acto (`S13`)\n- `AC:B9a:2` — anclar una vertical nueva es el mismo acto, y los tres emiten el aviso de cobertura\n- `AC:B9a:3` — otorgar cierra el saldo de una cortesía diferida (sembrada)\n- `AC:B9a:4` — `S20` convierte a $0 los complementos compatibles, en ese orden (sembrado)\n- `AC:B9a:5` — lo que el grant no hace con los addons\n\n**Depende de:** Dependencias del grafo: `B4`, `B8a`, `V2` (cada una por su hoja de salida: `B4.5`, `B8a.5`, `V2.5`).\n\n**Verificación:** tests `TEST:B9a:1`, `TEST:B9a:2`, `TEST:B9a:3`, `TEST:B9a:4`, `TEST:B9a:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
-            "acs": ["AC:B9a:1", "AC:B9a:2", "AC:B9a:3", "AC:B9a:4", "AC:B9a:5"],
+            "titulo": "B9a · Otorgar el grant corta el cobro (S13) (PR 1/5, parte 1/2)",
+            "descripcion": "**Qué entrega:** Otorgar el grant corta el cobro (S13).\n\n**Pieza:** `B9a` — spec [B9a.md](../../spec-consolidada/10-corte/B9a.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B9a:1` — otorgar un grant corta el cobro en el acto (`S13`)\n- `AC:B9a:2` — anclar una vertical nueva es el mismo acto, y los tres emiten el aviso de cobertura\n- `AC:B9a:3` — otorgar cierra el saldo de una cortesía diferida (sembrada)\n\n**Depende de:** Dependencias del grafo: `B4`, `B8a`, `V2` (cada una por su hoja de salida: `B4.5`, `B8a.5`, `V2.5`).\n\n**Verificación:** tests `TEST:B9a:1`, `TEST:B9a:2`, `TEST:B9a:3`, `TEST:B9a:4`, `TEST:B9a:5`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B9a:1", "AC:B9a:2", "AC:B9a:3"],
             "depende_de": ["B4.5", "B8a.5", "V2.5"],
+            "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
+            "clave": "B9a.1b",
+            "padre": "B9a",
+            "titulo": "B9a · Otorgar el grant corta el cobro (S13) (PR 1/5, parte 2/2)",
+            "descripcion": "**Qué entrega:** Otorgar el grant corta el cobro (S13).\n\n**Pieza:** `B9a` — spec [B9a.md](../../spec-consolidada/10-corte/B9a.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:B9a:4` — `S20` convierte a $0 los complementos compatibles, en ese orden (sembrado)\n- `AC:B9a:5` — lo que el grant no hace con los addons\n\n**Depende de:** Dentro de `B9a.1`: esperar a `B9a.1`.\n\n**Verificación:** tests de los ACs de esta parte; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B9a:4", "AC:B9a:5"],
+            "depende_de": ["B9a.1"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
@@ -1999,7 +2167,7 @@
             "titulo": "B9a · Revocar, fugas y límites (PR 2/5)",
             "descripcion": "**Qué entrega:** Revocar, fugas y límites.\n\n**Pieza:** `B9a` — spec [B9a.md](../../spec-consolidada/10-corte/B9a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B9a:6` — la fuga del `USER`/`GLOBAL` se deja\n- `AC:B9a:7` — revocar: se guarda el motivo y no se repara nada\n- `AC:B9a:8` — a lo sumo un grant vivo por beneficiario, por la base\n- `AC:B9a:9` — sólo `SUPER_ADMIN`, en las tres escrituras\n\n**Depende de:** Dentro de `B9a`: esperar a `B9a.1`.\n\n**Verificación:** tests `TEST:B9a:6`, `TEST:B9a:7`, `TEST:B9a:8`, `TEST:B9a:9`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B9a:6", "AC:B9a:7", "AC:B9a:8", "AC:B9a:9"],
-            "depende_de": ["B9a.1"],
+            "depende_de": ["B9a.1b"],
             "labels": ["area-api", "area-billing", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },

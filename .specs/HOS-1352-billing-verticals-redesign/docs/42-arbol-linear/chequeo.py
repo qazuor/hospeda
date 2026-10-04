@@ -16,7 +16,7 @@ no-hoja con ACs.
 
 Uso: python3 chequeo.py [ruta-alternativa/arbol.json]
 """
-import json, re, sys
+import ast, json, re, sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -55,10 +55,16 @@ def main():
     dup_claves = [k for k, c in Counter(claves).items() if c > 1]
     if dup_claves:
         fallos.append(f"claves duplicadas: {dup_claves}")
+    dup_titles = [title for title, count in Counter(n["titulo"] for n in nodos if not n["existente"]).items() if count > 1]
+    if dup_titles:
+        fallos.append(f"títulos nuevos duplicados: {dup_titles}")
     by = {n["clave"]: n for n in nodos}
     padres_usados = {n["padre"] for n in nodos if n["padre"]}
     hojas = [n["clave"] for n in nodos if n["clave"] not in padres_usados]
     hoja_set = set(hojas)
+    for key in hojas:
+        if not by[key]["acs"]:
+            fallos.append(f"hoja sin AC de PR: {key}")
 
     # (e) padre existe; sólo la raíz puede ser nula
     raices = [n["clave"] for n in nodos if not n["padre"]]
@@ -67,6 +73,14 @@ def main():
     for n in nodos:
         if n["padre"] and n["padre"] not in by:
             fallos.append(f"(e) {n['clave']}: padre inexistente {n['padre']!r}")
+        seen = {n['clave']}
+        p = n['padre']
+        while p in by:
+            if p in seen:
+                fallos.append(f"ciclo de padres desde {n['clave']}: {p}")
+                break
+            seen.add(p)
+            p = by[p]['padre']
 
     # depende_de existe + (c) ciclos
     for n in nodos:
@@ -98,10 +112,14 @@ def main():
             continue
         if n["clave"] not in hoja_set:
             fallos.append(f"nodo no-hoja con ACs: {n['clave']}")
+        if len(n["acs"]) > 4:
+            fallos.append(f"hoja demasiado grande (>4 AC): {n['clave']}")
         for tok in n["acs"]:
             conteo[tok] += 1
             if tok not in union_spec:
                 fallos.append(f"(b) AC fuera de la spec en {n['clave']}: {tok}")
+            if tok.split(":")[1] not in piezas_spec:
+                fallos.append(f"pieza de AC inexistente en {n['clave']}: {tok}")
         partes = {tok.split(":")[1] for tok in n["acs"]}
         if len(partes) > 1:
             fallos.append(f"(d) hoja {n['clave']} cubre piezas {sorted(partes)}")
@@ -117,6 +135,32 @@ def main():
     sin_hoja = sorted(piezas_spec - piezas_con_hoja)
     if sin_hoja:
         fallos.append(f"piezas de la spec sin hojas: {sin_hoja}")
+
+    # El grafo de la spec se declara en aristas.py; no basta con que las
+    # dependencias del árbol sean internamente válidas.
+    tree = ast.parse((HERE.parent / "41-corte-del-mvp" / "aristas.py").read_text(encoding="utf-8"))
+    graph = {}
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Name):
+            if stmt.targets[0].id in {"INTRA", "CRUZADAS"}:
+                graph[stmt.targets[0].id] = ast.literal_eval(stmt.value)
+    expected = set(graph["INTRA"]) | {(a, b) for a, b, _ in graph["CRUZADAS"]}
+    piece_re = re.compile(r"[UVB]\d+[ab]?")
+    pieces = {k: v for k, v in by.items() if piece_re.fullmatch(k)}
+    actual = {(d, k) for k, n in pieces.items() for d in n["depende_de"]}
+    if expected != actual:
+        fallos.append(f"aristas de piezas: faltan {sorted(expected - actual)}; sobran {sorted(actual - expected)}")
+    for piece, node in pieces.items():
+        descendants = [n for n in nodos if n["acs"] and n["acs"][0].split(":")[1] == piece]
+        entry = [n for n in descendants if not any(d in {v["clave"] for v in descendants} for d in n["depende_de"])]
+        if len(entry) != 1:
+            fallos.append(f"{piece}: esperaba una sola hoja de entrada, hay {len(entry)}")
+            continue
+        for predecessor in node["depende_de"]:
+            exits = [n["clave"] for n in nodos if n["acs"] and n["acs"][0].split(":")[1] == predecessor
+                     and not any(n["clave"] in other["depende_de"] for other in nodos if other["acs"] and other["acs"][0].split(":")[1] == predecessor)]
+            if len(exits) != 1 or exits[0] not in entry[0]["depende_de"]:
+                fallos.append(f"{piece}: hoja de entrada no depende de salida de {predecessor}: {exits}")
 
     # existentes
     vistos = Counter()

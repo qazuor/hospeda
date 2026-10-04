@@ -1,29 +1,37 @@
 # Árbol Linear de HOS-1352 — de la spec consolidada a issues
 
-Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (64 dependencias) y el árbol real de Linear (consulta de sólo lectura, 2026-10-04). Cada nodo es una issue: `↻HOS-n` = existente que se reusa; sin marca = issue a crear. Las hojas son unidades de PR (~400 líneas authored máximo) y las únicas que llevan ACs. Validar: `python3 chequeo.py` (exit 0 = árbol sano).
+Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (64 dependencias) y el árbol real de Linear (consulta de sólo lectura, 2026-10-04). Cada nodo es una issue: `↻HOS-n` = existente que se reusa; sin marca = issue a crear. Las hojas son unidades de PR con objetivo de ~400 líneas authored; el tamaño final se comprueba al implementar. Sólo las hojas llevan ACs. Validar: `python3 chequeo.py` (exit 0 = árbol sano).
 
-Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs cubiertas (exactamente una hoja por AC).
+Estadísticas: 248 nodos · 28 existentes reusados · 194 hojas de PR · 506 ACs cubiertas (exactamente una hoja por AC).
 
 - **HOS-1352 ↻HOS-1352** — Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
   - **HOS-1353 ↻HOS-1353** — Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela
     - **HOS-1362 ↻HOS-1362** — V8 · Superficies
       - **V8a** — V8a · Superficies, al corte ← V6
-        - **V8a.1** — V8a · Superficies, botones y mensajes de fichas (PR 1/4) · 6 AC ← V6.13
-        - **V8a.2** — V8a · Acciones 15 y 23 (PR 2/4) · 3 AC ← V8a.1
+        - **V8a.1** — V8a · Superficies, botones y mensajes de fichas (PR 1/4, parte 1/2) · 3 AC ← V6.13
+        - **V8a.1b** — V8a · Superficies, botones y mensajes de fichas (PR 1/4, parte 2/2) · 3 AC ← V8a.1
+        - **V8a.2** — V8a · Acciones 15 y 23 (PR 2/4) · 3 AC ← V8a.1b
         - **V8a.3** — V8a · Acción 24: la baja de cuenta (PR 3/4) · 4 AC ← V8a.2
         - **V8a.4** — V8a · Salida (PR 4/4) · 1 AC ← V8a.3
       - **V8b** — V8b · Superficies de Partner (Fase 4) ← V6, V7, V8a
-        - **V8b.1** — V8b · Panel de postulaciones y filas de presencia (PR 1/2) · 5 AC ← V6.13, V7.6, V8a.4
-        - **V8b.2** — V8b · Acción 25 y salida (PR 2/2) · 2 AC ← V8b.1
+        - **V8b.1** — V8b · Panel de postulaciones y filas de presencia (PR 1/2, parte 1/2) · 3 AC ← V6.13, V7.6, V8a.4
+        - **V8b.1b** — V8b · Panel de postulaciones y filas de presencia (PR 1/2, parte 2/2) · 2 AC ← V8b.1
+        - **V8b.2** — V8b · Acción 25 y salida (PR 2/2) · 2 AC ← V8b.1b
     - **HOS-1363 ↻HOS-1363** — V9 · Retención
       - **V9a** — V9a · El registro de los actos del dueño ← U2, V4, V6
-        - **V9a.1** — V9a · El registro de hechos de contenido (corte) (PR 1/1) · 5 AC ← U2.4, V4.7, V6.13
+        - **V9a.1** — V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 1/2) · 3 AC ← U2.4, V4.7, V6.13
+        - **V9a.1b** — V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 2/2) · 2 AC ← V9a.1
       - **V9b** — V9b · Retención ← U2, V4, V6, V9a
-        - **V9b.1** — V9b · El borrado del día 180 (PR 1/5) · 3 AC ← U2.4, V4.7, V6.13, V9a.1
+        - **V9b.1** — V9b · El borrado del día 180 (PR 1/5) · 3 AC ← U2.4, V4.7, V6.13, V9a.1b
         - **V9b.2** — V9b · Calendario, borrados remotos y plazos (PR 2/5) · 2 AC ← V9b.1
         - **V9b.3** — V9b · PB9, PB8 y PURGED bajo el lock (PR 3/5) · 4 AC ← V9b.2
         - **V9b.4** — V9b · El reloj, los avisos y la llegada de la Fase 1 (PR 4/5) · 4 AC ← V9b.3
         - **V9b.5** — V9b · Salida (PR 5/5) · 1 AC ← V9b.4
+    - **V1 ↻HOS-1355** — V1 · El catálogo y su doble guard ← U1
+      - **V1.1** — V1 · Catálogo de verticales y de claves (PR 1/4) · 2 AC ← U1.6
+      - **V1.2** — V1 · Guards del catálogo: G3, G18 y G1 (PR 2/4) · 3 AC ← V1.1
+      - **V1.3** — V1 · El package del contrato: interfaces, validaciones y simuladores (PR 3/4) · 2 AC ← V1.2
+      - **V1.4** — V1 · Trigger de set_updated_at y salida (PR 4/4) · 2 AC ← V1.3
     - **V2 ↻HOS-1356** — V2 · El catálogo de planes ← V1
       - **V2.1** — V2 · Plan mutable y versión inmutable (PR 1/5) · 2 AC ← V1.4
       - **V2.2** — V2 · Las tres consultas del contrato de planes (PR 2/5) · 3 AC ← V2.1
@@ -80,8 +88,9 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
       - **V6.G6** — V6 · Salida (subgrupo)
         - **V6.13** — V6 · Consultas del contrato y salida (PR 13/13) · 2 AC ← V6.12
     - **V7 ↻HOS-1361** — V7 · Partner ← B5, V5
-      - **V7.1** — V7 · Postulación: PP1, PP2 y PP3 (PR 1/6) · 6 AC ← B5.9, V5.10
-      - **V7.2** — V7 · El reclamo y su link (PR 2/6) · 4 AC ← V7.1
+      - **V7.1** — V7 · Postulación: PP1, PP2 y PP3 (PR 1/6, parte 1/2) · 3 AC ← B5.9, V5.10
+      - **V7.1b** — V7 · Postulación: PP1, PP2 y PP3 (PR 1/6, parte 2/2) · 3 AC ← V7.1
+      - **V7.2** — V7 · El reclamo y su link (PR 2/6) · 4 AC ← V7.1b
       - **V7.3** — V7 · Alta admin y rol de socio (PR 3/6) · 3 AC ← V7.2
       - **V7.4** — V7 · Presencia y moderación (PR 4/6) · 2 AC ← V7.3
       - **V7.5** — V7 · Leads, lectores y acción 6 (PR 5/6) · 3 AC ← V7.4
@@ -95,16 +104,20 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
         - **B8a.4** — B8a · Los cobros que cruzan la baja (PR 4/5) · 2 AC ← B8a.3
         - **B8a.5** — B8a · Las prohibidas y salida (PR 5/5) · 3 AC ← B8a.4
       - **B8b** — B8b · Los cambios del compromiso (después) ← B7, B8a, V2
-        - **B8b.1** — B8b · Pausar y reanudar (S8 y S10) (PR 1/6) · 6 AC ← B7.9, B8a.5, V2.5
-        - **B8b.2** — B8b · La sucesión: S17, S18 y sus ramas (PR 2/6) · 7 AC ← B8b.1
-        - **B8b.3** — B8b · La cola del cambio (S38) y sus colisiones (PR 3/6) · 7 AC ← B8b.2
-        - **B8b.4** — B8b · G-R1-C y la implementación real (PR 4/6) · 2 AC ← B8b.3
+        - **B8b.1** — B8b · Pausar y reanudar (S8 y S10) (PR 1/6, parte 1/2) · 3 AC ← B7.9, B8a.5, V2.5
+        - **B8b.1b** — B8b · Pausar y reanudar (S8 y S10) (PR 1/6, parte 2/2) · 3 AC ← B8b.1
+        - **B8b.2** — B8b · La sucesión: S17, S18 y sus ramas (PR 2/6, parte 1/2) · 4 AC ← B8b.1b
+        - **B8b.2b** — B8b · La sucesión: S17, S18 y sus ramas (PR 2/6, parte 2/2) · 3 AC ← B8b.2
+        - **B8b.3** — B8b · La cola del cambio (S38) y sus colisiones (PR 3/6, parte 1/2) · 4 AC ← B8b.2b
+        - **B8b.3b** — B8b · La cola del cambio (S38) y sus colisiones (PR 3/6, parte 2/2) · 3 AC ← B8b.3
+        - **B8b.4** — B8b · G-R1-C y la implementación real (PR 4/6) · 2 AC ← B8b.3b
         - **B8b.5** — B8b · El panel y lo que hay que decir (PR 5/6) · 2 AC ← B8b.4
         - **B8b.6** — B8b · Punta a punta y salida (PR 6/6) · 2 AC ← B8b.5
     - **HOS-1372 ↻HOS-1372** — B9 · Las concesiones
       - **B9a** — B9a · Los grants ← B4, B8a, V2
-        - **B9a.1** — B9a · Otorgar el grant corta el cobro (S13) (PR 1/5) · 5 AC ← B4.5, B8a.5, V2.5
-        - **B9a.2** — B9a · Revocar, fugas y límites (PR 2/5) · 4 AC ← B9a.1
+        - **B9a.1** — B9a · Otorgar el grant corta el cobro (S13) (PR 1/5, parte 1/2) · 3 AC ← B4.5, B8a.5, V2.5
+        - **B9a.1b** — B9a · Otorgar el grant corta el cobro (S13) (PR 1/5, parte 2/2) · 2 AC ← B9a.1
+        - **B9a.2** — B9a · Revocar, fugas y límites (PR 2/5) · 4 AC ← B9a.1b
         - **B9a.3** — B9a · Scope, piso y fuentes reales (PR 3/5) · 3 AC ← B9a.2
         - **B9a.4** — B9a · El cobro que entra después y el fan-out (PR 4/5) · 4 AC ← B9a.3
         - **B9a.5** — B9a · Salida (PR 5/5) · 1 AC ← B9a.4
@@ -126,18 +139,30 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
         - **B13a.8** — B13a · La cancelación de punta a punta y salida (PR 8/8) · 2 AC ← B13a.7
       - **B13b** — B13b · Las superficies de addons (después) ← B10, B13a
         - **B13b.1** — B13b · Moderación, despublicado y el editor (Fase 3) (PR 1/1) · 4 AC ← B10.4, B13a.8
+    - **B1 ↻HOS-1364** — B1 · El adaptador y el proveedor que miente ← U1
+      - **B1.1** — B1 · La interfaz del dominio y el package compartido (PR 1/7) · 2 AC ← U1.6
+      - **B1.2** — B1 · Relectura e instante: ninguna decisión vieja (PR 2/7) · 3 AC ← B1.1
+      - **B1.3** — B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7, parte 1/2) · 3 AC ← B1.2
+      - **B1.3b** — B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7, parte 2/2) · 3 AC ← B1.3
+      - **B1.4** — B1 · El falso: listas cerradas, mentiras y reglas (PR 4/7) · 3 AC ← B1.3b
+      - **B1.5** — B1 · El falso como servidor HTTP con reloj (PR 5/7) · 1 AC ← B1.4
+      - **B1.6** — B1 · La batería de vigilancia al proveedor (PR 6/7) · 3 AC ← B1.5
+      - **B1.7** — B1 · Salida (PR 7/7) · 1 AC ← B1.6
     - **B2 ↻HOS-1365** — B2 · El precio ← V2
       - **B2.1** — B2 · billing_option cuelga de la versión (PR 1/4) · 3 AC ← V2.5
       - **B2.2** — B2 · Acción 19: fijar el precio (PR 2/4) · 4 AC ← B2.1
       - **B2.3** — B2 · La tabla de plazos y su versión 1 (PR 3/4) · 4 AC ← B2.2
       - **B2.4** — B2 · Salida (PR 4/4) · 1 AC ← B2.3
     - **B3 ↻HOS-1366** — B3 · El alta y su ventana ← B1, B2, U2, V2
-      - **B3.1** — B3 · El alta nace pendiente, con candado y preapproval (PR 1/11) · 5 AC ← B1.7, B2.4, U2.4, V2.5
-      - **B3.2** — B3 · La sucesión antes de B8b y el invariante 8 (PR 2/11) · 2 AC ← B3.1
-      - **B3.3** — B3 · Activación, ventana y sus ramas (PR 3/11) · 5 AC ← B3.2
-      - **B3.4** — B3 · La marca y el catálogo de motivos (PR 4/11) · 4 AC ← B3.3
-      - **B3.5** — B3 · Rechazos, espejos y avisos sin estado (PR 5/11) · 6 AC ← B3.4
-      - **B3.6** — B3 · Receptor real, ensayo y producción (PR 6/11) · 4 AC ← B3.5
+      - **B3.1** — B3 · El alta nace pendiente, con candado y preapproval (PR 1/11, parte 1/2) · 3 AC ← B1.7, B2.4, U2.4, V2.5
+      - **B3.1b** — B3 · El alta nace pendiente, con candado y preapproval (PR 1/11, parte 2/2) · 2 AC ← B3.1
+      - **B3.2** — B3 · La sucesión antes de B8b y el invariante 8 (PR 2/11) · 2 AC ← B3.1b
+      - **B3.3** — B3 · Activación, ventana y sus ramas (PR 3/11, parte 1/2) · 3 AC ← B3.2
+      - **B3.3b** — B3 · Activación, ventana y sus ramas (PR 3/11, parte 2/2) · 2 AC ← B3.3
+      - **B3.4** — B3 · La marca y el catálogo de motivos (PR 4/11) · 4 AC ← B3.3b
+      - **B3.5** — B3 · Rechazos, espejos y avisos sin estado (PR 5/11, parte 1/2) · 3 AC ← B3.4
+      - **B3.5b** — B3 · Rechazos, espejos y avisos sin estado (PR 5/11, parte 2/2) · 3 AC ← B3.5
+      - **B3.6** — B3 · Receptor real, ensayo y producción (PR 6/11) · 4 AC ← B3.5b
       - **B3.7** — B3 · Los guards de sucesión: G-R1-A/B/E/F (PR 7/11) · 4 AC ← B3.6
       - **B3.8** — B3 · Turista VIP (PR 8/11) · 3 AC ← B3.7
       - **B3.9** — B3 · Esquema de lo que llega después y migraciones (PR 9/11) · 3 AC ← B3.8
@@ -151,28 +176,37 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
       - **B4.5** — B4 · Salida (PR 5/5) · 1 AC ← B4.4
     - **B5 ↻HOS-1368** — B5 · El registro del dinero ← B3
       - **B5.1** — B5 · El pago P1 y la deduplicación de hechos (PR 1/9) · 4 AC ← B3.11
-      - **B5.2** — B5 · Comprobantes, reintentos y provider_notification (PR 2/9) · 5 AC ← B5.1
-      - **B5.3** — B5 · El reembolso y la acción 14 (PR 3/9) · 4 AC ← B5.2
-      - **B5.4** — B5 · El pago manual MP1 a MP5 (PR 4/9) · 7 AC ← B5.3
-      - **B5.5** — B5 · La revocación (S36) (PR 5/9) · 5 AC ← B5.4
-      - **B5.6** — B5 · La orfandad (A5) y S21 (PR 6/9) · 7 AC ← B5.5
-      - **B5.7** — B5 · Las llamadas BL y la rama S14 (PR 7/9) · 5 AC ← B5.6
-      - **B5.8** — B5 · El esquema y los builds (PR 8/9) · 2 AC ← B5.7
+      - **B5.2** — B5 · Comprobantes, reintentos y provider_notification (PR 2/9, parte 1/2) · 3 AC ← B5.1
+      - **B5.2b** — B5 · Comprobantes, reintentos y provider_notification (PR 2/9, parte 2/2) · 2 AC ← B5.2
+      - **B5.3** — B5 · El reembolso y la acción 14 (PR 3/9) · 4 AC ← B5.2b
+      - **B5.4** — B5 · El pago manual MP1 a MP5 (PR 4/9, parte 1/2) · 4 AC ← B5.3
+      - **B5.4b** — B5 · El pago manual MP1 a MP5 (PR 4/9, parte 2/2) · 3 AC ← B5.4
+      - **B5.5** — B5 · La revocación (S36) (PR 5/9, parte 1/2) · 3 AC ← B5.4b
+      - **B5.5b** — B5 · La revocación (S36) (PR 5/9, parte 2/2) · 2 AC ← B5.5
+      - **B5.6** — B5 · La orfandad (A5) y S21 (PR 6/9, parte 1/2) · 4 AC ← B5.5b
+      - **B5.6b** — B5 · La orfandad (A5) y S21 (PR 6/9, parte 2/2) · 3 AC ← B5.6
+      - **B5.7** — B5 · Las llamadas BL y la rama S14 (PR 7/9, parte 1/2) · 3 AC ← B5.6b
+      - **B5.7b** — B5 · Las llamadas BL y la rama S14 (PR 7/9, parte 2/2) · 2 AC ← B5.7
+      - **B5.8** — B5 · El esquema y los builds (PR 8/9) · 2 AC ← B5.7b
       - **B5.9** — B5 · Salida (PR 9/9) · 1 AC ← B5.8
     - **B6 ↻HOS-1369** — B6 · Ejecutar el cobro y el reembolso ← B1, B5
       - **B6.1** — B6 · El refund y su confirmación (PR 1/4) · 4 AC ← B1.7, B5.9
       - **B6.2** — B6 · Relectura y excepciones del refund (PR 2/4) · 3 AC ← B6.1
-      - **B6.3** — B6 · Una vez, idempotencia y mandato (PR 3/4) · 5 AC ← B6.2
-      - **B6.4** — B6 · Salida (PR 4/4) · 1 AC ← B6.3
+      - **B6.3** — B6 · Una vez, idempotencia y mandato (PR 3/4, parte 1/2) · 3 AC ← B6.2
+      - **B6.3b** — B6 · Una vez, idempotencia y mandato (PR 3/4, parte 2/2) · 2 AC ← B6.3
+      - **B6.4** — B6 · Salida (PR 4/4) · 1 AC ← B6.3b
     - **B7 ↻HOS-1370** — B7 · La mora ← B5, V2
-      - **B7.1** — B7 · Entra a grace (PR 1/9) · 5 AC ← B5.9, V2.5
-      - **B7.2** — B7 · Sale de grace (PR 2/9) · 3 AC ← B7.1
+      - **B7.1** — B7 · Entra a grace (PR 1/9, parte 1/2) · 3 AC ← B5.9, V2.5
+      - **B7.1b** — B7 · Entra a grace (PR 1/9, parte 2/2) · 2 AC ← B7.1
+      - **B7.2** — B7 · Sale de grace (PR 2/9) · 3 AC ← B7.1b
       - **B7.3** — B7 · Pausa y contracargo espejo (PR 3/9) · 3 AC ← B7.2
-      - **B7.4** — B7 · Manual, sucesión y banderas (PR 4/9) · 6 AC ← B7.3
-      - **B7.5** — B7 · Complementos en la mora (PR 5/9) · 4 AC ← B7.4
+      - **B7.4** — B7 · Manual, sucesión y banderas (PR 4/9, parte 1/2) · 3 AC ← B7.3
+      - **B7.4b** — B7 · Manual, sucesión y banderas (PR 4/9, parte 2/2) · 3 AC ← B7.4
+      - **B7.5** — B7 · Complementos en la mora (PR 5/9) · 4 AC ← B7.4b
       - **B7.6** — B7 · Configuración del grace (PR 6/9) · 3 AC ← B7.5
-      - **B7.7** — B7 · BL y punta a punta (PR 7/9) · 5 AC ← B7.6
-      - **B7.8** — B7 · Turista VIP en mora (PR 8/9) · 2 AC ← B7.7
+      - **B7.7** — B7 · BL y punta a punta (PR 7/9, parte 1/2) · 3 AC ← B7.6
+      - **B7.7b** — B7 · BL y punta a punta (PR 7/9, parte 2/2) · 2 AC ← B7.7
+      - **B7.8** — B7 · Turista VIP en mora (PR 8/9) · 2 AC ← B7.7b
       - **B7.9** — B7 · Salida (PR 9/9) · 1 AC ← B7.8
     - **B10 ↻HOS-1373** — B10 · Addons ← B9b, V2, V6, V9b
       - **B10.1** — B10 · A1, A2 y A3: comprar y vencer la ventana (PR 1/4) · 4 AC ← B9b.5, V2.5, V6.13, V9b.5
@@ -201,27 +235,13 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
       - **B12.3** — B12 · S37 en los dos pagadores (PR 3/5) · 2 AC ← B12.2
       - **B12.4** — B12 · El aumento anclado y la cola visible (PR 4/5) · 2 AC ← B12.3
       - **B12.5** — B12 · Punta a punta y salida (PR 5/5) · 2 AC ← B12.4
-  - **PKG** — Package del contrato @repo/billing-verticals-contract (U1 · V1 · B1)
-    - **U1 ↻HOS-1400** — U1 · La limpieza del principio
-      - **U1.1** — U1 · Sacar el cobro viejo y su esquema (PR 1/6) · 2 AC
-      - **U1.2** — U1 · Sacar el agrupamiento viejo y reescribir documentos (PR 2/6) · 2 AC ← U1.1
-      - **U1.3** — U1 · G8 nace con la limpieza (PR 3/6) · 2 AC ← U1.2
-      - **U1.4** — U1 · Soltar enredos: seed, guards del repo y smoke (PR 4/6) · 4 AC ← U1.3
-      - **U1.5** — U1 · El package del contrato nace vacío (PR 5/6) · 1 AC ← U1.4
-      - **U1.6** — U1 · Momento 1 y salida (PR 6/6) · 2 AC ← U1.5
-    - **V1 ↻HOS-1355** — V1 · El catálogo y su doble guard ← U1
-      - **V1.1** — V1 · Catálogo de verticales y de claves (PR 1/4) · 2 AC ← U1.6
-      - **V1.2** — V1 · Guards del catálogo: G3, G18 y G1 (PR 2/4) · 3 AC ← V1.1
-      - **V1.3** — V1 · El package del contrato: interfaces, validaciones y simuladores (PR 3/4) · 2 AC ← V1.2
-      - **V1.4** — V1 · Trigger de set_updated_at y salida (PR 4/4) · 2 AC ← V1.3
-    - **B1 ↻HOS-1364** — B1 · El adaptador y el proveedor que miente ← U1
-      - **B1.1** — B1 · La interfaz del dominio y el package compartido (PR 1/7) · 2 AC ← U1.6
-      - **B1.2** — B1 · Relectura e instante: ninguna decisión vieja (PR 2/7) · 3 AC ← B1.1
-      - **B1.3** — B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7) · 6 AC ← B1.2
-      - **B1.4** — B1 · El falso: listas cerradas, mentiras y reglas (PR 4/7) · 3 AC ← B1.3
-      - **B1.5** — B1 · El falso como servidor HTTP con reloj (PR 5/7) · 1 AC ← B1.4
-      - **B1.6** — B1 · La batería de vigilancia al proveedor (PR 6/7) · 3 AC ← B1.5
-      - **B1.7** — B1 · Salida (PR 7/7) · 1 AC ← B1.6
+  - **U1 ↻HOS-1400** — U1 · La limpieza del principio
+    - **U1.1** — U1 · Sacar el cobro viejo y su esquema (PR 1/6) · 2 AC
+    - **U1.2** — U1 · Sacar el agrupamiento viejo y reescribir documentos (PR 2/6) · 2 AC ← U1.1
+    - **U1.3** — U1 · G8 nace con la limpieza (PR 3/6) · 2 AC ← U1.2
+    - **U1.4** — U1 · Soltar enredos: seed, guards del repo y smoke (PR 4/6) · 4 AC ← U1.3
+    - **U1.5** — U1 · El package del contrato nace vacío (PR 5/6) · 1 AC ← U1.4
+    - **U1.6** — U1 · Momento 1 y salida (PR 6/6) · 2 AC ← U1.5
   - **U2 ↻HOS-1401** — U2 · El outbox común ← U1
     - **U2.1** — U2 · Encolar el correo, deduplicar y dar dueño a processing (PR 1/4) · 4 AC ← U1.6
     - **U2.2** — U2 · Entrega: escala sin trabar, supresión y bitácora (PR 2/4) · 3 AC ← U2.1
@@ -235,8 +255,13 @@ Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs
 
 ## Reglas del árbol
 
-- `U1`, `V1` y `B1` se reubican como hijas de `PKG` (package del contrato, §7.1 del contrato).
+- `U1`, `V1` y `B1` conservan sus padres reales en Linear. Construyen el package compartido del contrato sin crear un contenedor duplicado.
 - `V5`, `V6` y `B11` llevan un nivel extra: subgrupos `G1..Gn` entre la pieza y las hojas.
 - Las piezas divididas (`V8a/b`, `V9a/b`, `B8a/b`, `B9a/b`, `B13a/b`) son issues nuevas bajo su contenedor existente.
 - Hoja 1 de cada pieza depende de las hojas de salida de sus predecesoras del grafo; las siguientes encadenan dentro de la pieza.
+- Las hojas de más de cuatro AC se dividen en dos tramos; el segundo tramo lleva sufijo `b` y bloquea a la siguiente entrega. El límite de AC es una señal de revisión de tamaño, no una estimación de líneas.
 - Labels: sólo del team HOS; las issues nuevas arrastran `kind-spec`, `source-agent` y las `area-*` de su unidad.
+
+## Creación
+
+`python3 crear_arbol.py` imprime el plan sin crear nada. `python3 crear_arbol.py --apply` requiere `LINEAR_API_KEY` y valida en Linear el team HOS, los labels, los padres existentes y los títulos antes de la primera mutación. Crea de padres a hijos y registra cada identificador en `creados.json` tras recibirlo; en una reanudación también reconoce la marca de clave en la descripción remota. Las dependencias de nodos nuevos se crean como relaciones `blocked by`; las dependencias de contenedores existentes se representan por las hojas de entrada y salida. Los issues existentes conservan título, descripción, labels, relaciones y padre; sólo reciben hijos nuevos.
