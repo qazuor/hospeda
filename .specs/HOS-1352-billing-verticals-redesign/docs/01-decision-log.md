@@ -8111,7 +8111,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
 
-- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AX y AY: las 38 filas `MIXTO` y qué es un ítem normativo; ver su 📌; **y otra vez el mismo día**, AZ: tres familias más son normativas; ver su segundo 📌; **y otra vez el mismo día**, BA, BB y BE: la lista cerrada de sólo citables y la pseudo-pieza `CORTE`; ver su tercer 📌; **y otra vez el 2026-10-02**, BK, BS y BT: el punto 7 alcanza tres familias más de texto superado, los detalles que las fuentes dejan a la implementación y las mediciones de producción; ver su cuarto 📌; **y otra vez el mismo día**, los defaults de la opción 1 de BS que su registro no recogía; ver su quinto 📌) · **Decide**: owner
+- **Fecha**: 2026-10-01 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, AX y AY: las 38 filas `MIXTO` y qué es un ítem normativo; ver su 📌; **y otra vez el mismo día**, AZ: tres familias más son normativas; ver su segundo 📌; **y otra vez el mismo día**, BA, BB y BE: la lista cerrada de sólo citables y la pseudo-pieza `CORTE`; ver su tercer 📌; **y otra vez el 2026-10-02**, BK, BS y BT: el punto 7 alcanza tres familias más de texto superado, los detalles que las fuentes dejan a la implementación y las mediciones de producción; ver su cuarto 📌; **y otra vez el mismo día**, los defaults de la opción 1 de BS que su registro no recogía; ver su quinto 📌; **y otra vez el 2026-10-03**, cómo terminó el método de la consolidación; ver su sexto 📌) · **Decide**: owner
 - **Problema**: el diseño vigente está repartido en 38 archivos, con 2.803 líneas tachadas y
   precisiones en prosa (📌, salvedades, residuos). Implementar sobre eso obliga a cada agente a
   reconstruir qué vale, y el owner lo dijo así: *«si no es perfecto, desarrollamos sobre una base
@@ -8236,6 +8236,22 @@ Cada entrada lleva, según §3.4:
   código las saca el PR del código o del registro y las lista en su descripción**; y **los labels de
   Linear son `kind-spec` más las `area-*` de cada fila**. Dónde: `16-fase-7-del-paraguas.md` §4.7,
   momento 1; `41-corte-del-mvp/10-decisiones-del-owner.md`, BS.
+- 📌 **Precisada otra vez el 2026-10-03, con OK del owner (cierre del método de la consolidación)**,
+  sobre cómo terminó el método de los puntos 4 y 5: corrieron las **siete vueltas ciegas con
+  canarios** (detección final 41-42/42; `spec-consolidada/_trabajo/verificacion/`, vueltas 1 a 7) y
+  las **once pasadas de corrección** (la 11 corrigió lo que la primera verificación de cierre
+  encontró). Como las vueltas completas estabilizaron en ~2 restos de propagación —la vuelta 4
+  trajo 13 `BLOQUEA` y las vueltas 5, 6 y 7, dos cada una—, **el owner cambió el criterio de cierre
+  el 2026-10-03**: en lugar de otra vuelta completa, la **verificación de cierre se focalizó en lo
+  que cambiaron las pasadas 7 a 10 y en todas las copias de cada regla cambiada**
+  (`spec-consolidada/_trabajo/verificacion/cierre/cierre.txt`); encontró 2 `BLOQUEA` y 3 `MENOR`,
+  corregidos y reverificados con **0 `BLOQUEA` y 0 `MENOR`**
+  (`spec-consolidada/_trabajo/verificacion/cierre/cierre2.txt`). Las fuentes quedan congeladas en
+  `284c6dd583156a728876950ce0171d7c43ce7084` (`spec-consolidada/scripts/comun.py:25`). **Regla para
+  implementar cada pieza**: antes de codear, el agente corre una verificación spec → fuente de esa
+  sola pieza con `spec-consolidada/_trabajo/verificacion/vuelta-3/brief-vb.txt` (adaptando rutas) y
+  corrige lo que encuentre. Dónde: `spec-consolidada/_trabajo/verificacion/` (vueltas 1 a 7,
+  pasadas 5 a 10, cierre); `03-handoff.md`, plan del 2026-10-01, paso 2.
 
 ---
 
