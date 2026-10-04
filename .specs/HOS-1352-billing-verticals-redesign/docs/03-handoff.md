@@ -64,14 +64,24 @@ status: CURRENT
       receptor, registro del dinero, concesiones (las cinco cuentas), barrido diario (gate E), `U3`;
       la mora antes del primer vencimiento (~30 días). Parece diferible: addons, Partner, cambios
       de plan, retención (primer borrado a 180 días), retirada de planes, parte de superficies.
-   2. **La spec consolidada**: reescritura limpia del diseño vigente, organizada por fase del MVP,
-      sin tachados (adelantar la tarea de cierre: una `DEC-METH-019`). Método exigido por el owner
-      («si no es perfecto, desarrollamos sobre una base no sólida»): inventario cerrado por script
-      (144 decisiones con sus 📌, 117 filas, 35 guards, 25 acciones, transiciones, motivos, 18
-      plazos, reglas `PB`/`RP`, pasos del corte, criterios «lista cuando», 12 dependencias); un
-      agente por capítulo, cada regla con su cita de origen; comprobación mecánica de que cada ítem
-      aparece; dos verificaciones ajenas ciegas en sentidos opuestos (qué falta / qué se inventó); lo
-      viejo queda congelado como histórico.
+   2. **La spec consolidada**: ~~reescritura limpia del diseño vigente, organizada por fase del MVP,
+      sin tachados (adelantar la tarea de cierre: una `DEC-METH-019`).~~ ✅ **CERRADO el
+      2026-10-03** con **0 `BLOQUEA` y 0 `MENOR`** en la verificación de cierre
+      (`spec-consolidada/_trabajo/verificacion/cierre/cierre2.txt`); fuentes congeladas en el SHA
+      `284c6dd583156a728876950ce0171d7c43ce7084` (`spec-consolidada/scripts/comun.py:25`). Método
+      exigido por el owner («si no es perfecto, desarrollamos sobre una base no sólida»): inventario
+      cerrado por script (144 decisiones con sus 📌, 117 filas, 35 guards, 25 acciones,
+      transiciones, motivos, 18 plazos, reglas `PB`/`RP`, pasos del corte, criterios «lista
+      cuando», 12 dependencias); un agente por capítulo, cada regla con su cita de origen;
+      comprobación mecánica de que cada ítem aparece; dos verificaciones ajenas ciegas en sentidos
+      opuestos (qué falta / qué se inventó); siete vueltas ciegas con canarios (detección final
+      41-42/42) y once pasadas de corrección; como las vueltas completas estabilizaron en ~2 restos
+      de propagación, el owner cambió el criterio de cierre el 2026-10-03 y la verificación de
+      cierre se focalizó en lo que cambiaron las pasadas 7 a 10 y en todas las copias de cada regla
+      cambiada; lo viejo queda congelado como histórico. **Regla para implementar**: antes de
+      implementar cada pieza, el agente corre una verificación spec → fuente de esa sola pieza con
+      `_trabajo/verificacion/vuelta-3/brief-vb.txt` (adaptando rutas) y corrige lo que encuentre
+      antes de codear.
    3. **El árbol completo en Linear**, atomizado desde la spec consolidada: HOS-1352 → issue del
       package del contrato (con U1/V1/B1 como hijos) y las sub-épicas → unidades → sub-issues del
       tamaño de un PR (más niveles en V5, V6, B11). Cada sub-issue = un PR chico a la rama épica con
