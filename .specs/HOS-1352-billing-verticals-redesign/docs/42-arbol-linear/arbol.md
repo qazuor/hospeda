@@ -1,0 +1,242 @@
+# Árbol Linear de HOS-1352 — de la spec consolidada a issues
+
+Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (64 dependencias) y el árbol real de Linear (consulta de sólo lectura, 2026-10-04). Cada nodo es una issue: `↻HOS-n` = existente que se reusa; sin marca = issue a crear. Las hojas son unidades de PR (~400 líneas authored máximo) y las únicas que llevan ACs. Validar: `python3 chequeo.py` (exit 0 = árbol sano).
+
+Estadísticas: 228 nodos · 28 existentes reusados · 173 hojas de PR · 506 ACs cubiertas (exactamente una hoja por AC).
+
+- **HOS-1352 ↻HOS-1352** — Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
+  - **HOS-1353 ↻HOS-1353** — Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela
+    - **HOS-1362 ↻HOS-1362** — V8 · Superficies
+      - **V8a** — V8a · Superficies, al corte ← V6
+        - **V8a.1** — V8a · Superficies, botones y mensajes de fichas (PR 1/4) · 6 AC ← V6.13
+        - **V8a.2** — V8a · Acciones 15 y 23 (PR 2/4) · 3 AC ← V8a.1
+        - **V8a.3** — V8a · Acción 24: la baja de cuenta (PR 3/4) · 4 AC ← V8a.2
+        - **V8a.4** — V8a · Salida (PR 4/4) · 1 AC ← V8a.3
+      - **V8b** — V8b · Superficies de Partner (Fase 4) ← V6, V7, V8a
+        - **V8b.1** — V8b · Panel de postulaciones y filas de presencia (PR 1/2) · 5 AC ← V6.13, V7.6, V8a.4
+        - **V8b.2** — V8b · Acción 25 y salida (PR 2/2) · 2 AC ← V8b.1
+    - **HOS-1363 ↻HOS-1363** — V9 · Retención
+      - **V9a** — V9a · El registro de los actos del dueño ← U2, V4, V6
+        - **V9a.1** — V9a · El registro de hechos de contenido (corte) (PR 1/1) · 5 AC ← U2.4, V4.7, V6.13
+      - **V9b** — V9b · Retención ← U2, V4, V6, V9a
+        - **V9b.1** — V9b · El borrado del día 180 (PR 1/5) · 3 AC ← U2.4, V4.7, V6.13, V9a.1
+        - **V9b.2** — V9b · Calendario, borrados remotos y plazos (PR 2/5) · 2 AC ← V9b.1
+        - **V9b.3** — V9b · PB9, PB8 y PURGED bajo el lock (PR 3/5) · 4 AC ← V9b.2
+        - **V9b.4** — V9b · El reloj, los avisos y la llegada de la Fase 1 (PR 4/5) · 4 AC ← V9b.3
+        - **V9b.5** — V9b · Salida (PR 5/5) · 1 AC ← V9b.4
+    - **V2 ↻HOS-1356** — V2 · El catálogo de planes ← V1
+      - **V2.1** — V2 · Plan mutable y versión inmutable (PR 1/5) · 2 AC ← V1.4
+      - **V2.2** — V2 · Las tres consultas del contrato de planes (PR 2/5) · 3 AC ← V2.1
+      - **V2.3** — V2 · Acción 18: publicar una versión de plan (PR 3/5) · 2 AC ← V2.2
+      - **V2.4** — V2 · Catálogo de producción y seed (PR 4/5) · 2 AC ← V2.3
+      - **V2.5** — V2 · Salida (PR 5/5) · 1 AC ← V2.4
+    - **V3 ↻HOS-1357** — V3 · La resolución de capacidades ← V2
+      - **V3.1** — V3 · Agregación de limits y descartes (PR 1/4) · 2 AC ← V2.5
+      - **V3.2** — V3 · Scope de claves y resolución del plan de trial (PR 2/4) · 3 AC ← V3.1
+      - **V3.3** — V3 · Caché del conjunto efectivo en Redis (PR 3/4) · 2 AC ← V3.2
+      - **V3.4** — V3 · Verticales simultáneas, cuota mensual y salida (PR 4/4) · 3 AC ← V3.3
+    - **V4 ↻HOS-1358** — V4 · El contrato de cobertura y el trial ← B1, U2, V3
+      - **V4.1** — V4 · La fila de trial y el seudónimo (PR 1/7) · 3 AC ← B1.7, U2.4, V3.4
+      - **V4.2** — V4 · T1: el arranque del trial (PR 2/7) · 2 AC ← V4.1
+      - **V4.3** — V4 · T2 a T4, la acción 11 y el vencimiento (PR 3/7) · 4 AC ← V4.2
+      - **V4.4** — V4 · T6 y T8: suscripción sin cobrar y primer pago (PR 4/7) · 1 AC ← V4.3
+      - **V4.5** — V4 · La implementación de arranque y G13 (PR 5/7) · 2 AC ← V4.4
+      - **V4.6** — V4 · Guards de racimos, reloj y avisos en el outbox (PR 6/7) · 3 AC ← V4.5
+      - **V4.7** — V4 · El trial de punta a punta y salida (PR 7/7) · 2 AC ← V4.6
+    - **V5 ↻HOS-1359** — V5 · La autorización ← V4
+      - **V5.G1** — V5 · Los siete pasos y el sujeto (subgrupo)
+        - **V5.1** — V5 · Paso 4: lo ajeno, lo archivado y lo inexistente (PR 1/10) · 3 AC ← V4.7
+        - **V5.2** — V5 · La vertical del recurso, lo público y las conversaciones (PR 2/10) · 4 AC ← V5.1
+      - **V5.G2** — V5 · El actor administrativo (subgrupo)
+        - **V5.3** — V5 · Acciones administrativas, sujeto y paso de cobertura (PR 3/10) · 3 AC ← V5.2
+        - **V5.4** — V5 · Sin impersonación y fullAdminRole (PR 4/10) · 2 AC ← V5.3
+      - **V5.G3** — V5 · El actor de sistema y el rol (subgrupo)
+        - **V5.5** — V5 · Fábrica de actor de sistema y G19 (PR 5/10) · 2 AC ← V5.4
+        - **V5.6** — V5 · SUPER_ADMIN: permisos, acción 26 y concesiones (PR 6/10) · 3 AC ← V5.5
+        - **V5.7** — V5 · El guest y la lectura pública (PR 7/10) · 1 AC ← V5.6
+      - **V5.G4** — V5 · Guards de autorización (subgrupo)
+        - **V5.8** — V5 · G6 y G4: el rol no decide y no escribe (PR 8/10) · 3 AC ← V5.7
+        - **V5.9** — V5 · G-R3-B, G-R3-C y G2 (PR 9/10) · 3 AC ← V5.8
+      - **V5.G5** — V5 · Salida (subgrupo)
+        - **V5.10** — V5 · Salida (PR 10/10) · 1 AC ← V5.9
+    - **V6 ↻HOS-1360** — V6 · Publicación y excedente ← U2, V5
+      - **V6.G1** — V6 · Publicar y despublicar (subgrupo)
+        - **V6.1** — V6 · PB1, el lock y PB2 (PR 1/13) · 4 AC ← U2.4, V5.10
+        - **V6.2** — V6 · Los avisos al archivar (PR 2/13) · 1 AC ← V6.1
+      - **V6.G2** — V6 · El excedente (subgrupo)
+        - **V6.3** — V6 · Excedente en las dos direcciones y G5 (PR 3/13) · 3 AC ← V6.2
+        - **V6.4** — V6 · PB4, PB5 y las salidas de ARCHIVED (PR 4/13) · 3 AC ← V6.3
+      - **V6.G3** — V6 · Moderación y borrado (subgrupo)
+        - **V6.5** — V6 · Moderación en dos niveles y PB12 (PR 5/13) · 3 AC ← V6.4
+        - **V6.6** — V6 · G-R9, G-R6-B y la corrida de reintentos (PR 6/13) · 3 AC ← V6.5
+        - **V6.7** — V6 · Sin puertas de borrado fuera del diseño (PR 7/13) · 1 AC ← V6.6
+      - **V6.G4** — V6 · El modelo listing y su migración (subgrupo)
+        - **V6.8** — V6 · El modelo sobre las tres tablas (PR 8/13) · 1 AC ← V6.7
+        - **V6.9** — V6 · La migración del paso 3, su herramienta y la medición (PR 9/13) · 3 AC ← V6.8
+        - **V6.10** — V6 · Plazos de verticales y la acción 22 (PR 10/13) · 1 AC ← V6.9
+        - **V6.11** — V6 · La migración de partners para V7 (PR 11/13) · 2 AC ← V6.10
+      - **V6.G5** — V6 · Pasos del corte (subgrupo)
+        - **V6.12** — V6 · Pasos 5b, 4c y 6 (PR 12/13) · 3 AC ← V6.11
+      - **V6.G6** — V6 · Salida (subgrupo)
+        - **V6.13** — V6 · Consultas del contrato y salida (PR 13/13) · 2 AC ← V6.12
+    - **V7 ↻HOS-1361** — V7 · Partner ← B5, V5
+      - **V7.1** — V7 · Postulación: PP1, PP2 y PP3 (PR 1/6) · 6 AC ← B5.9, V5.10
+      - **V7.2** — V7 · El reclamo y su link (PR 2/6) · 4 AC ← V7.1
+      - **V7.3** — V7 · Alta admin y rol de socio (PR 3/6) · 3 AC ← V7.2
+      - **V7.4** — V7 · Presencia y moderación (PR 4/6) · 2 AC ← V7.3
+      - **V7.5** — V7 · Leads, lectores y acción 6 (PR 5/6) · 3 AC ← V7.4
+      - **V7.6** — V7 · Salida (PR 6/6) · 1 AC ← V7.5
+  - **HOS-1354 ↻HOS-1354** — Épica Billing — cobro, suscripción y proveedor detrás de un adaptador
+    - **HOS-1371 ↻HOS-1371** — B8 · Los cambios del compromiso
+      - **B8a** — B8a · La baja ← B7
+        - **B8a.1** — B8a · La baja desde ACTIVE (S11) (PR 1/5) · 4 AC ← B7.9
+        - **B8a.2** — B8a · S12: el fin programado (PR 2/5) · 3 AC ← B8a.1
+        - **B8a.3** — B8a · Bajas desde SUSPENDED y GRACE_PERIOD (PR 3/5) · 2 AC ← B8a.2
+        - **B8a.4** — B8a · Los cobros que cruzan la baja (PR 4/5) · 2 AC ← B8a.3
+        - **B8a.5** — B8a · Las prohibidas y salida (PR 5/5) · 3 AC ← B8a.4
+      - **B8b** — B8b · Los cambios del compromiso (después) ← B7, B8a, V2
+        - **B8b.1** — B8b · Pausar y reanudar (S8 y S10) (PR 1/6) · 6 AC ← B7.9, B8a.5, V2.5
+        - **B8b.2** — B8b · La sucesión: S17, S18 y sus ramas (PR 2/6) · 7 AC ← B8b.1
+        - **B8b.3** — B8b · La cola del cambio (S38) y sus colisiones (PR 3/6) · 7 AC ← B8b.2
+        - **B8b.4** — B8b · G-R1-C y la implementación real (PR 4/6) · 2 AC ← B8b.3
+        - **B8b.5** — B8b · El panel y lo que hay que decir (PR 5/6) · 2 AC ← B8b.4
+        - **B8b.6** — B8b · Punta a punta y salida (PR 6/6) · 2 AC ← B8b.5
+    - **HOS-1372 ↻HOS-1372** — B9 · Las concesiones
+      - **B9a** — B9a · Los grants ← B4, B8a, V2
+        - **B9a.1** — B9a · Otorgar el grant corta el cobro (S13) (PR 1/5) · 5 AC ← B4.5, B8a.5, V2.5
+        - **B9a.2** — B9a · Revocar, fugas y límites (PR 2/5) · 4 AC ← B9a.1
+        - **B9a.3** — B9a · Scope, piso y fuentes reales (PR 3/5) · 3 AC ← B9a.2
+        - **B9a.4** — B9a · El cobro que entra después y el fan-out (PR 4/5) · 4 AC ← B9a.3
+        - **B9a.5** — B9a · Salida (PR 5/5) · 1 AC ← B9a.4
+      - **B9b** — B9b · Promos y cortesías (después) ← B8b, B9a, V4
+        - **B9b.1** — B9b · La composición de promos y su piso (PR 1/5) · 2 AC ← B8b.6, B9a.5, V4.7
+        - **B9b.2** — B9b · Cupo, ventana y contador de la promo (S30) (PR 2/5) · 3 AC ← B9b.1
+        - **B9b.3** — B9b · Canjes, cortesías y sus cruces (PR 3/5) · 4 AC ← B9b.2
+        - **B9b.4** — B9b · La acción 21 y su auditoría (PR 4/5) · 2 AC ← B9b.3
+        - **B9b.5** — B9b · Mensajes y salida (PR 5/5) · 2 AC ← B9b.4
+    - **HOS-1376 ↻HOS-1376** — B13 · Superficies y la baja
+      - **B13a** — B13a · Superficies y la baja, al corte ← B5, B7, B8a, B9a
+        - **B13a.1** — B13a · La baja self-service y los avisos del grace (PR 1/8) · 3 AC ← B5.9, B7.9, B8a.5, B9a.5
+        - **B13a.2** — B13a · Fichas borradas: qué se pierde (PR 2/8) · 2 AC ← B13a.1
+        - **B13a.3** — B13a · Confirmaciones de grants y anclas (PR 3/8) · 1 AC ← B13a.2
+        - **B13a.4** — B13a · Mi Suscripción y la cortesía diferida (PR 4/8) · 3 AC ← B13a.3
+        - **B13a.5** — B13a · Botones, pricing y ninguna pantalla esconde (PR 5/8) · 3 AC ← B13a.4
+        - **B13a.6** — B13a · Avisos de renovación y smoke del sistema nuevo (PR 6/8) · 2 AC ← B13a.5
+        - **B13a.7** — B13a · Las tres filas del corte: 10-bis, 11 y 22 (PR 7/8) · 3 AC ← B13a.6
+        - **B13a.8** — B13a · La cancelación de punta a punta y salida (PR 8/8) · 2 AC ← B13a.7
+      - **B13b** — B13b · Las superficies de addons (después) ← B10, B13a
+        - **B13b.1** — B13b · Moderación, despublicado y el editor (Fase 3) (PR 1/1) · 4 AC ← B10.4, B13a.8
+    - **B2 ↻HOS-1365** — B2 · El precio ← V2
+      - **B2.1** — B2 · billing_option cuelga de la versión (PR 1/4) · 3 AC ← V2.5
+      - **B2.2** — B2 · Acción 19: fijar el precio (PR 2/4) · 4 AC ← B2.1
+      - **B2.3** — B2 · La tabla de plazos y su versión 1 (PR 3/4) · 4 AC ← B2.2
+      - **B2.4** — B2 · Salida (PR 4/4) · 1 AC ← B2.3
+    - **B3 ↻HOS-1366** — B3 · El alta y su ventana ← B1, B2, U2, V2
+      - **B3.1** — B3 · El alta nace pendiente, con candado y preapproval (PR 1/11) · 5 AC ← B1.7, B2.4, U2.4, V2.5
+      - **B3.2** — B3 · La sucesión antes de B8b y el invariante 8 (PR 2/11) · 2 AC ← B3.1
+      - **B3.3** — B3 · Activación, ventana y sus ramas (PR 3/11) · 5 AC ← B3.2
+      - **B3.4** — B3 · La marca y el catálogo de motivos (PR 4/11) · 4 AC ← B3.3
+      - **B3.5** — B3 · Rechazos, espejos y avisos sin estado (PR 5/11) · 6 AC ← B3.4
+      - **B3.6** — B3 · Receptor real, ensayo y producción (PR 6/11) · 4 AC ← B3.5
+      - **B3.7** — B3 · Los guards de sucesión: G-R1-A/B/E/F (PR 7/11) · 4 AC ← B3.6
+      - **B3.8** — B3 · Turista VIP (PR 8/11) · 3 AC ← B3.7
+      - **B3.9** — B3 · Esquema de lo que llega después y migraciones (PR 9/11) · 3 AC ← B3.8
+      - **B3.10** — B3 · Ramas escritas sin ruta y apoyos (PR 10/11) · 4 AC ← B3.9
+      - **B3.11** — B3 · Salida (PR 11/11) · 1 AC ← B3.10
+    - **B4 ↻HOS-1367** — B4 · El contrato de cobertura, de verdad ← B3, B5, U2, V4
+      - **B4.1** — B4 · La cobertura sale de la fuente (PR 1/5) · 3 AC ← B3.11, B5.9, U2.4, V4.7
+      - **B4.2** — B4 · El aviso de cambio de cobertura (PR 2/5) · 2 AC ← B4.1
+      - **B4.3** — B4 · Retención y puedeCobrarle (PR 3/5) · 3 AC ← B4.2
+      - **B4.4** — B4 · El juego del contrato y anotar cancelación (PR 4/5) · 2 AC ← B4.3
+      - **B4.5** — B4 · Salida (PR 5/5) · 1 AC ← B4.4
+    - **B5 ↻HOS-1368** — B5 · El registro del dinero ← B3
+      - **B5.1** — B5 · El pago P1 y la deduplicación de hechos (PR 1/9) · 4 AC ← B3.11
+      - **B5.2** — B5 · Comprobantes, reintentos y provider_notification (PR 2/9) · 5 AC ← B5.1
+      - **B5.3** — B5 · El reembolso y la acción 14 (PR 3/9) · 4 AC ← B5.2
+      - **B5.4** — B5 · El pago manual MP1 a MP5 (PR 4/9) · 7 AC ← B5.3
+      - **B5.5** — B5 · La revocación (S36) (PR 5/9) · 5 AC ← B5.4
+      - **B5.6** — B5 · La orfandad (A5) y S21 (PR 6/9) · 7 AC ← B5.5
+      - **B5.7** — B5 · Las llamadas BL y la rama S14 (PR 7/9) · 5 AC ← B5.6
+      - **B5.8** — B5 · El esquema y los builds (PR 8/9) · 2 AC ← B5.7
+      - **B5.9** — B5 · Salida (PR 9/9) · 1 AC ← B5.8
+    - **B6 ↻HOS-1369** — B6 · Ejecutar el cobro y el reembolso ← B1, B5
+      - **B6.1** — B6 · El refund y su confirmación (PR 1/4) · 4 AC ← B1.7, B5.9
+      - **B6.2** — B6 · Relectura y excepciones del refund (PR 2/4) · 3 AC ← B6.1
+      - **B6.3** — B6 · Una vez, idempotencia y mandato (PR 3/4) · 5 AC ← B6.2
+      - **B6.4** — B6 · Salida (PR 4/4) · 1 AC ← B6.3
+    - **B7 ↻HOS-1370** — B7 · La mora ← B5, V2
+      - **B7.1** — B7 · Entra a grace (PR 1/9) · 5 AC ← B5.9, V2.5
+      - **B7.2** — B7 · Sale de grace (PR 2/9) · 3 AC ← B7.1
+      - **B7.3** — B7 · Pausa y contracargo espejo (PR 3/9) · 3 AC ← B7.2
+      - **B7.4** — B7 · Manual, sucesión y banderas (PR 4/9) · 6 AC ← B7.3
+      - **B7.5** — B7 · Complementos en la mora (PR 5/9) · 4 AC ← B7.4
+      - **B7.6** — B7 · Configuración del grace (PR 6/9) · 3 AC ← B7.5
+      - **B7.7** — B7 · BL y punta a punta (PR 7/9) · 5 AC ← B7.6
+      - **B7.8** — B7 · Turista VIP en mora (PR 8/9) · 2 AC ← B7.7
+      - **B7.9** — B7 · Salida (PR 9/9) · 1 AC ← B7.8
+    - **B10 ↻HOS-1373** — B10 · Addons ← B9b, V2, V6, V9b
+      - **B10.1** — B10 · A1, A2 y A3: comprar y vencer la ventana (PR 1/4) · 4 AC ← B9b.5, V2.5, V6.13, V9b.5
+      - **B10.2** — B10 · A4, A6 y A7: vencimiento, purga y rechazo (PR 2/4) · 4 AC ← B10.1
+      - **B10.3** — B10 · Acción 20 y el gratis bajo grant (PR 3/4) · 4 AC ← B10.2
+      - **B10.4** — B10 · Punta a punta y salida (PR 4/4) · 2 AC ← B10.3
+    - **B11 ↻HOS-1374** — B11 · Conciliación ← B4, B5
+      - **B11.G1** — B11 · El barrido y sus lápidas (subgrupo)
+        - **B11.1** — B11 · Inventario desde nuestra base y re-vinculación (PR 1/10) · 3 AC ← B4.5, B5.9
+        - **B11.2** — B11 · Lápida, sondas del manifiesto y reintentos (PR 2/10) · 4 AC ← B11.1
+      - **B11.G2** — B11 · Las comparaciones (subgrupo)
+        - **B11.3** — B11 · Estado, monto y los cobros del período (PR 3/10) · 4 AC ← B11.2
+        - **B11.4** — B11 · Pagos acreditados, órdenes y refunds (PR 4/10) · 3 AC ← B11.3
+        - **B11.5** — B11 · CHARGED_BACK, exención y la cancelación vista (PR 5/10) · 3 AC ← B11.4
+      - **B11.G3** — B11 · Las marcas (subgrupo)
+        - **B11.6** — B11 · Escalamiento y resumen agregado (PR 6/10) · 2 AC ← B11.5
+        - **B11.7** — B11 · Ventana del resumen y los dos correos (PR 7/10) · 2 AC ← B11.6
+      - **B11.G4** — B11 · Las pruebas sembradas (subgrupo)
+        - **B11.8** — B11 · Cero llamadas y la fila sin dueño (PR 8/10) · 2 AC ← B11.7
+        - **B11.9** — B11 · Creaciones duplicadas, ping y corrida a medias (PR 9/10) · 2 AC ← B11.8
+      - **B11.G5** — B11 · Salida (subgrupo)
+        - **B11.10** — B11 · Salida de la pieza (PR 10/10) · 1 AC ← B11.9
+    - **B12 ↻HOS-1375** — B12 · El catálogo que se retira ← B13b, U2, V2
+      - **B12.1** — B12 · Retirar un plan y la acción 17 (PR 1/5) · 2 AC ← B13b.1, U2.4, V2.5
+      - **B12.2** — B12 · El aviso, la cohorte y cancelar la migración (PR 2/5) · 3 AC ← B12.1
+      - **B12.3** — B12 · S37 en los dos pagadores (PR 3/5) · 2 AC ← B12.2
+      - **B12.4** — B12 · El aumento anclado y la cola visible (PR 4/5) · 2 AC ← B12.3
+      - **B12.5** — B12 · Punta a punta y salida (PR 5/5) · 2 AC ← B12.4
+  - **PKG** — Package del contrato @repo/billing-verticals-contract (U1 · V1 · B1)
+    - **U1 ↻HOS-1400** — U1 · La limpieza del principio
+      - **U1.1** — U1 · Sacar el cobro viejo y su esquema (PR 1/6) · 2 AC
+      - **U1.2** — U1 · Sacar el agrupamiento viejo y reescribir documentos (PR 2/6) · 2 AC ← U1.1
+      - **U1.3** — U1 · G8 nace con la limpieza (PR 3/6) · 2 AC ← U1.2
+      - **U1.4** — U1 · Soltar enredos: seed, guards del repo y smoke (PR 4/6) · 4 AC ← U1.3
+      - **U1.5** — U1 · El package del contrato nace vacío (PR 5/6) · 1 AC ← U1.4
+      - **U1.6** — U1 · Momento 1 y salida (PR 6/6) · 2 AC ← U1.5
+    - **V1 ↻HOS-1355** — V1 · El catálogo y su doble guard ← U1
+      - **V1.1** — V1 · Catálogo de verticales y de claves (PR 1/4) · 2 AC ← U1.6
+      - **V1.2** — V1 · Guards del catálogo: G3, G18 y G1 (PR 2/4) · 3 AC ← V1.1
+      - **V1.3** — V1 · El package del contrato: interfaces, validaciones y simuladores (PR 3/4) · 2 AC ← V1.2
+      - **V1.4** — V1 · Trigger de set_updated_at y salida (PR 4/4) · 2 AC ← V1.3
+    - **B1 ↻HOS-1364** — B1 · El adaptador y el proveedor que miente ← U1
+      - **B1.1** — B1 · La interfaz del dominio y el package compartido (PR 1/7) · 2 AC ← U1.6
+      - **B1.2** — B1 · Relectura e instante: ninguna decisión vieja (PR 2/7) · 3 AC ← B1.1
+      - **B1.3** — B1 · Guards del adaptador: G9 a G12, G16 y G17 (PR 3/7) · 6 AC ← B1.2
+      - **B1.4** — B1 · El falso: listas cerradas, mentiras y reglas (PR 4/7) · 3 AC ← B1.3
+      - **B1.5** — B1 · El falso como servidor HTTP con reloj (PR 5/7) · 1 AC ← B1.4
+      - **B1.6** — B1 · La batería de vigilancia al proveedor (PR 6/7) · 3 AC ← B1.5
+      - **B1.7** — B1 · Salida (PR 7/7) · 1 AC ← B1.6
+  - **U2 ↻HOS-1401** — U2 · El outbox común ← U1
+    - **U2.1** — U2 · Encolar el correo, deduplicar y dar dueño a processing (PR 1/4) · 4 AC ← U1.6
+    - **U2.2** — U2 · Entrega: escala sin trabar, supresión y bitácora (PR 2/4) · 3 AC ← U2.1
+    - **U2.3** — U2 · Huso, correlación y domain_event (PR 3/4) · 3 AC ← U2.2
+    - **U2.4** — U2 · Salida (PR 4/4) · 1 AC ← U2.3
+  - **U3 ↻HOS-1402** — U3 · El script del corte ← U1
+    - **U3.1** — U3 · Censo y cancelaciones en el proveedor (PR 1/4) · 4 AC ← U1.6
+    - **U3.2** — U3 · Manifiesto, script suelto e inversos (PR 2/4) · 3 AC ← U3.1
+    - **U3.3** — U3 · Sondas del 4b: Webhooks e IPN (PR 3/4) · 2 AC ← U3.2
+    - **U3.4** — U3 · Salida (PR 4/4) · 1 AC ← U3.3
+
+## Reglas del árbol
+
+- `U1`, `V1` y `B1` se reubican como hijas de `PKG` (package del contrato, §7.1 del contrato).
+- `V5`, `V6` y `B11` llevan un nivel extra: subgrupos `G1..Gn` entre la pieza y las hojas.
+- Las piezas divididas (`V8a/b`, `V9a/b`, `B8a/b`, `B9a/b`, `B13a/b`) son issues nuevas bajo su contenedor existente.
+- Hoja 1 de cada pieza depende de las hojas de salida de sus predecesoras del grafo; las siguientes encadenan dentro de la pieza.
+- Labels: sólo del team HOS; las issues nuevas arrastran `kind-spec`, `source-agent` y las `area-*` de su unidad.
