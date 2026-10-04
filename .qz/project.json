@@ -43,7 +43,7 @@
             "checkoutName": "hospeda-staging",
             "relativePath": "scripts/copy-env-to-worktree.sh"
         },
-        "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile)",
+        "install": "pnpm install && (cd scripts/client-tools && bun install --frozen-lockfile) && (cd scripts/server-tools && bun install --frozen-lockfile)",
         "build": "pnpm exec turbo run build --filter='./packages/*'"
     },
     "verification": {
@@ -94,7 +94,99 @@
         "genericPrefix": "qz-",
         "projectPrefix": "hops-",
         "source": "scripts/client-tools",
-        "dispatch": "node .qz/dispatch.mjs"
+        "dispatch": "node .qz/dispatch.mjs",
+        "registry": [
+            {
+                "id": "hops-stats",
+                "delegate": "stats",
+                "description": "Estadísticas del monorepo, GitHub y Linear",
+                "mutates": false
+            },
+            {
+                "id": "hops-db-start",
+                "delegate": "db-start",
+                "description": "Levanta las bases compartidas de desarrollo",
+                "mutates": true
+            },
+            {
+                "id": "hops-db-stop",
+                "delegate": "db-stop",
+                "description": "Detiene las bases compartidas de desarrollo",
+                "mutates": true
+            },
+            {
+                "id": "hops-db-migrate",
+                "delegate": "db-migrate",
+                "description": "Aplica migraciones a la base del worktree",
+                "mutates": true
+            },
+            {
+                "id": "hops-db-seed",
+                "delegate": "db-seed",
+                "description": "Carga datos en la base del worktree",
+                "mutates": true
+            },
+            {
+                "id": "hops-db-studio",
+                "delegate": "db-studio",
+                "description": "Abre Drizzle Studio para la base del worktree",
+                "mutates": false
+            },
+            {
+                "id": "hops-db-fresh",
+                "delegate": "db-fresh",
+                "description": "Recrea la base del worktree desde el template",
+                "mutates": true
+            },
+            {
+                "id": "hops-db-update-template",
+                "delegate": "db-update-template",
+                "description": "Actualiza el template de base de datos de Hospeda",
+                "mutates": true
+            },
+            {
+                "id": "hops-servers-up",
+                "delegate": "servers-up",
+                "description": "Levanta DB y servidores del worktree",
+                "mutates": true
+            },
+            {
+                "id": "hops-servers-down",
+                "delegate": "servers-down",
+                "description": "Detiene los servidores del worktree",
+                "mutates": true
+            },
+            {
+                "id": "hops-test",
+                "delegate": "test",
+                "description": "Ejecuta tests por categoría de Hospeda",
+                "mutates": false
+            },
+            {
+                "id": "hops-env",
+                "delegate": "env",
+                "description": "Valida variables de entorno y drift",
+                "mutates": false
+            },
+            {
+                "id": "hops-update",
+                "delegate": "update",
+                "description": "Actualiza Hospeda desde staging y reconcilia el entorno",
+                "mutates": true
+            },
+            {
+                "id": "hops-whats-new",
+                "delegate": "whats-new",
+                "description": "Audita novedades antes de promocionar ramas",
+                "mutates": true
+            },
+            {
+                "id": "hops-dependabot-review",
+                "delegate": "dependabot-review",
+                "description": "Analiza PRs de Dependabot sin decidir por sí solo",
+                "mutates": false
+            }
+        ]
     },
     "knowledge": {
         "root": ".qz/knowledge",

@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3373
     {
         id: '2026-09-22-pages-recover-after-an-outage',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T10:45:21Z',
         highlight: false,
         title: {
             es: 'Si una sección falla, se recupera apenas se arregla',
@@ -172,7 +172,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3379
     {
         id: '2026-09-22-rss-feeds-signal-outages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T09:45:21Z',
         highlight: false,
         title: {
             es: 'Los feeds RSS avisan cuando algo falla, en vez de aparecer vacíos',
@@ -189,7 +189,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3370
     {
         id: '2026-09-22-double-click-save-no-longer-errors',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T08:45:21Z',
         highlight: false,
         roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {

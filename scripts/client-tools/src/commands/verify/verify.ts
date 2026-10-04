@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
@@ -46,6 +47,69 @@ async function resolveBaseRef({
  */
 const TEST_LIMITS =
     'NODE_OPTIONS=--max-old-space-size=4096 VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1';
+
+/**
+ * Codex's workspace sandbox can reject the Unix pipes that tsx creates under
+ * /tmp. Keep the normal first attempt unchanged, then retry only that specific
+ * failure with a per-run temporary directory inside the writable worktree.
+ * The directory is removed before this command returns, so verify keeps its
+ * read-only contract for callers.
+ */
+function isSandboxTsxFailure(stderr: string): boolean {
+    return /(?:EPERM|EACCES).*?(?:tsx|pipe)|(?:tsx|pipe).*?(?:EPERM|EACCES)/is.test(stderr);
+}
+
+/** Creates a transient retry directory only when the project already has .qz. */
+async function createVerifyTmp(cwd: string): Promise<string | undefined> {
+    const qzDirectory = join(cwd, '.qz');
+    if (!existsSync(qzDirectory)) return undefined;
+    try {
+        return await mkdtemp(join(qzDirectory, 'verify-tmp-'));
+    } catch {
+        return undefined;
+    }
+}
+
+export interface DependencyGap {
+    readonly directory: string;
+    readonly install: string;
+}
+
+/**
+ * Finds CI working directories whose package dependencies are not installed.
+ * This is deliberately read-only: verify reports the exact install command but
+ * never runs it as part of a verification.
+ */
+export function dependencyGaps({
+    repoRoot,
+    steps
+}: {
+    readonly repoRoot: string;
+    readonly steps: readonly Pick<CiStep, 'workingDirectory'>[];
+}): readonly DependencyGap[] {
+    const directories = new Set(steps.map((step) => step.workingDirectory ?? '.'));
+    const gaps: DependencyGap[] = [];
+    for (const directory of directories) {
+        const absolute = resolve(repoRoot, directory);
+        if (
+            !existsSync(join(absolute, 'package.json')) ||
+            existsSync(join(absolute, 'node_modules'))
+        )
+            continue;
+        const install =
+            existsSync(join(absolute, 'bun.lockb')) || existsSync(join(absolute, 'bun.lock'))
+                ? 'bun install --frozen-lockfile'
+                : existsSync(join(absolute, 'pnpm-lock.yaml'))
+                  ? 'pnpm install --frozen-lockfile'
+                  : existsSync(join(absolute, 'package-lock.json'))
+                    ? 'npm ci'
+                    : existsSync(join(absolute, 'yarn.lock'))
+                      ? 'yarn install --immutable'
+                      : 'instalar las dependencias del proyecto';
+        gaps.push({ directory, install });
+    }
+    return gaps;
+}
 
 /** The help page. */
 function renderHelp(): string {
@@ -307,6 +371,31 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         return only === undefined ? 1 : 1;
     }
 
+    const gaps = dependencyGaps({
+        repoRoot: cwd,
+        steps: [...plan.steps, ...(tests === null ? [] : [tests])]
+    });
+    if (gaps.length > 0) {
+        if (json) {
+            process.stdout.write(
+                `${JSON.stringify({
+                    readOnly: true,
+                    status: 'blocked',
+                    reason: 'dependencies_missing',
+                    dependencies: gaps,
+                    mutations: 'none'
+                })}\n`
+            );
+        } else {
+            process.stderr.write(`${pc.yellow('verify bloqueado: faltan dependencias locales')}\n`);
+            for (const gap of gaps) process.stderr.write(`  - ${gap.directory}: ${gap.install}\n`);
+            process.stderr.write(
+                `${pc.dim('Instalalas y repetí verify; este comando no instala automáticamente.')}\n`
+            );
+        }
+        return 2;
+    }
+
     process.stderr.write(
         `${pc.dim(`${total} pasos, leídos de ${WORKFLOW}`)}` +
             `${plan.skipped.length > 0 ? pc.dim(`  ·  ${plan.skipped.length} no aplican acá`) : ''}\n`
@@ -314,52 +403,86 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
 
     let done = 0;
     const results: { job: string; name: string; code: number; passed: boolean }[] = [];
-    for (const step of [...plan.steps, ...(tests === null ? [] : [tests])]) {
-        done += 1;
-        process.stderr.write(
-            `\n${pc.dim(`[${done}/${total}]`)} ${pc.bold(step.job)} ${pc.dim('·')} ${step.name}\n`
-        );
-        // Through a shell because CI's own steps are shell: several are `if
-        // grep ...; then ... fi` one-liners, not single commands.
-        const job = {
-            command: 'bash',
-            args: ['-c', step.run],
-            cwd: step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
-            // CI injects BASE_SHA for guards that inspect the diff. Local
-            // verify has the same contract: use the configured local base so
-            // those guards do not fail closed merely because they are outside
-            // GitHub Actions.
-            env: { BASE_SHA: process.env.BASE_SHA ?? baseRef }
-        } as const;
-        const code = json ? (await runner.execCapture(job)).code : await runner.exec(job);
-        results.push({ job: step.job, name: step.name, code, passed: code === 0 });
-        if (code !== 0) {
-            if (json) {
-                process.stdout.write(
-                    `${JSON.stringify({
-                        readOnly: true,
-                        status: 'failed',
-                        workflow: WORKFLOW,
-                        mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
-                        base: baseRef,
-                        changedPackages: changed,
-                        steps: results,
-                        skipped: plan.skipped.map((item) => ({
-                            name: item.name,
-                            reason: item.reason
-                        })),
-                        total,
-                        failedStep: step.name,
-                        mutations: 'none'
-                    })}\n`
-                );
-            }
+    let sandboxTmp: string | undefined;
+    try {
+        for (const step of [...plan.steps, ...(tests === null ? [] : [tests])]) {
+            done += 1;
             process.stderr.write(
-                `\n${pc.red(`Falló: ${step.name}`)}\n` +
-                    `${pc.dim(`Es el paso ${done} de ${total}. No sigo: lo que rompe primero suele explicar el resto.`)}\n`
+                `\n${pc.dim(`[${done}/${total}]`)} ${pc.bold(step.job)} ${pc.dim('·')} ${step.name}\n`
             );
-            return code;
+            // Through a shell because CI's own steps are shell: several are `if
+            // grep ...; then ... fi` one-liners, not single commands.
+            const job = {
+                command: 'bash',
+                args: ['-c', step.run],
+                cwd:
+                    step.workingDirectory === undefined ? cwd : resolve(cwd, step.workingDirectory),
+                // CI injects BASE_SHA for guards that inspect the diff. Local
+                // verify has the same contract: use the configured local base so
+                // those guards do not fail closed merely because they are outside
+                // GitHub Actions.
+                env: {
+                    BASE_SHA: process.env.BASE_SHA ?? baseRef,
+                    ...(sandboxTmp === undefined
+                        ? {}
+                        : { TMPDIR: sandboxTmp, TMP: sandboxTmp, TEMP: sandboxTmp })
+                }
+            } as const;
+            let captured: Awaited<ReturnType<typeof runner.execCapture>> | null = null;
+            let code: number;
+            if (json) {
+                captured = await runner.execCapture(job);
+                code = captured.code;
+            } else {
+                code = await runner.exec(job);
+            }
+
+            // A Codex workspace can write the repository but not create the
+            // pipes tsx puts under /tmp. Retry only that known environmental
+            // error; ordinary test failures must still fail immediately.
+            if (json && code !== 0 && captured !== null && isSandboxTsxFailure(captured.stderr)) {
+                sandboxTmp ??= await createVerifyTmp(cwd);
+                if (sandboxTmp !== undefined) {
+                    const retryJob = {
+                        ...job,
+                        env: { ...job.env, TMPDIR: sandboxTmp, TMP: sandboxTmp, TEMP: sandboxTmp }
+                    } as const;
+                    captured = await runner.execCapture(retryJob);
+                    code = captured.code;
+                }
+            }
+
+            results.push({ job: step.job, name: step.name, code, passed: code === 0 });
+            if (code !== 0) {
+                if (json) {
+                    process.stdout.write(
+                        `${JSON.stringify({
+                            readOnly: true,
+                            status: 'failed',
+                            workflow: WORKFLOW,
+                            mode: full ? 'full' : wantsTests ? 'changed' : 'guards',
+                            base: baseRef,
+                            changedPackages: changed,
+                            steps: results,
+                            skipped: plan.skipped.map((item) => ({
+                                name: item.name,
+                                reason: item.reason
+                            })),
+                            total,
+                            failedStep: step.name,
+                            mutations: 'none'
+                        })}\n`
+                    );
+                }
+                process.stderr.write(
+                    `\n${pc.red(`Falló: ${step.name}`)}\n` +
+                        `${pc.dim(`Es el paso ${done} de ${total}. No sigo: lo que rompe primero suele explicar el resto.`)}\n`
+                );
+                return code;
+            }
         }
+    } finally {
+        if (sandboxTmp !== undefined) await rm(sandboxTmp, { recursive: true, force: true });
     }
 
     if (json) {
