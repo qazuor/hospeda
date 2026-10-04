@@ -1,0 +1,84 @@
+# G1 · spec → fuente · 01-decisiones-vigentes.md
+
+## Hallazgos
+
+01-decisiones-vigentes.md:222 · «seudónimo del correo se calcula con un hash sin clave sobre el correo normalizado, y la función no cambia» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:468 («seudónimo del correo es SHA-256 sin clave sobre el correo normalizado, y la función no cambia»): la copia elimina el algoritmo obligatorio y permite elegir otro hash; los 📌 posteriores precisan la normalización, no sustituyen SHA-256 · BLOQUEA
+
+01-decisiones-vigentes.md:2416 · «`card_token` es **reutilizable entre suscripciones**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5673 («`card_token` es **de un solo uso**»): invierte la restricción del token y contradice también las líneas 672 y 766 de la propia salida · BLOQUEA
+
+01-decisiones-vigentes.md:2649 · «con una retención técnica, no configurable, de 90 días» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7471 («con una retención técnica, no configurable, de 180 días»): reduce a la mitad la conservación de las entregas; el 📌 de la fuente, línea 7489, ratifica los mismos 180 días al agregar Webhooks y renombrar la tabla a `provider_notification` · BLOQUEA
+
+01-decisiones-vigentes.md:6314 · «ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner (un checkout real, su devolución, el correo de Mercado Pago, la caché del» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7801 («con la tarjeta del owner y un monto») y :7802 («aprobado de antemano»): omite la aprobación previa del monto del smoke de producción, sin tachado ni reemplazo que autorice retirarla; el 📌 de BS, líneas 8216–8217, la ratifica · BLOQUEA
+
+01-decisiones-vigentes.md:13744 · «promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73 («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia») y :111 («**`B3`**, como AV hizo con addons»): AP conserva las dos asignaciones superadas sin la marca «Caducada en parte» prometida por el registro; es incoherencia del registro sólo citable, pues AV, BG y DEC-ARCH-017 sí conservan las asignaciones vigentes · MENOR
+
+01-decisiones-vigentes.md:13988 · «`V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156 («**`U2`**, que es ancestro de todas las piezas que la escriben»): BN no lleva marca de caducidad parcial aunque BW reemplazó expresamente esa aplicación errónea; es incoherencia del registro sólo citable, mientras DEC-ARCH-017#📌6 ya omite esa misma frase y explica su reemplazo en la línea 6629 · MENOR
+
+01-decisiones-vigentes.md:14058 · «su valor inicial lo fija el owner antes del merge de `B11`» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157 («**el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`»): BU conserva el plazo superado sin marca de caducidad parcial; es incoherencia del registro sólo citable, porque BX y el 📌8 de DEC-DATA-008 explicitan la corrección vigente · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 01-decisiones-vigentes.md | 1–14222 | ≈2000, agrupadas en 138 DEC, 212 📌 y 320 letras del owner | 4 | 3 |
+
+Alcance: recorrido completo por comprobación textual independiente y barridos, con cotejo detallado de 40 ítems distribuidos entre principio, medio y final. Se contrastaron 6750 líneas o fragmentos de prosa contra el texto vivo de su decisión y 1091 celdas del owner contra sus filas fuente. La cifra de afirmaciones es estimativa: una línea puede contener varias reglas y otras son contexto o alternativas. No se ejecutó ningún generador, ni git, trackers o subagentes. Todas las lecturas fueron dentro de V y todas las escrituras dentro de salidas/. Las skills referidas por el brief están fuera de V; no se leyeron por la restricción explícita de alcance. No se encontraron copias locales de esas skills, AGENTS.md o .qz/project.json.
+
+Generadores leídos: generadores/g1/gen01.py, omisiones.py, omisiones.json y cabecera.md. Se revisaron eliminación de tachados, separación de 📌, cierre de paréntesis, división de tablas, aplicación de omisiones, reubicación y detección de letras caducadas. Los datos de omisiones se usaron como candidatos a justificar, no como autoridad superior a la fuente congelada.
+
+Clases de error buscadas en toda la salida con rg --hidden y contraste con las fuentes:
+
+- Tachados completos, parciales y multilínea que sobreviven: 103 tramos tachados en el log; no quedan delimitadores `~~` en la salida. El cotejo contra el texto vivo no encontró una supervivencia adicional confirmada. Se distinguieron las citas históricas de las notas «Parte sin efecto» del texto implementable.
+- Paráfrasis, sustitución de valores y pérdida de condiciones vivas: cuatro diferencias confirmadas, en 222, 2416, 2649 y 6314. Ninguna tiene soporte en una decisión posterior. El barrido inverso también detectó los cuatro cambios; los demás candidatos revisados correspondían a segmentación, tachados, omisiones declaradas o 📌 retirados.
+- Celdas partidas en `\|`: sin hallazgo. Comparación de las 1091 celdas, sin diferencia de contenido ni cantidad; la fila 5a de 26-fase-9-completa conserva `EXECUTED | FAILED` y todo lo que sigue. Ninguna línea termina en una barra invertida residual.
+- Texto pegado al bloque equivocado y 📌 dentro de paréntesis: sin diferencia confirmada. DEC-GRANT-004#📌1 conserva sólo la precisión de meses; el aviso de fecha nueva queda en el cuerpo. La cola de DEC-ARCH-014#📌7 está omitida allí y aparece completa bajo 📌6, con su cita a la línea 7640.
+- DEC y 📌 retirados que reaparecen como vigentes: ninguna decisión completa sin entrada o puntero entre los 146 encabezados DEC del log. Se revisaron los punteros de retirada y las notas de sustitución; no se contabilizaron como reglas actuales las citas explícitamente históricas. BI aparece como retirada, no como letra vigente.
+- Letras superadas sin marca: tres inconsistencias menores confirmadas (AP, BN, BU). Las 29 letras declaradas en `letras_muertas` tienen su marca; el hueco está fuera de esa lista. El detector excluye deliberadamente el verbo «precisa», pero AV/BG, BW y BX usan ese verbo para reemplazar aplicaciones o plazos concretos, no sólo para agregar detalle.
+- Omisiones de ítems completos: las 320 filas del owner tienen su Origen correspondiente; la única fila decisoria no transcrita es BI, retirada expresamente. No se detectó otra omisión completa injustificada.
+- Omisiones PARCIAL y texto reubicado: 54 bloques declarados PARCIAL, 54 notas y una reubicación. Se inspeccionaron los candidatos del barrido inverso y sus notas; no se agregó un hallazgo por retirar contenido que las decisiones posteriores dejaron sin efecto.
+- Contradicciones internas: la reutilización de `card_token` contradice 672/766 y el catálogo; los 90 días contradicen los 180 de B3 y del catálogo. SHA-256 también se diluye en V4, pero ese archivo pertenece a otro bloque: aquí se informa sólo la aparición de G1. Los hallazgos del registro se clasificaron MENOR porque las decisiones posteriores preservan expresamente la regla implementable correcta.
+
+Muestra estratificada cotejada línea por línea (anclas y rangos de la salida; fuentes y transcripciones enfrentadas en G1-muestra.txt):
+
+1. `dec-trial-001` — salida 35–72; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:257`; sin diferencia de copia no justificada.
+2. `dec-trial-004-p1` — salida 212–227; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:467`; diferencia informada.
+3. `dec-trial-006-p1` — salida 335–348; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:543`; sin diferencia de copia no justificada.
+4. `dec-sub-004` — salida 619–649; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:757`; sin diferencia de copia no justificada.
+5. `dec-sub-008-p2` — salida 910–929; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1297`; sin diferencia de copia no justificada.
+6. `dec-sub-022-p1` — salida 1827–1844; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6399`; sin diferencia de copia no justificada.
+7. `dec-mp-006` — salida 2390–2455; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5655`; diferencia informada.
+8. `dec-mp-009` — salida 2625–2669; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7455`; diferencia informada.
+9. `dec-ent-005` — salida 2925–2966; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047`; sin diferencia de copia no justificada.
+10. `dec-ent-002-p3` — salida 2842–2856; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:643`; sin diferencia de copia no justificada.
+11. `dec-addon-001` — salida 3089–3121; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:781`; sin diferencia de copia no justificada.
+12. `dec-auth-001` — salida 3634–3680; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6660`; sin diferencia de copia no justificada.
+13. `dec-data-001-p1` — salida 4011–4023; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:954`; sin diferencia de copia no justificada.
+14. `dec-data-006` — salida 4432–4461; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7045`; sin diferencia de copia no justificada.
+15. `dec-arch-014-p6` — salida 6167–6193; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7617`; sin diferencia de copia no justificada.
+16. `dec-arch-014-p7` — salida 6194–6217; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630`; sin diferencia de copia no justificada.
+17. `dec-arch-016` — salida 6248–6346; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7743`; diferencia informada.
+18. `dec-mig-007` — salida 7484–7522; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7015`; sin diferencia de copia no justificada.
+19. `dec-grant-004-p1` — salida 7752–7762; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2073`; sin diferencia de copia no justificada.
+20. `dec-grant-012` — salida 8054–8093; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4972`; sin diferencia de copia no justificada.
+21. `dec-legal-001-p1` — salida 8214–8229; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:990`; sin diferencia de copia no justificada.
+22. `dec-test-002` — salida 8488–8519; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5351`; sin diferencia de copia no justificada.
+23. `dec-conc-002-p4` — salida 8919–8934; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1673`; sin diferencia de copia no justificada.
+24. `dec-rf-005` — salida 9388–9417; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5294`; sin diferencia de copia no justificada.
+25. `dec-obs-001-p2` — salida 9812–9824; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282`; sin diferencia de copia no justificada.
+26. `dec-ci-002` — salida 9931–9954; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2867`; sin diferencia de copia no justificada.
+27. `dec-meth-019-p5` — salida 11056–11081; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8214`; sin diferencia de copia no justificada.
+28. `own-26-fase-9-completa-t1-1` — salida 11082–11090; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:19`; sin diferencia de copia no justificada.
+29. `own-26-fase-9-completa-t1-8d` — salida 11346–11354; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:48`; sin diferencia de copia no justificada.
+30. `own-28-fase-9-vuelta-1-t1-g4-3` — salida 11613–11621; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:32`; sin diferencia de copia no justificada.
+31. `own-29-fase-8-vuelta-2-t1-r9` — salida 11876–11884; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:26`; sin diferencia de copia no justificada.
+32. `own-30-revision-del-owner-t1-c12` — salida 12149–12156; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:36`; sin diferencia de copia no justificada.
+33. `own-30-revision-del-owner-t5-l3-f` — salida 12417–12425; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:87`; sin diferencia de copia no justificada.
+34. `own-37-fase-8-vuelta-3-t1-ab` — salida 12714–12723; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:49`; sin diferencia de copia no justificada.
+35. `own-38-fase-5-t3-b` — salida 13014–13023; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:76`; sin diferencia de copia no justificada.
+36. `own-38-fase-5-t7-m` — salida 13298–13306; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:152`; sin diferencia de copia no justificada.
+37. `own-41-corte-del-mvp-t1-ac` — salida 13602–13611; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:23`; sin diferencia de copia no justificada.
+38. `own-41-corte-del-mvp-t7-bf` — salida 13904–13913; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:110`; sin diferencia de copia no justificada.
+39. `own-41-corte-del-mvp-t16-cj` — salida 14214–14222; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:224`; sin diferencia de copia no justificada.
+40. `own-26-fase-9-completa-t1-5a` — salida 11236–11244; fuente `.specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:36`; sin diferencia de copia no justificada.
+
+Evidencia auxiliar: G1-auditar.py (verificador independiente, no importa ni ejecuta generadores), G1-comparacion.json, G1-reverso.json, G1-bloques.json, G1-barrido.txt, G1-cruces.txt y G1-muestra.txt/G1-muestra.json. Los JSON de candidatos contienen falsos positivos de segmentación; sólo los siete renglones de Hallazgos son veredictos.

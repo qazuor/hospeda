@@ -1,0 +1,38 @@
+# Brief · pasada 8 · aplicar la adjudicación de la vuelta 5 (HOS-1352)
+
+Worktree: `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`.
+Branch: `spec/HOS-1352-billing-verticals-redesign`.
+Fuentes previas: `8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b`; spec previa: `2e9ef99e2e`.
+Adjudicación: `adjudicacion/`, leída junto con `contra.txt` antes de editar.
+Precedente: `../vuelta-3/brief-pasada6.txt`; procedimiento: `../codex/RUNBOOK.md`.
+
+## Decisión del owner
+
+CK = 1: ratifica DEC-ARCH-009. Aviso de cobertura después del commit, sin entrega durable;
+el reconciliador diario es la red, con su población y exclusión de trial vigentes.
+El outbox de U2 sigue siendo sólo de correos. No se relitiga.
+
+## Grupos
+
+- F: agregar CK como t17 y 📌 de DEC-ARCH-009 más remisión Estado; tachar y agregar las
+  correcciones de transporte y reloj en las fuentes. Conservar B4 → U2 si otras obligaciones
+  la justifican. No editar PDR, matriz ni informes.
+- S: corregir B4 en g8/src y contrato; revisar H4-VB-09-2 y conservar su parte de correos;
+  aplicar 2 REAL BLOQUEA y 5 REAL MENOR por texto exacto, comprobando fuentes y citas.
+- G fase 1: caducidad parcial AP, BN y BU en g1 con un canario por defecto; demostrar fallo
+  sin arreglo y éxito con él en sandbox. No regenerar sobre la spec mientras S edita.
+
+Contra confirma los cinco casos revisados; no hay FALSO ni CORRECCIÓN A AJUSTAR.
+F/S/G fase 1 en paralelo, sin commits de agentes; integración y commits por el orquestador.
+
+## Re-congelado y verificación
+
+Después de los commits F/S/G: SHA = último commit de fuentes; inventario, asignar, adjudicar;
+reanclar y sellar cobertura; reanclar aparte secciones/fuentes.json y revisar citas nuevas.
+Regenerar g1, g3, g8 y secciones; markdownlint y biome JSON.
+Verificar trazar con posicionales, cinco suites de canarios, aristas, contar, cobertura y
+markdownlint global. Guardar salidas y exit codes en pasada8/.
+
+Commits autorizados por el pedido: `docs(spec): <english lowercase description> (HOS-1352)`,
+header ≤100 caracteres, `CI=true`, rutas explícitas, un commit por llamada y revisar staging.
+No push ni Linear; archivos ajenos preexistentes quedan fuera.

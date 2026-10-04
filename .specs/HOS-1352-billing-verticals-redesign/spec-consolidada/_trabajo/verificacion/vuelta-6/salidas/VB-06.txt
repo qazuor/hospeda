@@ -1,0 +1,14 @@
+# VB-06 · spec → fuente · 10-corte/V5.md, 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:1281 · «Un actor de sistema vence una hora después de construido. La cadena rechaza toda operación posterior hasta que el job obtenga otro actor de la fábrica.» · sin soporte · BLOQUEA
+
+10-corte/V6.md:42 · «la vertical de la ficha editable después del alta» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66 («la vertical de la ficha inmutable desde el alta») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6692 («la vertical de una ficha es inmutable desde el alta»); también contradice 10-corte/V6.md:706 y 10-corte/V5.md:617 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1576 | 300 | 1 | 0 |
+| 10-corte/V6.md | 1–1496 | 350 | 1 | 0 |

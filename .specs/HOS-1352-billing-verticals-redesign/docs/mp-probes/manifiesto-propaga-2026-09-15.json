@@ -1,0 +1,22 @@
+{
+  "sonda": 36,
+  "entorno": "sandbox",
+  "arrancado": "2026-09-16T02:32:46.446Z",
+  "esperado": "2026-09-17T02:32:46.446Z",
+  "sujetos": [
+    {
+      "slug": "sujeto-editado",
+      "id": "6ab7eba75dd442b383cb5eb6ef59d398",
+      "plan_id": "6cf919874b7645a1b79e8f1eaec8ab09",
+      "monto_alta": 2000,
+      "editado_a": 3300
+    },
+    {
+      "slug": "sujeto-control",
+      "id": "8f5db8a80b704075a611537062ba4fcd",
+      "plan_id": "616ca6fd25f44827af8286ca28ea5a28",
+      "monto_alta": 2000,
+      "editado_a": null
+    }
+  ]
+}

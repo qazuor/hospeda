@@ -1,0 +1,19 @@
+# VB-02 · spec → fuente · 02-nucleo.md 02-nucleo-auditoria.md 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo-auditoria.md:299 · «Exportar el listado de conciliación requiere la aprobación de un segundo administrador distinto del solicitante, registrada antes de generar el archivo.» · sin soporte: el §4 de .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:383–492 no exige esta aprobación para exportar. Tampoco la establece el decision log ni las decisiones posteriores del owner; el 📌 de DEC-AUTH-002 (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6848–6850) posterga la confirmación por segunda persona hasta que haya otra persona con el permiso. La spec inventa una condición que impide generar el archivo con un único administrador · BLOQUEA
+
+02-nucleo-auditoria.md:422 · «proveedor, id del webhook, id de correlación, listing y addon.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:500 («proveedor, id del webhook, id de request, id de correlación, listing y addon.»): omite el id de request de los campos mínimos obligatorios y ajusta el conteo a nueve en la línea 424. El PDR también exige «request id» (.specs/HOS-1352-billing-verticals-redesign/docs/00-PDR.md:1878). Seguir esta lista permite logs sin el identificador de la petición · BLOQUEA
+
+02-nucleo-outbox.md:34 · «el envío manda a la dirección que la cuenta tenga cuando sale, no a la guardada al encolarse.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:43 («el envío manda a esa dirección, no a la que la cuenta tenga cuando sale.»): invierte la dirección de entrega y rompe los correos encolados antes de seudonimizar la cuenta. También contradice 02-nucleo-outbox.md:195 y 10-corte/U2.md:138, que conservan el destinatario guardado al encolar · BLOQUEA
+
+02-nucleo-outbox.md:290 · «**la disputa se resolvió a favor de la persona**» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263 («**la disputa se resolvió a nuestro favor**»; «**al correr `P7`** —se leyó `reimbursed`—»): el catálogo conserva el aviso de `settled`, pero pasa directamente a «aumento de precio» en la línea 291 y omite la fila viva del aviso transaccional cuando la disputa se gana. Falta su disparador y el contenido que informa que el cargo era correcto y permite volver a suscribirse. No hay una decisión posterior que retire ese correo; el propio §4.1 de la spec, línea 177, sigue exigiendo los dos avisos de disputa resuelta · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1812 | 400 | 0 | 0 |
+| 02-nucleo-auditoria.md | 1–447 | 150 | 2 | 0 |
+| 02-nucleo-outbox.md | 1–414 | 180 | 2 | 0 |

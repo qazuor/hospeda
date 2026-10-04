@@ -1,0 +1,18 @@
+# VB-B3 · spec → fuente · zona B3 (04-catalogos.md)
+
+04-catalogos.md:2116 · «al reanudar una pausa que cruzó dos fechas de cobro, el primer cobro al volver suma el ciclo salteado más reciente» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1683 (la celda termina en «no dispara cobro de recuperación ni deja deuda (`PS-5`)»; `PS-5`, docs/06-mp-validation-matrix.md:212: «Reanudar cambia SÓLO el `status`»; la frase no existe en ningún lugar del corpus) · BLOQUEA
+04-catalogos.md:2117 · «entre el fin de una pausa y el pedido de la siguiente tienen que pasar al menos 30 días corridos (`DEC-SUB-004`)» · sin soporte (no está en .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1684 ni en `DEC-SUB-004`, docs/01-decision-log.md:757, que sólo fija sobre qué entidad se cuentan los límites) · BLOQUEA
+04-catalogos.md:5465 · «un escritor nuevo de la marca agrega su motivo con la aprobación del owner en el mismo PR» · más fuerte que .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1048 (la fuente sólo exige agregar la fila «en el mismo acto» y que `G-R1-F` falle; no hay requisito de aprobación del owner en el PR) · BLOQUEA
+04-catalogos.md:6678 · «RP3: piso ARS 15, techo ARS 2.000.000, con los mensajes exactos, que el panel muestra tal cual, sin traducirlos» · más fuerte que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:536 (la celda termina en «con los mensajes exactos»; el comportamiento del panel no está en ninguna fuente) · BLOQUEA
+04-catalogos.md:7547 · «G13 corre en CI, sobre el árbol de fuentes» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:57 («falla sobre un build destinado a producción, no sobre la rama, así que calla hasta que un build apunte a producción») · MENOR
+
+## Resumen
+
+Archivo: `04-catalogos.md`, recorrido entero, líneas 1–9702.
+
+- Ítems con ancla revisados: 297 (82 `TRANS`, 6 `PROH`, 24 `MOT`, 6 `LOCK`, 13 `M`, 12 `RP`, 35 `GUARD`, 2 `VAL`, 117 `MP`), más las 99 secciones «Texto de la fuente».
+- Afirmaciones y fragmentos normativos contrastados: 2895 (cada celda, cada campo de transición o de fila y cada párrafo de prosa). Además: 180 asignaciones «Pieza dueña / Fuente de la asignación» contra la línea citada de `descomposicion.md` o `D/16`, 41 «Traslado a pieza» contra `B/descomposicion.md` §2.12 y `D/16` §4.6, 123 «Test mínimo» contra AN y AZ, 24 «Valor del enum» contra `B/02` §2.5, 13 «Adjudicación», 35 «Dónde corre» contra la tabla de capas de `V/20` y `B/20` §1, y las 3 «También en `B/20-testing.md` §2 (línea N)».
+- Método: cada campo de cada fila comparado celda contra celda (sin lo tachado) con la fila que cita su `Origen:`; cada sección «Texto de la fuente» comparada en los dos sentidos con su rango de líneas (detecta agregados y recortes); el resto de la prosa buscado textual en el corpus vivo.
+- Por categoría: **BLOQUEA 4** (2 sin soporte o contradicción en la tabla de la pausa, 2 más fuertes que la fuente: motivo de la marca y `RP3`); **MENOR 1** (`G13`, dónde corre).
+- Sin problema: todas las asignaciones de pieza, los traslados, los valores del enum, los títulos de transición contra sus campos, las adjudicaciones (incluida la `PARCIAL` de `EX-46`, sostenida por S-40 y S-45 y por la línea tachada de `B/06`:556) y el resto de la prosa. Las otras diferencias son de formato: espacio antes de la puntuación, links pasados a texto con su ruta entre paréntesis, «[…]» de BK.
+- Nota no normativa: el encabezado (04-catalogos.md:5) afirma «copiado … nada parafraseado». Los cuatro BLOQUEA lo desmienten: son texto agregado dentro de celdas y párrafos que dicen copiar la fuente.

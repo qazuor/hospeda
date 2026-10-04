@@ -1,0 +1,72 @@
+# Correcciones propuestas — vuelta 6
+
+Todas las líneas son de pristina. No se modificó la spec real ni los generadores. Aplicar cada reemplazo sobre esa base; las líneas posteriores pueden desplazarse.
+
+## 00-indice.md
+
+H6-INDICE-PRECIOS · REAL BLOQUEA · línea 133
+Generado: no (tramo manual).
+
+SALE literal:
+```
+los carga el paso 3a y no se cambian
+```
+ENTRA literal:
+```
+los carga la migración estructural del paso 3 y el paso 3a sólo los verifica; no se cambian
+```
+
+H6-INDICE-PRECIOS · REAL BLOQUEA · línea 1398
+Generado: no (tramo manual).
+
+SALE literal:
+```
+los carga el [paso 3a](30-el-corte.md#paso-3a) y no se cambian
+```
+ENTRA literal:
+```
+los carga la migración estructural del paso 3 y el [paso 3a](30-el-corte.md#paso-3a) sólo los verifica; no se cambian
+```
+
+## 01-decisiones-vigentes.md
+
+H6-G1-7 · GENERADOR MENOR · línea 14164
+Generado: sí.
+Dónde va: g1/omisiones.py: clasificar CF:CC como reemplazo y agregar OWN:41-corte-del-mvp:t12:CC a LETRAS_MUERTAS con alcance «en parte», evidencia fila CF y sin inferencia. Regenerar omisiones.json y 01-decisiones-vigentes.md con g1; la inserción expresa el resultado requerido, no se aplica a mano.
+
+SALE literal:
+```
+**Letra CC**
+```
+ENTRA literal:
+```
+**Letra CC**
+
+> ⚠️ **Caducada en parte**: CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf).
+```
+
+## 10-corte/B9a.md
+
+H6-VB-11-1 · REAL BLOQUEA · línea 1216
+Generado: no (tramo manual).
+
+SALE literal:
+```
+Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar encolan cada uno el aviso de cobertura;
+en una vertical sin ancla la fuente `GRANT` no aparece.
+```
+ENTRA literal:
+```
+Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar emiten cada uno el aviso de cobertura
+después del commit, sin entrega durable y sin usar el outbox de `U2`, que es sólo de correos (CK).
+La prueba observa el aviso después del commit y comprueba que un rollback no lo emite;
+en una vertical sin ancla la fuente `GRANT` no aparece.
+```
+
+## En las fuentes
+
+Sin correcciones necesarias para los tres únicos adjudicados. BM, CF y CK y sus 📌 ya resuelven las reglas; no se requiere re-congelado ni nuevas letras. El texto histórico de CC se conserva con advertencia parcial en el generador.
+
+## FALSO
+
+Ningún hallazgo no canario resultó FALSO. Las declaraciones de cero hallazgos y las búsquedas auxiliares no se adjudican como falsos. Las omisiones plantadas tampoco son defectos de pristina.

@@ -1,0 +1,44 @@
+# VA-A7 · fuente → spec · bloque A7
+
+Rutas de fuente relativas a `fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/`; rutas de spec relativas a `s/11b6457f/`.
+
+## Reglas con problema
+
+- docs/14-promos-cortesias-y-grants.md:397 · «`stackable` y `usableWhileAnotherPromoActive` rigen SÓLO entre promos; las combinaciones con cortesía y grant las fija el mecanismo y no son configurables» · ausente (ningún archivo de la spec nombra `stackable` ni la restricción; el editor de la acción 21, AC:B9b:9, no la recoge) · BLOQUEA
+- docs/14-promos-cortesias-y-grants.md:297 · «el reintento de 3 días vale sólo para una mutación NUESTRA (`S30`, aumento, `S37`); cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto, sin reintento» · distinta en 04-catalogos.md:5666 (MOT:5 dice que la marca se abre «después de 3 días de reintentar la mutación», para toda divergencia) y en 10-corte/B11.md:222 (AC:B11:9, igual); la distinción sólo aparece en 80-abiertos.md:345, que por su propia regla no es criterio · BLOQUEA
+- docs/14-promos-cortesias-y-grants.md:359 · «el canje de extensión vale si la fila sigue `TRIAL_ACTIVE` al escribir: gana el estado escrito, nunca la hora; un canje a las 23:59:59 con el job sin correr es válido» · distinta en 04-catalogos.md:328 (la guarda de `T4` exige además «la fecha de fin sin pasar» y rechaza el canje si la fecha pasó aunque `T3` no haya corrido; precisión de verticales F-8V2A2-003 que la fuente 14 §3.2 no recoge: hay que adjudicar) · BLOQUEA
+- docs/14-promos-cortesias-y-grants.md:376 · «el job de vencimiento del trial vuelve a leer la fecha de fin dentro de su propia transacción, no la del lote» · ausente (`T3`, 04-catalogos.md:303-314, no lo dice y no aparece en ningún AC/TEST) · BLOQUEA
+- docs/14-promos-cortesias-y-grants.md:91 · «un descuento del 100 % no se canjea (el resultado es cero y el proveedor lo rechaza como el piso)» · ausente como regla explícita; lo cubre de hecho el rechazo bajo ARS 15 de AC:B9b:2 (20-fase-2/B9b.md:114) · MENOR
+- docs/14-promos-cortesias-y-grants.md:734 · «`S30` sale sólo de `ACTIVE`; el orden entre `P1` y `S30` en un cobro que saca del grace queda abierto» · distinta en 04-catalogos.md:3887 y 20-fase-2/B9b.md:149 (`ACTIVE` o `GRACE_PERIOD`, `S5` y `S30` en el mismo acto, F-8V1B1-006), mientras 80-abiertos.md:351 lo sigue listando abierto (la spec sigue a `03`, que es más nuevo; queda una inconsistencia interna) · MENOR
+- docs/16-addons.md:199 · «un grant permanente vale como título para comprar un addon en lugar de la `ACTIVE`, sólo en la vertical donde ancló y mientras tenga un ancla viva» · distinta en 04-catalogos.md:5215 (la guarda de `A1` sólo admite «`ACTIVE` y pagando») y en 20-fase-3/B10.md:142 (AC:B10:1, igual); la excepción sólo vive como glosario o contexto (02-nucleo-glosario.md:603, 03-contrato-de-cobertura.md:319) · BLOQUEA
+- docs/16-addons.md:233 · «el addon que elige gratis el beneficiario de un grant con `includesAddons: true`: sin `payment` y sin comprobante de cero, la instancia registra el ancla como su título, y la persona los elige uno por uno» · ausente como transición, AC o TEST (sólo INV:27 e INV:28, 02-nucleo.md:606-622; ni `B9a` ni `B10` construyen ese camino) · BLOQUEA
+- docs/16-addons.md:65 · «no existe una vigencia `PERMANENTE` de un addon» · ausente · MENOR
+- docs/19-superficies.md:142 · «fila 22: a quien pagó mientras ya mandábamos cancelar (espejo de `R18` o `S7` a `CANCEL_SCHEDULED`), el aviso y Mi Suscripción dicen “tu pago entró y tenés servicio hasta el {fecha}; ya estaba cancelada, no se renueva; volvé a suscribirte”, y que los addons recurrentes también se cortaron» · ausente (ni outbox, ni `B7`, ni `B8a`, ni `B13a` tienen esta superficie) · BLOQUEA
+- docs/19-superficies.md:119 · «fila 10-bis: la confirmación del admin, antes de registrar un pago manual tardío (`MP4`), dice qué devuelve la reapertura, que una ficha `PURGED` no vuelve, que sobre una predecesora el pago NO reactiva (queda por `S19`), qué período paga y cuándo se abre la próxima cuota» · distinta: sólo existe el correo al cliente después de reabrir (02-nucleo-outbox.md:308); ACC:3 (02-nucleo.md:986) y `B5` no tienen esa confirmación, y falta la cláusula de la predecesora · BLOQUEA
+- docs/19-superficies.md:137 · «fila 18: si tenía una cortesía diferida, el aviso dice que esos N MESES se cerraron, con el número» · distinta en 02-nucleo-outbox.md:309 (dice «esos N días»; la unidad cambió a meses con F-8CB1-001) · BLOQUEA
+- docs/19-superficies.md:292 · «el panel muestra las versiones de plan retiradas con cuántas suscripciones siguen ancladas» · ausente · BLOQUEA
+- docs/19-superficies.md:246 · «en el listado, un pago colgado que el banco ya devolvió por un contracargo se muestra con el contracargo y fuera del default» · ausente como regla del listado (sólo el lado de `RF2`, 04-catalogos.md:5867) · MENOR
+- docs/20-testing.md:687 · «ninguna credencial de producción la tiene un agente: las corridas de producción de la batería, la mensual y la manual, las dispara una persona o el programador de la batería, nunca quien implementa» · ausente (la batería se transcribe en 04-catalogos.md:6620-6656 sin esta frase; no está en `B1`) · BLOQUEA
+- docs/20-testing.md:762 · «cada flujo del §5 es una prueba de punta a punta (falso como servidor, reloj adelantable, correo capturado, aserciones sobre `B/19` §4 y sobre “nuestro correo antes”), y cada unidad escribe la suya: la revocación `B5`; los cambios, la pausa y la cancelación `B8`; el addon con su excedente `B10`; la migración `B12` (incluido el barrido entre `S37` y `S38` sin marca)» · distinta: sólo `B3` (10-corte/B3.md:607) y `B7` lo tienen; `B5`, `B8a`, `B8b`, `B10` y `B12` no tienen ese e2e de flujo en sus AC ni en sus TEST · BLOQUEA
+- descomposicion.md:713 · «un registro de cobro sin `expire_date` cierra sólo con `processed`: una terminal con el registro del alta en `recycling` y sin `expire_date` no se exime» · ausente como regla explícita (AC:B11:15, 10-corte/B11.md:302, sólo dice «el registro sigue abierto») · MENOR
+- descomposicion.md:694 · «las 11 migraciones de datos del seed que importan `@repo/billing` se congelan con sus valores hasta el paso 6» · distinta: la spec sigue a `21` §4, más nuevo (`U1` saca unas cincuenta, 10-corte/U1.md), y la fila de la descomposición quedó vieja · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| docs/14-promos-cortesias-y-grants.md | ~42 | 1-743 (completo; tachado salteado) | 3 (stackable, re-lectura de `T3`, 100 %) | 3 (reintento de 3 días, carrera del canje, `S30` desde grace) |
+| docs/16-addons.md | ~45 | 1-1153 (completo) | 2 (addon elegido gratis, sin `PERMANENTE`) | 1 (el grant como título de compra) |
+| docs/19-superficies.md | ~40 (filas 3 a 22 de §4, §1-§3.1, §4.1, §5-§7) | 1-347 (completo) | 3 (fila 22, versiones retiradas en el panel, pago contracargado en el listado) | 2 (fila 10-bis, fila 18) |
+| docs/20-testing.md | ~45 (17 guards, §2.1, §3.1-§3.3, §4, §4.1, §5, §5.1, §6) | 1-807 (completo) | 1 (credenciales de producción) | 1 (e2e por unidad) |
+| docs/21-migracion.md | ~20 | 1-696 (completo; lo tachado es mayoría) | 0 | 0 |
+| docs/22-lo-legal.md | ~15 | 1-196 (completo) | 0 | 0 |
+| descomposicion.md | ~70 (tabla §2, §2.1-§2.12, grafo §3, §3.1, §4, §6) | 1-1138 (completo) | 1 (`expire_date`/`processed`) | 1 (las 11 migraciones del seed) |
+| spec.md | ~20 (§3.1-§3.7, §4, §5.3, §6) | 1-348 (completo; §1, §5.1, §5.2 y §7 son relato o están cerrados) | 0 | 0 |
+
+**En total: 10 ausentes y 8 distintas, 18 hallazgos. Bloquean 12 (8 ausentes y 4 distintas) y 6 son menores.**
+
+Notas:
+- `21` y `22` no tienen problemas. `21` se rinde casi literal en 30-el-corte.md (líneas 985-1260) y en 10-corte/U1.md. `22` está en 10-corte/B5.md:785 y en 80-abiertos.md; en el caso de `22` §2.1, §2.2 (puntos 1-3) y §4, eso es correcto, porque son preguntas abiertas por definición.
+- `spec.md` es en buena parte relato y estado ya cerrado. Lo normativo (§3.1-§3.7, §4, §6) está en 00-indice.md, 10-corte/B1.md y 03-contrato-de-cobertura.md.
+- Tres de las «distintas» (`T4` y la carrera del canje, `S30` desde el grace, las 11 migraciones del seed) vienen de que la fuente de este bloque quedó vieja frente a una precisión posterior. La spec eligió la versión más nueva, pero no lo dejó adjudicado junto al ítem.

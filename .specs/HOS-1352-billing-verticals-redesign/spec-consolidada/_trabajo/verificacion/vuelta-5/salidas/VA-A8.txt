@@ -1,0 +1,13 @@
+# VA-A8 · fuente → spec · B/docs/05-idempotencia-y-concurrencia.md, B/docs/06-proveedor.md, B/docs/09-conciliacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:35 · «No hay locks distribuidos en este diseño.» · ausente (búsqueda con rg --hidden en toda s/2e9ef99e/ por «locks distribuidos», «lock distribuido», «sin locks», «sin lock», «distribuid» y «coordinación»; 04-catalogos.md:6138 anuncia la transcripción de las líneas 27–38, pero 04-catalogos.md:6146 conserva únicamente «Cada caso de abajo se resuelve con una restricción de la base o con una relectura», omitiendo la exclusión expresa de locks distribuidos para los cruces de billing. El «Sin lock y sin coordinación» de 04-catalogos.md:6393 y el AC de 10-corte/B5.md:171 cubren sólo C6, no la regla general. No se encontró sustitución de esta exclusión en P/docs/01-decision-log.md ni en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md. La omisión permite agregar coordinación distribuida a los demás cruces, con el modo de fallo que la fuente descarta explícitamente) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/05-idempotencia-y-concurrencia.md | ≈90 | 1–556 | 1 | 0 |
+| B/docs/06-proveedor.md | ≈100 | 1–570 | 0 | 0 |
+| B/docs/09-conciliacion.md | ≈210 | 1–1322 | 0 | 0 |

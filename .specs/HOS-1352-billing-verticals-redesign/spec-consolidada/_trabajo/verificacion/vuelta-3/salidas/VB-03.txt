@@ -1,0 +1,16 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:1119 · «el barrido la reintenta hasta 5 días con el preapproval `authorized`, y recién ahí abre la marca» … «hasta que el barrido la confirme o, pasados los 5 días, abra la marca» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1132 («el barrido la reintenta hasta 3 días con el preapproval `authorized`» … «pasados los 3 días, abra la marca»), y también .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:298 («hasta 3 días después de la transición que decidió la cancelación») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1619; ninguna decisión posterior (10-decisiones-del-owner) lo lleva a 5. Contradicción interna con 02-nucleo-glosario.md:537, 02-nucleo-auditoria.md:110 y 04-catalogos.md:1544/1637, que dicen 3 días · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:254 · «El evento se conserva veinticuatro meses; después se compacta en un resumen por fila.» · sin soporte: la regla 4 de .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:62 termina en «con quién la causó y qué la disparó», y no hay «veinticuatro meses» ni compactación de `domain_event` en ninguna fuente (`rg --hidden` sin resultados). Contradice además el registro append-only y sin `deleted_at` (.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:263) y lo que la retención conserva íntegro, también dentro de eventos de dominio (.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md, §4.1, fila «Se conserva íntegro, siempre», DEC-DATA-005); también choca con 02-nucleo-modelo-y-maquinas.md:162 y 10-corte/U2.md:225/235 (append-only, «rechaza el `update` y el `delete`») · BLOQUEA
+
+03-contrato-de-cobertura.md:507 · «desde `ACTIVE` o `CANCEL_SCHEDULED` es una de las diez» · contradicción interna con 03-contrato-de-cobertura.md:493 («de las **nueve** transiciones») y :561 («Las **nueve** transiciones … y `S36` desde `ACTIVE` o `CANCEL_SCHEDULED`»), que cuentan a `S36` dentro de las nueve. La fuente arrastra el mismo residuo (12-contrato-de-cobertura.md:480 vivo frente a :464 y :548) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1974 | 420 | 1 | 1 |
+| 02-nucleo-modelo-y-maquinas.md | 1–374 | 85 | 1 | 0 |

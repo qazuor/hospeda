@@ -1,0 +1,14 @@
+{
+  "creado": "2026-09-16T17:13:46.137Z",
+  "entorno": "produccion",
+  "cuenta": "HOSPEDA_COM_AR (3497516165)",
+  "pagador": "qazuor@gmail.com",
+  "monto_por_ciclo": 15,
+  "ciclo": "1 days",
+  "presupuestoAutorizado": 30,
+  "nota": "RC-1: el search IGNORA external_reference. Sin estos ids no hay forma de reencontrar los sujetos.",
+  "sujetos": [
+    { "slug": "apagon", "id": "5d9dfc9d3fe44d8596ef257792246ea0" },
+    { "slug": "ex33", "id": "04adf298aea54922884c5747b25d2c8b" }
+  ]
+}

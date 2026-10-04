@@ -1,0 +1,17 @@
+# VB-02 · spec → fuente · 02-nucleo.md 02-nucleo-auditoria.md 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo.md:1017 · «**Sí**: lleva a `CANCELLED` sin esperar el reloj.» (ACC:4, confirmar que no se pagó) · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:194 («**sí**: lleva a `SUSPENDED` sin esperar el reloj») y .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1872 (MP2: «la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj — es el cuarto evento de `S6`»); ninguna decisión posterior lo cambia (sin 📌 ni letra del owner sobre MP2). Además contradicción interna con 04-catalogos.md:4529 (TRANS:B:MP2, «va a `SUSPENDED` por `S6`»). · BLOQUEA
+
+02-nucleo-auditoria.md:199 · «**Cuando la cadena se corta** —un webhook de un preapproval que no conocemos— eso **es** la detección de una huérfana ([DEC-CONC-002]…).» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:160-162 («eso **es** la detección de una huérfana (`DEC-CONC-002`), y arranca su propia correlación anotando que no tiene padre»): la spec omite la regla viva de que la huérfana acuña su propia correlación marcada sin padre; no aparece en ningún otro archivo de la spec (`rg "no tiene padre|sin padre"` vacío), así que U2 no la construiría. · BLOQUEA
+
+02-nucleo-outbox.md:270 · «**Y nunca pasa de 60 caracteres**: el adaptador rechaza uno más largo antes de mandarlo al proveedor.» · sin soporte: la fuente citada (.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:242-243) y `INV:D9` (04-invariantes.md:136) sólo dicen que el `reason` es copy y nunca un slug ni un id, vigilado por un guard; el único «60» de las fuentes es el `.slice(0, 60)` de los scripts de sondas (probe-26/28/29/49), que no es una regla de diseño ni una medición. Regla inventada (rechazo en el adaptador). · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1810 | 260 (§1 mapa, 52 invariantes INV:n/Dn, 25 ACC:n, 19 PLAZO:n, §4.3 rechazos del panel, enrutado §3.3) | 1 | 0 |
+| 02-nucleo-auditoria.md | 1–444 | 70 (criterio y campos del evento, inmutabilidad, baja manual en 3 pasos, correlación, reglas de confirmación, DEC-OBS-001 y sus tres tipos de resumen, §50) | 1 | 0 |
+| 02-nucleo-outbox.md | 1–415 | 110 (outbox y estados, dedup, huso, supresión, reglas del proveedor, 33 filas del catálogo de correos y su prosa) | 1 | 0 |

@@ -1,0 +1,10 @@
+✓ base: exit 0
+✓ sale     el «**sale** …» vivo de una fila retirada por su id va como nota
+✓ idcelda  exit 0 · con la regla vieja las notas desaparecen (el canario «sale» las ve)
+✓ otro     exit 1 · una fila retirada con texto vivo que no es «**sale**»
+✓ entero   exit 1 · B9a sin el preámbulo de `B/14`
+✓ entero   exit 1 · B9a sin el §4.6 MIXTO de `B/14`
+✓ fixtures · 3 vivas, 3 muertas
+✓ prefijo  exit 1 · dead_row vuelve a «la primera celda empieza con ~~»
+
+8 canarios · 0 fallas

@@ -1,0 +1,37 @@
+[
+    {
+        "id": "H5-VB-06-2",
+        "archivo": "10-corte/V5.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-08-4",
+        "archivo": "10-corte/B3.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-04-1",
+        "archivo": "10-corte/U1.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-07-4",
+        "archivo": "20-fase-4/V7.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-07-5",
+        "archivo": "10-corte/V8a.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-07-6",
+        "archivo": "20-fase-4/V8b.md",
+        "aplicada": true
+    },
+    {
+        "id": "H5-VB-07-7",
+        "archivo": "10-corte/V9a.md",
+        "aplicada": true
+    }
+]

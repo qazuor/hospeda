@@ -1,0 +1,16 @@
+# VB-06 · spec → fuente · 10-corte/V5.md, 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:353 · «sobre la propia cuenta lo admite el paso 3» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216 («Sobre la propia cuenta la rechaza el paso 3»). AC:V5:15 permite asignarse o quitarse SUPER_ADMIN; también contradice TEST:V5:17 (V5.md:1412) y la regla de V5.md:941. DEC-AUTH-002 y su precisión mantienen la prohibición por cuenta; ninguna decisión posterior consultada la revoca · BLOQUEA
+
+10-corte/V5.md:1357 · «otorgue la capacidad es rechazado en el paso 5/6.» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:155 («El paso 5 pregunta por `fuentes`, no por `cubierto`»; líneas 159–160: «el paso 5 ya no rechaza a nadie, y toda la defensa se apoya en el paso 6»). TEST:V5:10 acepta rechazar en el paso 5 a un dueño que tiene BASE pero carece de la capacidad, validando «sin cobertura» donde corresponde el rechazo de capacidad del paso 6. La propia spec conserva la distinción en V5.md:575–594 · BLOQUEA
+
+10-corte/V6.md:218 · «Una ficha con un pedido de arreglo abierto no puede cambiar sus fotos hasta que un administrador cierre ese pedido.» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:704 («El dueño avisa que corrigió»; la operación no cierra el pedido) y :709 («verla, exportarla, editarla y borrarla; no publicarla»). Agrega una prohibición de edición sin soporte: el pedido es una marca que permite corregir antes de que el admin lo cierre, incluso si la ficha está MODERATED. DEC-DATA-007 y su precisión (01-decision-log.md:7086–7107) conservan esa regla; también la conserva AC:V6:11 (V6.md:402–403) · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1573 | 300 | 2 | 0 |
+| 10-corte/V6.md | 1–1498 | 350 | 1 | 0 |

@@ -1,0 +1,14 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md, 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:182 · «`sí` si esa fila tiene al menos dos pagos acreditados, `no` si no.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:170 («`sí` si esa fila tiene al menos un pago acreditado, `no` si no.»). La decisión vigente DEC-TRIAL-010 y su precisión mantienen el primer cobro como disparador (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6206). Exigir dos pagos retrasa la conversión o el consumo del trial y contradice también la tabla del mismo contrato, línea 155, su aviso de primer pago, líneas 840–843, y 10-corte/V4.md:339 · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:195 · «Toda alta de una entidad de billing debe asignar un identificador numérico consecutivo global; se rechazan identificadores UUID aunque sean únicos.» · sin soporte. No existe esta exigencia en las fuentes congeladas ni en el decision log o las decisiones posteriores del owner. El modelo de núcleo deja los tipos a implementación: fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:22 («un DDL: no hay tipos ni índices acá, porque eso es decisión de implementación.»). La regla agregada obliga a construir una secuencia numérica global y a rechazar UUID sin mandato de la fuente; contradice además el alcance declarado en las líneas 17–19 de este mismo archivo · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1986 | 450 | 1 | 0 |
+| 02-nucleo-modelo-y-maquinas.md | 1–376 | 100 | 1 | 0 |

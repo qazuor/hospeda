@@ -1,0 +1,15 @@
+# VB-08 · spec → fuente · 10-corte/B1.md, 10-corte/B2.md, 10-corte/B3.md
+
+## Hallazgos
+
+s/b249f841/10-corte/B1.md:113 · «importar el SDK afuera **sólo genera una advertencia**» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062 («importar el SDK afuera **falla**») · BLOQUEA
+
+s/b249f841/10-corte/B2.md:379 · «Una versión de plan admite como máximo dos ciclos de cobro vendibles a la vez. Publicar una tercera opción se rechaza aunque su ciclo todavía no exista en esa versión.» · sin soporte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–991 | 240 | 1 | 0 |
+| 10-corte/B2.md | 1–560 | 145 | 1 | 0 |
+| 10-corte/B3.md | 1–1480 | 350 | 0 | 0 |

@@ -1,0 +1,194 @@
+# Correcciones REAL de la vuelta 1 · grupo billing-despues
+
+Copiadas de `../verificacion/vuelta-1/adjudicacion/correcciones.txt`. Las líneas citan el ORIGINAL (`296e6495b6`): ubicá cada corrección por su texto «sale», no por el número. Si «sale» ya no está y «entra» sí, está aplicada: contala como tal y seguí.
+
+### `20-fase-2/B8b.md`
+
+- **H-VB-B8-15** · REAL MENOR · l. 219 — AC:B8b:8 dice sin excepcion que la sucesora nace con fecha de primer cobro posterior a su ventana; INV:D8 tiene una unica excepcion (sucesora de una SUSPENDED con tarjeta y preapproval releido cancelled cobra al autorizar), y la ruta de B8b alcanza sucesiones de una SUSPENDED (AC:B8b:9). El cuerpo es de B3 (que ya la tiene, B3.md:493) y TEST:B8b:8 no asierta la fecha, asi que no cambia lo construido: MENOR.
+  - sale:
+    la sucesora nace con fecha de primer
+      cobro posterior al vencimiento de su ventana;
+  - entra:
+    la sucesora nace con fecha de primer
+      cobro posterior al vencimiento de su ventana —salvo la de una `SUSPENDED` de pagador con tarjeta cuyo
+      preapproval se releyó `cancelled`, que cobra al autorizar ([INV:D8](../02-nucleo.md#inv-d8))—;
+
+- **H-VB-B8-15** · REAL MENOR · l. 224 — AC:B8b:8 dice sin excepcion que la sucesora nace con fecha de primer cobro posterior a su ventana; INV:D8 tiene una unica excepcion (sucesora de una SUSPENDED con tarjeta y preapproval releido cancelled cobra al autorizar), y la ruta de B8b alcanza sucesiones de una SUSPENDED (AC:B8b:9). El cuerpo es de B3 (que ya la tiene, B3.md:493) y TEST:B8b:8 no asierta la fecha, asi que no cambia lo construido: MENOR.
+  - sale:
+    Fuente: [INV:D7](../02-nucleo.md#inv-d7) · [DEC-SUB-006](../01-decisiones-vigentes.md#dec-sub-006) · [LISTA:B8b](#lista-b8b)
+  - entra:
+    Fuente: [INV:D7](../02-nucleo.md#inv-d7) · [INV:D8](../02-nucleo.md#inv-d8) · [DEC-SUB-006](../01-decisiones-vigentes.md#dec-sub-006) · [LISTA:B8b](#lista-b8b)
+
+- **H-VB-B8-16** · REAL MENOR · l. 335 — AC:B8b:16 encadena 'arrepentirse es otra mutacion mas cancelar el descenso, que termina la promo [...] en el mismo acto del pedido': se lee como si arrepentirse escribiera cobros_restantes = 0. La fuente atribuye esa escritura al PEDIDO del descenso, en el acto en que muta el monto. Como la promo ya quedo en 0 al pedir, no cambia lo construido: prosa ambigua.
+  - sale:
+    y arrepentirse es otra mutación del monto más cancelar el descenso, que termina la
+      promo de la fila (`cobros_restantes = 0`) en el mismo acto del pedido.
+  - entra:
+    el pedido del descenso termina la promo de la fila (`cobros_restantes = 0`) en el mismo
+      acto en que muta el monto; y arrepentirse es otra mutación del monto más cancelar el descenso
+      (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:258-266).
+
+- **H-VA-A7a-14** · FUENTE BLOQUEA · l. 436 — La rama desde PAUSED (S22) de la fila 8 —termina hoy, pierde los meses de cortesía, salvo la que vive del crédito con «seguís hasta el …»— no la construye ninguna pieza: B13a la deja fuera (al corte no hay PAUSED) y B8b, dueña de S22 por AR, no la recibe porque el reparto inferido de la fuente no la nombra, contra BH.
+  - sale:
+    - **Dado** las filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `B/19` §4,
+  - entra:
+    - **Dado** las filas 5, 5-bis, 6, 7, 13-quater, 15, 16, 16-bis, 17, 17-bis y 17-ter del `B/19` §4, y la rama desde `PAUSED` (`S22`) de la fila 8 (BH con AR: `S22` queda en `B8b`),
+
+- **H-VA-A7a-14** · FUENTE BLOQUEA · l. 438 — La rama desde PAUSED (S22) de la fila 8 —termina hoy, pierde los meses de cortesía, salvo la que vive del crédito con «seguís hasta el …»— no la construye ninguna pieza: B13a la deja fuera (al corte no hay PAUSED) y B8b, dueña de S22 por AR, no la recibe porque el reparto inferido de la fuente no la nombra, contra BH.
+  - sale:
+    - **Cuando** la persona pausa, reanuda o cambia de plan —o el cambio no se le ofrece—
+  - entra:
+    - **Cuando** la persona pausa, reanuda, cambia de plan —o el cambio no se le ofrece— o pide la baja estando pausada
+
+- **H-VA-A6-18** · REAL MENOR · l. 507 — La regla de B/10 §3.5 «la ventana de 60 días de DEC-MP-002 no aplica a un cambio de plan que el cliente elige» no está en la spec; es parte del cuerpo perdido de B12:63 y rige el cambio de plan de B8b.
+  - dónde: nuevo bullet al final de «Reglas»
+  - sale:
+(nada)
+  - entra:
+    - **la ventana de 60 días de `DEC-MP-002` no aplica a un cambio de plan que el cliente elige**: esa ventana protege a quien no eligió el precio nuevo; el que elige un plan lo acepta en el acto, con su precio a la vista (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:122).
+
+- **H-VA-A6-19** · REAL MENOR · l. 507 — B/12 §3 no se rinde en B8b: la mitad «rige el precio al pedirlo» se deriva de DEC-SUB-008 parte 1 (en la spec), pero falta escrita la otra: un aumento posterior del plan destino no entra por el downgrade (S38 no lleva precio; la fila conserva el monto mutado y el aumento la alcanza como a cualquier anclado).
+  - dónde: nuevo bullet al final de «Reglas», junto al de H-VA-A6-18
+  - sale:
+(nada)
+  - entra:
+    - **en un downgrade rige el precio vigente al pedirlo**, que es el que se muta en el acto (`DEC-SUB-008`, parte 1); **`S38` no lleva precio**: si el precio del plan destino sube entre el pedido y el fin del ciclo, la suscripción conserva el monto mutado y el aumento la alcanza como a cualquier otro anclado, por su camino y con su fecha (`DEC-MP-002`, con BZ), **nunca por la puerta del downgrade** (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:284, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:288).
+
+- **H-VA-A7a-14** · FUENTE BLOQUEA · l. 582 — La rama desde PAUSED (S22) de la fila 8 —termina hoy, pierde los meses de cortesía, salvo la que vive del crédito con «seguís hasta el …»— no la construye ninguna pieza: B13a la deja fuera (al corte no hay PAUSED) y B8b, dueña de S22 por AR, no la recibe porque el reparto inferido de la fuente no la nombra, contra BH.
+  - sale:
+    - **5 — al pausar estando en cortesía**: que **la pierde**, y dejarlo elegir (`DEC-GRANT-004`; lo
+  - entra:
+    - **8, la rama desde `PAUSED` (`S22`) — al pedir la baja estando pausado, antes de confirmar**: **que el servicio termina hoy y no al fin de un período** (la frase *«seguís hasta el …»* no aplica); **si la pausa era una cortesía, que pierde los meses que le quedaban**, con el número dicho; **salvo la pausada que vive del crédito sin consumir** (la sucesora con cortesía re-emitida): ahí el servicio sigue hasta el fin del crédito y la pantalla dice esa fecha, como la baja desde `ACTIVE`, y los meses de cortesía se pierden igual (`V2-b`). Las ramas desde `SUSPENDED` y `GRACE_PERIOD` son de `B13a` ([AC:B13a:1](../10-corte/B13a.md#ac-b13a-1)). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:116 y §5; BH, `D/41-corte-del-mvp/10-decisiones-del-owner.md:112`; AR, :61)
+    - **5 — al pausar estando en cortesía**: que **la pierde**, y dejarlo elegir (`DEC-GRANT-004`; lo
+
+- **H-VA-A7b-1** · REAL BLOQUEA · l. None — B/20 §5.1 punto 3 (revisión del owner N3, L3-e; DEC-TEST-003) manda que cada unidad escriba la prueba de punta a punta de su flujo (falso como servidor, reloj adelantable, correo capturado, aserciones sobre B/19 §4 y «nuestro correo antes»): alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12. La spec sólo la tiene en B3 (AC:B3:33) y B7 (AC:B7:29); B5, B8a, B8b, B10 y B12 no tienen ese e2e en sus AC ni TEST (sus e2e son de superficies sueltas).
+  - dónde: AC nuevo + TEST e2e web
+  - sale:
+(nada)
+  - entra:
+    **AC:B8b:N** — los cambios de plan y la pausa, de punta a punta, con el mismo arnés y las mismas aserciones sobre `B/19` §4 y «nuestro correo antes». (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762)
+
+### `20-fase-2/B9b.md`
+
+- **H-VA-A7a-6** · REAL MENOR · l. 355 — La regla de B/14 §4.1 (`stackable` y `usableWhileAnotherPromoActive` rigen SÓLO entre promos; las combinaciones con cortesía y grant las fija el mecanismo y no son configurables) no está en la spec; el editor de la acción 21 (AC:B9b:9) no la recoge. Lo que construyen §4.2/§4.3 sí está por mecanismo, así que el riesgo es un editor que exponga como configurable lo que no lo es.
+  - sale:
+    - **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH).
+  - entra:
+    - **Admin**: el editor de códigos promocionales (acción 21, con su operación: BH). **`stackable` y `usableWhileAnotherPromoActive` rigen SÓLO entre promos**: el editor no ofrece configurar cómo se combina una promo con una cortesía o un grant, porque esas combinaciones las fija el mecanismo de cada instrumento y volverlas configurables permitiría configurar un estado que el proveedor rechaza. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:395)
+
+### `20-fase-3/B10.md`
+
+- **H-VA-A7a-10** · REAL BLOQUEA · l. 142 — AC:B10:1 dice que la instancia SÓLO nace con una principal ACTIVE y pagando: deja afuera la excepción obligatoria de B/16 §2.4 (un grant permanente con ancla viva en esa vertical vale como título en lugar de la ACTIVE). Un implementador que sigue el AC le niega el addon al beneficiario de Free Forever y vuelve inalcanzable `includesAddons: true` para addons nuevos. La fila A1 de B/03 (copiada verbatim a 04-catalogos) tampoco nombra la excepción: residuo de fuente.
+  - sale:
+    - **Entonces** sólo nace la instancia en `PENDING_AUTHORIZATION` si tiene una suscripción principal
+      **válida** —`ACTIVE` y **pagando**: con al menos un pago acreditado, o sucesora de una predecesora
+      que venía pagando— y compatible;
+  - entra:
+    - **Entonces** sólo nace la instancia en `PENDING_AUTHORIZATION` si tiene una suscripción principal
+      **válida** —`ACTIVE` y **pagando**: con al menos un pago acreditado, o sucesora de una predecesora
+      que venía pagando— y compatible, **o, en su lugar, un ancla viva de un grant permanente en la
+      vertical del producto** —sólo donde el grant ancló y mientras no esté revocado; en una vertical
+      donde no ancló, el addon se adquiere como cualquier otro— (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:199, :204, :211);
+
+- **H-VB-B8-21** · REAL MENOR · l. 256 — AC:B10:9 lista entre 'las clausulas [...] que construye esta pieza' la de Free Forever (S20) y la de la pausa del cliente (S32/S33), cuyas transiciones construyen B9a y B7 (traslado a pieza del catalogo; nota de LISTA:B10). Las clausulas igual deben cumplirse con las filas de la venta, asi que lo construido no cambia salvo el riesgo de reimplementar S20/S32 en B10: MENOR. (Nota: la fuente descomposicion.md:1056 dice que S32/S33 se ejercen al corte en B7 'sobre la suspension'; la pausa del cliente no es del corte, por eso entra como 'se cumple tambien con las filas de la venta', no como 'ya verde desde el corte'.)
+  - sale:
+    **a un beneficiario de *Free Forever* con `includesAddons: true` no se le cobra ni
+      un peso más por un addon compatible**; **una pausa pedida por el cliente no deja ningún addon
+      recurrente de esa vertical cobrando**;
+  - entra:
+(nada)
+
+- **H-VB-B8-21** · REAL MENOR · l. 263 — AC:B10:9 lista entre 'las clausulas [...] que construye esta pieza' la de Free Forever (S20) y la de la pausa del cliente (S32/S33), cuyas transiciones construyen B9a y B7 (traslado a pieza del catalogo; nota de LISTA:B10). Las clausulas igual deben cumplirse con las filas de la venta, asi que lo construido no cambia salvo el riesgo de reimplementar S20/S32 en B10: MENOR. (Nota: la fuente descomposicion.md:1056 dice que S32/S33 se ejercen al corte en B7 'sobre la suspension'; la pausa del cliente no es del corte, por eso entra como 'se cumple tambien con las filas de la venta', no como 'ya verde desde el corte'.)
+  - sale:
+    ahora con filas que crea la venta; y las que se ejercen desde el corte en `B4`, `B5`, `B7` y `B9a`
+      siguen verdes.
+  - entra:
+    ahora con filas que crea la venta; la de *Free Forever* con `includesAddons: true` (`S20`, que construye
+      [B9a](../10-corte/B9a.md#tpz-s20)) y la de la pausa pedida por el cliente (`S32`/`S33`, que construye
+      [B7](../10-corte/B7.md#tpz-s32)) se cumplen también con esas filas; y las que se ejercen desde el corte en
+      `B4`, `B5`, `B7` y `B9a` siguen verdes (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1056;
+      traslado a pieza de `S20` y `S32` en `04-catalogos.md`).
+
+- **H-ORQ-1** · REAL BLOQUEA · confirmado por el orquestador · l. 432 — El predicado del UNIQUE parcial de addon_instance (lote Y: también ACTIVE con suscripción de complemento) no está en ESQ:8 (B3, que crea la tabla al corte) y B10 lo da con el predicado viejo (sólo PENDING_AUTHORIZATION).
+  - sale:
+    `UNIQUE` parcial `(dueño, producto, objetivo)` sobre las instancias en `PENDING_AUTHORIZATION`
+  - entra:
+    `UNIQUE` parcial `(dueño, producto, objetivo)` sobre las instancias en `PENDING_AUTHORIZATION` o, en el recurrente, `ACTIVE` con suscripción de complemento ([ESQ:8](../10-corte/B3.md#esq-8); lote Y)
+
+- **H-VA-A7a-12** · REAL MENOR · l. 436 — La spec no dice que no existe una vigencia `PERMANENTE` de addon (B/16 §1.3) ni enumera las vigencias; sólo prohíbe `PERIÓDICO + DÍAS_FIJOS`. No cambia lo construido si el implementador lee B/16, pero la spec debería cerrar el dominio.
+  - sale:
+    Esta pieza **sólo agrega lo que crea filas** (AS).
+  - entra:
+    Esta pieza **sólo agrega lo que crea filas** (AS). **Las vigencias de un addon son dos, `DÍAS_FIJOS` y `MIENTRAS_VIVA_LA_SUSCRIPCIÓN`, y no existe una vigencia `PERMANENTE`**: una capacidad para siempre por un pago único es lo que ya hace el grant permanente. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:65)
+
+- **H-VA-A7b-1** · REAL BLOQUEA · l. None — B/20 §5.1 punto 3 (revisión del owner N3, L3-e; DEC-TEST-003) manda que cada unidad escriba la prueba de punta a punta de su flujo (falso como servidor, reloj adelantable, correo capturado, aserciones sobre B/19 §4 y «nuestro correo antes»): alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12. La spec sólo la tiene en B3 (AC:B3:33) y B7 (AC:B7:29); B5, B8a, B8b, B10 y B12 no tienen ese e2e en sus AC ni TEST (sus e2e son de superficies sueltas).
+  - dónde: AC nuevo + TEST e2e web
+  - sale:
+(nada)
+  - entra:
+    **AC:B10:N** — el addon, de punta a punta, con el mismo arnés y las mismas aserciones sobre `B/19` §4 y «nuestro correo antes». (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762)
+
+### `20-fase-3/B12.md`
+
+- **H-VB-B8-6** · FUENTE BLOQUEA · l. 234 — AC:B12:9 y TEST:B12:10 piden a la vez «ningún monto cambia / el falso no recibe mutación antes de la fecha» (parte 3 de DEC-MP-002, pre-BZ) y «S37 muta siete días antes» (BZ). La fuente arrastra la frase vieja (decision-log:1412 y descomposicion.md:1058) junto a la de BZ; manda BZ. Lo que BZ conserva es que ningún COBRO sale al precio nuevo antes de la fecha.
+  - sale:
+    **ningún monto cambia antes de esa fecha**; llegada
+      la fecha **el monto se muta automáticamente**, **después** de nuestro aviso,
+  - entra:
+    **ningún cobro sale al precio nuevo antes de esa fecha**;
+      **siete días antes** de ella **el monto se muta automáticamente** por `S37` (BZ), **después** de nuestro aviso, (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478, DEC-MP-002 📌 BZ)
+
+- **H-VA-A6-17** · REAL BLOQUEA · l. 341 — El listado de administración de versiones de plan retiradas con cuántas suscripciones siguen ancladas (B/10 §3.4 y B/19 §6) no está en ninguna pieza; B12 declara incluir «las secciones de 10 §3» con su Origen (l. 75 = §3.4) pero el cuerpo quedó vacío.
+  - dónde: nuevo bullet en «UI web y admin, e i18n», después de la línea 341
+  - sale:
+(nada)
+  - entra:
+    - **Admin, la cola del retiro**: el listado de las **versiones de plan retiradas con cuántas suscripciones siguen ancladas a cada una**; una versión retirada se extingue cuando la deja su última suscripción, y eso es una **condición derivada, no un estado guardado** (`B/10` §3.4, `B/19` §6). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:88, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:292)
+
+- **H-VB-B8-6** · FUENTE BLOQUEA · l. 504 — AC:B12:9 y TEST:B12:10 piden a la vez «ningún monto cambia / el falso no recibe mutación antes de la fecha» (parte 3 de DEC-MP-002, pre-BZ) y «S37 muta siete días antes» (BZ). La fuente arrastra la frase vieja (decision-log:1412 y descomposicion.md:1058) junto a la de BZ; manda BZ. Lo que BZ conserva es que ningún COBRO sale al precio nuevo antes de la fecha.
+  - sale:
+    el falso no recibe ninguna
+    mutación antes de esa fecha; al mensual se le muta en el primer cobro estrictamente posterior a los
+    60 días,
+  - entra:
+    el falso no recibe ninguna
+    mutación antes de los siete días previos a esa fecha; al mensual el primer cobro al precio nuevo es el estrictamente posterior a los
+    60 días,
+
+- **H-VA-A6-17** · REAL BLOQUEA · l. 63 — El listado de administración de versiones de plan retiradas con cuántas suscripciones siguen ancladas (B/10 §3.4 y B/19 §6) no está en ninguna pieza; B12 declara incluir «las secciones de 10 §3» con su Origen (l. 75 = §3.4) pero el cuerpo quedó vacío.
+  - dónde: o se rinde el texto vigente de las secciones que la línea anuncia (al menos §3.4 y §3.5) o se borra la línea con su Origen; hoy promete un contenido que no está
+  - sale:
+    Las secciones de `10` §3 y §3.7, que la columna de capítulos de la fila le asigna:
+  - entra:
+    (el texto vigente de `B/10` §3.4 y §3.5 —o la línea fuera—; ver H-VA-A6-18)
+
+- **H-VA-A6-17** · REAL BLOQUEA · l. 76 — El listado de administración de versiones de plan retiradas con cuántas suscripciones siguen ancladas (B/10 §3.4 y B/19 §6) no está en ninguna pieza; B12 declara incluir «las secciones de 10 §3» con su Origen (l. 75 = §3.4) pero el cuerpo quedó vacío.
+  - dónde: nuevo AC con su TEST (integración con DB)
+  - sale:
+(nada)
+  - entra:
+    **AC:B12:N** — la cola del retiro se ve
+    
+    - **Dado** una versión retirada con tres suscripciones ancladas
+    - **Cuando** `SUPER_ADMIN` abre el listado de versiones retiradas
+    - **Entonces** la ve con 3; cuando la deja la última, deja de contar como viva sin que nadie escriba un estado en la versión.
+    
+    Fuente: [FILA:B12](#fila-b12)
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:88, .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:292
+
+- **H-VA-A7b-1** · REAL BLOQUEA · l. None — B/20 §5.1 punto 3 (revisión del owner N3, L3-e; DEC-TEST-003) manda que cada unidad escriba la prueba de punta a punta de su flujo (falso como servidor, reloj adelantable, correo capturado, aserciones sobre B/19 §4 y «nuestro correo antes»): alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12. La spec sólo la tiene en B3 (AC:B3:33) y B7 (AC:B7:29); B5, B8a, B8b, B10 y B12 no tienen ese e2e en sus AC ni TEST (sus e2e son de superficies sueltas).
+  - dónde: AC nuevo + TEST e2e admin/web
+  - sale:
+(nada)
+  - entra:
+    **AC:B12:N** — la migración de un plan retirado, de punta a punta, con el mismo arnés y las mismas aserciones sobre `B/19` §4 y «nuestro correo antes», incluido el barrido entre `S37` y `S38`, que no marca divergencia. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762, :733)
+
+### `todas las piezas (10-corte/*.md, 20-fase-*/*.md; B4–B7 en g8/src)`
+
+- **H-VB-B5-2** · REAL MENOR · l. None — U1:816 dice que la fuente no fija las etiquetas kind-*/area-*; el default de BS (5º 📌 de DEC-METH-019) las fija: `kind-spec` más las `area-*` de cada fila.
+  - dónde: sección «Labels de Linear» de cada pieza
+  - sale:
+    - Las etiquetas `kind-*`/`area-*` no las fija la fuente: las propone el PR de la pieza y quedan escritas acá al mergear (…)  [U1, U2]
+  - entra:
+    - Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner BS, con sus defaults en el 5º 📌 de DEC-METH-019)  [las 30 piezas, como U3]
+

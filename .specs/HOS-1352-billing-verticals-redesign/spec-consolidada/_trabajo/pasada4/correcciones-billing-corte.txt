@@ -1,0 +1,472 @@
+# Correcciones REAL de la vuelta 1 · grupo billing-corte
+
+Copiadas de `../verificacion/vuelta-1/adjudicacion/correcciones.txt`. Las líneas citan el ORIGINAL (`296e6495b6`): ubicá cada corrección por su texto «sale», no por el número. Si «sale» ya no está y «entra» sí, está aplicada: contala como tal y seguí.
+
+### `10-corte/B1.md`
+
+- **H-VB-B7-5** · REAL MENOR · l. 291 — AC:B1:14 resume RP12 sin «y autorizar deja otro igual en producción» (PA-3). El enlace RP:RP12 lo trae entero; omisión de resumen.
+  - sale:
+    por los dos canales, sin `external_reference` ni preapproval, `rejected` si la tarjeta no pasa
+  - entra:
+    por los dos canales, sin `external_reference` ni preapproval, `rejected` si la tarjeta no pasa, y autorizar deja otro igual (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:545, `PA-3`)
+
+- **H-VA-A6-15** · REAL MENOR · l. 307 — AC:B1:15 dice «alerta si pasa la cadencia sin ping» (copia de B/20 §4.1) y pierde el día de margen que B/09 §7.1 fija para la batería: una semana más un día (cuenta de pruebas) y un mes más un día (producción).
+  - sale:
+    una corrida completa hace ping al vigía externo, que alerta si pasa la cadencia sin ping; la de
+  - entra:
+    una corrida completa hace ping al vigía externo, que alerta si pasa **una semana más un día** sin el ping de la cuenta de pruebas, o **un mes más un día** sin el de producción (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1149); la de
+
+- **H-VB-B7-4** · REAL MENOR · l. 380 — El reparto «quién demuestra cada defensa» cita `cobertura.json` (archivo de trabajo, no fuente). Es una derivación válida (pieza que construye el mecanismo que la columna «qué defensa obliga a probar» nombra) pero sin marcar ni Origen.
+  - sale:
+    `cobertura.json`, «también»):
+  - entra:
+    derivado: la pieza que construye el mecanismo que nombra la columna *«qué defensa obliga a probar»*; Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:501-532):
+
+- **H-VA-A6-1** · REAL MENOR · l. 432 — La regla «impuestos: el dominio no los modela; se registra lo que el cobro liquidó, no se deriva» no está en la spec.
+  - sale:
+    un proveedor que rechaza lo que no soporta: es un proveedor que acepta y descarta. De ahí sale la regla 1.
+  - entra:
+    un proveedor que rechaza lo que no soporta: es un proveedor que acepta y descarta. De ahí sale la regla 1.
+    
+    **Impuestos: el dominio no los modela.** El §53 difiere ARCA y el §54 ordena un comprobante no fiscal (`DEC-LEGAL-001`). Lo que el proveedor retiene —comisión y lo que corresponda— no se calcula: se registra lo que el cobro liquidó, no se deriva.
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:298
+
+### `10-corte/B11.md`
+
+- **H-VA-A6-4** · REAL BLOQUEA · l. 165 — Ningún criterio dice que el barrido tampoco cancela la lápida de una sonda del manifiesto; AC:B11:6 mete toda lápida de recepción en la salvedad 4, así que el barrido le cancelaría la tarjeta de sonda al owner.
+  - sale:
+    devolver, sin motivo nuevo; un desconocido fuera de la lista se manda cancelar; y sin el módulo el
+      build no compila.
+  - entra:
+    devolver, sin motivo nuevo; **el barrido tampoco la manda cancelar: sin llamada nuestra no entra a la salvedad 4, y la
+      sigue la salvedad 2 mientras la marca esté abierta**; un desconocido fuera de la lista se manda cancelar; y sin el módulo el
+      build no compila.
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:125
+
+- **H-VA-A6-4** · REAL BLOQUEA · l. 187 — Ningún criterio dice que el barrido tampoco cancela la lápida de una sonda del manifiesto; AC:B11:6 mete toda lápida de recepción en la salvedad 4, así que el barrido le cancelaría la tarjeta de sonda al owner.
+  - sale:
+    `S24`, `S31`, `S36` y la lápida de recepción— o la suscripción
+  - entra:
+    `S24`, `S31`, `S36` y la lápida de recepción, salvo la de una sonda del manifiesto, que no tuvo llamada— o la suscripción
+
+- **H-VA-A6-6** · REAL BLOQUEA · l. 187 — AC:B11:6 (y la fila §10.1 de 04-catalogos) mete en la salvedad 4 a S3/S23/S24/S31/S36 sin exceptuar al pagador manual, que no tuvo llamada: el barrido esperaría una relectura que no existe y abriría CANCELACIÓN_SIN_CONFIRMAR a los 3 días.
+  - sale:
+    `S24`, `S31`, `S36` y la lápida de recepción— o la suscripción
+  - entra:
+    `S24`, `S31`, `S36` y la lápida de recepción; `S3`, `S23`, `S24`, `S31` y `S36` **sólo cuando hubo llamada**: sobre un
+      pagador manual están exentas y no vuelven al barrido— o la suscripción
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:319
+
+- **H-VA-A6-8** · REAL MENOR · l. 193 — Sobre la lápida de recepción no hay transición: los 3 días del reintento corren desde que se escribió; AC:B11:6 dice «después de la transición» para todas.
+  - sale:
+    después de la transición** (tiempo, no corridas);
+  - entra:
+    después de la transición** —sobre la lápida de recepción, que no tiene transición, desde que se escribió— (tiempo, no corridas; Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:351);
+
+- **H-VA-A6-3a** · REAL BLOQUEA · l. 222 — AC:B11:9 sólo cubre la divergencia de una mutación nuestra no aplicada; falta la rama «cualquier otra divergencia abre DIVERGENCIA_DE_MONTO en el acto» y los arranques del reloj (fecha efectiva del aumento, S10 al reanudar una PAUSED).
+  - sale:
+    - **Dado** una fila cuyo monto esperado —derivado, redondeado una sola vez hacia abajo— difiere del
+      `transaction_amount` del preapproval, porque el proveedor aceptó una mutación y no la aplicó
+    - **Cuando** pasan 3 días de reintentar la mutación
+    - **Entonces** **aparece sin que haya llegado ningún webhook**: se abre `DIVERGENCIA_DE_MONTO`; y la
+  - entra:
+    - **Dado** una fila cuyo monto esperado —derivado, redondeado una sola vez hacia abajo— difiere del
+      `transaction_amount` del preapproval
+    - **Cuando** la divergencia la abrió una mutación NUESTRA (`S30` o `S37`, que es también la de un aumento por BZ) y pasan 3 días
+      de reintentarla —contados desde esa transición; al reanudar una `PAUSED`, desde `S10`—, **o** la divergencia no la abrió ninguna mutación nuestra
+    - **Entonces** **aparece sin que haya llegado ningún webhook**: se abre `DIVERGENCIA_DE_MONTO` —en el segundo caso **en el
+      acto, sin reintento**—; y la
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185
+
+- **H-VA-A6-7** · REAL BLOQUEA · l. 226 — Falta que sobre la lápida de recepción la relectura de la salvedad 4 mira estado y cobros, NO el monto (no tiene versión contra la cual comparar).
+  - sale:
+    comparación **no corre** sobre una fila `PAUSED` ni sobre una cuyo preapproval la relectura ve
+      `cancelled`,
+  - entra:
+    comparación **no corre** sobre una fila `PAUSED`, ni sobre la lápida de recepción —que no tiene versión contra la cual
+      comparar un monto: ahí la relectura mira el estado y los cobros—, ni sobre una cuyo preapproval la relectura ve
+      `cancelled` (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:319),
+
+- **H-VA-A7a-3** · REAL BLOQUEA · l. 227 — El monto esperado del barrido entre el pedido de un downgrade y S38 (el del plan NUEVO, sin promos) y su ventana gemela de la migración entre S37 y S38 sólo están como «Cerrado» en 80-abiertos; ningún AC de B11 ni el catálogo lo dicen, y sin eso la comparación de monto abre DIVERGENCIA_DE_MONTO sobre cada downgrade pedido.
+  - dónde: AC:B11:9, Entonces (y la misma frase en las reglas de B11)
+  - sale:
+(nada)
+  - entra:
+    ; el **monto esperado** en las dos ventanas de un cambio encolado es: entre el pedido de un downgrade y el `S38` que lo aplica, el del plan **nuevo**, sin promos (el pedido ya mutó y escribió `cobros_restantes = 0`); entre `S37` y `S38` de una migración, el precio de lista de la versión destino para su ciclo, sin promos, salvo en el aumento de BZ, donde la promo viva se conserva y el monto esperado la descuenta (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:306, .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:271)
+
+- **H-VA-A6-9** · REAL BLOQUEA · l. 265 — La comprobación de pagos acreditados de la spec relee sólo SUCCEEDED; la fuente relee también PARTIALLY_REFUNDED y REFUNDED, y un REFUNDED contracargado abre CONTRACARGO sin P6.
+  - sale:
+    - **Dado** un pago nuestro `SUCCEEDED`, dentro de la ventana del plazo 18
+  - entra:
+    - **Dado** un pago nuestro `SUCCEEDED`, `PARTIALLY_REFUNDED` o `REFUNDED`, dentro de la ventana del plazo 18, releído por id
+    (y un caso más en «Entonces»:) si lo lee `charged_back` sobre un `SUCCEEDED`/`PARTIALLY_REFUNDED` corre `P6`; sobre un
+    `REFUNDED` **no corre `P6`**: `S14` abre `CONTRACARGO` con el pago colgado y nada más se mueve.
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:797, :806
+
+- **H-VA-A6-16** · REAL MENOR · l. 292 — La rama «más de una devolución candidata del mismo monto sobre un pago → no se elige, abre el motivo 18 con la fila CONFIRMED a la vista» sólo está en 80-abiertos.md:305; TRANS:B:RF2, AC:B6:10 y AC:B11:14 dicen «la fila toma la devolución de su monto» sin la rama ambigua.
+  - sale:
+    **con la misma clave** y, con un `200` sin cuerpo, la fila toma el id de la relectura del pago;
+  - entra:
+    **con la misma clave** y, con un `200` sin cuerpo, la fila toma el id de la relectura del pago —la devolución que ninguna fila nombra y cuyo monto es el de esa llamada; **si hay más de una candidata del mismo monto, no elige ninguna y abre el motivo 18 con la fila `CONFIRMED` a la vista** (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:854)—;
+
+- **H-VA-A6-5** · REAL BLOQUEA · l. 304 — (Sólo el resto no canario.) La spec no define cuándo «cierra» el registro de cobro del último ciclo (pasó a `processed` o venció su `expire_date`) ni que esa condición vale para toda terminal exenta, no sólo para el espejo en `recycling`.
+  - sale:
+    - **Cuando** tiene una marca abierta o un pago pendiente por `S19`, o el registro de cobro de su
+      último ciclo sigue abierto (un `CANCELLED` por el espejo con el registro en `recycling`), o la
+  - entra:
+    - **Cuando** tiene una marca abierta o un pago pendiente por `S19`, o el registro de cobro del último ciclo de su
+      preapproval sigue abierto —cerrar es pasar a `processed` o vencer su `expire_date`, y vale para toda terminal
+      exenta (el espejo o `S17`) y para la de la salvedad 4 ya confirmada; p. ej. un `CANCELLED` por el espejo con el
+      registro en `recycling`—, o la
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:209
+
+- **H-VA-A6-10** · REAL MENOR · l. 312 — La regla «una fila marcada SÍ se barre; lo que se suprime es el aviso, no la comparación» no está como tal; en la práctica la cubren S14 (no abre segunda marca del mismo motivo) y el correo agregado de DEC-OBS-001.
+  - sale:
+    abre `CANCELACIÓN_SIN_CONFIRMAR`; los cobros de mientras van a `COBRO_POSTERIOR_A_LA_BAJA`.
+  - entra:
+    abre `CANCELACIÓN_SIN_CONFIRMAR`; los cobros de mientras van a `COBRO_POSTERIOR_A_LA_BAJA`. Una fila con una marca abierta
+      **se sigue barriendo**: lo que se suprime es el aviso —no se re-emite una alerta por corrida sobre un caso ya abierto—,
+      nunca la comparación (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:922, :932).
+
+- **H-VB-B8-11** · REAL BLOQUEA · l. 347 — AC:B11:18 sólo abre PAGO_PENDIENTE_SIN_RAMA; la fuente manda primero resolver el pago por la rama que le corresponda y abrir la marca sólo si la rama no es determinable. Esa resolución no aparece en ninguna parte de B11: el implementador manda todo a mano.
+  - sale:
+    un pago retenido por `S19` que ninguna de las seis ramas alcanzó;
+  - entra:
+    dos pagos retenidos por `S19` cuya sucesión ya terminó sin que nadie ejecutara su destino, uno con su rama de `B/12` §5.3 determinable y otro sin rama determinable;
+
+- **H-VB-B8-11** · REAL BLOQUEA · l. 350 — AC:B11:18 sólo abre PAGO_PENDIENTE_SIN_RAMA; la fuente manda primero resolver el pago por la rama que le corresponda y abrir la marca sólo si la rama no es determinable. Esa resolución no aparece en ninguna parte de B11: el implementador manda todo a mano.
+  - sale:
+    - **Entonces** abre `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`, `PAGO_PENDIENTE_SIN_RAMA` y
+      `CORTESÍA_SIN_RE_EMITIR`, cada una con la acción que su motivo dice, sin ninguna llamada al
+      proveedor.
+  - entra:
+    - **Entonces** resuelve el primer pago por su rama y abre `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`,
+      `PAGO_PENDIENTE_SIN_RAMA` sólo sobre el segundo, con el pago colgado, y `CORTESÍA_SIN_RE_EMITIR`,
+      cada una con la acción que su motivo dice, sin ninguna llamada al proveedor. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:512-515)
+
+- **H-VA-A6-13** · REAL BLOQUEA · l. 414 — El barrido de creaciones sin respuesta de B/09 §7 (cada pocos minutos; con más de un pending que nombra la fila reusa el de date_created más reciente y cancela los otros con la relectura de S17 y sin correo; mientras la fila siga en PENDING_AUTHORIZATION sigue buscando por payer_email y cancela todo pending que la nombre y no sea su vínculo) no está: el catálogo copia B/05 §1.2, que dice «los duplicados viven en B/09 §7», y B11 sólo lista el barrido diario.
+  - dónde: nuevo AC:B11:23 después de AC:B11:22, con su TEST en «Testing esperado» (integración con DB, sobre el falso)
+  - sale:
+(nada)
+  - entra:
+    **AC:B11:23** — el barrido de creaciones reusa uno y cancela los duplicados
+    
+    - **Dado** una fila en `PENDING_AUTHORIZATION` cuya creación quedó sin respuesta, y el falso con dos `pending` cuyo `external_reference` la nombra y uno que nombra otra fila
+    - **Cuando** corre el barrido de creaciones
+    - **Entonces** vincula el de `date_created` más reciente, cancela el otro con la relectura de `S17` **sin mandar correo**, no toca el que nombra otra fila; y si en una corrida posterior, con la fila todavía en `PENDING_AUTHORIZATION`, aparece otro `pending` que la nombra, lo cancela igual.
+    
+    Fuente: [DEC-CONC-001](../01-decisiones-vigentes.md#dec-conc-001) · [FILA:B11](#fila-b11)
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1083
+
+- **H-VA-A6-14** · REAL BLOQUEA · l. 414 — Sin contar el canario (las 26 h del vigía, VA-A6-3), falta en B11 el registro de cada corrida (inicio, fin, filas leídas, filas fallidas), la definición de corrida completa (con fin y cero fallidas) y que el barrido le haga ping al monitor externo al terminar una completa; la spec sólo lo nombra de rebote y en 80-abiertos.
+  - dónde: nuevo AC:B11:24 con su TEST (integración con DB)
+  - sale:
+(nada)
+  - entra:
+    **AC:B11:24** — una corrida a medias no le da el ping al vigía
+    
+    - **Dado** el barrido con el falso fallando la lectura por id de una fila
+    - **Cuando** termina la corrida
+    - **Entonces** queda su registro con inicio, fin, filas leídas y una fallida, la corrida **no es completa** y **no hace ping**; una corrida sin fallidas deja su registro y hace ping al terminar.
+    
+    Fuente: [FILA:B11](#fila-b11)
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1119, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1134
+
+- **H-VB-B8-2** · REAL MENOR · l. 531 — B11 dice que `provider_link.cancelado_visto_en` nace en B3; la columna la construye B4 (B3.md:847 lo dice). Atribución de esquema; B11 no tiene migración propia, no cambia lo construido.
+  - sale:
+    (AD): `provider_link` con `cancelado_visto_en` y el `last_modified` de la última relectura, la
+    `reconciliation_mark` con su motivo y la `clase` de la suscripción, en `B3`;
+  - entra:
+    (AD): `provider_link` con el `last_modified` de la última relectura, la
+    `reconciliation_mark` con su motivo y la `clase` de la suscripción, en `B3`; la columna
+    `provider_link.cancelado_visto_en`, en [`B4`](B4.md#pieza-b4) (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:728);
+
+- **H-VA-A6-13** · REAL BLOQUEA · l. 565 — El barrido de creaciones sin respuesta de B/09 §7 (cada pocos minutos; con más de un pending que nombra la fila reusa el de date_created más reciente y cancela los otros con la relectura de S17 y sin correo; mientras la fila siga en PENDING_AUTHORIZATION sigue buscando por payer_email y cancela todo pending que la nombre y no sea su vínculo) no está: el catálogo copia B/05 §1.2, que dice «los duplicados viven en B/09 §7», y B11 sólo lista el barrido diario.
+  - dónde: nuevo bullet después de «El correo antes de cada cancelación…» en «Cron y outbox»
+  - sale:
+(nada)
+  - entra:
+    - **El barrido de creaciones sin respuesta**, **cada pocos minutos** (la cadencia exacta la propone el PR: BS): busca en el proveedor **sólo por `payer_email`, sin filtro de estado**, y clasifica de nuestro lado; reusa un `pending` **sólo si su `external_reference` nombra esta fila**; **si hay más de uno que la nombra, reusa el de `date_created` más reciente y cancela los otros con la regla de relectura de `S17` y sin correo**, porque no es una baja; tras una búsqueda vacía la corrida siguiente vuelve a crear con una clave nueva persistida antes de llamar; y **mientras la fila siga en `PENDING_AUTHORIZATION` sigue buscando** y cancela todo `pending` que la nombre y no sea su vínculo. Es idempotente: lo único que escribe es esa cancelación. ([DEC-CONC-001](../01-decisiones-vigentes.md#dec-conc-001)) (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1083, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1098)
+
+- **H-VA-A6-14** · REAL BLOQUEA · l. 565 — Sin contar el canario (las 26 h del vigía, VA-A6-3), falta en B11 el registro de cada corrida (inicio, fin, filas leídas, filas fallidas), la definición de corrida completa (con fin y cero fallidas) y que el barrido le haga ping al monitor externo al terminar una completa; la spec sólo lo nombra de rebote y en 80-abiertos.
+  - dónde: nuevo bullet en «Cron y outbox», después del de creaciones (H-VA-A6-13)
+  - sale:
+(nada)
+  - entra:
+    - **La vida del barrido**: cada corrida deja un registro con **inicio, fin, cuántas filas leyó y cuántas fallaron**; **una corrida es completa si tiene fin y ninguna fila fallida**; **al terminar una corrida completa el barrido le hace ping al monitor de cron externo**, que alerta si pasan 26 h sin ping. El nombre de la tabla del registro lo propone el PR (BS; `80-abiertos`: el registro no tiene entidad en `B/02`); la correlación y el id de corrida son de `U2`. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1119, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1123, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1134)
+
+- **H-VB-B8-11** · REAL BLOQUEA · l. 838 — AC:B11:18 sólo abre PAGO_PENDIENTE_SIN_RAMA; la fuente manda primero resolver el pago por la rama que le corresponda y abrir la marca sólo si la rama no es determinable. Esa resolución no aparece en ninguna parte de B11: el implementador manda todo a mano.
+  - sale:
+    Sobre las filas sembradas se abren las tres marcas y el falso no registra ninguna llamada.
+  - entra:
+    Sobre las filas sembradas el pago con rama determinable se resuelve por ella sin marca, se abren las tres marcas (la 4 sólo sobre el pago sin rama) y el falso no registra ninguna llamada.
+
+- **H-VB-B8-3** · REAL MENOR · l. 903 — B11 dice que el barrido se prende con los crons en el paso 3; el paso 3 despliega con los crons apagados y se prenden en el 5. MENOR: no cambia lo que la pieza construye y el procedimiento del corte (30-el-corte.md) lo dice bien.
+  - sale:
+    el barrido se prende con los crons en el paso 3 del corte.
+  - entra:
+    el barrido se prende con los crons en el paso 5 del corte; el paso 3 despliega con los crons apagados (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:152, :158).
+
+### `10-corte/B13a.md`
+
+- **H-VA-A7a-13** · REAL BLOQUEA · l. 166 — AC:B13a:1 reduce la fila 3-bis a «qué addons recurrentes se cancelan y por cuánto» y pierde lo que la fila exige decir: desde ACTIVE el cobro se corta hoy y se siguen viendo hasta el fin del servicio, desde otros estados se apagan hoy, no se promete cortar el cobro de uno en autorización o en mora, y si vuelve los contrata de nuevo. Ninguna otra pieza lo toma (B10 no; el reparto la deja en B13a).
+  - sale:
+    entero que el grace le venía dando; y antes de confirmar dice qué addons recurrentes se cancelan y
+      por cuánto (fila 3-bis), una enumeración vacía mientras no haya addons (AS).
+  - entra:
+    entero que el grace le venía dando; y antes de confirmar dice qué addons recurrentes se cancelan y
+      por cuánto (fila 3-bis), una enumeración vacía mientras no haya addons (AS): **desde `ACTIVE` su cobro
+      se corta hoy, en el mismo acto que el del plan, y se siguen viendo hasta el fin del servicio**; desde
+      los otros estados se apagan hoy con ella; **no promete** cortar hoy el cobro de un addon que espera
+      autorización o está en mora, que se apaga recién al fin del servicio; y **si vuelve, los contrata de
+      nuevo**, no se reanudan (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:109,
+      fila 3-bis; `R1-a`, `F-8CA2-003`).
+
+- **H-VB-B8-12** · REAL MENOR · l. 188 — AC:B13a:3 atribuye al criterio de B13 todo el contenido de la fila 10; el criterio de B13 sólo pide «al volver se pierde la promo». El resto es de B7 por CA (AC:B7:30). Redundancia de verificación, no cambia lo construido.
+  - sale:
+    - **Entonces** el aviso cumple lo que el criterio de `B13` le pide, y `B13a` lo verifica en su salida:
+      dice lo que pierde **como turista**, no sólo como anfitrión, y **los días de addon de única vez que
+      se le van a ir**; cómo volver según el método de pago —con tarjeta, volver a suscribirse; con pago
+      manual, registrar la cuota adeudada—; y, con tarjeta, **«si tenías una promo, al volver la
+      perdés»**, porque la vuelta es una sucesión que no re-apunta la redención.
+  - entra:
+    - **Entonces** el aviso cumple lo que el criterio de `B13` le pide, y `B13a` lo verifica en su salida:
+      con tarjeta, **«si tenías una promo, al volver la perdés»**, porque la vuelta es una sucesión que no
+      re-apunta la redención (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1059, 3b). Lo
+      demás del aviso —lo que pierde como turista, los días de addon de única vez y cómo volver según el
+      método de pago— es el criterio de `B7` ([AC:B7:30](B7.md#ac-b7-30), CA).
+
+- **H-VB-B8-13** · REAL MENOR · l. 261 — AC:B13a:9 muestra pagos, cantidad, total y propuesta en toda marca; la fuente lo pide «en las que devuelven plata».
+  - sale:
+    desde cuándo está abierta, todos los pagos
+      colgados con su cantidad, el total y la propuesta del sistema,
+  - entra:
+    desde cuándo está abierta y, en las que devuelven plata, todos los pagos
+      colgados con su cantidad, el total y la propuesta del sistema (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:216),
+
+- **H-VA-A7-pista-14** · REAL MENOR · confirmado por el orquestador · l. 262 — El listado accionable de B13a no dice que un pago colgado que el banco ya devolvió por contracargo se muestra con el contracargo y fuera del default (B/19 §6, F-8V3B2-002). No mueve plata (RF2 relee el pago y no devuelve), pero el listado propone una devolución que no va a salir.
+  - sale:
+    colgados con su cantidad, el total y la propuesta del sistema, con los motivos que devuelven plata
+      adelante;
+  - entra:
+    colgados con su cantidad, el total y la propuesta del sistema, con los motivos que devuelven plata
+      adelante; **un pago colgado que el banco ya devolvió por un contracargo se muestra con el
+      contracargo y fuera del default**, y se resuelve sin devolver (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:246, `F-8V3B2-002`);
+
+- **H-VA-A7a-19** · REAL BLOQUEA · l. 448 — La fila 22 de B/19 §4 (quien pagó mientras ya mandábamos cancelar, espejo de R18 o S7 a CANCEL_SCHEDULED: «tu pago entró y tenés servicio hasta el {fecha}; ya estaba cancelada, no se renueva: volvé a suscribirte», y que sus addons recurrentes también se cortaron) no la construye ninguna pieza: no está en el outbox, ni en B7 (dueña del espejo y de S7), ni en B13a. Por el reparto de BH, las filas sin acto posterior quedan en B13a.
+  - dónde: UI web (bullet Web) + un AC nuevo AC:B13a:N con su TEST e2e web
+  - sale:
+    - **Web** (Astro): la pricing por vertical, Turista incluida, con las tres situaciones del §47; Mi
+  - entra:
+    - **Web** (Astro): **la fila 22 del `B/19` §4** —en el aviso y en Mi Suscripción de quien pagó el período mientras ya habíamos mandado cancelar su preapproval y quedó en `CANCEL_SCHEDULED` por el espejo (`R18`) o por `S7`: *«tu pago entró y tenés servicio hasta el {fecha}; tu suscripción ya estaba cancelada, así que no se renueva: si querés seguir, volvé a suscribirte»*, con la fecha de su `fin_de_servicio`, y si tiene addons recurrentes que dependían de ella, que su cobro también se cortó y se siguen viendo hasta la misma fecha— (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:142; owner 2026-09-27, `R18`, `R18-b`); la pricing por vertical, Turista incluida, con las tres situaciones del §47; Mi
+
+- **H-VA-A7a-15** · REAL BLOQUEA · l. 453 — La fila 10-bis de B/19 §4 (la confirmación del admin ANTES de registrar un pago manual tardío por MP4: qué devuelve la reapertura y qué no, que una ficha PURGED no vuelve, que sobre una predecesora el pago no reactiva y queda por S19, qué período paga y cuándo se abre la próxima cuota) no está en la spec: sólo existe el correo al cliente después de reabrir (02-nucleo-outbox.md:308). AC:B5:18 y la UI de B5/B13a no la tienen.
+  - dónde: UI admin (bullet Admin) + un AC nuevo AC:B13a:N con su TEST e2e admin
+  - sale:
+    - **Admin**: el listado accionable de las marcas (`B/19` §6); la acción 14; el editor de precios
+  - entra:
+    - **Admin**: **la confirmación de registrar un pago manual tardío (`MP4`), la fila 10-bis del `B/19` §4**, antes de confirmar: qué devuelve la reapertura —el servicio y la publicación (`S7`), y la ficha archivada vuelve sola si el cupo le alcanza (`PB7`)— y qué no —el contenido que el hard delete ya borró, y una ficha `PURGED` no se reactiva—; **si la fila es la predecesora de una sucesión en curso, que el pago NO reactiva** y queda pendiente por `S19`; y **qué período paga esta transferencia y cuándo se abre la próxima cuota** (dentro del período pagado: ese período y la cuota del día en que termina; atraso mayor a un período: se reimputa al que arranca hoy y la próxima cuota se abre dentro de un ciclo) (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:119); el listado accionable de las marcas (`B/19` §6); la acción 14; el editor de precios
+
+- **H-VA-A7a-14** · FUENTE BLOQUEA · l. 76 — La rama desde PAUSED (S22) de la fila 8 —termina hoy, pierde los meses de cortesía, salvo la que vive del crédito con «seguís hasta el …»— no la construye ninguna pieza: B13a la deja fuera (al corte no hay PAUSED) y B8b, dueña de S22 por AR, no la recibe porque el reparto inferido de la fuente no la nombra, contra BH.
+  - sale:
+    Capítulos: `19` (salvo las filas de actos posteriores, de arriba; las 13 y 13-bis son de esta pieza,
+  - entra:
+    Capítulos: `19` (salvo las filas de actos posteriores, de arriba, y la rama desde `PAUSED` de la fila 8, que va con `S22` a `B8b`; las 13 y 13-bis son de esta pieza,
+
+### `10-corte/B3.md`
+
+- **H-VA-A5-5** · REAL BLOQUEA · l. 1058 — AC:B3:14 y TEST:B3:14 usan el verbo «declarar» con el sujeto equivocado (la fila marcada es la predecesora, la que es sucedida) y omiten la excepción SUSPENDED de tarjeta y la relectura obligatoria.
+  - sale:
+    la fila marcada ocupa el candado y no declara sucesión
+    salvo desde `CANCEL_SCHEDULED`.
+  - entra:
+    la fila marcada ocupa el candado y ningún `sucede_a` se escribe apuntándola, salvo en `CANCEL_SCHEDULED` o
+    `SUSPENDED` de tarjeta con la relectura por id que la ve `cancelled`; con la relectura que la ve viva, se rechaza.
+
+- **H-VA-A5-5** · REAL BLOQUEA · l. 355 — AC:B3:14 y TEST:B3:14 usan el verbo «declarar» con el sujeto equivocado (la fila marcada es la predecesora, la que es sucedida) y omiten la excepción SUSPENDED de tarjeta y la relectura obligatoria.
+  - sale:
+    - **Cuando** la misma persona intenta un alta nueva en esa vertical, y cuando la fila intenta declarar
+      una sucesión
+    - **Entonces** el alta se rechaza porque la fila marcada **ocupa** el candado; la fila marcada no puede
+      declarar una sucesión, salvo desde `CANCEL_SCHEDULED`; y su servicio sigue en su estado real: la marca
+      es para el operador, no para el cliente.
+  - entra:
+    - **Cuando** la misma persona intenta un alta nueva en esa vertical, y cuando una sucesora intenta escribir
+      su `sucede_a` apuntando a la fila marcada
+    - **Entonces** el alta se rechaza porque la fila marcada **ocupa** el candado; **ningún `sucede_a` puede escribirse
+      apuntando a la fila marcada** (no puede ser sucedida), salvo cuando está en `CANCEL_SCHEDULED` o es una `SUSPENDED`
+      de pagador con tarjeta, **y en los dos casos sólo si una relectura del preapproval por su id lo confirma cancelado**
+      (si sigue vivo, se rechaza); una marca abierta sobre una predecesora con la sucesión ya en curso no la deshace; y su
+      servicio sigue en su estado real: la marca es para el operador, no para el cliente.
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:288, :296
+
+- **H-VA-A5-1** · REAL BLOQUEA · l. 875 — La spec no dice que cobros_restantes es anulable (nulo=forever), ni con qué valor nace al canjear, ni que promo_code guarda la duración del §33.
+  - sale:
+    precisada por BG). Son `promo_code` (`UNIQUE(codigo)`) y `promo_redemption` (`UNIQUE(promo_code_id,
+    user_id)`, `cobros_restantes` nunca negativo) (`B/02` §2.4).
+  - entra:
+    precisada por BG). Son `promo_code` (`UNIQUE(codigo)`), que guarda la duración del §33 —primer cobro, N cobros o forever—, y `promo_redemption` (`UNIQUE(promo_code_id,
+    user_id)`, con `cobros_restantes` **anulable**: nulo = forever; N > 0 = quedan N cobros con descuento; 0 = agotado; nunca negativo). **Se inicializa al canjear** con la duración del código: primer cobro = 1, N cobros = N, forever = nulo (`B/02` §2.4).
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575, :576, :666
+
+- **H-ORQ-1** · REAL BLOQUEA · confirmado por el orquestador · l. 888 — El predicado del UNIQUE parcial de addon_instance (lote Y: también ACTIVE con suscripción de complemento) no está en ESQ:8 (B3, que crea la tabla al corte) y B10 lo da con el predicado viejo (sólo PENDING_AUTHORIZATION).
+  - sale:
+    la compra es la identidad `UNIQUE(dueño, producto,
+    objetivo)` parcial sobre `addon_instance`, con `UNIQUE(pedido)`
+  - entra:
+    la compra es la identidad `UNIQUE(dueño, producto,
+    objetivo) WHERE estado = 'PENDING_AUTHORIZATION' OR (estado = 'ACTIVE' AND` la suscripción de complemento `IS NOT NULL)` sobre `addon_instance` (en el recurrente frena también si ya hay una instancia viva igual; FASE 9 vuelta 3, owner 2026-09-30, lote Y), con `UNIQUE(pedido)` (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575)
+
+- **H-VA-A5-3** · REAL BLOQUEA · l. 888 — La identidad UNIQUE(dueño, producto, objetivo) de addon_instance no dice que el objetivo nulo (USER/GLOBAL) choca con otro nulo; con NULLs distintos por defecto el doble clic pasa.
+  - sale:
+    la compra es la identidad `UNIQUE(dueño, producto,
+    objetivo)` parcial sobre `addon_instance`, con `UNIQUE(pedido)`:
+  - entra:
+    la compra es la identidad `UNIQUE(dueño, producto,
+    objetivo)` parcial sobre `addon_instance` —**en la que el objetivo se compara también cuando no nombra una fila: un `USER` o un `GLOBAL` choca con otro del mismo producto, así que un objetivo nulo no queda distinto de otro nulo**—, con `UNIQUE(pedido)` (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575):
+
+- **H-VA-A5-4** · REAL BLOQUEA · l. 888 — La spec no fija que addon_product.version_id y la versión anclada de addon_instance no son anulables.
+  - sale:
+    Son `addon_product` y `addon_instance` (`B/02` §2.4);
+  - entra:
+    Son `addon_product` —con `version_id` → `addon_version` **no anulable**: sin ella el producto no se puede comprar— y `addon_instance` —con la `addon_version` que ancló al comprarse, **no anulable**— (`B/02` §2.4; Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:574, :575);
+
+### `10-corte/B5.md` — generado: `scripts/generadores/g8/src/B5.md`
+
+- **H-VA-A5-2** · REAL BLOQUEA · l. 1053 — El CHECK de exactamente una referencia (payment|manual_payment) de `receipt` no está en el modelo, el AC ni el TEST de B5.
+  - sale:
+    y sus dos `FK` posibles, y el par de columnas del pagador de `receipt`;
+  - entra:
+    y sus dos `FK` posibles, y el CHECK de una sola referencia y el par de columnas del pagador de `receipt` —un comprobante con las dos referencias, o con ninguna, se rechaza—;
+
+- **H-VA-A6-2** · REAL BLOQUEA · l. 153 — La prueba explícita del requisito del owner (dos Webhooks a 0,5 s + un IPN en el mismo segundo → una escritura y un correo) no está en ningún AC ni TEST; sólo en la implicación de DEC-MP-009 y en 80-abiertos.
+  - sale:
+    Dado un reembolso que emite tres notificaciones en dos formatos, o un reintento aprobado dentro del
+    mismo registro de cobro que llega con el mismo id del hecho
+  - entra:
+    Dado un reembolso que emite tres notificaciones en dos formatos, o un reintento aprobado dentro del
+    mismo registro de cobro que llega con el mismo id del hecho, **o un mismo `payment` aprobado entregado dos veces por
+    Webhooks a medio segundo y una por IPN en el mismo segundo, en cualquier orden**
+    (y en «Entonces», al final:) ; y el `payment` duplicado deja **exactamente una escritura, un correo y ningún aviso de
+    cobertura doble**, con las tres entregas guardadas en `provider_notification` con su canal y la de IPN en ningún otro lado.
+    Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:559 (+ un TEST:B5 de integración que lo ejercite: 2×Webhooks +0,5 s + 1×IPN, cuenta escrituras de `payment`, filas de outbox de correo y avisos de cobertura)
+
+- **H-VB-B7-1** · REAL MENOR · l. 170 — AC:B5:3 dice que el registro manual que llega segundo «falla»; desde el lote W lo asienta MP6 (REGISTERED + marca 20), que la misma pieza ya trae en AC:B5:19.
+  - dónde: scripts/generadores/g8/src/B5.md:170
+  - sale:
+    registro manual que llega segundo falla, y antes de registrar se relee si hay un pago del proveedor
+  - entra:
+    registro manual que llega segundo no escribe cobertura: lo asienta `MP6` con la marca 20 ([AC:B5:19](#ac-b5-19)), y antes de registrar se relee si hay un pago del proveedor (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1876, MP6, lote W)
+
+- **H-VA-A5-2** · REAL BLOQUEA · l. 588 — El CHECK de exactamente una referencia (payment|manual_payment) de `receipt` no está en el modelo, el AC ni el TEST de B5.
+  - sale:
+    `UNIQUE(marca, pago)`; y `receipt` tiene `nombre_pagador` y `correo_pagador`, las dos nulas o las dos
+    escritas.
+  - entra:
+    `UNIQUE(marca, pago)`; y `receipt` tiene el CHECK de una sola referencia al cobro y `nombre_pagador` y `correo_pagador`, las dos nulas o las dos
+    escritas.
+
+- **H-VA-A5-2** · REAL BLOQUEA · l. 828 — El CHECK de exactamente una referencia (payment|manual_payment) de `receipt` no está en el modelo, el AC ni el TEST de B5.
+  - sale:
+    - **`receipt`**: el cobro que certifica, número, PDF, `nombre_pagador` y `correo_pagador`;
+      `UNIQUE(numero)`, numerado
+  - entra:
+    - **`receipt`**: el cobro que certifica —un `payment` o un `manual_payment`, con un CHECK de que exactamente una de las dos referencias es no nula—, número, PDF, `nombre_pagador` y `correo_pagador`;
+      `UNIQUE(numero)`, numerado (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383)
+
+- **H-VA-A7b-1** · REAL BLOQUEA · l. None — B/20 §5.1 punto 3 (revisión del owner N3, L3-e; DEC-TEST-003) manda que cada unidad escriba la prueba de punta a punta de su flujo (falso como servidor, reloj adelantable, correo capturado, aserciones sobre B/19 §4 y «nuestro correo antes»): alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12. La spec sólo la tiene en B3 (AC:B3:33) y B7 (AC:B7:29); B5, B8a, B8b, B10 y B12 no tienen ese e2e en sus AC ni TEST (sus e2e son de superficies sueltas).
+  - dónde: AC nuevo + TEST e2e web/admin en «Testing esperado»
+  - sale:
+(nada)
+  - entra:
+    **AC:B5:N** — la revocación, de punta a punta. Dado los builds de la API, la web y el admin contra el Mercado Pago falso como servidor, con el reloj adelantable y el correo capturado; Cuando corre el flujo de la revocación del `B/20` §5; Entonces se cumplen las aserciones sobre el contenido de las filas del `B/19` §4 que ese flujo muestra y sobre el orden «nuestro correo antes que el del proveedor». (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762)
+
+### `10-corte/B7.md` — generado: `scripts/generadores/g8/src/B7.md`
+
+- **H-VB-B7-3** · REAL MENOR · l. 1471 — B7 dice que la validación grace<ciclo la provee la acción de precios de B2; la fuente la pone también en «publicar una versión de plan», que construye V2. Nota de dependencias incompleta; no cambia lo que B7 construye.
+  - dónde: scripts/generadores/g8/src/B7.md:1471
+  - sale:
+    - **La validación del grace** (no más corto que el ciclo) la provee la acción de precios de `B2`
+  - entra:
+    - **La validación del grace** (menor que el ciclo más corto) la proveen la acción de precios de `B2` y *«publicar una versión de plan»*, de [`V2`](V2.md#pieza-v2) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:133)
+
+- **H-VA-A7a-16** · REAL BLOQUEA · l. 1481 — El aviso de suspensión por contracargo a quien estaba en PAUSED por cortesía debe decir además que la cortesía terminó (cierre del owner 2026-09-25 en la fila 10-ter), y ni AC:B7:10 ni la UI de B7, que construye ese correo, lo dicen.
+  - sale:
+    servicio»*), no el de mora (
+  - entra:
+    servicio»*; a quien estaba en una `PAUSED` por cortesía, además, que la cortesía terminó), no el de mora (
+
+- **H-VA-A7a-16** · REAL BLOQUEA · l. 217 — El aviso de suspensión por contracargo a quien estaba en PAUSED por cortesía debe decir además que la cortesía terminó (cierre del owner 2026-09-25 en la fila 10-ter), y ni AC:B7:10 ni la UI de B7, que construye ese correo, lo dicen.
+  - sale:
+    el pago colgado; y el aviso es el correo propio de *«suspendido por contracargo»*, no el de mora.
+  - entra:
+    el pago colgado; y el aviso es el correo propio de *«suspendido por contracargo»*, no el de mora, y desde `PAUSED · COURTESY` dice además que la cortesía terminó (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120, fila 10-ter, cierre del owner 2026-09-25).
+
+- **H-VA-A7a-17** · REAL MENOR · l. 217 — El ⚠️ vivo de la fila 10-ter (si el texto final del aviso de contracargo dice «ya no se le va a cobrar» y «una persona sigue el caso») no figura en 80-abiertos ni en el catálogo. No es pregunta al owner: BS lo resuelve (el texto de un aviso lo propone el PR de B7 y, como es texto al cliente, lo aprueba el owner en el PR).
+  - dónde: scripts/generadores/g8/src/B7.md (AC:B7:10 o las reglas del aviso)
+  - sale:
+(nada)
+  - entra:
+    El texto final del aviso dice además, si producto lo decide, que ya no se le va a cobrar y que una persona sigue el caso: lo propone el PR de `B7` y lo aprueba el owner en el PR, por ser texto al cliente (owner BS) (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120)
+
+- **H-VB-B7-2** · REAL MENOR · l. 451 — AC:B7:25 incluye S36 en la rama 6 y atribuye a S18 la marca REEMBOLSO_POR_CONFIRMAR sin la excepción «tras S36 no hay marca»; lo que la pieza construye (la llamada) no cambia y B8b ya tiene la excepción.
+  - dónde: scripts/generadores/g8/src/B7.md:451
+  - sale:
+    predecesora la marca `REEMBOLSO_POR_CONFIRMAR` con el pago colgado va al criterio de `B8b`.
+  - entra:
+    predecesora la marca `REEMBOLSO_POR_CONFIRMAR` con el pago colgado —salvo tras `S36`, cuyo `RF1` ya lo devuelve— va al criterio de `B8b`. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:711, `V2-o`)
+
+### `10-corte/B8a.md`
+
+- **H-VB-B8-7** · REAL MENOR · l. 160 — AC:B8a:3 / TEST:B8a:3 dan la exclusión del USER sin la cláusula «ni un ancla viva» de S11/S32. El enlace TRANS:B:S11 la trae; omisión de resumen que el implementador puede perder.
+  - sale:
+    el `USER` **no entra** en la selección, porque le queda una principal viva fuera de la
+      exclusión
+  - entra:
+    el `USER` **no entra** en la selección, porque le queda una principal viva fuera de la
+      exclusión —y tampoco entraría con un ancla viva— (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161)
+
+- **H-VB-B8-7** · REAL MENOR · l. 524 — AC:B8a:3 / TEST:B8a:3 dan la exclusión del USER sin la cláusula «ni un ancla viva» de S11/S32. El enlace TRANS:B:S11 la trae; omisión de resumen que el implementador puede perder.
+  - sale:
+    Con la otra principal del `USER` en `CANCEL_SCHEDULED`, el
+    `USER` sí entra (`V2-c`).
+  - entra:
+    Con la otra principal del `USER` en `CANCEL_SCHEDULED` y sin ancla viva, el
+    `USER` sí entra (`V2-c`); con un ancla viva, no entra.
+
+- **H-VA-A7b-1** · REAL BLOQUEA · l. None — B/20 §5.1 punto 3 (revisión del owner N3, L3-e; DEC-TEST-003) manda que cada unidad escriba la prueba de punta a punta de su flujo (falso como servidor, reloj adelantable, correo capturado, aserciones sobre B/19 §4 y «nuestro correo antes»): alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12. La spec sólo la tiene en B3 (AC:B3:33) y B7 (AC:B7:29); B5, B8a, B8b, B10 y B12 no tienen ese e2e en sus AC ni TEST (sus e2e son de superficies sueltas).
+  - dónde: AC nuevo + TEST e2e web
+  - sale:
+(nada)
+  - entra:
+    **AC:B8a:N** — la cancelación (la baja), de punta a punta, con el mismo arnés (falso como servidor, reloj adelantable, correo capturado) y las mismas aserciones sobre `B/19` §4 y «nuestro correo antes» (la parte de `B8` que es del corte). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762)
+
+### `10-corte/B9a.md`
+
+- **H-VA-A5-6** · REAL MENOR · l. 239 — «al menos un ancla» está en la columna de restricciones de permanent_grant; AC:B9a:8 lo enuncia como consecuencia y no como restricción.
+  - sale:
+    revocados no cuentan; y un grant sin ningún ancla no otorga nada.
+  - entra:
+    revocados no cuentan; y un grant sin ningún ancla no se escribe: el grant lleva al menos un ancla, o no otorga nada (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579).
+
+- **H-VB-B8-9** · REAL MENOR · l. 510 — TEST:B9a:15 prueba la migración del UNIQUE parcial sobre filas sembradas antes de la restricción, pero la tabla nace en la misma migración de B9a (AD) y está vacía hasta el paso 3b: el escenario no existe. Test sin fuente; no cambia lo construido.
+  - sale:
+    | [AC:B9a:8](#ac-b9a-8) | [TEST:B9a:8](#test-b9a-8), [TEST:B9a:15](#test-b9a-15) | migración desde cero, migración sobre datos |
+  - entra:
+    | [AC:B9a:8](#ac-b9a-8) | [TEST:B9a:8](#test-b9a-8) | migración desde cero |
+
+- **H-VB-B8-9** · REAL MENOR · l. 620 — TEST:B9a:15 prueba la migración del UNIQUE parcial sobre filas sembradas antes de la restricción, pero la tabla nace en la misma migración de B9a (AD) y está vacía hasta el paso 3b: el escenario no existe. Test sin fuente; no cambia lo construido.
+  - sale:
+    el bloque entero de `<a id="test-b9a-15"></a>` hasta «y un segundo vivo se rechaza.» (l. 620-630)
+  - entra:
+    (nada; la tabla nace con la restricción en la migración de la rama, AD: no hay filas previas que probar. Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:24)
+
+### `todas las piezas (10-corte/*.md, 20-fase-*/*.md; B4–B7 en g8/src)`
+
+- **H-VB-B5-2** · REAL MENOR · l. None — U1:816 dice que la fuente no fija las etiquetas kind-*/area-*; el default de BS (5º 📌 de DEC-METH-019) las fija: `kind-spec` más las `area-*` de cada fila.
+  - dónde: sección «Labels de Linear» de cada pieza
+  - sale:
+    - Las etiquetas `kind-*`/`area-*` no las fija la fuente: las propone el PR de la pieza y quedan escritas acá al mergear (…)  [U1, U2]
+  - entra:
+    - Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner BS, con sus defaults en el 5º 📌 de DEC-METH-019)  [las 30 piezas, como U3]
+

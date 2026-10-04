@@ -1,0 +1,39 @@
+{
+  "arrancado": "2026-09-15T12:26:16-03:00",
+  "stamp": "20260915T152606Z",
+  "ampliado": "2026-09-15T12:29:06-03:00",
+  "sujetos": [
+    {
+      "slug": "cortesia-piso",
+      "id": "30c03ccacea045e0a6f9e0a44c870b02"
+    },
+    {
+      "slug": "monto-baja",
+      "id": "5e4c5e5c537248f7b0fed24ed12ac3ff"
+    },
+    {
+      "slug": "monto-sube",
+      "id": "4f60c31c3d5142068dd16a4f6afb3e12"
+    },
+    {
+      "slug": "pausa-real",
+      "id": "747cc456534d495b8705027b96785387"
+    },
+    {
+      "slug": "renov-falla3",
+      "id": "0e678ead9616489e976c13ef22a1f0ae"
+    },
+    {
+      "slug": "renov-ok",
+      "id": "930a7596704f4d3ba3cd31a180b4bfcf"
+    },
+    {
+      "slug": "sin-autorizar",
+      "id": "bf9b6feba3cc4a9d994754648b850a6a"
+    },
+    {
+      "slug": "cancelada-no-cobra",
+      "id": "6738c7fb2a404737b28ca232a8a0d0ab"
+    }
+  ]
+}

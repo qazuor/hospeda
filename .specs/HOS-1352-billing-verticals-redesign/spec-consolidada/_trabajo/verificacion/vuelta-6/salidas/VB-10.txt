@@ -1,0 +1,14 @@
+# VB-10 · spec → fuente · 10-corte/B7.md, 10-corte/B8a.md
+
+## Hallazgos
+
+10-corte/B7.md:1547 · «Después de una suspensión por contracargo, el alta de otra suscripción en esa vertical exige que soporte habilite primero la cuenta; sin esa habilitación no se abre el checkout.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120 («si puede volver antes de que la disputa se resuelva lo contesta el texto base: se lo ofrece en el mismo aviso, “mientras se resuelve”»; «podés volver cuando quieras»). Agrega una habilitación de soporte sin soporte vivo en la fuente ni en las precisiones de DEC-SUB-020 o las decisiones del owner; impediría volver por el checkout hasta una intervención adicional. · BLOQUEA
+
+10-corte/B8a.md:85 · «cobro acreditado, sustituida por la fecha del próximo cobro cuando ésta sea posterior.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161 («La fecha sale de los cobros acreditados, nunca de la fecha del próximo cobro»; «La copia de la fecha del próximo cobro no entra»). La precisión R17 admite el crédito pagado de una sucesora, no sustituir la fórmula por next_payment_date. El ejemplo extendería servicio sin pago y contradice también AC:B8a:1, líneas 128–132, y 04-catalogos.md:3060. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B7.md | 1–1819 | 430 | 1 | 0 |
+| 10-corte/B8a.md | 1–719 | 180 | 1 | 0 |

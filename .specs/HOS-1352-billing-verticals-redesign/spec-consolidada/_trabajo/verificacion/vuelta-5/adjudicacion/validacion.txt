@@ -1,0 +1,19 @@
+Validación documental de la adjudicación de vuelta 5
+
+H5-VB-06-2 10-corte/V5.md:1356 literal único OK
+H5-VB-08-4 10-corte/B3.md:1268 literal único OK
+H5-VB-04-1 10-corte/U1.md:790 literal único OK
+H5-VB-07-4 20-fase-4/V7.md:1067 literal único OK
+H5-VB-07-5 10-corte/V8a.md:648 literal único OK
+H5-VB-07-6 20-fase-4/V8b.md:306 literal único OK
+H5-VB-07-7 10-corte/V9a.md:312 literal único OK
+H5-G1-5 01-decisiones-vigentes.md:13745 literal único OK
+H5-G1-6 01-decisiones-vigentes.md:13989 literal único OK
+H5-G1-7 01-decisiones-vigentes.md:14059 literal único OK
+
+26 informes finales; 73 denuncias = 61 detecciones de canarios + 12 denuncias no-canarias.
+42 canarios; 39 detectados por el bloque propio.
+12 denuncias no-canarias = 11 únicos; el único duplicado es el transporte de cobertura.
+7 correcciones REAL y 3 efectos esperados de GENERADOR: todos los sale son literales únicos de pristina.
+Los cinco entregables requeridos existen y el JSON se parsea. Propuestas no aplicadas.
+No se ejecutaron los generadores de la spec ni build/tests del producto: el alcance es documental.

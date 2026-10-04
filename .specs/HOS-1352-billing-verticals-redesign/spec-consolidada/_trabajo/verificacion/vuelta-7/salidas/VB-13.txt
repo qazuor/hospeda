@@ -1,0 +1,23 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md, 20-fase-3/B10.md, 80-abiertos.md
+
+## Hallazgos
+
+20-fase-3/B10.md:41 · «`PENDING_AUTHORIZATION` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148 («`ACTIVE` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como título»); CD y CE siguen vigentes en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:183 y :192, y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535 dice «No pasa por `PENDING_AUTHORIZATION` porque no hay nada que autorizar». Contradicción interna con AC:B10:12 (línea 1435): la fila de alcance dejaría el addon gratuito esperando una autorización inexistente · BLOQUEA
+
+80-abiertos.md:174 · «cada clave lleva **tres** atributos declarados —scope, estrategia de agregación y **clase** (§3.4)—» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 («cada clave lleva **cuatro**»), :574 («atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—»); omite `enforcementStrategy`. DEC-ENT-005 mantiene la clase como cuarto atributo en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054; ninguna precisión posterior consultada elimina el atributo omitido · BLOQUEA
+
+80-abiertos.md:355 · «los 3 días del reintento de monto corren desde su fecha efectiva» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:742 («reintento de monto de un aumento corren desde `S37`, la transición que muta el monto siete días antes de la fecha efectiva»). BZ y la precisión de CC en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1495–1498 conservan la mutación anticipada. La frase retrasa siete días el origen del plazo de conciliación; también contradice 10-corte/B11.md:250, que lo cuenta desde S37 · BLOQUEA
+
+80-abiertos.md:411 · «Hasta cerrar la consulta sobre el silencio ante un aumento, toda contratación nueva requiere una aceptación firmada fuera de la plataforma y cargada por soporte.» · sin soporte; fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92–94 y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1446–1455 conservan la decisión de «avanzar así y corregir si la consulta legal dice otra cosa». La aceptación activa es una alternativa condicional para aumentos, no un requisito vigente para altas. La búsqueda en las fuentes no encuentra la firma externa ni su carga por soporte; agrega una guarda y un procedimiento que impedirían las contrataciones previstas · BLOQUEA
+
+80-abiertos.md:453 · «llegada la fecha efectiva **el monto se muta automáticamente**» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1495–1498 («la parte 3, *«llegada esa fecha, el monto se muta»*, se lee con BZ»; «`S37` muta el monto siete días antes de la fecha, y lo que se conserva es que **ningún cobro sale al precio nuevo antes de esa fecha**»). Aunque transcribe la tabla anterior de B/22, presenta como supuesto vigente una mecánica reemplazada por la precisión de CC: confunde la fecha de mutación con la fecha del cobro al nuevo precio · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–1406 | 180 | 0 | 0 |
+| 20-fase-3/B10.md | 1–1942 | 135 | 1 | 0 |
+| 80-abiertos.md | 1–655 | 250 | 4 | 0 |
+
+Alcance: se excluyeron de la auditoría VB los segmentos g-secciones de B8b (53–340) y B10 (90–1211), asignados a G2. Se contrastaron también 163 entradas de transcripción de 80-abiertos contra sus fuentes, descartando los tachados, y las decisiones posteriores aplicables. No se usaron git, trackers ni subagentes. Las skills de dominio indicadas por el brief no tienen copia dentro de V; no se leyeron sus rutas externas para respetar la restricción de lectura del propio brief.

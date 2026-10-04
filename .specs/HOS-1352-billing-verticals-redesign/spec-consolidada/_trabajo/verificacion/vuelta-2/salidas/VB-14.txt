@@ -1,0 +1,24 @@
+# VB-14 · spec → fuente · 30-el-corte.md, 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:99-100 · «bloquear toda escritura: una sola regla en el borde (Cloudflare) rechaza todo lo que no sea mirar, en el sitio viejo y en el nuevo, salvo la ruta de avisos de Mercado Pago, desde este paso hasta el paso 4» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:147 («desde este paso hasta el paso 5») y además 16-fase-7-del-paraguas.md:54, :218, :403 («del 0b al paso 5»). Contradicción interna con 30-el-corte.md:120, :125, :235, :341 y AC:CORTE:3 (l. 1586, «entre el paso 0b y el paso 5»). Quien opere el corte siguiendo el «Qué» del 0b levantaría la regla un paso antes · BLOQUEA
+
+30-el-corte.md:1577-1578 (AC:CORTE:2) · «la lista del seudónimo queda cerrada y medida antes del corte, y entra sólo lo que la medición confirma» · más fuerte que 16-fase-7-del-paraguas.md:146 («lo que la tabla de `V/02` §2.2 da como *«si la medición lo confirma»* entra sólo si lo confirma, y lo que la medición muestre fuera de la tabla vuelve al owner y, mientras no conteste, no se aplica»). El AC le exige confirmación a toda entrada (también a las incondicionales de la tabla) y se pierde la vuelta al owner de lo que aparezca fuera de la tabla (que podría entrar sin decisión del owner si «la medición lo confirma»). La lista que el paso 3 lleva saldría distinta. El texto del paso 0 (l. 68-71) sí lo dice bien · BLOQUEA
+
+90-retirados.md:30 · «Sobrevive sólo para el pagador manual, que en grace puede bajar a un plan más barato.» · sin soporte; contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5973 («**Supera a `DEC-SUB-003`**, entera.») y 01-decision-log.md:5989-5991 («El pagador manual **paga su cuota**. La pantalla del cambio de plan, en grace, dice eso y no ofrece la operación»). La línea 731 que cita el `Origen:` tampoco lo dice. Afirma una regla viva (bajar de plan en grace para el pagador manual) que la decisión vigente prohíbe · BLOQUEA
+
+30-el-corte.md:237-239 · «al cancelar el 1b, el viejo recibe cada cancelación. **Causa**: tocar el código viejo para silenciarlo cuesta más que decirlo, y no mueve plata.» · más débil que 16-fase-7-del-paraguas.md:334-336 («el viejo recibe cada cancelación y manda su correo de baja. No se suprime: el aviso en persona del owner lo anticipa ... el código viejo no se toca y el correo sale») y que :338 («Las fichas no las baja ... la ficha entra al corte a la vista»). La «Causa» queda sin el hecho que justifica. La regla sí está en 30-el-corte.md:901-902, así que no cambia lo que se construye · MENOR
+
+30-el-corte.md:569 y 30-el-corte.md:1874 (TEST:CORTE:12) · «`.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830`» como fuente de la condición de T · cita mal apuntada: 01-decision-log.md:2824-2837 es el 📌 de P y Q. La condición de T («cuenta sólo los commits propios de la épica: falla si HEAD trae algún commit de la rama épica que no está ni en el destino ni en `staging`») está en 01-decision-log.md:2838-2844 (y en 40-congelamiento-y-ci/10-decisiones-del-owner.md:25) · MENOR
+
+30-el-corte.md:1519 · «Un checklist nuevo, del sistema nuevo, en dos partes, que escribe `B13` en `docs/billing/`» · contradicción interna con 30-el-corte.md:42, :808, :1530 y :1542 (`B13a`, por Z: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:20; 16-fase-7-del-paraguas.md:146 y :160 lo corrigen a `B13a`). El residuo `B13` viene de 16-fase-7-del-paraguas.md:1181. La «Dueña del AC» (l. 1530) es correcta · MENOR
+
+30-el-corte.md:1421-1430 (GATE:M5) · el momento 5 no trae «Los precios, congelados hasta este momento ... Ningún precio cambia hasta que el momento 5 esté cumplido» · más débil que 16-fase-7-del-paraguas.md:1125-1133 (BM). 00-indice.md:1392 manda a [GATE:M5] como sede de esa regla, y ahí no está. La regla vive en 10-corte/B2.md:301, 00-indice.md:128 y 01-decisiones-vigentes.md:2107-2121, así que no cambia lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1927 | 230 | 2 | 4 |
+| 90-retirados.md | 1–534 | 45 | 1 | 0 |

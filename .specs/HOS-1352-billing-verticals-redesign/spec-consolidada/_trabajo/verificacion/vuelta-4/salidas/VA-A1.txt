@@ -1,0 +1,21 @@
+# VA-A1 · fuente → spec · P/docs/nucleo/{00-indice,01-glosario,02-modelo-de-datos,03-maquinas-de-estado,04-invariantes,07-outbox-y-notificaciones,08-auditoria-y-observabilidad}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:185 · «| 13 | la renovación por venir | billing | 5 y 1 días antes |» · distinta en s/5586fad7/02-nucleo.md:1637 («Mitad: billing · valor inicial: **7 y 1 días antes**»). Cambia el primer aviso inicial de renovación de cinco a siete días; contradice además el catálogo de correos de s/5586fad7/02-nucleo-outbox.md:289 y AC:B13a:13 de s/5586fad7/10-corte/B13a.md:733. Revisados el decision log, DEC-DATA-008 y sus precisiones, y las decisiones del owner del corte: no hay reemplazo de ese valor inicial. · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:49 · «El estado vive en una columna con dominio restringido» · distinta en s/5586fad7/02-nucleo-modelo-y-maquinas.md:240 («El estado vive en una columna con dominio abierto»). Elimina la exigencia de restringir los valores admitidos por la columna de estado; contradice también s/5586fad7/02-nucleo-glosario.md:436 y las restricciones de s/5586fad7/02-nucleo.md:279 y :309. La fuente reafirma el vocabulario cerrado en nucleo/01-glosario.md:486; no se encontró una decisión posterior que autorice abrirlo en el decision log ni en las decisiones del owner del corte. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| P/docs/nucleo/00-indice.md | ≈18 | 1–211 | 0 | 0 |
+| P/docs/nucleo/01-glosario.md | ≈170 | 1–981 | 0 | 0 |
+| P/docs/nucleo/02-modelo-de-datos.md | ≈67 | 1–274 | 0 | 1 |
+| P/docs/nucleo/03-maquinas-de-estado.md | ≈32 | 1–176 | 0 | 1 |
+| P/docs/nucleo/04-invariantes.md | ≈73 | 1–328 | 0 | 0 |
+| P/docs/nucleo/07-outbox-y-notificaciones.md | ≈95 | 1–383 | 0 | 0 |
+| P/docs/nucleo/08-auditoria-y-observabilidad.md | ≈140 | 1–520 | 0 | 0 |
+
+P = fuentes/.specs/HOS-1352-billing-verticals-redesign. Conteos aproximados por cláusulas normativas vivas, excluidos tachados, explicaciones históricas y reglas reemplazadas. Los dos hallazgos se cuentan una sola vez aunque otras fuentes del bloque reiteren la misma regla. Total: 2 BLOQUEA, 0 MENOR; 0 ausentes, 2 distintas.

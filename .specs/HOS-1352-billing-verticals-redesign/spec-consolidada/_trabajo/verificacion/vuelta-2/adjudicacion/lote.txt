@@ -1,0 +1,31 @@
+# HOS-1352 · Lote CH para el owner (adjudicación de la vuelta 2 de verificación ciega)
+
+Fuentes congeladas en `69cbe79360`, spec en `200317c484`. Ejemplo fijo: **Juan**, anfitrión de una
+cabaña en Colón, se suscribe al Básico la semana siguiente al corte.
+
+Todo lo demás de la adjudicación es REAL (corrección en la spec), FUENTE (residuo) o FALSO: ver
+`correcciones.txt` y `hallazgos.json`. Éste es el único hallazgo que pide una decisión.
+
+---
+
+## CH · Quién escribe `provider_link.cancelado_visto_en`: el capítulo de conciliación dice «la primera relectura que ve `cancelled`, sea del barrido, del handler o de una transición», y el reparto de la misma letra Z le da la escritura sólo al barrido de `B11`. El handler y `S16` son de `B3`, que se mergea antes de que exista la columna (la crea `B4`).
+
+Hallazgo: `H2-VA8-7`
+
+**Contexto.** La columna guarda el instante en que una relectura por id vio por primera vez el preapproval `cancelled`. De ese instante dependen tres cosas: la exención del barrido (*«nuestra llamada ya fue confirmada»*), `puedeCobrarle` (contesta `no` recién con la columna escrita) y el plazo 16 (cuenta desde la columna). La regla del capítulo (`B/09` §3) dice que la escribe cualquier relectura: la del barrido diario, la del handler de avisos y la de una transición como `S16`. El reparto (`B/descomposicion.md` §2.11) dice que `B4` trae la columna y `B11` «la relectura que la escribe». La spec copió el reparto: `B4.md:290-292` dice que la escribe sólo el barrido. Las dos están en el lote Z del 2026-09-30, así que ninguna supera a la otra. Si el handler y `S16` la escriben, su código vive en `B3`, que llega antes que la columna. Hay que hacer la llamada por una interfaz, como con el resto de BL, y eso cambia el reparto. Si no la escriben, el instante llega hasta un día tarde y la regla del capítulo hay que tacharla.
+
+**Evidencia.**
+
+- B/docs/09-conciliacion.md:270-272 «**Que una relectura vio `cancelled` lo guarda `provider_link.cancelado_visto_en`** (…lote Z): el instante de la primera relectura por id que vio el preapproval `cancelled` … Lo escribe esa relectura, sea del barrido, del handler o de la de una transición, y no lo reescriben las siguientes»
+- B/descomposicion.md:729 «| **`provider_link.cancelado_visto_en`** … | lote Z | **B4** *(la columna y `puedeCobrarle`)* · **B11** *(la relectura que la escribe y la exención que la lee)*»
+- spec 10-corte/B4.md:290-292 «La escribe la relectura del barrido de `B11` y la vacía una relectura que lo ve vivo»
+- spec 04-catalogos.md:2248 (la población de `S16` que no mandó llamada porque la relectura ya veía `cancelled`: «se la reconoce por `provider_link.cancelado_visto_en` escrito y el plazo 16 sin cumplir»)
+- D/41-corte-del-mvp/10-decisiones-del-owner.md:137 (BL) «la pieza anterior escribe su rama entera y la llamada contra una interfaz interna, y la posterior trae la implementación sin tocar código anterior»
+
+1. **Escriben todas las relecturas, como dice el capítulo.** `B3` (el handler y `S16`) llama por una interfaz interna a «anotar la cancelación vista». `B4` la implementa cuando crea la columna, y el barrido de `B11` la usa también. Es BL aplicada, y el reparto de §2.11 suma a `B3` como pieza que llama. Costo: una interfaz más en `B3`, su caso con filas sembradas en `B4` y una línea en el reparto. Riesgo: bajo. Es la regla que ya escribió el capítulo, y el instante queda exacto. **Recomendada.**
+2. **Escribe sólo el barrido, como dice el reparto.** Se tacha «del handler o de la de una transición» en `B/09` §3 y no cambia ningún reparto. Costo: ninguno de código. Riesgo: medio. Durante hasta un día `puedeCobrarle` contesta `sí` sobre un preapproval ya cancelado, el plazo 16 arranca un día tarde y la fila de `S16` que no mandó llamada se reconoce recién al día siguiente.
+3. **`B11` mete la escritura en el handler y en `S16` cuando llega.** Costo: `B11` toca código de `B3`. Riesgo: alto de método. Contradice BL y el punto 2 de `DEC-ARCH-017` («lo que llega después no toca lo construido»), y deja el guard de esa regla sin sentido.
+
+Recomendada: **1**.
+
+*Juan.* La semana siguiente al corte, Juan se suscribe al Básico para su cabaña en Colón. Meses después su tarjeta rechaza un cobro y Mercado Pago cancela el preapproval. El aviso llega en el acto, el handler relee y ve `cancelled`. Con la 1, la columna queda escrita en ese momento. Si esa misma tarde Juan pide que le den de baja la cuenta (la acción 24, que pregunta antes `puedeCobrarle`), el sistema ya sabe que no le queda un débito vivo y la baja sigue. Con la 2, hasta el barrido del día siguiente el sistema cree que todavía le puede cobrar, y la baja de Juan se frena un día. La 3 llega al mismo resultado que la 1, pero rompe la regla de no tocar lo ya construido.

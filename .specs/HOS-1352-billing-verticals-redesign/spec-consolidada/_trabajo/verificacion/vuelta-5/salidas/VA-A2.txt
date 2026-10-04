@@ -1,0 +1,13 @@
+# VA-A2 · fuente → spec · P/docs/12-contrato-de-cobertura.md, P/docs/16-fase-7-del-paraguas.md, P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:836 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · distinta en s/2e9ef99e/10-corte/B4.md:129 («Entonces el aviso de que la cobertura cambió queda encolado en el outbox común de `U2`»; también lo exigen las líneas 349 y 391). DEC-ARCH-009, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6175, mantiene el reconciliador diario como red y descarta la alternativa de hacer durable el aviso. El 📌 de U2 del mismo log:2477–2485 asigna la construcción del outbox de correos, sin cambiar esa decisión; las decisiones del owner del MVP no la reemplazan. La propia spec conserva la regla sin transporte durable en s/2e9ef99e/03-contrato-de-cobertura.md:849. Seguir el AC y su test exige construir un transporte de eventos de dominio por el outbox que el contrato excluye. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| P/docs/12-contrato-de-cobertura.md | ≈150 | 1–1585 | 0 | 1 BLOQUEA |
+| P/docs/16-fase-7-del-paraguas.md | ≈180 | 1–1218 | 0 | 0 |
+| P/docs/41-corte-del-mvp/10-decisiones-del-owner.md | ≈100 (63 decisiones no tachadas, con sus precisiones) | 1–257 | 0 | 0 |

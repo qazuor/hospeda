@@ -1,0 +1,23 @@
+# VB-05 · spec → fuente · 10-corte/V2.md 10-corte/V3.md 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V2.md:435 · «lo que `DEC-TRIAL-007` ya prometió —hasta tres borradores, **sin ninguna capacidad comercial**—» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:169 («lo que `DEC-TRIAL-007` ya prometió —borradores ilimitados, **sin ninguna capacidad comercial**—») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:548 («Pre-trial: borradores ilimitados»); ninguna decisión posterior lo limita a tres (rg sin resultados en fuentes). También choca dentro de la spec con 01-decisiones-vigentes.md:351 y 02-nucleo-glosario.md:413, que dicen «borradores ilimitados». Quien construya la versión de pre-trial siguiendo la spec le pondría un tope de 3 borradores · BLOQUEA
+
+10-corte/V4.md:748 · «**Salvo el segundo rechazo dentro del mismo trial, que sí lo termina**: la persona pasa a `TRIAL_EXPIRED` aunque le queden días.» · sin soporte: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:418-428 (§9.2) dice sólo que «Si el primer cobro se rechaza, el trial sigue, con los días que le quedaban», sin excepción. Además contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:56 (`T3`: la única transición a `TRIAL_EXPIRED` tiene como evento «llega la fecha de fin», condición «—»). No hay transición que la ejecute, y choca dentro de la spec con AC:V4:6 (c) y AC:V4:7. Es una regla inventada, y le quitaría a la persona los días de trial que le quedan · BLOQUEA
+
+10-corte/V4.md:478-489 (sección «El reloj del trial es calendario») · se omite la regla «**Y se dice en el momento de despublicar, no en los términos.** Que el reloj no se detiene es la primera pregunta de alguien molesto, y un aviso en el acto la convierte en una decisión informada» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:66-68 (§1.2, vivo). V4 es dueña de `11` entero, y el aviso al despublicar no aparece en ningún archivo de la spec (rg «despublicar»/«no se detiene»: sin resultados). Nadie construiría ese aviso · BLOQUEA
+
+10-corte/V3.md:419-420 · «el reconciliador se dispara por el recálculo, que ya ocurre porque llegar el aviso de cobertura está en la lista de invalidación (abajo; `V/02` §2.6)» · cita mal apuntada: la lista de invalidación está en .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:662-678 (§3.2), no en §2.6. El contenido sí coincide con la fila vigente de §3.2 («llega el aviso de cobertura»), que reemplazó a «toda transición de la máquina de suscripción», el texto que cita `15` §2.6 · MENOR
+
+10-corte/V3.md:719 · «la cuota restante que conviene mostrar y el total de trial son superficies de `V8a` y `B13a` (`DEC-ENT-002`, implicación 3; `V/descomposicion.md` §2, fila `V3`)» · sin soporte: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:630-632 (DEC-ENT-002 impl. 3) sólo dice «Conviene que la UI muestre la cuota restante del mes» y no asigna pieza; la fila `V3` (descomposicion.md:63) tampoco. Ningún archivo de la spec de V8a/B13a recoge esa superficie (rg «cuota restante»: sólo V3.md:719 y 01-decisiones-vigentes.md:2782). La asignación no tiene destino · MENOR
+
+10-corte/V4.md:225-228 (AC:V4:2) · «Gmail quita puntos y `+`; Microsoft consumidor sólo el `+` …; Proton e iCloud unifican y quitan el `+`; Fastmail y Yandex quitan el `+`; todo dominio que la lista no nombra cuenta como dominio propio y quita el `+`» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:345-347: la lista del AC omite las filas de Yahoo («`+alias` queda: se quita sólo si la medición lo confirma») y de AOL, Zoho, GMX y los ISP argentinos («queda»). Leído solo, el AC los manda a «todo dominio que la lista no nombra» y les quita el `+`. La tabla completa sí está en V4.md:851-853, así que es una incoherencia interna dentro del mismo archivo · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–721 | 95 | 1 | 0 |
+| 10-corte/V3.md | 1–918 | 110 | 0 | 2 |
+| 10-corte/V4.md | 1–1232 | 150 | 2 | 1 |

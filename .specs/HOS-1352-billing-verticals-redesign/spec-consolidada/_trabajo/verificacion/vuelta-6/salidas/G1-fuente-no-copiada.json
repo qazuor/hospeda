@@ -1,0 +1,722 @@
+[
+    {
+        "id": "DEC-MIG-001",
+        "src": 416,
+        "text": "- **Decisión**: **(1)**. Se los contacta, se los da de alta en el motor nuevo y se cancela el"
+    },
+    {
+        "id": "DEC-ENT-002",
+        "src": 640,
+        "text": "  11)**: Con más de un título vivo ancla el que da la cuota; con dos, el que arrancó primero. El"
+    },
+    {
+        "id": "DEC-DATA-001",
+        "src": 954,
+        "text": "     (`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la"
+    },
+    {
+        "id": "DEC-CONC-002",
+        "src": 1634,
+        "text": "     Terminar una cancelación NUESTRA ya decidida no es reparar una divergencia.** Once filas de"
+    },
+    {
+        "id": "DEC-CONC-002",
+        "src": 1670,
+        "text": "     llamada no se aplicó, la reintenta el barrido por la salvedad 4 del punto 4 —que desde"
+    },
+    {
+        "id": "DEC-CONC-002",
+        "src": 1671,
+        "text": "     entonces cuenta las dos lápidas, la del corte y la de recepción— y a los 3 días marca"
+    },
+    {
+        "id": "DEC-GRANT-004",
+        "src": 2073,
+        "text": "  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la"
+    },
+    {
+        "id": "DEC-ADDON-002",
+        "src": 2190,
+        "text": "     `V2-e`)**: la selección de `S32` en la baja suma `CANCEL_SCHEDULED` a la exclusión. `S26` la"
+    },
+    {
+        "id": "DEC-ADDON-002",
+        "src": 2191,
+        "text": "     aplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa. Y cuando una de las"
+    },
+    {
+        "id": "DEC-ADDON-002",
+        "src": 2192,
+        "text": "     catorce transiciones saca a una principal de las filas vivas y la orfandad de un"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2540,
+        "text": "  4. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G2-1`;"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2551,
+        "text": "  5. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G4-2`;"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2580,
+        "text": "- 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R5` y `Q-FECHA`)**: la"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2581,
+        "text": "  fecha de fin de servicio de una vertical la calcula billing y verticales la pregunta por"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2582,
+        "text": "  `finDeServicio` (`12-contrato…` §4.1), que en la implementación de arranque contesta"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2583,
+        "text": "  `NINGUNA`; la real contesta de `vertical_discontinuation`, una fila de billing por vertical"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2584,
+        "text": "  discontinuada, y verticales no guarda copia. El día del fin de servicio billing sólo avisa."
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2585,
+        "text": "  `PB2`, el hecho 4 y la invalidación de la vertical los ejecuta el reconciliador diario de"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2586,
+        "text": "  cobertura (`V/03` §9). `extenderTrial` sigue siendo la única escritura de billing en"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2588,
+        "text": "- 📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-x` sobre"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2589,
+        "text": "  `N-B-03`)**: `PB9` no borra una ficha de una vertical cuya `finDeServicio` ya pasó mientras la"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2590,
+        "text": "  corrida del reconciliador no escribió el hecho 4, así que `finDeServicio` tiene tres lectores en"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2591,
+        "text": "  verticales y no dos."
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2607,
+        "text": "  en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, las filas vivas sin"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2608,
+        "text": "  `CANCEL_SCHEDULED`, o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta. Su único lector es la acción"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2612,
+        "text": "  la cubre la de la dirección de ida, y siguen siendo once. Y mientras la app de la rama está rota,"
+    },
+    {
+        "id": "DEC-ARCH-006",
+        "src": 2619,
+        "text": "  la interfaz del reloj. Así `B1` no espera a `V1`, y las dependencias entre épicas siguen en once."
+    },
+    {
+        "id": "DEC-MIG-002",
+        "src": 2730,
+        "text": "- **Decisión**: **(1)**. Se siguen tomando altas en el sistema actual, y **se transcriben a mano"
+    },
+    {
+        "id": "DEC-MIG-002",
+        "src": 2737,
+        "text": "  el nuevo: una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el"
+    },
+    {
+        "id": "DEC-MIG-002",
+        "src": 2738,
+        "text": "  proveedor. No contradice esta decisión: su alcance es el rediseño, y el corte es su final."
+    },
+    {
+        "id": "DEC-MIG-002",
+        "src": 2746,
+        "text": "- **El riesgo, declarado**: **la cohorte a transcribir crece mientras dure el rediseño.** Hoy son 5;"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3099,
+        "text": "    declarada una **rama de aborto** si el despliegue falla: el costo, aceptado, es que los"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3101,
+        "text": "    decidido**. Detalle en `16-fase-7-del-paraguas.md` §4.2."
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3123,
+        "text": "       escribe sigue siendo: las lápidas (paso 4), los dos `permanent_grant` y `inactiva_desde` ="
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3143,
+        "text": "    - El apuntado de la URL es el paso 4b, después de las lápidas. El paso 3, que es hasta donde"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3157,
+        "text": "    `/api/v1/webhooks/mercadopago`, para los dos canales; el borde la cierra antes de apagar el"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3159,
+        "text": "    mientras está cerrada, el proveedor recibe error y reintenta a la misma URL. El 4b verifica con"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3160,
+        "text": "    la sonda de Webhooks y el pago chico de IPN. La rama de aborto ya no devuelve ninguna URL: vuelve"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3161,
+        "text": "    a cerrar la ruta si hace falta, redespliega la imagen vieja y la abre verificada con una entrega"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3163,
+        "text": "  - 📌 **Precisado el 2026-09-29, con OK del owner (verificación corta, lote P-A)**: la ruta de"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3164,
+        "text": "    avisos la cierra un Worker del borde que contesta `500` a todo pedido, con una cabecera propia,"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3165,
+        "text": "    y no una regla de bloqueo, que contesta un `4xx` cuyo reintento no está medido. Se le asigna la"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3166,
+        "text": "    ruta antes de apagar el contenedor viejo y se le quita al final del paso 4, las dos veces"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3167,
+        "text": "    verificado desde afuera; en la rama de aborto, cerrar y abrir la ruta son lo mismo. Vive"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3168,
+        "text": "    versionado con el script del corte y se archiva con él; lo deja listo el ensayo del paso 0 en"
+    },
+    {
+        "id": "DEC-MIG-003",
+        "src": 3169,
+        "text": "    `staging`, que mide también cuánto dura el cierre."
+    },
+    {
+        "id": "DEC-DATA-002",
+        "src": 3774,
+        "text": "     **📌 Precisado el 2026-09-25, con OK del owner.** La lista cerrada **tiene seis hechos**"
+    },
+    {
+        "id": "DEC-ADDON-003",
+        "src": 3858,
+        "text": "     convierte —no hay nada comprado— pero su cobro se cancela igual. **La condición de huérfano"
+    },
+    {
+        "id": "DEC-ADDON-004",
+        "src": 3931,
+        "text": "  `S11` o por `S26`—, en esa fecha corre primero el `S12` de la principal, la orfandad corre"
+    },
+    {
+        "id": "DEC-SUB-013",
+        "src": 4131,
+        "text": "  `S21`, `S24`, `S26`) y cuatro desde `PENDING_AUTHORIZATION` (`S13`, `S20`, `S21`, `S28`). Sin esto"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4547,
+        "text": "  es billing»*) era falsa. `B/20` §2 lista 15 filas y `V/20` §2, 20; el total de 31 guards no"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4656,
+        "text": "  confirmados el 2026-09-28, `V2-x`). El programa pasa a 32 guards, 19 de verticales y 13 de"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4660,
+        "text": "  dirección código → catálogo (la otra es una FK de la base); el catálogo queda en 33 guards"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4665,
+        "text": "  `listing.plazos_version`, que se escribe sólo junto con `inactiva_desde`. El catálogo sigue en 33"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4670,
+        "text": "  pasa de 33 a **34 guards distintos** (ver el 📌 de `DEC-ARCH-013`). La decisión no fijó qué"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4672,
+        "text": "  15 y 1 de `U1`, 📌 O-A de `DEC-ARCH-014`); queda para el owner. Origen: (FASE 5, lote de la"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4677,
+        "text": "  (*«la unidad nazca ANTES o CON lo que el guard vigila»*). El reparto queda **18 de verticales, 15"
+    },
+    {
+        "id": "DEC-TEST-001",
+        "src": 4678,
+        "text": "  de billing y 1 de `U1`**. Cierra lo que el 📌 anterior dejaba para el owner."
+    },
+    {
+        "id": "DEC-MP-003",
+        "src": 4751,
+        "text": "- **Decisión**: **un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de"
+    },
+    {
+        "id": "DEC-MP-004",
+        "src": 4812,
+        "text": "- **Decisión**: **el mensaje se deriva del `status_detail`, con un mapa explícito y un texto"
+    },
+    {
+        "id": "DEC-MP-004",
+        "src": 4813,
+        "text": "  genérico obligatorio** para los detalles que no estén en el mapa."
+    },
+    {
+        "id": "DEC-DATA-004",
+        "src": 5007,
+        "text": "### DEC-DATA-004 — Se ratifican las tres formas que la tanda eligió sin consultar: la rama de `PB7`, el orden del cupo y la lista de los cinco"
+    },
+    {
+        "id": "DEC-DATA-004",
+        "src": 5027,
+        "text": "- **`H1` — la lista de los cinco consumidores de `inactiva_desde` queda como está**, con los dos"
+    },
+    {
+        "id": "DEC-SUB-016",
+        "src": 5092,
+        "text": "  las **72 h**. Para el **pagador manual**, la ventana es de **7 días corridos**."
+    },
+    {
+        "id": "DEC-RF-004",
+        "src": 5212,
+        "text": "  ampliación parte cuatro caminos y deja uno. `S12`-vía-`S26` ya no depende de transportar la causa:"
+    },
+    {
+        "id": "DEC-RF-004",
+        "src": 5214,
+        "text": "  principal, y abre el 15. Queda del lado de la regla sólo `S17`. La lectura es por la vertical y no"
+    },
+    {
+        "id": "DEC-RF-006",
+        "src": 5510,
+        "text": "  `V2-p` el 2026-09-28)**: abren el 15 y no el 14, en la fecha de fin, el `USER`/`GLOBAL` que `S26`"
+    },
+    {
+        "id": "DEC-RF-006",
+        "src": 5512,
+        "text": "  `vertical_discontinuation`. Siguen siendo veinticuatro motivos, nueve que devuelven. Y la marca 7"
+    },
+    {
+        "id": "DEC-SUB-019",
+        "src": 5838,
+        "text": "  mora** una suscripción nuestra — cancelamos antes de que se le venza la ventana. La pausa con motivo"
+    },
+    {
+        "id": "DEC-MP-008",
+        "src": 5936,
+        "text": "- 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N8)**: Pendiente de medición"
+    },
+    {
+        "id": "DEC-MP-008",
+        "src": 5937,
+        "text": "  (revisión del owner, N8): una pausa o una cancelación hecha por el pagador desde su cuenta de"
+    },
+    {
+        "id": "DEC-MP-008",
+        "src": 5938,
+        "text": "  Mercado Pago no se distingue hoy de una del proveedor; hasta medir, esta decisión la trata como"
+    },
+    {
+        "id": "DEC-SUB-021",
+        "src": 6030,
+        "text": "     mensual es extrapolación—. **Se mide con el próximo rechazo mensual real.** Mientras tanto, **la"
+    },
+    {
+        "id": "DEC-DATA-005",
+        "src": 6126,
+        "text": "  sola por `S12`, sobre la cuenta ya dada de baja. El paso 1 de la baja manual termina cuando ninguna"
+    },
+    {
+        "id": "DEC-TRIAL-010",
+        "src": 6224,
+        "text": "     escribe la fila consumida, igual que `T7`. Si el cobro se rechaza, la persona queda en"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6492,
+        "text": "- 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R2`, `R21` y `R21-b`)**: el"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6493,
+        "text": "  cobro sobre una lápida del corte no se devuelve sólo si es del día del corte (`date_created`"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6494,
+        "text": "  del registro). Uno posterior abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo. La"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6495,
+        "text": "  población se lee de la re-verificación del día del corte, y un detector corre después del"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6496,
+        "text": "  corte, con dueño y fecha (`B/21` «NO cierra»). El titular de una autorización que sólo"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6497,
+        "text": "  conoce el proveedor entra a la población a avisar: antes del aviso previo, una pasada de sólo"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6498,
+        "text": "  lectura sobre el proveedor lista las autorizaciones vivas con su `payer_email`, y el 1b"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6499,
+        "text": "  cancela después. Quien aparezca recién en el manifiesto del 1b recibe el aviso después de la"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6500,
+        "text": "  cancelación, y lo que pierde se declara como en `G1-4`."
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6501,
+        "text": "- 📌 **Precisado con OK del owner (FASE 9 vuelta 2, verificación: `V2-a` el 2026-09-27; `V2-m` y"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6502,
+        "text": "  `V2-r` el 2026-09-28)**: el día del cobro se lee en la fecha del pago que aprobó el registro,"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6503,
+        "text": "  leído por id, y no en el `date_created` del registro, que no se mueve con los reintentos. Qué"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6504,
+        "text": "  campo del pago la trae se mide en el paso 0 del corte (`EX-48`), y el 1b no arranca sin ese dato:"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6505,
+        "text": "  si ningún campo es confiable, vuelve al owner antes del corte. Y el paso 0 cuenta las"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6506,
+        "text": "  suscripciones anuales vivas del viejo (`EX-50`), porque sobre ellas la segunda corrida del"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6507,
+        "text": "  detector puede caer hasta un año después del corte."
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6511,
+        "text": "- 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote P-B)**: La primera"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6512,
+        "text": "  corrida del detector, el día siguiente al corte, lista también, por cada lápida del corte, los"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6513,
+        "text": "  registros de cobro que el proveedor da aprobados con un pago del día del corte y que no tienen"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6514,
+        "text": "  `payment`, con la misma lectura del barrido, sin abrir marca ni asentar. Es lo que ve el cobro"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6515,
+        "text": "  cuyo aviso se perdió durante el cierre de la ruta de avisos, que el barrido no compara sobre una"
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6516,
+        "text": "  lápida del corte; la regla de `G3-1` no cambia, y la lista suma titulares a la llamada."
+    },
+    {
+        "id": "DEC-MIG-005",
+        "src": 6520,
+        "text": "  del corte. El titular que sólo conoce el proveedor tiene detector sólo si alguna lectura medida en"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6573,
+        "text": "     `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** El catálogo tiene hoy **quince**"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6576,
+        "text": "     §3.4 y su ⚠️, §3.5, `B/19` §6) dicen quince. Lo de arriba es exacto para su fecha."
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6578,
+        "text": "     **📌 Recontado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, owner 2026-09-27,"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6579,
+        "text": "     `Q-ACC16`).** El catálogo tiene **dieciséis** acciones: la decimosexta es *«discontinuar una"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6580,
+        "text": "     vertical»*, de `SUPER_ADMIN`, auditada y con confirmación, que orquesta las dos mitades del"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6581,
+        "text": "     acto de `DEC-ARCH-011`. Las líneas que cuantifican dicen dieciséis."
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6592,
+        "text": "  acciones administrativas pasan de dieciséis a veintiuna vivas: sale la 16, discontinuar una"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6596,
+        "text": "  I-C)**: Las acciones administrativas pasan de veintiuna a veintitrés vivas: entran la 23, borrar"
+    },
+    {
+        "id": "DEC-RF-008",
+        "src": 6600,
+        "text": "  destructivas, y las dos las construye `V8`, como la 15. La clase y la unidad las confirmó el"
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6751,
+        "text": "  permisos y su migración de datos, que se asigna al aprobar la postulación, y el paso 3 de la"
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6758,
+        "text": "  postulación: se da en el acto que fija al dueño de la presencia**, el reclamo (`DEC-AUTH-004`) o"
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6759,
+        "text": "  el alta directa del admin con dueño. Al aprobar todavía no se sabe cuál es la cuenta del dueño, y"
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6763,
+        "text": "  `payment_confirmed_through`; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el"
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6770,
+        "text": "  unidad de socios»*, **los borra `V7` con su migración, junto con sus lectores del panel** (O)."
+    },
+    {
+        "id": "DEC-ENT-006",
+        "src": 6774,
+        "text": "  (Gold o Silver) sale en la misma migración de `V7` que `starts_at` y `ends_at`, con su índice, y"
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 6997,
+        "text": "- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 5 y 6)**:"
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 6998,
+        "text": "  En el paso 0 se toman dos recuentos sobre la cartera vieja: si el sistema viejo servía alguna"
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 6999,
+        "text": "  ficha que el corte hace nacer `PURGED` o en `DRAFT`, y si da cero el paso 4c se saltea; y cuántos"
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 7000,
+        "text": "  dueños tienen más de una ficha a la vista en la misma vertical, que no es gate y vuelve al owner"
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 7001,
+        "text": "  si da más de cero."
+    },
+    {
+        "id": "DEC-MIG-006",
+        "src": 7009,
+        "text": "  después el script del corte, con la función de la aplicación, y se verifica a mano (lote 2 D,"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7339,
+        "text": "  y 49)**: Las 11 migraciones de datos del seed que importaban el archivo borrado se congelan con"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7340,
+        "text": "  sus valores adentro, en el mismo cambio que lo borra, y salen en el paso 6 del corte. Los datos de"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7344,
+        "text": "  alguno de los cinco plazos sin valor escrito está vacío, y el owner los fija antes del ensayo del"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7345,
+        "text": "  corte en staging. Y las claves, de los entitlements y de los límites, siguen en el código; los"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7355,
+        "text": "  después el script del corte, con la función de la aplicación, y se verifican a mano: se resigna"
+    },
+    {
+        "id": "DEC-ARCH-013",
+        "src": 7370,
+        "text": "  control cuenta como guard: los guards pasan de 33 a 34** (E; ver el 📌 de `DEC-TEST-001`). Y las"
+    },
+    {
+        "id": "DEC-DATA-008",
+        "src": 7388,
+        "text": "  Ningún plazo técnico es configurable (los 15 minutos del caché, las 26 horas del vigía, los 3 días"
+    },
+    {
+        "id": "DEC-DATA-008",
+        "src": 7413,
+        "text": "  atrasada y la espera tras un rechazo) los fija el owner antes del ensayo del corte en staging, y"
+    },
+    {
+        "id": "DEC-DATA-008",
+        "src": 7423,
+        "text": "  plazos de cada mitad, con los quince valores, la crea la migración estructural del paso 3 del"
+    },
+    {
+        "id": "DEC-DATA-008",
+        "src": 7432,
+        "text": "  paso 3 lleva los dieciocho, y los otros cinco sin valor escrito los sigue fijando el owner antes"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7562,
+        "text": "  mismo cambio; `G16` sigue en `B1`, porque su predicado (b) necesita el package del cobro. El"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7567,
+        "text": "  verificadas, el proveedor recibe error y reintenta a la misma URL, y el 4b sólo verifica, la"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7568,
+        "text": "  sonda de Webhooks y el pago chico de IPN (`DEC-MP-009`). `EX-46` queda sin sujeto. Qué código"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7571,
+        "text": "  (`30-revision-del-owner/35-aplicacion-lote-o.md` §3). Dónde: `16-fase-7-del-paraguas.md` §4.2 y"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7574,
+        "text": "  dos preguntas que el 📌 anterior dejó para el owner están contestadas. **P-A**: la ruta de avisos"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7580,
+        "text": "  siguiente al corte, sin abrir marca ni asentar (`DEC-MIG-005`). **P-C**: `U1`, al terminar la"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7582,
+        "text": "  su parte (`DEC-ARCH-006`). Las dependencias entre épicas siguen en once y los guards en 33, con el"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7583,
+        "text": "  mismo reparto: `G14` sigue en `V1`. Dónde: `16-fase-7-del-paraguas.md` §4.2 y §4.6; `B/21`, «NO"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7624,
+        "text": "  `payment_confirmed_through`; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el"
+    },
+    {
+        "id": "DEC-ARCH-014",
+        "src": 7625,
+        "text": "  📌 de `DEC-ENT-006`). Y los guards que cuentan los 📌 de O-A y P-C, 33, pasan a **34**: el"
+    },
+    {
+        "id": "DEC-ARCH-016",
+        "src": 7799,
+        "text": "     real de las cinco**, que se borra al terminar (C); arranca con la imagen vieja desplegada y **es"
+    },
+    {
+        "id": "DEC-ARCH-017",
+        "src": 7932,
+        "text": "  cambios, las columnas de la sucesión y las dos tablas de `B12`, `B3`; promos y cortesías, `B9a`;"
+    },
+    {
+        "id": "DEC-ARCH-017",
+        "src": 7933,
+        "text": "  addons, `B4`, que le agrega a `payment` la columna de la instancia—, con el drift guard sobre la"
+    },
+    {
+        "id": "DEC-ARCH-017",
+        "src": 8007,
+        "text": "  índice parcial y `reconciliation_mark_payment`; `V9a`, `domain_event` (inferido: ninguna pieza"
+    },
+    {
+        "id": "DEC-ARCH-017",
+        "src": 8008,
+        "text": "  anterior la escribe). Precisa AP y AV. **BO**: revocar una cortesía temporal (acción 1) es"
+    }
+]
