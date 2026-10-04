@@ -92,9 +92,13 @@ Cada hoja corta su branch desde ahí: `git switch -c feat/HOS-N-<slug> origin/ep
 `hops start-issue` NO sirve acá: corta de `staging` y abre Claude. Para levantar los servers y la
 DB del worktree: `hops servers-up`.
 
-**Antes de la primera hoja**: la épica está atrás de `staging`. Hay que sincronizarla con un PR
-`staging → epic` y verificar que el guard de destino lo deje pasar (`DEC-CI-001` y letras P, Q y T
-del registro `40-congelamiento-y-ci`).
+**Antes de la primera hoja**: la épica está atrás de `staging` (27 commits al 2026-10-04). Se
+sincroniza con un PR de `staging` a la épica, sin branch intermedia:
+`gh pr create --base epic/HOS-1352-verticales-billing --head staging --title "[NOSPEC:sync-umbrella] chore: merge staging into the umbrella branch"`.
+No le pongas `HOS-1352` en el título: la automatización de Linear cerraría el paraguas al mergear.
+Cuando el CI esté verde, se mergea con `--merge`. El guard `scripts/check-umbrella-branch-target.sh` no
+se mete: sólo frena los PR a `staging` o `main` que llevan commits de la épica. Conviene repetir la
+sincronización cada tanto, por ejemplo una vez por semana.
 
 ## Prompt del implementador
 
