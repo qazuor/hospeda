@@ -323,6 +323,12 @@ overrides:
   # lockfile already resolves 1.7.1 for @astrojs/internal-helpers, so this is
   # a pure resolution fix, same as the other transitive-only entries above.
   smol-toml: ">=1.7.1 <2"
+  # GHSA-xjh9-v7x6-24jw / GHSA-x8mw-p69m-v3mx: unstorage reaches this
+  # through @whatwg-node/node-fetch. Keep the 3.x line used by its consumer.
+  "@fastify/busboy": ">=3.2.1 <4"
+  # GHSA-ch52-4w7c-c8xp: Astro resolves 4.2.0. The advisory names 4.2.1
+  # as patched, but npm's first published fixed version is 4.3.0.
+  http-cache-semantics: ">=4.3.0 <5"
 
 auditConfig:
   ignoreGhsas:
@@ -337,6 +343,15 @@ auditConfig:
     # this explicit exception until Expo ships a compatible dependency update;
     # remove it as soon as `pnpm audit --prod` confirms the path is gone.
     - GHSA-86w9-cpqp-85rv
+    # GHSA-vfj7-8cjw-p6xm / CVE-2026-93687: braces@3.0.3 can exhaust the
+    # stack on deeply nested patterns. All production-audit paths are under
+    # apps/mobile > @better-auth/expo > expo > Metro > metro-file-map >
+    # micromatch > braces. Metro scans the app's source files at build time;
+    # this package does not process request input in the deployed runtimes.
+    # No fixed braces release exists on npm (latest is 3.0.3); the advisory's
+    # suggested 3.0.4 is unpublished. Remove this narrow exception as soon as
+    # a fixed braces release or an Expo/Metro dependency update is available.
+    - GHSA-vfj7-8cjw-p6xm
     # image-size DoS in its ICNS (GHSA-w3rx-r6r6-pgpr) and JXL/HEIF
     # (GHSA-5p2g-fcmc-qvqq) parsers, fixed in 2.0.3 (HOS-418).
     #
@@ -411,3 +426,4 @@ minimumReleaseAgeExclude:
   - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.1.0 || 2.1.1 || 2.1.2 || 3.0.0 || 4.0.0'
   - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.13 || 1.6.14 || 1.6.15 || 2.0.0 || 2.0.1'
   - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.28 || 1.1.29 || 1.1.30 || 2.0.0 || 2.0.1'
+  - http-cache-semantics@4.3.0
