@@ -8,7 +8,9 @@ in the worktree against HEAD: staged, unstaged and untracked (except .hoja/ itse
 Exit 0: everything inside the allow-list. Exit 1: prints each file outside it, with
 its status (A/M/D), so the coordinator can revert it and reject the leaf.
 
-Usage: python3 alcance.py <worktree>
+Usage: python3 alcance.py <worktree> [<allow-list file>]
+The optional second argument points to a copy of the allow-list kept OUTSIDE the
+worktree, so the agent cannot widen its own scope by editing .hoja/permitidas.txt.
 """
 import fnmatch
 import subprocess
@@ -31,7 +33,7 @@ def changed_files(worktree: Path) -> list[tuple[str, str]]:
 
 def main() -> None:
     worktree = Path(sys.argv[1]).resolve()
-    allow_file = worktree / ".hoja" / "permitidas.txt"
+    allow_file = Path(sys.argv[2]) if len(sys.argv) > 2 else worktree / ".hoja" / "permitidas.txt"
     if not allow_file.exists():
         sys.exit(f"✗ falta {allow_file}")
     globs = [g.strip() for g in allow_file.read_text().splitlines() if g.strip() and not g.startswith("#")]

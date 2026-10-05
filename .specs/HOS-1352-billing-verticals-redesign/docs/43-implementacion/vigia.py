@@ -19,6 +19,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -65,6 +66,16 @@ def main() -> None:
     a = ap.parse_args()
     wt = Path(a.worktree).resolve(); log = wt / ".hoja" / "vigia.log"; log.parent.mkdir(exist_ok=True)
     start = last_change = time.time(); seen: set[str] = set(); last_report = 0.0
+    # Fail closed: no allow-list means no run. Snapshot it OUTSIDE the worktree so the
+    # agent cannot widen its own scope; any edit to the in-tree copy is a violation.
+    allow_in_tree = wt / ".hoja" / "permitidas.txt"
+    if not allow_in_tree.exists():
+        print("✗ falta .hoja/permitidas.txt: no se vigila sin lista blanca", file=sys.stderr)
+        sys.exit(2)
+    allow_text = allow_in_tree.read_text()
+    snapshot = Path(tempfile.mkstemp(prefix="vigia-permitidas-", suffix=".txt")[1])
+    snapshot.write_text(allow_text)
+    own_pgid = os.getpgid(0)
 
     def emit(msg: str) -> None:
         line = f"[{time.strftime('%H:%M')}] {msg}"
@@ -76,7 +87,12 @@ def main() -> None:
         emit(why)
         if a.matar and code in (2, 3, 4) and alive(a.pid):
             try:
-                os.killpg(os.getpgid(a.pid), signal.SIGTERM)
+                pgid = os.getpgid(a.pid)
+                # Never take down our own process group (the coordinator lives there).
+                if pgid != own_pgid:
+                    os.killpg(pgid, signal.SIGTERM)
+                else:
+                    os.kill(a.pid, signal.SIGTERM)
             except OSError:
                 os.kill(a.pid, signal.SIGTERM)
             emit(f"proceso {a.pid} terminado por el vigía")
@@ -89,10 +105,12 @@ def main() -> None:
         if set(files) != seen or newest_mtime(wt, files) > last_change:
             last_change = max(now if set(files) != seen else last_change, newest_mtime(wt, files))
             seen = set(files)
-        if (wt / ".hoja" / "permitidas.txt").exists():
-            r = subprocess.run([sys.executable, str(HERE / "alcance.py"), str(wt)], capture_output=True, text=True)
-            if r.returncode == 1:
-                stop(2, "FUERA DE ALCANCE\n" + r.stdout.strip())
+        if not allow_in_tree.exists() or allow_in_tree.read_text() != allow_text:
+            stop(2, "FUERA DE ALCANCE: el agente modificó o borró .hoja/permitidas.txt")
+        r = subprocess.run([sys.executable, str(HERE / "alcance.py"), str(wt), str(snapshot)],
+                           capture_output=True, text=True)
+        if r.returncode != 0:  # any failure of the check counts as a violation (fail closed)
+            stop(2, "FUERA DE ALCANCE (o el chequeo falló)\n" + (r.stdout + r.stderr).strip())
         if not alive(a.pid):
             stop(0, f"TERMINÓ · {len(files)} archivos cambiados · último progreso: {last_progress(wt)}")
         elapsed = (now - start) / 60; quiet = (now - last_change) / 60
