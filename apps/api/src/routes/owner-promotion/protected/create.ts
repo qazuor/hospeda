@@ -36,6 +36,7 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        // HOS-1352: transitional until V3 (HOS-1357), see PR: promotion count has no plan cap while effective limits are rebuilt.
         // Inject ownerId from the authenticated session actor so the client
         // cannot supply or forge it. The body is validated against
         // OwnerPromotionCreateRequestSchema which omits ownerId entirely.
@@ -49,10 +50,5 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // SPEC-145 T-005: entitlement gate BEFORE limit check — actor must have the
-        // CREATE_PROMOTIONS entitlement (granted on owner-pro, owner-premium,
-        // complex-pro, complex-premium) before we consult the promotion-count limit.
     }
 });

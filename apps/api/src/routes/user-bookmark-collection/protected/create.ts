@@ -28,10 +28,7 @@ const CreateCollectionRequestSchema = UserBookmarkCollectionCreateInputSchema.om
     userId: true
 });
 
-/**
- * Default plan limit when the limit is not yet configured in the entitlement
- * context (e.g. unrecognised plan). Mirrors the VIP plan limit (25).
- */
+/** Temporary fixed collection cap until effective limits are rebuilt. */
 const DEFAULT_PLAN_LIMIT = 25;
 
 export const createUserBookmarkCollectionRoute = createProtectedRoute({
@@ -52,8 +49,7 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = body as Omit<UserBookmarkCollectionCreateInput, 'userId'>;
 
-        // The per-plan MAX_COLLECTIONS limit was removed with the legacy
-        // billing system (HOS-1416); the hard cap (25) always applies.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR: every actor uses the temporary 25-collection cap.
         const planLimit = DEFAULT_PLAN_LIMIT;
 
         const result = await collectionService.createCollection(

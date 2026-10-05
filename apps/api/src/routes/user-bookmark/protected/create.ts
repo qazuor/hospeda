@@ -63,8 +63,7 @@ export const createUserBookmarkRoute = createProtectedRoute({
             return { toggled: false, bookmark: null };
         }
 
-        // The per-plan MAX_FAVORITES limit was removed with the legacy billing
-        // system (HOS-1416).
+        // HOS-1352: transitional until V3 (HOS-1357), see PR: favorites have no monthly plan cap while effective limits are rebuilt.
         const result = await bookmarkService.create(actor, {
             ...input,
             userId: actor.id
@@ -75,17 +74,5 @@ export const createUserBookmarkRoute = createProtectedRoute({
         }
 
         return { toggled: true, bookmark: result.data };
-    },
-    options: {
-        // gateFavorites — entitlement check (SAVE_FAVORITES). Tourist plans
-        // (free/plus/vip) all include it; owner/complex plans also include it
-        // via tourist-VIP inheritance (SPEC-216). Throws 403 ENTITLEMENT_REQUIRED
-        // if missing (e.g. an unauthenticated or free-role actor).
-        //
-        // The MAX_FAVORITES limit (free=3, plus=20, vip=-1 unlimited) is NOT
-        // enforced as a middleware here: a toggle can either ADD or REMOVE a
-        // favorite, and removing must never be blocked at the cap. The limit is
-        // asserted inside the handler's toggle-ON branch only, via
-        // assertFavoritesLimitOrThrow (BETA-42).
     }
 });

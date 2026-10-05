@@ -2,9 +2,8 @@
  * POST /api/v1/protected/price-alerts
  * Subscribe to price-drop alerts for an accommodation — Protected endpoint.
  *
- * The PRICE_ALERTS entitlement gate and MAX_ACTIVE_ALERTS limit (gateAlerts +
- * populateActiveAlertsCount) were removed with the legacy billing system
- * (HOS-1416).
+ * HOS-1352: transitional until V3 (HOS-1357), see PR: price alerts have no
+ * monthly plan cap while effective limits are rebuilt.
  *
  * The response denormalizes `accommodationName` from a fresh accommodation
  * read — `AlertSubscriptionService.create()` does not re-fetch relations on
